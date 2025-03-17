@@ -32,7 +32,7 @@ def parse_QEfc(file_QEfc):
     nkd = None
     nat = None
 
-    with open(file_QEfc, 'r') as f:
+    with open(file_QEfc, "r") as f:
         line = f.readline()
         header.append(line)
         nkd, nat, ibrav = [int(entry) for entry in line.strip().split()[:3]]
@@ -50,7 +50,7 @@ def parse_QEfc(file_QEfc):
         header.append(line)
         epsil_flag = line.strip()
 
-        if epsil_flag == 'T':
+        if epsil_flag == "T":
             for i in range(3 + 4 * nat):
                 header.append(f.readline())
 
@@ -66,8 +66,9 @@ def parse_QEfc(file_QEfc):
                         for m3 in range(nz):
                             for m2 in range(ny):
                                 for m1 in range(nx):
-                                    fc2[3 * iat + icrd][3 * jat +
-                                                        jcrd][m1][m2][m3] = float(f.readline().split()[3])
+                                    fc2[3 * iat + icrd][3 * jat + jcrd][m1][m2][m3] = (
+                                        float(f.readline().split()[3])
+                                    )
 
     return header, nat, nkd, nx, ny, nz, fc2
 
@@ -77,7 +78,7 @@ def get_structure_info_dfc2(file_dfc2):
     nat = None
     nkd = None
 
-    with open(file_dfc2, 'r') as f:
+    with open(file_dfc2, "r") as f:
         lavec.append([float(t) for t in f.readline().strip().split()])
         lavec.append([float(t) for t in f.readline().strip().split()])
         lavec.append([float(t) for t in f.readline().strip().split()])
@@ -92,8 +93,7 @@ def get_dfc2(file_dfc2, temp_in):
     detect_temp_tag = False
     dfc2 = []
 
-    with open(file_dfc2, 'r') as f:
-
+    with open(file_dfc2, "r") as f:
         line = f.readline()
         temp = None
 
@@ -118,8 +118,10 @@ def get_dfc2(file_dfc2, temp_in):
             line = f.readline()
 
     if not detect_temp_tag:
-        print("Delta FC2 data for the specified temperature (%.2f K) does not exist in %s" % (
-            temp_in, file_dfc2))
+        print(
+            "Delta FC2 data for the specified temperature (%.2f K) does not exist in %s"
+            % (temp_in, file_dfc2)
+        )
         exit(1)
 
     return np.array(dfc2)
@@ -129,7 +131,6 @@ def create_newfc2(nx, ny, nz, fc2_orig, dfc2_array):
     fc2_new = np.copy(fc2_orig)
 
     for entry in dfc2_array:
-
         m1 = int(entry[0])
         m2 = int(entry[1])
         m3 = int(entry[2])
@@ -171,20 +172,29 @@ def print_fc2(header_in, nx, ny, nz, nat, fc2_in):
         for jcrd in range(3):
             for iat in range(nat):
                 for jat in range(nat):
-                    print(" %3d %3d %3d %3d" %
-                          (icrd + 1, jcrd + 1, iat + 1, jat + 1))
+                    print(" %3d %3d %3d %3d" % (icrd + 1, jcrd + 1, iat + 1, jat + 1))
 
                     for m3 in range(nz):
                         for m2 in range(ny):
                             for m1 in range(nx):
-                                print(" %3d %3d %3d %19.11e" % (
-                                    m1 + 1, m2 + 1, m3 + 1, fc2_in[3 * iat + icrd][3 * jat + jcrd][m1][m2][m3]))
+                                print(
+                                    " %3d %3d %3d %19.11e"
+                                    % (
+                                        m1 + 1,
+                                        m2 + 1,
+                                        m3 + 1,
+                                        fc2_in[3 * iat + icrd][3 * jat + jcrd][m1][m2][
+                                            m3
+                                        ],
+                                    )
+                                )
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("\nUsage:\n > python convert_to_qefc2.py original_QEfc2 scph_fc2_correction temperature\n")
+        print(
+            "\nUsage:\n > python convert_to_qefc2.py original_QEfc2 scph_fc2_correction temperature\n"
+        )
         exit(1)
 
     file_QEfc2 = sys.argv[1]

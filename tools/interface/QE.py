@@ -19,7 +19,6 @@ import numpy as np
 
 
 class QEParser(object):
-
     def __init__(self):
         self._prefix = None
         self._lattice_vector = None
@@ -51,18 +50,26 @@ class QEParser(object):
         self._RYDBERG_TO_EV = 13.60569253
 
     def load_initial_structure(self, file_in):
-
         # Parse fortran namelists
         self._list_CONTROL = self._get_namelist(file_in, "&CONTROL")
         self._list_SYSTEM = self._get_namelist(file_in, "&SYSTEM")
         self._list_ELECTRONS = self._get_namelist(file_in, "&ELECTRONS")
 
         # Parse general options
-        tags = ["ATOMIC_SPECIES", "ATOMIC_POSITIONS", "K_POINTS",
-                "CELL_PARAMETERS", "OCCUPATIONS", "CONSTRAINTS", "ATOMIC_FORCES"]
+        tags = [
+            "ATOMIC_SPECIES",
+            "ATOMIC_POSITIONS",
+            "K_POINTS",
+            "CELL_PARAMETERS",
+            "OCCUPATIONS",
+            "CONSTRAINTS",
+            "ATOMIC_FORCES",
+        ]
 
         self._list_ATOMIC_SPECIES = self._get_options("ATOMIC_SPECIES", tags, file_in)
-        self._list_ATOMIC_POSITIONS = self._get_options("ATOMIC_POSITIONS", tags, file_in)
+        self._list_ATOMIC_POSITIONS = self._get_options(
+            "ATOMIC_POSITIONS", tags, file_in
+        )
         self._list_K_POINTS = self._get_options("K_POINTS", tags, file_in)
         self._list_CELL_PARAMETERS = self._get_options("CELL_PARAMETERS", tags, file_in)
         self._list_OCCUPATIONS = self._get_options("OCCUPATIONS", tags, file_in)
@@ -71,8 +78,9 @@ class QEParser(object):
         self._set_system_info()
         self._initial_structure_loaded = True
 
-    def generate_structures(self, prefix, header_list, disp_list,  updated_structure=None):
-
+    def generate_structures(
+        self, prefix, header_list, disp_list, updated_structure=None
+    ):
         self._set_number_of_zerofill(len(disp_list))
         self._prefix = prefix
         self._counter = 1
@@ -80,9 +88,16 @@ class QEParser(object):
         for header, disp in zip(header_list, disp_list):
             self._generate_input(header, disp)
 
-    def parse(self, initial_pwin, pwout_files, pwout_file_offset, str_unit,
-              output_flags, filter_emin=None, filter_emax=None):
-
+    def parse(
+        self,
+        initial_pwin,
+        pwout_files,
+        pwout_file_offset,
+        str_unit,
+        output_flags,
+        filter_emin=None,
+        filter_emax=None,
+    ):
         if not self._initial_structure_loaded:
             self.load_initial_structure(initial_pwin)
 
@@ -90,10 +105,9 @@ class QEParser(object):
         self._set_output_flags(output_flags)
 
         if self._print_disp or self._print_force:
-            self._print_displacements_and_forces(pwout_files,
-                                                 pwout_file_offset,
-                                                 filter_emin,
-                                                 filter_emax)
+            self._print_displacements_and_forces(
+                pwout_files, pwout_file_offset, filter_emin, filter_emax
+            )
 
         elif self._print_energy:
             self._print_energies(pwout_files, pwout_file_offset)
@@ -102,9 +116,10 @@ class QEParser(object):
             self._print_borninfo(pwout_files)
 
     def get_displacements(self, pwout_files, unit="bohr"):
-
         if not self._initial_structure_loaded:
-            raise RuntimeError("Please call load_initial_structure before using this method")
+            raise RuntimeError(
+                "Please call load_initial_structure before using this method"
+            )
 
         x0 = np.round(self._x_fractional, 8)
         lavec_transpose = self._lattice_vector.transpose()
@@ -117,7 +132,9 @@ class QEParser(object):
         elif unit == "angstrom":
             unit_factor = 1.0
         else:
-            raise RuntimeError("Invalid unit type. Valid values are 'bohr' and 'angstrom'.")
+            raise RuntimeError(
+                "Invalid unit type. Valid values are 'bohr' and 'angstrom'."
+            )
 
         for search_target in pwout_files:
             x = self._get_coordinates_pwout(search_target)
@@ -127,7 +144,9 @@ class QEParser(object):
 
             for idata in range(ndata):
                 disp[idata, :, :] = x[idata, :, :] - x0
-                disp[idata, :, :] = np.dot(vec_refold(disp[idata, :, :]), lavec_transpose)
+                disp[idata, :, :] = np.dot(
+                    vec_refold(disp[idata, :, :]), lavec_transpose
+                )
                 disp[idata, :, :] *= unit_factor
 
             disp_merged.extend(disp)
@@ -135,10 +154,9 @@ class QEParser(object):
         return disp_merged
 
     def _generate_input(self, header, disp):
-
         filename = self._prefix + str(self._counter).zfill(self._nzerofills) + ".pw.in"
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             for entry in self._list_CONTROL:
                 f.write(entry)
             for entry in self._list_SYSTEM:
@@ -149,10 +167,15 @@ class QEParser(object):
                 f.write(entry)
             f.write("ATOMIC_POSITIONS crystal\n")
             for i in range(self._nat):
-                f.write("%s %20.15f %20.15f %20.15f\n" % (self._kdname[self._kd[i]],
-                                                          self._x_fractional[i][0] + disp[i, 0],
-                                                          self._x_fractional[i][1] + disp[i, 1],
-                                                          self._x_fractional[i][2] + disp[i, 2]))
+                f.write(
+                    "%s %20.15f %20.15f %20.15f\n"
+                    % (
+                        self._kdname[self._kd[i]],
+                        self._x_fractional[i][0] + disp[i, 0],
+                        self._x_fractional[i][1] + disp[i, 1],
+                        self._x_fractional[i][2] + disp[i, 2],
+                    )
+                )
             for entry in self._list_K_POINTS:
                 f.write(entry)
             for entry in self._list_CELL_PARAMETERS:
@@ -163,9 +186,9 @@ class QEParser(object):
 
         self._counter += 1
 
-    def _print_displacements_and_forces(self, pwout_files,
-                                        file_offset, filter_emin, filter_emax):
-
+    def _print_displacements_and_forces(
+        self, pwout_files, file_offset, filter_emin, filter_emax
+    ):
         x0 = np.round(self._x_fractional, 8)
         lavec_transpose = self._lattice_vector.transpose() / self._BOHR_TO_ANGSTROM
         vec_refold = np.vectorize(self._refold)
@@ -179,11 +202,15 @@ class QEParser(object):
         else:
             x_offset = self._get_coordinates_pwout(file_offset)
             if x_offset is None:
-                raise RuntimeError("File %s does not contain position entry" % file_offset)
+                raise RuntimeError(
+                    "File %s does not contain position entry" % file_offset
+                )
 
             ndata_offset, _, _ = np.shape(x_offset)
             if ndata_offset > 1:
-                raise RuntimeError("File %s contains too many position entries" % file_offset)
+                raise RuntimeError(
+                    "File %s contains too many position entries" % file_offset
+                )
 
             disp_offset = x_offset - x0
             force_offset = self._get_atomicforces_pwout(file_offset)
@@ -192,17 +219,22 @@ class QEParser(object):
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
             except:
-                raise RuntimeError("File %s contains too many force entries" % file_offset)
+                raise RuntimeError(
+                    "File %s contains too many force entries" % file_offset
+                )
 
             epot_offset = self._get_energies_pwout(file_offset)
             if epot_offset is None:
-                raise RuntimeError("File %s does not contain energy entry" % file_offset)
+                raise RuntimeError(
+                    "File %s does not contain energy entry" % file_offset
+                )
             epot_offset = np.array(epot_offset, dtype=float)
             if len(epot_offset) > 1:
-                raise RuntimeError("File %s contains too many energy entries" % file_offset)
+                raise RuntimeError(
+                    "File %s contains too many energy entries" % file_offset
+                )
 
         for search_target in pwout_files:
-
             x = self._get_coordinates_pwout(search_target)
             force = self._get_atomicforces_pwout(search_target)
             epot = self._get_energies_pwout(search_target)
@@ -214,23 +246,31 @@ class QEParser(object):
             force = np.reshape(force, (num_data_force, self._nat, 3))
             num_data_disp, _, _ = np.shape(x)
 
-            if num_data_disp != num_data_force and self._print_disp and self._print_force:
+            if (
+                num_data_disp != num_data_force
+                and self._print_disp
+                and self._print_force
+            ):
                 print(
-                    "Error: The number of entries of displacement and force is inconsistent.")
-                print("Ndata disp : %d, Ndata force : %d" %
-                      (num_data_disp, num_data_force))
+                    "Error: The number of entries of displacement and force is inconsistent."
+                )
+                print(
+                    "Ndata disp : %d, Ndata force : %d"
+                    % (num_data_disp, num_data_force)
+                )
                 exit(1)
 
             ndata_energy = len(epot)
             if ndata_energy != num_data_disp:
-                raise RuntimeError("The numbers of displacement and energy entries are different.")
+                raise RuntimeError(
+                    "The numbers of displacement and energy entries are different."
+                )
 
             epot = np.array(epot, dtype=float)
             epot -= epot_offset
             epot *= self._RYDBERG_TO_EV
 
             for idata in range(num_data_disp):
-
                 if filter_emin is not None:
                     if filter_emin > epot[idata]:
                         continue
@@ -248,27 +288,33 @@ class QEParser(object):
                     f = force[idata, :, :] - force_offset
                     f *= self._force_conversion_factor
 
-                print("# Filename: %s, Snapshot: %d, E_pot (eV): %s" %
-                      (search_target, idata + 1, epot[idata]))
+                print(
+                    "# Filename: %s, Snapshot: %d, E_pot (eV): %s"
+                    % (search_target, idata + 1, epot[idata])
+                )
 
                 if self._print_disp and self._print_force:
                     for i in range(self._nat):
-                        print("%15.7F %15.7F %15.7F %20.8E %15.8E %15.8E" % (disp[i, 0],
-                                                                             disp[i, 1],
-                                                                             disp[i, 2],
-                                                                             f[i, 0],
-                                                                             f[i, 1],
-                                                                             f[i, 2]))
+                        print(
+                            "%15.7F %15.7F %15.7F %20.8E %15.8E %15.8E"
+                            % (
+                                disp[i, 0],
+                                disp[i, 1],
+                                disp[i, 2],
+                                f[i, 0],
+                                f[i, 1],
+                                f[i, 2],
+                            )
+                        )
                 elif self._print_disp:
                     for i in range(self._nat):
-                        print("%15.7F %15.7F %15.7F" % (disp[i, 0],
-                                                        disp[i, 1],
-                                                        disp[i, 2]))
+                        print(
+                            "%15.7F %15.7F %15.7F"
+                            % (disp[i, 0], disp[i, 1], disp[i, 2])
+                        )
                 elif self._print_force:
                     for i in range(self._nat):
-                        print("%15.8E %15.8E %15.8E" % (f[i, 0],
-                                                        f[i, 1],
-                                                        f[i, 2]))
+                        print("%15.8E %15.8E %15.8E" % (f[i, 0], f[i, 1], f[i, 2]))
 
     def _print_energies(self, pwout_files, file_offset):
         if file_offset is None:
@@ -276,10 +322,14 @@ class QEParser(object):
         else:
             data = self._get_energies_pwout(file_offset)
             if data is None:
-                raise RuntimeError("File %s does not contain energy entry" % file_offset)
+                raise RuntimeError(
+                    "File %s does not contain energy entry" % file_offset
+                )
 
             if len(data) > 1:
-                raise RuntimeError("File %s contains too many energy entries" % file_offset)
+                raise RuntimeError(
+                    "File %s contains too many energy entries" % file_offset
+                )
             etot_offset = data[0]
 
         print("# Etot")
@@ -293,33 +343,36 @@ class QEParser(object):
                 print("%19.11E" % val)
 
     def _print_borninfo(self, phout_files):
-
         for search_target in phout_files:
-
             dielec, borncharge = self._get_borninfo_phout(search_target)
             nat_prim, _, _ = np.shape(borncharge)
 
             for i in range(3):
-                print("%16.8F %16.8F %16.8F" %
-                      (dielec[i, 0], dielec[i, 1], dielec[i, 2]))
+                print(
+                    "%16.8F %16.8F %16.8F" % (dielec[i, 0], dielec[i, 1], dielec[i, 2])
+                )
 
             for j in range(nat_prim):
                 for i in range(3):
-                    print("%16.8F %16.8F %16.8F" % (borncharge[j, i, 0],
-                                                    borncharge[j, i, 1],
-                                                    borncharge[j, i, 2]))
+                    print(
+                        "%16.8F %16.8F %16.8F"
+                        % (
+                            borncharge[j, i, 0],
+                            borncharge[j, i, 1],
+                            borncharge[j, i, 2],
+                        )
+                    )
 
     def _set_system_info(self):
-
         list_mod = []
 
         for obj in self._list_SYSTEM:
-            obj_split = obj.rstrip().split(',')
+            obj_split = obj.rstrip().split(",")
             for subobj in obj_split:
                 if subobj:
-                    index = subobj.find('=')
+                    index = subobj.find("=")
                     if index > 0:
-                        subobj = subobj[:index] + " = " + subobj[index + 1:]
+                        subobj = subobj[:index] + " = " + subobj[index + 1 :]
                     list_mod.append(subobj)
 
         str_input = ""
@@ -328,7 +381,6 @@ class QEParser(object):
         entrylist = str_input.split()
 
         for i in range(len(entrylist)):
-
             if "ibrav" in entrylist[i]:
                 ibrav = int(entrylist[i + 2])
 
@@ -344,7 +396,7 @@ class QEParser(object):
                 has_comment = False
                 for elem in self._list_SYSTEM:
                     if "celldm(1)" in elem:
-                        has_comment = ('!' == elem.strip().split()[0][0])
+                        has_comment = "!" == elem.strip().split()[0][0]
 
                 if not has_comment:
                     self._celldm[0] = float(entrylist[i + 2])
@@ -377,7 +429,6 @@ class QEParser(object):
         lavec = np.zeros((3, 3))
 
         if ibrav == 0:
-
             if self._list_CELL_PARAMETERS is None:
                 raise RuntimeError("CELL_PARAMETERS must be given when ibrav = 0.")
 
@@ -385,19 +436,23 @@ class QEParser(object):
 
             if len(mode) == 1:
                 raise RuntimeError(
-                    "Error : Please specify either alat, bohr, or angstrom for CELL_PARAMETERS")
+                    "Error : Please specify either alat, bohr, or angstrom for CELL_PARAMETERS"
+                )
 
             mode_str = mode[1].lower()
 
             for i in range(3):
-                lavec[i][:] = [float(entry) for entry in
-                               self._list_CELL_PARAMETERS[i + 1].rstrip().split()]
+                lavec[i][:] = [
+                    float(entry)
+                    for entry in self._list_CELL_PARAMETERS[i + 1].rstrip().split()
+                ]
             lavec = np.array(lavec)
 
             if "alat" in mode_str:
                 if not self._celldm[0]:
                     raise RuntimeError(
-                        "celldm(1) must be given when 'alat' is used for CELL_PARAMETERS")
+                        "celldm(1) must be given when 'alat' is used for CELL_PARAMETERS"
+                    )
 
                 for i in range(3):
                     for j in range(3):
@@ -411,70 +466,68 @@ class QEParser(object):
                         lavec[i][j] /= self._BOHR_TO_ANGSTROM
 
             elif "bohr" not in mode_str:
-                raise RuntimeError("Error : Invalid option for CELL_PARAMETERS: %s" %
-                                   mode[1])
+                raise RuntimeError(
+                    "Error : Invalid option for CELL_PARAMETERS: %s" % mode[1]
+                )
 
         elif ibrav == 1:
-
             if not self._celldm[0]:
                 raise RuntimeError("celldm(1) must be given when ibrav = 1.")
 
             else:
                 a = self._celldm[0]
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [0.0, a, 0.0],
-                                  [0.0, 0.0, a]])
+                lavec = np.array([[a, 0.0, 0.0], [0.0, a, 0.0], [0.0, 0.0, a]])
 
         elif ibrav == 2:
-
             if not self._celldm[0]:
                 raise RuntimeError("celldm(1) must be given when ibrav = 2.")
 
             else:
                 a = self._celldm[0] / 2.0
-                lavec = np.array([[-a, 0.0, a],
-                                  [0.0, a, a],
-                                  [-a, a, 0.0]])
+                lavec = np.array([[-a, 0.0, a], [0.0, a, a], [-a, a, 0.0]])
 
         elif ibrav == 3:
-
             if not self._celldm[0]:
                 raise RuntimeError("celldm(1) must be given when ibrav = 3.")
 
             else:
                 a = self._celldm[0] / 2.0
-                lavec = np.array([[a, a, a],
-                                  [-a, a, a],
-                                  [-a, -a, a]])
+                lavec = np.array([[a, a, a], [-a, a, a], [-a, -a, a]])
 
         elif ibrav == 4:
-
             if not self._celldm[0] or not self._celldm[2]:
-                raise RuntimeError("celldm(1) and celldm(3) must be given when ibrav = 4.")
+                raise RuntimeError(
+                    "celldm(1) and celldm(3) must be given when ibrav = 4."
+                )
 
             else:
                 a = self._celldm[0]
                 c = self._celldm[0] * self._celldm[2]
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [-0.5 * a, math.sqrt(3.) / 2.0 * a, 0.0],
-                                  [0.0, 0.0, c]])
+                lavec = np.array(
+                    [
+                        [a, 0.0, 0.0],
+                        [-0.5 * a, math.sqrt(3.0) / 2.0 * a, 0.0],
+                        [0.0, 0.0, c],
+                    ]
+                )
 
         elif ibrav == 5 or ibrav == -5:
-
             if not self._celldm[0] or not self._celldm[3]:
-                raise RuntimeError("celldm(1) and celldm(4) must be given when ibrav = 5, -5.")
+                raise RuntimeError(
+                    "celldm(1) and celldm(4) must be given when ibrav = 5, -5."
+                )
 
             else:
                 a = self._celldm[0]
                 cosalpha = self._celldm[3]
-                tx = a * math.sqrt((1.0 - cosalpha) / 2.)
-                ty = a * math.sqrt((1.0 - cosalpha) / 6.)
-                tz = a * math.sqrt((1.0 + 2.0 * cosalpha) / 3.)
+                tx = a * math.sqrt((1.0 - cosalpha) / 2.0)
+                ty = a * math.sqrt((1.0 - cosalpha) / 6.0)
+                tz = a * math.sqrt((1.0 + 2.0 * cosalpha) / 3.0)
 
                 if ibrav == 5:
-                    lavec = np.array([[tx, -ty, tz],
-                                      [0.0, 2.0 * ty, tz],
-                                      [-tx, -ty, tz]])
+                    lavec = np.array(
+                        [[tx, -ty, tz], [0.0, 2.0 * ty, tz], [-tx, -ty, tz]]
+                    )
 
                 else:
                     a_prime = a / math.sqrt(3.0)
@@ -484,54 +537,56 @@ class QEParser(object):
                     u *= a_prime
                     v *= a_prime
 
-                    lavec = np.array([[u, v, v],
-                                      [v, u, v],
-                                      [v, v, u]])
+                    lavec = np.array([[u, v, v], [v, u, v], [v, v, u]])
 
         elif ibrav == 6:
-
             if not self._celldm[0] or not self._celldm[2]:
-                raise RuntimeError("celldm(1) and celldm(3) must be given when ibrav = 6.")
+                raise RuntimeError(
+                    "celldm(1) and celldm(3) must be given when ibrav = 6."
+                )
 
             else:
                 a = self._celldm[0]
                 c = self._celldm[0] * self._celldm[2]
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [0.0, a, 0.0],
-                                  [0.0, 0.0, c]])
+                lavec = np.array([[a, 0.0, 0.0], [0.0, a, 0.0], [0.0, 0.0, c]])
 
         elif ibrav == 7:
-
             if not self._celldm[0] or not self._celldm[2]:
-                raise RuntimeError("celldm(1) and celldm(3) must be given when ibrav = 7.")
+                raise RuntimeError(
+                    "celldm(1) and celldm(3) must be given when ibrav = 7."
+                )
 
             else:
                 a = self._celldm[0]
                 c = self._celldm[0] * self._celldm[2]
-                lavec = np.array([[a / 2.0, -a / 2.0, c / 2.0],
-                                  [a / 2.0, a / 2.0, c / 2.0],
-                                  [-a / 2.0, -a / 2.0, c / 2.0]])
+                lavec = np.array(
+                    [
+                        [a / 2.0, -a / 2.0, c / 2.0],
+                        [a / 2.0, a / 2.0, c / 2.0],
+                        [-a / 2.0, -a / 2.0, c / 2.0],
+                    ]
+                )
 
         elif ibrav == 8:
-
             if not self._celldm[0] or not self._celldm[1] or not self._celldm[2]:
-                raise RuntimeError("celldm(1), celldm(2), and celldm(3) must be given\
-                when ibrav = 8.")
+                raise RuntimeError(
+                    "celldm(1), celldm(2), and celldm(3) must be given\
+                when ibrav = 8."
+                )
 
             else:
                 a = self._celldm[0]
                 b = self._celldm[0] * self._celldm[1]
                 c = self._celldm[0] * self._celldm[2]
 
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [0.0, b, 0.0],
-                                  [0.0, 0.0, c]])
+                lavec = np.array([[a, 0.0, 0.0], [0.0, b, 0.0], [0.0, 0.0, c]])
 
         elif ibrav == 9 or ibrav == -9:
-
             if not self._celldm[0] or not self._celldm[1] or not self._celldm[2]:
-                raise RuntimeError("celldm(1), celldm(2), and celldm(3) must be given\
-                when ibrav = 9 or -9.")
+                raise RuntimeError(
+                    "celldm(1), celldm(2), and celldm(3) must be given\
+                when ibrav = 9 or -9."
+                )
 
             else:
                 a = self._celldm[0]
@@ -539,94 +594,132 @@ class QEParser(object):
                 c = self._celldm[0] * self._celldm[2]
 
                 if ibrav == 9:
-                    lavec = np.array([[a / 2., b / 2., 0.0],
-                                      [-a / 2., b / 2., 0.0],
-                                      [0.0, 0.0, c]])
+                    lavec = np.array(
+                        [
+                            [a / 2.0, b / 2.0, 0.0],
+                            [-a / 2.0, b / 2.0, 0.0],
+                            [0.0, 0.0, c],
+                        ]
+                    )
                 else:
-                    lavec = np.array([[a / 2., -b / 2., 0.0],
-                                      [a / 2., b / 2., 0.0],
-                                      [0.0, 0.0, c]])
+                    lavec = np.array(
+                        [
+                            [a / 2.0, -b / 2.0, 0.0],
+                            [a / 2.0, b / 2.0, 0.0],
+                            [0.0, 0.0, c],
+                        ]
+                    )
 
         elif ibrav == 10:
-
             if not self._celldm[0] or not self._celldm[1] or not self._celldm[2]:
-                raise RuntimeError("celldm(1), celldm(2), and celldm(3) must be given\
-                when ibrav = 10.")
+                raise RuntimeError(
+                    "celldm(1), celldm(2), and celldm(3) must be given\
+                when ibrav = 10."
+                )
 
             else:
                 a = self._celldm[0] / 2.0
                 b = self._celldm[0] * self._celldm[1] / 2.0
                 c = self._celldm[0] * self._celldm[2] / 2.0
-                lavec = np.array([[a, 0.0, c],
-                                  [a, b, 0.0],
-                                  [0.0, b, c]])
+                lavec = np.array([[a, 0.0, c], [a, b, 0.0], [0.0, b, c]])
 
         elif ibrav == 11:
-
             if not self._celldm[0] or not self._celldm[1] or not self._celldm[2]:
-                raise RuntimeError("celldm(1), celldm(2), and celldm(3) must be given\
-                when ibrav = 11.")
+                raise RuntimeError(
+                    "celldm(1), celldm(2), and celldm(3) must be given\
+                when ibrav = 11."
+                )
 
             else:
                 a = self._celldm[0] / 2.0
                 b = self._celldm[0] * self._celldm[1] / 2.0
                 c = self._celldm[0] * self._celldm[2] / 2.0
-                lavec = np.array([[a, b, c],
-                                  [-a, b, c],
-                                  [-a, -b, c]])
+                lavec = np.array([[a, b, c], [-a, b, c], [-a, -b, c]])
 
         elif ibrav == 12:
-
-            if not self._celldm[0] or not self._celldm[1] or not self._celldm[2] or \
-                    not self._celldm[3]:
-                raise RuntimeError("celldm(1), celldm(2), celldm(3), and celldm(4)\
-                must be given when ibrav = 12.")
+            if (
+                not self._celldm[0]
+                or not self._celldm[1]
+                or not self._celldm[2]
+                or not self._celldm[3]
+            ):
+                raise RuntimeError(
+                    "celldm(1), celldm(2), celldm(3), and celldm(4)\
+                must be given when ibrav = 12."
+                )
 
             else:
                 a = self._celldm[0]
                 b = self._celldm[0] * self._celldm[1]
                 c = self._celldm[0] * self._celldm[2]
                 gamma = math.acos(self._celldm[3])
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [b * math.cos(gamma), b * math.sin(gamma), 0.0],
-                                  [0.0, 0.0, c]])
+                lavec = np.array(
+                    [
+                        [a, 0.0, 0.0],
+                        [b * math.cos(gamma), b * math.sin(gamma), 0.0],
+                        [0.0, 0.0, c],
+                    ]
+                )
 
         elif ibrav == -12:
-
-            if not self._celldm[0] or not self._celldm[1] or not self._celldm[2] or \
-                    not self._celldm[4]:
-                raise RuntimeError("celldm(1), celldm(2), celldm(3), and celldm(5)\
-                must be given when ibrav = -12.")
+            if (
+                not self._celldm[0]
+                or not self._celldm[1]
+                or not self._celldm[2]
+                or not self._celldm[4]
+            ):
+                raise RuntimeError(
+                    "celldm(1), celldm(2), celldm(3), and celldm(5)\
+                must be given when ibrav = -12."
+                )
 
             else:
                 a = self._celldm[0]
                 b = self._celldm[0] * self._celldm[1]
                 c = self._celldm[0] * self._celldm[2]
                 beta = math.acos(self._celldm[4])
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [0.0, b, 0.0],
-                                  [c * math.cos(beta), 0.0, c * math.sin(beta)]])
+                lavec = np.array(
+                    [
+                        [a, 0.0, 0.0],
+                        [0.0, b, 0.0],
+                        [c * math.cos(beta), 0.0, c * math.sin(beta)],
+                    ]
+                )
 
         elif ibrav == 13:
-
-            if not self._celldm[0] or not self._celldm[1] or not self._celldm[2] or \
-                    not self._celldm[3]:
-                raise RuntimeError("celldm(1), celldm(2), celldm(3), and celldm(4)\
-                must be given when ibrav = 13.")
+            if (
+                not self._celldm[0]
+                or not self._celldm[1]
+                or not self._celldm[2]
+                or not self._celldm[3]
+            ):
+                raise RuntimeError(
+                    "celldm(1), celldm(2), celldm(3), and celldm(4)\
+                must be given when ibrav = 13."
+                )
 
             else:
                 a = self._celldm[0]
                 b = self._celldm[0] * self._celldm[1]
                 c = self._celldm[0] * self._celldm[2]
                 gamma = math.acos(self._celldm[3])
-                lavec = np.array([[a / 2.0, 0.0, -c / 2.0],
-                                  [b * math.cos(gamma), b * math.sin(gamma), 0.0],
-                                  [a / 2.0, 0.0, c / 2.0]])
+                lavec = np.array(
+                    [
+                        [a / 2.0, 0.0, -c / 2.0],
+                        [b * math.cos(gamma), b * math.sin(gamma), 0.0],
+                        [a / 2.0, 0.0, c / 2.0],
+                    ]
+                )
 
         elif ibrav == 14:
-
-            if not self._celldm[0] or not self._celldm[1] or not self._celldm[2] or \
-                    not self._celldm[3] or not self._celldm[4] or not self._celldm[5]:
+            if (
+                not self._celldm[0]
+                or not self._celldm[1]
+                or not self._celldm[2]
+                or not self._celldm[3]
+                or not self._celldm[4]
+                or not self._celldm[5]
+            ):
                 raise RuntimeError("All celldm must be given when ibrav = 14.")
 
             else:
@@ -637,14 +730,30 @@ class QEParser(object):
                 beta = math.acos(self._celldm[4])
                 gamma = math.acos(self._celldm[5])
 
-                lavec = np.array([[a, 0.0, 0.0],
-                                  [b * math.cos(gamma), b * math.sin(gamma), 0.0],
-                                  [c * math.cos(beta),
-                                   c * (math.cos(alpha) - math.cos(beta) *
-                                        math.cos(gamma)) / math.sin(gamma),
-                                   c * math.sqrt(1.0 + 2.0 * math.cos(alpha) * math.cos(beta) * math.cos(gamma)
-                                                 - math.cos(alpha) ** 2 - math.cos(beta) ** 2 - math.cos(
-                                       gamma) ** 2) / math.sin(gamma)]])
+                lavec = np.array(
+                    [
+                        [a, 0.0, 0.0],
+                        [b * math.cos(gamma), b * math.sin(gamma), 0.0],
+                        [
+                            c * math.cos(beta),
+                            c
+                            * (math.cos(alpha) - math.cos(beta) * math.cos(gamma))
+                            / math.sin(gamma),
+                            c
+                            * math.sqrt(
+                                1.0
+                                + 2.0
+                                * math.cos(alpha)
+                                * math.cos(beta)
+                                * math.cos(gamma)
+                                - math.cos(alpha) ** 2
+                                - math.cos(beta) ** 2
+                                - math.cos(gamma) ** 2
+                            )
+                            / math.sin(gamma),
+                        ],
+                    ]
+                )
 
         else:
             raise RuntimeError("Invalid ibrav = %s" % ibrav)
@@ -665,18 +774,20 @@ class QEParser(object):
         self._inverse_lattice_vector = np.linalg.inv(lavec)
 
     def _set_fractional_coordinate(self):
-
         list_tmp = self._list_ATOMIC_POSITIONS[0].rstrip().split()
 
         if len(list_tmp) == 1:
-            raise RuntimeError("Error : Please specify either alat, "
-                               " bohr, angstrom, or crystal for ATOMIC_POSITIONS")
+            raise RuntimeError(
+                "Error : Please specify either alat, "
+                " bohr, angstrom, or crystal for ATOMIC_POSITIONS"
+            )
 
         mode_str = list_tmp[1].lower()
         if "crystal_sg" in mode_str:
             raise RuntimeError(
                 "Error : Sorry. 'crystal_sg' is not supported in this script. "
-                "Please use another option.")
+                "Please use another option."
+            )
 
         xtmp = np.zeros((self._nat, 3))
         kd = []
@@ -701,7 +812,6 @@ class QEParser(object):
                 xtmp[i][:] = np.dot(xtmp[i][:], aa_inv.transpose())
 
         elif "bohr" in mode_str:
-
             for i in range(3):
                 for j in range(3):
                     aa_inv[i][j] *= self._BOHR_TO_ANGSTROM
@@ -710,12 +820,13 @@ class QEParser(object):
                 xtmp[i][:] = np.dot(xtmp[i][:], aa_inv.transpose())
 
         elif "angstrom" in mode_str:
-
             for i in range(self._nat):
                 xtmp[i][:] = np.dot(xtmp[i][:], aa_inv.transpose())
 
         elif "crystal" not in mode_str:
-            raise RuntimeError("Error : Invalid option for ATOMIC_POSITIONS: %s" % mode_str)
+            raise RuntimeError(
+                "Error : Invalid option for ATOMIC_POSITIONS: %s" % mode_str
+            )
 
         kdname = []
         for entry in kd:
@@ -735,7 +846,6 @@ class QEParser(object):
         self._x_fractional = xtmp
 
     def _set_number_of_zerofill(self, npattern):
-
         nzero = 1
 
         while True:
@@ -747,7 +857,6 @@ class QEParser(object):
         self._nzerofills = nzero
 
     def _set_unit_conversion_factor(self, str_unit):
-
         if str_unit == "ev":
             self._disp_conversion_factor = self._BOHR_TO_ANGSTROM
             self._energy_conversion_factor = self._RYDBERG_TO_EV
@@ -763,11 +872,14 @@ class QEParser(object):
         else:
             raise RuntimeError("This cannot happen.")
 
-        self._force_conversion_factor = self._energy_conversion_factor / self._disp_conversion_factor
+        self._force_conversion_factor = (
+            self._energy_conversion_factor / self._disp_conversion_factor
+        )
 
     def _set_output_flags(self, output_flags):
-        self._print_disp, self._print_force, \
-            self._print_energy, self._print_born = output_flags
+        self._print_disp, self._print_force, self._print_energy, self._print_born = (
+            output_flags
+        )
 
     @property
     def nat(self):
@@ -847,7 +959,6 @@ class QEParser(object):
 
     @staticmethod
     def _get_namelist(file_in, namelist_tag):
-
         list_out = []
         flag_add = False
 
@@ -871,7 +982,6 @@ class QEParser(object):
 
     @staticmethod
     def _get_options(option_tag, taglists, file_in):
-
         list_out = []
         flag_add = False
 
@@ -907,7 +1017,7 @@ class QEParser(object):
         basis = ""
         found_tag = False
 
-        f = open(pwout_file, 'r')
+        f = open(pwout_file, "r")
         line = f.readline()
 
         while line:
@@ -923,8 +1033,11 @@ class QEParser(object):
             # print("%s tag not found in %s" % (search_flag, pwout_file), file=sys.stderr)
             return None
 
-        x = self._celldm[0] * np.dot(x, self._inverse_lattice_vector.transpose()) \
+        x = (
+            self._celldm[0]
+            * np.dot(x, self._inverse_lattice_vector.transpose())
             * self._BOHR_TO_ANGSTROM
+        )
 
         # Search additional entries containing atomic position
         # (for parsing MD trajectory)
@@ -948,12 +1061,15 @@ class QEParser(object):
         # from that of x. Therefore, perform basis conversion here.
         if num_data_disp_extra > 0:
             if "alat" in basis:
-                conversion_mat = self._celldm[0] \
-                                 * self._inverse_lattice_vector.transpose() \
-                                 * self._BOHR_TO_ANGSTROM
+                conversion_mat = (
+                    self._celldm[0]
+                    * self._inverse_lattice_vector.transpose()
+                    * self._BOHR_TO_ANGSTROM
+                )
             elif "bohr" in basis:
-                conversion_mat = self._inverse_lattice_vector.transpose \
-                                 * self._BOHR_TO_ANGSTROM
+                conversion_mat = (
+                    self._inverse_lattice_vector.transpose * self._BOHR_TO_ANGSTROM
+                )
             elif "angstrom" in basis:
                 conversion_mat = self._inverse_lattice_vector.transpose()
             elif "crystal" in basis:
@@ -963,8 +1079,7 @@ class QEParser(object):
 
             x_additional = np.reshape(x_additional, (num_data_disp_extra, self._nat, 3))
             for i in range(num_data_disp_extra):
-                x_additional[i, :, :] \
-                    = np.dot(x_additional[i, :, :], conversion_mat)
+                x_additional[i, :, :] = np.dot(x_additional[i, :, :], conversion_mat)
 
         if num_data_disp_extra <= 1:
             return np.reshape(x, (1, self._nat, 3))
@@ -980,7 +1095,7 @@ class QEParser(object):
 
         found_tag = False
 
-        f = open(pwout_file, 'r')
+        f = open(pwout_file, "r")
         line = f.readline()
 
         force = []
@@ -1027,7 +1142,7 @@ class QEParser(object):
 
         search_tag1 = "Dielectric constant in cartesian axis"
         search_tags = ["Px", "Py", "Pz", "Ex", "Ey", "Ez"]
-        f = open(phout_file, 'r')
+        f = open(phout_file, "r")
         line = f.readline()
 
         found_tag1 = False
@@ -1049,11 +1164,14 @@ class QEParser(object):
         f.close()
 
         if not found_tag1 or not found_tag2:
-            print("Dielectric constants or Born effective charges are not found"
-                  "in %s" % phout_file, file=sys.stderr)
+            print(
+                "Dielectric constants or Born effective charges are not found"
+                "in %s" % phout_file,
+                file=sys.stderr,
+            )
             return None
 
         nat2 = len(borncharge) // 9
         dielec = np.reshape(np.array(dielec[9:]), (3, 3))
         borncharge = np.reshape(np.array(borncharge), (nat2, 3, 3))
-        return dielec, borncharge[:nat2 // 2, :, :]
+        return dielec, borncharge[: nat2 // 2, :, :]

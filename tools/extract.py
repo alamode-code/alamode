@@ -40,20 +40,25 @@ except ModuleNotFoundError:  # occurs when it is called as a library
 def check_options(args):
     # Check the calculator option
 
-    conditions = [args.VASP is None,
-                  args.QE is None,
-                  args.xTAPP is None,
-                  args.LAMMPS is None,
-                  args.OpenMX is None]
+    conditions = [
+        args.VASP is None,
+        args.QE is None,
+        args.xTAPP is None,
+        args.LAMMPS is None,
+        args.OpenMX is None,
+    ]
 
     if conditions.count(True) == len(conditions):
         raise RuntimeError(
             "Either --VASP, --QE, --xTAPP, --LAMMPS, \
-                --OpenMX option must be given.")
+                --OpenMX option must be given."
+        )
 
     elif len(conditions) - conditions.count(True) > 1:
-        raise RuntimeError("Error : --VASP, --QE, --xTAPP, --LAMMPS, and \
-            --OpenMX cannot be given simultaneously.")
+        raise RuntimeError(
+            "Error : --VASP, --QE, --xTAPP, --LAMMPS, and \
+            --OpenMX cannot be given simultaneously."
+        )
 
     elif args.VASP:
         code = "VASP"
@@ -79,7 +84,8 @@ def check_options(args):
     str_get = args.get.lower()
     if str_get not in ["disp-force", "disp", "force", "energy", "born", "dielec"]:
         raise RuntimeError(
-            "Error: Please specify which quantity to extract by the --get option.")
+            "Error: Please specify which quantity to extract by the --get option."
+        )
 
     print_disp = False
     print_force = False
@@ -98,8 +104,7 @@ def check_options(args):
     elif str_get == "born" or str_get == "dielec":
         print_borninfo = True
         if code != "VASP" and code != "QE":
-            raise RuntimeError(
-                "Sorry, --get born is available only for VASP and QE.")
+            raise RuntimeError("Sorry, --get born is available only for VASP and QE.")
 
     output_flags = [print_disp, print_force, print_energy, print_borninfo]
 
@@ -135,75 +140,112 @@ def run_parse(args, code, file_original, file_results, output_flags, str_unit):
     elif code == "LAMMPS":
         handler = LammpsParser()
 
-    handler.parse(file_original, file_results, args.offset,
-                  str_unit, output_flags, args.emin, args.emax)
+    handler.parse(
+        file_original,
+        file_results,
+        args.offset,
+        str_unit,
+        output_flags,
+        args.emin,
+        args.emax,
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--VASP',
-                        metavar='SPOSCAR',
-                        help="VASP POSCAR file with equilibrium atomic \
-                            positions (default: None)")
+    parser.add_argument(
+        "--VASP",
+        metavar="SPOSCAR",
+        help="VASP POSCAR file with equilibrium atomic \
+                            positions (default: None)",
+    )
 
-    parser.add_argument('--QE',
-                        metavar='supercell.pw.in',
-                        help="Quantum-ESPRESSO input file with equilibrium\
-                    atomic positions (default: None)")
+    parser.add_argument(
+        "--QE",
+        metavar="supercell.pw.in",
+        help="Quantum-ESPRESSO input file with equilibrium\
+                    atomic positions (default: None)",
+    )
 
-    parser.add_argument('--xTAPP',
-                        metavar='supercell.cg',
-                        help="xTAPP CG file with equilibrium atomic \
-                            positions (default: None)")
+    parser.add_argument(
+        "--xTAPP",
+        metavar="supercell.cg",
+        help="xTAPP CG file with equilibrium atomic \
+                            positions (default: None)",
+    )
 
-    parser.add_argument('--LAMMPS',
-                        metavar='supercell.lammps',
-                        help="LAMMPS structure file with equilibrium atomic \
-                            positions (default: None)")
+    parser.add_argument(
+        "--LAMMPS",
+        metavar="supercell.lammps",
+        help="LAMMPS structure file with equilibrium atomic \
+                            positions (default: None)",
+    )
 
-    parser.add_argument('--OpenMX',
-                        metavar='supercell.dat',
-                        help="OpenMX dat file with equilibrium atomic \
-                            positions (default: None)")
+    parser.add_argument(
+        "--OpenMX",
+        metavar="supercell.dat",
+        help="OpenMX dat file with equilibrium atomic \
+                            positions (default: None)",
+    )
 
-    parser.add_argument('--get',
-                        default="disp-force",
-                        help="specify which quantity to extract. \
+    parser.add_argument(
+        "--get",
+        default="disp-force",
+        help="specify which quantity to extract. \
                             Available options are 'disp-force', 'disp', \
                             'force', 'energy', and 'born'. \
-                            (default: disp-force)")
+                            (default: disp-force)",
+    )
 
-    parser.add_argument('--unit',
-                        action="store",
-                        metavar="OUTPUT_UNIT",
-                        dest="unitname",
-                        default="Rydberg",
-                        help="print atomic displacements and forces in units of UNIT. \
-                            Available options are 'eV', 'Rydberg' (default), and 'Hartree'.")
+    parser.add_argument(
+        "--unit",
+        action="store",
+        metavar="OUTPUT_UNIT",
+        dest="unitname",
+        default="Rydberg",
+        help="print atomic displacements and forces in units of UNIT. \
+                            Available options are 'eV', 'Rydberg' (default), and 'Hartree'.",
+    )
 
-    parser.add_argument('--offset',
-                        help="Specify an output file (either *.xml, *.pw.out, or *.str) of an\
+    parser.add_argument(
+        "--offset",
+        help="Specify an output file (either *.xml, *.pw.out, or *.str) of an\
                             equilibrium structure to subtract residual forces, \
-                            displacements, or energies.")
+                            displacements, or energies.",
+    )
 
-    parser.add_argument('--emin',
-                        default=None,
-                        type=float,
-                        help="Lower bound of the energy filter (eV) used for selecting output structures.\
-                            Available only in the VASP parser.")
+    parser.add_argument(
+        "--emin",
+        default=None,
+        type=float,
+        help="Lower bound of the energy filter (eV) used for selecting output structures.\
+                            Available only in the VASP parser.",
+    )
 
-    parser.add_argument('--emax',
-                        default=None,
-                        type=float,
-                        help="Upper bound of the energy filter (eV) used for selecting output structures.\
-                            Available only in the VASP parser.")
+    parser.add_argument(
+        "--emax",
+        default=None,
+        type=float,
+        help="Upper bound of the energy filter (eV) used for selecting output structures.\
+                            Available only in the VASP parser.",
+    )
 
-    parser.add_argument('target_file', metavar='file_to_parse', type=str, nargs='+',
-                        help="Output file of DFT codes, e.g., vasprun.xml.")
+    parser.add_argument(
+        "target_file",
+        metavar="file_to_parse",
+        type=str,
+        nargs="+",
+        help="Output file of DFT codes, e.g., vasprun.xml.",
+    )
 
-    parser.add_argument('--vca', action='store_true', dest='vca', default=False,
-                        help='Use VCA mode for VASP parser. (default: False)')
+    parser.add_argument(
+        "--vca",
+        action="store_true",
+        dest="vca",
+        default=False,
+        help="Use VCA mode for VASP parser. (default: False)",
+    )
 
     args = parser.parse_args()
     file_results = args.target_file

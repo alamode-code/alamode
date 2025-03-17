@@ -22,10 +22,10 @@ class ParseResult:
     def read_result(self, filename):
         total_irq = 0
         which_phonon = 0
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             while True:
                 line = f.readline()
-                if '#SYSTEM' in line:
+                if "#SYSTEM" in line:
                     line = f.readline().rstrip().split()
                     self.nat = int(line[0])  # number of atoms
                     line = f.readline().rstrip()
@@ -33,17 +33,21 @@ class ParseResult:
                     try:
                         self.lattice_vector = np.zeros((3, 3), dtype=float)
                         for i in range(3):
-                            self.lattice_vector[i, :] = np.array([float(t) for t in f.readline().strip().split()])
+                            self.lattice_vector[i, :] = np.array(
+                                [float(t) for t in f.readline().strip().split()]
+                            )
                         self.atomic_kinds = np.zeros(self.nat, dtype=int)
                         self.x_fractional = np.zeros((self.nat, 3), dtype=float)
                         for i in range(self.nat):
                             line = f.readline().strip().split()
                             self.atomic_kinds[i] = int(line[0])
-                            self.x_fractional[i, :] = np.array([float(t) for t in line[1:]])
+                            self.x_fractional[i, :] = np.array(
+                                [float(t) for t in line[1:]]
+                            )
                     except:
                         pass
 
-                elif '#KPOINT' in line:
+                elif "#KPOINT" in line:
                     line = f.readline().rstrip().split()
                     self.kgrid = np.array(line, dtype=int)
 
@@ -60,7 +64,7 @@ class ParseResult:
                     line = f.readline().rstrip().split()
                     self.classical = int(line[0])
 
-                elif '#TEMPERATURE' in line:
+                elif "#TEMPERATURE" in line:
                     line = f.readline().rstrip().split()
                     t_min = float(line[0])
                     t_max = float(line[1])
@@ -71,7 +75,7 @@ class ParseResult:
                     self.vel = np.zeros((total_irq, self.nat * 3, 48, 3))
                     self.multiplicity = np.zeros(total_irq)
 
-                elif '#K-point (irreducible)' in line:
+                elif "#K-point (irreducible)" in line:
                     self.omega = np.zeros((total_irq, 3 * self.nat))
                     for i in range(3 * self.nat * total_irq):
                         line = f.readline().rstrip().split()
@@ -80,7 +84,7 @@ class ParseResult:
                         o = float(line[2])
                         self.omega[ik - 1, im - 1] = o
 
-                elif '#GAMMA_EACH' in line:
+                elif "#GAMMA_EACH" in line:
                     which_phonon += 1
                     line = f.readline().rstrip().split()
                     ik = int(line[0]) - 1

@@ -27,29 +27,29 @@ import matplotlib.pyplot as plt
 
 
 # font styles
-mpl.rc('font', **{'family': 'Times New Roman', 'sans-serif': ['Helvetica']})
-mpl.rc('xtick', labelsize=12)
-mpl.rc('ytick', labelsize=16)
-mpl.rc('axes', labelsize=16)
-mpl.rc('lines', linewidth=1.5)
-mpl.rc('legend', fontsize='small')
+mpl.rc("font", **{"family": "Times New Roman", "sans-serif": ["Helvetica"]})
+mpl.rc("xtick", labelsize=12)
+mpl.rc("ytick", labelsize=16)
+mpl.rc("axes", labelsize=16)
+mpl.rc("lines", linewidth=1.5)
+mpl.rc("legend", fontsize="small")
 # line colors and styles
-color = ['b', 'g', 'r', 'm', 'k', 'c', 'y', 'r']
-lsty = ['-', '-', '-', '-', '--', '--', '--', '--']
+color = ["b", "g", "r", "m", "k", "c", "y", "r"]
+lsty = ["-", "-", "-", "-", "--", "--", "--", "--"]
 
 
 def get_kpath_and_kval(file_in):
-    ftmp = open(file_in, 'r')
-    kpath = ftmp.readline().rstrip('\n').split()
-    kval = ftmp.readline().rstrip('\n').split()
+    ftmp = open(file_in, "r")
+    kpath = ftmp.readline().rstrip("\n").split()
+    kval = ftmp.readline().rstrip("\n").split()
     ftmp.close()
 
-    if kpath[0] == '#' and kval[0] == '#':
+    if kpath[0] == "#" and kval[0] == "#":
         kval_float = [float(val) for val in kval[1:]]
         kpath_list = []
         for i in range(len(kpath[1:])):
-            if kpath[i + 1] == 'G':
-                kpath_list.append('$\Gamma$')
+            if kpath[i + 1] == "G":
+                kpath_list.append("$\Gamma$")
             else:
                 kpath_list.append("$\mathrm{%s}$" % kpath[i + 1])
 
@@ -61,14 +61,13 @@ def get_kpath_and_kval(file_in):
 def change_scale(array, str_scale):
     str_tmp = str_scale.lower()
 
-    if str_tmp == 'kayser':
+    if str_tmp == "kayser":
         print("Band structure will be shown in units of cm^{-1}")
         return array
 
-    elif str_tmp == 'mev':
+    elif str_tmp == "mev":
         print("Band structure will be shown in units of meV")
-        kayser_to_mev = 0.0299792458 * 1.0e+12 * \
-                        6.62606896e-34 / 1.602176565e-19 * 1000
+        kayser_to_mev = 0.0299792458 * 1.0e12 * 6.62606896e-34 / 1.602176565e-19 * 1000
 
         for i in range(len(array)):
             for j in range(len(array[i])):
@@ -77,7 +76,7 @@ def change_scale(array, str_scale):
 
         return array
 
-    elif str_tmp == 'thz':
+    elif str_tmp == "thz":
         print("Band structure will be shown in units of THz")
         kayser_to_thz = 0.0299792458
 
@@ -139,7 +138,6 @@ def gridspec_setup(data_merged, xtickslabels, xticksvars):
     xticks_tmp = []
 
     for i in range(len(xtickslabels)):
-
         if i == 0:
             xmins.append(xticksvars[0])
         else:
@@ -171,7 +169,6 @@ def gridspec_setup(data_merged, xtickslabels, xticksvars):
         xmax_ax = xmaxs[i]
 
         for j in range(nfiles):
-
             kval = np.array(data_merged[j][0:, 0])
             ix_xmin_arr = np.where(kval <= xmin_ax)
             ix_xmax_arr = np.where(kval >= xmax_ax)
@@ -186,7 +183,7 @@ def gridspec_setup(data_merged, xtickslabels, xticksvars):
             else:
                 ix_xmax = -2
 
-            data_ax.append(data_merged[j][ix_xmin:(ix_xmax + 1), :])
+            data_ax.append(data_merged[j][ix_xmin : (ix_xmax + 1), :])
 
         data_all_axes.append(data_ax)
 
@@ -194,10 +191,7 @@ def gridspec_setup(data_merged, xtickslabels, xticksvars):
 
 
 def preprocess_data(files, unitname, normalize_xaxis, emin=None, emax=None):
-    """_summary_
-
-
-    """
+    """_summary_"""
 
     xtickslabels, xticksvars = get_kpath_and_kval(files[0])
 
@@ -226,15 +220,36 @@ def preprocess_data(files, unitname, normalize_xaxis, emin=None, emax=None):
         if ymin > ymax:
             print("Warning: emin > emax")
 
-    naxes, xticks_grids, xticklabels_grids, xmin, xmax, data_merged_grids \
-        = gridspec_setup(data_merged, xtickslabels, xticksvars)
+    naxes, xticks_grids, xticklabels_grids, xmin, xmax, data_merged_grids = (
+        gridspec_setup(data_merged, xtickslabels, xticksvars)
+    )
 
-    return naxes, xticks_grids, xticklabels_grids, \
-        xmin, xmax, ymin, ymax, data_merged_grids
+    return (
+        naxes,
+        xticks_grids,
+        xticklabels_grids,
+        xmin,
+        xmax,
+        ymin,
+        ymax,
+        data_merged_grids,
+    )
 
 
-def run_plot(files, nax, xticks_ax, xticklabels_ax, xmin_ax, xmax_ax, ymin, ymax,
-             data_merged_ax, unitname, print_key, show=True):
+def run_plot(
+    files,
+    nax,
+    xticks_ax,
+    xticklabels_ax,
+    xmin_ax,
+    xmax_ax,
+    ymin,
+    ymax,
+    data_merged_ax,
+    unitname,
+    print_key,
+    show=True,
+):
     # fig = plt.figure()
     width_ratios = []
     for xmin, xmax in zip(xmin_ax, xmax_ax):
@@ -247,14 +262,22 @@ def run_plot(files, nax, xticks_ax, xticklabels_ax, xmin_ax, xmax_ax, ymin, ymax
         ax = plt.subplot(gs[iax])
 
         for i in range(len(data_merged_ax[iax])):
-
             if len(data_merged_ax[iax][i]) > 0:
-                ax.plot(data_merged_ax[iax][i][0:, 0], data_merged_ax[iax][i][0:, 1],
-                        linestyle=lsty[i], color=color[i], label=files[i])
+                ax.plot(
+                    data_merged_ax[iax][i][0:, 0],
+                    data_merged_ax[iax][i][0:, 1],
+                    linestyle=lsty[i],
+                    color=color[i],
+                    label=files[i],
+                )
 
                 for j in range(2, len(data_merged_ax[iax][i][0][0:])):
-                    ax.plot(data_merged_ax[iax][i][0:, 0], data_merged_ax[iax][i][0:, j],
-                            linestyle=lsty[i], color=color[i])
+                    ax.plot(
+                        data_merged_ax[iax][i][0:, 0],
+                        data_merged_ax[iax][i][0:, j],
+                        linestyle=lsty[i],
+                        color=color[i],
+                    )
 
         if iax == 0:
             if unitname.lower() == "mev":
@@ -271,40 +294,67 @@ def run_plot(files, nax, xticks_ax, xticklabels_ax, xmin_ax, xmax_ax, ymin, ymax
         plt.axis([xmin_ax[iax], xmax_ax[iax], ymin, ymax])
         ax.set_xticks(xticks_ax[iax])
         ax.set_xticklabels(xticklabels_ax[iax])
-        ax.xaxis.grid(True, linestyle='-')
+        ax.xaxis.grid(True, linestyle="-")
 
         if print_key and iax == 0:
-            ax.legend(loc='best', prop={'size': 10})
+            ax.legend(loc="best", prop={"size": 10})
 
     if show:
         plt.show()
 
 
-if __name__ == '__main__':
-    '''
+if __name__ == "__main__":
+    """
     Simple script for visualizing phonon dispersion relations.
     Usage:
     $ python plot_band.py [options] file1.bands file2.bands ...
 
     For details of available options, please type
     $ python plot_band.py -h
-    '''
+    """
 
     usage = "usage: %prog [options] file1.bands file2.bands ... "
     parser = optparse.OptionParser(usage=usage)
 
-    parser.add_option("--nokey", action="store_false", dest="print_key", default=True,
-                      help="don't print the key in the figure")
-    parser.add_option("-u", "--unit", action="store", type="string", dest="unitname", default="kayser",
-                      help="print the band dispersion in units of UNIT. "
-                           "Available options are kayser, meV, and THz",
-                      metavar="UNIT")
-    parser.add_option("--emin", action="store", type="float", dest="emin",
-                      help="minimum value of the energy axis")
-    parser.add_option("--emax", action="store", type="float", dest="emax",
-                      help="maximum value of the energy axis")
-    parser.add_option("--normalize", action="store_true", dest="normalize_xaxis", default=False,
-                      help="normalize the x axis to unity.")
+    parser.add_option(
+        "--nokey",
+        action="store_false",
+        dest="print_key",
+        default=True,
+        help="don't print the key in the figure",
+    )
+    parser.add_option(
+        "-u",
+        "--unit",
+        action="store",
+        type="string",
+        dest="unitname",
+        default="kayser",
+        help="print the band dispersion in units of UNIT. "
+        "Available options are kayser, meV, and THz",
+        metavar="UNIT",
+    )
+    parser.add_option(
+        "--emin",
+        action="store",
+        type="float",
+        dest="emin",
+        help="minimum value of the energy axis",
+    )
+    parser.add_option(
+        "--emax",
+        action="store",
+        type="float",
+        dest="emax",
+        help="maximum value of the energy axis",
+    )
+    parser.add_option(
+        "--normalize",
+        action="store_true",
+        dest="normalize_xaxis",
+        default=False,
+        help="normalize the x axis to unity.",
+    )
 
     options, args = parser.parse_args()
     files = args[0:]
@@ -317,9 +367,22 @@ if __name__ == '__main__':
     else:
         print("Number of files = %d" % nfiles)
 
-    nax, xticks_ax, xticklabels_ax, xmin_ax, xmax_ax, ymin, ymax, \
-        data_merged_ax = preprocess_data(
-        files, options.unitname, options.normalize_xaxis, options.emin, options.emax)
+    nax, xticks_ax, xticklabels_ax, xmin_ax, xmax_ax, ymin, ymax, data_merged_ax = (
+        preprocess_data(
+            files, options.unitname, options.normalize_xaxis, options.emin, options.emax
+        )
+    )
 
-    run_plot(files, nax, xticks_ax, xticklabels_ax,
-             xmin_ax, xmax_ax, ymin, ymax, data_merged_ax, options.unitname, options.print_key)
+    run_plot(
+        files,
+        nax,
+        xticks_ax,
+        xticklabels_ax,
+        xmin_ax,
+        xmax_ax,
+        ymin,
+        ymax,
+        data_merged_ax,
+        options.unitname,
+        options.print_key,
+    )

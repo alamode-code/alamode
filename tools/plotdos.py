@@ -18,21 +18,33 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # font styles
-mpl.rc('font', **{'family': 'Times New Roman', 'sans-serif': ['Helvetica']})
+mpl.rc("font", **{"family": "Times New Roman", "sans-serif": ["Helvetica"]})
 
 # line colors and styles
-color = ['k', 'b', 'g', 'r', 'm', 'c', 'y', 'r',
-         'darkred', 'darkblue', 'darkgreen', 'darkmagenta']
-lsty = ['-', '-', '-', '-', '--', '--', '--', '--', '-', '-', '-', '-']
+color = [
+    "k",
+    "b",
+    "g",
+    "r",
+    "m",
+    "c",
+    "y",
+    "r",
+    "darkred",
+    "darkblue",
+    "darkgreen",
+    "darkmagenta",
+]
+lsty = ["-", "-", "-", "-", "--", "--", "--", "--", "-", "-", "-", "-"]
 
 
 def get_natoms_and_symbols(file_in):
-    ftmp = open(file_in, 'r')
-    str_symbols = ftmp.readline().rstrip('\n').split()
-    str_natoms = ftmp.readline().rstrip('\n').split()
+    ftmp = open(file_in, "r")
+    str_symbols = ftmp.readline().rstrip("\n").split()
+    str_natoms = ftmp.readline().rstrip("\n").split()
     ftmp.close()
 
-    if str_symbols[0] == '#' and str_natoms[0] == '#':
+    if str_symbols[0] == "#" and str_natoms[0] == "#":
         symbols = str_symbols[1:]
         natoms = [int(x) for x in str_natoms[1:]]
 
@@ -65,21 +77,20 @@ def get_y_minmax(array):
 def change_xscale(array, str_scale):
     str_tmp = str_scale.lower()
 
-    if str_tmp == 'kayser':
+    if str_tmp == "kayser":
         print("Phonon DOS will be shown in units of cm^{-1}")
         return array
 
-    elif str_tmp == 'mev':
+    elif str_tmp == "mev":
         print("Phonon DOS will be shown in units of meV")
-        kayser_to_mev = 0.0299792458 * 1.0e+12 * \
-                        6.62606896e-34 / 1.602176565e-19 * 1000
+        kayser_to_mev = 0.0299792458 * 1.0e12 * 6.62606896e-34 / 1.602176565e-19 * 1000
 
         for i in range(len(array)):
             array[i] *= kayser_to_mev
 
         return array
 
-    elif str_tmp == 'thz':
+    elif str_tmp == "thz":
         print("Phonon DOS will be shown in units of THz")
         kayser_to_thz = 0.0299792458
 
@@ -104,7 +115,6 @@ def sum_atom_projected_dos(pdos_tmp, natoms_tmp):
 
     for i in range(nkinds):
         for j in range(natoms_tmp[i]):
-
             for k in range(nenergy):
                 pdos_sum[k][i] += pdos_tmp[k][counter]
 
@@ -113,7 +123,15 @@ def sum_atom_projected_dos(pdos_tmp, natoms_tmp):
     return pdos_sum
 
 
-def run_plot(files, unitname='kayser', print_pdos=False, print_key=False, emin=None, emax=None, show=True):
+def run_plot(
+    files,
+    unitname="kayser",
+    print_pdos=False,
+    print_key=False,
+    emin=None,
+    emax=None,
+    show=True,
+):
     energy_axis = []
     dos_merged = []
 
@@ -131,8 +149,13 @@ def run_plot(files, unitname='kayser', print_pdos=False, print_key=False, emin=N
     for i in range(len(dos_merged)):
         counter_line = counter_line % 12
 
-        plt.plot(energy_axis[i][:], dos_merged[i][:, 0],
-                 linestyle=lsty[counter_line], color=color[counter_line], label="File" + str(i + 1) + ".Total")
+        plt.plot(
+            energy_axis[i][:],
+            dos_merged[i][:, 0],
+            linestyle=lsty[counter_line],
+            color=color[counter_line],
+            label="File" + str(i + 1) + ".Total",
+        )
 
         counter_line += 1
 
@@ -141,14 +164,20 @@ def run_plot(files, unitname='kayser', print_pdos=False, print_key=False, emin=N
 
             if len(dos_merged[i][0, 1:]) != np.sum(natoms):
                 print(
-                    "Error: Projected DOS is not contained in the %d-th file" % (i + 1))
+                    "Error: Projected DOS is not contained in the %d-th file" % (i + 1)
+                )
                 exit(1)
             else:
                 pdos = sum_atom_projected_dos(dos_merged[i][:, 1:], natoms)
 
                 for j in range(len(pdos[0, :])):
-                    plt.plot(energy_axis[i][:], pdos[:, j], linestyle=lsty[counter_line],
-                             color=color[counter_line], label="File" + str(i + 1) + "." + symbols[j])
+                    plt.plot(
+                        energy_axis[i][:],
+                        pdos[:, j],
+                        linestyle=lsty[counter_line],
+                        color=color[counter_line],
+                        label="File" + str(i + 1) + "." + symbols[j],
+                    )
 
                     counter_line += 1
 
@@ -181,30 +210,56 @@ def run_plot(files, unitname='kayser', print_pdos=False, print_key=False, emin=N
     plt.yticks([])
 
     if print_key:
-        plt.legend(loc='upper right', prop={'size': 12})
+        plt.legend(loc="upper right", prop={"size": 12})
 
     plt.tight_layout()
     if show:
         plt.show()
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     usage = "usage: %prog [options] file1.dos file2.dos ... "
     parser = optparse.OptionParser(usage=usage)
 
-    parser.add_option("--pdos", action="store_true", dest="print_pdos", default=False,
-                      help="print atom-projected phonon DOS")
-    parser.add_option("--nokey", action="store_false", dest="print_key", default=True,
-                      help="don't print the key in the figure")
-    parser.add_option("-u", "--unit", action="store", type="string", dest="unitname", default="kayser",
-                      help="print the band dispersion in units of UNIT. "
-                           "Available options are kayser, meV, and THz",
-                      metavar="UNIT")
-    parser.add_option("--emin", action="store", type="float", dest="emin",
-                      help="minimum value of the energy axis")
-    parser.add_option("--emax", action="store", type="float", dest="emax",
-                      help="maximum value of the energy axis")
+    parser.add_option(
+        "--pdos",
+        action="store_true",
+        dest="print_pdos",
+        default=False,
+        help="print atom-projected phonon DOS",
+    )
+    parser.add_option(
+        "--nokey",
+        action="store_false",
+        dest="print_key",
+        default=True,
+        help="don't print the key in the figure",
+    )
+    parser.add_option(
+        "-u",
+        "--unit",
+        action="store",
+        type="string",
+        dest="unitname",
+        default="kayser",
+        help="print the band dispersion in units of UNIT. "
+        "Available options are kayser, meV, and THz",
+        metavar="UNIT",
+    )
+    parser.add_option(
+        "--emin",
+        action="store",
+        type="float",
+        dest="emin",
+        help="minimum value of the energy axis",
+    )
+    parser.add_option(
+        "--emax",
+        action="store",
+        type="float",
+        dest="emax",
+        help="maximum value of the energy axis",
+    )
 
     options, args = parser.parse_args()
     files = args[0:]
@@ -217,5 +272,11 @@ if __name__ == '__main__':
     else:
         print("Number of files = %d" % nfiles)
 
-    run_plot(files, options.unitname,
-             options.print_pdos, options.print_key, options.emin, options.emax)
+    run_plot(
+        files,
+        options.unitname,
+        options.print_pdos,
+        options.print_key,
+        options.emin,
+        options.emax,
+    )

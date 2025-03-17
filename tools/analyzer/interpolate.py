@@ -55,10 +55,14 @@ class Interpolator:
                 if cl != int(self.weight_xqc[i]):
                     print("unfolding goes wrong")
 
-    def run(self, data_coarse,
-            xk,
-            interpolation_method='log-linear',
-            rotations=None, eps=1.0e-12):
+    def run(
+        self,
+        data_coarse,
+        xk,
+        interpolation_method="log-linear",
+        rotations=None,
+        eps=1.0e-12,
+    ):
         if self.bz2irb is None:
             if rotations is None:
                 raise RuntimeError("need to give rotations to run interpolation")
@@ -82,8 +86,7 @@ class Interpolator:
         _, nmodes, ntemps = np.shape(data_coarse)
         out = np.zeros((nmodes, ntemps))
 
-        if interpolation_method == 'linear':
-
+        if interpolation_method == "linear":
             for imode in range(nmodes):
                 for itemp in range(ntemps):
                     v000 = data_coarse[self.bz2irb[self.get_knum(x000)], imode, itemp]
@@ -104,24 +107,70 @@ class Interpolator:
                     c6 = v011 - v010 - v001 + v000
                     c7 = v111 - v110 - v011 - v101 + v001 + v010 + v100 - v000
 
-                    v = c0 + c1 * delta[2] + c2 * delta[0] + c3 * delta[1] \
-                        + c4 * delta[0] * delta[2] + c5 * delta[0] * delta[1] \
-                        + c6 * delta[1] * delta[2] + c7 * delta[0] * delta[1] * delta[2]
+                    v = (
+                        c0
+                        + c1 * delta[2]
+                        + c2 * delta[0]
+                        + c3 * delta[1]
+                        + c4 * delta[0] * delta[2]
+                        + c5 * delta[0] * delta[1]
+                        + c6 * delta[1] * delta[2]
+                        + c7 * delta[0] * delta[1] * delta[2]
+                    )
 
                     out[imode, itemp] = v
 
-        elif interpolation_method == 'log-linear':
-
+        elif interpolation_method == "log-linear":
             for imode in range(nmodes):
                 for itemp in range(ntemps):
-                    v000 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x000)], imode, itemp], eps))
-                    v100 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x100)], imode, itemp], eps))
-                    v110 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x110)], imode, itemp], eps))
-                    v010 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x010)], imode, itemp], eps))
-                    v001 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x001)], imode, itemp], eps))
-                    v101 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x101)], imode, itemp], eps))
-                    v111 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x111)], imode, itemp], eps))
-                    v011 = np.log(max(data_coarse[self.bz2irb[self.get_knum(x011)], imode, itemp], eps))
+                    v000 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x000)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v100 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x100)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v110 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x110)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v010 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x010)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v001 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x001)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v101 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x101)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v111 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x111)], imode, itemp],
+                            eps,
+                        )
+                    )
+                    v011 = np.log(
+                        max(
+                            data_coarse[self.bz2irb[self.get_knum(x011)], imode, itemp],
+                            eps,
+                        )
+                    )
 
                     c0 = v000
                     c1 = v001 - v000
@@ -132,15 +181,29 @@ class Interpolator:
                     c6 = v011 - v010 - v001 + v000
                     c7 = v111 - v110 - v011 - v101 + v001 + v010 + v100 - v000
 
-                    v = c0 + c1 * delta[2] + c2 * delta[0] + c3 * delta[1] \
-                        + c4 * delta[0] * delta[2] + c5 * delta[0] * delta[1] \
-                        + c6 * delta[1] * delta[2] + c7 * delta[0] * delta[1] * delta[2]
+                    v = (
+                        c0
+                        + c1 * delta[2]
+                        + c2 * delta[0]
+                        + c3 * delta[1]
+                        + c4 * delta[0] * delta[2]
+                        + c5 * delta[0] * delta[1]
+                        + c6 * delta[1] * delta[2]
+                        + c7 * delta[0] * delta[1] * delta[2]
+                    )
 
                     out[imode, itemp] = np.exp(v)
 
         return out
 
-    def run2(self, data_coarse, xk, interpolation_method='log-linear', rotations=None, eps=1.0e-12):
+    def run2(
+        self,
+        data_coarse,
+        xk,
+        interpolation_method="log-linear",
+        rotations=None,
+        eps=1.0e-12,
+    ):
         if self.bz2irb is None:
             if rotations is None:
                 raise RuntimeError("need to give rotations to run interpolation")
@@ -151,18 +214,24 @@ class Interpolator:
         x000 = corners[0]
         x111 = corners[6]
         delta = (xk - x000) / (x111 - x000)
-        delta_reshaped = np.array([1.0,
-                                   delta[2], delta[0], delta[1],
-                                   delta[0] * delta[2],
-                                   delta[0] * delta[1],
-                                   delta[1] * delta[2],
-                                   delta[0] * delta[1] * delta[2]]).reshape(8, 1, 1)
+        delta_reshaped = np.array(
+            [
+                1.0,
+                delta[2],
+                delta[0],
+                delta[1],
+                delta[0] * delta[2],
+                delta[0] * delta[1],
+                delta[1] * delta[2],
+                delta[0] * delta[1] * delta[2],
+            ]
+        ).reshape(8, 1, 1)
 
         corner_indices = np.array([self.get_knum(corner) for corner in corners])
         corner_values = data_coarse[self.bz2irb[corner_indices]]
         c = np.zeros(corner_values.shape)
 
-        if interpolation_method == 'log-linear':
+        if interpolation_method == "log-linear":
             corner_values = np.log(np.maximum(corner_values, eps))
 
         c[0] = corner_values[0]
@@ -172,12 +241,20 @@ class Interpolator:
         c[4] = corner_values[5] - corner_values[4] - corner_values[1] + corner_values[0]
         c[5] = corner_values[2] - corner_values[3] - corner_values[1] + corner_values[0]
         c[6] = corner_values[7] - corner_values[3] - corner_values[4] + corner_values[0]
-        c[7] = (corner_values[6] - corner_values[2] - corner_values[7] - corner_values[5]
-                + corner_values[1] + corner_values[3] + corner_values[4] - corner_values[0])
+        c[7] = (
+            corner_values[6]
+            - corner_values[2]
+            - corner_values[7]
+            - corner_values[5]
+            + corner_values[1]
+            + corner_values[3]
+            + corner_values[4]
+            - corner_values[0]
+        )
 
         v = np.sum(c * delta_reshaped, axis=0)
 
-        if interpolation_method == 'log-linear':
+        if interpolation_method == "log-linear":
             v = np.exp(v)
 
         return v
@@ -195,9 +272,9 @@ class Interpolator:
         k = np.floor(xk[2] * self.kgrid[2])
         # (i,j,k) with the below x will contain xkf
 
-        ii = (i + 1)
-        jj = (j + 1)
-        kk = (k + 1)
+        ii = i + 1
+        jj = j + 1
+        kk = k + 1
 
         x1 = np.array([i / nk1, j / nk2, k / nk3])
         x2 = np.array([ii / nk1, j / nk2, k / nk3])

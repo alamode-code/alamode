@@ -38,7 +38,8 @@ def get_forceconstants_xml(fname_xml):
     lattice = np.zeros((3, 3), dtype=float)
     for i in range(3):
         lattice[:, i] = [
-            float(t) for t in root.find(f"Structure/LatticeVector/a{i+1}").text.split()
+            float(t)
+            for t in root.find(f"Structure/LatticeVector/a{i + 1}").text.split()
         ]
     for elems in root.findall("Structure/Position/pos"):
         iatom = int(elems.get("index")) - 1

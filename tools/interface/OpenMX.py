@@ -15,7 +15,6 @@ import numpy as np
 
 
 class OpenmxParser(object):
-
     def __init__(self):
         self._prefix = None
         self._lattice_vector = None
@@ -42,7 +41,6 @@ class OpenmxParser(object):
         self._RYDBERG_TO_EV = 13.60569253
 
     def load_initial_structure(self, file_original):
-
         search_target = [
             "atoms.number",
             "atoms.speciesandcoordinates.unit",
@@ -51,7 +49,7 @@ class OpenmxParser(object):
             "atoms.unitvectors.unit",
             "<atoms.unitvectors",
             "atoms.unitvectors>",
-            "scf.kgrid"
+            "scf.kgrid",
         ]
 
         nat = None
@@ -64,11 +62,10 @@ class OpenmxParser(object):
 
         # read original dat file and pull out some information
 
-        with open(file_original, 'r') as f:
+        with open(file_original, "r") as f:
             lines = f.read().splitlines()
 
             for i, line in enumerate(lines):
-
                 if search_target[0] in line.lower():
                     nat = int(line.strip().split()[1])
 
@@ -94,11 +91,15 @@ class OpenmxParser(object):
                     kgrid.extend([int(t) for t in line.strip().split()[1:4]])
 
             if nat is None:
-                raise RuntimeError("Failed to extract the Atoms.Number value from the file.")
+                raise RuntimeError(
+                    "Failed to extract the Atoms.Number value from the file."
+                )
 
             if nat != (fpos_coord - ipos_coord):
-                raise RuntimeError("The number of entries in Atoms.SpeciesAndCoordinates does not match"
-                                   "with the Atoms.Number value.")
+                raise RuntimeError(
+                    "The number of entries in Atoms.SpeciesAndCoordinates does not match"
+                    "with the Atoms.Number value."
+                )
 
             for line in lines[ipos_coord:fpos_coord]:
                 line_split = line.strip().split()
@@ -110,13 +111,13 @@ class OpenmxParser(object):
                 lavec.append([float(t) for t in line.strip().split()])
 
             if ipos_lavec > ipos_coord:
-                common_settings.extend(lines[:ipos_coord - 1])
-                common_settings.extend(lines[fpos_coord + 1:ipos_lavec - 1])
-                common_settings.extend(lines[fpos_lavec + 1:])
+                common_settings.extend(lines[: ipos_coord - 1])
+                common_settings.extend(lines[fpos_coord + 1 : ipos_lavec - 1])
+                common_settings.extend(lines[fpos_lavec + 1 :])
             else:
-                common_settings.extend(lines[:ipos_lavec - 1])
-                common_settings.extend(lines[fpos_lavec + 1:ipos_coord - 1])
-                common_settings.extend(lines[fpos_coord + 1:])
+                common_settings.extend(lines[: ipos_lavec - 1])
+                common_settings.extend(lines[fpos_lavec + 1 : ipos_coord - 1])
+                common_settings.extend(lines[fpos_coord + 1 :])
 
         x_frac0 = np.array(x_frac0)
         lavec = np.array(lavec).transpose()
@@ -158,22 +159,32 @@ class OpenmxParser(object):
         self._common_settings = common_settings
         self._initial_structure_loaded = True
 
-    def generate_structures(self, prefix, header_list, disp_list, updated_structure=None):
-
+    def generate_structures(
+        self, prefix, header_list, disp_list, updated_structure=None
+    ):
         self._set_number_of_zerofill(len(disp_list))
         self._prefix = prefix
         self._counter = 1
 
         if len(self._initial_charges) < self._nat:
-            raise RuntimeError("The length of initial_charges is not nat. "
-                               "It should be updated as well.")
+            raise RuntimeError(
+                "The length of initial_charges is not nat. "
+                "It should be updated as well."
+            )
 
         for header, disp in zip(header_list, disp_list):
             self._generate_input(header, disp)
 
-    def parse(self, initial_dat, out_files, out_file_offset, str_unit,
-              output_flags, filter_emin=None, filter_emax=None):
-
+    def parse(
+        self,
+        initial_dat,
+        out_files,
+        out_file_offset,
+        str_unit,
+        output_flags,
+        filter_emin=None,
+        filter_emax=None,
+    ):
         if not self._initial_structure_loaded:
             self.load_initial_structure(initial_dat)
 
@@ -181,39 +192,44 @@ class OpenmxParser(object):
         self._set_output_flags(output_flags)
 
         if self._print_disp or self._print_force:
-            self._print_displacements_and_forces(out_files,
-                                                 out_file_offset,
-                                                 filter_emin,
-                                                 filter_emax)
+            self._print_displacements_and_forces(
+                out_files, out_file_offset, filter_emin, filter_emax
+            )
         elif self._print_energy:
             self._print_energies(out_files, out_file_offset)
 
     def _generate_input(self, header, disp):
-
         filename = self._prefix + str(self._counter).zfill(self._nzerofills) + ".dat"
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             for line in self._common_settings:
-
                 if "atoms.number" in line.lower():
                     f.write("Atoms.Number %d\n" % self._nat)
 
                 elif "scf.kgrid" in line.lower():
-                    f.write("scf.Kgrid %d %d %d\n" % (self._kmesh[0], self._kmesh[1], self._kmesh[2]))
+                    f.write(
+                        "scf.Kgrid %d %d %d\n"
+                        % (self._kmesh[0], self._kmesh[1], self._kmesh[2])
+                    )
 
                 elif "atoms.speciesandcoordinates.unit" in line.lower():
                     f.write("Atoms.SpeciesAndCoordinates.Unit Ang\n")
                     f.write("<Atoms.SpeciesAndCoordinates\n")
 
                     for i in range(self._nat):
-                        f.write("%4d %3s" % (i + 1, self._element_list[self._atomic_kinds[i]]))
-                        x_cartesian_disp = np.dot(self._x_fractional[i, :] + disp[i, :],
-                                                  self._lattice_vector.transpose())
+                        f.write(
+                            "%4d %3s"
+                            % (i + 1, self._element_list[self._atomic_kinds[i]])
+                        )
+                        x_cartesian_disp = np.dot(
+                            self._x_fractional[i, :] + disp[i, :],
+                            self._lattice_vector.transpose(),
+                        )
                         for j in range(3):
                             f.write("%21.16f" % x_cartesian_disp[j])
                         for j in range(2):
                             f.write("%6.2f" % (self._initial_charges[i, j]))
-                        f.write('\n')
+                        f.write("\n")
                     f.write("Atoms.SpeciesAndCoordinates>\n")
 
                 elif "atoms.unitvectors.unit" in line.lower():
@@ -222,16 +238,16 @@ class OpenmxParser(object):
                     for i in range(3):
                         for j in range(3):
                             f.write("%21.16f" % (self._lattice_vector[j, i]))
-                        f.write('\n')
+                        f.write("\n")
                     f.write("Atoms.UnitVectors>\n")
                 else:
                     f.write("%s\n" % line)
 
         self._counter += 1
 
-    def _print_displacements_and_forces(self, out_files,
-                                        file_offset, filter_emin, filter_emax):
-
+    def _print_displacements_and_forces(
+        self, out_files, file_offset, filter_emin, filter_emax
+    ):
         # vec_refold = np.vectorize(refold)
         lavec_transpose = self._lattice_vector.transpose()
 
@@ -243,22 +259,27 @@ class OpenmxParser(object):
             epot_offset = 0.0
 
         else:
-            x0_offset, force_offset = self._get_coordinate_and_force_outfile(file_offset)
+            x0_offset, force_offset = self._get_coordinate_and_force_outfile(
+                file_offset
+            )
             try:
                 x0_offset = np.reshape(x0_offset, (self._nat, 3))
             except:
-                raise RuntimeError("File %s contains too many position entries" % file_offset)
+                raise RuntimeError(
+                    "File %s contains too many position entries" % file_offset
+                )
 
             disp_offset = x0_offset - x0
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
             except:
-                raise RuntimeError("File %s contains too many force entries" % file_offset)
+                raise RuntimeError(
+                    "File %s contains too many force entries" % file_offset
+                )
 
             epot_offset = self._get_energies_outfile(file_offset)
 
         for search_target in out_files:
-
             x, force = self._get_coordinate_and_force_outfile(search_target)
             epot = self._get_energies_outfile(search_target)
             epot -= epot_offset
@@ -267,7 +288,6 @@ class OpenmxParser(object):
             ndata = 1
 
             for idata in range(ndata):
-
                 if filter_emin is not None:
                     if filter_emin > epot[idata]:
                         continue
@@ -289,30 +309,35 @@ class OpenmxParser(object):
                     f = force - force_offset
                     f *= self._force_conversion_factor
 
-                print("# Filename: %s, Snapshot: %d, E_pot (eV): %s" %
-                      (search_target, idata + 1, epot[idata]))
+                print(
+                    "# Filename: %s, Snapshot: %d, E_pot (eV): %s"
+                    % (search_target, idata + 1, epot[idata])
+                )
 
                 if self._print_disp and self._print_force:
                     for i in range(self._nat):
-                        print("%15.7F %15.7F %15.7F %20.8E %15.8E %15.8E" % (disp[i, 0],
-                                                                             disp[i, 1],
-                                                                             disp[i, 2],
-                                                                             f[i, 0],
-                                                                             f[i, 1],
-                                                                             f[i, 2]))
+                        print(
+                            "%15.7F %15.7F %15.7F %20.8E %15.8E %15.8E"
+                            % (
+                                disp[i, 0],
+                                disp[i, 1],
+                                disp[i, 2],
+                                f[i, 0],
+                                f[i, 1],
+                                f[i, 2],
+                            )
+                        )
                 elif self._print_disp:
                     for i in range(self._nat):
-                        print("%15.7F %15.7F %15.7F" % (disp[i, 0],
-                                                        disp[i, 1],
-                                                        disp[i, 2]))
+                        print(
+                            "%15.7F %15.7F %15.7F"
+                            % (disp[i, 0], disp[i, 1], disp[i, 2])
+                        )
                 elif self._print_force:
                     for i in range(self._nat):
-                        print("%15.8E %15.8E %15.8E" % (f[i, 0],
-                                                        f[i, 1],
-                                                        f[i, 2]))
+                        print("%15.8E %15.8E %15.8E" % (f[i, 0], f[i, 1], f[i, 2]))
 
     def _print_energies(self, out_files, file_offset):
-
         if file_offset is None:
             etot_offset = 0.0
         else:
@@ -320,7 +345,6 @@ class OpenmxParser(object):
 
         print("# Etot")
         for search_target in out_files:
-
             etot = self._get_energies_outfile(search_target)
 
             for idata in range(len(etot)):
@@ -329,7 +353,6 @@ class OpenmxParser(object):
                 print("%19.11E" % val)
 
     def _set_number_of_zerofill(self, npattern):
-
         nzero = 1
 
         while True:
@@ -341,7 +364,6 @@ class OpenmxParser(object):
         self._nzerofills = nzero
 
     def _set_unit_conversion_factor(self, str_unit):
-
         if str_unit == "ev":
             disp_conv_factor = 1.0
             energy_conv_factor = 2.0 * self._RYDBERG_TO_EV
@@ -365,8 +387,9 @@ class OpenmxParser(object):
         self._energy_conversion_factor = energy_conv_factor
 
     def _set_output_flags(self, output_flags):
-        self._print_disp, self._print_force, \
-            self._print_energy, self._print_born = output_flags
+        self._print_disp, self._print_force, self._print_energy, self._print_born = (
+            output_flags
+        )
 
     @property
     def nat(self):
@@ -430,7 +453,7 @@ class OpenmxParser(object):
         Return fractional coordinates and atomic forces in units of Hartree/Bohr
         """
         search_flag = "<coordinates.forces"
-        f = open(out_file, 'r')
+        f = open(out_file, "r")
         line = f.readline()
         found_tag = False
 
@@ -459,11 +482,10 @@ class OpenmxParser(object):
 
     @staticmethod
     def _get_energies_outfile(out_file):
-
         target = "Utot."
         etot = []
 
-        f = open(out_file, 'r')
+        f = open(out_file, "r")
         for line in f:
             ss = line.strip().split()
             if len(ss) > 0 and ss[0] == target:
