@@ -6,13 +6,14 @@ import numpy as np
 
 try:
     from pymatgen.core import Structure
-except:
+except ImportError:
     from pymatgen import Structure
-from pymatgen.io.vasp import inputs
-from pymatgen.core.periodic_table import get_el_sp
+
 import seekpath
-from interface.QE import QEParser
 from GenDisplacement import AlamodeDisplace
+from interface.QE import QEParser
+from pymatgen.core.periodic_table import get_el_sp
+from pymatgen.io.vasp import inputs
 
 ALAMODE_root = "~/src/alamode/_build"
 
@@ -158,7 +159,6 @@ def gen_anphon_input(
         collections.OrderedDict.fromkeys(structure.atomic_numbers)
     )
 
-    species_index = gen_species_dictionary(atomic_numbers_uniq)
     # Make input for ALM
     with open(filename, "w") as f:
         f.write("&general\n")
@@ -168,7 +168,7 @@ def gen_anphon_input(
         for num in atomic_numbers_uniq:
             str_spec += str(get_el_sp(num)) + " "
         f.write(" NKD = %i; KD = %s\n" % (structure.ntypesp, str_spec))
-        f.write(" TOLERANCE = {:f}}\n".format(symprec))
+        f.write(" TOLERANCE = {:f}\n".format(symprec))
         if alamode_ver == 1:
             f.write(" FCSXML = %s.xml\n" % prefix)
         else:

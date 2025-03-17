@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import sys
 import os
 import shutil
 import subprocess
+import sys
+
 import numpy as np
 
 
@@ -106,12 +107,12 @@ def run_alm_si(almbin, project_root):
     try:
         with open("ALM1.log", "w") as f:
             subprocess.run([almbin, "ALM1.in"], stdout=f)
-    except:
+    except Exception:
         return 1
     try:
         with open("ALM2.log", "w") as f:
             subprocess.run([almbin, "ALM2.in"], stdout=f)
-    except:
+    except Exception:
         return 1
 
     return 0
@@ -196,12 +197,12 @@ def run_anphon_si(anphonbin, project_root):
     try:
         with open("phband.log", "w") as f:
             subprocess.run([anphonbin, "phband.in"], stdout=f)
-    except:
+    except Exception:
         return 1
     try:
         with open("RTA.log", "w") as f:
             subprocess.run([anphonbin, "RTA.in"], stdout=f)
-    except:
+    except Exception:
         return 1
 
     return 0

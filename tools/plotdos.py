@@ -114,7 +114,7 @@ def sum_atom_projected_dos(pdos_tmp, natoms_tmp):
     counter = 0
 
     for i in range(nkinds):
-        for j in range(natoms_tmp[i]):
+        for _ in range(natoms_tmp[i]):
             for k in range(nenergy):
                 pdos_sum[k][i] += pdos_tmp[k][counter]
 
@@ -190,14 +190,14 @@ def run_plot(
 
     plt.ylabel("Phonon DOS", fontsize=16, labelpad=20)
 
-    if emin == None and emax == None:
+    if emin is None and emax is None:
         factor = 1.00
         xmin *= factor
         xmax *= factor
     else:
-        if emin != None:
+        if emin is not None:
             xmin = emin
-        if emax != None:
+        if emax is not None:
             xmax = emax
 
         if xmin > xmax:

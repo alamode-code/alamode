@@ -1,10 +1,10 @@
 import itertools
 
+import h5py
 import numpy as np
 import spglib
 from ase.data import atomic_numbers
 from lxml import etree
-import h5py
 
 
 class ForceConstantParser:
@@ -163,7 +163,7 @@ class ForceConstantParser:
 
         self.map_p2s = np.zeros((ntrans, natom_prim), dtype=int)
         self.map_s2p = np.zeros(natom_super, dtype=int)
-        for i, elems in enumerate(self.root.findall("Symmetry/Translations/map")):
+        for _, elems in enumerate(self.root.findall("Symmetry/Translations/map")):
             itran = int(elems.get("tran")) - 1
             iatom = int(elems.get("atom")) - 1
             self.map_p2s[itran, iatom] = int(elems.text) - 1

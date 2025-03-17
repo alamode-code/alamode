@@ -19,7 +19,7 @@ from matplotlib.gridspec import GridSpec
 
 try:
     mpl.use("Qt5")
-except:
+except ModuleNotFoundError:
     pass
 import matplotlib.pyplot as plt
 

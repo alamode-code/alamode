@@ -43,7 +43,7 @@ def parse_QEfc(file_QEfc):
         else:
             nskip = nat + nkd
 
-        for i in range(nskip):
+        for _ in range(nskip):
             header.append(f.readline())
 
         line = f.readline()
@@ -51,7 +51,7 @@ def parse_QEfc(file_QEfc):
         epsil_flag = line.strip()
 
         if epsil_flag == "T":
-            for i in range(3 + 4 * nat):
+            for _ in range(3 + 4 * nat):
                 header.append(f.readline())
 
         nx, ny, nz = [int(i) for i in f.readline().split()]

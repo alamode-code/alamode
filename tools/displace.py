@@ -21,7 +21,6 @@ from __future__ import print_function
 import argparse
 
 import numpy as np
-
 from GenDisplacement import AlamodeDisplace
 from interface.LAMMPS import LammpsParser
 from interface.OpenMX import OpenmxParser

@@ -44,7 +44,7 @@ class ParseResult:
                             self.x_fractional[i, :] = np.array(
                                 [float(t) for t in line[1:]]
                             )
-                    except:
+                    except Exception:
                         pass
 
                 elif "#KPOINT" in line:
@@ -77,7 +77,7 @@ class ParseResult:
 
                 elif "#K-point (irreducible)" in line:
                     self.omega = np.zeros((total_irq, 3 * self.nat))
-                    for i in range(3 * self.nat * total_irq):
+                    for _i in range(3 * self.nat * total_irq):
                         line = f.readline().rstrip().split()
                         ik = int(line[0])
                         im = int(line[1])

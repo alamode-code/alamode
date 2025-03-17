@@ -521,9 +521,9 @@ class Calculator:
         for i in range(nk):
             for j in range(nmode):
                 for k in range(3):
-                    for l in range(3):
-                        vvprod[i, j, k, l] = np.dot(
-                            self.vel[i, j, :, k], self.vel[i, j, :, l]
+                    for m in range(3):
+                        vvprod[i, j, k, m] = np.dot(
+                            self.vel[i, j, :, k], self.vel[i, j, :, m]
                         )
 
         if len_boundary is None:
@@ -673,9 +673,9 @@ class Calculator:
         for i in range(nk):
             for j in range(nmode):
                 for k in range(3):
-                    for l in range(3):
-                        vvprod[i, j, k, l] = np.dot(
-                            self.vel[i, j, :, k], self.vel[i, j, :, l]
+                    for m in range(3):
+                        vvprod[i, j, k, m] = np.dot(
+                            self.vel[i, j, :, k], self.vel[i, j, :, m]
                         )
 
         velnorm = np.linalg.norm(self.vel[:, :, 0, :], axis=2)

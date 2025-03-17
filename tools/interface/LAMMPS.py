@@ -160,10 +160,10 @@ class LammpsParser(object):
             try:
                 x0_offset = np.reshape(x0_offset, (self._nat, 3))
                 force_offset = np.reshape(force_offset, (self._nat, 3))
-            except:
+            except Exception as err:
                 raise RuntimeError(
                     "File %s contains too many/few entries" % file_offset
-                )
+                ) from err
 
             disp_offset = x0_offset - self._x_cartesian
 
@@ -324,10 +324,10 @@ class LammpsParser(object):
 
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
-            except:
+            except Exception as err:
                 raise RuntimeError(
                     "File %s contains too many position entries" % file_offset
-                )
+                ) from err
 
         for search_target in lammps_files:
             _, force = self._get_coordinate_and_force_lammps(search_target)

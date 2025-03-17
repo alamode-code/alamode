@@ -349,17 +349,17 @@ class VaspParser(object):
             epot_offset = np.array(epot_offset, dtype=float)
             try:
                 x0_offset = np.reshape(x0_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many position entries" % file_offset
-                )
+                ) from err
 
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many force entries" % file_offset
-                )
+                ) from err
 
             disp_offset = x0_offset - x0
 
@@ -623,11 +623,11 @@ class VaspParser(object):
                 f = np.ravel(forces["forces"])
                 return x, f
 
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading atomic positions and "
                     "forces from the HDF5 file: %s" % file_to_parse
-                )
+                ) from err
 
         else:
             x = []
@@ -653,11 +653,11 @@ class VaspParser(object):
 
                 return np.array(x, dtype=float), np.array(f, dtype=float)
 
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading atomic positions and "
                     "forces from the XML file: %s" % file_to_parse
-                )
+                ) from err
 
     def _get_energies(self, file_to_parse):
         hdf5_mode = file_to_parse.lower().split(".")[-1] in ["h5", "hdf5"]
@@ -678,11 +678,11 @@ class VaspParser(object):
                 ekin_array = ["N/A"] * len(etot_array)
 
                 return etot_array, ekin_array
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading atomic positions and "
                     "forces from the HDF5 file: %s" % file_to_parse
-                )
+                ) from err
 
         else:
             etot_array = []
@@ -706,10 +706,10 @@ class VaspParser(object):
                     ekin_array.append(ekin)
 
                 return etot_array, ekin_array
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading energies from the XML file: %s" % file_to_parse
-                )
+                ) from err
 
     def _get_borninfo(self, file_to_parse):
         hdf5_mode = file_to_parse.lower().split(".")[-1] in ["h5", "hdf5"]
@@ -734,20 +734,20 @@ class VaspParser(object):
                     ],
                 )
                 dielec_tensor_elec = obj.electron[:]
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading electronic dielectric tensor from the HDF5 file: %s"
                     % file_to_parse
-                )
+                ) from err
 
             try:
                 obj = py4vasp.Calculation.from_file(file_to_parse)
                 borncharge = obj.born_effective_charge.read()["charge_tensors"]
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading Born effective charges from the HDF5 file: %s"
                     % file_to_parse
-                )
+                ) from err
 
             return dielec_tensor_elec, borncharge
 
@@ -780,8 +780,8 @@ class VaspParser(object):
                 dielec = np.reshape(np.array(dielec), (3, 3))
                 borncharge = np.reshape(np.array(borncharge), (nat, 3, 3))
                 return dielec, borncharge
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "Error in reading Born charges from the XML file: %s"
                     % file_to_parse
-                )
+                ) from err

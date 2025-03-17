@@ -172,7 +172,7 @@ class AlamodeDisplace(object):
 
                     if nat_from_pattern // self._supercell.nat > 1:
                         self._set_updated_structure(obj["structure"]["supercell"])
-            except:
+            except ImportError:
                 pass
 
             for pattern in self._pattern:
@@ -384,7 +384,7 @@ class AlamodeDisplace(object):
         try:
             # Get displacements in angstrom unit
             disp_merged = self._supercell.get_displacements(file_mddata, "angstrom")
-        except:
+        except ValueError:
             try:
                 for target in file_mddata:
                     disp = np.loadtxt(target, dtype=float)
@@ -395,8 +395,8 @@ class AlamodeDisplace(object):
                             (len(disp) // self._supercell.nat, self._supercell.nat, 3),
                         )
                     )
-            except:
-                raise RuntimeError("Failed to read the MD files")
+            except ValueError as err:
+                raise RuntimeError("Failed to read the MD files") from err
 
         list_str_every = str_every.strip().split(":")
         start = 0
@@ -468,12 +468,12 @@ class AlamodeDisplace(object):
 
                     pattern_tmp.append(pattern_set)
 
-            except:
+            except ValueError:
                 # If failed, assume the old format
 
                 tmp, basis = f.readline().rstrip().split(":")
                 if basis == "F":
-                    raise RuntimeError("DBASIS must be 'C'")
+                    raise RuntimeError("DBASIS must be 'C'") from None
 
                 while True:
                     line = f.readline()
@@ -486,7 +486,7 @@ class AlamodeDisplace(object):
                     if is_entry:
                         pattern_set = []
                         natom_move = int(line_split_by_colon[1])
-                        for i in range(natom_move):
+                        for _ in range(natom_move):
                             disp = []
                             line = f.readline()
                             line_split = line.rstrip().split()
@@ -821,16 +821,18 @@ class AlamodeDisplace(object):
         tol_zero = 1.0e-3
 
         nqmax = (
-            supercell.get_global_number_of_atoms()
-            // primitive.get_global_number_of_atoms()
+            self.supercell.get_global_number_of_atoms()
+            // self.primitive.get_global_number_of_atoms()
         )
         convertor = np.dot(
-            np.linalg.inv(supercell.get_cell()).T, primitive.get_cell().T
+            np.linalg.inv(self.supercell.get_cell()).T, self.primitive.get_cell().T
         )
 
         for i in range(3):
             for j in range(3):
-                numerator, denominator = find_fraction(convertor[i, j], tol=tol_zero)
+                numerator, denominator = self.find_fraction(
+                    convertor[i, j], tol=tol_zero
+                )
                 convertor[i, j] = float(numerator) / float(denominator)
 
         comb = np.array(
@@ -980,15 +982,15 @@ class AlamodeDisplace(object):
         f = open(file_in, "r")
 
         # skip 10 lines
-        for i in range(10):
+        for _ in range(10):
             f.readline()
 
         nmode = int(f.readline().split(":")[1])
         nq = int(f.readline().split(":")[1])
-        nkd = int(f.readline().split(":")[1])
+        # nkd = int(f.readline().split(":")[1])
         mass = [float(t) for t in f.readline().split(":")[1].split()]
         # skip 3 lines
-        for i in range(3):
+        for _ in range(3):
             f.readline()
 
         omega2 = np.zeros((nq, nmode))

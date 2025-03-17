@@ -264,18 +264,18 @@ class OpenmxParser(object):
             )
             try:
                 x0_offset = np.reshape(x0_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many position entries" % file_offset
-                )
+                ) from err
 
             disp_offset = x0_offset - x0
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many force entries" % file_offset
-                )
+                ) from err
 
             epot_offset = self._get_energies_outfile(file_offset)
 

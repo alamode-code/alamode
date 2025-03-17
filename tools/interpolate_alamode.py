@@ -1,5 +1,6 @@
-import numpy as np
 import xml.etree.ElementTree as ET
+
+import numpy as np
 from ase.data import atomic_numbers
 
 Hz_to_kayser = 5.30883746e-12
@@ -117,7 +118,7 @@ class Result:
 
                 elif "#K-point (irreducible)" in line:
                     self.omega = np.zeros((total_irq, 3 * self.nat))
-                    for i in range(3 * self.nat * total_irq):
+                    for _ in range(3 * self.nat * total_irq):
                         line = f.readline().rstrip().split()
                         ik = int(line[0])
                         im = int(line[1])
@@ -247,7 +248,6 @@ class Result:
         nk1 = self.kgrid[0]
         nk2 = self.kgrid[1]
         nk3 = self.kgrid[2]
-        nk23 = nk2 * nk3
 
         i = np.floor(xk[0] * self.kgrid[0])
         j = np.floor(xk[1] * self.kgrid[1])

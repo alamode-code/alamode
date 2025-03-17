@@ -218,10 +218,10 @@ class QEParser(object):
                 raise RuntimeError("File %s does not contain force entry" % file_offset)
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many force entries" % file_offset
-                )
+                ) from err
 
             epot_offset = self._get_energies_pwout(file_offset)
             if epot_offset is None:
@@ -387,8 +387,8 @@ class QEParser(object):
             if "nat" in entrylist[i]:
                 self._nat = int(entrylist[i + 2])
 
-            if "ntyp" in entrylist[i]:
-                ntyp = int(entrylist[i + 2])
+            # if "ntyp" in entrylist[i]:
+            # ntyp = int(entrylist[i + 2])
 
             if "celldm(1)" in entrylist[i]:
                 # Do not assign the value if the comment character '!'
@@ -1050,7 +1050,7 @@ class QEParser(object):
                     basis = line.rstrip().split()[1]
 
                 num_data_disp_extra += 1
-                for i in range(self._nat):
+                for _ in range(self._nat):
                     line = f.readline()
                     x_additional.extend([t for t in line.rstrip().split()[1:4]])
             line = f.readline()
@@ -1104,7 +1104,7 @@ class QEParser(object):
             if search_tag in line or search_tag_QE6 in line:
                 found_tag = True
                 f.readline()
-                for i in range(self._nat):
+                for _ in range(self._nat):
                     line = f.readline()
                     force.extend([t for t in line.rstrip().split()[6:9]])
             line = f.readline()
@@ -1152,7 +1152,7 @@ class QEParser(object):
             if search_tag1 in line:
                 found_tag1 = True
                 f.readline()
-                for i in range(3):
+                for _ in range(3):
                     line = f.readline()
                     dielec.extend([float(t) for t in line.strip().split()[1:4]])
 

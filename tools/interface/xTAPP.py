@@ -292,18 +292,18 @@ class XtappParser(object):
             epot_offset = self._get_energies_xtapp(file_offset)
             try:
                 x0_offset = np.reshape(x0_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many position entries" % file_offset
-                )
+                ) from err
             disp_offset = x0_offset - x0
 
             try:
                 force_offset = np.reshape(force_offset, (self._nat, 3))
-            except:
+            except ValueError as err:
                 raise RuntimeError(
                     "File %s contains too many position entries" % file_offset
-                )
+                ) from err
 
         for search_target in stdout_files:
             x = self._get_coordinates_xtapp(search_target, self._nat)
@@ -494,7 +494,7 @@ class XtappParser(object):
         while line:
             if "atom_position" in line:
                 found_tag = True
-                for i in range(nat):
+                for _ in range(nat):
                     line = f.readline()
                     x.extend([t for t in line.rstrip().split()[1:]])
                 break
@@ -517,7 +517,7 @@ class XtappParser(object):
         while line:
             if "force" in line:
                 found_tag = True
-                for i in range(nat):
+                for _ in range(nat):
                     line = f.readline()
                     force.extend([t for t in line.rstrip().split()])
                 break

@@ -1,9 +1,10 @@
 import argparse
-from lxml import etree
-from ase.units import Rydberg, Bohr
+import sys
+
 import numpy as np
 from ase.data import atomic_numbers
-import sys
+from ase.units import Bohr, Rydberg
+from lxml import etree
 
 
 def parse_xml(fname_xml):
@@ -131,9 +132,9 @@ def print_fc2_phonopy(map_p2s, fc2_compact, outfile=None):
             for j in range(natom_super):
                 print("{:5d} {:5d}".format(map_p2s[0, i] + 1, j + 1), file=f)
                 for k in range(3):
-                    for l in range(3):
+                    for m in range(3):
                         print(
-                            "{:20.15f}".format(fc2_compact[i, j, k, l]),
+                            "{:20.15f}".format(fc2_compact[i, j, k, m]),
                             end="",
                             file=f,
                         )
@@ -152,8 +153,8 @@ def print_fc2_phonopy_full(fc2_full, outfile=None):
             for j in range(natom_super):
                 print("{:5d} {:5d}".format(i + 1, j + 1), file=f)
                 for k in range(3):
-                    for l in range(3):
-                        print("{:20.15f}".format(fc2_full[i, j, k, l]), end="", file=f)
+                    for m in range(3):
+                        print("{:20.15f}".format(fc2_full[i, j, k, m]), end="", file=f)
                     print("", file=f)
 
 

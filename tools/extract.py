@@ -23,18 +23,18 @@ from __future__ import print_function
 import argparse
 
 try:
-    from interface.VASP import VaspParser
-    from interface.QE import QEParser
-    from interface.xTAPP import XtappParser
-    from interface.OpenMX import OpenmxParser
     from interface.LAMMPS import LammpsParser
+    from interface.OpenMX import OpenmxParser
+    from interface.QE import QEParser
+    from interface.VASP import VaspParser
+    from interface.xTAPP import XtappParser
 
 except ModuleNotFoundError:  # occurs when it is called as a library
-    from .interface.VASP import VaspParser
-    from .interface.QE import QEParser
-    from .interface.xTAPP import XtappParser
-    from .interface.OpenMX import OpenmxParser
     from .interface.LAMMPS import LammpsParser
+    from .interface.OpenMX import OpenmxParser
+    from .interface.QE import QEParser
+    from .interface.VASP import VaspParser
+    from .interface.xTAPP import XtappParser
 
 
 def check_options(args):
