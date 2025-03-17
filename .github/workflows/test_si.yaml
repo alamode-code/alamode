@@ -57,7 +57,7 @@ jobs:
           conda config --show
           printenv | sort
       - name: Install conda libraries
-        run: conda install numpy scipy h5py compilers spglib boost eigen cmake
+        run: conda install numpy scipy h5py compilers spglib boost eigen cmake openmpi
         
       - run: echo ${CC} ${CXX}
 
