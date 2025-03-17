@@ -25,13 +25,11 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Mambaforge
+      - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: alamode
-          use-mamba: true
           python-version: ${{ matrix.python-version }}
      
       - name: Get Date
@@ -50,7 +48,7 @@ jobs:
         id: cache
          
       - name: Update environment
-        run: mamba env update -n anaconda-client-env -f etc/alamode-environment.yml
+        run: conda env update -n anaconda-client-env -f etc/alamode-environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - run: |
           conda info
@@ -59,7 +57,7 @@ jobs:
           conda config --show
           printenv | sort
       - name: Install conda libraries
-        run: mamba install numpy scipy h5py compilers spglib boost eigen cmake
+        run: conda install numpy scipy h5py compilers spglib boost eigen cmake
         
       - run: echo ${CC} ${CXX}
       
