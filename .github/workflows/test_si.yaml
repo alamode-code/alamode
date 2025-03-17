@@ -3,6 +3,8 @@ name: Test Si example
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 2.0dev
     paths:
       - '**.cpp'
       - '**.h'
