@@ -24,6 +24,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <Eigen/Core>
 #include <iomanip>
 
+#include "optimizers.h"
+
 using namespace PHON_NS;
 
 Relaxation::Relaxation(PHON *phon) : Pointers(phon)
@@ -438,7 +440,11 @@ void Relaxation::update_cell_coordinate(double *q0,
 
     MatrixXcd Cmat(ns, ns), v2_mat_full(ns, ns);
     MatrixXcd v2_mat_optical(ns - 3, ns - 3);
+    std::vector<std::vector<double>> v2_mat_optical_tmp(ns - 3, std::vector<double>(ns - 3));
     VectorXcd dq0_vec(ns - 3), v1_vec_atT(ns - 3);
+    std::vector<double> q0_optical_tmp(ns-3);
+    std::vector<double> v1_vec_atT_tmp(ns - 3);
+    std::vector<double> delta_q0_tmp(ns-3);
 
     MatrixXcd C2_mat_tmp(6, 6);
     VectorXcd du_tensor_vec(6), del_v0_strain_vec(6);
@@ -478,20 +484,32 @@ void Relaxation::update_cell_coordinate(double *q0,
         for (is = 0; is < ns - 3; is++) {
             for (js = 0; js < ns - 3; js++) {
                 v2_mat_optical(is, js) = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]);
+                v2_mat_optical_tmp[is][js] = v2_mat_optical(is, js).real();
+                // std::cout << v2_mat_optical_tmp[is][js] << std::endl;
             }
             v2_mat_optical(is, is) += add_hess_diag_omega2;
+            v2_mat_optical_tmp[is][is] += add_hess_diag_omega2;
         }
         // solve linear equation
         for (is = 0; is < ns - 3; is++) {
             v1_vec_atT(is) = v1_array_atT[harm_optical_modes[is]];
+            v1_vec_atT_tmp[is] = v1_vec_atT(is).real();
+            // std::cout << v1_array_atT[harm_optical_modes[is]];
+            q0_optical_tmp[is] = q0[harm_optical_modes[is]];
         }
 
         dq0_vec = v2_mat_optical.colPivHouseholderQr().solve(v1_vec_atT);
+        optimizer->update_state(ns-3,
+                               v1_vec_atT_tmp,
+                               q0_optical_tmp,
+                               v2_mat_optical_tmp,
+                               delta_q0_tmp);
 
         // update q0
         for (is = 0; is < ns - 3; is++) {
-            delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
-            q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
+            // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
+            std::cout << "compare delta: " << delta_q0_tmp[is] << " " << -mixbeta_coord * dq0_vec(is).real() << std::endl;
+            q0[harm_optical_modes[is]] += delta_q0_tmp[is];//delta_q0[harm_optical_modes[is]];
         }
 
         if (relax_str == 1) {

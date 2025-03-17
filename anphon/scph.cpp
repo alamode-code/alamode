@@ -1254,6 +1254,11 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     allocate(v4_with_umn, nk_irred_interpolate * kmesh_dense->nk,
              ns * ns, ns * ns);
 
+    // initialize optimizer
+    if (relaxation->relax_algo == 2){
+        relaxation->optimizer = new Newton_Optimizer(relaxation->mixbeta_coord);
+    }
+
     // Compute matrix element of 4-phonon interaction
     // This operation is the most expensive part of the calculation.
     if (selfenergy_offdiagonal & (ialgo == 1)) {
