@@ -60,6 +60,14 @@ jobs:
         run: conda install numpy scipy h5py compilers spglib boost eigen cmake
         
       - run: echo ${CC} ${CXX}
+
+      - name: Build alm and anphon with cmake
+        run: |
+          mkdir -p _build
+          cd _build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j
+          cd ..
       
       - name: Run test Si
         working-directory: ./test
