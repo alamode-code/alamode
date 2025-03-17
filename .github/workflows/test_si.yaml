@@ -1,0 +1,68 @@
+name: Test Si example
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 2.0dev
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.py'
+      - '**.c'
+  
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+#        os: [ubuntu-latest, windows-latest, macOS-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+    name: OS ${{ matrix.os }} Python ${{ matrix.python-version }} 
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: alamode
+          use-mamba: true
+          python-version: ${{ matrix.python-version }}
+     
+      - name: Get Date
+        id: get-date
+        run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+        shell: bash
+        
+      - name: Cache Conda env
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if etc/alm-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('etc/alamode-environment.yml') }}-${{ env.CACHE_NUMBER }}
+        id: cache
+         
+      - name: Update environment
+        run: mamba env update -n anaconda-client-env -f etc/alamode-environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+      - run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
+      - name: Install conda libraries
+        run: mamba install numpy scipy h5py compilers spglib boost eigen cmake
+        
+      - run: echo ${CC} ${CXX}
+      
+      - name: Run test Si
+        working-directory: ./test
+        run: python test_si.py
