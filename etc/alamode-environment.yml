@@ -1,0 +1,14 @@
+name: alm
+
+channels:
+  - conda-forge
+
+dependencies:
+  - numpy
+  - scipy
+  - h5py
+  - compilers
+  - spglib
+  - boost
+  - eigen
+  - cmake
