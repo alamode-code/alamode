@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import glob
 import os
 import shutil
 import subprocess
@@ -92,6 +93,14 @@ def uncompress_files(workdir):
         for file in file_list:
             with zipfile.ZipFile(file, "r") as zip_ref:
                 zip_ref.extractall(workdir)
+    except Exception:
+        return 1
+
+    files_list = glob.glob("strain_IFC/*.zip")
+    try:
+        for file in files_list:
+            with zipfile.ZipFile(file, "r") as zip_ref:
+                zip_ref.extractall(os.path.join(workdir, "strain_IFC"))
     except Exception:
         return 1
 
