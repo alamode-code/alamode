@@ -75,16 +75,15 @@ jobs:
         working-directory: ./test/zno
         run: | 
           ../../_build/anphon/anphon ZnO_qha_thermo.in
-          ls test/zno/
 
-      - name: Run ZnO example
-        working-directory: ./test
-        run: | 
-          python test_zno.py --job run
-          cd zno
-          ls
-          cat ZnO_qha_thermo.log
-          cd ../
+      # - name: Run ZnO example
+      #   working-directory: ./test
+      #   run: | 
+      #     python test_zno.py --job run
+      #     cd zno
+      #     ls
+      #     cat ZnO_qha_thermo.log
+      #     cd ../
 
       - name: Compare results
         working-directory: ./test
