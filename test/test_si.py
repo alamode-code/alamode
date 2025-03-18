@@ -178,7 +178,7 @@ def check_consistency_alm(project_root, abs_tol=0.01, rel_tol=1.0e-9):
 def gen_anphoninput_si(prefix, mode, fname):
     with open(fname, "w") as f:
         f.write(
-            "&general\n PREFIX = %s; MODE = %s; FCSFILE = si222_cubic.xml; KD = Si\n/\n"
+            "&general\n PREFIX = %s; MODE = %s; FCSXML = si222_cubic.xml; NKD = 1; KD = Si\n/\n"
             % (prefix, mode)
         )
         f.write("&cell\n  10.203\n  0.0 0.5 0.5\n  0.5 0.0 0.5\n  0.5 0.5 0.0\n/\n")
