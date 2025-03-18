@@ -1,4 +1,4 @@
-name: Test Si example
+name: Run ZnO example
 
 on:
   push:
@@ -50,17 +50,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: atztogo/spglib
-          path: spglib
+          path: spglib_repo
           ref: v2.4.0
 
       - run: echo ${CC} ${CXX}
 
       - name: Build spglib
         run: |
-          cd spglib
+          mkdir spglib
+          cd spglib_repo
           mkdir -p _build
           cd _build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../spglib ..
           make -j
           make install
           cd ../../
@@ -69,10 +70,12 @@ jobs:
         run: |
           mkdir -p _build
           cd _build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DSPGLIB_ROOT=../spglib/ ..
           make -j
           cd ..
       
       - name: Run test ZnO
         working-directory: ./test
-        run: python test_zno.py
+        run: |
+          export LD_LIBRARY_PATH=../spglib/lib:${LD_LIBRARY_PATH}
+          python test_zno.py
