@@ -69,8 +69,10 @@ jobs:
         working-directory: ./test
         run: | 
           python test_zno.py --job run
+          cd zno
           ls
           cat ZnO_qha_thermo.log
+          cd ../
 
       - name: Compare results
         working-directory: ./test
