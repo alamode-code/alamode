@@ -5,11 +5,11 @@ on:
     branches:
       - develop
       - 2.0dev
-    paths:
-      - '**.cpp'
-      - '**.h'
-      - '**.py'
-      - '**.c'
+    # paths:
+    #   - '**.cpp'
+    #   - '**.h'
+    #   - '**.py'
+    #   - '**.c'
   
 jobs:
   build:
