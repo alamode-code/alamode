@@ -68,10 +68,11 @@ jobs:
 
       - name: Build alm and anphon with cmake
         run: |
+          export workdir=$(pwd)
           mkdir -p _build
           cd _build
-          cmake -DCMAKE_BUILD_TYPE=Release -DSPGLIB_ROOT=../spglib/ ..
-          make -j
+          cmake -DCMAKE_BUILD_TYPE=Release -DSPGLIB_ROOT=${workdir}/spglib/ ..
+          make alm anphon -j
           cd ..
       
       - name: Run test ZnO
