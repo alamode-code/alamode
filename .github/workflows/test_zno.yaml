@@ -74,9 +74,9 @@ jobs:
       - name: Run ZnO example manually
         working-directory: ./test/zno
         run: | 
-          ../../_build/anphon/anphon ZnO_qha_thermo.in > ZnO_qha_thermo.log
-          ls ZnO_qha_thermo.log
-          
+          ../../_build/anphon/anphon ZnO_qha_thermo.in
+          ls test/zno/
+
       - name: Run ZnO example
         working-directory: ./test
         run: | 
