@@ -508,6 +508,7 @@ void Relaxation::update_cell_coordinate(double *q0,
         // update q0
         for (is = 0; is < ns - 3; is++) {
             // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
+            delta_q0[harm_optical_modes[is]] = delta_q0_tmp[is];
             std::cout << "compare delta: " << delta_q0_tmp[is] << " " << -mixbeta_coord * dq0_vec(is).real() << std::endl;
             q0[harm_optical_modes[is]] += delta_q0_tmp[is];//delta_q0[harm_optical_modes[is]];
         }
