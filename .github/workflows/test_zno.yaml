@@ -61,6 +61,14 @@ jobs:
           make alm anphon -j
           cd ..
       
-      - name: Run test ZnO
+      - name: Copy files
         working-directory: ./test
-        run: python test_zno.py
+        run: python test_zno.py --job copy
+
+      - name: Run ZnO example
+        working-directory: ./test
+        run: python test_zno.py --job run
+
+      - name: Compare results
+        working-directory: ./test
+        run: python test_zno.py --job compare

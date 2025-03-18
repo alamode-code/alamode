@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 import shutil
 import subprocess
@@ -56,26 +57,6 @@ def check_consistency_anphon(example_dir, abs_tol=0.01, rel_tol=1.0e-9):
     return 0
 
 
-def runtest_zno(anphonbin, example_dir):
-    info = run_anphon_zno(anphonbin)
-
-    if info > 0:
-        print(
-            "ANPHON code failed to execute.\nPlease check if the alm binary exist at %s"
-            % anphonbin
-        )
-        return 1
-
-    info = check_consistency_anphon(example_dir, abs_tol=1.0e-12, rel_tol=1.0e-12)
-
-    if info == 0:
-        print("ZnO ANPHON --> pass")
-    else:
-        print("ZnO ANPHON --> failed")
-
-    return info
-
-
 def copy_input_files(workdir, example_dir):
     file_list = [
         "ZnO332_500K_cutoff1208_nbody233.xml.zip",
@@ -118,6 +99,12 @@ def uncompress_files(workdir):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--jobs", type=str, default="all", help="Job types (all, copy, run, compare)"
+    )
+    args = parser.parse_args()
+
     build_dir = os.getcwd()
     project_root = os.path.dirname(build_dir)
     example_dir = os.path.join(project_root, "example/ZnO/qha_relax/")
@@ -130,16 +117,33 @@ if __name__ == "__main__":
     # almbin = "%s/_build/alm/alm" % project_root
     anphonbin = "%s/_build/anphon/anphon" % project_root
 
-    info = copy_input_files(workdir, example_dir)
-    if info > 0:
-        sys.exit(1)
+    if args.jobs in ["all", "copy"]:
+        info = copy_input_files(workdir, example_dir)
+        if info > 0:
+            sys.exit(1)
 
-    info = uncompress_files(workdir)
-    if info > 0:
-        print("Failed to uncompress files")
-        sys.exit(1)
+        info = uncompress_files(workdir)
+        if info > 0:
+            print("Failed to uncompress files")
+            sys.exit(1)
 
-    info = runtest_zno(anphonbin, example_dir)
+    if args.jobs in ["all", "run"]:
+        info = run_anphon_zno(anphonbin)
+
+        if info > 0:
+            print(
+                "ANPHON code failed to execute.\nPlease check if the alm binary exist at %s"
+                % anphonbin
+            )
+            sys.exit(1)
+
+    if args.jobs in ["all", "compare"]:
+        info = check_consistency_anphon(example_dir, abs_tol=1.0e-12, rel_tol=1.0e-12)
+
+    if info == 0:
+        print("ZnO ANPHON --> pass")
+    else:
+        print("ZnO ANPHON --> failed")
 
     if info == 0:
         sys.exit(0)
