@@ -63,7 +63,13 @@ jobs:
       
       - name: Copy files
         working-directory: ./test
-        run: python test_zno.py --job copy
+        run: | 
+          python test_zno.py --job copy
+          cd zno
+          ls
+          cd strain_IFC
+          ls
+          cd ../../
 
       - name: Run ZnO example
         working-directory: ./test
