@@ -55,3 +55,22 @@ class Newton_Optimizer : public Optimizer{
                       const std::vector<std::vector<double>> &hessian,
                       std::vector<double> &delta);
 };
+
+class CellCoord_Newton_Optimizer : public Optimizer{
+  public:
+  double mixbeta_cell = 1.0;
+  double mixbeta_coord = 1.0;
+  Newton_Optimizer *cell_optimizer;
+  Newton_Optimizer *coord_optimizer;
+
+  CellCoord_Newton_Optimizer();
+  ~CellCoord_Newton_Optimizer();
+
+  CellCoord_Newton_Optimizer(double mixbeta_cell, double mixbeta_coord);
+
+  void update_state(const int dim,
+                    const std::vector<double> &grad_vec, 
+                    std::vector<double> &state_vec,
+                    const std::vector<std::vector<double>> &hessian,
+                    std::vector<double> &delta);
+};

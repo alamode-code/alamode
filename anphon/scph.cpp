@@ -1255,8 +1255,13 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
              ns * ns, ns * ns);
 
     // initialize optimizer
-    if (relaxation->relax_algo == 2){
+    if (relaxation->relax_str == 1 & relaxation->relax_algo == 2){
         relaxation->optimizer = new Newton_Optimizer(relaxation->mixbeta_coord);
+    }
+    else if (relaxation->relax_str == 2 & relaxation->relax_algo == 2){
+        relaxation->optimizer = new CellCoord_Newton_Optimizer(relaxation->mixbeta_cell, relaxation->mixbeta_coord);
+        std::cout << "typeid(*optimizer).name(): " << typeid(*(relaxation->optimizer)).name() << std::endl;
+
     }
 
     // Compute matrix element of 4-phonon interaction

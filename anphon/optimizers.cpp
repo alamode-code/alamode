@@ -54,3 +54,64 @@ void Newton_Optimizer::update_state(const int dim,
         state_vec[i] = state_vec[i] + delta[i];
     }
 }
+
+CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer() {}
+
+CellCoord_Newton_Optimizer::~CellCoord_Newton_Optimizer() {}
+
+CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer(double mixbeta_cell, double mixbeta_coord) {
+    this->mixbeta_cell = mixbeta_cell;
+    this->mixbeta_coord = mixbeta_coord;
+
+    cell_optimizer = new Newton_Optimizer(mixbeta_cell);
+    coord_optimizer = new Newton_Optimizer(mixbeta_coord);
+}
+
+void CellCoord_Newton_Optimizer::update_state(const int dim,
+                                              const std::vector<double> &grad_vec,
+                                              std::vector<double> &state_vec,
+                                              const std::vector<std::vector<double>> &hessian,
+                                              std::vector<double> &delta) {
+
+    std::vector<double> grad_cell(6);
+    std::vector<double> state_cell(6);
+    std::vector<double> delta_cell(6);
+    std::vector<std::vector<double>> hessian_cell(6, std::vector<double>(6));
+
+    std::vector<double> grad_coord(dim-6);
+    std::vector<double> state_coord(dim-6);
+    std::vector<double> delta_coord(dim-6);
+    std::vector<std::vector<double>> hessian_coord(dim-6, std::vector<double>(dim-6));
+
+
+    for (int i = 0; i < dim-6; ++i) {
+        grad_coord[i] = grad_vec[i];
+        state_coord[i] = state_vec[i];
+        for (int j = 0; j < dim-6; ++j) {
+            hessian_coord[i][j] = hessian[i][j];
+        }
+    }
+
+    for(int i = 0; i < 6; ++i){
+        grad_cell[i] = grad_vec[i + dim - 6];
+        state_cell[i] = state_vec[i + dim - 6];
+        for (int j = 0; j < 6; ++j) {
+            hessian_cell[i][j] = hessian[i + dim - 6][j + dim - 6];
+        }
+    }
+
+    coord_optimizer->update_state(dim-6, grad_coord, state_coord, hessian_coord, delta_coord);
+    cell_optimizer->update_state(6, grad_cell, state_cell, hessian_cell, delta_cell);
+
+    for (int i = 0; i < dim-6; ++i) {
+        std::cout << i << std::endl;
+        delta[i] = delta_coord[i];
+        state_vec[i] = state_coord[i]; 
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        std::cout << i << std::endl;
+        delta[i + dim - 6] = delta_cell[i];
+        state_vec[i + dim - 6] = state_cell[i];
+    }
+}
