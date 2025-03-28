@@ -115,3 +115,27 @@ void CellCoord_Newton_Optimizer::update_state(const int dim,
         state_vec[i + dim - 6] = state_cell[i];
     }
 }
+
+void FarkasIII_Optimizer::update_state(const int dim,
+                                       const std::vector<double> &grad_vec,
+                                       std::vector<double> &state_vec,
+                                       const std::vector<std::vector<double>> &hessian,
+                                       std::vector<double> &delta)
+{
+    Eigen::VectorXd state_tmp(dim);
+    Eigen::VectorXd grad_tmp(dim);
+    Eigen::VectorXd updated_state(dim);
+
+    for(int i = 0; i < dim; ++i){
+        state_tmp(i) = state_vec[i];
+        grad_tmp(i) = grad_vec[i];
+    }
+    updated_state = this->update(state_tmp, grad_tmp);
+
+    // write answer
+    for(int i = 0; i < dim; ++i){
+        delta[i] = updated_state(i) - state_vec[i];
+        state_vec[i] = updated_state[i];
+    }
+
+}
