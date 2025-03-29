@@ -156,10 +156,12 @@ class FarkasIII_Optimizer : public Optimizer{
               result_residual += coeffs(i) * residuals[i];
           }
           Eigen::VectorXd point_DIIS = result_point + result_residual ;
+          std::cout << "point_DIIS = " << "result_point + result_residual" << std::endl;
           Eigen::VectorXd diff_REF = point_BFGS - point;
           Eigen::VectorXd diff_DIIS = point_DIIS - point;
           double cos_angle = diff_DIIS.dot(diff_REF)/( diff_DIIS.norm()*diff_REF.norm() );
           if(cos_angle < threshold_angle){
+              std::cout << "point_DIIS = point_BFGS" << std::endl;
               point_DIIS = point_BFGS;
           }
   

@@ -130,12 +130,14 @@ void FarkasIII_Optimizer::update_state(const int dim,
         state_tmp(i) = state_vec[i];
         grad_tmp(i) = grad_vec[i];
     }
+    std::cout << "call update" << std::endl;
     updated_state = this->update(state_tmp, grad_tmp);
 
     // write answer
     for(int i = 0; i < dim; ++i){
         delta[i] = updated_state(i) - state_vec[i];
         state_vec[i] = updated_state[i];
+        std::cout << "delta[" << i << "] = " << delta[i] << std::endl;
     }
 
 }

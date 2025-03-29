@@ -486,7 +486,7 @@ void Relaxation::update_cell_coordinate(double *q0,
             delta_q0[is] = -alpha_steepest_decent * v1_array_atT[is].real();
             q0[is] += delta_q0[is];
         }
-    } else if (relax_algo == 2) { // iterative solution of linear equation
+    } else if (relax_algo >= 2) { // iterative solution of linear equation
 
         // prepare harmonic IFC matrix
         for (is = 0; is < ns; is++) {
@@ -527,11 +527,14 @@ void Relaxation::update_cell_coordinate(double *q0,
         //                        delta_q0_tmp);
         
         if (relax_str == 1){
+            std::cout << "start update_state" << std::endl;
             optimizer->update_state(ns-3,
                                     grad_vec,
                                     state_vec,
                                     hessian_mat,
                                     delta_vec);
+
+            std::cout << "end update_state" << std::endl;
             
             // update q0
             for (is = 0; is < ns - 3; is++) {
@@ -603,15 +606,18 @@ void Relaxation::update_cell_coordinate(double *q0,
 
 
             // update q0
+            std::cout << "update state"
             for (is = 0; is < ns - 3; is++) {
                 // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];//delta_q0_tmp[is];
+                std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]] << std::endl;
                 // std::cout << "compare delta: " << delta_q0_tmp[is] << " " << -mixbeta_coord * dq0_vec(is).real() << std::endl;
-                q0[harm_optical_modes[is]] += delta_q0_tmp[is];//delta_q0[harm_optical_modes[is]];
+                q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]]; //delta_q0_tmp[is];//delta_q0[harm_optical_modes[is]];
             }
             // update u tensor
             for (is = 0; is < 6; is++) {
                 delta_umn[is] = delta_vec[is+ns-3];//-mixbeta_cell * du_tensor_vec(is).real();
+                std::cout << "delta_umn[" << is << "] = " << delta_umn[is] << std::endl;
                 std::cout << "compare delta_umn : " << delta_vec[is+ns-3] << " " << -mixbeta_cell * du_tensor_vec(is).real() << std::endl;
                 if (is < 3) {
                     u_tensor[is][is] += delta_umn[is];
