@@ -541,7 +541,7 @@ void Relaxation::update_cell_coordinate(double *q0,
                 // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];//delta_q0_tmp[is];
                 // std::cout << "compare delta: " << delta_q0_tmp[is] << " " << -mixbeta_coord * dq0_vec(is).real() << std::endl;
-                q0[harm_optical_modes[is]] += delta_q0_tmp[is];//delta_q0[harm_optical_modes[is]];
+                q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
             for (i1 = 0; i1 < 6; i1++) {
                 delta_umn[i1] = 0.0;
@@ -606,7 +606,7 @@ void Relaxation::update_cell_coordinate(double *q0,
 
 
             // update q0
-            std::cout << "update state"
+            std::cout << "update state";
             for (is = 0; is < ns - 3; is++) {
                 // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];//delta_q0_tmp[is];
