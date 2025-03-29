@@ -439,19 +439,13 @@ void Relaxation::update_cell_coordinate(double *q0,
     int itmp1, itmp2, itmp3, itmp4, itmp5, itmp6;
 
     MatrixXcd Cmat(ns, ns), v2_mat_full(ns, ns);
-    MatrixXcd v2_mat_optical(ns - 3, ns - 3);
-    // std::vector<std::vector<double>> v2_mat_optical_tmp(ns - 3, std::vector<double>(ns - 3));
-    VectorXcd dq0_vec(ns - 3), v1_vec_atT(ns - 3);
-    std::vector<double> q0_optical_tmp(ns-3);
-    // std::vector<double> v1_vec_atT_tmp(ns - 3);
     std::vector<double> grad_vec;
-    std::vector<double> delta_q0_tmp(ns-3);
     std::vector<double> delta_vec;
     std::vector<double> state_vec;
     std::vector<std::vector<double>> hessian_mat;
 
     MatrixXcd C2_mat_tmp(6, 6);
-    VectorXcd du_tensor_vec(6), del_v0_strain_vec(6);
+    VectorXcd del_v0_strain_vec(6);
 
 
     double Ry_to_kayser_tmp = Hz_to_kayser / time_ry;
@@ -498,49 +492,29 @@ void Relaxation::update_cell_coordinate(double *q0,
         }
         v2_mat_full = Cmat.adjoint() * v2_mat_full * Cmat;
 
+        // set gradient, hessian, and current state
         for (is = 0; is < ns - 3; is++) {
             for (js = 0; js < ns - 3; js++) {
-                // v2_mat_optical(is, js) = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]);
-                // v2_mat_optical_tmp[is][js] = v2_mat_optical(is, js).real();
                 hessian_mat[is][js] = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]).real();
-                // std::cout << v2_mat_optical_tmp[is][js] << std::endl;
             }
             hessian_mat[is][is] += add_hess_diag_omega2;
-            // v2_mat_optical(is, is) += add_hess_diag_omega2;
-            // v2_mat_optical_tmp[is][is] += add_hess_diag_omega2;
         }
-        // solve linear equation
         for (is = 0; is < ns - 3; is++) {
-            // v1_vec_atT(is) = v1_array_atT[harm_optical_modes[is]];
-            // v1_vec_atT_tmp[is] = v1_vec_atT(is).real();
             grad_vec[is] = v1_array_atT[harm_optical_modes[is]].real();
-            // std::cout << v1_array_atT[harm_optical_modes[is]];
-            // q0_optical_tmp[is] = q0[harm_optical_modes[is]];
             state_vec[is] = q0[harm_optical_modes[is]];
         }
-
-        // dq0_vec = v2_mat_optical.colPivHouseholderQr().solve(v1_vec_atT);
-        // optimizer->update_state(ns-3,
-        //                        v1_vec_atT_tmp,
-        //                        q0_optical_tmp,
-        //                        v2_mat_optical_tmp,
-        //                        delta_q0_tmp);
         
         if (relax_str == 1){
-            std::cout << "start update_state" << std::endl;
+            // call optimizer
             optimizer->update_state(ns-3,
                                     grad_vec,
                                     state_vec,
                                     hessian_mat,
                                     delta_vec);
-
-            std::cout << "end update_state" << std::endl;
             
             // update q0
             for (is = 0; is < ns - 3; is++) {
-                // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
-                delta_q0[harm_optical_modes[is]] = delta_vec[is];//delta_q0_tmp[is];
-                // std::cout << "compare delta: " << delta_q0_tmp[is] << " " << -mixbeta_coord * dq0_vec(is).real() << std::endl;
+                delta_q0[harm_optical_modes[is]] = delta_vec[is];
                 q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
             for (i1 = 0; i1 < 6; i1++) {
@@ -596,29 +570,23 @@ void Relaxation::update_cell_coordinate(double *q0,
                 grad_vec[itmp1+ns-3] = del_v0_strain_vec(itmp1).real();
             }
 
+            // call optimizer
             optimizer->update_state(ns+3,
                                     grad_vec,
                                     state_vec,
                                     hessian_mat,
                                     delta_vec);
 
-            du_tensor_vec = C2_mat_tmp.colPivHouseholderQr().solve(del_v0_strain_vec);
-
-
             // update q0
             std::cout << "update state";
             for (is = 0; is < ns - 3; is++) {
-                // delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
-                delta_q0[harm_optical_modes[is]] = delta_vec[is];//delta_q0_tmp[is];
+                delta_q0[harm_optical_modes[is]] = delta_vec[is];
                 std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]] << std::endl;
-                // std::cout << "compare delta: " << delta_q0_tmp[is] << " " << -mixbeta_coord * dq0_vec(is).real() << std::endl;
-                q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]]; //delta_q0_tmp[is];//delta_q0[harm_optical_modes[is]];
+                q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
             // update u tensor
             for (is = 0; is < 6; is++) {
-                delta_umn[is] = delta_vec[is+ns-3];//-mixbeta_cell * du_tensor_vec(is).real();
-                std::cout << "delta_umn[" << is << "] = " << delta_umn[is] << std::endl;
-                std::cout << "compare delta_umn : " << delta_vec[is+ns-3] << " " << -mixbeta_cell * du_tensor_vec(is).real() << std::endl;
+                delta_umn[is] = delta_vec[is+ns-3];
                 if (is < 3) {
                     u_tensor[is][is] += delta_umn[is];
                 } else {

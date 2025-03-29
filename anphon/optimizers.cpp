@@ -27,7 +27,6 @@ Newton_Optimizer::~Newton_Optimizer() {}
 
 Newton_Optimizer::Newton_Optimizer(double mixbeta) {
     this->mixbeta = mixbeta;
-    std::cout << "mixbeta = " << mixbeta << std::endl;
 }
 
 void Newton_Optimizer::update_state(const int dim,
@@ -104,13 +103,11 @@ void CellCoord_Newton_Optimizer::update_state(const int dim,
     cell_optimizer->update_state(6, grad_cell, state_cell, hessian_cell, delta_cell);
 
     for (int i = 0; i < dim-6; ++i) {
-        std::cout << i << std::endl;
         delta[i] = delta_coord[i];
         state_vec[i] = state_coord[i]; 
     }
 
     for (int i = 0; i < 6; ++i) {
-        std::cout << i << std::endl;
         delta[i + dim - 6] = delta_cell[i];
         state_vec[i + dim - 6] = state_cell[i];
     }
@@ -130,14 +127,12 @@ void FarkasIII_Optimizer::update_state(const int dim,
         state_tmp(i) = state_vec[i];
         grad_tmp(i) = grad_vec[i];
     }
-    std::cout << "call update" << std::endl;
     updated_state = this->update(state_tmp, grad_tmp);
 
     // write answer
     for(int i = 0; i < dim; ++i){
         delta[i] = updated_state(i) - state_vec[i];
         state_vec[i] = updated_state[i];
-        std::cout << "delta[" << i << "] = " << delta[i] << std::endl;
     }
 
 }

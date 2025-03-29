@@ -38,7 +38,7 @@ public:
                               std::vector<double> &state_vec,
                               const std::vector<std::vector<double>> &hessian,
                               std::vector<double> &delta)
-                            {std::cout << "Parent class" << std::endl;};
+                            {};
 };
 
 class Newton_Optimizer : public Optimizer{
@@ -88,10 +88,6 @@ class FarkasIII_Optimizer : public Optimizer{
           if(max_vectors==7) threshold_angle = 0.56;
           if(max_vectors==8) threshold_angle = 0.49;
           if(max_vectors==9) threshold_angle = 0.41;
-          
-          std::cout << "use FarkasIII_Optimizer" << std::endl;
-          std::cout << "max_vectors = " << max_vectors << std::endl;
-          std::cout << "threshold_angle = " << threshold_angle << std::endl;
       }
 
       void update_state(const int dim,
@@ -113,18 +109,17 @@ class FarkasIII_Optimizer : public Optimizer{
               Eigen::VectorXd s = point - point_old;
               Eigen::VectorXd y = gradient - gradient_old;
               double ys = y.dot(s);
-              // std::cout << "ys =\n" << ys << std::endl;
-              if ( ys > 1e-12 ) {  // 条件を満たす場合のみ更新
+
+              if ( ys > 1e-12 ) {  // Update when the condition is satisfied
                   Eigen::MatrixXd I = Eigen::MatrixXd::Identity(dim,dim);
                   Eigen::MatrixXd A = I - y * s.transpose() / ys;
                   H = A.transpose() * H * A + s * s.transpose() / ys;
-                  // std::cout << "H =\n" << H << std::endl;
               }
           }
           gradient_old = gradient;  
           point_old = point;
   
-          Eigen::VectorXd diff_GRAD = - 0.1 * gradient; // 0.1は通常の勾配法で用いる大きさの調整（理想的にはDIISに影響しない）
+          Eigen::VectorXd diff_GRAD = - 0.1 * gradient; // 0.1 is used for the gradient method (it is not used in BFGS)
           Eigen::VectorXd point_GRAD = point + diff_GRAD;
           // residuals.push_back(diff_GRAD); 
   
@@ -156,17 +151,15 @@ class FarkasIII_Optimizer : public Optimizer{
               result_residual += coeffs(i) * residuals[i];
           }
           Eigen::VectorXd point_DIIS = result_point + result_residual ;
-          std::cout << "point_DIIS = " << "result_point + result_residual" << std::endl;
           Eigen::VectorXd diff_REF = point_BFGS - point;
           Eigen::VectorXd diff_DIIS = point_DIIS - point;
           double cos_angle = diff_DIIS.dot(diff_REF)/( diff_DIIS.norm()*diff_REF.norm() );
           if(cos_angle < threshold_angle){
-              std::cout << "point_DIIS = point_BFGS" << std::endl;
               point_DIIS = point_BFGS;
           }
   
-          // return point_GRAD; // 勾配法単体を見たい場合
-          // return point_BFGS; // BFGS単体を評価したい場合
+          // return point_GRAD; // gradient method
+          // return point_BFGS; // BFGS method
           return point_DIIS; // 
       }
   private:
