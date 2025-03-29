@@ -39,6 +39,8 @@ public:
                               const std::vector<std::vector<double>> &hessian,
                               std::vector<double> &delta)
                             {};
+
+    int initialize_flag = 0; // flag to run initialization
 };
 
 class Newton_Optimizer : public Optimizer{
@@ -162,6 +164,10 @@ class FarkasIII_Optimizer : public Optimizer{
           // return point_BFGS; // BFGS method
           return point_DIIS; // 
       }
+
+      void set_inverse_Hessian(const int dim,
+                               const std::vector<std::vector<double>> &hessian);
+
   private:
       int max_vectors;
       Eigen::VectorXd point_old;

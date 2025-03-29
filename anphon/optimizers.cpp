@@ -12,6 +12,7 @@
 #include <fftw3.h>
 #include <iomanip>
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include <iomanip>
 
 
@@ -127,6 +128,12 @@ void FarkasIII_Optimizer::update_state(const int dim,
         state_tmp(i) = state_vec[i];
         grad_tmp(i) = grad_vec[i];
     }
+
+    if (initialize_flag == 1){
+        set_inverse_Hessian(dim, hessian);
+        initialize_flag = 0;
+    }
+
     updated_state = this->update(state_tmp, grad_tmp);
 
     // write answer
@@ -134,5 +141,18 @@ void FarkasIII_Optimizer::update_state(const int dim,
         delta[i] = updated_state(i) - state_vec[i];
         state_vec[i] = updated_state[i];
     }
+
+}
+
+void FarkasIII_Optimizer::set_inverse_Hessian(const int dim,
+    const std::vector<std::vector<double>> &hessian)
+{
+    Eigen::MatrixXd H_tmp(dim, dim);
+    for (int i = 0; i < dim; ++i) {
+        for (int j = 0; j < dim; ++j) {
+            H_tmp(i, j) = hessian[i][j];
+        }
+    }
+    H = H_tmp.inverse();
 
 }

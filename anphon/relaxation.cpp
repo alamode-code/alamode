@@ -283,6 +283,9 @@ void Relaxation::set_init_structure_atT(double *q0,
         converged_prev = false;
         str_diverged = 0;
 
+        // set the flag to initialize the optimizer
+        optimizer->initialize_flag = 1;
+
         return;
     }
 
@@ -303,6 +306,7 @@ void Relaxation::set_init_structure_atT(double *q0,
             set_initial_strain(u_tensor);
         }
         converged_prev = false;
+        optimizer->initialize_flag = 1;
 
         return;
     } else if (set_init_str == 2) {
@@ -320,6 +324,8 @@ void Relaxation::set_init_structure_atT(double *q0,
             } else {
                 set_initial_strain(u_tensor);
             }
+            converged_prev = false;
+            optimizer->initialize_flag = 1;
         } else {
             std::cout << " start from structure from the previous temperature.\n\n";
         }
@@ -341,6 +347,7 @@ void Relaxation::set_init_structure_atT(double *q0,
             } else {
                 set_initial_strain(u_tensor);
             }
+            optimizer->initialize_flag = 1;
         }
             // read initial DISPLACEMENT if the structure converges
             // to the high-symmetry one.
@@ -354,6 +361,7 @@ void Relaxation::set_init_structure_atT(double *q0,
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
             converged_prev = false;
+            optimizer->initialize_flag = 1;
         } else {
             std::cout << " start from the structure at the previous temperature.\n\n";
         }
