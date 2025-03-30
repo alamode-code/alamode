@@ -165,8 +165,11 @@ class FarkasIII_Optimizer : public Optimizer{
           return point_DIIS; // 
       }
 
+
       void set_inverse_Hessian(const int dim,
                                const std::vector<std::vector<double>> &hessian);
+    
+      void initialize_history();
 
   private:
       int max_vectors;

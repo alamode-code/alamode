@@ -131,6 +131,7 @@ void FarkasIII_Optimizer::update_state(const int dim,
 
     if (initialize_flag == 1){
         set_inverse_Hessian(dim, hessian);
+        initialize_history();
         initialize_flag = 0;
     }
 
@@ -155,4 +156,10 @@ void FarkasIII_Optimizer::set_inverse_Hessian(const int dim,
     }
     H = H_tmp.inverse();
 
+}
+
+void FarkasIII_Optimizer::initialize_history()
+{
+    points.clear();
+    residuals.clear();
 }
