@@ -365,6 +365,9 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     allocate(v4_with_umn, nk_irred_interpolate * kmesh_dense->nk,
              ns * ns, ns * ns);
 
+    relaxation->create_optimizer(ns);
+
+
     // Calculate v4 array.
     // This operation is the most expensive part of the calculation.
     if (scph->ialgo == 1) {

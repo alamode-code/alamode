@@ -1,40 +1,19 @@
-#include "mpi_common.h"
 #include "optimizers.h"
-#include "dynamical.h"
-#include "gruneisen.h"
-#include "system.h"
-#include "constants.h"
-#include "scph.h"
-#include "parsephon.h"
-#include "error.h"
 #include "timer.h"
-#include "mathfunctions.h"
-#include <fftw3.h>
 #include <iomanip>
 #include <Eigen/Core>
-#include <Eigen/LU>
-#include <iomanip>
-
 
 using namespace PHON_NS;
 
-Optimizer::Optimizer() {}
 
-Optimizer::~Optimizer() {}
-
-Newton_Optimizer::Newton_Optimizer() {}
-
-Newton_Optimizer::~Newton_Optimizer() {}
-
-Newton_Optimizer::Newton_Optimizer(double mixbeta) {
-    this->mixbeta = mixbeta;
-}
+Newton_Optimizer::Newton_Optimizer(double mixbeta) : mixbeta(mixbeta) {}
 
 void Newton_Optimizer::update_state(const int dim,
                                     const std::vector<double> &grad_vec,
                                     std::vector<double> &state_vec,
                                     const std::vector<std::vector<double>> &hessian,
-                                    std::vector<double> &delta) {
+                                    std::vector<double> &delta)
+{
 
     Eigen::MatrixXd hessian_matrix(dim, dim);
     Eigen::VectorXd grad(dim);
@@ -55,44 +34,43 @@ void Newton_Optimizer::update_state(const int dim,
     }
 }
 
-CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer() {}
 
-CellCoord_Newton_Optimizer::~CellCoord_Newton_Optimizer() {}
-
-CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer(double mixbeta_cell, double mixbeta_coord) {
+CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer(double mixbeta_cell, double mixbeta_coord)
+{
     this->mixbeta_cell = mixbeta_cell;
     this->mixbeta_coord = mixbeta_coord;
 
-    cell_optimizer = new Newton_Optimizer(mixbeta_cell);
-    coord_optimizer = new Newton_Optimizer(mixbeta_coord);
+    cell_optimizer = std::make_unique<Newton_Optimizer>(mixbeta_cell);
+    coord_optimizer = std::make_unique<Newton_Optimizer>(mixbeta_coord);
 }
 
 void CellCoord_Newton_Optimizer::update_state(const int dim,
                                               const std::vector<double> &grad_vec,
                                               std::vector<double> &state_vec,
                                               const std::vector<std::vector<double>> &hessian,
-                                              std::vector<double> &delta) {
+                                              std::vector<double> &delta)
+{
 
     std::vector<double> grad_cell(6);
     std::vector<double> state_cell(6);
     std::vector<double> delta_cell(6);
     std::vector<std::vector<double>> hessian_cell(6, std::vector<double>(6));
 
-    std::vector<double> grad_coord(dim-6);
-    std::vector<double> state_coord(dim-6);
-    std::vector<double> delta_coord(dim-6);
-    std::vector<std::vector<double>> hessian_coord(dim-6, std::vector<double>(dim-6));
+    std::vector<double> grad_coord(dim - 6);
+    std::vector<double> state_coord(dim - 6);
+    std::vector<double> delta_coord(dim - 6);
+    std::vector<std::vector<double>> hessian_coord(dim - 6, std::vector<double>(dim - 6));
 
 
-    for (int i = 0; i < dim-6; ++i) {
+    for (int i = 0; i < dim - 6; ++i) {
         grad_coord[i] = grad_vec[i];
         state_coord[i] = state_vec[i];
-        for (int j = 0; j < dim-6; ++j) {
+        for (int j = 0; j < dim - 6; ++j) {
             hessian_coord[i][j] = hessian[i][j];
         }
     }
 
-    for(int i = 0; i < 6; ++i){
+    for (int i = 0; i < 6; ++i) {
         grad_cell[i] = grad_vec[i + dim - 6];
         state_cell[i] = state_vec[i + dim - 6];
         for (int j = 0; j < 6; ++j) {
@@ -100,12 +78,12 @@ void CellCoord_Newton_Optimizer::update_state(const int dim,
         }
     }
 
-    coord_optimizer->update_state(dim-6, grad_coord, state_coord, hessian_coord, delta_coord);
+    coord_optimizer->update_state(dim - 6, grad_coord, state_coord, hessian_coord, delta_coord);
     cell_optimizer->update_state(6, grad_cell, state_cell, hessian_cell, delta_cell);
 
-    for (int i = 0; i < dim-6; ++i) {
+    for (int i = 0; i < dim - 6; ++i) {
         delta[i] = delta_coord[i];
-        state_vec[i] = state_coord[i]; 
+        state_vec[i] = state_coord[i];
     }
 
     for (int i = 0; i < 6; ++i) {
@@ -124,12 +102,12 @@ void FarkasIII_Optimizer::update_state(const int dim,
     Eigen::VectorXd grad_tmp(dim);
     Eigen::VectorXd updated_state(dim);
 
-    for(int i = 0; i < dim; ++i){
+    for (int i = 0; i < dim; ++i) {
         state_tmp(i) = state_vec[i];
         grad_tmp(i) = grad_vec[i];
     }
 
-    if (initialize_flag == 1){
+    if (initialize_flag == 1) {
         set_inverse_Hessian(dim, hessian);
         initialize_history();
         initialize_flag = 0;
@@ -138,7 +116,7 @@ void FarkasIII_Optimizer::update_state(const int dim,
     updated_state = this->update(state_tmp, grad_tmp);
 
     // write answer
-    for(int i = 0; i < dim; ++i){
+    for (int i = 0; i < dim; ++i) {
         delta[i] = updated_state(i) - state_vec[i];
         state_vec[i] = updated_state[i];
     }
@@ -146,7 +124,7 @@ void FarkasIII_Optimizer::update_state(const int dim,
 }
 
 void FarkasIII_Optimizer::set_inverse_Hessian(const int dim,
-    const std::vector<std::vector<double>> &hessian)
+                                              const std::vector<std::vector<double>> &hessian)
 {
     Eigen::MatrixXd H_tmp(dim, dim);
     for (int i = 0; i < dim; ++i) {

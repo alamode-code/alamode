@@ -8,22 +8,17 @@ Please see the file 'LICENCE.txt' in the root directory
 or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "relaxation.h"
 #include "dynamical.h"
 #include "gruneisen.h"
 #include "system.h"
-#include "constants.h"
 #include "scph.h"
 #include "parsephon.h"
 #include "error.h"
 #include "timer.h"
-#include "mathfunctions.h"
 #include <fftw3.h>
 #include <iomanip>
 #include <Eigen/Core>
-#include <iomanip>
-
 #include "optimizers.h"
 
 using namespace PHON_NS;
@@ -73,6 +68,24 @@ void Relaxation::setup_relaxation()
 
     V0.resize(NT);
     std::fill(V0.begin(), V0.end(), 0.0);
+}
+
+void Relaxation::create_optimizer(const size_t num_modes)
+{
+    if (relax_str == 1 && relax_algo == 2){
+        optimizer = std::make_unique<Newton_Optimizer>(mixbeta_coord);
+    }
+    else if (relax_str == 2 && relax_algo == 2){
+        optimizer = std::make_unique<CellCoord_Newton_Optimizer>(mixbeta_cell, mixbeta_coord);
+    }
+    else if (relax_str == 1 && relax_algo == 3){
+        Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes-3, num_modes-3);
+        optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
+    }
+    else if (relax_str == 2 && relax_algo == 3){
+        Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes+3, num_modes+3);
+        optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
+    }
 }
 
 void Relaxation::load_V0_from_file()
@@ -263,6 +276,8 @@ void Relaxation::set_init_structure_atT(double *q0,
 
     int i1, i2;
 
+    optimizer->initialize_flag = 1;
+
     if (str_diverged) {
         std::cout << " The crystal structure at the previous temperature is divergent.\n";
         std::cout << " read initial structure from input files.\n\n";
@@ -325,7 +340,9 @@ void Relaxation::set_init_structure_atT(double *q0,
                 set_initial_strain(u_tensor);
             }
             converged_prev = false;
+            std::cout << "HOGE1\n" << std::flush;
             optimizer->initialize_flag = 1;
+            std::cout << "HOGE2\n" << std::flush;
         } else {
             std::cout << " start from structure from the previous temperature.\n\n";
         }
@@ -459,17 +476,16 @@ void Relaxation::update_cell_coordinate(double *q0,
     double Ry_to_kayser_tmp = Hz_to_kayser / time_ry;
     double add_hess_diag_omega2 = std::pow(add_hess_diag / Ry_to_kayser_tmp, 2);
 
-    if (relax_str == 1){
-        delta_vec.assign(ns-3, 0.0);
-        state_vec.assign(ns-3, 0.0);
-        grad_vec.assign(ns-3, 0.0);
-        hessian_mat.assign(ns-3, std::vector<double>(ns-3, 0.0));
-    }
-    else if (relax_str == 2){
-        delta_vec.assign(ns+3, 0.0);
-        state_vec.assign(ns+3, 0.0);
-        grad_vec.assign(ns+3, 0.0);
-        hessian_mat.assign(ns+3, std::vector<double>(ns+3, 0.0));
+    if (relax_str == 1) {
+        delta_vec.assign(ns - 3, 0.0);
+        state_vec.assign(ns - 3, 0.0);
+        grad_vec.assign(ns - 3, 0.0);
+        hessian_mat.assign(ns - 3, std::vector<double>(ns - 3, 0.0));
+    } else if (relax_str == 2) {
+        delta_vec.assign(ns + 3, 0.0);
+        state_vec.assign(ns + 3, 0.0);
+        grad_vec.assign(ns + 3, 0.0);
+        hessian_mat.assign(ns + 3, std::vector<double>(ns + 3, 0.0));
     }
 
     for (is = 0; is < ns; is++) {
@@ -511,15 +527,15 @@ void Relaxation::update_cell_coordinate(double *q0,
             grad_vec[is] = v1_array_atT[harm_optical_modes[is]].real();
             state_vec[is] = q0[harm_optical_modes[is]];
         }
-        
-        if (relax_str == 1){
+
+        if (relax_str == 1) {
             // call optimizer
-            optimizer->update_state(ns-3,
+            optimizer->update_state(ns - 3,
                                     grad_vec,
                                     state_vec,
                                     hessian_mat,
                                     delta_vec);
-            
+
             // update q0
             for (is = 0; is < ns - 3; is++) {
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];
@@ -533,8 +549,7 @@ void Relaxation::update_cell_coordinate(double *q0,
                     u_tensor[i1][i2] = 0.0;
                 }
             }
-        }
-        else if (relax_str == 2) {
+        } else if (relax_str == 2) {
             // prepare matrix of elastic constants and vector of del_v0_strain_atT
             for (itmp1 = 0; itmp1 < 3; itmp1++) {
                 del_v0_strain_vec(itmp1) = del_v0_strain_atT[itmp1 * 3 + itmp1];
@@ -568,18 +583,18 @@ void Relaxation::update_cell_coordinate(double *q0,
             }
 
             // write C2mat to hessian matrix
-            for (itmp1 = 0; itmp1 < 6; itmp1++){
-                for(itmp2 = 0; itmp2 < 6; itmp2++){
-                    hessian_mat[itmp1+ns-3][itmp2+ns-3] = C2_mat_tmp(itmp1, itmp2).real();
+            for (itmp1 = 0; itmp1 < 6; itmp1++) {
+                for (itmp2 = 0; itmp2 < 6; itmp2++) {
+                    hessian_mat[itmp1 + ns - 3][itmp2 + ns - 3] = C2_mat_tmp(itmp1, itmp2).real();
                 }
             }
             // write to grad vector
-            for (itmp1 = 0; itmp1 < 6; itmp1++){
-                grad_vec[itmp1+ns-3] = del_v0_strain_vec(itmp1).real();
+            for (itmp1 = 0; itmp1 < 6; itmp1++) {
+                grad_vec[itmp1 + ns - 3] = del_v0_strain_vec(itmp1).real();
             }
 
             // call optimizer
-            optimizer->update_state(ns+3,
+            optimizer->update_state(ns + 3,
                                     grad_vec,
                                     state_vec,
                                     hessian_mat,
@@ -589,12 +604,13 @@ void Relaxation::update_cell_coordinate(double *q0,
             std::cout << "update state";
             for (is = 0; is < ns - 3; is++) {
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];
-                std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]] << std::endl;
+                std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]]
+                          << std::endl;
                 q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
             // update u tensor
             for (is = 0; is < 6; is++) {
-                delta_umn[is] = delta_vec[is+ns-3];
+                delta_umn[is] = delta_vec[is + ns - 3];
                 if (is < 3) {
                     u_tensor[is][is] += delta_umn[is];
                 } else {
@@ -1841,13 +1857,13 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         for (const auto &it: fc2_deformed[imode]) {
 ///            dphi2_dumn_realspace_tmp[it.atm1 * 3 + it.xyz1][it.atm2 * 3 + it.xyz2] += it.fcs_val;
             // 
-            index2 = system->get_map_p2s(0)[it.pairs[1].index/3][it.pairs[1].tran];
-            dphi2_dumn_realspace_tmp[it.pairs[0].index][index2*3 + it.pairs[1].index%3] += it.fcs_val;
+            index2 = system->get_map_p2s(0)[it.pairs[1].index / 3][it.pairs[1].tran];
+            dphi2_dumn_realspace_tmp[it.pairs[0].index][index2 * 3 + it.pairs[1].index % 3] += it.fcs_val;
         }
         for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
 //            dphi2_dumn_realspace_tmp[it.atm1 * 3 + it.xyz1][it.atm2 * 3 + it.xyz2] -= it.fcs_val;
-            index2 = system->get_map_p2s(0)[it.pairs[1].index/3][it.pairs[1].tran];
-            dphi2_dumn_realspace_tmp[it.pairs[0].index][index2*3 + it.pairs[1].index%3] -= it.fcs_val;
+            index2 = system->get_map_p2s(0)[it.pairs[1].index / 3][it.pairs[1].tran];
+            dphi2_dumn_realspace_tmp[it.pairs[0].index][index2 * 3 + it.pairs[1].index % 3] -= it.fcs_val;
         }
 
         if (ixyz1 == ixyz2) {
@@ -2759,7 +2775,8 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
             vec_origin[i] = system->get_supercell(1).x_fractional(system->get_map_p2s(1)[it.pairs[0].index / 3][0], i);
             for (j = 1; j < norder - 1; j++) {
                 vec_origin[i] +=
-                        system->get_supercell(1).x_fractional(system->get_map_p2s(1)[it.pairs[j].index / 3][it.pairs[j].tran], i)
+                        system->get_supercell(1).x_fractional(
+                                system->get_map_p2s(1)[it.pairs[j].index / 3][it.pairs[j].tran], i)
                         + dynamical->get_xrs_image()[it.pairs[j].cell_s][i];
             }
             vec_origin[i] /= static_cast<double>(norder - 1);
@@ -2771,7 +2788,8 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
         // vec_origin /= static_cast<double>(nelems);
 
         for (i = 0; i < 3; ++i) {
-            vec[i] = system->get_supercell(1).x_fractional(system->get_map_p2s(1)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran], i)
+            vec[i] = system->get_supercell(1).x_fractional(
+                    system->get_map_p2s(1)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran], i)
                      - vec_origin[i]
                      + dynamical->get_xrs_image()[it.pairs[norder - 1].cell_s][i];
         }
@@ -2792,7 +2810,7 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
         //     }
         //     std::cout << std::setw(20) << it.fcs_val;
         //     std::cout << std::setw(20) << vec[ixyz2] << '\n';
-    
+
         // }
     }
 
@@ -2951,7 +2969,8 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
             vec_origin[i] = system->get_supercell(2).x_fractional(system->get_map_p2s(2)[it.pairs[0].index / 3][0], i);
             for (j = 1; j < norder - 2; j++) {
                 vec_origin[i] +=
-                        system->get_supercell(2).x_fractional(system->get_map_p2s(2)[it.pairs[j].index / 3][it.pairs[j].tran], i)
+                        system->get_supercell(2).x_fractional(
+                                system->get_map_p2s(2)[it.pairs[j].index / 3][it.pairs[j].tran], i)
                         + dynamical->get_xrs_image()[it.pairs[j].cell_s][i];
             }
             vec_origin[i] /= static_cast<double>(norder - 2);
@@ -2973,10 +2992,12 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
 
 
         for (i = 0; i < 3; ++i) {
-            vec1[i] = system->get_supercell(2).x_fractional(system->get_map_p2s(2)[it.pairs[norder - 2].index / 3][it.pairs[norder - 2].tran], i)
+            vec1[i] = system->get_supercell(2).x_fractional(
+                    system->get_map_p2s(2)[it.pairs[norder - 2].index / 3][it.pairs[norder - 2].tran], i)
                       - vec_origin[i]
                       + dynamical->get_xrs_image()[it.pairs[norder - 2].cell_s][i];
-            vec2[i] = system->get_supercell(2).x_fractional(system->get_map_p2s(2)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran], i)
+            vec2[i] = system->get_supercell(2).x_fractional(
+                    system->get_map_p2s(2)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran], i)
                       - vec_origin[i]
                       + dynamical->get_xrs_image()[it.pairs[norder - 1].cell_s][i];
         }

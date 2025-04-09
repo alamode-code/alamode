@@ -12,6 +12,7 @@
 
 #include "pointers.h"
 #include <complex>
+#include <memory>
 #include "kpoint.h"
 #include "fcs_phonon.h"
 #include "scph.h"
@@ -55,7 +56,9 @@ public:
     int renorm_34to1st;
     std::string strain_IFC_dir;
 
-    Optimizer * optimizer;
+    std::unique_ptr<Optimizer> optimizer;
+
+    void create_optimizer(const size_t num_modes);
 
     void setup_relaxation();
 

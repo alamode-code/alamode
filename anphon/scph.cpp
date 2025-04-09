@@ -1257,20 +1257,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 //             ns * ns, ns * ns);
 
     // initialize optimizer
-    if (relaxation->relax_str == 1 & relaxation->relax_algo == 2){
-        relaxation->optimizer = new Newton_Optimizer(relaxation->mixbeta_coord);
-    }
-    else if (relaxation->relax_str == 2 & relaxation->relax_algo == 2){
-        relaxation->optimizer = new CellCoord_Newton_Optimizer(relaxation->mixbeta_cell, relaxation->mixbeta_coord);
-    }
-    else if (relaxation->relax_str == 1 & relaxation->relax_algo == 3){
-        Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(ns-3, ns-3);
-        relaxation->optimizer = new FarkasIII_Optimizer(6, H_init);
-    }
-    else if (relaxation->relax_str == 2 & relaxation->relax_algo == 3){
-        Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(ns+3, ns+3);
-        relaxation->optimizer = new FarkasIII_Optimizer(6, H_init);
-    }
+    relaxation->create_optimizer(ns);
 
     // Compute matrix element of 4-phonon interaction
     // This operation is the most expensive part of the calculation.
