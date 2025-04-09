@@ -987,7 +987,7 @@ class AlamodeDisplace(object):
 
         nmode = int(f.readline().split(":")[1])
         nq = int(f.readline().split(":")[1])
-        # nkd = int(f.readline().split(":")[1])
+        _nkd = int(f.readline().split(":")[1])
         mass = [float(t) for t in f.readline().split(":")[1].split()]
         # skip 3 lines
         for _ in range(3):

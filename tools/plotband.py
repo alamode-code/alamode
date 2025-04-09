@@ -14,14 +14,9 @@
 import optparse
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
-
-try:
-    mpl.use("Qt5")
-except ModuleNotFoundError:
-    pass
-import matplotlib.pyplot as plt
 
 # parser options
 
