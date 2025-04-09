@@ -42,7 +42,7 @@ jobs:
           key: conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('etc/alamode-environment.yml') }}-${{ env.CACHE_NUMBER }}
         id: cache
       - name: Update environment
-        run: conda env update -n anaconda-client-env -f etc/alamode-environment.yml
+        run: conda env update -n alamode -f etc/alamode-environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - run: |
           conda info
