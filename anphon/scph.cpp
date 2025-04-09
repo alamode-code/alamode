@@ -8,6 +8,7 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
+#include "mpi.h"
 #include "mpi_common.h"
 #include "scph.h"
 #include "dynamical.h"
@@ -1173,7 +1174,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     // k-space IFCs at the reference and updated structures
     std::complex<double> *v1_ref, *v1_renorm, *v1_with_umn;
     std::complex<double> ***v3_ref, ***v3_renorm, ***v3_with_umn;
-    std::complex<double> ***v4_ref, ***v4_renorm, ***v4_with_umn;
+    std::complex<double> ***v4_ref; //, ***v4_renorm, ***v4_with_umn;
     double v0_ref, v0_renorm, v0_with_umn;
     v0_ref = 0.0; // set original ground state energy as zero
 
@@ -1249,10 +1250,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
     allocate(v4_ref, nk_irred_interpolate * kmesh_dense->nk,
              ns * ns, ns * ns);
-    allocate(v4_renorm, nk_irred_interpolate * kmesh_dense->nk,
-             ns * ns, ns * ns);
-    allocate(v4_with_umn, nk_irred_interpolate * kmesh_dense->nk,
-             ns * ns, ns * ns);
+//    allocate(v4_renorm, nk_irred_interpolate * kmesh_dense->nk,
+//             ns * ns, ns * ns);
+//    allocate(v4_with_umn, nk_irred_interpolate * kmesh_dense->nk,
+//             ns * ns, ns * ns);
 
     // Compute matrix element of 4-phonon interaction
     // This operation is the most expensive part of the calculation.
@@ -1495,26 +1496,26 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 relaxation->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, v3_with_umn, v3_ref, del_v3_del_umn,
                                                     u_tensor);
 
-                for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
-                    for (is = 0; is < ns * ns; is++) {
-                        for (is1 = 0; is1 < ns * ns; is1++) {
-                            v4_with_umn[ik][is][is1] = v4_ref[ik][is][is1];
-                        }
-                    }
-                }
+//                for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
+//                    for (is = 0; is < ns * ns; is++) {
+//                        for (is1 = 0; is1 < ns * ns; is1++) {
+//                            v4_with_umn[ik][is][is1] = v4_ref[ik][is][is1];
+//                        }
+//                    }
+//                }
 
                 //renormalize IFC
                 relaxation->renormalize_v1_from_q0(omega2_harmonic, kmesh_coarse, kmesh_dense,
-                                                   v1_renorm, v1_with_umn, delta_v2_with_umn, v3_with_umn, v4_with_umn,
+                                                   v1_renorm, v1_with_umn, delta_v2_with_umn, v3_with_umn, v4_ref,
                                                    q0);
                 relaxation->renormalize_v2_from_q0(evec_harmonic, kmesh_coarse, kmesh_dense, kmap_interpolate_to_scph,
                                                    mat_transform_sym,
-                                                   delta_v2_renorm, delta_v2_with_umn, v3_with_umn, v4_with_umn, q0);
+                                                   delta_v2_renorm, delta_v2_with_umn, v3_with_umn, v4_ref, q0);
                 relaxation->renormalize_v3_from_q0(kmesh_dense, kmesh_coarse, v3_renorm, v3_with_umn,
-                                                   v4_with_umn, q0);
+                                                   v4_ref, q0);
                 relaxation->renormalize_v0_from_q0(omega2_harmonic, kmesh_dense,
                                                    v0_renorm, v0_with_umn, v1_with_umn, delta_v2_with_umn, v3_with_umn,
-                                                   v4_with_umn,
+                                                   v4_ref,
                                                    q0);
 
                 // calculate PES gradient by strain
@@ -1533,16 +1534,16 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
 
                 // copy v4_ref to v4_renorm
-                for (ik = 0; ik < nk_irred_interpolate * kmesh_dense->nk; ik++) {
-                    for (is1 = 0; is1 < ns * ns; is1++) {
-                        for (is2 = 0; is2 < ns * ns; is2++) {
-                            v4_renorm[ik][is1][is2] = v4_ref[ik][is1][is2];
-                        }
-                    }
-                }
+//                for (ik = 0; ik < nk_irred_interpolate * kmesh_dense->nk; ik++) {
+//                    for (is1 = 0; is1 < ns * ns; is1++) {
+//                        for (is2 = 0; is2 < ns * ns; is2++) {
+//                            v4_renorm[ik][is1][is2] = v4_ref[ik][is1][is2];
+//                        }
+//                    }
+//                }
 
                 // solve SCP equation
-                compute_anharmonic_frequency(v4_renorm,
+                compute_anharmonic_frequency(v4_ref,
                                              omega2_anharm[iT],
                                              evec_anharm_tmp,
                                              temp,
@@ -1718,8 +1719,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(v3_renorm);
     deallocate(v3_with_umn);
     deallocate(v4_ref);
-    deallocate(v4_renorm);
-    deallocate(v4_with_umn);
+//    deallocate(v4_renorm);
+//    deallocate(v4_with_umn);
 
 
     deallocate(del_v1_del_umn);
@@ -3318,7 +3319,7 @@ void Scph::setup_eigvecs()
 
     // Calculate phonon eigenvalues and eigenvectors for all k-points for scph
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int ik = 0; ik < kmesh_dense->nk; ++ik) {
 
         dynamical->eval_k(kmesh_dense->xk[ik],
@@ -3691,27 +3692,6 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all,
             mat_tmp = evec_initial[knum] * saes.eigenvectors();
             Dymat = mat_tmp * eval_tmp.asDiagonal() * mat_tmp.adjoint();
 
-#ifdef _DEBUG2
-                                                                                                                                    Dymat_sym = Dymat;
-            symmetrize_dynamical_matrix(ik, Dymat_sym);
-            std::complex<double> **dymat_exact;
-            allocate(dymat_exact, ns, ns);
-            std::cout << "ik = " << ik + 1 << '\n';
-            std::cout << "Dymat" << '\n';
-            std::cout << Dymat << '\n';
-            std::cout << "Dymat_sym" << '\n';
-            std::cout << Dymat_sym << '\n';
-            dynamical->calc_analytic_k(xk_interpolate[knum_interpolate], fcs_phonon->fc2_ext, dymat_exact);
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    Dymat_sym(is,js) = dymat_exact[is][js];
-                }
-            }
-            std::cout << "Dymat_exact" << '\n';
-            std::cout << Dymat_sym << '\n';
-            deallocate(dymat_exact);jjj
-
-#endif
             dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse, mat_transform_sym,
                                                    Dymat);
             for (is = 0; is < ns; ++is) {
@@ -3723,36 +3703,6 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all,
         dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse,
                                                    mat_transform_sym,
                                                    dymat_q);
-#ifdef _DEBUG2
-                                                                                                                                for (ik = 0; ik < nk_interpolate; ++ik) {
-
-            knum = kmap_interpolate_to_scph[ik];
-
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    Dymat(is,js) = dymat_q[is][js][ik];
-                }
-            }
-
-            saes.compute(Dymat);
-            eval_tmp = saes.eigenvalues();
-
-            for (is = 0; is < ns; ++is) {
-                eval_orig(is) = omega2_harmonic(knum,is);
-            }
-
-            std::cout << " ik = " << std::setw(4) << ik + 1 << " : ";
-            for (i = 0; i < 3; ++i)  std::cout << std::setw(15) << xk_scph[knum][i];
-            std::cout << '\n';
-
-            for (is = 0; is < ns; ++is) {
-                std::cout << std::setw(15) << eval_tmp(is);
-                std::cout << std::setw(15) << eval_orig(is);
-                std::cout << std::setw(15) << eval_tmp(is) - eval_orig(is) << '\n';
-            }
-
-        }
-#endif
 
         // Subtract harmonic contribution to the dynamical matrix
         for (ik = 0; ik < nk_interpolate; ++ik) {
@@ -3796,8 +3746,6 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all,
                 }
             }
 
-
-//            Cmat = evec_initial[ik].adjoint() * evec_tmp;
             Cmat = evec_initial_adjoint[ik] * evec_tmp;
 
             for (is = 0; is < ns; ++is) {
