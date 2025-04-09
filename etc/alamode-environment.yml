@@ -12,3 +12,5 @@ dependencies:
   - boost
   - eigen
   - cmake>=3.17,<4.0.0
+  - openmpi
+  - fftw
