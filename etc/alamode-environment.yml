@@ -11,4 +11,4 @@ dependencies:
   - spglib
   - boost
   - eigen
-  - cmake
+  - cmake>=3.17,<4.0.0
