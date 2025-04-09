@@ -24,6 +24,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <Eigen/Core>
 #include <iomanip>
 
+#include "optimizers.h"
+
 using namespace PHON_NS;
 
 Relaxation::Relaxation(PHON *phon) : Pointers(phon)
@@ -281,6 +283,9 @@ void Relaxation::set_init_structure_atT(double *q0,
         converged_prev = false;
         str_diverged = 0;
 
+        // set the flag to initialize the optimizer
+        optimizer->initialize_flag = 1;
+
         return;
     }
 
@@ -301,6 +306,7 @@ void Relaxation::set_init_structure_atT(double *q0,
             set_initial_strain(u_tensor);
         }
         converged_prev = false;
+        optimizer->initialize_flag = 1;
 
         return;
     } else if (set_init_str == 2) {
@@ -318,6 +324,8 @@ void Relaxation::set_init_structure_atT(double *q0,
             } else {
                 set_initial_strain(u_tensor);
             }
+            converged_prev = false;
+            optimizer->initialize_flag = 1;
         } else {
             std::cout << " start from structure from the previous temperature.\n\n";
         }
@@ -339,6 +347,7 @@ void Relaxation::set_init_structure_atT(double *q0,
             } else {
                 set_initial_strain(u_tensor);
             }
+            optimizer->initialize_flag = 1;
         }
             // read initial DISPLACEMENT if the structure converges
             // to the high-symmetry one.
@@ -352,6 +361,7 @@ void Relaxation::set_init_structure_atT(double *q0,
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
             converged_prev = false;
+            optimizer->initialize_flag = 1;
         } else {
             std::cout << " start from the structure at the previous temperature.\n\n";
         }
@@ -437,15 +447,30 @@ void Relaxation::update_cell_coordinate(double *q0,
     int itmp1, itmp2, itmp3, itmp4, itmp5, itmp6;
 
     MatrixXcd Cmat(ns, ns), v2_mat_full(ns, ns);
-    MatrixXcd v2_mat_optical(ns - 3, ns - 3);
-    VectorXcd dq0_vec(ns - 3), v1_vec_atT(ns - 3);
+    std::vector<double> grad_vec;
+    std::vector<double> delta_vec;
+    std::vector<double> state_vec;
+    std::vector<std::vector<double>> hessian_mat;
 
     MatrixXcd C2_mat_tmp(6, 6);
-    VectorXcd du_tensor_vec(6), del_v0_strain_vec(6);
+    VectorXcd del_v0_strain_vec(6);
 
 
     double Ry_to_kayser_tmp = Hz_to_kayser / time_ry;
     double add_hess_diag_omega2 = std::pow(add_hess_diag / Ry_to_kayser_tmp, 2);
+
+    if (relax_str == 1){
+        delta_vec.assign(ns-3, 0.0);
+        state_vec.assign(ns-3, 0.0);
+        grad_vec.assign(ns-3, 0.0);
+        hessian_mat.assign(ns-3, std::vector<double>(ns-3, 0.0));
+    }
+    else if (relax_str == 2){
+        delta_vec.assign(ns+3, 0.0);
+        state_vec.assign(ns+3, 0.0);
+        grad_vec.assign(ns+3, 0.0);
+        hessian_mat.assign(ns+3, std::vector<double>(ns+3, 0.0));
+    }
 
     for (is = 0; is < ns; is++) {
         delta_q0[is] = 0.0;
@@ -463,7 +488,7 @@ void Relaxation::update_cell_coordinate(double *q0,
             delta_q0[is] = -alpha_steepest_decent * v1_array_atT[is].real();
             q0[is] += delta_q0[is];
         }
-    } else if (relax_algo == 2) { // iterative solution of linear equation
+    } else if (relax_algo >= 2) { // iterative solution of linear equation
 
         // prepare harmonic IFC matrix
         for (is = 0; is < ns; is++) {
@@ -475,26 +500,31 @@ void Relaxation::update_cell_coordinate(double *q0,
         }
         v2_mat_full = Cmat.adjoint() * v2_mat_full * Cmat;
 
+        // set gradient, hessian, and current state
         for (is = 0; is < ns - 3; is++) {
             for (js = 0; js < ns - 3; js++) {
-                v2_mat_optical(is, js) = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]);
+                hessian_mat[is][js] = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]).real();
             }
-            v2_mat_optical(is, is) += add_hess_diag_omega2;
+            hessian_mat[is][is] += add_hess_diag_omega2;
         }
-        // solve linear equation
         for (is = 0; is < ns - 3; is++) {
-            v1_vec_atT(is) = v1_array_atT[harm_optical_modes[is]];
+            grad_vec[is] = v1_array_atT[harm_optical_modes[is]].real();
+            state_vec[is] = q0[harm_optical_modes[is]];
         }
-
-        dq0_vec = v2_mat_optical.colPivHouseholderQr().solve(v1_vec_atT);
-
-        // update q0
-        for (is = 0; is < ns - 3; is++) {
-            delta_q0[harm_optical_modes[is]] = -mixbeta_coord * dq0_vec(is).real();
-            q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
-        }
-
-        if (relax_str == 1) {
+        
+        if (relax_str == 1){
+            // call optimizer
+            optimizer->update_state(ns-3,
+                                    grad_vec,
+                                    state_vec,
+                                    hessian_mat,
+                                    delta_vec);
+            
+            // update q0
+            for (is = 0; is < ns - 3; is++) {
+                delta_q0[harm_optical_modes[is]] = delta_vec[is];
+                q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
+            }
             for (i1 = 0; i1 < 6; i1++) {
                 delta_umn[i1] = 0.0;
             }
@@ -503,7 +533,8 @@ void Relaxation::update_cell_coordinate(double *q0,
                     u_tensor[i1][i2] = 0.0;
                 }
             }
-        } else if (relax_str == 2) {
+        }
+        else if (relax_str == 2) {
             // prepare matrix of elastic constants and vector of del_v0_strain_atT
             for (itmp1 = 0; itmp1 < 3; itmp1++) {
                 del_v0_strain_vec(itmp1) = del_v0_strain_atT[itmp1 * 3 + itmp1];
@@ -536,11 +567,34 @@ void Relaxation::update_cell_coordinate(double *q0,
                 }
             }
 
-            du_tensor_vec = C2_mat_tmp.colPivHouseholderQr().solve(del_v0_strain_vec);
+            // write C2mat to hessian matrix
+            for (itmp1 = 0; itmp1 < 6; itmp1++){
+                for(itmp2 = 0; itmp2 < 6; itmp2++){
+                    hessian_mat[itmp1+ns-3][itmp2+ns-3] = C2_mat_tmp(itmp1, itmp2).real();
+                }
+            }
+            // write to grad vector
+            for (itmp1 = 0; itmp1 < 6; itmp1++){
+                grad_vec[itmp1+ns-3] = del_v0_strain_vec(itmp1).real();
+            }
 
+            // call optimizer
+            optimizer->update_state(ns+3,
+                                    grad_vec,
+                                    state_vec,
+                                    hessian_mat,
+                                    delta_vec);
+
+            // update q0
+            std::cout << "update state";
+            for (is = 0; is < ns - 3; is++) {
+                delta_q0[harm_optical_modes[is]] = delta_vec[is];
+                std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]] << std::endl;
+                q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
+            }
             // update u tensor
             for (is = 0; is < 6; is++) {
-                delta_umn[is] = -mixbeta_cell * du_tensor_vec(is).real();
+                delta_umn[is] = delta_vec[is+ns-3];
                 if (is < 3) {
                     u_tensor[is][is] += delta_umn[is];
                 } else {

@@ -111,6 +111,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/phonon_dos.cpp
             ${PROJECT_SOURCE_DIR}/phonon_velocity.cpp
             ${PROJECT_SOURCE_DIR}/phonons.cpp
+            ${PROJECT_SOURCE_DIR}/optimizers.cpp
             ${PROJECT_SOURCE_DIR}/qha.cpp
             ${PROJECT_SOURCE_DIR}/relaxation.cpp
             ${PROJECT_SOURCE_DIR}/scph.cpp
@@ -143,6 +144,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/phonon_velocity.h
             ${PROJECT_SOURCE_DIR}/phonons.h
             ${PROJECT_SOURCE_DIR}/pointers.h
+            ${PROJECT_SOURCE_DIR}/optimizers.h
             ${PROJECT_SOURCE_DIR}/qha.h
             ${PROJECT_SOURCE_DIR}/relaxation.h
             ${PROJECT_SOURCE_DIR}/scph.h

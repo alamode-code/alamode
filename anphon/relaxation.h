@@ -16,6 +16,7 @@
 #include "fcs_phonon.h"
 #include "scph.h"
 #include "gruneisen.h"
+#include "optimizers.h"
 
 namespace PHON_NS {
 class Relaxation : protected Pointers {
@@ -53,6 +54,8 @@ public:
     int renorm_2to1st;
     int renorm_34to1st;
     std::string strain_IFC_dir;
+
+    Optimizer * optimizer;
 
     void setup_relaxation();
 
