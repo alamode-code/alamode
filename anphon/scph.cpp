@@ -1251,10 +1251,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
     allocate(v4_ref, nk_irred_interpolate * kmesh_dense->nk,
              ns * ns, ns * ns);
-//    allocate(v4_renorm, nk_irred_interpolate * kmesh_dense->nk,
-//             ns * ns, ns * ns);
-//    allocate(v4_with_umn, nk_irred_interpolate * kmesh_dense->nk,
-//             ns * ns, ns * ns);
 
     // initialize optimizer
     relaxation->create_optimizer(ns);
