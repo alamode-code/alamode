@@ -51,7 +51,7 @@ void System::set_default_variables()
     load_primitive_from_file = 0;
     symbol_kd.clear();
     mass_kd.clear();
-    tolerance_for_coordinates = 1.0e-5;
+    tolerance_for_coordinates = 1.0e-4;
 }
 
 void System::deallocate_variables()
@@ -884,6 +884,13 @@ void System::update_primitive_lattice()
                     magmom_unique.emplace_back(magmom_tmp_vec);
                 }
             }
+        }
+
+        for (const auto &it : xf_unique) {
+            for (const auto &it2: it) {
+                std::cout << std::setw(15)  << it2;
+            }
+            std::cout << '\n';
         }
 
         if (xf_unique.size() != primcell.number_of_atoms) {

@@ -139,6 +139,6 @@ private:
 
     void calc_anisotropic_hmat(double,
                                const double *,
-                               double **);
+                               Eigen::Matrix3d &hmat_out) const;
 };
 }
