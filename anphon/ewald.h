@@ -20,7 +20,7 @@
 namespace PHON_NS {
 class Gvecs {
 public:
-    double vec[3];
+    Eigen::Vector3d vec;
 
     Gvecs();
 
@@ -30,6 +30,7 @@ public:
             vec[i] = arr[i];
         }
     };
+    Gvecs(const Eigen::Vector3d _vec) : vec(_vec) {};
 };
 
 class DistInfo {
@@ -87,6 +88,8 @@ private:
     int nl[3], ng[3], num_l, num_g;
     bool force_permutation_sym;
 
+    Eigen::Matrix3d epsilon_mat, invepsilon_mat;
+
     std::vector<DistInfo> **distall_ewald;
 
     void set_default_variables();
@@ -112,11 +115,11 @@ private:
                             int,
                             double *);
 
-    void calc_short_term_ewald_fcs(int,
+    void calc_real_space_sum_ewald_fcs(int,
                                    int,
                                    double **);
 
-    void calc_long_term_ewald_fcs(int,
+    void calc_reciprocal_space_sum_ewald_fcs(int,
                                   int,
                                   double **);
 
@@ -127,8 +130,8 @@ private:
 
     void calc_long_term_dynamical_matrix(const int iat,
                                          const int jat,
-                                         const double *xk_in,
-                                         const double *kvec_in,
+                                         const Eigen::Vector3d &xk_in,
+                                         const Eigen::Vector3d &kvec_in,
                                          std::complex<double> **mat_out);
 
     void calc_realspace_sum(const int iat,

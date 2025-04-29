@@ -103,7 +103,6 @@ void Ewald::prepare_Ewald(const Eigen::Matrix3d &dielectric)
     double lavec_norm[3], rlavec_norm[3];
     Eigen::Vector3d e_lavec, e_rlavec;
     double lavec_enorm, rlavec_enorm, lavec_min[2], rlavec_min[2];
-    Eigen::Matrix3d epsilon_mat, invepsilon_mat;
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -115,11 +114,11 @@ void Ewald::prepare_Ewald(const Eigen::Matrix3d &dielectric)
     for (icrd = 0; icrd < 3; ++icrd) {
         for (int jcrd = 0; jcrd < 3; ++jcrd) {
             epsilon[icrd][jcrd] = dielectric(icrd, jcrd);
-            //            epsilon_mat(icrd, jcrd) = epsilon[icrd][jcrd];
         }
     }
     epsilon_mat = dielectric;
-
+    // Symmetrize the dielectric tensor
+    epsilon_mat = 0.5 * (epsilon_mat + epsilon_mat.transpose());
     // perform Cholesky decomposition assuming that epsilon is symmetric positive definite.
     // If the off-diagonal elements of epsilon is negligible, this assumption is valid.
     Eigen::LLT<Eigen::Matrix3d> llt(epsilon_mat);
@@ -237,7 +236,7 @@ void Ewald::prepare_Ewald(const Eigen::Matrix3d &dielectric)
         std::cout << "  Inverse dielectric tensor : \n";
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                std::cout << std::setw(15) << epsilon_inv[i][j];
+                std::cout << std::setw(15) << invepsilon_mat(i, j);
             }
             std::cout << '\n';
         }
@@ -384,10 +383,10 @@ void Ewald::compute_ewald_fcs()
     int iat, jat;
     int icrd, jcrd;
     int atm_s;
-    int nat = system->get_supercell(0).number_of_atoms;
-    int natmin = system->get_primcell().number_of_atoms;
-    double **fc_ewald_short, **fc_ewald_long;
-    std::string file_fcs_ewald = input->job_title + ".fc2_ewald";
+    const auto nat = system->get_supercell(0).number_of_atoms;
+    const auto natmin = system->get_primcell().number_of_atoms;
+    double **fc_ewald_real_space_sum, **fc_ewald_reciprocal_space_sum;
+    const std::string file_fcs_ewald = input->job_title + ".fc2_ewald";
 
     if (mympi->my_rank == 0) {
         std::cout << " Calculating long-range (dipole-dipole) FCs in the supercell ...";
@@ -400,26 +399,27 @@ void Ewald::compute_ewald_fcs()
     Eigen::MatrixXd fcs_total(3 * natmin, 3 * nat);
     Eigen::MatrixXd fcs_other(3 * natmin, 3 * nat);
 
-    allocate(fc_ewald_short, 3, 3);
-    allocate(fc_ewald_long, 3, 3);
+    allocate(fc_ewald_real_space_sum, 3, 3);
+    allocate(fc_ewald_reciprocal_space_sum, 3, 3);
 
     for (iat = 0; iat < natmin; ++iat) {
         atm_s = map_p2s[iat][0];
         for (jat = 0; jat < nat; ++jat) {
-            calc_short_term_ewald_fcs(atm_s, jat, fc_ewald_short);
-            calc_long_term_ewald_fcs(atm_s, jat, fc_ewald_long);
+            calc_real_space_sum_ewald_fcs(atm_s, jat, fc_ewald_real_space_sum);
+            calc_reciprocal_space_sum_ewald_fcs(atm_s, jat, fc_ewald_reciprocal_space_sum);
 
             for (icrd = 0; icrd < 3; ++icrd) {
                 for (jcrd = 0; jcrd < 3; ++jcrd) {
                     fcs_ewald(3 * iat + icrd, 3 * jat + jcrd)
-                            = fc_ewald_short[icrd][jcrd] + fc_ewald_long[icrd][jcrd];
+                            = fc_ewald_real_space_sum[icrd][jcrd]
+                              + fc_ewald_reciprocal_space_sum[icrd][jcrd];
                 }
             }
         }
     }
 
-    deallocate(fc_ewald_short);
-    deallocate(fc_ewald_long);
+    deallocate(fc_ewald_real_space_sum);
+    deallocate(fc_ewald_reciprocal_space_sum);
 
     fcs_total.setZero();
 
@@ -440,7 +440,7 @@ void Ewald::compute_ewald_fcs()
         atm_s = map_p2s[iat][0];
 
         for (jat = 0; jat < nat; ++jat) {
-            int nmulti = multiplicity[atm_s][jat];
+            const auto nmulti = multiplicity[atm_s][jat];
 
             pairs_tmp[0].tran = 0;
             pairs_tmp[1].tran = map_s2p[jat].tran_num;
@@ -530,9 +530,9 @@ void Ewald::compute_ewald_fcs()
 }
 
 
-void Ewald::calc_short_term_ewald_fcs(const int iat,
-                                      const int jat,
-                                      double **fc_l_out)
+void Ewald::calc_real_space_sum_ewald_fcs(const int iat,
+                                          const int jat,
+                                          double **fc_l_out)
 {
     // Real lattice sum part for FCs
     // iat : atom index in the supercell (should be in the center primitive cell)
@@ -662,9 +662,9 @@ void Ewald::calc_short_term_ewald_fcs(const int iat,
     }
 }
 
-void Ewald::calc_long_term_ewald_fcs(const int iat,
-                                     const int jat,
-                                     double **fc_g_out)
+void Ewald::calc_reciprocal_space_sum_ewald_fcs(const int iat,
+                                                const int jat,
+                                                double **fc_g_out)
 {
     // Reciprocal lattice sum part for FCs
 
@@ -672,7 +672,7 @@ void Ewald::calc_long_term_ewald_fcs(const int iat,
     int icrd, jcrd;
     int acrd, bcrd;
     double gnorm2;
-    double x_tmp[3], g_tmp[3], epsilon_gvector[3];
+    Eigen::Vector3d x_tmp, g_tmp, epsilon_gvector;
     double common_tmp;
 
     for (icrd = 0; icrd < 3; ++icrd) {
@@ -680,34 +680,27 @@ void Ewald::calc_long_term_ewald_fcs(const int iat,
             fc_g_out[icrd][jcrd] = 0.0;
         }
     }
-    double volume = system->get_supercell(0).volume;
+    const auto volume = system->get_supercell(0).volume;
+    const auto ikd = system->get_map_s2p(0)[iat].atom_num;
+    const auto jkd = system->get_map_s2p(0)[jat].atom_num;
+    const auto factor = 4.0 * pi / volume;
+    const auto x_frac_super = system->get_supercell(0).x_fractional.transpose();
+    const auto lavec = system->get_supercell(0).lattice_vector;
 
-    int ikd = system->get_map_s2p(0)[iat].atom_num;
-    int jkd = system->get_map_s2p(0)[jat].atom_num;
-
-    double factor = 4.0 * pi / volume;
 
     if (iat == jat) {
         for (const auto &it: G_vector_sub) {
-            for (i = 0; i < 3; ++i) g_tmp[i] = it.vec[i];
-            rotvec(epsilon_gvector, g_tmp, epsilon);
-            gnorm2 = g_tmp[0] * epsilon_gvector[0]
-                     + g_tmp[1] * epsilon_gvector[1]
-                     + g_tmp[2] * epsilon_gvector[2];
+            g_tmp = it.vec;
+            epsilon_gvector = epsilon_mat * g_tmp;
+            gnorm2 = g_tmp.dot(epsilon_gvector);
 
             for (int kat = 0; kat < system->get_supercell(0).number_of_atoms; ++kat) {
-                int kkd = system->get_map_s2p(0)[kat].atom_num;
+                const auto kkd = system->get_map_s2p(0)[kat].atom_num;
 
-                for (i = 0; i < 3; ++i) {
-                    x_tmp[i] = system->get_supercell(0).x_fractional(iat, i)
-                               - system->get_supercell(0).x_fractional(kat, i);
-                }
-                rotvec(x_tmp, x_tmp, system->get_supercell(0).lattice_vector);
+                x_tmp = lavec * (x_frac_super.col(iat) - x_frac_super.col(kat));
 
                 common_tmp = factor * std::exp(-0.25 * gnorm2 / std::pow(lambda_sub, 2.0)) / gnorm2
-                             * std::cos(g_tmp[0] * x_tmp[0]
-                                        + g_tmp[1] * x_tmp[1]
-                                        + g_tmp[2] * x_tmp[2]);
+                             * std::cos(g_tmp.dot(x_tmp));
 
                 for (icrd = 0; icrd < 3; ++icrd) {
                     for (jcrd = 0; jcrd < 3; ++jcrd) {
@@ -734,20 +727,12 @@ void Ewald::calc_long_term_ewald_fcs(const int iat,
     }
 
     for (const auto &it: G_vector_sub) {
-        for (i = 0; i < 3; ++i) g_tmp[i] = it.vec[i];
-        rotvec(epsilon_gvector, g_tmp, epsilon);
-        gnorm2 = g_tmp[0] * epsilon_gvector[0]
-                 + g_tmp[1] * epsilon_gvector[1]
-                 + g_tmp[2] * epsilon_gvector[2];
-
-        for (i = 0; i < 3; ++i) {
-            x_tmp[i] = system->get_supercell(0).x_fractional(iat, i)
-                       - system->get_supercell(0).x_fractional(jat, i);
-        }
-        rotvec(x_tmp, x_tmp, system->get_supercell(0).lattice_vector);
-
+        g_tmp = it.vec;
+        epsilon_gvector = epsilon_mat * g_tmp;
+        gnorm2 = g_tmp.dot(epsilon_gvector);
+        x_tmp = lavec * (x_frac_super.col(iat) - x_frac_super.col(jat));
         common_tmp = 2.0 * factor * std::exp(-0.25 * gnorm2 / std::pow(lambda_sub, 2.0)) / gnorm2
-                     * std::cos(g_tmp[0] * x_tmp[0] + g_tmp[1] * x_tmp[1] + g_tmp[2] * x_tmp[2]);
+                     * std::cos(g_tmp.dot(x_tmp));
 
         for (icrd = 0; icrd < 3; ++icrd) {
             for (jcrd = 0; jcrd < 3; ++jcrd) {
@@ -767,18 +752,19 @@ void Ewald::add_longrange_matrix(const double *xk_in,
                                  std::complex<double> **dymat_k_out)
 {
     int icrd, jcrd, iat, jat;
-    const int natmin = system->get_primcell().number_of_atoms;
-    const long natmin2 = natmin * natmin;
-    int neval = 3 * system->get_primcell().number_of_atoms;
-    double xk[3];
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const long natmin2 = static_cast<long>(natmin * natmin);
+    const auto neval = 3 * system->get_primcell().number_of_atoms;
+    Eigen::Vector3d xk, kvec;
 
     // Move input xk back to the -0.5 <= xk < 0.5 range to avoid zero division.
     // Also, this is necessary to make the phonon dispersion periodic in the reciprocal lattice.
     for (auto i = 0; i < 3; ++i) {
         xk[i] = xk_in[i] - static_cast<double>(nint(xk_in[i]));
+        kvec[i] = kvec_in[i];
     }
 
-    rotvec(xk, xk, system->get_primcell().reciprocal_lattice_vector, 'T');
+    xk = system->get_primcell().reciprocal_lattice_vector.transpose() * xk;
 
     for (int i = 0; i < neval; ++i) {
         for (int j = 0; j < neval; ++j) {
@@ -797,8 +783,8 @@ void Ewald::add_longrange_matrix(const double *xk_in,
         for (long i = 0; i < natmin2; ++i) {
             iat = i / natmin;
             jat = i % natmin;
-            calc_short_term_dynamical_matrix(iat, jat, xk, dymat_tmp_l);
-            calc_long_term_dynamical_matrix(iat, jat, xk, kvec_in, dymat_tmp_g);
+            calc_short_term_dynamical_matrix(iat, jat, xk.data(), dymat_tmp_l);
+            calc_long_term_dynamical_matrix(iat, jat, xk, kvec, dymat_tmp_g);
             for (icrd = 0; icrd < 3; ++icrd) {
                 for (jcrd = 0; jcrd < 3; ++jcrd) {
                     dymat_k_out[3 * iat + icrd][3 * jat + jcrd] = dymat_tmp_l[icrd][jcrd]
@@ -821,25 +807,28 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
     // iat : atom index in the primitive cell
     // jat : atom index in the primitive cell
 
-    int i;
-    int icrd, jcrd, kat;
-    int atm_s3;
+    int icrd, jcrd;
     int icell, jcell, kcell;
     double xnorm, phase;
-    double x_tmp[3], trans[3];
+    Eigen::Vector3d x_tmp, trans;
     std::vector<std::vector<double> > func_L(3, std::vector<double>(3, 0.0));
 
     // Substitute quantities into variables
-    int atm_s1 = system->get_map_p2s(0)[iat][0];
-    int atm_s2 = system->get_map_p2s(0)[jat][0];
+    const auto atm_s1 = system->get_map_p2s(0)[iat][0];
+    const auto atm_s2 = system->get_map_p2s(0)[jat][0];
+    const auto x_frac_super = system->get_supercell(0).x_fractional.transpose();
+    const auto lavec_s = system->get_supercell(0).lattice_vector;
+    const auto lavec_p = system->get_primcell().lattice_vector;
 
-    for (i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             mat_out[i][j] = std::complex<double>(0.0, 0.0);
         }
     }
 
     if (iat == jat) {
+        int atm_s3;
+        int kat;
         // k = k'
 
         for (icell = -nl[0]; icell <= nl[0]; ++icell) {
@@ -848,7 +837,7 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
                     trans[0] = static_cast<double>(icell);
                     trans[1] = static_cast<double>(jcell);
                     trans[2] = static_cast<double>(kcell);
-                    rotvec(trans, trans, system->get_primcell().lattice_vector);
+                    trans = lavec_p * trans;
 
                     // Lattice vector = 0
                     if (icell == 0 && jcell == 0 && kcell == 0) {
@@ -856,17 +845,10 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
                             if (kat == iat) continue;
 
                             atm_s3 = system->get_map_p2s(0)[kat][0];
-                            for (i = 0; i < 3; ++i) {
-                                x_tmp[i] = system->get_supercell(0).x_fractional(atm_s1, i)
-                                           - system->get_supercell(0).x_fractional(atm_s3, i);
-                            }
-                            rotvec(x_tmp, x_tmp, system->get_supercell(0).lattice_vector);
-                            xnorm = std::sqrt(x_tmp[0] * x_tmp[0]
-                                              + x_tmp[1] * x_tmp[1]
-                                              + x_tmp[2] * x_tmp[2]);
-
+                            x_tmp = lavec_s * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s3));
+                            xnorm = x_tmp.norm();
                             if (xnorm < Lmax) {
-                                calc_realspace_sum(atm_s1, atm_s3, x_tmp, lambda, func_L);
+                                calc_realspace_sum(atm_s1, atm_s3, x_tmp.data(), lambda, func_L);
 
                                 if (force_permutation_sym) {
                                     for (icrd = 0; icrd < 3; ++icrd) {
@@ -887,20 +869,11 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
                     } else {
                         for (kat = 0; kat < system->get_primcell().number_of_atoms; ++kat) {
                             atm_s3 = system->get_map_p2s(0)[kat][0];
-                            for (i = 0; i < 3; ++i) {
-                                x_tmp[i] = system->get_supercell(0).x_fractional(atm_s1, i)
-                                           - system->get_supercell(0).x_fractional(atm_s3, i);
-                            }
-                            rotvec(x_tmp, x_tmp, system->get_supercell(0).lattice_vector);
-                            for (i = 0; i < 3; ++i) {
-                                x_tmp[i] -= trans[i];
-                            }
-                            xnorm = std::sqrt(x_tmp[0] * x_tmp[0]
-                                              + x_tmp[1] * x_tmp[1]
-                                              + x_tmp[2] * x_tmp[2]);
+                            x_tmp = lavec_s * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s3)) - trans;
+                            xnorm = x_tmp.norm();
 
                             if (xnorm < Lmax) {
-                                calc_realspace_sum(atm_s1, atm_s3, x_tmp, lambda, func_L);
+                                calc_realspace_sum(atm_s1, atm_s3, x_tmp.data(), lambda, func_L);
 
                                 if (force_permutation_sym) {
                                     for (icrd = 0; icrd < 3; ++icrd) {
@@ -919,20 +892,11 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
                             }
                         }
 
-                        for (i = 0; i < 3; ++i) {
-                            x_tmp[i] = system->get_supercell(0).x_fractional(atm_s1, i)
-                                       - system->get_supercell(0).x_fractional(atm_s2, i);
-                        }
-                        rotvec(x_tmp, x_tmp, system->get_supercell(0).lattice_vector);
-                        for (i = 0; i < 3; ++i) {
-                            x_tmp[i] -= trans[i];
-                        }
-                        xnorm = std::sqrt(x_tmp[0] * x_tmp[0]
-                                          + x_tmp[1] * x_tmp[1]
-                                          + x_tmp[2] * x_tmp[2]);
+                        x_tmp = lavec_s * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s2)) - trans;
+                        xnorm = x_tmp.norm();
 
                         if (xnorm < Lmax) {
-                            calc_realspace_sum(atm_s1, atm_s2, x_tmp, lambda, func_L);
+                            calc_realspace_sum(atm_s1, atm_s2, x_tmp.data(), lambda, func_L);
                             phase = xk_in[0] * trans[0] + xk_in[1] * trans[1] + xk_in[2] * trans[2];
 
                             for (icrd = 0; icrd < 3; ++icrd) {
@@ -952,22 +916,12 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
                     trans[0] = static_cast<double>(icell);
                     trans[1] = static_cast<double>(jcell);
                     trans[2] = static_cast<double>(kcell);
-                    rotvec(trans, trans, system->get_primcell().lattice_vector);
+                    trans = lavec_p * trans;
 
-                    for (i = 0; i < 3; ++i) {
-                        x_tmp[i] = system->get_supercell(0).x_fractional(atm_s1, i)
-                                   - system->get_supercell(0).x_fractional(atm_s2, i);
-                    }
-                    rotvec(x_tmp, x_tmp, system->get_supercell(0).lattice_vector);
-                    for (i = 0; i < 3; ++i) {
-                        x_tmp[i] -= trans[i];
-                    }
-                    xnorm = std::sqrt(x_tmp[0] * x_tmp[0]
-                                      + x_tmp[1] * x_tmp[1]
-                                      + x_tmp[2] * x_tmp[2]);
-
+                    x_tmp = lavec_s * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s2)) - trans;
+                    xnorm = x_tmp.norm();
                     if (xnorm < Lmax) {
-                        calc_realspace_sum(atm_s1, atm_s2, x_tmp, lambda, func_L);
+                        calc_realspace_sum(atm_s1, atm_s2, x_tmp.data(), lambda, func_L);
                         phase = xk_in[0] * trans[0] + xk_in[1] * trans[1] + xk_in[2] * trans[2];
 
                         for (icrd = 0; icrd < 3; ++icrd) {
@@ -992,36 +946,37 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat,
 
 void Ewald::calc_long_term_dynamical_matrix(const int iat,
                                             const int jat,
-                                            const double *xk_in,
-                                            const double *kvec_in,
+                                            const Eigen::Vector3d &xk_in,
+                                            const Eigen::Vector3d &kvec_in,
                                             std::complex<double> **mat_out)
 {
     // Reciprocal lattice sum part for a dynamical matrix
 
     int i, j;
     int icrd, jcrd, acrd, bcrd;
-    double vec[3], e_kvec[3];
+    Eigen::Vector3d vec, e_kvec;
     double tmp;
 
-    int atm_s1 = system->get_map_p2s(0)[iat][0];
-    int atm_s2 = system->get_map_p2s(0)[jat][0];
-    double mi = system->get_mass_super()[atm_s1];
-    double mj = system->get_mass_super()[atm_s2];
-    double vol_p = system->get_primcell().volume;
-    for (i = 0; i < 3; ++i) {
-        vec[i] = system->get_supercell(0).x_fractional(atm_s1, i)
-                 - system->get_supercell(0).x_fractional(atm_s2, i);
-    }
-    rotvec(vec, vec, system->get_supercell(0).lattice_vector);
-    double phase = xk_in[0] * vec[0] + xk_in[1] * vec[1] + xk_in[2] * vec[2];
-    rotvec(e_kvec, xk_in, epsilon);
+    const auto atm_s1 = system->get_map_p2s(0)[iat][0];
+    const auto atm_s2 = system->get_map_p2s(0)[jat][0];
+    const double mi = system->get_mass_super()[atm_s1];
+    const double mj = system->get_mass_super()[atm_s2];
+    const double vol_p = system->get_primcell().volume;
+
+    const auto x_frac_super = system->get_supercell(0).x_fractional.transpose();
+    const auto lavec = system->get_supercell(0).lattice_vector;
+
+    vec = lavec * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s2));
+    e_kvec = epsilon_mat * xk_in;
 
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
             mat_out[i][j] = std::complex<double>(0.0, 0.0);
         }
     }
-    double kd = xk_in[0] * e_kvec[0] + xk_in[1] * e_kvec[1] + xk_in[2] * e_kvec[2];
+
+    double phase = xk_in.dot(vec);
+    double kd = xk_in.dot(e_kvec);
 
     std::complex<double> exp_phase = std::exp(im * phase);
 
@@ -1045,10 +1000,10 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat,
     } else {
         // Treat non-analytic term
 
-        double kdirec[3], e_kdirec[3];
-        for (i = 0; i < 3; ++i) kdirec[i] = kvec_in[i];
-        rotvec(e_kdirec, kdirec, epsilon);
-        double norm = kdirec[0] * e_kdirec[0] + kdirec[1] * e_kdirec[1] + kdirec[2] * e_kdirec[2];
+        Eigen::Vector3d kdirec, e_kdirec;
+        kdirec = kvec_in;
+        e_kdirec = epsilon_mat * kdirec;
+        double norm = kdirec.dot(e_kdirec);
 
         if (norm > eps) {
             for (icrd = 0; icrd < 3; ++icrd) {
@@ -1067,7 +1022,7 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat,
         }
     }
 
-    double g[3], gk[3], vecl[3], g_tmp[3], gk_tmp[3];
+    Eigen::Vector3d g, gk, vecl, g_tmp, gk_tmp;
     double common;
 
     for (auto &it: G_vector) {
@@ -1077,20 +1032,17 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat,
         }
 
         if (iat == jat) {
-            rotvec(g_tmp, g, epsilon);
-            double gd = g[0] * g_tmp[0] + g[1] * g_tmp[1] + g[2] * g_tmp[2];
+            g_tmp = epsilon_mat * g;
+            const auto gd = g.dot(g_tmp);
+
             common = std::exp(-0.25 * gd / std::pow(lambda, 2.0)) / gd;
 
             for (int kat = 0; kat < system->get_primcell().number_of_atoms; ++kat) {
                 int atm_s3 = system->get_map_p2s(0)[kat][0];
 
-                for (i = 0; i < 3; ++i) {
-                    vecl[i] = system->get_supercell(0).x_fractional(atm_s1, i)
-                              - system->get_supercell(0).x_fractional(atm_s3, i);
-                }
-                rotvec(vecl, vecl, system->get_supercell(0).lattice_vector);
-                double phase_g1 = g[0] * vecl[0] + g[1] * vecl[1] + g[2] * vecl[2];
-                exp_phase = std::exp(im * phase_g1);
+                vecl = lavec * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s3));
+
+                exp_phase = std::exp(im * g.dot(vecl));
 
                 for (icrd = 0; icrd < 3; ++icrd) {
                     for (jcrd = 0; jcrd < 3; ++jcrd) {
@@ -1114,9 +1066,10 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat,
             }
         }
 
-        rotvec(gk_tmp, gk, epsilon);
-        double gkd = gk[0] * gk_tmp[0] + gk[1] * gk_tmp[1] + gk[2] * gk_tmp[2];
-        double phase_g2 = gk[0] * vec[0] + gk[1] * vec[1] + gk[2] * vec[2];
+        gk_tmp = epsilon_mat * gk;
+
+        const double gkd = gk.dot(gk_tmp);
+        const double phase_g2 = gk.dot(vec);
 
         common = 2.0 * std::exp(-0.25 * gkd / std::pow(lambda, 2.0)) / gkd;
         exp_phase = std::exp(im * phase_g2);
