@@ -30,7 +30,10 @@ public:
             vec[i] = arr[i];
         }
     };
-    Gvecs(const Eigen::Vector3d _vec) : vec(_vec) {};
+
+    Gvecs(const Eigen::Vector3d _vec) : vec(_vec)
+    {
+    };
 };
 
 class DistInfo {
@@ -41,9 +44,13 @@ public:
     DistInfo();
 
     DistInfo(const int n,
-             const double d) : cell(n), dist(d) {};
+             const double d) : cell(n), dist(d)
+    {
+    };
 
-    DistInfo(const DistInfo &obj) : cell(obj.cell), dist(obj.dist) {};
+    DistInfo(const DistInfo &obj) : cell(obj.cell), dist(obj.dist)
+    {
+    };
 
     bool operator<(const DistInfo &obj) const
     {
@@ -76,16 +83,15 @@ public:
                               std::complex<double> **);
 
 private:
+    std::vector<Gvecs> G_vectors_fcs;
+    double lambda_fcs;
+    double Gmax_fcs, Lmax_fcs;
+    Eigen::Vector3i nl_fcs, ng_fcs;
 
-    std::vector<Gvecs> G_vector_sub;
-    double lambda_sub;
-    double Gmax_sub, Lmax_sub;
-    int nl_sub[3], ng_sub[3], num_l_sub, num_g_sub;
-
-    std::vector<Gvecs> G_vector;
-    double lambda;
-    double Gmax, Lmax;
-    int nl[3], ng[3], num_l, num_g;
+    std::vector<Gvecs> G_vectors_dymat;
+    double lambda_dymat;
+    double Gmax_dymat, Lmax_dymat;
+    Eigen::Vector3i nl_dymat, ng_dymat;
     bool force_permutation_sym;
 
     Eigen::Matrix3d epsilon_mat, invepsilon_mat;
@@ -116,12 +122,12 @@ private:
                             double *);
 
     void calc_real_space_sum_ewald_fcs(int,
-                                   int,
-                                   double **);
+                                       int,
+                                       double **);
 
     void calc_reciprocal_space_sum_ewald_fcs(int,
-                                  int,
-                                  double **);
+                                             int,
+                                             double **);
 
     void calc_short_term_dynamical_matrix(int,
                                           int,
@@ -138,10 +144,21 @@ private:
                             const int jat,
                             const double xdist[3],
                             const double lambda_in,
-                            std::vector<std::vector<double>> &ret);
+                            std::vector<std::vector<double> > &ret);
 
     void calc_anisotropic_hmat(double,
                                const double *,
                                Eigen::Matrix3d &hmat_out) const;
+
+    void get_lambda_and_lgmax(const Eigen::Matrix3d &lavec,
+                              const Eigen::Matrix3d &rlavec,
+                              const Eigen::Matrix3d &epsilon,
+                              const Eigen::Matrix3d &epsilon_inv,
+                              const double &p,
+                              double &lambda_out,
+                              double &Lmax_out,
+                              double &Gmax_out,
+                              Eigen::Vector3i &lsize,
+                              Eigen::Vector3i &gsize);
 };
 }

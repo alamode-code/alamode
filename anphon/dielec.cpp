@@ -210,8 +210,6 @@ void Dielec::load_born(const unsigned int flag_symmborn,
         }
     }
 
-    std::cout << "hoge\n" << std::flush;
-
     if (flag_symmborn) {
 
         // Symmetrize Born effective charges. Necessary to avoid the violation of ASR

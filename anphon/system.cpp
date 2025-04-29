@@ -886,12 +886,12 @@ void System::update_primitive_lattice()
             }
         }
 
-        for (const auto &it : xf_unique) {
-            for (const auto &it2: it) {
-                std::cout << std::setw(15)  << it2;
-            }
-            std::cout << '\n';
-        }
+        // for (const auto &it : xf_unique) {
+        //     for (const auto &it2: it) {
+        //         std::cout << std::setw(15)  << it2;
+        //     }
+        //     std::cout << '\n';
+        // }
 
         if (xf_unique.size() != primcell.number_of_atoms) {
             std::cout << "primcell.number_of_atoms = " << primcell.number_of_atoms << '\n';
