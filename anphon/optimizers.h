@@ -123,6 +123,16 @@ public:
                 H = A.transpose() * H * A + s * s.transpose() / ys;
             }
         }
+        threshold_angle = 0.0; // We set angle threshold to be zero when we store more than 9 vectors
+        if (size == 2) threshold_angle = 0.97;
+        if (size == 3) threshold_angle = 0.84;
+        if (size == 4) threshold_angle = 0.71;
+        if (size == 5) threshold_angle = 0.67;
+        if (size == 6) threshold_angle = 0.62;
+        if (size == 7) threshold_angle = 0.56;
+        if (size == 8) threshold_angle = 0.49;
+        if (size == 9) threshold_angle = 0.41;
+     
         gradient_old = gradient;
         point_old = point;
 
