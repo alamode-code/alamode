@@ -25,8 +25,10 @@
 #include "timer.h"
 
 
-namespace ALM_NS {
-class ConstraintClass {
+namespace ALM_NS
+{
+class ConstraintClass
+{
 public:
     std::vector<double> w_const;
 
@@ -34,7 +36,8 @@ public:
 
     ConstraintClass(const ConstraintClass &a) = default;
 
-    ConstraintClass(std::vector<double> vec) : w_const(std::move(vec)) {}
+    ConstraintClass(std::vector<double> vec) :
+        w_const(std::move(vec)) {}
 
     ConstraintClass(const int n,
                     const double *arr,
@@ -47,22 +50,26 @@ public:
 
     bool operator<(const ConstraintClass &a) const
     {
-        return std::lexicographical_compare(w_const.begin(), w_const.end(),
-                                            a.w_const.begin(), a.w_const.end());
+        return std::lexicographical_compare(w_const.begin(),
+                                            w_const.end(),
+                                            a.w_const.begin(),
+                                            a.w_const.end());
     }
 };
 
-class ConstraintTypeFix {
+class ConstraintTypeFix
+{
 public:
     size_t p_index_target;
     double val_to_fix;
 
     ConstraintTypeFix(const size_t index_in,
                       const double val_in) :
-            p_index_target(index_in), val_to_fix(val_in) {}
+        p_index_target(index_in), val_to_fix(val_in) {}
 };
 
-class ConstraintTypeRelate {
+class ConstraintTypeRelate
+{
 public:
     size_t p_index_target;
     std::vector<double> alpha;
@@ -71,7 +78,8 @@ public:
     ConstraintTypeRelate(const size_t index_in,
                          std::vector<double> alpha_in,
                          std::vector<size_t> p_index_in) :
-            p_index_target(index_in), alpha(std::move(alpha_in)), p_index_orig(std::move(p_index_in)) {}
+        p_index_target(index_in), alpha(std::move(alpha_in)),
+        p_index_orig(std::move(p_index_in)) {}
 };
 
 inline bool equal_within_eps12(const std::vector<double> &a,
@@ -86,7 +94,8 @@ inline bool equal_within_eps12(const std::vector<double> &a,
     return true;
 }
 
-class ConstraintIntegerElement {
+class ConstraintIntegerElement
+{
     // For sparse representation
 public:
     size_t col;
@@ -94,7 +103,7 @@ public:
 
     ConstraintIntegerElement(const size_t col_in,
                              const int val_in) :
-            col(col_in), val(val_in) {}
+        col(col_in), val(val_in) {}
 };
 
 // Operator for sort
@@ -138,7 +147,8 @@ inline bool operator==(const std::vector<ConstraintIntegerElement> &obj1,
     return true;
 }
 
-class ConstraintDoubleElement {
+class ConstraintDoubleElement
+{
     // For sparse representation
 public:
     size_t col;
@@ -146,7 +156,7 @@ public:
 
     ConstraintDoubleElement(const size_t col_in,
                             const double val_in) :
-            col(col_in), val(val_in) {}
+        col(col_in), val(val_in) {}
 
     bool operator<(const ConstraintDoubleElement &obj) const
     {
@@ -201,7 +211,8 @@ inline bool operator<(const std::map<size_t, double> &obj1,
     return obj1.begin()->first < obj2.begin()->first;
 }
 
-class Constraint {
+class Constraint
+{
 public:
     Constraint();
 
@@ -289,7 +300,6 @@ public:
     [[nodiscard]] bool ready_all_constraints() const;
 
 private:
-
     int constraint_mode;
     size_t number_of_constraints;
     std::string fc2_file, fc3_file;
@@ -307,12 +317,13 @@ private:
     std::vector<std::vector<ConstraintTypeRelate>> const_relate_rotation;
     boost::bimap<size_t, size_t> *index_bimap;
 
-    bool impose_inv_T, impose_inv_R, exclude_last_R;
+    bool impose_inv_T, impose_inv_R, exclude_last_R, impose_inv_Huang;
 
     std::vector<ConstraintSparseForm> const_symmetry;
     std::vector<ConstraintSparseForm> const_translation;
     std::vector<ConstraintSparseForm> const_rotation_self;
     std::vector<ConstraintSparseForm> const_rotation_cross;
+    std::vector<ConstraintSparseForm> const_huang;
     std::vector<ConstraintSparseForm> const_self;
 
     std::vector<std::vector<int>> intpair_fix_fc2, intpair_fix_fc3;
@@ -406,6 +417,13 @@ private:
                                            const int,
                                            const int);
 
+    void generate_huang_constraint(const Cell &,
+                                   const std::unique_ptr<Symmetry> &symmetry,
+                                   const std::unique_ptr<Cluster> &cluster,
+                                   const std::unique_ptr<Fcs> &fcs,
+                                   const std::vector<Eigen::MatrixXd> &x_image,
+                                   const int verbosity);
+
 
     void get_forceconstants_from_file(const int order,
                                       const std::unique_ptr<Symmetry> &symmetry,
@@ -454,7 +472,8 @@ private:
     void test_svd(ConstraintSparseForm &const_in, const int nparams) const;
 };
 
-extern "C" {
+extern "C"
+{
 void dgesvd_(char *jobu,
              char *jobvt,
              int *m,
