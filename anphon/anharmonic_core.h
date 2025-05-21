@@ -17,9 +17,11 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "fcs_phonon.h"
 #include "kpoint.h"
 
-namespace PHON_NS {
+namespace PHON_NS
+{
 
-struct QuartS {
+struct QuartS
+{
     // for an (k,s)
     // we store for a single k quartic pair and {s1,s2,s3}, with the smearing result,
     // only for smearing method
@@ -32,16 +34,17 @@ struct QuartS {
     QuartS();
 
     QuartS(int in1, int in2, int in3) :
-            s1(in1), s2(in2), s3(in3) {}
+        s1(in1), s2(in2), s3(in3) {}
 
     QuartS(int in1, int in2, int in3,
            double d1, double d2) :
-            s1(in1), s2(in2), s3(in3),
-            delta1(d1),
-            delta2(d2) {}
+        s1(in1), s2(in2), s3(in3),
+        delta1(d1),
+        delta2(d2) {}
 };
 
-class RelativeVector {
+class RelativeVector
+{
 public:
     double vecs[3][3];
 
@@ -71,7 +74,8 @@ public:
     }
 };
 
-class PhaseFactorStorage {
+class PhaseFactorStorage
+{
 public:
     PhaseFactorStorage() {};
 
@@ -111,7 +115,8 @@ private:
     std::complex<double> ***exp_phase3 = nullptr;
 };
 
-class AnharmonicCore : protected Pointers {
+class AnharmonicCore: protected Pointers
+{
 public:
     AnharmonicCore(class PHON *);
 
@@ -272,7 +277,6 @@ public:
     void calc_analytic_k_from_FcsArrayWithCell(const double *,
                                                const std::vector<FcsArrayWithCell> &,
                                                std::complex<double> **) const;
-
 
 private:
     void set_default_variables();

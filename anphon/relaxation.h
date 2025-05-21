@@ -16,13 +16,37 @@
 #include "kpoint.h"
 #include "fcs_phonon.h"
 #include "scph.h"
-#include "gruneisen.h"
 #include "optimizers.h"
+#include <Eigen/Core>
 
-namespace PHON_NS {
-class Relaxation : protected Pointers {
+namespace PHON_NS
+{
+
+class DelVStrainData
+    // TODO: implement the class for derivative of V by umn
+{
 public:
+    Eigen::MatrixXcd del_v1;                           // del_v1_del_umn
+    Eigen::MatrixXcd del2_v1;                          // del2_v1_del_umn2
+    Eigen::MatrixXcd del3_v1;                          // del3_v1_del_umn3
+    std::vector<Eigen::MatrixXcd> del_v2;              // del_v2_del_umn
+    std::vector<Eigen::MatrixXcd> del2_v2;             // del2_v2_del_umn2
+    std::vector<std::vector<Eigen::MatrixXcd>> del_v3; // del_v3_del_umn
 
+    DelVStrainData() = default;
+    ~DelVStrainData() = default;
+
+    void resize(const int nk, const int nmode)
+    {
+        del_v1.resize(9, nmode);
+        del2_v1.resize(81, nmode);
+        del3_v1.resize(729, nmode);
+    }
+};
+
+class Relaxation: protected Pointers
+{
+public:
     Relaxation(class PHON *phon);
 
     ~Relaxation();
@@ -33,7 +57,7 @@ public:
     double init_u_tensor[3][3]{{0.0}};
     std::vector<double> init_u0;
 
-    // zero-th order term of the potential energy surface
+    // zeroth order term of the potential energy surface
     std::vector<double> V0;
 
     // variables related to structural optimization
@@ -46,7 +70,7 @@ public:
     double mixbeta_cell;
 
     int set_init_str;
-    int cooling_u0_index; // used if set_init_str is 3
+    int cooling_u0_index;  // used if set_init_str is 3
     double cooling_u0_thr; // used if set_init_str is 3
     double add_hess_diag;
     double stat_pressure;
@@ -202,7 +226,7 @@ public:
                            const double temperature,
                            std::ofstream &fout_q0,
                            std::ofstream &fout_u0,
-                           std::ofstream &fout_u_tensor);
+                           std::ofstream &fout_u_tensor) const;
 
     void write_stepresfile_header_atT(std::ofstream &fout_step_q0,
                                       std::ofstream &fout_step_u0,
@@ -215,16 +239,14 @@ public:
                            const int i_str_loop,
                            std::ofstream &fout_step_q0,
                            std::ofstream &fout_step_u0,
-                           std::ofstream &fout_step_u_tensor);
+                           std::ofstream &fout_step_u_tensor) const;
 
-    int get_xyz_string(const int, std::string &);
+    static int get_xyz_string(const int, std::string &);
 
-    void calculate_eta_tensor(double **,
-                              const double *const *const);
-
+    static void calculate_eta_tensor(double **,
+                                     const double *const *const);
 
 private:
-
     void set_default_variables();
 
     void deallocate_variables();
@@ -238,6 +260,38 @@ private:
 
 
     void set_initial_strain(double *const *const) const;
+
+    static void set_del_v_fixed_cell(const size_t nk, const size_t ns,
+                                     std::complex<double> **del_v1_del_umn,
+                                     std::complex<double> **del2_v1_del_umn2,
+                                     std::complex<double> **del3_v1_del_umn3,
+                                     std::complex<double> ***del_v2_del_umn,
+                                     std::complex<double> ***del2_v2_del_umn2,
+                                     std::complex<double> ****del_v3_del_umn);
+
+    void set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
+                              const KpointMeshUniform *kmesh_dense,
+                              const size_t ns,
+                              std::complex<double> **del_v1_del_umn,
+                              std::complex<double> **del2_v1_del_umn2,
+                              std::complex<double> **del3_v1_del_umn3,
+                              std::complex<double> ***del_v2_del_umn,
+                              std::complex<double> ***del2_v2_del_umn2,
+                              std::complex<double> ****del_v3_del_umn,
+                              double **omega2_harmonic,
+                              std::complex<double> ***evec_harmonic,
+                              MinimumDistList ***mindist_list,
+                              const PhaseFactorStorage *phase_storage_in);
+
+    void set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse,
+                                        const KpointMeshUniform *kmesh_dense,
+                                        const size_t ns,
+                                        std::complex<double> **del_v1_del_umn,
+                                        std::complex<double> **del2_v1_del_umn2,
+                                        std::complex<double> ***del_v2_del_umn,
+                                        double **omega2_harmonic,
+                                        std::complex<double> ***evec_harmonic,
+                                        MinimumDistList ***mindist_list);
 
 
     void compute_del_v1_del_umn(std::complex<double> **,
@@ -306,6 +360,3 @@ private:
 
 };
 }
-
-
-

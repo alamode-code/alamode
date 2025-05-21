@@ -442,68 +442,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                      relaxation->relax_str,
                                      mindist_list_qha, phase_factor_qha);
 
-    // std::cout << "\n";
-    // std::cout << "del_v1_del_umn\n";
-    // for (int i = 0; i < 9; i++) {
-    //     for (int j = 0; j < ns; j++) {
-    //         if (std::abs(del_v1_del_umn[i][j]) > eps8) {
-    //             std::cout << del_v1_del_umn[i][j] << '\n';
-    //         } 
-    //     }
-    // }
-    // std::cout << "\n";
-    // std::cout << "del2_v1_del_umn2\n";
-    // for (int i = 0; i < 81; i++) {
-    //     for (int j = 0; j < ns; j++) {
-    //         if (std::abs(del2_v1_del_umn2[i][j]) > eps8) {
-    //             std::cout << del2_v1_del_umn2[i][j] << '\n';
-    //         } 
-    //     }
-    // }
-    // std::cout << "\n";
-    // std::cout << "del3_v1_del_umn3\n";
-    // for (int i = 0; i < 729; i++) {
-    //     for (int j = 0; j < ns; j++) {
-    //         if (std::abs(del3_v1_del_umn3[i][j]) > eps8) {
-    //             std::cout << del3_v1_del_umn3[i][j] << "\n";
-    //         } 
-    //     }
-    // }
-    // std::cout << "\n";
-    // std::cout << "dev_v2_del_umn\n";
-    // for (int i = 0; i < 9; i++) {
-    //     for (int j = 0; j < nk; j++) {
-    //         for (int k = 0; k < ns * ns; k++) {
-    //             if (std::abs(del_v2_del_umn[i][j][k]) > eps8) {
-    //                 std::cout << std::abs(del_v2_del_umn[i][j][k]) << "\n";
-    //             } 
-    //         }
-    //     }
-    // }
-    // std::cout << "\n";
-    // std::cout << "dev2_v2_del_umn2\n";
-    // for (int i = 0; i < 81; i++) {
-    //     for (int j = 0; j < nk; j++) {
-    //         for (int k = 0; k < ns * ns; k++) {
-    //             if (std::abs(del2_v2_del_umn2[i][j][k]) > eps8) {
-    //                 std::cout << del2_v2_del_umn2[i][j][k] << "\n";
-    //             } 
-    //         }
-    //     }
-    // }
-    // std::cout << "\n";
-    // std::cout << "dev_v3_del_umn\n";
-    // for (int i = 0; i < 9; i++) {
-    //     for (int j = 0; j < nk; j++) {
-    //         for (int k = 0; k < ns; k++) {
-    //             for (int l = 0; l < ns * ns; l++) {
-    //                 if (std::abs(del_v3_del_umn[i][j][k][l]) > eps8) {
-    //                     std::cout << del_v3_del_umn[i][j][k][l] << "\n";
-    //                 } 
-    //             }
-    //         }
-    //     }
-    // }                                     
 
     // get indices of optical modes at Gamma point
     js = 0;
