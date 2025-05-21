@@ -20,9 +20,9 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <iomanip>
 #include <Eigen/Core>
 #include "optimizers.h"
-#include <boost/move/algo/detail/pdqsort.hpp>
-#include <boost/sort/sort.hpp>
-#include <boost/range/algorithm.hpp>
+// #include <boost/move/algo/detail/pdqsort.hpp>
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
+// #include <boost/range/algorithm.hpp>
 
 using namespace PHON_NS;
 
@@ -68,7 +68,8 @@ void Relaxation::setup_relaxation()
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
     V0.resize(NT);
-    boost::range::fill(V0, 0.0);
+    std::fill(V0.begin(), V0.end(), 0.0);
+    // boost::range::fill(V0, 0.0);
 }
 
 void Relaxation::create_optimizer(const size_t num_modes)
