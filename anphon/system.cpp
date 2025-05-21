@@ -1309,6 +1309,9 @@ double System::volume(const Eigen::Matrix3d &mat_in,
 
 const Cell &System::get_primcell(const bool distorted) const
 {
+    // return the primitive cell.
+    // Note that the "primitive cell" is the one that is used in the phonon calculation.
+    // It may not be a true primitive cell if a conventional cell is spefified in the &cell field.
     if (distorted) {
         return primcell_distort;
     } else {

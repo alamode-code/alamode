@@ -89,12 +89,7 @@ void Input::parce_input(int narg,
     parse_kpoints();
 
     if (phon->mode == "RTA") {
-        // not really essential information to read
         const auto use_defaults_for_kappa = !locate_tag("&kappa");
-        //if (!locate_tag("&kappa"))
-        //    exit("parse_input",
-        //         "&kappa entry not found in the input file");
-
         parse_kappa_vars(use_defaults_for_kappa);
     }
 
@@ -130,8 +125,6 @@ void Input::parce_input(int narg,
 
         parse_initial_displace();
     }
-    // TODO: Implement mode = "kappa" and the associated &kappa field
-    // TODO: for thermal conductivity calculations.
 }
 
 void Input::parse_general_vars()

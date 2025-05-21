@@ -16,9 +16,11 @@
 #include <vector>
 #include <set>
 
-namespace PHON_NS {
+namespace PHON_NS
+{
 
-class FcsClassExtent {
+class FcsClassExtent
+{
 public:
     unsigned int atm1, atm2;
     unsigned int xyz1, xyz2;
@@ -45,8 +47,9 @@ public:
     }
 };
 
-struct AtomCellSuper {
-    unsigned int index;// flattened array
+struct AtomCellSuper
+{
+    unsigned int index; // flattened array
     unsigned int tran;
     unsigned int cell_s;
 } __attribute__((aligned(16)));
@@ -57,23 +60,25 @@ inline bool operator<(const AtomCellSuper &a,
     return a.index < b.index;
 }
 
-class FcsArrayWithCell {
+class FcsArrayWithCell
+{
 public:
     std::vector<AtomCellSuper> pairs;
     //std::vector<unsigned int> atoms_p; // atom index in the primitive cell (not used?)
     std::vector<unsigned int> atoms_s; // atom index in the supercell
-    std::vector<unsigned int> coords; // xyz components
+    std::vector<unsigned int> coords;  // xyz components
     double fcs_val;
-    std::vector<Eigen::Vector3d> relvecs; // For computing phase factor in exp
+    std::vector<Eigen::Vector3d> relvecs;          // For computing phase factor in exp
     std::vector<Eigen::Vector3d> relvecs_velocity; // For computing group velocity matrix
 
     FcsArrayWithCell() {};
 
     FcsArrayWithCell(const double fcs_in,
                      const std::vector<AtomCellSuper> &pairs_in,
-                     const std::vector<unsigned int> &atoms_s_in) : pairs(pairs_in),
-                                                                    atoms_s(atoms_s_in),
-                                                                    fcs_val(fcs_in)
+                     const std::vector<unsigned int> &atoms_s_in) :
+        pairs(pairs_in),
+        atoms_s(atoms_s_in),
+        fcs_val(fcs_in)
     {
         coords.clear();
         for (const auto &it: pairs_in) {
@@ -84,10 +89,11 @@ public:
     FcsArrayWithCell(const double fcs_in,
                      const std::vector<AtomCellSuper> &pairs_in,
                      const std::vector<unsigned int> &atoms_s_in,
-                     const std::vector<Eigen::Vector3d> &relvecs_vel_in) : pairs(pairs_in),
-                                                                           atoms_s(atoms_s_in),
-                                                                           fcs_val(fcs_in),
-                                                                           relvecs_velocity(relvecs_vel_in)
+                     const std::vector<Eigen::Vector3d> &relvecs_vel_in) :
+        pairs(pairs_in),
+        atoms_s(atoms_s_in),
+        fcs_val(fcs_in),
+        relvecs_velocity(relvecs_vel_in)
     {
         coords.clear();
         for (const auto &it: pairs_in) {
@@ -99,11 +105,12 @@ public:
                      const std::vector<AtomCellSuper> &pairs_in,
                      const std::vector<unsigned int> &atoms_s_in,
                      const std::vector<Eigen::Vector3d> &relvecs_in,
-                     const std::vector<Eigen::Vector3d> &relvecs_vel_in) : pairs(pairs_in),
-                                                                           atoms_s(atoms_s_in),
-                                                                           fcs_val(fcs_in),
-                                                                           relvecs(relvecs_in),
-                                                                           relvecs_velocity(relvecs_vel_in)
+                     const std::vector<Eigen::Vector3d> &relvecs_vel_in) :
+        pairs(pairs_in),
+        atoms_s(atoms_s_in),
+        fcs_val(fcs_in),
+        relvecs(relvecs_in),
+        relvecs_velocity(relvecs_vel_in)
     {
         coords.clear();
         for (const auto &it: pairs_in) {
@@ -146,12 +153,14 @@ public:
 };
 
 
-struct sort_by_heading_indices {
+struct sort_by_heading_indices
+{
     unsigned int number_of_tails; // number of indices at the tail of the array
     // It should be 1 when renormalizing 2nd-order force constants by 3rd-order force constants,
     // and should be 2 when renormalizing 2nd-order force constants by 4th-order force constants.
 
-    sort_by_heading_indices(const unsigned int n) : number_of_tails(n) {}
+    sort_by_heading_indices(const unsigned int n) :
+        number_of_tails(n) {}
 
     inline bool operator()(const FcsArrayWithCell &a, const FcsArrayWithCell &b) const
     {
@@ -184,12 +193,15 @@ struct sort_by_heading_indices {
             }
         }
 
-        return std::lexicographical_compare(array_a.begin(), array_a.end(),
-                                            array_b.begin(), array_b.end());
+        return std::lexicographical_compare(array_a.begin(),
+                                            array_a.end(),
+                                            array_b.begin(),
+                                            array_b.end());
     }
 };
 
-class Fcs_phonon : protected Pointers {
+class Fcs_phonon: protected Pointers
+{
 public:
     Fcs_phonon(class PHON *);
 
@@ -207,6 +219,9 @@ public:
     void get_fcs_from_file(const std::string fname_fcs,
                            const int order,
                            std::vector<FcsArrayWithCell> &fcs_out) const;
+
+    void replicate_force_constant(const System *system_in,
+                                  std::vector<FcsArrayWithCell> &fcs_inout) const;
 
 private:
     bool require_cubic;
@@ -235,7 +250,7 @@ private:
                                             const std::vector<std::vector<unsigned int>> &map_p2s_in,
                                             const std::vector<FcsArrayWithCell> &fc_in) const;
 
-    void replicate_force_constants(const int maxorder_in);
+    void replicate_force_constants(const int maxorder_in) const;
 
     void MPI_Bcast_fc_class(unsigned int) const;
 

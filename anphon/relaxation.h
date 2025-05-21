@@ -80,7 +80,7 @@ public:
 
     void load_V0_from_file();
 
-    void store_V0_to_file();
+    void store_V0_to_file() const;
 
     void set_init_structure_atT(double *q0,
                                 double **u_tensor,
@@ -167,7 +167,7 @@ public:
 
     void calculate_u0(const double *const q0, double *const u0,
                       double **omega2_harmonic,
-                      std::complex<double> ***evec_harmonic);
+                      std::complex<double> ***evec_harmonic) const;
 
     void update_cell_coordinate(double *,
                                 double *,
@@ -184,12 +184,12 @@ public:
                                 double &,
                                 double &,
                                 double **omega2_harmonic,
-                                std::complex<double> ***evec_harmonic);
+                                std::complex<double> ***evec_harmonic) const;
 
     void check_str_divergence(int &diverged,
                               const double *const q0,
                               const double *const u0,
-                              const double *const *const u_tensor);
+                              const double *const *const u_tensor) const;
 
 
     void write_resfile_header(std::ofstream &fout_q0,
@@ -229,25 +229,25 @@ private:
 
     void deallocate_variables();
 
-    void read_C1_array(double *const);
+    static void read_C1_array(double *const);
 
     void read_elastic_constants(double *const *const,
-                                double *const *const *const);
+                                double *const *const *const) const;
 
-    void set_initial_q0(double *const q0, std::complex<double> ***evec_harmonic);
+    void set_initial_q0(double *const q0, std::complex<double> ***evec_harmonic) const;
 
 
-    void set_initial_strain(double *const *const);
+    void set_initial_strain(double *const *const) const;
 
 
     void compute_del_v1_del_umn(std::complex<double> **,
-                                const std::complex<double> *const *const *const);
+                                const std::complex<double> *const *const *const) const;
 
     void compute_del2_v1_del_umn2(std::complex<double> **,
-                                  const std::complex<double> *const *const *const);
+                                  const std::complex<double> *const *const *const) const;
 
     void compute_del3_v1_del_umn3(std::complex<double> **,
-                                  const std::complex<double> *const *const *const);
+                                  const std::complex<double> *const *const *const) const;
 
 
     void compute_del_v2_del_umn(std::complex<double> ***,
@@ -279,10 +279,10 @@ private:
                                        const std::complex<double> *const *const *const,
                                        std::complex<double> ***,
                                        const unsigned int nk,
-                                       const unsigned int nk_interpolate);
+                                       const unsigned int nk_interpolate) const;
 
     void calculate_delv1_delumn_finite_difference(std::complex<double> **,
-                                                  const std::complex<double> *const *const *const);
+                                                  const std::complex<double> *const *const *const) const;
 
     void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_in,
                                              std::vector<FcsArrayWithCell> &delta_fcs,

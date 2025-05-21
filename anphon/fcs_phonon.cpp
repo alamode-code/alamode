@@ -33,7 +33,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Fcs_phonon::Fcs_phonon(PHON *phon) : Pointers(phon)
+Fcs_phonon::Fcs_phonon(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -130,7 +131,7 @@ void Fcs_phonon::setup(std::string mode)
                                                                  system->get_mapping_super_alm(i).from_true_primitive,
                                                                  force_constant_with_cell[i]);
             std::cout << "   Order " << i + 2 << " : " << std::setw(12)
-                      << std::scientific << maxdev << '\n';
+                << std::scientific << maxdev << '\n';
         }
         std::cout << '\n';
     }
@@ -139,98 +140,109 @@ void Fcs_phonon::setup(std::string mode)
     replicate_force_constants(maxorder);
 }
 
-void Fcs_phonon::replicate_force_constants(const int maxorder_in)
+void Fcs_phonon::replicate_force_constants(const int maxorder_in) const
+{
+    for (auto order = 0; order < maxorder_in; ++order) {
+        replicate_force_constant(system, force_constant_with_cell[order]);
+    }
+}
+
+void Fcs_phonon::replicate_force_constant(const System *system_in,
+                                          std::vector<FcsArrayWithCell> &fcs_inout) const
 {
     std::vector<FcsArrayWithCell> force_constant_replicate;
     std::vector<Eigen::Vector3d> relvecs, relvecs_vel;
     Eigen::Vector3d relvec_tmp, relvec_tmp2;
     std::vector<std::vector<unsigned int>> map_trans;
-    Eigen::Vector3d xshift, x0, x_shifted;
+    Eigen::Vector3d xshift;
     Eigen::Vector3d xdiff, xdiff_cart;
     std::vector<unsigned int> map_now;
 
-    for (auto order = 0; order < maxorder_in; ++order) {
+    const int order = fcs_inout[0].pairs.size() - 2;
 
-        force_constant_replicate.clear();
-        map_trans.clear();
+    if (order < 0) return;
 
-        const auto map_tmp = system->get_mapping_super_alm(order);
-        const auto cell_tmp = system->get_supercell(order);
-        const auto ntran_tmp = map_tmp.from_true_primitive[0].size();
+    force_constant_replicate.clear();
+    map_trans.clear();
 
-        for (auto itran = 0; itran < ntran_tmp; ++itran) {
-            xshift = cell_tmp.x_fractional.row(map_tmp.from_true_primitive[0][itran])
-                     - cell_tmp.x_fractional.row(map_tmp.from_true_primitive[0][0]);
-            map_now.clear();
+    const auto [to_true_primitive, from_true_primitive] = system_in->get_mapping_super_alm(order);
+    const auto cell_tmp = system_in->get_supercell(order);
+    const auto ntran_tmp = from_true_primitive[0].size();
 
-            for (auto iat = 0; iat < cell_tmp.number_of_atoms; ++iat) {
-                auto kat = -1;
-                for (auto jat = 0; jat < cell_tmp.number_of_atoms; ++jat) {
-                    xdiff = cell_tmp.x_fractional.row(jat) - cell_tmp.x_fractional.row(iat);
-                    xdiff = (xdiff + xshift).unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
-                    xdiff_cart = cell_tmp.lattice_vector * xdiff;
-                    if (xdiff_cart.norm() < 1.0e-3) {
-                        kat = jat;
-                        break;
-                    }
-                }
-                if (kat == -1) {
-                    exit("replicate_force_constants", "Equivalent atom could not be found.");
-                } else {
-                    map_now.emplace_back(kat);
+    for (auto itran = 0; itran < ntran_tmp; ++itran) {
+        xshift = cell_tmp.x_fractional.row(from_true_primitive[0][itran])
+                 - cell_tmp.x_fractional.row(from_true_primitive[0][0]);
+        map_now.clear();
+
+        for (auto iat = 0; iat < cell_tmp.number_of_atoms; ++iat) {
+            auto kat = -1;
+            for (auto jat = 0; jat < cell_tmp.number_of_atoms; ++jat) {
+                xdiff = cell_tmp.x_fractional.row(jat) - cell_tmp.x_fractional.row(iat);
+                xdiff = (xdiff + xshift).unaryExpr([](const double x) {
+                    return x - static_cast<double>(nint(x));
+                });
+                xdiff_cart = cell_tmp.lattice_vector * xdiff;
+                if (xdiff_cart.norm() < 1.0e-3) {
+                    kat = jat;
+                    break;
                 }
             }
-            map_trans.emplace_back(map_now);
-        }
-
-        std::vector<AtomCellSuper> pairs_tmp(order + 2);
-        std::vector<unsigned int> atom_super(order + 2), atom_super_tran(order + 2);
-        std::vector<unsigned int> atom_new_prim(order + 2), atom_new_super(order + 2);
-        std::vector<unsigned int> tran_new(order + 2);
-
-        for (const auto &it_trans: map_trans) {
-            for (const auto &it: force_constant_with_cell[order]) {
-
-                for (auto i = 0; i < order + 2; ++i) {
-                    atom_super[i] = it.atoms_s[i];
-                    atom_super_tran[i] = it_trans[atom_super[i]];
-                }
-
-                if (system->get_map_s2p(order)[atom_super_tran[0]].tran_num != 0) continue;
-
-                for (auto i = 0; i < order + 2; ++i) {
-                    atom_new_prim[i] = system->get_map_s2p(order)[atom_super_tran[i]].atom_num;
-                    pairs_tmp[i].index = 3 * atom_new_prim[i] + it.pairs[i].index % 3;
-                    pairs_tmp[i].tran = system->get_map_s2p(order)[atom_super_tran[i]].tran_num;
-                    pairs_tmp[i].cell_s = it.pairs[i].cell_s;
-                }
-
-                relvecs.clear();
-                relvecs_vel.clear();
-                for (auto i = 0; i < order + 1; ++i) {
-                    for (auto j = 0; j < 3; ++j) {
-                        relvec_tmp[j] = it.relvecs_velocity[i][j] + cell_tmp.x_cartesian(atom_super_tran[0], j)
-                                        - cell_tmp.x_cartesian(system->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
-                        relvec_tmp2[j] = it.relvecs_velocity[i][j];
-                    }
-                    relvec_tmp = system->get_primcell().lattice_vector.inverse() * relvec_tmp;
-                    relvec_tmp2 = system->get_primcell().lattice_vector.inverse() * relvec_tmp2;
-                    relvecs.emplace_back(relvec_tmp);
-                    relvecs_vel.emplace_back(relvec_tmp2);
-                }
-                force_constant_replicate.emplace_back(it.fcs_val,
-                                                      pairs_tmp,
-                                                      atom_super_tran,
-                                                      relvecs,
-                                                      relvecs_vel);
+            if (kat == -1) {
+                exit("replicate_force_constants", "Equivalent atom could not be found.");
+            } else {
+                map_now.emplace_back(kat);
             }
         }
-
-        force_constant_with_cell[order].clear();
-        std::copy(force_constant_replicate.begin(),
-                  force_constant_replicate.end(),
-                  std::back_inserter(force_constant_with_cell[order]));
+        map_trans.emplace_back(map_now);
     }
+
+    std::vector<AtomCellSuper> pairs_tmp(order + 2);
+    std::vector<unsigned int> atom_super(order + 2), atom_super_tran(order + 2);
+    std::vector<unsigned int> atom_new_prim(order + 2), atom_new_super(order + 2);
+    // std::vector<unsigned int> tran_new(order + 2);
+
+    for (const auto &it_trans: map_trans) {
+        for (const auto &it: fcs_inout) {
+
+            for (auto i = 0; i < order + 2; ++i) {
+                atom_super[i] = it.atoms_s[i];
+                atom_super_tran[i] = it_trans[atom_super[i]];
+            }
+
+            if (system_in->get_map_s2p(order)[atom_super_tran[0]].tran_num != 0) continue;
+
+            for (auto i = 0; i < order + 2; ++i) {
+                atom_new_prim[i] = system_in->get_map_s2p(order)[atom_super_tran[i]].atom_num;
+                pairs_tmp[i].index = 3 * atom_new_prim[i] + it.pairs[i].index % 3;
+                pairs_tmp[i].tran = system_in->get_map_s2p(order)[atom_super_tran[i]].tran_num;
+                pairs_tmp[i].cell_s = it.pairs[i].cell_s;
+            }
+
+            relvecs.clear();
+            relvecs_vel.clear();
+            for (auto i = 0; i < order + 1; ++i) {
+                for (auto j = 0; j < 3; ++j) {
+                    relvec_tmp[j] = it.relvecs_velocity[i][j] + cell_tmp.x_cartesian(atom_super_tran[0], j)
+                                    - cell_tmp.x_cartesian(system->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
+                    relvec_tmp2[j] = it.relvecs_velocity[i][j];
+                }
+                relvec_tmp = system_in->get_primcell().lattice_vector.inverse() * relvec_tmp;
+                relvec_tmp2 = system_in->get_primcell().lattice_vector.inverse() * relvec_tmp2;
+                relvecs.emplace_back(relvec_tmp);
+                relvecs_vel.emplace_back(relvec_tmp2);
+            }
+            force_constant_replicate.emplace_back(it.fcs_val,
+                                                  pairs_tmp,
+                                                  atom_super_tran,
+                                                  relvecs,
+                                                  relvecs_vel);
+        }
+    }
+
+    fcs_inout.clear();
+    std::copy(force_constant_replicate.begin(),
+              force_constant_replicate.end(),
+              std::back_inserter(fcs_inout));
 }
 
 
@@ -330,8 +342,7 @@ void Fcs_phonon::load_fcs_xml(const std::string fname_fcs,
 
     try {
         read_xml(fname_fcs, pt);
-    }
-    catch (std::exception &e) {
+    } catch (std::exception &e) {
         auto str_error = "Cannot open file FCSFILE ( " + fname_fcs + " )";
         exit("load_fcs_xml", str_error.c_str());
     }
@@ -352,54 +363,54 @@ void Fcs_phonon::load_fcs_xml(const std::string fname_fcs,
         exit("load_fcs_xml", str_tmp.c_str());
     }
 
-    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child(str_tag)) {
-                    const auto &child = child_.second;
+    BOOST_FOREACH(const ptree::value_type &child_, pt.get_child(str_tag)) {
+        const auto &child = child_.second;
 
-                    auto fcs_val = boost::lexical_cast<double>(child.data());
+        auto fcs_val = boost::lexical_cast<double>(child.data());
 
-                    ivec_with_cell.clear();
+        ivec_with_cell.clear();
 
-                    for (auto i = 0; i < order + 2; ++i) {
-                        auto str_attr = "<xmlattr>.pair" + std::to_string(i + 1);
-                        auto str_pairs = child.get<std::string>(str_attr);
+        for (auto i = 0; i < order + 2; ++i) {
+            auto str_attr = "<xmlattr>.pair" + std::to_string(i + 1);
+            auto str_pairs = child.get<std::string>(str_attr);
 
-                        ss.str("");
-                        ss.clear();
-                        ss << str_pairs;
+            ss.str("");
+            ss.clear();
+            ss << str_pairs;
 
-                        if (i == 0) {
-                            ss >> atmn >> xyz;
-                            ivec_tmp.index = 3 * map_tmp.from_true_primitive[atmn - 1][0] + xyz - 1;
-                            ivec_tmp.cell_s = 0;
-                            ivec_tmp.tran = 0; // dummy
-                            ivec_with_cell.push_back(ivec_tmp);
-                        } else {
-                            ss >> atmn >> xyz >> cell_s;
-                            ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
-                            ivec_tmp.cell_s = cell_s - 1;
-                            ivec_tmp.tran = 0; // dummy
-                            ivec_with_cell.push_back(ivec_tmp);
-                        }
-                    }
+            if (i == 0) {
+                ss >> atmn >> xyz;
+                ivec_tmp.index = 3 * map_tmp.from_true_primitive[atmn - 1][0] + xyz - 1;
+                ivec_tmp.cell_s = 0;
+                ivec_tmp.tran = 0; // dummy
+                ivec_with_cell.push_back(ivec_tmp);
+            } else {
+                ss >> atmn >> xyz >> cell_s;
+                ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
+                ivec_tmp.cell_s = cell_s - 1;
+                ivec_tmp.tran = 0; // dummy
+                ivec_with_cell.push_back(ivec_tmp);
+            }
+        }
 
-                    if (std::abs(fcs_val) > eps) {
-                        do {
-                            ivec_copy.clear();
-                            atoms_s_tmp.clear();
+        if (std::abs(fcs_val) > eps) {
+            do {
+                ivec_copy.clear();
+                atoms_s_tmp.clear();
 
-                            for (auto i = 0; i < ivec_with_cell.size(); ++i) {
-                                atmn = ivec_with_cell[i].index / 3;
-                                xyz = ivec_with_cell[i].index % 3;
-                                ivec_tmp.index = 3 * map_tmp.to_true_primitive[atmn].atom_num + xyz;
-                                ivec_tmp.cell_s = ivec_with_cell[i].cell_s;
-                                ivec_tmp.tran = map_tmp.to_true_primitive[atmn].tran_num;
-                                ivec_copy.push_back(ivec_tmp);
-                                atoms_s_tmp.emplace_back(atmn);
-                            }
-                            fcs_out.emplace_back(fcs_val, ivec_copy, atoms_s_tmp);
-                        } while (std::next_permutation(ivec_with_cell.begin() + 1, ivec_with_cell.end()));
-                    }
+                for (auto i = 0; i < ivec_with_cell.size(); ++i) {
+                    atmn = ivec_with_cell[i].index / 3;
+                    xyz = ivec_with_cell[i].index % 3;
+                    ivec_tmp.index = 3 * map_tmp.to_true_primitive[atmn].atom_num + xyz;
+                    ivec_tmp.cell_s = ivec_with_cell[i].cell_s;
+                    ivec_tmp.tran = map_tmp.to_true_primitive[atmn].tran_num;
+                    ivec_copy.push_back(ivec_tmp);
+                    atoms_s_tmp.emplace_back(atmn);
                 }
+                fcs_out.emplace_back(fcs_val, ivec_copy, atoms_s_tmp);
+            } while (std::next_permutation(ivec_with_cell.begin() + 1, ivec_with_cell.end()));
+        }
+    }
 
     // Register relative vector information for later use
     for (auto &it: fcs_out) {
@@ -444,7 +455,8 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string fname_fcs,
     std::vector<Eigen::Vector3d> relvecs_tmp;
     std::vector<unsigned int> atoms_s_tmp;
 
-    struct IndexAndRelvecs {
+    struct IndexAndRelvecs
+    {
         unsigned int index_super;
         unsigned int index_prim;
         Eigen::Vector3d relvec;
@@ -492,7 +504,8 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string fname_fcs,
                 relvecs_tmp.emplace_back(vec_index[j].relvec);
             }
             fcs_out.emplace_back(fcs_values[i], ivec_copy, atoms_s_tmp, relvecs_tmp);
-        } while (std::next_permutation(vec_index.begin() + 1, vec_index.end(),
+        } while (std::next_permutation(vec_index.begin() + 1,
+                                       vec_index.end(),
                                        [](const IndexAndRelvecs &a, const IndexAndRelvecs &b) {
                                            return a.index_super < b.index_super;
                                        }));
