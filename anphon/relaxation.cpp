@@ -677,10 +677,6 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse,
 {
     const auto ns = dynamical->neval;
     const auto nk = kmesh_dense->nk;
-    const auto nk_interpolate = kmesh_coarse->nk;
-    constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-
-    int i1, is1;
 
     // relax_str == 1: keep the unit cell fixed and relax internal coordinates
     // set renormalization from strain as zero
@@ -1719,11 +1715,19 @@ const
     }
 
 
+
     // convert from eV/Angst to Ry/Bohr
     constexpr double eV_to_Ry = 1.6021766208e-19 / Ryd;
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         for (is1 = 0; is1 < ns; is1++) {
             del_v1_del_umn_in_real_space[ixyz1][is1] *= Bohr_in_Angstrom * eV_to_Ry;
+        }
+    }
+
+    for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
+        for (int is = 0; is < ns; ++is) {
+            std::cout << "del_v1_del_umn_in_real_space[" << ixyz1 << "][" << is << "] = "
+                      << del_v1_del_umn_in_real_space[ixyz1][is] << '\n';
         }
     }
 
@@ -1762,6 +1766,13 @@ const
         }
     }
 
+    for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
+        for (int is = 0; is < ns; ++is) {
+            std::cout << "del_v1_del_umn_in_real_space_symm[" << ixyz1 << "][" << is << "] = "
+                      << del_v1_del_umn_in_real_space_symm[ixyz1][is] << '\n';
+        }
+    }
+
     // transform to Fourier space
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         for (is1 = 0; is1 < ns; is1++) {
@@ -1773,6 +1784,15 @@ const
                         * del_v1_del_umn_in_real_space_symm[ixyz1][iat1 * 3 + ixyz2];
                 }
             }
+        }
+    }
+
+    std::cout << std::scientific << std::setprecision(15);
+
+    for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
+        for (is1 = 0; is1 < ns; is1++) {
+            std::cout << "del_v1_del_umn[" << ixyz1 << "][" << is1 << "] = "
+                      << del_v1_del_umn[ixyz1][is1] << '\n';
         }
     }
 

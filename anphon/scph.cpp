@@ -22,14 +22,12 @@
 #include "constants.h"
 #include "system.h"
 #include "error.h"
-#include "mathfunctions.h"
 #include "integration.h"
 #include "parsephon.h"
 #include "phonon_dos.h"
 #include "symmetry_core.h"
 #include "fcs_phonon.h"
 #include "relaxation.h"
-#include "optimizers.h"
 #include <iostream>
 #include <iomanip>
 #include <complex>
@@ -984,7 +982,7 @@ void Scph::store_scph_dymat_to_file(const std::complex<double> *const *const *co
 
 
 void Scph::zerofill_harmonic_dymat_renormalize(std::complex<double> ****delta_harmonic_dymat_renormalize,
-                                               unsigned int NT)
+                                               unsigned int NT) const
 {
     const auto ns = dynamical->neval;
     static auto complex_zero = std::complex<double>(0.0, 0.0);
@@ -1183,7 +1181,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 {
     using namespace Eigen;
 
-    int ik, is, js;
+    int is, js;
     int is1, is2;
     int i1;
     int iat1, ixyz1, ixyz2;
@@ -1314,7 +1312,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                      mindist_list_scph,
                                      phase_factor_scph);
 
-
     allocate(v4_ref,
              nk_irred_interpolate * kmesh_dense->nk,
              ns * ns,
@@ -1378,6 +1375,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     }
 
     if (mympi->my_rank == 0) {
+        int ik;
 
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
@@ -1629,6 +1627,12 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     q0,
                                                     pvcell,
                                                     kmesh_dense);
+
+                    for (i1 = 0; i1 < 9; i1++) {
+                        std::cout << " del_v0_del_umn_renorm[" << i1 << "] = "
+                            << std::scientific << std::setw(15) << std::setprecision(6)
+                            << del_v0_del_umn_renorm[i1] << '\n';
+                    }
                 }
 
 
@@ -1684,6 +1688,12 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                       omega2_anharm[iT],
                                                       temp,
                                                       kmesh_dense);
+
+                    for (i1 = 0; i1 < 9; i1++) {
+                        std::cout << " del_v0_del_umn_SCP[" << i1 << "] = "
+                            << std::scientific << std::setw(15) << std::setprecision(6)
+                            << del_v0_del_umn_SCP[i1] << '\n';
+                    }
                 }
 
                 relaxation->update_cell_coordinate(q0,

@@ -288,7 +288,7 @@ private:
                                                             const std::vector<std::complex<double>> &omegalist);
 
     void zerofill_harmonic_dymat_renormalize(std::complex<double> ****,
-                                             unsigned int);
+                                             unsigned int) const;
 
 
 };
