@@ -207,7 +207,7 @@ public:
 
     ~Fcs_phonon();
 
-    void setup(std::string);
+    void setup(const std::string &);
 
     unsigned int maxorder;
     std::string file_fcs, file_fc2, file_fc3, file_fc4;

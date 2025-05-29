@@ -1,5 +1,5 @@
 &general
-  PREFIX = ZnO_qha3
+  PREFIX = ZnO_qha
   MODE = QHA
 #  NKD = 2
   FCSFILE = ZnO332_500K_cutoff1208_nbody233.xml

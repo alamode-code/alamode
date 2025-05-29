@@ -62,7 +62,7 @@ void Fcs_phonon::deallocate_variables()
     }
 }
 
-void Fcs_phonon::setup(std::string mode)
+void Fcs_phonon::setup(const std::string &mode)
 {
     if (mympi->my_rank == 0) {
         std::cout << " =================\n";
