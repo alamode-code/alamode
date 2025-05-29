@@ -120,21 +120,21 @@ public:
                                double **C2_array,
                                double ***C3_array) const;
 
-    void renormalize_v0_from_umn(double &,
-                                 double,
-                                 double **,
-                                 double *,
-                                 double **,
-                                 double ***,
-                                 double **,
-                                 const double);
+    static void renormalize_v0_from_umn(double &,
+                                        double,
+                                        double **,
+                                        double *,
+                                        double **,
+                                        double ***,
+                                        double **,
+                                        const double);
 
     void renormalize_v1_from_umn(std::complex<double> *,
                                  const std::complex<double> *const,
                                  const std::complex<double> *const *const,
                                  const std::complex<double> *const *const,
                                  const std::complex<double> *const *const,
-                                 const double *const *const);
+                                 const double *const *const) const;
 
     void renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
                                  const KpointMeshUniform *kmesh_dense,
@@ -142,14 +142,14 @@ public:
                                  std::complex<double> **,
                                  std::complex<double> ***,
                                  std::complex<double> ***,
-                                 double **);
+                                 double **) const;
 
     void renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse,
                                  const KpointMeshUniform *kmesh_dense,
                                  std::complex<double> ***,
                                  std::complex<double> ***,
                                  std::complex<double> ****,
-                                 double **);
+                                 double **) const;
 
     void renormalize_v1_from_q0(double **omega2_harmonic,
                                 const KpointMeshUniform *kmesh_coarse,
@@ -159,7 +159,7 @@ public:
                                 std::complex<double> **,
                                 std::complex<double> ***,
                                 std::complex<double> ***,
-                                double *);
+                                double *) const;
 
     void renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
                                 const KpointMeshUniform *kmesh_coarse,
@@ -170,14 +170,14 @@ public:
                                 std::complex<double> **delta_v2_array_original,
                                 std::complex<double> ***v3_ref,
                                 std::complex<double> ***v4_ref,
-                                double *q0);
+                                double *q0) const;
 
     void renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense,
                                 const KpointMeshUniform *kmesh_coarse,
                                 std::complex<double> ***,
                                 std::complex<double> ***,
                                 std::complex<double> ***,
-                                double *);
+                                double *) const;
 
     void renormalize_v0_from_q0(double **omega2_harmonic,
                                 const KpointMeshUniform *kmesh_dense,
@@ -187,7 +187,7 @@ public:
                                 std::complex<double> **,
                                 std::complex<double> ***,
                                 std::complex<double> ***,
-                                double *);
+                                double *) const;
 
     void calculate_u0(const double *const q0, double *const u0,
                       double **omega2_harmonic,
@@ -218,7 +218,7 @@ public:
 
     void write_resfile_header(std::ofstream &fout_q0,
                               std::ofstream &fout_u0,
-                              std::ofstream &fout_u_tensor);
+                              std::ofstream &fout_u_tensor) const;
 
     void write_resfile_atT(const double *const q0,
                            const double *const *const u_tensor,
@@ -231,7 +231,7 @@ public:
     void write_stepresfile_header_atT(std::ofstream &fout_step_q0,
                                       std::ofstream &fout_step_u0,
                                       std::ofstream &fout_step_u_tensor,
-                                      const double temp);
+                                      const double temp) const;
 
     void write_stepresfile(const double *const q0,
                            const double *const *const u_tensor,
@@ -338,22 +338,22 @@ private:
     void calculate_delv1_delumn_finite_difference(std::complex<double> **,
                                                   const std::complex<double> *const *const *const) const;
 
-    void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell>& fcs_in,
-                                             std::vector<FcsArrayWithCell>& delta_fcs,
+    void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_in,
+                                             std::vector<FcsArrayWithCell> &delta_fcs,
                                              int ixyz1,
-                                             int ixyz2);
+                                             int ixyz2) const;
 
-    void compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell>&,
-                                             std::vector<FcsArrayWithCell>&,
+    void compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &,
+                                             std::vector<FcsArrayWithCell> &,
                                              int,
                                              int,
                                              int,
-                                             int);
+                                             int) const;
 
 
-    void make_supercell_mapping_by_symmetry_operations(int **);
+    void make_supercell_mapping_by_symmetry_operations(int **) const;
 
-    void make_inverse_translation_mapping(int **);
+    void make_inverse_translation_mapping(int **) const;
 
 
 };

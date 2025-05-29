@@ -17,8 +17,10 @@
 #include <complex>
 #include <Eigen/Core>
 
-namespace PHON_NS {
-class PhononVelocity : protected Pointers {
+namespace PHON_NS
+{
+class PhononVelocity: protected Pointers
+{
 public:
     PhononVelocity(class PHON *);
 
@@ -62,7 +64,6 @@ public:
     std::complex<double> ***velmat;
 
 private:
-
     double **xshift_s;
 
     double diff(const double *,

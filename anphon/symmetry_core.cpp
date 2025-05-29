@@ -21,13 +21,15 @@
 #include <fstream>
 #include <algorithm>
 
-extern "C" {
+extern "C"
+{
 #include "spglib.h"
 }
 
 using namespace PHON_NS;
 
-Symmetry::Symmetry(PHON *phon) : Pointers(phon)
+Symmetry::Symmetry(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -108,7 +110,7 @@ void Symmetry::setup_symmetry()
         if ((phon->mode == "SCPH" && relaxation->relax_str != 0) ||
             (phon->mode == "QHA" && relaxation->relax_str != 0)) {
             std::cout << "  Number of symmetry operations in reference structure : "
-                      << nsym_ref << "\n\n";
+                << nsym_ref << "\n\n";
             use_distorted_structure = true;
         }
 
@@ -117,14 +119,16 @@ void Symmetry::setup_symmetry()
         gensym_withmap(cell_tmp.lattice_vector,
                        cell_tmp.x_fractional,
                        cell_tmp.kind,
-                       SymmList, SymmListWithMap);
+                       SymmList,
+                       SymmListWithMap);
 
         if ((phon->mode == "SCPH" && relaxation->relax_str != 0) ||
             (phon->mode == "QHA" && relaxation->relax_str != 0)) {
             gensym_withmap(system->get_primcell().lattice_vector,
                            system->get_primcell().x_fractional,
                            system->get_primcell().kind,
-                           SymmList_ref, SymmListWithMap_ref);
+                           SymmList_ref,
+                           SymmListWithMap_ref);
         }
     }
 }
@@ -150,7 +154,7 @@ void Symmetry::setup_symmetry_operation(const Cell &cell_in,
                                            symlist);
         if (verbosity > 0) {
             std::cout << "  Space group: " << spgsymbol << " ("
-                      << std::setw(3) << spgnum << ")\n";
+                << std::setw(3) << spgnum << ")\n";
         }
     }
 
@@ -731,4 +735,3 @@ bool Symmetry::is_translation(const Eigen::Matrix3i &rot) const
     const Eigen::Matrix3i identity = Eigen::Matrix3i::Identity();
     return (rot == identity);
 }
-

@@ -1939,8 +1939,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         }
     }
 
-    std::cout << "OK1\n" << std::flush;
-
     // read information on strain patterns and names of corresponding XML files.
     fin_strain_mode_coupling.open(strain_IFC_dir + "strain_harmonic.in");
 
@@ -1966,7 +1964,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
             break;
         }
     }
-    std::cout << "OK2\n" << std::flush;
 
     // read IFCs with strain.
     std::vector<std::vector<FcsArrayWithCell>> fc2_deformed(nmode);
@@ -1975,8 +1972,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         fcs_phonon->get_fcs_from_file(strain_IFC_dir + filename_list[imode], 0, fc2_deformed[imode]);
         fcs_phonon->replicate_force_constant(system, fc2_deformed[imode]);
     }
-
-    std::cout << "OK2.5\n" << std::flush;
 
     weight_sum.setZero();
 
@@ -2042,9 +2037,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         }
     }
 
-    std::cout << "OK3\n" << std::flush;
-
-
     // check weight_sum
     if (renorm_3to2nd == 2) {
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
@@ -2073,9 +2065,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
             }
         }
     }
-
-    std::cout << "OK4\n" << std::flush;
-
 
     // make mapping information
     allocate(symm_mapping_s, symmetry->SymmListWithMap_ref.size(), nat);
@@ -2235,9 +2224,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         }
     }
 
-    std::cout << "OK5\n" << std::flush;
-
-
     deallocate(symm_mapping_s);
     deallocate(inv_translation_mapping);
 
@@ -2330,9 +2316,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         }
     }
 
-    std::cout << "OK6\n" << std::flush;
-
-
     // Assign ASR to del_v2_del_umn from here.
     // set elements of acoustic mode at Gamma point exactly zero
 
@@ -2372,28 +2355,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         }
     }
 
-    // write the result in k-space and (alpha,mu) representation in a file
-    // std::ofstream fout_B_array_kspace;
-    // fout_B_array_kspace.open("B_array_kspace.txt");
-
-    // for(ik = 0; ik < nk; ik++){
-    //     std::cout << kmesh_dense->xk[ik][0] << " " << kmesh_dense->xk[ik][1] << " " << kmesh_dense->xk[ik][2] << '\n';
-    // }
-
-
-    // for(ixyz1 = 0; ixyz1 < 3; ixyz1++){
-    //     for(ixyz2 = 0; ixyz2 < 3; ixyz2++){
-    //         for(ik = 0; ik < nk; ik++){
-    //             for(is = 0; is < ns*ns; is++){
-    //                 fout_B_array_kspace << std::scientific << std::setprecision(15);
-    //                 fout_B_array_kspace << del_v2_strain_from_cubic_alphamu[ixyz1*3+ixyz2][ik][is].real() << " " << del_v2_strain_from_cubic_alphamu[ixyz1*3+ixyz2][ik][is].imag() << '\n';
-    //             }
-    //         }
-    //     }
-    // }
-    // fout_B_array_kspace.close();
-
-
     deallocate(dphi2_dumn_realspace_tmp);
     deallocate(dphi2_dumn_realspace_symm);
     deallocate(dphi2_dumn_realspace_in);
@@ -2415,22 +2376,22 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn,
                                          double **u_tensor,
                                          const double pvcell)
 {
-    int ixyz1, ixyz2, ixyz3, ixyz4, ixyz5, ixyz6;
+    int ixyz1;
 
-    double factor1 = 0.5;
-    double factor2 = 1.0 / 6.0;
+    constexpr double factor1 = 0.5;
+    constexpr double factor2 = 1.0 / 6.0;
 
     v0_with_umn = v0_ref;
 
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-        for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+        for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
             v0_with_umn += C1_array[ixyz1 * 3 + ixyz2] * eta_tensor[ixyz1][ixyz2];
-            for (ixyz3 = 0; ixyz3 < 3; ixyz3++) {
-                for (ixyz4 = 0; ixyz4 < 3; ixyz4++) {
+            for (int ixyz3 = 0; ixyz3 < 3; ixyz3++) {
+                for (int ixyz4 = 0; ixyz4 < 3; ixyz4++) {
                     v0_with_umn += factor1 * C2_array[ixyz1 * 3 + ixyz2][ixyz3 * 3 + ixyz4] * eta_tensor[ixyz1][ixyz2] *
                         eta_tensor[ixyz3][ixyz4];
-                    for (ixyz5 = 0; ixyz5 < 3; ixyz5++) {
-                        for (ixyz6 = 0; ixyz6 < 3; ixyz6++) {
+                    for (int ixyz5 = 0; ixyz5 < 3; ixyz5++) {
+                        for (int ixyz6 = 0; ixyz6 < 3; ixyz6++) {
                             v0_with_umn += factor2 * C3_array[ixyz1 * 3 + ixyz2][ixyz3 * 3 + ixyz4][ixyz5 * 3 + ixyz6]
                                 * eta_tensor[ixyz1][ixyz2] * eta_tensor[ixyz3][ixyz4] *
                                 eta_tensor[ixyz5][ixyz6];
@@ -2452,7 +2413,7 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn,
     vec_tmp2[1] += 1.0;
     vec_tmp3[2] += 1.0;
 
-    double det_F_tensor = std::abs(vec_tmp1.dot(vec_tmp2.cross(vec_tmp3)));
+    const double det_F_tensor = std::abs(vec_tmp1.dot(vec_tmp2.cross(vec_tmp3)));
     v0_with_umn += pvcell * det_F_tensor;
 
 }
@@ -2462,7 +2423,7 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn,
                                          const std::complex<double> *const *const del_v1_del_umn,
                                          const std::complex<double> *const *const del2_v1_del_umn2,
                                          const std::complex<double> *const *const del3_v1_del_umn3,
-                                         const double *const *const u_tensor)
+                                         const double *const *const u_tensor) const
 {
     const auto ns = dynamical->neval;
 
@@ -2507,7 +2468,7 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
                                          std::complex<double> **delta_v2_renorm,
                                          std::complex<double> ***del_v2_del_umn,
                                          std::complex<double> ***del2_v2_del_umn2,
-                                         double **u_tensor)
+                                         double **u_tensor) const
 {
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
@@ -2560,7 +2521,7 @@ void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse,
                                          std::complex<double> ***v3_with_umn,
                                          std::complex<double> ***v3_ref,
                                          std::complex<double> ****del_v3_del_umn,
-                                         double **u_tensor)
+                                         double **u_tensor) const
 {
     const auto nk_scph = kmesh_dense->nk;
     //    const auto nk_interpolate = kmesh_coarse->nk;
@@ -2601,7 +2562,7 @@ void Relaxation::renormalize_v1_from_q0(double **omega2_harmonic,
                                         std::complex<double> **delta_v2_array_original,
                                         std::complex<double> ***v3_ref,
                                         std::complex<double> ***v4_ref,
-                                        double *q0)
+                                        double *q0) const
 {
     int is1, is2;
     const auto ik_irred0 = kmesh_coarse->kpoint_map_symmetry[0].knum_irred_orig;
@@ -2649,7 +2610,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
                                         std::complex<double> **delta_v2_array_original,
                                         std::complex<double> ***v3_ref,
                                         std::complex<double> ***v4_ref,
-                                        double *q0)
+                                        double *q0) const
 {
     using namespace Eigen;
 
@@ -2754,7 +2715,7 @@ void Relaxation::renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense,
                                         std::complex<double> ***v3_renorm,
                                         std::complex<double> ***v3_ref,
                                         std::complex<double> ***v4_ref,
-                                        double *q0)
+                                        double *q0) const
 {
     const auto ns = dynamical->neval;
     const auto ik_irred0 = kmesh_coarse->kpoint_map_symmetry[0].knum_irred_orig;
@@ -2788,14 +2749,14 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic,
                                         std::complex<double> **delta_v2_array_original,
                                         std::complex<double> ***v3_ref,
                                         std::complex<double> ***v4_ref,
-                                        double *q0)
+                                        double *q0) const
 {
-    int is1, is2, is3, is4;
+    int is1, is2;
     const auto ns = dynamical->neval;
-    int nk_scph = kmesh_dense->nk;
-    double factor2 = 1.0 / 2.0;
-    double factor3 = 1.0 / 6.0 * 4.0 * nk_scph;;
-    double factor4 = 1.0 / 24.0 * 4.0 * nk_scph;;
+    const auto nk_scph = kmesh_dense->nk;
+    constexpr double factor2 = 1.0 / 2.0;
+    const double factor3 = 1.0 / 6.0 * 4.0 * nk_scph;;
+    const double factor4 = 1.0 / 24.0 * 4.0 * nk_scph;;
 
     std::complex<double> v0_renorm_tmp;
 
@@ -2814,9 +2775,9 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic,
     // renormalize from the cubic, quartic IFC
     for (is1 = 0; is1 < ns; is1++) {
         for (is2 = 0; is2 < ns; is2++) {
-            for (is3 = 0; is3 < ns; is3++) {
+            for (int is3 = 0; is3 < ns; is3++) {
                 v0_renorm_tmp += factor3 * v3_ref[0][is1][is2 * ns + is3] * q0[is1] * q0[is2] * q0[is3];
-                for (is4 = 0; is4 < ns; is4++) {
+                for (int is4 = 0; is4 < ns; is4++) {
                     v0_renorm_tmp +=
                         factor4 * v4_ref[0][is2 * ns + is1][is3 * ns + is4] * q0[is1] * q0[is2] * q0[is3] * q0[is4];
                 }
@@ -2831,7 +2792,7 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic,
 void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                      std::vector<FcsArrayWithCell> &delta_fcs,
                                                      const int ixyz1,
-                                                     const int ixyz2)
+                                                     const int ixyz2) const
 {
     unsigned int i, j;
     Eigen::Vector3d vec;
@@ -2852,8 +2813,8 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
 
     delta_fcs.clear();
 
-    const auto convmat = system->get_supercell(1).lattice_vector;
-    // const auto convmat = system->get_primcell().lattice_vector;
+    // const auto convmat = system->get_supercell(1).lattice_vector;
+    const auto convmat = system->get_primcell().lattice_vector;
     const auto norder = fcs_aligned[0].pairs.size();
     const auto nelems = norder - 1;
 
@@ -2878,16 +2839,6 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
     relvecs_vel_old.resize(nelems - 1);
 
     for (i = 0; i < 3 * (norder - 2) + 1; ++i) index_with_cell_old.push_back(-1);
-
-    // for (const auto &it : fcs_aligned) {
-    //     for (const auto &it2: it.pairs) {
-    //         std::cout << std::setw(5) << it2.index;
-    //     }
-    //     for (const auto &it2: it.relvecs) {
-    //         std::cout << std::setw(4) << nint(it2[0]) << ' ' << std::setw(4) << nint(it2[1]) << ' ' << std::setw(4) << nint(it2[2]);
-    //     }
-    //     std::cout << std::setw(20) << it.fcs_val << '\n';
-    // }
 
     for (const auto &it: fcs_aligned) {
 
@@ -2941,19 +2892,6 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
                                            atoms_s_old,
                                            relvecs_old,
                                            relvecs_vel_old);
-
-                    // std::cout << "delta_fcs: ";
-                    // for (auto ii = 0; ii < pairs_vec.size(); ++ii) {
-                    //     std::cout << std::setw(5) << pairs_vec[ii].index;
-                    //     std::cout << std::setw(5) << pairs_vec[ii].tran;
-                    //     std::cout << std::setw(5) << pairs_vec[ii].cell_s;
-                    // }
-                    // for (auto ii = 0; ii < relvecs_old.size(); ++ii) {
-                    //     std::cout << std::setw(4) << nint(relvecs_old[ii][0]) << ' '
-                    //               << std::setw(4) << nint(relvecs_old[ii][1]) << ' '
-                    //               << std::setw(4) << nint(relvecs_old[ii][2]);
-                    // }
-                    // std::cout << std::setw(20) << std::scientific << fcs_tmp << '\n';
                 }
             }
 
@@ -2968,31 +2906,17 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
 
         vec.setZero();
 
-        // To activate this version, the definision of convmat should be changed at the same time.
-        for (i = 0; i < 3; ++i) {
-            vec[i] = system->get_supercell(1).x_fractional(
-                         system->get_map_p2s(1)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran],
-                         i)
-                     + dynamical->get_xrs_image()[it.pairs[norder - 1].cell_s][i];
-        }
-
-        // vec = convmat * it.relvecs_velocity[nelems - 1];
-        vec = convmat * vec;
-        fcs_tmp += it.fcs_val * vec[ixyz2];
-
-        // if (ixyz1 == 0)
-        // {
-        //     std::cout << "DEBUG: ";
-        //     std::cout << " ixyz1 = " << ixyz1 << " ixyz2 = " << ixyz2 << " ";
-        //     for (i = 0; i < it.pairs.size(); ++i) {
-        //         std::cout << std::setw(5) << it.pairs[i].index;
-        //         std::cout << std::setw(5) << it.pairs[i].tran;
-        //         std::cout << std::setw(5) << it.pairs[i].cell_s;
-        //     }
-        //     std::cout << std::setw(20) << it.fcs_val;
-        //     std::cout << std::setw(20) << vec[ixyz2] << '\n';
-
+        // // To activate this version, the definision of convmat should be changed at the same time.
+        // for (i = 0; i < 3; ++i) {
+        //     vec[i] = system->get_supercell(1).x_fractional(
+        //                  system->get_map_p2s(1)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran],
+        //                  i)
+        //              + dynamical->get_xrs_image()[it.pairs[norder - 1].cell_s][i];
         // }
+        // vec = convmat * vec;
+
+        vec = convmat * it.relvecs_velocity[nelems - 1];
+        fcs_tmp += it.fcs_val * vec[ixyz2];
     }
 
     if (std::abs(fcs_tmp) > eps15) {
@@ -3024,11 +2948,10 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
                                                      const int ixyz11,
                                                      const int ixyz12,
                                                      const int ixyz21,
-                                                     const int ixyz22)
+                                                     const int ixyz22) const
 {
     unsigned int i, j;
     Eigen::Vector3d vec1, vec2;
-    Eigen::Vector3d vec1_tmp, vec2_tmp;
 
     double fcs_tmp = 0.0;
 
@@ -3185,7 +3108,7 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
 }
 
 
-void Relaxation::make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s)
+void Relaxation::make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const
 {
     const auto nat = system->get_supercell(0).number_of_atoms;
     const auto ntran = system->get_map_p2s()[0].size();
@@ -3293,7 +3216,7 @@ void Relaxation::make_supercell_mapping_by_symmetry_operations(int **symm_mappin
     deallocate(map_tmp);
 }
 
-void Relaxation::make_inverse_translation_mapping(int **inv_translation_mapping)
+void Relaxation::make_inverse_translation_mapping(int **inv_translation_mapping) const
 {
     const auto ntran = system->get_map_p2s(0)[0].size();
 
@@ -3349,7 +3272,7 @@ void Relaxation::make_inverse_translation_mapping(int **inv_translation_mapping)
 
 void Relaxation::write_resfile_header(std::ofstream &fout_q0,
                                       std::ofstream &fout_u0,
-                                      std::ofstream &fout_u_tensor)
+                                      std::ofstream &fout_u_tensor) const
 {
     const auto ns = dynamical->neval;
 
@@ -3432,7 +3355,7 @@ auto Relaxation::write_resfile_atT(const double *const q0,
 void Relaxation::write_stepresfile_header_atT(std::ofstream &fout_step_q0,
                                               std::ofstream &fout_step_u0,
                                               std::ofstream &fout_step_u_tensor,
-                                              const double temp)
+                                              const double temp) const
 {
     const auto ns = dynamical->neval;
 

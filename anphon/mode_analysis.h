@@ -17,9 +17,11 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "anharmonic_core.h"
 #include "kpoint.h"
 
-namespace PHON_NS {
+namespace PHON_NS
+{
 
-class KsListMode {
+class KsListMode
+{
 public:
     double xk[3]{};
     int nmode;
@@ -34,7 +36,8 @@ public:
     }
 };
 
-class KpointListWithCoordinate {
+class KpointListWithCoordinate
+{
 public:
     double xk[3];
     double x, y;
@@ -57,7 +60,8 @@ public:
     }
 };
 
-class ModeAnalysis : protected Pointers {
+class ModeAnalysis: protected Pointers
+{
 public:
     ModeAnalysis(class PHON *);
 

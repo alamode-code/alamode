@@ -6,7 +6,8 @@
 using namespace PHON_NS;
 
 
-Newton_Optimizer::Newton_Optimizer(double mixbeta) : mixbeta(mixbeta) {}
+Newton_Optimizer::Newton_Optimizer(double mixbeta) :
+    mixbeta(mixbeta) {}
 
 void Newton_Optimizer::update_state(const int dim,
                                     const std::vector<double> &grad_vec,

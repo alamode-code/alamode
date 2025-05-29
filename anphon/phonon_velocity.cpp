@@ -25,7 +25,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-PhononVelocity::PhononVelocity(PHON *phon) : Pointers(phon)
+PhononVelocity::PhononVelocity(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -95,9 +96,9 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
 
     allocate(evec_tmp, 1, 1);
 
-//    if (mympi->my_rank == 0) {
-//        std::cout << " Calculating group velocities of phonon along given k path ... ";
-//    }
+    //    if (mympi->my_rank == 0) {
+    //        std::cout << " Calculating group velocities of phonon along given k path ... ";
+    //    }
 
     const unsigned int ndiff = 2;
     allocate(xk_shift, ndiff, 3);
@@ -111,7 +112,7 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
         // Represent the given kpoint in Cartesian coordinate
         rotvec(xk_tmp, kpoint_bs_in->xk[ik], rlavec_p, 'T');
 
-//        if (ndiff == 2) {
+        //        if (ndiff == 2) {
         // central difference
         // f'(x) =~ f(x+h)-f(x-h)/2h
 
@@ -120,10 +121,10 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
             xk_shift[1][i] = xk_tmp[i] + h * kpoint_bs_in->kvec_na[ik][i];
         }
 
-//        } else {
-//            exit("get_phonon_group_velocity_bandstructure",
-//                        "ndiff > 2 is not supported yet.");
-//        }
+        //        } else {
+        //            exit("get_phonon_group_velocity_bandstructure",
+        //                        "ndiff > 2 is not supported yet.");
+        //        }
 
         for (idiff = 0; idiff < ndiff; ++idiff) {
 
@@ -137,13 +138,15 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
                                         kpoint_bs_in->kvec_na[ik],
                                         fc2_without_dipole,
                                         omega_shift[idiff],
-                                        evec_tmp, false);
+                                        evec_tmp,
+                                        false);
             } else {
                 dynamical->eval_k(xk_shift[idiff],
                                   kpoint_bs_in->kvec_na[ik],
                                   fc2_in,
                                   omega_shift[idiff],
-                                  evec_tmp, false);
+                                  evec_tmp,
+                                  false);
             }
         }
 
@@ -161,9 +164,9 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
 
     deallocate(evec_tmp);
 
-//    if (mympi->my_rank == 0) {
-//        std::cout << "done!" << '\n';
-//    }
+    //    if (mympi->my_rank == 0) {
+    //        std::cout << "done!" << '\n';
+    //    }
 }
 
 void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in,
@@ -225,9 +228,9 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     std::vector<int> nk_proc;
     std::vector<int> ik_begin_proc, ik_end_proc;
 
-//    if (mympi->my_rank == 0) {
-//        std::cout << " Calculating group velocities of phonons on uniform grid ... ";
-//    }
+    //    if (mympi->my_rank == 0) {
+    //        std::cout << " Calculating group velocities of phonons on uniform grid ... ";
+    //    }
 
     allocate(sendcount, mympi->nprocs);
     allocate(recvcount, mympi->nprocs);
@@ -288,17 +291,24 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
 
     deallocate(vel);
 
-    MPI_Gatherv(&phvel3_loc[0][0][0], sendcount[mympi->my_rank], MPI_DOUBLE,
-                &phvel3_out[0][0][0], &recvcount[0], &displs[0], MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(&phvel3_loc[0][0][0],
+                sendcount[mympi->my_rank],
+                MPI_DOUBLE,
+                &phvel3_out[0][0][0],
+                &recvcount[0],
+                &displs[0],
+                MPI_DOUBLE,
+                0,
+                MPI_COMM_WORLD);
 
     deallocate(phvel3_loc);
     deallocate(sendcount);
     deallocate(recvcount);
     if (displs) deallocate(displs);
 
-//    if (mympi->my_rank == 0) {
-//        std::cout << "done!" << '\n';
-//    }
+    //    if (mympi->my_rank == 0) {
+    //        std::cout << "done!" << '\n';
+    //    }
 }
 
 void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out) const
@@ -383,32 +393,39 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
             }
         }
 
-//        std::cout << "k = " << i << '\n';
-//        std::cout << dos->kmesh_dos->xk[i][0] << "  " << dos->kmesh_dos->xk[i][1] << " " << dos->kmesh_dos->xk[i][2] << '\n';
-//        for (auto mu = 0; mu < 3; ++mu) {
-//            std::cout << "mu = " << mu << '\n';
-//
-//            std::cout << "Diagonal:\n";
-//
-//            for (auto j = 0; j < ns; ++j) {
-//                std::cout << std::setw(20) << velmat_loc[i][j][j][mu] << '\n';
-//            }
-//
-//            std::cout << "Full:\n";
-//            for (auto j = 0; j < ns; ++j) {
-//                for (auto k = 0; k < ns; ++k) {
-//                    std::cout << std::setw(20) << velmat_loc[i][j][k][mu].real()
-//                                << std::setw(15) << velmat_loc[i][j][k][mu].imag();
-//                }
-//                std::cout << '\n';
-//            }
-//            std::cout << '\n';
-//        }
-//        std::cout << '\n';
+        //        std::cout << "k = " << i << '\n';
+        //        std::cout << dos->kmesh_dos->xk[i][0] << "  " << dos->kmesh_dos->xk[i][1] << " " << dos->kmesh_dos->xk[i][2] << '\n';
+        //        for (auto mu = 0; mu < 3; ++mu) {
+        //            std::cout << "mu = " << mu << '\n';
+        //
+        //            std::cout << "Diagonal:\n";
+        //
+        //            for (auto j = 0; j < ns; ++j) {
+        //                std::cout << std::setw(20) << velmat_loc[i][j][j][mu] << '\n';
+        //            }
+        //
+        //            std::cout << "Full:\n";
+        //            for (auto j = 0; j < ns; ++j) {
+        //                for (auto k = 0; k < ns; ++k) {
+        //                    std::cout << std::setw(20) << velmat_loc[i][j][k][mu].real()
+        //                                << std::setw(15) << velmat_loc[i][j][k][mu].imag();
+        //                }
+        //                std::cout << '\n';
+        //            }
+        //            std::cout << '\n';
+        //        }
+        //        std::cout << '\n';
     }
 
-    MPI_Gatherv(&velmat_loc[0][0][0][0], sendcount[mympi->my_rank], MPI_COMPLEX16,
-                &velmat_out[0][0][0][0], &recvcount[0], &displs[0], MPI_COMPLEX16, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(&velmat_loc[0][0][0][0],
+                sendcount[mympi->my_rank],
+                MPI_COMPLEX16,
+                &velmat_out[0][0][0][0],
+                &recvcount[0],
+                &displs[0],
+                MPI_COMPLEX16,
+                0,
+                MPI_COMM_WORLD);
 
     deallocate(velmat_loc);
     deallocate(sendcount);
@@ -583,7 +600,7 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in,
 
             if (ideg == 1) {
 
-                // When the branch is non-degenerate, the velocity can be calculated 
+                // When the branch is non-degenerate, the velocity can be calculated
                 // from the diagonal element of e^{*} * DDYN * e.
 
                 for (icrd = 0; icrd < 3; ++icrd) {
@@ -601,8 +618,8 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in,
 
             } else if (ideg > 1) {
 
-                // When the branch is degenerated with two or more branches, 
-                // we have to construct a MxM matrix and diagonalize it to obtain 
+                // When the branch is degenerated with two or more branches,
+                // we have to construct a MxM matrix and diagonalize it to obtain
                 // group velocities.
 
                 allocate(mat_tmp, 3, ideg, ideg);
@@ -721,10 +738,10 @@ void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in,
             // For the diagonal components, this should be fine,
             // whereas it.relvecs_vel should be used for computing the off diagonal elements.
             ddyn_out[k][it.pairs[0].index][it.pairs[1].index]
-                    += it.fcs_val * std::exp(im * phase)
-                       * tpi * it.relvecs[0][k]
-                       * invsqrt_mass[it.pairs[0].index / 3]
-                       * invsqrt_mass[it.pairs[1].index / 3];
+                += it.fcs_val * std::exp(im * phase)
+                * tpi * it.relvecs[0][k]
+                * invsqrt_mass[it.pairs[0].index / 3]
+                * invsqrt_mass[it.pairs[1].index / 3];
         }
     }
 
@@ -804,9 +821,9 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in,
 
         for (k = 0; k < 3; ++k) {
             ddymat[it.pairs[0].index][it.pairs[1].index][k]
-                    += it.fcs_val * std::exp(im * phase) * tpi * it.relvecs_velocity[0][k]
-                       * invsqrt_mass[it.pairs[0].index / 3]
-                       * invsqrt_mass[it.pairs[1].index / 3];
+                += it.fcs_val * std::exp(im * phase) * tpi * it.relvecs_velocity[0][k]
+                * invsqrt_mass[it.pairs[0].index / 3]
+                * invsqrt_mass[it.pairs[1].index / 3];
         }
     }
 
@@ -818,9 +835,9 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in,
                 for (jj = 0; jj < nmode; ++jj) {
                     for (k = 0; k < 3; ++k) {
                         velmat_out[i][j][k]
-                                += std::conj(evec_in[i][ii])
-                                   * ddymat[ii][jj][k]
-                                   * evec_in[j][jj];
+                            += std::conj(evec_in[i][ii])
+                            * ddymat[ii][jj][k]
+                            * evec_in[j][jj];
                     }
                 }
             }

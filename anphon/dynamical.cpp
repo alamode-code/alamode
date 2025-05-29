@@ -38,7 +38,8 @@
 
 using namespace PHON_NS;
 
-Dynamical::Dynamical(PHON *phon) : Pointers(phon)
+Dynamical::Dynamical(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -100,8 +101,9 @@ void DymatEigenValue::set_eigenvalues(const unsigned int n,
             }
         }
     } else {
-        exit("set_eigenvalues", "the number of kpoint is larger than the one"
-                                "used in the constructor.");
+        exit("set_eigenvalues",
+             "the number of kpoint is larger than the one"
+             "used in the constructor.");
     }
 }
 
@@ -113,8 +115,9 @@ void DymatEigenValue::set_eigenvectors(const unsigned int n,
              "the array for the eigenvector is not allocated.");
     }
     if (n > this->nk) {
-        exit("set_eigenvectors", "the number of kpoint is larger than "
-                                 "the one used in the constructor.");
+        exit("set_eigenvectors",
+             "the number of kpoint is larger than "
+             "the one used in the constructor.");
     }
     for (unsigned int i = 0; i < n; ++i) {
         for (unsigned int j = 0; j < ns; ++j) {
@@ -587,8 +590,8 @@ void Dynamical::calc_analytic_k(const double *xk_in,
         const auto phase = vec[0] * xk_in[0] + vec[1] * xk_in[1] + vec[2] * xk_in[2];
 
         dymat_out[3 * atm1_p + xyz1][3 * atm2_p + xyz2]
-                += it.fcs_val * std::exp(im * phase) /
-                   std::sqrt(system->get_mass_super()[atm1_s] * system->get_mass_super()[atm2_s]);
+            += it.fcs_val * std::exp(im * phase) /
+            std::sqrt(system->get_mass_super()[atm1_s] * system->get_mass_super()[atm2_s]);
     }
 }
 
@@ -609,9 +612,9 @@ void Dynamical::calc_analytic_k(const double *xk_in,
                                   + it.relvecs[0][1] * xk_in[1]
                                   + it.relvecs[0][2] * xk_in[2]);
         dymat_out[it.pairs[0].index][it.pairs[1].index]
-                += it.fcs_val * std::exp(im * phase)
-                   * invsqrt_mass[it.pairs[0].index / 3]
-                   * invsqrt_mass[it.pairs[1].index / 3];
+            += it.fcs_val * std::exp(im * phase)
+            * invsqrt_mass[it.pairs[0].index / 3]
+            * invsqrt_mass[it.pairs[1].index / 3];
     }
 }
 
@@ -673,8 +676,9 @@ void Dynamical::calc_nonanalytic_k(const double *xk_in,
                     for (j = 0; j < 3; ++j) {
 
                         dymat_na_out[3 * iat + i][3 * jat + j]
-                                = kz1[i] * kz2[j] / (denom * std::sqrt(
-                                system->get_mass_super()[atm_p1] * system->get_mass_super()[atm_p2]));
+                            = kz1[i] * kz2[j] / (denom * std::sqrt(
+                                                     system->get_mass_super()[atm_p1] * system->get_mass_super()[
+                                                         atm_p2]));
 
                     }
                 }
@@ -685,9 +689,9 @@ void Dynamical::calc_nonanalytic_k(const double *xk_in,
     // make the phonon dispersion periodic in the reciprocal lattice.
     // For the moment, comment out here as it gives strange values for group velocities.
     // Need to use Niggli reduction for this to work properly.
-//    for (i = 0; i < 3; ++i) {
-//        xk_tmp[i] = xk_in[i] - static_cast<double>(nint(xk_in[i]));
-//    }
+    //    for (i = 0; i < 3; ++i) {
+    //        xk_tmp[i] = xk_in[i] - static_cast<double>(nint(xk_in[i]));
+    //    }
 
     for (i = 0; i < 3; ++i) xk_tmp[i] = xk_in[i];
     xk_tmp = pcell.reciprocal_lattice_vector.transpose() * xk_tmp;
@@ -803,8 +807,8 @@ void Dynamical::calc_nonanalytic_k2(const double *xk_in,
                         }
 
 
-//                        rotvec(vec, vec, system->get_supercell(0).lattice_vector);
-//                        rotvec(vec, vec, system->get_primcell().reciprocal_lattice_vector);
+                        //                        rotvec(vec, vec, system->get_supercell(0).lattice_vector);
+                        //                        rotvec(vec, vec, system->get_primcell().reciprocal_lattice_vector);
 
                         vec = convmat * vec;
                         double phase = vec[0] * xk_in[0] + vec[1] * xk_in[1] + vec[2] * xk_in[2];
@@ -818,9 +822,10 @@ void Dynamical::calc_nonanalytic_k2(const double *xk_in,
                 for (i = 0; i < 3; ++i) {
                     for (j = 0; j < 3; ++j) {
                         dymat_na_out[3 * iat + i][3 * jat + j]
-                                = kz1[i] * kz2[j] / (denom * std::sqrt(
-                                system->get_mass_super()[atm_p1] * system->get_mass_super()[atm_p2]))
-                                  * exp_phase;
+                            = kz1[i] * kz2[j] / (denom * std::sqrt(
+                                                     system->get_mass_super()[atm_p1] * system->get_mass_super()[
+                                                         atm_p2]))
+                              * exp_phase;
                     }
                 }
             }
@@ -842,7 +847,7 @@ void Dynamical::diagonalize_dynamical_all()
 
     if (mympi->my_rank == 0) {
         std::cout << '\n'
-                  << " Diagonalizing dynamical matrices for all k points ... ";
+            << " Diagonalizing dynamical matrices for all k points ... ";
     }
     double **eval_tmp;
     std::complex<double> ***evec_tmp;
@@ -880,7 +885,9 @@ void Dynamical::diagonalize_dynamical_all()
 
             MPI_Bcast(&evec_tmp[0][0][0],
                       nk * neval * neval,
-                      MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+                      MPI_CXX_DOUBLE_COMPLEX,
+                      0,
+                      MPI_COMM_WORLD);
         }
 
         dymat_general->set_eigenvals_and_eigenvecs(nk,
@@ -921,7 +928,9 @@ void Dynamical::diagonalize_dynamical_all()
 
             MPI_Bcast(&evec_tmp[0][0][0],
                       nk * neval * neval,
-                      MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+                      MPI_CXX_DOUBLE_COMPLEX,
+                      0,
+                      MPI_COMM_WORLD);
         }
 
         dymat_band->set_eigenvals_and_eigenvecs(nk,
@@ -963,7 +972,9 @@ void Dynamical::diagonalize_dynamical_all()
 
             MPI_Bcast(&evec_tmp[0][0][0],
                       nk * neval * neval,
-                      MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+                      MPI_CXX_DOUBLE_COMPLEX,
+                      0,
+                      MPI_COMM_WORLD);
         }
 
         dos->dymat_dos->set_eigenvals_and_eigenvecs(nk,
@@ -1195,14 +1206,14 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
             // Non degenerate case. just copy the original eigenvector
 
             evec_new.block(0, ishift, ns, 1)
-                    = evec_orig.block(0, ishift, ns, 1);
+                = evec_orig.block(0, ishift, ns, 1);
 
         } else if (iset == 2) {
             // Doubly degenerate case.
 
             if (ndirec == 0) {
                 evec_new.block(0, ishift, ns, 2)
-                        = evec_orig.block(0, ishift, ns, 2);
+                    = evec_orig.block(0, ishift, ns, 2);
             } else {
 
                 Eigen::MatrixXcd evec_sub = evec_orig.block(0, ishift, ns, 2);
@@ -1223,13 +1234,13 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
                     for (i = 0; i < 3; ++i) std::cout << std::setw(15) << xk_in[i];
                     std::cout << '\n';
                     std::cout << " All projections did not lift the two-fold degeneracy.\n"
-                                 " Try another projection!\n";
+                        " Try another projection!\n";
 
                     evec_new.block(0, ishift, ns, 2)
-                            = evec_orig.block(0, ishift, ns, 2);
+                        = evec_orig.block(0, ishift, ns, 2);
                 } else {
                     evec_new.block(0, ishift, ns, 2)
-                            = evec_sub.block(0, 0, ns, 2);
+                        = evec_sub.block(0, 0, ns, 2);
                 }
             }
 
@@ -1239,7 +1250,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
             if (ndirec == 0) {
 
                 evec_new.block(0, ishift, ns, 3)
-                        = evec_orig.block(0, ishift, ns, 3);
+                    = evec_orig.block(0, ishift, ns, 3);
 
             } else if (ndirec == 1) {
 
@@ -1247,13 +1258,13 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
                 auto is_lifted = transform_eigenvectors(xk_in, directions[0], dk, evec_sub);
 
                 evec_new.block(0, ishift, ns, 3)
-                        = evec_sub.block(0, 0, ns, 3);
+                    = evec_sub.block(0, 0, ns, 3);
                 if (is_lifted == 0) {
                     std::cout << " xk = ";
                     for (i = 0; i < 3; ++i) std::cout << std::setw(15) << xk_in[i];
                     std::cout << '\n';
                     std::cout << " The first projection did not lift the two-fold degeneracy.\n"
-                                 " Try another projection!\n";
+                        " Try another projection!\n";
                 }
 
             } else if (ndirec >= 2) {
@@ -1265,16 +1276,16 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
                 auto is_lifted2 = transform_eigenvectors(xk_in, directions[1], dk, evec_sub2);
 
                 evec_new.block(0, ishift, ns, 1)
-                        = evec_sub.block(0, 0, ns, 1);
+                    = evec_sub.block(0, 0, ns, 1);
                 evec_new.block(0, ishift + 1, ns, 2)
-                        = evec_sub2.block(0, 0, ns, 2);
+                    = evec_sub2.block(0, 0, ns, 2);
 
                 if (is_lifted1 == 0 || is_lifted2 == 0) {
                     std::cout << " xk = ";
                     for (i = 0; i < 3; ++i) std::cout << std::setw(15) << xk_in[i];
                     std::cout << '\n';
                     std::cout << " The given projections did not lift the three-fold degeneracy.\n"
-                                 " Try another set of projections!\n";
+                        " Try another set of projections!\n";
                 }
 
             }
@@ -1519,7 +1530,8 @@ void Dynamical::connect_band_by_eigen_similarity(const unsigned int nk_in,
 
             // Argsort abs_similarity[is] (use C++11 lambda)
             iota(index.begin(), index.end(), 0);
-            std::sort(index.begin(), index.end(),
+            std::sort(index.begin(),
+                      index.end(),
                       [&abs_similarity, is](int i1,
                                             int i2) {
                           return abs_similarity[is][i1] > abs_similarity[is][i2];
@@ -1534,7 +1546,11 @@ void Dynamical::connect_band_by_eigen_similarity(const unsigned int nk_in,
             }
         }
 
-        if (std::any_of(found.begin(), found.end(), [](int i1) { return i1 == 0; })) {
+        if (std::any_of(found.begin(),
+                        found.end(),
+                        [](int i1) {
+                            return i1 == 0;
+                        })) {
             exit("connect_band_by_eigen_similarity",
                  "Could not identify the connection.");
         }
@@ -1589,15 +1605,15 @@ void Dynamical::detect_imaginary_branches(const KpointMeshUniform &kmesh_in,
                                 std::cout << std::setw(15) << kmesh_in.xk[knum][j];
                             }
                             std::cout << std::setw(4) << is + 1 << " :"
-                                      << std::setw(10) << std::fixed
-                                      << writes->in_kayser(omega) << " (cm^-1)" << '\n';
+                                << std::setw(10) << std::fixed
+                                << writes->in_kayser(omega) << " (cm^-1)" << '\n';
                             std::cout << std::scientific;
                         }
                     }
                 }
             }
             std::cout << std::setw(5) << count << " imaginary branches out of "
-                      << std::setw(5) << nks << " total branches.\n\n";
+                << std::setw(5) << nks << " total branches.\n\n";
             std::cout << " Phonon-phonon scattering rate and thermal conductivity involving these\n";
             std::cout << " imaginary branches will be treated as zero in the following calculations.\n";
             std::cout << " If imaginary branches are acoustic phonons at Gamma point (0, 0, 0), \n";
@@ -1802,8 +1818,10 @@ void Dynamical::compute_renormalized_harmonic_frequency(double **omega2_out,
 
         Dymat = evec_tmp * Fmat * evec_tmp.adjoint();
 
-        symmetrize_dynamical_matrix(ik, kmesh_coarse,
-                                    mat_transform_sym, Dymat);
+        symmetrize_dynamical_matrix(ik,
+                                    kmesh_coarse,
+                                    mat_transform_sym,
+                                    Dymat);
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {
                 dymat_q[is][js][knum_interpolate] = Dymat(is, js);
@@ -1824,10 +1842,13 @@ void Dynamical::compute_renormalized_harmonic_frequency(double **omega2_out,
 
     for (is = 0; is < ns; ++is) {
         for (js = 0; js < ns; ++js) {
-            fftw_plan plan = fftw_plan_dft_3d(nk1, nk2, nk3,
+            fftw_plan plan = fftw_plan_dft_3d(nk1,
+                                              nk2,
+                                              nk3,
                                               reinterpret_cast<fftw_complex *>(dymat_q[is][js]),
                                               reinterpret_cast<fftw_complex *>(dymat_new[is][js]),
-                                              FFTW_FORWARD, FFTW_ESTIMATE);
+                                              FFTW_FORWARD,
+                                              FFTW_ESTIMATE);
             fftw_execute(plan);
             fftw_destroy_plan(plan);
 
@@ -2065,8 +2086,14 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3],
                                 fcs_phonon->force_constant_with_cell[0],
                                 mat_harmonic);
             }
-            r2q(xk_dense[ik], nk1, nk2, nk3, ns, mindist_list_in,
-                dymat_r, mat_tmp);
+            r2q(xk_dense[ik],
+                nk1,
+                nk2,
+                nk3,
+                ns,
+                mindist_list_in,
+                dymat_r,
+                mat_tmp);
             for (i = 0; i < ns; ++i) {
                 for (j = 0; j < ns; ++j) {
                     mat_tmp[i][j] += mat_harmonic[i][j];
@@ -2233,10 +2260,32 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out,
             }
         }
 
-        zgemm_(TRANSA, TRANSB, &ns, &ns, &ns, &alpha,
-               eigval_matrix, &ns, polarization_matrix, &ns, beta, mat_tmp, &ns);
-        zgemm_(TRANSA, TRANSA, &ns, &ns, &ns, &alpha,
-               polarization_matrix, &ns, mat_tmp, &ns, beta, dmat, &ns);
+        zgemm_(TRANSA,
+               TRANSB,
+               &ns,
+               &ns,
+               &ns,
+               &alpha,
+               eigval_matrix,
+               &ns,
+               polarization_matrix,
+               &ns,
+               beta,
+               mat_tmp,
+               &ns);
+        zgemm_(TRANSA,
+               TRANSA,
+               &ns,
+               &ns,
+               &ns,
+               &alpha,
+               polarization_matrix,
+               &ns,
+               mat_tmp,
+               &ns,
+               beta,
+               dmat,
+               &ns);
 
         m = 0;
 
@@ -2382,8 +2431,11 @@ void Dynamical::get_symmetry_gamma_dynamical(KpointMeshUniform *kmesh_in,
     allocate(gamma_tmp, ns, ns);
 
     if (mat_transform_sym) deallocate(mat_transform_sym);
-    allocate(mat_transform_sym, nk_irred_interpolate,
-             nsym, ns, ns);
+    allocate(mat_transform_sym,
+             nk_irred_interpolate,
+             nsym,
+             ns,
+             ns);
 
     for (ik = 0; ik < nk_irred_interpolate; ++ik) {
 
@@ -2430,7 +2482,7 @@ void Dynamical::get_symmetry_gamma_dynamical(KpointMeshUniform *kmesh_in,
                 for (icrd = 0; icrd < 3; ++icrd) {
                     for (jcrd = 0; jcrd < 3; ++jcrd) {
                         gamma_tmp[3 * iat + icrd][3 * jat + jcrd]
-                                = S_cart[icrd][jcrd] * std::exp(im * phase);
+                            = S_cart[icrd][jcrd] * std::exp(im * phase);
                     }
                 }
             }

@@ -16,10 +16,11 @@
 #include <fstream>
 #include <complex>
 
-namespace PHON_NS {
-class Writes : protected Pointers {
+namespace PHON_NS
+{
+class Writes: protected Pointers
+{
 public:
-
     Writes(class PHON *);
 
     ~Writes();
@@ -99,7 +100,6 @@ public:
     int nbands;
 
 private:
-
     void writePhononBands() const;
 
     void writePhononVel() const;

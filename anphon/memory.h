@@ -14,7 +14,8 @@
 
 // memsize calculator
 
-namespace PHON_NS {
+namespace PHON_NS
+{
 inline size_t memsize_in_MB(const size_t size_of_one,
                             const size_t n1)
 {
@@ -53,14 +54,13 @@ inline size_t memsize_in_MB(const size_t size_of_one,
 
 /* allocator */
 
-template<typename T>
+template <typename T>
 T *allocate(T *&arr,
             const size_t n1)
 {
     try {
         arr = new T[n1];
-    }
-    catch (std::bad_alloc &ba) {
+    } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 1-dimensional array" << '\n';
         std::cout << " " << ba.what() << " : Array shape = " << n1 << '\n';
         std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1) << '\n';
@@ -69,7 +69,7 @@ T *allocate(T *&arr,
     return arr;
 }
 
-template<typename T>
+template <typename T>
 T **allocate(T **&arr,
              const size_t n1,
              const size_t n2)
@@ -80,8 +80,7 @@ T **allocate(T **&arr,
         for (size_t i = 1; i < n1; ++i) {
             arr[i] = arr[0] + i * n2;
         }
-    }
-    catch (std::bad_alloc &ba) {
+    } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 2-dimensional array\n";
         std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << '\n';
         std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2) << '\n';
@@ -90,7 +89,7 @@ T **allocate(T **&arr,
     return arr;
 }
 
-template<typename T>
+template <typename T>
 T ***allocate(T ***&arr,
               const size_t n1,
               const size_t n2,
@@ -106,8 +105,7 @@ T ***allocate(T ***&arr,
                 arr[i][j] = arr[0][0] + i * n2 * n3 + j * n3;
             }
         }
-    }
-    catch (std::bad_alloc &ba) {
+    } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 3-dimensional array\n";
         std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << "x" << n3 << '\n';
         std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3) << '\n';
@@ -116,7 +114,7 @@ T ***allocate(T ***&arr,
     return arr;
 }
 
-template<typename T>
+template <typename T>
 T ****allocate(T ****&arr,
                const size_t n1,
                const size_t n2,
@@ -138,8 +136,7 @@ T ****allocate(T ****&arr,
                 }
             }
         }
-    }
-    catch (std::bad_alloc &ba) {
+    } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 4-dimensional array\n";
         std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << "x" << n3 << "x" << n4 << '\n';
         std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3, n4) << '\n';
@@ -151,14 +148,14 @@ T ****allocate(T ****&arr,
 /* deallocator */
 
 
-template<typename T>
+template <typename T>
 void deallocate(T *&arr)
 {
     delete[] arr;
     arr = nullptr;
 }
 
-template<typename T>
+template <typename T>
 void deallocate(T **&arr)
 {
     delete[] arr[0];
@@ -166,7 +163,7 @@ void deallocate(T **&arr)
     arr = nullptr;
 }
 
-template<typename T>
+template <typename T>
 void deallocate(T ***&arr)
 {
     delete[] arr[0][0];
@@ -175,7 +172,7 @@ void deallocate(T ***&arr)
     arr = nullptr;
 }
 
-template<typename T>
+template <typename T>
 void deallocate(T ****&arr)
 {
     delete[] arr[0][0][0];

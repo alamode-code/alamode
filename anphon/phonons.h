@@ -20,8 +20,10 @@
 
 #include <string>
 
-namespace PHON_NS {
-class PHON {
+namespace PHON_NS
+{
+class PHON
+{
 public:
     PHON(int,
          char **,

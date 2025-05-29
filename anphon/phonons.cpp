@@ -67,7 +67,7 @@ PHON::PHON(int narg,
         std::cout << " The number of MPI processes: " << mympi->nprocs << '\n';
 #ifdef _OPENMP
         std::cout << " The number of OpenMP threads: "
-                  << omp_get_max_threads() << '\n';
+            << omp_get_max_threads() << '\n';
 #endif
         std::cout << '\n';
 
@@ -96,7 +96,7 @@ PHON::PHON(int narg,
 
     if (mympi->my_rank == 0) {
         std::cout << "\n Job finished at "
-                  << timer->DateAndTime() << '\n';
+            << timer->DateAndTime() << '\n';
     }
     destroy_pointers();
 }
@@ -269,7 +269,7 @@ void PHON::execute_RTA() const
         conductivity->calc_anharmonic_imagself();
         conductivity->compute_kappa();
         writes->writeKappa();
-		writes->writeSelfenergyIsotope();
+        writes->writeSelfenergyIsotope();
 
     }
 }

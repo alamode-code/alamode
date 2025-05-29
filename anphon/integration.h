@@ -17,8 +17,10 @@
 #include "memory.h"
 #include <vector>
 
-namespace PHON_NS {
-struct tetra_pair {
+namespace PHON_NS
+{
+struct tetra_pair
+{
     double e;
     double f;
 };
@@ -29,7 +31,8 @@ inline bool operator<(const tetra_pair &a,
     return a.e < b.e;
 }
 
-struct TetraWithKnum {
+struct TetraWithKnum
+{
     double e;
     int knum;
 };
@@ -40,7 +43,8 @@ inline bool operator<(const TetraWithKnum &a,
     return a.e < b.e;
 }
 
-class TetraNodes {
+class TetraNodes
+{
 public:
     TetraNodes()
     {
@@ -79,7 +83,8 @@ private:
     unsigned int **tetras;
 };
 
-class AdaptiveSmearingSigma {
+class AdaptiveSmearingSigma
+{
 public:
     AdaptiveSmearingSigma() {};
 
@@ -127,7 +132,8 @@ private:
     double dq[3][3];
 };
 
-class Integration : protected Pointers {
+class Integration: protected Pointers
+{
 public:
     Integration(class PHON *);
 
@@ -174,14 +180,14 @@ private:
     void prepare_adaptivesmearing();
 
     static inline double fij(double,
-                      double,
-                      double) ;
+                             double,
+                             double);
 
     std::vector<tetra_pair> tetra_data;
 
     static void insertion_sort(double *,
-                        int *,
-                        int) ;
+                               int *,
+                               int);
 };
 
 inline double delta_lorentz(const double omega,

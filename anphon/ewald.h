@@ -17,8 +17,10 @@
 #include "system.h"
 #include "fcs_phonon.h"
 
-namespace PHON_NS {
-class Gvecs {
+namespace PHON_NS
+{
+class Gvecs
+{
 public:
     Eigen::Vector3d vec;
 
@@ -31,12 +33,12 @@ public:
         }
     };
 
-    Gvecs(const Eigen::Vector3d _vec) : vec(_vec)
-    {
-    };
+    Gvecs(const Eigen::Vector3d _vec) :
+        vec(_vec) {};
 };
 
-class DistInfo {
+class DistInfo
+{
 public:
     int cell;
     double dist;
@@ -44,13 +46,11 @@ public:
     DistInfo();
 
     DistInfo(const int n,
-             const double d) : cell(n), dist(d)
-    {
-    };
+             const double d) :
+        cell(n), dist(d) {};
 
-    DistInfo(const DistInfo &obj) : cell(obj.cell), dist(obj.dist)
-    {
-    };
+    DistInfo(const DistInfo &obj) :
+        cell(obj.cell), dist(obj.dist) {};
 
     bool operator<(const DistInfo &obj) const
     {
@@ -58,7 +58,8 @@ public:
     }
 };
 
-class Ewald : protected Pointers {
+class Ewald: protected Pointers
+{
 public:
     Ewald(class PHON *);
 
@@ -144,7 +145,7 @@ private:
                             const int jat,
                             const double xdist[3],
                             const double lambda_in,
-                            std::vector<std::vector<double> > &ret);
+                            std::vector<std::vector<double>> &ret);
 
     void calc_anisotropic_hmat(double,
                                const double *,

@@ -23,7 +23,8 @@
 
 using namespace PHON_NS;
 
-Isotope::Isotope(PHON *phon) : Pointers(phon)
+Isotope::Isotope(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 };
@@ -118,7 +119,7 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum,
                 auto dprod = std::complex<double>(0.0, 0.0);
                 for (auto icrd = 0; icrd < 3; ++icrd) {
                     dprod += std::conj(evec_in[ik][is][3 * iat + icrd])
-                             * evec_in[knum][snum][3 * iat + icrd];
+                        * evec_in[knum][snum][3 * iat + icrd];
                 }
                 prod += isotope_factor[system->get_primcell().kind[iat]] * std::norm(dprod);
             }
@@ -178,7 +179,7 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum,
                 auto dprod = std::complex<double>(0.0, 0.0);
                 for (auto icrd = 0; icrd < 3; ++icrd) {
                     dprod += std::conj(evec_in[ik][is][3 * iat + icrd])
-                             * evec_in[knum][snum][3 * iat + icrd];
+                        * evec_in[knum][snum][3 * iat + icrd];
                 }
                 prod += isotope_factor[system->get_primcell().kind[iat]] * std::norm(dprod);
             }
@@ -186,7 +187,8 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum,
             weight[ik] = prod * eval_in[ik][is];
             eval[ik] = eval_in[ik][is];
         }
-        ret += integration->do_tetrahedron(eval, weight,
+        ret += integration->do_tetrahedron(eval,
+                                           weight,
                                            dos->tetra_nodes_dos->get_ntetra(),
                                            dos->tetra_nodes_dos->get_tetras(),
                                            omega);
@@ -254,8 +256,13 @@ void Isotope::calc_isotope_selfenergy_all() const
             gamma_loc[i] = tmp;
         }
 
-        MPI_Reduce(&gamma_loc[0], &gamma_tmp[0], nks,
-                   MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&gamma_loc[0],
+                   &gamma_tmp[0],
+                   nks,
+                   MPI_DOUBLE,
+                   MPI_SUM,
+                   0,
+                   MPI_COMM_WORLD);
 
         if (mympi->my_rank == 0) {
             for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {

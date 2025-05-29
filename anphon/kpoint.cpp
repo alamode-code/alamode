@@ -31,7 +31,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Kpoint::Kpoint(PHON *phon) : Pointers(phon)
+Kpoint::Kpoint(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -73,114 +74,114 @@ void Kpoint::kpoint_setups(const std::string mode)
     }
 
     switch (kpoint_mode) {
-        case 0:
+    case 0:
 
-            if (mympi->my_rank == 0) {
-                std::cout << "  KPMODE = 0 : Calculation on given k points\n";
-            }
+        if (mympi->my_rank == 0) {
+            std::cout << "  KPMODE = 0 : Calculation on given k points\n";
+        }
 
-            setup_kpoint_given(kpInp,
-                               system->get_primcell().reciprocal_lattice_vector);
+        setup_kpoint_given(kpInp,
+                           system->get_primcell().reciprocal_lattice_vector);
 
-            if (mympi->my_rank == 0) {
-                std::cout << "  Number of k points : " << kpoint->kpoint_general->nk << "\n\n";
-                std::cout << "  List of k points : " << '\n';
-                for (auto i = 0; i < kpoint->kpoint_general->nk; ++i) {
-                    std::cout << std::setw(5) << i + 1 << ":";
-                    for (auto j = 0; j < 3; ++j) {
-                        std::cout << std::setw(15) << kpoint->kpoint_general->xk[i][j];
-                    }
-                    std::cout << '\n';
+        if (mympi->my_rank == 0) {
+            std::cout << "  Number of k points : " << kpoint->kpoint_general->nk << "\n\n";
+            std::cout << "  List of k points : " << '\n';
+            for (auto i = 0; i < kpoint->kpoint_general->nk; ++i) {
+                std::cout << std::setw(5) << i + 1 << ":";
+                for (auto j = 0; j < 3; ++j) {
+                    std::cout << std::setw(15) << kpoint->kpoint_general->xk[i][j];
                 }
                 std::cout << '\n';
             }
+            std::cout << '\n';
+        }
 
-            break;
+        break;
 
-        case 1:
+    case 1:
 
-            if (mympi->my_rank == 0) {
-                std::cout << "  KPMODE = 1: Band structure calculation\n";
-            }
+        if (mympi->my_rank == 0) {
+            std::cout << "  KPMODE = 1: Band structure calculation\n";
+        }
 
-            setup_kpoint_band(kpInp,
-                              system->get_primcell().reciprocal_lattice_vector);
-            if (mympi->my_rank == 0) {
-                std::cout << "  Number of paths : " << kpInp.size() << "\n\n";
-                std::cout << "  List of k paths : " << '\n';
+        setup_kpoint_band(kpInp,
+                          system->get_primcell().reciprocal_lattice_vector);
+        if (mympi->my_rank == 0) {
+            std::cout << "  Number of paths : " << kpInp.size() << "\n\n";
+            std::cout << "  List of k paths : " << '\n';
 
-                for (auto i = 0; i < kpInp.size(); ++i) {
-                    std::cout << std::setw(4) << i + 1 << ":";
-                    std::cout << std::setw(3) << kpInp[i].kpelem[0];
-                    std::cout << " (";
-                    for (int k = 0; k < 3; ++k) {
-                        std::cout << std::setprecision(4) << std::setw(8)
-                                  << std::atof(kpInp[i].kpelem[k + 1].c_str());
-                    }
-                    std::cout << ")";
-                    std::cout << std::setw(3) << kpInp[i].kpelem[4];
-                    std::cout << " (";
-                    for (int k = 0; k < 3; ++k) {
-                        std::cout << std::setprecision(4) << std::setw(8)
-                                  << std::atof(kpInp[i].kpelem[k + 5].c_str());
-                    }
-                    std::cout << ")";
-                    std::cout << std::setw(4) << kpInp[i].kpelem[8] << '\n';
+            for (auto i = 0; i < kpInp.size(); ++i) {
+                std::cout << std::setw(4) << i + 1 << ":";
+                std::cout << std::setw(3) << kpInp[i].kpelem[0];
+                std::cout << " (";
+                for (int k = 0; k < 3; ++k) {
+                    std::cout << std::setprecision(4) << std::setw(8)
+                        << std::atof(kpInp[i].kpelem[k + 1].c_str());
                 }
-                std::cout << '\n';
-                std::cout << "  Number of k points : " << kpoint_bs->nk << "\n\n";
-
-            }
-
-            break;
-
-        case 2:
-
-            if (mympi->my_rank == 0) {
-                std::cout << "  KPMODE = 2: Uniform grid\n";
-            }
-
-            unsigned int nk_tmp[3];
-            nk_tmp[0] = 0;
-            nk_tmp[1] = 0;
-            nk_tmp[2] = 0;
-            if (mympi->my_rank == 0) {
-                for (auto i = 0; i < 3; ++i) {
-                    nk_tmp[i] = std::atoi(kpInp[0].kpelem[i].c_str());
+                std::cout << ")";
+                std::cout << std::setw(3) << kpInp[i].kpelem[4];
+                std::cout << " (";
+                for (int k = 0; k < 3; ++k) {
+                    std::cout << std::setprecision(4) << std::setw(8)
+                        << std::atof(kpInp[i].kpelem[k + 5].c_str());
                 }
+                std::cout << ")";
+                std::cout << std::setw(4) << kpInp[i].kpelem[8] << '\n';
             }
-            MPI_Bcast(&nk_tmp[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-            dos->kmesh_dos = new KpointMeshUniform(nk_tmp);
-            dos->kmesh_dos->setup(symmetry->SymmList,
-                                  system->get_primcell().reciprocal_lattice_vector,
-                                  symmetry->time_reversal_sym,
-                                  true);
+            std::cout << '\n';
+            std::cout << "  Number of k points : " << kpoint_bs->nk << "\n\n";
 
-            if (mympi->my_rank == 0) {
-                std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
-                std::cout << "  nk1:" << std::setw(4) << dos->kmesh_dos->nk_i[0] << '\n';
-                std::cout << "  nk2:" << std::setw(4) << dos->kmesh_dos->nk_i[1] << '\n';
-                std::cout << "  nk3:" << std::setw(4) << dos->kmesh_dos->nk_i[2] << "\n\n";
-                std::cout << "  Number of k points : " << dos->kmesh_dos->nk << '\n';
-                std::cout << "  Number of irreducible k points : " << dos->kmesh_dos->nk_irred << "\n\n";
-                std::cout << "  List of irreducible k points (reciprocal coordinate, weight) : \n";
+        }
 
-                for (auto i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
-                    std::cout << "  " << std::setw(5) << i + 1 << ":";
-                    for (auto j = 0; j < 3; ++j) {
-                        std::cout << std::setprecision(5) << std::setw(14)
-                                  << std::scientific << dos->kmesh_dos->kpoint_irred_all[i][0].kval[j];
-                    }
-                    std::cout << std::setprecision(6) << std::setw(11)
-                              << std::fixed << dos->kmesh_dos->weight_k[i] << '\n';
+        break;
+
+    case 2:
+
+        if (mympi->my_rank == 0) {
+            std::cout << "  KPMODE = 2: Uniform grid\n";
+        }
+
+        unsigned int nk_tmp[3];
+        nk_tmp[0] = 0;
+        nk_tmp[1] = 0;
+        nk_tmp[2] = 0;
+        if (mympi->my_rank == 0) {
+            for (auto i = 0; i < 3; ++i) {
+                nk_tmp[i] = std::atoi(kpInp[0].kpelem[i].c_str());
+            }
+        }
+        MPI_Bcast(&nk_tmp[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+        dos->kmesh_dos = new KpointMeshUniform(nk_tmp);
+        dos->kmesh_dos->setup(symmetry->SymmList,
+                              system->get_primcell().reciprocal_lattice_vector,
+                              symmetry->time_reversal_sym,
+                              true);
+
+        if (mympi->my_rank == 0) {
+            std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
+            std::cout << "  nk1:" << std::setw(4) << dos->kmesh_dos->nk_i[0] << '\n';
+            std::cout << "  nk2:" << std::setw(4) << dos->kmesh_dos->nk_i[1] << '\n';
+            std::cout << "  nk3:" << std::setw(4) << dos->kmesh_dos->nk_i[2] << "\n\n";
+            std::cout << "  Number of k points : " << dos->kmesh_dos->nk << '\n';
+            std::cout << "  Number of irreducible k points : " << dos->kmesh_dos->nk_irred << "\n\n";
+            std::cout << "  List of irreducible k points (reciprocal coordinate, weight) : \n";
+
+            for (auto i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
+                std::cout << "  " << std::setw(5) << i + 1 << ":";
+                for (auto j = 0; j < 3; ++j) {
+                    std::cout << std::setprecision(5) << std::setw(14)
+                        << std::scientific << dos->kmesh_dos->kpoint_irred_all[i][0].kval[j];
                 }
-                std::cout << '\n';
+                std::cout << std::setprecision(6) << std::setw(11)
+                    << std::fixed << dos->kmesh_dos->weight_k[i] << '\n';
             }
+            std::cout << '\n';
+        }
 
-            break;
+        break;
 
-        default:
-            exit("setup_kpoints", "This cannot happen.");
+    default:
+        exit("setup_kpoints", "This cannot happen.");
     }
 }
 
@@ -295,7 +296,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo,
                 for (k = 0; k < 3; ++k) {
                     xk_tmp[ik][k] = k_start[i][k]
                                     + (k_end[i][k] - k_start[i][k])
-                                      * static_cast<double>(j) / static_cast<double>(nk_path[i] - 1);
+                                    * static_cast<double>(j) / static_cast<double>(nk_path[i] - 1);
 
                     kdirec_tmp[ik][k] = direc_tmp[k];
                 }
@@ -374,8 +375,8 @@ void KpointMeshUniform::setup(const std::vector<SymmetryOperation> &symmlist,
     weight_k.resize(nk_irred);
     for (auto i = 0; i < nk_irred; ++i) {
         weight_k[i]
-                = static_cast<double>(kpoint_irred_all[i].size())
-                  / static_cast<double>(nk);
+            = static_cast<double>(kpoint_irred_all[i].size())
+              / static_cast<double>(nk);
     }
     gen_nkminus();
 
@@ -464,25 +465,28 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
             distances[icell] = norm;
         }
         // find the periodic image having the minimum distance from (0, 0, 0)
-        std::stable_sort(idx.begin(), idx.end(),
-                         [&distances](size_t i1, size_t i2) { return distances[i1] < distances[i2]; });
+        std::stable_sort(idx.begin(),
+                         idx.end(),
+                         [&distances](size_t i1, size_t i2) {
+                             return distances[i1] < distances[i2];
+                         });
 
-//        const auto minimum_distance = distances[idx[0]];
-//        std::cout << "ik = " << ik << '\n';
-//        std::cout << "xk = " << std::setw(15) << xkr[ik][0] << std::setw(15) << xkr[ik][1]
-//        << std::setw(15) << xkr[ik][2] << '\n';
-//        std::cout  << "icell = " << idx[0] << " distance = " << distances[idx[0]] << '\n';
-//        std::cout << " Gvec = " << gvec_shift[idx[0]][0] << " " << gvec_shift[idx[0]][1]
-//        << " " << gvec_shift[idx[0]][2] << '\n';
-//        for (auto icell = 1; icell < 27; ++icell) {
-//            if (distances[idx[icell]] - minimum_distance > eps4) {
-//                break;
-//            } else {
-//                std::cout << "icell = " << idx[icell] << " distance = " << distances[idx[icell]] << '\n';
-//                std::cout << " Gvec = " << gvec_shift[idx[icell]][0]
-//                << " " << gvec_shift[idx[icell]][1] << " " << gvec_shift[idx[icell]][2] << '\n';
-//            }
-//        }
+        //        const auto minimum_distance = distances[idx[0]];
+        //        std::cout << "ik = " << ik << '\n';
+        //        std::cout << "xk = " << std::setw(15) << xkr[ik][0] << std::setw(15) << xkr[ik][1]
+        //        << std::setw(15) << xkr[ik][2] << '\n';
+        //        std::cout  << "icell = " << idx[0] << " distance = " << distances[idx[0]] << '\n';
+        //        std::cout << " Gvec = " << gvec_shift[idx[0]][0] << " " << gvec_shift[idx[0]][1]
+        //        << " " << gvec_shift[idx[0]][2] << '\n';
+        //        for (auto icell = 1; icell < 27; ++icell) {
+        //            if (distances[idx[icell]] - minimum_distance > eps4) {
+        //                break;
+        //            } else {
+        //                std::cout << "icell = " << idx[icell] << " distance = " << distances[idx[icell]] << '\n';
+        //                std::cout << " Gvec = " << gvec_shift[idx[icell]][0]
+        //                << " " << gvec_shift[idx[icell]][1] << " " << gvec_shift[idx[icell]][2] << '\n';
+        //            }
+        //        }
         // Select the first periodic image that gives the shortest |q+G|
         for (auto i = 0; i < 3; ++i) {
             xkr[ik][i] += static_cast<double>(gvec_shift[idx[0]][i]);
@@ -498,7 +502,7 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
 
     for (ik = 0; ik < nk; ++ik) {
         for (unsigned int i = 0; i < 3; ++i) {
-//            xk[ik][i] = xkr[ik][i] - static_cast<double>(nint(xkr[ik][i]));
+            //            xk[ik][i] = xkr[ik][i] - static_cast<double>(nint(xkr[ik][i]));
             xk[ik][i] = xkr[ik][i];
         }
     }
@@ -602,19 +606,22 @@ void KpointMeshUniform::gen_kmesh_niggli(const std::vector<SymmetryOperation> &s
             distances[icell] = norm;
         }
         // find the periodic image having the minimum distance from (0, 0, 0)
-        std::stable_sort(idx.begin(), idx.end(),
-                         [&distances](size_t i1, size_t i2) { return distances[i1] < distances[i2]; });
+        std::stable_sort(idx.begin(),
+                         idx.end(),
+                         [&distances](size_t i1, size_t i2) {
+                             return distances[i1] < distances[i2];
+                         });
 
-//        const auto minimum_distance = distances[idx[0]];
-//        std::cout << "ik = " << ik << '\n';
-//        std::cout  << "icell = " << idx[0] << " distance = " << distances[idx[0]] << '\n';
-//        for (auto icell = 1; icell < 27; ++icell) {
-//            if (distances[idx[icell]] - minimum_distance > eps4) {
-//                break;
-//            } else {
-//                std::cout << "icell = " << idx[icell] << " distance = " << distances[idx[icell]] << '\n';
-//            }
-//        }
+        //        const auto minimum_distance = distances[idx[0]];
+        //        std::cout << "ik = " << ik << '\n';
+        //        std::cout  << "icell = " << idx[0] << " distance = " << distances[idx[0]] << '\n';
+        //        for (auto icell = 1; icell < 27; ++icell) {
+        //            if (distances[idx[icell]] - minimum_distance > eps4) {
+        //                break;
+        //            } else {
+        //                std::cout << "icell = " << idx[icell] << " distance = " << distances[idx[icell]] << '\n';
+        //            }
+        //        }
 
         // Select the first G that minimizes |q+G|
         for (auto i = 0; i < 3; ++i) {
@@ -776,8 +783,8 @@ void KpointMeshUniform::gen_nkminus()
         const auto ik_minus = get_knum(minus_xk);
 
         if (ik_minus == -1) {
-//            exit("gen_nkminus",
-//                        "-xk doesn't exist on the mesh point.");
+            //            exit("gen_nkminus",
+            //                        "-xk doesn't exist on the mesh point.");
         }
 
         if (ik_minus < ik) continue;
@@ -793,9 +800,9 @@ void KpointMeshUniform::set_small_groups_k_irred(const bool usesym,
     small_group_of_k.resize(nk_irred);
     for (auto ik = 0; ik < nk_irred; ++ik) {
         small_group_of_k[ik]
-                = get_small_group_of_k(kpoint_irred_all[ik][0].knum,
-                                       usesym,
-                                       symmlist);
+            = get_small_group_of_k(kpoint_irred_all[ik][0].knum,
+                                   usesym,
+                                   symmlist);
     }
 }
 
@@ -1185,12 +1192,12 @@ void Kpoint::get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super,
     inv_lavec_super = lavec_super.inverse();
     //invmat3(inv_lavec_super, lavec_super);
     convmat = (inv_lavec_super * lavec_prim).transpose();
-//    matmul3(convmat, inv_lavec_super, lavec_prim);
+    //    matmul3(convmat, inv_lavec_super, lavec_prim);
     //transpose3(convmat, convmat);
 
-//    const auto det = convmat[0][0] * (convmat[1][1] * convmat[2][2] - convmat[2][1] * convmat[1][2])
-//                     - convmat[1][0] * (convmat[0][1] * convmat[2][2] - convmat[2][1] * convmat[0][2])
-//                     + convmat[2][0] * (convmat[0][1] * convmat[1][2] - convmat[1][1] * convmat[0][2]);
+    //    const auto det = convmat[0][0] * (convmat[1][1] * convmat[2][2] - convmat[2][1] * convmat[1][2])
+    //                     - convmat[1][0] * (convmat[0][1] * convmat[2][2] - convmat[2][1] * convmat[0][2])
+    //                     + convmat[2][0] * (convmat[0][1] * convmat[1][2] - convmat[1][1] * convmat[0][2]);
 
     const auto det = convmat.determinant();
 

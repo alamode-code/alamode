@@ -14,8 +14,10 @@
 #include <complex>
 #include <vector>
 
-namespace PHON_NS {
-class Dielec : protected Pointers {
+namespace PHON_NS
+{
+class Dielec: protected Pointers
+{
 public:
     Dielec(class PHON *);
 
@@ -45,9 +47,7 @@ public:
 
     Eigen::Matrix3d get_dielec_tensor() const;
 
-
 private:
-
     void set_default_variables();
 
     void deallocate_variables();

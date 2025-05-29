@@ -16,9 +16,11 @@
 #include <complex>
 #include <vector>
 
-namespace PHON_NS {
+namespace PHON_NS
+{
 
-class Gruneisen : protected Pointers {
+class Gruneisen: protected Pointers
+{
 public:
     Gruneisen(class PHON *);
 

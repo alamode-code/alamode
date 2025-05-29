@@ -17,7 +17,8 @@
 
 using namespace PHON_NS;
 
-Timer::Timer(PHON *phon) : Pointers(phon)
+Timer::Timer(PHON *phon) :
+    Pointers(phon)
 {
 #if defined(WIN32) || defined(_WIN32)
     QueryPerformanceCounter(&time_ref);

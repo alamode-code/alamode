@@ -17,8 +17,10 @@
 #include <vector>
 #include <complex>
 
-namespace PHON_NS {
-class Dos : protected Pointers {
+namespace PHON_NS
+{
+class Dos: protected Pointers
+{
 public:
     Dos(class PHON *);
 
@@ -58,7 +60,6 @@ public:
     void update_dos_energy_grid(const double emin_in,
                                 const double emax_in,
                                 const bool force_update = false);
-
 
 private:
     void set_default_variables();

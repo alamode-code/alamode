@@ -27,7 +27,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Dos::Dos(PHON *phon) : Pointers(phon)
+Dos::Dos(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -182,10 +183,14 @@ void Dos::calc_dos_all()
 
     if (compute_dos) {
         allocate(dos_phonon, n_energy);
-        calc_dos(nk, kmesh_dos->nk_irred,
+        calc_dos(nk,
+                 kmesh_dos->nk_irred,
                  kmesh_dos->kmap_to_irreducible.data(),
-                 eval, n_energy, energy_dos,
-                 neval, integration->ismear,
+                 eval,
+                 n_energy,
+                 energy_dos,
+                 neval,
+                 integration->ismear,
                  tetra_nodes_dos->get_ntetra(),
                  tetra_nodes_dos->get_tetras(),
                  dos_phonon);
@@ -193,18 +198,28 @@ void Dos::calc_dos_all()
 
     if (projected_dos) {
         allocate(pdos_phonon, system->get_primcell().number_of_atoms, n_energy);
-        calc_atom_projected_dos(nk, eval, n_energy, energy_dos,
-                                pdos_phonon, neval, system->get_primcell().number_of_atoms,
+        calc_atom_projected_dos(nk,
+                                eval,
+                                n_energy,
+                                energy_dos,
+                                pdos_phonon,
+                                neval,
+                                system->get_primcell().number_of_atoms,
                                 integration->ismear,
                                 dymat_dos->get_eigenvectors());
     }
 
     if (longitudinal_projected_dos) {
         allocate(longitude_dos, n_energy);
-        calc_longitudinal_projected_dos(nk, kmesh_dos->xk,
+        calc_longitudinal_projected_dos(nk,
+                                        kmesh_dos->xk,
                                         system->get_primcell().reciprocal_lattice_vector,
-                                        eval, n_energy, energy_dos,
-                                        longitude_dos, neval, system->get_primcell().number_of_atoms,
+                                        eval,
+                                        n_energy,
+                                        energy_dos,
+                                        longitude_dos,
+                                        neval,
+                                        system->get_primcell().number_of_atoms,
                                         integration->ismear,
                                         dymat_dos->get_eigenvectors());
     }
@@ -221,19 +236,25 @@ void Dos::calc_dos_all()
     }
 
     if (scattering_phase_space == 1) {
-        allocate(sps3_mode, kmesh_dos->nk_irred,
-                 dynamical->neval, 2);
+        allocate(sps3_mode,
+                 kmesh_dos->nk_irred,
+                 dynamical->neval,
+                 2);
         calc_total_scattering_phase_space(dymat_dos->get_eigenvalues(),
                                           integration->ismear,
-                                          sps3_mode, total_sps3);
+                                          sps3_mode,
+                                          total_sps3);
     } else if (scattering_phase_space == 2) {
         const auto Tmin = system->Tmin;
         const auto Tmax = system->Tmax;
         const auto dT = system->dT;
         const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-        allocate(sps3_with_bose, kmesh_dos->nk_irred,
-                 dynamical->neval, NT, 2);
+        allocate(sps3_with_bose,
+                 kmesh_dos->nk_irred,
+                 dynamical->neval,
+                 NT,
+                 2);
         calc_scattering_phase_space_with_Bose(dymat_dos->get_eigenvalues(),
                                               integration->ismear,
                                               sps3_with_bose);
@@ -269,13 +290,20 @@ void Dos::calc_dos(const unsigned int nk,
 
             for (int k = 0; k < neval; ++k) {
                 if (smearing_method == -1) {
-                    integration->calc_weight_tetrahedron(nk_irreducible, map_k,
-                                                         eval[k], energy[i],
-                                                         ntetra, tetras,
+                    integration->calc_weight_tetrahedron(nk_irreducible,
+                                                         map_k,
+                                                         eval[k],
+                                                         energy[i],
+                                                         ntetra,
+                                                         tetras,
                                                          weight);
                 } else {
-                    integration->calc_weight_smearing(nk, nk_irreducible, map_k,
-                                                      eval[k], energy[i], smearing_method,
+                    integration->calc_weight_smearing(nk,
+                                                      nk_irreducible,
+                                                      map_k,
+                                                      eval[k],
+                                                      energy[i],
+                                                      smearing_method,
                                                       weight);
                 }
 
@@ -340,14 +368,19 @@ void Dos::calc_atom_projected_dos(const unsigned int nk,
 
                 for (unsigned int k = 0; k < neval; ++k) {
                     if (smearing_method == -1) {
-                        integration->calc_weight_tetrahedron(nk, kmap_identity,
-                                                             eval[k], energy[i],
+                        integration->calc_weight_tetrahedron(nk,
+                                                             kmap_identity,
+                                                             eval[k],
+                                                             energy[i],
                                                              tetra_nodes_dos->get_ntetra(),
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
                     } else {
-                        integration->calc_weight_smearing(nk, nk, kmap_identity,
-                                                          eval[k], energy[i],
+                        integration->calc_weight_smearing(nk,
+                                                          nk,
+                                                          kmap_identity,
+                                                          eval[k],
+                                                          energy[i],
                                                           smearing_method,
                                                           weight);
                     }
@@ -435,7 +468,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
             double sum_weight = dot_prod_sum + cross_prod_sum;
             if (sum_weight > eps) {
                 dot_prod_sum /= sum_weight;
-//                cross_prod_sum /= sum_weight;
+                //                cross_prod_sum /= sum_weight;
             }
             proj[imode][ik] = dot_prod_sum;
         }
@@ -454,14 +487,19 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
 
             for (unsigned int k = 0; k < neval; ++k) {
                 if (smearing_method == -1) {
-                    integration->calc_weight_tetrahedron(nk, kmap_identity,
-                                                         eval[k], energy[i],
+                    integration->calc_weight_tetrahedron(nk,
+                                                         kmap_identity,
+                                                         eval[k],
+                                                         energy[i],
                                                          tetra_nodes_dos->get_ntetra(),
                                                          tetra_nodes_dos->get_tetras(),
                                                          weight);
                 } else {
-                    integration->calc_weight_smearing(nk, nk, kmap_identity,
-                                                      eval[k], energy[i],
+                    integration->calc_weight_smearing(nk,
+                                                      nk,
+                                                      kmap_identity,
+                                                      eval[k],
+                                                      energy[i],
                                                       smearing_method,
                                                       weight);
                 }
@@ -556,8 +594,10 @@ void Dos::calc_two_phonon_dos(double *const *eval_in,
 #pragma omp parallel for private(k)
 #endif
                     for (i = 0; i < n; ++i) {
-                        integration->calc_weight_tetrahedron(nk, kmap_identity,
-                                                             e_tmp[j], energy[i],
+                        integration->calc_weight_tetrahedron(nk,
+                                                             kmap_identity,
+                                                             e_tmp[j],
+                                                             energy[i],
                                                              tetra_nodes_dos->get_ntetra(),
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight[i]);
@@ -574,8 +614,11 @@ void Dos::calc_two_phonon_dos(double *const *eval_in,
 #pragma omp parallel for private(k)
 #endif
                     for (i = 0; i < n; ++i) {
-                        integration->calc_weight_smearing(nk, nk, kmap_identity,
-                                                          e_tmp[j], energy[i],
+                        integration->calc_weight_smearing(nk,
+                                                          nk,
+                                                          kmap_identity,
+                                                          e_tmp[j],
+                                                          energy[i],
                                                           smearing_method,
                                                           weight[i]);
                         for (k = 0; k < nk; ++k) {
@@ -665,16 +708,20 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
                     }
 
                     if (smearing_method == -1) {
-                        integration->calc_weight_tetrahedron(nk, kmap_identity,
-                                                             e_tmp[0], omega0,
+                        integration->calc_weight_tetrahedron(nk,
+                                                             kmap_identity,
+                                                             e_tmp[0],
+                                                             omega0,
                                                              tetra_nodes_dos->get_ntetra(),
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
 
                         for (j = 0; j < nk; ++j) sps_tmp1 += weight[j];
 
-                        integration->calc_weight_tetrahedron(nk, kmap_identity,
-                                                             e_tmp[1], omega0,
+                        integration->calc_weight_tetrahedron(nk,
+                                                             kmap_identity,
+                                                             e_tmp[1],
+                                                             omega0,
                                                              tetra_nodes_dos->get_ntetra(),
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
@@ -682,13 +729,19 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
 
                     } else {
 
-                        integration->calc_weight_smearing(nk, nk, kmap_identity,
-                                                          e_tmp[0], omega0,
+                        integration->calc_weight_smearing(nk,
+                                                          nk,
+                                                          kmap_identity,
+                                                          e_tmp[0],
+                                                          omega0,
                                                           smearing_method,
                                                           weight);
                         for (j = 0; j < nk; ++j) sps_tmp1 += weight[j];
-                        integration->calc_weight_smearing(nk, nk, kmap_identity,
-                                                          e_tmp[1], omega0,
+                        integration->calc_weight_smearing(nk,
+                                                          nk,
+                                                          kmap_identity,
+                                                          e_tmp[1],
+                                                          omega0,
                                                           smearing_method,
                                                           weight);
                         for (j = 0; j < nk; ++j) sps_tmp2 += weight[j];
@@ -735,11 +788,16 @@ void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in,
     }
 
 
-    calc_dos(nk, kmesh_in->nk_irred,
+    calc_dos(nk,
+             kmesh_in->nk_irred,
              kmesh_in->kmap_to_irreducible.data(),
-             eval, n_energy, energy_dos,
-             neval, integration->ismear,
-             ntetra_in, tetras_in,
+             eval,
+             n_energy,
+             energy_dos,
+             neval,
+             integration->ismear,
+             ntetra_in,
+             tetras_in,
              dos_out);
 
     deallocate(eval);
@@ -856,12 +914,24 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in,
             }
 
             omega0 = eval_in[knum][snum];
-            calc_scattering_phase_space_with_Bose_mode(nk, ns, N, omega0, eval_in,
-                                                       temperature, k2_arr,
-                                                       smearing_method, ret_mode);
+            calc_scattering_phase_space_with_Bose_mode(nk,
+                                                       ns,
+                                                       N,
+                                                       omega0,
+                                                       eval_in,
+                                                       temperature,
+                                                       k2_arr,
+                                                       smearing_method,
+                                                       ret_mode);
         }
-        MPI_Gather(&ret_mode[0][0], 2 * N, MPI_DOUBLE, &recv_buf[mympi->nprocs * i][0],
-                   2 * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(&ret_mode[0][0],
+                   2 * N,
+                   MPI_DOUBLE,
+                   &recv_buf[mympi->nprocs * i][0],
+                   2 * N,
+                   MPI_DOUBLE,
+                   0,
+                   MPI_COMM_WORLD);
     }
 
     count = 0;
@@ -949,16 +1019,21 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk,
 
             if (smearing_method == -1) {
                 for (i = 0; i < 2; ++i) {
-                    integration->calc_weight_tetrahedron(nk, kmap_identity,
-                                                         energy_tmp[i], omega0,
+                    integration->calc_weight_tetrahedron(nk,
+                                                         kmap_identity,
+                                                         energy_tmp[i],
+                                                         omega0,
                                                          tetra_nodes_dos->get_ntetra(),
                                                          tetra_nodes_dos->get_tetras(),
                                                          weight[i]);
                 }
             } else {
                 for (i = 0; i < 2; ++i) {
-                    integration->calc_weight_smearing(nk, nk, kmap_identity,
-                                                      energy_tmp[i], omega0,
+                    integration->calc_weight_smearing(nk,
+                                                      nk,
+                                                      kmap_identity,
+                                                      energy_tmp[i],
+                                                      omega0,
                                                       smearing_method,
                                                       weight[i]);
                 }

@@ -41,16 +41,18 @@ Improvement:
 #include <set>
 #include <complex>
 
-namespace PHON_NS {
-class Iterativebte : protected Pointers {
+namespace PHON_NS
+{
+class Iterativebte: protected Pointers
+{
 public:
     Iterativebte(class PHON *);
 
     ~Iterativebte();
 
-    void setup_iterative();  // initialize variables
+    void setup_iterative(); // initialize variables
 
-    void do_iterativebte();  // wrapper
+    void do_iterativebte(); // wrapper
 
     bool do_iterative;
     bool direct_solution;
@@ -61,7 +63,7 @@ public:
     int min_cycle;
     double mixing_factor;
 
-    double convergence_criteria;  // dF(i+1) - dF(i) < cc
+    double convergence_criteria; // dF(i+1) - dF(i) < cc
 
     double ***kappa;
     bool use_triplet_symmetry;
@@ -70,7 +72,6 @@ public:
     std::fstream fs_result;
 
 private:
-
     void set_default_variables();
 
     void deallocate_variables();
@@ -102,19 +103,19 @@ private:
     //std::vector<std::vector<int>> ikp_absorb;
 
     void iterative_solver(); // calculate kappa iteratively
-    void direct_solver(); // calculate kappa iteratively
+    void direct_solver();    // calculate kappa iteratively
 
     //void setup_kpindex();
 
-    void calc_kappa(int, double ***&, double **&);   // calculate kappa with off equilibrium part
+    void calc_kappa(int, double ***&, double **&); // calculate kappa with off equilibrium part
 
-    void get_triplets();        // set up all triplets
+    void get_triplets(); // set up all triplets
 
     void setup_L_smear();
 
     void setup_L_tetra();
 
-    void calc_Q_from_L(double **&, double **&);  // calculate Q
+    void calc_Q_from_L(double **&, double **&); // calculate Q
 
     void calc_Q_directly(double **&, double **&);
 

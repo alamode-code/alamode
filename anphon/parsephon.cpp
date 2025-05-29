@@ -46,9 +46,8 @@
 
 using namespace PHON_NS;
 
-Input::Input(PHON *phon) : Pointers(phon), job_title(""), from_stdin(false)
-{
-}
+Input::Input(PHON *phon) :
+    Pointers(phon), job_title(""), from_stdin(false) {}
 
 Input::~Input()
 {
@@ -135,11 +134,38 @@ void Input::parse_general_vars()
     struct stat st{};
     std::string str_tmp;
     const std::vector<std::string> input_list{
-            "PREFIX", "MODE", "NSYM", "TOLERANCE", "PRINTSYM",
-            "TMIN", "TMAX", "DT", "NBANDS", "NONANALYTIC", "BORNINFO", "NA_SIGMA",
-            "ISMEAR", "EPSILON", "EMIN", "EMAX", "DELTA_E", "RESTART",  // "TREVSYM",
-            "KD", "MASS", "TRISYM", "PREC_EWALD", "CLASSICAL", "BCONNECT", "BORNSYM",
-            "VERBOSITY", "FC2FILE", "FC3FILE", "FC4FILE", "FCSFILE", "RESTART_4PH"
+        "PREFIX",
+        "MODE",
+        "NSYM",
+        "TOLERANCE",
+        "PRINTSYM",
+        "TMIN",
+        "TMAX",
+        "DT",
+        "NBANDS",
+        "NONANALYTIC",
+        "BORNINFO",
+        "NA_SIGMA",
+        "ISMEAR",
+        "EPSILON",
+        "EMIN",
+        "EMAX",
+        "DELTA_E",
+        "RESTART",
+        // "TREVSYM",
+        "KD",
+        "MASS",
+        "TRISYM",
+        "PREC_EWALD",
+        "CLASSICAL",
+        "BCONNECT",
+        "BORNSYM",
+        "VERBOSITY",
+        "FC2FILE",
+        "FC3FILE",
+        "FC4FILE",
+        "FCSFILE",
+        "RESTART_4PH"
     };
 
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
@@ -352,11 +378,22 @@ void Input::parse_kappa_vars(const bool use_default_values)
 {
     std::string str_tmp;
     const std::vector<std::string> input_list{
-            "KMESH_COARSE", "EPSILON_4PH", "ISMEAR_4PH",
-            "INTERPOLATOR", "LEN_BOUNDARY",
-            "ISOTOPE", "ISOFACT", "KAPPA_COHERENT", "KAPPA_SPEC",
-            "WRITE_INTERPOL", "ADAPTIVE_FACTOR",
-            "ITERATIVE", "MAX_CYCLE", "MIN_CYCLE", "ITER_THRESHOLD", "IBTE_MIXING"
+        "KMESH_COARSE",
+        "EPSILON_4PH",
+        "ISMEAR_4PH",
+        "INTERPOLATOR",
+        "LEN_BOUNDARY",
+        "ISOTOPE",
+        "ISOFACT",
+        "KAPPA_COHERENT",
+        "KAPPA_SPEC",
+        "WRITE_INTERPOL",
+        "ADAPTIVE_FACTOR",
+        "ITERATIVE",
+        "MAX_CYCLE",
+        "MIN_CYCLE",
+        "ITER_THRESHOLD",
+        "IBTE_MIXING"
     };
 
     std::vector<double> isotope_factor;
@@ -487,9 +524,18 @@ void Input::parse_scph_vars()
 
     struct stat st{};
     const std::vector<std::string> input_list{
-            "KMESH_SCPH", "KMESH_INTERPOLATE", "MIXALPHA", "MAXITER",
-            "RESTART_SCPH", "IALGO", "SELF_OFFDIAG", "TOL_SCPH",
-            "LOWER_TEMP", "WARMSTART", "BUBBLE", "RELAX_STR"
+        "KMESH_SCPH",
+        "KMESH_INTERPOLATE",
+        "MIXALPHA",
+        "MAXITER",
+        "RESTART_SCPH",
+        "IALGO",
+        "SELF_OFFDIAG",
+        "TOL_SCPH",
+        "LOWER_TEMP",
+        "WARMSTART",
+        "BUBBLE",
+        "RELAX_STR"
     };
     std::vector<std::string> no_defaults{"KMESH_SCPH", "KMESH_INTERPOLATE"};
     std::vector<int> kmesh_v, kmesh_interpolate_v;
@@ -628,8 +674,12 @@ void Input::parse_qha_vars()
 
     struct stat st{};
     const std::vector<std::string> input_list{
-            "KMESH_QHA", "KMESH_INTERPOLATE",
-            "LOWER_TEMP", "RELAX_STR", "QHA_SCHEME", "RESTART_QHA"
+        "KMESH_QHA",
+        "KMESH_INTERPOLATE",
+        "LOWER_TEMP",
+        "RELAX_STR",
+        "QHA_SCHEME",
+        "RESTART_QHA"
     };
     std::vector<std::string> no_defaults{"KMESH_QHA", "KMESH_INTERPOLATE"};
     std::vector<int> kmesh_v, kmesh_interpolate_v;
@@ -738,13 +788,22 @@ void Input::parse_relax_vars()
     // Read input parameters in the &relax-field.
 
     const std::vector<std::string> input_list{
-            "RELAX_ALGO", "MAX_STR_ITER",
-            "COORD_CONV_TOL", "MIXBETA_COORD", "ALPHA_STDECENT",
-            "CELL_CONV_TOL", "MIXBETA_CELL",
-            "SET_INIT_STR", "COOLING_U0_INDEX", "COOLING_U0_THR",
-            "ADD_HESS_DIAG", "STAT_PRESSURE",
-            "RENORM_3TO2ND", "RENORM_2TO1ST", "RENORM_34TO1ST",
-            "STRAIN_IFC_DIR"
+        "RELAX_ALGO",
+        "MAX_STR_ITER",
+        "COORD_CONV_TOL",
+        "MIXBETA_COORD",
+        "ALPHA_STDECENT",
+        "CELL_CONV_TOL",
+        "MIXBETA_CELL",
+        "SET_INIT_STR",
+        "COOLING_U0_INDEX",
+        "COOLING_U0_THR",
+        "ADD_HESS_DIAG",
+        "STAT_PRESSURE",
+        "RENORM_3TO2ND",
+        "RENORM_2TO1ST",
+        "RENORM_34TO1ST",
+        "STRAIN_IFC_DIR"
     };
 
     std::map<std::string, std::string> stropt_var_dict;
@@ -776,7 +835,7 @@ void Input::parse_relax_vars()
     double cooling_u0_thr = 0.001;
 
     double add_hess_diag = 100.0; // [cm^{-1}]
-    double stat_pressure = 0.0; // [GPa]
+    double stat_pressure = 0.0;   // [GPa]
 
     int renorm_3to2nd = 2;
     int renorm_2to1st = 2;
@@ -790,7 +849,8 @@ void Input::parse_relax_vars()
 
     if (relax_algo == 1) {
         assign_val(alpha_steepest_decent,
-                   "ALPHA_STEEPEST_DECENT", stropt_var_dict);
+                   "ALPHA_STEEPEST_DECENT",
+                   stropt_var_dict);
     } else if (relax_algo == 2) {
         assign_val(mixbeta_coord, "MIXBETA_COORD", stropt_var_dict);
     }
@@ -815,8 +875,8 @@ void Input::parse_relax_vars()
         strain_IFC_dir = strain_IFC_dir + "/";
     }
 
-//    bool restart_scph = (stat(file_dymat.c_str(), &st) == 0) && (stat(file_harm_dymat.c_str(), &st) == 0);
-//    restart_scph = restart_scph & (stat(file_v0.c_str(), &st) == 0);
+    //    bool restart_scph = (stat(file_dymat.c_str(), &st) == 0) && (stat(file_harm_dymat.c_str(), &st) == 0);
+    //    restart_scph = restart_scph & (stat(file_v0.c_str(), &st) == 0);
 
     relaxation->relax_algo = relax_algo;
     relaxation->max_str_iter = max_str_iter;
@@ -954,8 +1014,10 @@ void Input::parse_initial_strain()
     for (i = 0; i < 3; ++i) {
 
         line = line_vec[i];
-        split(line_split, line,
-              boost::is_any_of("\t "), boost::token_compress_on);
+        split(line_split,
+              line,
+              boost::is_any_of("\t "),
+              boost::token_compress_on);
 
 
         // u_tensor
@@ -1038,8 +1100,10 @@ void Input::parse_initial_displace()
     }
 
     line = line_vec[0];
-    split(line_split, line,
-          boost::is_any_of("\t "), boost::token_compress_on);
+    split(line_split,
+          line,
+          boost::is_any_of("\t "),
+          boost::token_compress_on);
 
     if (line_split.size() == 1) {
         input_mode = boost::lexical_cast<int>(line_split[0]);
@@ -1069,8 +1133,10 @@ void Input::parse_initial_displace()
         for (i = 1; i < 5; ++i) {
 
             line = line_vec[i];
-            split(line_split, line,
-                  boost::is_any_of("\t "), boost::token_compress_on);
+            split(line_split,
+                  line,
+                  boost::is_any_of("\t "),
+                  boost::token_compress_on);
 
             if (i == 1) {
                 // read unit
@@ -1104,8 +1170,10 @@ void Input::parse_initial_displace()
         for (i = 5; i < line_vec.size(); i++) {
 
             line = line_vec[i];
-            split(line_split, line,
-                  boost::is_any_of("\t "), boost::token_compress_on);
+            split(line_split,
+                  line,
+                  boost::is_any_of("\t "),
+                  boost::token_compress_on);
 
             if (line_split.size() == 3) {
                 for (j = 0; j < 3; ++j) {
@@ -1142,8 +1210,10 @@ void Input::parse_initial_displace()
         for (i = 1; i < line_vec.size(); i++) {
 
             line = line_vec[i];
-            split(line_split, line,
-                  boost::is_any_of("\t "), boost::token_compress_on);
+            split(line_split,
+                  line,
+                  boost::is_any_of("\t "),
+                  boost::token_compress_on);
 
             if (line_split.size() == 3) {
                 for (j = 0; j < 3; ++j) {
@@ -1157,7 +1227,7 @@ void Input::parse_initial_displace()
         }
     }
 
-    // Copy the values to appropriate classes 
+    // Copy the values to appropriate classes
     relaxation->init_u0.clear();
     for (iat = 0; iat < u_xyz.size(); iat++) {
         for (ixyz = 0; ixyz < 3; ixyz++) {
@@ -1173,14 +1243,38 @@ void Input::parse_analysis_vars(const bool use_default_values)
     int i;
 
     std::vector<std::string> input_list{
-            "PRINTEVEC", "PRINTXSF", "PRINTVEL", "QUARTIC", "KS_INPUT",
-            "REALPART",
-            "FSTATE_W", "FSTATE_K", "PRINTMSD", "DOS", "PDOS", "TDOS",
-            "GRUNEISEN", "NEWFCS", "DELTA_A", "ANIME", "ANIME_CELLSIZE",
-            "ANIME_FORMAT", "ANIME_FRAMES", "SPS", "PRINTV3", "PRINTPR",
-            "FC2_EWALD", "SELF_W", "UCORR", "SHIFT_UCORR",
-            "DIELEC", "SELF_ENERGY", "PRINTV4", "ZMODE", "PROJECTION_AXES",
-            "LONGITUDINAL_DOS"
+        "PRINTEVEC",
+        "PRINTXSF",
+        "PRINTVEL",
+        "QUARTIC",
+        "KS_INPUT",
+        "REALPART",
+        "FSTATE_W",
+        "FSTATE_K",
+        "PRINTMSD",
+        "DOS",
+        "PDOS",
+        "TDOS",
+        "GRUNEISEN",
+        "NEWFCS",
+        "DELTA_A",
+        "ANIME",
+        "ANIME_CELLSIZE",
+        "ANIME_FORMAT",
+        "ANIME_FRAMES",
+        "SPS",
+        "PRINTV3",
+        "PRINTPR",
+        "FC2_EWALD",
+        "SELF_W",
+        "UCORR",
+        "SHIFT_UCORR",
+        "DIELEC",
+        "SELF_ENERGY",
+        "PRINTV4",
+        "ZMODE",
+        "PROJECTION_AXES",
+        "LONGITUDINAL_DOS"
     };
 
 #ifdef _FE_BUBBLE
@@ -1309,8 +1403,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
         for (i = 0; i < 3; ++i) {
             try {
                 cellsize[i] = boost::lexical_cast<unsigned int>(anime_cellsize[i]);
-            }
-            catch (std::exception &e) {
+            } catch (std::exception &e) {
                 std::cout << e.what() << '\n';
                 exit("parse_analysis_vars",
                      "ANIME_CELLSIZE must be a set of positive integers.");
@@ -1322,8 +1415,10 @@ void Input::parse_analysis_vars(const bool use_default_values)
         }
 
         assign_val(anime_format, "ANIME_FORMAT", analysis_var_dict);
-        std::transform(anime_format.begin(), anime_format.end(),
-                       anime_format.begin(), toupper);
+        std::transform(anime_format.begin(),
+                       anime_format.end(),
+                       anime_format.begin(),
+                       toupper);
 
         if (anime_format.empty()) anime_format = "XYZ";
 
@@ -1349,8 +1444,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
             for (i = 0; i < 3; ++i) {
                 try {
                     shift_ucorr[i] = boost::lexical_cast<int>(list_shift_ucorr[i]);
-                }
-                catch (std::exception &e) {
+                } catch (std::exception &e) {
                     std::cout << e.what() << '\n';
                     exit("parse_analysis_vars",
                          "SHIFT_UCORR must be an array of integers.");
@@ -1382,8 +1476,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
                 for (auto j = 0; j < 3; ++j) {
                     try {
                         direction[j] = boost::lexical_cast<double>(str_vec[j]);
-                    }
-                    catch (std::exception &e) {
+                    } catch (std::exception &e) {
                         std::cout << e.what() << '\n';
                         exit("parse_analysis_vars",
                              "subset of PROJECTION_AXES must be an array of doubles.");
@@ -1511,8 +1604,10 @@ void Input::parse_cell_parameter()
     for (i = 0; i < 4; ++i) {
 
         line = line_vec[i];
-        split(line_split, line,
-              boost::is_any_of("\t "), boost::token_compress_on);
+        split(line_split,
+              line,
+              boost::is_any_of("\t "),
+              boost::token_compress_on);
 
         if (i == 0) {
             // Lattice factor a
@@ -1606,8 +1701,7 @@ void Input::parse_kpoints()
             if (kpelem.size() == 1) {
                 try {
                     kpmode = boost::lexical_cast<int>(kpelem[0]);
-                }
-                catch (std::exception &e) {
+                } catch (std::exception &e) {
                     std::cout << e.what() << '\n';
                     exit("parse_kpoints",
                          "KPMODE must be an integer. [0, 1, or 2]");
@@ -1781,7 +1875,7 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
 
                     if (var_dict.find(key) != var_dict.end()) {
                         std::cout << "Variable " << key
-                                  << " appears twice in the input file.\n";
+                            << " appears twice in the input file.\n";
                         exit("get_var_dict",
                              "Redundant input parameter");
                     }
@@ -1857,14 +1951,14 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
 
                     if (keyword_set.find(key) == keyword_set.end()) {
                         std::cout << "Could not recognize the variable "
-                                  << key << '\n';
+                            << key << '\n';
                         exit("get_var_dict",
                              "Invalid variable found");
                     }
 
                     if (var_dict.find(key) != var_dict.end()) {
                         std::cout << "Variable " << key
-                                  << " appears twice in the input file.\n";
+                            << " appears twice in the input file.\n";
                         exit("get_var_dict",
                              "Redundant input parameter");
                     }
@@ -1905,7 +1999,7 @@ void Input::split_str_by_space(const std::string &str,
     str_tmp.clear();
 }
 
-template<typename T>
+template <typename T>
 void Input::assign_val(T &val,
                        const std::string &key,
                        std::map<std::string, std::string> dict)
@@ -1915,8 +2009,7 @@ void Input::assign_val(T &val,
     if (!dict[key].empty()) {
         try {
             val = boost::lexical_cast<T>(dict[key]);
-        }
-        catch (std::exception &e) {
+        } catch (std::exception &e) {
             std::cout << e.what() << '\n';
             std::string str_tmp = "Invalid entry for the " + key + " tag.\n";
             str_tmp += " Please check the input value.";
@@ -1925,7 +2018,7 @@ void Input::assign_val(T &val,
     }
 }
 
-template<typename T_to, typename T_from>
+template <typename T_to, typename T_from>
 T_to Input::my_cast(T_from const &x)
 {
     std::stringstream ss;

@@ -19,8 +19,10 @@
 #include <string>
 #include <Eigen/Core>
 
-namespace PHON_NS {
-class DistWithCell {
+namespace PHON_NS
+{
+class DistWithCell
+{
 public:
     int cell;
     double dist;
@@ -28,7 +30,8 @@ public:
     DistWithCell();
 
     DistWithCell(const int n,
-                 const double d) : cell(n), dist(d) {};
+                 const double d) :
+        cell(n), dist(d) {};
 };
 
 inline bool operator<(const DistWithCell a,
@@ -37,17 +40,20 @@ inline bool operator<(const DistWithCell a,
     return a.dist < b.dist;
 }
 
-class DymatEigenValue {
+class DymatEigenValue
+{
 public:
-    DymatEigenValue() : nk(0), ns(0), eval(nullptr), evec(nullptr),
-                        is_stored_eigvec(true), is_irreducible_only(false) {};
+    DymatEigenValue() :
+        nk(0), ns(0), eval(nullptr), evec(nullptr),
+        is_stored_eigvec(true), is_irreducible_only(false) {};
 
     DymatEigenValue(const bool stored_eigvec_,
                     const bool store_irreducible_only_,
                     const unsigned int nk_in,
-                    const unsigned int ns_in) : nk(nk_in), ns(ns_in),
-                                                is_stored_eigvec(stored_eigvec_),
-                                                is_irreducible_only(store_irreducible_only_)
+                    const unsigned int ns_in) :
+        nk(nk_in), ns(ns_in),
+        is_stored_eigvec(stored_eigvec_),
+        is_irreducible_only(store_irreducible_only_)
     {
         if (eval) deallocate(eval);
         if (evec) deallocate(evec);
@@ -78,7 +84,6 @@ public:
 
     std::complex<double> ***get_eigenvectors() const;
 
-
 private:
     unsigned int nk, ns;
     double **eval = nullptr;
@@ -88,7 +93,8 @@ private:
 };
 
 
-class Dynamical : protected Pointers {
+class Dynamical: protected Pointers
+{
 public:
     Dynamical(class PHON *);
 
@@ -123,7 +129,7 @@ public:
 
     void eval_k_ewald(const double *,
                       const double *,
-//                      const std::vector<FcsClassExtent> &,
+                      //                      const std::vector<FcsClassExtent> &,
                       const std::vector<FcsArrayWithCell> &,
                       double *,
                       std::complex<double> **,
@@ -266,7 +272,6 @@ private:
                                    double **eval_in);
 
 
-
     std::vector<std::vector<double>> projection_directions;
 
     int transform_eigenvectors(double *xk_in,
@@ -285,7 +290,8 @@ private:
     std::vector<int> **mindist_list{};
 };
 
-extern "C" {
+extern "C"
+{
 void zheev_(const char *jobz,
             const char *uplo,
             int *n,

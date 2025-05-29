@@ -27,9 +27,9 @@
 
 using namespace PHON_NS;
 
-class Optimizer {
+class Optimizer
+{
 public:
-
     Optimizer() = default;
 
     virtual ~Optimizer() = default;
@@ -43,7 +43,8 @@ public:
     int initialize_flag = 0; // flag to run initialization
 };
 
-class Newton_Optimizer : public Optimizer {
+class Newton_Optimizer: public Optimizer
+{
 public:
     double mixbeta = 1.0;
 
@@ -60,7 +61,8 @@ public:
                       std::vector<double> &delta);
 };
 
-class CellCoord_Newton_Optimizer : public Optimizer {
+class CellCoord_Newton_Optimizer: public Optimizer
+{
 public:
     double mixbeta_cell = 1.0;
     double mixbeta_coord = 1.0;
@@ -80,9 +82,11 @@ public:
                       std::vector<double> &delta);
 };
 
-class FarkasIII_Optimizer : public Optimizer {
+class FarkasIII_Optimizer: public Optimizer
+{
 public:
-    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini) : max_vectors(max_vectors), H(H_ini)
+    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini) :
+        max_vectors(max_vectors), H(H_ini)
     {
         gradient_old = Eigen::VectorXd::Zero(H_ini.size());
         threshold_angle = 0.0; // We set angle threshold to be zero when we store more than 9 vectors
@@ -117,7 +121,8 @@ public:
             Eigen::VectorXd y = gradient - gradient_old;
             double ys = y.dot(s);
 
-            if (ys > 1e-12) {  // Update when the condition is satisfied
+            if (ys > 1e-12) {
+                // Update when the condition is satisfied
                 Eigen::MatrixXd I = Eigen::MatrixXd::Identity(dim, dim);
                 Eigen::MatrixXd A = I - y * s.transpose() / ys;
                 H = A.transpose() * H * A + s * s.transpose() / ys;
@@ -132,7 +137,7 @@ public:
         if (size == 7) threshold_angle = 0.56;
         if (size == 8) threshold_angle = 0.49;
         if (size == 9) threshold_angle = 0.41;
-     
+
         gradient_old = gradient;
         point_old = point;
 

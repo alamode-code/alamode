@@ -18,8 +18,10 @@
 #include <complex>
 #include <Eigen/Dense>
 
-namespace PHON_NS {
-class DistList {
+namespace PHON_NS
+{
+class DistList
+{
 public:
     unsigned int cell_s;
     double dist;
@@ -27,7 +29,8 @@ public:
     DistList();
 
     DistList(const unsigned int cell_s_,
-             const double dist_) : cell_s(cell_s_), dist(dist_) {};
+             const double dist_) :
+        cell_s(cell_s_), dist(dist_) {};
 
     bool operator<(const DistList &obj) const
     {
@@ -36,9 +39,9 @@ public:
 };
 
 
-class Scph : protected Pointers {
+class Scph: protected Pointers
+{
 public:
-
     Scph(class PHON *phon);
 
     ~Scph();
@@ -175,7 +178,6 @@ public:
                      const int bubble_in = 0);
 
 private:
-
     // Information of kmesh for SCPH calculation
     KpointMeshUniform *kmesh_coarse = nullptr;
     KpointMeshUniform *kmesh_dense = nullptr;
@@ -246,7 +248,7 @@ private:
                           std::complex<double> ***dymat0,
                           std::complex<double> ***v4_array_all,
                           std::complex<double> ***cmat_convert,
-//                          std::vector<Eigen::MatrixXcd> &dmat,
+                          //                          std::vector<Eigen::MatrixXcd> &dmat,
                           std::complex<double> ***dymat_out,
                           std::complex<double> ***evec_out,
                           const double alpha,
@@ -293,7 +295,8 @@ private:
 
 };
 
-extern "C" {
+extern "C"
+{
 void zgemm_(const char *transa,
             const char *transb,
             int *m,

@@ -16,10 +16,11 @@
 #include <complex>
 #include "kpoint.h"
 
-namespace PHON_NS {
-class Qha : protected Pointers {
+namespace PHON_NS
+{
+class Qha: protected Pointers
+{
 public:
-
     Qha(class PHON *phon);
 
     ~Qha();
@@ -39,9 +40,7 @@ public:
 
     void exec_qha_optimization();
 
-
 private:
-
     void set_default_variables();
 
     void deallocate_variables();
@@ -137,6 +136,3 @@ private:
 
 };
 }
-
-
-

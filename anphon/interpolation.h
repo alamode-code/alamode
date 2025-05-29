@@ -16,8 +16,10 @@
 #include "memory.h"
 #include "mathfunctions.h"
 
-namespace PHON_NS {
-class TriLinearInterpolator {
+namespace PHON_NS
+{
+class TriLinearInterpolator
+{
 public:
     TriLinearInterpolator()
     = default;
@@ -47,7 +49,7 @@ public:
     };
 
 
-    template<typename T>
+    template <typename T>
     void interpolate(const T *val_c, T *val_f, const bool regular_grid = true)
     {
 
@@ -76,7 +78,7 @@ public:
         deallocate(corner_coord);
     }
 
-    template<typename T>
+    template <typename T>
     void interpolate_avoidgamma(const T *val_c, T *val_f, const unsigned is, const bool regular_grid = true)
     {
         T v_cubes[8];
@@ -84,7 +86,7 @@ public:
         int corner_index[8];
         double **corner_coord;
 
-        double limit = -100;  // only for at acoustic branch at gamma
+        double limit = -100; // only for at acoustic branch at gamma
 
         allocate(corner_coord, 8, 3);
 
@@ -162,8 +164,8 @@ public:
                             }
 
                         } // tmpk
-                    } // tmpj
-                } // tmpi
+                    }     // tmpj
+                }         // tmpi
 
                 val_f[i] = val_sum / static_cast<T>(counter);
                 deallocate(neigh_corner_coord);
@@ -294,24 +296,30 @@ private:
     }
 
 
-    template<typename T>
+    template <typename T>
     T TriLinearInterpolation(double *center, double **corners_coord, const T *val_corner)
     {
         T tx = static_cast<T>(center[0] - corners_coord[0][0]) * static_cast<T>(grid_c[0]);
         T ty = static_cast<T>(center[1] - corners_coord[0][1]) * static_cast<T>(grid_c[1]);
         T tz = static_cast<T>(center[2] - corners_coord[0][2]) * static_cast<T>(grid_c[2]);
 
-        const auto c0 = BiLinearInterpolation(tx, ty,
-                                              val_corner[0], val_corner[1],
-                                              val_corner[2], val_corner[3]);
-        const auto c1 = BiLinearInterpolation(tx, ty,
-                                              val_corner[4], val_corner[5],
-                                              val_corner[6], val_corner[7]);
+        const auto c0 = BiLinearInterpolation(tx,
+                                              ty,
+                                              val_corner[0],
+                                              val_corner[1],
+                                              val_corner[2],
+                                              val_corner[3]);
+        const auto c1 = BiLinearInterpolation(tx,
+                                              ty,
+                                              val_corner[4],
+                                              val_corner[5],
+                                              val_corner[6],
+                                              val_corner[7]);
         return (c1 - c0) * tz + c0;
     }
 
 
-    template<typename T>
+    template <typename T>
     T BiLinearInterpolation(const T tx, const T ty,
                             const T c00, const T c10,
                             const T c01, const T c11)

@@ -21,8 +21,10 @@
 #include <functional>
 #include <sstream>
 
-namespace PHON_NS {
-class Input : protected Pointers {
+namespace PHON_NS
+{
+class Input: protected Pointers
+{
 public:
     Input(class PHON *);
 
@@ -68,10 +70,10 @@ private:
 
     static bool is_endof_entry(const std::string &str);
 
-    template<typename T_to, typename T_from>
+    template <typename T_to, typename T_from>
     T_to my_cast(T_from const &);
 
-    template<typename T>
+    template <typename T>
     void assign_val(T &,
                     const std::string &,
                     std::map<std::string, std::string>);
@@ -93,16 +95,24 @@ private:
 // trim from start
 static inline std::string &ltrim(std::string &s)
 {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-                                    [](int c) { return !std::isspace(c); }));
+    s.erase(s.begin(),
+            std::find_if(s.begin(),
+                         s.end(),
+                         [](int c) {
+                             return !std::isspace(c);
+                         }));
     return s;
 }
 
 // trim from end
 static inline std::string &rtrim(std::string &s)
 {
-    s.erase(std::find_if(s.rbegin(), s.rend(),
-                         [](int c) { return !std::isspace(c); }).base(), s.end());
+    s.erase(std::find_if(s.rbegin(),
+                         s.rend(),
+                         [](int c) {
+                             return !std::isspace(c);
+                         }).base(),
+            s.end());
     return s;
 }
 

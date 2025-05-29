@@ -15,8 +15,10 @@
 #include <vector>
 #include "kpoint.h"
 
-namespace PHON_NS {
-class Thermodynamics : protected Pointers {
+namespace PHON_NS
+{
+class Thermodynamics: protected Pointers
+{
 public:
     Thermodynamics(class PHON *);
 

@@ -25,7 +25,8 @@
 
 using namespace PHON_NS;
 
-Integration::Integration(PHON *phon) : Pointers(phon)
+Integration::Integration(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -37,7 +38,7 @@ Integration::~Integration()
 
 void Integration::set_default_variables()
 {
-    ismear = -1; // for 3ph scattering
+    ismear = -1;    // for 3ph scattering
     ismear_4ph = 1; // for 4ph scattering
     epsilon = 10.0;
     epsilon_4ph = 10.0;
@@ -70,10 +71,10 @@ void Integration::setup_integration()
             std::cout << "   ISMEAR = -1: Tetrahedron method\n";
         } else if (ismear == 0) {
             std::cout << "   ISMEAR = 0: Lorentzian broadening with epsilon = "
-                      << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
         } else if (ismear == 1) {
             std::cout << "   ISMEAR = 1: Gaussian broadening with epsilon = "
-                      << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
         } else if (ismear == 2) {
             std::cout << "   ISMEAR = 2: Adaptive Gaussian broadening\n";
         } else {
@@ -88,10 +89,10 @@ void Integration::setup_integration()
                 ismear_4ph = 2;
             } else if (ismear_4ph == 0) {
                 std::cout << "   ISMEAR_4PH = 0: Lorentzian broadening with epsilon = "
-                          << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                    << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
             } else if (ismear_4ph == 1) {
                 std::cout << "   ISMEAR_4PH = 1: Gaussian broadening with epsilon = "
-                          << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                    << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
             } else if (ismear_4ph == 2) {
                 std::cout << "   ISMEAR_4PH = 2: Adaptive Gaussian broadening\n";
             } else {
@@ -103,7 +104,7 @@ void Integration::setup_integration()
 
     prepare_adaptivesmearing();
 
-    epsilon *= time_ry / Hz_to_kayser; // Convert epsilon to a.u.
+    epsilon *= time_ry / Hz_to_kayser;     // Convert epsilon to a.u.
     epsilon_4ph *= time_ry / Hz_to_kayser; // Convert epsilon to a.u.
     MPI_Bcast(&epsilon, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&epsilon_4ph, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -258,15 +259,15 @@ double Integration::do_tetrahedron(const double *energy,
 
         } else if (e2 <= e_ref && e_ref < e3) {
             g = 3.0 * (e2 - e1 + 2.0 * (e_ref - e2) - (e4 + e3 - e2 - e1)
-                                                      * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
+                       * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = frac3 * fij(e1, e4, e_ref) * g + fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 -
-                                                                                                                  e1);
+                     e1);
             I2 = frac3 * fij(e2, e3, e_ref) * g + std::pow(fij(e2, e4, e_ref), 2) * fij(e3, e2, e_ref) / (e4 - e1);
             I3 = frac3 * fij(e3, e2, e_ref) * g + std::pow(fij(e3, e1, e_ref), 2) * fij(e2, e3, e_ref) / (e4 - e1);
             I4 = frac3 * fij(e4, e1, e_ref) * g + fij(e4, e2, e_ref) * fij(e2, e4, e_ref) * fij(e3, e2, e_ref) / (e4 -
-                                                                                                                  e1);
+                     e1);
 
             ret += I1 * f1 + I2 * f2 + I3 * f3 + I4 * f4;
 
@@ -335,7 +336,7 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
 
         } else if (e2 <= e_ref && e_ref < e3) {
             g = (e2 - e1 + 2.0 * (e_ref - e2) - (e4 + e3 - e2 - e1)
-                                                * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
+                 * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = g * fij(e1, e4, e_ref) + fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 - e1);
@@ -430,7 +431,7 @@ void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class,
 
     for (auto u = 0; u < 3; u++) {
         for (auto a = 0; a < 3; a++) {
-            dq[u][a] = rlavec_p_in(u,a) / static_cast<double>(kmesh_in->nk_i[u]);
+            dq[u][a] = rlavec_p_in(u, a) / static_cast<double>(kmesh_in->nk_i[u]);
         }
     }
 }
@@ -442,7 +443,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1,
     double tmp;
     double parts = 0;
 
-    for (auto & u : dq) {
+    for (auto &u: dq) {
 
         tmp = 0;
         for (auto a = 0; a < 3; ++a) {
@@ -467,7 +468,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1,
 
     for (i = 0; i < 2; ++i) parts[i] = 0;
 
-    for (auto & u : dq) {
+    for (auto &u: dq) {
 
         for (i = 0; i < 2; ++i) tmp[i] = 0;
 
@@ -497,7 +498,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k2,
     int i;
     for (i = 0; i < 3; ++i) parts[i] = 0;
 
-    for (auto & u : dq) {
+    for (auto &u: dq) {
 
         for (i = 0; i < 3; ++i) tmp[i] = 0;
 
@@ -511,8 +512,8 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k2,
     }
 
     sigma_out[0] = std::max(2.0e-5,
-                            adaptive_factor * std::sqrt((parts[0] + parts[1]) / 12));  // for delta(w1 - w2 - w3 - w4)
+                            adaptive_factor * std::sqrt((parts[0] + parts[1]) / 12)); // for delta(w1 - w2 - w3 - w4)
     sigma_out[1] = std::max(2.0e-5,
                             adaptive_factor * std::sqrt((parts[2] + parts[1]) /
-                                                        12));  // for delta(w1 + w2 - w3 - w4) and (w1 - w2 + w3 + w4)
+                                                        12)); // for delta(w1 + w2 - w3 - w4) and (w1 - w2 + w3 + w4)
 }

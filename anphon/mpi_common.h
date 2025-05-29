@@ -23,8 +23,10 @@
 #include "system.h"
 #include <Eigen/Core>
 
-namespace PHON_NS {
-class MyMPI : protected Pointers {
+namespace PHON_NS
+{
+class MyMPI: protected Pointers
+{
 public:
     MyMPI(class PHON *,
           MPI_Comm);

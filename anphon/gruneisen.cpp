@@ -65,7 +65,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Gruneisen::Gruneisen(PHON *phon) : Pointers(phon)
+Gruneisen::Gruneisen(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 };
@@ -187,8 +188,8 @@ void Gruneisen::calc_gruneisen()
                 for (unsigned int i = 0; i < ns; ++i) {
                     for (unsigned int j = 0; j < ns; ++j) {
                         gruneisen_bs[ik][is] += std::conj(evec[ik][is][i])
-                                                * dfc2_reciprocal[i][j]
-                                                * evec[ik][is][j];
+                            * dfc2_reciprocal[i][j]
+                            * evec[ik][is][j];
                     }
                 }
 
@@ -223,8 +224,8 @@ void Gruneisen::calc_gruneisen()
                 for (unsigned int i = 0; i < ns; ++i) {
                     for (unsigned int j = 0; j < ns; ++j) {
                         gruneisen_dos[ik][is] += std::conj(evec[ik][is][i])
-                                                 * dfc2_reciprocal[i][j]
-                                                 * evec[ik][is][j];
+                            * dfc2_reciprocal[i][j]
+                            * evec[ik][is][j];
                     }
                 }
 
@@ -266,9 +267,9 @@ void Gruneisen::calc_dfc2_reciprocal(std::complex<double> **dphi2,
                                   + it.relvecs[0][1] * xk_in[1]
                                   + it.relvecs[0][2] * xk_in[2]);
         dphi2[it.pairs[0].index][it.pairs[1].index]
-                += it.fcs_val * std::exp(im * phase)
-                   * invsqrt_mass[it.pairs[0].index / 3]
-                   * invsqrt_mass[it.pairs[1].index / 3];
+            += it.fcs_val * std::exp(im * phase)
+            * invsqrt_mass[it.pairs[0].index / 3]
+            * invsqrt_mass[it.pairs[1].index / 3];
     }
 }
 
@@ -433,14 +434,14 @@ void Gruneisen::write_new_fcsxml_all()
 
         std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_xml;
         std::cout << " : Force constants of the system expanded by "
-                  << std::fixed << std::setprecision(3) << delta_a * 100 << " %\n";
+            << std::fixed << std::setprecision(3) << delta_a * 100 << " %\n";
 
         file_xml = input->job_title + "_-.xml";
         write_new_fcsxml(file_xml, -delta_a);
 
         std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_xml;
         std::cout << " : Force constants of the system compressed by "
-                  << std::fixed << std::setprecision(3) << delta_a * 100 << " %\n";
+            << std::fixed << std::setprecision(3) << delta_a * 100 << " %\n";
     }
 }
 
@@ -591,7 +592,9 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
     const auto indent = 2;
 
 #if BOOST_VERSION >= 105600
-    write_xml(filename_xml, pt, std::locale(),
+    write_xml(filename_xml,
+              pt,
+              std::locale(),
               xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
 #else
     write_xml(filename_xml, pt, std::locale(),

@@ -26,7 +26,8 @@
 
 using namespace PHON_NS;
 
-Thermodynamics::Thermodynamics(PHON *phon) : Pointers(phon)
+Thermodynamics::Thermodynamics(PHON *phon) :
+    Pointers(phon)
 {
     T_to_Ryd = k_Boltzmann / Ryd;
     calc_FE_bubble = false;
@@ -334,8 +335,15 @@ double Thermodynamics::disp2_avg(const double T_in,
                                  std::complex<double> ***evec_in) const
 {
     const double cell_shift[3]{0, 0, 0};
-    return disp_corrfunc(T_in, ncrd1, ncrd2, cell_shift,
-                         nk, ns, xk_in, eval_in, evec_in);
+    return disp_corrfunc(T_in,
+                         ncrd1,
+                         ncrd2,
+                         cell_shift,
+                         nk,
+                         ns,
+                         xk_in,
+                         eval_in,
+                         evec_in);
 }
 
 double Thermodynamics::disp_corrfunc(const double T_in,
@@ -372,7 +380,7 @@ double Thermodynamics::disp_corrfunc(const double T_in,
             ret += real(std::conj(evec_in[ik][is][ncrd1])
                         * evec_in[ik][is][ncrd2]
                         * std::exp(phase))
-                   * T_in * T_to_Ryd / (omega * omega);
+                * T_in * T_to_Ryd / (omega * omega);
 
         }
 
@@ -392,7 +400,7 @@ double Thermodynamics::disp_corrfunc(const double T_in,
             ret += real(std::conj(evec_in[ik][is][ncrd1])
                         * evec_in[ik][is][ncrd2]
                         * std::exp(im * phase))
-                   * (fB(omega, T_in) + 0.5) / omega;
+                * (fB(omega, T_in) + 0.5) / omega;
         }
     }
 
@@ -493,7 +501,8 @@ void Thermodynamics::compute_FE_bubble(double **eval,
                                                  symmetry->SymmList,
                                                  anharmonic_core->use_triplet_symmetry,
                                                  true,
-                                                 triplet, 1);
+                                                 triplet,
+                                                 1);
 
             const int npair_uniq = triplet.size();
 
@@ -631,7 +640,8 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in,
                                                  symmetry->SymmList,
                                                  anharmonic_core->use_triplet_symmetry,
                                                  true,
-                                                 triplet, 1);
+                                                 triplet,
+                                                 1);
 
             int npair_uniq = triplet.size();
 
@@ -736,7 +746,7 @@ double Thermodynamics::FE_scph_correction(unsigned int iT,
                 Cmat(js, ks) = 0.0;
                 for (int ls = 0; ls < ns; ls++) {
                     Cmat(js, ks) += std::conj(evec_harm_renormalized[ik][js][ls])
-                                    * evec[ik][ks][ls];
+                        * evec[ik][ks][ls];
                 }
             }
         }

@@ -13,7 +13,8 @@
 #include <iostream>
 #include <cstdlib>
 
-namespace PHON_NS {
+namespace PHON_NS
+{
 inline void warn(const char *file,
                  const char *message)
 {
@@ -28,7 +29,7 @@ inline void exit(const char *file,
     std::exit(EXIT_FAILURE);
 }
 
-template<typename T>
+template <typename T>
 void exit(const char *file,
           const char *message,
           const T info)
@@ -53,4 +54,3 @@ inline void exitall(const char *file,
     std::exit(EXIT_FAILURE);
 }
 }
-

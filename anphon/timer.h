@@ -22,8 +22,10 @@
 
 #endif
 
-namespace PHON_NS {
-class Timer : protected Pointers {
+namespace PHON_NS
+{
+class Timer: protected Pointers
+{
 public:
     Timer(class PHON *);
 

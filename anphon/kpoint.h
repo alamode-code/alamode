@@ -18,31 +18,37 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <map>
 #include <Eigen/Core>
 
-namespace PHON_NS {
-class KpointList {
+namespace PHON_NS
+{
+class KpointList
+{
 public:
     std::vector<double> kval;
     unsigned int knum;
 
     KpointList() {};
 
-    KpointList(const KpointList &obj) : kval(obj.kval), knum(obj.knum) {};
+    KpointList(const KpointList &obj) :
+        kval(obj.kval), knum(obj.knum) {};
 
     KpointList(const unsigned int knum_in,
-               const std::vector<double> &vec)
-            : kval(vec), knum(knum_in) {};
+               const std::vector<double> &vec) :
+        kval(vec), knum(knum_in) {};
 };
 
-class KpointInp {
+class KpointInp
+{
 public:
     std::vector<std::string> kpelem;
 
     KpointInp() {};
 
-    KpointInp(const std::vector<std::string> &obj) : kpelem(obj) {};
+    KpointInp(const std::vector<std::string> &obj) :
+        kpelem(obj) {};
 };
 
-class KpointPlaneGeometry {
+class KpointPlaneGeometry
+{
 public:
     double xk_origin[3];
     double xk_edges[2][3];
@@ -66,7 +72,8 @@ public:
     }
 };
 
-class KpointPlane {
+class KpointPlane
+{
 public:
     double k[3];
     int n[2];
@@ -81,7 +88,8 @@ public:
     }
 };
 
-class KpointPlaneTriangle {
+class KpointPlaneTriangle
+{
 public:
     int index;
     int knum[3];
@@ -99,14 +107,16 @@ public:
     }
 };
 
-class KsList {
+class KsList
+{
 public:
     std::vector<int> ks;
     int symnum;
 
     KsList();
 
-    KsList(const KsList &a) : ks(a.ks), symnum(a.symnum) {};
+    KsList(const KsList &a) :
+        ks(a.ks), symnum(a.symnum) {};
 
     KsList(const int n,
            int *ks_in,
@@ -120,21 +130,26 @@ public:
 
     bool operator<(const KsList &obj) const
     {
-        return std::lexicographical_compare(ks.begin(), ks.end(),
-                                            obj.ks.begin(), obj.ks.end());
+        return std::lexicographical_compare(ks.begin(),
+                                            ks.end(),
+                                            obj.ks.begin(),
+                                            obj.ks.end());
     }
 };
 
-class KsListGroup {
+class KsListGroup
+{
 public:
     std::vector<KsList> group;
 
     KsListGroup();
 
-    KsListGroup(const std::vector<KsList> &a) : group(a) {};
+    KsListGroup(const std::vector<KsList> &a) :
+        group(a) {};
 };
 
-class KpointGeneral {
+class KpointGeneral
+{
 public:
     KpointGeneral()
     {
@@ -178,14 +193,16 @@ public:
     double **kvec_na = nullptr;
 };
 
-struct KpointSymmetry {
+struct KpointSymmetry
+{
 public:
     int symmetry_op;
     unsigned int knum_irred_orig;
     unsigned int knum_orig;
 };
 
-class KpointMeshUniform {
+class KpointMeshUniform
+{
 public:
     KpointMeshUniform() = default;
 
@@ -254,9 +271,7 @@ public:
 
     void setup_kpoint_symmetry(const std::vector<SymmetryOperationWithMapping> &symmlist);
 
-
 private:
-
     void gen_kmesh(const std::vector<SymmetryOperation> &symmlist,
                    const Eigen::Matrix3d &rlavec_p,
                    const bool usesym,
@@ -283,7 +298,8 @@ private:
 
 };
 
-class KpointBandStructure {
+class KpointBandStructure
+{
 public:
     KpointBandStructure()
     {
@@ -338,7 +354,8 @@ public:
     double *kaxis = nullptr;
 };
 
-class Kpoint : protected Pointers {
+class Kpoint: protected Pointers
+{
 public:
     Kpoint(class PHON *);
 

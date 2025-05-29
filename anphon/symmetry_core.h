@@ -17,12 +17,14 @@
 #include <set>
 #include <Eigen/Core>
 
-namespace PHON_NS {
-class SymmetryOperation {
+namespace PHON_NS
+{
+class SymmetryOperation
+{
 public:
-    Eigen::Matrix3i rotation;         // in lattice basis
-    Eigen::Vector3d tran;             // in lattice basis
-    Eigen::Matrix3d rotation_cart;  // in Cartesian basis
+    Eigen::Matrix3i rotation;      // in lattice basis
+    Eigen::Vector3d tran;          // in lattice basis
+    Eigen::Matrix3d rotation_cart; // in Cartesian basis
     bool is_translation;
 
     SymmetryOperation();
@@ -60,12 +62,15 @@ public:
                 v2.push_back(a.tran[i]);
             }
         }
-        return std::lexicographical_compare(v1.begin(), v1.end(),
-                                            v2.begin(), v2.end());
+        return std::lexicographical_compare(v1.begin(),
+                                            v1.end(),
+                                            v2.begin(),
+                                            v2.end());
     }
 };
 
-class RotationMatrix {
+class RotationMatrix
+{
 public:
     Eigen::Matrix3i mat;
 
@@ -86,7 +91,8 @@ public:
     }
 };
 
-class SymmetryOperationWithMapping {
+class SymmetryOperationWithMapping
+{
 public:
     std::vector<double> rot;            // Rotation matrix in Cartesian basis
     std::vector<double> rot_real;       // Rotation matrix in fractional basis
@@ -146,7 +152,8 @@ public:
 };
 
 
-class Symmetry : protected Pointers {
+class Symmetry: protected Pointers
+{
 public:
     Symmetry(class PHON *);
 
@@ -165,7 +172,6 @@ public:
     void setup_symmetry();
 
 private:
-
     std::string file_sym;
 
     void set_default_variables();
