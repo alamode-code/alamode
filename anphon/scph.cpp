@@ -1558,7 +1558,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
-                                                    kmesh_dense,
                                                     kmap_interpolate_to_scph,
                                                     delta_v2_with_umn,
                                                     del_v2_del_umn,

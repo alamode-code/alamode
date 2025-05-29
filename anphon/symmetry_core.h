@@ -180,7 +180,7 @@ private:
                                   const Spin &spin_in,
                                   const std::vector<std::vector<unsigned int>> &atomtype_in,
                                   std::vector<SymmetryOperation> &symlist,
-                                  const int verbosity = 1);
+                                  const int verbosity = 1) const;
 
     void gensym_withmap(const Eigen::Matrix3d &aa,
                         const Eigen::MatrixXd &x,
@@ -188,9 +188,9 @@ private:
                         const std::vector<SymmetryOperation> &symmlist_in,
                         std::vector<SymmetryOperationWithMapping> &symmlist_withmap_out) const;
 
-    bool is_proper(const Eigen::Matrix3d &rot) const;
+    static bool is_proper(const Eigen::Matrix3d &rot);
 
-    bool is_translation(const Eigen::Matrix3i &rot) const;
+    static bool is_translation(const Eigen::Matrix3i &rot);
 
     void find_lattice_symmetry(const Eigen::Matrix3d &aa,
                                std::vector<RotationMatrix> &) const;
@@ -212,10 +212,10 @@ private:
                        std::string &,
                        std::vector<SymmetryOperation> &symm_out) const;
 
-    void symop_in_cart(Eigen::Matrix3d &rot_cart,
-                       const Eigen::Matrix3i &rot_lattice,
-                       const Eigen::Matrix3d &lavec,
-                       const Eigen::Matrix3d &rlavec) const;
+    static void symop_in_cart(Eigen::Matrix3d &rot_cart,
+                              const Eigen::Matrix3i &rot_lattice,
+                              const Eigen::Matrix3d &lavec,
+                              const Eigen::Matrix3d &rlavec);
 
 
     void broadcast_symmlist(std::vector<SymmetryOperation> &) const;

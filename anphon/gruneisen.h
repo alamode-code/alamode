@@ -37,7 +37,7 @@ public:
 
     void calc_gruneisen();
 
-    void write_new_fcsxml_all();
+    void write_new_fcsxml_all() const;
 
 private:
     void set_default_variables();
@@ -47,20 +47,16 @@ private:
     double **xshift_s;
     std::vector<FcsArrayWithCell> delta_fc2, delta_fc3;
 
-    void prepare_delta_fcs(const std::vector<FcsArrayWithCell> &,
-                           std::vector<FcsArrayWithCell> &,
-                           const int) const;
+    void prepare_delta_fcs(const std::vector<FcsArrayWithCell>&,
+                           std::vector<FcsArrayWithCell>&) const;
 
     // void impose_ASR_on_harmonic_IFC(std::vector<FcsArrayWithCell> &,
     //                    int);
 
-    void calc_dfc2_reciprocal(std::complex<double> **,
-                              const double *);
-
     void write_new_fcsxml(const std::string &,
-                          double);
+                          double) const;
 
-    std::string double2string(double) const;
+    static std::string double2string(double);
 
     //  double calc_stress_energy2(const std::vector<FcsArrayWithCell>);
     void calc_stress_energy3(std::vector<FcsArrayWithCell>,

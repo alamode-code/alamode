@@ -137,7 +137,7 @@ void Symmetry::setup_symmetry_operation(const Cell &cell_in,
                                         const Spin &spin_in,
                                         const std::vector<std::vector<unsigned int>> &atomtype_in,
                                         std::vector<SymmetryOperation> &symlist,
-                                        const int verbosity)
+                                        const int verbosity) const
 {
     // input cell into a true primitive cell.
     if (spin_in.lspin && spin_in.noncollinear) {
@@ -199,11 +199,9 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
     */
 
     int i, j, k;
-    int m11, m12, m13, m21, m22, m23, m31, m32, m33;
 
     auto nsym_tmp = 0;
     int mat_tmp[3][3];
-    double det, res;
     Eigen::Matrix3d rot_tmp;
     Eigen::Matrix3d aa_rot;
 
@@ -233,24 +231,24 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
     // Identity matrix should be the first entry.
     LatticeSymmList.emplace_back(mat_tmp);
 
-    for (m11 = -1; m11 <= 1; ++m11) {
-        for (m12 = -1; m12 <= 1; ++m12) {
-            for (m13 = -1; m13 <= 1; ++m13) {
-                for (m21 = -1; m21 <= 1; ++m21) {
-                    for (m22 = -1; m22 <= 1; ++m22) {
-                        for (m23 = -1; m23 <= 1; ++m23) {
-                            for (m31 = -1; m31 <= 1; ++m31) {
-                                for (m32 = -1; m32 <= 1; ++m32) {
-                                    for (m33 = -1; m33 <= 1; ++m33) {
+    for (int m11 = -1; m11 <= 1; ++m11) {
+        for (int m12 = -1; m12 <= 1; ++m12) {
+            for (int m13 = -1; m13 <= 1; ++m13) {
+                for (int m21 = -1; m21 <= 1; ++m21) {
+                    for (int m22 = -1; m22 <= 1; ++m22) {
+                        for (int m23 = -1; m23 <= 1; ++m23) {
+                            for (int m31 = -1; m31 <= 1; ++m31) {
+                                for (int m32 = -1; m32 <= 1; ++m32) {
+                                    for (int m33 = -1; m33 <= 1; ++m33) {
 
                                         if (m11 == 1 && m12 == 0 && m13 == 0 &&
                                             m21 == 0 && m22 == 1 && m23 == 0 &&
                                             m31 == 0 && m32 == 0 && m33 == 1)
                                             continue;
 
-                                        det = m11 * (m22 * m33 - m32 * m23)
-                                              - m21 * (m12 * m33 - m32 * m13)
-                                              + m31 * (m12 * m23 - m22 * m13);
+                                        const double det = m11 * (m22 * m33 - m32 * m23)
+                                                           - m21 * (m12 * m33 - m32 * m13)
+                                                           + m31 * (m12 * m23 - m22 * m13);
 
                                         if (det != 1 && det != -1) continue;
 
@@ -276,7 +274,7 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
                                             }
                                         }
 
-                                        res = 0.0;
+                                        double res = 0.0;
                                         for (i = 0; i < 3; ++i) {
                                             for (j = 0; j < 3; ++j) {
                                                 res += std::pow(metric_tensor[i][j] - metric_tensor_rot[i][j], 2.0);
@@ -517,8 +515,8 @@ int Symmetry::findsym_spglib(const Cell &cell,
         }
     }
 
-    auto spgdataset = spg_get_dataset(aa_tmp, position, types_tmp, nat, tolerance);
-    auto nsym_out = spgdataset->n_operations;
+    const auto spgdataset = spg_get_dataset(aa_tmp, position, types_tmp, nat, tolerance);
+    const auto nsym_out = spgdataset->n_operations;
     if (nsym_out == 0) exit("findsym_spglib", "Error occurred in spg_get_dataset");
 
     allocate(translation, nsym_out);
@@ -574,13 +572,12 @@ int Symmetry::findsym_spglib(const Cell &cell,
 void Symmetry::symop_in_cart(Eigen::Matrix3d &rot_cart,
                              const Eigen::Matrix3i &rot_lattice,
                              const Eigen::Matrix3d &lavec,
-                             const Eigen::Matrix3d &rlavec) const
+                             const Eigen::Matrix3d &rlavec)
 {
-    int i, j;
-    Eigen::Matrix3d sym_tmp, tmp;
+    Eigen::Matrix3d sym_tmp;
 
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
             sym_tmp(i, j) = static_cast<double>(rot_lattice(i, j));
         }
     }
@@ -595,8 +592,8 @@ void Symmetry::gensym_withmap(const Eigen::Matrix3d &aa,
 {
     // Generate symmetry operations in Cartesian coordinate with the atom-mapping information.
 
-    Eigen::Matrix3d S, T, S_recip, mat_tmp;
-    Eigen::Vector3d shift, x_mod, tmp;
+    Eigen::Matrix3d T;
+    Eigen::Vector3d shift, tmp;
     unsigned int *map_tmp;
     int i, j;
     unsigned int natmin = x.rows();
@@ -617,17 +614,17 @@ void Symmetry::gensym_withmap(const Eigen::Matrix3d &aa,
             shift[i] = isym.tran[i];
         }
 
-        S_recip = T.inverse().transpose();
+        const Eigen::Matrix3d S_recip = T.inverse().transpose();
 
         // Convert to Cartesian coordinate
-        mat_tmp = T * aa.inverse();
-        S = aa * mat_tmp;
+        const Eigen::Matrix3d mat_tmp = T * aa.inverse();
+        const Eigen::Matrix3d S = aa * mat_tmp;
 
         // Generate mapping information
 
         for (i = 0; i < natmin; ++i) {
 
-            x_mod = T * x.row(i).transpose();
+            Eigen::Vector3d x_mod = T * x.row(i).transpose();
 
             for (j = 0; j < 3; ++j) {
                 x_mod[j] += shift[j];
@@ -672,14 +669,9 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
 {
     int i, j, k;
     int n;
-    std::vector<int> sym_entry;
     int ***rot_tmp;
     double ***rot_tmp2;
     double **tran_tmp;
-
-    Eigen::Matrix3i rotation;
-    Eigen::Vector3d tran;
-    Eigen::Matrix3d rotation_cart;
 
     if (mympi->my_rank == 0) n = sym.size();
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -704,6 +696,9 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     MPI_Bcast(&tran_tmp[0][0], 3 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank > 0) {
+        Eigen::Matrix3i rotation;
+        Eigen::Matrix3d rotation_cart;
+        Eigen::Vector3d tran;
         for (i = 0; i < n; ++i) {
             for (j = 0; j < 3; ++j) {
                 for (k = 0; k < 3; ++k) {
@@ -724,13 +719,13 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     deallocate(tran_tmp);
 }
 
-bool Symmetry::is_proper(const Eigen::Matrix3d &rot) const
+bool Symmetry::is_proper(const Eigen::Matrix3d &rot)
 {
     const auto det = rot.determinant();
     return std::abs(det - 1.0) < eps12;
 }
 
-bool Symmetry::is_translation(const Eigen::Matrix3i &rot) const
+bool Symmetry::is_translation(const Eigen::Matrix3i &rot)
 {
     const Eigen::Matrix3i identity = Eigen::Matrix3i::Identity();
     return (rot == identity);

@@ -832,7 +832,7 @@ void Dynamical::calc_nonanalytic_k2(const double *xk_in,
         }
     }
 
-    double factor = 8.0 * pi / system->get_primcell().volume;
+    const auto factor = 8.0 * pi / system->get_primcell().volume;
 
     for (i = 0; i < neval; ++i) {
         for (j = 0; j < neval; ++j) {

@@ -29,39 +29,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/version.hpp>
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <cmath>
-
-//namespace PHON_NS {
-//bool less_FcsAlignedForGruneisen2(const FcsAlignedForGruneisen &obj1, const FcsAlignedForGruneisen &obj2)
-//{
-//    std::vector<unsigned int> array_a, array_b;
-//    array_a.clear();
-//    array_b.clear();
-//    int len = obj1.pairs.size();
-//    for (int i = 0; i < len - 2; ++i) {
-//        array_a.push_back(obj1.pairs[i].index);
-//        array_a.push_back(obj1.pairs[i].tran);
-//        array_b.push_back(obj2.pairs[i].index);
-//        array_b.push_back(obj2.pairs[i].tran);
-//    }
-//    for (int i = 0; i < len - 2; ++i) {
-//        array_a.push_back(obj1.pairs[i].cell_s);
-//        array_b.push_back(obj2.pairs[i].cell_s);
-//    }
-//
-//    array_a.push_back(obj1.pairs[len - 2].index);
-//    array_a.push_back(obj1.pairs[len - 2].tran);
-//    array_b.push_back(obj2.pairs[len - 2].index);
-//    array_b.push_back(obj2.pairs[len - 2].tran);
-//
-//    array_a.push_back(obj1.pairs[len - 1].index);
-//    array_a.push_back(obj1.pairs[len - 1].tran);
-//    array_b.push_back(obj2.pairs[len - 1].index);
-//    array_b.push_back(obj2.pairs[len - 1].tran);
-//    return std::lexicographical_compare(array_a.begin(), array_a.end(),
-//                                        array_b.begin(), array_b.end());
-//}
-//}
 
 using namespace PHON_NS;
 
@@ -127,13 +96,13 @@ void Gruneisen::setup()
     }
 
     if (print_gruneisen || print_newfcs) {
-        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2, 1);
+        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2);
 
         // impose_ASR_on_harmonic_IFC(delta_fc2, 0);
     }
 
     if (print_newfcs && anharmonic_core->quartic_mode > 0) {
-        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3, 1);
+        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3);
     }
     if (print_gruneisen) {
         if (kpoint->kpoint_bs) {
@@ -178,8 +147,7 @@ void Gruneisen::calc_gruneisen()
         const auto evec = dynamical->dymat_band->get_eigenvectors();
 
         for (auto ik = 0; ik < nk; ++ik) {
-
-            calc_dfc2_reciprocal(dfc2_reciprocal, xk[ik]);
+            dynamical->calc_analytic_k(xk[ik], delta_fc2, dfc2_reciprocal);
 
             for (auto is = 0; is < ns; ++is) {
 
@@ -215,7 +183,7 @@ void Gruneisen::calc_gruneisen()
 
         for (auto ik = 0; ik < nk; ++ik) {
 
-            calc_dfc2_reciprocal(dfc2_reciprocal, xk[ik]);
+            dynamical->calc_analytic_k(xk[ik], delta_fc2, dfc2_reciprocal);
 
             for (auto is = 0; is < ns; ++is) {
 
@@ -250,35 +218,11 @@ void Gruneisen::calc_gruneisen()
     }
 }
 
-void Gruneisen::calc_dfc2_reciprocal(std::complex<double> **dphi2,
-                                     const double *xk_in)
-{
-    const auto ns = dynamical->neval;
-    for (auto i = 0; i < ns; ++i) {
-        for (unsigned int j = 0; j < ns; ++j) {
-            dphi2[i][j] = std::complex<double>(0.0, 0.0);
-        }
-    }
-
-    const auto invsqrt_mass = system->get_invsqrt_mass();
-
-    for (const auto &it: delta_fc2) {
-        const auto phase = tpi * (it.relvecs[0][0] * xk_in[0]
-                                  + it.relvecs[0][1] * xk_in[1]
-                                  + it.relvecs[0][2] * xk_in[2]);
-        dphi2[it.pairs[0].index][it.pairs[1].index]
-            += it.fcs_val * std::exp(im * phase)
-            * invsqrt_mass[it.pairs[0].index / 3]
-            * invsqrt_mass[it.pairs[1].index / 3];
-    }
-}
-
-void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
-                                  std::vector<FcsArrayWithCell> &delta_fcs,
-                                  const int periodic_image_mode) const
+void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell>& fcs_in,
+                                  std::vector<FcsArrayWithCell>& delta_fcs) const
 {
     unsigned int i, j;
-    Eigen::Vector3d vec, vec_origin;
+    Eigen::Vector3d vec;
 
     std::vector<FcsArrayWithCell> fcs_aligned;
     std::vector<AtomCellSuper> pairs_vec;
@@ -305,13 +249,12 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
     for (const auto &it: fcs_in) {
         fcs_aligned.emplace_back(it);
     }
-    sort_by_heading_indices operator1(1);
-    std::sort(fcs_aligned.begin(),
+    sort_by_heading_indices const operator1(1);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(),
               fcs_aligned.end(),
               operator1);
 
     const auto cell_tmp = system->get_supercell(norder - 2);
-    const auto map_p2s_tmp = system->get_map_p2s(norder - 2);
     const auto convmat = system->get_primcell().lattice_vector;
 
     index_old.clear();
@@ -419,7 +362,7 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
 }
 
 
-void Gruneisen::write_new_fcsxml_all()
+void Gruneisen::write_new_fcsxml_all() const
 {
     std::cout << '\n';
 
@@ -446,7 +389,7 @@ void Gruneisen::write_new_fcsxml_all()
 }
 
 void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
-                                 const double change_ratio_of_a)
+                                 const double change_ratio_of_a) const
 {
     int i, j;
     double lattice_vector[3][3];
@@ -589,7 +532,7 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
     }
 
     using namespace boost::property_tree::xml_parser;
-    const auto indent = 2;
+    constexpr auto indent = 2;
 
 #if BOOST_VERSION >= 105600
     write_xml(filename_xml,
@@ -602,7 +545,7 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
 #endif
 }
 
-std::string Gruneisen::double2string(const double d) const
+auto Gruneisen::double2string(const double d) -> std::string
 {
     std::string rt;
     std::stringstream ss;

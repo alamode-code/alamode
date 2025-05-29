@@ -625,7 +625,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                                     u_tensor);
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
-                                                    kmesh_dense,
                                                     kmap_coarse_to_dense,
                                                     delta_v2_with_umn,
                                                     del_v2_del_umn,
@@ -1365,7 +1364,6 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                 u_tensor);
 
             relaxation->renormalize_v2_from_umn(kmesh_coarse,
-                                                kmesh_dense,
                                                 kmap_coarse_to_dense,
                                                 delta_v2_with_umn,
                                                 del_v2_del_umn,
