@@ -113,12 +113,12 @@ public:
                                 int &str_diverged,
                                 const int i_temp_loop,
                                 double **omega2_harmonic,
-                                std::complex<double> ***evec_harmonic);
+                                std::complex<double> ***evec_harmonic) const;
 
 
     void set_elastic_constants(double *C1_array,
                                double **C2_array,
-                               double ***C3_array);
+                               double ***C3_array) const;
 
     void renormalize_v0_from_umn(double &,
                                  double,
@@ -338,19 +338,17 @@ private:
     void calculate_delv1_delumn_finite_difference(std::complex<double> **,
                                                   const std::complex<double> *const *const *const) const;
 
-    void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_in,
-                                             std::vector<FcsArrayWithCell> &delta_fcs,
-                                             const int ixyz1,
-                                             const int ixyz2,
-                                             const int periodic_image_mode);
+    void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell>& fcs_in,
+                                             std::vector<FcsArrayWithCell>& delta_fcs,
+                                             int ixyz1,
+                                             int ixyz2);
 
-    void compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &,
-                                             std::vector<FcsArrayWithCell> &,
-                                             const int,
-                                             const int,
-                                             const int,
-                                             const int,
-                                             const int);
+    void compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell>&,
+                                             std::vector<FcsArrayWithCell>&,
+                                             int,
+                                             int,
+                                             int,
+                                             int);
 
 
     void make_supercell_mapping_by_symmetry_operations(int **);

@@ -36,7 +36,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-System::System(PHON *phon) : Pointers(phon)
+System::System(PHON *phon) :
+    Pointers(phon)
 {
     set_default_variables();
 }
@@ -54,9 +55,7 @@ void System::set_default_variables()
     tolerance_for_coordinates = 1.0e-4;
 }
 
-void System::deallocate_variables()
-{
-}
+void System::deallocate_variables() {}
 
 void System::setup()
 {
@@ -153,7 +152,7 @@ void System::print_structure_information_stdout() const
 
     cout << "  Volume of the primitive cell : " << primcell.volume << " (a.u.)^3\n\n";
     cout << "  Number of atoms in the primitive cell: "
-         << primcell.number_of_atoms << "\n\n";
+        << primcell.number_of_atoms << "\n\n";
 
     cout << "  Atomic positions in the primitive cell (fractional):\n";
     for (auto i = 0; i < primcell.number_of_atoms; ++i) {
@@ -221,7 +220,7 @@ void System::print_structure_information_stdout() const
              "The transformation matrix should be composed of integers. Something is wrong.");
     }
     cout << '\n' << "  Number of atoms in the supercell     : "
-         << supercell[0].number_of_atoms << "\n\n\n";
+        << supercell[0].number_of_atoms << "\n\n\n";
 }
 
 void System::load_system_info_from_file()
@@ -278,15 +277,21 @@ void System::load_system_info_from_file()
 
         if (filetype[i] == 0) {
             get_structure_and_mapping_table_xml(filename_list[i],
-                                                scell, pcell,
-                                                spin_s, spin_p,
-                                                map_s, map_p,
+                                                scell,
+                                                pcell,
+                                                spin_s,
+                                                spin_p,
+                                                map_s,
+                                                map_p,
                                                 elements_tmp);
         } else if (filetype[i] == 1) {
             get_structure_and_mapping_table_h5(filename_list[i],
-                                               scell, pcell,
-                                               spin_s, spin_p,
-                                               map_s, map_p,
+                                               scell,
+                                               pcell,
+                                               spin_s,
+                                               spin_p,
+                                               map_s,
+                                               map_p,
                                                elements_tmp);
         } else {
             exit("load_system_info_from_file", "This cannot happen.");
@@ -399,8 +404,7 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename,
 
         try {
             read_xml(filename, pt);
-        }
-        catch (std::exception &e) {
+        } catch (std::exception &e) {
             std::string str_error = "Cannot open file FCSFILE ( "
                                     + filename + " )";
             exit("get_structure_and_mapping_table_xml",
@@ -409,14 +413,14 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename,
 
         // Parse nat_base and ntran_super
         nat_tmp = boost::lexical_cast<unsigned int>(
-                get_value_from_xml(pt,
-                                   "Data.Structure.NumberOfAtoms"));
+            get_value_from_xml(pt,
+                               "Data.Structure.NumberOfAtoms"));
         nkd_tmp = boost::lexical_cast<unsigned int>(
-                get_value_from_xml(pt,
-                                   "Data.Structure.NumberOfElements"));
+            get_value_from_xml(pt,
+                               "Data.Structure.NumberOfElements"));
         ntran_tmp = boost::lexical_cast<unsigned int>(
-                get_value_from_xml(pt,
-                                   "Data.Symmetry.NumberOfTranslations"));
+            get_value_from_xml(pt,
+                               "Data.Symmetry.NumberOfTranslations"));
 
         natmin_tmp = nat_tmp / ntran_tmp;
 
@@ -437,33 +441,35 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename,
         allocate(xr_s_tmp, nat_tmp, 3);
         allocate(kd_tmp, nat_tmp);
 
-        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
-                        const auto &child = child_.second;
-                        const auto icount_kd = child.get<unsigned int>("<xmlattr>.number");
-                        dict_atomic_kind[boost::lexical_cast<std::string>(child_.second.data())] = icount_kd - 1;
-                        elements.emplace_back(child_.second.data());
-                    }
+        BOOST_FOREACH(const ptree::value_type &child_,
+                      pt.get_child("Data.Structure.AtomicElements")) {
+            const auto &child = child_.second;
+            const auto icount_kd = child.get<unsigned int>("<xmlattr>.number");
+            dict_atomic_kind[boost::lexical_cast<std::string>(child_.second.data())] = icount_kd - 1;
+            elements.emplace_back(child_.second.data());
+        }
 
         unsigned int index;
 
-        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
-                        const auto &child = child_.second;
-                        const auto str_index = child.get<std::string>("<xmlattr>.index");
-                        const auto str_element = child.get<std::string>("<xmlattr>.element");
+        BOOST_FOREACH(const ptree::value_type &child_,
+                      pt.get_child("Data.Structure.Position")) {
+            const auto &child = child_.second;
+            const auto str_index = child.get<std::string>("<xmlattr>.index");
+            const auto str_element = child.get<std::string>("<xmlattr>.element");
 
-                        ss.str("");
-                        ss.clear();
-                        ss << child.data();
+            ss.str("");
+            ss.clear();
+            ss << child.data();
 
-                        index = boost::lexical_cast<unsigned int>(str_index) - 1;
+            index = boost::lexical_cast<unsigned int>(str_index) - 1;
 
-                        if (index >= nat_tmp)
-                            exit("load_system_info_xml",
-                                 "index is out of range");
+            if (index >= nat_tmp)
+                exit("load_system_info_xml",
+                     "index is out of range");
 
-                        kd_tmp[index] = dict_atomic_kind[str_element];
-                        ss >> xr_s_tmp[index][0] >> xr_s_tmp[index][1] >> xr_s_tmp[index][2];
-                    }
+            kd_tmp[index] = dict_atomic_kind[str_element];
+            ss >> xr_s_tmp[index][0] >> xr_s_tmp[index][1] >> xr_s_tmp[index][2];
+        }
 
         dict_atomic_kind.clear();
 
@@ -472,24 +478,25 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename,
         allocate(map_p2s_tmp, natmin_tmp, ntran_tmp);
         allocate(map_s2p_tmp, nat_tmp);
 
-        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
-                        const auto &child = child_.second;
-                        const auto str_tran = child.get<std::string>("<xmlattr>.tran");
-                        const auto str_atom = child.get<std::string>("<xmlattr>.atom");
+        BOOST_FOREACH(const ptree::value_type &child_,
+                      pt.get_child("Data.Symmetry.Translations")) {
+            const auto &child = child_.second;
+            const auto str_tran = child.get<std::string>("<xmlattr>.tran");
+            const auto str_atom = child.get<std::string>("<xmlattr>.atom");
 
-                        const auto tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
-                        const auto atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
-                        const auto atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
+            const auto tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
+            const auto atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
+            const auto atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
 
-                        if (tran >= ntran_tmp || atom_p >= natmin_tmp || atom_s >= nat_tmp) {
-                            exit("load_system_info_xml",
-                                 "index is out of range");
-                        }
+            if (tran >= ntran_tmp || atom_p >= natmin_tmp || atom_s >= nat_tmp) {
+                exit("load_system_info_xml",
+                     "index is out of range");
+            }
 
-                        map_p2s_tmp[atom_p][tran] = atom_s;
-                        map_s2p_tmp[atom_s].atom_num = atom_p;
-                        map_s2p_tmp[atom_s].tran_num = tran;
-                    }
+            map_p2s_tmp[atom_p][tran] = atom_s;
+            map_s2p_tmp[atom_s].atom_num = atom_p;
+            map_s2p_tmp[atom_s].tran_num = tran;
+        }
 
         // Parse magnetic moments
 
@@ -499,29 +506,29 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename,
 
         lspin_tmp = true;
         try {
-            BOOST_FOREACH(const ptree::value_type &child_, pt.get_child("Data.MagneticMoments")) {
-                            if (child_.first == "mag") {
-                                const auto &child = child_.second;
-                                const auto str_index = child.get<std::string>("<xmlattr>.index");
+            BOOST_FOREACH(const ptree::value_type &child_,
+                          pt.get_child("Data.MagneticMoments")) {
+                if (child_.first == "mag") {
+                    const auto &child = child_.second;
+                    const auto str_index = child.get<std::string>("<xmlattr>.index");
 
-                                ss.str("");
-                                ss.clear();
-                                ss << child.data();
+                    ss.str("");
+                    ss.clear();
+                    ss << child.data();
 
-                                index = boost::lexical_cast<unsigned int>(str_index) - 1;
+                    index = boost::lexical_cast<unsigned int>(str_index) - 1;
 
-                                if (index >= nat_tmp)
-                                    exit("load_system_info_xml",
-                                         "index is out of range");
+                    if (index >= nat_tmp)
+                        exit("load_system_info_xml",
+                             "index is out of range");
 
-                                ss >> magmom_tmp2[index][0]
-                                   >> magmom_tmp2[index][1]
-                                   >> magmom_tmp2[index][2];
-                            }
-                        }
+                    ss >> magmom_tmp2[index][0]
+                        >> magmom_tmp2[index][1]
+                        >> magmom_tmp2[index][2];
+                }
+            }
 
-        }
-        catch (...) {
+        } catch (...) {
             lspin_tmp = false;
         }
 
@@ -534,20 +541,18 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename,
 
             try {
                 noncollinear_tmp = boost::lexical_cast<int>(
-                        get_value_from_xml(pt,
-                                           "Data.MagneticMoments.Noncollinear"));
-            }
-            catch (...) {
+                    get_value_from_xml(pt,
+                                       "Data.MagneticMoments.Noncollinear"));
+            } catch (...) {
                 noncollinear_tmp = 0;
             }
 
             try {
 
                 time_reversal_symmetry_tmp = boost::lexical_cast<int>(
-                        get_value_from_xml(pt,
-                                           "Data.MagneticMoments.TimeReversalSymmetry"));
-            }
-            catch (...) {
+                    get_value_from_xml(pt,
+                                       "Data.MagneticMoments.TimeReversalSymmetry"));
+            } catch (...) {
                 time_reversal_symmetry_tmp = 1;
             }
         } else {
@@ -835,7 +840,9 @@ void System::update_primitive_lattice()
 
         for (auto i = 0; i < supercell[0].number_of_atoms; ++i) {
             xf_tmp = xf_prim_all.row(i);
-            xf_tmp = xf_tmp.unaryExpr([](const double x) { return std::fmod(x, 1.0); });
+            xf_tmp = xf_tmp.unaryExpr([](const double x) {
+                return std::fmod(x, 1.0);
+            });
             for (auto j = 0; j < 3; ++j) {
                 if (xf_tmp[j] < -eps6) xf_tmp[j] += 1.0;
             }
@@ -846,7 +853,9 @@ void System::update_primitive_lattice()
                 for (auto kk = 0; kk < 3; ++kk) {
                     xf_tmp2[kk] = xf_unique[k][kk];
                 }
-                xf_diff = (xf_tmp - xf_tmp2).unaryExpr([](const double x) { return std::fmod(x, 1.0); });
+                xf_diff = (xf_tmp - xf_tmp2).unaryExpr([](const double x) {
+                    return std::fmod(x, 1.0);
+                });
                 for (auto j = 0; j < 3; ++j) {
                     if (xf_diff[j] < -0.5) xf_diff[j] += 1.0;
                     if (xf_diff[j] >= 0.5) xf_diff[j] -= 1.0;
@@ -921,8 +930,10 @@ void System::generate_mapping_tables()
     map_s2p_new.resize(3);
     map_p2s_new.resize(3);
     for (auto i = 0; i < 3; ++i) {
-        generate_mapping_primitive_super(primcell, supercell[i],
-                                         map_p2s_new[i], map_s2p_new[i]);
+        generate_mapping_primitive_super(primcell,
+                                         supercell[i],
+                                         map_p2s_new[i],
+                                         map_s2p_new[i]);
     }
 }
 
@@ -997,7 +1008,7 @@ void System::generate_mapping_primitive_super(const Cell &pcell,
     const Eigen::MatrixXd x_super_in_primitive_frac = scell.x_fractional * scell.lattice_vector.transpose()
                                                       * pcell.lattice_vector.inverse().transpose();
     const Eigen::Matrix3d transform_basis_primitive_to_super
-            = scell.lattice_vector.inverse() * pcell.lattice_vector;
+        = scell.lattice_vector.inverse() * pcell.lattice_vector;
 
     const auto ntran_tmp = scell.number_of_atoms / pcell.number_of_atoms;
 
@@ -1028,18 +1039,26 @@ void System::generate_mapping_primitive_super(const Cell &pcell,
         auto iloc = -1;
         for (auto jat = 0; jat < pcell.number_of_atoms; ++jat) {
             x2 = pcell.x_fractional.row(jat);
-            xdiff = (x1 - x2).unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+            xdiff = (x1 - x2).unaryExpr([](const double x) {
+                return x - static_cast<double>(nint(x));
+            });
 
             if (xdiff.norm() < tolerance_for_coordinates && (scell.kind[iat] == pcell.kind[jat])) {
-                tran_d = (x1 - x2).unaryExpr([](const double x) { return static_cast<double>(nint(x)); });
+                tran_d = (x1 - x2).unaryExpr([](const double x) {
+                    return static_cast<double>(nint(x));
+                });
                 // First move back to the fractional coordinate of the supercell and
                 // make sure that the shift vectors are in the 0<=x<1 region in that basis.
                 tran_d = transform_basis_primitive_to_super * tran_d;
-                tran_d = tran_d.unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+                tran_d = tran_d.unaryExpr([](const double x) {
+                    return x - static_cast<double>(nint(x));
+                });
                 // Then, transform it back to the components in the primitive cell basis.
                 // All components should be integer.
                 tran_d = transform_basis_primitive_to_super.inverse() * tran_d;
-                tran = tran_d.unaryExpr([](const double x) { return nint(x); });
+                tran = tran_d.unaryExpr([](const double x) {
+                    return nint(x);
+                });
                 iloc = jat;
                 break;
             }
@@ -1054,7 +1073,9 @@ void System::generate_mapping_primitive_super(const Cell &pcell,
             trans_vecs.emplace_back(vtmp);
         }
 
-        tran_d = tran.unaryExpr([](const int x) { return static_cast<double>(x); });
+        tran_d = tran.unaryExpr([](const int x) {
+            return static_cast<double>(x);
+        });
 
         map_index.clear();
 
@@ -1068,7 +1089,9 @@ void System::generate_mapping_primitive_super(const Cell &pcell,
                 if (flag_found[k]) continue;
 
                 x3 = scell.x_fractional.row(k);
-                xdiff = (x3 - x2).unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+                xdiff = (x3 - x2).unaryExpr([](const double x) {
+                    return x - static_cast<double>(nint(x));
+                });
 
                 if (xdiff.norm() < tolerance_for_coordinates) {
                     flag_found[k] = 1;
@@ -1307,24 +1330,23 @@ double System::volume(const Eigen::Matrix3d &mat_in,
     return vol;
 }
 
-const Cell &System::get_primcell(const bool distorted) const
+auto System::get_primcell(const bool distorted) const -> const Cell &
 {
     // return the primitive cell.
     // Note that the "primitive cell" is the one that is used in the phonon calculation.
     // It may not be a true primitive cell if a conventional cell is spefified in the &cell field.
     if (distorted) {
         return primcell_distort;
-    } else {
-        return primcell;
     }
+    return primcell;
 }
 
-const Cell &System::get_supercell(const int index) const
+auto System::get_supercell(const int index) const -> const Cell &
 {
     return supercell[index];
 }
 
-const MappingTable &System::get_mapping_super_alm(const int index) const
+auto System::get_mapping_super_alm(const int index) const -> const MappingTable &
 {
     return map_super_alm[index];
 }
@@ -1346,32 +1368,32 @@ const std::vector<double> &System::get_mass_prim() const
     return mass_prim;
 }
 
-const std::vector<double> &System::get_mass_super() const
+auto System::get_mass_super() const -> const std::vector<double> &
 {
     return mass_super;
 }
 
-const std::vector<double> &System::get_invsqrt_mass() const
+auto System::get_invsqrt_mass() const -> const std::vector<double> &
 {
     return invsqrt_mass_p;
 }
 
-const std::vector<Maps> &System::get_map_s2p(const int index) const
+auto System::get_map_s2p(const int index) const -> const std::vector<Maps> &
 {
     return map_s2p_new[index];
 }
 
-const std::vector<std::vector<unsigned int>> &System::get_map_p2s(const int index) const
+auto System::get_map_p2s(const int index) const -> const std::vector<std::vector<unsigned int>> &
 {
     return map_p2s_new[index];
 }
 
-const Spin &System::get_spin_prim() const
+auto System::get_spin_prim() const -> const Spin &
 {
     return spin_prim;
 }
 
-const Spin &System::get_spin_super() const
+auto System::get_spin_super() const -> const Spin &
 {
     return spin_super;
 }

@@ -216,7 +216,7 @@ public:
 
     bool update_fc2;
 
-    void get_fcs_from_file(const std::string fname_fcs,
+    void get_fcs_from_file(const std::string &fname_fcs,
                            const int order,
                            std::vector<FcsArrayWithCell> &fcs_out) const;
 
@@ -233,22 +233,21 @@ private:
 
     void load_fc2_xml();
 
-    void load_fcs_xml(const std::string fname_fcs,
+    void load_fcs_xml(const std::string &fname_fcs,
                       const int order,
                       std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    void parse_fcs_from_h5(const std::string fname_fcs,
-                           const int order,
-                           std::vector<FcsArrayWithCell> &fcs_out) const;
+    static void parse_fcs_from_h5(const std::string &fname_fcs,
+                                  const int order,
+                                  std::vector<FcsArrayWithCell> &fcs_out);
 
     void load_fcs_from_file(const int maxorder_in) const;
 
 
-    double examine_translational_invariance(const int order,
-                                            const unsigned int nat,
-                                            const unsigned int natmin,
-                                            const std::vector<std::vector<unsigned int>> &map_p2s_in,
-                                            const std::vector<FcsArrayWithCell> &fc_in) const;
+    static double examine_translational_invariance(int order,
+                                                   unsigned int nat,
+                                                   unsigned int natmin,
+                                                   const std::vector<FcsArrayWithCell> &fc_in);
 
     void replicate_force_constants(const int maxorder_in) const;
 

@@ -28,6 +28,13 @@ void Newton_Optimizer::update_state(const int dim,
 
     delta_tmp = hessian_matrix.colPivHouseholderQr().solve(grad);
 
+    std::cout << "Hessian matrix:\n" << hessian_matrix << std::endl;
+    std::cout << "Eigenvalue of Hessian matrix: \n" << hessian_matrix.eigenvalues().real() << std::endl;
+    std::cout << "gradient:\n" << grad << std::endl;
+    std::cout << "-H^{-1} * grad:\n" << delta_tmp << std::endl;
+    std::cout << "H^{-1} \n" << hessian_matrix.inverse() << std::endl;
+
+
     for (int i = 0; i < dim; ++i) {
         delta[i] = -1.0 * mixbeta * delta_tmp(i);
         state_vec[i] = state_vec[i] + delta[i];
@@ -133,6 +140,8 @@ void FarkasIII_Optimizer::set_inverse_Hessian(const int dim,
         }
     }
     H = H_tmp.inverse();
+    // std::cout << "Inverse Hessian matrix initialized." << std::endl;
+    // std::cout << H << std::endl;
 
 }
 

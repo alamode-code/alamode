@@ -1182,7 +1182,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     using namespace Eigen;
 
     int is, js;
-    int is1, is2;
     int i1;
     int iat1, ixyz1, ixyz2;
     std::string str_tmp;
@@ -1452,7 +1451,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
             for (ik = 0; ik < nk; ++ik) {
                 for (is = 0; is < ns; ++is) {
-                    for (int js = 0; js < ns; ++js) {
+                    for (js = 0; js < ns; ++js) {
                         evec_anharm_tmp[ik][is][js] = evec_harmonic[ik][is][js];
                     }
                 }
@@ -1541,12 +1540,23 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     u_tensor,
                                                     pvcell);
 
+                std::cout << "u_tensor\n";
+                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+                    for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+                        std::cout << std::scientific << std::setw(15) << std::setprecision(6)
+                            << u_tensor[ixyz1][ixyz2] << " ";
+                    }
+                    std::cout << '\n';
+                }
+
                 relaxation->renormalize_v1_from_umn(v1_with_umn,
                                                     v1_ref,
                                                     del_v1_del_umn,
                                                     del2_v1_del_umn2,
                                                     del3_v1_del_umn3,
                                                     u_tensor);
+
+
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
                                                     kmesh_dense,
@@ -1571,6 +1581,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 //                }
 
                 //renormalize IFC
+                // TODO: check whether bug exists here
                 relaxation->renormalize_v1_from_q0(omega2_harmonic,
                                                    kmesh_coarse,
                                                    kmesh_dense,
@@ -1671,6 +1682,18 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                             temp,
                                             kmesh_dense);
 
+                std::cout << std::setw(15) << "v1_with_umn";
+                std::cout << std::setw(15) << "v1_renorm";
+                std::cout << std::setw(15) << "v1_SCP\n";
+                for (auto ii = 0; ii < ns; ++ii) {
+                    std::cout << std::setw(15) << std::setprecision(6)
+                        << std::scientific << v1_with_umn[ii];
+                    std::cout << std::setw(15) << std::setprecision(6)
+                        << std::scientific << v1_renorm[ii];
+                    std::cout << std::setw(15) << std::setprecision(6)
+                        << std::scientific << v1_SCP[ii] << '\n';
+                }
+
                 // calculate SCP stress tensor
                 if (relax_str == 1) {
                     for (i1 = 0; i1 < 9; i1++) {
@@ -1689,11 +1712,12 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                       temp,
                                                       kmesh_dense);
 
-                    for (i1 = 0; i1 < 9; i1++) {
-                        std::cout << " del_v0_del_umn_SCP[" << i1 << "] = "
-                            << std::scientific << std::setw(15) << std::setprecision(6)
-                            << del_v0_del_umn_SCP[i1] << '\n';
-                    }
+                }
+
+                for (i1 = 0; i1 < 9; i1++) {
+                    std::cout << " del_v0_del_umn_SCP[" << i1 << "] = "
+                        << std::scientific << std::setw(15) << std::setprecision(6)
+                        << del_v0_del_umn_SCP[i1] << '\n';
                 }
 
                 relaxation->update_cell_coordinate(q0,
@@ -1712,6 +1736,12 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                    du_tensor,
                                                    omega2_harmonic,
                                                    evec_harmonic);
+
+                for (i1 = 0; i1 < ns; i1++) {
+                    std::cout << " q0[" << i1 << "] = "
+                        << std::scientific << std::setw(15) << std::setprecision(6)
+                        << q0[i1] << '\n';
+                }
 
                 relaxation->write_stepresfile(q0,
                                               u_tensor,
@@ -3123,8 +3153,8 @@ void Scph::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0_del_umn_
                                            const KpointMeshUniform *kmesh_dense_in)
 {
 
-    int ns = dynamical->neval;
-    int nk = kmesh_dense_in->nk;
+    const auto ns = dynamical->neval;
+    const auto nk = kmesh_dense_in->nk;
     double **del_eta_del_u;
     double *del_v0_del_eta;
     double *del_v0_strain_with_strain;
@@ -3139,7 +3169,7 @@ void Scph::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0_del_umn_
     allocate(del_v1_del_umn_with_umn, 9, ns);
     allocate(del_v2_del_umn_with_umn, 9, ns, ns);
 
-    double factor = 1.0 / 6.0 * 4.0 * nk;
+    const double factor = 1.0 / 6.0 * 4.0 * nk;
     int i1, i2, i3, ixyz1, ixyz2, ixyz3, ixyz4;
     int is1, is2, is3;
 
@@ -3258,8 +3288,6 @@ void Scph::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0_del_umn_
     deallocate(del_v0_strain_with_strain);
     deallocate(del_v1_del_umn_with_umn);
     deallocate(del_v2_del_umn_with_umn);
-
-    return;
 }
 
 
@@ -3273,13 +3301,10 @@ void Scph::compute_anharmonic_v1_array(std::complex<double> *v1_SCP,
 {
     using namespace Eigen;
 
-    int is, js, js1, js2, ik;
-    double n1, omega1_tmp;
+    int is;
     std::complex<double> Qtmp;
     const auto ns = dynamical->neval;
-    int nk_scph = kmesh_dense_in->nk;
-
-    int count_zero;
+    const auto nk_scph = kmesh_dense_in->nk;
 
     MatrixXcd Cmat(ns, ns);
     MatrixXcd v3mat_original_mode(ns, ns), v3mat_tmp(ns, ns);
@@ -3291,10 +3316,10 @@ void Scph::compute_anharmonic_v1_array(std::complex<double> *v1_SCP,
 
     // calculate SCP renormalization
     for (is = 0; is < ns; is++) {
-        for (ik = 0; ik < nk_scph; ik++) {
+        for (int ik = 0; ik < nk_scph; ik++) {
             // unitary transform phi3 to SCP mode
-            for (js1 = 0; js1 < ns; js1++) {
-                for (js2 = 0; js2 < ns; js2++) {
+            for (int js1 = 0; js1 < ns; js1++) {
+                for (int js2 = 0; js2 < ns; js2++) {
                     Cmat(js2, js1) = cmat_convert[ik][js1][js2]; // transpose
                     v3mat_original_mode(js1, js2) = v3_renorm[ik][is][js1 * ns + js2];
                 }
@@ -3302,9 +3327,9 @@ void Scph::compute_anharmonic_v1_array(std::complex<double> *v1_SCP,
             v3mat_tmp = Cmat * v3mat_original_mode * Cmat.adjoint();
 
             // update v1_SCP
-            count_zero = 0;
-            for (js = 0; js < ns; js++) {
-                omega1_tmp = std::sqrt(std::fabs(omega2_anharm_T[ik][js]));
+            int count_zero = 0;
+            for (int js = 0; js < ns; js++) {
+                double omega1_tmp = std::sqrt(std::fabs(omega2_anharm_T[ik][js]));
                 if (std::abs(omega1_tmp) < eps8) {
                     Qtmp = 0.0;
                     count_zero++;
@@ -3313,7 +3338,7 @@ void Scph::compute_anharmonic_v1_array(std::complex<double> *v1_SCP,
                         Qtmp = std::complex<double>(2.0 * T_in * thermodynamics->T_to_Ryd / (omega1_tmp * omega1_tmp),
                                                     0.0);
                     } else {
-                        n1 = thermodynamics->fB(omega1_tmp, T_in);
+                        const double n1 = thermodynamics->fB(omega1_tmp, T_in);
                         Qtmp = std::complex<double>((2.0 * n1 + 1.0) / omega1_tmp, 0.0);
                     }
                 }

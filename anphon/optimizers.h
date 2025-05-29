@@ -110,9 +110,9 @@ public:
             residuals.erase(residuals.begin());
         }
         points.push_back(point);
-        int size = points.size();
+        int const size = points.size();
         if (size > 1) {
-            int dim = gradient.size();
+            int const dim = gradient.size();
             Eigen::VectorXd s = point - point_old;
             Eigen::VectorXd y = gradient - gradient_old;
             double ys = y.dot(s);
