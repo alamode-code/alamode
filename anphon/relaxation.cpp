@@ -2915,7 +2915,7 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
         // }
         // vec = convmat * vec;
 
-        vec = convmat * it.relvecs_velocity[nelems - 1];
+        vec = convmat * it.relvecs_velocity[norder - 2];
         fcs_tmp += it.fcs_val * vec[ixyz2];
     }
 
