@@ -843,6 +843,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
 {
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
     const auto nk = kmesh_dense->nk;
+    const auto nk_interpolate = kmesh_coarse->nk;
 
     // first-order derivative of first-order IFCs
     switch (renorm_2to1st) {
@@ -909,17 +910,17 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     switch (renorm_3to2nd) {
     case 1:
         if (mympi->my_rank == 0)
-            std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
+            std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... " << std::flush;
 
         compute_del_v2_del_umn(del_v2_del_umn,
                                evec_harmonic,
-                               nk,
+                               nk_interpolate,
                                kmesh_coarse->xk);
         break;
     case 2:
         if (mympi->my_rank == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
-            std::cout << "    use inputs with all strain patterns ... ";
+            std::cout << "    use inputs with all strain patterns ... " << std::flush;
         }
 
         calculate_delv2_delumn_finite_difference(omega2_harmonic,
@@ -933,7 +934,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     case 3:
         if (mympi->my_rank == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
-            std::cout << "    use inputs with specified strain patterns ... ";
+            std::cout << "    use inputs with specified strain patterns ... " << std::flush;
         }
 
         calculate_delv2_delumn_finite_difference(omega2_harmonic,
@@ -947,7 +948,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     case 4:
         if (mympi->my_rank == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs\n";
-            std::cout << "    (read from file in k-space representation) ... ";
+            std::cout << "    (read from file in k-space representation) ... " << std::flush;
         }
 
         read_del_v2_del_umn_in_kspace(omega2_harmonic,
@@ -1284,7 +1285,6 @@ void Relaxation::compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
     sort_by_heading_indices const operator_fcs(1);
     //std::sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
-
 
     for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
