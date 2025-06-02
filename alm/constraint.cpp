@@ -174,11 +174,12 @@ void Constraint::setup(const std::unique_ptr<System> &system,
         set_constraint_flag("translation", 1);
         set_constraint_flag("rotation", 1);
         set_constraint_flag("rotation_extra", 0);
-        set_constraint_flag("huang", 0);
+        set_constraint_flag("huang", 1);
         if (verbosity > 0) {
             std::cout << "  ICONST = 4: Constraints for translational, rotational, and Huang invariance\n";
             std::cout << "              will be considered. Axis of rotation is " << rotation_axis << '\n';
         }
+        break;
     default:
         exit("Constraint::setup", "invalid constraint_mode", constraint_mode);
         break;
@@ -315,6 +316,7 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
 
     if (status_constraint_subset["huang"] == 0) {
         // Implement a function to compute the huang constraint
+
         generate_huang_constraint(system->get_supercell(),
                                   symmetry,
                                   cluster,
@@ -358,10 +360,15 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
     for (auto order = 0; order < maxorder; ++order) {
         const auto nparam = fcs->get_nequiv()[order].size();
 
-        const_self[order].reserve(
-            const_translation[order].size()
-            + const_rotation_self[order].size()
-            + const_symmetry[order].size());
+        auto nlen_const = const_translation[order].size()
+                          + const_rotation_self[order].size()
+                          + const_symmetry[order].size();
+
+        if (order == 0) {
+            nlen_const += const_huang[order].size();
+        }
+
+        const_self[order].reserve(nlen_const);
 
         // The order of const_symmetry and const_translation
         // should not be changed since the rref_sparse is sensitive to
@@ -374,6 +381,12 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         const_self[order].insert(const_self[order].end(),
                                  const_translation[order].begin(),
                                  const_translation[order].end());
+
+        if (order == 0) {
+            const_self[order].insert(const_self[order].end(),
+                                     const_huang[0].begin(),
+                                     const_huang[0].end());
+        }
 
         const_self[order].insert(const_self[order].end(),
                                  const_rotation_self[order].begin(),
@@ -1097,7 +1110,7 @@ void Constraint::get_constraint_translation(const Cell &supercell,
     std::vector<std::vector<int>> data_vec;
     std::vector<int> const_now;
 
-    typedef std::vector<ConstraintIntegerElement> ConstEntry;
+    using ConstEntry = std::vector<ConstraintIntegerElement>;
     std::vector<ConstEntry> constraint_all;
 
     ConstEntry const_tmp;
@@ -1166,7 +1179,7 @@ void Constraint::get_constraint_translation(const Cell &supercell,
                         //  If found an IFC
                         if (iter_found != list_found.end()) {
                             // Round the coefficient to integer
-                            const_now[(*iter_found).mother] += nint((*iter_found).sign);
+                            const_now[iter_found->mother] += nint(iter_found->sign);
                         }
                     }
                     // Add to the constraint list
@@ -1267,7 +1280,7 @@ void Constraint::get_constraint_translation(const Cell &supercell,
                                                                             intarr_copy_omp,
                                                                             1));
                                     if (iter_found != list_found.end()) {
-                                        const_now_omp[(*iter_found).mother] += nint((*iter_found).sign);
+                                        const_now_omp[iter_found->mother] += nint(iter_found->sign);
                                     }
                                 }
                             } // close loop jat
@@ -1391,7 +1404,7 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
     std::vector<std::vector<int>> data_vec;
     std::vector<double> const_now;
 
-    typedef std::vector<ConstraintDoubleElement> ConstEntry;
+    using ConstEntry = std::vector<ConstraintDoubleElement>;
     std::vector<ConstEntry> constraint_all;
 
     ConstEntry const_tmp;
@@ -1427,7 +1440,7 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
 
     const auto nxyz = static_cast<int>(std::pow(static_cast<double>(3), order + 1));
     allocate(xyzcomponent, nxyz, order + 1);
-    fcs->get_xyzcomponent(order + 1, xyzcomponent);
+    Fcs::get_xyzcomponent(order + 1, xyzcomponent);
 
     allocate(intarr, order + 2);
     allocate(intarr_copy, order + 2);
@@ -1450,7 +1463,7 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
             data_vec.clear();
             // Generate data_vec that contains possible interacting clusters.
             // Each cluster contains (order + 1) atoms, and the last atom index
-            // will be treated seperately below.
+            // will be treated separately below.
             CombinationWithRepetition<int> g2(intlist.begin(), intlist.end(), order);
             do {
                 data = g2.now();
@@ -1591,8 +1604,8 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
                                                 }
 
                                                 // add to the constraint
-                                                consts_now_omp[i_mi_tmp][(*iter_found).mother] +=
-                                                    weight * (*iter_found).sign;
+                                                consts_now_omp[i_mi_tmp][iter_found->mother] +=
+                                                    weight * iter_found->sign;
                                             }
                                         }
                                     }
@@ -1700,7 +1713,7 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
     std::unordered_set<FcProperty> list_found;
     std::unordered_set<FcProperty> list_found_last;
 
-    typedef std::vector<ConstraintDoubleElement> ConstEntry;
+    using ConstEntry = std::vector<ConstraintDoubleElement>;
     std::vector<ConstEntry> *const_self_vec, *const_cross_vec;
 
     allocate(const_self_vec, maxorder);
@@ -1884,7 +1897,7 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
     interaction_atom.resize(order + 2);
     interaction_tmp.resize(order + 2);
 
-    typedef std::vector<ConstraintDoubleElement> ConstEntry;
+    using ConstEntry = std::vector<ConstraintDoubleElement>;
     ConstEntry const_tmp;
 
     for (int i = 0; i < maxorder; ++i) {
@@ -1967,8 +1980,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                             }
 
                             if (iter_found != list_found.end()) {
-                                arr_constraint[(*iter_found).mother]
-                                    += (*iter_found).sign * vec_for_rot[nu];
+                                arr_constraint[iter_found->mother]
+                                    += iter_found->sign * vec_for_rot[nu];
                             }
 
                             // Exchange mu <--> nu and repeat again.
@@ -1980,8 +1993,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                                                     &interaction_index[0],
                                                                     1));
                             if (iter_found != list_found.end()) {
-                                arr_constraint[(*iter_found).mother]
-                                    -= (*iter_found).sign * vec_for_rot[mu];
+                                arr_constraint[iter_found->mother]
+                                    -= iter_found->sign * vec_for_rot[mu];
                             }
                         }
 
@@ -2130,8 +2143,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         iter_found = list_found.
                                             find(FcProperty(order + 2, 1.0, &interaction_tmp[0], 1));
                                         if (iter_found != list_found.end()) {
-                                            arr_constraint[nparams[order - 1] + (*iter_found).mother]
-                                                -= (*iter_found).sign * vec_for_rot[mu];
+                                            arr_constraint[nparams[order - 1] + iter_found->mother]
+                                                -= iter_found->sign * vec_for_rot[mu];
                                         }
                                     }
 
@@ -2161,8 +2174,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                                 &interaction_tmp[0],
                                                 1));
                                             if (iter_found != list_found_last.end()) {
-                                                arr_constraint[(*iter_found).mother]
-                                                    += (*iter_found).sign * static_cast<double>(levi_factor);
+                                                arr_constraint[iter_found->mother]
+                                                    += iter_found->sign * static_cast<double>(levi_factor);
                                             }
                                         }
                                     }
@@ -2458,7 +2471,7 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
                                            const std::vector<Eigen::MatrixXd> &x_image,
                                            const int verbosity)
 {
-    // Create constraint matrix for the translational invariance (aka acoustic sum rule).
+    // Create constraint matrix for the Huang constraints.
 
     if (const_huang.empty()) {
         const_huang.resize(1);
@@ -2467,115 +2480,163 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
     if (status_constraint_subset["huang"] == -1) return;
 
     if (verbosity > 0) {
-        std::cout << "  Generating constraints for Huang invariance ...\n";
+        std::cout << "  Generating constraints for Huang invariance ...";
     }
     const_huang[0].clear();
     if (verbosity > 0) std::cout << " done.\n" << std::flush;
     const auto nparams = fcs->get_nequiv()[0].size();
     if (nparams == 0) {
         if (verbosity > 0) std::cout << "  No parameters! Skipped.\n";
-    } else {
-        std::unordered_set<FcProperty> list_found;
+        return;
+    }
+    std::unordered_set<FcProperty> list_found;
 
-        list_found.clear();
+    list_found.clear();
 
-        // Accumulate set of non-zero force constants.
-        for (auto p = fcs->get_fc_table()[0].begin();
-             p != fcs->get_fc_table()[0].end(); ++p) {
-            list_found.insert(FcProperty(2,
-                                         (*p).sign,
-                                         &(*p).elems[0],
-                                         (*p).mother));
-        }
+    // Accumulate sets of non-zero force constants.
+    for (auto p = fcs->get_fc_table()[0].begin();
+         p != fcs->get_fc_table()[0].end(); ++p) {
+        list_found.insert(FcProperty(2,
+                                     p->sign,
+                                     p->elems.data(),
+                                     p->mother));
+    }
 
 
-        const auto natmin = symmetry->get_nat_trueprim();
-        const auto nat = supercell.number_of_atoms;
+    const auto natmin = symmetry->get_nat_trueprim();
+    const auto nat = supercell.number_of_atoms;
 
-        int pair1[2], pair2[2];
-        std::vector<int> atom_tmp;
-        std::vector<std::vector<int>> cell_dummy;
-        std::vector<std::vector<Eigen::Matrix3d>> relvec_tensor;
-        Eigen::Vector3d vec_tmp;
+    int pair1[2], pair2[2];
+    std::vector<int> atom_tmp;
+    std::vector<std::vector<int>> cell_dummy;
+    std::vector<std::vector<Eigen::Matrix3d>> relvec_tensor;
+    Eigen::Vector3d vec_tmp;
+    std::vector<double> const_now;
 
-        relvec_tensor.resize(natmin, std::vector<Eigen::Matrix3d>(nat));
+    relvec_tensor.resize(natmin, std::vector<Eigen::Matrix3d>(nat));
+    using ConstEntry = std::vector<ConstraintDoubleElement>;
+    ConstEntry const_tmp;
+    std::vector<ConstEntry> const_list;
 
-        for (size_t iat = 0; iat < natmin; ++iat) {
-            auto iat_s = symmetry->get_map_trueprim_to_super()[iat][0];
+    // Construct relative vector products considering periodic images
+    for (size_t iat = 0; iat < natmin; ++iat) {
+        const auto iat_s = symmetry->get_map_trueprim_to_super()[iat][0];
 
-            for (size_t jat = 0; jat < nat; ++jat) {
-                atom_tmp.clear();
-                atom_tmp.push_back(jat);
-                cell_dummy.clear();
+        for (size_t jat = 0; jat < nat; ++jat) {
+            atom_tmp.clear();
+            atom_tmp.push_back(jat);
+            cell_dummy.clear();
 
-                const auto iter_cluster = cluster->get_interaction_cluster(0, iat).find(
-                    InteractionCluster(atom_tmp, cell_dummy));
+            relvec_tensor[iat][jat].setZero();
 
-                if (iter_cluster != cluster->get_interaction_cluster(0, iat).end()) {
-                    const auto nsize_equiv = (*iter_cluster).cell.size();
+            const auto iter_cluster = cluster->get_interaction_cluster(0, iat).find(
+                InteractionCluster(atom_tmp, cell_dummy));
 
-                    for (int j = 0; j < nsize_equiv; ++j) {
-                        for (auto k = 0; k < 3; ++k) {
-                            vec_tmp[k] = x_image[(*iter_cluster).cell[j][0]](jat, k)
-                                         - x_image[0](iat_s, k);
+            if (iter_cluster != cluster->get_interaction_cluster(0, iat).end()) {
+                const auto nsize_equiv = iter_cluster->cell.size();
+                // const auto nsize_equiv = 1;
+                for (int j = 0; j < nsize_equiv; ++j) {
+                    for (auto k = 0; k < 3; ++k) {
+                        vec_tmp[k] = x_image[iter_cluster->cell[j][0]](jat, k)
+                                     - x_image[0](iat_s, k);
+                    }
+                    for (auto k = 0; k < 3; ++k) {
+                        for (auto m = 0; m < 3; ++m) {
+                            relvec_tensor[iat][jat](k, m) += vec_tmp[k] * vec_tmp[m];
                         }
-                        relvec_tensor[iat][jat].setZero();
-                        for (auto k = 0; k < 3; ++k) {
-                            for (auto m = 0; m < 3; ++m) {
-                                relvec_tensor[iat][jat](k, m) += vec_tmp[k] * vec_tmp[m];
+                    }
+                }
+                relvec_tensor[iat][jat] /= static_cast<double>(nsize_equiv);
+            }
+        }
+    }
+
+    const_now.resize(nparams);
+    const_list.clear();
+
+    int loc_nonzero;
+
+    for (size_t mu1 = 0; mu1 < 3; ++mu1) {
+        for (size_t nu1 = 0; nu1 < 3; ++nu1) {
+            for (size_t mu2 = 0; mu2 < 3; ++mu2) {
+                for (size_t nu2 = 0; nu2 < 3; ++nu2) {
+
+                    if (mu1 == mu2 && nu1 == nu2) {
+                        // Skip the case where mu1 == mu2 and nu1 == nu2
+                        continue;
+                    }
+
+                    // Reset the temporary array for the current constraint
+                    for (size_t j = 0; j < nparams; ++j) {
+                        const_now[j] = 0.0;
+                    }
+
+                    for (size_t iat = 0; iat < natmin; ++iat) {
+                        pair1[0] = 3 * iat + mu1; // (0k1;alpha)
+                        pair2[0] = 3 * iat + mu2; // (0k1;gamma)
+
+                        for (size_t jat = 0; jat < nat; ++jat) {
+                            pair1[1] = 3 * jat + nu1; // (l2k2;beta)
+                            pair2[1] = 3 * jat + nu2; // (l2k2;delta)
+
+                            auto iter_found = list_found.find(FcProperty(2,
+                                                                         1.0,
+                                                                         &pair1[0],
+                                                                         1));
+
+                            auto iter_found2 = list_found.find(FcProperty(2,
+                                                                          1.0,
+                                                                          &pair2[0],
+                                                                          1));
+
+                            if (iter_found != list_found.end()) {
+                                const_now[iter_found->mother] += iter_found->sign
+                                    * relvec_tensor[iat][jat](mu2, nu2);
+                            }
+                            if (iter_found2 != list_found.end()) {
+                                const_now[iter_found2->mother] -= iter_found2->sign
+                                    * relvec_tensor[iat][jat](mu1, nu1);
                             }
                         }
                     }
-                    relvec_tensor[iat][jat] /= static_cast<double>(nsize_equiv);
-                } else {
-                    relvec_tensor[iat][jat].setZero();
-                }
-            }
-        }
 
-        for (size_t mu1 = 0; mu1 < 3; ++mu1) {
-            for (size_t nu1 = 0; nu1 < 3; ++nu1) {
-                for (size_t mu2 = 0; mu2 < 3; ++mu2) {
-                    for (size_t nu2 = 0; nu2 < 3; ++nu2) {
-                        for (size_t iat = 0; iat < natmin; ++iat) {
-                            pair1[0] = 3 * iat + mu1;
-                            pair2[0] = 3 * iat + mu2;
-
-                            for (size_t jat = 0; jat < nat; ++jat) {
-                                pair1[1] = 3 * jat + mu1;
-                                pair2[1] = 3 * jat + mu2;
-
-                                auto iter_found = list_found.find(FcProperty(2,
-                                                                             1.0,
-                                                                             &pair1[0],
-                                                                             1));
-
-                                auto iter_found2 = list_found.find(FcProperty(2,
-                                                                              1.0,
-                                                                              &pair2[0],
-                                                                              1));
-
-                                if (iter_found != list_found.end()) {
-                                    std::cout << "pair1 = " << pair1[0] << " " << pair1[1];
-                                    std::cout << " mother = " << (*iter_found).mother << '\n';
-                                }
-                                if (iter_found2 != list_found.end()) {
-                                    std::cout << "pair2 = " << pair2[0] << " " << pair2[1];
-                                    std::cout << " mother = " << (*iter_found2).mother << '\n';
-                                }
-
-
+                    const_tmp.clear();
+                    if (!is_allzero(const_now, eps8, loc_nonzero, 0)) {
+                        if (const_now[loc_nonzero] < 0.0) {
+                            for (size_t j = 0; j < nparams; ++j) {
+                                const_now[j] *= -1.0;
                             }
                         }
+                        for (size_t j = 0; j < nparams; ++j) {
+                            if (std::abs(const_now[j]) >= eps8) {
+                                const_tmp.emplace_back(j, const_now[j]);
+                            }
+                        }
+                        const_list.emplace_back(const_tmp);
                     }
                 }
             }
         }
     }
+    MapConstraintElement const_copy;
+
+    auto division_factor = 1.0;
+    for (const auto &it: const_list) {
+        auto counter = 0;
+        const_copy.clear();
+        for (const auto &it2: it) {
+            if (counter == 0) {
+                division_factor = 1.0 / it2.val;
+            }
+            const_copy[it2.col] = it2.val * division_factor;
+            ++counter;
+        }
+        const_huang[0].emplace_back(const_copy);
+    }
+
+    rref_sparse(nparams, const_huang[0], eps8);
 
     status_constraint_subset["huang"] = 1;
-    if (verbosity > 0) std::cout << "  Finished !\n\n";
-
 }
 
 void Constraint::parse_forceconstants_from_xml(const int order,
@@ -2583,7 +2644,7 @@ void Constraint::parse_forceconstants_from_xml(const int order,
                                                const std::unique_ptr<Fcs> &fcs,
                                                const std::string file_to_fix,
                                                std::vector<std::vector<int>> &intpair_fcs,
-                                               std::vector<double> &fcs_values) const
+                                               std::vector<double> &fcs_values)
 {
     using namespace boost::property_tree;
     ptree pt;
@@ -2673,7 +2734,8 @@ void Constraint::parse_forceconstants_from_xml(const int order,
 
     int counter = 0;
     if (order == 0) {
-        BOOST_FOREACH(const ptree::value_type &child_, pt.get_child("Data.ForceConstants.HarmonicUnique")) {
+        BOOST_FOREACH(const ptree::value_type &child_,
+                      pt.get_child("Data.ForceConstants.HarmonicUnique")) {
             if (child_.first == "FC2") {
                 const auto &child = child_.second;
                 const auto str_intpair = child.get<std::string>("<xmlattr>.pairs");
@@ -2686,7 +2748,8 @@ void Constraint::parse_forceconstants_from_xml(const int order,
             }
         }
     } else if (order == 1) {
-        BOOST_FOREACH(const ptree::value_type &child_, pt.get_child("Data.ForceConstants.CubicUnique")) {
+        BOOST_FOREACH(const ptree::value_type &child_,
+                      pt.get_child("Data.ForceConstants.CubicUnique")) {
             if (child_.first == "FC3") {
                 const auto &child = child_.second;
                 const auto str_intpair = child.get<std::string>("<xmlattr>.pairs");
@@ -2706,7 +2769,7 @@ void Constraint::parse_forceconstants_from_h5(const int order,
                                               const std::unique_ptr<Fcs> &fcs,
                                               const std::string file_to_fix,
                                               std::vector<std::vector<int>> &intpair_fcs,
-                                              std::vector<double> &fcs_values) const
+                                              std::vector<double> &fcs_values)
 {
     H5Easy::File file(file_to_fix, H5Easy::File::ReadOnly);
 

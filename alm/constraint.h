@@ -432,19 +432,19 @@ private:
                                       std::vector<std::vector<int>> &intpair_fcs,
                                       std::vector<double> &fcs_values) const;
 
-    void parse_forceconstants_from_xml(const int order,
-                                       const std::unique_ptr<Symmetry> &symmetry,
-                                       const std::unique_ptr<Fcs> &fcs,
-                                       const std::string file_to_fix,
-                                       std::vector<std::vector<int>> &intpair_fcs,
-                                       std::vector<double> &fcs_values) const;
+    static void parse_forceconstants_from_xml(const int order,
+                                              const std::unique_ptr<Symmetry> &symmetry,
+                                              const std::unique_ptr<Fcs> &fcs,
+                                              const std::string file_to_fix,
+                                              std::vector<std::vector<int>> &intpair_fcs,
+                                              std::vector<double> &fcs_values);
 
-    void parse_forceconstants_from_h5(const int order,
-                                      const std::unique_ptr<Symmetry> &symmetry,
-                                      const std::unique_ptr<Fcs> &fcs,
-                                      const std::string file_to_fix,
-                                      std::vector<std::vector<int>> &intpair_fcs,
-                                      std::vector<double> &fcs_values) const;
+    static void parse_forceconstants_from_h5(const int order,
+                                             const std::unique_ptr<Symmetry> &symmetry,
+                                             const std::unique_ptr<Fcs> &fcs,
+                                             const std::string file_to_fix,
+                                             std::vector<std::vector<int>> &intpair_fcs,
+                                             std::vector<double> &fcs_values);
 
     void set_rotation_constraints(const std::unique_ptr<System> &system,
                                   const std::unique_ptr<Symmetry> &symmetry,
