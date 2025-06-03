@@ -35,9 +35,7 @@ InputParser::InputParser()
     input_setter = std::make_unique<InputSetter>();
 }
 
-InputParser::~InputParser()
-{
-}
+InputParser::~InputParser() {}
 
 void InputParser::run(ALM *alm,
                       const int narg,
@@ -209,7 +207,8 @@ void InputParser::parse_input(ALM *alm)
     int noncollinear, time_reversal_symm, lspin;
     Eigen::MatrixXd magmom_vec;
 
-    get_magnetic_params(dict_input_vars, nat_in,
+    get_magnetic_params(dict_input_vars,
+                        nat_in,
                         lspin,
                         magmom_vec,
                         noncollinear,
@@ -269,12 +268,34 @@ void InputParser::parse_general_vars(ALM *alm)
     std::string format_pattern;
 
     const std::vector<std::string> input_list{
-            "PREFIX", "MODE", "NAT", "NKD", "KD", "PERIODIC", "PRINTSYM", "TOLERANCE",
-            "DBASIS", "TRIMEVEN", "VERBOSITY",
-            "MAGMOM", "NONCOLLINEAR", "TREVSYM", "HESSIAN", "TOL_CONST", "FCSYM_BASIS",
-            "NMAXSAVE", "FC3_SHENGBTE", "FC4_SHENGBTE", "FC2_QEFC", "FCS_ALAMODE",
-            "FC_ZERO_THR", "SUPERCELL", "PRIMCELL", "STRUCTURE_FILE", "COMPRESSION",
-            "FORMAT_PATTERN"
+        "PREFIX",
+        "MODE",
+        "NAT",
+        "NKD",
+        "KD",
+        "PERIODIC",
+        "PRINTSYM",
+        "TOLERANCE",
+        "DBASIS",
+        "TRIMEVEN",
+        "VERBOSITY",
+        "MAGMOM",
+        "NONCOLLINEAR",
+        "TREVSYM",
+        "HESSIAN",
+        "TOL_CONST",
+        "FCSYM_BASIS",
+        "NMAXSAVE",
+        "FC3_SHENGBTE",
+        "FC4_SHENGBTE",
+        "FC2_QEFC",
+        "FCS_ALAMODE",
+        "FC_ZERO_THR",
+        "SUPERCELL",
+        "PRIMCELL",
+        "STRUCTURE_FILE",
+        "COMPRESSION",
+        "FORMAT_PATTERN"
     };
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::map<std::string, std::string> general_var_dict;
@@ -371,8 +392,7 @@ void InputParser::parse_general_vars(ALM *alm)
         for (i = 0; i < 3; ++i) {
             try {
                 is_periodic[i] = boost::lexical_cast<int>(periodic_v[i]);
-            }
-            catch (std::exception &e) {
+            } catch (std::exception &e) {
                 std::cout << e.what() << '\n';
                 exit("parse_general_vars",
                      "The PERIODIC tag must be a set of integers.");
@@ -400,7 +420,8 @@ void InputParser::parse_general_vars(ALM *alm)
     if (!autoset_primcell) {
         parse_transformation_matrix_string("PRIMCELL",
                                            primcell_v,
-                                           transmat_to_prim, 1);
+                                           transmat_to_prim,
+                                           1);
     }
 
     if (general_var_dict["TOLERANCE"].empty()) {
@@ -421,7 +442,8 @@ void InputParser::parse_general_vars(ALM *alm)
         boost::to_lower(basis_force_constant);
 
         if (basis_force_constant[0] != 'c' && basis_force_constant[0] != 'l') {
-            exit("parse_general_vars", "Invalid FCSYM_BASIS.",
+            exit("parse_general_vars",
+                 "Invalid FCSYM_BASIS.",
                  basis_force_constant.c_str());
         }
     }
@@ -478,15 +500,18 @@ void InputParser::parse_general_vars(ALM *alm)
         } else {
             str_disp_basis = general_var_dict["DBASIS"];
         }
-        std::transform(str_disp_basis.begin(), str_disp_basis.end(),
-                       str_disp_basis.begin(), toupper);
+        std::transform(str_disp_basis.begin(),
+                       str_disp_basis.end(),
+                       str_disp_basis.begin(),
+                       toupper);
         if ((str_disp_basis[0] != 'C') && (str_disp_basis[0] != 'F')) {
             exit("parse_general_vars", "Invalid DBASIS");
         }
 
         if (!general_var_dict["TRIMEVEN"].empty()) {
             assign_val(trim_dispsign_for_evenfunc,
-                       "TRIMEVEN", general_var_dict);
+                       "TRIMEVEN",
+                       general_var_dict);
         }
     }
 
@@ -769,8 +794,7 @@ void InputParser::parse_atomic_positions()
         if (pos_line.size() == 4) {
             try {
                 atomic_types_input[i] = boost::lexical_cast<int>(pos_line[0]);
-            }
-            catch (std::exception &e) {
+            } catch (std::exception &e) {
                 std::cout << e.what() << '\n';
                 exit("parse_atomic_positions",
                      "Invalid entry for the &position field at line ",
@@ -819,7 +843,7 @@ void InputParser::parse_structure_poscar(const std::string &fname_poscar,
 
     std::string str_species;
     std::vector<std::string> species_v;
-    std::set < std::string > unique_species;
+    std::set<std::string> unique_species;
     std::set<std::string>::iterator it_set;
     std::map<std::string, int> map_kindname_to_index;
 
@@ -967,8 +991,7 @@ void InputParser::get_magnetic_params(std::map<std::string, std::string> &dict_i
                         try {
                             magmag = boost::lexical_cast<double>(str_split[1]);
                             ncount = static_cast<size_t>(boost::lexical_cast<double>(str_split[0]));
-                        }
-                        catch (std::exception) {
+                        } catch (std::exception) {
                             exit("get_magnetic_params", "Bad format for MAGMOM.");
                         }
 
@@ -1046,8 +1069,7 @@ void InputParser::parse_interaction_vars()
         for (i = 0; i < maxorder; ++i) {
             try {
                 nbody_include[i] = boost::lexical_cast<int>(nbody_v[i]);
-            }
-            catch (std::exception &e) {
+            } catch (std::exception &e) {
                 std::cout << e.what() << '\n';
                 exit("parse_interaction_vars",
                      "NBODY must be an integer.");
@@ -1085,15 +1107,41 @@ void InputParser::parse_optimize_vars(ALM *alm)
     std::vector<std::vector<double>> u_tmp2, f_tmp2;
 
     const std::vector<std::string> input_list{
-            "LMODEL", "SPARSE", "SPARSESOLVER",
-            "ICONST", "ROTAXIS", "FC2XML", "FC3XML", "FC2FIX", "FC3FIX",
-            "NDATA", "NSTART", "NEND", "SKIP", "DFSET",
-            "NDATA_CV", "NSTART_CV", "NEND_CV", "DFSET_CV",
-            "L1_RATIO", "STANDARDIZE", "ENET_DNORM",
-            "L1_ALPHA", "CV_MAXALPHA", "CV_MINALPHA", "CV_NALPHA",
-            "CV", "MAXITER", "CONV_TOL", "NWRITE", "SOLUTION_PATH", "DEBIAS_OLS",
-            "PERIODIC_IMAGE_CONV", "STOP_CRITERION",
-            "USE_CHOLESKY", "CHUNKSIZE"
+        "LMODEL",
+        "SPARSE",
+        "SPARSESOLVER",
+        "ICONST",
+        "ROTAXIS",
+        "FC2XML",
+        "FC3XML",
+        "FC2FIX",
+        "FC3FIX",
+        "NDATA",
+        "NSTART",
+        "NEND",
+        "SKIP",
+        "DFSET",
+        "NDATA_CV",
+        "NSTART_CV",
+        "NEND_CV",
+        "DFSET_CV",
+        "L1_RATIO",
+        "STANDARDIZE",
+        "ENET_DNORM",
+        "L1_ALPHA",
+        "CV_MAXALPHA",
+        "CV_MINALPHA",
+        "CV_NALPHA",
+        "CV",
+        "MAXITER",
+        "CONV_TOL",
+        "NWRITE",
+        "SOLUTION_PATH",
+        "DEBIAS_OLS",
+        "PERIODIC_IMAGE_CONV",
+        "STOP_CRITERION",
+        "USE_CHOLESKY",
+        "CHUNKSIZE"
     };
 
     std::map<std::string, std::string> optimize_var_dict;
@@ -1148,7 +1196,7 @@ void InputParser::parse_optimize_vars(ALM *alm)
 
     if (!optimize_var_dict["ENET_DNORM"].empty()) {
         optcontrol.displacement_normalization_factor
-                = boost::lexical_cast<double>(optimize_var_dict["ENET_DNORM"]);
+            = boost::lexical_cast<double>(optimize_var_dict["ENET_DNORM"]);
     }
     if (!optimize_var_dict["L1_ALPHA"].empty()) {
         optcontrol.l1_alpha = boost::lexical_cast<double>(optimize_var_dict["L1_ALPHA"]);
@@ -1288,8 +1336,10 @@ void InputParser::parse_optimize_vars(ALM *alm)
     }
 
     input_setter->set_optimize_vars(alm,
-                                    u_tmp1, f_tmp1,
-                                    u_tmp2, f_tmp2,
+                                    u_tmp1,
+                                    f_tmp1,
+                                    u_tmp2,
+                                    f_tmp2,
                                     optcontrol);
 
     input_setter->set_file_vars(alm,
@@ -1401,7 +1451,7 @@ void InputParser::parse_cutoff_radii()
     size_t i, j, k;
     int order;
     std::vector<std::string> cutoff_line;
-    std::set < std::string > element_allowed;
+    std::set<std::string> element_allowed;
     std::vector<std::string> str_pair;
     std::map<std::string, int> kd_map;
 
@@ -1504,9 +1554,9 @@ void InputParser::parse_cutoff_radii()
             for (k = 0; k < nkd_in; ++k) {
                 if (undefined_cutoff[order][j][k]) {
                     std::cout << " Cutoff radius for " << std::setw(3)
-                              << order + 2 << "th-order terms\n";
+                        << order + 2 << "th-order terms\n";
                     std::cout << " are not defined between elements " << std::setw(3) << j + 1
-                              << " and " << std::setw(3) << k + 1 << '\n';
+                        << " and " << std::setw(3) << k + 1 << '\n';
                     exit("parse_cutoff_radii", "Incomplete cutoff radii");
                 }
             }
@@ -1540,7 +1590,7 @@ void InputParser::get_var_dict(const std::vector<std::string> &input_list,
     std::string::size_type pos_first_comment_tag;
     std::vector<std::string> str_entry, str_varval;
 
-    std::set < std::string > keyword_set;
+    std::set<std::string> keyword_set;
 
     for (const auto &it: input_list) {
         keyword_set.insert(it);
@@ -1653,13 +1703,13 @@ void InputParser::get_var_dict(const std::vector<std::string> &input_list,
 
                     if (keyword_set.find(key) == keyword_set.end()) {
                         std::cout << " Could not recognize the variable "
-                                  << key << '\n';
+                            << key << '\n';
                         exit("get_var_dict", "Invalid variable found");
                     }
 
                     if (var_dict.find(key) != var_dict.end()) {
                         std::cout << " Variable " << key
-                                  << " appears twice in the input file.\n";
+                            << " appears twice in the input file.\n";
                         exit("get_var_dict", "Redundant input parameter");
                     }
 
@@ -1757,7 +1807,7 @@ void InputParser::split_str_by_space(const std::string str,
     str_tmp.clear();
 }
 
-template<typename T>
+template <typename T>
 void InputParser::assign_val(T &val,
                              const std::string &key,
                              std::map<std::string, std::string> dict)
@@ -1767,8 +1817,7 @@ void InputParser::assign_val(T &val,
     if (!dict[key].empty()) {
         try {
             val = boost::lexical_cast<T>(dict[key]);
-        }
-        catch (std::exception &e) {
+        } catch (std::exception &e) {
             std::cout << e.what() << '\n';
             auto str_tmp = "Invalid entry for the " + key + " tag.\n";
             str_tmp += " Please check the input value.";

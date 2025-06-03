@@ -32,4 +32,3 @@ void smith_decomposition(const Eigen::MatrixXi &A,
                          Eigen::MatrixXi &D,
                          Eigen::MatrixXi &U,
                          Eigen::MatrixXi &V);
-

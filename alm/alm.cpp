@@ -33,9 +33,7 @@ ALM::ALM()
     coutbuf = nullptr;
 }
 
-ALM::~ALM()
-{
-}
+ALM::~ALM() {}
 
 void ALM::init_instances()
 {
@@ -127,8 +125,8 @@ void ALM::set_transformation_matrices(const double transmat_to_super[3][3],
 void ALM::set_magnetic_params(const size_t nat,
                               const double (*magmom)[3], // MAGMOM
                               const bool lspin,
-                              const int noncollinear, // NONCOLLINEAR
-                              const int trev_sym_mag, // TREVSYM
+                              const int noncollinear,             // NONCOLLINEAR
+                              const int trev_sym_mag,             // TREVSYM
                               const std::string str_magmom) const // MAGMOM
 {
     system->set_spin_variables(nat,
@@ -390,7 +388,9 @@ size_t ALM::get_number_of_fc_elements(const int fc_order) const
 {
     const auto order = fc_order - 1;
 
-    if (fcs->get_nequiv()[order].empty()) { return 0; }
+    if (fcs->get_nequiv()[order].empty()) {
+        return 0;
+    }
     size_t id = 0;
     const auto num_unique_elems = fcs->get_nequiv()[order].size();
 
@@ -543,7 +543,9 @@ void ALM::get_fc_irreducible(double *fc_values,
 
     for (auto order = 0; order < fc_order; ++order) {
 
-        if (constraint->get_index_bimap(order).empty()) { continue; }
+        if (constraint->get_index_bimap(order).empty()) {
+            continue;
+        }
 
         if (order == fc_order - 1) {
             for (const auto &it: constraint->get_index_bimap(order)) {
@@ -554,7 +556,7 @@ void ALM::get_fc_irreducible(double *fc_values,
                 fc_values[inew] = fc_elem;
                 for (auto i = 0; i < fc_order + 1; ++i) {
                     elem_indices[inew * (fc_order + 1) + i] =
-                            fcs->get_fc_table()[order][it.right].elems[i];
+                        fcs->get_fc_table()[order][it.right].elems[i];
                 }
             }
         }
@@ -672,17 +674,22 @@ void ALM::get_matrix_elements(double *amat,
                                           matrix_out,
                                           optimize->get_u_train(),
                                           optimize->get_f_train(),
-                                          symmetry, fcs, constraint,
-                                          true, false, false, 0);
-//    optimize->get_matrix_elements_algebraic_constraint(maxorder,
-//                                                       amat_vec,
-//                                                       bvec_vec,
-//                                                       optimize->get_u_train(),
-//                                                       optimize->get_f_train(),
-//                                                       fnorm,
-//                                                       symmetry,
-//                                                       fcs,
-//                                                       constraint);
+                                          symmetry,
+                                          fcs,
+                                          constraint,
+                                          true,
+                                          false,
+                                          false,
+                                          0);
+    //    optimize->get_matrix_elements_algebraic_constraint(maxorder,
+    //                                                       amat_vec,
+    //                                                       bvec_vec,
+    //                                                       optimize->get_u_train(),
+    //                                                       optimize->get_f_train(),
+    //                                                       fnorm,
+    //                                                       symmetry,
+    //                                                       fcs,
+    //                                                       constraint);
     // This may be inefficient.
     auto i = 0;
     for (const auto it: matrix_out->amat_dense) {

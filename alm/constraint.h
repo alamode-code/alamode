@@ -339,9 +339,9 @@ private:
 
     void deallocate_variables();
 
-    [[nodiscard]] int levi_civita(const int,
-                                  const int,
-                                  const int) const;
+    [[nodiscard]] static int levi_civita(const int,
+                                         const int,
+                                         const int);
 
     void generate_rotational_constraint(const std::unique_ptr<System> &system,
                                         const std::unique_ptr<Symmetry> &symmetry,
@@ -425,12 +425,12 @@ private:
                                    const int verbosity);
 
 
-    void get_forceconstants_from_file(const int order,
-                                      const std::unique_ptr<Symmetry> &symmetry,
-                                      const std::unique_ptr<Fcs> &fcs,
-                                      const std::string file_to_fix,
-                                      std::vector<std::vector<int>> &intpair_fcs,
-                                      std::vector<double> &fcs_values) const;
+    static void get_forceconstants_from_file(const int order,
+                                             const std::unique_ptr<Symmetry> &symmetry,
+                                             const std::unique_ptr<Fcs> &fcs,
+                                             const std::string &file_to_fix,
+                                             std::vector<std::vector<int>> &intpair_fcs,
+                                             std::vector<double> &fcs_values);
 
     static void parse_forceconstants_from_xml(const int order,
                                               const std::unique_ptr<Symmetry> &symmetry,

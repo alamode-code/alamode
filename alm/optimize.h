@@ -22,15 +22,17 @@
 using SpMat = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
 
-namespace ALM_NS {
-class OptimizerControl {
+namespace ALM_NS
+{
+class OptimizerControl
+{
 public:
     // General optimization options
     int linear_model;         // 1 : least-squares, 2 : elastic net, 3 : adaptive lasso (experimental)
     int use_sparse_solver;    // 0: No, 1: Yes
     std::string sparsesolver; // Method name of Eigen sparse solver
     int use_cholesky;         // 0: No, 1: Yes
-    int chunk_size;            // chunk size used for the decomposed computation of (A^T A)
+    int chunk_size;           // chunk size used for the decomposed computation of (A^T A)
     int maxnum_iteration;
     double tolerance_iteration;
     int output_frequency;
@@ -69,8 +71,8 @@ public:
         debiase_after_l1opt = 0;
         cross_validation = 0;
         l1_alpha = 0.0;
-        l1_alpha_min = -1.0;  // Recommended l1_alpha_max * 1e-6
-        l1_alpha_max = -1.0;  // Use recommended value
+        l1_alpha_min = -1.0; // Recommended l1_alpha_max * 1e-6
+        l1_alpha_max = -1.0; // Use recommended value
         l1_ratio = 1.0;
         num_l1_alpha = 50;
         save_solution_path = 0;
@@ -87,16 +89,18 @@ public:
     OptimizerControl &operator=(const OptimizerControl &obj) = default;
 };
 
-class SensingMatrix {
+class SensingMatrix
+{
     // A class storing matrix information necessary for linear algebra solvers
 public:
-    std::vector<double> amat_dense; // Sensing matrix A (dense)
-    std::vector<double> bvec; // vector b
+    std::vector<double> amat_dense;      // Sensing matrix A (dense)
+    std::vector<double> bvec;            // vector b
     std::vector<double> original_forces; // stored to compute the relative errors
-    SpMat amat_sparse; // Sensing matrix A (sparse form)
+    SpMat amat_sparse;                   // Sensing matrix A (sparse form)
 };
 
-class Optimize {
+class Optimize
+{
 public:
     Optimize();
 
@@ -155,9 +159,8 @@ public:
     [[nodiscard]] double get_cv_l1_alpha() const;
 
 private:
-
     double *params;
-    double cv_l1_alpha;  // stores alpha at minimum CV
+    double cv_l1_alpha; // stores alpha at minimum CV
 
     std::vector<std::vector<double>> u_train, f_train;
     std::vector<std::vector<double>> u_validation, f_validation;
@@ -464,7 +467,8 @@ inline double shrink(const double x,
     return sign * std::max<double>(xabs - a, 0.0);
 }
 
-extern "C" {
+extern "C"
+{
 void dgelss_(int *m,
              int *n,
              int *nrhs,

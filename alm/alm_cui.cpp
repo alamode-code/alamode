@@ -47,7 +47,7 @@ void ALMCUI::run(const int narg,
         std::cout << " +-----------------------------------------------------------------+\n\n";
 #ifdef _OPENMP
         std::cout << " Number of OpenMP threads = "
-                  << omp_get_max_threads() << "\n\n";
+            << omp_get_max_threads() << "\n\n";
 #endif
 
         std::cout << " Job started at " << alm->timer->DateAndTime() << '\n';
@@ -92,7 +92,7 @@ void ALMCUI::run(const int narg,
 
     if (alm->get_verbosity() > 0) {
         std::cout << '\n' << " Job finished at "
-                  << alm->timer->DateAndTime() << '\n';
+            << alm->timer->DateAndTime() << '\n';
     }
 
     delete alm;

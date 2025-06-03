@@ -1492,7 +1492,6 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
                 int *intarr_omp, *intarr_copy_omp;
 
                 double weight;
-                std::vector<std::vector<int>> cell_dummy;
 
                 allocate(intarr_omp, order + 2);
                 allocate(intarr_copy_omp, order + 2);
@@ -1573,7 +1572,7 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
                                                                             1));
 
                                     auto cluster_found = cluster->get_interaction_cluster(order, i).find(
-                                        InteractionCluster(atom_tmp, cell_dummy));
+                                        InteractionCluster(atom_tmp));
 
                                     if (iter_found != list_found.end()) {
                                         if (cluster_found == cluster->get_interaction_cluster(order, i).end()) {
@@ -1753,13 +1752,13 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
 
         list_found.clear();
 
-        // Accumulate set of non-zero force constants.
+        // Accumulate sets of non-zero force constants.
         for (auto p = fcs->get_fc_table()[order].begin();
              p != fcs->get_fc_table()[order].end(); ++p) {
             list_found.insert(FcProperty(order + 2,
-                                         (*p).sign,
-                                         &(*p).elems[0],
-                                         (*p).mother));
+                                         p->sign,
+                                         p->elems.data(),
+                                         p->mother));
         }
 
         set_rotation_constraints(system,
@@ -1885,7 +1884,6 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
     std::vector<double> arr_constraint_lower;
 
     std::vector<int> atom_tmp;
-    std::vector<std::vector<int>> cell_dummy;
 
     std::vector<int> interaction_list;
 
@@ -1920,7 +1918,7 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
     if (order > 0) {
         nxyz = static_cast<int>(pow(static_cast<double>(3), order));
         allocate(xyzcomponent, nxyz, order);
-        fcs->get_xyzcomponent(order, xyzcomponent);
+        Fcs::get_xyzcomponent(order, xyzcomponent);
     }
 
     for (int i = 0; i < natmin; ++i) {
@@ -1955,9 +1953,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
 
                             atom_tmp.clear();
                             atom_tmp.push_back(jat);
-                            cell_dummy.clear();
                             const auto iter_cluster = cluster->get_interaction_cluster(order, i).find(
-                                InteractionCluster(atom_tmp, cell_dummy));
+                                InteractionCluster(atom_tmp));
 
                             if (iter_cluster == cluster->get_interaction_cluster(order, i).end()) {
                                 exit("generate_rotational_constraint",
@@ -1965,12 +1962,12 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                             } else {
                                 for (int j = 0; j < 3; ++j) vec_for_rot[j] = 0.0;
 
-                                const auto nsize_equiv = (*iter_cluster).cell.size();
+                                const auto nsize_equiv = iter_cluster->cell.size();
 
                                 for (int j = 0; j < nsize_equiv; ++j) {
                                     for (auto k = 0; k < 3; ++k) {
                                         vec_for_rot[k]
-                                            += system->get_x_image()[(*iter_cluster).cell[j][0]](jat, k);
+                                            += system->get_x_image()[iter_cluster->cell[j][0]](jat, k);
                                     }
                                 }
 
@@ -2086,8 +2083,7 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         std::sort(atom_tmp.begin(), atom_tmp.end());
 
                                         const auto iter_cluster = cluster->get_interaction_cluster(order, i).find(
-                                            InteractionCluster(atom_tmp,
-                                                               cell_dummy));
+                                            InteractionCluster(atom_tmp));
                                         if (iter_cluster != cluster->get_interaction_cluster(order, i).end()) {
                                             int iloc = -1;
 
@@ -2384,7 +2380,7 @@ void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &s
 
 int Constraint::levi_civita(const int i,
                             const int j,
-                            const int k) const
+                            const int k)
 {
     return (j - i) * (k - i) * (k - j) / 2;
 }
@@ -2439,9 +2435,9 @@ void Constraint::setup_rotation_axis(bool flag[3][3])
 void Constraint::get_forceconstants_from_file(const int order,
                                               const std::unique_ptr<Symmetry> &symmetry,
                                               const std::unique_ptr<Fcs> &fcs,
-                                              const std::string file_to_fix,
+                                              const std::string &file_to_fix,
                                               std::vector<std::vector<int>> &intpair_fcs,
-                                              std::vector<double> &fcs_values) const
+                                              std::vector<double> &fcs_values)
 {
     const auto file_extension = file_to_fix.substr(file_to_fix.find_last_of('.') + 1);
 
@@ -2508,7 +2504,6 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
 
     int pair1[2], pair2[2];
     std::vector<int> atom_tmp;
-    std::vector<std::vector<int>> cell_dummy;
     std::vector<std::vector<Eigen::Matrix3d>> relvec_tensor;
     Eigen::Vector3d vec_tmp;
     std::vector<double> const_now;
@@ -2525,12 +2520,11 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
         for (size_t jat = 0; jat < nat; ++jat) {
             atom_tmp.clear();
             atom_tmp.push_back(jat);
-            cell_dummy.clear();
 
             relvec_tensor[iat][jat].setZero();
 
             const auto iter_cluster = cluster->get_interaction_cluster(0, iat).find(
-                InteractionCluster(atom_tmp, cell_dummy));
+                InteractionCluster(atom_tmp));
 
             if (iter_cluster != cluster->get_interaction_cluster(0, iat).end()) {
                 const auto nsize_equiv = iter_cluster->cell.size();

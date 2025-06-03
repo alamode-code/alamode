@@ -14,17 +14,18 @@
 #include<set>
 #include "../external/combination.hpp"
 
-namespace ALM_NS {
-template<class TYPE>
-class CombinationWithRepetition {
+namespace ALM_NS
+{
+template <class TYPE>
+class CombinationWithRepetition
+{
     std::vector<TYPE> vec;
     unsigned int ndim;
-
 
 public:
     CombinationWithRepetition() {};
 
-    template<class InputIter>
+    template <class InputIter>
     CombinationWithRepetition(InputIter begin,
                               InputIter end,
                               const unsigned int n)
@@ -32,7 +33,7 @@ public:
         ndim = n;
 
         // remove redundunt elements
-        std::set < TYPE > set_tmp;
+        std::set<TYPE> set_tmp;
         for (InputIter iter = begin; iter != end; ++iter) set_tmp.insert(*iter);
 
         vec.clear();

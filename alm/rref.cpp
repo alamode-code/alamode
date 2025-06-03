@@ -243,7 +243,9 @@ void rref_sparse(const size_t ncols,
     // Remove emptry entries from the sp_constraint vector
     sp_constraint.erase(std::remove_if(sp_constraint.begin(),
                                        sp_constraint.end(),
-                                       [](const MapConstraintElement &obj) { return obj.empty(); }),
+                                       [](const MapConstraintElement &obj) {
+                                           return obj.empty();
+                                       }),
                         sp_constraint.end());
     sp_constraint.shrink_to_fit();
 }

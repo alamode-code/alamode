@@ -12,8 +12,10 @@
 
 #include <string>
 
-namespace ALM_NS {
-class DispForceFile {
+namespace ALM_NS
+{
+class DispForceFile
+{
 public:
     std::string filename;
     size_t ndata, nstart, nend;
@@ -36,7 +38,8 @@ public:
     DispForceFile &operator=(const DispForceFile &obj) = default;
 };
 
-class Files {
+class Files
+{
 public:
     Files();
 
@@ -57,7 +60,6 @@ public:
     [[nodiscard]] DispForceFile get_datfile_validation() const;
 
 private:
-
     std::string job_title;
     DispForceFile datfile_train, datfile_validation;
 };

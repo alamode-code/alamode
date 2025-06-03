@@ -44,7 +44,7 @@ public:
         }
     }
 
-    bool operator<(const IntList &a) const
+    auto operator<(const IntList &a) const -> bool
     {
         return std::lexicographical_compare(iarray.begin(), iarray.end(),
                                             a.iarray.begin(), a.iarray.end());
@@ -70,7 +70,7 @@ public:
 
     RelativeVectors() = default;
 
-    RelativeVectors(int order_in)
+    RelativeVectors(const int order_in)
     {
         relvecs_cartesian.clear();
         order = order_in;
@@ -78,8 +78,7 @@ public:
 
     void clear_relvecs()
     {
-        int i;
-        for (i = 0; i < order + 2; i++) {
+        for (int i = 0; i < order + 2; i++) {
             relvecs_fractional[i].clear();
             relvecs_cartesian[i].clear();
         }
@@ -87,18 +86,15 @@ public:
 
     void make_fractional_from_cartesian(const Eigen::Matrix3d &reciprocal_lat)
     {
-
-        int i, xyz, xyz2;
         std::vector<double> vectmp;
-
         relvecs_fractional.clear();
 
-        for (i = 0; i < order + 1; i++) {
+        for (int i = 0; i < order + 1; i++) {
 
             vectmp.clear();
-            for (xyz = 0; xyz < 3; xyz++) {
+            for (int xyz = 0; xyz < 3; xyz++) {
                 vectmp.push_back(0.0);
-                for (xyz2 = 0; xyz2 < 3; xyz2++) {
+                for (int xyz2 = 0; xyz2 < 3; xyz2++) {
                     vectmp[xyz] += reciprocal_lat(xyz, xyz2) / (2.0 * pi) * relvecs_cartesian[i][xyz2];
                 }
             }
@@ -107,22 +103,20 @@ public:
         }
     }
 
-    bool is_equal(RelativeVectors &another, double threshold)
+    bool is_equal(const RelativeVectors &another, const double threshold) const
     {
         std::vector<int> is_checked(order + 1);
         int is_found = 0;
-        int is_equal_flg;
 
-        int i, j, xyz;
-        for (i = 0; i < order + 1; i++) {
+        for (int i = 0; i < order + 1; i++) {
             is_found = 0;
             // find corresponding relative vector
-            for (j = 0; j < order + 1; j++) {
+            for (int j = 0; j < order + 1; j++) {
                 if (is_checked[j] == 1) {
                     continue;
                 }
-                is_equal_flg = 1;
-                for (xyz = 0; xyz < 3; xyz++) {
+                int is_equal_flg = 1;
+                for (int xyz = 0; xyz < 3; xyz++) {
                     if (std::fabs(relvecs_cartesian[i][xyz] - another.relvecs_cartesian[j][xyz]) > threshold) {
                         is_equal_flg = 0;
                         break;
@@ -205,10 +199,10 @@ public:
         double dist_a = 0;
         double dist_b = 0;
 
-        for (auto i: a.dist) {
+        for (const auto i: a.dist) {
             dist_a += i;
         }
-        for (auto i: b.dist) {
+        for (const auto i: b.dist) {
             dist_b += i;
         }
         return dist_a < dist_b;
@@ -242,6 +236,11 @@ public:
                        std::vector<std::vector<int>> cell_in)
             : atom(std::move(atom_in)), cell(std::move(cell_in)), distmax(0.0) {};
 
+    InteractionCluster(std::vector<int> atom_in) : atom(std::move(atom_in))
+    {
+        distmax = 0.0;
+        cell.clear();
+    }
 
     bool operator<(const InteractionCluster &a) const
     {
@@ -386,9 +385,9 @@ template<>
 struct hash<ALM_NS::IntList> {
     std::size_t operator()(ALM_NS::IntList const &obj) const
     {
-        hash<int> hasher;
+        hash<int> const hasher;
         size_t seed = 0;
-        for (auto i: obj.iarray) {
+        for (const auto i: obj.iarray) {
             seed ^= hasher(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         }
         return seed;

@@ -98,10 +98,10 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
             std::cout << "  NSTART = " << filedata_train.nstart << "; NEND = " << filedata_train.nend << '\n';
             if (filedata_train.skip_s < filedata_train.skip_e) {
                 std::cout << ": SKIP = " << filedata_train.skip_s << "-" <<
-                          filedata_train.skip_e - 1 << '\n';
+                    filedata_train.skip_e - 1 << '\n';
             }
             std::cout << "  " << ndata_used
-                      << " entries will be used for training.\n\n";
+                << " entries will be used for training.\n\n";
         }
 
         if (optcontrol.cross_validation == -1) {
@@ -109,9 +109,9 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
             if (!filedata_validation.filename.empty()) {
                 std::cout << "  Validation data file (DFSET_CV) : " << filedata_validation.filename << "\n\n";
                 std::cout << "  NSTART_CV = " << filedata_validation.nstart << "; NEND_CV = "
-                          << filedata_validation.nend << '\n';
+                    << filedata_validation.nend << '\n';
                 std::cout << "  " << ndata_used_validation
-                          << " entries will be used for validation.\n\n";
+                    << " entries will be used for validation.\n\n";
             }
         }
         std::cout << "  Total Number of Parameters : " << nparams << '\n';
@@ -149,16 +149,18 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
         if (optcontrol.linear_model == 3) {
             if (optcontrol.standardize) {
                 if (verbosity > 0) {
-                    warn("optimize_main", "STANDARDIZE = 1 in adaptive LASSO is meaningless.\n"
-                                          " Switch to STANDARDIZE = 0.");
+                    warn("optimize_main",
+                         "STANDARDIZE = 1 in adaptive LASSO is meaningless.\n"
+                         " Switch to STANDARDIZE = 0.");
                 }
                 optcontrol.standardize = 0;
             }
 
             if (std::abs(optcontrol.displacement_normalization_factor - 1.0) > eps) {
                 if (verbosity > 0) {
-                    warn("optimize_main", "DNORM_BASIS != 1.0 should be avoided in adaptive LASSO.\n"
-                                          " Switch to DNORM_BASIS = 1.0.");
+                    warn("optimize_main",
+                         "DNORM_BASIS != 1.0 should be avoided in adaptive LASSO.\n"
+                         " Switch to DNORM_BASIS = 1.0.");
                 }
                 optcontrol.displacement_normalization_factor = 1.0;
             }
@@ -241,9 +243,17 @@ int Optimize::least_squares(const int maxorder,
              " Please use ICONST=10, 11, 12 instead.");
     }
 
-    get_matrix_elements_unified(maxorder, matrix_out, u_train, f_train,
-                                symmetry, fcs, constraint,
-                                compact, sparse, return_ata, (verbosity > 0));
+    get_matrix_elements_unified(maxorder,
+                                matrix_out,
+                                u_train,
+                                f_train,
+                                symmetry,
+                                fcs,
+                                constraint,
+                                compact,
+                                sparse,
+                                return_ata,
+                                (verbosity > 0));
     auto fnorm = 0.0;
     for (const auto &it: matrix_out->original_forces) {
         fnorm += it * it;
@@ -282,15 +292,16 @@ int Optimize::least_squares(const int maxorder,
             // Solve the normal equation (A^T A)x=A^T b using dense datatype
             // Cholesky decomposition
             info_fitting
-                    = solve_normal_equation(matrix_out->bvec.size(),
-                                            matrix_out->amat_dense.data(),
-                                            matrix_out->bvec.data(),
-                                            param_out,
-                                            fnorm,
-                                            maxorder,
-                                            fcs,
-                                            constraint,
-                                            verbosity, compact);
+                = solve_normal_equation(matrix_out->bvec.size(),
+                                        matrix_out->amat_dense.data(),
+                                        matrix_out->bvec.data(),
+                                        param_out,
+                                        fnorm,
+                                        maxorder,
+                                        fcs,
+                                        constraint,
+                                        verbosity,
+                                        compact);
         }
 
     } else {
@@ -317,38 +328,38 @@ int Optimize::least_squares(const int maxorder,
                 // Perform singular value decomposition to solve
                 // min||Ax-b||^{2}_{2}
                 info_fitting
-                        = fit_algebraic_constraints(N_new,
-                                                    M,
-                                                    matrix_out->amat_dense.data(),
-                                                    matrix_out->bvec.data(),
-                                                    param_out,
-                                                    fnorm,
-                                                    maxorder,
-                                                    fcs,
-                                                    constraint,
-                                                    verbosity);
+                    = fit_algebraic_constraints(N_new,
+                                                M,
+                                                matrix_out->amat_dense.data(),
+                                                matrix_out->bvec.data(),
+                                                param_out,
+                                                fnorm,
+                                                maxorder,
+                                                fcs,
+                                                constraint,
+                                                verbosity);
             } else if (constraint->get_exist_constraint()) {
                 // Perform fitting with QRD
                 info_fitting
-                        = fit_with_constraints(N,
-                                               M,
-                                               constraint->get_number_of_constraints(),
-                                               matrix_out->amat_dense.data(),
-                                               matrix_out->bvec.data(),
-                                               param_out.data(),
-                                               constraint->get_const_mat(),
-                                               constraint->get_const_rhs(),
-                                               verbosity);
+                    = fit_with_constraints(N,
+                                           M,
+                                           constraint->get_number_of_constraints(),
+                                           matrix_out->amat_dense.data(),
+                                           matrix_out->bvec.data(),
+                                           param_out.data(),
+                                           constraint->get_const_mat(),
+                                           constraint->get_const_rhs(),
+                                           verbosity);
 
             } else {
                 // Perform fitting with SVD
                 info_fitting
-                        = fit_without_constraints(N,
-                                                  M,
-                                                  matrix_out->amat_dense.data(),
-                                                  matrix_out->bvec.data(),
-                                                  param_out.data(),
-                                                  verbosity);
+                    = fit_without_constraints(N,
+                                              M,
+                                              matrix_out->amat_dense.data(),
+                                              matrix_out->bvec.data(),
+                                              param_out.data(),
+                                              verbosity);
             }
         }
     }
@@ -376,9 +387,9 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
     // Scale displacements if DNORM != 1.0 and the data is not standardized.
     // This rule is not applied when the adaptive lasso is selected.
     const int scale_displacement
-            = std::abs(optcontrol.displacement_normalization_factor - 1.0) > eps
-              && (optcontrol.standardize == 0)
-              && (optcontrol.linear_model == 2);
+        = std::abs(optcontrol.displacement_normalization_factor - 1.0) > eps
+          && (optcontrol.standardize == 0)
+          && (optcontrol.linear_model == 2);
 
     if (optcontrol.cross_validation == 0) {
 
@@ -411,7 +422,7 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
 
             for (auto order = 0; order < maxorder; ++order) {
                 std::cout << "  Number of non-zero " << std::setw(9) << str_order[order] << " FCs : "
-                          << constraint->get_index_bimap(order).size() - nzero_cs[order] << '\n';
+                    << constraint->get_index_bimap(order).size() - nzero_cs[order] << '\n';
             }
             std::cout << '\n';
         }
@@ -557,19 +568,35 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
     std::unique_ptr<SensingMatrix> matrix_train = std::make_unique<SensingMatrix>();
     std::unique_ptr<SensingMatrix> matrix_validation = std::make_unique<SensingMatrix>();
 
-    get_matrix_elements_unified(maxorder, matrix_train, u_train, f_train,
-                                symmetry, fcs, constraint,
-                                true, false, false);
+    get_matrix_elements_unified(maxorder,
+                                matrix_train,
+                                u_train,
+                                f_train,
+                                symmetry,
+                                fcs,
+                                constraint,
+                                true,
+                                false,
+                                false);
 
-    get_matrix_elements_unified(maxorder, matrix_validation, u_validation, f_validation,
-                                symmetry, fcs, constraint,
-                                true, false, false);
+    get_matrix_elements_unified(maxorder,
+                                matrix_validation,
+                                u_validation,
+                                f_validation,
+                                symmetry,
+                                fcs,
+                                constraint,
+                                true,
+                                false,
+                                false);
 
     Eigen::MatrixXd A = Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(),
-                                                    matrix_train->amat_dense.size() / N_new, N_new);
+                                                    matrix_train->amat_dense.size() / N_new,
+                                                    N_new);
     Eigen::VectorXd b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
     Eigen::MatrixXd A_validation = Eigen::Map<Eigen::MatrixXd>(matrix_validation->amat_dense.data(),
-                                                               matrix_validation->amat_dense.size() / N_new, N_new);
+                                                               matrix_validation->amat_dense.size() / N_new,
+                                                               N_new);
     Eigen::VectorXd b_validation = Eigen::Map<Eigen::VectorXd>(matrix_validation->bvec.data(),
                                                                matrix_validation->bvec.size());
 
@@ -603,8 +630,8 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
 
     if (verbosity > 0) {
         std::cout << "  Recommended CV_MAXALPHA = "
-                  << estimated_max_alpha
-                  << "\n\n";
+            << estimated_max_alpha
+            << "\n\n";
     }
 
     const auto file_coef = job_prefix + ".solution_path";
@@ -629,12 +656,20 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
         }
     }
 
-    solution_path(maxorder, A, b, A_validation, b_validation,
-                  fnorm, fnorm_validation,
-                  file_coef, verbosity,
+    solution_path(maxorder,
+                  A,
+                  b,
+                  A_validation,
+                  b_validation,
+                  fnorm,
+                  fnorm_validation,
+                  file_coef,
+                  verbosity,
                   constraint,
                   alphas,
-                  training_error, validation_error, nonzeros);
+                  training_error,
+                  validation_error,
+                  nonzeros);
 
     write_cvresult_to_file(file_cv,
                            alphas,
@@ -647,12 +682,13 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
     if (verbosity > 0) {
         std::cout << "  The manual CV has been done.\n";
         std::cout << "  Minimum validation error at alpha = "
-                  << alphas[ialpha] << '\n';
+            << alphas[ialpha] << '\n';
         std::cout << "  The CV result is saved in " << file_cv << '\n';
 
         if (ialpha == optcontrol.num_l1_alpha - 1) {
-            warn("run_manual_cv", "The minimum validation score occurs at CV_MINALPHA.\n"
-                                  " Please use a smaller CV_MINALPHA to suppress this message.");
+            warn("run_manual_cv",
+                 "The minimum validation score occurs at CV_MINALPHA.\n"
+                 " Please use a smaller CV_MINALPHA to suppress this message.");
         }
     }
 
@@ -706,16 +742,24 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
 
     if (verbosity > 0) {
         std::cout << "  Start " << nsets << "-fold CV with "
-                  << u_train.size() << " Datasets\n\n";
+            << u_train.size() << " Datasets\n\n";
     }
 
     if (optcontrol.linear_model == 3) {
-        get_matrix_elements_unified(maxorder, matrix_train, u_train, f_train,
-                                    symmetry, fcs, constraint,
-                                    true, false, false);
+        get_matrix_elements_unified(maxorder,
+                                    matrix_train,
+                                    u_train,
+                                    f_train,
+                                    symmetry,
+                                    fcs,
+                                    constraint,
+                                    true,
+                                    false,
+                                    false);
 
         Eigen::MatrixXd A_full = Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(),
-                                                             matrix_train->amat_dense.size() / N_new, N_new);
+                                                             matrix_train->amat_dense.size() / N_new,
+                                                             N_new);
         Eigen::VectorXd b_full = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
         Eigen::VectorXd x_ols = A_full.colPivHouseholderQr().solve(b_full);
         weight_adalasso = x_ols.cwiseAbs();
@@ -743,20 +787,28 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
             }
             ishift += ndata_block[iset];
 
-            get_matrix_elements_unified(maxorder, matrix_train, u_train_tmp, f_train_tmp,
-                                        symmetry, fcs, constraint,
-                                        true, false, false);
+            get_matrix_elements_unified(maxorder,
+                                        matrix_train,
+                                        u_train_tmp,
+                                        f_train_tmp,
+                                        symmetry,
+                                        fcs,
+                                        constraint,
+                                        true,
+                                        false,
+                                        false);
 
             Eigen::MatrixXd A = Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(),
-                                                            matrix_train->amat_dense.size() / N_new, N_new);
+                                                            matrix_train->amat_dense.size() / N_new,
+                                                            N_new);
             Eigen::VectorXd b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
             if (optcontrol.linear_model == 3) A = A * weight_adalasso.asDiagonal();
             const auto this_estimated_max_alpha = get_estimated_max_alpha(A, b);
 
             if (verbosity > 0) {
                 std::cout << "  Recommended CV_MAXALPHA (" << std::setw(3)
-                          << iset + 1 << ") = "
-                          << this_estimated_max_alpha << '\n';
+                    << iset + 1 << ") = "
+                    << this_estimated_max_alpha << '\n';
             }
 
             if (this_estimated_max_alpha > estimated_max_alpha) {
@@ -791,19 +843,35 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
         }
         ishift += ndata_block[iset];
 
-        get_matrix_elements_unified(maxorder, matrix_train, u_train_tmp, f_train_tmp,
-                                    symmetry, fcs, constraint,
-                                    true, false, false);
+        get_matrix_elements_unified(maxorder,
+                                    matrix_train,
+                                    u_train_tmp,
+                                    f_train_tmp,
+                                    symmetry,
+                                    fcs,
+                                    constraint,
+                                    true,
+                                    false,
+                                    false);
 
-        get_matrix_elements_unified(maxorder, matrix_validation, u_validation_tmp, f_validation_tmp,
-                                    symmetry, fcs, constraint,
-                                    true, false, false);
+        get_matrix_elements_unified(maxorder,
+                                    matrix_validation,
+                                    u_validation_tmp,
+                                    f_validation_tmp,
+                                    symmetry,
+                                    fcs,
+                                    constraint,
+                                    true,
+                                    false,
+                                    false);
 
         Eigen::MatrixXd A = Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(),
-                                                        matrix_train->amat_dense.size() / N_new, N_new);
+                                                        matrix_train->amat_dense.size() / N_new,
+                                                        N_new);
         Eigen::VectorXd b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
         Eigen::MatrixXd A_validation = Eigen::Map<Eigen::MatrixXd>(matrix_validation->amat_dense.data(),
-                                                                   matrix_validation->amat_dense.size() / N_new, N_new);
+                                                                   matrix_validation->amat_dense.size() / N_new,
+                                                                   N_new);
         Eigen::VectorXd b_validation = Eigen::Map<Eigen::VectorXd>(matrix_validation->bvec.data(),
                                                                    matrix_validation->bvec.size());
 
@@ -827,8 +895,8 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
 
         if (verbosity > 0) {
             std::cout << "  Recommended CV_MAXALPHA = "
-                      << get_estimated_max_alpha(A, b)
-                      << "\n\n";
+                << get_estimated_max_alpha(A, b)
+                << "\n\n";
         }
 
         const auto file_coef = job_prefix + ".solution_path" + std::to_string(iset + 1);
@@ -853,12 +921,20 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
             }
         }
 
-        solution_path(maxorder, A, b, A_validation, b_validation,
-                      fnorm, fnorm_validation,
-                      file_coef, verbosity,
+        solution_path(maxorder,
+                      A,
+                      b,
+                      A_validation,
+                      b_validation,
+                      fnorm,
+                      fnorm_validation,
+                      file_coef,
+                      verbosity,
                       constraint,
                       alphas,
-                      training_error, validation_error, nonzeros);
+                      training_error,
+                      validation_error,
+                      nonzeros);
 
         if (!job_prefix.empty()) {
             write_cvresult_to_file(file_cv,
@@ -877,8 +953,9 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
             }
 
             if (ialpha == optcontrol.num_l1_alpha - 1) {
-                warn("run_auto_cv", "The minimum validation score occurs at CV_MINALPHA.\n"
-                                    " Please use a smaller CV_MINALPHA to suppress this message.");
+                warn("run_auto_cv",
+                     "The minimum validation score occurs at CV_MINALPHA.\n"
+                     " Please use a smaller CV_MINALPHA to suppress this message.");
             }
             std::cout << "  ---------------------------------------------------\n";
         }
@@ -897,8 +974,12 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
     verr_mean.resize(nalphas);
     verr_std.resize(nalphas);
 
-    set_errors_of_cvscore(terr_mean, terr_std, verr_mean, verr_std,
-                          training_error_accum, validation_error_accum);
+    set_errors_of_cvscore(terr_mean,
+                          terr_std,
+                          verr_mean,
+                          verr_std,
+                          training_error_accum,
+                          validation_error_accum);
     const auto ialpha_minimum = get_ialpha_at_minimum_validation_error(verr_mean);
 
     if (!job_prefix.empty()) {
@@ -1023,10 +1104,10 @@ void Optimize::set_errors_of_cvscore(std::vector<double> &terr_mean,
         for (size_t iset = 0; iset < nsets; ++iset) {
             sum_t += training_error_accum[iset][ialpha];
             sum2_t += training_error_accum[iset][ialpha]
-                      * training_error_accum[iset][ialpha];
+                * training_error_accum[iset][ialpha];
             sum_v += validation_error_accum[iset][ialpha];
             sum2_v += validation_error_accum[iset][ialpha]
-                      * validation_error_accum[iset][ialpha];
+                * validation_error_accum[iset][ialpha];
         }
         sum_t *= factor;
         sum2_t *= factor;
@@ -1137,9 +1218,18 @@ void Optimize::solution_path(const int maxorder,
             scale_beta_enet(i) = 1.0 / (1.0 / scale_beta(i) + (1.0 - optcontrol.l1_ratio) * l1_alpha);
         }
 
-        coordinate_descent(M, N_new, l1_alpha,
+        coordinate_descent(M,
+                           N_new,
+                           l1_alpha,
                            initialize_mode,
-                           x, A, b, grad0, has_prod, Prod, grad, fnorm,
+                           x,
+                           A,
+                           b,
+                           grad0,
+                           has_prod,
+                           Prod,
+                           grad,
+                           fnorm,
                            scale_beta_enet,
                            verbosity);
 
@@ -1254,9 +1344,16 @@ void Optimize::optimize_with_given_l1alpha(const int maxorder,
 
 
     std::unique_ptr<SensingMatrix> matrix_train = std::make_unique<SensingMatrix>();
-    get_matrix_elements_unified(maxorder, matrix_train, u_train, f_train,
-                                symmetry, fcs, constraint,
-                                true, false, false);
+    get_matrix_elements_unified(maxorder,
+                                matrix_train,
+                                u_train,
+                                f_train,
+                                symmetry,
+                                fcs,
+                                constraint,
+                                true,
+                                false,
+                                false);
 
     double fnorm = 0.0;
     for (const auto &it: matrix_train->original_forces) {
@@ -1292,7 +1389,7 @@ void Optimize::optimize_with_given_l1alpha(const int maxorder,
             std::cout << "  Elastic-net minimization with the following parameters:" << '\n';
             std::cout << "   L1_RATIO = " << optcontrol.l1_ratio << '\n';
             std::cout << "   ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor
-                      << '\n';
+                << '\n';
             if (optcontrol.standardize) {
                 std::cout << "  STANDARDIZE = 1 : Standardization will be performed for matrix A and vector b.\n";
                 std::cout << "                    The ENET_DNORM-tag will be neglected.\n\n";
@@ -1324,9 +1421,18 @@ void Optimize::optimize_with_given_l1alpha(const int maxorder,
     }
 
     // Coordinate Descent Method
-    coordinate_descent(M, N_new, optcontrol.l1_alpha,
+    coordinate_descent(M,
+                       N_new,
+                       optcontrol.l1_alpha,
                        0,
-                       x, A, b, grad0, has_prod, Prod, grad, fnorm,
+                       x,
+                       A,
+                       b,
+                       grad0,
+                       has_prod,
+                       Prod,
+                       grad,
+                       fnorm,
                        scale_beta,
                        verbosity);
 
@@ -1353,7 +1459,8 @@ void Optimize::optimize_with_given_l1alpha(const int maxorder,
     deallocate(has_prod);
 
     if (optcontrol.debiase_after_l1opt && optcontrol.linear_model == 2) {
-        run_least_squares_with_nonzero_coefs(A, b,
+        run_least_squares_with_nonzero_coefs(A,
+                                             b,
                                              factor_std,
                                              param_out,
                                              verbosity);
@@ -1774,8 +1881,19 @@ int Optimize::fit_without_constraints(const size_t N,
     // M_tmp and N_tmp are prepared to cast N and M to (non-const) int.
     M_tmp = M;
     N_tmp = N;
-    dgelss_(&M_tmp, &N_tmp, &nrhs, amat, &M_tmp, fsum2, &LMAX,
-            S, &rcond, &nrank, WORK, &LWORK, &INFO);
+    dgelss_(&M_tmp,
+            &N_tmp,
+            &nrhs,
+            amat,
+            &M_tmp,
+            fsum2,
+            &LMAX,
+            S,
+            &rcond,
+            &nrank,
+            WORK,
+            &LWORK,
+            &INFO);
 
     if (verbosity > 0) {
         std::cout << "finished !" << '\n' << '\n';
@@ -1792,9 +1910,9 @@ int Optimize::fit_without_constraints(const size_t N,
             f_residual += std::pow(fsum2[i], 2);
         }
         std::cout << '\n' << "  Residual sum of squares for the solution: "
-                  << sqrt(f_residual) << '\n';
+            << sqrt(f_residual) << '\n';
         std::cout << "  Fitting error (%) : "
-                  << sqrt(f_residual / f_square) * 100.0 << '\n';
+            << sqrt(f_residual / f_square) * 100.0 << '\n';
     }
 
     for (i = 0; i < N; ++i) {
@@ -1891,8 +2009,19 @@ int Optimize::fit_with_constraints(const size_t N,
     M_tmp = M;
     N_tmp = N;
     P_tmp = P;
-    dgglse_(&M_tmp, &N_tmp, &P_tmp, amat, &M_tmp, cmat_mod, &P_tmp,
-            fsum2, dvec, x, WORK, &LWORK, &INFO);
+    dgglse_(&M_tmp,
+            &N_tmp,
+            &P_tmp,
+            amat,
+            &M_tmp,
+            cmat_mod,
+            &P_tmp,
+            fsum2,
+            dvec,
+            x,
+            WORK,
+            &LWORK,
+            &INFO);
 
     if (verbosity > 0) std::cout << " finished. \n";
 
@@ -1903,9 +2032,9 @@ int Optimize::fit_with_constraints(const size_t N,
 
     if (verbosity > 0) {
         std::cout << '\n' << "  Residual sum of squares for the solution: "
-                  << sqrt(f_residual) << '\n';
+            << sqrt(f_residual) << '\n';
         std::cout << "  Fitting error (%) : "
-                  << std::sqrt(f_residual / f_square) * 100.0 << '\n';
+            << std::sqrt(f_residual / f_square) * 100.0 << '\n';
     }
 
     // copy fcs to bvec
@@ -1962,8 +2091,19 @@ int Optimize::fit_algebraic_constraints(const size_t N,
     // M_tmp and N_tmp are prepared to cast N and M to (non-const) int.
     M_tmp = M;
     N_tmp = N;
-    dgelss_(&M_tmp, &N_tmp, &nrhs, amat, &M_tmp, fsum2, &LMAX,
-            S, &rcond, &nrank, WORK, &LWORK, &INFO);
+    dgelss_(&M_tmp,
+            &N_tmp,
+            &nrhs,
+            amat,
+            &M_tmp,
+            fsum2,
+            &LMAX,
+            S,
+            &rcond,
+            &nrank,
+            WORK,
+            &LWORK,
+            &INFO);
 
     deallocate(WORK);
     deallocate(S);
@@ -1990,9 +2130,9 @@ int Optimize::fit_algebraic_constraints(const size_t N,
         }
         std::cout << '\n';
         std::cout << "  Residual sum of squares for the solution: "
-                  << sqrt(f_residual) << '\n';
+            << sqrt(f_residual) << '\n';
         std::cout << "  Fitting error (%) : "
-                  << sqrt(f_residual / (fnorm * fnorm)) * 100.0 << '\n';
+            << sqrt(f_residual / (fnorm * fnorm)) * 100.0 << '\n';
     }
 
     if (INFO == 0) {
@@ -2151,35 +2291,47 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 matrix_out->amat_sparse.resize(ncols_new, ncols_new);
                 matrix_out->bvec.resize(ncols_new, 0.0);
 
-                get_matrix_elements_normal_equation2(maxorder, ncycle, nrows, ncols, ncols_new,
+                get_matrix_elements_normal_equation2(maxorder,
+                                                     ncycle,
+                                                     nrows,
+                                                     ncols,
+                                                     ncols_new,
                                                      matrix_out,
-                                                     u_multi, f_multi,
+                                                     u_multi,
+                                                     f_multi,
                                                      gamma_precomputed,
                                                      symmetry,
                                                      fcs,
-                                                     constraint, true);
+                                                     constraint,
+                                                     true);
             } else {
                 if (verbosity > 0) {
                     std::cout << "  Calculate the sensing matrix A using dense data type\n";
                     std::cout << "  Directly construct (A^T A) and (A^T b)\n";
                     const auto memory_full =
-                            static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024);
+                        static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024);
                     const auto memory_chunk = static_cast<float>(optcontrol.chunk_size * ncols_new * 8) /
                                               static_cast<float>(1024 * 1024 * 1024);
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                              << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
+                        << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(ncols_new * ncols_new, 0.0);
                 matrix_out->bvec.resize(ncols_new, 0.0);
 
-                get_matrix_elements_normal_equation2(maxorder, ncycle, nrows, ncols, ncols_new,
+                get_matrix_elements_normal_equation2(maxorder,
+                                                     ncycle,
+                                                     nrows,
+                                                     ncols,
+                                                     ncols_new,
                                                      matrix_out,
-                                                     u_multi, f_multi,
+                                                     u_multi,
+                                                     f_multi,
                                                      gamma_precomputed,
                                                      symmetry,
                                                      fcs,
-                                                     constraint, false);
+                                                     constraint,
+                                                     false);
             }
 
         } else {
@@ -2193,13 +2345,19 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 matrix_out->amat_sparse.resize(nrows, ncols_new);
                 matrix_out->bvec.resize(nrows, 0.0);
 
-                get_matrix_elements2(maxorder, ncycle, nrows, ncols, ncols_new,
+                get_matrix_elements2(maxorder,
+                                     ncycle,
+                                     nrows,
+                                     ncols,
+                                     ncols_new,
                                      matrix_out,
-                                     u_multi, f_multi,
+                                     u_multi,
+                                     f_multi,
                                      gamma_precomputed,
                                      symmetry,
                                      fcs,
-                                     constraint, true);
+                                     constraint,
+                                     true);
 
 
             } else {
@@ -2207,20 +2365,26 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 if (verbosity > 0) {
                     std::cout << "  Calculate the sensing matrix A using dense data type\n";
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                              << static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024)
-                              << " GiB of memory will be allocated.\n";
+                        << static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024)
+                        << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(nrows * ncols_new, 0.0);
                 matrix_out->bvec.resize(nrows, 0.0);
 
-                get_matrix_elements2(maxorder, ncycle, nrows, ncols, ncols_new,
+                get_matrix_elements2(maxorder,
+                                     ncycle,
+                                     nrows,
+                                     ncols,
+                                     ncols_new,
                                      matrix_out,
-                                     u_multi, f_multi,
+                                     u_multi,
+                                     f_multi,
                                      gamma_precomputed,
                                      symmetry,
                                      fcs,
-                                     constraint, false);
+                                     constraint,
+                                     false);
             }
         }
 
@@ -2238,13 +2402,19 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 matrix_out->amat_sparse.resize(ncols, ncols);
                 matrix_out->bvec.resize(ncols, 0.0);
 
-                get_matrix_elements_normal_equation2(maxorder, ncycle, nrows, ncols, ncols,
+                get_matrix_elements_normal_equation2(maxorder,
+                                                     ncycle,
+                                                     nrows,
+                                                     ncols,
+                                                     ncols,
                                                      matrix_out,
-                                                     u_multi, f_multi,
+                                                     u_multi,
+                                                     f_multi,
                                                      gamma_precomputed,
                                                      symmetry,
                                                      fcs,
-                                                     constraint, true);
+                                                     constraint,
+                                                     true);
 
 
             } else {
@@ -2252,24 +2422,30 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                     std::cout << "  Calculate the sensing matrix A using dense data type\n";
                     std::cout << "  Directly construct (A^T A) and (A^T b)\n";
                     const auto memory_full =
-                            static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024);
+                        static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024);
                     const auto memory_chunk =
-                            static_cast<float>(optcontrol.chunk_size * ncols * 8) /
-                            static_cast<float>(1024 * 1024 * 1024);
+                        static_cast<float>(optcontrol.chunk_size * ncols * 8) /
+                        static_cast<float>(1024 * 1024 * 1024);
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                              << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
+                        << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(ncols * ncols, 0.0);
                 matrix_out->bvec.resize(ncols, 0.0);
 
-                get_matrix_elements_normal_equation2(maxorder, ncycle, nrows, ncols, ncols,
+                get_matrix_elements_normal_equation2(maxorder,
+                                                     ncycle,
+                                                     nrows,
+                                                     ncols,
+                                                     ncols,
                                                      matrix_out,
-                                                     u_multi, f_multi,
+                                                     u_multi,
+                                                     f_multi,
                                                      gamma_precomputed,
                                                      symmetry,
                                                      fcs,
-                                                     constraint, false);
+                                                     constraint,
+                                                     false);
             }
 
         } else {
@@ -2281,30 +2457,42 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
 
                 matrix_out->amat_sparse.resize(nrows, ncols);
                 matrix_out->bvec.resize(nrows, 0.0);
-                get_matrix_elements2(maxorder, ncycle, nrows, ncols, ncols_new,
+                get_matrix_elements2(maxorder,
+                                     ncycle,
+                                     nrows,
+                                     ncols,
+                                     ncols_new,
                                      matrix_out,
-                                     u_multi, f_multi,
+                                     u_multi,
+                                     f_multi,
                                      gamma_precomputed,
                                      symmetry,
                                      fcs,
-                                     constraint, true);
+                                     constraint,
+                                     true);
             } else {
                 if (verbosity > 0) {
                     std::cout << "  Calculate the sensing matrix A using dense data type\n";
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                              << static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024)
-                              << " GiB of memory will be allocated.\n";
+                        << static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024)
+                        << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(nrows * ncols, 0.0);
                 matrix_out->bvec.resize(nrows, 0.0);
-                get_matrix_elements2(maxorder, ncycle, nrows, ncols, ncols_new,
+                get_matrix_elements2(maxorder,
+                                     ncycle,
+                                     nrows,
+                                     ncols,
+                                     ncols_new,
                                      matrix_out,
-                                     u_multi, f_multi,
+                                     u_multi,
+                                     f_multi,
                                      gamma_precomputed,
                                      symmetry,
                                      fcs,
-                                     constraint, false);
+                                     constraint,
+                                     false);
             }
         }
     }
@@ -2357,13 +2545,21 @@ void Optimize::get_matrix_elements2(const int maxorder,
         for (irow = 0; irow < ncycle; ++irow) {
 
             // generate r.h.s vector B
-            fill_bvec(natmin, irow, symmetry->get_map_trueprim_to_super(),
-                      f_multi[irow], bvec_orig);
+            fill_bvec(natmin,
+                      irow,
+                      symmetry->get_map_trueprim_to_super(),
+                      f_multi[irow],
+                      bvec_orig);
 
             // generate l.h.s. matrix A
-            fill_amat(maxorder, natmin, ncols,
-                      u_multi[irow], gamma_precomputed,
-                      symmetry, fcs, amat_orig_tmp);
+            fill_amat(maxorder,
+                      natmin,
+                      ncols,
+                      u_multi[irow],
+                      gamma_precomputed,
+                      symmetry,
+                      fcs,
+                      amat_orig_tmp);
 
             // When the force constants are defined in the fractional coordinate,
             // we need to multiply the basis_conversion_matrix to obtain atomic forces
@@ -2379,9 +2575,14 @@ void Optimize::get_matrix_elements2(const int maxorder,
 
             if (constraint->get_constraint_algebraic()) {
                 // Project constraints
-                project_constraints(maxorder, natmin, irow,
-                                    fcs, constraint, amat_orig_tmp,
-                                    amat_mod_tmp, bvec_correction);
+                project_constraints(maxorder,
+                                    natmin,
+                                    irow,
+                                    fcs,
+                                    constraint,
+                                    amat_orig_tmp,
+                                    amat_mod_tmp,
+                                    bvec_correction);
 
                 if (sparse) {
                     for (i = 0; i < natmin3; ++i) {
@@ -2520,15 +2721,26 @@ void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
                 idata = natmin3 * (irow - istart_cycle);
 
                 // generate r.h.s vector B
-                fill_bvec(natmin, irow, symmetry->get_map_trueprim_to_super(),
-                          f_multi[irow], matrix_out->original_forces);
-                fill_bvec(natmin, irow - istart_cycle, symmetry->get_map_trueprim_to_super(),
-                          f_multi[irow], bvec_subset);
+                fill_bvec(natmin,
+                          irow,
+                          symmetry->get_map_trueprim_to_super(),
+                          f_multi[irow],
+                          matrix_out->original_forces);
+                fill_bvec(natmin,
+                          irow - istart_cycle,
+                          symmetry->get_map_trueprim_to_super(),
+                          f_multi[irow],
+                          bvec_subset);
 
                 // generate l.h.s. matrix A
-                fill_amat(maxorder, natmin, ncols,
-                          u_multi[irow], gamma_precomputed,
-                          symmetry, fcs, amat_orig_tmp);
+                fill_amat(maxorder,
+                          natmin,
+                          ncols,
+                          u_multi[irow],
+                          gamma_precomputed,
+                          symmetry,
+                          fcs,
+                          amat_orig_tmp);
 
                 // When the force constants are defined in the fractional coordinate,
                 // we need to multiply the basis_conversion_matrix to obtain atomic forces
@@ -2543,9 +2755,14 @@ void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
                 if (constraint->get_constraint_algebraic()) {
 
                     // Project constraints
-                    project_constraints(maxorder, natmin, irow - istart_cycle,
-                                        fcs, constraint, amat_orig_tmp,
-                                        amat_mod_tmp, bvec_subset);
+                    project_constraints(maxorder,
+                                        natmin,
+                                        irow - istart_cycle,
+                                        fcs,
+                                        constraint,
+                                        amat_orig_tmp,
+                                        amat_mod_tmp,
+                                        bvec_subset);
 
                     if (sparse) {
                         for (ii = 0; ii < natmin3; ++ii) {
@@ -2711,7 +2928,7 @@ void Optimize::project_constraints(const int maxorder,
 
             for (size_t j = 0; j < natmin3; ++j) {
                 bvec_mod[j + idata] -= constraint->get_const_fix(order)[i].val_to_fix
-                                       * amat_orig[j][ishift + constraint->get_const_fix(order)[i].p_index_target];
+                    * amat_orig[j][ishift + constraint->get_const_fix(order)[i].p_index_target];
             }
         }
 
@@ -2731,14 +2948,14 @@ void Optimize::project_constraints(const int maxorder,
             for (size_t j = 0; j < constraint->get_const_relate(order)[i].alpha.size(); ++j) {
 
                 // This part can issue an error when the constraint matrix is deviate from rref.
-//                        const auto right_value =  constraint->get_const_relate(order)[i].p_index_orig[j];
-//                        std::cout << "right = " << right_value << '\n'<< std::flush;
-//                        if (constraint->get_index_bimap(order).right.find(right_value) == constraint->get_index_bimap(order).right.end()) {
-//                            std::cout << "The key not found \n" << '\n' << std::flush;
-//                            std::exit(1);
-//                        }
+                //                        const auto right_value =  constraint->get_const_relate(order)[i].p_index_orig[j];
+                //                        std::cout << "right = " << right_value << '\n'<< std::flush;
+                //                        if (constraint->get_index_bimap(order).right.find(right_value) == constraint->get_index_bimap(order).right.end()) {
+                //                            std::cout << "The key not found \n" << '\n' << std::flush;
+                //                            std::exit(1);
+                //                        }
                 inew = constraint->get_index_bimap(order).right.at(
-                        constraint->get_const_relate(order)[i].p_index_orig[j]) +
+                           constraint->get_const_relate(order)[i].p_index_orig[j]) +
                        iparam;
 
                 for (size_t k = 0; k < natmin3; ++k) {
@@ -2776,7 +2993,7 @@ void Optimize::recover_original_forceconstants(const int maxorder,
     for (i = 0; i < maxorder; ++i) {
         for (j = 0; j < constraint->get_const_fix(i).size(); ++j) {
             param_out[constraint->get_const_fix(i)[j].p_index_target + ishift]
-                    = constraint->get_const_fix(i)[j].val_to_fix;
+                = constraint->get_const_fix(i)[j].val_to_fix;
         }
 
         for (const auto &it: constraint->get_index_bimap(i)) {
@@ -2791,7 +3008,7 @@ void Optimize::recover_original_forceconstants(const int maxorder,
 
             for (k = 0; k < constraint->get_const_relate(i)[j].alpha.size(); ++k) {
                 tmp += constraint->get_const_relate(i)[j].alpha[k]
-                       * param_out[constraint->get_const_relate(i)[j].p_index_orig[k] + ishift];
+                    * param_out[constraint->get_const_relate(i)[j].p_index_orig[k] + ishift];
             }
             param_out[constraint->get_const_relate(i)[j].p_index_target + ishift] = -tmp;
         }
@@ -3078,9 +3295,9 @@ int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
 
     if (verbosity > 0) {
         std::cout << "  Residual sum of squares for the solution: "
-                  << sqrt(res2norm) << '\n';
+            << sqrt(res2norm) << '\n';
         std::cout << "  Fitting error (%) : "
-                  << sqrt(res2norm / (fnorm * fnorm)) * 100.0 << '\n';
+            << sqrt(res2norm / (fnorm * fnorm)) * 100.0 << '\n';
     }
 
     return 0;
@@ -3194,7 +3411,7 @@ void Optimize::coordinate_descent(const int M,
 
             if (do_print_log) {
                 std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff
-                          << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
+                    << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
                 auto tmp = 0.0;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tmp)
@@ -3206,7 +3423,7 @@ void Optimize::coordinate_descent(const int M,
                 res = A * beta - b;
                 tmp = res.dot(res);
                 std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp)
-                          << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+                    << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
                 std::cout << '\n';
             }
         }
@@ -3251,7 +3468,7 @@ void Optimize::coordinate_descent(const int M,
 
             if (do_print_log) {
                 std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff
-                          << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
+                    << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
                 auto tmp = 0.0;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tmp)
@@ -3263,7 +3480,7 @@ void Optimize::coordinate_descent(const int M,
                 res = A * beta - b;
                 tmp = res.dot(res);
                 std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp)
-                          << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+                    << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
                 std::cout << '\n';
             }
         }
@@ -3272,17 +3489,17 @@ void Optimize::coordinate_descent(const int M,
     if (verbosity > 1) {
         if (iloop >= optcontrol.maxnum_iteration) {
             std::cout << "WARNING: Convergence NOT achieved within " << optcontrol.maxnum_iteration
-                      << " coordinate descent iterations.\n";
+                << " coordinate descent iterations.\n";
         } else {
             std::cout << "  Convergence achieved in " << iloop << " iterations.\n";
         }
         const auto param2norm = beta.dot(beta);
         if (std::abs(param2norm) < eps) {
             std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << 0.0
-                      << std::setw(15) << 0.0 << '\n';
+                << std::setw(15) << 0.0 << '\n';
         } else {
             std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff
-                      << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / param2norm) << '\n';
+                << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / param2norm) << '\n';
         }
         double tmp = 0.0;
 #ifdef _OPENMP
@@ -3295,7 +3512,7 @@ void Optimize::coordinate_descent(const int M,
         res = A * beta - b;
         tmp = res.dot(res);
         std::cout << "    3': ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp)
-                  << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+            << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
         std::cout << '\n';
     }
 

@@ -23,7 +23,8 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-extern "C" {
+extern "C"
+{
 #include "spglib.h"
 }
 
@@ -219,9 +220,9 @@ void Symmetry::setup_symmetry_operation(const Cell &pcell,
     // because one can give PRIMCELL value which does not necessary transform the
     // input cell into a true primitive cell.
     if (spin_prim.lspin && spin_prim.noncollinear) {
-//        if (spg_get_major_version() < 2) {
-//            std::cout << "  Please update spglib to version 2 or above to .\n";
-//        }
+        //        if (spg_get_major_version() < 2) {
+        //            std::cout << "  Please update spglib to version 2 or above to .\n";
+        //        }
         if (verbosity > 0) {
             std::cout << "  Switch to the internal symmetry finder from spglib when NONCOLLINEAR = 1.\n";
         }
@@ -237,7 +238,7 @@ void Symmetry::setup_symmetry_operation(const Cell &pcell,
 
         if (verbosity > 0) {
             std::cout << "  Space group: " << spgsymbol << " ("
-                      << std::setw(3) << spgnum << ")\n";
+                << std::setw(3) << spgnum << ")\n";
         }
 
         const auto spgnum2 = findsym_spglib(scell,
@@ -526,10 +527,10 @@ void Symmetry::find_crystal_symmetry(const Cell &cell,
                 tran[i] = tran[i] - nint(tran[i]);
             }
 
-//            if ((std::abs(tran[0]) > eps12 && !is_periodic[0]) ||
-//                (std::abs(tran[1]) > eps12 && !is_periodic[1]) ||
-//                (std::abs(tran[2]) > eps12 && !is_periodic[2]))
-//                continue;
+            //            if ((std::abs(tran[0]) > eps12 && !is_periodic[0]) ||
+            //                (std::abs(tran[1]) > eps12 && !is_periodic[1]) ||
+            //                (std::abs(tran[2]) > eps12 && !is_periodic[2]))
+            //                continue;
 
             is_identity_matrix = (rot - mat_identity).norm() < eps6;
             if (is_identity_matrix) continue;
@@ -742,12 +743,12 @@ void Symmetry::symop_in_cart(Eigen::Matrix3d &rot_cart,
 void Symmetry::print_symminfo_stdout() const
 {
     std::cout << "  Number of symmetry operations of the primitive cell = "
-              << symmetry_data_prim.size() << '\n';
+        << symmetry_data_prim.size() << '\n';
     std::cout << '\n';
     if (ntran_prim > 1) {
         std::cout << "  The user defined primitive cell is NOT a true primitive cell.\n";
         std::cout << "  It is composed of " << std::setw(5)
-                  << ntran_prim << " true primitive cells.\n";
+            << ntran_prim << " true primitive cells.\n";
     }
 
     std::cout << '\n';
@@ -774,8 +775,8 @@ void Symmetry::print_symminfo_stdout() const
                 std::cout << "  │" << std::setw(7) << i + 1 << " │";
                 std::cout.width(4);
                 std::cout << "(" << std::setw(2)
-                          << atomgroup_super[i].shift_vector.transpose()
-                          << ")";
+                    << atomgroup_super[i].shift_vector.transpose()
+                    << ")";
                 std::cout.width(6);
                 std::cout << "│";
             } else {
@@ -818,7 +819,7 @@ void Symmetry::assign_shift_vectors_supercell(const ALM_NS::Cell &cell_prim,
     std::vector<std::vector<int>> trans_vecs;
     const Eigen::Matrix3d invlavec_p = cell_prim.lattice_vector.transpose().inverse();
     const Eigen::Matrix3d transform_basis_primitive_to_super
-            = cell_super.lattice_vector.inverse() * cell_prim.lattice_vector;
+        = cell_super.lattice_vector.inverse() * cell_prim.lattice_vector;
 
     x_super = cell_super.x_cartesian * invlavec_p;
 
@@ -836,18 +837,26 @@ void Symmetry::assign_shift_vectors_supercell(const ALM_NS::Cell &cell_prim,
         auto iloc = -1;
         for (auto j = 0; j < cell_prim.number_of_atoms; ++j) {
             xtmp2 = cell_prim.x_fractional.row(j);
-            xdiff = (xtmp - xtmp2).unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+            xdiff = (xtmp - xtmp2).unaryExpr([](const double x) {
+                return x - static_cast<double>(nint(x));
+            });
             xdiff_cart = cell_prim.lattice_vector * xdiff;
             if (xdiff_cart.norm() < tolerance) {
-                tran_d = (xtmp - xtmp2).unaryExpr([](const double x) { return static_cast<double>(nint(x)); });
+                tran_d = (xtmp - xtmp2).unaryExpr([](const double x) {
+                    return static_cast<double>(nint(x));
+                });
                 // First move back to the fractional coordinate of the supercell and
                 // make sure that the shift vectors are in the 0<=x<1 region in that basis.
                 tran_d = transform_basis_primitive_to_super * tran_d;
-                tran_d = tran_d.unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+                tran_d = tran_d.unaryExpr([](const double x) {
+                    return x - static_cast<double>(nint(x));
+                });
                 // Then, transform it back to the components in the primitive cell basis.
                 // All components should be integer.
                 tran_d = transform_basis_primitive_to_super.inverse() * tran_d;
-                tran = tran_d.unaryExpr([](const double x) { return nint(x); });
+                tran = tran_d.unaryExpr([](const double x) {
+                    return nint(x);
+                });
                 iloc = j;
                 break;
             }
@@ -862,7 +871,9 @@ void Symmetry::assign_shift_vectors_supercell(const ALM_NS::Cell &cell_prim,
             trans_vecs.emplace_back(vtmp);
         }
 
-        tran_d = tran.unaryExpr([](const int x) { return static_cast<double>(x); });
+        tran_d = tran.unaryExpr([](const int x) {
+            return static_cast<double>(x);
+        });
 
         map_index.clear();
 
@@ -876,7 +887,9 @@ void Symmetry::assign_shift_vectors_supercell(const ALM_NS::Cell &cell_prim,
                 if (is_done[k]) continue;
 
                 xtmp3 = cell_super.x_fractional.row(k);
-                xdiff = (xtmp3 - xtmp2).unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+                xdiff = (xtmp3 - xtmp2).unaryExpr([](const double x) {
+                    return x - static_cast<double>(nint(x));
+                });
                 xdiff_cart = cell_super.lattice_vector * xdiff; // difference in Cartesian frame
                 if (xdiff_cart.norm() < tolerance) {
                     is_done[k] = 1;
@@ -940,7 +953,9 @@ void Symmetry::gen_mapping_information(const Cell &scell,
 #pragma omp for private(iat, isym)
         for (isym = 0; isym < nsym_super; ++isym) {
 
-            rot_double = symm_super[isym].rotation.unaryExpr([](const double x) { return static_cast<double>(x); });
+            rot_double = symm_super[isym].rotation.unaryExpr([](const double x) {
+                return static_cast<double>(x);
+            });
 
             for (itype = 0; itype < natomtypes_s; ++itype) {
 
@@ -955,7 +970,9 @@ void Symmetry::gen_mapping_information(const Cell &scell,
                         jat = atomtype_group_super[itype][jj];
 
                         xdiff = (scell.x_fractional.row(jat).transpose() - xnew).unaryExpr(
-                                [](const double x) { return x - static_cast<double>(nint(x)); });
+                            [](const double x) {
+                                return x - static_cast<double>(nint(x));
+                            });
                         xdiff_cart = scell.lattice_vector * xdiff;
                         if (xdiff_cart.norm() < tolerance) {
                             map_fullsymmetry_super[iat][isym] = jat;
@@ -974,7 +991,9 @@ void Symmetry::gen_mapping_information(const Cell &scell,
 #pragma omp for private(iat, isym)
         for (isym = 0; isym < nsym_prim; ++isym) {
 
-            rot_double = symm_prim[isym].rotation.unaryExpr([](const double x) { return static_cast<double>(x); });
+            rot_double = symm_prim[isym].rotation.unaryExpr([](const double x) {
+                return static_cast<double>(x);
+            });
 
             for (itype = 0; itype < natomtypes_p; ++itype) {
 
@@ -989,7 +1008,9 @@ void Symmetry::gen_mapping_information(const Cell &scell,
                         jat = atomtype_group_prim[itype][jj];
 
                         xdiff = (pcell.x_fractional.row(jat).transpose() - xnew).unaryExpr(
-                                [](const double x) { return x - static_cast<double>(nint(x)); });
+                            [](const double x) {
+                                return x - static_cast<double>(nint(x));
+                            });
                         xdiff_cart = pcell.lattice_vector * xdiff;
                         if (xdiff_cart.norm() < tolerance) {
                             map_fullsymmetry_prim[iat][isym] = jat;
@@ -1066,9 +1087,9 @@ void Symmetry::gen_mapping_information(const Cell &scell,
 bool Symmetry::is_translation(const int rot[3][3]) const
 {
     const auto ret =
-            rot[0][0] == 1 && rot[0][1] == 0 && rot[0][2] == 0 &&
-            rot[1][0] == 0 && rot[1][1] == 1 && rot[1][2] == 0 &&
-            rot[2][0] == 0 && rot[2][1] == 0 && rot[2][2] == 1;
+        rot[0][0] == 1 && rot[0][1] == 0 && rot[0][2] == 0 &&
+        rot[1][0] == 0 && rot[1][1] == 1 && rot[1][2] == 0 &&
+        rot[2][0] == 0 && rot[2][1] == 0 && rot[2][2] == 1;
 
     return ret;
 }
@@ -1079,7 +1100,7 @@ bool Symmetry::is_translation(const Eigen::Matrix3i &rot) const
     return (rot == identity);
 }
 
-template<typename T>
+template <typename T>
 bool Symmetry::is_compatible(const T rot[3][3],
                              const double tolerance_zero) const
 {
@@ -1096,7 +1117,7 @@ bool Symmetry::is_compatible(const T rot[3][3],
     return (nfinite == 3);
 }
 
-template<typename T>
+template <typename T>
 bool Symmetry::is_compatible(const Eigen::MatrixBase<T> &mat,
                              double tolerance_zero) const
 {

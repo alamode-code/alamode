@@ -16,12 +16,14 @@
 #include "timer.h"
 #include <Eigen/Core>
 
-namespace ALM_NS {
-class SymmetryOperation {
+namespace ALM_NS
+{
+class SymmetryOperation
+{
 public:
-    Eigen::Matrix3i rotation;         // in lattice basis
-    Eigen::Vector3d tran;             // in lattice basis
-    Eigen::Matrix3d rotation_cart;  // in Cartesian basis
+    Eigen::Matrix3i rotation;      // in lattice basis
+    Eigen::Vector3d tran;          // in lattice basis
+    Eigen::Matrix3d rotation_cart; // in Cartesian basis
     bool compatible_with_lattice;
     bool compatible_with_cartesian;
     bool is_translation;
@@ -65,12 +67,15 @@ public:
                 v2.push_back(a.tran[i]);
             }
         }
-        return std::lexicographical_compare(v1.begin(), v1.end(),
-                                            v2.begin(), v2.end());
+        return std::lexicographical_compare(v1.begin(),
+                                            v1.end(),
+                                            v2.begin(),
+                                            v2.end());
     }
 };
 
-class RotationMatrix {
+class RotationMatrix
+{
 public:
     Eigen::Matrix3i mat;
 
@@ -91,13 +96,15 @@ public:
     }
 };
 
-class Maps {
+class Maps
+{
 public:
     int atom_num;
     int tran_num;
 };
 
-class PrimitiveGroup {
+class PrimitiveGroup
+{
 public:
     std::map<int, int> map_index_p2s;
     Eigen::Vector3i shift_vector;
@@ -112,7 +119,8 @@ public:
     }
 };
 
-class Symmetry {
+class Symmetry
+{
 public:
     Symmetry();
 
@@ -161,17 +169,17 @@ private:
     // When nat_trueprim != primcell.number_of_atoms, ntran_prim will be larger
     // than 1.
 
-    std::vector<std::vector<int>> map_fullsymmetry_super;   // [nat_base, nsym_super]
-    std::vector<std::vector<int>> map_fullsymmetry_prim;   // [nat_base, nsym_super]
+    std::vector<std::vector<int>> map_fullsymmetry_super; // [nat_base, nsym_super]
+    std::vector<std::vector<int>> map_fullsymmetry_prim;  // [nat_base, nsym_super]
 
-    std::vector<std::vector<int>> map_trueprim_to_super;   // [nat_trueprim, ntran_super]
-    std::vector<Maps> map_super_to_trueprim;               // [nat_super]
-    std::vector<std::vector<int>> map_trueprim_to_prim; // [nat_trueprim, ntran_prim]
-    std::vector<Maps> map_prim_to_trueprim;             // [nat_prim]
-    std::vector<SymmetryOperation> symmetry_data_super; // [nsym_super]
-    std::vector<SymmetryOperation> symmetry_data_prim; // [nsym_prim]
-    std::vector<int> symnum_tran_super;            // [ntran_super]
-    std::vector<int> symnum_tran_prim;            // [ntran_prim]
+    std::vector<std::vector<int>> map_trueprim_to_super; // [nat_trueprim, ntran_super]
+    std::vector<Maps> map_super_to_trueprim;             // [nat_super]
+    std::vector<std::vector<int>> map_trueprim_to_prim;  // [nat_trueprim, ntran_prim]
+    std::vector<Maps> map_prim_to_trueprim;              // [nat_prim]
+    std::vector<SymmetryOperation> symmetry_data_super;  // [nsym_super]
+    std::vector<SymmetryOperation> symmetry_data_prim;   // [nsym_prim]
+    std::vector<int> symnum_tran_super;                  // [ntran_super]
+    std::vector<int> symnum_tran_prim;                   // [ntran_prim]
     std::vector<PrimitiveGroup> atomgroup_super;
 
     double tolerance;
@@ -221,11 +229,11 @@ private:
 
     void print_symminfo_stdout() const;
 
-    template<typename T>
+    template <typename T>
     bool is_compatible(const T [3][3],
                        double tolerance_zero = 1.0e-5) const;
 
-    template<typename T>
+    template <typename T>
     bool is_compatible(const Eigen::MatrixBase<T> &mat,
                        double tolerance_zero = 1.0e-5) const;
 

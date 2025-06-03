@@ -20,8 +20,10 @@
 #include <Eigen/Core>
 
 
-namespace ALM_NS {
-class InputParser {
+namespace ALM_NS
+{
+class InputParser
+{
 public:
     InputParser();
 
@@ -92,11 +94,11 @@ private:
 
     void get_var_dict(const std::vector<std::string> &,
                       std::map<std::string,
-                              std::string> &);
+                               std::string> &);
 
     [[nodiscard]] bool is_data_range_consistent(const DispForceFile &datfile_in) const;
 
-    template<typename T>
+    template <typename T>
     void assign_val(T &,
                     const std::string &,
                     std::map<std::string, std::string>);

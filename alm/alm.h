@@ -23,8 +23,10 @@
 #include "timer.h"
 #include "writer.h"
 
-namespace ALM_NS {
-class ALM {
+namespace ALM_NS
+{
+class ALM
+{
 public:
     ALM();
 
@@ -175,7 +177,7 @@ public:
                                        int fc_order) const; // harmonic=1, ...
     int get_displacement_patterns(int *atom_indices,
                                   double *disp_patterns,
-                                  int fc_order) const;          // harmonic=1, ...
+                                  int fc_order) const;                        // harmonic=1, ...
     [[nodiscard]] size_t get_number_of_fc_elements(const int fc_order) const; // harmonic=1, ...
     [[nodiscard]] size_t get_number_of_irred_fc_elements(const int fc_order); // harmonic=1, ...
 
@@ -184,18 +186,18 @@ public:
 
     void get_fc_origin(double *fc_values,
                        int *elem_indices, // (len(fc_value), fc_order) is flatten.
-                       int fc_order, // harmonic=1, ...
+                       int fc_order,      // harmonic=1, ...
                        int permutation = 1) const;
 
 
     void get_fc_irreducible(double *fc_values,
                             int *elem_indices, // (len(fc_value), fc_order) is flatten.
-                            int fc_order); // harmonic=1, ...
+                            int fc_order);     // harmonic=1, ...
 
 
     void get_fc_all(double *fc_values,
                     int *elem_indices, // (len(fc_value), fc_order) is flatten.
-                    int fc_order, // harmonic=1, ...
+                    int fc_order,      // harmonic=1, ...
                     int permutation = 1) const;
 
     void set_fc(double *fc_in) const;
@@ -230,7 +232,6 @@ public:
     [[nodiscard]] std::string get_format_pattern() const;
 
 private:
-
     int verbosity;
     bool structure_initialized;
     bool initialized_constraint_class;

@@ -215,7 +215,6 @@ void Cluster::check_permutation_symmetry(const std::unique_ptr<System> &system,
     int jat_prim;
     int i_periodic;
     std::vector<int> data_now;
-    std::vector<std::vector<int>> cell_dummy;
 
     std::vector<class RelativeVectors> relvecs1(order), relvecs2(order);
 
@@ -265,7 +264,7 @@ void Cluster::check_permutation_symmetry(const std::unique_ptr<System> &system,
                 std::sort(data_now.begin(), data_now.end());
 
                 // search for the corresponding cluster
-                auto cluster_tmp2 = interaction_cluster[order][jat_prim].find(InteractionCluster(data_now, cell_dummy));
+                auto cluster_tmp2 = interaction_cluster[order][jat_prim].find(InteractionCluster(data_now));
                 if (cluster_tmp2 == interaction_cluster[order][jat_prim].end()) {
                     std::cout << "permutation symmetry is NOT satisfied: ";
                     std::cout << "corresponding cluster does not exist\n";

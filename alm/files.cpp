@@ -18,8 +18,8 @@ Files::~Files() = default;
 
 void Files::init()
 {
-//    file_fcs = job_title + ".fcs";
-//    file_hes = job_title + ".hessian";
+    //    file_fcs = job_title + ".fcs";
+    //    file_hes = job_title + ".hessian";
 }
 
 void Files::set_prefix(const std::string prefix_in)
@@ -51,5 +51,3 @@ DispForceFile Files::get_datfile_validation() const
 {
     return datfile_validation;
 }
-
-

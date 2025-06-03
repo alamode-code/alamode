@@ -22,8 +22,10 @@
 
 #endif
 
-namespace ALM_NS {
-class Timer {
+namespace ALM_NS
+{
+class Timer
+{
 public:
     Timer();
 

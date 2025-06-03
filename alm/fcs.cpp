@@ -101,8 +101,8 @@ void Fcs::init(const std::unique_ptr<Cluster> &cluster,
         std::cout << '\n';
         for (i = 0; i < maxorder; ++i) {
             std::cout << "  Number of " << std::setw(9)
-                      << cluster->get_ordername(i)
-                      << " FCs : " << nequiv[i].size();
+                << cluster->get_ordername(i)
+                << " FCs : " << nequiv[i].size();
             std::cout << '\n';
         }
         std::cout << '\n';
@@ -215,7 +215,9 @@ void Fcs::generate_force_constant_table(const int order,
 
             if (!is_ascending(order + 2, ind)) continue;
 
-            i_prim = get_minimum_index_in_primitive(order + 2, ind, nat,
+            i_prim = get_minimum_index_in_primitive(order + 2,
+                                                    ind,
+                                                    nat,
                                                     symm_in->get_nat_trueprim(),
                                                     symm_in->get_map_trueprim_to_super());
             std::swap(ind[0], ind[i_prim]);
@@ -388,8 +390,10 @@ void Fcs::get_constraint_symmetry(const size_t nat,
     list_found.clear();
     for (const auto &p: fc_table_in) {
         for (i = 0; i < order + 2; ++i) index_tmp[i] = p.elems[i];
-        list_found.insert(FcProperty(order + 2, p.sign,
-                                     index_tmp, p.mother));
+        list_found.insert(FcProperty(order + 2,
+                                     p.sign,
+                                     index_tmp,
+                                     p.mother));
     }
 
 
@@ -445,7 +449,10 @@ void Fcs::get_constraint_symmetry(const size_t nat,
                     for (i = 0; i < order + 2; ++i)
                         ind[i] = 3 * atm_index_symm[i] + xyzcomponent[ixyz][i];
 
-                    i_prim = get_minimum_index_in_primitive(order + 2, ind, nat, natmin,
+                    i_prim = get_minimum_index_in_primitive(order + 2,
+                                                            ind,
+                                                            nat,
+                                                            natmin,
                                                             symmetry->get_map_trueprim_to_super());
                     std::swap(ind[0], ind[i_prim]);
                     sort_tail(order + 2, ind);
@@ -578,8 +585,10 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
     list_found.clear();
     for (const auto &p: fc_table_in) {
         for (i = 0; i < order + 2; ++i) index_tmp[i] = p.elems[i];
-        list_found.insert(FcProperty(order + 2, p.sign,
-                                     index_tmp, p.mother));
+        list_found.insert(FcProperty(order + 2,
+                                     p.sign,
+                                     index_tmp,
+                                     p.mother));
     }
 
 #ifdef _OPENMP
@@ -633,7 +642,10 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
                     for (i = 0; i < order + 2; ++i)
                         ind[i] = 3 * atm_index_symm[i] + xyzcomponent[ixyz][i];
 
-                    i_prim = get_minimum_index_in_primitive(order + 2, ind, nat, natmin,
+                    i_prim = get_minimum_index_in_primitive(order + 2,
+                                                            ind,
+                                                            nat,
+                                                            natmin,
                                                             symmetry->get_map_trueprim_to_super());
                     std::swap(ind[0], ind[i_prim]);
                     sort_tail(order + 2, ind);
@@ -787,7 +799,9 @@ void Fcs::set_forceconstant_cartesian(const int maxorder,
             nfc_cart_permu[i] = fc_cart[i].size();
             nfc_cart_nopermu[i] = std::count_if(fc_cart[i].begin(),
                                                 fc_cart[i].end(),
-                                                [](const ForceConstantTable &obj) { return obj.is_ascending_order; });
+                                                [](const ForceConstantTable &obj) {
+                                                    return obj.is_ascending_order;
+                                                });
         }
 
     } else if (preferred_basis == "Cartesian") {
@@ -820,7 +834,9 @@ void Fcs::set_forceconstant_cartesian(const int maxorder,
             nfc_cart_permu[i] = fc_cart[i].size();
             nfc_cart_nopermu[i] = std::count_if(fc_cart[i].begin(),
                                                 fc_cart[i].end(),
-                                                [](const ForceConstantTable &obj) { return obj.is_ascending_order; });
+                                                [](const ForceConstantTable &obj) {
+                                                    return obj.is_ascending_order;
+                                                });
         }
     }
 }
@@ -1031,7 +1047,9 @@ void Fcs::get_available_symmop(const size_t nat,
 
         for (const auto &it: symmetry->get_symmetry_data()) {
             if (it.compatible_with_lattice == use_compatible) {
-                rotation.emplace_back(it.rotation.unaryExpr([](const int x) { return static_cast<double>(x); }));
+                rotation.emplace_back(it.rotation.unaryExpr([](const int x) {
+                    return static_cast<double>(x);
+                }));
                 isym_to_add.emplace_back(counter);
             }
             ++counter;
@@ -1198,7 +1216,7 @@ void Fcs::set_basis_conversion_matrix(const Cell &supercell)
         for (auto i = 0; i < 3; ++i) {
             for (auto j = 0; j < 3; ++j) {
                 basis_conversion_matrix(i, j)
-                        = supercell.reciprocal_lattice_vector(i, j) * scale_factor;
+                    = supercell.reciprocal_lattice_vector(i, j) * scale_factor;
             }
         }
     } else if (preferred_basis == "Cartesian") {

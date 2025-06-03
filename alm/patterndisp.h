@@ -21,17 +21,21 @@
 #include "constraint.h"
 #include "system.h"
 
-namespace ALM_NS {
-class DispAtomSet {
+namespace ALM_NS
+{
+class DispAtomSet
+{
 public:
     std::vector<int> atomset;
 
     DispAtomSet();
 
-    DispAtomSet(std::vector<int> atomset_in) : atomset(std::move(atomset_in)) {}
+    DispAtomSet(std::vector<int> atomset_in) :
+        atomset(std::move(atomset_in)) {}
 };
 
-class DirectionVec {
+class DirectionVec
+{
 public:
     double direction[3]{};
 
@@ -43,7 +47,8 @@ public:
     }
 };
 
-class DispDirectionHarmonic {
+class DispDirectionHarmonic
+{
 public:
     int atom;
     std::vector<DirectionVec> directionlist;
@@ -60,7 +65,8 @@ public:
     }
 };
 
-class AtomWithDirection {
+class AtomWithDirection
+{
 public:
     std::vector<int> atoms;
     std::vector<double> directions;
@@ -68,7 +74,8 @@ public:
     AtomWithDirection();
 
     AtomWithDirection(std::vector<int> a,
-                      std::vector<double> b) : atoms(std::move(a)), directions(std::move(b)) {}
+                      std::vector<double> b) :
+        atoms(std::move(a)), directions(std::move(b)) {}
 
     AtomWithDirection(const int n,
                       const int *a,
@@ -87,12 +94,15 @@ public:
 inline bool operator<(const DispAtomSet &a,
                       const DispAtomSet &b)
 {
-    return std::lexicographical_compare(a.atomset.begin(), a.atomset.end(),
-                                        b.atomset.begin(), b.atomset.end());
+    return std::lexicographical_compare(a.atomset.begin(),
+                                        a.atomset.end(),
+                                        b.atomset.begin(),
+                                        b.atomset.end());
 }
 
 
-class IndexWithSign {
+class IndexWithSign
+{
 public:
     int ind, sign;
 
@@ -112,7 +122,8 @@ inline bool operator<(const IndexWithSign &a,
     return a.ind < b.ind;
 }
 
-class Displace {
+class Displace
+{
 public:
     Displace();
 

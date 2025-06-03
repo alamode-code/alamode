@@ -265,7 +265,3 @@ void smith_decomposition(const Eigen::MatrixXi &A,
 
     assert((L * A * R - D).isZero());
 }
-
-
-
-
