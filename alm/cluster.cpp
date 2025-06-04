@@ -311,7 +311,7 @@ void Cluster::check_permutation_symmetry(const std::unique_ptr<System> &system,
                     }
 
                     relvecs1[i_periodic].make_fractional_from_cartesian(
-                            system->get_supercell().reciprocal_lattice_vector);
+                        system->get_supercell().reciprocal_lattice_vector);
                 }
 
                 relvecs2.clear();
@@ -331,7 +331,7 @@ void Cluster::check_permutation_symmetry(const std::unique_ptr<System> &system,
                     }
 
                     relvecs2[i_periodic].make_fractional_from_cartesian(
-                            system->get_supercell().reciprocal_lattice_vector);
+                        system->get_supercell().reciprocal_lattice_vector);
                 }
 
                 if (relvecs1.size() != relvecs2.size()) {
@@ -385,7 +385,6 @@ void Cluster::check_permutation_symmetry(const std::unique_ptr<System> &system,
                     }
                     continue;
                 }
-
 
 
                 // compare relative vector
@@ -453,7 +452,7 @@ void Cluster::check_permutation_symmetry(const std::unique_ptr<System> &system,
                             }
                         }
                         std::cout << "corresponding periodic image does not exist for " << itmp
-                                  << "-th periodic image in current cluster\n";
+                            << "-th periodic image in current cluster\n";
                     } else {
                         // std::cout << "corresponding periodic image is found for " << itmp << "-th periodic image in current cluster\n";
                     }
@@ -610,7 +609,8 @@ void Cluster::print_neighborlist(const size_t nat,
             atoms_tmp.emplace_back(j);
             dists_tmp.emplace_back(distance_table[iat][j].distances[0]);
         }
-        std::sort(indices.begin(), indices.end(),
+        std::sort(indices.begin(),
+                  indices.end(),
                   [&dists_tmp, &atoms_tmp, &dist_tol](int left, int right) -> bool {
                       if (std::abs(dists_tmp[left] - dists_tmp[right]) > dist_tol) {
                           return dists_tmp[left] < dists_tmp[right];
@@ -636,7 +636,7 @@ void Cluster::print_neighborlist(const size_t nat,
 
         iat = map_p2s[i][0];
         std::cout << std::setw(5) << iat + 1 << " ("
-                  << std::setw(3) << kdname[kd[iat] - 1] << "): ";
+            << std::setw(3) << kdname[kd[iat] - 1] << "): ";
 
         auto dist_tmp = 0.0;
 
@@ -652,7 +652,7 @@ void Cluster::print_neighborlist(const size_t nat,
                     if (nthnearest > 1) std::cout << std::setw(13) << " ";
 
                     std::cout << std::setw(3) << nthnearest << std::setw(10) << dist_tmp
-                              << " (" << std::setw(3) << atomlist.size() << ") -";
+                        << " (" << std::setw(3) << atomlist.size() << ") -";
 
                     icount = 0;
                     for (k = 0; k < atomlist.size(); ++k) {
@@ -665,7 +665,7 @@ void Cluster::print_neighborlist(const size_t nat,
 
                         std::cout << std::setw(4) << atomlist[k] + 1;
                         std::cout << "(" << std::setw(3)
-                                  << kdname[kd[atomlist[k]] - 1] << ")";
+                            << kdname[kd[atomlist[k]] - 1] << ")";
 
                     }
                     std::cout << '\n';
@@ -684,7 +684,7 @@ void Cluster::print_neighborlist(const size_t nat,
             if (nthnearest > 1) std::cout << std::setw(13) << " ";
 
             std::cout << std::setw(3) << nthnearest << std::setw(10) << dist_tmp
-                      << " (" << std::setw(3) << atomlist.size() << ") -";
+                << " (" << std::setw(3) << atomlist.size() << ") -";
 
             icount = 0;
             for (k = 0; k < atomlist.size(); ++k) {
@@ -697,7 +697,7 @@ void Cluster::print_neighborlist(const size_t nat,
 
                 std::cout << std::setw(4) << atomlist[k] + 1;
                 std::cout << "(" << std::setw(3)
-                          << kdname[kd[atomlist[k]] - 1] << ")";
+                    << kdname[kd[atomlist[k]] - 1] << ")";
 
             }
             std::cout << '\n';
@@ -869,8 +869,8 @@ void Cluster::print_interaction_information(const size_t natmin,
 
             // write atoms inside the cutoff radius
             std::cout << "    Atom " << std::setw(5) << iat + 1
-                      << "(" << std::setw(3) << kdname[kd[iat] - 1]
-                      << ")" << " interacts with atoms ... \n";
+                << "(" << std::setw(3) << kdname[kd[iat] - 1]
+                << ")" << " interacts with atoms ... \n";
 
             for (size_t id = 0; id < intlist.size(); ++id) {
                 if (id % 6 == 0) {
@@ -882,12 +882,12 @@ void Cluster::print_interaction_information(const size_t natmin,
                     }
                 }
                 std::cout << std::setw(5) << intlist[id] + 1 << "("
-                          << std::setw(3) << kdname[kd[intlist[id]] - 1] << ")";
+                    << std::setw(3) << kdname[kd[intlist[id]] - 1] << ")";
             }
 
             std::cout << "\n\n";
             std::cout << "    Number of total interaction pairs = "
-                      << interaction_list[order][i].size() << "\n\n";
+                << interaction_list[order][i].size() << "\n\n";
         }
     }
 
@@ -1084,7 +1084,7 @@ void Cluster::set_interaction_cluster(const int order,
                 std::vector<int> accum_tmp;
                 std::vector<MinDistList> distance_list;
                 std::vector<std::vector<int>> pairs_icell, comb_cell, comb_cell_min;
-                std::set < InteractionCluster > interaction_cluster_omp;
+                std::set<InteractionCluster> interaction_cluster_omp;
 
                 int icount;
 
@@ -1213,7 +1213,8 @@ void Cluster::set_interaction_cluster(const int order,
                                 comb_cell_atom_center.emplace_back(cellpair);
                             }
 
-                            std::sort(distance_list.begin(), distance_list.end(),
+                            std::sort(distance_list.begin(),
+                                      distance_list.end(),
                                       MinDistList::compare_max_distance);
 
                             const auto distmax = *std::max_element(distance_list[0].dist.begin(),
@@ -1223,7 +1224,7 @@ void Cluster::set_interaction_cluster(const int order,
                                                                               comb_cell_atom_center,
                                                                               distmax));
 
-                        } else/* if(mirror_image_conv == 1)*/{
+                        } else/* if(mirror_image_conv == 1)*/ {
 
                             // assign IFCs to periodic images in which the sum of the distances between the atom pairs
                             // is the smallest.
@@ -1231,7 +1232,8 @@ void Cluster::set_interaction_cluster(const int order,
                             // Additional constraints are imposed in constraint.cpp to make the IFCs satisfy ASR
                             // after assigning IFCs to the periodic images.
 
-                            std::sort(distance_list.begin(), distance_list.end(),
+                            std::sort(distance_list.begin(),
+                                      distance_list.end(),
                                       MinDistList::compare_sum_distance);
                             comb_cell_min.clear();
 

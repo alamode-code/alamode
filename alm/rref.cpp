@@ -1,10 +1,7 @@
 #include "rref.h"
 #include "constraint.h"
-#include <cmath>
 #include <vector>
-#include <map>
 #include <algorithm>
-
 
 void rref(const size_t nrows,
           const size_t ncols,
@@ -144,13 +141,11 @@ void rref_sparse(const size_t ncols,
 
     const auto nrows = sp_constraint.size();
     size_t jrow;
-    double scaling_factor;
-    double division_factor;
 
     // This parameter controls the stability and performance.
-    // Smaller value is more stable but little more costly.
+    // Smaller value is more stable but a little more costly.
     //    double zero_criterion = tolerance * 1.0e-3;
-    const auto zero_criterion = eps15;
+    constexpr auto zero_criterion = eps10;
 
     size_t nrank = 0;
     size_t icol = 0;
@@ -187,9 +182,9 @@ void rref_sparse(const size_t ncols,
                            sp_constraint.begin() + pivot);
         }
 
-        division_factor = 1.0 / it_elem->second;
-        for (auto &it: sp_constraint[irow]) {
-            it.second *= division_factor;
+        const double division_factor = 1.0 / it_elem->second;
+        for (auto &[fst, snd]: sp_constraint[irow]) {
+            snd *= division_factor;
         }
 
         for (jrow = 0; jrow < nrows; ++jrow) {
@@ -197,25 +192,25 @@ void rref_sparse(const size_t ncols,
 
             it_elem = sp_constraint[jrow].find(icol);
             if (it_elem == sp_constraint[jrow].end()) continue;
-            scaling_factor = it_elem->second;
+            const double scaling_factor = it_elem->second;
 
             // Subtract irow elements from jrow
-            for (const auto &it_now: sp_constraint[irow]) {
-                // This part might be accelerated by using std::map::lower_bound
+            for (const auto &[fst, snd]: sp_constraint[irow]) {
+                // This part might be speeded up by using std::map::lower_bound
                 // when the datatype of sp_constraint[irow] is std::map.
-                if (it_now.first < icol) {
+                if (fst < icol) {
                     continue;
                 }
-                it_other = sp_constraint[jrow].find(it_now.first);
+                it_other = sp_constraint[jrow].find(fst);
                 if (it_other != sp_constraint[jrow].end()) {
-                    it_other->second -= scaling_factor * it_now.second;
-                    // Delete zero elements and remove from map. 
+                    it_other->second -= scaling_factor * snd;
+                    // Delete zero elements and remove from the map.
                     // A smaller threshold is used for better stability.
                     if (std::abs(it_other->second) < zero_criterion) {
                         sp_constraint[jrow].erase(it_other);
                     }
                 } else {
-                    sp_constraint[jrow][it_now.first] = -scaling_factor * it_now.second;
+                    sp_constraint[jrow][fst] = -scaling_factor * snd;
                 }
             }
             // Make sure to erase the icol element from the target row if it exists.
@@ -230,7 +225,7 @@ void rref_sparse(const size_t ncols,
 
     // Erase all elements smaller than the tolerance value
     for (jrow = 0; jrow < nrows; ++jrow) {
-        auto it_other = sp_constraint[jrow].begin();
+        it_other = sp_constraint[jrow].begin();
         while (it_other != sp_constraint[jrow].end()) {
             if (std::abs(it_other->second) <= tolerance) {
                 sp_constraint[jrow].erase(it_other++);

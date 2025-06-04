@@ -243,7 +243,7 @@ public:
     [[nodiscard]] std::string get_fc_file(const int) const;
 
     void set_fc_file(const int,
-                     const std::string);
+                     const std::string &);
 
     [[nodiscard]] bool get_fix_harmonic() const;
 
@@ -269,7 +269,7 @@ public:
 
     [[nodiscard]] std::string get_rotation_axis() const;
 
-    void set_rotation_axis(const std::string);
+    void set_rotation_axis(const std::string &);
 
     [[nodiscard]] const ConstraintSparseForm &get_const_symmetry(const int) const;
 
@@ -283,7 +283,7 @@ public:
 
     [[nodiscard]] const boost::bimap<size_t, size_t> &get_index_bimap(const int) const;
 
-    void set_constraint_flag(const std::string const_name, const int use_constraint);
+    void set_constraint_flag(const std::string &const_name, const int use_constraint);
 
     void show_status_constraint() const;
 
@@ -362,17 +362,17 @@ private:
 
     void setup_rotation_axis(bool [3][3]);
 
-    [[nodiscard]] bool is_allzero(const int,
-                                  const double *,
-                                  const int nshift = 0) const;
+    [[nodiscard]] static bool is_allzero(const int,
+                                         const double *,
+                                         const int nshift = 0);
 
-    [[nodiscard]] bool is_allzero(const std::vector<int> &,
-                                  int &) const;
+    [[nodiscard]] static bool is_allzero(const std::vector<int> &,
+                                         int &);
 
-    [[nodiscard]] bool is_allzero(const std::vector<double> &,
-                                  const double,
-                                  int &,
-                                  const int nshift = 0) const;
+    [[nodiscard]] static bool is_allzero(const std::vector<double> &,
+                                         const double,
+                                         int &,
+                                         const int nshift = 0);
 
 
     void remove_redundant_rows(const size_t n,
@@ -402,12 +402,11 @@ private:
     void get_constraint_translation_for_periodic_images(const Cell &supercell,
                                                         const std::unique_ptr<Symmetry> &symmetry,
                                                         const std::unique_ptr<Cluster> &cluster,
-                                                        const std::unique_ptr<Fcs> &fcs,
-                                                        const int order,
+                                                        int order,
                                                         const std::vector<FcProperty> &fc_table,
-                                                        const size_t nparams,
+                                                        size_t nparams,
                                                         ConstraintSparseForm &const_out,
-                                                        const bool do_rref) const;
+                                                        bool do_rref) const;
 
     // const_translation is updated.
     void generate_translational_constraint(const Cell &,
@@ -435,14 +434,14 @@ private:
     static void parse_forceconstants_from_xml(const int order,
                                               const std::unique_ptr<Symmetry> &symmetry,
                                               const std::unique_ptr<Fcs> &fcs,
-                                              const std::string file_to_fix,
+                                              const std::string &file_to_fix,
                                               std::vector<std::vector<int>> &intpair_fcs,
                                               std::vector<double> &fcs_values);
 
     static void parse_forceconstants_from_h5(const int order,
                                              const std::unique_ptr<Symmetry> &symmetry,
                                              const std::unique_ptr<Fcs> &fcs,
-                                             const std::string file_to_fix,
+                                             const std::string &file_to_fix,
                                              std::vector<std::vector<int>> &intpair_fcs,
                                              std::vector<double> &fcs_values);
 
@@ -469,24 +468,7 @@ private:
                                         std::vector<std::vector<ConstraintDoubleElement>> *const_self_vec,
                                         std::vector<std::vector<ConstraintDoubleElement>> *const_cross_vec);
 
-    void test_svd(ConstraintSparseForm &const_in, const int nparams) const;
 };
 
-extern "C"
-{
-void dgesvd_(char *jobu,
-             char *jobvt,
-             int *m,
-             int *n,
-             double *a,
-             int *lda,
-             double *s,
-             double *u,
-             int *ldu,
-             double *vt,
-             int *ldvt,
-             double *work,
-             int *lwork,
-             int *info);
-}
+
 }

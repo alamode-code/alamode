@@ -16,8 +16,10 @@
 #include "timer.h"
 #include <Eigen/Core>
 
-namespace ALM_NS {
-class AtomType {
+namespace ALM_NS
+{
+class AtomType
+{
 public:
     int element;
     double magmom;
@@ -34,7 +36,8 @@ public:
     }
 };
 
-class Cell {
+class Cell
+{
 public:
     Eigen::Matrix3d lattice_vector;
     Eigen::Matrix3d reciprocal_lattice_vector;
@@ -46,7 +49,8 @@ public:
     Eigen::MatrixXd x_cartesian;
 };
 
-class Spin {
+class Spin
+{
 public:
     bool lspin;
     int time_reversal_symm;
@@ -54,7 +58,8 @@ public:
     std::vector<std::vector<double>> magmom;
 };
 
-class System {
+class System
+{
 public:
     System();
 
@@ -110,7 +115,6 @@ public:
     [[nodiscard]] Eigen::Matrix3d compute_transmat_to_prim_using_spglib(const Cell &cell_input,
                                                                         const double symprec) const;
 
-
 private:
     // Variables for geometric structure
     Cell supercell, primcell, inputcell;
@@ -134,7 +138,8 @@ private:
     // concatenate atomic kind and magmom (only for collinear case)
     std::vector<std::vector<unsigned int>> atomtype_group_super, atomtype_group_prim;
 
-    enum LatticeType {
+    enum LatticeType
+    {
         Direct, Reciprocal
     };
 

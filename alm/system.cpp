@@ -22,7 +22,8 @@
 #include <Eigen/Geometry>
 #include <utility>
 
-extern "C" {
+extern "C"
+{
 #include "spglib.h"
 }
 
@@ -102,7 +103,7 @@ void System::set_basecell(const double lavec_in[3][3],
     for (i = 0; i < nkd; i++) {
         if (static_cast<size_t>(unique_nums[i]) > nkd) {
             std::cout << " WARNING : integers assigned to atoms are wrong. "
-                      << " The numbers will be resorted.\n";
+                << " The numbers will be resorted.\n";
             wrong_number = true;
             break;
         }
@@ -223,7 +224,9 @@ void System::build_primcell()
 
     for (auto i = 0; i < inputcell.number_of_atoms; ++i) {
         xf_tmp = xf_prim_all.row(i);
-        xf_tmp = xf_tmp.unaryExpr([](const double x) { return std::fmod(x, 1.0); });
+        xf_tmp = xf_tmp.unaryExpr([](const double x) {
+            return std::fmod(x, 1.0);
+        });
         for (auto j = 0; j < 3; ++j) {
             if (xf_tmp[j] < -eps6) xf_tmp[j] += 1.0;
         }
@@ -234,7 +237,9 @@ void System::build_primcell()
             for (auto kk = 0; kk < 3; ++kk) {
                 xf_tmp2[kk] = xf_unique[k][kk];
             }
-            xf_diff = (xf_tmp - xf_tmp2).unaryExpr([](const double x) { return std::fmod(x, 1.0); });
+            xf_diff = (xf_tmp - xf_tmp2).unaryExpr([](const double x) {
+                return std::fmod(x, 1.0);
+            });
             for (auto j = 0; j < 3; ++j) {
                 if (xf_diff[j] < -0.5) xf_diff[j] += 1.0;
                 if (xf_diff[j] >= 0.5) xf_diff[j] -= 1.0;
@@ -319,7 +324,7 @@ void System::build_supercell()
     Eigen::MatrixXd R_double = R.cast<double>();
     Eigen::MatrixXd L_double = L.cast<double>();
 
-//    std::cout << "transmat_to_super:" << transmat_to_super << '\n';
+    //    std::cout << "transmat_to_super:" << transmat_to_super << '\n';
 
     // (a_s, b_s, c_s) = (a_in, b_in, c_in) * Mat(inp->s)
     supercell.lattice_vector = inputcell.lattice_vector * transmat_to_super;
@@ -350,7 +355,9 @@ void System::build_supercell()
                 for (auto k = 0; k < D(2, 2); ++k) {
                     DD << static_cast<double>(i), static_cast<double>(j), static_cast<double>(k);
                     DD = transmat_newprim_to_origsuper * DD + xs_f;
-                    DD_mod = DD.unaryExpr([](const double x) { return std::fmod(x, 1.0); });
+                    DD_mod = DD.unaryExpr([](const double x) {
+                        return std::fmod(x, 1.0);
+                    });
                     // fmod allows negative values, so correct them.
                     for (auto m = 0; m < 3; ++m) {
                         if (DD_mod[m] < 0.0) DD_mod[m] += 1.0;
@@ -562,7 +569,7 @@ void System::set_atomtype_group(const Cell &cell_in,
 
     unsigned int i;
     AtomType type_tmp{};
-    std::set < AtomType > set_type;
+    std::set<AtomType> set_type;
     set_type.clear();
 
     for (i = 0; i < cell_in.number_of_atoms; ++i) {
@@ -681,8 +688,10 @@ Eigen::Matrix3d System::compute_transmat_to_prim_using_spglib(const Cell &cell_i
 
     Cell cell_out;
     Spin spin_out, spin_in;
-    find_primitive_cell(cell_input, spin_in,
-                        cell_out, spin_out,
+    find_primitive_cell(cell_input,
+                        spin_in,
+                        cell_out,
+                        spin_out,
                         symprec);
 
     transmat_out = cell_input.lattice_vector.inverse() * cell_out.lattice_vector;
@@ -889,7 +898,7 @@ void System::print_structure_stdout(const int verbosity)
 
     cout << "   Number of atoms : " << cell.number_of_atoms << "\n\n";
     cout << "   Supercell contains " << std::setw(5) << cell.number_of_atoms / nat_prim
-         << " primitive cells\n\n";
+        << " primitive cells\n\n";
 
     if (verbosity > 1) {
         cout << "   Cell volume = " << cell.volume << " (bohr^3)\n\n";
@@ -931,7 +940,7 @@ void System::print_magmom_stdout() const
     cout << " ====================\n\n";
 
     cout << "  MAGMOM is given.\n"
-            "  The magnetic moments of each atom in the primitive cell are as follows:\n";
+        "  The magnetic moments of each atom in the primitive cell are as follows:\n";
     for (size_t i = 0; i < primcell.number_of_atoms; ++i) {
         cout << setw(6) << i + 1;
         cout << setw(5) << spin_prim.magmom[i][0];
@@ -948,7 +957,7 @@ void System::print_magmom_stdout() const
             cout << "  TREVSYM = 1: Time-reversal symmetry will be considered for generating magnetic space group\n";
         } else {
             cout <<
-                 "  TREVSYM = 0: Time-reversal symmetry will NOT be considered for generating magnetic space group\n";
+                "  TREVSYM = 0: Time-reversal symmetry will NOT be considered for generating magnetic space group\n";
         }
     }
     cout << "\n\n";

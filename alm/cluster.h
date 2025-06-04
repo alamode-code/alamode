@@ -25,8 +25,10 @@
 #include "mathfunctions.h"
 
 
-namespace ALM_NS {
-class IntList {
+namespace ALM_NS
+{
+class IntList
+{
 public:
     std::vector<int> iarray;
 
@@ -46,8 +48,10 @@ public:
 
     auto operator<(const IntList &a) const -> bool
     {
-        return std::lexicographical_compare(iarray.begin(), iarray.end(),
-                                            a.iarray.begin(), a.iarray.end());
+        return std::lexicographical_compare(iarray.begin(),
+                                            iarray.end(),
+                                            a.iarray.begin(),
+                                            a.iarray.end());
     }
 
     bool operator==(const IntList &a) const
@@ -62,7 +66,8 @@ public:
     }
 };
 
-class RelativeVectors {
+class RelativeVectors
+{
 public:
     int order;
     std::vector<std::vector<double>> relvecs_cartesian;
@@ -137,7 +142,8 @@ public:
     }
 };
 
-class PairDistances {
+class PairDistances
+{
 public:
     std::vector<int> cells;
     std::vector<double> distances;
@@ -156,7 +162,8 @@ public:
     {
         std::vector<size_t> indices(distances_.size());
         std::iota(indices.begin(), indices.end(), 0);
-        std::sort(indices.begin(), indices.end(),
+        std::sort(indices.begin(),
+                  indices.end(),
                   [&distances_](int left, int right) -> bool {
                       return distances_[left] < distances_[right];
                   });
@@ -182,7 +189,8 @@ public:
     }
 };
 
-class MinDistList {
+class MinDistList
+{
 public:
     std::vector<int> cell;
     std::vector<double> dist;
@@ -190,8 +198,8 @@ public:
     MinDistList() = default;
 
     MinDistList(std::vector<int> cell_in,
-                std::vector<double> dist_in)
-            : cell(std::move(cell_in)), dist(std::move(dist_in)) {};
+                std::vector<double> dist_in) :
+        cell(std::move(cell_in)), dist(std::move(dist_in)) {};
 
     static bool compare_sum_distance(const MinDistList &a,
                                      const MinDistList &b)
@@ -219,7 +227,8 @@ public:
     }
 };
 
-class InteractionCluster {
+class InteractionCluster
+{
 public:
     std::vector<int> atom;
     std::vector<std::vector<int>> cell;
@@ -229,14 +238,15 @@ public:
 
     InteractionCluster(std::vector<int> atom_in,
                        std::vector<std::vector<int>> cell_in,
-                       const double dist_in)
-            : atom(std::move(atom_in)), cell(std::move(cell_in)), distmax(dist_in) {};
+                       const double dist_in) :
+        atom(std::move(atom_in)), cell(std::move(cell_in)), distmax(dist_in) {};
 
     InteractionCluster(std::vector<int> atom_in,
-                       std::vector<std::vector<int>> cell_in)
-            : atom(std::move(atom_in)), cell(std::move(cell_in)), distmax(0.0) {};
+                       std::vector<std::vector<int>> cell_in) :
+        atom(std::move(atom_in)), cell(std::move(cell_in)), distmax(0.0) {};
 
-    InteractionCluster(std::vector<int> atom_in) : atom(std::move(atom_in))
+    InteractionCluster(std::vector<int> atom_in) :
+        atom(std::move(atom_in))
     {
         distmax = 0.0;
         cell.clear();
@@ -244,12 +254,15 @@ public:
 
     bool operator<(const InteractionCluster &a) const
     {
-        return lexicographical_compare(atom.begin(), atom.end(),
-                                       a.atom.begin(), a.atom.end());
+        return lexicographical_compare(atom.begin(),
+                                       atom.end(),
+                                       a.atom.begin(),
+                                       a.atom.end());
     }
 };
 
-class Cluster {
+class Cluster
+{
 public:
     Cluster();
 
@@ -290,7 +303,6 @@ public:
                                                                               const size_t atom_index) const;
 
 private:
-
     int maxorder;
     int *nbody_include;
     double ***cutoff_radii;
@@ -380,9 +392,11 @@ private:
 };
 }
 
-namespace std {
-template<>
-struct hash<ALM_NS::IntList> {
+namespace std
+{
+template <>
+struct hash<ALM_NS::IntList>
+{
     std::size_t operator()(ALM_NS::IntList const &obj) const
     {
         hash<int> const hasher;

@@ -29,8 +29,10 @@ using MapConstraintElement = std::unordered_map<size_t, double>;
 #endif
 using ConstraintSparseForm = std::vector<MapConstraintElement>;
 
-namespace ALM_NS {
-class FcProperty {
+namespace ALM_NS
+{
+class FcProperty
+{
 public:
     std::vector<int> elems; // flattened index of (iatom, icoordinate) in the supercell
     double sign;            // factor (+1 or -1) to convert the mother FC to the child
@@ -54,8 +56,10 @@ public:
 
     bool operator<(const FcProperty &a) const
     {
-        return std::lexicographical_compare(elems.begin(), elems.end(),
-                                            a.elems.begin(), a.elems.end());
+        return std::lexicographical_compare(elems.begin(),
+                                            elems.end(),
+                                            a.elems.begin(),
+                                            a.elems.end());
     }
 
     bool operator==(const FcProperty &a) const
@@ -83,12 +87,15 @@ public:
             atom_array2[i] = b.elems[i] / 3;
         }
 
-        return std::lexicographical_compare(atom_array1.begin(), atom_array1.end(),
-                                            atom_array2.begin(), atom_array2.end());
+        return std::lexicographical_compare(atom_array1.begin(),
+                                            atom_array1.end(),
+                                            atom_array2.begin(),
+                                            atom_array2.end());
     }
 };
 
-class ForceConstantTable {
+class ForceConstantTable
+{
 public:
     double fc_value;
     std::vector<int> atoms, coords, flattenarray;
@@ -145,8 +152,10 @@ public:
 
     bool operator<(const ForceConstantTable &a) const
     {
-        return std::lexicographical_compare(flattenarray.begin(), flattenarray.end(),
-                                            a.flattenarray.begin(), a.flattenarray.end());
+        return std::lexicographical_compare(flattenarray.begin(),
+                                            flattenarray.end(),
+                                            a.flattenarray.begin(),
+                                            a.flattenarray.end());
     }
 
     bool operator==(const ForceConstantTable &a) const
@@ -161,12 +170,15 @@ public:
         const auto n2 = b.atoms.size();
         if (n1 != n2) return n1 < n2;
 
-        return std::lexicographical_compare(a.atoms.begin(), a.atoms.end(),
-                                            b.atoms.begin(), b.atoms.end());
+        return std::lexicographical_compare(a.atoms.begin(),
+                                            a.atoms.end(),
+                                            b.atoms.begin(),
+                                            b.atoms.end());
     }
 };
 
-class Fcs {
+class Fcs
+{
 public:
     Fcs();
 
@@ -185,31 +197,31 @@ public:
                                        const size_t nat,
                                        const std::set<IntList> &,
                                        const std::unique_ptr<Symmetry> &symm_in,
-                                       const std::string,
+                                       const std::string &,
                                        std::vector<FcProperty> &,
                                        std::vector<size_t> &,
                                        std::vector<FcProperty> &,
                                        const bool) const;
 
-    void get_constraint_symmetry(const size_t nat,
-                                 const std::unique_ptr<Symmetry> &symmetry,
-                                 const int order,
-                                 const std::string basis,
-                                 const std::vector<FcProperty> &fc_table_in,
-                                 const size_t nparams,
-                                 const double tolerance,
-                                 ConstraintSparseForm &const_out,
-                                 const bool do_rref = false) const;
+    static void get_constraint_symmetry(const size_t nat,
+                                        const std::unique_ptr<Symmetry> &symmetry,
+                                        const int order,
+                                        const std::string &basis,
+                                        const std::vector<FcProperty> &fc_table_in,
+                                        const size_t nparams,
+                                        const double tolerance,
+                                        ConstraintSparseForm &const_out,
+                                        const bool do_rref = false);
 
-    void get_constraint_symmetry_in_integer(const size_t nat,
-                                            const std::unique_ptr<Symmetry> &symmetry,
-                                            const int order,
-                                            const std::string basis,
-                                            const std::vector<FcProperty> &fc_table_in,
-                                            const size_t nparams,
-                                            const double tolerance,
-                                            ConstraintSparseForm &const_out,
-                                            const bool do_rref = false) const;
+    static void get_constraint_symmetry_in_integer(const size_t nat,
+                                                   const std::unique_ptr<Symmetry> &symmetry,
+                                                   const int order,
+                                                   const std::string &basis,
+                                                   const std::vector<FcProperty> &fc_table_in,
+                                                   const size_t nparams,
+                                                   const double tolerance,
+                                                   ConstraintSparseForm &const_out,
+                                                   const bool do_rref = false);
 
     [[nodiscard]] std::vector<size_t> *get_nequiv() const;
 
@@ -219,7 +231,7 @@ public:
 
     [[nodiscard]] std::vector<size_t> get_nfc_cart(const int permutation) const;
 
-    void set_forceconstant_basis(const std::string preferred_basis_in);
+    void set_forceconstant_basis(const std::string &preferred_basis_in);
 
     [[nodiscard]] std::string get_forceconstant_basis() const;
 
@@ -232,8 +244,8 @@ public:
 
     [[nodiscard]] double get_fc_zero_threshold() const;
 
-    void translate_forceconstant_index_to_centercell(const std::unique_ptr<Symmetry> &symmetry,
-                                                     std::vector<std::vector<int>> &index_inout) const;
+    static void translate_forceconstant_index_to_centercell(const std::unique_ptr<Symmetry> &symmetry,
+                                                            std::vector<std::vector<int>> &index_inout);
 
     void change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
                                       std::vector<ForceConstantTable> &fc_out,
@@ -245,8 +257,8 @@ private:
     std::vector<FcProperty> *fc_zeros; // zero force constants (due to space group symm.)
 
     std::vector<ForceConstantTable> *fc_cart; // all force constants in Cartesian coordinate
-    std::vector<size_t> nfc_cart_permu; // Number of nonzero elements with permutation
-    std::vector<size_t> nfc_cart_nopermu; // Number of nonzero elements without permutation
+    std::vector<size_t> nfc_cart_permu;       // Number of nonzero elements with permutation
+    std::vector<size_t> nfc_cart_nopermu;     // Number of nonzero elements without permutation
 
     std::string preferred_basis; // "Cartesian" or "Lattice"
     Eigen::Matrix3d basis_conversion_matrix;
@@ -281,7 +293,7 @@ private:
 
     static void get_available_symmop(const size_t nat,
                                      const std::unique_ptr<Symmetry> &symmetry,
-                                     const std::string basis,
+                                     const std::string &basis,
                                      std::vector<std::vector<int>> &mapping_symm,
                                      std::vector<Eigen::Matrix3d> &rotation,
                                      const bool use_compatible);
@@ -303,14 +315,16 @@ private:
 
 // Define a hash function for FcProperty class
 // Use boost::hash_combine
-namespace std {
-template<>
-struct hash<ALM_NS::FcProperty> {
+namespace std
+{
+template <>
+struct hash<ALM_NS::FcProperty>
+{
     std::size_t operator()(ALM_NS::FcProperty const &obj) const
     {
         hash<int> hasher;
         size_t seed = 0;
-        for (auto i: obj.elems) {
+        for (const auto i: obj.elems) {
             seed ^= hasher(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         }
         return seed;
