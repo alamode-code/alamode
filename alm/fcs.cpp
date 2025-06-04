@@ -19,14 +19,13 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <cstddef>
 #include <string>
 #include <cmath>
 #include <fstream>
 
 #include "../external/combination.hpp"
 #include <unordered_set>
-#include "svd.h"
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 
 #if defined(_WIN32) || defined(_WIN64)
 #undef min
@@ -238,7 +237,7 @@ void Fcs::generate_force_constant_table(const int order,
 
                 for (int i2 = 0; i2 < nxyz; ++i2) {
 
-                    double c_tmp = coef_sym(order + 2,
+                    double const c_tmp = coef_sym(order + 2,
                                             rotation[isym],
                                             xyzcomponent[i1],
                                             xyzcomponent[i2]);
@@ -307,7 +306,7 @@ void Fcs::generate_force_constant_table(const int order,
             if (is_zero) {
                 if (store_zeros_in) {
                     for (auto it = fc_vec.rbegin(); it != fc_vec.rbegin() + ndeps; ++it) {
-                        (*it).mother = std::numeric_limits<size_t>::max();
+                        it->mother = std::numeric_limits<size_t>::max();
                         fc_zeros_out.push_back(*it);
                     }
                 }
@@ -575,7 +574,7 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
     int nsym_in_use;
     std::unordered_set<FcProperty> list_found;
 
-    typedef std::vector<ConstraintIntegerElement> ConstEntry;
+    using ConstEntry = std::vector<ConstraintIntegerElement>;
     std::vector<ConstEntry> constraint_all;
     ConstEntry const_tmp;
 
@@ -716,8 +715,7 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
 
     deallocate(xyzcomponent);
     deallocate(index_tmp);
-
-    std::sort(constraint_all.begin(), constraint_all.end());
+    boost::sort::block_indirect_sort(constraint_all.begin(), constraint_all.end());
     constraint_all.erase(std::unique(constraint_all.begin(),
                                      constraint_all.end()),
                          constraint_all.end());

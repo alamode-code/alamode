@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 #include <string>
-#include <iomanip>
 #include <map>
 #include <unordered_set>
 #include "constants.h"
@@ -295,7 +294,8 @@ public:
                                   const std::unique_ptr<Cluster> &cluster,
                                   const std::unique_ptr<Fcs> &fcs,
                                   const int verbosity,
-                                  const int periodic_image_conv);
+                                  const int periodic_image_conv,
+                                  const bool do_rref = true);
 
     [[nodiscard]] bool ready_all_constraints() const;
 
@@ -347,8 +347,9 @@ private:
                                         const std::unique_ptr<Symmetry> &symmetry,
                                         const std::unique_ptr<Cluster> &cluster,
                                         const std::unique_ptr<Fcs> &fcs,
-                                        const int,
-                                        const double);
+                                        const int verbosity,
+                                        const double tolerance,
+                                        const bool do_rref = true);
 
 
     // const_mat and const_rhs are updated.
@@ -356,7 +357,7 @@ private:
                                                 const std::vector<size_t> *nequiv,
                                                 const size_t nparams) const;
 
-    void print_constraint(const ConstraintSparseForm &) const;
+    static void print_constraint(const ConstraintSparseForm &);
 
     void print_constraint_information(const std::unique_ptr<Cluster> &cluster) const;
 
@@ -384,7 +385,8 @@ private:
                                       const std::unique_ptr<Symmetry> &symmetry,
                                       const std::unique_ptr<Cluster> &cluster,
                                       const std::unique_ptr<Fcs> &fcs,
-                                      const int verbosity);
+                                      const int verbosity,
+                                      const bool do_rref = true);
 
     void generate_fix_constraint(const std::unique_ptr<Symmetry> &symmetry,
                                  const std::unique_ptr<Fcs> &fcs);
@@ -409,19 +411,21 @@ private:
                                                         bool do_rref) const;
 
     // const_translation is updated.
-    void generate_translational_constraint(const Cell &,
+    void generate_translational_constraint(const Cell &supercell,
                                            const std::unique_ptr<Symmetry> &symmetry,
                                            const std::unique_ptr<Cluster> &cluster,
                                            const std::unique_ptr<Fcs> &fcs,
                                            const int,
-                                           const int);
+                                           const int,
+                                           const bool do_rref = true);
 
-    void generate_huang_constraint(const Cell &,
+    void generate_huang_constraint(const Cell &supercell,
                                    const std::unique_ptr<Symmetry> &symmetry,
                                    const std::unique_ptr<Cluster> &cluster,
                                    const std::unique_ptr<Fcs> &fcs,
                                    const std::vector<Eigen::MatrixXd> &x_image,
-                                   const int verbosity);
+                                   const int verbosity,
+                                   const bool do_rref = true);
 
 
     static void get_forceconstants_from_file(const int order,
@@ -468,6 +472,43 @@ private:
                                         std::vector<std::vector<ConstraintDoubleElement>> *const_self_vec,
                                         std::vector<std::vector<ConstraintDoubleElement>> *const_cross_vec);
 
+    void update_constraint_symmetry(const size_t nat,
+                                    const int maxorder,
+                                    const std::unique_ptr<Symmetry> &symmetry,
+                                    const std::unique_ptr<Cluster> &cluster,
+                                    const std::unique_ptr<Fcs> &fcs,
+                                    const int verbosity,
+                                    const bool do_rref = true);
+
+    void update_constraint_translation(const Cell &supercell,
+                                       const int maxorder,
+                                       const std::unique_ptr<Symmetry> &symmetry,
+                                       const std::unique_ptr<Cluster> &cluster,
+                                       const std::unique_ptr<Fcs> &fcs,
+                                       const int periodic_image_conv,
+                                       const int verbosity,
+                                       const bool do_rref = true);
+
+
+    void update_constraint_rotation(const std::unique_ptr<System> &system,
+                                    const int maxorder,
+                                    const std::unique_ptr<Symmetry> &symmetry,
+                                    const std::unique_ptr<Cluster> &cluster,
+                                    const std::unique_ptr<Fcs> &fcs,
+                                    const int periodic_image_conv,
+                                    const int verbosity,
+                                    const bool do_rref = true);
+
+    void update_constraint_huang(const std::unique_ptr<System> &system,
+                                 const std::unique_ptr<Symmetry> &symmetry,
+                                 const std::unique_ptr<Cluster> &cluster,
+                                 const std::unique_ptr<Fcs> &fcs,
+                                 const int verbosity,
+                                 const bool do_rref = true);
+
+    void update_constraint_fix(const int maxorder,
+                               const std::unique_ptr<Symmetry> &symmetry,
+                               const std::unique_ptr<Fcs> &fcs);
 };
 
 

@@ -323,16 +323,6 @@ private:
                                   const std::unique_ptr<Constraint> &constraint,
                                   const int verbosity) const;
 
-    int fit_with_constraints(const size_t N,
-                             const size_t M,
-                             const size_t P,
-                             double *amat,
-                             const double *bvec,
-                             double *param_out,
-                             const double *const *cmat,
-                             double *dvec,
-                             const int verbosity) const;
-
     int solve_normal_equation(const size_t N,
                               double *amat,
                               double *bvec,
@@ -467,59 +457,4 @@ inline double shrink(const double x,
     return sign * std::max<double>(xabs - a, 0.0);
 }
 
-extern "C"
-{
-void dgelss_(int *m,
-             int *n,
-             int *nrhs,
-             double *a,
-             int *lda,
-             double *b,
-             int *ldb,
-             double *s,
-             double *rcond,
-             int *rank,
-             double *work,
-             int *lwork,
-             int *info);
-
-void dgglse_(int *m,
-             int *n,
-             int *p,
-             double *a,
-             int *lda,
-             double *b,
-             int *ldb,
-             double *c,
-             double *d,
-             double *x,
-             double *work,
-             int *lwork,
-             int *info);
-
-void dgeqp3_(int *m,
-             int *n,
-             double *a,
-             int *lda,
-             int *jpvt,
-             double *tau,
-             double *work,
-             int *lwork,
-             int *info);
-
-void dpotrf_(char *uplo,
-             int *n,
-             double *a,
-             int *lda,
-             int *info);
-
-void dpotrs_(char *uplo,
-             int *n,
-             int *nrhs,
-             double *a,
-             int *lda,
-             double *b,
-             int *ldb,
-             int *info);
-}
 }

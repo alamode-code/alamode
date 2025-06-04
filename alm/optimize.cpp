@@ -17,6 +17,8 @@
 #include "memory.h"
 #include "symmetry.h"
 #include "timer.h"
+#include "lapack_wrapper.h"
+#include "least_squares.h"
 #include <iostream>
 #include <cmath>
 #include <memory>
@@ -28,6 +30,7 @@
 #include <Eigen/SparseQR>
 #include <Eigen/SparseCholesky>
 #include <Eigen/IterativeLinearSolvers>
+#include <Eigen/Dense>  // for SVD nullspace solver
 
 #include <omp.h>
 
@@ -339,18 +342,16 @@ int Optimize::least_squares(const int maxorder,
                                                 constraint,
                                                 verbosity);
             } else if (constraint->get_exist_constraint()) {
-                // Perform fitting with QRD
-                info_fitting
-                    = fit_with_constraints(N,
-                                           M,
-                                           constraint->get_number_of_constraints(),
-                                           matrix_out->amat_dense.data(),
-                                           matrix_out->bvec.data(),
-                                           param_out.data(),
-                                           constraint->get_const_mat(),
-                                           constraint->get_const_rhs(),
-                                           verbosity);
 
+                info_fitting = least_squares_with_constraints_gqr(N,
+                                                                  M,
+                                                                  constraint->get_number_of_constraints(),
+                                                                  matrix_out->amat_dense.data(),
+                                                                  matrix_out->bvec.data(),
+                                                                  param_out.data(),
+                                                                  constraint->get_const_mat(),
+                                                                  constraint->get_const_rhs(),
+                                                                  verbosity);
             } else {
                 // Perform fitting with SVD
                 info_fitting
@@ -365,6 +366,7 @@ int Optimize::least_squares(const int maxorder,
     }
     return info_fitting;
 }
+
 
 int Optimize::compressive_sensing(const std::string &job_prefix,
                                   const int maxorder,
@@ -1926,129 +1928,6 @@ int Optimize::fit_without_constraints(const size_t N,
     return INFO;
 }
 
-int Optimize::fit_with_constraints(const size_t N,
-                                   const size_t M,
-                                   const size_t P,
-                                   double *amat,
-                                   const double *bvec,
-                                   double *param_out,
-                                   const double *const *cmat,
-                                   double *dvec,
-                                   const int verbosity) const
-{
-    size_t i, j;
-    int N_tmp, M_tmp, P_tmp;
-    double *fsum2;
-    double *mat_tmp;
-
-    if (verbosity > 0) {
-        std::cout << "  Entering fitting routine: QRD with constraints" << '\n';
-    }
-
-    allocate(fsum2, M);
-    allocate(mat_tmp, (M + P) * N);
-
-    size_t k = 0;
-    size_t l = 0;
-
-    // Concatenate two matrices as 1D array
-    for (j = 0; j < N; ++j) {
-        for (i = 0; i < M; ++i) {
-            mat_tmp[k++] = amat[l++];
-        }
-        for (i = 0; i < P; ++i) {
-            mat_tmp[k++] = cmat[i][j];
-        }
-    }
-
-    const auto nrank = rankQRD((M + P), N, mat_tmp, eps12);
-    deallocate(mat_tmp);
-
-    if (nrank != N) {
-        std::cout << '\n';
-        std::cout << " **************************************************************************\n";
-        std::cout << "  WARNING : rank deficient.                                                \n";
-        std::cout << "  rank ( (A) ) ! = N            A: Fitting matrix     B: Constraint matrix \n";
-        std::cout << "       ( (B) )                  N: The number of parameters                \n";
-        std::cout << "  rank = " << nrank << " N = " << N << "\n\n";
-        std::cout << "  This can cause a difficulty in solving the fitting problem properly      \n";
-        std::cout << "  with DGGLSE, especially when the difference is large. Please check if    \n";
-        std::cout << "  you obtain reliable force constants in the .fcs file.                    \n\n";
-        std::cout << "  You may need to reduce the cutoff radii and/or increase NDATA            \n";
-        std::cout << "  by giving linearly-independent displacement patterns.                    \n";
-        std::cout << " **************************************************************************\n\n";
-    }
-
-    auto f_square = 0.0;
-    for (i = 0; i < M; ++i) {
-        fsum2[i] = bvec[i];
-        f_square += std::pow(bvec[i], 2);
-    }
-    if (verbosity > 0) std::cout << "  QR-Decomposition has started ...";
-
-    double *cmat_mod;
-    allocate(cmat_mod, P * N);
-
-    k = 0;
-    for (j = 0; j < N; ++j) {
-        for (i = 0; i < P; ++i) {
-            cmat_mod[k++] = cmat[i][j];
-        }
-    }
-
-    // Fitting
-
-    auto LWORK = static_cast<int>(P) + std::min<int>(M, N) + 10 * std::max<int>(M, N);
-    int INFO;
-    double *WORK, *x;
-    allocate(WORK, LWORK);
-    allocate(x, N);
-
-    // M_tmp, N_tmp, P_tmp are prepared to cast N, M, P to (non-const)
-    // int.
-    M_tmp = M;
-    N_tmp = N;
-    P_tmp = P;
-    dgglse_(&M_tmp,
-            &N_tmp,
-            &P_tmp,
-            amat,
-            &M_tmp,
-            cmat_mod,
-            &P_tmp,
-            fsum2,
-            dvec,
-            x,
-            WORK,
-            &LWORK,
-            &INFO);
-
-    if (verbosity > 0) std::cout << " finished. \n";
-
-    auto f_residual = 0.0;
-    for (i = N - P; i < M; ++i) {
-        f_residual += std::pow(fsum2[i], 2);
-    }
-
-    if (verbosity > 0) {
-        std::cout << '\n' << "  Residual sum of squares for the solution: "
-            << sqrt(f_residual) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << std::sqrt(f_residual / f_square) * 100.0 << '\n';
-    }
-
-    // copy fcs to bvec
-    for (i = 0; i < N; ++i) {
-        param_out[i] = x[i];
-    }
-
-    deallocate(cmat_mod);
-    deallocate(WORK);
-    deallocate(x);
-    deallocate(fsum2);
-
-    return INFO;
-}
 
 int Optimize::fit_algebraic_constraints(const size_t N,
                                         const size_t M,

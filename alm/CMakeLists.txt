@@ -95,7 +95,8 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/alm.cpp
             ${PROJECT_SOURCE_DIR}/timer.cpp
             ${PROJECT_SOURCE_DIR}/writer.cpp
             ${PROJECT_SOURCE_DIR}/smith.cpp
-            ${PROJECT_SOURCE_DIR}/svd.cpp)
+            ${PROJECT_SOURCE_DIR}/svd.cpp
+            ${PROJECT_SOURCE_DIR}/least_squares.cpp)
 
 set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
             ${PROJECT_SOURCE_DIR}/cluster.h
@@ -112,7 +113,8 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
             ${PROJECT_SOURCE_DIR}/timer.h
             ${PROJECT_SOURCE_DIR}/writer.h
             ${PROJECT_SOURCE_DIR}/smith.h
-            ${PROJECT_SOURCE_DIR}/svd.h)
+            ${PROJECT_SOURCE_DIR}/svd.h
+            ${PROJECT_SOURCE_DIR}/least_squares.h)
 
 # # Trick to use gcc to compile *.cpp: This doesn't work because of boost
 # SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE C)

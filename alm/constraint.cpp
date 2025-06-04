@@ -32,7 +32,6 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-#include <Eigen/Dense>
 #include <highfive/H5Easy.hpp>
 
 using namespace ALM_NS;
@@ -235,7 +234,8 @@ void Constraint::setup(const std::unique_ptr<System> &system,
                              cluster,
                              fcs,
                              verbosity,
-                             periodic_image_conv);
+                             periodic_image_conv,
+                             true);
 
     if (verbosity > 0) {
         print_constraint_information(cluster);
@@ -247,26 +247,39 @@ void Constraint::setup(const std::unique_ptr<System> &system,
     timer->stop_clock("constraint");
 }
 
-void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
-                                          const std::unique_ptr<Symmetry> &symmetry,
-                                          const std::unique_ptr<Cluster> &cluster,
-                                          const std::unique_ptr<Fcs> &fcs,
-                                          const int verbosity,
-                                          const int periodic_image_conv)
+void Constraint::update_constraint_symmetry(const size_t nat,
+                                            const int maxorder,
+                                            const std::unique_ptr<Symmetry> &symmetry,
+                                            const std::unique_ptr<Cluster> &cluster,
+                                            const std::unique_ptr<Fcs> &fcs,
+                                            const int verbosity,
+                                            const bool do_rref)
 {
-    const auto maxorder = cluster->get_maxorder();
-    // const_symmetry is updated.
+
     if (const_symmetry.size() != maxorder) const_symmetry.resize(maxorder);
 
     if (status_constraint_subset["symmetry"] == 0) {
-        generate_symmetry_constraint(system->get_supercell().number_of_atoms,
+        generate_symmetry_constraint(nat,
                                      symmetry,
                                      cluster,
                                      fcs,
-                                     verbosity);
+                                     verbosity,
+                                     do_rref);
+
+        status_constraint_subset["symmetry"] = 1;
     }
 
-    // const_translation is updated.
+}
+
+void Constraint::update_constraint_translation(const Cell &supercell,
+                                               const int maxorder,
+                                               const std::unique_ptr<Symmetry> &symmetry,
+                                               const std::unique_ptr<Cluster> &cluster,
+                                               const std::unique_ptr<Fcs> &fcs,
+                                               const int periodic_image_conv,
+                                               const int verbosity,
+                                               const bool do_rref)
+{
     if (const_translation.size() != maxorder) const_translation.resize(maxorder);
 
     if (status_constraint_subset["translation"] == -1) {
@@ -276,15 +289,27 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         }
     }
     if (status_constraint_subset["translation"] == 0) {
-        generate_translational_constraint(system->get_supercell(),
+        generate_translational_constraint(supercell,
                                           symmetry,
                                           cluster,
                                           fcs,
                                           periodic_image_conv,
-                                          verbosity);
+                                          verbosity,
+                                          do_rref);
+        status_constraint_subset["translation"] = 1;
     }
+}
 
-    // const_rotation_self and const_rotation_cross are updated.
+
+void Constraint::update_constraint_rotation(const std::unique_ptr<System> &system,
+                                            const int maxorder,
+                                            const std::unique_ptr<Symmetry> &symmetry,
+                                            const std::unique_ptr<Cluster> &cluster,
+                                            const std::unique_ptr<Fcs> &fcs,
+                                            const int periodic_image_conv,
+                                            const int verbosity,
+                                            const bool do_rref)
+{
     if (const_rotation_self.size() != maxorder) const_rotation_self.resize(maxorder);
     if (const_rotation_cross.size() != maxorder) const_rotation_cross.resize(maxorder);
 
@@ -306,9 +331,20 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                        fcs,
                                        verbosity,
                                        tolerance_constraint);
-    }
 
-    // Huang constraint only for the harmonic IFCs
+        if (status_constraint_subset["rotation"] == 0) status_constraint_subset["rotation"] = 1;
+        if (status_constraint_subset["rotation_extra"] == 0) status_constraint_subset["rotation_extra"] = 1;
+
+    }
+}
+
+void Constraint::update_constraint_huang(const std::unique_ptr<System> &system,
+                                         const std::unique_ptr<Symmetry> &symmetry,
+                                         const std::unique_ptr<Cluster> &cluster,
+                                         const std::unique_ptr<Fcs> &fcs,
+                                         const int verbosity,
+                                         const bool do_rref)
+{
     if (const_huang.size() != 1) const_huang.resize(1);
     if (status_constraint_subset["huang"] == -1) {
         const_huang[0].clear();
@@ -323,10 +359,16 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                   cluster,
                                   fcs,
                                   system->get_x_image(),
-                                  verbosity);
+                                  verbosity,
+                                  do_rref);
+        status_constraint_subset["huang"] = 1;
     }
+}
 
-    // const_fix is updated.
+void Constraint::update_constraint_fix(const int maxorder,
+                                       const std::unique_ptr<Symmetry> &symmetry,
+                                       const std::unique_ptr<Fcs> &fcs)
+{
     if (const_fix.size() != maxorder) const_fix.resize(maxorder);
     if (status_constraint_subset["fix2"] == -1 or status_constraint_subset["fix3"] == -1) {
         for (auto order = 0; order < maxorder; ++order) {
@@ -339,7 +381,59 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         generate_fix_constraint(symmetry,
                                 fcs);
     }
+}
 
+
+void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
+                                          const std::unique_ptr<Symmetry> &symmetry,
+                                          const std::unique_ptr<Cluster> &cluster,
+                                          const std::unique_ptr<Fcs> &fcs,
+                                          const int verbosity,
+                                          const int periodic_image_conv,
+                                          const bool do_rref)
+{
+    const auto maxorder = cluster->get_maxorder();
+
+    // const_symmetry is updated.
+    update_constraint_symmetry(system->get_supercell().number_of_atoms,
+                               maxorder,
+                               symmetry,
+                               cluster,
+                               fcs,
+                               verbosity,
+                               do_rref);
+
+    // const_translation is updated.
+    update_constraint_translation(system->get_supercell(),
+                                  maxorder,
+                                  symmetry,
+                                  cluster,
+                                  fcs,
+                                  periodic_image_conv,
+                                  verbosity,
+                                  do_rref);
+
+    // const_rotation_self and const_rotation_cross are updated.
+    update_constraint_rotation(system,
+                               maxorder,
+                               symmetry,
+                               cluster,
+                               fcs,
+                               periodic_image_conv,
+                               verbosity,
+                               do_rref);
+
+    // Huang constraint is updated.
+    update_constraint_huang(system,
+                            symmetry,
+                            cluster,
+                            fcs,
+                            verbosity,
+                            do_rref);
+
+
+    // const_fix is updated.
+    update_constraint_fix(maxorder, symmetry, fcs);
 
     // Merge intra-order constraints and do reduction
     if (const_self.size() != maxorder) const_self.resize(maxorder);
@@ -398,7 +492,7 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         //            nparams += fcs->get_nequiv()[order2].size();
         //        }
         //test_svd(const_self[order], nparams);
-        rref_sparse(nparam, const_self[order], tolerance_constraint);
+        if (do_rref) rref_sparse(nparam, const_self[order], tolerance_constraint);
     }
 
 
@@ -604,7 +698,6 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
     }
 
     size_t irow = 0;
-    //    size_t icol = 0;
     size_t ishift = 0;
 
     if (fix_harmonic) {
@@ -615,7 +708,6 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
         }
 
         irow += const_fix[0].size();
-        //        icol += const_fix[0].size();
         ishift += const_fix[0].size();
     }
 
@@ -629,7 +721,6 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
         }
 
         irow += const_fix[1].size();
-        //icol += const_fix[1].size();
     }
 
     for (auto &p: const_total) {
@@ -934,7 +1025,8 @@ void Constraint::generate_symmetry_constraint(const size_t nat,
                                               const std::unique_ptr<Symmetry> &symmetry,
                                               const std::unique_ptr<Cluster> &cluster,
                                               const std::unique_ptr<Fcs> &fcs,
-                                              const int verbosity)
+                                              const int verbosity,
+                                              const bool do_rref)
 {
     // Create constraint matrices arising from the crystal symmetry.
     // This function clears and updates const_symmetry.
@@ -975,7 +1067,7 @@ void Constraint::generate_symmetry_constraint(const size_t nat,
         }
 
         if (fcs->get_forceconstant_basis() == "Lattice") {
-            fcs->get_constraint_symmetry_in_integer(nat,
+            Fcs::get_constraint_symmetry_in_integer(nat,
                                                     symmetry,
                                                     order,
                                                     fcs->get_forceconstant_basis(),
@@ -983,9 +1075,9 @@ void Constraint::generate_symmetry_constraint(const size_t nat,
                                                     fcs->get_nequiv()[order].size(),
                                                     tolerance_constraint,
                                                     const_symmetry[order],
-                                                    true);
+                                                    do_rref);
         } else {
-            fcs->get_constraint_symmetry(nat,
+            Fcs::get_constraint_symmetry(nat,
                                          symmetry,
                                          order,
                                          fcs->get_forceconstant_basis(),
@@ -993,7 +1085,7 @@ void Constraint::generate_symmetry_constraint(const size_t nat,
                                          fcs->get_nequiv()[order].size(),
                                          tolerance_constraint,
                                          const_symmetry[order],
-                                         true);
+                                         do_rref);
         }
 
         if (has_constraint_from_symm) {
@@ -1004,8 +1096,6 @@ void Constraint::generate_symmetry_constraint(const size_t nat,
     if (has_constraint_from_symm) {
         std::cout << "  Finished !\n\n";
     }
-
-    status_constraint_subset["symmetry"] = 1;
 }
 
 
@@ -1014,7 +1104,8 @@ void Constraint::generate_translational_constraint(const Cell &supercell,
                                                    const std::unique_ptr<Cluster> &cluster,
                                                    const std::unique_ptr<Fcs> &fcs,
                                                    const int periodic_image_conv,
-                                                   const int verbosity)
+                                                   const int verbosity,
+                                                   const bool do_rref)
 {
     // Create constraint matrix for the translational invariance (aka acoustic sum rule).
     const auto maxorder = cluster->get_maxorder();
@@ -1051,7 +1142,7 @@ void Constraint::generate_translational_constraint(const Cell &supercell,
                                        fcs->get_fc_table()[order],
                                        fcs->get_nequiv()[order].size(),
                                        const_translation[order],
-                                       true);
+                                       do_rref);
         }
         // make translation constraint for each periodic image combination
         // if periodic_image_conv == 0 or order == 0, there is no need to impose additional ASR constraints.
@@ -1064,12 +1155,11 @@ void Constraint::generate_translational_constraint(const Cell &supercell,
                                                            fcs->get_fc_table()[order],
                                                            fcs->get_nequiv()[order].size(),
                                                            const_translation[order],
-                                                           true);
+                                                           do_rref);
         }
 
         if (verbosity > 0) std::cout << " done.\n" << std::flush;
     }
-    status_constraint_subset["translation"] = 1;
     if (verbosity > 0) std::cout << "  Finished !\n\n";
 }
 
@@ -1683,7 +1773,8 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
                                                 const std::unique_ptr<Cluster> &cluster,
                                                 const std::unique_ptr<Fcs> &fcs,
                                                 const int verbosity,
-                                                const double tolerance)
+                                                const double tolerance,
+                                                const bool do_rref)
 {
     // Create constraints for the rotational invariance
     const auto maxorder = cluster->get_maxorder();
@@ -1829,11 +1920,12 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
         const_cross_vec[order].clear();
 
         //  Perform rref
-        rref_sparse(nparams[order],
-                    const_rotation_self[order],
-                    eps6);
+        if (do_rref)
+            rref_sparse(nparams[order],
+                        const_rotation_self[order],
+                        eps6);
 
-        if (order > 0) {
+        if (order > 0 && do_rref) {
             rref_sparse(nparams[order - 1] + nparams[order],
                         const_rotation_cross[order],
                         eps6);
@@ -1842,8 +1934,6 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
 
     if (verbosity > 0) std::cout << "  Finished !\n\n" << std::flush;
 
-    if (status_constraint_subset["rotation"] == 0) status_constraint_subset["rotation"] = 1;
-    if (status_constraint_subset["rotation_extra"] == 0) status_constraint_subset["rotation_extra"] = 1;
 
     deallocate(const_self_vec);
     deallocate(const_cross_vec);
@@ -2458,7 +2548,8 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
                                            const std::unique_ptr<Cluster> &cluster,
                                            const std::unique_ptr<Fcs> &fcs,
                                            const std::vector<Eigen::MatrixXd> &x_image,
-                                           const int verbosity)
+                                           const int verbosity,
+                                           const bool do_rref)
 {
     // Create constraint matrix for the Huang constraints.
 
@@ -2483,12 +2574,11 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
     list_found.clear();
 
     // Accumulate sets of non-zero force constants.
-    for (auto p = fcs->get_fc_table()[0].begin();
-         p != fcs->get_fc_table()[0].end(); ++p) {
+    for (auto &p: fcs->get_fc_table()[0]) {
         list_found.insert(FcProperty(2,
-                                     p->sign,
-                                     p->elems.data(),
-                                     p->mother));
+                                     p.sign,
+                                     p.elems.data(),
+                                     p.mother));
     }
 
 
@@ -2621,9 +2711,8 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
         const_huang[0].emplace_back(const_copy);
     }
 
-    rref_sparse(nparams, const_huang[0], eps8);
+    if (do_rref) rref_sparse(nparams, const_huang[0], eps8);
 
-    status_constraint_subset["huang"] = 1;
 }
 
 void Constraint::parse_forceconstants_from_xml(const int order,
@@ -2758,7 +2847,7 @@ void Constraint::parse_forceconstants_from_h5(const int order,
                                               std::vector<std::vector<int>> &intpair_fcs,
                                               std::vector<double> &fcs_values)
 {
-    H5Easy::File file(file_to_fix, H5Easy::File::ReadOnly);
+    const H5Easy::File file(file_to_fix, H5Easy::File::ReadOnly);
 
     const std::string celltype = "SuperCell";
 
@@ -2788,7 +2877,6 @@ void Constraint::parse_forceconstants_from_h5(const int order,
 
     // fcs_values_file are force constants in the Cartesian basis.
     // They need to be converted to the lattice basis if the FCSYM_BASIS = Lattice.
-
 
     std::vector<ForceConstantTable> fc_cart, fc_cart_unique, fc_cart_copy;
     std::vector<int> flatten_array(order + 2);
@@ -2883,7 +2971,7 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
         const auto order = 0;
         auto intpair_to_fix = intpair_fix_fc2;
 
-        fcs->translate_forceconstant_index_to_centercell(symmetry,
+        Fcs::translate_forceconstant_index_to_centercell(symmetry,
                                                          intpair_to_fix);
         std::set<ForceConstantTable> fc_fix_table;
 
@@ -2903,11 +2991,11 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
         const_fix[order].shrink_to_fit();
 
         for (unsigned int ui = 0; ui < fcs->get_nequiv()[order].size(); ++ui) {
-            size_t mother = fcs->get_fc_table()[order][ihead].mother;
+            size_t const mother = fcs->get_fc_table()[order][ihead].mother;
             bool found_element = false;
 
             for (auto j = 0; j < fcs->get_nequiv()[order][ui]; ++j) {
-                std::vector<int> index_tmp = fcs->get_fc_table()[order][ihead + j].elems;
+                std::vector<int> const index_tmp = fcs->get_fc_table()[order][ihead + j].elems;
 
                 it_found = fc_fix_table.find(ForceConstantTable(0.0, index_tmp));
 
@@ -2934,7 +3022,7 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
         const auto order = 1;
         auto intpair_to_fix = intpair_fix_fc3;
 
-        fcs->translate_forceconstant_index_to_centercell(symmetry,
+        Fcs::translate_forceconstant_index_to_centercell(symmetry,
                                                          intpair_to_fix);
 
         const auto nfcs = intpair_to_fix.size();
@@ -2955,11 +3043,11 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
         const_fix[order].shrink_to_fit();
 
         for (unsigned int ui = 0; ui < fcs->get_nequiv()[order].size(); ++ui) {
-            size_t mother = fcs->get_fc_table()[order][ihead].mother;
+            size_t const mother = fcs->get_fc_table()[order][ihead].mother;
             bool found_element = false;
 
             for (auto j = 0; j < fcs->get_nequiv()[order][ui]; ++j) {
-                std::vector<int> index_tmp = fcs->get_fc_table()[order][ihead + j].elems;
+                std::vector<int> const index_tmp = fcs->get_fc_table()[order][ihead + j].elems;
                 it_found = fc_fix_table.find(ForceConstantTable(0.0, index_tmp));
 
                 if (it_found != fc_fix_table.end()) {
@@ -3079,7 +3167,7 @@ void Constraint::remove_redundant_rows(const size_t n,
     }
 }
 
-void Constraint::print_constraint(const ConstraintSparseForm &const_in) const
+void Constraint::print_constraint(const ConstraintSparseForm &const_in)
 {
     const auto nconst = const_in.size();
     auto counter = 0;
