@@ -8,6 +8,105 @@
 #include <limits>
 #include <algorithm>
 #include <numeric>
+#include <cmath>       // for std::pow, std::sqrt
+#include <boost/algorithm/string.hpp>
+
+int least_squares_svd(const size_t N,
+                      const size_t M,
+                      double *amat,
+                      const double *bvec,
+                      double *param_out,
+                      const int verbosity)
+{
+    // Local variables
+    int nrhs = 1;
+    int nrank = 0;
+    int INFO = 0;
+    int M_tmp = static_cast<int>(M);
+    int N_tmp = static_cast<int>(N);
+    double rcond = -1.0;   // use default machine precision tolerance
+    double f_square = 0.0; // sum of squares of entries of bvec
+    const int LMIN = static_cast<int>(std::min(N, M));
+    int LMAX = static_cast<int>(std::max(N, M));
+
+    // Compute recommended WORK size:
+    // LWORK = 2 * (3*LMIN + max(2*LMIN, LMAX))
+    int recommended = 3 * LMIN + std::max(2 * LMIN, LMAX);
+    int LWORK = 2 * recommended;
+
+    if (verbosity > 0) {
+        std::cout << "  Entering fitting routine: SVD without constraints" << std::endl;
+    }
+
+    // Use std::vector to manage workspace and buffers, avoiding manual allocate/deallocate
+    std::vector<double> work_buf(LWORK);
+    std::vector<double> singular_vals(LMIN);
+    std::vector<double> fsum2(LMAX);
+
+    // Copy bvec into fsum2 and compute its norm-squared
+    for (size_t i = 0; i < M; ++i) {
+        fsum2[i] = bvec[i];
+        f_square += std::pow(bvec[i], 2);
+    }
+    // Zero out any remaining entries of fsum2 if M < LMAX
+    for (size_t i = M; i < static_cast<size_t>(LMAX); ++i) {
+        fsum2[i] = 0.0;
+    }
+
+    if (verbosity > 0) {
+        std::cout << "  SVD has started ... ";
+    }
+
+    // Call LAPACK's DGELSS to solve min || A*x - b || using SVD
+    dgelss_(&M_tmp,
+            &N_tmp,
+            &nrhs,
+            amat,
+            &M_tmp,
+            // leading dimension of A is M
+            fsum2.data(),
+            // on exit, first N entries contain solution x
+            &LMAX,
+            // leading dimension of b (stored in fsum2) is LMAX
+            singular_vals.data(),
+            &rcond,
+            &nrank,
+            work_buf.data(),
+            &LWORK,
+            &INFO);
+
+    if (verbosity > 0) {
+        std::cout << "finished!\n\n";
+        std::cout << "  RANK of the matrix = " << nrank << '\n';
+    }
+
+    if (nrank < static_cast<int>(N)) {
+        std::cerr << "　　Warning [fit_without_constraints]: "
+            << "Matrix is rank-deficient. Force constants could not be determined uniquely :(\n";
+    }
+
+    if (nrank == static_cast<int>(N) && verbosity > 0) {
+        // Compute residual sum of squares: sum of squares of entries fsum2[N..M-1]
+        double f_residual = 0.0;
+        for (int i = static_cast<int>(N); i < static_cast<int>(M); ++i) {
+            f_residual += std::pow(fsum2[i], 2);
+        }
+        std::cout << '\n'
+            << "  Residual sum of squares for the solution: "
+            << std::sqrt(f_residual) << '\n';
+        std::cout << "  Fitting error (%) : "
+            << std::sqrt(f_residual / f_square) * 100.0 << '\n';
+    }
+
+    // Copy solution (first N entries of fsum2) into param_out
+    for (size_t i = 0; i < N; ++i) {
+        param_out[i] = fsum2[i];
+    }
+
+    // Vectors automatically deallocate when going out of scope
+    return INFO;
+}
+
 
 int least_squares_with_constraints_gqr(const size_t N,
                                        const size_t M,
@@ -38,7 +137,7 @@ int least_squares_with_constraints_gqr(const size_t N,
     }
 
     if (verbosity > 1) {
-        std::cout << "[fit_with_constraints_gqr] Starting row-rank determination of C...\n";
+        std::cout << "　　[least_squares_with_constraints_gqr] Starting row-rank determination of C...\n";
     }
 
     // Step 1: Compute QR with column pivoting on C^T (size N×P)
@@ -74,7 +173,7 @@ int least_squares_with_constraints_gqr(const size_t N,
 
     if (INFO_qr != 0) {
         if (verbosity > 1) {
-            std::cerr << "[fit_with_constraints_gqr] dgeqp3_ (workspace query) failed, INFO = "
+            std::cerr << "　　[least_squares_with_constraints_gqr] dgeqp3_ (workspace query) failed, INFO = "
                 << INFO_qr << "\n";
         }
         return INFO_qr;
@@ -96,7 +195,7 @@ int least_squares_with_constraints_gqr(const size_t N,
 
     if (INFO_qr != 0) {
         if (verbosity > 1) {
-            std::cerr << "[fit_with_constraints_gqr] dgeqp3_ failed, INFO = "
+            std::cerr << "　　[least_squares_with_constraints_gqr] dgeqp3_ failed, INFO = "
                 << INFO_qr << "\n";
         }
         return INFO_qr;
@@ -116,7 +215,7 @@ int least_squares_with_constraints_gqr(const size_t N,
     }
 
     if (verbosity > 1) {
-        std::cout << "[fit_with_constraints_gqr] C row-rank r = "
+        std::cout << "　　[least_squares_with_constraints_gqr] C row-rank r = "
             << r << " / " << P_i << "\n";
     }
 
@@ -138,7 +237,8 @@ int least_squares_with_constraints_gqr(const size_t N,
     }
 
     if (verbosity > 1) {
-        std::cout << "[fit_with_constraints_gqr] Calling dgglse_ with reduced C (" << r << "×" << N_i << ")...\n";
+        std::cout << "　[least_squares_with_constraints_gqr] Calling dgglse_ with reduced C (" << r << "×" << N_i <<
+            ")...\n";
     }
 
     // Step 5: Call dgglse to solve minimize ||A x - b||_2 subject to C_red x = d_red
@@ -169,14 +269,14 @@ int least_squares_with_constraints_gqr(const size_t N,
 
     if (verbosity > 1) {
         if (INFO_qr == 0) {
-            std::cout << "[fit_with_constraints_gqr] dgglse_ completed successfully.\n";
+            std::cout << "　[least_squares_with_constraints_gqr] dgglse_ completed successfully.\n";
         } else {
-            std::cerr << "[fit_with_constraints_gqr] dgglse_ returned INFO = "
+            std::cerr << "　[least_squares_with_constraints_gqr] dgglse_ returned INFO = "
                 << INFO_qr << "\n";
         }
     }
 
-    // Copy solution into param_out
+    // Copy the solution into param_out
     for (int i = 0; i < N_i; ++i) {
         param_out[i] = X[i];
     }
@@ -197,14 +297,14 @@ int least_squares_with_constraints_gqr(const size_t N,
 }
 
 int least_squares_with_constraints_svd(const size_t N,
-                                      const size_t M,
-                                      const size_t P,
-                                      double *amat,              // A: (M×N) column-major, may be overwritten
-                                      double *bvec,              // b: (M) column vector, may be overwritten
-                                      double *param_out,         // output x (length N)
-                                      const double *const *cmat, // C[i][j] pointer array (row i, col j)
-                                      const double *dvec_orig,   // d: (P) column vector
-                                      const int verbosity
+                                       const size_t M,
+                                       const size_t P,
+                                       double *amat,              // A: (M×N) column-major, may be overwritten
+                                       double *bvec,              // b: (M) column vector, may be overwritten
+                                       double *param_out,         // output x (length N)
+                                       const double *const *cmat, // C[i][j] pointer array (row i, col j)
+                                       const double *dvec_orig,   // d: (P) column vector
+                                       const int verbosity
     )
 {
     // ------------------------------------------------------------
@@ -213,7 +313,6 @@ int least_squares_with_constraints_svd(const size_t N,
     int p = static_cast<int>(P);
     int n = static_cast<int>(N);
     int m = static_cast<int>(M);
-    int min_pn = std::min(p, n);
 
     // C_copy: column-major, size P×N
     std::vector<double> C_copy(static_cast<size_t>(P) * static_cast<size_t>(N));
@@ -396,5 +495,94 @@ int least_squares_with_constraints_svd(const size_t N,
     }
 
 
+    return 0;
+}
+
+int least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat,
+                                      const Eigen::VectorXd &sp_bvec,
+                                      Eigen::VectorXd &x_out,
+                                      const std::string &solver_type,
+                                      const double tolerance_iteration,
+                                      const int maxnum_iteration)
+{
+    const auto solver_type_lower = boost::algorithm::to_lower_copy(solver_type);
+
+    using SpMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+    if (solver_type_lower == "simplicialldlt") {
+        SpMat AtA = sp_mat.transpose() * sp_mat;
+        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
+        Eigen::SimplicialLDLT<SpMat> ldlt(AtA);
+        x_out = ldlt.solve(AtB);
+
+        if (ldlt.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed.\n";
+            std::cerr << ldlt.info() << '\n';
+            return 1;
+        }
+
+    } else if (solver_type_lower == "sparseqr") {
+
+        Eigen::SparseQR<SpMat, Eigen::COLAMDOrdering<int>> qr(sp_mat);
+        x_out = qr.solve(sp_bvec);
+
+        if (qr.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed.\n";
+            std::cerr << qr.info() << '\n';
+            return 1;
+        }
+
+    } else if (solver_type_lower == "conjugategradient") {
+        SpMat AtA = sp_mat.transpose() * sp_mat;
+        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
+
+        Eigen::ConjugateGradient<SpMat> cg(AtA);
+        cg.setTolerance(tolerance_iteration);
+        cg.setMaxIterations(maxnum_iteration);
+        x_out.setZero();
+        x_out = cg.solve(AtB);
+
+        if (cg.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed.\n";
+            std::cerr << cg.info() << '\n';
+            return 1;
+        }
+
+    } else if (solver_type_lower == "leastsquaresconjugategradient") {
+
+#if EIGEN_VERSION_AT_LEAST(3, 3, 0)
+        Eigen::LeastSquaresConjugateGradient<SpMat> lscg(sp_mat);
+        lscg.setTolerance(tolerance_iteration);
+        lscg.setMaxIterations(maxnum_iteration);
+        x_out.setZero();
+        x_out = lscg.solve(sp_bvec);
+
+        if (lscg.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed.\n";
+            std::cerr << lscg.info() << '\n';
+            return 1;
+        }
+
+#else
+        std::cerr << "The linked Eigen version is too old\n";
+        std::cerr << solver_type + " is available as of 3.3.0\n";
+        return 1;
+#endif
+
+    } else if (solver_type_lower == "bicgstab") {
+        SpMat AtA = sp_mat.transpose() * sp_mat;
+        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
+
+        Eigen::BiCGSTAB<SpMat> bicg(AtA);
+        bicg.setTolerance(tolerance_iteration);
+        bicg.setMaxIterations(maxnum_iteration);
+        x_out.setZero();
+        x_out = bicg.solve(AtB);
+
+        if (bicg.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed.\n";
+            std::cerr << bicg.info() << '\n';
+            return 1;
+        }
+    }
     return 0;
 }

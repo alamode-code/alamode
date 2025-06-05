@@ -31,7 +31,7 @@
 #include <Eigen/SparseQR>
 #include <Eigen/SparseCholesky>
 #include <Eigen/IterativeLinearSolvers>
-#include <Eigen/Dense> 
+#include <Eigen/Dense>
 
 #include <omp.h>
 
@@ -62,7 +62,7 @@ void Optimize::deallocate_variables()
 
 int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
                             std::unique_ptr<Constraint> &constraint,
-                            std::unique_ptr<Fcs> &fcs,
+                            const std::unique_ptr<Fcs> &fcs,
                             const int maxorder,
                             const std::string &file_prefix,
                             const std::vector<std::string> &str_order,
@@ -282,7 +282,7 @@ int Optimize::least_squares(const int maxorder,
                 param_irred[i] = x(i);
             }
             if (compact) {
-                // Recover reducible set of force constants
+                // Recover full reducible force constants
                 recover_original_forceconstants(maxorder,
                                                 param_irred,
                                                 param_out,
@@ -356,12 +356,12 @@ int Optimize::least_squares(const int maxorder,
             } else {
                 // Perform fitting with SVD
                 info_fitting
-                    = fit_without_constraints(N,
-                                              M,
-                                              matrix_out->amat_dense.data(),
-                                              matrix_out->bvec.data(),
-                                              param_out.data(),
-                                              verbosity);
+                    = least_squares_svd(N,
+                                        M,
+                                        matrix_out->amat_dense.data(),
+                                        matrix_out->bvec.data(),
+                                        param_out.data(),
+                                        verbosity);
             }
         }
     }
@@ -1843,92 +1843,6 @@ size_t Optimize::get_number_of_rows_sensing_matrix() const
     return u_train.size() * u_train[0].size();
 }
 
-int Optimize::fit_without_constraints(const size_t N,
-                                      const size_t M,
-                                      double *amat,
-                                      const double *bvec,
-                                      double *param_out,
-                                      const int verbosity)
-{
-    int i;
-    int nrhs = 1, nrank, INFO, M_tmp, N_tmp;
-    auto rcond = -1.0;
-    auto f_square = 0.0;
-    double *WORK, *S, *fsum2;
-
-
-    const auto LMIN = std::min<int>(M, N);
-    auto LMAX = std::max<int>(M, N);
-
-    auto LWORK = 3 * LMIN + std::max<int>(2 * LMIN, LMAX);
-    LWORK = 2 * LWORK;
-
-    if (verbosity > 0) {
-        std::cout << "  Entering fitting routine: SVD without constraints" << '\n';
-    }
-
-
-    allocate(WORK, LWORK);
-    allocate(S, LMIN);
-    allocate(fsum2, LMAX);
-
-    for (i = 0; i < M; ++i) {
-        fsum2[i] = bvec[i];
-        f_square += std::pow(bvec[i], 2);
-    }
-    for (i = M; i < LMAX; ++i) fsum2[i] = 0.0;
-
-    if (verbosity > 0) std::cout << "  SVD has started ... ";
-
-    // Fitting with singular value decomposition
-    // M_tmp and N_tmp are prepared to cast N and M to (non-const) int.
-    M_tmp = M;
-    N_tmp = N;
-    dgelss_(&M_tmp,
-            &N_tmp,
-            &nrhs,
-            amat,
-            &M_tmp,
-            fsum2,
-            &LMAX,
-            S,
-            &rcond,
-            &nrank,
-            WORK,
-            &LWORK,
-            &INFO);
-
-    if (verbosity > 0) {
-        std::cout << "finished !" << '\n' << '\n';
-        std::cout << "  RANK of the matrix = " << nrank << '\n';
-    }
-
-    if (nrank < N)
-        warn("fit_without_constraints",
-             "Matrix is rank-deficient. Force constants could not be determined uniquely :(");
-
-    if (nrank == N && verbosity > 0) {
-        auto f_residual = 0.0;
-        for (i = N; i < M; ++i) {
-            f_residual += std::pow(fsum2[i], 2);
-        }
-        std::cout << '\n' << "  Residual sum of squares for the solution: "
-            << sqrt(f_residual) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << sqrt(f_residual / f_square) * 100.0 << '\n';
-    }
-
-    for (i = 0; i < N; ++i) {
-        param_out[i] = fsum2[i];
-    }
-
-    deallocate(WORK);
-    deallocate(S);
-    deallocate(fsum2);
-
-    return INFO;
-}
-
 
 int Optimize::fit_algebraic_constraints(const size_t N,
                                         const size_t M,
@@ -2997,62 +2911,6 @@ int Optimize::factorial(const int n) const
 }
 
 
-int Optimize::rankQRD(const size_t m,
-                      const size_t n,
-                      double *mat,
-                      const double tolerance)
-{
-    // Return the rank of matrix mat revealed by the column pivoting QR decomposition
-    // The matrix mat is destroyed.
-
-    auto m_ = static_cast<int>(m);
-    auto n_ = static_cast<int>(n);
-
-    auto LDA = m_;
-
-    auto LWORK = 10 * n_;
-    int INFO;
-    int *JPVT;
-    double *WORK, *TAU;
-
-    const auto nmin = std::min<int>(m_, n_);
-
-    allocate(JPVT, n_);
-    allocate(WORK, LWORK);
-    allocate(TAU, nmin);
-
-    for (auto i = 0; i < n_; ++i) JPVT[i] = 0;
-
-    dgeqp3_(&m_, &n_, mat, &LDA, JPVT, TAU, WORK, &LWORK, &INFO);
-
-    deallocate(JPVT);
-    deallocate(WORK);
-    deallocate(TAU);
-
-    if (std::abs(mat[0]) < eps) return 0;
-
-    double **mat_tmp;
-    allocate(mat_tmp, m_, n_);
-
-    unsigned long k = 0;
-
-    for (auto j = 0; j < n_; ++j) {
-        for (auto i = 0; i < m_; ++i) {
-            mat_tmp[i][j] = mat[k++];
-        }
-    }
-
-    auto nrank = 0;
-    for (auto i = 0; i < nmin; ++i) {
-        if (std::abs(mat_tmp[i][i]) > tolerance * std::abs(mat[0])) ++nrank;
-    }
-
-    deallocate(mat_tmp);
-
-    return nrank;
-}
-
-
 int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
                                       const Eigen::VectorXd &sp_bvec,
                                       std::vector<double> &param_out,
@@ -3063,90 +2921,18 @@ int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
                                       const std::string solver_type,
                                       const int verbosity) const
 {
-    const auto solver_type_lower = boost::algorithm::to_lower_copy(solver_type);
-    Eigen::VectorXd x;
-
     if (verbosity > 0) {
         std::cout << "  Solve least-squares problem by Eigen " + solver_type + ".\n";
     }
 
-    if (solver_type_lower == "simplicialldlt") {
-        SpMat AtA = sp_mat.transpose() * sp_mat;
-        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
+    Eigen::VectorXd x;
 
-        Eigen::SimplicialLDLT<SpMat> ldlt(AtA);
-        x = ldlt.solve(AtB);
-
-        if (ldlt.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << ldlt.info() << '\n';
-            return 1;
-        }
-
-    } else if (solver_type_lower == "sparseqr") {
-
-        Eigen::SparseQR<SpMat, Eigen::COLAMDOrdering<int>> qr(sp_mat);
-        x = qr.solve(sp_bvec);
-
-        if (qr.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << qr.info() << '\n';
-            return 1;
-        }
-
-    } else if (solver_type_lower == "conjugategradient") {
-        SpMat AtA = sp_mat.transpose() * sp_mat;
-        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
-
-        Eigen::ConjugateGradient<SpMat> cg(AtA);
-        cg.setTolerance(optcontrol.tolerance_iteration);
-        cg.setMaxIterations(optcontrol.maxnum_iteration);
-        x.setZero();
-        x = cg.solve(AtB);
-
-        if (cg.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << cg.info() << '\n';
-            return 1;
-        }
-
-    } else if (solver_type_lower == "leastsquaresconjugategradient") {
-
-#if EIGEN_VERSION_AT_LEAST(3, 3, 0)
-        Eigen::LeastSquaresConjugateGradient<SpMat> lscg(sp_mat);
-        lscg.setTolerance(optcontrol.tolerance_iteration);
-        lscg.setMaxIterations(optcontrol.maxnum_iteration);
-        x.setZero();
-        x = lscg.solve(sp_bvec);
-
-        if (lscg.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << lscg.info() << '\n';
-            return 1;
-        }
-
-#else
-        std::cerr << "The linked Eigen version is too old\n";
-        std::cerr << solver_type + " is available as of 3.3.0\n";
-        return 1;
-#endif
-
-    } else if (solver_type_lower == "bicgstab") {
-        SpMat AtA = sp_mat.transpose() * sp_mat;
-        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
-
-        Eigen::BiCGSTAB<SpMat> bicg(AtA);
-        bicg.setTolerance(optcontrol.tolerance_iteration);
-        bicg.setMaxIterations(optcontrol.maxnum_iteration);
-        x.setZero();
-        x = bicg.solve(AtB);
-
-        if (bicg.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << bicg.info() << '\n';
-            return 1;
-        }
-    }
+    auto info_eigen = least_squares_eigen_sparse_solver(sp_mat,
+                                                        sp_bvec,
+                                                        x,
+                                                        solver_type,
+                                                        optcontrol.tolerance_iteration,
+                                                        optcontrol.maxnum_iteration);
 
     auto res = sp_bvec - sp_mat * x;
     const auto res2norm = res.squaredNorm();
@@ -3171,7 +2957,6 @@ int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
             param_out[i] = param_irred[i];
         }
     }
-
 
     if (verbosity > 0) {
         std::cout << "  Residual sum of squares for the solution: "
