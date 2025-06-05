@@ -102,7 +102,6 @@ int least_squares_with_constraints_svd(const size_t N,
                                        const int verbosity);
 
 
-
 /**
  * @brief Solves a sparse least squares problem using Eigen's sparse solvers.
  *
@@ -127,3 +126,32 @@ int least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat,
                                       const std::string &solver_type,
                                       const double tolerance_iteration,
                                       const int maxnum_iteration);
+
+
+/**
+ * @brief  Build reduced constraint matrix C_red (r×N) and vector d_red (length r).
+ *
+ * This function takes the original constraint matrix C (size P×N) and constraint vector d
+ * (length P), determines the numerical row rank r of C via QR with column pivoting on C^T,
+ * and extracts the first r independent rows. The outputs C_red and d_red are stored in
+ * column-major order.
+ *
+ * @param[in]   N          Number of variables (number of columns of C)
+ * @param[in]   P          Number of constraints (number of rows of C)
+ * @param[in]   cmat       Pointer to constraint matrix C: cmat[i][j] is row i, column j (0 ≤ i < P, 0 ≤ j < N)
+ * @param[in]   dvec       Original constraint vector d (length P)
+ * @param[in]   verbosity  Verbosity level (0: silent, >0: print info)
+ * @param[out]  C_red      Output reduced constraint matrix (r×N) in column-major layout
+ * @param[out]  d_red      Output reduced constraint vector (length r)
+ * @param[out]  r          Computed numerical row rank (0 ≤ r ≤ min(P, N))
+ *
+ * @return  0 on success, nonzero LAPACK info code on failure
+ */
+int get_independent_rows(const size_t N,
+                         const size_t P,
+                         const double *const *cmat,
+                         const double *dvec,
+                         const int verbosity,
+                         std::vector<double> &C_red,
+                         std::vector<double> &d_red,
+                         int &r);

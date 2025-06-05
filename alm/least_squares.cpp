@@ -11,6 +11,135 @@
 #include <cmath>       // for std::pow, std::sqrt
 #include <boost/algorithm/string.hpp>
 
+
+int get_independent_rows(const size_t N,
+                         const size_t P,
+                         const double *const *cmat,
+                         const double *dvec,
+                         const int verbosity,
+                         std::vector<double> &C_red,
+                         std::vector<double> &d_red,
+                         int &r)
+{
+    // Convert N and P to int for LAPACK calls
+    int N_i = static_cast<int>(N);
+    int P_i = static_cast<int>(P);
+
+    // 1) Copy original C into a contiguous column-major buffer C_mat (size P×N)
+    std::vector<double> C_mat(P_i * N_i);
+    for (int row = 0; row < P_i; ++row) {
+        for (int col = 0; col < N_i; ++col) {
+            // C_mat is stored column-major: index = col * P_i + row
+            C_mat[col * P_i + row] = cmat[row][col];
+        }
+    }
+    if (verbosity > 1) {
+        std::cout << "  [get_independent_rows] Copied C into column-major buffer ("
+            << P_i << "×" << N_i << ").\n";
+    }
+
+    // 2) Prepare to perform QR with column pivoting on C^T (size N×P)
+    // Build A_qr = C^T in column-major layout
+    std::vector<double> A_qr(N_i * P_i);
+    for (int i = 0; i < P_i; ++i) {
+        for (int j = 0; j < N_i; ++j) {
+            // Copy element (row=i, col=j) of C_mat into (row=j, col=i) of A_qr
+            A_qr[j + i * N_i] = C_mat[i + j * P_i];
+        }
+    }
+
+    // jpvt array holds pivot indices (1-based)
+    std::vector<int> jpvt(P_i, 0);
+    int minNP = std::min(N_i, P_i);
+    std::vector<double> tau(minNP);
+
+    // Query optimal workspace size for dgeqp3_
+    int lwork_qr = -1;
+    double work_qr_query = 0.0;
+    int INFO_qr = 0;
+    dgeqp3_(&N_i,
+            &P_i,
+            A_qr.data(),
+            &N_i,
+            jpvt.data(),
+            tau.data(),
+            &work_qr_query,
+            &lwork_qr,
+            &INFO_qr);
+    if (INFO_qr != 0) {
+        if (verbosity > 0) {
+            std::cerr << "  [get_independent_rows] dgeqp3_ (workspace query) failed, INFO="
+                << INFO_qr << "\n";
+        }
+        return INFO_qr;
+    }
+    int LWORK_qr = static_cast<int>(work_qr_query);
+    std::vector<double> WORK_qr(LWORK_qr);
+
+    // 3) Perform QR with column pivoting to determine numerical row rank of C
+    dgeqp3_(&N_i,
+            &P_i,
+            A_qr.data(),
+            &N_i,
+            jpvt.data(),
+            tau.data(),
+            WORK_qr.data(),
+            &LWORK_qr,
+            &INFO_qr);
+    if (INFO_qr != 0) {
+        if (verbosity > 0) {
+            std::cerr << "  [get_independent_rows] dgeqp3_ failed, INFO="
+                << INFO_qr << "\n";
+        }
+        return INFO_qr;
+    }
+
+    // 4) Determine numerical row rank r by inspecting diagonal of R in A_qr
+    // R[k, k] is stored at A_qr[k + k*N_i] in column-major
+    double R00 = std::abs(A_qr[0 + 0 * N_i]);
+    double tol = std::max(P_i, N_i) * R00 * std::numeric_limits<double>::epsilon();
+    r = 0;
+    for (int k = 0; k < std::min(P_i, N_i); ++k) {
+        double diag = std::abs(A_qr[k + k * N_i]);
+        if (diag > tol) {
+            ++r;
+        } else {
+            break;
+        }
+    }
+    if (verbosity > 1) {
+        std::cout << "  [get_independent_rows] Numerical row rank r = "
+            << r << " (max possible = " << std::min(P_i, N_i) << ").\n";
+    }
+
+    // 5) Extract the indices of the first r pivoted rows of C^T (which correspond to independent rows of C)
+    std::vector<int> independent_rows(r);
+    for (int i = 0; i < r; ++i) {
+        independent_rows[i] = jpvt[i] - 1; // convert 1-based to 0-based
+    }
+
+    // 6) Build C_red (size r×N) and d_red (length r), both in column-major layout
+    C_red.assign(static_cast<size_t>(r) * static_cast<size_t>(N), 0.0);
+    d_red.assign(static_cast<size_t>(r), 0.0);
+    for (int ii = 0; ii < r; ++ii) {
+        int orig_row = independent_rows[ii]; // original row index in C
+        for (int col = 0; col < N_i; ++col) {
+            // Copy C_mat[orig_row, col] into C_red[ii, col]
+            // C_mat index: col * P_i + orig_row
+            // C_red is r×N in column-major: index = col * r + ii
+            C_red[col * r + ii] = C_mat[col * P_i + orig_row];
+        }
+        // Copy corresponding entry from dvec
+        d_red[ii] = dvec[orig_row];
+    }
+    if (verbosity > 1) {
+        std::cout << "  [get_independent_rows] Constructed C_red (" << r << "×" << N_i
+            << ") and d_red (length " << r << ").\n";
+    }
+
+    return 0;
+}
+
 int least_squares_svd(const size_t N,
                       const size_t M,
                       double *amat,
@@ -35,7 +164,7 @@ int least_squares_svd(const size_t N,
     int LWORK = 2 * recommended;
 
     if (verbosity > 0) {
-        std::cout << "  Entering fitting routine: SVD without constraints" << std::endl;
+        std::cout << "  Entering fitting routine: SVD without constraints\n";
     }
 
     // Use std::vector to manage workspace and buffers, avoiding manual allocate/deallocate
@@ -128,125 +257,27 @@ int least_squares_with_constraints_gqr(const size_t N,
                                                b_copy.begin(),
                                                0.0);
 
-    // Copy C into a contiguous column-major buffer C_mat (P×N)
-    std::vector<double> C_mat(P * N);
-    for (size_t row = 0; row < P; ++row) {
-        for (size_t col = 0; col < N; ++col) {
-            C_mat[row + col * P] = cmat[row][col];
-        }
-    }
-
-    if (verbosity > 1) {
-        std::cout << "　　[least_squares_with_constraints_gqr] Starting row-rank determination of C...\n";
-    }
-
-    // Step 1: Compute QR with column pivoting on C^T (size N×P)
-    int N_i = static_cast<int>(N);
-    int P_i = static_cast<int>(P);
-
-    // Build A_qr = C^T in column-major (N×P)
-    std::vector<double> A_qr(N * P);
-    for (int i = 0; i < P_i; ++i) {
-        for (int j = 0; j < N_i; ++j) {
-            A_qr[j + i * N_i] = C_mat[i + j * P_i];
-        }
-    }
-
-    // jpvt for pivot indices, TAU for scalar factors
-    std::vector<int> jpvt(P_i, 0);
-    int minNP = std::min(N_i, P_i);
-    std::vector<double> tau(minNP);
-
-    // Query optimal WORK size
-    int lwork_qr = -1;
-    double work_qr_query = 0.0;
-    int INFO_qr;
-    dgeqp3_(&N_i,
-            &P_i,
-            A_qr.data(),
-            &N_i,
-            jpvt.data(),
-            tau.data(),
-            &work_qr_query,
-            &lwork_qr,
-            &INFO_qr);
-
-    if (INFO_qr != 0) {
-        if (verbosity > 1) {
-            std::cerr << "　　[least_squares_with_constraints_gqr] dgeqp3_ (workspace query) failed, INFO = "
-                << INFO_qr << "\n";
-        }
-        return INFO_qr;
-    }
-
-    int LWORK_qr = static_cast<int>(work_qr_query);
-    std::vector<double> WORK_qr(LWORK_qr);
-
-    // Perform QR with column pivoting
-    dgeqp3_(&N_i,
-            &P_i,
-            A_qr.data(),
-            &N_i,
-            jpvt.data(),
-            tau.data(),
-            WORK_qr.data(),
-            &LWORK_qr,
-            &INFO_qr);
-
-    if (INFO_qr != 0) {
-        if (verbosity > 1) {
-            std::cerr << "　　[least_squares_with_constraints_gqr] dgeqp3_ failed, INFO = "
-                << INFO_qr << "\n";
-        }
-        return INFO_qr;
-    }
-
-    // Step 2: Determine numerical rank r of C by inspecting R diagonal in A_qr
-    double R00 = std::abs(A_qr[0 + 0 * N_i]);
-    double tol = std::max(P_i, N_i) * R00 * std::numeric_limits<double>::epsilon();
+    std::vector<double> C_red;
+    std::vector<double> d_red;
     int r = 0;
-    for (int k = 0; k < std::min(P_i, N_i); ++k) {
-        double diag = std::abs(A_qr[k + k * N_i]);
-        if (diag > tol) {
-            ++r;
-        } else {
-            break;
-        }
+    int ierr = get_independent_rows(N, P, cmat, dvec, verbosity, C_red, d_red, r);
+    if (ierr != 0) {
+        // If reduction fails, return the error code
+        return ierr;
     }
-
     if (verbosity > 1) {
-        std::cout << "　　[least_squares_with_constraints_gqr] C row-rank r = "
-            << r << " / " << P_i << "\n";
-    }
-
-    // Step 3: Extract indices of the first r pivoted columns of C^T
-    std::vector<int> independent_rows(r);
-    for (int i = 0; i < r; ++i) {
-        independent_rows[i] = jpvt[i] - 1; // Convert 1-based to 0-based
-    }
-
-    // Step 4: Build reduced C_red (r×N) and d_red (length r), both column-major
-    std::vector<double> C_red(r * N);
-    std::vector<double> d_red(r);
-    for (int ii = 0; ii < r; ++ii) {
-        int orig_row = independent_rows[ii];
-        for (int col = 0; col < N_i; ++col) {
-            C_red[ii + col * r] = C_mat[orig_row + col * P_i];
-        }
-        d_red[ii] = dvec[orig_row];
-    }
-
-    if (verbosity > 1) {
-        std::cout << "　[least_squares_with_constraints_gqr] Calling dgglse_ with reduced C (" << r << "×" << N_i <<
-            ")...\n";
+        std::cout << "  [least_squares_with_constraints_gqr] build_reduced_constraints returned r = "
+            << r << ".\n";
     }
 
     // Step 5: Call dgglse to solve minimize ||A x - b||_2 subject to C_red x = d_red
     int M_i = static_cast<int>(M);
+    int N_i = static_cast<int>(N);
     int r_i = r;
     int LWORK_lse = r_i + std::min(M_i, N_i) + 10 * std::max(M_i, N_i);
     std::vector<double> WORK_lse(LWORK_lse);
-    std::vector<double> X(N_i);
+    std::vector<double> X(N_i, 0.0); // Solution vector x (length N)
+    int INFO_lse = 0;
 
     dgglse_(&M_i,
             &N_i,
@@ -265,14 +296,14 @@ int least_squares_with_constraints_gqr(const size_t N,
             // solution x
             WORK_lse.data(),
             &LWORK_lse,
-            &INFO_qr);
+            &INFO_lse);
 
     if (verbosity > 1) {
-        if (INFO_qr == 0) {
+        if (INFO_lse == 0) {
             std::cout << "　[least_squares_with_constraints_gqr] dgglse_ completed successfully.\n";
         } else {
             std::cerr << "　[least_squares_with_constraints_gqr] dgglse_ returned INFO = "
-                << INFO_qr << "\n";
+                << INFO_lse << "\n";
         }
     }
 
@@ -293,7 +324,7 @@ int least_squares_with_constraints_gqr(const size_t N,
             << std::sqrt(f_residual / f_square) * 100.0 << '\n';
     }
 
-    return INFO_qr;
+    return INFO_lse;
 }
 
 int least_squares_with_constraints_svd(const size_t N,
