@@ -20,6 +20,7 @@
 #include "lapack_wrapper.h"
 #include "least_squares.h"
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -30,7 +31,7 @@
 #include <Eigen/SparseQR>
 #include <Eigen/SparseCholesky>
 #include <Eigen/IterativeLinearSolvers>
-#include <Eigen/Dense>  // for SVD nullspace solver
+#include <Eigen/Dense> 
 
 #include <omp.h>
 
