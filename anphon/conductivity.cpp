@@ -8,29 +8,29 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "conductivity.h"
+#include <iomanip>
+#include <iostream>
+#include <vector>
+#include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
 #include "ewald.h"
 #include "integration.h"
 #include "interpolation.h"
-#include "parsephon.h"
 #include "isotope.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mpi_common.h"
+#include "parsephon.h"
 #include "phonon_dos.h"
-#include "thermodynamics.h"
 #include "phonon_velocity.h"
-#include "anharmonic_core.h"
-#include "system.h"
-#include "write_phonons.h"
 #include "progress_bar.h"
-#include <iostream>
-#include <iomanip>
-#include <vector>
+#include "system.h"
+#include "thermodynamics.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -146,7 +146,8 @@ void Conductivity::setup_kappa()
 
     if (len_boundary > eps) {
         if (mympi->my_rank == 0) {
-            std::cout << "\n    Bounday scattering effect will be considered with len_boundary = " << len_boundary << "\n\n";
+            std::cout << "\n    Bounday scattering effect will be considered with len_boundary = " << len_boundary
+                      << "\n\n";
         }
     }
 
@@ -164,14 +165,13 @@ void Conductivity::setup_kappa()
         }
     }
 
-    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*dos->kmesh_dos,
-                                                        system->get_primcell().lattice_vector,
-                                                        vel);
+    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*dos->kmesh_dos, system->get_primcell().lattice_vector, vel);
 
     if (mympi->my_rank == 0) {
         for (auto i = 0; i < nk_3ph; ++i) {
             for (auto j = 0; j < ns; ++j) {
-                for (auto k = 0; k < 3; ++k) vel[i][j][k] *= factor;
+                for (auto k = 0; k < 3; ++k)
+                    vel[i][j][k] *= factor;
             }
         }
     }
@@ -197,7 +197,6 @@ void Conductivity::setup_kappa()
 
     // setting up related to setup_kappa_4ph are inside here
     if (fph_rta > 0) setup_kappa_4ph();
-
 }
 
 void Conductivity::setup_kappa_4ph()
@@ -224,9 +223,11 @@ void Conductivity::setup_kappa_4ph()
     // If nk_coarse is not set, use the same k-mesh as the 3-ph calculation.
     unsigned int nkc_tmp[3] = {};
     if (nk_coarse[0] * nk_coarse[1] * nk_coarse[2] > 0) {
-        for (auto i = 0; i < 3; i++) nkc_tmp[i] = nk_coarse[i];
+        for (auto i = 0; i < 3; i++)
+            nkc_tmp[i] = nk_coarse[i];
     } else {
-        for (auto i = 0; i < 3; i++) nkc_tmp[i] = dos->kmesh_dos->nk_i[i];
+        for (auto i = 0; i < 3; i++)
+            nkc_tmp[i] = dos->kmesh_dos->nk_i[i];
     }
 
     if (mympi->my_rank == 0) {
@@ -277,13 +278,10 @@ void Conductivity::setup_kappa_4ph()
             }
         }
 
-        MPI_Bcast(&evec_tmp[0][0][0], nk_4ph * neval * neval,
-                  MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&evec_tmp[0][0][0], nk_4ph * neval * neval, MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
     }
 
-    dymat_4ph->set_eigenvals_and_eigenvecs(nk_4ph,
-                                           eval_tmp,
-                                           evec_tmp);
+    dymat_4ph->set_eigenvals_and_eigenvecs(nk_4ph, eval_tmp, evec_tmp);
     deallocate(eval_tmp);
     deallocate(evec_tmp);
 
@@ -295,15 +293,14 @@ void Conductivity::setup_kappa_4ph()
     } else {
         allocate(vel_4ph, 1, 1, 1);
     }
-    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*kmesh_4ph,
-                                                        system->get_primcell().lattice_vector,
-                                                        vel_4ph);
+    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*kmesh_4ph, system->get_primcell().lattice_vector, vel_4ph);
     const auto factor = Bohr_in_Angstrom * 1.0e-10 / time_ry;
 
     if (mympi->my_rank == 0) {
         for (auto i = 0; i < kmesh_4ph->nk; ++i) {
             for (auto j = 0; j < ns; ++j) {
-                for (auto k = 0; k < 3; ++k) vel_4ph[i][j][k] *= factor;
+                for (auto k = 0; k < 3; ++k)
+                    vel_4ph[i][j][k] *= factor;
             }
         }
     }
@@ -316,8 +313,7 @@ void Conductivity::setup_kappa_4ph()
     }
 
     if (!integration->adaptive_sigma4) {
-        integration->adaptive_sigma4 = new AdaptiveSmearingSigma(kmesh_4ph->nk,
-                                                                 ns, integration->adaptive_factor);
+        integration->adaptive_sigma4 = new AdaptiveSmearingSigma(kmesh_4ph->nk, ns, integration->adaptive_factor);
         integration->adaptive_sigma4->setup(phonon_velocity,
                                             kmesh_4ph,
                                             system->get_primcell().lattice_vector,
@@ -327,7 +323,6 @@ void Conductivity::setup_kappa_4ph()
     // prepare IO for four phonon
     setup_result_io(-1);
     prepare_restart(-1);
-
 }
 
 
@@ -356,8 +351,7 @@ void Conductivity::prepare_restart(const int mode)
                     const auto ik = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
                     for (auto is = 0; is < dynamical->neval; ++is) {
                         fs_result3 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result3 << std::setw(15)
-                                   << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
+                        fs_result3 << std::setw(15) << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
                                    << '\n';
                     }
                 }
@@ -413,8 +407,7 @@ void Conductivity::prepare_restart(const int mode)
                 const auto it_set = vks_job.find(arr_done[i]);
 
                 if (it_set == vks_job.end()) {
-                    std::cout << " rank = " << mympi->my_rank
-                              << " arr_done = " << arr_done[i] << '\n';
+                    std::cout << " rank = " << mympi->my_rank << " arr_done = " << arr_done[i] << '\n';
                     exit("prepare_restart", "This cannot happen");
                 } else {
                     vks_job.erase(it_set);
@@ -437,8 +430,7 @@ void Conductivity::prepare_restart(const int mode)
                     const int ik = kmesh_4ph->kpoint_irred_all[i][0].knum;
                     for (auto is = 0; is < dynamical->neval; ++is) {
                         fs_result4 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result4 << std::setw(15)
-                                   << writes->in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
+                        fs_result4 << std::setw(15) << writes->in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
                     }
                 }
 
@@ -493,8 +485,7 @@ void Conductivity::prepare_restart(const int mode)
                 const auto it_set = vks_job4.find(arr_done[i]);
 
                 if (it_set == vks_job4.end()) {
-                    std::cout << " rank = " << mympi->my_rank
-                              << " arr_done = " << arr_done[i] << '\n';
+                    std::cout << " rank = " << mympi->my_rank << " arr_done = " << arr_done[i] << '\n';
                     exit("prepare_restart", "This cannot happen");
                 } else {
                     vks_job4.erase(it_set);
@@ -506,7 +497,6 @@ void Conductivity::prepare_restart(const int mode)
     } else {
         exit("prepare_restart", "this could not happen");
     }
-
 }
 
 
@@ -588,7 +578,6 @@ void Conductivity::setup_result_io(const int mode)
         } else {
             exit("set_up_result_io", "this could not happen");
         }
-
     }
 }
 
@@ -618,8 +607,7 @@ void Conductivity::calc_anharmonic_imagself3()
     }
 
     auto nks_tmp = vks_l.size();
-    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, &nks_thread[mympi->my_rank],
-               1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, &nks_thread[mympi->my_rank], 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -654,7 +642,8 @@ void Conductivity::calc_anharmonic_imagself3()
 
         if (iks == -1) {
 
-            for (unsigned int j = 0; j < ntemp; ++j) damping3_loc[j] = eps; // do nothing
+            for (unsigned int j = 0; j < ntemp; ++j)
+                damping3_loc[j] = eps; // do nothing
 
         } else {
 
@@ -686,18 +675,24 @@ void Conductivity::calc_anharmonic_imagself3()
             }
         }
 
-        MPI_Gather(&damping3_loc[0], ntemp, MPI_DOUBLE,
-                   damping3[nshift_restart + i * mympi->nprocs], ntemp,
-                   MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(&damping3_loc[0],
+                   ntemp,
+                   MPI_DOUBLE,
+                   damping3[nshift_restart + i * mympi->nprocs],
+                   ntemp,
+                   MPI_DOUBLE,
+                   0,
+                   MPI_COMM_WORLD);
 
         if (mympi->my_rank == 0) {
             write_result_gamma(i, nshift_restart, vel, damping3, 1);
 
             auto currentTime = std::chrono::system_clock::now();
-            long long totalElapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+            long long totalElapsedTime =
+                std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            displayProgressBar(i, nks_tmp-1, std::cout, timeRemaining, isConsole, "3-phonon");
+            displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "3-phonon");
             lastUpdate = currentTime;
             if (i == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
         }
@@ -732,8 +727,7 @@ void Conductivity::calc_anharmonic_imagself4()
     double *damping4_loc;
 
     auto nks_tmp = vks_l.size();
-    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, &nks_thread[mympi->my_rank],
-               1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, &nks_thread[mympi->my_rank], 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -769,7 +763,8 @@ void Conductivity::calc_anharmonic_imagself4()
 
         if (iks == -1) {
 
-            for (unsigned int j = 0; j < ntemp; ++j) damping4_loc[j] = eps; // do nothing
+            for (unsigned int j = 0; j < ntemp; ++j)
+                damping4_loc[j] = eps; // do nothing
 
         } else {
 
@@ -792,31 +787,36 @@ void Conductivity::calc_anharmonic_imagself4()
 
             } else if (integration->ismear_4ph == -1) {
                 // TODO: Implement tetrahedron method for 4ph scattering
-//                anharmonic_core->calc_damping_tetrahedron(ntemp,
-//                                                          Temperature,
-//                                                          omega,
-//                                                          iks / ns,
-//                                                          snum,
-//                                                          damping4_loc);
+                //                anharmonic_core->calc_damping_tetrahedron(ntemp,
+                //                                                          Temperature,
+                //                                                          omega,
+                //                                                          iks / ns,
+                //                                                          snum,
+                //                                                          damping4_loc);
             }
         }
 
-        MPI_Gather(&damping4_loc[0], ntemp, MPI_DOUBLE,
-                   damping4[nshift_restart4 + i * mympi->nprocs], ntemp,
-                   MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(&damping4_loc[0],
+                   ntemp,
+                   MPI_DOUBLE,
+                   damping4[nshift_restart4 + i * mympi->nprocs],
+                   ntemp,
+                   MPI_DOUBLE,
+                   0,
+                   MPI_COMM_WORLD);
 
         if (mympi->my_rank == 0) {
             write_result_gamma(i, nshift_restart4, vel_4ph, damping4, -1);
 
             auto currentTime = std::chrono::system_clock::now();
-            long long totalElapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+            long long totalElapsedTime =
+                std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            displayProgressBar(i, nks_tmp-1, std::cout, timeRemaining, isConsole, "4-phonon");
+            displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "4-phonon");
             lastUpdate = currentTime;
             if (i == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
         }
-
     }
     deallocate(damping4_loc);
 }
@@ -831,11 +831,8 @@ void Conductivity::calc_anharmonic_imagself()
 }
 
 
-void Conductivity::write_result_gamma(const unsigned int ik,
-                                      const unsigned int nshift,
-                                      double ***vel_in,
-                                      double **damp_in,
-                                      int mode)
+void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int nshift, double ***vel_in,
+                                      double **damp_in, int mode)
 {
     const unsigned int np = mympi->nprocs;
     unsigned int k;
@@ -862,8 +859,7 @@ void Conductivity::write_result_gamma(const unsigned int ik,
             }
 
             for (k = 0; k < ntemp; ++k) {
-                fs_result3 << std::setw(15)
-                           << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
+                fs_result3 << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
             }
             fs_result3 << "#END GAMMA_EACH\n";
         }
@@ -890,13 +886,11 @@ void Conductivity::write_result_gamma(const unsigned int ik,
             }
 
             for (k = 0; k < ntemp; ++k) {
-                fs_result4 << std::setw(15)
-                           << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
+                fs_result4 << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
             }
             fs_result4 << "#END GAMMA_EACH\n";
         }
     }
-
 }
 
 
@@ -943,7 +937,6 @@ void Conductivity::compute_kappa()
                 for (i = 0; i < ntemp; ++i) {
                     gamma_total[iks][i] += (vel_norm / len_boundary) * time_ry; // same unit as gamma
                 }
-
             }
         }
 
@@ -980,10 +973,7 @@ void Conductivity::compute_kappa()
 
             allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-            interpolate_data(kmesh_4ph,
-                             dos->kmesh_dos,
-                             damping4,
-                             damping4_dense);
+            interpolate_data(kmesh_4ph, dos->kmesh_dos, damping4, damping4_dense);
 
             for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ++ik) {
                 for (auto is = 0; is < ns; ++is) {
@@ -1002,19 +992,12 @@ void Conductivity::compute_kappa()
             allocate(kappa_spec, dos->n_energy, ntemp, 3);
         }
 
-        compute_kappa_intraband(dos->kmesh_dos,
-                                dos->dymat_dos->get_eigenvalues(),
-                                lifetime,
-                                kappa,
-                                kappa_spec);
+        compute_kappa_intraband(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), lifetime, kappa, kappa_spec);
         deallocate(lifetime);
 
         if (calc_coherent) {
             allocate(kappa_coherent, ntemp, 3, 3);
-            compute_kappa_coherent(dos->kmesh_dos,
-                                   dos->dymat_dos->get_eigenvalues(),
-                                   gamma_total,
-                                   kappa_coherent);
+            compute_kappa_coherent(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), gamma_total, kappa_coherent);
         }
 
         deallocate(gamma_total);
@@ -1022,11 +1005,8 @@ void Conductivity::compute_kappa()
 }
 
 
-void Conductivity::average_self_energy_at_degenerate_point(const int n,
-                                                           const int m,
-                                                           const KpointMeshUniform *kmesh_in,
-                                                           const double *const *eval_in,
-                                                           double **damping) const
+void Conductivity::average_self_energy_at_degenerate_point(const int n, const int m, const KpointMeshUniform *kmesh_in,
+                                                           const double *const *eval_in, double **damping) const
 {
     int j, k, l;
     const auto nkr = kmesh_in->nk_irred;
@@ -1045,7 +1025,8 @@ void Conductivity::average_self_energy_at_degenerate_point(const int n,
     for (auto i = 0; i < nkr; ++i) {
         const auto ik = kmesh_in->kpoint_irred_all[i][0].knum;
 
-        for (j = 0; j < ns; ++j) eval_tmp[j] = eval_in[ik][j];
+        for (j = 0; j < ns; ++j)
+            eval_tmp[j] = eval_in[ik][j];
 
         degeneracy_at_k.clear();
 
@@ -1071,7 +1052,8 @@ void Conductivity::average_self_energy_at_degenerate_point(const int n,
 
             if (ideg > 1) {
 
-                for (l = 0; l < m; ++l) damping_sum[l] = 0.0;
+                for (l = 0; l < m; ++l)
+                    damping_sum[l] = 0.0;
 
                 for (k = is; k < is + ideg; ++k) {
                     for (l = 0; l < m; ++l) {
@@ -1092,10 +1074,8 @@ void Conductivity::average_self_energy_at_degenerate_point(const int n,
     deallocate(damping_sum);
 }
 
-void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in,
-                                           const double *const *eval_in,
-                                           const double *const *lifetime,
-                                           double ***kappa_intra,
+void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                           const double *const *lifetime, double ***kappa_intra,
                                            double ***kappa_spec_out) const
 {
     int i, is, ik;
@@ -1131,18 +1111,15 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in,
                             }
 
                             if (thermodynamics->classical) {
-                                kappa_mode[i][3 * j + k][is][ik]
-                                        = thermodynamics->Cv_classical(omega, temperature[i])
-                                          * vv_tmp * lifetime[ns * ik + is][i];
+                                kappa_mode[i][3 * j + k][is][ik] = thermodynamics->Cv_classical(omega, temperature[i]) *
+                                                                   vv_tmp * lifetime[ns * ik + is][i];
                             } else {
-                                kappa_mode[i][3 * j + k][is][ik]
-                                        = thermodynamics->Cv(omega, temperature[i])
-                                          * vv_tmp * lifetime[ns * ik + is][i];
+                                kappa_mode[i][3 * j + k][is][ik] =
+                                    thermodynamics->Cv(omega, temperature[i]) * vv_tmp * lifetime[ns * ik + is][i];
                             }
 
                             // Convert to SI unit
                             kappa_mode[i][3 * j + k][is][ik] *= factor_toSI;
-
                         }
                     }
                 }
@@ -1173,10 +1150,8 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in,
     deallocate(kappa_mode);
 }
 
-void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in,
-                                          const double *const *eval_in,
-                                          const double *const *gamma_total,
-                                          double ***kappa_coherent_out) const
+void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                          const double *const *gamma_total, double ***kappa_coherent_out) const
 {
     // Compute the coherent part of thermal conductivity
     // based on the Michelle's paper.
@@ -1229,14 +1204,14 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in,
                                 const auto ktmp = kmesh_in->kpoint_irred_all[ik][ieq].knum;
                                 vv_tmp += velmat[ktmp][is][js][j] * velmat[ktmp][js][is][k];
                             }
-                            auto kcelem_tmp = 2.0 * (omega1 * omega2) / (omega1 + omega2)
-                                              * (thermodynamics->Cv(omega1, temperature[i]) / omega1
-                                                 + thermodynamics->Cv(omega2, temperature[i]) / omega2)
-                                              * 2.0 * (gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i])
-                                              / (4.0 * std::pow(omega1 - omega2, 2.0)
-                                                 + 4.0 * std::pow(gamma_total[ik * ns + is][i]
-                                                                  + gamma_total[ik * ns + js][i], 2.0))
-                                              * vv_tmp;
+                            auto kcelem_tmp =
+                                2.0 * (omega1 * omega2) / (omega1 + omega2) *
+                                (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
+                                 thermodynamics->Cv(omega2, temperature[i]) / omega2) *
+                                2.0 * (gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i]) /
+                                (4.0 * std::pow(omega1 - omega2, 2.0) +
+                                 4.0 * std::pow(gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i], 2.0)) *
+                                vv_tmp;
                             kappa_tmp[ib] += kcelem_tmp;
 
                             if (calc_coherent == 2 && j == k) {
@@ -1247,8 +1222,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in,
 
                     for (ib = 0; ib < ns2; ++ib) {
                         if (std::abs(kappa_tmp[ib].imag()) > eps10) {
-                            warn("compute_kappa_coherent",
-                                 "The kappa_coherent_out has imaginary component.");
+                            warn("compute_kappa_coherent", "The kappa_coherent_out has imaginary component.");
                         }
                         kappa_coherent_out[i][j][k] += kappa_tmp[ib].real();
                     }
@@ -1291,10 +1265,8 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in,
     }
 }
 
-void Conductivity::compute_frequency_resolved_kappa(const int ntemp,
-                                                    const int smearing_method,
-                                                    const KpointMeshUniform *kmesh_in,
-                                                    const double *const *eval_in,
+void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int smearing_method,
+                                                    const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                                     const double *const *const *const *kappa_mode,
                                                     double ***kappa_spec_out) const
 {
@@ -1308,7 +1280,8 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp,
     allocate(kmap_identity, nk_3ph);
     allocate(eval, ns, nk_3ph);
 
-    for (i = 0; i < nk_3ph; ++i) kmap_identity[i] = i;
+    for (i = 0; i < nk_3ph; ++i)
+        kmap_identity[i] = i;
 
     for (i = 0; i < nk_3ph; ++i) {
         for (j = 0; j < ns; ++j) {
@@ -1317,7 +1290,7 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp,
     }
 
 #ifdef _OPENMP
-#pragma omp parallel private (j)
+#pragma omp parallel private(j)
 #endif
     {
         int k;
@@ -1338,15 +1311,21 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp,
 
             for (int is = 0; is < ns; ++is) {
                 if (smearing_method == -1) {
-                    integration->calc_weight_tetrahedron(nk_3ph, kmap_identity,
-                                                         eval[is], dos->energy_dos[i],
+                    integration->calc_weight_tetrahedron(nk_3ph,
+                                                         kmap_identity,
+                                                         eval[is],
+                                                         dos->energy_dos[i],
                                                          dos->tetra_nodes_dos->get_ntetra(),
                                                          dos->tetra_nodes_dos->get_tetras(),
                                                          weight);
                 } else {
-                    integration->calc_weight_smearing(nk_3ph, nk_3ph, kmap_identity,
-                                                      eval[is], dos->energy_dos[i],
-                                                      smearing_method, weight);
+                    integration->calc_weight_smearing(nk_3ph,
+                                                      nk_3ph,
+                                                      kmap_identity,
+                                                      eval[is],
+                                                      dos->energy_dos[i],
+                                                      smearing_method,
+                                                      weight);
                 }
 
                 for (j = 0; j < ntemp; ++j) {
@@ -1370,7 +1349,8 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp,
 
 void Conductivity::set_kmesh_coarse(const unsigned int *nk_in)
 {
-    for (auto i = 0; i < 3; ++i) nk_coarse[i] = nk_in[i];
+    for (auto i = 0; i < 3; ++i)
+        nk_coarse[i] = nk_in[i];
 }
 
 KpointMeshUniform *Conductivity::get_kmesh_coarse() const
@@ -1378,10 +1358,8 @@ KpointMeshUniform *Conductivity::get_kmesh_coarse() const
     return kmesh_4ph;
 }
 
-void Conductivity::set_conductivity_params(const std::string &file_result3_in,
-                                           const std::string &file_result4_in,
-                                           const bool restart_3ph_in,
-                                           const bool restart_4ph_in)
+void Conductivity::set_conductivity_params(const std::string &file_result3_in, const std::string &file_result4_in,
+                                           const bool restart_3ph_in, const bool restart_4ph_in)
 {
     file_result3 = file_result3_in;
     file_result4 = file_result4_in;
@@ -1405,25 +1383,17 @@ std::string Conductivity::get_filename_results(const int order) const
     return "";
 }
 
-void Conductivity::check_consistency_restart(std::fstream &fs_result,
-                                             const std::string &file_result_in,
-                                             const unsigned int nk_in[3],
-                                             const unsigned int nk_irred_in,
-                                             const Cell &primcell,
-                                             const bool classical_in,
-                                             const int ismear_in,
-                                             const double epsilon_in,
-                                             const double tmin_in,
-                                             const double tmax_in,
-                                             const double delta_t_in,
-                                             const std::string &file_fcs_in)
+void Conductivity::check_consistency_restart(std::fstream &fs_result, const std::string &file_result_in,
+                                             const unsigned int nk_in[3], const unsigned int nk_irred_in,
+                                             const Cell &primcell, const bool classical_in, const int ismear_in,
+                                             const double epsilon_in, const double tmin_in, const double tmax_in,
+                                             const double delta_t_in, const std::string &file_fcs_in)
 {
     const auto Ry_to_kayser = Hz_to_kayser / time_ry;
 
     fs_result.open(file_result_in.c_str(), std::ios::in | std::ios::out);
     if (!fs_result) {
-        exit("check_consistency_restart",
-             "Could not open file_result_in");
+        exit("check_consistency_restart", "Could not open file_result_in");
     }
 
     // Check the consistency
@@ -1441,15 +1411,12 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result,
             break;
         }
     }
-    if (!found_tag)
-        exit("check_consistency_restart",
-             "Could not find #SYSTEM tag");
+    if (!found_tag) exit("check_consistency_restart", "Could not find #SYSTEM tag");
 
     fs_result >> natmin_tmp >> nkd_tmp;
 
     if (!(natmin_tmp == primcell.number_of_atoms && nkd_tmp == primcell.number_of_elems)) {
-        exit("check_consistency_restart",
-             "SYSTEM information is not consistent");
+        exit("check_consistency_restart", "SYSTEM information is not consistent");
     }
 
     found_tag = false;
@@ -1459,19 +1426,13 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result,
             break;
         }
     }
-    if (!found_tag)
-        exit("check_consistency_restart",
-             "Could not find #KPOINT tag");
+    if (!found_tag) exit("check_consistency_restart", "Could not find #KPOINT tag");
 
     fs_result >> nk_tmp[0] >> nk_tmp[1] >> nk_tmp[2];
     fs_result >> nksym_tmp;
 
-    if (!(nk_in[0] == nk_tmp[0] &&
-          nk_in[1] == nk_tmp[1] &&
-          nk_in[2] == nk_tmp[2] &&
-          nk_irred_in == nksym_tmp)) {
-        exit("check_consistency_restart",
-             "KPOINT information is not consistent");
+    if (!(nk_in[0] == nk_tmp[0] && nk_in[1] == nk_tmp[1] && nk_in[2] == nk_tmp[2] && nk_irred_in == nksym_tmp)) {
+        exit("check_consistency_restart", "KPOINT information is not consistent");
     }
 
     found_tag = false;
@@ -1489,8 +1450,7 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result,
         fs_result >> is_classical;
     }
     if (static_cast<bool>(is_classical) != classical_in) {
-        warn("check_consistency_restart",
-             "CLASSICAL val is not consistent");
+        warn("check_consistency_restart", "CLASSICAL val is not consistent");
     }
 
     found_tag = false;
@@ -1500,14 +1460,11 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result,
             break;
         }
     }
-    if (!found_tag)
-        exit("check_consistency_restart",
-             "Could not find #FCSXML tag");
+    if (!found_tag) exit("check_consistency_restart", "Could not find #FCSXML tag");
 
     fs_result >> str_tmp;
     if (str_tmp != file_fcs_in) {
-        warn("check_consistency_restart",
-             "FCSXML is not consistent");
+        warn("check_consistency_restart", "FCSXML is not consistent");
     }
 
     found_tag = false;
@@ -1517,24 +1474,20 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result,
             break;
         }
     }
-    if (!found_tag)
-        exit("check_consistency_restart",
-             "Could not find #SMEARING tag");
+    if (!found_tag) exit("check_consistency_restart", "Could not find #SMEARING tag");
 
     fs_result >> ismear;
     fs_result >> epsilon_tmp;
 
     if (ismear != ismear_in) {
-        warn("check_consistency_restart",
-             "Smearing method is not consistent");
+        warn("check_consistency_restart", "Smearing method is not consistent");
     }
     if (ismear != -1 && std::abs(epsilon_tmp - epsilon_in * Ry_to_kayser) >= eps4) {
-        std::cout << "epsilon from file : " << std::setw(15)
-                  << std::setprecision(10) << epsilon_tmp * Ry_to_kayser << '\n';
-        std::cout << "epsilon from input: " << std::setw(15)
-                  << std::setprecision(10) << epsilon_in * Ry_to_kayser << '\n';
-        warn("check_consistency_restart",
-             "Smearing width is not consistent");
+        std::cout << "epsilon from file : " << std::setw(15) << std::setprecision(10) << epsilon_tmp * Ry_to_kayser
+                  << '\n';
+        std::cout << "epsilon from input: " << std::setw(15) << std::setprecision(10) << epsilon_in * Ry_to_kayser
+                  << '\n';
+        warn("check_consistency_restart", "Smearing width is not consistent");
     }
 
     found_tag = false;
@@ -1544,38 +1497,25 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result,
             break;
         }
     }
-    if (!found_tag)
-        exit("check_consistency_restart",
-             "Could not find #TEMPERATURE tag");
+    if (!found_tag) exit("check_consistency_restart", "Could not find #TEMPERATURE tag");
 
     fs_result >> T1 >> T2 >> delta_T;
 
-    if (!(T1 == tmin_in &&
-          T2 == tmax_in &&
-          delta_T == delta_t_in)) {
-        exit("check_consistency_restart",
-             "Temperature information is not consistent");
+    if (!(T1 == tmin_in && T2 == tmax_in && delta_T == delta_t_in)) {
+        exit("check_consistency_restart", "Temperature information is not consistent");
     }
 }
 
-void Conductivity::write_header_result(std::fstream &fs_result,
-                                       const std::string &file_result,
-                                       const KpointMeshUniform *kmesh_in,
-                                       const Cell &primcell,
-                                       const bool classical_in,
-                                       const int ismear_in,
-                                       const double epsilon_in,
-                                       const double tmin_in,
-                                       const double tmax_in,
-                                       const double delta_t_in,
-                                       const std::string &file_fcs_in)
+void Conductivity::write_header_result(std::fstream &fs_result, const std::string &file_result,
+                                       const KpointMeshUniform *kmesh_in, const Cell &primcell, const bool classical_in,
+                                       const int ismear_in, const double epsilon_in, const double tmin_in,
+                                       const double tmax_in, const double delta_t_in, const std::string &file_fcs_in)
 {
     const auto Ry_to_kayser = Hz_to_kayser / time_ry;
 
     fs_result.open(file_result.c_str(), std::ios::out);
     if (!fs_result) {
-        exit("setup_result_io",
-             "Could not open file_result3");
+        exit("setup_result_io", "Could not open file_result3");
     }
 
     fs_result << "## General information\n";
@@ -1597,19 +1537,15 @@ void Conductivity::write_header_result(std::fstream &fs_result,
     fs_result << "#END SYSTEM\n";
 
     fs_result << "#KPOINT\n";
-    fs_result << kmesh_in->nk_i[0] << " "
-              << kmesh_in->nk_i[1] << " "
-              << kmesh_in->nk_i[2] << '\n';
+    fs_result << kmesh_in->nk_i[0] << " " << kmesh_in->nk_i[1] << " " << kmesh_in->nk_i[2] << '\n';
     fs_result << kmesh_in->nk_irred << '\n';
 
     for (int i = 0; i < kmesh_in->nk_irred; ++i) {
         fs_result << std::setw(6) << i + 1 << ":";
         for (int j = 0; j < 3; ++j) {
-            fs_result << std::setw(15)
-                      << std::scientific << kmesh_in->kpoint_irred_all[i][0].kval[j];
+            fs_result << std::setw(15) << std::scientific << kmesh_in->kpoint_irred_all[i][0].kval[j];
         }
-        fs_result << std::setw(12)
-                  << std::fixed << kmesh_in->weight_k[i] << '\n';
+        fs_result << std::setw(12) << std::fixed << kmesh_in->weight_k[i] << '\n';
     }
 
     fs_result.unsetf(std::ios::fixed);
@@ -1636,18 +1572,15 @@ void Conductivity::write_header_result(std::fstream &fs_result,
     fs_result << "##END General information\n";
 }
 
-void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in,
-                                    const KpointMeshUniform *kmesh_dense_in,
-                                    const double *const *val_coarse_in,
-                                    double **val_dense_out) const
+void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+                                    const double *const *val_coarse_in, double **val_dense_out) const
 {
     double ***damping4_coarse = nullptr;
     double ***damping4_interpolated = nullptr;
     allocate(damping4_interpolated, ns, ntemp, kmesh_dense_in->nk);
     allocate(damping4_coarse, ns, ntemp, kmesh_coarse_in->nk);
 
-    auto interpol = new TriLinearInterpolator(kmesh_coarse_in->nk_i,
-                                              kmesh_dense_in->nk_i);
+    auto interpol = new TriLinearInterpolator(kmesh_coarse_in->nk_i, kmesh_dense_in->nk_i);
     interpol->setup();
 
     if (interpolator == "linear") {
@@ -1655,16 +1588,15 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in,
         for (auto ik = 0; ik < kmesh_coarse_in->nk; ++ik) {
             for (auto is = 0; is < ns; ++is) {
                 for (auto itemp = 0; itemp < ntemp; ++itemp) {
-                    damping4_coarse[is][itemp][ik]
-                            = val_coarse_in[kmesh_coarse_in->kmap_to_irreducible[ik] * ns + is][itemp];
+                    damping4_coarse[is][itemp][ik] =
+                        val_coarse_in[kmesh_coarse_in->kmap_to_irreducible[ik] * ns + is][itemp];
                 }
             }
         }
 
         for (auto is = 0; is < ns; ++is) {
             for (auto itemp = 0; itemp < ntemp; ++itemp) {
-                interpol->interpolate(damping4_coarse[is][itemp],
-                                      damping4_interpolated[is][itemp]);
+                interpol->interpolate(damping4_coarse[is][itemp], damping4_interpolated[is][itemp]);
             }
         }
 
@@ -1693,11 +1625,9 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in,
         for (auto is = 0; is < ns; ++is) {
             for (auto itemp = 0; itemp < ntemp; ++itemp) {
                 if (interpolator == "modified-log-linear") {
-                    interpol->interpolate_avoidgamma(damping4_coarse[is][itemp],
-                                                     damping4_interpolated[is][itemp], is);
+                    interpol->interpolate_avoidgamma(damping4_coarse[is][itemp], damping4_interpolated[is][itemp], is);
                 } else {
-                    interpol->interpolate(damping4_coarse[is][itemp],
-                                          damping4_interpolated[is][itemp]);
+                    interpol->interpolate(damping4_coarse[is][itemp], damping4_interpolated[is][itemp]);
                 }
             }
         }
@@ -1741,7 +1671,6 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in,
         }
 
         ofs_itp.close();
-
     }
 
     deallocate(damping4_coarse);
@@ -1773,5 +1702,4 @@ void Conductivity::lifetime_from_gamma(double **&gamma, double **&lifetime)
             }
         }
     }
-
 }

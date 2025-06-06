@@ -35,11 +35,11 @@ Improvement:
 
 #pragma once
 
-#include "pointers.h"
-#include "kpoint.h"
-#include <vector>
-#include <set>
 #include <complex>
+#include <set>
+#include <vector>
+#include "kpoint.h"
+#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -134,6 +134,5 @@ private:
     void write_Q_dF(int, double **&, double ***&);
 
     void write_kappa_iterative();
-
 };
-}
+} // namespace PHON_NS

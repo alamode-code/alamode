@@ -17,8 +17,8 @@
 #include <Windows.h>
 #else
 
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
 #endif
 
@@ -47,4 +47,4 @@ private:
     timeval time_ref;
 #endif
 };
-}
+} // namespace PHON_NS

@@ -10,12 +10,12 @@
 
 #pragma once
 
-#include "pointers.h"
+#include <complex>
 #include <string>
 #include <vector>
-#include <complex>
-#include "system.h"
 #include "fcs_phonon.h"
+#include "pointers.h"
+#include "system.h"
 
 namespace PHON_NS
 {
@@ -33,8 +33,7 @@ public:
         }
     };
 
-    Gvecs(const Eigen::Vector3d _vec) :
-        vec(_vec) {};
+    Gvecs(const Eigen::Vector3d _vec) : vec(_vec) {};
 };
 
 class DistInfo
@@ -45,12 +44,9 @@ public:
 
     DistInfo();
 
-    DistInfo(const int n,
-             const double d) :
-        cell(n), dist(d) {};
+    DistInfo(const int n, const double d) : cell(n), dist(d) {};
 
-    DistInfo(const DistInfo &obj) :
-        cell(obj.cell), dist(obj.dist) {};
+    DistInfo(const DistInfo &obj) : cell(obj.cell), dist(obj.dist) {};
 
     bool operator<(const DistInfo &obj) const
     {
@@ -79,9 +75,7 @@ public:
 
     void init();
 
-    void add_longrange_matrix(const double *,
-                              const double *,
-                              std::complex<double> **);
+    void add_longrange_matrix(const double *, const double *, std::complex<double> **);
 
 private:
     std::vector<Gvecs> G_vectors_fcs;
@@ -111,55 +105,27 @@ private:
 
     void compute_ewald_fcs2();
 
-    void get_pairs_of_minimum_distance(int,
-                                       const int [3],
-                                       const Eigen::MatrixXd &) const;
+    void get_pairs_of_minimum_distance(int, const int[3], const Eigen::MatrixXd &) const;
 
-    void calc_longrange_fcs(int,
-                            int,
-                            int,
-                            int,
-                            int,
-                            double *);
+    void calc_longrange_fcs(int, int, int, int, int, double *);
 
-    void calc_real_space_sum_ewald_fcs(int,
-                                       int,
-                                       double **);
+    void calc_real_space_sum_ewald_fcs(int, int, double **);
 
-    void calc_reciprocal_space_sum_ewald_fcs(int,
-                                             int,
-                                             double **);
+    void calc_reciprocal_space_sum_ewald_fcs(int, int, double **);
 
-    void calc_short_term_dynamical_matrix(int,
-                                          int,
-                                          double *,
-                                          std::complex<double> **);
+    void calc_short_term_dynamical_matrix(int, int, double *, std::complex<double> **);
 
-    void calc_long_term_dynamical_matrix(const int iat,
-                                         const int jat,
-                                         const Eigen::Vector3d &xk_in,
-                                         const Eigen::Vector3d &kvec_in,
-                                         std::complex<double> **mat_out);
+    void calc_long_term_dynamical_matrix(const int iat, const int jat, const Eigen::Vector3d &xk_in,
+                                         const Eigen::Vector3d &kvec_in, std::complex<double> **mat_out);
 
-    void calc_realspace_sum(const int iat,
-                            const int jat,
-                            const double xdist[3],
-                            const double lambda_in,
+    void calc_realspace_sum(const int iat, const int jat, const double xdist[3], const double lambda_in,
                             std::vector<std::vector<double>> &ret);
 
-    void calc_anisotropic_hmat(double,
-                               const double *,
-                               Eigen::Matrix3d &hmat_out) const;
+    void calc_anisotropic_hmat(double, const double *, Eigen::Matrix3d &hmat_out) const;
 
-    void get_lambda_and_lgmax(const Eigen::Matrix3d &lavec,
-                              const Eigen::Matrix3d &rlavec,
-                              const Eigen::Matrix3d &epsilon,
-                              const Eigen::Matrix3d &epsilon_inv,
-                              const double &p,
-                              double &lambda_out,
-                              double &Lmax_out,
-                              double &Gmax_out,
-                              Eigen::Vector3i &lsize,
+    void get_lambda_and_lgmax(const Eigen::Matrix3d &lavec, const Eigen::Matrix3d &rlavec,
+                              const Eigen::Matrix3d &epsilon, const Eigen::Matrix3d &epsilon_inv, const double &p,
+                              double &lambda_out, double &Lmax_out, double &Gmax_out, Eigen::Vector3i &lsize,
                               Eigen::Vector3i &gsize);
 };
-}
+} // namespace PHON_NS

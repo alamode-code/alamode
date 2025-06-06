@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include "pointers.h"
 #include <complex>
 #include <vector>
+#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -31,11 +31,8 @@ public:
 
     double ***get_dielectric_func() const;
 
-    void compute_dielectric_function(const unsigned int nomega_in,
-                                     double *omega_grid_in,
-                                     double *eval_in,
-                                     std::complex<double> **evec_in,
-                                     double ***dielec_out);
+    void compute_dielectric_function(const unsigned int nomega_in, double *omega_grid_in, double *eval_in,
+                                     std::complex<double> **evec_in, double ***dielec_out);
 
     int calc_dielectric_constant;
     unsigned int symmetrize_borncharge{};
@@ -57,8 +54,7 @@ private:
     void compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode,
                                        const bool do_normalize = false) const;
 
-    void load_born(const unsigned int flag_symmborn,
-                   const unsigned int verbosity = 1);
+    void load_born(const unsigned int flag_symmborn, const unsigned int verbosity = 1);
 
     double *omega_grid;
     double ***dielec;
@@ -68,4 +64,4 @@ private:
     Eigen::Matrix3d dielec_tensor;
     double ***borncharge{};
 };
-}
+} // namespace PHON_NS

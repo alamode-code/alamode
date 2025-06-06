@@ -1,31 +1,31 @@
-#include "mpi_common.h"
-#include "conductivity.h"
 #include "iterativebte.h"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <vector>
+#include "anharmonic_core.h"
+#include "conductivity.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
 #include "interpolation.h"
-#include "parsephon.h"
 #include "isotope.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mpi_common.h"
+#include "parsephon.h"
 #include "phonon_dos.h"
-#include "thermodynamics.h"
 #include "phonon_velocity.h"
-#include "anharmonic_core.h"
-#include "system.h"
-#include "write_phonons.h"
 #include "symmetry_core.h"
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <vector>
-#include <iterator>
+#include "system.h"
+#include "thermodynamics.h"
+#include "write_phonons.h"
 
 //mpic++ -o3 -std=c++11 -I../include -I/Users/wenhao/mylib/include -I/Users/wenhao/mylib/spg/include -I/Users/wenhao/mylib/fftw/3.3.9/include -c iterativebte.cpp
-// 
+//
 // DONE: test tetrahedron method
 // DONE: test with isotope
 // TODO: test with more grid
@@ -34,8 +34,7 @@
 
 using namespace PHON_NS;
 
-Iterativebte::Iterativebte(PHON *phon) :
-    Pointers(phon)
+Iterativebte::Iterativebte(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
@@ -147,8 +146,8 @@ void Iterativebte::setup_iterative()
         std::cout << " Iterative solution" << std::endl;
         std::cout << " ==================" << std::endl;
         std::cout << " MIN_CYCLE = " << min_cycle << ", MAX_CYCLE = " << max_cycle << std::endl;
-        std::cout << " ITER_THRESHOLD = " << std::setw(10) << std::right <<
-            std::setprecision(4) << convergence_criteria << std::endl;
+        std::cout << " ITER_THRESHOLD = " << std::setw(10) << std::right << std::setprecision(4) << convergence_criteria
+                  << std::endl;
         std::cout << std::endl;
         std::cout << " Distribute q point ... ";
         std::cout << " Number of q point pre process: " << std::setw(5) << nklocal << std::endl;
@@ -175,19 +174,11 @@ void Iterativebte::get_triplets()
         std::vector<KsListGroup> triplet2;
 
         // k3 = k1 - k2
-        dos->kmesh_dos->get_unique_triplet_k(ik,
-                                             symmetry->SymmList,
-                                             use_triplet_symmetry,
-                                             sym_permutation,
-                                             triplet);
+        dos->kmesh_dos->get_unique_triplet_k(ik, symmetry->SymmList, use_triplet_symmetry, sym_permutation, triplet);
 
         // k3 = - (k1 + k2)
-        dos->kmesh_dos->get_unique_triplet_k(ik,
-                                             symmetry->SymmList,
-                                             use_triplet_symmetry,
-                                             sym_permutation,
-                                             triplet2,
-                                             1);
+        dos->kmesh_dos
+            ->get_unique_triplet_k(ik, symmetry->SymmList, use_triplet_symmetry, sym_permutation, triplet2, 1);
 
         counter += triplet.size();
         counter2 += triplet2.size();
@@ -198,7 +189,6 @@ void Iterativebte::get_triplets()
 
     kplength_emitt = counter; // remember number of unique pairs
     kplength_absorb = counter2;
-
 }
 
 void Iterativebte::do_iterativebte()
@@ -207,8 +197,7 @@ void Iterativebte::do_iterativebte()
         std::cout << std::endl;
         std::cout << " Calculate once for the transition probability L(absorb) and L(emitt)" << std::endl;
         std::cout << " Size of L (MB) (approx.) = "
-            << memsize_in_MB(sizeof(double), kplength_absorb + kplength_emitt, ns, ns2)
-            << " ... ";
+                  << memsize_in_MB(sizeof(double), kplength_absorb + kplength_emitt, ns, ns2) << " ... ";
     }
 
     if (integration->ismear >= 0) {
@@ -259,7 +248,7 @@ void Iterativebte::setup_L_smear()
         auto tmpk = nk_l[ik];
         k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum; // k index in full grid
 
-        // emitt k1 -> k2 + k3 
+        // emitt k1 -> k2 + k3
         // V(-q1, q2, q3) delta(w1 - w2 - w3)
         for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
 
@@ -290,10 +279,7 @@ void Iterativebte::setup_L_smear()
                         delta = delta_gauss(omega1 - omega2 - omega3, epsilon2[0]);
                     }
 
-                    v3_tmp = std::norm(anharmonic_core->V3(arr,
-                                                           dos->kmesh_dos->xk,
-                                                           omega_tmp,
-                                                           evec_tmp));
+                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
 
                     L_emitt[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta / static_cast<double>(nk_3ph);
                 }
@@ -344,10 +330,7 @@ void Iterativebte::setup_L_smear()
                         // this is different from the adaptive in SERTA case
                     }
 
-                    v3_tmp = std::norm(anharmonic_core->V3(arr,
-                                                           dos->kmesh_dos->xk,
-                                                           omega_tmp,
-                                                           evec_tmp));
+                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
 
                     L_absorb[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta / static_cast<double>(nk_3ph);
                 }
@@ -359,7 +342,6 @@ void Iterativebte::setup_L_smear()
     if (counter != kplength_absorb) {
         exit("setup_L", "absorb: pair length not equal!");
     }
-
 }
 
 void Iterativebte::setup_L_tetra()
@@ -385,7 +367,8 @@ void Iterativebte::setup_L_tetra()
 
     unsigned int *kmap_identity;
     allocate(kmap_identity, nk_3ph);
-    for (auto i = 0; i < nk_3ph; ++i) kmap_identity[i] = i;
+    for (auto i = 0; i < nk_3ph; ++i)
+        kmap_identity[i] = i;
 
     double *energy_tmp;
     double *weight_tetra;
@@ -457,7 +440,7 @@ void Iterativebte::setup_L_tetra()
                                                      dos->tetra_nodes_dos->get_tetras(),
                                                      weight_tetra);
 
-                // emitt k1 -> k2 + k3 
+                // emitt k1 -> k2 + k3
                 // V(-q1, q2, q3) delta(w1 - w2 - w3)
                 for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
 
@@ -471,10 +454,7 @@ void Iterativebte::setup_L_tetra()
                     arr[1] = k2 * ns + s2;
                     arr[2] = k3 * ns + s3;
                     delta = weight_tetra[k2];
-                    v3_tmp = std::norm(anharmonic_core->V3(arr,
-                                                           dos->kmesh_dos->xk,
-                                                           omega_tmp,
-                                                           evec_tmp));
+                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
 
                     L_emitt[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta;
                 }
@@ -514,16 +494,13 @@ void Iterativebte::setup_L_tetra()
                     arr[1] = k2 * ns + s2;
                     arr[2] = k3 * ns + s3;
                     delta = weight_tetra[k2];
-                    v3_tmp = std::norm(anharmonic_core->V3(arr,
-                                                           dos->kmesh_dos->xk,
-                                                           omega_tmp,
-                                                           evec_tmp));
+                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
 
                     L_absorb[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta;
                 }
             } // ib
-        }     // s1    
-    }         // ik
+        } // s1
+    } // ik
 
     //if (mympi->my_rank == 0) {
     //    std::cout << "  DONE !" << std::endl;
@@ -581,7 +558,6 @@ void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
             }
             counter += 1;
         }
-
     }
     if (counter != kplength_emitt) {
         exit("setup_L", "Emitt: pair length not equal!");
@@ -613,7 +589,6 @@ void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
                 }
             }
             counter += 1;
-
         }
     }
 
@@ -646,10 +621,7 @@ void Iterativebte::calc_damping4()
         double **damping4_dense = nullptr;
         allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-        conductivity->interpolate_data(conductivity->kmesh_4ph,
-                                       dos->kmesh_dos,
-                                       conductivity->damping4,
-                                       damping4_dense);
+        conductivity->interpolate_data(conductivity->kmesh_4ph, dos->kmesh_dos, conductivity->damping4, damping4_dense);
 
         for (auto itemp = 0; itemp < ntemp; ++itemp) {
             for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ++ik) {
@@ -714,7 +686,6 @@ void Iterativebte::calc_anharmonic_imagself4()
             for (auto itemp = 0; itemp < ntemp; ++itemp) {
                 damping4[itemp][ik][s1] = damping4_loc[itemp];
             }
-
         }
     }
 
@@ -845,12 +816,11 @@ void Iterativebte::iterative_solver()
         calc_boson(itemp, fb, dndt);
 
         if (mympi->my_rank == 0) {
-            std::cout << " Temperature step ..." << std::setw(10) << std::right
-                << std::fixed << std::setprecision(2) << Temperature[itemp] << " K" <<
-                "    -----------------------------" << std::endl;
-            std::cout << "      Kappa [W/mK]        xx          xy          xz" <<
-                "          yx          yy          yz" <<
-                "          zx          zy          zz    |df' - df|" << std::endl;
+            std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed << std::setprecision(2)
+                      << Temperature[itemp] << " K" << "    -----------------------------" << std::endl;
+            std::cout << "      Kappa [W/mK]        xx          xy          xz"
+                      << "          yx          yy          yz" << "          zx          zy          zz    |df' - df|"
+                      << std::endl;
         }
 
         calc_Q_from_L(fb, Q);
@@ -920,29 +890,25 @@ void Iterativebte::iterative_solver()
                         std::cout << num_equivalent << std::endl;
                         std::cout << "   k1: ";
                         for (int j = 0; j < 3; ++j) {
-                            std::cout << std::setw(15)
-                                << std::scientific << dos->kmesh_dos->xk[k1][j];
+                            std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[k1][j];
                         }
                         auto minusk = dos->kmesh_dos->kindex_minus_xk[k1];
                         std::cout << " - k1: " << minusk << " ";
                         for (int j = 0; j < 3; ++j) {
-                            std::cout << std::setw(15)
-                                << std::scientific << dos->kmesh_dos->xk[minusk][j];
+                            std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[minusk][j];
                         }
                         std::cout << std::endl;
                         std::cout << "ir k1: ";
                         auto irk1 = dos->kmesh_dos->kmap_to_irreducible[k1];
                         for (int j = 0; j < 3; ++j) {
-                            std::cout << std::setw(15)
-                                << std::scientific << dos->kmesh_dos->xk[irk1][j];
+                            std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[irk1][j];
                         }
                         std::cout << std::endl;
                         for (auto iieq = 0; iieq < num_equivalent; ++iieq) {
                             auto symk = dos->kmesh_dos->kpoint_irred_all[irk1][iieq].knum;
                             std::cout << "sym k: ";
                             for (int j = 0; j < 3; ++j) {
-                                std::cout << std::setw(15)
-                                    << std::scientific << dos->kmesh_dos->xk[symk][j];
+                                std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[symk][j];
                             }
                             std::cout << std::endl;
                         }
@@ -950,8 +916,7 @@ void Iterativebte::iterative_solver()
                             auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
                             std::cout << "rot k: ";
                             for (int j = 0; j < 3; ++j) {
-                                std::cout << std::setw(15)
-                                    << std::scientific << dos->kmesh_dos->xk[krot][j];
+                                std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[krot][j];
                             }
                             std::cout << std::endl;
                         }
@@ -990,8 +955,8 @@ void Iterativebte::iterative_solver()
                                     n2 = fb[k2][s2];
                                     n3 = fb[k3][s3];
                                     for (ix = 0; ix < 3; ++ix) {
-                                        Wks[s1][ix] -= 0.5 * (dFold[k2][s2][ix] + dFold[k3][s3][ix]) * n1 * (n2 + 1.0)
-                                            * (n3 + 1.0) * L_emitt[kp_index][s1][ib];
+                                        Wks[s1][ix] -= 0.5 * (dFold[k2][s2][ix] + dFold[k3][s3][ix]) * n1 * (n2 + 1.0) *
+                                                       (n3 + 1.0) * L_emitt[kp_index][s1][ib];
                                     }
                                 }
                             }
@@ -1024,9 +989,8 @@ void Iterativebte::iterative_solver()
                                     n2 = fb[k2][s2];
                                     n3 = fb[k3][s3];
                                     for (ix = 0; ix < 3; ++ix) {
-                                        Wks[s1][ix] +=
-                                            (dFold[k2][s2][ix] - dFold[k3_minus][s3][ix]) * n1 * n2 * (n3 + 1.0)
-                                            * L_absorb[kp_index][s1][ib];
+                                        Wks[s1][ix] += (dFold[k2][s2][ix] - dFold[k3_minus][s3][ix]) * n1 * n2 *
+                                                       (n3 + 1.0) * L_absorb[kp_index][s1][ib];
                                     }
                                 }
                             }
@@ -1052,7 +1016,8 @@ void Iterativebte::iterative_solver()
                         }
 
                         if (Q_final < 1.0e-50 || dos->dymat_dos->get_eigenvalues()[k1][s1] < eps8) {
-                            for (ix = 0; ix < 3; ix++) dFnew[k1][s1][ix] = 0.0;
+                            for (ix = 0; ix < 3; ix++)
+                                dFnew[k1][s1][ix] = 0.0;
                         } else {
                             for (ix = 0; ix < 3; ix++) {
                                 dFnew[k1][s1][ix] = (-vel[k1][s1][ix] * dndt[ik][s1] / beta - Wks[s1][ix]) / Q_final;
@@ -1067,11 +1032,10 @@ void Iterativebte::iterative_solver()
                                 local_difference += std::pow(dFnew[k1][s1][ix] - dFold[k1][s1][ix], 2.0);
                             }
                         }
-
                     }
 
                 } // ieq
-            }     // ik
+            } // ik
 
             // check convergence, if converged, stop, if not, update dF and print kappa
             norm = 0.0;
@@ -1089,20 +1053,14 @@ void Iterativebte::iterative_solver()
                     }
                 }
             } else {
-                MPI_Allreduce(&dFnew[0][0][0],
-                              &dFold[0][0][0],
-                              nk_3ph * ns * 3,
-                              MPI_DOUBLE,
-                              MPI_SUM,
-                              MPI_COMM_WORLD);
+                MPI_Allreduce(&dFnew[0][0][0], &dFold[0][0][0], nk_3ph * ns * 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
                 calc_kappa(itemp, dFold, kappa_new);
                 //print kappa
                 if (mympi->my_rank == 0) {
                     for (ix = 0; ix < 3; ++ix) {
                         for (iy = 0; iy < 3; ++iy) {
-                            std::cout << std::setw(12) << std::scientific
-                                << std::setprecision(2) << kappa_new[ix][iy];
+                            std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_new[ix][iy];
                         }
                     }
                     norm = std::pow(norm, 0.5);
@@ -1119,9 +1077,9 @@ void Iterativebte::iterative_solver()
                 }
                 if (mympi->my_rank == 0) {
                     std::cout << "   -> Converged is achieved                 "
-                        << "                                            "
-                        << "                                    "
-                        << std::setw(14) << std::scientific << std::setprecision(2) << norm << std::endl;
+                              << "                                            "
+                              << "                                    " << std::setw(14) << std::scientific
+                              << std::setprecision(2) << norm << std::endl;
                 }
                 break;
 
@@ -1201,7 +1159,8 @@ void Iterativebte::average_scalar_degenerate_at_k(int k1, double *&val)
     const auto tol_omega = 1.0e-7; // Approximately equal to 0.01 cm^{-1}
     int s1, s2;
 
-    for (s1 = 0; s1 < ns; ++s1) tmp_omega[s1] = dos->dymat_dos->get_eigenvalues()[k1][s1];
+    for (s1 = 0; s1 < ns; ++s1)
+        tmp_omega[s1] = dos->dymat_dos->get_eigenvalues()[k1][s1];
 
     for (s1 = 0; s1 < ns; ++s1) {
         double sum_scalar = 0.0;
@@ -1216,7 +1175,8 @@ void Iterativebte::average_scalar_degenerate_at_k(int k1, double *&val)
     }
 
 
-    for (s1 = 0; s1 < ns; ++s1) val[s1] = tmp_q[s1];
+    for (s1 = 0; s1 < ns; ++s1)
+        val[s1] = tmp_q[s1];
 
     deallocate(tmp_q);
     deallocate(tmp_omega);
@@ -1232,11 +1192,13 @@ void Iterativebte::average_vector_degenerate_at_k(int k1, double **&val)
     const auto tol_omega = 1.0e-7; // Approximately equal to 0.01 cm^{-1}
     int s1, s2;
 
-    for (s1 = 0; s1 < ns; ++s1) tmp_omega[s1] = dos->dymat_dos->get_eigenvalues()[k1][s1];
+    for (s1 = 0; s1 < ns; ++s1)
+        tmp_omega[s1] = dos->dymat_dos->get_eigenvalues()[k1][s1];
 
     for (s1 = 0; s1 < ns; ++s1) {
         double sum_vector[3];
-        for (auto i = 0; i < 3; ++i) sum_vector[i] = 0.0;
+        for (auto i = 0; i < 3; ++i)
+            sum_vector[i] = 0.0;
         int n_deg = 0;
         for (s2 = 0; s2 < ns; ++s2) {
             if (std::abs(tmp_omega[s2] - tmp_omega[s1]) < tol_omega) {
@@ -1276,8 +1238,8 @@ void Iterativebte::calc_kappa(int itemp, double ***&df, double **&kappa_out)
         }
     }
 
-    const double conversionfactor = Ryd / (time_ry * Bohr_in_Angstrom * 1.0e-10 * nk_3ph * system->get_primcell().
-                                           volume);
+    const double conversionfactor =
+        Ryd / (time_ry * Bohr_in_Angstrom * 1.0e-10 * nk_3ph * system->get_primcell().volume);
 
     for (auto k1 = 0; k1 < nk_3ph; ++k1) {
         for (auto s1 = 0; s1 < ns; ++s1) {
@@ -1324,7 +1286,8 @@ bool Iterativebte::check_convergence(const std::vector<double> &history)
     double lastlast = history[size - 2];
     if (last > lastlast) {
         return true;
-    } else return false;
+    } else
+        return false;
 }
 
 
@@ -1347,16 +1310,14 @@ void Iterativebte::write_kappa_iterative()
         if (conductivity->fph_rta > 0) ofs_kl << "# 4ph is included non-iteratively." << std::endl;
         if (conductivity->len_boundary > eps) {
             ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2)
-                << conductivity->len_boundary * 1e9 << " [nm]" << std::endl;
+                   << conductivity->len_boundary * 1e9 << " [nm]" << std::endl;
         }
 
         for (auto itemp = 0; itemp < ntemp; ++itemp) {
-            ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2)
-                << Temperature[itemp];
+            ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2) << Temperature[itemp];
             for (auto ix = 0; ix < 3; ++ix) {
                 for (auto iy = 0; iy < 3; ++iy) {
-                    ofs_kl << std::setw(15) << std::scientific
-                        << std::setprecision(4) << kappa[itemp][ix][iy];
+                    ofs_kl << std::setw(15) << std::scientific << std::setprecision(4) << kappa[itemp][ix][iy];
                 }
             }
             ofs_kl << std::endl;
@@ -1366,7 +1327,6 @@ void Iterativebte::write_kappa_iterative()
         std::cout << " -----------------------------------------------------------------" << std::endl << std::endl;
         std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << std::endl;
     }
-
 }
 
 void Iterativebte::write_result()
@@ -1382,30 +1342,27 @@ void Iterativebte::write_result()
         fs_result.open(conductivity->get_filename_results(3).c_str(), std::ios::out);
 
         if (!fs_result) {
-            exit("setup_result_io",
-                 "Could not open file_result3");
+            exit("setup_result_io", "Could not open file_result3");
         }
 
         fs_result << "## General information" << std::endl;
         fs_result << "#SYSTEM" << std::endl;
-        fs_result << system->get_primcell().number_of_atoms << " " << system->get_primcell().number_of_elems <<
-            std::endl;
+        fs_result << system->get_primcell().number_of_atoms << " " << system->get_primcell().number_of_elems
+                  << std::endl;
         fs_result << system->get_primcell().volume << std::endl;
         fs_result << "#END SYSTEM" << std::endl;
 
         fs_result << "#KPOINT" << std::endl;
         fs_result << dos->kmesh_dos->nk_i[0] << " " << dos->kmesh_dos->nk_i[1] << " " << dos->kmesh_dos->nk_i[2]
-            << std::endl;
+                  << std::endl;
         fs_result << dos->kmesh_dos->nk_irred << std::endl;
 
         for (int i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
             fs_result << std::setw(6) << i + 1 << ":";
             for (int j = 0; j < 3; ++j) {
-                fs_result << std::setw(15)
-                    << std::scientific << dos->kmesh_dos->kpoint_irred_all[i][0].kval[j];
+                fs_result << std::setw(15) << std::scientific << dos->kmesh_dos->kpoint_irred_all[i][0].kval[j];
             }
-            fs_result << std::setw(12)
-                << std::fixed << dos->kmesh_dos->weight_k[i] << std::endl;
+            fs_result << std::setw(12) << std::fixed << dos->kmesh_dos->weight_k[i] << std::endl;
         }
         fs_result.unsetf(std::ios::fixed);
 
@@ -1439,9 +1396,8 @@ void Iterativebte::write_result()
             for (auto is = 0; is < dynamical->neval; ++is) {
                 fs_result << std::setw(6) << i + 1 << std::setw(6) << is + 1;
                 fs_result << std::setw(15) << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is]);
-                fs_result << std::setw(15) << vel[ik][is][0] * factor
-                    << std::setw(15) << vel[ik][is][1] * factor
-                    << std::setw(15) << vel[ik][is][2] * factor << std::endl;
+                fs_result << std::setw(15) << vel[ik][is][0] * factor << std::setw(15) << vel[ik][is][1] * factor
+                          << std::setw(15) << vel[ik][is][2] * factor << std::endl;
             }
         }
 
@@ -1471,12 +1427,7 @@ void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df)
             Q_tmp[tmpk][is] = q[ik][is];
         }
     }
-    MPI_Allreduce(&Q_tmp[0][0],
-                  &Q_all[0][0],
-                  nk_ir * ns,
-                  MPI_DOUBLE,
-                  MPI_SUM,
-                  MPI_COMM_WORLD);
+    MPI_Allreduce(&Q_tmp[0][0], &Q_all[0][0], nk_ir * ns, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     deallocate(Q_tmp);
 
     // now we have Q
@@ -1487,11 +1438,10 @@ void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df)
             for (auto is = 0; is < ns; ++is) {
                 auto k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
                 fs_result << std::setw(6) << ik + 1 << std::setw(6) << is + 1 << std::endl;
-                fs_result
-                    << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is]
-                    << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][0]
-                    << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][1]
-                    << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][2] << std::endl;
+                fs_result << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is] << std::setw(15)
+                          << std::scientific << std::setprecision(5) << df[k1][is][0] << std::setw(15)
+                          << std::scientific << std::setprecision(5) << df[k1][is][1] << std::setw(15)
+                          << std::scientific << std::setprecision(5) << df[k1][is][2] << std::endl;
             }
         }
         fs_result << std::endl;

@@ -10,11 +10,11 @@
 
 #pragma once
 
-#include "pointers.h"
-#include "anharmonic_core.h"
-#include "scph.h"
 #include <complex>
+#include "anharmonic_core.h"
 #include "kpoint.h"
+#include "pointers.h"
+#include "scph.h"
 
 namespace PHON_NS
 {
@@ -51,64 +51,33 @@ private:
 
     void setup_pp_interaction();
 
-    void exec_QHA_relax_main(std::complex<double> ****,
-                             std::complex<double> ****);
+    void exec_QHA_relax_main(std::complex<double> ****, std::complex<double> ****);
 
-    void exec_perturbative_QHA(std::complex<double> ****,
-                               std::complex<double> ****);
+    void exec_perturbative_QHA(std::complex<double> ****, std::complex<double> ****);
 
-    void calc_del_v0_del_umn_vib(std::complex<double> *,
-                                 std::complex<double> ***,
-                                 double);
+    void calc_del_v0_del_umn_vib(std::complex<double> *, std::complex<double> ***, double);
 
 
-    void calculate_del_v1_del_umn_renorm(std::complex<double> **,
-                                         double **,
-                                         std::complex<double> **,
-                                         std::complex<double> **,
-                                         std::complex<double> **,
-                                         std::complex<double> ***,
-                                         std::complex<double> ***,
-                                         std::complex<double> ****,
-                                         double *);
+    void calculate_del_v1_del_umn_renorm(std::complex<double> **, double **, std::complex<double> **,
+                                         std::complex<double> **, std::complex<double> **, std::complex<double> ***,
+                                         std::complex<double> ***, std::complex<double> ****, double *);
 
-    void calculate_C2_array_renorm(double **,
-                                   double **,
-                                   double **,
-                                   double **,
-                                   double ***,
-                                   std::complex<double> **,
-                                   std::complex<double> **,
-                                   std::complex<double> ***,
-                                   double *);
+    void calculate_C2_array_renorm(double **, double **, double **, double **, double ***, std::complex<double> **,
+                                   std::complex<double> **, std::complex<double> ***, double *);
 
-    void calculate_C2_array_ZSISA(double **,
-                                  double **,
-                                  std::complex<double> **,
-                                  double **);
+    void calculate_C2_array_ZSISA(double **, double **, std::complex<double> **, double **);
 
-    void compute_ZSISA_stress(double **,
-                              std::complex<double> *,
-                              std::complex<double> ***,
-                              double **,
-                              std::complex<double> *,
-                              std::complex<double> **,
-                              std::complex<double> *,
+    void compute_ZSISA_stress(double **, std::complex<double> *, std::complex<double> ***, double **,
+                              std::complex<double> *, std::complex<double> **, std::complex<double> *,
                               std::vector<int> &);
 
-    void compute_vZSISA_stress(std::complex<double> *,
-                               double **,
-                               std::complex<double> *,
-                               std::complex<double> *,
+    void compute_vZSISA_stress(std::complex<double> *, double **, std::complex<double> *, std::complex<double> *,
                                double **);
 
     // QHA
-    void compute_cmat(std::complex<double> ***,
-                      const std::complex<double> *const *const *const);
+    void compute_cmat(std::complex<double> ***, const std::complex<double> *const *const *const);
 
-    void calc_v1_vib(std::complex<double> *,
-                     std::complex<double> ***,
-                     const double);
+    void calc_v1_vib(std::complex<double> *, std::complex<double> ***, const double);
 
     KpointMeshUniform *kmesh_coarse = nullptr;
     KpointMeshUniform *kmesh_dense = nullptr;
@@ -130,9 +99,6 @@ private:
 
     std::vector<Eigen::MatrixXcd> dymat_harm_short, dymat_harm_long;
 
-    void zerofill_harmonic_dymat_renormalize(std::complex<double> ****,
-                                             unsigned int);
-
-
+    void zerofill_harmonic_dymat_renormalize(std::complex<double> ****, unsigned int);
 };
-}
+} // namespace PHON_NS

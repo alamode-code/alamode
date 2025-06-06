@@ -10,22 +10,20 @@
 
 #pragma once
 
-#include <vector>
 #include <cmath>
 #include <iomanip>
-#include "memory.h"
+#include <vector>
 #include "mathfunctions.h"
+#include "memory.h"
 
 namespace PHON_NS
 {
 class TriLinearInterpolator
 {
 public:
-    TriLinearInterpolator()
-    = default;
+    TriLinearInterpolator() = default;
 
-    TriLinearInterpolator(const unsigned int ngrid_coarse_in[3],
-                          const unsigned int ngrid_dense_in[3])
+    TriLinearInterpolator(const unsigned int ngrid_coarse_in[3], const unsigned int ngrid_dense_in[3])
     {
         for (auto i = 0; i < 3; ++i) {
             grid_c[i] = ngrid_coarse_in[i];
@@ -64,7 +62,6 @@ public:
             if (regular_grid) {
 
                 get_corners_regular(xf[i], corner_index, corner_coord);
-
             }
 
             for (auto j = 0; j < 8; ++j) {
@@ -72,7 +69,6 @@ public:
             }
 
             val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
-
         }
 
         deallocate(corner_coord);
@@ -124,7 +120,8 @@ public:
                     }
                     if (tmp < dist) {
                         dist = tmp;
-                        for (auto k = 0; k < 3; ++k) closest[k] = corner_coord[j][k];
+                        for (auto k = 0; k < 3; ++k)
+                            closest[k] = corner_coord[j][k];
                     }
                 }
 
@@ -164,8 +161,8 @@ public:
                             }
 
                         } // tmpk
-                    }     // tmpj
-                }         // tmpi
+                    } // tmpj
+                } // tmpi
 
                 val_f[i] = val_sum / static_cast<T>(counter);
                 deallocate(neigh_corner_coord);
@@ -177,7 +174,6 @@ public:
                 }
 
                 val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
-
             }
         }
         deallocate(corner_coord);
@@ -233,7 +229,8 @@ private:
             igrid[i] = static_cast<int>(grid_c[i]);
         }
 
-        for (auto j = 0; j < 3; ++j) tmp[j] = xk_i[j] * dn_c[j];
+        for (auto j = 0; j < 3; ++j)
+            tmp[j] = xk_i[j] * dn_c[j];
         iloc[0] = nint(std::floor(tmp[0]));
         iloc[1] = nint(std::ceil(tmp[0]));
         jloc[0] = nint(std::floor(tmp[1]));
@@ -292,7 +289,6 @@ private:
         corner_index[5] = kloc[1] + jloc[0] * igrid[2] + iloc[1] * n23; // index of c101
         corner_index[6] = kloc[1] + jloc[1] * igrid[2] + iloc[0] * n23; // index of c011
         corner_index[7] = kloc[1] + jloc[1] * igrid[2] + iloc[1] * n23; // index of c111
-
     }
 
 
@@ -303,34 +299,20 @@ private:
         T ty = static_cast<T>(center[1] - corners_coord[0][1]) * static_cast<T>(grid_c[1]);
         T tz = static_cast<T>(center[2] - corners_coord[0][2]) * static_cast<T>(grid_c[2]);
 
-        const auto c0 = BiLinearInterpolation(tx,
-                                              ty,
-                                              val_corner[0],
-                                              val_corner[1],
-                                              val_corner[2],
-                                              val_corner[3]);
-        const auto c1 = BiLinearInterpolation(tx,
-                                              ty,
-                                              val_corner[4],
-                                              val_corner[5],
-                                              val_corner[6],
-                                              val_corner[7]);
+        const auto c0 = BiLinearInterpolation(tx, ty, val_corner[0], val_corner[1], val_corner[2], val_corner[3]);
+        const auto c1 = BiLinearInterpolation(tx, ty, val_corner[4], val_corner[5], val_corner[6], val_corner[7]);
         return (c1 - c0) * tz + c0;
     }
 
 
     template <typename T>
-    T BiLinearInterpolation(const T tx, const T ty,
-                            const T c00, const T c10,
-                            const T c01, const T c11)
+    T BiLinearInterpolation(const T tx, const T ty, const T c00, const T c10, const T c01, const T c11)
     {
-        return c00 + (c10 - c00) * tx + (c01 - c00) * ty
-               + (c11 - c01 - c10 + c00) * tx * ty;
+        return c00 + (c10 - c00) * tx + (c01 - c00) * ty + (c11 - c01 - c10 + c00) * tx * ty;
     }
-
 };
 
-}
+} // namespace PHON_NS
 
 /* original interpolate function
 

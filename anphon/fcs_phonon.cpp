@@ -8,32 +8,31 @@ Please see the file 'LICENCE.txt' in the root directory
 or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "fcs_phonon.h"
+#include <algorithm>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
 #include "gruneisen.h"
+#include "hdf5_parser.h"
+#include "mathfunctions.h"
 #include "memory.h"
+#include "mpi_common.h"
 #include "phonons.h"
-#include "anharmonic_core.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "mathfunctions.h"
-#include <algorithm>
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include "hdf5_parser.h"
 
 using namespace PHON_NS;
 
-Fcs_phonon::Fcs_phonon(PHON *phon) :
-    Pointers(phon)
+Fcs_phonon::Fcs_phonon(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
@@ -128,8 +127,7 @@ void Fcs_phonon::setup(const std::string &mode)
                                                                  system->get_supercell(i).number_of_atoms,
                                                                  system->get_primcell().number_of_atoms,
                                                                  force_constant_with_cell[i]);
-            std::cout << "   Order " << i + 2 << " : " << std::setw(12)
-                << std::scientific << maxdev << '\n';
+            std::cout << "   Order " << i + 2 << " : " << std::setw(12) << std::scientific << maxdev << '\n';
         }
         std::cout << '\n';
     }
@@ -145,8 +143,7 @@ void Fcs_phonon::replicate_force_constants(const int maxorder_in) const
     }
 }
 
-void Fcs_phonon::replicate_force_constant(const System *system_in,
-                                          std::vector<FcsArrayWithCell> &fcs_inout) const
+void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout) const
 {
     // This function does the following tasks:
     // 1. Replicates the force constants originally computed for \Phi_{ij}, \Phi_{ijk}, ...,
@@ -177,17 +174,15 @@ void Fcs_phonon::replicate_force_constant(const System *system_in,
 
     // Generate the atom index mapping table for all translations
     for (auto itran = 0; itran < ntran_tmp; ++itran) {
-        xshift = cell_tmp.x_fractional.row(from_true_primitive[0][itran])
-                 - cell_tmp.x_fractional.row(from_true_primitive[0][0]);
+        xshift = cell_tmp.x_fractional.row(from_true_primitive[0][itran]) -
+                 cell_tmp.x_fractional.row(from_true_primitive[0][0]);
         map_now.clear();
 
         for (auto iat = 0; iat < cell_tmp.number_of_atoms; ++iat) {
             auto kat = -1;
             for (auto jat = 0; jat < cell_tmp.number_of_atoms; ++jat) {
                 xdiff = cell_tmp.x_fractional.row(jat) - cell_tmp.x_fractional.row(iat);
-                xdiff = (xdiff + xshift).unaryExpr([](const double x) {
-                    return x - static_cast<double>(nint(x));
-                });
+                xdiff = (xdiff + xshift).unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
                 xdiff_cart = cell_tmp.lattice_vector * xdiff;
                 if (xdiff_cart.norm() < 1.0e-3) {
                     kat = jat;
@@ -230,8 +225,8 @@ void Fcs_phonon::replicate_force_constant(const System *system_in,
             relvecs_vel.clear();
             for (auto i = 0; i < order + 1; ++i) {
                 for (auto j = 0; j < 3; ++j) {
-                    relvec_tmp[j] = it.relvecs_velocity[i][j] + cell_tmp.x_cartesian(atom_super_tran[0], j)
-                                    - cell_tmp.x_cartesian(system->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
+                    relvec_tmp[j] = it.relvecs_velocity[i][j] + cell_tmp.x_cartesian(atom_super_tran[0], j) -
+                                    cell_tmp.x_cartesian(system->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
                     relvec_tmp2[j] = it.relvecs_velocity[i][j];
                 }
                 relvec_tmp = convmat * relvec_tmp;
@@ -239,26 +234,18 @@ void Fcs_phonon::replicate_force_constant(const System *system_in,
                 relvecs.emplace_back(relvec_tmp);
                 relvecs_vel.emplace_back(relvec_tmp2);
             }
-            force_constant_replicate.emplace_back(it.fcs_val,
-                                                  pairs_tmp,
-                                                  atom_super_tran,
-                                                  relvecs,
-                                                  relvecs_vel);
+            force_constant_replicate.emplace_back(it.fcs_val, pairs_tmp, atom_super_tran, relvecs, relvecs_vel);
         }
     }
 
     fcs_inout.clear();
-    std::copy(force_constant_replicate.begin(),
-              force_constant_replicate.end(),
-              std::back_inserter(fcs_inout));
+    std::copy(force_constant_replicate.begin(), force_constant_replicate.end(), std::back_inserter(fcs_inout));
 }
 
 
 void Fcs_phonon::load_fcs_from_file(const int maxorder_in) const
 {
-    std::vector filename_list{file_fc2,
-                              file_fc3,
-                              file_fc4};
+    std::vector filename_list{file_fc2, file_fc3, file_fc4};
 
     std::vector load_flags{true, require_cubic, require_quartic};
 
@@ -305,15 +292,13 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in) const
         } else if (file_extension == "h5" || file_extension == "hdf5") {
 
             parse_fcs_from_h5(filename, i, force_constant_with_cell[i]);
-
         }
     }
 
     std::cout << "done.\n\n";
 }
 
-void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs,
-                                   const int order,
+void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs, const int order,
                                    std::vector<FcsArrayWithCell> &fcs_out) const
 {
     const auto file_extension = fname_fcs.substr(fname_fcs.find_last_of('.') + 1);
@@ -325,8 +310,7 @@ void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs,
 }
 
 
-void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs,
-                              const int order,
+void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs, const int order,
                               std::vector<FcsArrayWithCell> &fcs_out) const
 {
     using namespace boost::property_tree;
@@ -366,8 +350,7 @@ void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs,
         exit("load_fcs_xml", str_tmp.c_str());
     }
 
-    BOOST_FOREACH(const ptree::value_type &child_,
-                  pt.get_child(str_tag)) {
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child(str_tag)) {
         AtomCellSuper ivec_tmp{};
         const auto &child = child_.second;
 
@@ -428,15 +411,13 @@ void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs,
             const auto atom2_s = from_true_primitive[it.pairs[i].index / 3][it.pairs[i].tran];
             const auto atom2_s_mod = from_true_primitive[it.pairs[i].index / 3][0];
             for (auto j = 0; j < 3; ++j) {
-                relvec_tmp[j] = xf_tmp(atom2_s_mod, j) + xf_image[it.pairs[i].cell_s][j]
-                                - xf_tmp(atom1_s, j);
+                relvec_tmp[j] = xf_tmp(atom2_s_mod, j) + xf_image[it.pairs[i].cell_s][j] - xf_tmp(atom1_s, j);
             }
             relvec_tmp = system->get_supercell(order).lattice_vector * relvec_tmp;
             relvecs.emplace_back(relvec_tmp);
 
             for (auto j = 0; j < 3; ++j) {
-                relvec_tmp[j] = xf_tmp(atom2_s, j) + xf_image[it.pairs[i].cell_s][j]
-                                - xf_tmp(atom1_s, j);
+                relvec_tmp[j] = xf_tmp(atom2_s, j) + xf_image[it.pairs[i].cell_s][j] - xf_tmp(atom1_s, j);
             }
 
             relvec_tmp = system->get_supercell(order).lattice_vector * relvec_tmp;
@@ -447,8 +428,7 @@ void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs,
     }
 }
 
-void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs,
-                                   const int order,
+void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order,
                                    std::vector<FcsArrayWithCell> &fcs_out)
 {
     // Parse the force constants from the HDF5 file.
@@ -526,18 +506,15 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs,
                 relvecs_tmp.emplace_back(vec_index[j].relvec_vel);
             }
             fcs_out.emplace_back(fcs_values[i], ivec_copy, atoms_s_tmp, relvecs_tmp);
-        } while (std::next_permutation(vec_index.begin() + 1,
-                                       vec_index.end(),
-                                       [](const IndexAndRelvecs &a, const IndexAndRelvecs &b) {
-                                           return a.index_super < b.index_super;
-                                       }));
+        } while (std::next_permutation(
+            vec_index.begin() + 1,
+            vec_index.end(),
+            [](const IndexAndRelvecs &a, const IndexAndRelvecs &b) { return a.index_super < b.index_super; }));
     }
 }
 
 
-double Fcs_phonon::examine_translational_invariance(const int order,
-                                                    const unsigned int nat,
-                                                    const unsigned int natmin,
+double Fcs_phonon::examine_translational_invariance(const int order, const unsigned int nat, const unsigned int natmin,
                                                     const std::vector<FcsArrayWithCell> &fc_in)
 {
     size_t j, k, l, m;
@@ -630,7 +607,6 @@ double Fcs_phonon::examine_translational_invariance(const int order,
                     for (m = 0; m < 3; ++m) {
                         dev = std::abs(sum4[j][k][l][m]);
                         ret = std::max(ret, dev);
-
                     }
                 }
             }
@@ -714,10 +690,7 @@ void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N) const
                     }
                     relvecs_vel.emplace_back(relvec_tmp);
                 }
-                force_constant_with_cell[i].emplace_back(fcs_tmp[j],
-                                                         ivec_array,
-                                                         atoms_s_tmp,
-                                                         relvecs_vel);
+                force_constant_with_cell[i].emplace_back(fcs_tmp[j], ivec_array, atoms_s_tmp, relvecs_vel);
             }
         }
 

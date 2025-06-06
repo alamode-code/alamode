@@ -10,11 +10,11 @@
 
 #pragma once
 
+#include <complex>
+#include <string>
+#include <vector>
 #include "fcs_phonon.h"
 #include "pointers.h"
-#include <string>
-#include <complex>
-#include <vector>
 
 namespace PHON_NS
 {
@@ -47,21 +47,18 @@ private:
     double **xshift_s;
     std::vector<FcsArrayWithCell> delta_fc2, delta_fc3;
 
-    void prepare_delta_fcs(const std::vector<FcsArrayWithCell>&,
-                           std::vector<FcsArrayWithCell>&) const;
+    void prepare_delta_fcs(const std::vector<FcsArrayWithCell> &, std::vector<FcsArrayWithCell> &) const;
 
     // void impose_ASR_on_harmonic_IFC(std::vector<FcsArrayWithCell> &,
     //                    int);
 
-    void write_new_fcsxml(const std::string &,
-                          double) const;
+    void write_new_fcsxml(const std::string &, double) const;
 
     static std::string double2string(double);
 
     //  double calc_stress_energy2(const std::vector<FcsArrayWithCell>);
-    void calc_stress_energy3(std::vector<FcsArrayWithCell>,
-                             double ****);
+    void calc_stress_energy3(std::vector<FcsArrayWithCell>, double ****);
 
     void print_stress_energy();
 };
-}
+} // namespace PHON_NS

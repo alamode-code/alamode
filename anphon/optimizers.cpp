@@ -1,19 +1,16 @@
 #include "optimizers.h"
-#include "timer.h"
-#include <iomanip>
 #include <Eigen/Core>
+#include <iomanip>
+#include "timer.h"
 
 using namespace PHON_NS;
 
 
-Newton_Optimizer::Newton_Optimizer(double mixbeta) :
-    mixbeta(mixbeta) {}
+Newton_Optimizer::Newton_Optimizer(double mixbeta) : mixbeta(mixbeta)
+{}
 
-void Newton_Optimizer::update_state(const int dim,
-                                    const std::vector<double> &grad_vec,
-                                    std::vector<double> &state_vec,
-                                    const std::vector<std::vector<double>> &hessian,
-                                    std::vector<double> &delta)
+void Newton_Optimizer::update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
+                                    const std::vector<std::vector<double>> &hessian, std::vector<double> &delta)
 {
 
     Eigen::MatrixXd hessian_matrix(dim, dim);
@@ -52,8 +49,7 @@ CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer(double mixbeta_cell, doub
     coord_optimizer = std::make_unique<Newton_Optimizer>(mixbeta_coord);
 }
 
-void CellCoord_Newton_Optimizer::update_state(const int dim,
-                                              const std::vector<double> &grad_vec,
+void CellCoord_Newton_Optimizer::update_state(const int dim, const std::vector<double> &grad_vec,
                                               std::vector<double> &state_vec,
                                               const std::vector<std::vector<double>> &hessian,
                                               std::vector<double> &delta)
@@ -100,10 +96,8 @@ void CellCoord_Newton_Optimizer::update_state(const int dim,
     }
 }
 
-void FarkasIII_Optimizer::update_state(const int dim,
-                                       const std::vector<double> &grad_vec,
-                                       std::vector<double> &state_vec,
-                                       const std::vector<std::vector<double>> &hessian,
+void FarkasIII_Optimizer::update_state(const int dim, const std::vector<double> &grad_vec,
+                                       std::vector<double> &state_vec, const std::vector<std::vector<double>> &hessian,
                                        std::vector<double> &delta)
 {
     Eigen::VectorXd state_tmp(dim);
@@ -128,11 +122,9 @@ void FarkasIII_Optimizer::update_state(const int dim,
         delta[i] = updated_state(i) - state_vec[i];
         state_vec[i] = updated_state[i];
     }
-
 }
 
-void FarkasIII_Optimizer::set_inverse_Hessian(const int dim,
-                                              const std::vector<std::vector<double>> &hessian)
+void FarkasIII_Optimizer::set_inverse_Hessian(const int dim, const std::vector<std::vector<double>> &hessian)
 {
     Eigen::MatrixXd H_tmp(dim, dim);
     for (int i = 0; i < dim; ++i) {
@@ -143,7 +135,6 @@ void FarkasIII_Optimizer::set_inverse_Hessian(const int dim,
     H = H_tmp.inverse();
     // std::cout << "Inverse Hessian matrix initialized." << std::endl;
     // std::cout << H << std::endl;
-
 }
 
 void FarkasIII_Optimizer::initialize_history()

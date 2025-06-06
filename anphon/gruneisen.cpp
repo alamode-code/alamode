@@ -8,8 +8,16 @@ Please see the file 'LICENCE.txt' in the root directory
 or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "gruneisen.h"
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
+#include <boost/version.hpp>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -17,25 +25,16 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mpi_common.h"
 #include "parsephon.h"
 #include "phonon_dos.h"
 #include "pointers.h"
 #include "system.h"
-#include "anharmonic_core.h"
 #include "version.h"
-#include <iostream>
-#include <iomanip>
-#include <boost/lexical_cast.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/version.hpp>
-#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
-#include <cmath>
 
 using namespace PHON_NS;
 
-Gruneisen::Gruneisen(PHON *phon) :
-    Pointers(phon)
+Gruneisen::Gruneisen(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 };
@@ -77,7 +76,8 @@ void Gruneisen::setup()
 
     allocate(xshift_s, 27, 3);
 
-    for (int i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
+    for (int i = 0; i < 3; ++i)
+        xshift_s[0][i] = 0.0;
 
     int icell = 0;
 
@@ -155,9 +155,7 @@ void Gruneisen::calc_gruneisen()
 
                 for (unsigned int i = 0; i < ns; ++i) {
                     for (unsigned int j = 0; j < ns; ++j) {
-                        gruneisen_bs[ik][is] += std::conj(evec[ik][is][i])
-                            * dfc2_reciprocal[i][j]
-                            * evec[ik][is][j];
+                        gruneisen_bs[ik][is] += std::conj(evec[ik][is][i]) * dfc2_reciprocal[i][j] * evec[ik][is][j];
                     }
                 }
 
@@ -191,9 +189,7 @@ void Gruneisen::calc_gruneisen()
 
                 for (unsigned int i = 0; i < ns; ++i) {
                     for (unsigned int j = 0; j < ns; ++j) {
-                        gruneisen_dos[ik][is] += std::conj(evec[ik][is][i])
-                            * dfc2_reciprocal[i][j]
-                            * evec[ik][is][j];
+                        gruneisen_dos[ik][is] += std::conj(evec[ik][is][i]) * dfc2_reciprocal[i][j] * evec[ik][is][j];
                     }
                 }
 
@@ -218,8 +214,8 @@ void Gruneisen::calc_gruneisen()
     }
 }
 
-void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell>& fcs_in,
-                                  std::vector<FcsArrayWithCell>& delta_fcs) const
+void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
+                                  std::vector<FcsArrayWithCell> &delta_fcs) const
 {
     unsigned int i, j;
     Eigen::Vector3d vec;
@@ -250,9 +246,7 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell>& fcs_in,
         fcs_aligned.emplace_back(it);
     }
     sort_by_heading_indices const operator1(1);
-    boost::sort::block_indirect_sort(fcs_aligned.begin(),
-              fcs_aligned.end(),
-              operator1);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator1);
 
     const auto cell_tmp = system->get_supercell(norder - 2);
     const auto convmat = system->get_primcell().lattice_vector;
@@ -320,11 +314,7 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell>& fcs_in,
                         pairs_tmp.cell_s = index_with_cell_old[3 * i];
                         pairs_vec.push_back(pairs_tmp);
                     }
-                    delta_fcs.emplace_back(fcs_tmp,
-                                           pairs_vec,
-                                           atoms_s_old,
-                                           relvecs_old,
-                                           relvecs_vel_old);
+                    delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
                 }
             }
 
@@ -353,11 +343,7 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell>& fcs_in,
             pairs_tmp.cell_s = index_with_cell[3 * i];
             pairs_vec.push_back(pairs_tmp);
         }
-        delta_fcs.emplace_back(fcs_tmp,
-                               pairs_vec,
-                               atoms_s_now,
-                               relvecs_now,
-                               relvecs_vel_now);
+        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_now, relvecs_now, relvecs_vel_now);
     }
 }
 
@@ -367,8 +353,7 @@ void Gruneisen::write_new_fcsxml_all() const
     std::cout << '\n';
 
     if (fcs_phonon->update_fc2) {
-        warn("write_new_fcsxml_all",
-             "NEWFCS = 1 cannot be combined with the FC2XML.");
+        warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with the FC2XML.");
     } else {
         std::cout << " NEWFCS = 1 : Following XML files are created. \n";
 
@@ -376,28 +361,26 @@ void Gruneisen::write_new_fcsxml_all() const
         write_new_fcsxml(file_xml, delta_a);
 
         std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_xml;
-        std::cout << " : Force constants of the system expanded by "
-            << std::fixed << std::setprecision(3) << delta_a * 100 << " %\n";
+        std::cout << " : Force constants of the system expanded by " << std::fixed << std::setprecision(3)
+                  << delta_a * 100 << " %\n";
 
         file_xml = input->job_title + "_-.xml";
         write_new_fcsxml(file_xml, -delta_a);
 
         std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_xml;
-        std::cout << " : Force constants of the system compressed by "
-            << std::fixed << std::setprecision(3) << delta_a * 100 << " %\n";
+        std::cout << " : Force constants of the system compressed by " << std::fixed << std::setprecision(3)
+                  << delta_a * 100 << " %\n";
     }
 }
 
-void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
-                                 const double change_ratio_of_a) const
+void Gruneisen::write_new_fcsxml(const std::string &filename_xml, const double change_ratio_of_a) const
 {
     int i, j;
     double lattice_vector[3][3];
 
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
-            lattice_vector[i][j] = (1.0 + change_ratio_of_a)
-                                   * system->get_supercell(0).lattice_vector(i, j);
+            lattice_vector[i][j] = (1.0 + change_ratio_of_a) * system->get_supercell(0).lattice_vector(i, j);
         }
     }
 
@@ -414,8 +397,7 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
     pt.put("Data.Structure.NumberOfElements", system->get_primcell().number_of_elems);
 
     for (i = 0; i < system->get_primcell().number_of_elems; ++i) {
-        ptree &child = pt.add("Data.Structure.AtomicElements.element",
-                              system->symbol_kd[i]);
+        ptree &child = pt.add("Data.Structure.AtomicElements.element", system->symbol_kd[i]);
         child.put("<xmlattr>.number", i + 1);
     }
 
@@ -439,7 +421,8 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
 
     for (i = 0; i < cell_tmp.number_of_atoms; ++i) {
         str_tmp.clear();
-        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(cell_tmp.x_fractional(i, j));
+        for (j = 0; j < 3; ++j)
+            str_tmp += " " + double2string(cell_tmp.x_fractional(i, j));
         auto &child = pt.add("Data.Structure.Position.pos", str_tmp);
         child.put("<xmlattr>.index", i + 1);
         child.put("<xmlattr>.element", system->symbol_kd[cell_tmp.kind[i]]);
@@ -448,8 +431,7 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
     pt.put("Data.Symmetry.NumberOfTranslations", map_tmp[0].size());
     for (i = 0; i < map_tmp[0].size(); ++i) {
         for (j = 0; j < nat_prim_tmp; ++j) {
-            auto &child = pt.add("Data.Symmetry.Translations.map",
-                                 map_tmp[j][i] + 1);
+            auto &child = pt.add("Data.Symmetry.Translations.map", map_tmp[j][i] + 1);
             child.put("<xmlattr>.tran", i + 1);
             child.put("<xmlattr>.atom", j + 1);
         }
@@ -463,28 +445,23 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
         auto &child = pt.add("Data.ForceConstants.HARMONIC.FC2", double2string(it.fcs_val));
 
         child.put("<xmlattr>.pair1",
-                  std::to_string(it.pairs[0].index / 3 + 1)
-                  + " " + std::to_string(it.pairs[0].index % 3 + 1));
+                  std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
         child.put("<xmlattr>.pair2",
-                  std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1)
-                  + " " + std::to_string(it.pairs[1].index % 3 + 1)
-                  + " " + std::to_string(it.pairs[1].cell_s + 1));
+                  std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
+                      std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
     }
 
     for (const auto &it: delta_fc2) {
 
         if (std::abs(it.fcs_val) < eps12) continue;
 
-        auto &child = pt.add("Data.ForceConstants.HARMONIC.FC2",
-                             double2string(change_ratio_of_a * it.fcs_val));
+        auto &child = pt.add("Data.ForceConstants.HARMONIC.FC2", double2string(change_ratio_of_a * it.fcs_val));
 
         child.put("<xmlattr>.pair1",
-                  std::to_string(it.pairs[0].index / 3 + 1)
-                  + " " + std::to_string(it.pairs[0].index % 3 + 1));
+                  std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
         child.put("<xmlattr>.pair2",
-                  std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1)
-                  + " " + std::to_string(it.pairs[1].index % 3 + 1)
-                  + " " + std::to_string(it.pairs[1].cell_s + 1));
+                  std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
+                      std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
     }
 
     if (anharmonic_core->quartic_mode) {
@@ -492,20 +469,16 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
 
             if (it.pairs[1].index > it.pairs[2].index) continue;
 
-            auto &child = pt.add("Data.ForceConstants.ANHARM3.FC3",
-                                 double2string(it.fcs_val));
+            auto &child = pt.add("Data.ForceConstants.ANHARM3.FC3", double2string(it.fcs_val));
 
             child.put("<xmlattr>.pair1",
-                      std::to_string(it.pairs[0].index / 3 + 1)
-                      + " " + std::to_string(it.pairs[0].index % 3 + 1));
+                      std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
             child.put("<xmlattr>.pair2",
-                      std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1)
-                      + " " + std::to_string(it.pairs[1].index % 3 + 1)
-                      + " " + std::to_string(it.pairs[1].cell_s + 1));
+                      std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
+                          std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
             child.put("<xmlattr>.pair3",
-                      std::to_string(map_tmp[it.pairs[2].index / 3][it.pairs[2].tran] + 1)
-                      + " " + std::to_string(it.pairs[2].index % 3 + 1)
-                      + " " + std::to_string(it.pairs[2].cell_s + 1));
+                      std::to_string(map_tmp[it.pairs[2].index / 3][it.pairs[2].tran] + 1) + " " +
+                          std::to_string(it.pairs[2].index % 3 + 1) + " " + std::to_string(it.pairs[2].cell_s + 1));
         }
 
         for (const auto &it: delta_fc3) {
@@ -514,20 +487,16 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
 
             if (it.pairs[1].index > it.pairs[2].index) continue;
 
-            auto &child = pt.add("Data.ForceConstants.ANHARM3.FC3",
-                                 double2string(change_ratio_of_a * it.fcs_val));
+            auto &child = pt.add("Data.ForceConstants.ANHARM3.FC3", double2string(change_ratio_of_a * it.fcs_val));
 
             child.put("<xmlattr>.pair1",
-                      std::to_string(it.pairs[0].index / 3 + 1)
-                      + " " + std::to_string(it.pairs[0].index % 3 + 1));
+                      std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
             child.put("<xmlattr>.pair2",
-                      std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1)
-                      + " " + std::to_string(it.pairs[1].index % 3 + 1)
-                      + " " + std::to_string(it.pairs[1].cell_s + 1));
+                      std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
+                          std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
             child.put("<xmlattr>.pair3",
-                      std::to_string(map_tmp[it.pairs[2].index / 3][it.pairs[2].tran] + 1)
-                      + " " + std::to_string(it.pairs[2].index % 3 + 1)
-                      + " " + std::to_string(it.pairs[2].cell_s + 1));
+                      std::to_string(map_tmp[it.pairs[2].index / 3][it.pairs[2].tran] + 1) + " " +
+                          std::to_string(it.pairs[2].index % 3 + 1) + " " + std::to_string(it.pairs[2].cell_s + 1));
         }
     }
 
@@ -540,8 +509,7 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml,
               std::locale(),
               xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
 #else
-    write_xml(filename_xml, pt, std::locale(),
-        xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
+    write_xml(filename_xml, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
 #endif
 }
 
@@ -565,35 +533,35 @@ auto Gruneisen::double2string(const double d) -> std::string
 //     double xshift[3];
 //     unsigned int itran;
 //     unsigned int norder = fcs_in[0].pairs.size();
-// 
+//
 //     allocate(vec, norder, 3);
 //     allocate(pos, norder, 3);
-// 
+//
 //     for (std::vector<FcsArrayWithCell>::const_iterator it = fcs_in.begin(); it != fcs_in.end(); ++it) {
-// 
+//
 //         for (i = 0; i < norder; ++i) {
 //             for (j = 0; j < 3; ++j) {
 //                 vec[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][(*it).pairs[i].tran]][j]
 //                 + xshift_s[(*it).pairs[i].cell_s][j];
-// 
+//
 //                 pos[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][0]][j];
 //             //    vec[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[0][(*it).pairs[i].tran]][j] + xshift_s[(*it).pairs[i].cell_s][j];
 //             }
 //             rotvec(vec[i], vec[i], system->lavec_s);
 //             rotvec(pos[i], pos[i], system->lavec_s);
-//         } 
-// 
-//         
-//         ret += (*it).fcs_val 
+//         }
+//
+//
+//         ret += (*it).fcs_val
 //             * (vec[1][(*it).pairs[0].index % 3] - pos[0][(*it).pairs[0].index % 3])
 //             * (vec[1][(*it).pairs[1].index % 3] - pos[0][(*it).pairs[1].index % 3]);
 //     }
-// 
+//
 //     deallocate(vec);
 //     deallocate(pos);
 //     return ret;
 // }
-// 
+//
 // void Gruneisen::calc_stress_energy3(const std::vector<FcsArrayWithCell> fcs_in, double ****ret)
 // {
 //     unsigned int i, j, k, l;
@@ -603,10 +571,10 @@ auto Gruneisen::double2string(const double d) -> std::string
 //     unsigned int itran;
 //     unsigned int norder = fcs_in[0].pairs.size();
 //     unsigned int crd[4];
-// 
+//
 //     allocate(vec, norder, 3);
 //     allocate(pos, norder, 3);
-// 
+//
 //     for (i = 0; i < 3; ++i) {
 //         for (j = 0; j < 3; ++j) {
 //             for (k = 0; k < 3; ++k) {
@@ -616,39 +584,39 @@ auto Gruneisen::double2string(const double d) -> std::string
 //             }
 //         }
 //     }
-// 
+//
 //     for (std::vector<FcsArrayWithCell>::const_iterator it = fcs_in.begin(); it != fcs_in.end(); ++it) {
-// 
+//
 //         for (i = 0; i < norder; ++i) {
 //             for (j = 0; j < 3; ++j) {
 //                 vec[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][(*it).pairs[i].tran]][j]
 //                 + xshift_s[(*it).pairs[i].cell_s][j];
-// 
+//
 //                 pos[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][0]][j];
 //             }
 //             rotvec(vec[i], vec[i], system->lavec_s);
 //             rotvec(pos[i], pos[i], system->lavec_s);
 //         }
-// 
+//
 //         crd[0] = (*it).pairs[0].index % 3;
 //         crd[1] = (*it).pairs[1].index % 3;
-// 
+//
 //         for (k = 0; k < 3; ++k) {
-//             
+//
 //             crd[2] = k;
-// 
+//
 //             for (l = 0; l < 3; ++l) {
-// 
+//
 //                 crd[3] = l;
-// 
+//
 //                 ret[crd[0]][crd[1]][k][l] += (*it).fcs_val * (vec[1][k] - pos[0][k]) * (vec[1][l] - pos[0][l]);
 //             }
 //         }
 //     }
-// 
+//
 //     deallocate(vec);
 //     deallocate(pos);
-// 
+//
 //     for (i = 0; i < 3; ++i) {
 //         for (j = 0; j < 3; ++j) {
 //             for (k = 0; k < 3; ++k) {
@@ -659,25 +627,25 @@ auto Gruneisen::double2string(const double d) -> std::string
 //         }
 //     }
 // }
-// 
-// 
+//
+//
 // void Gruneisen::print_stress_energy()
 // {
-// 
+//
 //     double volume = system->get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30;
-// 
-// 
+//
+//
 //     double ****A, ****C;
-// 
+//
 //     allocate(A, 3, 3, 3, 3);
 //     allocate(C, 3, 3, 3, 3);
-// 
+//
 //     calc_stress_energy3(fcs_phonon->force_constant_with_cell[0], A);
-// 
+//
 //     unsigned int i, j, k, l;
-// 
+//
 //     std::cout << "# A [Ryd]" << '\n';
-// 
+//
 //     for (i = 0; i < 3; ++i) {
 //         for (j = 0; j < 3; ++j) {
 //             for (k = 0; k < 3; ++k) {
@@ -692,10 +660,10 @@ auto Gruneisen::double2string(const double d) -> std::string
 //             }
 //         }
 //     }
-// 
+//
 //     std::cout << '\n';
 //     std::cout << "# C [GPa]" << '\n';
-// 
+//
 //     for (i = 0; i < 3; ++i) {
 //         for (j = 0; j < 3; ++j) {
 //             for (k = 0; k < 3; ++k) {
@@ -708,14 +676,14 @@ auto Gruneisen::double2string(const double d) -> std::string
 //                     std::cout << std::setw(3) << l + 1;
 //                     std::cout << std::setw(15) << std::fixed << C[i][j][k][l];
 //                     std::cout << '\n';
-// 
+//
 //                 }
 //             }
 //         }
 //     }
-// 
+//
 //     std::cout << "Bulk Modulus [GPa] = " << (C[0][0][0][0] + 2.0 * C[0][0][1][1]) / 3.0 << '\n';
-// 
+//
 //     deallocate(A);
 //     deallocate(C);
 // }

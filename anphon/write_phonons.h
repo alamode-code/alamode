@@ -10,11 +10,11 @@
 
 #pragma once
 
+#include <complex>
+#include <fstream>
+#include <string>
 #include "mpi_common.h"
 #include "pointers.h"
-#include <string>
-#include <fstream>
-#include <complex>
 
 namespace PHON_NS
 {
@@ -43,49 +43,27 @@ public:
 
     double in_kayser(const double) const;
 
-    void setWriteOptions(const bool print_msd_,
-                         const bool print_xsf_,
-                         const bool print_anime_,
-                         const std::string &anime_format_,
-                         const int anime_steps_,
-                         const unsigned int anime_cellsize_[3],
-                         const double anime_kpoint_[3],
-                         const bool print_ucorr_,
-                         const int shift_ucorr_[3],
-                         const bool print_zmode_);
+    void setWriteOptions(const bool print_msd_, const bool print_xsf_, const bool print_anime_,
+                         const std::string &anime_format_, const int anime_steps_,
+                         const unsigned int anime_cellsize_[3], const double anime_kpoint_[3], const bool print_ucorr_,
+                         const int shift_ucorr_[3], const bool print_zmode_);
 
-    void writePhononEnergies(const unsigned int nk_in,
-                             const double *const *const *eval_in,
-                             const bool is_qha = false,
+    void writePhononEnergies(const unsigned int nk_in, const double *const *const *eval_in, const bool is_qha = false,
                              const int bubble = 0) const;
 
-    void writePhononBands(const unsigned int nk_in,
-                          const double *kaxis_in,
-                          const double *const *const *eval_in,
-                          const bool is_qha = false,
-                          const int bubble = 0) const;
+    void writePhononBands(const unsigned int nk_in, const double *kaxis_in, const double *const *const *eval_in,
+                          const bool is_qha = false, const int bubble = 0) const;
 
-    void writePhononDos(double **dos_in,
-                        const bool is_qha = false,
-                        const int bubble = 0) const;
+    void writePhononDos(double **dos_in, const bool is_qha = false, const int bubble = 0) const;
 
-    void writeThermodynamicFunc(double *heat_capacity,
-                                double *heat_capacity_correction,
-                                double *FE_QHA,
-                                double *dFE_scph,
-                                double *FE_total,
-                                const bool is_qha = false) const;
+    void writeThermodynamicFunc(double *heat_capacity, double *heat_capacity_correction, double *FE_QHA,
+                                double *dFE_scph, double *FE_total, const bool is_qha = false) const;
 
-    void writeMSD(double **msd_in,
-                  const bool is_qha = false,
-                  const int bubble = 0) const;
+    void writeMSD(double **msd_in, const bool is_qha = false, const int bubble = 0) const;
 
-    void writeDispCorrelation(double ***ucorr_in,
-                              const bool is_qha = false,
-                              const int bubble = 0) const;
+    void writeDispCorrelation(double ***ucorr_in, const bool is_qha = false, const int bubble = 0) const;
 
-    void writeDielecFunc(double ****dielec_in,
-                         const bool is_qha = false) const;
+    void writeDielecFunc(double ****dielec_in, const bool is_qha = false) const;
 
     unsigned int getVerbosity() const;
 
@@ -118,20 +96,15 @@ private:
 
     void writeNormalModeDirection() const;
 
-    void writeNormalModeDirectionEach(const std::string &fname_axsf,
-                                      const unsigned int nk_in,
+    void writeNormalModeDirectionEach(const std::string &fname_axsf, const unsigned int nk_in,
                                       const std::complex<double> *const *const *evec_in) const;
 
-    void writeNormalModeAnimation(const double [3],
-                                  const unsigned int [3]) const;
+    void writeNormalModeAnimation(const double[3], const unsigned int[3]) const;
 
     void writeEigenvectors() const;
 
-    void writeEigenvectorsEach(const std::string &fname_evec,
-                               const unsigned int nk_in,
-                               const double *const *xk_in,
-                               const double *const *eval_in,
-                               const std::complex<double> *const *const *evec_in) const;
+    void writeEigenvectorsEach(const std::string &fname_evec, const unsigned int nk_in, const double *const *xk_in,
+                               const double *const *eval_in, const std::complex<double> *const *const *evec_in) const;
 
     void printNormalmodeBorncharge() const;
 
@@ -139,11 +112,8 @@ private:
 
     void writeEigenvectorsHdf5() const;
 
-    void writeEigenvectorsEachHdf5(const std::string &fname_evec,
-                                   const unsigned int nk_in,
-                                   const double *const *xk_in,
-                                   const double *const *eval_in,
-                                   const std::complex<double> *const *const *evec_in,
+    void writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsigned int nk_in, const double *const *xk_in,
+                                   const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                    const unsigned int kpmode_in) const;
 
 #endif
@@ -156,17 +126,12 @@ private:
 
     void writeParticipationRatio() const;
 
-    void writeParticipationRatioEach(const std::string &fname_pr,
-                                     const std::string &fname_apr,
-                                     const unsigned int nk_in,
-                                     const double *const *xk_in,
-                                     const double *const *eval_in,
+    void writeParticipationRatioEach(const std::string &fname_pr, const std::string &fname_apr,
+                                     const unsigned int nk_in, const double *const *xk_in, const double *const *eval_in,
                                      const std::complex<double> *const *const *evec_in) const;
 
-    void writeParticipationRatioMesh(const std::string &fname_pr,
-                                     const std::string &fname_apr,
-                                     const KpointMeshUniform *kmesh_in,
-                                     const double *const *eval_in,
+    void writeParticipationRatioMesh(const std::string &fname_pr, const std::string &fname_apr,
+                                     const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                      const std::complex<double> *const *const *evec_in) const;
 
     void writeDielectricFunction() const;
@@ -188,6 +153,5 @@ private:
     std::string anime_format;
 
 public:
-
 };
-}
+} // namespace PHON_NS

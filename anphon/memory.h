@@ -16,34 +16,25 @@
 
 namespace PHON_NS
 {
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1)
+inline size_t memsize_in_MB(const size_t size_of_one, const size_t n1)
 {
     const auto n = n1 * size_of_one;
     return n / 1000000;
 }
 
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1,
-                            const size_t n2)
+inline size_t memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2)
 {
     const auto n = n1 * n2 * size_of_one;
     return n / 1000000;
 }
 
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1,
-                            const size_t n2,
-                            const size_t n3)
+inline size_t memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2, const size_t n3)
 {
     const auto n = n1 * n2 * n3 * size_of_one;
     return n / 1000000;
 }
 
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1,
-                            const size_t n2,
-                            const size_t n3,
+inline size_t memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2, const size_t n3,
                             const size_t n4)
 {
     const auto n = n1 * n2 * n3 * n4 * size_of_one;
@@ -55,8 +46,7 @@ inline size_t memsize_in_MB(const size_t size_of_one,
 /* allocator */
 
 template <typename T>
-T *allocate(T *&arr,
-            const size_t n1)
+T *allocate(T *&arr, const size_t n1)
 {
     try {
         arr = new T[n1];
@@ -70,9 +60,7 @@ T *allocate(T *&arr,
 }
 
 template <typename T>
-T **allocate(T **&arr,
-             const size_t n1,
-             const size_t n2)
+T **allocate(T **&arr, const size_t n1, const size_t n2)
 {
     try {
         arr = new T *[n1];
@@ -90,10 +78,7 @@ T **allocate(T **&arr,
 }
 
 template <typename T>
-T ***allocate(T ***&arr,
-              const size_t n1,
-              const size_t n2,
-              const size_t n3)
+T ***allocate(T ***&arr, const size_t n1, const size_t n2, const size_t n3)
 {
     try {
         arr = new T **[n1];
@@ -115,11 +100,7 @@ T ***allocate(T ***&arr,
 }
 
 template <typename T>
-T ****allocate(T ****&arr,
-               const size_t n1,
-               const size_t n2,
-               const size_t n3,
-               const size_t n4)
+T ****allocate(T ****&arr, const size_t n1, const size_t n2, const size_t n3, const size_t n4)
 {
     try {
         arr = new T ***[n1];
@@ -181,4 +162,4 @@ void deallocate(T ****&arr)
     delete[] arr;
     arr = nullptr;
 }
-}
+} // namespace PHON_NS

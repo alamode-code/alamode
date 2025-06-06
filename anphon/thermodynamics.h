@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "pointers.h"
 #include <complex>
 #include <vector>
 #include "kpoint.h"
+#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -31,96 +31,55 @@ public:
 
     void setup();
 
-    double Cv(const double omega,
-              const double temp_in) const;
+    double Cv(const double omega, const double temp_in) const;
 
-    double Cv_classical(const double omega,
-                        const double temp_in) const;
+    double Cv_classical(const double omega, const double temp_in) const;
 
-    double fB(const double omega,
-              const double temp_in) const;
+    double fB(const double omega, const double temp_in) const;
 
-    double fC(const double omega,
-              const double temp_in) const;
+    double fC(const double omega, const double temp_in) const;
 
-    double Cv_tot(const double temp_in,
-                  const unsigned int nk_irred,
-                  const unsigned int ns,
-                  const std::vector<std::vector<KpointList>> &kp_irred,
-                  const double *weight_k_irred,
+    double Cv_tot(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                  const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                   const double *const *eval_in) const;
 
-    double Cv_anharm_correction(const double temp_in,
-                                const unsigned int nk_irred,
-                                const unsigned int ns,
-                                const std::vector<std::vector<KpointList>> &kp_irred,
-                                const double *weight_k_irred,
-                                const double *const *eval_in,
-                                const double *const *del_eval_in) const;
+    double Cv_anharm_correction(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                                const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
+                                const double *const *eval_in, const double *const *del_eval_in) const;
 
-    double internal_energy(const double temp_in,
-                           const unsigned int nk_irred,
-                           const unsigned int ns,
-                           const std::vector<std::vector<KpointList>> &kp_irred,
-                           const double *weight_k_irred,
+    double internal_energy(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                           const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                            const double *const *eval_in) const;
 
-    double vibrational_entropy(const double temp_in,
-                               const unsigned int nk_irred,
-                               const unsigned int ns,
-                               const std::vector<std::vector<KpointList>> &kp_irred,
-                               const double *weight_k_irred,
+    double vibrational_entropy(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                               const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                                const double *const *eval_in) const;
 
-    double free_energy_QHA(const double temp_in,
-                           const unsigned int nk_irred,
-                           const unsigned int ns,
-                           const std::vector<std::vector<KpointList>> &kp_irred,
-                           const double *weight_k_irred,
+    double free_energy_QHA(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                           const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                            const double *const *eval_in) const;
 
-    double disp2_avg(const double T_in,
-                     const unsigned int ncrd1,
-                     const unsigned int ncrd2,
-                     const unsigned int nk,
-                     const unsigned int ns,
-                     const double *const *xk_in,
-                     const double *const *eval_in,
+    double disp2_avg(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2, const unsigned int nk,
+                     const unsigned int ns, const double *const *xk_in, const double *const *eval_in,
                      std::complex<double> ***evec_in) const;
 
-    double disp_corrfunc(const double T_in,
-                         const unsigned int ncrd1,
-                         const unsigned int ncrd2,
-                         const double cell_shift[3],
-                         const unsigned int nk,
-                         const unsigned int ns,
-                         const double *const *xk_in,
-                         const double *const *eval_in,
+    double disp_corrfunc(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
+                         const double cell_shift[3], const unsigned int nk, const unsigned int ns,
+                         const double *const *xk_in, const double *const *eval_in,
                          std::complex<double> ***evec_in) const;
 
-    double coth_T(double,
-                  double) const;
+    double coth_T(double, double) const;
 
     void compute_free_energy_bubble();
 
-    void compute_FE_bubble(double **,
-                           std::complex<double> ***,
-                           double *) const;
+    void compute_FE_bubble(double **, std::complex<double> ***, double *) const;
 
-    void compute_FE_bubble_SCPH(double ***eval_in,
-                                std::complex<double> ****evec_in,
-                                double *FE_bubble);
+    void compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble);
 
-    double FE_scph_correction(unsigned int,
-                              double **,
-                              std::complex<double> ***,
-                              double **,
+    double FE_scph_correction(unsigned int, double **, std::complex<double> ***, double **,
                               std::complex<double> ***) const;
 
-    double compute_FE_total(unsigned int,
-                            double,
-                            double);
-
+    double compute_FE_total(unsigned int, double, double);
 };
 
-}
+} // namespace PHON_NS

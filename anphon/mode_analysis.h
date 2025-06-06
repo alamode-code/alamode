@@ -10,12 +10,12 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #pragma once
 
-#include "pointers.h"
 #include <complex>
-#include <vector>
 #include <string>
+#include <vector>
 #include "anharmonic_core.h"
 #include "kpoint.h"
+#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -28,10 +28,10 @@ public:
 
     KsListMode();
 
-    KsListMode(double xk_in[3],
-               const int n)
+    KsListMode(double xk_in[3], const int n)
     {
-        for (int i = 0; i < 3; ++i) xk[i] = xk_in[i];
+        for (int i = 0; i < 3; ++i)
+            xk[i] = xk_in[i];
         nmode = n;
     }
 };
@@ -46,13 +46,11 @@ public:
 
     KpointListWithCoordinate();
 
-    KpointListWithCoordinate(const std::vector<double> &a,
-                             const double x_in,
-                             const double y_in,
-                             const int plane_in,
+    KpointListWithCoordinate(const std::vector<double> &a, const double x_in, const double y_in, const int plane_in,
                              const int selection_type_in)
     {
-        for (int i = 0; i < 3; ++i) xk[i] = a[i];
+        for (int i = 0; i < 3; ++i)
+            xk[i] = a[i];
         x = x_in;
         y = y_in;
         plane = plane_in;
@@ -91,36 +89,20 @@ private:
 
     std::vector<KsListMode> kslist_fstate_k;
 
-    void calc_frequency_resolved_final_state(const unsigned int ntemp,
-                                             const double *temperature,
-                                             const double omega0,
-                                             const unsigned int nomegas,
-                                             const double *omega,
-                                             const unsigned int ik_in,
-                                             const unsigned int is_in,
-                                             const KpointMeshUniform *kmesh_in,
+    void calc_frequency_resolved_final_state(const unsigned int ntemp, const double *temperature, const double omega0,
+                                             const unsigned int nomegas, const double *omega, const unsigned int ik_in,
+                                             const unsigned int is_in, const KpointMeshUniform *kmesh_in,
                                              const double *const *eval_in,
-                                             const std::complex<double> *const *const *evec_in,
-                                             double ***ret) const;
+                                             const std::complex<double> *const *const *evec_in, double ***ret) const;
 
-    void calc_frequency_resolved_final_state_tetrahedron(const unsigned int ntemp,
-                                                         double *temperature,
-                                                         const double omega0,
-                                                         const unsigned int nomegas,
-                                                         const double *omega,
-                                                         const unsigned int ik_in,
-                                                         const unsigned int is_in,
-                                                         const KpointMeshUniform *kmesh_in,
-                                                         const double *const *eval_in,
-                                                         const std::complex<double> *const *const *evec_in,
-                                                         double ***ret) const;
+    void calc_frequency_resolved_final_state_tetrahedron(
+        const unsigned int ntemp, double *temperature, const double omega0, const unsigned int nomegas,
+        const double *omega, const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
+        const double *const *eval_in, const std::complex<double> *const *const *evec_in, double ***ret) const;
 
-    void print_momentum_resolved_final_state(const unsigned int,
-                                             double *,
-                                             const double);
+    void print_momentum_resolved_final_state(const unsigned int, double *, const double);
 
-    void print_frequency_resolved_final_state(const unsigned int,
-                                              double *);
+    void print_frequency_resolved_final_state(const unsigned int, double *);
 
     void print_V3_elements() const;
 
@@ -130,31 +112,20 @@ private:
 
     void print_Phi4_elements() const;
 
-    void calc_V3norm2(const unsigned int,
-                      const unsigned int,
-                      const std::vector<KsListGroup> &,
+    void calc_V3norm2(const unsigned int, const unsigned int, const std::vector<KsListGroup> &,
                       std::vector<std::vector<double>> &) const;
 
-    void calc_V4norm2(const unsigned int,
-                      const unsigned int,
-                      const std::vector<KsListGroup> &,
+    void calc_V4norm2(const unsigned int, const unsigned int, const std::vector<KsListGroup> &,
                       std::vector<std::vector<double>> &) const;
 
-    void calc_Phi3(const unsigned int,
-                   const unsigned int,
-                   const std::vector<KsListGroup> &,
+    void calc_Phi3(const unsigned int, const unsigned int, const std::vector<KsListGroup> &,
                    std::vector<std::vector<std::complex<double>>> &) const;
 
-    void calc_Phi4(const unsigned int,
-                   const unsigned int,
-                   const std::vector<KsListGroup> &,
+    void calc_Phi4(const unsigned int, const unsigned int, const std::vector<KsListGroup> &,
                    std::vector<std::vector<std::complex<double>>> &) const;
 
-    void print_selfenergy(const unsigned int,
-                          double *);
+    void print_selfenergy(const unsigned int, double *);
 
-    void print_spectral_function(const unsigned int,
-                                 const double *);
-
+    void print_spectral_function(const unsigned int, const double *);
 };
-}
+} // namespace PHON_NS

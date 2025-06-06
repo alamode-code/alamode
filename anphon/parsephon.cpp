@@ -9,8 +9,19 @@
 */
 
 #include "parsephon.h"
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <fstream>
+#include <iostream>
+#include <istream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <sys/stat.h>
+#include <vector>
+#include "anharmonic_core.h"
 #include "conductivity.h"
-#include "iterativebte.h"
 #include "dielec.h"
 #include "dynamical.h"
 #include "error.h"
@@ -19,43 +30,31 @@
 #include "gruneisen.h"
 #include "integration.h"
 #include "isotope.h"
+#include "iterativebte.h"
 #include "kpoint.h"
 #include "memory.h"
+#include "mode_analysis.h"
 #include "phonon_dos.h"
 #include "phonon_velocity.h"
-#include "anharmonic_core.h"
-#include "mode_analysis.h"
-#include "relaxation.h"
 #include "qha.h"
+#include "relaxation.h"
 #include "scph.h"
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
 #include "write_phonons.h"
-#include <sys/stat.h>
-#include <sstream>
-#include <istream>
-#include <iostream>
-#include <fstream>
-#include <map>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
 
 using namespace PHON_NS;
 
-Input::Input(PHON *phon) :
-    Pointers(phon), job_title(""), from_stdin(false) {}
+Input::Input(PHON *phon) : Pointers(phon), job_title(""), from_stdin(false)
+{}
 
 Input::~Input()
 {
     if (ifs_input.is_open()) ifs_input.close();
 }
 
-void Input::parce_input(int narg,
-                        char **arg)
+void Input::parce_input(int narg, char **arg)
 {
     if (narg == 1) {
 
@@ -72,9 +71,7 @@ void Input::parce_input(int narg,
         }
     }
 
-    if (!locate_tag("&general"))
-        exit("parse_input",
-             "&general entry not found in the input file");
+    if (!locate_tag("&general")) exit("parse_input", "&general entry not found in the input file");
     parse_general_vars();
 
     if (locate_tag("&cell")) parse_cell_parameter();
@@ -82,9 +79,7 @@ void Input::parce_input(int narg,
     const auto use_defaults_for_analysis = !locate_tag("&analysis");
     parse_analysis_vars(use_defaults_for_analysis);
 
-    if (!locate_tag("&kpoint"))
-        exit("parse_input",
-             "&kpoint entry not found in the input file");
+    if (!locate_tag("&kpoint")) exit("parse_input", "&kpoint entry not found in the input file");
     parse_kpoints();
 
     if (phon->mode == "RTA") {
@@ -93,34 +88,24 @@ void Input::parce_input(int narg,
     }
 
     if (phon->mode == "SCPH") {
-        if (!locate_tag("&scph"))
-            exit("parse_input",
-                 "&scph entry not found in the input file");
+        if (!locate_tag("&scph")) exit("parse_input", "&scph entry not found in the input file");
         parse_scph_vars();
     }
     if (phon->mode == "QHA") {
-        if (!locate_tag("&qha"))
-            exit("parse_input",
-                 "&qha entry not found in the input file");
+        if (!locate_tag("&qha")) exit("parse_input", "&qha entry not found in the input file");
         parse_qha_vars();
     }
     if ((phon->mode == "SCPH" || phon->mode == "QHA") && relaxation->relax_str != 0) {
-        if (!locate_tag("&relax"))
-            exit("parse_input",
-                 "&relax entry not found in the input file");
+        if (!locate_tag("&relax")) exit("parse_input", "&relax entry not found in the input file");
         parse_relax_vars();
 
         check_relax_vars();
 
         if (relaxation->relax_str != 1) {
-            if (!locate_tag("&strain"))
-                exit("parse_input",
-                     "&strain entry not found in the input file");
+            if (!locate_tag("&strain")) exit("parse_input", "&strain entry not found in the input file");
             parse_initial_strain();
         }
-        if (!locate_tag("&displace"))
-            exit("parse_input",
-                 "&displace entry not found in the input file");
+        if (!locate_tag("&displace")) exit("parse_input", "&displace entry not found in the input file");
 
         parse_initial_displace();
     }
@@ -133,40 +118,38 @@ void Input::parse_general_vars()
     int i;
     struct stat st{};
     std::string str_tmp;
-    const std::vector<std::string> input_list{
-        "PREFIX",
-        "MODE",
-        "NSYM",
-        "TOLERANCE",
-        "PRINTSYM",
-        "TMIN",
-        "TMAX",
-        "DT",
-        "NBANDS",
-        "NONANALYTIC",
-        "BORNINFO",
-        "NA_SIGMA",
-        "ISMEAR",
-        "EPSILON",
-        "EMIN",
-        "EMAX",
-        "DELTA_E",
-        "RESTART",
-        // "TREVSYM",
-        "KD",
-        "MASS",
-        "TRISYM",
-        "PREC_EWALD",
-        "CLASSICAL",
-        "BCONNECT",
-        "BORNSYM",
-        "VERBOSITY",
-        "FC2FILE",
-        "FC3FILE",
-        "FC4FILE",
-        "FCSFILE",
-        "RESTART_4PH"
-    };
+    const std::vector<std::string> input_list{"PREFIX",
+                                              "MODE",
+                                              "NSYM",
+                                              "TOLERANCE",
+                                              "PRINTSYM",
+                                              "TMIN",
+                                              "TMAX",
+                                              "DT",
+                                              "NBANDS",
+                                              "NONANALYTIC",
+                                              "BORNINFO",
+                                              "NA_SIGMA",
+                                              "ISMEAR",
+                                              "EPSILON",
+                                              "EMIN",
+                                              "EMAX",
+                                              "DELTA_E",
+                                              "RESTART",
+                                              // "TREVSYM",
+                                              "KD",
+                                              "MASS",
+                                              "TRISYM",
+                                              "PREC_EWALD",
+                                              "CLASSICAL",
+                                              "BCONNECT",
+                                              "BORNSYM",
+                                              "VERBOSITY",
+                                              "FC2FILE",
+                                              "FC3FILE",
+                                              "FC4FILE",
+                                              "FCSFILE",
+                                              "RESTART_4PH"};
 
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::vector<std::string> kdname_input, masskd_v;
@@ -203,8 +186,7 @@ void Input::parse_general_vars()
     const auto fc4file = general_var_dict["FC4FILE"];
 
     if (fcsfile.empty() && fc2file.empty()) {
-        exit("parse_general_vars",
-             "Either FCSFILE or FC2FILE must be given to start a phonon calculation.");
+        exit("parse_general_vars", "Either FCSFILE or FC2FILE must be given to start a phonon calculation.");
     }
 
     if (!general_var_dict["KD"].empty()) {
@@ -309,8 +291,7 @@ void Input::parse_general_vars()
     if (nonanalytic == 3) {
         assign_val(prec_ewald, "PREC_EWALD", general_var_dict);
         if (prec_ewald <= 0.0 || prec_ewald >= 1.0) {
-            exit("parse_general_vars",
-                 "PREC_EWALD should be a small positive value.");
+            exit("parse_general_vars", "PREC_EWALD should be a small positive value.");
         }
         ewald->is_longrange = true;
         ewald->file_longrange = boost::lexical_cast<std::string>(general_var_dict["BORNINFO"]);
@@ -322,12 +303,10 @@ void Input::parse_general_vars()
     }
 
     if (nonanalytic > 3) {
-        exit("parse_general_vars",
-             "NONANALYTIC-tag can take 0, 1, 2, or 3.");
+        exit("parse_general_vars", "NONANALYTIC-tag can take 0, 1, 2, or 3.");
     }
     if (nonanalytic && borninfo == "") {
-        exit("parse_general_vars",
-             "BORNINFO must be specified when NONANALYTIC > 0.");
+        exit("parse_general_vars", "BORNINFO must be specified when NONANALYTIC > 0.");
     }
 
     // Copy the values to appropriate classes.
@@ -335,10 +314,7 @@ void Input::parse_general_vars()
     job_title = prefix;
     phon->mode = mode;
 
-    conductivity->set_conductivity_params(file_result,
-                                          file_result4,
-                                          restart,
-                                          restart_4ph);
+    conductivity->set_conductivity_params(file_result, file_result4, restart, restart_4ph);
 
     symmetry->nsym = nsym;
     symmetry->tolerance = tolerance;
@@ -377,24 +353,22 @@ void Input::parse_general_vars()
 void Input::parse_kappa_vars(const bool use_default_values)
 {
     std::string str_tmp;
-    const std::vector<std::string> input_list{
-        "KMESH_COARSE",
-        "EPSILON_4PH",
-        "ISMEAR_4PH",
-        "INTERPOLATOR",
-        "LEN_BOUNDARY",
-        "ISOTOPE",
-        "ISOFACT",
-        "KAPPA_COHERENT",
-        "KAPPA_SPEC",
-        "WRITE_INTERPOL",
-        "ADAPTIVE_FACTOR",
-        "ITERATIVE",
-        "MAX_CYCLE",
-        "MIN_CYCLE",
-        "ITER_THRESHOLD",
-        "IBTE_MIXING"
-    };
+    const std::vector<std::string> input_list{"KMESH_COARSE",
+                                              "EPSILON_4PH",
+                                              "ISMEAR_4PH",
+                                              "INTERPOLATOR",
+                                              "LEN_BOUNDARY",
+                                              "ISOTOPE",
+                                              "ISOFACT",
+                                              "KAPPA_COHERENT",
+                                              "KAPPA_SPEC",
+                                              "WRITE_INTERPOL",
+                                              "ADAPTIVE_FACTOR",
+                                              "ITERATIVE",
+                                              "MAX_CYCLE",
+                                              "MIN_CYCLE",
+                                              "ITER_THRESHOLD",
+                                              "IBTE_MIXING"};
 
     std::vector<double> isotope_factor;
     std::map<std::string, std::string> kappa_var_dict;
@@ -476,20 +450,20 @@ void Input::parse_kappa_vars(const bool use_default_values)
         }
 
         if (kmesh_v.size() != 3) {
-            exit("parse_kappa_vars",
-                 "The number of entries for KMESH_COARSE has to be 3.");
+            exit("parse_kappa_vars", "The number of entries for KMESH_COARSE has to be 3.");
         }
     } else {
         kmesh_v.resize(3);
-        for (auto i = 0; i < 3; ++i) kmesh_v[i] = 0;
+        for (auto i = 0; i < 3; ++i)
+            kmesh_v[i] = 0;
     }
 
     boost::to_lower(interpolator);
     std::vector<std::string> supported_interpolator{"linear", "log-linear", "modified-log-linear"};
-    if (std::find(std::begin(supported_interpolator), std::end(supported_interpolator), interpolator)
-        == std::end(supported_interpolator)) {
-        exit("parse_kappa_vars",
-             "INTERPOLATOR is not supported.");
+    if (std::find(std::begin(supported_interpolator), std::end(supported_interpolator), interpolator) ==
+        std::end(supported_interpolator))
+    {
+        exit("parse_kappa_vars", "INTERPOLATOR is not supported.");
     }
 
     conductivity->set_interpolator(interpolator);
@@ -523,20 +497,18 @@ void Input::parse_scph_vars()
     // Read input parameters in the &scph-field.
 
     struct stat st{};
-    const std::vector<std::string> input_list{
-        "KMESH_SCPH",
-        "KMESH_INTERPOLATE",
-        "MIXALPHA",
-        "MAXITER",
-        "RESTART_SCPH",
-        "IALGO",
-        "SELF_OFFDIAG",
-        "TOL_SCPH",
-        "LOWER_TEMP",
-        "WARMSTART",
-        "BUBBLE",
-        "RELAX_STR"
-    };
+    const std::vector<std::string> input_list{"KMESH_SCPH",
+                                              "KMESH_INTERPOLATE",
+                                              "MIXALPHA",
+                                              "MAXITER",
+                                              "RESTART_SCPH",
+                                              "IALGO",
+                                              "SELF_OFFDIAG",
+                                              "TOL_SCPH",
+                                              "LOWER_TEMP",
+                                              "WARMSTART",
+                                              "BUBBLE",
+                                              "RELAX_STR"};
     std::vector<std::string> no_defaults{"KMESH_SCPH", "KMESH_INTERPOLATE"};
     std::vector<int> kmesh_v, kmesh_interpolate_v;
     std::map<std::string, std::string> scph_var_dict;
@@ -551,9 +523,7 @@ void Input::parse_scph_vars()
 
     for (auto &no_default: no_defaults) {
         if (scph_var_dict.find(no_default) == scph_var_dict.end()) {
-            exit("parse_scph_vars",
-                 "The following variable is not found in &scph input region: ",
-                 no_default.c_str());
+            exit("parse_scph_vars", "The following variable is not found in &scph input region: ", no_default.c_str());
         }
     }
 
@@ -585,8 +555,7 @@ void Input::parse_scph_vars()
     assign_val(bubble, "BUBBLE", scph_var_dict);
     assign_val(relax_str, "RELAX_STR", scph_var_dict);
     if (relax_str != 0 && !selfenergy_offdiagonal) {
-        exit("parse_scph_vars",
-             "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
+        exit("parse_scph_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
     }
 
     if (relax_str) {
@@ -614,12 +583,10 @@ void Input::parse_scph_vars()
         }
 
         if (kmesh_v.size() != 3) {
-            exit("parse_scph_vars",
-                 "The number of entries for KMESH_SCPH has to be 3.");
+            exit("parse_scph_vars", "The number of entries for KMESH_SCPH has to be 3.");
         }
     } else {
-        exit("parse_scph_vars",
-             "Please specify KMESH_SCPH for mode = SCPH");
+        exit("parse_scph_vars", "Please specify KMESH_SCPH for mode = SCPH");
     }
 
     str_tmp = scph_var_dict["KMESH_INTERPOLATE"];
@@ -637,12 +604,10 @@ void Input::parse_scph_vars()
         }
 
         if (kmesh_interpolate_v.size() != 3) {
-            exit("parse_scph_vars",
-                 "The number of entries for KMESH_INTERPOLATE has to be 3.");
+            exit("parse_scph_vars", "The number of entries for KMESH_INTERPOLATE has to be 3.");
         }
     } else {
-        exit("parse_scph_vars",
-             "Please specify KMESH_INTERPOLATE for mode = SCPH");
+        exit("parse_scph_vars", "Please specify KMESH_INTERPOLATE for mode = SCPH");
     }
 
     // Copy the values to appropriate classes.
@@ -673,14 +638,12 @@ void Input::parse_qha_vars()
     // Read input parameters in the &qha-field.
 
     struct stat st{};
-    const std::vector<std::string> input_list{
-        "KMESH_QHA",
-        "KMESH_INTERPOLATE",
-        "LOWER_TEMP",
-        "RELAX_STR",
-        "QHA_SCHEME",
-        "RESTART_QHA"
-    };
+    const std::vector<std::string> input_list{"KMESH_QHA",
+                                              "KMESH_INTERPOLATE",
+                                              "LOWER_TEMP",
+                                              "RELAX_STR",
+                                              "QHA_SCHEME",
+                                              "RESTART_QHA"};
     std::vector<std::string> no_defaults{"KMESH_QHA", "KMESH_INTERPOLATE"};
     std::vector<int> kmesh_v, kmesh_interpolate_v;
 
@@ -690,9 +653,7 @@ void Input::parse_qha_vars()
 
     for (auto &no_default: no_defaults) {
         if (qha_var_dict.find(no_default) == qha_var_dict.end()) {
-            exit("parse_qha_vars",
-                 "The following variable is not found in &qha input region: ",
-                 no_default.c_str());
+            exit("parse_qha_vars", "The following variable is not found in &qha input region: ", no_default.c_str());
         }
     }
 
@@ -705,8 +666,7 @@ void Input::parse_qha_vars()
     assign_val(qha_scheme, "QHA_SCHEME", qha_var_dict);
 
     if (relax_str == 0) {
-        exit("parse_qha_vars",
-             "RELAX_STR = 0 is not supported when mode = QHA.");
+        exit("parse_qha_vars", "RELAX_STR = 0 is not supported when mode = QHA.");
     }
 
     auto str_tmp = qha_var_dict["KMESH_QHA"];
@@ -725,12 +685,10 @@ void Input::parse_qha_vars()
         }
 
         if (kmesh_v.size() != 3) {
-            exit("parse_qha_vars",
-                 "The number of entries for KMESH_QHA has to be 3.");
+            exit("parse_qha_vars", "The number of entries for KMESH_QHA has to be 3.");
         }
     } else {
-        exit("parse_qha_vars",
-             "Please specify KMESH_QHA for mode = QHA");
+        exit("parse_qha_vars", "Please specify KMESH_QHA for mode = QHA");
     }
 
     str_tmp = qha_var_dict["KMESH_INTERPOLATE"];
@@ -748,12 +706,10 @@ void Input::parse_qha_vars()
         }
 
         if (kmesh_interpolate_v.size() != 3) {
-            exit("parse_qha_vars",
-                 "The number of entries for KMESH_INTERPOLATE has to be 3.");
+            exit("parse_qha_vars", "The number of entries for KMESH_INTERPOLATE has to be 3.");
         }
     } else {
-        exit("parse_qha_vars",
-             "Please specify KMESH_INTERPOLATE for mode = QHA");
+        exit("parse_qha_vars", "Please specify KMESH_INTERPOLATE for mode = QHA");
     }
 
     // Copy the values to appropriate classes.
@@ -780,31 +736,28 @@ void Input::parse_qha_vars()
     kmesh_interpolate_v.clear();
 
     qha_var_dict.clear();
-
 }
 
 void Input::parse_relax_vars()
 {
     // Read input parameters in the &relax-field.
 
-    const std::vector<std::string> input_list{
-        "RELAX_ALGO",
-        "MAX_STR_ITER",
-        "COORD_CONV_TOL",
-        "MIXBETA_COORD",
-        "ALPHA_STDECENT",
-        "CELL_CONV_TOL",
-        "MIXBETA_CELL",
-        "SET_INIT_STR",
-        "COOLING_U0_INDEX",
-        "COOLING_U0_THR",
-        "ADD_HESS_DIAG",
-        "STAT_PRESSURE",
-        "RENORM_3TO2ND",
-        "RENORM_2TO1ST",
-        "RENORM_34TO1ST",
-        "STRAIN_IFC_DIR"
-    };
+    const std::vector<std::string> input_list{"RELAX_ALGO",
+                                              "MAX_STR_ITER",
+                                              "COORD_CONV_TOL",
+                                              "MIXBETA_COORD",
+                                              "ALPHA_STDECENT",
+                                              "CELL_CONV_TOL",
+                                              "MIXBETA_CELL",
+                                              "SET_INIT_STR",
+                                              "COOLING_U0_INDEX",
+                                              "COOLING_U0_THR",
+                                              "ADD_HESS_DIAG",
+                                              "STAT_PRESSURE",
+                                              "RENORM_3TO2ND",
+                                              "RENORM_2TO1ST",
+                                              "RENORM_34TO1ST",
+                                              "STRAIN_IFC_DIR"};
 
     std::map<std::string, std::string> stropt_var_dict;
 
@@ -848,9 +801,7 @@ void Input::parse_relax_vars()
     assign_val(coord_conv_tol, "COORD_CONV_TOL", stropt_var_dict);
 
     if (relax_algo == 1) {
-        assign_val(alpha_steepest_decent,
-                   "ALPHA_STEEPEST_DECENT",
-                   stropt_var_dict);
+        assign_val(alpha_steepest_decent, "ALPHA_STEEPEST_DECENT", stropt_var_dict);
     } else if (relax_algo == 2) {
         assign_val(mixbeta_coord, "MIXBETA_COORD", stropt_var_dict);
     }
@@ -902,7 +853,6 @@ void Input::parse_relax_vars()
     relaxation->strain_IFC_dir = strain_IFC_dir;
 
     stropt_var_dict.clear();
-
 }
 
 void Input::check_relax_vars()
@@ -914,8 +864,7 @@ void Input::check_relax_vars()
     if (relaxation->relax_str != 0) {
 
         if (thermodynamics->calc_FE_bubble) {
-            exit("check_relax_vars",
-                 "Sorry, RELAX_STR!=0 can't be used with bubble correction of the free energy.");
+            exit("check_relax_vars", "Sorry, RELAX_STR!=0 can't be used with bubble correction of the free energy.");
         }
         if (scph->bubble > 0) {
             exit("check_relax_vars",
@@ -929,8 +878,7 @@ void Input::check_relax_vars()
                 fin_test.open(relaxation->strain_IFC_dir + "strain_force.in");
 
                 if (!fin_test) {
-                    exit("check_relax_vars",
-                         "strain_force.in is required in STRAIN_IFC_DIR when RENORM_2TO1ST = 2.");
+                    exit("check_relax_vars", "strain_force.in is required in STRAIN_IFC_DIR when RENORM_2TO1ST = 2.");
                 }
                 fin_test.close();
             }
@@ -948,7 +896,6 @@ void Input::check_relax_vars()
             }
         }
     }
-
 }
 
 
@@ -1006,18 +953,14 @@ void Input::parse_initial_strain()
     }
 
     if (line_vec.size() != 3) {
-        exit("parse_initial_strain",
-             "Too few or too much lines for the &strain field.\n \
+        exit("parse_initial_strain", "Too few or too much lines for the &strain field.\n \
                                             The number of valid lines for the &cell field should be 3.");
     }
 
     for (i = 0; i < 3; ++i) {
 
         line = line_vec[i];
-        split(line_split,
-              line,
-              boost::is_any_of("\t "),
-              boost::token_compress_on);
+        split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
 
 
         // u_tensor
@@ -1026,8 +969,7 @@ void Input::parse_initial_strain()
                 u_tensor_tmp[i][j] = boost::lexical_cast<double>(line_split[j]);
             }
         } else {
-            exit("parse_initial_strain",
-                 "Unacceptable format for &strain field.");
+            exit("parse_initial_strain", "Unacceptable format for &strain field.");
         }
     }
     relaxation->setInitialDistortion(u_tensor_tmp);
@@ -1095,26 +1037,20 @@ void Input::parse_initial_displace()
     }
 
     if (line_vec.empty()) {
-        exit("parse_initial_displace",
-             "Too few lines for the &displace field.");
+        exit("parse_initial_displace", "Too few lines for the &displace field.");
     }
 
     line = line_vec[0];
-    split(line_split,
-          line,
-          boost::is_any_of("\t "),
-          boost::token_compress_on);
+    split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
 
     if (line_split.size() == 1) {
         input_mode = boost::lexical_cast<int>(line_split[0]);
     } else {
-        exit("parse_initial_displace",
-             "Unacceptable format for &displace field.");
+        exit("parse_initial_displace", "Unacceptable format for &displace field.");
     }
 
     if (input_mode < 0 || input_mode >= 2) {
-        exit("parse_initial_displace",
-             "Invalid value of input_mode");
+        exit("parse_initial_displace", "Invalid value of input_mode");
     }
 
     // read displacements
@@ -1133,18 +1069,14 @@ void Input::parse_initial_displace()
         for (i = 1; i < 5; ++i) {
 
             line = line_vec[i];
-            split(line_split,
-                  line,
-                  boost::is_any_of("\t "),
-                  boost::token_compress_on);
+            split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
 
             if (i == 1) {
                 // read unit
                 if (line_split.size() == 1) {
                     unit = boost::lexical_cast<double>(line_split[0]);
                 } else {
-                    exit("parse_initial_displace",
-                         "Unacceptable format for &displace field.");
+                    exit("parse_initial_displace", "Unacceptable format for &displace field.");
                 }
 
             } else {
@@ -1154,8 +1086,7 @@ void Input::parse_initial_displace()
                         a[i - 2][j] = boost::lexical_cast<double>(line_split[j]);
                     }
                 } else {
-                    exit("parse_initial_displace",
-                         "Unacceptable format for &displace field.");
+                    exit("parse_initial_displace", "Unacceptable format for &displace field.");
                 }
             }
         }
@@ -1170,10 +1101,7 @@ void Input::parse_initial_displace()
         for (i = 5; i < line_vec.size(); i++) {
 
             line = line_vec[i];
-            split(line_split,
-                  line,
-                  boost::is_any_of("\t "),
-                  boost::token_compress_on);
+            split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
 
             if (line_split.size() == 3) {
                 for (j = 0; j < 3; ++j) {
@@ -1181,8 +1109,7 @@ void Input::parse_initial_displace()
                 }
                 u_fractional.push_back(vec_tmp);
             } else {
-                exit("parse_initial_displace",
-                     "Unacceptable format for &displace field.");
+                exit("parse_initial_displace", "Unacceptable format for &displace field.");
             }
         }
 
@@ -1210,10 +1137,7 @@ void Input::parse_initial_displace()
         for (i = 1; i < line_vec.size(); i++) {
 
             line = line_vec[i];
-            split(line_split,
-                  line,
-                  boost::is_any_of("\t "),
-                  boost::token_compress_on);
+            split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
 
             if (line_split.size() == 3) {
                 for (j = 0; j < 3; ++j) {
@@ -1221,8 +1145,7 @@ void Input::parse_initial_displace()
                 }
                 u_xyz.push_back(vec_tmp);
             } else {
-                exit("parse_cell_parameter",
-                     "Unacceptable format for &displace field.");
+                exit("parse_cell_parameter", "Unacceptable format for &displace field.");
             }
         }
     }
@@ -1234,7 +1157,6 @@ void Input::parse_initial_displace()
             relaxation->init_u0.push_back(u_xyz[iat][ixyz]);
         }
     }
-
 }
 
 void Input::parse_analysis_vars(const bool use_default_values)
@@ -1242,40 +1164,38 @@ void Input::parse_analysis_vars(const bool use_default_values)
     // Read input parameters in the &analysis field.
     int i;
 
-    std::vector<std::string> input_list{
-        "PRINTEVEC",
-        "PRINTXSF",
-        "PRINTVEL",
-        "QUARTIC",
-        "KS_INPUT",
-        "REALPART",
-        "FSTATE_W",
-        "FSTATE_K",
-        "PRINTMSD",
-        "DOS",
-        "PDOS",
-        "TDOS",
-        "GRUNEISEN",
-        "NEWFCS",
-        "DELTA_A",
-        "ANIME",
-        "ANIME_CELLSIZE",
-        "ANIME_FORMAT",
-        "ANIME_FRAMES",
-        "SPS",
-        "PRINTV3",
-        "PRINTPR",
-        "FC2_EWALD",
-        "SELF_W",
-        "UCORR",
-        "SHIFT_UCORR",
-        "DIELEC",
-        "SELF_ENERGY",
-        "PRINTV4",
-        "ZMODE",
-        "PROJECTION_AXES",
-        "LONGITUDINAL_DOS"
-    };
+    std::vector<std::string> input_list{"PRINTEVEC",
+                                        "PRINTXSF",
+                                        "PRINTVEL",
+                                        "QUARTIC",
+                                        "KS_INPUT",
+                                        "REALPART",
+                                        "FSTATE_W",
+                                        "FSTATE_K",
+                                        "PRINTMSD",
+                                        "DOS",
+                                        "PDOS",
+                                        "TDOS",
+                                        "GRUNEISEN",
+                                        "NEWFCS",
+                                        "DELTA_A",
+                                        "ANIME",
+                                        "ANIME_CELLSIZE",
+                                        "ANIME_FORMAT",
+                                        "ANIME_FRAMES",
+                                        "SPS",
+                                        "PRINTV3",
+                                        "PRINTPR",
+                                        "FC2_EWALD",
+                                        "SELF_W",
+                                        "UCORR",
+                                        "SHIFT_UCORR",
+                                        "DIELEC",
+                                        "SELF_ENERGY",
+                                        "PRINTV4",
+                                        "ZMODE",
+                                        "PROJECTION_AXES",
+                                        "LONGITUDINAL_DOS"};
 
 #ifdef _FE_BUBBLE
     input_list.push_back("FE_BUBBLE");
@@ -1386,8 +1306,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
         split_str_by_space(analysis_var_dict["ANIME"], anime_kpoint);
 
         if (anime_kpoint.size() != 3) {
-            exit("parse_analysis_vars",
-                 "The number of entries for ANIME should be 3.");
+            exit("parse_analysis_vars", "The number of entries for ANIME should be 3.");
         }
         for (i = 0; i < 3; ++i) {
             anime_kpoint_double[i] = my_cast<double>(anime_kpoint[i]);
@@ -1396,8 +1315,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
         split_str_by_space(analysis_var_dict["ANIME_CELLSIZE"], anime_cellsize);
 
         if (anime_cellsize.size() != 3) {
-            exit("parse_analysis_vars",
-                 "The number of entries for ANIME_CELLSIZE should be 3.");
+            exit("parse_analysis_vars", "The number of entries for ANIME_CELLSIZE should be 3.");
         }
 
         for (i = 0; i < 3; ++i) {
@@ -1405,20 +1323,15 @@ void Input::parse_analysis_vars(const bool use_default_values)
                 cellsize[i] = boost::lexical_cast<unsigned int>(anime_cellsize[i]);
             } catch (std::exception &e) {
                 std::cout << e.what() << '\n';
-                exit("parse_analysis_vars",
-                     "ANIME_CELLSIZE must be a set of positive integers.");
+                exit("parse_analysis_vars", "ANIME_CELLSIZE must be a set of positive integers.");
             }
             if (cellsize[i] < 1) {
-                exit("parse_analysis_vars",
-                     "Please give positive integers for ANIME_CELLSIZE.");
+                exit("parse_analysis_vars", "Please give positive integers for ANIME_CELLSIZE.");
             }
         }
 
         assign_val(anime_format, "ANIME_FORMAT", analysis_var_dict);
-        std::transform(anime_format.begin(),
-                       anime_format.end(),
-                       anime_format.begin(),
-                       toupper);
+        std::transform(anime_format.begin(), anime_format.end(), anime_format.begin(), toupper);
 
         if (anime_format.empty()) anime_format = "XYZ";
 
@@ -1437,8 +1350,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
         if (!str_shift_ucorr.empty()) {
             split_str_by_space(str_shift_ucorr, list_shift_ucorr);
             if (list_shift_ucorr.size() != 3) {
-                exit("parse_analysis_vars",
-                     "The number of entries for SHIFT_UCORR must be 3.");
+                exit("parse_analysis_vars", "The number of entries for SHIFT_UCORR must be 3.");
             }
 
             for (i = 0; i < 3; ++i) {
@@ -1446,8 +1358,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
                     shift_ucorr[i] = boost::lexical_cast<int>(list_shift_ucorr[i]);
                 } catch (std::exception &e) {
                     std::cout << e.what() << '\n';
-                    exit("parse_analysis_vars",
-                         "SHIFT_UCORR must be an array of integers.");
+                    exit("parse_analysis_vars", "SHIFT_UCORR must be an array of integers.");
                 }
             }
         }
@@ -1463,23 +1374,20 @@ void Input::parse_analysis_vars(const bool use_default_values)
             boost::split(str_projection_each, str_projection_axes, boost::is_any_of(","));
 
             if (str_projection_each.size() > 2) {
-                warn("parse_analysis_vars",
-                     "Too many entries for PROJECTION_AXES. Only the first two will be used.");
+                warn("parse_analysis_vars", "Too many entries for PROJECTION_AXES. Only the first two will be used.");
             }
 
             for (i = 0; i < str_projection_each.size(); ++i) {
                 split_str_by_space(str_projection_each[i], str_vec);
                 if (str_vec.size() != 3) {
-                    exit("parse_analysis_vars",
-                         "The number of entries for each vector in PROJECTION_AXES must be 3.");
+                    exit("parse_analysis_vars", "The number of entries for each vector in PROJECTION_AXES must be 3.");
                 }
                 for (auto j = 0; j < 3; ++j) {
                     try {
                         direction[j] = boost::lexical_cast<double>(str_vec[j]);
                     } catch (std::exception &e) {
                         std::cout << e.what() << '\n';
-                        exit("parse_analysis_vars",
-                             "subset of PROJECTION_AXES must be an array of doubles.");
+                        exit("parse_analysis_vars", "subset of PROJECTION_AXES must be an array of doubles.");
                     }
                 }
                 projection_directions.push_back(direction);
@@ -1604,18 +1512,14 @@ void Input::parse_cell_parameter()
     for (i = 0; i < 4; ++i) {
 
         line = line_vec[i];
-        split(line_split,
-              line,
-              boost::is_any_of("\t "),
-              boost::token_compress_on);
+        split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
 
         if (i == 0) {
             // Lattice factor a
             if (line_split.size() == 1) {
                 a = boost::lexical_cast<double>(line_split[0]);
             } else {
-                exit("parse_cell_parameter",
-                     "Unacceptable format for &cell field.");
+                exit("parse_cell_parameter", "Unacceptable format for &cell field.");
             }
 
         } else {
@@ -1625,8 +1529,7 @@ void Input::parse_cell_parameter()
                     lavec_tmp[j][i - 1] = boost::lexical_cast<double>(line_split[j]);
                 }
             } else {
-                exit("parse_cell_parameter",
-                     "Unacceptable format for &cell field.");
+                exit("parse_cell_parameter", "Unacceptable format for &cell field.");
             }
         }
     }
@@ -1703,38 +1606,31 @@ void Input::parse_kpoints()
                     kpmode = boost::lexical_cast<int>(kpelem[0]);
                 } catch (std::exception &e) {
                     std::cout << e.what() << '\n';
-                    exit("parse_kpoints",
-                         "KPMODE must be an integer. [0, 1, or 2]");
+                    exit("parse_kpoints", "KPMODE must be an integer. [0, 1, or 2]");
                 }
 
                 if (!(kpmode >= 0 && kpmode <= 3)) {
-                    exit("parse_kpoints",
-                         "KPMODE must be 0, 1, or 2.");
+                    exit("parse_kpoints", "KPMODE must be 0, 1, or 2.");
                 }
 
             } else {
-                exit("parse_kpoints",
-                     "Unacceptable format for the &kpoint field.");
+                exit("parse_kpoints", "Unacceptable format for the &kpoint field.");
             }
 
         } else {
             // Read each entry of kpoint
 
             if (kpmode == 0 && kpelem.size() != 3) {
-                exit("parse_kpoints",
-                     "The number of columns must be 3 when KPMODE = 0");
+                exit("parse_kpoints", "The number of columns must be 3 when KPMODE = 0");
             }
             if (kpmode == 1 && kpelem.size() != 9) {
-                exit("parse_kpoints",
-                     "The number of columns must be 9 when KPMODE = 1");
+                exit("parse_kpoints", "The number of columns must be 9 when KPMODE = 1");
             }
             if (kpmode == 2 && kpelem.size() != 3) {
-                exit("parse_kpoints",
-                     "The number of columns must be 3 when KPMODE = 2");
+                exit("parse_kpoints", "The number of columns must be 3 when KPMODE = 2");
             }
             if (kpmode == 3 && kpelem.size() != 8) {
-                exit("parse_kpoints",
-                     "The number of columns must be 8 when KPMODE = 3");
+                exit("parse_kpoints", "The number of columns must be 8 when KPMODE = 3");
             }
 
             kpoint->kpInp.emplace_back(kpelem);
@@ -1771,7 +1667,6 @@ int Input::locate_tag(const std::string &key)
             }
         }
         return ret;
-
     }
     ifs_input.clear();
     ifs_input.seekg(0, std::ios_base::beg);
@@ -1793,8 +1688,7 @@ int Input::locate_tag(const std::string &key)
     return ret;
 }
 
-void Input::get_var_dict(const std::vector<std::string> &input_list,
-                         std::map<std::string, std::string> &var_dict)
+void Input::get_var_dict(const std::vector<std::string> &input_list, std::map<std::string, std::string> &var_dict)
 {
     std::string line, key, val;
     std::string line_wo_comment, line_tmp;
@@ -1856,8 +1750,7 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
                             std::cout << it2 << ' ';
                         }
                         std::cout << '\n';
-                        exit("get_var_dict",
-                             "Unacceptable format");
+                        exit("get_var_dict", "Unacceptable format");
                     }
 #ifdef _USE_BOOST
                     key = boost::to_upper_copy(boost::trim_copy(str_varval[0]));
@@ -1869,15 +1762,12 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
 #endif
                     if (keyword_set.find(key) == keyword_set.end()) {
                         std::cout << "Could not recognize the variable " << key << '\n';
-                        exit("get_var_dict",
-                             "Invalid variable found");
+                        exit("get_var_dict", "Invalid variable found");
                     }
 
                     if (var_dict.find(key) != var_dict.end()) {
-                        std::cout << "Variable " << key
-                            << " appears twice in the input file.\n";
-                        exit("get_var_dict",
-                             "Redundant input parameter");
+                        std::cout << "Variable " << key << " appears twice in the input file.\n";
+                        exit("get_var_dict", "Redundant input parameter");
                     }
 
                     // If everything is OK, add the variable and the corresponding value
@@ -1936,8 +1826,7 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
                             std::cout << it2 << ' ';
                         }
                         std::cout << '\n';
-                        exit("get_var_dict",
-                             "Unacceptable format");
+                        exit("get_var_dict", "Unacceptable format");
                     }
 
 #ifdef _USE_BOOST
@@ -1950,17 +1839,13 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
 #endif
 
                     if (keyword_set.find(key) == keyword_set.end()) {
-                        std::cout << "Could not recognize the variable "
-                            << key << '\n';
-                        exit("get_var_dict",
-                             "Invalid variable found");
+                        std::cout << "Could not recognize the variable " << key << '\n';
+                        exit("get_var_dict", "Invalid variable found");
                     }
 
                     if (var_dict.find(key) != var_dict.end()) {
-                        std::cout << "Variable " << key
-                            << " appears twice in the input file.\n";
-                        exit("get_var_dict",
-                             "Redundant input parameter");
+                        std::cout << "Variable " << key << " appears twice in the input file.\n";
+                        exit("get_var_dict", "Redundant input parameter");
                     }
 
                     // If everything is OK, add the variable and the corresponding value
@@ -1970,7 +1855,6 @@ void Input::get_var_dict(const std::vector<std::string> &input_list,
                 }
             }
         }
-
     }
     keyword_set.clear();
 }
@@ -1980,8 +1864,7 @@ bool Input::is_endof_entry(const std::string &str)
     return str[0] == '/';
 }
 
-void Input::split_str_by_space(const std::string &str,
-                               std::vector<std::string> &str_vec)
+void Input::split_str_by_space(const std::string &str, std::vector<std::string> &str_vec)
 {
     std::string str_tmp;
     std::istringstream is(str);
@@ -2000,9 +1883,7 @@ void Input::split_str_by_space(const std::string &str,
 }
 
 template <typename T>
-void Input::assign_val(T &val,
-                       const std::string &key,
-                       std::map<std::string, std::string> dict)
+void Input::assign_val(T &val, const std::string &key, std::map<std::string, std::string> dict)
 {
     // Assign a value to the variable "key" using the boost::lexica_cast.
 

@@ -8,25 +8,24 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "integration.h"
-#include "error.h"
-#include "mathfunctions.h"
-#include "memory.h"
-#include "system.h"
-#include "phonon_dos.h"
-#include "phonon_velocity.h"
-#include "dynamical.h"
-#include "anharmonic_core.h"
-#include "fcs_phonon.h"
-#include <iomanip>
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include "anharmonic_core.h"
+#include "dynamical.h"
+#include "error.h"
+#include "fcs_phonon.h"
+#include "mathfunctions.h"
+#include "memory.h"
+#include "mpi_common.h"
+#include "phonon_dos.h"
+#include "phonon_velocity.h"
+#include "system.h"
 
 using namespace PHON_NS;
 
-Integration::Integration(PHON *phon) :
-    Pointers(phon)
+Integration::Integration(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
@@ -70,11 +69,11 @@ void Integration::setup_integration()
         if (ismear == -1) {
             std::cout << "   ISMEAR = -1: Tetrahedron method\n";
         } else if (ismear == 0) {
-            std::cout << "   ISMEAR = 0: Lorentzian broadening with epsilon = "
-                << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+            std::cout << "   ISMEAR = 0: Lorentzian broadening with epsilon = " << std::fixed << std::setprecision(2)
+                      << epsilon << " (cm^-1)\n";
         } else if (ismear == 1) {
-            std::cout << "   ISMEAR = 1: Gaussian broadening with epsilon = "
-                << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+            std::cout << "   ISMEAR = 1: Gaussian broadening with epsilon = " << std::fixed << std::setprecision(2)
+                      << epsilon << " (cm^-1)\n";
         } else if (ismear == 2) {
             std::cout << "   ISMEAR = 2: Adaptive Gaussian broadening\n";
         } else {
@@ -88,11 +87,11 @@ void Integration::setup_integration()
                 std::cout << "   Tetrahedron method (ISMEAR_4PH) is not implemented. Switch to adaptive smearing !\n";
                 ismear_4ph = 2;
             } else if (ismear_4ph == 0) {
-                std::cout << "   ISMEAR_4PH = 0: Lorentzian broadening with epsilon = "
-                    << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                std::cout << "   ISMEAR_4PH = 0: Lorentzian broadening with epsilon = " << std::fixed
+                          << std::setprecision(2) << epsilon << " (cm^-1)\n";
             } else if (ismear_4ph == 1) {
-                std::cout << "   ISMEAR_4PH = 1: Gaussian broadening with epsilon = "
-                    << std::fixed << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                std::cout << "   ISMEAR_4PH = 1: Gaussian broadening with epsilon = " << std::fixed
+                          << std::setprecision(2) << epsilon << " (cm^-1)\n";
             } else if (ismear_4ph == 2) {
                 std::cout << "   ISMEAR_4PH = 2: Adaptive Gaussian broadening\n";
             } else {
@@ -113,9 +112,7 @@ void Integration::setup_integration()
 void Integration::prepare_adaptivesmearing()
 {
     if (ismear == 2) {
-        adaptive_sigma = new AdaptiveSmearingSigma(dos->kmesh_dos->nk,
-                                                   dynamical->neval,
-                                                   adaptive_factor);
+        adaptive_sigma = new AdaptiveSmearingSigma(dos->kmesh_dos->nk, dynamical->neval, adaptive_factor);
         adaptive_sigma->setup(phonon_velocity,
                               dos->kmesh_dos,
                               system->get_primcell().lattice_vector,
@@ -202,11 +199,8 @@ unsigned int **TetraNodes::get_tetras() const
     return this->tetras;
 }
 
-double Integration::do_tetrahedron(const double *energy,
-                                   const double *f,
-                                   const unsigned int ntetra,
-                                   const unsigned int *const *tetras,
-                                   const double e_ref)
+double Integration::do_tetrahedron(const double *energy, const double *f, const unsigned int ntetra,
+                                   const unsigned int *const *tetras, const double e_ref)
 {
     /*
     This function returns the summation of the given function f_{k}
@@ -258,16 +252,17 @@ double Integration::do_tetrahedron(const double *energy,
             ret += g * (I1 * f1 + I2 * f2 + I3 * f3 + I4 * f4);
 
         } else if (e2 <= e_ref && e_ref < e3) {
-            g = 3.0 * (e2 - e1 + 2.0 * (e_ref - e2) - (e4 + e3 - e2 - e1)
-                       * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
+            g = 3.0 *
+                (e2 - e1 + 2.0 * (e_ref - e2) -
+                 (e4 + e3 - e2 - e1) * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
-            I1 = frac3 * fij(e1, e4, e_ref) * g + fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 -
-                     e1);
+            I1 = frac3 * fij(e1, e4, e_ref) * g +
+                 fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 - e1);
             I2 = frac3 * fij(e2, e3, e_ref) * g + std::pow(fij(e2, e4, e_ref), 2) * fij(e3, e2, e_ref) / (e4 - e1);
             I3 = frac3 * fij(e3, e2, e_ref) * g + std::pow(fij(e3, e1, e_ref), 2) * fij(e2, e3, e_ref) / (e4 - e1);
-            I4 = frac3 * fij(e4, e1, e_ref) * g + fij(e4, e2, e_ref) * fij(e2, e4, e_ref) * fij(e3, e2, e_ref) / (e4 -
-                     e1);
+            I4 = frac3 * fij(e4, e1, e_ref) * g +
+                 fij(e4, e2, e_ref) * fij(e2, e4, e_ref) * fij(e3, e2, e_ref) / (e4 - e1);
 
             ret += I1 * f1 + I2 * f2 + I3 * f3 + I4 * f4;
 
@@ -280,20 +275,15 @@ double Integration::do_tetrahedron(const double *energy,
             I4 = frac3 * fij(e4, e1, e_ref);
 
             ret += g * (I1 * f1 + I2 * f2 + I3 * f3 + I4 * f4);
-
         }
     }
 
     return ret / static_cast<double>(ntetra);
 }
 
-void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
-                                          const unsigned int *map_to_irreducible_k,
-                                          const double *energy,
-                                          const double e_ref,
-                                          const unsigned int ntetra,
-                                          const unsigned int *const *tetras,
-                                          double *weight) const
+void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, const unsigned int *map_to_irreducible_k,
+                                          const double *energy, const double e_ref, const unsigned int ntetra,
+                                          const unsigned int *const *tetras, double *weight) const
 {
     int i;
 
@@ -301,7 +291,8 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
     double e_tmp[4];
     int sort_arg[4], kindex[4];
 
-    for (i = 0; i < nk_irreducible; ++i) weight[i] = 0.0;
+    for (i = 0; i < nk_irreducible; ++i)
+        weight[i] = 0.0;
 
     for (i = 0; i < ntetra; ++i) {
 
@@ -335,8 +326,8 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
             I4 = g * (fij(e4, e1, e_ref) + fij(e4, e2, e_ref) + fij(e4, e3, e_ref));
 
         } else if (e2 <= e_ref && e_ref < e3) {
-            g = (e2 - e1 + 2.0 * (e_ref - e2) - (e4 + e3 - e2 - e1)
-                 * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
+            g = (e2 - e1 + 2.0 * (e_ref - e2) -
+                 (e4 + e3 - e2 - e1) * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = g * fij(e1, e4, e_ref) + fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 - e1);
@@ -351,7 +342,6 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
             I2 = g * fij(e2, e1, e_ref);
             I3 = g * fij(e3, e1, e_ref);
             I4 = g * fij(e4, e1, e_ref);
-
         }
         weight[k1] += I1;
         weight[k2] += I2;
@@ -359,23 +349,21 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
         weight[k4] += I4;
     }
     auto factor = 1.0 / static_cast<double>(ntetra);
-    for (i = 0; i < nk_irreducible; ++i) weight[i] *= factor;
+    for (i = 0; i < nk_irreducible; ++i)
+        weight[i] *= factor;
 }
 
-void Integration::calc_weight_smearing(const unsigned int nk,
-                                       const unsigned int nk_irreducible,
-                                       const unsigned int *map_to_irreducible_k,
-                                       const double *energy,
-                                       const double e_ref,
-                                       const int smearing_method,
-                                       double *weight) const
+void Integration::calc_weight_smearing(const unsigned int nk, const unsigned int nk_irreducible,
+                                       const unsigned int *map_to_irreducible_k, const double *energy,
+                                       const double e_ref, const int smearing_method, double *weight) const
 {
     int i;
 
     const auto epsilon_kayser = this->epsilon * Hz_to_kayser / time_ry;
     const auto invnk = 1.0 / static_cast<double>(nk);
 
-    for (i = 0; i < nk_irreducible; ++i) weight[i] = 0.0;
+    for (i = 0; i < nk_irreducible; ++i)
+        weight[i] = 0.0;
 
     if (smearing_method == 0) {
         for (i = 0; i < nk; ++i) {
@@ -387,23 +375,21 @@ void Integration::calc_weight_smearing(const unsigned int nk,
         }
     }
 
-    for (i = 0; i < nk_irreducible; ++i) weight[i] *= invnk;
+    for (i = 0; i < nk_irreducible; ++i)
+        weight[i] *= invnk;
 }
 
-double Integration::fij(const double ei,
-                        const double ej,
-                        const double e)
+double Integration::fij(const double ei, const double ej, const double e)
 {
     return (e - ej) / (ei - ej);
 }
 
-void Integration::insertion_sort(double *a,
-                                 int *ind,
-                                 int n)
+void Integration::insertion_sort(double *a, int *ind, int n)
 {
     int i;
 
-    for (i = 0; i < n; ++i) ind[i] = i;
+    for (i = 0; i < n; ++i)
+        ind[i] = i;
 
     for (i = 1; i < n; ++i) {
         double tmp = a[i];
@@ -419,15 +405,10 @@ void Integration::insertion_sort(double *a,
     }
 }
 
-void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class,
-                                  const KpointMeshUniform *kmesh_in,
-                                  const Eigen::Matrix3d &lavec_p_in,
-                                  const Eigen::Matrix3d &rlavec_p_in)
+void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class, const KpointMeshUniform *kmesh_in,
+                                  const Eigen::Matrix3d &lavec_p_in, const Eigen::Matrix3d &rlavec_p_in)
 {
-    phvel_class->get_phonon_group_velocity_mesh(*kmesh_in,
-                                                lavec_p_in,
-                                                false,
-                                                vel);
+    phvel_class->get_phonon_group_velocity_mesh(*kmesh_in, lavec_p_in, false, vel);
 
     for (auto u = 0; u < 3; u++) {
         for (auto a = 0; a < 3; a++) {
@@ -436,9 +417,7 @@ void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class,
     }
 }
 
-void AdaptiveSmearingSigma::get_sigma(const unsigned int k1,
-                                      const unsigned int s1,
-                                      double &sigma_out)
+void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int s1, double &sigma_out)
 {
     double tmp;
     double parts = 0;
@@ -456,28 +435,28 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1,
     sigma_out = std::max(2.0e-5, adaptive_factor * std::sqrt(parts / 12)); // for (w1 - w2)
 }
 
-void AdaptiveSmearingSigma::get_sigma(const unsigned int k1,
-                                      const unsigned int s1,
-                                      const unsigned int k2,
-                                      const unsigned int s2,
-                                      double sigma_out[2])
+void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2,
+                                      const unsigned int s2, double sigma_out[2])
 {
     double parts[2];
     double tmp[2];
     int i;
 
-    for (i = 0; i < 2; ++i) parts[i] = 0;
+    for (i = 0; i < 2; ++i)
+        parts[i] = 0;
 
     for (auto &u: dq) {
 
-        for (i = 0; i < 2; ++i) tmp[i] = 0;
+        for (i = 0; i < 2; ++i)
+            tmp[i] = 0;
 
         for (auto a = 0; a < 3; ++a) {
             tmp[0] += (vel[k1][s1][a] - vel[k2][s2][a]) * u[a];
             tmp[1] += (vel[k1][s1][a] + vel[k2][s2][a]) * u[a];
         }
 
-        for (i = 0; i < 2; ++i) parts[i] += std::pow(tmp[i], 2);
+        for (i = 0; i < 2; ++i)
+            parts[i] += std::pow(tmp[i], 2);
     }
 
     sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[0]) / 12)); // for (w1 - w2 - w3)
@@ -485,22 +464,20 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1,
     // 2.0e-5 ry ~ 3 cm^-1
 }
 
-void AdaptiveSmearingSigma::get_sigma(const unsigned int k2,
-                                      const unsigned int s2,
-                                      const unsigned int k3,
-                                      const unsigned int s3,
-                                      const unsigned int k4,
-                                      const unsigned int s4,
+void AdaptiveSmearingSigma::get_sigma(const unsigned int k2, const unsigned int s2, const unsigned int k3,
+                                      const unsigned int s3, const unsigned int k4, const unsigned int s4,
                                       double sigma_out[2])
 {
     double parts[3];
     double tmp[3];
     int i;
-    for (i = 0; i < 3; ++i) parts[i] = 0;
+    for (i = 0; i < 3; ++i)
+        parts[i] = 0;
 
     for (auto &u: dq) {
 
-        for (i = 0; i < 3; ++i) tmp[i] = 0;
+        for (i = 0; i < 3; ++i)
+            tmp[i] = 0;
 
         for (auto a = 0; a < 3; ++a) {
             tmp[0] += (vel[k2][s2][a] - vel[k4][s4][a]) * u[a];
@@ -508,7 +485,8 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k2,
             tmp[2] += (vel[k2][s2][a] + vel[k4][s4][a]) * u[a];
         }
 
-        for (i = 0; i < 3; ++i) parts[i] += std::pow(tmp[i], 2);
+        for (i = 0; i < 3; ++i)
+            parts[i] += std::pow(tmp[i], 2);
     }
 
     sigma_out[0] = std::max(2.0e-5,

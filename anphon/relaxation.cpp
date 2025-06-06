@@ -9,23 +9,22 @@ or http://opensource.org/licenses/mit-license.php for information.
 */
 
 #include "relaxation.h"
-#include "dynamical.h"
-#include "system.h"
-#include "scph.h"
-#include "parsephon.h"
-#include "error.h"
-#include "timer.h"
+#include <Eigen/Core>
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <fftw3.h>
 #include <iomanip>
-#include <Eigen/Core>
+#include "dynamical.h"
+#include "error.h"
 #include "optimizers.h"
-#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
+#include "parsephon.h"
+#include "scph.h"
+#include "system.h"
+#include "timer.h"
 // #include <boost/range/algorithm.hpp> // boost/range may induce compile error
 
 using namespace PHON_NS;
 
-Relaxation::Relaxation(PHON *phon) :
-    Pointers(phon)
+Relaxation::Relaxation(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
@@ -55,7 +54,8 @@ void Relaxation::set_default_variables()
     stat_pressure = 0.0;   // [GPa]
 }
 
-void Relaxation::deallocate_variables() {}
+void Relaxation::deallocate_variables()
+{}
 
 void Relaxation::setup_relaxation()
 {
@@ -76,12 +76,10 @@ void Relaxation::create_optimizer(const size_t num_modes)
     } else if (relax_str == 2 && relax_algo == 2) {
         optimizer = std::make_unique<CellCoord_Newton_Optimizer>(mixbeta_cell, mixbeta_coord);
     } else if (relax_str == 1 && relax_algo == 3) {
-        const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes - 3,
-                                                                 num_modes - 3);
+        const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes - 3, num_modes - 3);
         optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
     } else if (relax_str == 2 && relax_algo == 3) {
-        const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes + 3,
-                                                                 num_modes + 3);
+        const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes + 3, num_modes + 3);
         optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
     }
 }
@@ -108,16 +106,14 @@ void Relaxation::load_V0_from_file()
         ifs_v0.open(file_v0.c_str(), std::ios::in);
 
         if (!ifs_v0) {
-            exit("load_V0_from_file",
-                 "Cannot open V0 file.");
+            exit("load_V0_from_file", "Cannot open V0 file.");
         }
 
         for (int iT = 0; iT < NT; iT++) {
             ifs_v0 >> temp >> V0[iT];
 
             if (std::fabs(temp - Temp_array[iT]) > eps6) {
-                exit("load_V0_from_file",
-                     "Temperature grid is not consistent.");
+                exit("load_V0_from_file", "Temperature grid is not consistent.");
             }
         }
 
@@ -145,8 +141,7 @@ void Relaxation::store_V0_to_file() const
     ofs_v0.open(file_v0.c_str(), std::ios::out);
 
     if (!ofs_v0) {
-        exit("store_V0_to_file",
-             "Cannot open V0 file");
+        exit("store_V0_to_file", "Cannot open V0 file");
     }
 
     for (int i = 0; i < NT; i++) {
@@ -158,12 +153,9 @@ void Relaxation::store_V0_to_file() const
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_v0;
     std::cout << " : Renormalized static potential V0 (restart file)\n";
-
 }
 
-void Relaxation::set_elastic_constants(double *C1_array,
-                                       double **C2_array,
-                                       double ***C3_array) const
+void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const
 {
 
     // if the shape of the unit cell is relaxed,
@@ -227,8 +219,7 @@ void Relaxation::read_C1_array(double *const C1_array)
     }
 }
 
-void Relaxation::read_elastic_constants(double *const *const C2_array,
-                                        double *const *const *const C3_array) const
+void Relaxation::read_elastic_constants(double *const *const C2_array, double *const *const *const C3_array) const
 {
     std::fstream fin_elastic_constants;
     std::string str_tmp;
@@ -258,13 +249,8 @@ void Relaxation::read_elastic_constants(double *const *const C2_array,
 }
 
 
-void Relaxation::set_init_structure_atT(double *q0,
-                                        double **u_tensor,
-                                        double *u0,
-                                        bool &converged_prev,
-                                        int &str_diverged,
-                                        const int i_temp_loop,
-                                        double **omega2_harmonic,
+void Relaxation::set_init_structure_atT(double *q0, double **u_tensor, double *u0, bool &converged_prev,
+                                        int &str_diverged, const int i_temp_loop, double **omega2_harmonic,
                                         std::complex<double> ***evec_harmonic) const
 {
     int i1, i2;
@@ -357,10 +343,11 @@ void Relaxation::set_init_structure_atT(double *q0,
         }
         // read initial DISPLACEMENT if the structure converges
         // to the high-symmetry one.
-        else if (std::fabs(u0[cooling_u0_index]) < cooling_u0_thr) {
+        else if (std::fabs(u0[cooling_u0_index]) < cooling_u0_thr)
+        {
             std::cout << '\n';
             std::cout << " u0[" << cooling_u0_index << "] < " << std::setw(15) << std::setprecision(6) << cooling_u0_thr
-                << " is satisfied.\n";
+                      << " is satisfied.\n";
             std::cout << " the structure is back to the high-symmetry phase.\n";
             std::cout << " set again initial displacement from input file.\n\n";
 
@@ -383,9 +370,8 @@ void Relaxation::set_initial_q0(double *const q0, std::complex<double> ***evec_h
         q0[is] = 0.0;
         for (int i_atm = 0; i_atm < natmin; i_atm++) {
             for (int ixyz = 0; ixyz < 3; ixyz++) {
-                q0[is] += evec_harmonic[0][is][i_atm * 3 + ixyz].real() *
-                    std::sqrt(system->get_mass_prim()[i_atm])
-                    * init_u0[i_atm * 3 + ixyz];
+                q0[is] += evec_harmonic[0][is][i_atm * 3 + ixyz].real() * std::sqrt(system->get_mass_prim()[i_atm]) *
+                          init_u0[i_atm * 3 + ixyz];
             }
         }
     }
@@ -400,8 +386,7 @@ void Relaxation::set_initial_strain(double *const *const u_tensor) const
     }
 }
 
-void Relaxation::calculate_u0(const double *const q0, double *const u0,
-                              double **omega2_harmonic,
+void Relaxation::calculate_u0(const double *const q0, double *const u0, double **omega2_harmonic,
                               std::complex<double> ***evec_harmonic) const
 {
     const auto natmin = system->get_primcell().number_of_atoms;
@@ -422,22 +407,12 @@ void Relaxation::calculate_u0(const double *const q0, double *const u0,
     }
 }
 
-void Relaxation::update_cell_coordinate(double *q0,
-                                        double *u0,
-                                        double **u_tensor,
-                                        const std::complex<double> *const v1_array_atT,
-                                        const double *const *const omega2_array,
-                                        const std::complex<double> *const del_v0_strain_atT,
-                                        const double *const *const C2_array,
-                                        const std::complex<double> *const *const *const cmat_convert,
-                                        const std::vector<int> &harm_optical_modes,
-                                        double *delta_q0,
-                                        double *delta_u0,
-                                        double *delta_umn,
-                                        double &du0,
-                                        double &du_tensor,
-                                        double **omega2_harmonic,
-                                        std::complex<double> ***evec_harmonic) const
+void Relaxation::update_cell_coordinate(
+    double *q0, double *u0, double **u_tensor, const std::complex<double> *const v1_array_atT,
+    const double *const *const omega2_array, const std::complex<double> *const del_v0_strain_atT,
+    const double *const *const C2_array, const std::complex<double> *const *const *const cmat_convert,
+    const std::vector<int> &harm_optical_modes, double *delta_q0, double *delta_u0, double *delta_umn, double &du0,
+    double &du_tensor, double **omega2_harmonic, std::complex<double> ***evec_harmonic) const
 {
     using namespace Eigen;
 
@@ -517,11 +492,7 @@ void Relaxation::update_cell_coordinate(double *q0,
         if (relax_str == 1) {
             int i1, i2;
             // call optimizer
-            optimizer->update_state(ns - 3,
-                                    grad_vec,
-                                    state_vec,
-                                    hessian_mat,
-                                    delta_vec);
+            optimizer->update_state(ns - 3, grad_vec, state_vec, hessian_mat, delta_vec);
 
             // update q0
             for (is = 0; is < ns - 3; is++) {
@@ -620,18 +591,14 @@ void Relaxation::update_cell_coordinate(double *q0,
 
 
             // call optimizer
-            optimizer->update_state(ns + 3,
-                                    grad_vec,
-                                    state_vec,
-                                    hessian_mat,
-                                    delta_vec);
+            optimizer->update_state(ns + 3, grad_vec, state_vec, hessian_mat, delta_vec);
 
             // update q0
             std::cout << "update state";
             for (is = 0; is < ns - 3; is++) {
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];
                 std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]]
-                    << '\n';
+                          << '\n';
                 q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
             // update u tensor
@@ -671,12 +638,9 @@ void Relaxation::update_cell_coordinate(double *q0,
         std::cout << delta_umn[is] << '\n';
     }
     std::cout << "\n";
-
 }
 
-void Relaxation::check_str_divergence(int &diverged,
-                                      const double *const q0,
-                                      const double *const u0,
+void Relaxation::check_str_divergence(int &diverged, const double *const q0, const double *const u0,
                                       const double *const *const u_tensor) const
 {
     const auto ns = dynamical->neval;
@@ -706,19 +670,12 @@ void Relaxation::check_str_divergence(int &diverged,
 }
 
 
-void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse,
-                                      const KpointMeshUniform *kmesh_dense,
-                                      std::complex<double> **del_v1_del_umn,
-                                      std::complex<double> **del2_v1_del_umn2,
-                                      std::complex<double> **del3_v1_del_umn3,
-                                      std::complex<double> ***del_v2_del_umn,
-                                      std::complex<double> ***del2_v2_del_umn2,
-                                      std::complex<double> ****del_v3_del_umn,
-                                      double **omega2_harmonic,
-                                      std::complex<double> ***evec_harmonic,
-                                      int relax_str,
-                                      MinimumDistList ***mindist_list,
-                                      const PhaseFactorStorage *phase_storage_in)
+void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
+                                      std::complex<double> **del_v1_del_umn, std::complex<double> **del2_v1_del_umn2,
+                                      std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del_v2_del_umn,
+                                      std::complex<double> ***del2_v2_del_umn2, std::complex<double> ****del_v3_del_umn,
+                                      double **omega2_harmonic, std::complex<double> ***evec_harmonic, int relax_str,
+                                      MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in)
 {
     const auto ns = dynamical->neval;
     const auto nk = kmesh_dense->nk;
@@ -776,18 +733,13 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse,
 
         if (mympi->my_rank == 0) timer->print_elapsed();
     }
-
 }
 
 // relax_str == 1: keep the unit cell fixed and relax internal coordinates
 // set renormalization from strain as zero
-void Relaxation::set_del_v_fixed_cell(const size_t nk,
-                                      const size_t ns,
-                                      std::complex<double> **del_v1_del_umn,
-                                      std::complex<double> **del2_v1_del_umn2,
-                                      std::complex<double> **del3_v1_del_umn3,
-                                      std::complex<double> ***del_v2_del_umn,
-                                      std::complex<double> ***del2_v2_del_umn2,
+void Relaxation::set_del_v_fixed_cell(const size_t nk, const size_t ns, std::complex<double> **del_v1_del_umn,
+                                      std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
+                                      std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
                                       std::complex<double> ****del_v3_del_umn)
 {
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
@@ -827,18 +779,12 @@ void Relaxation::set_del_v_fixed_cell(const size_t nk,
 }
 
 // relax_str == 2: relax both the cell shape and the internal coordinates.
-void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
-                                      const KpointMeshUniform *kmesh_dense,
-                                      const size_t ns,
-                                      std::complex<double> **del_v1_del_umn,
-                                      std::complex<double> **del2_v1_del_umn2,
-                                      std::complex<double> **del3_v1_del_umn3,
-                                      std::complex<double> ***del_v2_del_umn,
-                                      std::complex<double> ***del2_v2_del_umn2,
-                                      std::complex<double> ****del_v3_del_umn,
-                                      double **omega2_harmonic,
-                                      std::complex<double> ***evec_harmonic,
-                                      MinimumDistList ***mindist_list,
+void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
+                                      const size_t ns, std::complex<double> **del_v1_del_umn,
+                                      std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
+                                      std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
+                                      std::complex<double> ****del_v3_del_umn, double **omega2_harmonic,
+                                      std::complex<double> ***evec_harmonic, MinimumDistList ***mindist_list,
                                       const PhaseFactorStorage *phase_storage_in)
 {
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
@@ -848,8 +794,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     // first-order derivative of first-order IFCs
     switch (renorm_2to1st) {
     case 0:
-        if (mympi->my_rank == 0)
-            std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
         for (int i1 = 0; i1 < 9; i1++) {
             std::fill_n(del_v1_del_umn[i1], ns, complex_zero);
         }
@@ -874,8 +819,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     // second and third-order derivatives of first-order IFCs
     switch (renorm_34to1st) {
     case 0:
-        if (mympi->my_rank == 0)
-            std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
         for (int i1 = 0; i1 < 81; i1++) {
             std::fill_n(del2_v1_del_umn2[i1], ns, complex_zero);
         }
@@ -889,8 +833,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
         if (mympi->my_rank == 0) std::cout << "  done!\n";
         break;
     case 1:
-        if (mympi->my_rank == 0)
-            std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
         compute_del2_v1_del_umn2(del2_v1_del_umn2, evec_harmonic);
 
         if (mympi->my_rank == 0) {
@@ -912,10 +855,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
         if (mympi->my_rank == 0)
             std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... " << std::flush;
 
-        compute_del_v2_del_umn(del_v2_del_umn,
-                               evec_harmonic,
-                               nk_interpolate,
-                               kmesh_coarse->xk);
+        compute_del_v2_del_umn(del_v2_del_umn, evec_harmonic, nk_interpolate, kmesh_coarse->xk);
         break;
     case 2:
         if (mympi->my_rank == 0) {
@@ -951,10 +891,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
             std::cout << "    (read from file in k-space representation) ... " << std::flush;
         }
 
-        read_del_v2_del_umn_in_kspace(omega2_harmonic,
-                                      evec_harmonic,
-                                      del_v2_del_umn,
-                                      nk);
+        read_del_v2_del_umn_in_kspace(omega2_harmonic, evec_harmonic, del_v2_del_umn, nk);
         break;
 
     default:
@@ -966,10 +903,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     if (mympi->my_rank == 0)
         std::cout << "  - second-order derivatives of harmonic IFCs (from quartic IFCs) ... " << std::flush;
 
-    compute_del2_v2_del_umn2(del2_v2_del_umn2,
-                             evec_harmonic,
-                             nk,
-                             kmesh_dense->xk);
+    compute_del2_v2_del_umn2(del2_v2_del_umn2, evec_harmonic, nk, kmesh_dense->xk);
 
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -977,12 +911,7 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
     }
 
     // first order derivatives of cubic IFCs
-    compute_del_v3_del_umn(del_v3_del_umn,
-                           omega2_harmonic,
-                           evec_harmonic,
-                           kmesh_coarse,
-                           kmesh_dense,
-                           phase_storage_in);
+    compute_del_v3_del_umn(del_v3_del_umn, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_storage_in);
 
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -991,14 +920,11 @@ void Relaxation::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse,
 
 // relax_str == 3: calculate lowest-order linear equation of QHA.
 void Relaxation::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse,
-                                                const KpointMeshUniform *kmesh_dense,
-                                                const size_t ns,
+                                                const KpointMeshUniform *kmesh_dense, const size_t ns,
                                                 std::complex<double> **del_v1_del_umn,
                                                 std::complex<double> **del2_v1_del_umn2,
-                                                std::complex<double> ***del_v2_del_umn,
-                                                double **omega2_harmonic,
-                                                std::complex<double> ***evec_harmonic,
-                                                MinimumDistList ***mindist_list)
+                                                std::complex<double> ***del_v2_del_umn, double **omega2_harmonic,
+                                                std::complex<double> ***evec_harmonic, MinimumDistList ***mindist_list)
 
 {
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
@@ -1008,8 +934,7 @@ void Relaxation::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_c
     int i1, is1;
     // first-order derivative of first-order IFCs
     if (renorm_2to1st == 0) {
-        if (mympi->my_rank == 0)
-            std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
         for (i1 = 0; i1 < 9; i1++) {
             for (is1 = 0; is1 < ns; is1++) {
                 del_v1_del_umn[i1][is1] = complex_zero;
@@ -1031,8 +956,7 @@ void Relaxation::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_c
 
     // second-order derivatives of 1st order IFCs
     if (renorm_34to1st == 0) {
-        if (mympi->my_rank == 0)
-            std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
         for (i1 = 0; i1 < 81; i1++) {
             for (is1 = 0; is1 < ns; is1++) {
                 del2_v1_del_umn2[i1][is1] = complex_zero;
@@ -1040,10 +964,8 @@ void Relaxation::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_c
         }
 
     } else if (renorm_34to1st == 1) {
-        if (mympi->my_rank == 0)
-            std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
         compute_del2_v1_del_umn2(del2_v1_del_umn2, evec_harmonic);
-
     }
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -1051,13 +973,9 @@ void Relaxation::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_c
 
     // first-order derivatives of harmonic IFCs
     if (renorm_3to2nd == 1) {
-        if (mympi->my_rank == 0)
-            std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
+        if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
 
-        compute_del_v2_del_umn(del_v2_del_umn,
-                               evec_harmonic,
-                               nk,
-                               kmesh_coarse->xk);
+        compute_del_v2_del_umn(del_v2_del_umn, evec_harmonic, nk, kmesh_coarse->xk);
     } else if (renorm_3to2nd == 2 || renorm_3to2nd == 3) {
         if (mympi->my_rank == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
@@ -1079,10 +997,7 @@ void Relaxation::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_c
             std::cout << "  - first-order derivatives of harmonic IFCs\n";
             std::cout << "    (read from file in k-space representation) ... ";
         }
-        read_del_v2_del_umn_in_kspace(omega2_harmonic,
-                                      evec_harmonic,
-                                      del_v2_del_umn,
-                                      nk);
+        read_del_v2_del_umn_in_kspace(omega2_harmonic, evec_harmonic, del_v2_del_umn, nk);
     }
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -1128,7 +1043,7 @@ void Relaxation::compute_del_v1_del_umn(std::complex<double> **del_v1_del_umn,
             for (int i = 0; i < natmin; i++) {
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                     del_v1_del_umn[ixyz][is1] += evec_harmonic[0][is1][i * 3 + ixyz1] * invsqrt_mass[i] *
-                        del_v1_del_umn_in_real_space(ixyz, i * 3 + ixyz1);
+                                                 del_v1_del_umn_in_real_space(ixyz, i * 3 + ixyz1);
                 }
             }
         }
@@ -1169,9 +1084,8 @@ void Relaxation::compute_del2_v1_del_umn2(std::complex<double> **del2_v1_del_umn
                 //                ixyz_comb = (it.pairs[1].index % 3) * 27 + ixyz1 * 9 + (it.pairs[2].index % 3) * 3 + ixyz2;
                 //                del2_v1_del_umn2_in_real_space[ixyz_comb][ind1] += it.fcs_val * vec1[ixyz1] * vec2[ixyz2];
                 int const ixyz_comb = it.coords[1] * 27 + ixyz1 * 9 + it.coords[2] * 3 + ixyz2;
-                del2_v1_del_umn2_in_real_space(ixyz_comb, ind1) += it.fcs_val
-                    * it.relvecs_velocity[0][ixyz1]
-                    * it.relvecs_velocity[1][ixyz2];
+                del2_v1_del_umn2_in_real_space(ixyz_comb, ind1) +=
+                    it.fcs_val * it.relvecs_velocity[0][ixyz1] * it.relvecs_velocity[1][ixyz2];
             }
         }
     }
@@ -1183,7 +1097,7 @@ void Relaxation::compute_del2_v1_del_umn2(std::complex<double> **del2_v1_del_umn
             for (int i = 0; i < natmin; i++) {
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                     del2_v1_del_umn2[ixyz][is1] += evec_harmonic[0][is1][i * 3 + ixyz1] * invsqrt_mass[i] *
-                        del2_v1_del_umn2_in_real_space(ixyz, i * 3 + ixyz1);
+                                                   del2_v1_del_umn2_in_real_space(ixyz, i * 3 + ixyz1);
                 }
             }
         }
@@ -1230,11 +1144,11 @@ void Relaxation::compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_umn
                     //                                (it.pairs[3].index % 3) * 3 + ixyz3;
                     //                    del3_v1_del_umn3_in_real_space[ixyz_comb][ind1] +=
                     //                            it.fcs_val * vec1[ixyz1] * vec2[ixyz2] * vec3[ixyz3];
-                    const int ixyz_comb = it.coords[1] * 243 + ixyz1 * 81 + it.coords[2] * 27
-                                          + ixyz2 * 9 + it.coords[3] * 3 + ixyz3;
-                    del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) +=
-                        it.fcs_val * it.relvecs_velocity[0][ixyz1] * it.relvecs_velocity[1][ixyz2] *
-                        it.relvecs_velocity[2][ixyz3];
+                    const int ixyz_comb =
+                        it.coords[1] * 243 + ixyz1 * 81 + it.coords[2] * 27 + ixyz2 * 9 + it.coords[3] * 3 + ixyz3;
+                    del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) += it.fcs_val * it.relvecs_velocity[0][ixyz1] *
+                                                                       it.relvecs_velocity[1][ixyz2] *
+                                                                       it.relvecs_velocity[2][ixyz3];
                 }
             }
         }
@@ -1247,7 +1161,7 @@ void Relaxation::compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_umn
             for (int i = 0; i < natmin; i++) {
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                     del3_v1_del_umn3[ixyz][is1] += evec_harmonic[0][is1][i * 3 + ixyz1] * invsqrt_mass[i] *
-                        del3_v1_del_umn3_in_real_space(ixyz, i * 3 + ixyz1);
+                                                   del3_v1_del_umn3_in_real_space(ixyz, i * 3 + ixyz1);
                 }
             }
         }
@@ -1255,9 +1169,8 @@ void Relaxation::compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_umn
 }
 
 void Relaxation::compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
-                                        const std::complex<double> *const*const*const evec_harmonic,
-                                        const unsigned int nk,
-                                        double **xk_in) const
+                                        const std::complex<double> *const *const *const evec_harmonic,
+                                        const unsigned int nk, double **xk_in) const
 {
     // Calculate the correction to the second-order force constants coming from the third-order force constants
     // due to strain.
@@ -1319,8 +1232,7 @@ void Relaxation::compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
 
 void Relaxation::compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del_umn2,
                                           const std::complex<double> *const *const *const evec_harmonic,
-                                          const unsigned int nk,
-                                          double **xk_in) const
+                                          const unsigned int nk, double **xk_in) const
 {
     using namespace Eigen;
 
@@ -1357,12 +1269,7 @@ void Relaxation::compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del_um
             const int ixyz11 = itmp / 3;
 
             // calculate renormalization in real space
-            compute_del_v_strain_in_real_space2(fcs_aligned,
-                                                delta_fcs,
-                                                ixyz11,
-                                                ixyz12,
-                                                ixyz21,
-                                                ixyz22);
+            compute_del_v_strain_in_real_space2(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
 
             for (int ik = 0; ik < nk; ik++) {
                 //anharmonic_core->calc_analytic_k_from_FcsArrayWithCell(xk_in[ik],
@@ -1391,11 +1298,9 @@ void Relaxation::compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del_um
 
         deallocate(mat_tmp);
     }
-
 }
 
-void Relaxation::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn,
-                                        double **omega2_harmonic,
+void Relaxation::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn, double **omega2_harmonic,
                                         const std::complex<double> *const *const *const evec_harmonic,
                                         const KpointMeshUniform *kmesh_coarse_in,
                                         const KpointMeshUniform *kmesh_dense_in,
@@ -1440,29 +1345,23 @@ void Relaxation::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn,
             boost::sort::block_indirect_sort(delta_fcs.begin(), delta_fcs.end());
             // std::sort(delta_fcs.begin(), delta_fcs.end());
 
-            anharmonic_core->prepare_group_of_force_constants(delta_fcs,
-                                                              ngroup_tmp,
-                                                              fcs_group_tmp);
+            anharmonic_core->prepare_group_of_force_constants(delta_fcs, ngroup_tmp, fcs_group_tmp);
 
             allocate(invmass_v3_tmp, ngroup_tmp);
             allocate(evec_index_v3_tmp, ngroup_tmp, 3);
             allocate(relvec_tmp, ngroup_tmp);
             allocate(phi3_reciprocal_tmp, ngroup_tmp);
 
-            anharmonic_core->prepare_relative_vector(delta_fcs,
-                                                     ngroup_tmp,
-                                                     fcs_group_tmp,
-                                                     relvec_tmp);
+            anharmonic_core->prepare_relative_vector(delta_fcs, ngroup_tmp, fcs_group_tmp, relvec_tmp);
 
             int k = 0;
             for (i = 0; i < ngroup_tmp; ++i) {
                 for (int j = 0; j < 3; ++j) {
                     evec_index_v3_tmp[i][j] = delta_fcs[k].pairs[j].index;
                 }
-                invmass_v3_tmp[i]
-                    = invsqrt_mass_p[evec_index_v3_tmp[i][0] / 3]
-                      * invsqrt_mass_p[evec_index_v3_tmp[i][1] / 3]
-                      * invsqrt_mass_p[evec_index_v3_tmp[i][2] / 3];
+                invmass_v3_tmp[i] = invsqrt_mass_p[evec_index_v3_tmp[i][0] / 3] *
+                                    invsqrt_mass_p[evec_index_v3_tmp[i][1] / 3] *
+                                    invsqrt_mass_p[evec_index_v3_tmp[i][2] / 3];
                 k += fcs_group_tmp[i].size();
             }
 
@@ -1485,7 +1384,6 @@ void Relaxation::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn,
             deallocate(evec_index_v3_tmp);
             deallocate(relvec_tmp);
             deallocate(phi3_reciprocal_tmp);
-
         }
     }
     deallocate(invsqrt_mass_p);
@@ -1493,9 +1391,8 @@ void Relaxation::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn,
 
 
 void Relaxation::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
-                                               const std::complex<double> *const*const*const evec_harmonic,
-                                               std::complex<double> ***del_v2_del_umn,
-                                               const unsigned int nk) const
+                                               const std::complex<double> *const *const *const evec_harmonic,
+                                               std::complex<double> ***del_v2_del_umn, const unsigned int nk) const
 {
     using namespace Eigen;
 
@@ -1552,7 +1449,6 @@ void Relaxation::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
                     }
                 }
             }
-
         }
     }
     deallocate(del_v2_del_umn_alphamu);
@@ -1593,15 +1489,13 @@ void Relaxation::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
             }
         }
     }
-
 }
 
 
 // calculate strain-force coupling using finite-difference method.
 // use finite difference for all 6 strains
-void Relaxation::calculate_delv1_delumn_finite_difference(std::complex<double> **del_v1_del_umn,
-                                                          const std::complex<double> *const *const *const evec_harmonic)
-const
+void Relaxation::calculate_delv1_delumn_finite_difference(
+    std::complex<double> **del_v1_del_umn, const std::complex<double> *const *const *const evec_harmonic) const
 {
 
     // Read strain_force.in, symmetrize elements, and set it to del_v1_del_umn
@@ -1625,8 +1519,7 @@ const
     fin_strain_force_coupling.open(strain_IFC_dir + "strain_force.in");
 
     if (!fin_strain_force_coupling) {
-        exit("calculate_delv1_delumn_finite_difference",
-             "strain_force.in not found");
+        exit("calculate_delv1_delumn_finite_difference", "strain_force.in not found");
     }
 
     weight_sum.setZero();
@@ -1661,8 +1554,8 @@ const
                     del_v1_del_umn_in_real_space[ixyz1 * 3 + ixyz2][iat1 * 3 + ixyz3] += dtmp * -1.0 / smag * weight;
 
                     if (ixyz1 != ixyz2) {
-                        del_v1_del_umn_in_real_space[ixyz2 * 3 + ixyz1][iat1 * 3 + ixyz3]
-                            = del_v1_del_umn_in_real_space[ixyz1 * 3 + ixyz2][iat1 * 3 + ixyz3];
+                        del_v1_del_umn_in_real_space[ixyz2 * 3 + ixyz1][iat1 * 3 + ixyz3] =
+                            del_v1_del_umn_in_real_space[ixyz1 * 3 + ixyz2][iat1 * 3 + ixyz3];
                     }
                 }
             }
@@ -1682,8 +1575,7 @@ const
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
             if (std::fabs(weight_sum(ixyz1, ixyz2) - 1.0) > eps6) {
-                exit("calculate_delv1_delumn_finite_difference",
-                     "Sum of weights must be 1.");
+                exit("calculate_delv1_delumn_finite_difference", "Sum of weights must be 1.");
             }
         }
     }
@@ -1722,11 +1614,11 @@ const
                     ixyz22 = (i2 % 9) / 3;
                     ixyz32 = i2 % 3;
 
-                    del_v1_del_umn_in_real_space_symm[ixyz12 * 3 + ixyz22][iat2 * 3 + ixyz32]
-                        += del_v1_del_umn_in_real_space[ixyz1 * 3 + ixyz2][iat1 * 3 + ixyz3]
-                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz12 * 3 + ixyz1]
-                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz22 * 3 + ixyz2]
-                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz32 * 3 + ixyz3];
+                    del_v1_del_umn_in_real_space_symm[ixyz12 * 3 + ixyz22][iat2 * 3 + ixyz32] +=
+                        del_v1_del_umn_in_real_space[ixyz1 * 3 + ixyz2][iat1 * 3 + ixyz3] *
+                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz12 * 3 + ixyz1] *
+                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz22 * 3 + ixyz2] *
+                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz32 * 3 + ixyz3];
                 }
             }
         }
@@ -1734,8 +1626,7 @@ const
 
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         for (is1 = 0; is1 < ns; is1++) {
-            del_v1_del_umn_in_real_space_symm[ixyz1][is1]
-                /= static_cast<double>(symmetry->SymmListWithMap_ref.size());
+            del_v1_del_umn_in_real_space_symm[ixyz1][is1] /= static_cast<double>(symmetry->SymmListWithMap_ref.size());
         }
     }
 
@@ -1752,9 +1643,9 @@ const
             del_v1_del_umn[ixyz1][is1] = 0.0;
             for (iat1 = 0; iat1 < natmin; iat1++) {
                 for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                    del_v1_del_umn[ixyz1][is1] += evec_harmonic[0][is1][iat1 * 3 + ixyz2]
-                        * system->get_invsqrt_mass()[iat1]
-                        * del_v1_del_umn_in_real_space_symm[ixyz1][iat1 * 3 + ixyz2];
+                    del_v1_del_umn[ixyz1][is1] += evec_harmonic[0][is1][iat1 * 3 + ixyz2] *
+                                                  system->get_invsqrt_mass()[iat1] *
+                                                  del_v1_del_umn_in_real_space_symm[ixyz1][iat1 * 3 + ixyz2];
                 }
             }
         }
@@ -1861,8 +1752,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
     fin_strain_mode_coupling.open(strain_IFC_dir + "strain_harmonic.in");
 
     if (!fin_strain_mode_coupling) {
-        exit("calculate_delv2_delumn_finite_difference",
-             "strain_harmonic.in not found");
+        exit("calculate_delv2_delumn_finite_difference", "strain_harmonic.in not found");
     }
 
     mode_list.clear();
@@ -1910,8 +1800,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
             ixyz1 = 2;
             ixyz2 = 0;
         } else {
-            exit("calculate_delv2_delumn_finite_difference",
-                 "Invalid name of strain mode in strain_harmonic.in.");
+            exit("calculate_delv2_delumn_finite_difference", "Invalid name of strain mode in strain_harmonic.in.");
         }
 
         // calculate finite difference
@@ -1959,8 +1848,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
                 if (std::fabs(weight_sum(ixyz1, ixyz2) - 1.0) < eps6) {
                     exist_in(ixyz1, ixyz2) = 1;
                 } else {
-                    exit("calculate_delv2_delumn_finite_difference",
-                         "Sum of weights must be 1.");
+                    exit("calculate_delv2_delumn_finite_difference", "Sum of weights must be 1.");
                 }
             }
         }
@@ -1974,8 +1862,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
                 } else if (std::fabs(weight_sum(ixyz1, ixyz2)) < eps6) {
                     exist_in(ixyz1, ixyz2) = 0;
                 } else {
-                    exit("calculate_delv2_delumn_finite_difference",
-                         "Sum of weights must be 1 or 0 for each mode.");
+                    exit("calculate_delv2_delumn_finite_difference", "Sum of weights must be 1 or 0 for each mode.");
                 }
             }
         }
@@ -2014,7 +1901,8 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
 
                         for (i1 = 0; i1 < ntran; i1++) {
                             if (system->get_map_p2s(0)[iat1_2][i1] ==
-                                symm_mapping_s[isymm][system->get_map_p2s(0)[iat1][0]]) {
+                                symm_mapping_s[isymm][system->get_map_p2s(0)[iat1][0]])
+                            {
                                 itran1 = i1;
                             }
                         }
@@ -2026,12 +1914,12 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
 
                             iat2_2 = system->get_map_p2s(0)[iat2_2_prim][inv_translation_mapping[itran1][itran2]];
 
-                            dphi2_dumn_realspace_symm[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2][iat2_2 * 3 + ixyz4_2]
-                                += dphi2_dumn_realspace_in[ixyz1][ixyz2][iat1 * 3 + ixyz3][iat2 * 3 + ixyz4]
-                                * symmetry->SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1]
-                                * symmetry->SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2]
-                                * symmetry->SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3]
-                                * symmetry->SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
+                            dphi2_dumn_realspace_symm[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2][iat2_2 * 3 + ixyz4_2] +=
+                                dphi2_dumn_realspace_in[ixyz1][ixyz2][iat1 * 3 + ixyz3][iat2 * 3 + ixyz4] *
+                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1] *
+                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2] *
+                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3] *
+                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
                         }
                     }
                 }
@@ -2058,8 +1946,8 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
 
             for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                 for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                    if (std::fabs(std::fabs(symmetry->SymmListWithMap_ref[isymm].rot[ixyz1 * 3 + ixyz2]) - 1.0) <
-                        eps6) {
+                    if (std::fabs(std::fabs(symmetry->SymmListWithMap_ref[isymm].rot[ixyz1 * 3 + ixyz2]) - 1.0) < eps6)
+                    {
                         mapping_xyz[ixyz2] = ixyz1;
                     }
                 }
@@ -2087,7 +1975,8 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
 
                         for (i1 = 0; i1 < ntran; i1++) {
                             if (system->get_map_p2s(0)[iat1_2][i1] ==
-                                symm_mapping_s[isymm][system->get_map_p2s(0)[iat1][0]]) {
+                                symm_mapping_s[isymm][system->get_map_p2s(0)[iat1][0]])
+                            {
                                 itran1 = i1;
                             }
                         }
@@ -2104,16 +1993,15 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
                                     ixyz3_2 = mapping_xyz[ixyz3];
                                     ixyz4_2 = mapping_xyz[ixyz4];
 
-                                    dphi2_dumn_realspace_symm[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2][iat2_2 * 3 +
-                                            ixyz4_2]
-                                        += dphi2_dumn_realspace_in[ixyz1][ixyz2][iat1 * 3 + ixyz3][iat2 * 3 + ixyz4]
-                                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1]
-                                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2]
-                                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3]
-                                        * symmetry->SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
+                                    dphi2_dumn_realspace_symm[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2]
+                                                             [iat2_2 * 3 + ixyz4_2] +=
+                                        dphi2_dumn_realspace_in[ixyz1][ixyz2][iat1 * 3 + ixyz3][iat2 * 3 + ixyz4] *
+                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1] *
+                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2] *
+                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3] *
+                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
 
                                     count_tmp[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2][iat2_2 * 3 + ixyz4_2]++;
-
                                 }
                             }
                         }
@@ -2128,7 +2016,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
                     for (i2 = 0; i2 < nat * 3; i2++) {
                         if (count_tmp[ixyz1][ixyz2][i1][i2] == 0) {
                             std::cout << "Warning: dphi2_dumn_realspace[" << ixyz1 << "][" << ixyz2 << "][" << i1
-                                << "][" << i2 << "] is not given\n";
+                                      << "][" << i2 << "] is not given\n";
                             std::cout << "The corresponding component is set zero.\n";
                             dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] = 0.0;
                         } else {
@@ -2147,18 +2035,12 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
             for (i1 = 0; i1 < natmin3; i1++) {
                 for (i2 = 0; i2 < nat3; i2++) {
-                    std::cout << "dhi2     : " << std::setw(3) << ixyz1
-                        << std::setw(3) << ixyz2
-                        << std::setw(6) << i1
-                        << std::setw(6) << i2
-                        << " : " << std::setw(15) << std::scientific << dphi2_dumn_realspace_in[ixyz1][ixyz2][i1][i2] <<
-                        '\n';
-                    std::cout << "dhi2_symm: " << std::setw(3) << ixyz1
-                        << std::setw(3) << ixyz2
-                        << std::setw(6) << i1
-                        << std::setw(6) << i2
-                        << " : " << std::setw(15) << std::scientific << dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2]
-                        << '\n';
+                    std::cout << "dhi2     : " << std::setw(3) << ixyz1 << std::setw(3) << ixyz2 << std::setw(6) << i1
+                              << std::setw(6) << i2 << " : " << std::setw(15) << std::scientific
+                              << dphi2_dumn_realspace_in[ixyz1][ixyz2][i1][i2] << '\n';
+                    std::cout << "dhi2_symm: " << std::setw(3) << ixyz1 << std::setw(3) << ixyz2 << std::setw(6) << i1
+                              << std::setw(6) << i2 << " : " << std::setw(15) << std::scientific
+                              << dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] << '\n';
                 }
             }
         }
@@ -2219,14 +2101,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
             }
 
             for (ik = 0; ik < nk; ik++) {
-                dynamical->r2q(kmesh_dense->xk[ik],
-                               nk1,
-                               nk2,
-                               nk3,
-                               ns,
-                               mindist_list,
-                               dymat_new,
-                               dymat_tmp);
+                dynamical->r2q(kmesh_dense->xk[ik], nk1, nk2, nk3, ns, mindist_list, dymat_new, dymat_tmp);
 
                 // (alpha,mu) representation in k-space (this is temporary)
                 for (is = 0; is < ns; is++) {
@@ -2250,7 +2125,6 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
                     }
                 }
             }
-
         }
     }
 
@@ -2276,8 +2150,7 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
 
     // check number of acoustic modes
     if (count_acoustic != 3) {
-        exit("calculate_delv2_delumn_finite_difference",
-             "the number of detected acoustic modes is not three.");
+        exit("calculate_delv2_delumn_finite_difference", "the number of detected acoustic modes is not three.");
     }
 
     // set acoustic sum rule (ASR)
@@ -2304,14 +2177,8 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
     deallocate(is_acoustic);
 }
 
-void Relaxation::renormalize_v0_from_umn(double &v0_with_umn,
-                                         double v0_ref,
-                                         double **eta_tensor,
-                                         double *C1_array,
-                                         double **C2_array,
-                                         double ***C3_array,
-                                         double **u_tensor,
-                                         const double pvcell)
+void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref, double **eta_tensor, double *C1_array,
+                                         double **C2_array, double ***C3_array, double **u_tensor, const double pvcell)
 {
     int ixyz1;
 
@@ -2326,12 +2193,12 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn,
             for (int ixyz3 = 0; ixyz3 < 3; ixyz3++) {
                 for (int ixyz4 = 0; ixyz4 < 3; ixyz4++) {
                     v0_with_umn += factor1 * C2_array[ixyz1 * 3 + ixyz2][ixyz3 * 3 + ixyz4] * eta_tensor[ixyz1][ixyz2] *
-                        eta_tensor[ixyz3][ixyz4];
+                                   eta_tensor[ixyz3][ixyz4];
                     for (int ixyz5 = 0; ixyz5 < 3; ixyz5++) {
                         for (int ixyz6 = 0; ixyz6 < 3; ixyz6++) {
-                            v0_with_umn += factor2 * C3_array[ixyz1 * 3 + ixyz2][ixyz3 * 3 + ixyz4][ixyz5 * 3 + ixyz6]
-                                * eta_tensor[ixyz1][ixyz2] * eta_tensor[ixyz3][ixyz4] *
-                                eta_tensor[ixyz5][ixyz6];
+                            v0_with_umn += factor2 * C3_array[ixyz1 * 3 + ixyz2][ixyz3 * 3 + ixyz4][ixyz5 * 3 + ixyz6] *
+                                           eta_tensor[ixyz1][ixyz2] * eta_tensor[ixyz3][ixyz4] *
+                                           eta_tensor[ixyz5][ixyz6];
                         }
                     }
                 }
@@ -2352,11 +2219,9 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn,
 
     const double det_F_tensor = std::abs(vec_tmp1.dot(vec_tmp2.cross(vec_tmp3)));
     v0_with_umn += pvcell * det_F_tensor;
-
 }
 
-void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn,
-                                         const std::complex<double> *const v1_ref,
+void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, const std::complex<double> *const v1_ref,
                                          const std::complex<double> *const *const del_v1_del_umn,
                                          const std::complex<double> *const *const del2_v1_del_umn2,
                                          const std::complex<double> *const *const del3_v1_del_umn3,
@@ -2380,16 +2245,15 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn,
                     for (int ixyz4 = 0; ixyz4 < 3; ixyz4++) {
                         // renormalization from cubic IFCs
                         int ixyz_comb = ixyz1 * 27 + ixyz2 * 9 + ixyz3 * 3 + ixyz4;
-                        v1_with_umn[is] += factor1 * del2_v1_del_umn2[ixyz_comb][is]
-                            * u_tensor[ixyz1][ixyz2] * u_tensor[ixyz3][ixyz4];
+                        v1_with_umn[is] +=
+                            factor1 * del2_v1_del_umn2[ixyz_comb][is] * u_tensor[ixyz1][ixyz2] * u_tensor[ixyz3][ixyz4];
 
                         for (int ixyz5 = 0; ixyz5 < 3; ixyz5++) {
                             for (int ixyz6 = 0; ixyz6 < 3; ixyz6++) {
                                 // renormalization from quartic IFCs
                                 ixyz_comb = ixyz1 * 243 + ixyz2 * 81 + ixyz3 * 27 + ixyz4 * 9 + ixyz5 * 3 + ixyz6;
-                                v1_with_umn[is] += factor2 * del3_v1_del_umn3[ixyz_comb][is]
-                                    * u_tensor[ixyz1][ixyz2] * u_tensor[ixyz3][ixyz4] *
-                                    u_tensor[ixyz5][ixyz6];
+                                v1_with_umn[is] += factor2 * del3_v1_del_umn3[ixyz_comb][is] * u_tensor[ixyz1][ixyz2] *
+                                                   u_tensor[ixyz3][ixyz4] * u_tensor[ixyz5][ixyz6];
                             }
                         }
                     }
@@ -2401,10 +2265,8 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn,
 
 void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
                                          const std::vector<int> &kmap_coarse_to_dense,
-                                         std::complex<double> **delta_v2_renorm,
-                                         std::complex<double> ***del_v2_del_umn,
-                                         std::complex<double> ***del2_v2_del_umn2,
-                                         double **u_tensor) const
+                                         std::complex<double> **delta_v2_renorm, std::complex<double> ***del_v2_del_umn,
+                                         std::complex<double> ***del2_v2_del_umn2, double **u_tensor) const
 {
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
@@ -2445,19 +2307,15 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
             ixyz12 = itmp % 3;
             ixyz11 = itmp / 3;
 
-            delta_v2_renorm[ik][is1 * ns + is2] +=
-                0.5 * del2_v2_del_umn2[ixyz][knum][is1 * ns + is2] * u_tensor[ixyz11][ixyz12] *
-                u_tensor[ixyz21][ixyz22];
+            delta_v2_renorm[ik][is1 * ns + is2] += 0.5 * del2_v2_del_umn2[ixyz][knum][is1 * ns + is2] *
+                                                   u_tensor[ixyz11][ixyz12] * u_tensor[ixyz21][ixyz22];
         }
     }
 }
 
-void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse,
-                                         const KpointMeshUniform *kmesh_dense,
-                                         std::complex<double> ***v3_with_umn,
-                                         std::complex<double> ***v3_ref,
-                                         std::complex<double> ****del_v3_del_umn,
-                                         double **u_tensor) const
+void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
+                                         std::complex<double> ***v3_with_umn, std::complex<double> ***v3_ref,
+                                         std::complex<double> ****del_v3_del_umn, double **u_tensor) const
 {
     const auto nk_scph = kmesh_dense->nk;
     //    const auto nk_interpolate = kmesh_coarse->nk;
@@ -2490,14 +2348,10 @@ void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse,
     }
 }
 
-void Relaxation::renormalize_v1_from_q0(double **omega2_harmonic,
-                                        const KpointMeshUniform *kmesh_coarse,
-                                        const KpointMeshUniform *kmesh_dense,
-                                        std::complex<double> *v1_renorm,
-                                        std::complex<double> *v1_ref,
-                                        std::complex<double> **delta_v2_array_original,
-                                        std::complex<double> ***v3_ref,
-                                        std::complex<double> ***v4_ref,
+void Relaxation::renormalize_v1_from_q0(double **omega2_harmonic, const KpointMeshUniform *kmesh_coarse,
+                                        const KpointMeshUniform *kmesh_dense, std::complex<double> *v1_renorm,
+                                        std::complex<double> *v1_ref, std::complex<double> **delta_v2_array_original,
+                                        std::complex<double> ***v3_ref, std::complex<double> ***v4_ref,
                                         double *q0) const
 {
     int is1, is2;
@@ -2518,8 +2372,7 @@ void Relaxation::renormalize_v1_from_q0(double **omega2_harmonic,
 
         for (is1 = 0; is1 < ns; is1++) {
             for (is2 = 0; is2 < ns; is2++) {
-                v1_renorm[is] += factor * v3_ref[0][is][is1 * ns + is2]
-                    * q0[is1] * q0[is2];
+                v1_renorm[is] += factor * v3_ref[0][is][is1 * ns + is2] * q0[is1] * q0[is2];
             }
         }
 
@@ -2527,26 +2380,22 @@ void Relaxation::renormalize_v1_from_q0(double **omega2_harmonic,
             for (is2 = 0; is2 < ns; is2++) {
                 for (int is3 = 0; is3 < ns; is3++) {
 
-                    v1_renorm[is] += factor2 * v4_ref[ik_irred0 * kmesh_dense->nk][is * ns + is1][is2 * ns + is3]
-                        * q0[is1] * q0[is2] * q0[is3];
+                    v1_renorm[is] += factor2 * v4_ref[ik_irred0 * kmesh_dense->nk][is * ns + is1][is2 * ns + is3] *
+                                     q0[is1] * q0[is2] * q0[is3];
                     // the factor 4.0 appears due to the definition of v4_array = 1.0/(4.0*N_scph) Phi_4
                 }
             }
         }
-
     }
 }
 
-void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
-                                        const KpointMeshUniform *kmesh_coarse,
+void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, const KpointMeshUniform *kmesh_coarse,
                                         const KpointMeshUniform *kmesh_dense,
                                         const std::vector<int> &kmap_coarse_to_dense,
                                         std::complex<double> ****mat_transform_sym,
                                         std::complex<double> **delta_v2_renorm,
-                                        std::complex<double> **delta_v2_array_original,
-                                        std::complex<double> ***v3_ref,
-                                        std::complex<double> ***v4_ref,
-                                        double *q0) const
+                                        std::complex<double> **delta_v2_array_original, std::complex<double> ***v3_ref,
+                                        std::complex<double> ***v4_ref, double *q0) const
 {
     using namespace Eigen;
 
@@ -2579,12 +2428,11 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
                 Dymat(is1, is2) = complex_zero;
                 for (js1 = 0; js1 < ns; js1++) {
                     // cubic reormalization
-                    Dymat(is1, is2) += factor * v3_ref[knum][js1][is2 * ns + is1]
-                        * q0[js1];
+                    Dymat(is1, is2) += factor * v3_ref[knum][js1][is2 * ns + is1] * q0[js1];
                     // quartic renormalization
                     for (js2 = 0; js2 < ns; js2++) {
-                        Dymat(is1, is2) += factor2 * v4_ref[ik * nk_scph][is1 * ns + is2][js1 * ns + js2]
-                            * q0[js1] * q0[js2];
+                        Dymat(is1, is2) +=
+                            factor2 * v4_ref[ik * nk_scph][is1 * ns + is2][js1 * ns + js2] * q0[js1] * q0[js2];
                     }
                 }
             }
@@ -2599,10 +2447,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
         Dymat = evec_tmp * Dymat * evec_tmp.adjoint();
 
         // symmetrize dynamical matrix
-        dynamical->symmetrize_dynamical_matrix(ik,
-                                               kmesh_coarse,
-                                               mat_transform_sym,
-                                               Dymat);
+        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse, mat_transform_sym, Dymat);
 
         // store to dymat_q
         for (is1 = 0; is1 < ns; is1++) {
@@ -2613,9 +2458,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
     }
 
     // replicate dymat_q to all q
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse,
-                                               mat_transform_sym,
-                                               dymat_q);
+    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_q);
 
     // copy to delta_v2_renorm
     for (ik = 0; ik < nk_interpolate; ik++) {
@@ -2643,15 +2486,11 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic,
     }
 
     deallocate(dymat_q);
-
 }
 
-void Relaxation::renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense,
-                                        const KpointMeshUniform *kmesh_coarse,
-                                        std::complex<double> ***v3_renorm,
-                                        std::complex<double> ***v3_ref,
-                                        std::complex<double> ***v4_ref,
-                                        double *q0) const
+void Relaxation::renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense, const KpointMeshUniform *kmesh_coarse,
+                                        std::complex<double> ***v3_renorm, std::complex<double> ***v3_ref,
+                                        std::complex<double> ***v4_ref, double *q0) const
 {
     const auto ns = dynamical->neval;
     const auto ik_irred0 = kmesh_coarse->kpoint_map_symmetry[0].knum_irred_orig;
@@ -2677,22 +2516,19 @@ void Relaxation::renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense,
     }
 }
 
-void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic,
-                                        const KpointMeshUniform *kmesh_dense,
-                                        double &v0_renorm,
-                                        double v0_ref,
-                                        std::complex<double> *v1_ref,
-                                        std::complex<double> **delta_v2_array_original,
-                                        std::complex<double> ***v3_ref,
-                                        std::complex<double> ***v4_ref,
-                                        double *q0) const
+void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic, const KpointMeshUniform *kmesh_dense,
+                                        double &v0_renorm, double v0_ref, std::complex<double> *v1_ref,
+                                        std::complex<double> **delta_v2_array_original, std::complex<double> ***v3_ref,
+                                        std::complex<double> ***v4_ref, double *q0) const
 {
     int is1, is2;
     const auto ns = dynamical->neval;
     const auto nk_scph = kmesh_dense->nk;
     constexpr double factor2 = 1.0 / 2.0;
-    const double factor3 = 1.0 / 6.0 * 4.0 * nk_scph;;
-    const double factor4 = 1.0 / 24.0 * 4.0 * nk_scph;;
+    const double factor3 = 1.0 / 6.0 * 4.0 * nk_scph;
+    ;
+    const double factor4 = 1.0 / 24.0 * 4.0 * nk_scph;
+    ;
 
     std::complex<double> v0_renorm_tmp = v0_ref;
     // renormalize from the 1st order, harmonic IFC
@@ -2720,12 +2556,10 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic,
     }
 
     v0_renorm = v0_renorm_tmp.real();
-
 }
 
 void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                     std::vector<FcsArrayWithCell> &delta_fcs,
-                                                     const int ixyz1,
+                                                     std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz1,
                                                      const int ixyz2) const
 {
     unsigned int i, j;
@@ -2771,7 +2605,8 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
     relvecs_vel_now.resize(nelems - 1);
     relvecs_vel_old.resize(nelems - 1);
 
-    for (i = 0; i < 3 * (norder - 2) + 1; ++i) index_with_cell_old.push_back(-1);
+    for (i = 0; i < 3 * (norder - 2) + 1; ++i)
+        index_with_cell_old.push_back(-1);
 
     for (const auto &it: fcs_aligned) {
 
@@ -2820,11 +2655,7 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
                         pairs_tmp.cell_s = index_with_cell_old[3 * i];
                         pairs_vec.push_back(pairs_tmp);
                     }
-                    delta_fcs.emplace_back(fcs_tmp,
-                                           pairs_vec,
-                                           atoms_s_old,
-                                           relvecs_old,
-                                           relvecs_vel_old);
+                    delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
                 }
             }
 
@@ -2864,21 +2695,14 @@ void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayW
             pairs_tmp.cell_s = index_with_cell[3 * i];
             pairs_vec.push_back(pairs_tmp);
         }
-        delta_fcs.emplace_back(fcs_tmp,
-                               pairs_vec,
-                               atoms_s_now,
-                               relvecs_now,
-                               relvecs_vel_now);
+        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_now, relvecs_now, relvecs_vel_now);
     }
 }
 
 
 void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                     std::vector<FcsArrayWithCell> &delta_fcs,
-                                                     const int ixyz11,
-                                                     const int ixyz12,
-                                                     const int ixyz21,
-                                                     const int ixyz22) const
+                                                     std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz11,
+                                                     const int ixyz12, const int ixyz21, const int ixyz22) const
 {
     unsigned int i, j;
     Eigen::Vector3d vec1, vec2;
@@ -2922,7 +2746,8 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
     relvecs_vel_now.resize(nelems - 1);
     relvecs_vel_old.resize(nelems - 1);
 
-    for (i = 0; i < 3 * (norder - 3) + 1; ++i) index_with_cell_old.push_back(-1);
+    for (i = 0; i < 3 * (norder - 3) + 1; ++i)
+        index_with_cell_old.push_back(-1);
 
     for (const auto &it: fcs_aligned) {
 
@@ -2971,11 +2796,7 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
                         pairs_tmp.cell_s = index_with_cell_old[3 * i];
                         pairs_vec.push_back(pairs_tmp);
                     }
-                    delta_fcs.emplace_back(fcs_tmp,
-                                           pairs_vec,
-                                           atoms_s_old,
-                                           relvecs_old,
-                                           relvecs_vel_old);
+                    delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
                 }
             }
 
@@ -3029,11 +2850,7 @@ void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayW
             pairs_vec.push_back(pairs_tmp);
             //fcs_aligned.clear();
         }
-        delta_fcs.emplace_back(fcs_tmp,
-                               pairs_vec,
-                               atoms_s_old,
-                               relvecs_old,
-                               relvecs_vel_old);
+        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
     }
 }
 
@@ -3095,13 +2912,10 @@ void Relaxation::make_supercell_mapping_by_symmetry_operations(int **symm_mappin
                 int iflag = 1;
                 for (i = 0; i < 3; i++) {
                     // This is for robustness when numerical error is present.
-                    double dtmp = std::min(std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i]),
-                                           std::min(
-                                               std::fabs(
-                                                   system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] + 1.0),
-                                               std::fabs(
-                                                   system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] - 1.0))
-                        );
+                    double dtmp =
+                        std::min(std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i]),
+                                 std::min(std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] + 1.0),
+                                          std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] - 1.0)));
                     if (dtmp > eps6) {
                         iflag = 0;
                     }
@@ -3111,11 +2925,9 @@ void Relaxation::make_supercell_mapping_by_symmetry_operations(int **symm_mappin
                     symm_mapping_s[isymm][iat1] = jat1;
                     break;
                 }
-
             }
             if (atm_found == 0) {
-                exit("make_supercell_mapping_by_symmetry_operations",
-                     "corresponding atom is not found.");
+                exit("make_supercell_mapping_by_symmetry_operations", "corresponding atom is not found.");
             }
         }
     }
@@ -3156,8 +2968,8 @@ void Relaxation::make_inverse_translation_mapping(int **inv_translation_mapping)
     for (int i1 = 0; i1 < ntran; i1++) {
         // bring i1-th primitive cell to the original primitive cell
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-            x_tran1[ixyz1] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i1], ixyz1)
-                             - system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][0], ixyz1);
+            x_tran1[ixyz1] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i1], ixyz1) -
+                             system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][0], ixyz1);
             x_tran1[ixyz1] = std::fmod(x_tran1[ixyz1] + 1.0, 1.0);
         }
 
@@ -3167,9 +2979,8 @@ void Relaxation::make_inverse_translation_mapping(int **inv_translation_mapping)
             for (int i3 = 0; i3 < ntran; i3++) {
                 // calculate translation vector
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    x_tran2[ixyz1] =
-                        system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i2], ixyz1)
-                        - system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i3], ixyz1);
+                    x_tran2[ixyz1] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i2], ixyz1) -
+                                     system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i3], ixyz1);
                     x_tran2[ixyz1] = std::fmod(x_tran2[ixyz1] + 1.0, 1.0);
                 }
 
@@ -3200,8 +3011,7 @@ void Relaxation::make_inverse_translation_mapping(int **inv_translation_mapping)
 }
 
 
-void Relaxation::write_resfile_header(std::ofstream &fout_q0,
-                                      std::ofstream &fout_u0,
+void Relaxation::write_resfile_header(std::ofstream &fout_q0, std::ofstream &fout_u0,
                                       std::ofstream &fout_u_tensor) const
 {
     const auto ns = dynamical->neval;
@@ -3241,15 +3051,10 @@ void Relaxation::write_resfile_header(std::ofstream &fout_q0,
         }
         fout_u_tensor << '\n';
     }
-
 }
 
-auto Relaxation::write_resfile_atT(const double *const q0,
-                                   const double *const *const u_tensor,
-                                   const double *const u0,
-                                   const double temp,
-                                   std::ofstream &fout_q0,
-                                   std::ofstream &fout_u0,
+auto Relaxation::write_resfile_atT(const double *const q0, const double *const *const u_tensor, const double *const u0,
+                                   const double temp, std::ofstream &fout_q0, std::ofstream &fout_u0,
                                    std::ofstream &fout_u_tensor) const -> void
 {
     int is;
@@ -3278,14 +3083,11 @@ auto Relaxation::write_resfile_atT(const double *const q0,
         }
         fout_u_tensor << '\n';
     }
-
 }
 
 
-void Relaxation::write_stepresfile_header_atT(std::ofstream &fout_step_q0,
-                                              std::ofstream &fout_step_u0,
-                                              std::ofstream &fout_step_u_tensor,
-                                              const double temp) const
+void Relaxation::write_stepresfile_header_atT(std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
+                                              std::ofstream &fout_step_u_tensor, const double temp) const
 {
     const auto ns = dynamical->neval;
 
@@ -3316,7 +3118,7 @@ void Relaxation::write_stepresfile_header_atT(std::ofstream &fout_step_q0,
     if (fout_step_u_tensor) {
         std::string str_tmp2;
         fout_step_u_tensor << "Temperature :" << std::scientific << std::setw(15) << std::setprecision(6) << temp
-            << " K\n";
+                           << " K\n";
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
                 get_xyz_string(ixyz1, str_tmp);
@@ -3326,15 +3128,10 @@ void Relaxation::write_stepresfile_header_atT(std::ofstream &fout_step_q0,
         }
         fout_step_u_tensor << '\n';
     }
-
 }
 
-void Relaxation::write_stepresfile(const double *const q0,
-                                   const double *const *const u_tensor,
-                                   const double *const u0,
-                                   const int i_str_loop,
-                                   std::ofstream &fout_step_q0,
-                                   std::ofstream &fout_step_u0,
+void Relaxation::write_stepresfile(const double *const q0, const double *const *const u_tensor, const double *const u0,
+                                   const int i_str_loop, std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
                                    std::ofstream &fout_step_u_tensor) const
 {
     const auto ns = dynamical->neval;
@@ -3364,7 +3161,6 @@ void Relaxation::write_stepresfile(const double *const q0,
         }
         fout_step_u_tensor << '\n';
     }
-
 }
 
 int Relaxation::get_xyz_string(const int ixyz, std::string &xyz_str)
@@ -3377,11 +3173,9 @@ int Relaxation::get_xyz_string(const int ixyz, std::string &xyz_str)
         xyz_str = "z";
     }
     return 0;
-
 }
 
-void Relaxation::calculate_eta_tensor(double **eta_tensor,
-                                      const double *const *const u_tensor)
+void Relaxation::calculate_eta_tensor(double **eta_tensor, const double *const *const u_tensor)
 {
     for (auto i1 = 0; i1 < 3; i1++) {
         for (auto i2 = 0; i2 < 3; i2++) {

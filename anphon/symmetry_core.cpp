@@ -8,18 +8,18 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "symmetry_core.h"
+#include <algorithm>
+#include <fstream>
+#include <iomanip>
 #include "constants.h"
 #include "error.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mpi_common.h"
 #include "relaxation.h"
-#include "system.h"
 #include "scph.h"
-#include <iomanip>
-#include <fstream>
-#include <algorithm>
+#include "system.h"
 
 extern "C"
 {
@@ -28,13 +28,13 @@ extern "C"
 
 using namespace PHON_NS;
 
-Symmetry::Symmetry(PHON *phon) :
-    Pointers(phon)
+Symmetry::Symmetry(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
 
-Symmetry::~Symmetry() {}
+Symmetry::~Symmetry()
+{}
 
 void Symmetry::set_default_variables()
 {
@@ -52,8 +52,7 @@ void Symmetry::setup_symmetry()
     SymmList.clear();
     SymmList_ref.clear();
 
-    if ((phon->mode == "SCPH" && relaxation->relax_str != 0) ||
-        (phon->mode == "QHA" && relaxation->relax_str != 0)) {
+    if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0)) {
 
         if (mympi->my_rank == 0) {
             std::cout << " ==========\n";
@@ -65,16 +64,10 @@ void Symmetry::setup_symmetry()
 
 
             std::cout << "  Primitive cell ";
-            setup_symmetry_operation(cell_tmp_ref,
-                                     system->get_spin_prim(),
-                                     system->get_atomtype_group(),
-                                     SymmList_ref);
+            setup_symmetry_operation(cell_tmp_ref, system->get_spin_prim(), system->get_atomtype_group(), SymmList_ref);
 
             std::cout << "  Distorted cell ";
-            setup_symmetry_operation(cell_tmp,
-                                     system->get_spin_prim(),
-                                     system->get_atomtype_group(true),
-                                     SymmList);
+            setup_symmetry_operation(cell_tmp, system->get_spin_prim(), system->get_atomtype_group(true), SymmList);
 
             nsym = SymmList.size();
             nsym_ref = SymmList_ref.size();
@@ -86,10 +79,7 @@ void Symmetry::setup_symmetry()
             std::cout << " ==========\n\n";
 
             const auto cell_tmp = system->get_primcell();
-            setup_symmetry_operation(cell_tmp,
-                                     system->get_spin_prim(),
-                                     system->get_atomtype_group(),
-                                     SymmList);
+            setup_symmetry_operation(cell_tmp, system->get_spin_prim(), system->get_atomtype_group(), SymmList);
 
             nsym = SymmList.size();
         }
@@ -107,23 +97,18 @@ void Symmetry::setup_symmetry()
 
         std::cout << '\n';
         std::cout << "  Number of symmetry operations : " << nsym << '\n';
-        if ((phon->mode == "SCPH" && relaxation->relax_str != 0) ||
-            (phon->mode == "QHA" && relaxation->relax_str != 0)) {
-            std::cout << "  Number of symmetry operations in reference structure : "
-                << nsym_ref << "\n\n";
+        if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0))
+        {
+            std::cout << "  Number of symmetry operations in reference structure : " << nsym_ref << "\n\n";
             use_distorted_structure = true;
         }
 
         const auto cell_tmp = system->get_primcell(use_distorted_structure);
 
-        gensym_withmap(cell_tmp.lattice_vector,
-                       cell_tmp.x_fractional,
-                       cell_tmp.kind,
-                       SymmList,
-                       SymmListWithMap);
+        gensym_withmap(cell_tmp.lattice_vector, cell_tmp.x_fractional, cell_tmp.kind, SymmList, SymmListWithMap);
 
-        if ((phon->mode == "SCPH" && relaxation->relax_str != 0) ||
-            (phon->mode == "QHA" && relaxation->relax_str != 0)) {
+        if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0))
+        {
             gensym_withmap(system->get_primcell().lattice_vector,
                            system->get_primcell().x_fractional,
                            system->get_primcell().kind,
@@ -133,11 +118,9 @@ void Symmetry::setup_symmetry()
     }
 }
 
-void Symmetry::setup_symmetry_operation(const Cell &cell_in,
-                                        const Spin &spin_in,
+void Symmetry::setup_symmetry_operation(const Cell &cell_in, const Spin &spin_in,
                                         const std::vector<std::vector<unsigned int>> &atomtype_in,
-                                        std::vector<SymmetryOperation> &symlist,
-                                        const int verbosity) const
+                                        std::vector<SymmetryOperation> &symlist, const int verbosity) const
 {
     // input cell into a true primitive cell.
     if (spin_in.lspin && spin_in.noncollinear) {
@@ -147,14 +130,9 @@ void Symmetry::setup_symmetry_operation(const Cell &cell_in,
         findsym_alm(cell_in, atomtype_in, spin_in, symlist);
     } else {
         std::string spgsymbol;
-        const auto spgnum = findsym_spglib(cell_in,
-                                           atomtype_in,
-                                           spin_in,
-                                           spgsymbol,
-                                           symlist);
+        const auto spgnum = findsym_spglib(cell_in, atomtype_in, spin_in, spgsymbol, symlist);
         if (verbosity > 0) {
-            std::cout << "  Space group: " << spgsymbol << " ("
-                << std::setw(3) << spgnum << ")\n";
+            std::cout << "  Space group: " << spgsymbol << " (" << std::setw(3) << spgnum << ")\n";
         }
     }
 
@@ -164,10 +142,8 @@ void Symmetry::setup_symmetry_operation(const Cell &cell_in,
 }
 
 
-void Symmetry::findsym_alm(const Cell &cell,
-                           const std::vector<std::vector<unsigned int>> &atomtype_group,
-                           const Spin &spin,
-                           std::vector<SymmetryOperation> &symm_out) const
+void Symmetry::findsym_alm(const Cell &cell, const std::vector<std::vector<unsigned int>> &atomtype_group,
+                           const Spin &spin, std::vector<SymmetryOperation> &symm_out) const
 {
     std::vector<RotationMatrix> LatticeSymmList;
 
@@ -178,17 +154,12 @@ void Symmetry::findsym_alm(const Cell &cell,
     // Generate all the space group operations with translational vectors
     // The data is stored in symmetry_data_super.
     symm_out.clear();
-    find_crystal_symmetry(cell,
-                          atomtype_group,
-                          spin,
-                          LatticeSymmList,
-                          symm_out);
+    find_crystal_symmetry(cell, atomtype_group, spin, LatticeSymmList, symm_out);
 
     LatticeSymmList.clear();
 }
 
-void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
-                                     std::vector<RotationMatrix> &LatticeSymmList) const
+void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa, std::vector<RotationMatrix> &LatticeSymmList) const
 {
     /*
     Find the rotational matrices that leave the metric tensor invariant.
@@ -241,14 +212,13 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
                                 for (int m32 = -1; m32 <= 1; ++m32) {
                                     for (int m33 = -1; m33 <= 1; ++m33) {
 
-                                        if (m11 == 1 && m12 == 0 && m13 == 0 &&
-                                            m21 == 0 && m22 == 1 && m23 == 0 &&
+                                        if (m11 == 1 && m12 == 0 && m13 == 0 && m21 == 0 && m22 == 1 && m23 == 0 &&
                                             m31 == 0 && m32 == 0 && m33 == 1)
                                             continue;
 
-                                        const double det = m11 * (m22 * m33 - m32 * m23)
-                                                           - m21 * (m12 * m33 - m32 * m13)
-                                                           + m31 * (m12 * m23 - m22 * m13);
+                                        const double det = m11 * (m22 * m33 - m32 * m23) -
+                                                           m21 * (m12 * m33 - m32 * m13) +
+                                                           m31 * (m12 * m23 - m22 * m13);
 
                                         if (det != 1 && det != -1) continue;
 
@@ -292,7 +262,6 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
                                             }
                                             LatticeSymmList.emplace_back(mat_tmp);
                                         }
-
                                     }
                                 }
                             }
@@ -308,10 +277,8 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
     }
 }
 
-void Symmetry::find_crystal_symmetry(const Cell &cell,
-                                     const std::vector<std::vector<unsigned int>> &atomtype_group,
-                                     const Spin &spin,
-                                     const std::vector<RotationMatrix> &LatticeSymmList,
+void Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::vector<unsigned int>> &atomtype_group,
+                                     const Spin &spin, const std::vector<RotationMatrix> &LatticeSymmList,
                                      std::vector<SymmetryOperation> &symm_out) const
 {
     unsigned int i, j;
@@ -353,10 +320,7 @@ void Symmetry::find_crystal_symmetry(const Cell &cell,
         tran[i] = 0.0;
     }
 
-    symm_out.emplace_back(rot_int,
-                          tran,
-                          rot_cart,
-                          is_translation(rot_int));
+    symm_out.emplace_back(rot_int, tran, rot_cart, is_translation(rot_int));
 
     for (auto &it_latsym: LatticeSymmList) {
 
@@ -367,13 +331,35 @@ void Symmetry::find_crystal_symmetry(const Cell &cell,
             }
         }
 
-        for (i = 0; i < 3; ++i) x_tmp[i] = cell.x_fractional(iat, i);
+        for (i = 0; i < 3; ++i)
+            x_tmp[i] = cell.x_fractional(iat, i);
         //rotvec(x_rot, x_tmp, rot);
         x_rot = rot * x_tmp;
 
 #ifdef _OPENMP
-#pragma omp parallel for private(jat, tran, isok, kat, x_tmp, x_rot_tmp, is_found, lat, tmp, diff, \
-    i, j, itype, jj, kk, is_identity_matrix, mag, mag_rot, rot_tmp, rot_cart, mag_sym1, mag_sym2, xdiff)
+#pragma omp parallel for private(jat,                                                                                  \
+                                     tran,                                                                             \
+                                     isok,                                                                             \
+                                     kat,                                                                              \
+                                     x_tmp,                                                                            \
+                                     x_rot_tmp,                                                                        \
+                                     is_found,                                                                         \
+                                     lat,                                                                              \
+                                     tmp,                                                                              \
+                                     diff,                                                                             \
+                                     i,                                                                                \
+                                     j,                                                                                \
+                                     itype,                                                                            \
+                                     jj,                                                                               \
+                                     kk,                                                                               \
+                                     is_identity_matrix,                                                               \
+                                     mag,                                                                              \
+                                     mag_rot,                                                                          \
+                                     rot_tmp,                                                                          \
+                                     rot_cart,                                                                         \
+                                     mag_sym1,                                                                         \
+                                     mag_sym2,                                                                         \
+                                     xdiff)
 #endif
         for (ii = 0; ii < atomtype_group[0].size(); ++ii) {
             jat = atomtype_group[0][ii];
@@ -394,7 +380,8 @@ void Symmetry::find_crystal_symmetry(const Cell &cell,
 
                     kat = atomtype_group[itype][jj];
 
-                    for (i = 0; i < 3; ++i) x_tmp[i] = cell.x_fractional(kat, i);
+                    for (i = 0; i < 3; ++i)
+                        x_tmp[i] = cell.x_fractional(kat, i);
                     x_rot_tmp = rot * x_tmp;
 
                     for (i = 0; i < 3; ++i) {
@@ -444,13 +431,11 @@ void Symmetry::find_crystal_symmetry(const Cell &cell,
                         }
                     }
 
-                    mag_sym1 = (std::pow(mag[0] - mag_rot[0], 2.0)
-                                + std::pow(mag[1] - mag_rot[1], 2.0)
-                                + std::pow(mag[2] - mag_rot[2], 2.0)) < eps6;
+                    mag_sym1 = (std::pow(mag[0] - mag_rot[0], 2.0) + std::pow(mag[1] - mag_rot[1], 2.0) +
+                                std::pow(mag[2] - mag_rot[2], 2.0)) < eps6;
 
-                    mag_sym2 = (std::pow(mag[0] + mag_rot[0], 2.0)
-                                + std::pow(mag[1] + mag_rot[1], 2.0)
-                                + std::pow(mag[2] + mag_rot[2], 2.0)) < eps6;
+                    mag_sym2 = (std::pow(mag[0] + mag_rot[0], 2.0) + std::pow(mag[1] + mag_rot[1], 2.0) +
+                                std::pow(mag[2] + mag_rot[2], 2.0)) < eps6;
 
                     if (!mag_sym1 && !mag_sym2) {
                         isok = false;
@@ -464,25 +449,19 @@ void Symmetry::find_crystal_symmetry(const Cell &cell,
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-                symm_out.emplace_back(it_latsym.mat,
-                                      tran,
-                                      rot_cart,
-                                      is_translation(it_latsym.mat));
+                symm_out.emplace_back(it_latsym.mat, tran, rot_cart, is_translation(it_latsym.mat));
             }
         }
     }
 }
 
-int Symmetry::findsym_spglib(const Cell &cell,
-                             const std::vector<std::vector<unsigned int>> &atomtype_group,
-                             const Spin &spin,
-                             std::string &spgsymbol,
-                             std::vector<SymmetryOperation> &symm_out) const
+int Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<unsigned int>> &atomtype_group,
+                             const Spin &spin, std::string &spgsymbol, std::vector<SymmetryOperation> &symm_out) const
 {
     int i, j;
-    double (*position)[3];
-    double (*translation)[3];
-    int (*rotation)[3][3];
+    double(*position)[3];
+    double(*translation)[3];
+    int(*rotation)[3][3];
     char symbol[11];
     double aa_tmp[3][3];
     int *types_tmp;
@@ -549,15 +528,9 @@ int Symmetry::findsym_spglib(const Cell &cell,
             trans_tmp(j) = translation[i][j];
         }
 
-        symop_in_cart(rot_cartesian,
-                      rot_int,
-                      cell.lattice_vector,
-                      cell.reciprocal_lattice_vector);
+        symop_in_cart(rot_cartesian, rot_int, cell.lattice_vector, cell.reciprocal_lattice_vector);
 
-        symm_out.emplace_back(rot_int,
-                              trans_tmp,
-                              rot_cartesian,
-                              is_translation(rot_int));
+        symm_out.emplace_back(rot_int, trans_tmp, rot_cartesian, is_translation(rot_int));
     }
 
     deallocate(rotation);
@@ -569,10 +542,8 @@ int Symmetry::findsym_spglib(const Cell &cell,
 }
 
 
-void Symmetry::symop_in_cart(Eigen::Matrix3d &rot_cart,
-                             const Eigen::Matrix3i &rot_lattice,
-                             const Eigen::Matrix3d &lavec,
-                             const Eigen::Matrix3d &rlavec)
+void Symmetry::symop_in_cart(Eigen::Matrix3d &rot_cart, const Eigen::Matrix3i &rot_lattice,
+                             const Eigen::Matrix3d &lavec, const Eigen::Matrix3d &rlavec)
 {
     Eigen::Matrix3d sym_tmp;
 
@@ -584,9 +555,7 @@ void Symmetry::symop_in_cart(Eigen::Matrix3d &rot_cart,
     rot_cart = lavec * sym_tmp * rlavec * inv_tpi;
 }
 
-void Symmetry::gensym_withmap(const Eigen::Matrix3d &aa,
-                              const Eigen::MatrixXd &x,
-                              const std::vector<int> &kd,
+void Symmetry::gensym_withmap(const Eigen::Matrix3d &aa, const Eigen::MatrixXd &x, const std::vector<int> &kd,
                               const std::vector<SymmetryOperation> &symmlist_in,
                               std::vector<SymmetryOperationWithMapping> &symmlist_withmap_out) const
 {
@@ -656,12 +625,7 @@ void Symmetry::gensym_withmap(const Eigen::Matrix3d &aa,
 
         // Add to vector
 
-        symmlist_withmap_out.emplace_back(S,
-                                          T,
-                                          S_recip,
-                                          map_tmp,
-                                          natmin,
-                                          shift);
+        symmlist_withmap_out.emplace_back(S, T, S_recip, map_tmp, natmin, shift);
     }
 }
 
@@ -707,10 +671,7 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
                 }
                 tran[j] = tran_tmp[i][j];
             }
-            sym.emplace_back(rotation,
-                             tran,
-                             rotation_cart,
-                             is_translation(rotation));
+            sym.emplace_back(rotation, tran, rotation_cart, is_translation(rotation));
         }
     }
 

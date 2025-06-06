@@ -18,24 +18,21 @@
 
 #endif
 
+#include <Eigen/Core>
 #include <string>
 #include "pointers.h"
 #include "system.h"
-#include <Eigen/Core>
 
 namespace PHON_NS
 {
 class MyMPI: protected Pointers
 {
 public:
-    MyMPI(class PHON *,
-          MPI_Comm);
+    MyMPI(class PHON *, MPI_Comm);
 
     ~MyMPI();
 
-    void MPI_Bcast_string(std::string &,
-                          int,
-                          MPI_Comm) const;
+    void MPI_Bcast_string(std::string &, int, MPI_Comm) const;
 
     void MPI_Bcast_CellClass(Cell &cell, int root, MPI_Comm comm) const;
 
@@ -50,4 +47,4 @@ public:
     int my_rank;
     int nprocs;
 };
-}
+} // namespace PHON_NS

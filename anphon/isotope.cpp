@@ -8,23 +8,22 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "isotope.h"
+#include <complex>
+#include <iomanip>
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
 #include "kpoint.h"
 #include "memory.h"
+#include "mpi_common.h"
 #include "phonon_dos.h"
 #include "system.h"
-#include <iomanip>
-#include <complex>
 
 using namespace PHON_NS;
 
-Isotope::Isotope(PHON *phon) :
-    Pointers(phon)
+Isotope::Isotope(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 };
@@ -59,9 +58,7 @@ void Isotope::setup_isotope_scattering()
         if (mympi->my_rank == 0) {
             if (isotope_factor.empty()) {
                 isotope_factor.resize(nkd);
-                set_isotope_factor_from_database(nkd,
-                                                 &system->symbol_kd[0],
-                                                 isotope_factor);
+                set_isotope_factor_from_database(nkd, &system->symbol_kd[0], isotope_factor);
             } else {
                 if (isotope_factor.size() != nkd) {
                     exit("setup_isotope_scattering",
@@ -89,13 +86,9 @@ void Isotope::setup_isotope_scattering()
     }
 }
 
-void Isotope::calc_isotope_selfenergy(const unsigned int knum,
-                                      const unsigned int snum,
-                                      const double omega,
-                                      const KpointMeshUniform *kmesh_in,
-                                      const double *const *eval_in,
-                                      const std::complex<double> *const *const *evec_in,
-                                      double &ret) const
+void Isotope::calc_isotope_selfenergy(const unsigned int knum, const unsigned int snum, const double omega,
+                                      const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                      const std::complex<double> *const *const *evec_in, double &ret) const
 {
     // Compute phonon selfenergy of phonon (knum, snum)
     // due to phonon-isotope scatterings.
@@ -108,7 +101,7 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum,
 
     ret = 0.0;
 
-#pragma omp parallel for reduction(+: ret)
+#pragma omp parallel for reduction(+ : ret)
     for (auto ik = 0; ik < nk; ++ik) {
         for (auto is = 0; is < ns; ++is) {
 
@@ -118,8 +111,7 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum,
 
                 auto dprod = std::complex<double>(0.0, 0.0);
                 for (auto icrd = 0; icrd < 3; ++icrd) {
-                    dprod += std::conj(evec_in[ik][is][3 * iat + icrd])
-                        * evec_in[knum][snum][3 * iat + icrd];
+                    dprod += std::conj(evec_in[ik][is][3 * iat + icrd]) * evec_in[knum][snum][3 * iat + icrd];
                 }
                 prod += isotope_factor[system->get_primcell().kind[iat]] * std::norm(dprod);
             }
@@ -143,13 +135,9 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum,
     ret *= pi * omega * 0.25 / static_cast<double>(nk);
 }
 
-void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum,
-                                            const unsigned int snum,
-                                            const double omega,
-                                            const KpointMeshUniform *kmesh_in,
-                                            const double *const *eval_in,
-                                            const std::complex<double> *const *const *evec_in,
-                                            double &ret) const
+void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsigned int snum, const double omega,
+                                            const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                            const std::complex<double> *const *const *evec_in, double &ret) const
 {
     // Compute phonon selfenergy of phonon (knum, snum)
     // due to phonon-isotope scatterings.
@@ -178,8 +166,7 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum,
 
                 auto dprod = std::complex<double>(0.0, 0.0);
                 for (auto icrd = 0; icrd < 3; ++icrd) {
-                    dprod += std::conj(evec_in[ik][is][3 * iat + icrd])
-                        * evec_in[knum][snum][3 * iat + icrd];
+                    dprod += std::conj(evec_in[ik][is][3 * iat + icrd]) * evec_in[knum][snum][3 * iat + icrd];
                 }
                 prod += isotope_factor[system->get_primcell().kind[iat]] * std::norm(dprod);
             }
@@ -230,7 +217,8 @@ void Isotope::calc_isotope_selfenergy_all() const
         }
         allocate(gamma_loc, nks);
 
-        for (i = 0; i < nks; ++i) gamma_loc[i] = 0.0;
+        for (i = 0; i < nks; ++i)
+            gamma_loc[i] = 0.0;
 
         for (i = mympi->my_rank; i < nks; i += mympi->nprocs) {
             const auto knum = dos->kmesh_dos->kpoint_irred_all[i / ns][0].knum;
@@ -256,13 +244,7 @@ void Isotope::calc_isotope_selfenergy_all() const
             gamma_loc[i] = tmp;
         }
 
-        MPI_Reduce(&gamma_loc[0],
-                   &gamma_tmp[0],
-                   nks,
-                   MPI_DOUBLE,
-                   MPI_SUM,
-                   0,
-                   MPI_COMM_WORLD);
+        MPI_Reduce(&gamma_loc[0], &gamma_tmp[0], nks, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
         if (mympi->my_rank == 0) {
             for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
@@ -281,8 +263,7 @@ void Isotope::calc_isotope_selfenergy_all() const
     }
 }
 
-void Isotope::set_isotope_factor_from_database(const int nkd,
-                                               const std::string *symbol_in,
+void Isotope::set_isotope_factor_from_database(const int nkd, const std::string *symbol_in,
                                                std::vector<double> &isofact_out)
 {
     for (int i = 0; i < nkd; ++i) {

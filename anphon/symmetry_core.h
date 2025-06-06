@@ -10,12 +10,12 @@
 
 #pragma once
 
-#include "pointers.h"
-#include "system.h"
+#include <Eigen/Core>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <Eigen/Core>
+#include "pointers.h"
+#include "system.h"
 
 namespace PHON_NS
 {
@@ -29,9 +29,7 @@ public:
 
     SymmetryOperation();
 
-    SymmetryOperation(const Eigen::Matrix3i &rot_in,
-                      const Eigen::Vector3d &tran_in,
-                      const Eigen::Matrix3d &rot_cart_in,
+    SymmetryOperation(const Eigen::Matrix3i &rot_in, const Eigen::Vector3d &tran_in, const Eigen::Matrix3d &rot_cart_in,
                       const bool is_trans_in)
     {
         rotation = rot_in;
@@ -62,10 +60,7 @@ public:
                 v2.push_back(a.tran[i]);
             }
         }
-        return std::lexicographical_compare(v1.begin(),
-                                            v1.end(),
-                                            v2.begin(),
-                                            v2.end());
+        return std::lexicographical_compare(v1.begin(), v1.end(), v2.begin(), v2.end());
     }
 };
 
@@ -102,12 +97,8 @@ public:
 
     SymmetryOperationWithMapping();
 
-    SymmetryOperationWithMapping(const double S[3][3],
-                                 const double T[3][3],
-                                 const double R[3][3],
-                                 unsigned int *mapping_info,
-                                 const unsigned int n,
-                                 const double shift_in[3])
+    SymmetryOperationWithMapping(const double S[3][3], const double T[3][3], const double R[3][3],
+                                 unsigned int *mapping_info, const unsigned int n, const double shift_in[3])
     {
         unsigned int i, j;
 
@@ -126,12 +117,8 @@ public:
         }
     }
 
-    SymmetryOperationWithMapping(const Eigen::Matrix3d &S,
-                                 const Eigen::Matrix3d &T,
-                                 const Eigen::Matrix3d &R,
-                                 unsigned int *mapping_info,
-                                 const unsigned int n,
-                                 const Eigen::Vector3d &shift_in)
+    SymmetryOperationWithMapping(const Eigen::Matrix3d &S, const Eigen::Matrix3d &T, const Eigen::Matrix3d &R,
+                                 unsigned int *mapping_info, const unsigned int n, const Eigen::Vector3d &shift_in)
     {
         unsigned int i, j;
 
@@ -176,15 +163,11 @@ private:
 
     void set_default_variables();
 
-    void setup_symmetry_operation(const Cell &cell_in,
-                                  const Spin &spin_in,
+    void setup_symmetry_operation(const Cell &cell_in, const Spin &spin_in,
                                   const std::vector<std::vector<unsigned int>> &atomtype_in,
-                                  std::vector<SymmetryOperation> &symlist,
-                                  const int verbosity = 1) const;
+                                  std::vector<SymmetryOperation> &symlist, const int verbosity = 1) const;
 
-    void gensym_withmap(const Eigen::Matrix3d &aa,
-                        const Eigen::MatrixXd &x,
-                        const std::vector<int> &kd,
+    void gensym_withmap(const Eigen::Matrix3d &aa, const Eigen::MatrixXd &x, const std::vector<int> &kd,
                         const std::vector<SymmetryOperation> &symmlist_in,
                         std::vector<SymmetryOperationWithMapping> &symmlist_withmap_out) const;
 
@@ -192,32 +175,22 @@ private:
 
     static bool is_translation(const Eigen::Matrix3i &rot);
 
-    void find_lattice_symmetry(const Eigen::Matrix3d &aa,
-                               std::vector<RotationMatrix> &) const;
+    void find_lattice_symmetry(const Eigen::Matrix3d &aa, std::vector<RotationMatrix> &) const;
 
-    void find_crystal_symmetry(const Cell &cell,
-                               const std::vector<std::vector<unsigned int>> &atomtype_group,
-                               const Spin &spin,
-                               const std::vector<RotationMatrix> &LatticeSymmList,
+    void find_crystal_symmetry(const Cell &cell, const std::vector<std::vector<unsigned int>> &atomtype_group,
+                               const Spin &spin, const std::vector<RotationMatrix> &LatticeSymmList,
                                std::vector<SymmetryOperation> &symm_out) const;
 
-    void findsym_alm(const Cell &,
-                     const std::vector<std::vector<unsigned int>> &,
-                     const Spin &,
+    void findsym_alm(const Cell &, const std::vector<std::vector<unsigned int>> &, const Spin &,
                      std::vector<SymmetryOperation> &symm_out) const;
 
-    int findsym_spglib(const Cell &,
-                       const std::vector<std::vector<unsigned int>> &,
-                       const Spin &,
-                       std::string &,
+    int findsym_spglib(const Cell &, const std::vector<std::vector<unsigned int>> &, const Spin &, std::string &,
                        std::vector<SymmetryOperation> &symm_out) const;
 
-    static void symop_in_cart(Eigen::Matrix3d &rot_cart,
-                              const Eigen::Matrix3i &rot_lattice,
-                              const Eigen::Matrix3d &lavec,
-                              const Eigen::Matrix3d &rlavec);
+    static void symop_in_cart(Eigen::Matrix3d &rot_cart, const Eigen::Matrix3i &rot_lattice,
+                              const Eigen::Matrix3d &lavec, const Eigen::Matrix3d &rlavec);
 
 
     void broadcast_symmlist(std::vector<SymmetryOperation> &) const;
 };
-}
+} // namespace PHON_NS

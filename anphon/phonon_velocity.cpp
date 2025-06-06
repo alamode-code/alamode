@@ -8,8 +8,9 @@ Please see the file 'LICENCE.txt' in the root directory
 or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "phonon_velocity.h"
+#include <complex>
+#include <iomanip>
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -18,15 +19,13 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mpi_common.h"
 #include "phonon_dos.h"
 #include "system.h"
-#include <complex>
-#include <iomanip>
 
 using namespace PHON_NS;
 
-PhononVelocity::PhononVelocity(PHON *phon) :
-    Pointers(phon)
+PhononVelocity::PhononVelocity(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
@@ -43,7 +42,8 @@ void PhononVelocity::set_default_variables()
 
     allocate(xshift_s, 27, 3);
 
-    for (auto i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
+    for (auto i = 0; i < 3; ++i)
+        xshift_s[0][i] = 0.0;
     auto icell = 0;
     for (auto ix = -1; ix <= 1; ++ix) {
         for (auto iy = -1; iy <= 1; ++iy) {
@@ -131,7 +131,8 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
             // Move back to fractional basis
 
             rotvec(xk_shift[idiff], xk_shift[idiff], lavec_p, 'T');
-            for (i = 0; i < 3; ++i) xk_shift[idiff][i] /= 2.0 * pi;
+            for (i = 0; i < 3; ++i)
+                xk_shift[idiff][i] /= 2.0 * pi;
 
             if (dynamical->nonanalytic == 3) {
                 dynamical->eval_k_ewald(xk_shift[idiff],
@@ -141,12 +142,8 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
                                         evec_tmp,
                                         false);
             } else {
-                dynamical->eval_k(xk_shift[idiff],
-                                  kpoint_bs_in->kvec_na[ik],
-                                  fc2_in,
-                                  omega_shift[idiff],
-                                  evec_tmp,
-                                  false);
+                dynamical
+                    ->eval_k(xk_shift[idiff], kpoint_bs_in->kvec_na[ik], fc2_in, omega_shift[idiff], evec_tmp, false);
             }
         }
 
@@ -169,10 +166,8 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
     //    }
 }
 
-void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in,
-                                                    const Eigen::Matrix3d &lavec_p,
-                                                    const bool irreducible_only,
-                                                    double ***phvel3_out) const
+void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
+                                                    const bool irreducible_only, double ***phvel3_out) const
 {
     // This routine computes the group velocities for the given uniform k mesh.
     const auto nk = kmesh_in.nk;
@@ -212,8 +207,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
 }
 
 void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform &kmesh_in,
-                                                        const Eigen::Matrix3d &lavec_p,
-                                                        double ***phvel3_out) const
+                                                        const Eigen::Matrix3d &lavec_p, double ***phvel3_out) const
 {
     // This routine computes the group velocities for the given uniform k mesh
     // using MPI parallelization.
@@ -379,9 +373,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
 
         double symmetrizer_k[3][3];
         std::vector<int> smallgroup_k;
-        kpoint->get_symmetrization_matrix_at_k(dos->kmesh_dos->xk[knum],
-                                               smallgroup_k,
-                                               symmetrizer_k);
+        kpoint->get_symmetrization_matrix_at_k(dos->kmesh_dos->xk[knum], smallgroup_k, symmetrizer_k);
 
         for (auto j = 0; j < ns; ++j) {
             for (auto k = 0; k < ns; ++k) {
@@ -437,8 +429,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
     }
 }
 
-void PhononVelocity::phonon_vel_k(const double *xk_in,
-                                  double **vel_out) const
+void PhononVelocity::phonon_vel_k(const double *xk_in, double **vel_out) const
 {
     unsigned int j;
     unsigned int idiff;
@@ -475,19 +466,19 @@ void PhononVelocity::phonon_vel_k(const double *xk_in,
         rotvec(kvec_na_tmp[0], kvec_na_tmp[0], system->get_primcell().reciprocal_lattice_vector, 'T');
         rotvec(kvec_na_tmp[1], kvec_na_tmp[1], system->get_primcell().reciprocal_lattice_vector, 'T');
 
-        auto norm = std::sqrt(kvec_na_tmp[0][0] * kvec_na_tmp[0][0]
-                              + kvec_na_tmp[0][1] * kvec_na_tmp[0][1]
-                              + kvec_na_tmp[0][2] * kvec_na_tmp[0][2]);
+        auto norm = std::sqrt(kvec_na_tmp[0][0] * kvec_na_tmp[0][0] + kvec_na_tmp[0][1] * kvec_na_tmp[0][1] +
+                              kvec_na_tmp[0][2] * kvec_na_tmp[0][2]);
 
         if (norm > eps) {
-            for (j = 0; j < 3; ++j) kvec_na_tmp[0][j] /= norm;
+            for (j = 0; j < 3; ++j)
+                kvec_na_tmp[0][j] /= norm;
         }
-        norm = std::sqrt(kvec_na_tmp[1][0] * kvec_na_tmp[1][0]
-                         + kvec_na_tmp[1][1] * kvec_na_tmp[1][1]
-                         + kvec_na_tmp[1][2] * kvec_na_tmp[1][2]);
+        norm = std::sqrt(kvec_na_tmp[1][0] * kvec_na_tmp[1][0] + kvec_na_tmp[1][1] * kvec_na_tmp[1][1] +
+                         kvec_na_tmp[1][2] * kvec_na_tmp[1][2]);
 
         if (norm > eps) {
-            for (j = 0; j < 3; ++j) kvec_na_tmp[1][j] /= norm;
+            for (j = 0; j < 3; ++j)
+                kvec_na_tmp[1][j] /= norm;
         }
 
         for (idiff = 0; idiff < ndiff; ++idiff) {
@@ -524,25 +515,20 @@ void PhononVelocity::phonon_vel_k(const double *xk_in,
     deallocate(kvec_na_tmp);
 }
 
-double PhononVelocity::diff(const double *f,
-                            const unsigned int n,
-                            const double h) const
+double PhononVelocity::diff(const double *f, const unsigned int n, const double h) const
 {
     auto df = 0.0;
 
     if (n == 2) {
         df = (f[1] - f[0]) / (2.0 * h);
     } else {
-        exit("diff",
-             "Numerical differentiation of n > 2 is not supported yet.");
+        exit("diff", "Numerical differentiation of n > 2 is not supported yet.");
     }
 
     return df;
 }
 
-void PhononVelocity::phonon_vel_k2(const double *xk_in,
-                                   const double *omega_in,
-                                   std::complex<double> **evec_in,
+void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, std::complex<double> **evec_in,
                                    double **vel_out) const
 {
     unsigned int i, j, l, m;
@@ -710,8 +696,7 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in,
     }
 }
 
-void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in,
-                                              const std::vector<FcsArrayWithCell> &fc2_in,
+void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
                                               std::complex<double> ***ddyn_out) const
 {
     unsigned int i, j, k;
@@ -730,18 +715,15 @@ void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in,
 
     for (const auto &it: fc2_in) {
 
-        const auto phase = tpi * (it.relvecs[0][0] * xk_in[0]
-                                  + it.relvecs[0][1] * xk_in[1]
-                                  + it.relvecs[0][2] * xk_in[2]);
+        const auto phase =
+            tpi * (it.relvecs[0][0] * xk_in[0] + it.relvecs[0][1] * xk_in[1] + it.relvecs[0][2] * xk_in[2]);
 
         for (k = 0; k < 3; ++k) {
             // For the diagonal components, this should be fine,
             // whereas it.relvecs_vel should be used for computing the off diagonal elements.
-            ddyn_out[k][it.pairs[0].index][it.pairs[1].index]
-                += it.fcs_val * std::exp(im * phase)
-                * tpi * it.relvecs[0][k]
-                * invsqrt_mass[it.pairs[0].index / 3]
-                * invsqrt_mass[it.pairs[1].index / 3];
+            ddyn_out[k][it.pairs[0].index][it.pairs[1].index] +=
+                it.fcs_val * std::exp(im * phase) * tpi * it.relvecs[0][k] * invsqrt_mass[it.pairs[0].index / 3] *
+                invsqrt_mass[it.pairs[1].index / 3];
         }
     }
 
@@ -754,9 +736,7 @@ void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in,
     }
 }
 
-void PhononVelocity::diagonalize_hermite_mat(const int n,
-                                             std::complex<double> **mat_in,
-                                             double *eval_out) const
+void PhononVelocity::diagonalize_hermite_mat(const int n, std::complex<double> **mat_in, double *eval_out) const
 {
     std::complex<double> *mat_1D;
     int LWORK = (2 * n - 1) * 10;
@@ -785,10 +765,8 @@ void PhononVelocity::diagonalize_hermite_mat(const int n,
     deallocate(mat_1D);
 }
 
-void PhononVelocity::velocity_matrix_analytic(const double *xk_in,
-                                              const std::vector<FcsArrayWithCell> &fc2_in,
-                                              const double *omega_in,
-                                              std::complex<double> **evec_in,
+void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
+                                              const double *omega_in, std::complex<double> **evec_in,
                                               std::complex<double> ***velmat_out) const
 {
     // Use Allen's definition
@@ -815,15 +793,13 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in,
     const auto invsqrt_mass = system->get_invsqrt_mass();
 
     for (const auto &it: fc2_in) {
-        const auto phase = tpi * (it.relvecs[0][0] * xk_in[0]
-                                  + it.relvecs[0][1] * xk_in[1]
-                                  + it.relvecs[0][2] * xk_in[2]);
+        const auto phase =
+            tpi * (it.relvecs[0][0] * xk_in[0] + it.relvecs[0][1] * xk_in[1] + it.relvecs[0][2] * xk_in[2]);
 
         for (k = 0; k < 3; ++k) {
-            ddymat[it.pairs[0].index][it.pairs[1].index][k]
-                += it.fcs_val * std::exp(im * phase) * tpi * it.relvecs_velocity[0][k]
-                * invsqrt_mass[it.pairs[0].index / 3]
-                * invsqrt_mass[it.pairs[1].index / 3];
+            ddymat[it.pairs[0].index][it.pairs[1].index][k] +=
+                it.fcs_val * std::exp(im * phase) * tpi * it.relvecs_velocity[0][k] *
+                invsqrt_mass[it.pairs[0].index / 3] * invsqrt_mass[it.pairs[1].index / 3];
         }
     }
 
@@ -834,10 +810,7 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in,
             for (ii = 0; ii < nmode; ++ii) {
                 for (jj = 0; jj < nmode; ++jj) {
                     for (k = 0; k < 3; ++k) {
-                        velmat_out[i][j][k]
-                            += std::conj(evec_in[i][ii])
-                            * ddymat[ii][jj][k]
-                            * evec_in[j][jj];
+                        velmat_out[i][j][k] += std::conj(evec_in[i][ii]) * ddymat[ii][jj][k] * evec_in[j][jj];
                     }
                 }
             }

@@ -10,20 +10,19 @@
 
 #pragma once
 
-#include "mpi_common.h"
-#include "dynamical.h"
-#include "gruneisen.h"
-#include "system.h"
-#include "constants.h"
-#include "scph.h"
-#include "parsephon.h"
-#include "error.h"
-#include "timer.h"
-#include "mathfunctions.h"
+#include <Eigen/Core>
 #include <fftw3.h>
 #include <iomanip>
-#include <Eigen/Core>
-#include <iomanip>
+#include "constants.h"
+#include "dynamical.h"
+#include "error.h"
+#include "gruneisen.h"
+#include "mathfunctions.h"
+#include "mpi_common.h"
+#include "parsephon.h"
+#include "scph.h"
+#include "system.h"
+#include "timer.h"
 
 using namespace PHON_NS;
 
@@ -34,11 +33,8 @@ public:
 
     virtual ~Optimizer() = default;
 
-    virtual void update_state(const int dim,
-                              const std::vector<double> &grad_vec,
-                              std::vector<double> &state_vec,
-                              const std::vector<std::vector<double>> &hessian,
-                              std::vector<double> &delta) {};
+    virtual void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
+                              const std::vector<std::vector<double>> &hessian, std::vector<double> &delta) {};
 
     int initialize_flag = 0; // flag to run initialization
 };
@@ -54,11 +50,8 @@ public:
 
     explicit Newton_Optimizer(double mixbeta);
 
-    void update_state(const int dim,
-                      const std::vector<double> &grad_vec,
-                      std::vector<double> &state_vec,
-                      const std::vector<std::vector<double>> &hessian,
-                      std::vector<double> &delta);
+    void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
+                      const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
 };
 
 class CellCoord_Newton_Optimizer: public Optimizer
@@ -75,18 +68,14 @@ public:
 
     CellCoord_Newton_Optimizer(double mixbeta_cell, double mixbeta_coord);
 
-    void update_state(const int dim,
-                      const std::vector<double> &grad_vec,
-                      std::vector<double> &state_vec,
-                      const std::vector<std::vector<double>> &hessian,
-                      std::vector<double> &delta);
+    void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
+                      const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
 };
 
 class FarkasIII_Optimizer: public Optimizer
 {
 public:
-    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini) :
-        max_vectors(max_vectors), H(H_ini)
+    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini) : max_vectors(max_vectors), H(H_ini)
     {
         gradient_old = Eigen::VectorXd::Zero(H_ini.size());
         threshold_angle = 0.0; // We set angle threshold to be zero when we store more than 9 vectors
@@ -100,11 +89,8 @@ public:
         if (max_vectors == 9) threshold_angle = 0.41;
     }
 
-    void update_state(const int dim,
-                      const std::vector<double> &grad_vec,
-                      std::vector<double> &state_vec,
-                      const std::vector<std::vector<double>> &hessian,
-                      std::vector<double> &delta);
+    void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
+                      const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
 
 
     Eigen::VectorXd update(const Eigen::VectorXd &point, const Eigen::VectorXd &gradient)
@@ -186,8 +172,7 @@ public:
     }
 
 
-    void set_inverse_Hessian(const int dim,
-                             const std::vector<std::vector<double>> &hessian);
+    void set_inverse_Hessian(const int dim, const std::vector<std::vector<double>> &hessian);
 
     void initialize_history();
 

@@ -8,27 +8,26 @@ Please see the file 'LICENCE.txt' in the root directory
 or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "phonon_dos.h"
-#include "kpoint.h"
+#include <Eigen/Geometry>
+#include <iomanip>
+#include <vector>
 #include "constants.h"
+#include "dynamical.h"
 #include "error.h"
-#include "system.h"
+#include "integration.h"
+#include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
-#include "dynamical.h"
-#include "write_phonons.h"
-#include "integration.h"
-#include <vector>
-#include <iomanip>
+#include "mpi_common.h"
 #include "symmetry_core.h"
+#include "system.h"
 #include "thermodynamics.h"
-#include <Eigen/Geometry>
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
-Dos::Dos(PHON *phon) :
-    Pointers(phon)
+Dos::Dos(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
 }
@@ -108,22 +107,16 @@ void Dos::setup()
         flag_dos = false;
     }
 
-    if (flag_dos && delta_e < eps12)
-        exit("Dos::setup()", "Too small delta_e");
+    if (flag_dos && delta_e < eps12) exit("Dos::setup()", "Too small delta_e");
 
     if (flag_dos) {
 
         update_dos_energy_grid(emin, emax, true);
 
-        dymat_dos = new DymatEigenValue(dynamical->eigenvectors,
-                                        false,
-                                        kmesh_dos->nk,
-                                        dynamical->neval);
+        dymat_dos = new DymatEigenValue(dynamical->eigenvectors, false, kmesh_dos->nk, dynamical->neval);
 
         if (integration->ismear == -1) {
-            tetra_nodes_dos = new TetraNodes(kmesh_dos->nk_i[0],
-                                             kmesh_dos->nk_i[1],
-                                             kmesh_dos->nk_i[2]);
+            tetra_nodes_dos = new TetraNodes(kmesh_dos->nk_i[0], kmesh_dos->nk_i[1], kmesh_dos->nk_i[2]);
             tetra_nodes_dos->setup();
         } else {
             tetra_nodes_dos = new TetraNodes();
@@ -131,9 +124,7 @@ void Dos::setup()
     }
 }
 
-void Dos::update_dos_energy_grid(const double emin_in,
-                                 const double emax_in,
-                                 const bool force_update)
+void Dos::update_dos_energy_grid(const double emin_in, const double emax_in, const bool force_update)
 {
     if (auto_set_emin || force_update) {
         if (emin_in < 0.0) {
@@ -228,56 +219,32 @@ void Dos::calc_dos_all()
 
     if (two_phonon_dos) {
         allocate(dos2_phonon, kmesh_dos->nk_irred, n_energy, 4);
-        calc_two_phonon_dos(dymat_dos->get_eigenvalues(),
-                            n_energy,
-                            energy_dos,
-                            integration->ismear,
-                            dos2_phonon);
+        calc_two_phonon_dos(dymat_dos->get_eigenvalues(), n_energy, energy_dos, integration->ismear, dos2_phonon);
     }
 
     if (scattering_phase_space == 1) {
-        allocate(sps3_mode,
-                 kmesh_dos->nk_irred,
-                 dynamical->neval,
-                 2);
-        calc_total_scattering_phase_space(dymat_dos->get_eigenvalues(),
-                                          integration->ismear,
-                                          sps3_mode,
-                                          total_sps3);
+        allocate(sps3_mode, kmesh_dos->nk_irred, dynamical->neval, 2);
+        calc_total_scattering_phase_space(dymat_dos->get_eigenvalues(), integration->ismear, sps3_mode, total_sps3);
     } else if (scattering_phase_space == 2) {
         const auto Tmin = system->Tmin;
         const auto Tmax = system->Tmax;
         const auto dT = system->dT;
         const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-        allocate(sps3_with_bose,
-                 kmesh_dos->nk_irred,
-                 dynamical->neval,
-                 NT,
-                 2);
-        calc_scattering_phase_space_with_Bose(dymat_dos->get_eigenvalues(),
-                                              integration->ismear,
-                                              sps3_with_bose);
+        allocate(sps3_with_bose, kmesh_dos->nk_irred, dynamical->neval, NT, 2);
+        calc_scattering_phase_space_with_Bose(dymat_dos->get_eigenvalues(), integration->ismear, sps3_with_bose);
     }
-
 }
 
-void Dos::calc_dos(const unsigned int nk,
-                   const unsigned int nk_irreducible,
-                   const unsigned int *map_k,
-                   const double *const *eval,
-                   const unsigned int n,
-                   const std::vector<double> &energy,
-                   const unsigned int neval,
-                   const int smearing_method,
-                   const unsigned int ntetra,
-                   const unsigned int *const *tetras,
-                   double *ret) const
+void Dos::calc_dos(const unsigned int nk, const unsigned int nk_irreducible, const unsigned int *map_k,
+                   const double *const *eval, const unsigned int n, const std::vector<double> &energy,
+                   const unsigned int neval, const int smearing_method, const unsigned int ntetra,
+                   const unsigned int *const *tetras, double *ret) const
 {
     double *weight;
 
 #ifdef _OPENMP
-#pragma omp parallel private (weight)
+#pragma omp parallel private(weight)
 #endif
     {
         allocate(weight, nk_irreducible);
@@ -290,21 +257,11 @@ void Dos::calc_dos(const unsigned int nk,
 
             for (int k = 0; k < neval; ++k) {
                 if (smearing_method == -1) {
-                    integration->calc_weight_tetrahedron(nk_irreducible,
-                                                         map_k,
-                                                         eval[k],
-                                                         energy[i],
-                                                         ntetra,
-                                                         tetras,
-                                                         weight);
+                    integration
+                        ->calc_weight_tetrahedron(nk_irreducible, map_k, eval[k], energy[i], ntetra, tetras, weight);
                 } else {
-                    integration->calc_weight_smearing(nk,
-                                                      nk_irreducible,
-                                                      map_k,
-                                                      eval[k],
-                                                      energy[i],
-                                                      smearing_method,
-                                                      weight);
+                    integration
+                        ->calc_weight_smearing(nk, nk_irreducible, map_k, eval[k], energy[i], smearing_method, weight);
                 }
 
                 for (int j = 0; j < nk_irreducible; ++j) {
@@ -318,14 +275,9 @@ void Dos::calc_dos(const unsigned int nk,
     //    if (mympi->my_rank == 0) std::cout << " done." << '\n';
 }
 
-void Dos::calc_atom_projected_dos(const unsigned int nk,
-                                  double *const *eval,
-                                  const unsigned int n,
-                                  const std::vector<double> &energy,
-                                  double **ret,
-                                  const unsigned int neval,
-                                  const unsigned int natmin,
-                                  const int smearing_method,
+void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, const unsigned int n,
+                                  const std::vector<double> &energy, double **ret, const unsigned int neval,
+                                  const unsigned int natmin, const int smearing_method,
                                   std::complex<double> ***evec) const
 {
     // Calculate atom projected phonon-DOS
@@ -335,13 +287,13 @@ void Dos::calc_atom_projected_dos(const unsigned int nk,
     double *weight;
     double **proj;
 
-    if (mympi->my_rank == 0)
-        std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
+    if (mympi->my_rank == 0) std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
 
     allocate(kmap_identity, nk);
     allocate(proj, neval, nk);
 
-    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i)
+        kmap_identity[i] = i;
 
     for (unsigned int iat = 0; iat < natmin; ++iat) {
 
@@ -356,7 +308,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk,
             }
         }
 #ifdef _OPENMP
-#pragma omp parallel private (weight)
+#pragma omp parallel private(weight)
 #endif
         {
             allocate(weight, nk);
@@ -376,13 +328,8 @@ void Dos::calc_atom_projected_dos(const unsigned int nk,
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
                     } else {
-                        integration->calc_weight_smearing(nk,
-                                                          nk,
-                                                          kmap_identity,
-                                                          eval[k],
-                                                          energy[i],
-                                                          smearing_method,
-                                                          weight);
+                        integration
+                            ->calc_weight_smearing(nk, nk, kmap_identity, eval[k], energy[i], smearing_method, weight);
                     }
 
                     for (unsigned int j = 0; j < nk; ++j) {
@@ -401,16 +348,10 @@ void Dos::calc_atom_projected_dos(const unsigned int nk,
 }
 
 
-void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
-                                          const double *const *xk_in,
-                                          const Eigen::Matrix3d &rlavec_p,
-                                          double *const *eval,
-                                          const unsigned int n,
-                                          const std::vector<double> &energy,
-                                          double *ret,
-                                          const unsigned int neval,
-                                          const unsigned int natmin,
-                                          const int smearing_method,
+void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *const *xk_in,
+                                          const Eigen::Matrix3d &rlavec_p, double *const *eval, const unsigned int n,
+                                          const std::vector<double> &energy, double *ret, const unsigned int neval,
+                                          const unsigned int natmin, const int smearing_method,
                                           std::complex<double> ***evec) const
 {
     // Calculate atom projected phonon-DOS
@@ -431,26 +372,28 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
     allocate(kmap_identity, nk);
     allocate(proj, neval, nk);
 
-    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i)
+        kmap_identity[i] = i;
 
     double dot_prod_sum;
     double cross_prod_sum;
 
     for (unsigned int ik = 0; ik < nk; ++ik) {
 
-        for (i = 0; i < 3; ++i) xq_cart[i] = xk_in[ik][i];
+        for (i = 0; i < 3; ++i)
+            xq_cart[i] = xk_in[ik][i];
 
         rotvec(xq_cart, xq_cart, rlavec_p, 'T');
 
-        const double norm = std::sqrt(xq_cart[0] * xq_cart[0]
-                                      + xq_cart[1] * xq_cart[1]
-                                      + xq_cart[2] * xq_cart[2]);
+        const double norm = std::sqrt(xq_cart[0] * xq_cart[0] + xq_cart[1] * xq_cart[1] + xq_cart[2] * xq_cart[2]);
 
         if (norm > eps) {
-            for (i = 0; i < 3; ++i) xq_cart[i] /= norm;
+            for (i = 0; i < 3; ++i)
+                xq_cart[i] /= norm;
         }
 
-        for (i = 0; i < 3; ++i) qvec(i) = xq_cart[i];
+        for (i = 0; i < 3; ++i)
+            qvec(i) = xq_cart[i];
 
         for (unsigned int imode = 0; imode < neval; ++imode) {
             dot_prod_sum = 0.0;
@@ -475,7 +418,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
     }
 
 #ifdef _OPENMP
-#pragma omp parallel private (weight)
+#pragma omp parallel private(weight)
 #endif
     {
         allocate(weight, nk);
@@ -495,13 +438,8 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
                                                          tetra_nodes_dos->get_tetras(),
                                                          weight);
                 } else {
-                    integration->calc_weight_smearing(nk,
-                                                      nk,
-                                                      kmap_identity,
-                                                      eval[k],
-                                                      energy[i],
-                                                      smearing_method,
-                                                      weight);
+                    integration
+                        ->calc_weight_smearing(nk, nk, kmap_identity, eval[k], energy[i], smearing_method, weight);
                 }
 
                 for (unsigned int j = 0; j < nk; ++j) {
@@ -519,11 +457,8 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk,
 }
 
 
-void Dos::calc_two_phonon_dos(double *const *eval_in,
-                              const unsigned int n,
-                              const std::vector<double> &energy,
-                              const int smearing_method,
-                              double ***ret) const
+void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, const std::vector<double> &energy,
+                              const int smearing_method, double ***ret) const
 {
     int i, j;
     int jk;
@@ -557,14 +492,16 @@ void Dos::calc_two_phonon_dos(double *const *eval_in,
 
     const auto xk = kmesh_dos->xk;
 
-    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i)
+        kmap_identity[i] = i;
 
     for (int ik = 0; ik < nk_reduced; ++ik) {
 
         auto knum = kmesh_dos->kpoint_irred_all[ik][0].knum;
 
         for (jk = 0; jk < nk; ++jk) {
-            for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] + xk[jk][i];
+            for (i = 0; i < 3; ++i)
+                xk_tmp[i] = xk[knum][i] + xk[jk][i];
             k_pair[jk] = kmesh_dos->get_knum(xk_tmp);
         }
 
@@ -640,9 +577,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in,
     }
 }
 
-void Dos::calc_total_scattering_phase_space(double *const *eval_in,
-                                            const int smearing_method,
-                                            double ***ret_mode,
+void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int smearing_method, double ***ret_mode,
                                             double &ret) const
 {
     int i, j;
@@ -659,7 +594,8 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
 
     allocate(kmap_identity, nk);
 
-    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i)
+        kmap_identity[i] = i;
 
     ret = 0.0;
     auto sps_sum1 = 0.0;
@@ -691,7 +627,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
                 allocate(weight, nk);
                 allocate(e_tmp, 2, nk);
 #ifdef _OPENMP
-#pragma omp for private(i, j), reduction(+: sps_tmp1, sps_tmp2)
+#pragma omp for private(i, j), reduction(+ : sps_tmp1, sps_tmp2)
 #endif
                 for (int ib = 0; ib < ns2; ++ib) {
 
@@ -700,7 +636,8 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
 
                     for (int jk = 0; jk < nk; ++jk) {
 
-                        for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] + xk[jk][i];
+                        for (i = 0; i < 3; ++i)
+                            xk_tmp[i] = xk[knum][i] + xk[jk][i];
                         loc = kmesh_dos->get_knum(xk_tmp);
 
                         e_tmp[0][jk] = writes->in_kayser(eval_in[jk][js] + eval_in[loc][ks]);
@@ -716,7 +653,8 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
 
-                        for (j = 0; j < nk; ++j) sps_tmp1 += weight[j];
+                        for (j = 0; j < nk; ++j)
+                            sps_tmp1 += weight[j];
 
                         integration->calc_weight_tetrahedron(nk,
                                                              kmap_identity,
@@ -725,29 +663,20 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
                                                              tetra_nodes_dos->get_ntetra(),
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
-                        for (j = 0; j < nk; ++j) sps_tmp2 += weight[j];
+                        for (j = 0; j < nk; ++j)
+                            sps_tmp2 += weight[j];
 
                     } else {
 
-                        integration->calc_weight_smearing(nk,
-                                                          nk,
-                                                          kmap_identity,
-                                                          e_tmp[0],
-                                                          omega0,
-                                                          smearing_method,
-                                                          weight);
-                        for (j = 0; j < nk; ++j) sps_tmp1 += weight[j];
-                        integration->calc_weight_smearing(nk,
-                                                          nk,
-                                                          kmap_identity,
-                                                          e_tmp[1],
-                                                          omega0,
-                                                          smearing_method,
-                                                          weight);
-                        for (j = 0; j < nk; ++j) sps_tmp2 += weight[j];
-
+                        integration
+                            ->calc_weight_smearing(nk, nk, kmap_identity, e_tmp[0], omega0, smearing_method, weight);
+                        for (j = 0; j < nk; ++j)
+                            sps_tmp1 += weight[j];
+                        integration
+                            ->calc_weight_smearing(nk, nk, kmap_identity, e_tmp[1], omega0, smearing_method, weight);
+                        for (j = 0; j < nk; ++j)
+                            sps_tmp2 += weight[j];
                     }
-
                 }
                 deallocate(e_tmp);
                 deallocate(weight);
@@ -762,18 +691,15 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in,
 
     deallocate(kmap_identity);
 
-    ret = (sps_sum1 + 2.0 * sps_sum2)
-          / (3.0 * static_cast<double>(std::pow(ns, 3.0)));
+    ret = (sps_sum1 + 2.0 * sps_sum2) / (3.0 * static_cast<double>(std::pow(ns, 3.0)));
 
     if (mympi->my_rank == 0) {
         std::cout << "done!\n";
     }
 }
 
-void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in,
-                                        const double *const *eval_in,
-                                        const unsigned int ntetra_in,
-                                        const unsigned int *const *tetras_in,
+void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                        const unsigned int ntetra_in, const unsigned int *const *tetras_in,
                                         double *dos_out) const
 {
     const auto nk = kmesh_in->nk;
@@ -803,8 +729,7 @@ void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in,
     deallocate(eval);
 }
 
-void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in,
-                                                const int smearing_method,
+void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, const int smearing_method,
                                                 double ****ret) const
 {
     unsigned int i, j;
@@ -835,7 +760,8 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in,
 
     const auto N = static_cast<int>((Tmax - Tmin) / dT) + 1;
     allocate(temperature, N);
-    for (i = 0; i < N; ++i) temperature[i] = Tmin + static_cast<double>(i) * dT;
+    for (i = 0; i < N; ++i)
+        temperature[i] = Tmin + static_cast<double>(i) * dT;
 
     allocate(k2_arr, nk);
 
@@ -908,7 +834,8 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in,
             const auto snum = iks % ns;
 
             for (unsigned int k1 = 0; k1 < nk; ++k1) {
-                for (j = 0; j < 3; ++j) xk_tmp[j] = kmesh_dos->xk[knum][j] - kmesh_dos->xk[k1][j];
+                for (j = 0; j < 3; ++j)
+                    xk_tmp[j] = kmesh_dos->xk[knum][j] - kmesh_dos->xk[k1][j];
                 unsigned int k2 = kmesh_dos->get_knum(xk_tmp);
                 k2_arr[k1] = k2;
             }
@@ -962,15 +889,10 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in,
     }
 }
 
-void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk,
-                                                     const unsigned int ns,
-                                                     const unsigned int N,
-                                                     const double omega,
-                                                     const double *const *eval,
-                                                     const double *temperature,
-                                                     const unsigned int *k_pair,
-                                                     const int smearing_method,
-                                                     double **ret) const
+void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, const unsigned int ns, const unsigned int N,
+                                                     const double omega, const double *const *eval,
+                                                     const double *temperature, const unsigned int *k_pair,
+                                                     const int smearing_method, double **ret) const
 {
     int ib;
     unsigned int i, is, js, k1, k2;
@@ -989,7 +911,8 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk,
     allocate(delta_arr, nk, ns2, 2);
 
     allocate(kmap_identity, nk);
-    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i)
+        kmap_identity[i] = i;
 
     const auto omega0 = writes->in_kayser(omega);
 
@@ -1054,7 +977,7 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk,
         ret1 = 0.0;
         ret2 = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for private(k1, k2, is, js, omega1, omega2, n1, n2, f1, f2), reduction(+:ret1, ret2)
+#pragma omp parallel for private(k1, k2, is, js, omega1, omega2, n1, n2, f1, f2), reduction(+ : ret1, ret2)
 #endif
         for (ib = 0; ib < ns2; ++ib) {
 

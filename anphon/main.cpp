@@ -8,13 +8,12 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "phonons.h"
 #include <iostream>
+#include "phonons.h"
 
 using namespace PHON_NS;
 
-int main(int argc,
-         char **argv)
+int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
 

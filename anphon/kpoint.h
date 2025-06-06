@@ -10,13 +10,13 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #pragma once
 
-#include "pointers.h"
-#include "memory.h"
-#include "symmetry_core.h"
+#include <Eigen/Core>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <Eigen/Core>
+#include "memory.h"
+#include "pointers.h"
+#include "symmetry_core.h"
 
 namespace PHON_NS
 {
@@ -28,12 +28,9 @@ public:
 
     KpointList() {};
 
-    KpointList(const KpointList &obj) :
-        kval(obj.kval), knum(obj.knum) {};
+    KpointList(const KpointList &obj) : kval(obj.kval), knum(obj.knum) {};
 
-    KpointList(const unsigned int knum_in,
-               const std::vector<double> &vec) :
-        kval(vec), knum(knum_in) {};
+    KpointList(const unsigned int knum_in, const std::vector<double> &vec) : kval(vec), knum(knum_in) {};
 };
 
 class KpointInp
@@ -43,8 +40,7 @@ public:
 
     KpointInp() {};
 
-    KpointInp(const std::vector<std::string> &obj) :
-        kpelem(obj) {};
+    KpointInp(const std::vector<std::string> &obj) : kpelem(obj) {};
 };
 
 class KpointPlaneGeometry
@@ -56,9 +52,7 @@ public:
 
     KpointPlaneGeometry() {};
 
-    KpointPlaneGeometry(const double *xk_origin_in,
-                        const double *xk_edge1_in,
-                        const double *xk_edge2_in,
+    KpointPlaneGeometry(const double *xk_origin_in, const double *xk_edge1_in, const double *xk_edge2_in,
                         const int *num)
     {
         for (int i = 0; i < 3; ++i) {
@@ -80,11 +74,12 @@ public:
 
     KpointPlane() {};
 
-    KpointPlane(const double *xk_in,
-                const int *n_in)
+    KpointPlane(const double *xk_in, const int *n_in)
     {
-        for (int i = 0; i < 3; ++i) k[i] = xk_in[i];
-        for (int i = 0; i < 2; ++i) n[i] = n_in[i];
+        for (int i = 0; i < 3; ++i)
+            k[i] = xk_in[i];
+        for (int i = 0; i < 2; ++i)
+            n[i] = n_in[i];
     }
 };
 
@@ -96,8 +91,7 @@ public:
 
     KpointPlaneTriangle() {};
 
-    KpointPlaneTriangle(int index_in,
-                        const int *nk_in)
+    KpointPlaneTriangle(int index_in, const int *nk_in)
     {
         index = index_in;
 
@@ -115,12 +109,9 @@ public:
 
     KsList();
 
-    KsList(const KsList &a) :
-        ks(a.ks), symnum(a.symnum) {};
+    KsList(const KsList &a) : ks(a.ks), symnum(a.symnum) {};
 
-    KsList(const int n,
-           int *ks_in,
-           const int sym)
+    KsList(const int n, int *ks_in, const int sym)
     {
         for (int i = 0; i < n; ++i) {
             ks.push_back(ks_in[i]);
@@ -130,10 +121,7 @@ public:
 
     bool operator<(const KsList &obj) const
     {
-        return std::lexicographical_compare(ks.begin(),
-                                            ks.end(),
-                                            obj.ks.begin(),
-                                            obj.ks.end());
+        return std::lexicographical_compare(ks.begin(), ks.end(), obj.ks.begin(), obj.ks.end());
     }
 };
 
@@ -144,8 +132,7 @@ public:
 
     KsListGroup();
 
-    KsListGroup(const std::vector<KsList> &a) :
-        group(a) {};
+    KsListGroup(const std::vector<KsList> &a) : group(a) {};
 };
 
 class KpointGeneral
@@ -158,9 +145,7 @@ public:
         kvec_na = nullptr;
     };
 
-    KpointGeneral(const unsigned int nk_in,
-                  const double *const *xk_in,
-                  const double *const *kvec_na_in)
+    KpointGeneral(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in)
     {
         nk = nk_in;
         if (xk) deallocate(xk);
@@ -245,57 +230,39 @@ public:
 
     bool niggli_reduced = false;
 
-    void setup(const std::vector<SymmetryOperation> &symmlist,
-               const Eigen::Matrix3d &rlavec_p,
-               const bool time_reversal_symmetry = true,
-               const bool niggli_reduce_in = false);
+    void setup(const std::vector<SymmetryOperation> &symmlist, const Eigen::Matrix3d &rlavec_p,
+               const bool time_reversal_symmetry = true, const bool niggli_reduce_in = false);
 
     int get_knum(const double xk[3]) const;
 
-    int knum_sym(const unsigned int ik,
-                 const Eigen::Matrix3i &rot) const;
+    int knum_sym(const unsigned int ik, const Eigen::Matrix3i &rot) const;
 
-    void get_unique_triplet_k(const int ik,
-                              const std::vector<SymmetryOperation> &symmlist,
-                              const bool use_triplet_symmetry,
-                              const bool use_permutation_symmetry,
-                              std::vector<KsListGroup> &triplet,
-                              const int sign = -1) const;
+    void get_unique_triplet_k(const int ik, const std::vector<SymmetryOperation> &symmlist,
+                              const bool use_triplet_symmetry, const bool use_permutation_symmetry,
+                              std::vector<KsListGroup> &triplet, const int sign = -1) const;
 
-    void get_unique_quartet_k(const int ik,
-                              const std::vector<SymmetryOperation> &symmlist,
-                              const bool use_quartet_symmetry,
-                              const bool use_permutation_symmetry,
-                              std::vector<KsListGroup> &quartet,
-                              const int sign = -1) const;
+    void get_unique_quartet_k(const int ik, const std::vector<SymmetryOperation> &symmlist,
+                              const bool use_quartet_symmetry, const bool use_permutation_symmetry,
+                              std::vector<KsListGroup> &quartet, const int sign = -1) const;
 
     void setup_kpoint_symmetry(const std::vector<SymmetryOperationWithMapping> &symmlist);
 
 private:
-    void gen_kmesh(const std::vector<SymmetryOperation> &symmlist,
-                   const Eigen::Matrix3d &rlavec_p,
-                   const bool usesym,
+    void gen_kmesh(const std::vector<SymmetryOperation> &symmlist, const Eigen::Matrix3d &rlavec_p, const bool usesym,
                    const bool time_reversal_symmetry);
 
-    void gen_kmesh_niggli(const std::vector<SymmetryOperation> &symmlist,
-                          const Eigen::Matrix3d &rlavec_p,
-                          const bool usesym,
-                          const bool time_reversal_symmetry);
+    void gen_kmesh_niggli(const std::vector<SymmetryOperation> &symmlist, const Eigen::Matrix3d &rlavec_p,
+                          const bool usesym, const bool time_reversal_symmetry);
 
-    void reduce_kpoints(const unsigned int nsym,
-                        const std::vector<SymmetryOperation> &symmlist,
-                        const bool time_reversal_symmetry,
-                        const double *const *xkr);
+    void reduce_kpoints(const unsigned int nsym, const std::vector<SymmetryOperation> &symmlist,
+                        const bool time_reversal_symmetry, const double *const *xkr);
 
     void gen_nkminus();
 
-    void set_small_groups_k_irred(const bool usesym,
-                                  const std::vector<SymmetryOperation> &symmlist);
+    void set_small_groups_k_irred(const bool usesym, const std::vector<SymmetryOperation> &symmlist);
 
-    std::vector<int> get_small_group_of_k(const unsigned int ik,
-                                          const bool usesym,
+    std::vector<int> get_small_group_of_k(const unsigned int ik, const bool usesym,
                                           const std::vector<SymmetryOperation> &symmlist) const;
-
 };
 
 class KpointBandStructure
@@ -309,9 +276,7 @@ public:
         kaxis = nullptr;
     };
 
-    KpointBandStructure(const unsigned int nk_in,
-                        const double *const *xk_in,
-                        const double *const *kvec_na_in,
+    KpointBandStructure(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                         const double *kaxis_in)
     {
         nk = nk_in;
@@ -374,19 +339,14 @@ public:
     KpointBandStructure *kpoint_bs;
     KpointGeneral *kpoint_general;
 
-    int get_knum(const double [3],
-                 const unsigned int [3]) const;
+    int get_knum(const double[3], const unsigned int[3]) const;
 
-    void get_symmetrization_matrix_at_k(const double *xk_in,
-                                        std::vector<int> &sym_list,
-                                        double S_avg[3][3]) const;
+    void get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int> &sym_list, double S_avg[3][3]) const;
 
-    void get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super,
-                                  const Eigen::Matrix3d &lavec_prim,
+    void get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const Eigen::Matrix3d &lavec_prim,
                                   std::vector<std::vector<double>> &klist) const;
 
-    int get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse,
-                                 const KpointMeshUniform *kmesh_dense,
+    int get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                  std::vector<int> &kmap) const;
 
 private:
@@ -394,24 +354,17 @@ private:
 
     void deallocate_variables();
 
-    void setup_kpoint_given(const std::vector<KpointInp> &kpinfo,
-                            const Eigen::Matrix3d &rlavec_p);
+    void setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
-    void setup_kpoint_band(const std::vector<KpointInp> &kpinfo,
-                           const Eigen::Matrix3d &rlavec_p);
+    void setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
-    void setup_kpoint_plane(const std::vector<KpointInp> &,
-                            unsigned int &,
-                            std::vector<KpointPlane> *&);
+    void setup_kpoint_plane(const std::vector<KpointInp> &, unsigned int &, std::vector<KpointPlane> *&);
 
-    void gen_kpoints_plane(const std::vector<KpointInp> &,
-                           std::vector<KpointPlane> *,
+    void gen_kpoints_plane(const std::vector<KpointInp> &, std::vector<KpointPlane> *,
                            std::vector<KpointPlaneTriangle> *);
 
     bool in_first_BZ(const double *) const;
 
-    void mpi_broadcast_kplane_vector(unsigned int,
-                                     std::vector<KpointPlane> *&) const;
-
+    void mpi_broadcast_kplane_vector(unsigned int, std::vector<KpointPlane> *&) const;
 };
-}
+} // namespace PHON_NS

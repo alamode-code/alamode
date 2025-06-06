@@ -18,34 +18,17 @@ class Pointers
 {
 public:
     Pointers(PHON *ptr) :
-        phon(ptr),
-        input(ptr->input),
-        system(ptr->system),
-        symmetry(ptr->symmetry),
-        kpoint(ptr->kpoint),
-        integration(ptr->integration),
-        fcs_phonon(ptr->fcs_phonon),
-        dynamical(ptr->dynamical),
-        phonon_velocity(ptr->phonon_velocity),
-        thermodynamics(ptr->thermodynamics),
-        anharmonic_core(ptr->anharmonic_core),
-        mode_analysis(ptr->mode_analysis),
-        selfenergy(ptr->selfenergy),
-        conductivity(ptr->conductivity),
-        iterativebte(ptr->iterativebte),
-        writes(ptr->writes),
-        dos(ptr->dos),
-        gruneisen(ptr->gruneisen),
-        mympi(ptr->mympi),
-        isotope(ptr->isotope),
-        scph(ptr->scph),
-        ewald(ptr->ewald),
-        dielec(ptr->dielec),
-        qha(ptr->qha),
-        relaxation(ptr->relaxation),
-        timer(ptr->timer) {}
+        phon(ptr), input(ptr->input), system(ptr->system), symmetry(ptr->symmetry), kpoint(ptr->kpoint),
+        integration(ptr->integration), fcs_phonon(ptr->fcs_phonon), dynamical(ptr->dynamical),
+        phonon_velocity(ptr->phonon_velocity), thermodynamics(ptr->thermodynamics),
+        anharmonic_core(ptr->anharmonic_core), mode_analysis(ptr->mode_analysis), selfenergy(ptr->selfenergy),
+        conductivity(ptr->conductivity), iterativebte(ptr->iterativebte), writes(ptr->writes), dos(ptr->dos),
+        gruneisen(ptr->gruneisen), mympi(ptr->mympi), isotope(ptr->isotope), scph(ptr->scph), ewald(ptr->ewald),
+        dielec(ptr->dielec), qha(ptr->qha), relaxation(ptr->relaxation), timer(ptr->timer)
+    {}
 
-    virtual ~Pointers() {}
+    virtual ~Pointers()
+    {}
 
 protected:
     PHON *phon;
@@ -75,4 +58,4 @@ protected:
     Relaxation *&relaxation;
     Timer *&timer;
 };
-}
+} // namespace PHON_NS

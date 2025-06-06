@@ -8,24 +8,25 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "selfenergy.h"
-#include "constants.h"
 #include "anharmonic_core.h"
+#include "constants.h"
 #include "dynamical.h"
-#include "kpoint.h"
-#include "memory.h"
-#include "thermodynamics.h"
-#include "mathfunctions.h"
 #include "integration.h"
+#include "kpoint.h"
+#include "mathfunctions.h"
+#include "memory.h"
+#include "mpi_common.h"
 #include "phonon_dos.h"
+#include "thermodynamics.h"
 
 using namespace PHON_NS;
 
-Selfenergy::Selfenergy(PHON *phon) :
-    Pointers(phon) {}
+Selfenergy::Selfenergy(PHON *phon) : Pointers(phon)
+{}
 
-Selfenergy::~Selfenergy() {}
+Selfenergy::~Selfenergy()
+{}
 
 void Selfenergy::setup_selfenergy()
 {
@@ -33,9 +34,7 @@ void Selfenergy::setup_selfenergy()
     epsilon = integration->epsilon;
 }
 
-void Selfenergy::mpi_reduce_complex(unsigned int N,
-                                    std::complex<double> *in_mpi,
-                                    std::complex<double> *out) const
+void Selfenergy::mpi_reduce_complex(unsigned int N, std::complex<double> *in_mpi, std::complex<double> *out) const
 {
 #ifdef MPI_COMPLEX16
     MPI_Reduce(&in_mpi[0], &out[0], N, MPI_COMPLEX16, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -66,14 +65,9 @@ void Selfenergy::mpi_reduce_complex(unsigned int N,
 #endif
 }
 
-void Selfenergy::selfenergy_tadpole(const unsigned int N,
-                                    const double *T,
-                                    const double omega,
-                                    const unsigned int knum,
-                                    const unsigned int snum,
-                                    const KpointMeshUniform *kmesh_in,
-                                    const double *const *eval_in,
-                                    const std::complex<double> *const *const *evec_in,
+void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                                    const unsigned int snum, const KpointMeshUniform *kmesh_in,
+                                    const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                     std::complex<double> *ret) const
 {
     unsigned int i;
@@ -88,7 +82,8 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N,
     allocate(ret_mpi, N);
     allocate(ret_tmp, N);
 
-    for (i = 0; i < N; ++i) ret[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret[i] = std::complex<double>(0.0, 0.0);
 
     for (unsigned int is1 = 0; is1 < ns; ++is1) {
         arr_cubic1[2] = is1;
@@ -99,7 +94,8 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N,
 
         auto v3_tmp1 = anharmonic_core->V3(arr_cubic1);
 
-        for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+        for (i = 0; i < N; ++i)
+            ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
         for (unsigned int ik2 = mympi->my_rank; ik2 < nk; ik2 += mympi->nprocs) {
             for (unsigned int is2 = 0; is2 < ns; ++is2) {
@@ -131,21 +127,16 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N,
     }
 
     const auto factor = -1.0 / (static_cast<double>(nk) * std::pow(2.0, 3));
-    for (i = 0; i < N; ++i) ret[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret[i] *= factor;
 
     deallocate(ret_tmp);
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_a(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
 
@@ -172,7 +163,8 @@ void Selfenergy::selfenergy_a(const unsigned int N,
 
     allocate(ret_mpi, N);
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
 
@@ -217,22 +209,17 @@ void Selfenergy::selfenergy_a(const unsigned int N,
     }
 
     double factor = 1.0 / (static_cast<double>(nk) * std::pow(2.0, 4));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_b(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
     Diagram (b)
@@ -251,7 +238,8 @@ void Selfenergy::selfenergy_b(const unsigned int N,
 
     allocate(ret_mpi, N);
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_quartic[3] = ns * knum + snum;
@@ -278,27 +266,21 @@ void Selfenergy::selfenergy_b(const unsigned int N,
                     ret_mpi[i] += v4_tmp * (2.0 * n1 + 1.0);
                 }
             }
-
         }
     }
 
     double factor = -1.0 / (static_cast<double>(nk) * std::pow(2.0, 3));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_c(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /* 
 
@@ -322,7 +304,8 @@ void Selfenergy::selfenergy_c(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
 
@@ -352,18 +335,14 @@ void Selfenergy::selfenergy_c(const unsigned int N,
 
                         double v4_tmp = std::norm(anharmonic_core->V4(arr_quartic));
 
-                        omega_sum[0]
-                            = 1.0 / (omega_shift - omega1 - omega2 - omega3)
-                              - 1.0 / (omega_shift + omega1 + omega2 + omega3);
-                        omega_sum[1]
-                            = 1.0 / (omega_shift - omega1 - omega2 + omega3)
-                              - 1.0 / (omega_shift + omega1 + omega2 - omega3);
-                        omega_sum[2]
-                            = 1.0 / (omega_shift + omega1 - omega2 - omega3)
-                              - 1.0 / (omega_shift - omega1 + omega2 + omega3);
-                        omega_sum[3]
-                            = 1.0 / (omega_shift - omega1 + omega2 - omega3)
-                              - 1.0 / (omega_shift + omega1 - omega2 + omega3);
+                        omega_sum[0] = 1.0 / (omega_shift - omega1 - omega2 - omega3) -
+                                       1.0 / (omega_shift + omega1 + omega2 + omega3);
+                        omega_sum[1] = 1.0 / (omega_shift - omega1 - omega2 + omega3) -
+                                       1.0 / (omega_shift + omega1 + omega2 - omega3);
+                        omega_sum[2] = 1.0 / (omega_shift + omega1 - omega2 - omega3) -
+                                       1.0 / (omega_shift - omega1 + omega2 + omega3);
+                        omega_sum[3] = 1.0 / (omega_shift - omega1 + omega2 - omega3) -
+                                       1.0 / (omega_shift + omega1 - omega2 + omega3);
 
                         for (i = 0; i < N; ++i) {
                             double T_tmp = T[i];
@@ -376,11 +355,10 @@ void Selfenergy::selfenergy_c(const unsigned int N,
                             double n23 = n2 * n3;
                             double n31 = n3 * n1;
 
-                            ret_mpi[i] += v4_tmp
-                                * ((n12 + n23 + n31 + n1 + n2 + n3 + 1.0) * omega_sum[0]
-                                   + (n31 + n23 + n3 - n12) * omega_sum[1]
-                                   + (n12 + n31 + n1 - n23) * omega_sum[2]
-                                   + (n23 + n12 + n2 - n31) * omega_sum[3]);
+                            ret_mpi[i] += v4_tmp * ((n12 + n23 + n31 + n1 + n2 + n3 + 1.0) * omega_sum[0] +
+                                                    (n31 + n23 + n3 - n12) * omega_sum[1] +
+                                                    (n12 + n31 + n1 - n23) * omega_sum[2] +
+                                                    (n23 + n12 + n2 - n31) * omega_sum[3]);
                         }
                     }
                 }
@@ -389,21 +367,17 @@ void Selfenergy::selfenergy_c(const unsigned int N,
     }
 
     double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 5) * 3.0);
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_c_mod(const unsigned int N,
-                                  const double *T,
-                                  const double omega,
-                                  const unsigned int knum,
-                                  const unsigned int snum,
-                                  const KpointMeshUniform *kmesh_in,
-                                  const double *const *eval_in,
-                                  const std::complex<double> *const *const *evec_in,
+void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                                  const unsigned int snum, const KpointMeshUniform *kmesh_in,
+                                  const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                   std::complex<double> *ret) const
 {
     /*
@@ -424,17 +398,14 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     std::vector<KsListGroup> quartet;
 
     auto ik_irred = kmesh_in->kmap_to_irreducible[knum];
 
-    kmesh_in->get_unique_quartet_k(ik_irred,
-                                   symmetry->SymmList,
-                                   true,
-                                   true,
-                                   quartet);
+    kmesh_in->get_unique_quartet_k(ik_irred, symmetry->SymmList, true, true, quartet);
 
     const size_t npair_uniq = quartet.size();
 
@@ -468,18 +439,14 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N,
 
                     double v4_tmp = std::norm(anharmonic_core->V4(arr_quartic)) * multi;
 
-                    omega_sum[0]
-                        = 1.0 / (omega_shift - omega1 - omega2 - omega3)
-                          - 1.0 / (omega_shift + omega1 + omega2 + omega3);
-                    omega_sum[1]
-                        = 1.0 / (omega_shift - omega1 - omega2 + omega3)
-                          - 1.0 / (omega_shift + omega1 + omega2 - omega3);
-                    omega_sum[2]
-                        = 1.0 / (omega_shift + omega1 - omega2 - omega3)
-                          - 1.0 / (omega_shift - omega1 + omega2 + omega3);
-                    omega_sum[3]
-                        = 1.0 / (omega_shift - omega1 + omega2 - omega3)
-                          - 1.0 / (omega_shift + omega1 - omega2 + omega3);
+                    omega_sum[0] =
+                        1.0 / (omega_shift - omega1 - omega2 - omega3) - 1.0 / (omega_shift + omega1 + omega2 + omega3);
+                    omega_sum[1] =
+                        1.0 / (omega_shift - omega1 - omega2 + omega3) - 1.0 / (omega_shift + omega1 + omega2 - omega3);
+                    omega_sum[2] =
+                        1.0 / (omega_shift + omega1 - omega2 - omega3) - 1.0 / (omega_shift - omega1 + omega2 + omega3);
+                    omega_sum[3] =
+                        1.0 / (omega_shift - omega1 + omega2 - omega3) - 1.0 / (omega_shift + omega1 - omega2 + omega3);
 
                     for (i = 0; i < N; ++i) {
                         double T_tmp = T[i];
@@ -492,11 +459,10 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N,
                         double n23 = n2 * n3;
                         double n31 = n3 * n1;
 
-                        ret_mpi[i] += v4_tmp
-                            * ((n12 + n23 + n31 + n1 + n2 + n3 + 1.0) * omega_sum[0]
-                               + (n31 + n23 + n3 - n12) * omega_sum[1]
-                               + (n12 + n31 + n1 - n23) * omega_sum[2]
-                               + (n23 + n12 + n2 - n31) * omega_sum[3]);
+                        ret_mpi[i] +=
+                            v4_tmp * ((n12 + n23 + n31 + n1 + n2 + n3 + 1.0) * omega_sum[0] +
+                                      (n31 + n23 + n3 - n12) * omega_sum[1] + (n12 + n31 + n1 - n23) * omega_sum[2] +
+                                      (n23 + n12 + n2 - n31) * omega_sum[3]);
                     }
                 }
             }
@@ -504,22 +470,17 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N,
     }
 
     double factor = -1.0 / (std::pow(static_cast<double>(kmesh_in->nk), 2) * std::pow(2.0, 5) * 3.0);
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_d(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
 
@@ -545,7 +506,8 @@ void Selfenergy::selfenergy_d(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret[i] = std::complex<double>(0.0, 0.0);
 
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic2[2] = ns * knum + snum;
@@ -600,18 +562,14 @@ void Selfenergy::selfenergy_d(const unsigned int N,
 
                             std::complex<double> v_prod = v3_tmp1 * v3_tmp2 * v4_tmp;
 
-                            omega_sum[0]
-                                = 1.0 / (omega_shift + omega1 + omega2)
-                                  - 1.0 / (omega_shift - omega1 - omega2);
-                            omega_sum[1]
-                                = 1.0 / (omega_shift + omega1 - omega2)
-                                  - 1.0 / (omega_shift - omega1 + omega2);
-                            omega_sum[2]
-                                = 1.0 / (omega_shift + omega3 + omega4)
-                                  - 1.0 / (omega_shift - omega3 - omega4);
-                            omega_sum[3]
-                                = 1.0 / (omega_shift + omega3 - omega4)
-                                  - 1.0 / (omega_shift - omega3 + omega4);
+                            omega_sum[0] =
+                                1.0 / (omega_shift + omega1 + omega2) - 1.0 / (omega_shift - omega1 - omega2);
+                            omega_sum[1] =
+                                1.0 / (omega_shift + omega1 - omega2) - 1.0 / (omega_shift - omega1 + omega2);
+                            omega_sum[2] =
+                                1.0 / (omega_shift + omega3 + omega4) - 1.0 / (omega_shift - omega3 - omega4);
+                            omega_sum[3] =
+                                1.0 / (omega_shift + omega3 - omega4) - 1.0 / (omega_shift - omega3 + omega4);
 
                             for (i = 0; i < N; ++i) {
                                 double T_tmp = T[i];
@@ -621,9 +579,8 @@ void Selfenergy::selfenergy_d(const unsigned int N,
                                 double n3 = thermodynamics->fB(omega3, T_tmp);
                                 double n4 = thermodynamics->fB(omega4, T_tmp);
 
-                                ret_mpi[i] += v_prod
-                                    * ((1.0 + n1 + n2) * omega_sum[0] + (n2 - n1) * omega_sum[1])
-                                    * ((1.0 + n3 + n4) * omega_sum[2] + (n4 - n3) * omega_sum[3]);
+                                ret_mpi[i] += v_prod * ((1.0 + n1 + n2) * omega_sum[0] + (n2 - n1) * omega_sum[1]) *
+                                              ((1.0 + n3 + n4) * omega_sum[2] + (n4 - n3) * omega_sum[3]);
                             }
                         }
                     }
@@ -633,22 +590,17 @@ void Selfenergy::selfenergy_d(const unsigned int N,
     }
 
     double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_e(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
 
@@ -685,7 +637,8 @@ void Selfenergy::selfenergy_e(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic2[2] = ns * knum + snum;
@@ -738,7 +691,8 @@ void Selfenergy::selfenergy_e(const unsigned int N,
 
                                 v_prod = v3_tmp1 * v3_tmp2 * v4_tmp;
 
-                                for (i = 0; i < N; ++i) prod_tmp[i] = std::complex<double>(0.0, 0.0);
+                                for (i = 0; i < N; ++i)
+                                    prod_tmp[i] = std::complex<double>(0.0, 0.0);
 
                                 for (int ip1 = 1; ip1 >= -1; ip1 -= 2) {
                                     double dp1 = static_cast<double>(ip1) * omega1;
@@ -764,9 +718,9 @@ void Selfenergy::selfenergy_e(const unsigned int N,
                                                 T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
                                             }
 
-                                            prod_tmp[i] += static_cast<double>(ip4) * omega_sum
-                                                * ((1.0 + n1 + n4) * omega_sum
-                                                   + (1.0 + n1 + n4) * dp1_inv + n1 * (1.0 + n1) * T_inv);
+                                            prod_tmp[i] += static_cast<double>(ip4) * omega_sum *
+                                                           ((1.0 + n1 + n4) * omega_sum + (1.0 + n1 + n4) * dp1_inv +
+                                                            n1 * (1.0 + n1) * T_inv);
                                         }
                                     }
                                 }
@@ -820,10 +774,8 @@ void Selfenergy::selfenergy_e(const unsigned int N,
                                 omega_prod[1] = D12[0] * (omega_sum14[2] - omega_sum14[3]);
                                 omega_prod[2] = D12[1] * (omega_sum24[0] - omega_sum24[1]);
                                 omega_prod[3] = D12[1] * (omega_sum24[2] - omega_sum24[3]);
-                                omega_prod[4] = (omega_sum14[1] - omega_sum14[3])
-                                                * (omega_sum24[1] - omega_sum24[3]);
-                                omega_prod[5] = (omega_sum14[0] - omega_sum14[2])
-                                                * (omega_sum24[0] - omega_sum24[2]);
+                                omega_prod[4] = (omega_sum14[1] - omega_sum14[3]) * (omega_sum24[1] - omega_sum24[3]);
+                                omega_prod[5] = (omega_sum14[0] - omega_sum14[2]) * (omega_sum24[0] - omega_sum24[2]);
 
                                 for (i = 0; i < N; ++i) {
                                     T_tmp = T[i];
@@ -833,10 +785,10 @@ void Selfenergy::selfenergy_e(const unsigned int N,
                                     n3 = thermodynamics->fB(omega3, T_tmp);
                                     n4 = thermodynamics->fB(omega4, T_tmp);
 
-                                    ret_mpi[i] += v_prod * (2.0 * n3 + 1.0)
-                                        * ((1.0 + n1) * omega_prod[0] + n1 * omega_prod[1]
-                                           + (1.0 + n2) * omega_prod[2] + n2 * omega_prod[3]
-                                           + (1.0 + n4) * omega_prod[4] + n4 * omega_prod[5]);
+                                    ret_mpi[i] +=
+                                        v_prod * (2.0 * n3 + 1.0) *
+                                        ((1.0 + n1) * omega_prod[0] + n1 * omega_prod[1] + (1.0 + n2) * omega_prod[2] +
+                                         n2 * omega_prod[3] + (1.0 + n4) * omega_prod[4] + n4 * omega_prod[5]);
 
                                     /*
                                     ret[i] *= v3_tmp1 * v3_tmp2 * v4_tmp * (2.0 * n3 + 1.0) * (2.0 * omega2) / (omega1 * omega1 - omega2 * omega2)
@@ -846,7 +798,6 @@ void Selfenergy::selfenergy_e(const unsigned int N,
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -855,7 +806,8 @@ void Selfenergy::selfenergy_e(const unsigned int N,
 
     double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 6));
     //	factor = -1.0 / (std::pow(static_cast<double>(nk_3ph), 2) * std::pow(2.0, 7));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
@@ -863,15 +815,9 @@ void Selfenergy::selfenergy_e(const unsigned int N,
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_f(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
     Diagram (f)
@@ -901,7 +847,8 @@ void Selfenergy::selfenergy_f(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic4[2] = ns * knum + snum;
@@ -1000,19 +947,15 @@ void Selfenergy::selfenergy_f(const unsigned int N,
                                                             T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
                                                         }
 
-                                                        ret_mpi[i]
-                                                            += v3_prod * static_cast<double>(ip2 * ip3 * ip4)
-                                                            * (omega_sum[1]
-                                                               * (n2 * omega_sum[0]
-                                                                  * ((1.0 + n3 + n4) * omega_sum[0] +
-                                                                     (1.0 + n2 + n4)
-                                                                     * dp1_inv)
-                                                                  + (1.0 + n3) * (1.0 + n4) * D134 *
-                                                                  (D134 + dp1_inv))
-                                                               + (1.0 + n1) * (1.0 + n3 + n4) * D134
-                                                               * omega_sum[0] *
-                                                               (omega_sum[0] + D134 + dp1_inv + n1 *
-                                                                T_inv));
+                                                        ret_mpi[i] +=
+                                                            v3_prod * static_cast<double>(ip2 * ip3 * ip4) *
+                                                            (omega_sum[1] *
+                                                                 (n2 * omega_sum[0] *
+                                                                      ((1.0 + n3 + n4) * omega_sum[0] +
+                                                                       (1.0 + n2 + n4) * dp1_inv) +
+                                                                  (1.0 + n3) * (1.0 + n4) * D134 * (D134 + dp1_inv)) +
+                                                             (1.0 + n1) * (1.0 + n3 + n4) * D134 * omega_sum[0] *
+                                                                 (omega_sum[0] + D134 + dp1_inv + n1 * T_inv));
                                                     }
                                                 }
                                             }
@@ -1054,22 +997,14 @@ void Selfenergy::selfenergy_f(const unsigned int N,
                                                             n4 = thermodynamics->fB(dp4, T_tmp);
                                                             double n5 = thermodynamics->fB(dp5, T_tmp);
 
-                                                            ret_mpi[i]
-                                                                += v3_prod *
-                                                                static_cast<double>(ip1 * ip2 * ip3 * ip4 *
-                                                                    ip5)
-                                                                * ((1.0 + n3 + n4)
-                                                                   *
-                                                                   (-(1.0 + n1 + n2) * D15 * D134
-                                                                    * omega_sum[0]
-                                                                    +
-                                                                    (1.0 + n5 + n2)
-                                                                    * D15 * D345
-                                                                    * omega_sum[1])
-                                                                   + (1.0 + n2 + n3 + n4 + n2 * n3 + n3 * n4 +
-                                                                      n4 * n2)
-                                                                   * D15 * (D345 - D134)
-                                                                   * omega_sum[2]);
+                                                            ret_mpi[i] +=
+                                                                v3_prod *
+                                                                static_cast<double>(ip1 * ip2 * ip3 * ip4 * ip5) *
+                                                                ((1.0 + n3 + n4) *
+                                                                     (-(1.0 + n1 + n2) * D15 * D134 * omega_sum[0] +
+                                                                      (1.0 + n5 + n2) * D15 * D345 * omega_sum[1]) +
+                                                                 (1.0 + n2 + n3 + n4 + n2 * n3 + n3 * n4 + n4 * n2) *
+                                                                     D15 * (D345 - D134) * omega_sum[2]);
                                                         }
                                                     }
                                                 }
@@ -1086,22 +1021,17 @@ void Selfenergy::selfenergy_f(const unsigned int N,
     }
 
     double factor = 1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_g(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /* 
     Diagram (g)
@@ -1126,7 +1056,8 @@ void Selfenergy::selfenergy_g(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic2[2] = ns * knum + snum;
@@ -1201,15 +1132,11 @@ void Selfenergy::selfenergy_g(const unsigned int N,
                                                 double n3 = thermodynamics->fB(dp3, T_tmp);
                                                 double n4 = thermodynamics->fB(dp4, T_tmp);
 
-                                                ret_mpi[i]
-                                                    += v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4) * D124
-                                                    * ((1.0 + n1 + n2 + n3 + n4 + n1 * n3 + n1 * n4 + n2 * n3 +
-                                                        n2 * n4)
-                                                       * omega_sum[0]
-                                                       - (1.0 + n1 + n2 + n3 + n1 * n2 + n2 * n3 + n1 * n3) *
-                                                       omega_sum
-                                                       [1]);
-
+                                                ret_mpi[i] +=
+                                                    v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4) * D124 *
+                                                    ((1.0 + n1 + n2 + n3 + n4 + n1 * n3 + n1 * n4 + n2 * n3 + n2 * n4) *
+                                                         omega_sum[0] -
+                                                     (1.0 + n1 + n2 + n3 + n1 * n2 + n2 * n3 + n1 * n3) * omega_sum[1]);
                                             }
                                         }
                                     }
@@ -1223,22 +1150,17 @@ void Selfenergy::selfenergy_g(const unsigned int N,
     }
 
     double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 6));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_h(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
     Diagram (h)
@@ -1262,7 +1184,8 @@ void Selfenergy::selfenergy_h(const unsigned int N,
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic4[2] = ns * knum + snum;
@@ -1369,23 +1292,18 @@ void Selfenergy::selfenergy_h(const unsigned int N,
                                                         double N35 = n3 - n5;
 
                                                         N_prod[0] = N12 * (1.0 + n3);
-                                                        N_prod[1] = (1.0 + n2 + n3) * (1.0 + n5) - (1.0 + n1 + n3) * (
-                                                                        1.0 + n4);
+                                                        N_prod[1] =
+                                                            (1.0 + n2 + n3) * (1.0 + n5) - (1.0 + n1 + n3) * (1.0 + n4);
                                                         N_prod[2] = (1.0 + n2) * N35 - n3 * (1.0 + n5);
                                                         N_prod[3] = -((1.0 + n1) * N34 - n3 * (1.0 + n4));
 
-                                                        ret_mpi[i]
-                                                            += v_prod *
-                                                            static_cast<double>(ip1 * ip2 * ip3 * ip4 * ip5)
-                                                            * (D12_inv
-                                                               * (N_prod[0] * omega_sum[0]
-                                                                  + N_prod[1] * omega_sum[1]
-                                                                  + N_prod[2] * omega_sum[2]
-                                                                  + N_prod[3] * omega_sum[3])
-                                                               +
-                                                               N12 * ((1.0 + n5) * D1_inv
-                                                                      - (1.0 + n4) * D2_inv)
-                                                               * omega_sum[0] * omega_sum[1]);
+                                                        ret_mpi[i] +=
+                                                            v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4 * ip5) *
+                                                            (D12_inv *
+                                                                 (N_prod[0] * omega_sum[0] + N_prod[1] * omega_sum[1] +
+                                                                  N_prod[2] * omega_sum[2] + N_prod[3] * omega_sum[3]) +
+                                                             N12 * ((1.0 + n5) * D1_inv - (1.0 + n4) * D2_inv) *
+                                                                 omega_sum[0] * omega_sum[1]);
                                                     }
                                                 }
                                             }
@@ -1401,22 +1319,17 @@ void Selfenergy::selfenergy_h(const unsigned int N,
     }
 
     double factor = 1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_i(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /* 
 
@@ -1452,7 +1365,8 @@ void Selfenergy::selfenergy_i(const unsigned int N,
 
     allocate(ret_mpi, N);
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_quartic[3] = ns * knum + snum;
@@ -1529,10 +1443,9 @@ void Selfenergy::selfenergy_i(const unsigned int N,
                                                     T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
                                                 }
 
-                                                ret_mpi[i]
-                                                    += v_prod * static_cast<double>(ip1 * ip3)
-                                                    * (D123 * (N_prod[0] * D123 + N_prod[1] * T_inv + N_prod[0] *
-                                                               dp2_inv));
+                                                ret_mpi[i] += v_prod * static_cast<double>(ip1 * ip3) *
+                                                              (D123 * (N_prod[0] * D123 + N_prod[1] * T_inv +
+                                                                       N_prod[0] * dp2_inv));
                                             }
                                         }
                                     }
@@ -1583,10 +1496,9 @@ void Selfenergy::selfenergy_i(const unsigned int N,
                                                     n3 = thermodynamics->fB(dp3, T_tmp);
                                                     double n4 = thermodynamics->fB(dp4, T_tmp);
 
-                                                    ret_mpi[i]
-                                                        += v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4)
-                                                        * ((1.0 + n1 + n3) * D24 * (n4 * D134 - n2 * D123)
-                                                           + D123 * D134 * n1 * n3);
+                                                    ret_mpi[i] += v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4) *
+                                                                  ((1.0 + n1 + n3) * D24 * (n4 * D134 - n2 * D123) +
+                                                                   D123 * D134 * n1 * n3);
                                                 }
                                             }
                                         }
@@ -1601,22 +1513,17 @@ void Selfenergy::selfenergy_i(const unsigned int N,
     }
 
     double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
     deallocate(ret_mpi);
 }
 
-void Selfenergy::selfenergy_j(const unsigned int N,
-                              const double *T,
-                              const double omega,
-                              const unsigned int knum,
-                              const unsigned int snum,
-                              const KpointMeshUniform *kmesh_in,
-                              const double *const *eval_in,
-                              const std::complex<double> *const *const *evec_in,
-                              std::complex<double> *ret) const
+void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const double omega, const unsigned int knum,
+                              const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const
 {
     /*
 
@@ -1644,7 +1551,8 @@ void Selfenergy::selfenergy_j(const unsigned int N,
 
     allocate(ret_mpi, N);
 
-    for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
     arr_quartic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_quartic1[3] = ns * knum + snum;
@@ -1694,10 +1602,8 @@ void Selfenergy::selfenergy_j(const unsigned int N,
                                     T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
                                 }
 
-                                ret_mpi[i]
-                                    += v_prod * (2.0 * n2 + 1.0)
-                                    * (-2.0 * (1.0 + n1) * n1 * T_inv
-                                       - (2.0 * n1 + 1.0) * omega1_inv);
+                                ret_mpi[i] += v_prod * (2.0 * n2 + 1.0) *
+                                              (-2.0 * (1.0 + n1) * n1 * T_inv - (2.0 * n1 + 1.0) * omega1_inv);
                             }
                         }
                     } else {
@@ -1722,9 +1628,7 @@ void Selfenergy::selfenergy_j(const unsigned int N,
                                 n2 = thermodynamics->fB(omega2, T_tmp);
                                 double n3 = thermodynamics->fB(omega3, T_tmp);
 
-                                ret_mpi[i]
-                                    += v_prod * 2.0
-                                    * ((n1 - n3) * D13[0] - (1.0 + n1 + n3) * D13[1]);
+                                ret_mpi[i] += v_prod * 2.0 * ((n1 - n3) * D13[0] - (1.0 + n1 + n3) * D13[1]);
                             }
                         }
                     }
@@ -1735,7 +1639,8 @@ void Selfenergy::selfenergy_j(const unsigned int N,
 
     double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 6));
 
-    for (i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    for (i = 0; i < N; ++i)
+        ret_mpi[i] *= factor;
 
     mpi_reduce_complex(N, ret_mpi, ret);
 

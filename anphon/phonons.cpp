@@ -8,36 +8,36 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
-#include <iostream>
-#include <iomanip>
 #include "phonons.h"
-#include "timer.h"
-#include "parsephon.h"
-#include "error.h"
-#include "gruneisen.h"
-#include "system.h"
-#include "symmetry_core.h"
-#include "kpoint.h"
-#include "fcs_phonon.h"
-#include "dynamical.h"
-#include "phonon_velocity.h"
-#include "thermodynamics.h"
-#include "write_phonons.h"
-#include "phonon_dos.h"
-#include "integration.h"
+#include <iomanip>
+#include <iostream>
 #include "anharmonic_core.h"
-#include "mode_analysis.h"
 #include "conductivity.h"
-#include "iterativebte.h"
-#include "isotope.h"
-#include "selfenergy.h"
-#include "version.h"
-#include "scph.h"
-#include "ewald.h"
 #include "dielec.h"
+#include "dynamical.h"
+#include "error.h"
+#include "ewald.h"
+#include "fcs_phonon.h"
+#include "gruneisen.h"
+#include "integration.h"
+#include "isotope.h"
+#include "iterativebte.h"
+#include "kpoint.h"
+#include "mode_analysis.h"
+#include "mpi_common.h"
+#include "parsephon.h"
+#include "phonon_dos.h"
+#include "phonon_velocity.h"
 #include "qha.h"
 #include "relaxation.h"
+#include "scph.h"
+#include "selfenergy.h"
+#include "symmetry_core.h"
+#include "system.h"
+#include "thermodynamics.h"
+#include "timer.h"
+#include "version.h"
+#include "write_phonons.h"
 
 #ifdef _OPENMP
 
@@ -47,9 +47,7 @@
 
 using namespace PHON_NS;
 
-PHON::PHON(int narg,
-           char **arg,
-           MPI_Comm comm)
+PHON::PHON(int narg, char **arg, MPI_Comm comm)
 {
     mympi = new MyMPI(this, comm);
     input = new Input(this);
@@ -66,8 +64,7 @@ PHON::PHON(int narg,
         std::cout << " Job started at " << timer->DateAndTime() << '\n';
         std::cout << " The number of MPI processes: " << mympi->nprocs << '\n';
 #ifdef _OPENMP
-        std::cout << " The number of OpenMP threads: "
-            << omp_get_max_threads() << '\n';
+        std::cout << " The number of OpenMP threads: " << omp_get_max_threads() << '\n';
 #endif
         std::cout << '\n';
 
@@ -95,8 +92,7 @@ PHON::PHON(int narg,
     }
 
     if (mympi->my_rank == 0) {
-        std::cout << "\n Job finished at "
-            << timer->DateAndTime() << '\n';
+        std::cout << "\n Job finished at " << timer->DateAndTime() << '\n';
     }
     destroy_pointers();
 }
@@ -270,7 +266,6 @@ void PHON::execute_RTA() const
         conductivity->compute_kappa();
         writes->writeKappa();
         writes->writeSelfenergyIsotope();
-
     }
 }
 

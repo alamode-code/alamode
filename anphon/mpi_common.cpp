@@ -9,26 +9,23 @@
 */
 
 #include "mpi_common.h"
-#include <string>
-#include <cstring>
 #include <Eigen/Core>
+#include <cstring>
 #include <iostream>
+#include <string>
 
 using namespace PHON_NS;
 
-MyMPI::MyMPI(PHON *phon,
-             MPI_Comm comm) :
-    Pointers(phon)
+MyMPI::MyMPI(PHON *phon, MPI_Comm comm) : Pointers(phon)
 {
     MPI_Comm_rank(comm, &my_rank);
     MPI_Comm_size(comm, &nprocs);
 }
 
-MyMPI::~MyMPI() {}
+MyMPI::~MyMPI()
+{}
 
-void MyMPI::MPI_Bcast_string(std::string &str,
-                             int root,
-                             MPI_Comm comm) const
+void MyMPI::MPI_Bcast_string(std::string &str, int root, MPI_Comm comm) const
 {
     int len = str.length();
     MPI_Bcast(&len, 1, MPI_INT, root, comm);
@@ -41,9 +38,7 @@ void MyMPI::MPI_Bcast_string(std::string &str,
 }
 
 
-void MyMPI::MPI_Bcast_CellClass(Cell &cell,
-                                int root,
-                                MPI_Comm comm) const
+void MyMPI::MPI_Bcast_CellClass(Cell &cell, int root, MPI_Comm comm) const
 {
     MPI_Bcast(cell.lattice_vector.data(), 9, MPI_DOUBLE, root, comm);
 
@@ -61,9 +56,7 @@ void MyMPI::MPI_Bcast_CellClass(Cell &cell,
     MPI_Bcast(cell.kind.data(), natoms, MPI_INT, root, comm);
 }
 
-void MyMPI::MPI_Bcast_SpinClass(Spin &spin,
-                                int root,
-                                MPI_Comm comm) const
+void MyMPI::MPI_Bcast_SpinClass(Spin &spin, int root, MPI_Comm comm) const
 {
     MPI_Bcast(&spin.lspin, 1, MPI_INT, root, comm);
     MPI_Bcast(&spin.noncollinear, 1, MPI_INT, root, comm);
@@ -80,9 +73,7 @@ void MyMPI::MPI_Bcast_SpinClass(Spin &spin,
     MPI_Bcast(spin.magmom.data(), 3 * natoms, MPI_DOUBLE, root, comm);
 }
 
-void MyMPI::MPI_Bcast_MappingTable(MappingTable &mapping,
-                                   int root,
-                                   MPI_Comm comm) const
+void MyMPI::MPI_Bcast_MappingTable(MappingTable &mapping, int root, MPI_Comm comm) const
 {
     int natmin_tmp, ntran_tmp;
     if (my_rank == root) {

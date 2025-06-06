@@ -10,12 +10,12 @@
 
 #pragma once
 
-#include "pointers.h"
+#include <vector>
 #include "constants.h"
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "memory.h"
-#include <vector>
+#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -25,8 +25,7 @@ struct tetra_pair
     double f;
 };
 
-inline bool operator<(const tetra_pair &a,
-                      const tetra_pair &b)
+inline bool operator<(const tetra_pair &a, const tetra_pair &b)
 {
     return a.e < b.e;
 }
@@ -37,8 +36,7 @@ struct TetraWithKnum
     int knum;
 };
 
-inline bool operator<(const TetraWithKnum &a,
-                      const TetraWithKnum &b)
+inline bool operator<(const TetraWithKnum &a, const TetraWithKnum &b)
 {
     return a.e < b.e;
 }
@@ -55,9 +53,7 @@ public:
         tetras = nullptr;
     };
 
-    TetraNodes(unsigned int nk1_in,
-               unsigned int nk2_in,
-               unsigned int nk3_in)
+    TetraNodes(unsigned int nk1_in, unsigned int nk2_in, unsigned int nk3_in)
     {
         nk1 = nk1_in;
         nk2 = nk2_in;
@@ -88,9 +84,7 @@ class AdaptiveSmearingSigma
 public:
     AdaptiveSmearingSigma() {};
 
-    AdaptiveSmearingSigma(const unsigned int nk_in,
-                          const unsigned int ns_in,
-                          const double factor)
+    AdaptiveSmearingSigma(const unsigned int nk_in, const unsigned int ns_in, const double factor)
     {
 
         allocate(vel, nk_in, ns_in, 3);
@@ -102,29 +96,17 @@ public:
         if (vel) deallocate(vel);
     };
 
-    void setup(const PhononVelocity *phvel_class,
-               const KpointMeshUniform *kmesh_in,
-               const Eigen::Matrix3d &lavec_p_in,
+    void setup(const PhononVelocity *phvel_class, const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &lavec_p_in,
                const Eigen::Matrix3d &rlavec_p_in);
 
     // overload for 3ph or 4ph
-    void get_sigma(const unsigned int k1,
-                   const unsigned int s1,
-                   double &sigma_out);
+    void get_sigma(const unsigned int k1, const unsigned int s1, double &sigma_out);
 
-    void get_sigma(const unsigned int k1,
-                   const unsigned int s1,
-                   const unsigned int k2,
-                   const unsigned int s2,
+    void get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2, const unsigned int s2,
                    double sigma_out[2]);
 
-    void get_sigma(const unsigned int k1,
-                   const unsigned int s1,
-                   const unsigned int k2,
-                   const unsigned int s2,
-                   const unsigned int k3,
-                   const unsigned int s3,
-                   double sigma_out[2]);
+    void get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2, const unsigned int s2,
+                   const unsigned int k3, const unsigned int s3, double sigma_out[2]);
 
 private:
     double adaptive_factor;
@@ -150,27 +132,16 @@ public:
 
     void setup_integration();
 
-    double do_tetrahedron(const double *energy,
-                          const double *f,
-                          const unsigned int ntetra,
-                          const unsigned int *const *tetras,
-                          const double e_ref);
+    double do_tetrahedron(const double *energy, const double *f, const unsigned int ntetra,
+                          const unsigned int *const *tetras, const double e_ref);
 
-    void calc_weight_tetrahedron(const unsigned int nk_irreducible,
-                                 const unsigned int *map_to_irreducible_k,
-                                 const double *energy,
-                                 const double e_ref,
-                                 const unsigned int ntetra,
-                                 const unsigned int *const *tetras,
-                                 double *weight) const;
+    void calc_weight_tetrahedron(const unsigned int nk_irreducible, const unsigned int *map_to_irreducible_k,
+                                 const double *energy, const double e_ref, const unsigned int ntetra,
+                                 const unsigned int *const *tetras, double *weight) const;
 
-    void calc_weight_smearing(const unsigned int nk,
-                              const unsigned int nk_irreducible,
-                              const unsigned int *map_to_irreducible_k,
-                              const double *energy,
-                              const double e_ref,
-                              const int smearing_method,
-                              double *weight) const;
+    void calc_weight_smearing(const unsigned int nk, const unsigned int nk_irreducible,
+                              const unsigned int *map_to_irreducible_k, const double *energy, const double e_ref,
+                              const int smearing_method, double *weight) const;
 
 private:
     void set_default_variables();
@@ -179,26 +150,20 @@ private:
 
     void prepare_adaptivesmearing();
 
-    static inline double fij(double,
-                             double,
-                             double);
+    static inline double fij(double, double, double);
 
     std::vector<tetra_pair> tetra_data;
 
-    static void insertion_sort(double *,
-                               int *,
-                               int);
+    static void insertion_sort(double *, int *, int);
 };
 
-inline double delta_lorentz(const double omega,
-                            const double epsilon)
+inline double delta_lorentz(const double omega, const double epsilon)
 {
     return inverse_pi * epsilon / (omega * omega + epsilon * epsilon);
 }
 
-inline double delta_gauss(const double omega,
-                          const double epsilon)
+inline double delta_gauss(const double omega, const double epsilon)
 {
     return std::exp(-omega * omega / (epsilon * epsilon)) / (epsilon * std::sqrt(pi));
 }
-}
+} // namespace PHON_NS

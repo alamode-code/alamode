@@ -10,16 +10,16 @@
 
 #pragma once
 
-#include "pointers.h"
-#include <string>
-#include <map>
-#include <vector>
-#include <fstream>
-#include <cctype>
-#include <locale>
 #include <algorithm>
+#include <cctype>
+#include <fstream>
 #include <functional>
+#include <locale>
+#include <map>
 #include <sstream>
+#include <string>
+#include <vector>
+#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -30,8 +30,7 @@ public:
 
     ~Input();
 
-    void parce_input(int,
-                     char **);
+    void parce_input(int, char **);
 
     std::string job_title;
 
@@ -62,11 +61,9 @@ private:
 
     void parse_kpoints();
 
-    void get_var_dict(const std::vector<std::string> &,
-                      std::map<std::string, std::string> &);
+    void get_var_dict(const std::vector<std::string> &, std::map<std::string, std::string> &);
 
-    static void split_str_by_space(const std::string &,
-                                   std::vector<std::string> &);
+    static void split_str_by_space(const std::string &, std::vector<std::string> &);
 
     static bool is_endof_entry(const std::string &str);
 
@@ -74,12 +71,9 @@ private:
     T_to my_cast(T_from const &);
 
     template <typename T>
-    void assign_val(T &,
-                    const std::string &,
-                    std::map<std::string, std::string>);
+    void assign_val(T &, const std::string &, std::map<std::string, std::string>);
 
-    std::vector<std::string> my_split(const std::string &str,
-                                      char delim) const
+    std::vector<std::string> my_split(const std::string &str, char delim) const
     {
         std::istringstream iss(str);
         std::string str_tmp;
@@ -95,24 +89,14 @@ private:
 // trim from start
 static inline std::string &ltrim(std::string &s)
 {
-    s.erase(s.begin(),
-            std::find_if(s.begin(),
-                         s.end(),
-                         [](int c) {
-                             return !std::isspace(c);
-                         }));
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) { return !std::isspace(c); }));
     return s;
 }
 
 // trim from end
 static inline std::string &rtrim(std::string &s)
 {
-    s.erase(std::find_if(s.rbegin(),
-                         s.rend(),
-                         [](int c) {
-                             return !std::isspace(c);
-                         }).base(),
-            s.end());
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](int c) { return !std::isspace(c); }).base(), s.end());
     return s;
 }
 
@@ -121,4 +105,4 @@ static inline std::string &trim(std::string &s)
 {
     return ltrim(rtrim(s));
 }
-}
+} // namespace PHON_NS

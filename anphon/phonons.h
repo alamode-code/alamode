@@ -25,9 +25,7 @@ namespace PHON_NS
 class PHON
 {
 public:
-    PHON(int,
-         char **,
-         MPI_Comm);
+    PHON(int, char **, MPI_Comm);
 
     virtual ~PHON();
 
@@ -98,4 +96,4 @@ public:
 
     void setup_base() const;
 };
-}
+} // namespace PHON_NS

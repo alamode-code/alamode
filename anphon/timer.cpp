@@ -8,17 +8,16 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include "mpi_common.h"
 #include "timer.h"
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include "mpi_common.h"
 
 using namespace PHON_NS;
 
-Timer::Timer(PHON *phon) :
-    Pointers(phon)
+Timer::Timer(PHON *phon) : Pointers(phon)
 {
 #if defined(WIN32) || defined(_WIN32)
     QueryPerformanceCounter(&time_ref);
@@ -28,7 +27,8 @@ Timer::Timer(PHON *phon) :
 #endif
 }
 
-Timer::~Timer() {}
+Timer::~Timer()
+{}
 
 void Timer::reset()
 {

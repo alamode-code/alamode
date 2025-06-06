@@ -10,47 +10,40 @@
 
 #pragma once
 
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 
 namespace PHON_NS
 {
-inline void warn(const char *file,
-                 const char *message)
+inline void warn(const char *file, const char *message)
 {
     std::cout << '\n' << " WARNING in " << file << "  MESSAGE: " << message << '\n';
 }
 
 
-inline void exit(const char *file,
-                 const char *message)
+inline void exit(const char *file, const char *message)
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << '\n';
     std::exit(EXIT_FAILURE);
 }
 
 template <typename T>
-void exit(const char *file,
-          const char *message,
-          const T info)
+void exit(const char *file, const char *message, const T info)
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << info << '\n';
     std::exit(EXIT_FAILURE);
 }
 
-inline void exit(const char *file,
-                 const char *message,
-                 const char *info)
+inline void exit(const char *file, const char *message, const char *info)
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << info << '\n';
     std::exit(EXIT_FAILURE);
 }
 
-inline void exitall(const char *file,
-                    const char *message)
+inline void exitall(const char *file, const char *message)
 {
     MPI_Finalize();
     std::cout << '\n' << "ERROR in " << file << "  MESSAGE: " << message << '\n';
     std::exit(EXIT_FAILURE);
 }
-}
+} // namespace PHON_NS
