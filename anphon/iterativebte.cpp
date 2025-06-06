@@ -696,7 +696,7 @@ void Iterativebte::iterative_solver()
 {
     // f_new = f_new * mixing_factor + f_old * (1 - mixing_factor)
     std::vector<double> convergence_history; // store | f_n - f_{n-1} | L2 norm
-    convergence_history.empty();
+    convergence_history.clear();
 
     double **Q;
     double **kappa_new;

@@ -38,6 +38,7 @@ Improvement:
 #include <complex>
 #include <set>
 #include <vector>
+#include <fstream>
 #include "kpoint.h"
 #include "pointers.h"
 

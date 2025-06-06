@@ -13,7 +13,7 @@
 #include <complex>
 #include <fstream>
 #include <string>
-#include "mpi_common.h"
+#include "kpoint.h"
 #include "pointers.h"
 
 namespace PHON_NS
