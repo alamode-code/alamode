@@ -136,7 +136,6 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/isotope.h
             ${PROJECT_SOURCE_DIR}/iterativebte.h
             ${PROJECT_SOURCE_DIR}/kpoint.h
-            ${PROJECT_SOURCE_DIR}/memory.h
             ${PROJECT_SOURCE_DIR}/mode_analysis.h
             ${PROJECT_SOURCE_DIR}/mpi_common.h
             ${PROJECT_SOURCE_DIR}/parsephon.h
