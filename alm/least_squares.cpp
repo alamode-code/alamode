@@ -1,25 +1,19 @@
 // least_squares.cpp
 
 #include "least_squares.h"
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
+#include <cmath> // for std::pow, std::sqrt
+#include <iostream>
+#include <limits>
+#include <numeric>
+#include <vector>
 #include "lapack_wrapper.h"
 #include "svd.h"
-#include <iostream>
-#include <vector>
-#include <limits>
-#include <algorithm>
-#include <numeric>
-#include <cmath>       // for std::pow, std::sqrt
-#include <boost/algorithm/string.hpp>
 
 
-int get_independent_rows(const size_t N,
-                         const size_t P,
-                         const double *const *cmat,
-                         const double *dvec,
-                         const int verbosity,
-                         std::vector<double> &C_red,
-                         std::vector<double> &d_red,
-                         int &r)
+auto get_independent_rows(const size_t N, const size_t P, const double *const *cmat, const double *dvec,
+                          const int verbosity, std::vector<double> &C_red, std::vector<double> &d_red, int &r) -> int
 {
     // Convert N and P to int for LAPACK calls
     int N_i = static_cast<int>(N);
@@ -34,8 +28,7 @@ int get_independent_rows(const size_t N,
         }
     }
     if (verbosity > 1) {
-        std::cout << "  [get_independent_rows] Copied C into column-major buffer ("
-            << P_i << "×" << N_i << ").\n";
+        std::cout << "  [get_independent_rows] Copied C into column-major buffer (" << P_i << "×" << N_i << ").\n";
     }
 
     // 2) Prepare to perform QR with column pivoting on C^T (size N×P)
@@ -57,19 +50,10 @@ int get_independent_rows(const size_t N,
     int lwork_qr = -1;
     double work_qr_query = 0.0;
     int INFO_qr = 0;
-    dgeqp3_(&N_i,
-            &P_i,
-            A_qr.data(),
-            &N_i,
-            jpvt.data(),
-            tau.data(),
-            &work_qr_query,
-            &lwork_qr,
-            &INFO_qr);
+    dgeqp3_(&N_i, &P_i, A_qr.data(), &N_i, jpvt.data(), tau.data(), &work_qr_query, &lwork_qr, &INFO_qr);
     if (INFO_qr != 0) {
         if (verbosity > 0) {
-            std::cerr << "  [get_independent_rows] dgeqp3_ (workspace query) failed, INFO="
-                << INFO_qr << "\n";
+            std::cerr << "  [get_independent_rows] dgeqp3_ (workspace query) failed, INFO=" << INFO_qr << "\n";
         }
         return INFO_qr;
     }
@@ -77,19 +61,10 @@ int get_independent_rows(const size_t N,
     std::vector<double> WORK_qr(LWORK_qr);
 
     // 3) Perform QR with column pivoting to determine numerical row rank of C
-    dgeqp3_(&N_i,
-            &P_i,
-            A_qr.data(),
-            &N_i,
-            jpvt.data(),
-            tau.data(),
-            WORK_qr.data(),
-            &LWORK_qr,
-            &INFO_qr);
+    dgeqp3_(&N_i, &P_i, A_qr.data(), &N_i, jpvt.data(), tau.data(), WORK_qr.data(), &LWORK_qr, &INFO_qr);
     if (INFO_qr != 0) {
         if (verbosity > 0) {
-            std::cerr << "  [get_independent_rows] dgeqp3_ failed, INFO="
-                << INFO_qr << "\n";
+            std::cerr << "  [get_independent_rows] dgeqp3_ failed, INFO=" << INFO_qr << "\n";
         }
         return INFO_qr;
     }
@@ -108,8 +83,8 @@ int get_independent_rows(const size_t N,
         }
     }
     if (verbosity > 1) {
-        std::cout << "  [get_independent_rows] Numerical row rank r = "
-            << r << " (max possible = " << std::min(P_i, N_i) << ").\n";
+        std::cout << "  [get_independent_rows] Numerical row rank r = " << r
+                  << " (max possible = " << std::min(P_i, N_i) << ").\n";
     }
 
     // 5) Extract the indices of the first r pivoted rows of C^T (which correspond to independent rows of C)
@@ -133,19 +108,15 @@ int get_independent_rows(const size_t N,
         d_red[ii] = dvec[orig_row];
     }
     if (verbosity > 1) {
-        std::cout << "  [get_independent_rows] Constructed C_red (" << r << "×" << N_i
-            << ") and d_red (length " << r << ").\n";
+        std::cout << "  [get_independent_rows] Constructed C_red (" << r << "×" << N_i << ") and d_red (length " << r
+                  << ").\n";
     }
 
     return 0;
 }
 
-int least_squares_svd(const size_t N,
-                      const size_t M,
-                      double *amat,
-                      const double *bvec,
-                      double *param_out,
-                      const int verbosity)
+auto least_squares_svd(const size_t N, const size_t M, double *amat, const double *bvec, double *param_out,
+                       const int verbosity) -> int
 {
     // Local variables
     int nrhs = 1;
@@ -211,7 +182,7 @@ int least_squares_svd(const size_t N,
 
     if (nrank < static_cast<int>(N)) {
         std::cerr << "　　Warning [fit_without_constraints]: "
-            << "Matrix is rank-deficient. Force constants could not be determined uniquely :(\n";
+                  << "Matrix is rank-deficient. Force constants could not be determined uniquely :(\n";
     }
 
     if (nrank == static_cast<int>(N) && verbosity > 0) {
@@ -220,11 +191,8 @@ int least_squares_svd(const size_t N,
         for (int i = static_cast<int>(N); i < static_cast<int>(M); ++i) {
             f_residual += std::pow(fsum2[i], 2);
         }
-        std::cout << '\n'
-            << "  Residual sum of squares for the solution: "
-            << std::sqrt(f_residual) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << std::sqrt(f_residual / f_square) * 100.0 << '\n';
+        std::cout << '\n' << "  Residual sum of squares for the solution: " << std::sqrt(f_residual) << '\n';
+        std::cout << "  Fitting error (%) : " << std::sqrt(f_residual / f_square) * 100.0 << '\n';
     }
 
     // Copy solution (first N entries of fsum2) into param_out
@@ -237,25 +205,16 @@ int least_squares_svd(const size_t N,
 }
 
 
-int least_squares_with_constraints_gqr(const size_t N,
-                                       const size_t M,
-                                       const size_t P,
-                                       double *amat,
-                                       const double *bvec,
-                                       double *param_out,
-                                       const double *const *cmat,
-                                       const double *dvec,
-                                       const int verbosity)
+auto least_squares_with_constraints_gqr(const size_t N, const size_t M, const size_t P, double *amat,
+                                        const double *bvec, double *param_out, const double *const *cmat,
+                                        const double *dvec, const int verbosity) -> int
 {
     // Copy b into a mutable array b_copy, since dgglse_ overwrites it
     std::vector<double> b_copy(M);
     for (size_t i = 0; i < M; ++i) {
         b_copy[i] = bvec[i];
     }
-    const double f_square = std::inner_product(b_copy.begin(),
-                                               b_copy.end(),
-                                               b_copy.begin(),
-                                               0.0);
+    const double f_square = std::inner_product(b_copy.begin(), b_copy.end(), b_copy.begin(), 0.0);
 
     std::vector<double> C_red;
     std::vector<double> d_red;
@@ -266,8 +225,7 @@ int least_squares_with_constraints_gqr(const size_t N,
         return ierr;
     }
     if (verbosity > 1) {
-        std::cout << "  [least_squares_with_constraints_gqr] build_reduced_constraints returned r = "
-            << r << ".\n";
+        std::cout << "  [least_squares_with_constraints_gqr] build_reduced_constraints returned r = " << r << ".\n";
     }
 
     // Step 5: Call dgglse to solve minimize ||A x - b||_2 subject to C_red x = d_red
@@ -302,8 +260,7 @@ int least_squares_with_constraints_gqr(const size_t N,
         if (INFO_lse == 0) {
             std::cout << "　[least_squares_with_constraints_gqr] dgglse_ completed successfully.\n";
         } else {
-            std::cerr << "　[least_squares_with_constraints_gqr] dgglse_ returned INFO = "
-                << INFO_lse << "\n";
+            std::cerr << "　[least_squares_with_constraints_gqr] dgglse_ returned INFO = " << INFO_lse << "\n";
         }
     }
 
@@ -318,25 +275,20 @@ int least_squares_with_constraints_gqr(const size_t N,
     }
 
     if (verbosity > 0) {
-        std::cout << '\n' << "  Residual sum of squares for the solution: "
-            << sqrt(f_residual) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << std::sqrt(f_residual / f_square) * 100.0 << '\n';
+        std::cout << '\n' << "  Residual sum of squares for the solution: " << sqrt(f_residual) << '\n';
+        std::cout << "  Fitting error (%) : " << std::sqrt(f_residual / f_square) * 100.0 << '\n';
     }
 
     return INFO_lse;
 }
 
-int least_squares_with_constraints_svd(const size_t N,
-                                       const size_t M,
-                                       const size_t P,
-                                       double *amat,              // A: (M×N) column-major, may be overwritten
-                                       double *bvec,              // b: (M) column vector, may be overwritten
-                                       double *param_out,         // output x (length N)
-                                       const double *const *cmat, // C[i][j] pointer array (row i, col j)
-                                       const double *dvec_orig,   // d: (P) column vector
-                                       const int verbosity
-    )
+auto least_squares_with_constraints_svd(const size_t N, const size_t M, const size_t P,
+                                        double *amat,              // A: (M×N) column-major, may be overwritten
+                                        double *bvec,              // b: (M) column vector, may be overwritten
+                                        double *param_out,         // output x (length N)
+                                        const double *const *cmat, // C[i][j] pointer array (row i, col j)
+                                        const double *dvec_orig,   // d: (P) column vector
+                                        const int verbosity) -> int
 {
     // ------------------------------------------------------------
     // 1) Copy C into a contiguous column-major buffer; copy d into a vector
@@ -373,17 +325,7 @@ int least_squares_with_constraints_svd(const size_t N,
         char trans = 'N';
         double alpha = 1.0, beta = 0.0;
         int inc = 1;
-        dgemv_(&trans,
-               &n,
-               &p,
-               &alpha,
-               C_pinv.data(),
-               &n,
-               d_copy.data(),
-               &inc,
-               &beta,
-               x0.data(),
-               &inc);
+        dgemv_(&trans, &n, &p, &alpha, C_pinv.data(), &n, d_copy.data(), &inc, &beta, x0.data(), &inc);
     }
     // If rankC == 0, x0 remains all zeros
 
@@ -391,26 +333,14 @@ int least_squares_with_constraints_svd(const size_t N,
     // 4) Compute residual b' = b − A * x0
     // ------------------------------------------------------------
     std::vector<double> b_prime(m);
-    for (int i = 0; i < m; ++i) b_prime[i] = bvec[i];
-    const auto f_square = std::inner_product(b_prime.begin(),
-                                             b_prime.end(),
-                                             b_prime.begin(),
-                                             0.0);
+    for (int i = 0; i < m; ++i)
+        b_prime[i] = bvec[i];
+    const auto f_square = std::inner_product(b_prime.begin(), b_prime.end(), b_prime.begin(), 0.0);
     {
         char trans = 'N';
         double alpha = -1.0, beta = 1.0;
         int inc = 1;
-        dgemv_(&trans,
-               &m,
-               &n,
-               &alpha,
-               amat,
-               &m,
-               x0.data(),
-               &inc,
-               &beta,
-               b_prime.data(),
-               &inc);
+        dgemv_(&trans, &m, &n, &alpha, amat, &m, x0.data(), &inc, &beta, b_prime.data(), &inc);
     }
     // ------------------------------------------------------------
     // 5) Projector matrix N = I - C^+ * C (nxn)
@@ -419,19 +349,7 @@ int least_squares_with_constraints_svd(const size_t N,
     {
         char tA = 'N', tB = 'N';
         double alpha = 1.0, beta = 0.0;
-        dgemm_(&tA,
-               &tB,
-               &n,
-               &n,
-               &p,
-               &alpha,
-               C_pinv.data(),
-               &n,
-               C_copy.data(),
-               &p,
-               &beta,
-               Nproj.data(),
-               &n);
+        dgemm_(&tA, &tB, &n, &n, &p, &alpha, C_pinv.data(), &n, C_copy.data(), &p, &beta, Nproj.data(), &n);
         for (int i = 0; i < n * n; ++i) {
             Nproj[i] = -Nproj[i];
         }
@@ -446,19 +364,7 @@ int least_squares_with_constraints_svd(const size_t N,
     {
         char tA = 'N', tB = 'N';
         double alpha = 1.0, beta = 0.0;
-        dgemm_(&tA,
-               &tB,
-               &m,
-               &n,
-               &n,
-               &alpha,
-               amat,
-               &m,
-               Nproj.data(),
-               &n,
-               &beta,
-               A2.data(),
-               &m);
+        dgemm_(&tA, &tB, &m, &n, &n, &alpha, amat, &m, Nproj.data(), &n, &beta, A2.data(), &m);
     }
     // ------------------------------------------------------------
     // 7) Solve least squares system A2 * y = b' without constraints.
@@ -473,17 +379,7 @@ int least_squares_with_constraints_svd(const size_t N,
         char trans = 'N';
         double alpha = 1.0, beta = 0.0;
         int inc = 1;
-        dgemv_(&trans,
-               &n,
-               &m,
-               &alpha,
-               A2_pinv.data(),
-               &n,
-               b_prime.data(),
-               &inc,
-               &beta,
-               delta.data(),
-               &inc);
+        dgemv_(&trans, &n, &m, &alpha, A2_pinv.data(), &n, b_prime.data(), &inc, &beta, delta.data(), &inc);
     }
 
     // ------------------------------------------------------------
@@ -500,17 +396,7 @@ int least_squares_with_constraints_svd(const size_t N,
         double alpha = 1.0;
         double beta = 0.0;
         int incx = 1, incy = 1;
-        dgemv_(&trans,
-               &m,
-               &n,
-               &alpha,
-               amat,
-               &m,
-               param_out,
-               &incx,
-               &beta,
-               Ax.data(),
-               &incy);
+        dgemv_(&trans, &m, &n, &alpha, amat, &m, param_out, &incx, &beta, Ax.data(), &incy);
 
         double rss = 0.0;
         for (int i = n - p; i < m; ++i) {
@@ -518,23 +404,17 @@ int least_squares_with_constraints_svd(const size_t N,
             rss += ri * ri;
         }
 
-        std::cout << '\n' << "  Residual sum of squares for the solution: "
-            << sqrt(rss) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << std::sqrt(rss / f_square) * 100.0 << '\n';
-
+        std::cout << '\n' << "  Residual sum of squares for the solution: " << sqrt(rss) << '\n';
+        std::cout << "  Fitting error (%) : " << std::sqrt(rss / f_square) * 100.0 << '\n';
     }
 
 
     return 0;
 }
 
-int least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat,
-                                      const Eigen::VectorXd &sp_bvec,
-                                      Eigen::VectorXd &x_out,
-                                      const std::string &solver_type,
-                                      const double tolerance_iteration,
-                                      const int maxnum_iteration)
+auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat, const Eigen::VectorXd &sp_bvec,
+                                       Eigen::VectorXd &x_out, const std::string &solver_type,
+                                       const double tolerance_iteration, const int maxnum_iteration) -> int
 {
     const auto solver_type_lower = boost::algorithm::to_lower_copy(solver_type);
 

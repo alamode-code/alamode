@@ -16,8 +16,8 @@
 
 constexpr double pi = M_PI;
 constexpr double inverse_pi = 1.0 / pi; // pi^{-1}
-constexpr double tpi = 2.0 * pi; // (2*pi)
-constexpr double inv_tpi = 1.0 / tpi; // (2*pi)^{-1}
+constexpr double tpi = 2.0 * pi;        // (2*pi)
+constexpr double inv_tpi = 1.0 / tpi;   // (2*pi)^{-1}
 constexpr double amu = 1.660538782e-27;
 constexpr double electron_mass = 9.10938215e-31;
 constexpr double amu_ry = amu / electron_mass / 2.0;

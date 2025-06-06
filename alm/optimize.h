@@ -10,14 +10,14 @@
 
 #pragma once
 
-#include <vector>
-#include "files.h"
-#include "constraint.h"
-#include "symmetry.h"
-#include "fcs.h"
-#include "timer.h"
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
+#include <vector>
+#include "constraint.h"
+#include "fcs.h"
+#include "files.h"
+#include "symmetry.h"
+#include "timer.h"
 
 using SpMat = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
@@ -106,57 +106,44 @@ public:
 
     ~Optimize();
 
-    int optimize_main(const std::unique_ptr<Symmetry> &symmetry,
-                      std::unique_ptr<Constraint> &constraint,
-                      const std::unique_ptr<Fcs> &fcs,
-                      const int maxorder,
-                      const std::string &file_prefix,
-                      const std::vector<std::string> &str_order,
-                      const int verbosity,
-                      const DispForceFile &filedata_train,
-                      const DispForceFile &filedata_validation,
-                      const int output_maxorder,
-                      std::unique_ptr<Timer> &timer);
+    auto optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::unique_ptr<Constraint> &constraint,
+                       const std::unique_ptr<Fcs> &fcs, const int maxorder, const std::string &file_prefix,
+                       const std::vector<std::string> &str_order, const int verbosity,
+                       const DispForceFile &filedata_train, const DispForceFile &filedata_validation,
+                       const int output_maxorder, std::unique_ptr<Timer> &timer) -> int;
 
-    void set_u_train(const std::vector<std::vector<double>> &u_train_in);
+    auto set_u_train(const std::vector<std::vector<double>> &u_train_in) -> void;
 
-    void set_f_train(const std::vector<std::vector<double>> &f_train_in);
+    auto set_f_train(const std::vector<std::vector<double>> &f_train_in) -> void;
 
-    void set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
-                             const std::vector<std::vector<double>> &f_validation_in);
+    auto set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
+                             const std::vector<std::vector<double>> &f_validation_in) -> void;
 
-    [[nodiscard]] std::vector<std::vector<double>> get_u_train() const;
+    [[nodiscard]] auto get_u_train() const -> std::vector<std::vector<double>>;
 
-    [[nodiscard]] std::vector<std::vector<double>> get_f_train() const;
+    [[nodiscard]] auto get_f_train() const -> std::vector<std::vector<double>>;
 
-    [[nodiscard]] size_t get_number_of_data() const;
+    [[nodiscard]] auto get_number_of_data() const -> size_t;
 
-    void get_matrix_elements_unified(const int maxorder,
-                                     std::unique_ptr<SensingMatrix> &matrix_out,
+    auto get_matrix_elements_unified(const int maxorder, std::unique_ptr<SensingMatrix> &matrix_out,
                                      const std::vector<std::vector<double>> &u_in,
                                      const std::vector<std::vector<double>> &f_in,
-                                     const std::unique_ptr<Symmetry> &symmetry,
-                                     const std::unique_ptr<Fcs> &fcs,
-                                     const std::unique_ptr<Constraint> &constraint,
-                                     const bool compact,
-                                     const bool sparse,
-                                     const bool return_ata,
-                                     const int verbosity = 0) const;
+                                     const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                     const std::unique_ptr<Constraint> &constraint, const bool compact,
+                                     const bool sparse, const bool return_ata, const int verbosity = 0) const -> void;
 
-    void set_fcs_values(const int maxorder,
-                        double *fc_in,
-                        std::vector<size_t> *nequiv,
-                        const std::unique_ptr<Constraint> &constraint);
+    auto set_fcs_values(const int maxorder, double *fc_in, std::vector<size_t> *nequiv,
+                        const std::unique_ptr<Constraint> &constraint) -> void;
 
-    [[nodiscard]] size_t get_number_of_rows_sensing_matrix() const;
+    [[nodiscard]] auto get_number_of_rows_sensing_matrix() const -> size_t;
 
-    [[nodiscard]] double *get_params() const;
+    [[nodiscard]] auto get_params() const -> double *;
 
-    void set_optimizer_control(const OptimizerControl &);
+    auto set_optimizer_control(const OptimizerControl &) -> void;
 
-    [[nodiscard]] OptimizerControl get_optimizer_control() const;
+    [[nodiscard]] auto get_optimizer_control() const -> OptimizerControl;
 
-    [[nodiscard]] double get_cv_l1_alpha() const;
+    [[nodiscard]] auto get_cv_l1_alpha() const -> double;
 
 private:
     double *params;
@@ -167,282 +154,164 @@ private:
 
     OptimizerControl optcontrol;
 
-    void set_default_variables();
+    auto set_default_variables() -> void;
 
-    void deallocate_variables();
+    auto deallocate_variables() -> void;
 
-    void data_multiplier(const std::vector<std::vector<double>> &data_in,
-                         std::vector<std::vector<double>> &data_out,
-                         const std::unique_ptr<Symmetry> &symmetry) const;
+    auto data_multiplier(const std::vector<std::vector<double>> &data_in, std::vector<std::vector<double>> &data_out,
+                         const std::unique_ptr<Symmetry> &symmetry) const -> void;
 
-    static int inprim_index(const int n,
-                            const std::unique_ptr<Symmetry> &symmetry);
+    static auto inprim_index(const int n, const std::unique_ptr<Symmetry> &symmetry) -> int;
 
-    int least_squares(const int maxorder,
-                      const size_t N,
-                      const size_t N_new,
-                      const size_t M,
-                      const int verbosity,
-                      const std::unique_ptr<Symmetry> &symmetry,
-                      const std::unique_ptr<Fcs> &fcs,
-                      const std::unique_ptr<Constraint> &constraint,
-                      std::vector<double> &param_out);
+    auto least_squares(const int maxorder, const size_t N, const size_t N_new, const size_t M, const int verbosity,
+                       const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                       const std::unique_ptr<Constraint> &constraint, std::vector<double> &param_out) const -> int;
 
-    int compressive_sensing(const std::string &job_prefix,
-                            const int maxorder,
-                            const size_t N_new,
-                            const size_t M,
-                            const std::unique_ptr<Symmetry> &symmetry,
-                            const std::vector<std::string> &str_order,
-                            const std::unique_ptr<Fcs> &fcs,
-                            std::unique_ptr<Constraint> &constraint,
-                            const int verbosity,
-                            std::vector<double> &param_out);
+    auto compressive_sensing(const std::string &job_prefix, const int maxorder, const size_t N_new, const size_t M,
+                             const std::unique_ptr<Symmetry> &symmetry, const std::vector<std::string> &str_order,
+                             const std::unique_ptr<Fcs> &fcs, std::unique_ptr<Constraint> &constraint,
+                             const int verbosity, std::vector<double> &param_out) -> int;
 
-    double crossvalidation(const std::string job_prefix,
-                           const int maxorder,
-                           const std::unique_ptr<Fcs> &fcs,
-                           const std::unique_ptr<Symmetry> &symmetry,
-                           const std::unique_ptr<Constraint> &constraint,
-                           const int verbosity);
+    auto crossvalidation(const std::string job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                         const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
+                         const int verbosity) -> double;
 
-    double run_manual_cv(const std::string &job_prefix,
-                         const int maxorder,
-                         const std::unique_ptr<Fcs> &fcs,
-                         const std::unique_ptr<Symmetry> &symmetry,
-                         const std::unique_ptr<Constraint> &constraint,
-                         const int verbosity);
+    auto run_manual_cv(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                       const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
+                       const int verbosity) const -> double;
 
-    double run_auto_cv(const std::string &job_prefix,
-                       const int maxorder,
-                       const std::unique_ptr<Fcs> &fcs,
-                       const std::unique_ptr<Symmetry> &symmetry,
-                       const std::unique_ptr<Constraint> &constraint,
-                       const int verbosity);
+    auto run_auto_cv(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                     const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
+                     const int verbosity) -> double;
 
-    void write_cvresult_to_file(const std::string &file_out,
-                                const std::vector<double> &alphas,
-                                const std::vector<double> &training_error,
-                                const std::vector<double> &validation_error,
-                                const std::vector<std::vector<int>> &nonzeros) const;
+    auto write_cvresult_to_file(const std::string &file_out, const std::vector<double> &alphas,
+                                const std::vector<double> &training_error, const std::vector<double> &validation_error,
+                                const std::vector<std::vector<int>> &nonzeros) const -> void;
 
-    void write_cvscore_to_file(const std::string &file_out,
-                               const std::vector<double> &alphas,
-                               const std::vector<double> &terr_mean,
-                               const std::vector<double> &terr_std,
-                               const std::vector<double> &verr_mean,
-                               const std::vector<double> &verr_std,
-                               const int ialpha_minimum,
-                               const size_t nsets) const;
+    auto write_cvscore_to_file(const std::string &file_out, const std::vector<double> &alphas,
+                               const std::vector<double> &terr_mean, const std::vector<double> &terr_std,
+                               const std::vector<double> &verr_mean, const std::vector<double> &verr_std,
+                               const int ialpha_minimum, const size_t nsets) const -> void;
 
-    void set_errors_of_cvscore(std::vector<double> &terr_mean,
-                               std::vector<double> &terr_std,
-                               std::vector<double> &verr_mean,
-                               std::vector<double> &verr_std,
+    auto set_errors_of_cvscore(std::vector<double> &terr_mean, std::vector<double> &terr_std,
+                               std::vector<double> &verr_mean, std::vector<double> &verr_std,
                                const std::vector<std::vector<double>> &training_error_accum,
-                               const std::vector<std::vector<double>> &validation_error_accum) const;
+                               const std::vector<std::vector<double>> &validation_error_accum) const -> void;
 
-    int get_ialpha_at_minimum_validation_error(const std::vector<double> &validation_error) const;
+    static auto get_ialpha_at_minimum_validation_error(const std::vector<double> &validation_error) -> int;
 
-    void optimize_with_given_l1alpha(const int maxorder,
-                                     const size_t M,
-                                     const size_t N_new,
-                                     const std::unique_ptr<Fcs> &fcs,
-                                     const std::unique_ptr<Symmetry> &symmetry,
-                                     const std::unique_ptr<Constraint> &constraint,
-                                     const int verbosity,
-                                     std::vector<double> &param_out) const;
+    auto optimize_with_given_l1alpha(const int maxorder, const size_t M, const size_t N_new,
+                                     const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Symmetry> &symmetry,
+                                     const std::unique_ptr<Constraint> &constraint, const int verbosity,
+                                     std::vector<double> &param_out) const -> void;
 
-    void run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in,
-                                              const Eigen::VectorXd &b_in,
-                                              const Eigen::VectorXd &factor_std,
-                                              std::vector<double> &params_inout,
-                                              const int verbosity) const;
+    auto run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in, const Eigen::VectorXd &b_in,
+                                              const Eigen::VectorXd &factor_std, std::vector<double> &params_inout,
+                                              const int verbosity) const -> void;
 
-    static void get_number_of_zero_coefs(const int maxorder,
-                                         const std::unique_ptr<Constraint> &constraint,
-                                         const Eigen::VectorXd &x,
-                                         std::vector<int> &nzeros);
+    static auto get_number_of_zero_coefs(const int maxorder, const std::unique_ptr<Constraint> &constraint,
+                                         const Eigen::VectorXd &x, std::vector<int> &nzeros) -> void;
 
-    void get_standardizer(const Eigen::MatrixXd &Amat,
-                          Eigen::VectorXd &mean,
-                          Eigen::VectorXd &dev,
-                          Eigen::VectorXd &factor_std,
-                          Eigen::VectorXd &scale_beta) const;
+    auto get_standardizer(const Eigen::MatrixXd &Amat, Eigen::VectorXd &mean, Eigen::VectorXd &dev,
+                          Eigen::VectorXd &factor_std, Eigen::VectorXd &scale_beta) const -> void;
 
-    void apply_standardizer(Eigen::MatrixXd &Amat,
-                            const Eigen::VectorXd &mean,
-                            const Eigen::VectorXd &dev) const;
+    auto apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean, const Eigen::VectorXd &dev) const
+        -> void;
 
-    [[nodiscard]] double get_estimated_max_alpha(const Eigen::MatrixXd &Amat,
-                                                 const Eigen::VectorXd &bvec) const;
+    [[nodiscard]] auto get_estimated_max_alpha(const Eigen::MatrixXd &Amat, const Eigen::VectorXd &bvec) const
+        -> double;
 
-    static void apply_scaler_displacement(std::vector<std::vector<double>> &u_inout,
-                                          const double normalization_factor,
-                                          const bool scale_back = false);
+    static auto apply_scaler_displacement(std::vector<std::vector<double>> &u_inout, const double normalization_factor,
+                                          const bool scale_back = false) -> void;
 
-    static void apply_scaler_constraint(const int maxorder,
-                                        const double normalization_factor,
-                                        const std::unique_ptr<Constraint> &constraint,
-                                        const bool scale_back = false);
+    static auto apply_scaler_constraint(const int maxorder, const double normalization_factor,
+                                        const std::unique_ptr<Constraint> &constraint, const bool scale_back = false)
+        -> void;
 
-    static void apply_scaler_force_constants(const int maxorder,
-                                             const double normalization_factor,
+    static auto apply_scaler_force_constants(const int maxorder, const double normalization_factor,
                                              const std::unique_ptr<Constraint> &constraint,
-                                             std::vector<double> &param_inout);
+                                             std::vector<double> &param_inout) -> void;
 
-    void apply_scalers(const int maxorder,
-                       const std::unique_ptr<Constraint> &constraint);
+    auto apply_scalers(const int maxorder, const std::unique_ptr<Constraint> &constraint) -> void;
 
-    void finalize_scalers(const int maxorder,
-                          const std::unique_ptr<Constraint> &constraint);
+    auto finalize_scalers(const int maxorder, const std::unique_ptr<Constraint> &constraint) -> void;
 
-    static void apply_basis_converter(std::vector<std::vector<double>> &u_multi,
-                                      Eigen::Matrix3d cmat);
+    static auto apply_basis_converter(std::vector<std::vector<double>> &u_multi, Eigen::Matrix3d cmat) -> void;
 
-    static void apply_basis_converter_amat(const int natmin3,
-                                           const int ncols,
-                                           double **amat_orig_tmp,
-                                           Eigen::Matrix3d cmat);
+    static auto apply_basis_converter_amat(const int natmin3, const int ncols, double **amat_orig_tmp,
+                                           Eigen::Matrix3d cmat) -> void;
 
-    int fit_algebraic_constraints(const size_t N,
-                                  const size_t M,
-                                  double *amat,
-                                  const double *bvec,
-                                  std::vector<double> &param_out,
-                                  const double fnorm,
-                                  const int maxorder,
-                                  const std::unique_ptr<Fcs> &fcs,
-                                  const std::unique_ptr<Constraint> &constraint,
-                                  const int verbosity) const;
+    auto fit_algebraic_constraints(const size_t N, const size_t M, double *amat, const double *bvec,
+                                   std::vector<double> &param_out, const double fnorm, const int maxorder,
+                                   const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                                   const int verbosity) const -> int;
 
-    int solve_normal_equation(const size_t N,
-                              double *amat,
-                              double *bvec,
-                              std::vector<double> &param_out,
-                              const double fnorm,
-                              const int maxorder,
-                              const std::unique_ptr<Fcs> &fcs,
-                              const std::unique_ptr<Constraint> &constraint,
-                              const int verbosity,
-                              const bool algebraic_constraint) const;
+    auto solve_normal_equation(const size_t N, double *amat, double *bvec, std::vector<double> &param_out,
+                               const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                               const std::unique_ptr<Constraint> &constraint, const int verbosity,
+                               const bool algebraic_constraint) const -> int;
 
 
-    void get_matrix_elements2(const int maxorder,
-                              const size_t ncycle,
-                              const size_t nrows,
-                              const size_t ncols,
-                              const size_t ncols_compact,
-                              std::unique_ptr<SensingMatrix> &matrix_out,
+    auto get_matrix_elements2(const int maxorder, const size_t ncycle, const size_t nrows, const size_t ncols,
+                              const size_t ncols_compact, std::unique_ptr<SensingMatrix> &matrix_out,
                               const std::vector<std::vector<double>> &u_multi,
                               const std::vector<std::vector<double>> &f_multi,
                               const std::vector<std::vector<double>> &gamma_precomputed,
-                              const std::unique_ptr<Symmetry> &symmetry,
-                              const std::unique_ptr<Fcs> &fcs,
-                              const std::unique_ptr<Constraint> &constraint,
-                              const bool sparse) const;
+                              const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                              const std::unique_ptr<Constraint> &constraint, const bool sparse) const -> void;
 
-    void get_matrix_elements_normal_equation2(const int maxorder,
-                                              const size_t ncycle,
-                                              const size_t nrows,
-                                              const size_t ncols,
-                                              const size_t ncols_compact,
-                                              std::unique_ptr<SensingMatrix> &matrix_out,
-                                              const std::vector<std::vector<double>> &u_multi,
-                                              const std::vector<std::vector<double>> &f_multi,
-                                              const std::vector<std::vector<double>> &gamma_precomputed,
-                                              const std::unique_ptr<Symmetry> &symmetry,
-                                              const std::unique_ptr<Fcs> &fcs,
-                                              const std::unique_ptr<Constraint> &constraint,
-                                              const bool sparse) const;
+    auto get_matrix_elements_normal_equation2(
+        const int maxorder, const size_t ncycle, const size_t nrows, const size_t ncols, const size_t ncols_compact,
+        std::unique_ptr<SensingMatrix> &matrix_out, const std::vector<std::vector<double>> &u_multi,
+        const std::vector<std::vector<double>> &f_multi, const std::vector<std::vector<double>> &gamma_precomputed,
+        const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+        const std::unique_ptr<Constraint> &constraint, const bool sparse) const -> void;
 
-    static void fill_bvec(const size_t natmin,
-                          const size_t irow,
-                          const std::vector<std::vector<int>> &index_mapping,
-                          const std::vector<double> &f_sub,
-                          std::vector<double> &bvec);
+    static auto fill_bvec(const size_t natmin, const size_t irow, const std::vector<std::vector<int>> &index_mapping,
+                          const std::vector<double> &f_sub, std::vector<double> &bvec) -> void;
 
-    static void fill_amat(const int maxorder,
-                          const size_t natmin,
-                          const size_t ncols,
-                          const std::vector<double> &u_sub,
+    static auto fill_amat(const int maxorder, const size_t natmin, const size_t ncols, const std::vector<double> &u_sub,
                           const std::vector<std::vector<double>> &gamma_precomputed,
-                          const std::unique_ptr<Symmetry> &symmetry,
-                          const std::unique_ptr<Fcs> &fcs,
-                          double **&amat_orig);
+                          const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                          double **&amat_orig) -> void;
 
-    static void project_constraints(const int maxorder,
-                                    const size_t natmin,
-                                    const size_t irow,
-                                    const std::unique_ptr<Fcs> &fcs,
-                                    const std::unique_ptr<Constraint> &constraint,
-                                    double **amat_orig,
-                                    double **&amat_mod,
-                                    std::vector<double> &bvec_mod);
+    static auto project_constraints(const int maxorder, const size_t natmin, const size_t irow,
+                                    const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                                    double **amat_orig, double **&amat_mod, std::vector<double> &bvec_mod) -> void;
 
-    int run_eigen_sparse_solver(const SpMat &sp_mat,
-                                const Eigen::VectorXd &sp_bvec,
-                                std::vector<double> &param_out,
-                                const double fnorm,
-                                const int maxorder,
-                                const std::unique_ptr<Fcs> &fcs,
-                                const std::unique_ptr<Constraint> &constraint,
-                                const std::string solver_type,
-                                const int verbosity) const;
+    auto run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec, std::vector<double> &param_out,
+                                 const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                                 const std::unique_ptr<Constraint> &constraint, const std::string solver_type,
+                                 const int verbosity) const -> int;
 
-    void recover_original_forceconstants(const int maxorder,
-                                         const std::vector<double> &param_in,
-                                         std::vector<double> &param_out,
-                                         const std::vector<size_t> *nequiv,
-                                         const std::unique_ptr<Constraint> &constraint) const;
+    auto recover_original_forceconstants(const int maxorder, const std::vector<double> &param_in,
+                                         std::vector<double> &param_out, const std::vector<size_t> *nequiv,
+                                         const std::unique_ptr<Constraint> &constraint) const -> void;
 
-    [[nodiscard]] int factorial(const int) const;
+    [[nodiscard]] auto factorial(const int) const -> int;
 
-    double gamma(const int,
-                 const int *) const;
+    auto gamma(const int, const int *) const -> double;
 
-    void coordinate_descent(const int M,
-                            const int N,
-                            const double alpha,
-                            const int warm_start,
-                            Eigen::VectorXd &x,
-                            const Eigen::MatrixXd &A,
-                            const Eigen::VectorXd &b,
-                            const Eigen::VectorXd &grad0,
-                            bool *has_prod,
-                            Eigen::MatrixXd &Prod,
-                            Eigen::VectorXd &grad,
-                            const double fnorm,
-                            const Eigen::VectorXd &scale_beta,
-                            const int verbosity) const;
+    auto coordinate_descent(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
+                            const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const Eigen::VectorXd &grad0,
+                            bool *has_prod, Eigen::MatrixXd &Prod, Eigen::VectorXd &grad, const double fnorm,
+                            const Eigen::VectorXd &scale_beta, const int verbosity) const -> void;
 
-    void solution_path(const int maxorder,
-                       Eigen::MatrixXd &A,
-                       Eigen::VectorXd &b,
-                       Eigen::MatrixXd &A_validation,
-                       Eigen::VectorXd &b_validation,
-                       const double fnorm,
-                       const double fnorm_validation,
-                       const std::string &file_coef,
-                       const int verbosity,
-                       const std::unique_ptr<Constraint> &constraint,
-                       const std::vector<double> &alphas,
-                       std::vector<double> &training_error,
-                       std::vector<double> &validation_error,
-                       std::vector<std::vector<int>> &nonzeros) const;
+    auto solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::VectorXd &b, Eigen::MatrixXd &A_validation,
+                       Eigen::VectorXd &b_validation, const double fnorm, const double fnorm_validation,
+                       const std::string &file_coef, const int verbosity, const std::unique_ptr<Constraint> &constraint,
+                       const std::vector<double> &alphas, std::vector<double> &training_error,
+                       std::vector<double> &validation_error, std::vector<std::vector<int>> &nonzeros) const -> void;
 
-    static void compute_alphas(const double l1_alpha_max,
-                               const double l1_alpha_min,
-                               const int num_l1_alpha,
-                               std::vector<double> &alphas);
+    static auto compute_alphas(const double l1_alpha_max, const double l1_alpha_min, const int num_l1_alpha,
+                               std::vector<double> &alphas) -> void;
 };
 
-inline double shrink(const double x,
-                     const double a)
+inline auto shrink(const double x, const double a) -> double
 {
     const auto xabs = std::abs(x);
     const auto sign = static_cast<double>((0.0 < x) - (x < 0.0));
     return sign * std::max<double>(xabs - a, 0.0);
 }
 
-}
+} // namespace ALM_NS

@@ -9,12 +9,12 @@
 */
 
 #include "alm_cui.h"
+#include <iomanip>
+#include <iostream>
+#include <memory>
 #include "alm.h"
 #include "input_parser.h"
 #include "version.h"
-#include <iostream>
-#include <iomanip>
-#include <memory>
 
 #ifdef _OPENMP
 
@@ -24,19 +24,20 @@
 
 using namespace ALM_NS;
 
-ALMCUI::ALMCUI() {}
+ALMCUI::ALMCUI()
+{}
 
-ALMCUI::~ALMCUI() {}
+ALMCUI::~ALMCUI()
+{}
 
-void ALMCUI::run(const int narg,
-                 char **arg) const
+auto ALMCUI::run(const int narg, char **arg) const -> void
 {
     auto alm = new ALM();
 
     // alm->mode is set herein.
     auto input_parser = std::make_unique<InputParser>();
     input_parser->run(alm, narg, arg);
-    auto run_mode = input_parser->get_run_mode();
+    const auto run_mode = input_parser->get_run_mode();
 
     if (alm->get_verbosity() > 0) {
         std::cout << " +-----------------------------------------------------------------+\n";
@@ -46,8 +47,7 @@ void ALMCUI::run(const int narg,
         std::cout << "                         +\n";
         std::cout << " +-----------------------------------------------------------------+\n\n";
 #ifdef _OPENMP
-        std::cout << " Number of OpenMP threads = "
-            << omp_get_max_threads() << "\n\n";
+        std::cout << " Number of OpenMP threads = " << omp_get_max_threads() << "\n\n";
 #endif
 
         std::cout << " Job started at " << alm->timer->DateAndTime() << '\n';
@@ -70,8 +70,8 @@ void ALMCUI::run(const int narg,
     if (run_mode == "optimize") {
         alm->run_optimize();
         if (alm->get_optimizer_control().linear_model == 1 ||
-            (alm->get_optimizer_control().linear_model >= 2
-             && alm->get_optimizer_control().cross_validation == 0)) {
+            (alm->get_optimizer_control().linear_model >= 2 && alm->get_optimizer_control().cross_validation == 0))
+        {
             alm->writer->writeall(alm->system,
                                   alm->symmetry,
                                   alm->cluster,
@@ -91,8 +91,7 @@ void ALMCUI::run(const int narg,
     }
 
     if (alm->get_verbosity() > 0) {
-        std::cout << '\n' << " Job finished at "
-            << alm->timer->DateAndTime() << '\n';
+        std::cout << '\n' << " Job finished at " << alm->timer->DateAndTime() << '\n';
     }
 
     delete alm;

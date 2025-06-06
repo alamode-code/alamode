@@ -22,32 +22,32 @@ void Files::init()
     //    file_hes = job_title + ".hessian";
 }
 
-void Files::set_prefix(const std::string prefix_in)
+auto Files::set_prefix(const std::string prefix_in) -> void
 {
     job_title = prefix_in;
 }
 
-std::string Files::get_prefix() const
+auto Files::get_prefix() const -> std::string
 {
     return job_title;
 }
 
-void Files::set_datfile_train(const DispForceFile &dat_in)
+auto Files::set_datfile_train(const DispForceFile &dat_in) -> void
 {
     datfile_train = dat_in;
 }
 
-void Files::set_datfile_validation(const DispForceFile &dat_in)
+auto Files::set_datfile_validation(const DispForceFile &dat_in) -> void
 {
     datfile_validation = dat_in;
 }
 
-DispForceFile Files::get_datfile_train() const
+auto Files::get_datfile_train() const -> DispForceFile
 {
     return datfile_train;
 }
 
-DispForceFile Files::get_datfile_validation() const
+auto Files::get_datfile_validation() const -> DispForceFile
 {
     return datfile_validation;
 }

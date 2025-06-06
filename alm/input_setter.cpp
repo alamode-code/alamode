@@ -8,16 +8,16 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include <string>
 #include "input_setter.h"
-#include "memory.h"
-#include "files.h"
-#include "symmetry.h"
-#include "optimize.h"
-#include "constraint.h"
-#include "patterndisp.h"
+#include <string>
 #include "alm.h"
+#include "constraint.h"
 #include "error.h"
+#include "files.h"
+#include "memory.h"
+#include "optimize.h"
+#include "patterndisp.h"
+#include "symmetry.h"
 
 using namespace ALM_NS;
 
@@ -50,13 +50,12 @@ InputSetter::~InputSetter()
     }
 }
 
-void InputSetter::set_cell_parameter(const Eigen::Matrix3d &lavec_in)
+auto InputSetter::set_cell_parameter(const Eigen::Matrix3d &lavec_in) -> void
 {
     lavec_base_mat = lavec_in;
 }
 
-void InputSetter::set_interaction_vars(const int maxorder_in,
-                                       const int *nbody_include_in)
+auto InputSetter::set_interaction_vars(const int maxorder_in, const int *nbody_include_in) -> void
 {
     maxorder = maxorder_in;
     if (nbody_include) {
@@ -68,13 +67,11 @@ void InputSetter::set_interaction_vars(const int maxorder_in,
     }
 }
 
-void InputSetter::set_cutoff_radii(const int maxorder_in,
-                                   const size_t nkd_in,
-                                   const std::vector<double> &cutoff_radii_in)
+auto InputSetter::set_cutoff_radii(const int maxorder_in, const size_t nkd_in,
+                                   const std::vector<double> &cutoff_radii_in) -> void
 {
     if (cutoff_radii_in.size() != (nkd_in * nkd_in * maxorder_in)) {
-        exit("set_cutoff_radii",
-             "Incorrect size of the input array cutoff_radii_in");
+        exit("set_cutoff_radii", "Incorrect size of the input array cutoff_radii_in");
     }
     if (cutoff_radii) {
         deallocate(cutoff_radii);
@@ -91,26 +88,14 @@ void InputSetter::set_cutoff_radii(const int maxorder_in,
     }
 }
 
-void InputSetter::set_general_vars(ALM *alm,
-                                   const std::string &prefix,
-                                   const std::string &mode,
-                                   const int verbosity,
-                                   const std::string &str_disp_basis,
-                                   const int printsymmetry,
-                                   const int is_periodic_in[3],
-                                   const bool trim_dispsign_for_evenfunc,
-                                   const int print_hessian,
-                                   const int print_fcs_alamode,
-                                   const int print_fc3_shengbte,
-                                   const int print_fc4_shengbte,
-                                   const int print_fc2_qefc,
-                                   const double tolerance,
-                                   const double tolerance_constraint,
-                                   const std::string &basis_force_constant,
-                                   const int nmaxsave,
-                                   const double fc_zero_threshold,
-                                   const int compression_level,
-                                   const std::string &format_pattern)
+auto InputSetter::set_general_vars(ALM *alm, const std::string &prefix, const std::string &mode, const int verbosity,
+                                   const std::string &str_disp_basis, const int printsymmetry,
+                                   const int is_periodic_in[3], const bool trim_dispsign_for_evenfunc,
+                                   const int print_hessian, const int print_fcs_alamode, const int print_fc3_shengbte,
+                                   const int print_fc4_shengbte, const int print_fc2_qefc, const double tolerance,
+                                   const double tolerance_constraint, const std::string &basis_force_constant,
+                                   const int nmaxsave, const double fc_zero_threshold, const int compression_level,
+                                   const std::string &format_pattern) -> void
 {
     size_t i;
 
@@ -141,21 +126,17 @@ void InputSetter::set_general_vars(ALM *alm,
     }
 }
 
-void InputSetter::define(ALM *alm) const
+auto InputSetter::define(ALM *alm) const -> void
 {
-    alm->define(maxorder,
-                nkd,
-                nbody_include,
-                cutoff_radii);
+    alm->define(maxorder, nkd, nbody_include, cutoff_radii);
 }
 
 
-void InputSetter::set_optimize_vars(ALM *alm,
-                                    const std::vector<std::vector<double>> &u_train_in,
+auto InputSetter::set_optimize_vars(ALM *alm, const std::vector<std::vector<double>> &u_train_in,
                                     const std::vector<std::vector<double>> &f_train_in,
                                     const std::vector<std::vector<double>> &u_validation_in,
                                     const std::vector<std::vector<double>> &f_validation_in,
-                                    const OptimizerControl &optcontrol_in) const
+                                    const OptimizerControl &optcontrol_in) const -> void
 {
     alm->set_u_train(u_train_in);
     alm->set_f_train(f_train_in);
@@ -163,21 +144,16 @@ void InputSetter::set_optimize_vars(ALM *alm,
     alm->set_optimizer_control(optcontrol_in);
 }
 
-void InputSetter::set_file_vars(ALM *alm,
-                                const DispForceFile &datfile_train_in,
-                                const DispForceFile &datfile_validation_in) const
+auto InputSetter::set_file_vars(ALM *alm, const DispForceFile &datfile_train_in,
+                                const DispForceFile &datfile_validation_in) const -> void
 {
     alm->set_datfile_train(datfile_train_in);
     alm->set_datfile_validation(datfile_validation_in);
 }
 
-void InputSetter::set_constraint_vars(ALM *alm,
-                                      const int constraint_flag,
-                                      const std::string &rotation_axis,
-                                      const std::string &fc2_file,
-                                      const std::string &fc3_file,
-                                      const bool fix_harmonic,
-                                      const bool fix_cubic) const
+auto InputSetter::set_constraint_vars(ALM *alm, const int constraint_flag, const std::string &rotation_axis,
+                                      const std::string &fc2_file, const std::string &fc3_file, const bool fix_harmonic,
+                                      const bool fix_cubic) const -> void
 {
     alm->set_constraint_mode(constraint_flag);
     alm->set_rotation_axis(rotation_axis);
@@ -190,24 +166,22 @@ void InputSetter::set_constraint_vars(ALM *alm,
 }
 
 
-void InputSetter::set_atomic_positions(const Eigen::MatrixXd &positions_in)
+auto InputSetter::set_atomic_positions(const Eigen::MatrixXd &positions_in) -> void
 {
     nat_base = positions_in.col(0).size();
     xcoord_base_mat = positions_in;
 }
 
-void InputSetter::set_element_types(const std::vector<int> &kd_in,
-                                    const std::vector<std::string> &kdnames_in)
+auto InputSetter::set_element_types(const std::vector<int> &kd_in, const std::vector<std::string> &kdnames_in) -> void
 {
     kd_base_vec = kd_in;
     kdnames_vec = kdnames_in;
     nkd = kdnames_in.size();
 }
 
-void InputSetter::set_transformation_matrices(const Eigen::Matrix3d &transmat_super_in,
-                                              const Eigen::Matrix3d &transmat_prim_in,
-                                              const int autoset_primcell_in,
-                                              const bool transpose)
+auto InputSetter::set_transformation_matrices(const Eigen::Matrix3d &transmat_super_in,
+                                              const Eigen::Matrix3d &transmat_prim_in, const int autoset_primcell_in,
+                                              const bool transpose) -> void
 {
     // if the input transformation matrices are defined by (a_s, b_s, c_s)^T = M (a_p, b_p, c_p)^T,
     // which is more understandable for human, we need to transpose the matrices to make it consistent
@@ -227,10 +201,8 @@ void InputSetter::set_transformation_matrices(const Eigen::Matrix3d &transmat_su
     autoset_primcell = autoset_primcell_in;
 }
 
-void InputSetter::set_magnetic_vars(const int lspin_in,
-                                    const Eigen::MatrixXd &magmom_in,
-                                    const int noncollinear_in,
-                                    const int time_reversal_symm_in)
+auto InputSetter::set_magnetic_vars(const int lspin_in, const Eigen::MatrixXd &magmom_in, const int noncollinear_in,
+                                    const int time_reversal_symm_in) -> void
 {
     lspin = lspin_in;
     magmom_base_mat = magmom_in;
@@ -239,10 +211,10 @@ void InputSetter::set_magnetic_vars(const int lspin_in,
 }
 
 
-void InputSetter::set_geometric_structure(ALM *alm)
+auto InputSetter::set_geometric_structure(ALM *alm) -> void
 {
-    double (*xcoord_base)[3]; // fractional coordinate
-    double (*magmom_base)[3];
+    double(*xcoord_base)[3]; // fractional coordinate
+    double(*magmom_base)[3];
     int *kd_base;
     double lavec_base[3][3];
 
@@ -279,16 +251,13 @@ void InputSetter::set_geometric_structure(ALM *alm)
             transmat_prim_tmp[i][j] = transmat_prim(i, j);
         }
     }
-    alm->set_transformation_matrices(transmat_super_tmp,
-                                     transmat_prim_tmp,
-                                     autoset_primcell);
+    alm->set_transformation_matrices(transmat_super_tmp, transmat_prim_tmp, autoset_primcell);
 
     alm->set_magnetic_params(nat_base, magmom_base, lspin, noncollinear, trevsym, str_magmom);
     deallocate(magmom_base);
 }
 
-void InputSetter::set_input_var_dict(ALM *alm,
-                                     const std::map<std::string, std::string> &dict_input_vars) const
+auto InputSetter::set_input_var_dict(ALM *alm, const std::map<std::string, std::string> &dict_input_vars) const -> void
 {
     alm->set_input_vars(dict_input_vars);
 }

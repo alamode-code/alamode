@@ -16,35 +16,26 @@
 
 namespace ALM_NS
 {
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1)
+inline auto memsize_in_MB(const size_t size_of_one, const size_t n1) -> size_t
 {
     const auto n = n1 * size_of_one;
     return n / 1000000;
 }
 
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1,
-                            const size_t n2)
+inline auto memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2) -> size_t
 {
     const auto n = n1 * n2 * size_of_one;
     return n / 1000000;
 }
 
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1,
-                            const size_t n2,
-                            const size_t n3)
+inline auto memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2, const size_t n3) -> size_t
 {
     const auto n = n1 * n2 * n3 * size_of_one;
     return n / 1000000;
 }
 
-inline size_t memsize_in_MB(const size_t size_of_one,
-                            const size_t n1,
-                            const size_t n2,
-                            const size_t n3,
-                            const size_t n4)
+inline auto memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2, const size_t n3, const size_t n4)
+    -> size_t
 {
     const auto n = n1 * n2 * n3 * n4 * size_of_one;
     return n / 1000000;
@@ -55,8 +46,7 @@ inline size_t memsize_in_MB(const size_t size_of_one,
 /* allocator */
 
 template <typename T>
-T *allocate(T *&arr,
-            const size_t n1)
+auto allocate(T *&arr, const size_t n1) -> T *
 {
     try {
         arr = new T[n1];
@@ -70,9 +60,7 @@ T *allocate(T *&arr,
 }
 
 template <typename T>
-T **allocate(T **&arr,
-             const size_t n1,
-             const size_t n2)
+auto allocate(T **&arr, const size_t n1, const size_t n2) -> T **
 {
     try {
         arr = new T *[n1];
@@ -90,10 +78,7 @@ T **allocate(T **&arr,
 }
 
 template <typename T>
-T ***allocate(T ***&arr,
-              const size_t n1,
-              const size_t n2,
-              const size_t n3)
+auto allocate(T ***&arr, const size_t n1, const size_t n2, const size_t n3) -> T ***
 {
     try {
         arr = new T **[n1];
@@ -108,19 +93,14 @@ T ***allocate(T ***&arr,
     } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 3-dimensional array" << '\n';
         std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << "x" << n3 << '\n';
-        std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3) << std::
-            endl;
+        std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3) << std::endl;
         std::exit(EXIT_FAILURE);
     }
     return arr;
 }
 
 template <typename T>
-T ****allocate(T ****&arr,
-               const size_t n1,
-               const size_t n2,
-               const size_t n3,
-               const size_t n4)
+auto allocate(T ****&arr, const size_t n1, const size_t n2, const size_t n3, const size_t n4) -> T ****
 {
     try {
         arr = new T ***[n1];
@@ -139,11 +119,9 @@ T ****allocate(T ****&arr,
         }
     } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 4-dimensional array" << '\n';
-        std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << "x" << n3 << "x" << n4 << std::
-            endl;
-        std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3, n4) << std
-            ::
-            endl;
+        std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << "x" << n3 << "x" << n4 << std::endl;
+        std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3, n4)
+                  << std ::endl;
         std::exit(EXIT_FAILURE);
     }
     return arr;
@@ -154,14 +132,14 @@ T ****allocate(T ****&arr,
 
 
 template <typename T>
-void deallocate(T *&arr)
+auto deallocate(T *&arr) -> void
 {
     delete[] arr;
     arr = nullptr;
 }
 
 template <typename T>
-void deallocate(T **&arr)
+auto deallocate(T **&arr) -> void
 {
     delete[] arr[0];
     delete[] arr;
@@ -169,7 +147,7 @@ void deallocate(T **&arr)
 }
 
 template <typename T>
-void deallocate(T ***&arr)
+auto deallocate(T ***&arr) -> void
 {
     delete[] arr[0][0];
     delete[] arr[0];
@@ -178,7 +156,7 @@ void deallocate(T ***&arr)
 }
 
 template <typename T>
-void deallocate(T ****&arr)
+auto deallocate(T ****&arr) -> void
 {
     delete[] arr[0][0][0];
     delete[] arr[0][0];
@@ -186,4 +164,4 @@ void deallocate(T ****&arr)
     delete[] arr;
     arr = nullptr;
 }
-}
+} // namespace ALM_NS

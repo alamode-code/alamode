@@ -9,29 +9,29 @@
 */
 
 #include "optimize.h"
-#include "files.h"
-#include "constraint.h"
-#include "error.h"
-#include "fcs.h"
-#include "input_parser.h"
-#include "memory.h"
-#include "symmetry.h"
-#include "timer.h"
-#include "lapack_wrapper.h"
-#include "least_squares.h"
-#include <iostream>
-#include <iomanip>
+#include <boost/algorithm/string.hpp>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
-#include <boost/algorithm/string.hpp>
+#include "constraint.h"
+#include "error.h"
+#include "fcs.h"
+#include "files.h"
+#include "input_parser.h"
+#include "lapack_wrapper.h"
+#include "least_squares.h"
+#include "memory.h"
+#include "symmetry.h"
+#include "timer.h"
 
+#include <Eigen/Dense>
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/SparseCholesky>
 #include <Eigen/SparseCore>
 #include <Eigen/SparseQR>
-#include <Eigen/SparseCholesky>
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/Dense>
 
 #include <omp.h>
 
@@ -60,22 +60,16 @@ void Optimize::deallocate_variables()
     }
 }
 
-int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
-                            std::unique_ptr<Constraint> &constraint,
-                            const std::unique_ptr<Fcs> &fcs,
-                            const int maxorder,
-                            const std::string &file_prefix,
-                            const std::vector<std::string> &str_order,
-                            const int verbosity,
-                            const DispForceFile &filedata_train,
-                            const DispForceFile &filedata_validation,
-                            const int output_maxorder,
-                            std::unique_ptr<Timer> &timer)
+auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::unique_ptr<Constraint> &constraint,
+                             const std::unique_ptr<Fcs> &fcs, const int maxorder, const std::string &file_prefix,
+                             const std::vector<std::string> &str_order, const int verbosity,
+                             const DispForceFile &filedata_train, const DispForceFile &filedata_validation,
+                             const int output_maxorder, std::unique_ptr<Timer> &timer) -> int
 {
     timer->start_clock("optimize");
 
-    const auto ndata_used = filedata_train.nend - filedata_train.nstart + 1
-                            - filedata_train.skip_e + filedata_train.skip_s;
+    const auto ndata_used =
+        filedata_train.nend - filedata_train.nstart + 1 - filedata_train.skip_e + filedata_train.skip_s;
     const auto ndata_used_validation = filedata_validation.nend - filedata_validation.nstart + 1;
     auto info_fitting = 0;
     const auto M = get_number_of_rows_sensing_matrix();
@@ -101,21 +95,18 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
             std::cout << "  Training data file (DFSET) : " << filedata_train.filename << "\n\n";
             std::cout << "  NSTART = " << filedata_train.nstart << "; NEND = " << filedata_train.nend << '\n';
             if (filedata_train.skip_s < filedata_train.skip_e) {
-                std::cout << ": SKIP = " << filedata_train.skip_s << "-" <<
-                    filedata_train.skip_e - 1 << '\n';
+                std::cout << ": SKIP = " << filedata_train.skip_s << "-" << filedata_train.skip_e - 1 << '\n';
             }
-            std::cout << "  " << ndata_used
-                << " entries will be used for training.\n\n";
+            std::cout << "  " << ndata_used << " entries will be used for training.\n\n";
         }
 
         if (optcontrol.cross_validation == -1) {
             std::cout << "  CV = -1 : Manual cross-validation mode is selected\n";
             if (!filedata_validation.filename.empty()) {
                 std::cout << "  Validation data file (DFSET_CV) : " << filedata_validation.filename << "\n\n";
-                std::cout << "  NSTART_CV = " << filedata_validation.nstart << "; NEND_CV = "
-                    << filedata_validation.nend << '\n';
-                std::cout << "  " << ndata_used_validation
-                    << " entries will be used for validation.\n\n";
+                std::cout << "  NSTART_CV = " << filedata_validation.nstart
+                          << "; NEND_CV = " << filedata_validation.nend << '\n';
+                std::cout << "  " << ndata_used_validation << " entries will be used for validation.\n\n";
             }
         }
         std::cout << "  Total Number of Parameters : " << nparams << '\n';
@@ -131,23 +122,15 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
     if (optcontrol.linear_model == 1) {
         // Use ordinary least-squares
 
-        info_fitting = least_squares(maxorder,
-                                     nparams,
-                                     nparams_irred,
-                                     M,
-                                     verbosity,
-                                     symmetry,
-                                     fcs,
-                                     constraint,
-                                     fcs_tmp);
+        info_fitting =
+            least_squares(maxorder, nparams, nparams_irred, M, verbosity, symmetry, fcs, constraint, fcs_tmp);
 
     } else if (optcontrol.linear_model == 2 or optcontrol.linear_model == 3) {
 
         // Use elastic net or adaptive lasso
 
         if (!constraint->get_constraint_algebraic()) {
-            exit("optimize_main",
-                 "Sorry, ICONST = 10 or ICONST = 11 must be used when using elastic net.");
+            exit("optimize_main", "Sorry, ICONST = 10 or ICONST = 11 must be used when using elastic net.");
         }
 
         if (optcontrol.linear_model == 3) {
@@ -195,12 +178,12 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
             deallocate(params);
         }
         allocate(params, nparams);
-        for (auto i = 0; i < nparams; ++i) params[i] = fcs_tmp[i];
+        for (auto i = 0; i < nparams; ++i)
+            params[i] = fcs_tmp[i];
 
         // Set calculated force constants in FCS class
         auto maxorder_min = std::min(maxorder, output_maxorder);
-        fcs->set_forceconstant_cartesian(maxorder_min,
-                                         params);
+        fcs->set_forceconstant_cartesian(maxorder_min, params);
     }
 
     fcs_tmp.clear();
@@ -217,15 +200,10 @@ int Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry,
     return info_fitting;
 }
 
-int Optimize::least_squares(const int maxorder,
-                            const size_t N,
-                            const size_t N_new,
-                            const size_t M,
-                            const int verbosity,
-                            const std::unique_ptr<Symmetry> &symmetry,
-                            const std::unique_ptr<Fcs> &fcs,
-                            const std::unique_ptr<Constraint> &constraint,
-                            std::vector<double> &param_out)
+auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_new, const size_t M,
+                             const int verbosity, const std::unique_ptr<Symmetry> &symmetry,
+                             const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                             std::vector<double> &param_out) const -> int
 {
     auto info_fitting = 0;
 
@@ -266,8 +244,7 @@ int Optimize::least_squares(const int maxorder,
 
     if (return_ata) {
         if (sparse) {
-            Eigen::VectorXd sp_bvec = Eigen::Map<Eigen::VectorXd>(matrix_out->bvec.data(),
-                                                                  matrix_out->bvec.size());
+            Eigen::VectorXd sp_bvec = Eigen::Map<Eigen::VectorXd>(matrix_out->bvec.data(), matrix_out->bvec.size());
             if (verbosity > 0) {
                 std::cout << "  Now, start fitting ...\n";
             }
@@ -283,11 +260,7 @@ int Optimize::least_squares(const int maxorder,
             }
             if (compact) {
                 // Recover full reducible force constants
-                recover_original_forceconstants(maxorder,
-                                                param_irred,
-                                                param_out,
-                                                fcs->get_nequiv(),
-                                                constraint);
+                recover_original_forceconstants(maxorder, param_irred, param_out, fcs->get_nequiv(), constraint);
             } else {
                 param_out = param_irred;
             }
@@ -295,24 +268,22 @@ int Optimize::least_squares(const int maxorder,
         } else {
             // Solve the normal equation (A^T A)x=A^T b using dense datatype
             // Cholesky decomposition
-            info_fitting
-                = solve_normal_equation(matrix_out->bvec.size(),
-                                        matrix_out->amat_dense.data(),
-                                        matrix_out->bvec.data(),
-                                        param_out,
-                                        fnorm,
-                                        maxorder,
-                                        fcs,
-                                        constraint,
-                                        verbosity,
-                                        compact);
+            info_fitting = solve_normal_equation(matrix_out->bvec.size(),
+                                                 matrix_out->amat_dense.data(),
+                                                 matrix_out->bvec.data(),
+                                                 param_out,
+                                                 fnorm,
+                                                 maxorder,
+                                                 fcs,
+                                                 constraint,
+                                                 verbosity,
+                                                 compact);
         }
 
     } else {
 
         if (sparse) {
-            Eigen::VectorXd sp_bvec = Eigen::Map<Eigen::VectorXd>(matrix_out->bvec.data(),
-                                                                  matrix_out->bvec.size());
+            Eigen::VectorXd sp_bvec = Eigen::Map<Eigen::VectorXd>(matrix_out->bvec.data(), matrix_out->bvec.size());
             if (verbosity > 0) {
                 std::cout << "  Now, start fitting ...\n";
             }
@@ -331,17 +302,16 @@ int Optimize::least_squares(const int maxorder,
             if (compact) {
                 // Perform singular value decomposition to solve
                 // min||Ax-b||^{2}_{2}
-                info_fitting
-                    = fit_algebraic_constraints(N_new,
-                                                M,
-                                                matrix_out->amat_dense.data(),
-                                                matrix_out->bvec.data(),
-                                                param_out,
-                                                fnorm,
-                                                maxorder,
-                                                fcs,
-                                                constraint,
-                                                verbosity);
+                info_fitting = fit_algebraic_constraints(N_new,
+                                                         M,
+                                                         matrix_out->amat_dense.data(),
+                                                         matrix_out->bvec.data(),
+                                                         param_out,
+                                                         fnorm,
+                                                         maxorder,
+                                                         fcs,
+                                                         constraint,
+                                                         verbosity);
             } else if (constraint->get_exist_constraint()) {
 
                 info_fitting = least_squares_with_constraints_gqr(N,
@@ -355,13 +325,12 @@ int Optimize::least_squares(const int maxorder,
                                                                   verbosity);
             } else {
                 // Perform fitting with SVD
-                info_fitting
-                    = least_squares_svd(N,
-                                        M,
-                                        matrix_out->amat_dense.data(),
-                                        matrix_out->bvec.data(),
-                                        param_out.data(),
-                                        verbosity);
+                info_fitting = least_squares_svd(N,
+                                                 M,
+                                                 matrix_out->amat_dense.data(),
+                                                 matrix_out->bvec.data(),
+                                                 param_out.data(),
+                                                 verbosity);
             }
         }
     }
@@ -369,16 +338,11 @@ int Optimize::least_squares(const int maxorder,
 }
 
 
-int Optimize::compressive_sensing(const std::string &job_prefix,
-                                  const int maxorder,
-                                  const size_t N_new,
-                                  const size_t M,
-                                  const std::unique_ptr<Symmetry> &symmetry,
-                                  const std::vector<std::string> &str_order,
-                                  const std::unique_ptr<Fcs> &fcs,
-                                  std::unique_ptr<Constraint> &constraint,
-                                  const int verbosity,
-                                  std::vector<double> &param_out)
+auto Optimize::compressive_sensing(const std::string &job_prefix, const int maxorder, const size_t N_new,
+                                   const size_t M, const std::unique_ptr<Symmetry> &symmetry,
+                                   const std::vector<std::string> &str_order, const std::unique_ptr<Fcs> &fcs,
+                                   std::unique_ptr<Constraint> &constraint, const int verbosity,
+                                   std::vector<double> &param_out) -> int
 {
     // Perform compressive sensing analysis of the linear model either based on
     // the elastic net or adaptive lasso.
@@ -389,10 +353,8 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
 
     // Scale displacements if DNORM != 1.0 and the data is not standardized.
     // This rule is not applied when the adaptive lasso is selected.
-    const int scale_displacement
-        = std::abs(optcontrol.displacement_normalization_factor - 1.0) > eps
-          && (optcontrol.standardize == 0)
-          && (optcontrol.linear_model == 2);
+    const int scale_displacement = std::abs(optcontrol.displacement_normalization_factor - 1.0) > eps &&
+                                   (optcontrol.standardize == 0) && (optcontrol.linear_model == 2);
 
     if (optcontrol.cross_validation == 0) {
 
@@ -401,14 +363,7 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
         }
 
         // Optimize with a given L1 coefficient (l1_alpha)
-        optimize_with_given_l1alpha(maxorder,
-                                    M,
-                                    N_new,
-                                    fcs,
-                                    symmetry,
-                                    constraint,
-                                    verbosity,
-                                    param_tmp);
+        optimize_with_given_l1alpha(maxorder, M, N_new, fcs, symmetry, constraint, verbosity, param_tmp);
 
         if (verbosity > 0) {
             size_t iparam = 0;
@@ -424,8 +379,8 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
             }
 
             for (auto order = 0; order < maxorder; ++order) {
-                std::cout << "  Number of non-zero " << std::setw(9) << str_order[order] << " FCs : "
-                    << constraint->get_index_bimap(order).size() - nzero_cs[order] << '\n';
+                std::cout << "  Number of non-zero " << std::setw(9) << str_order[order]
+                          << " FCs : " << constraint->get_index_bimap(order).size() - nzero_cs[order] << '\n';
             }
             std::cout << '\n';
         }
@@ -433,18 +388,11 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
         // Scale back force constants
 
         if (scale_displacement) {
-            apply_scaler_force_constants(maxorder,
-                                         optcontrol.displacement_normalization_factor,
-                                         constraint,
-                                         param_tmp);
+            apply_scaler_force_constants(maxorder, optcontrol.displacement_normalization_factor, constraint, param_tmp);
             finalize_scalers(maxorder, constraint);
         }
 
-        recover_original_forceconstants(maxorder,
-                                        param_tmp,
-                                        param_out,
-                                        fcs->get_nequiv(),
-                                        constraint);
+        recover_original_forceconstants(maxorder, param_tmp, param_out, fcs->get_nequiv(), constraint);
         info_fitting = 0;
 
     } else {
@@ -455,12 +403,7 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
         }
 
         // cv_l1_alpha is a private variable of Optimize class.
-        cv_l1_alpha = crossvalidation(job_prefix,
-                                      maxorder,
-                                      fcs,
-                                      symmetry,
-                                      constraint,
-                                      verbosity);
+        cv_l1_alpha = crossvalidation(job_prefix, maxorder, fcs, symmetry, constraint, verbosity);
         if (scale_displacement) {
             finalize_scalers(maxorder, constraint);
         }
@@ -472,12 +415,9 @@ int Optimize::compressive_sensing(const std::string &job_prefix,
 }
 
 
-double Optimize::crossvalidation(const std::string job_prefix,
-                                 const int maxorder,
-                                 const std::unique_ptr<Fcs> &fcs,
-                                 const std::unique_ptr<Symmetry> &symmetry,
-                                 const std::unique_ptr<Constraint> &constraint,
-                                 const int verbosity)
+auto Optimize::crossvalidation(const std::string job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                               const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
+                               const int verbosity) -> double
 {
     // Cross-validation mode:
     // Returns alpha giving minimum CV score
@@ -522,8 +462,7 @@ double Optimize::crossvalidation(const std::string job_prefix,
         } else if (optcontrol.cross_validation > 0) {
             std::cout << "  CV > 0: Automatic CV mode.\n";
         } else {
-            exit("crossvalidation",
-                 "This cannot happen.");
+            exit("crossvalidation", "This cannot happen.");
         }
         std::cout << '\n';
     }
@@ -531,28 +470,15 @@ double Optimize::crossvalidation(const std::string job_prefix,
 
     // Returns alpha at minimum CV
     if (optcontrol.cross_validation == -1) {
-        return run_manual_cv(job_prefix,
-                             maxorder,
-                             fcs,
-                             symmetry,
-                             constraint,
-                             verbosity);
+        return run_manual_cv(job_prefix, maxorder, fcs, symmetry, constraint, verbosity);
     } else {
-        return run_auto_cv(job_prefix,
-                           maxorder,
-                           fcs,
-                           symmetry,
-                           constraint,
-                           verbosity);
+        return run_auto_cv(job_prefix, maxorder, fcs, symmetry, constraint, verbosity);
     }
 }
 
-double Optimize::run_manual_cv(const std::string &job_prefix,
-                               const int maxorder,
-                               const std::unique_ptr<Fcs> &fcs,
-                               const std::unique_ptr<Symmetry> &symmetry,
-                               const std::unique_ptr<Constraint> &constraint,
-                               const int verbosity)
+auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                             const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
+                             const int verbosity) const -> double
 {
     // Manual CV mode where the test data is read from the user-defined file.
     // Indeed, the test data is already read in the input_parser and stored in u_validation and f_validation.
@@ -593,15 +519,14 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
                                 false,
                                 false);
 
-    Eigen::MatrixXd A = Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(),
-                                                    matrix_train->amat_dense.size() / N_new,
-                                                    N_new);
+    Eigen::MatrixXd A =
+        Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(), matrix_train->amat_dense.size() / N_new, N_new);
     Eigen::VectorXd b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
     Eigen::MatrixXd A_validation = Eigen::Map<Eigen::MatrixXd>(matrix_validation->amat_dense.data(),
                                                                matrix_validation->amat_dense.size() / N_new,
                                                                N_new);
-    Eigen::VectorXd b_validation = Eigen::Map<Eigen::VectorXd>(matrix_validation->bvec.data(),
-                                                               matrix_validation->bvec.size());
+    Eigen::VectorXd b_validation =
+        Eigen::Map<Eigen::VectorXd>(matrix_validation->bvec.data(), matrix_validation->bvec.size());
 
     fnorm = 0.0;
     for (const auto &it: matrix_train->original_forces) {
@@ -632,30 +557,19 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
     const auto estimated_max_alpha = get_estimated_max_alpha(A, b);
 
     if (verbosity > 0) {
-        std::cout << "  Recommended CV_MAXALPHA = "
-            << estimated_max_alpha
-            << "\n\n";
+        std::cout << "  Recommended CV_MAXALPHA = " << estimated_max_alpha << "\n\n";
     }
 
     const auto file_coef = job_prefix + ".solution_path";
     const auto file_cv = job_prefix + ".cvset";
 
     if (optcontrol.l1_alpha_max > 0) {
-        compute_alphas(optcontrol.l1_alpha_max,
-                       optcontrol.l1_alpha_min,
-                       optcontrol.num_l1_alpha,
-                       alphas);
+        compute_alphas(optcontrol.l1_alpha_max, optcontrol.l1_alpha_min, optcontrol.num_l1_alpha, alphas);
     } else {
         if (optcontrol.l1_alpha_min > 0) {
-            compute_alphas(estimated_max_alpha,
-                           optcontrol.l1_alpha_min,
-                           optcontrol.num_l1_alpha,
-                           alphas);
+            compute_alphas(estimated_max_alpha, optcontrol.l1_alpha_min, optcontrol.num_l1_alpha, alphas);
         } else {
-            compute_alphas(estimated_max_alpha,
-                           estimated_max_alpha * 1e-6,
-                           optcontrol.num_l1_alpha,
-                           alphas);
+            compute_alphas(estimated_max_alpha, estimated_max_alpha * 1e-6, optcontrol.num_l1_alpha, alphas);
         }
     }
 
@@ -674,18 +588,13 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
                   validation_error,
                   nonzeros);
 
-    write_cvresult_to_file(file_cv,
-                           alphas,
-                           training_error,
-                           validation_error,
-                           nonzeros);
+    write_cvresult_to_file(file_cv, alphas, training_error, validation_error, nonzeros);
 
     const auto ialpha = get_ialpha_at_minimum_validation_error(validation_error);
 
     if (verbosity > 0) {
         std::cout << "  The manual CV has been done.\n";
-        std::cout << "  Minimum validation error at alpha = "
-            << alphas[ialpha] << '\n';
+        std::cout << "  Minimum validation error at alpha = " << alphas[ialpha] << '\n';
         std::cout << "  The CV result is saved in " << file_cv << '\n';
 
         if (ialpha == optcontrol.num_l1_alpha - 1) {
@@ -698,12 +607,9 @@ double Optimize::run_manual_cv(const std::string &job_prefix,
     return alphas[ialpha];
 }
 
-double Optimize::run_auto_cv(const std::string &job_prefix,
-                             const int maxorder,
-                             const std::unique_ptr<Fcs> &fcs,
-                             const std::unique_ptr<Symmetry> &symmetry,
-                             const std::unique_ptr<Constraint> &constraint,
-                             const int verbosity)
+auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                           const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
+                           const int verbosity) -> double
 {
     // Automatic CV mode.
 
@@ -718,8 +624,7 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
     const auto nsets = optcontrol.cross_validation;
 
     if (nsets > nstructures) {
-        exit("run_auto_cv",
-             "The input CV is larger than the total number of training data.");
+        exit("run_auto_cv", "The input CV is larger than the total number of training data.");
     }
 
     std::vector<int> ndata_block(nsets, nstructures / nsets);
@@ -744,8 +649,7 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
     auto ishift = 0;
 
     if (verbosity > 0) {
-        std::cout << "  Start " << nsets << "-fold CV with "
-            << u_train.size() << " Datasets\n\n";
+        std::cout << "  Start " << nsets << "-fold CV with " << u_train.size() << " Datasets\n\n";
     }
 
     if (optcontrol.linear_model == 3) {
@@ -809,9 +713,8 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
             const auto this_estimated_max_alpha = get_estimated_max_alpha(A, b);
 
             if (verbosity > 0) {
-                std::cout << "  Recommended CV_MAXALPHA (" << std::setw(3)
-                    << iset + 1 << ") = "
-                    << this_estimated_max_alpha << '\n';
+                std::cout << "  Recommended CV_MAXALPHA (" << std::setw(3) << iset + 1
+                          << ") = " << this_estimated_max_alpha << '\n';
             }
 
             if (this_estimated_max_alpha > estimated_max_alpha) {
@@ -875,8 +778,8 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
         Eigen::MatrixXd A_validation = Eigen::Map<Eigen::MatrixXd>(matrix_validation->amat_dense.data(),
                                                                    matrix_validation->amat_dense.size() / N_new,
                                                                    N_new);
-        Eigen::VectorXd b_validation = Eigen::Map<Eigen::VectorXd>(matrix_validation->bvec.data(),
-                                                                   matrix_validation->bvec.size());
+        Eigen::VectorXd b_validation =
+            Eigen::Map<Eigen::VectorXd>(matrix_validation->bvec.data(), matrix_validation->bvec.size());
 
 
         fnorm = 0.0;
@@ -897,30 +800,19 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
         }
 
         if (verbosity > 0) {
-            std::cout << "  Recommended CV_MAXALPHA = "
-                << get_estimated_max_alpha(A, b)
-                << "\n\n";
+            std::cout << "  Recommended CV_MAXALPHA = " << get_estimated_max_alpha(A, b) << "\n\n";
         }
 
         const auto file_coef = job_prefix + ".solution_path" + std::to_string(iset + 1);
         const auto file_cv = job_prefix + ".cvset" + std::to_string(iset + 1);
 
         if (optcontrol.l1_alpha_max > 0) {
-            compute_alphas(optcontrol.l1_alpha_max,
-                           optcontrol.l1_alpha_min,
-                           optcontrol.num_l1_alpha,
-                           alphas);
+            compute_alphas(optcontrol.l1_alpha_max, optcontrol.l1_alpha_min, optcontrol.num_l1_alpha, alphas);
         } else {
             if (optcontrol.l1_alpha_min > 0) {
-                compute_alphas(estimated_max_alpha,
-                               optcontrol.l1_alpha_min,
-                               optcontrol.num_l1_alpha,
-                               alphas);
+                compute_alphas(estimated_max_alpha, optcontrol.l1_alpha_min, optcontrol.num_l1_alpha, alphas);
             } else {
-                compute_alphas(estimated_max_alpha,
-                               estimated_max_alpha * 1e-6,
-                               optcontrol.num_l1_alpha,
-                               alphas);
+                compute_alphas(estimated_max_alpha, estimated_max_alpha * 1e-6, optcontrol.num_l1_alpha, alphas);
             }
         }
 
@@ -940,11 +832,7 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
                       nonzeros);
 
         if (!job_prefix.empty()) {
-            write_cvresult_to_file(file_cv,
-                                   alphas,
-                                   training_error,
-                                   validation_error,
-                                   nonzeros);
+            write_cvresult_to_file(file_cv, alphas, training_error, validation_error, nonzeros);
         }
 
         if (verbosity > 0) {
@@ -977,24 +865,12 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
     verr_mean.resize(nalphas);
     verr_std.resize(nalphas);
 
-    set_errors_of_cvscore(terr_mean,
-                          terr_std,
-                          verr_mean,
-                          verr_std,
-                          training_error_accum,
-                          validation_error_accum);
+    set_errors_of_cvscore(terr_mean, terr_std, verr_mean, verr_std, training_error_accum, validation_error_accum);
     const auto ialpha_minimum = get_ialpha_at_minimum_validation_error(verr_mean);
 
     if (!job_prefix.empty()) {
         const auto file_cvscore = job_prefix + ".cvscore";
-        write_cvscore_to_file(file_cvscore,
-                              alphas,
-                              terr_mean,
-                              terr_std,
-                              verr_mean,
-                              verr_std,
-                              ialpha_minimum,
-                              nsets);
+        write_cvscore_to_file(file_cvscore, alphas, terr_mean, terr_std, verr_mean, verr_std, ialpha_minimum, nsets);
 
         if (verbosity > 0) {
             std::cout << " Average and standard deviation of the CV error are\n";
@@ -1007,11 +883,10 @@ double Optimize::run_auto_cv(const std::string &job_prefix,
 }
 
 
-void Optimize::write_cvresult_to_file(const std::string &file_out,
-                                      const std::vector<double> &alphas,
+auto Optimize::write_cvresult_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                       const std::vector<double> &training_error,
                                       const std::vector<double> &validation_error,
-                                      const std::vector<std::vector<int>> &nonzeros) const
+                                      const std::vector<std::vector<int>> &nonzeros) const -> void
 {
     std::vector<std::string> str_linearmodel{"Elastic-net", "Adaptive LASSO"};
     std::ofstream ofs_cv;
@@ -1037,14 +912,10 @@ void Optimize::write_cvresult_to_file(const std::string &file_out,
     ofs_cv.close();
 }
 
-void Optimize::write_cvscore_to_file(const std::string &file_out,
-                                     const std::vector<double> &alphas,
-                                     const std::vector<double> &terr_mean,
-                                     const std::vector<double> &terr_std,
-                                     const std::vector<double> &verr_mean,
-                                     const std::vector<double> &verr_std,
-                                     const int ialpha_minimum,
-                                     const size_t nsets) const
+auto Optimize::write_cvscore_to_file(const std::string &file_out, const std::vector<double> &alphas,
+                                     const std::vector<double> &terr_mean, const std::vector<double> &terr_std,
+                                     const std::vector<double> &verr_mean, const std::vector<double> &verr_std,
+                                     const int ialpha_minimum, const size_t nsets) const -> void
 {
     const auto nalphas = alphas.size();
     const auto n_terr = terr_mean.size();
@@ -1074,12 +945,10 @@ void Optimize::write_cvscore_to_file(const std::string &file_out,
     ofs_cv.close();
 }
 
-void Optimize::set_errors_of_cvscore(std::vector<double> &terr_mean,
-                                     std::vector<double> &terr_std,
-                                     std::vector<double> &verr_mean,
-                                     std::vector<double> &verr_std,
+auto Optimize::set_errors_of_cvscore(std::vector<double> &terr_mean, std::vector<double> &terr_std,
+                                     std::vector<double> &verr_mean, std::vector<double> &verr_std,
                                      const std::vector<std::vector<double>> &training_error_accum,
-                                     const std::vector<std::vector<double>> &validation_error_accum) const
+                                     const std::vector<std::vector<double>> &validation_error_accum) const -> void
 {
     const auto nsets = training_error_accum.size();
     const auto nalphas = terr_mean.size();
@@ -1106,11 +975,9 @@ void Optimize::set_errors_of_cvscore(std::vector<double> &terr_mean,
         sum2_v = 0.0;
         for (size_t iset = 0; iset < nsets; ++iset) {
             sum_t += training_error_accum[iset][ialpha];
-            sum2_t += training_error_accum[iset][ialpha]
-                * training_error_accum[iset][ialpha];
+            sum2_t += training_error_accum[iset][ialpha] * training_error_accum[iset][ialpha];
             sum_v += validation_error_accum[iset][ialpha];
-            sum2_v += validation_error_accum[iset][ialpha]
-                * validation_error_accum[iset][ialpha];
+            sum2_v += validation_error_accum[iset][ialpha] * validation_error_accum[iset][ialpha];
         }
         sum_t *= factor;
         sum2_t *= factor;
@@ -1123,27 +990,17 @@ void Optimize::set_errors_of_cvscore(std::vector<double> &terr_mean,
     }
 }
 
-int Optimize::get_ialpha_at_minimum_validation_error(const std::vector<double> &validation_error) const
+auto Optimize::get_ialpha_at_minimum_validation_error(const std::vector<double> &validation_error) -> int
 {
-    return std::distance(validation_error.begin(),
-                         std::min_element(validation_error.begin(),
-                                          validation_error.end()));
+    return std::distance(validation_error.begin(), std::min_element(validation_error.begin(), validation_error.end()));
 }
 
-void Optimize::solution_path(const int maxorder,
-                             Eigen::MatrixXd &A,
-                             Eigen::VectorXd &b,
-                             Eigen::MatrixXd &A_validation,
-                             Eigen::VectorXd &b_validation,
-                             const double fnorm,
-                             const double fnorm_validation,
-                             const std::string &file_coef,
-                             const int verbosity,
-                             const std::unique_ptr<Constraint> &constraint,
-                             const std::vector<double> &alphas,
-                             std::vector<double> &training_error,
-                             std::vector<double> &validation_error,
-                             std::vector<std::vector<int>> &nonzeros) const
+auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::VectorXd &b, Eigen::MatrixXd &A_validation,
+                             Eigen::VectorXd &b_validation, const double fnorm, const double fnorm_validation,
+                             const std::string &file_coef, const int verbosity,
+                             const std::unique_ptr<Constraint> &constraint, const std::vector<double> &alphas,
+                             std::vector<double> &training_error, std::vector<double> &validation_error,
+                             std::vector<std::vector<int>> &nonzeros) const -> void
 {
     int initialize_mode;
     int ncount_verr_consecutive_increase = 0;
@@ -1245,10 +1102,7 @@ void Optimize::solution_path(const int maxorder,
         const auto res1 = fdiff.dot(fdiff) / (fnorm * fnorm);
         const auto res2 = fdiff_validation.dot(fdiff_validation) / (fnorm_validation * fnorm_validation);
 
-        get_number_of_zero_coefs(maxorder,
-                                 constraint,
-                                 x,
-                                 nzero_lasso);
+        get_number_of_zero_coefs(maxorder, constraint, x, nzero_lasso);
 
         training_error.push_back(std::sqrt(res1));
         validation_error.push_back(std::sqrt(res2));
@@ -1257,7 +1111,8 @@ void Optimize::solution_path(const int maxorder,
         if (optcontrol.save_solution_path) {
             ofs_coef << std::setw(15) << l1_alpha;
 
-            for (auto i = 0; i < N_new; ++i) params_tmp[i] = x[i];
+            for (auto i = 0; i < N_new; ++i)
+                params_tmp[i] = x[i];
 
             apply_scaler_force_constants(maxorder,
                                          optcontrol.displacement_normalization_factor,
@@ -1307,32 +1162,25 @@ void Optimize::solution_path(const int maxorder,
     deallocate(has_prod);
 }
 
-void Optimize::compute_alphas(const double l1_alpha_max,
-                              const double l1_alpha_min,
-                              const int num_l1_alpha,
-                              std::vector<double> &alphas)
+auto Optimize::compute_alphas(const double l1_alpha_max, const double l1_alpha_min, const int num_l1_alpha,
+                              std::vector<double> &alphas) -> void
 {
     alphas.resize(num_l1_alpha);
 
     for (auto ialpha = 0; ialpha < num_l1_alpha; ++ialpha) {
 
-        const auto l1_alpha = l1_alpha_min
-                              * std::pow(l1_alpha_max / l1_alpha_min,
-                                         static_cast<double>(num_l1_alpha - ialpha - 1) /
-                                         static_cast<double>(num_l1_alpha));
+        const auto l1_alpha =
+            l1_alpha_min * std::pow(l1_alpha_max / l1_alpha_min,
+                                    static_cast<double>(num_l1_alpha - ialpha - 1) / static_cast<double>(num_l1_alpha));
 
         alphas[ialpha] = l1_alpha;
     }
 }
 
-void Optimize::optimize_with_given_l1alpha(const int maxorder,
-                                           const size_t M,
-                                           const size_t N_new,
-                                           const std::unique_ptr<Fcs> &fcs,
-                                           const std::unique_ptr<Symmetry> &symmetry,
-                                           const std::unique_ptr<Constraint> &constraint,
-                                           const int verbosity,
-                                           std::vector<double> &param_out) const
+auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, const size_t N_new,
+                                           const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Symmetry> &symmetry,
+                                           const std::unique_ptr<Constraint> &constraint, const int verbosity,
+                                           std::vector<double> &param_out) const -> void
 {
     // Start Elastic-net or adaptive lasso optimization
     int i;
@@ -1391,8 +1239,7 @@ void Optimize::optimize_with_given_l1alpha(const int maxorder,
         if (optcontrol.linear_model == 2) {
             std::cout << "  Elastic-net minimization with the following parameters:" << '\n';
             std::cout << "   L1_RATIO = " << optcontrol.l1_ratio << '\n';
-            std::cout << "   ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor
-                << '\n';
+            std::cout << "   ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor << '\n';
             if (optcontrol.standardize) {
                 std::cout << "  STANDARDIZE = 1 : Standardization will be performed for matrix A and vector b.\n";
                 std::cout << "                    The ENET_DNORM-tag will be neglected.\n\n";
@@ -1462,20 +1309,15 @@ void Optimize::optimize_with_given_l1alpha(const int maxorder,
     deallocate(has_prod);
 
     if (optcontrol.debiase_after_l1opt && optcontrol.linear_model == 2) {
-        run_least_squares_with_nonzero_coefs(A,
-                                             b,
-                                             factor_std,
-                                             param_out,
-                                             verbosity);
+        run_least_squares_with_nonzero_coefs(A, b, factor_std, param_out, verbosity);
     }
 }
 
 
-void Optimize::run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in,
-                                                    const Eigen::VectorXd &b_in,
+auto Optimize::run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in, const Eigen::VectorXd &b_in,
                                                     const Eigen::VectorXd &factor_std,
-                                                    std::vector<double> &params_inout,
-                                                    const int verbosity) const
+                                                    std::vector<double> &params_inout, const int verbosity) const
+    -> void
 {
     // Perform OLS fitting to the features selected by LASSO for reducing the bias.
 
@@ -1505,16 +1347,15 @@ void Optimize::run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in,
     }
     Eigen::VectorXd x_nonzero = A_nonzero.colPivHouseholderQr().solve(b_in);
 
-    for (auto i = 0; i < N_new; ++i) params_inout[i] = 0.0;
+    for (auto i = 0; i < N_new; ++i)
+        params_inout[i] = 0.0;
     for (auto i = 0; i < N_nonzero; ++i) {
         params_inout[nonzero_index[i]] = x_nonzero[i] * factor_std[nonzero_index[i]];
     }
 }
 
-void Optimize::get_number_of_zero_coefs(const int maxorder,
-                                        const std::unique_ptr<Constraint> &constraint,
-                                        const Eigen::VectorXd &x,
-                                        std::vector<int> &nzeros)
+auto Optimize::get_number_of_zero_coefs(const int maxorder, const std::unique_ptr<Constraint> &constraint,
+                                        const Eigen::VectorXd &x, std::vector<int> &nzeros) -> void
 {
     // Count the number of zero parameters
     size_t iparam = 0;
@@ -1524,18 +1365,14 @@ void Optimize::get_number_of_zero_coefs(const int maxorder,
         for (const auto &it: constraint->get_index_bimap(i)) {
             const auto inew = it.left + iparam;
             if (std::abs(x[inew]) < eps) ++nzeros[i];
-
         }
         iparam += constraint->get_index_bimap(i).size();
     }
 }
 
 
-void Optimize::get_standardizer(const Eigen::MatrixXd &Amat,
-                                Eigen::VectorXd &mean,
-                                Eigen::VectorXd &dev,
-                                Eigen::VectorXd &factor_std,
-                                Eigen::VectorXd &scale_beta) const
+auto Optimize::get_standardizer(const Eigen::MatrixXd &Amat, Eigen::VectorXd &mean, Eigen::VectorXd &dev,
+                                Eigen::VectorXd &factor_std, Eigen::VectorXd &scale_beta) const -> void
 {
     const auto nrows = Amat.rows();
     const auto ncols = Amat.cols();
@@ -1568,9 +1405,8 @@ void Optimize::get_standardizer(const Eigen::MatrixXd &Amat,
     }
 }
 
-void Optimize::apply_standardizer(Eigen::MatrixXd &Amat,
-                                  const Eigen::VectorXd &mean,
-                                  const Eigen::VectorXd &dev) const
+auto Optimize::apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean, const Eigen::VectorXd &dev) const
+    -> void
 {
     const auto ncols = Amat.cols();
     const auto nrows = Amat.rows();
@@ -1585,8 +1421,7 @@ void Optimize::apply_standardizer(Eigen::MatrixXd &Amat,
     }
 }
 
-double Optimize::get_estimated_max_alpha(const Eigen::MatrixXd &Amat,
-                                         const Eigen::VectorXd &bvec) const
+auto Optimize::get_estimated_max_alpha(const Eigen::MatrixXd &Amat, const Eigen::VectorXd &bvec) const -> double
 {
     const auto ncols = Amat.cols();
     const auto nrows = Amat.rows();
@@ -1619,9 +1454,8 @@ double Optimize::get_estimated_max_alpha(const Eigen::MatrixXd &Amat,
     return max_alpha;
 }
 
-void Optimize::apply_scaler_displacement(std::vector<std::vector<double>> &u_inout,
-                                         const double normalization_factor,
-                                         const bool scale_back)
+auto Optimize::apply_scaler_displacement(std::vector<std::vector<double>> &u_inout, const double normalization_factor,
+                                         const bool scale_back) -> void
 {
     const auto nrows = u_inout.size();
     const auto ncols = u_inout[0].size();
@@ -1642,10 +1476,8 @@ void Optimize::apply_scaler_displacement(std::vector<std::vector<double>> &u_ino
     }
 }
 
-void Optimize::apply_scaler_constraint(const int maxorder,
-                                       const double normalization_factor,
-                                       const std::unique_ptr<Constraint> &constraint,
-                                       const bool scale_back)
+auto Optimize::apply_scaler_constraint(const int maxorder, const double normalization_factor,
+                                       const std::unique_ptr<Constraint> &constraint, const bool scale_back) -> void
 {
     if (scale_back) {
         for (auto i = 0; i < maxorder; ++i) {
@@ -1666,10 +1498,9 @@ void Optimize::apply_scaler_constraint(const int maxorder,
     }
 }
 
-void Optimize::apply_scaler_force_constants(const int maxorder,
-                                            const double normalization_factor,
+auto Optimize::apply_scaler_force_constants(const int maxorder, const double normalization_factor,
                                             const std::unique_ptr<Constraint> &constraint,
-                                            std::vector<double> &param_inout)
+                                            std::vector<double> &param_inout) -> void
 {
     auto k = 0;
     for (auto i = 0; i < maxorder; ++i) {
@@ -1682,41 +1513,26 @@ void Optimize::apply_scaler_force_constants(const int maxorder,
     }
 }
 
-void Optimize::apply_scalers(const int maxorder,
-                             const std::unique_ptr<Constraint> &constraint)
+auto Optimize::apply_scalers(const int maxorder, const std::unique_ptr<Constraint> &constraint) -> void
 {
-    apply_scaler_displacement(u_train,
-                              optcontrol.displacement_normalization_factor);
-    apply_scaler_constraint(maxorder,
-                            optcontrol.displacement_normalization_factor,
-                            constraint);
+    apply_scaler_displacement(u_train, optcontrol.displacement_normalization_factor);
+    apply_scaler_constraint(maxorder, optcontrol.displacement_normalization_factor, constraint);
 
     if (optcontrol.cross_validation == -1) {
-        apply_scaler_displacement(u_validation,
-                                  optcontrol.displacement_normalization_factor);
-
+        apply_scaler_displacement(u_validation, optcontrol.displacement_normalization_factor);
     }
 }
 
-void Optimize::finalize_scalers(const int maxorder,
-                                const std::unique_ptr<Constraint> &constraint)
+auto Optimize::finalize_scalers(const int maxorder, const std::unique_ptr<Constraint> &constraint) -> void
 {
-    apply_scaler_displacement(u_train,
-                              optcontrol.displacement_normalization_factor,
-                              true);
-    apply_scaler_constraint(maxorder,
-                            optcontrol.displacement_normalization_factor,
-                            constraint,
-                            true);
+    apply_scaler_displacement(u_train, optcontrol.displacement_normalization_factor, true);
+    apply_scaler_constraint(maxorder, optcontrol.displacement_normalization_factor, constraint, true);
     if (optcontrol.cross_validation == -1) {
-        apply_scaler_displacement(u_validation,
-                                  optcontrol.displacement_normalization_factor,
-                                  true);
+        apply_scaler_displacement(u_validation, optcontrol.displacement_normalization_factor, true);
     }
 }
 
-void Optimize::apply_basis_converter(std::vector<std::vector<double>> &u_multi,
-                                     Eigen::Matrix3d cmat)
+auto Optimize::apply_basis_converter(std::vector<std::vector<double>> &u_multi, Eigen::Matrix3d cmat) -> void
 {
     // Convert the basis of displacements from Cartesian to fractional
     const auto nrows = u_multi.size();
@@ -1738,10 +1554,8 @@ void Optimize::apply_basis_converter(std::vector<std::vector<double>> &u_multi,
     }
 }
 
-void Optimize::apply_basis_converter_amat(const int natmin3,
-                                          const int ncols,
-                                          double **amat_orig_tmp,
-                                          Eigen::Matrix3d cmat)
+auto Optimize::apply_basis_converter_amat(const int natmin3, const int ncols, double **amat_orig_tmp,
+                                          Eigen::Matrix3d cmat) -> void
 {
     const auto natmin = natmin3 / 3;
     Eigen::Vector3d vec_tmp;
@@ -1761,22 +1575,22 @@ void Optimize::apply_basis_converter_amat(const int natmin3,
 }
 
 
-void Optimize::set_u_train(const std::vector<std::vector<double>> &u_train_in)
+auto Optimize::set_u_train(const std::vector<std::vector<double>> &u_train_in) -> void
 {
     u_train.clear();
     u_train = u_train_in;
     u_train.shrink_to_fit();
 }
 
-void Optimize::set_f_train(const std::vector<std::vector<double>> &f_train_in)
+auto Optimize::set_f_train(const std::vector<std::vector<double>> &f_train_in) -> void
 {
     f_train.clear();
     f_train = f_train_in;
     f_train.shrink_to_fit();
 }
 
-void Optimize::set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
-                                   const std::vector<std::vector<double>> &f_validation_in)
+auto Optimize::set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
+                                   const std::vector<std::vector<double>> &f_validation_in) -> void
 {
     u_validation.clear();
     f_validation.clear();
@@ -1786,25 +1600,23 @@ void Optimize::set_validation_data(const std::vector<std::vector<double>> &u_val
     f_validation.shrink_to_fit();
 }
 
-std::vector<std::vector<double>> Optimize::get_u_train() const
+auto Optimize::get_u_train() const -> std::vector<std::vector<double>>
 {
     return u_train;
 }
 
-std::vector<std::vector<double>> Optimize::get_f_train() const
+auto Optimize::get_f_train() const -> std::vector<std::vector<double>>
 {
     return f_train;
 }
 
-size_t Optimize::get_number_of_data() const
+auto Optimize::get_number_of_data() const -> size_t
 {
     return u_train.size();
 }
 
-void Optimize::set_fcs_values(const int maxorder,
-                              double *fc_in,
-                              std::vector<size_t> *nequiv,
-                              const std::unique_ptr<Constraint> &constraint)
+auto Optimize::set_fcs_values(const int maxorder, double *fc_in, std::vector<size_t> *nequiv,
+                              const std::unique_ptr<Constraint> &constraint) -> void
 {
     // fc_in: irreducible set of force constants
     // fc_length: dimension of params (can differ from that of fc_in)
@@ -1824,11 +1636,7 @@ void Optimize::set_fcs_values(const int maxorder,
     for (i = 0; i < Nirred; ++i) {
         param_in[i] = fc_in[i];
     }
-    recover_original_forceconstants(maxorder,
-                                    param_in,
-                                    param_out,
-                                    nequiv,
-                                    constraint);
+    recover_original_forceconstants(maxorder, param_in, param_out, nequiv, constraint);
     if (params) {
         deallocate(params);
     }
@@ -1838,22 +1646,16 @@ void Optimize::set_fcs_values(const int maxorder,
     }
 }
 
-size_t Optimize::get_number_of_rows_sensing_matrix() const
+auto Optimize::get_number_of_rows_sensing_matrix() const -> size_t
 {
     return u_train.size() * u_train[0].size();
 }
 
 
-int Optimize::fit_algebraic_constraints(const size_t N,
-                                        const size_t M,
-                                        double *amat,
-                                        const double *bvec,
-                                        std::vector<double> &param_out,
-                                        const double fnorm,
-                                        const int maxorder,
-                                        const std::unique_ptr<Fcs> &fcs,
-                                        const std::unique_ptr<Constraint> &constraint,
-                                        const int verbosity) const
+auto Optimize::fit_algebraic_constraints(const size_t N, const size_t M, double *amat, const double *bvec,
+                                         std::vector<double> &param_out, const double fnorm, const int maxorder,
+                                         const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                                         const int verbosity) const -> int
 {
     int i;
     int nrhs = 1, nrank, INFO, M_tmp, N_tmp;
@@ -1877,7 +1679,8 @@ int Optimize::fit_algebraic_constraints(const size_t N,
     for (i = 0; i < M; ++i) {
         fsum2[i] = bvec[i];
     }
-    for (i = M; i < LMAX; ++i) fsum2[i] = 0.0;
+    for (i = M; i < LMAX; ++i)
+        fsum2[i] = 0.0;
 
     if (verbosity > 0) std::cout << "  SVD has started ... " << std::flush;
 
@@ -1885,19 +1688,7 @@ int Optimize::fit_algebraic_constraints(const size_t N,
     // M_tmp and N_tmp are prepared to cast N and M to (non-const) int.
     M_tmp = M;
     N_tmp = N;
-    dgelss_(&M_tmp,
-            &N_tmp,
-            &nrhs,
-            amat,
-            &M_tmp,
-            fsum2,
-            &LMAX,
-            S,
-            &rcond,
-            &nrank,
-            WORK,
-            &LWORK,
-            &INFO);
+    dgelss_(&M_tmp, &N_tmp, &nrhs, amat, &M_tmp, fsum2, &LMAX, S, &rcond, &nrank, WORK, &LWORK, &INFO);
 
     deallocate(WORK);
     deallocate(S);
@@ -1923,39 +1714,28 @@ int Optimize::fit_algebraic_constraints(const size_t N,
             f_residual += std::pow(fsum2[i], 2);
         }
         std::cout << '\n';
-        std::cout << "  Residual sum of squares for the solution: "
-            << sqrt(f_residual) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << sqrt(f_residual / (fnorm * fnorm)) * 100.0 << '\n';
+        std::cout << "  Residual sum of squares for the solution: " << sqrt(f_residual) << '\n';
+        std::cout << "  Fitting error (%) : " << sqrt(f_residual / (fnorm * fnorm)) * 100.0 << '\n';
     }
 
     if (INFO == 0) {
         std::vector<double> param_irred(N, 0.0);
-        for (i = 0; i < LMIN; ++i) param_irred[i] = fsum2[i];
+        for (i = 0; i < LMIN; ++i)
+            param_irred[i] = fsum2[i];
         deallocate(fsum2);
 
         // Recover reducible set of force constants
 
-        recover_original_forceconstants(maxorder,
-                                        param_irred,
-                                        param_out,
-                                        fcs->get_nequiv(),
-                                        constraint);
+        recover_original_forceconstants(maxorder, param_irred, param_out, fcs->get_nequiv(), constraint);
     }
 
     return INFO;
 }
 
-int Optimize::solve_normal_equation(const size_t N,
-                                    double *amat,
-                                    double *bvec,
-                                    std::vector<double> &param_out,
-                                    const double fnorm,
-                                    const int maxorder,
-                                    const std::unique_ptr<Fcs> &fcs,
-                                    const std::unique_ptr<Constraint> &constraint,
-                                    const int verbosity,
-                                    const bool algebraic_constraint) const
+auto Optimize::solve_normal_equation(const size_t N, double *amat, double *bvec, std::vector<double> &param_out,
+                                     const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                                     const std::unique_ptr<Constraint> &constraint, const int verbosity,
+                                     const bool algebraic_constraint) const -> int
 {
     if (verbosity > 0) {
         std::cout << "  Entering fitting routine: Solve normal equation (A^T A)x= (A^T b) by Cholesky.\n" << std::flush;
@@ -1975,14 +1755,11 @@ int Optimize::solve_normal_equation(const size_t N,
         if (algebraic_constraint) {
 
             std::vector<double> param_irred(N, 0.0);
-            for (auto i = 0; i < N; ++i) param_irred[i] = bvec[i];
+            for (auto i = 0; i < N; ++i)
+                param_irred[i] = bvec[i];
             // Recover reducible set of force constants
 
-            recover_original_forceconstants(maxorder,
-                                            param_irred,
-                                            param_out,
-                                            fcs->get_nequiv(),
-                                            constraint);
+            recover_original_forceconstants(maxorder, param_irred, param_out, fcs->get_nequiv(), constraint);
         } else {
             param_out.resize(N, 0.0);
             for (size_t i = 0; i < N; ++i) {
@@ -1993,17 +1770,12 @@ int Optimize::solve_normal_equation(const size_t N,
     return info;
 }
 
-void Optimize::get_matrix_elements_unified(const int maxorder,
-                                           std::unique_ptr<SensingMatrix> &matrix_out,
+auto Optimize::get_matrix_elements_unified(const int maxorder, std::unique_ptr<SensingMatrix> &matrix_out,
                                            const std::vector<std::vector<double>> &u_in,
                                            const std::vector<std::vector<double>> &f_in,
-                                           const std::unique_ptr<Symmetry> &symmetry,
-                                           const std::unique_ptr<Fcs> &fcs,
-                                           const std::unique_ptr<Constraint> &constraint,
-                                           const bool compact,
-                                           const bool sparse,
-                                           const bool return_ata,
-                                           const int verbosity) const
+                                           const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                           const std::unique_ptr<Constraint> &constraint, const bool compact,
+                                           const bool sparse, const bool return_ata, const int verbosity) const -> void
 {
     // Construct the matrix and vector necessary for estimating force constants.
     // The computed results are stored in matrix_out, and the updated variables in matrix_out
@@ -2016,8 +1788,7 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
     //         If false, store the matrix A in dense form and save if in matrix_out->amat_dense.
 
     if (u_in.size() != f_in.size()) {
-        exit("get_matrix_elements_unified",
-             "The lengths of displacement array and force array are diferent.");
+        exit("get_matrix_elements_unified", "The lengths of displacement array and force array are diferent.");
     }
 
     size_t i, j;
@@ -2045,8 +1816,7 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
     data_multiplier(f_in, f_multi, symmetry);
 
     if (fcs->get_forceconstant_basis() == "Lattice") {
-        apply_basis_converter(u_multi,
-                              fcs->get_basis_conversion_matrix());
+        apply_basis_converter(u_multi, fcs->get_basis_conversion_matrix());
     }
 
     std::vector<int> ind_tmp(maxorder + 1);
@@ -2064,8 +1834,7 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 for (j = 1; j < order + 2; ++j) {
                     ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
                 }
-                gamma_precomputed[order][ii] = gamma(order + 2, ind_tmp.data())
-                                               * fcs->get_fc_table()[order][ii].sign;
+                gamma_precomputed[order][ii] = gamma(order + 2, ind_tmp.data()) * fcs->get_fc_table()[order][ii].sign;
                 ++ii;
             }
         }
@@ -2107,7 +1876,7 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                     const auto memory_chunk = static_cast<float>(optcontrol.chunk_size * ncols_new * 8) /
                                               static_cast<float>(1024 * 1024 * 1024);
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                        << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
+                              << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(ncols_new * ncols_new, 0.0);
@@ -2159,8 +1928,8 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 if (verbosity > 0) {
                     std::cout << "  Calculate the sensing matrix A using dense data type\n";
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                        << static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024)
-                        << " GiB of memory will be allocated.\n";
+                              << static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024)
+                              << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(nrows * ncols_new, 0.0);
@@ -2218,10 +1987,9 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                     const auto memory_full =
                         static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024);
                     const auto memory_chunk =
-                        static_cast<float>(optcontrol.chunk_size * ncols * 8) /
-                        static_cast<float>(1024 * 1024 * 1024);
+                        static_cast<float>(optcontrol.chunk_size * ncols * 8) / static_cast<float>(1024 * 1024 * 1024);
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                        << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
+                              << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(ncols * ncols, 0.0);
@@ -2268,8 +2036,8 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
                 if (verbosity > 0) {
                     std::cout << "  Calculate the sensing matrix A using dense data type\n";
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                        << static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024)
-                        << " GiB of memory will be allocated.\n";
+                              << static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024)
+                              << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(nrows * ncols, 0.0);
@@ -2293,19 +2061,13 @@ void Optimize::get_matrix_elements_unified(const int maxorder,
 }
 
 
-void Optimize::get_matrix_elements2(const int maxorder,
-                                    const size_t ncycle,
-                                    const size_t nrows,
-                                    const size_t ncols,
-                                    const size_t ncols_compact,
-                                    std::unique_ptr<SensingMatrix> &matrix_out,
+auto Optimize::get_matrix_elements2(const int maxorder, const size_t ncycle, const size_t nrows, const size_t ncols,
+                                    const size_t ncols_compact, std::unique_ptr<SensingMatrix> &matrix_out,
                                     const std::vector<std::vector<double>> &u_multi,
                                     const std::vector<std::vector<double>> &f_multi,
                                     const std::vector<std::vector<double>> &gamma_precomputed,
-                                    const std::unique_ptr<Symmetry> &symmetry,
-                                    const std::unique_ptr<Fcs> &fcs,
-                                    const std::unique_ptr<Constraint> &constraint,
-                                    const bool sparse) const
+                                    const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                    const std::unique_ptr<Constraint> &constraint, const bool sparse) const -> void
 {
     size_t i, j;
     long irow;
@@ -2339,30 +2101,16 @@ void Optimize::get_matrix_elements2(const int maxorder,
         for (irow = 0; irow < ncycle; ++irow) {
 
             // generate r.h.s vector B
-            fill_bvec(natmin,
-                      irow,
-                      symmetry->get_map_trueprim_to_super(),
-                      f_multi[irow],
-                      bvec_orig);
+            fill_bvec(natmin, irow, symmetry->get_map_trueprim_to_super(), f_multi[irow], bvec_orig);
 
             // generate l.h.s. matrix A
-            fill_amat(maxorder,
-                      natmin,
-                      ncols,
-                      u_multi[irow],
-                      gamma_precomputed,
-                      symmetry,
-                      fcs,
-                      amat_orig_tmp);
+            fill_amat(maxorder, natmin, ncols, u_multi[irow], gamma_precomputed, symmetry, fcs, amat_orig_tmp);
 
             // When the force constants are defined in the fractional coordinate,
             // we need to multiply the basis_conversion_matrix to obtain atomic forces
             // in the Cartesian coordinate.
             if (fcs->get_forceconstant_basis() == "Lattice") {
-                apply_basis_converter_amat(natmin3,
-                                           ncols,
-                                           amat_orig_tmp,
-                                           fcs->get_basis_conversion_matrix());
+                apply_basis_converter_amat(natmin3, ncols, amat_orig_tmp, fcs->get_basis_conversion_matrix());
             }
 
             idata = natmin3 * irow;
@@ -2438,19 +2186,12 @@ void Optimize::get_matrix_elements2(const int maxorder,
     }
 }
 
-void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
-                                                    const size_t ncycle,
-                                                    const size_t nrows,
-                                                    const size_t ncols,
-                                                    const size_t ncols_compact,
-                                                    std::unique_ptr<SensingMatrix> &matrix_out,
-                                                    const std::vector<std::vector<double>> &u_multi,
-                                                    const std::vector<std::vector<double>> &f_multi,
-                                                    const std::vector<std::vector<double>> &gamma_precomputed,
-                                                    const std::unique_ptr<Symmetry> &symmetry,
-                                                    const std::unique_ptr<Fcs> &fcs,
-                                                    const std::unique_ptr<Constraint> &constraint,
-                                                    const bool sparse) const
+auto Optimize::get_matrix_elements_normal_equation2(
+    const int maxorder, const size_t ncycle, const size_t nrows, const size_t ncols, const size_t ncols_compact,
+    std::unique_ptr<SensingMatrix> &matrix_out, const std::vector<std::vector<double>> &u_multi,
+    const std::vector<std::vector<double>> &f_multi, const std::vector<std::vector<double>> &gamma_precomputed,
+    const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+    const std::unique_ptr<Constraint> &constraint, const bool sparse) const -> void
 {
     typedef Eigen::Triplet<double, size_t> T;
 
@@ -2527,23 +2268,13 @@ void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
                           bvec_subset);
 
                 // generate l.h.s. matrix A
-                fill_amat(maxorder,
-                          natmin,
-                          ncols,
-                          u_multi[irow],
-                          gamma_precomputed,
-                          symmetry,
-                          fcs,
-                          amat_orig_tmp);
+                fill_amat(maxorder, natmin, ncols, u_multi[irow], gamma_precomputed, symmetry, fcs, amat_orig_tmp);
 
                 // When the force constants are defined in the fractional coordinate,
                 // we need to multiply the basis_conversion_matrix to obtain atomic forces
                 // in the Cartesian coordinate.
                 if (fcs->get_forceconstant_basis() == "Lattice") {
-                    apply_basis_converter_amat(natmin3,
-                                               ncols,
-                                               amat_orig_tmp,
-                                               fcs->get_basis_conversion_matrix());
+                    apply_basis_converter_amat(natmin3, ncols, amat_orig_tmp, fcs->get_basis_conversion_matrix());
                 }
 
                 if (constraint->get_constraint_algebraic()) {
@@ -2618,8 +2349,7 @@ void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
             amat_subset_transpose_sparse = amat_subset_sparse.transpose();
 
             matrix_out->amat_sparse += amat_subset_transpose_sparse * amat_subset_sparse;
-            Eigen::VectorXd bvec_subset2 = Eigen::Map<Eigen::VectorXd>(bvec_subset.data(),
-                                                                       bvec_subset.size());
+            Eigen::VectorXd bvec_subset2 = Eigen::Map<Eigen::VectorXd>(bvec_subset.data(), bvec_subset.size());
             Eigen::VectorXd atb_tmp2 = amat_subset_transpose_sparse * bvec_subset2;
 
             for (size_t i = 0; i < ncols_compact; ++i) {
@@ -2629,8 +2359,7 @@ void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
         } else {
             amat_subset_transpose = amat_subset.transpose();
             ata_subset = amat_subset_transpose * amat_subset;
-            atb_subset = amat_subset_transpose * Eigen::Map<Eigen::VectorXd>(bvec_subset.data(),
-                                                                             bvec_subset.size());
+            atb_subset = amat_subset_transpose * Eigen::Map<Eigen::VectorXd>(bvec_subset.data(), bvec_subset.size());
 
             for (size_t i = 0; i < ncols_compact; ++i) {
                 for (size_t j = 0; j < ncols_compact; ++j) {
@@ -2643,11 +2372,8 @@ void Optimize::get_matrix_elements_normal_equation2(const int maxorder,
 }
 
 
-void Optimize::fill_bvec(const size_t natmin,
-                         const size_t irow,
-                         const std::vector<std::vector<int>> &index_mapping,
-                         const std::vector<double> &f_sub,
-                         std::vector<double> &bvec)
+auto Optimize::fill_bvec(const size_t natmin, const size_t irow, const std::vector<std::vector<int>> &index_mapping,
+                         const std::vector<double> &f_sub, std::vector<double> &bvec) -> void
 {
     const auto natmin3 = natmin * 3;
     for (auto i = 0; i < natmin; ++i) {
@@ -2657,14 +2383,10 @@ void Optimize::fill_bvec(const size_t natmin,
     }
 }
 
-void Optimize::fill_amat(const int maxorder,
-                         const size_t natmin,
-                         const size_t ncols,
-                         const std::vector<double> &u_sub,
+auto Optimize::fill_amat(const int maxorder, const size_t natmin, const size_t ncols, const std::vector<double> &u_sub,
                          const std::vector<std::vector<double>> &gamma_precomputed,
-                         const std::unique_ptr<Symmetry> &symmetry,
-                         const std::unique_ptr<Fcs> &fcs,
-                         double **&amat_orig)
+                         const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                         double **&amat_orig) -> void
 {
     const auto natmin3 = natmin * 3;
 
@@ -2698,14 +2420,9 @@ void Optimize::fill_amat(const int maxorder,
     }
 }
 
-void Optimize::project_constraints(const int maxorder,
-                                   const size_t natmin,
-                                   const size_t irow,
-                                   const std::unique_ptr<Fcs> &fcs,
-                                   const std::unique_ptr<Constraint> &constraint,
-                                   double **amat_orig,
-                                   double **&amat_mod,
-                                   std::vector<double> &bvec_mod)
+auto Optimize::project_constraints(const int maxorder, const size_t natmin, const size_t irow,
+                                   const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                                   double **amat_orig, double **&amat_mod, std::vector<double> &bvec_mod) -> void
 {
     // Convert the full matrix and vector into a smaller irreducible form
     // by using constraint information.
@@ -2721,8 +2438,8 @@ void Optimize::project_constraints(const int maxorder,
         for (size_t i = 0; i < constraint->get_const_fix(order).size(); ++i) {
 
             for (size_t j = 0; j < natmin3; ++j) {
-                bvec_mod[j + idata] -= constraint->get_const_fix(order)[i].val_to_fix
-                    * amat_orig[j][ishift + constraint->get_const_fix(order)[i].p_index_target];
+                bvec_mod[j + idata] -= constraint->get_const_fix(order)[i].val_to_fix *
+                                       amat_orig[j][ishift + constraint->get_const_fix(order)[i].p_index_target];
             }
         }
 
@@ -2763,11 +2480,9 @@ void Optimize::project_constraints(const int maxorder,
     }
 }
 
-void Optimize::recover_original_forceconstants(const int maxorder,
-                                               const std::vector<double> &param_in,
-                                               std::vector<double> &param_out,
-                                               const std::vector<size_t> *nequiv,
-                                               const std::unique_ptr<Constraint> &constraint) const
+auto Optimize::recover_original_forceconstants(const int maxorder, const std::vector<double> &param_in,
+                                               std::vector<double> &param_out, const std::vector<size_t> *nequiv,
+                                               const std::unique_ptr<Constraint> &constraint) const -> void
 {
     // Expand the given force constants into the larger sets
     // by using the constraint matrix.
@@ -2780,14 +2495,15 @@ void Optimize::recover_original_forceconstants(const int maxorder,
 
     size_t nparams = 0;
 
-    for (i = 0; i < maxorder; ++i) nparams += nequiv[i].size();
+    for (i = 0; i < maxorder; ++i)
+        nparams += nequiv[i].size();
 
     param_out.resize(nparams, 0.0);
 
     for (i = 0; i < maxorder; ++i) {
         for (j = 0; j < constraint->get_const_fix(i).size(); ++j) {
-            param_out[constraint->get_const_fix(i)[j].p_index_target + ishift]
-                = constraint->get_const_fix(i)[j].val_to_fix;
+            param_out[constraint->get_const_fix(i)[j].p_index_target + ishift] =
+                constraint->get_const_fix(i)[j].val_to_fix;
         }
 
         for (const auto &it: constraint->get_index_bimap(i)) {
@@ -2801,8 +2517,8 @@ void Optimize::recover_original_forceconstants(const int maxorder,
             tmp = 0.0;
 
             for (k = 0; k < constraint->get_const_relate(i)[j].alpha.size(); ++k) {
-                tmp += constraint->get_const_relate(i)[j].alpha[k]
-                    * param_out[constraint->get_const_relate(i)[j].p_index_orig[k] + ishift];
+                tmp += constraint->get_const_relate(i)[j].alpha[k] *
+                       param_out[constraint->get_const_relate(i)[j].p_index_orig[k] + ishift];
             }
             param_out[constraint->get_const_relate(i)[j].p_index_target + ishift] = -tmp;
         }
@@ -2813,9 +2529,9 @@ void Optimize::recover_original_forceconstants(const int maxorder,
 }
 
 
-void Optimize::data_multiplier(const std::vector<std::vector<double>> &data_in,
+auto Optimize::data_multiplier(const std::vector<std::vector<double>> &data_in,
                                std::vector<std::vector<double>> &data_out,
-                               const std::unique_ptr<Symmetry> &symmetry) const
+                               const std::unique_ptr<Symmetry> &symmetry) const -> void
 {
     const auto nat = symmetry->get_nat_trueprim() * symmetry->get_ntran();
     const auto ndata_used = data_in.size();
@@ -2838,8 +2554,7 @@ void Optimize::data_multiplier(const std::vector<std::vector<double>> &data_in,
     }
 }
 
-int Optimize::inprim_index(const int n,
-                           const std::unique_ptr<Symmetry> &symmetry)
+auto Optimize::inprim_index(const int n, const std::unique_ptr<Symmetry> &symmetry) -> int
 {
     auto in = -1;
     const auto atmn = n / 3;
@@ -2854,8 +2569,7 @@ int Optimize::inprim_index(const int n,
     return in;
 }
 
-double Optimize::gamma(const int n,
-                       const int *arr) const
+auto Optimize::gamma(const int n, const int *arr) const -> double
 {
     std::vector<int> arr_tmp(n);
     std::vector<int> nsame(n);
@@ -2897,12 +2611,12 @@ double Optimize::gamma(const int n,
 }
 
 
-double *Optimize::get_params() const
+auto Optimize::get_params() const -> double *
 {
     return params;
 }
 
-int Optimize::factorial(const int n) const
+auto Optimize::factorial(const int n) const -> int
 {
     if (n == 1 || n == 0) {
         return 1;
@@ -2911,15 +2625,10 @@ int Optimize::factorial(const int n) const
 }
 
 
-int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
-                                      const Eigen::VectorXd &sp_bvec,
-                                      std::vector<double> &param_out,
-                                      const double fnorm,
-                                      const int maxorder,
-                                      const std::unique_ptr<Fcs> &fcs,
-                                      const std::unique_ptr<Constraint> &constraint,
-                                      const std::string solver_type,
-                                      const int verbosity) const
+auto Optimize::run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec,
+                                       std::vector<double> &param_out, const double fnorm, const int maxorder,
+                                       const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                                       const std::string solver_type, const int verbosity) const -> int
 {
     if (verbosity > 0) {
         std::cout << "  Solve least-squares problem by Eigen " + solver_type + ".\n";
@@ -2946,11 +2655,7 @@ int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
     // Recover reducible set of force constants
 
     if (constraint->get_constraint_algebraic()) {
-        recover_original_forceconstants(maxorder,
-                                        param_irred,
-                                        param_out,
-                                        fcs->get_nequiv(),
-                                        constraint);
+        recover_original_forceconstants(maxorder, param_irred, param_out, fcs->get_nequiv(), constraint);
     } else {
         param_out.resize(nparams, 0.0);
         for (size_t i = 0; i < nparams; ++i) {
@@ -2959,17 +2664,15 @@ int Optimize::run_eigen_sparse_solver(const SpMat &sp_mat,
     }
 
     if (verbosity > 0) {
-        std::cout << "  Residual sum of squares for the solution: "
-            << sqrt(res2norm) << '\n';
-        std::cout << "  Fitting error (%) : "
-            << sqrt(res2norm / (fnorm * fnorm)) * 100.0 << '\n';
+        std::cout << "  Residual sum of squares for the solution: " << sqrt(res2norm) << '\n';
+        std::cout << "  Fitting error (%) : " << sqrt(res2norm / (fnorm * fnorm)) * 100.0 << '\n';
     }
 
     return 0;
 }
 
 
-void Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in)
+auto Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in) -> void
 {
     // Check the validity of the options before copying it.
 
@@ -2993,30 +2696,21 @@ void Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in)
     optcontrol = optcontrol_in;
 }
 
-OptimizerControl Optimize::get_optimizer_control() const
+auto Optimize::get_optimizer_control() const -> OptimizerControl
 {
     return optcontrol;
 }
 
-double Optimize::get_cv_l1_alpha() const
+auto Optimize::get_cv_l1_alpha() const -> double
 {
     return cv_l1_alpha;
 }
 
-void Optimize::coordinate_descent(const int M,
-                                  const int N,
-                                  const double alpha,
-                                  const int warm_start,
-                                  Eigen::VectorXd &x,
-                                  const Eigen::MatrixXd &A,
-                                  const Eigen::VectorXd &b,
-                                  const Eigen::VectorXd &grad0,
-                                  bool *has_prod,
-                                  Eigen::MatrixXd &Prod,
-                                  Eigen::VectorXd &grad,
-                                  const double fnorm,
-                                  const Eigen::VectorXd &scale_beta,
-                                  const int verbosity) const
+auto Optimize::coordinate_descent(const int M, const int N, const double alpha, const int warm_start,
+                                  Eigen::VectorXd &x, const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
+                                  const Eigen::VectorXd &grad0, bool *has_prod, Eigen::MatrixXd &Prod,
+                                  Eigen::VectorXd &grad, const double fnorm, const Eigen::VectorXd &scale_beta,
+                                  const int verbosity) const -> void
 {
     int i, j;
     double diff{0.0};
@@ -3025,9 +2719,11 @@ void Optimize::coordinate_descent(const int M,
     bool do_print_log;
 
     if (warm_start) {
-        for (i = 0; i < N; ++i) beta(i) = x(i);
+        for (i = 0; i < N; ++i)
+            beta(i) = x(i);
     } else {
-        for (i = 0; i < N; ++i) beta(i) = 0.0;
+        for (i = 0; i < N; ++i)
+            beta(i) = 0.0;
         grad = grad0;
     }
 
@@ -3065,7 +2761,7 @@ void Optimize::coordinate_descent(const int M,
             }
             ++iloop;
             diff = 0.0;
-#pragma omp parallel for reduction(+:diff)
+#pragma omp parallel for reduction(+ : diff)
             for (i = 0; i < N; ++i) {
                 diff += delta(i) * delta(i);
             }
@@ -3075,11 +2771,11 @@ void Optimize::coordinate_descent(const int M,
             if (diff < optcontrol.tolerance_iteration) break;
 
             if (do_print_log) {
-                std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff
-                    << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
+                std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
+                          << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
                 auto tmp = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tmp)
+#pragma omp parallel for reduction(+ : tmp)
 #endif
                 for (i = 0; i < N; ++i) {
                     tmp += std::abs(beta(i));
@@ -3087,8 +2783,8 @@ void Optimize::coordinate_descent(const int M,
                 std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
                 res = A * beta - b;
                 tmp = res.dot(res);
-                std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp)
-                    << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+                std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
+                          << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
                 std::cout << '\n';
             }
         }
@@ -3097,7 +2793,8 @@ void Optimize::coordinate_descent(const int M,
 
         Eigen::VectorXd inv_scale_beta(N);
 
-        for (i = 0; i < N; ++i) inv_scale_beta(i) = 1.0 / scale_beta(i);
+        for (i = 0; i < N; ++i)
+            inv_scale_beta(i) = 1.0 / scale_beta(i);
 
         while (iloop < optcontrol.maxnum_iteration) {
             do_print_log = !((iloop + 1) % optcontrol.output_frequency) && (verbosity > 1);
@@ -3122,7 +2819,7 @@ void Optimize::coordinate_descent(const int M,
             }
             ++iloop;
             diff = 0.0;
-#pragma omp parallel for reduction(+:diff)
+#pragma omp parallel for reduction(+ : diff)
             for (i = 0; i < N; ++i) {
                 diff += delta(i) * delta(i);
             }
@@ -3132,11 +2829,11 @@ void Optimize::coordinate_descent(const int M,
             if (diff < optcontrol.tolerance_iteration) break;
 
             if (do_print_log) {
-                std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff
-                    << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
+                std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
+                          << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
                 auto tmp = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tmp)
+#pragma omp parallel for reduction(+ : tmp)
 #endif
                 for (i = 0; i < N; ++i) {
                     tmp += std::abs(beta(i));
@@ -3144,8 +2841,8 @@ void Optimize::coordinate_descent(const int M,
                 std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
                 res = A * beta - b;
                 tmp = res.dot(res);
-                std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp)
-                    << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+                std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
+                          << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
                 std::cout << '\n';
             }
         }
@@ -3154,21 +2851,20 @@ void Optimize::coordinate_descent(const int M,
     if (verbosity > 1) {
         if (iloop >= optcontrol.maxnum_iteration) {
             std::cout << "WARNING: Convergence NOT achieved within " << optcontrol.maxnum_iteration
-                << " coordinate descent iterations.\n";
+                      << " coordinate descent iterations.\n";
         } else {
             std::cout << "  Convergence achieved in " << iloop << " iterations.\n";
         }
         const auto param2norm = beta.dot(beta);
         if (std::abs(param2norm) < eps) {
-            std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << 0.0
-                << std::setw(15) << 0.0 << '\n';
+            std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << 0.0 << std::setw(15) << 0.0 << '\n';
         } else {
-            std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff
-                << std::setw(15) << diff * std::sqrt(static_cast<double>(N) / param2norm) << '\n';
+            std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
+                      << diff * std::sqrt(static_cast<double>(N) / param2norm) << '\n';
         }
         double tmp = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tmp)
+#pragma omp parallel for reduction(+ : tmp)
 #endif
         for (i = 0; i < N; ++i) {
             tmp += std::abs(beta(i));
@@ -3176,10 +2872,11 @@ void Optimize::coordinate_descent(const int M,
         std::cout << "    2': ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
         res = A * beta - b;
         tmp = res.dot(res);
-        std::cout << "    3': ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp)
-            << std::setw(15) << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+        std::cout << "    3': ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
+                  << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
         std::cout << '\n';
     }
 
-    for (i = 0; i < N; ++i) x[i] = beta(i);
+    for (i = 0; i < N; ++i)
+        x[i] = beta(i);
 }

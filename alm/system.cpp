@@ -9,18 +9,18 @@
 */
 
 #include "system.h"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <iomanip>
+#include <iostream>
+#include <set>
+#include <utility>
 #include "constants.h"
 #include "error.h"
 #include "mathfunctions.h"
 #include "memory.h"
-#include "timer.h"
 #include "smith.h"
-#include <iostream>
-#include <iomanip>
-#include <set>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <utility>
+#include "timer.h"
 
 extern "C"
 {
@@ -39,8 +39,7 @@ System::~System()
     deallocate_variables();
 }
 
-void System::init(const int verbosity,
-                  std::unique_ptr<Timer> &timer)
+auto System::init(const int verbosity, std::unique_ptr<Timer> &timer) -> void
 {
     timer->start_clock("system");
 
@@ -71,10 +70,8 @@ void System::init(const int verbosity,
     timer->stop_clock("system");
 }
 
-void System::set_basecell(const double lavec_in[3][3],
-                          const size_t nat_in,
-                          const int *kind_in,
-                          const double xf_in[][3])
+auto System::set_basecell(const double lavec_in[3][3], const size_t nat_in, const int *kind_in, const double xf_in[][3])
+    -> void
 {
     size_t i, j;
     std::vector<int> unique_nums(nat_in);
@@ -103,7 +100,7 @@ void System::set_basecell(const double lavec_in[3][3],
     for (i = 0; i < nkd; i++) {
         if (static_cast<size_t>(unique_nums[i]) > nkd) {
             std::cout << " WARNING : integers assigned to atoms are wrong. "
-                << " The numbers will be resorted.\n";
+                      << " The numbers will be resorted.\n";
             wrong_number = true;
             break;
         }
@@ -114,8 +111,7 @@ void System::set_basecell(const double lavec_in[3][3],
             inputcell.lattice_vector(i, j) = lavec_in[i][j];
         }
     }
-    set_reciprocal_latt(inputcell.lattice_vector,
-                        inputcell.reciprocal_lattice_vector);
+    set_reciprocal_latt(inputcell.lattice_vector, inputcell.reciprocal_lattice_vector);
 
     inputcell.volume = volume(inputcell.lattice_vector, Direct);
     inputcell.number_of_atoms = nat_in;
@@ -170,20 +166,19 @@ void System::set_basecell(const double lavec_in[3][3],
     }
 }
 
-void System::build_cells()
+auto System::build_cells() -> void
 {
     build_primcell();
     build_supercell();
 }
 
-void System::build_primcell()
+auto System::build_primcell() -> void
 {
     // Generate primitive cell information from the inputcell and PRIMCELL value
     // The symmetry detection is not performed here as it will be done
     // when the Symmetry::init() is called.
 
-    transmat_to_prim_spglib = compute_transmat_to_prim_using_spglib(inputcell,
-                                                                    symmetry_tolerance);
+    transmat_to_prim_spglib = compute_transmat_to_prim_using_spglib(inputcell, symmetry_tolerance);
 
     if (autoset_primcell) transmat_to_prim = transmat_to_prim_spglib;
 
@@ -205,8 +200,7 @@ void System::build_primcell()
 
     // (a_p, b_p, c_p) = (a_in, b_in, c_in) * Mat(inp->p)
     primcell.lattice_vector = inputcell.lattice_vector * transmat_to_prim;
-    set_reciprocal_latt(primcell.lattice_vector,
-                        primcell.reciprocal_lattice_vector);
+    set_reciprocal_latt(primcell.lattice_vector, primcell.reciprocal_lattice_vector);
     primcell.volume = volume(primcell.lattice_vector, Direct);
 
     // Convert the basis of coordinates from inputcell to primitive fractional
@@ -224,9 +218,7 @@ void System::build_primcell()
 
     for (auto i = 0; i < inputcell.number_of_atoms; ++i) {
         xf_tmp = xf_prim_all.row(i);
-        xf_tmp = xf_tmp.unaryExpr([](const double x) {
-            return std::fmod(x, 1.0);
-        });
+        xf_tmp = xf_tmp.unaryExpr([](const double x) { return std::fmod(x, 1.0); });
         for (auto j = 0; j < 3; ++j) {
             if (xf_tmp[j] < -eps6) xf_tmp[j] += 1.0;
         }
@@ -237,9 +229,7 @@ void System::build_primcell()
             for (auto kk = 0; kk < 3; ++kk) {
                 xf_tmp2[kk] = xf_unique[k][kk];
             }
-            xf_diff = (xf_tmp - xf_tmp2).unaryExpr([](const double x) {
-                return std::fmod(x, 1.0);
-            });
+            xf_diff = (xf_tmp - xf_tmp2).unaryExpr([](const double x) { return std::fmod(x, 1.0); });
             for (auto j = 0; j < 3; ++j) {
                 if (xf_diff[j] < -0.5) xf_diff[j] += 1.0;
                 if (xf_diff[j] >= 0.5) xf_diff[j] -= 1.0;
@@ -271,11 +261,13 @@ void System::build_primcell()
         }
 
         if (!is_duplicate) {
-            for (auto j = 0; j < 3; ++j) xf_tmp_vec[j] = xf_tmp[j];
+            for (auto j = 0; j < 3; ++j)
+                xf_tmp_vec[j] = xf_tmp[j];
             xf_unique.emplace_back(xf_tmp_vec);
             kind_unique.emplace_back(inputcell.kind[i]);
             if (spin_input.lspin) {
-                for (auto j = 0; j < 3; ++j) magmom_tmp_vec[j] = spin_input.magmom[i][j];
+                for (auto j = 0; j < 3; ++j)
+                    magmom_tmp_vec[j] = spin_input.magmom[i][j];
                 magmom_unique.emplace_back(magmom_tmp_vec);
             }
         }
@@ -301,14 +293,12 @@ void System::build_primcell()
     primcell.x_cartesian = primcell.x_fractional * primcell.lattice_vector.transpose();
 
     if (spin_prim.lspin) {
-        std::copy(magmom_unique.begin(),
-                  magmom_unique.end(),
-                  std::back_inserter(spin_prim.magmom));
+        std::copy(magmom_unique.begin(), magmom_unique.end(), std::back_inserter(spin_prim.magmom));
     }
 }
 
 
-void System::build_supercell()
+auto System::build_supercell() -> void
 {
     Eigen::MatrixXi transmat_int(3, 3);
     Eigen::MatrixXi D, R, L;
@@ -355,9 +345,7 @@ void System::build_supercell()
                 for (auto k = 0; k < D(2, 2); ++k) {
                     DD << static_cast<double>(i), static_cast<double>(j), static_cast<double>(k);
                     DD = transmat_newprim_to_origsuper * DD + xs_f;
-                    DD_mod = DD.unaryExpr([](const double x) {
-                        return std::fmod(x, 1.0);
-                    });
+                    DD_mod = DD.unaryExpr([](const double x) { return std::fmod(x, 1.0); });
                     // fmod allows negative values, so correct them.
                     for (auto m = 0; m < 3; ++m) {
                         if (DD_mod[m] < 0.0) DD_mod[m] += 1.0;
@@ -379,43 +367,41 @@ void System::build_supercell()
     spin_super.magmom.clear();
     spin_super.magmom.shrink_to_fit();
     if (spin_super.lspin) {
-        std::copy(magmom_tmp.begin(),
-                  magmom_tmp.end(),
-                  std::back_inserter(spin_super.magmom));
+        std::copy(magmom_tmp.begin(), magmom_tmp.end(), std::back_inserter(spin_super.magmom));
     }
 }
 
-const Cell &System::get_supercell() const
+auto System::get_supercell() const -> const Cell &
 {
     return supercell;
 }
 
-const Cell &System::get_primcell() const
+auto System::get_primcell() const -> const Cell &
 {
     return primcell;
 }
 
-const Cell &System::get_inputcell() const
+auto System::get_inputcell() const -> const Cell &
 {
     return inputcell;
 }
 
-const std::vector<Eigen::MatrixXd> &System::get_x_image() const
+auto System::get_x_image() const -> const std::vector<Eigen::MatrixXd> &
 {
     return x_image;
 }
 
-int *System::get_exist_image() const
+auto System::get_exist_image() const -> int *
 {
     return exist_image;
 }
 
-void System::set_tolerance(const double tolerance)
+auto System::set_tolerance(const double tolerance) -> void
 {
     symmetry_tolerance = tolerance;
 }
 
-void System::set_periodicity(const int is_periodic_in[3])
+auto System::set_periodicity(const int is_periodic_in[3]) -> void
 {
     if (!is_periodic) {
         // This should be already allocated though.
@@ -426,12 +412,12 @@ void System::set_periodicity(const int is_periodic_in[3])
     }
 }
 
-int *System::get_periodicity() const
+auto System::get_periodicity() const -> int *
 {
     return is_periodic;
 }
 
-void System::set_kdname(const std::vector<std::string> &kdname_in)
+auto System::set_kdname(const std::vector<std::string> &kdname_in) -> void
 {
     if (inputcell.number_of_elems != kdname_in.size()) {
         exit("set_kdname",
@@ -442,13 +428,12 @@ void System::set_kdname(const std::vector<std::string> &kdname_in)
     std::copy(kdname_in.begin(), kdname_in.end(), std::back_inserter(kdname));
 }
 
-const std::vector<std::string> &System::get_kdname() const
+auto System::get_kdname() const -> const std::vector<std::string> &
 {
     return kdname;
 }
 
-void System::set_reciprocal_latt(const Eigen::Matrix3d &lavec_in,
-                                 Eigen::Matrix3d &rlavec_out) const
+auto System::set_reciprocal_latt(const Eigen::Matrix3d &lavec_in, Eigen::Matrix3d &rlavec_out) const -> void
 {
     // Compute reciprocal lattice vectors
     const auto det = lavec_in.determinant();
@@ -459,11 +444,9 @@ void System::set_reciprocal_latt(const Eigen::Matrix3d &lavec_in,
     rlavec_out = tpi * lavec_in.inverse();
 }
 
-double System::volume(const Eigen::Matrix3d &mat_in,
-                      const LatticeType latttype_in) const
+auto System::volume(const Eigen::Matrix3d &mat_in, const LatticeType latttype_in) const -> double
 {
     Eigen::Matrix3d mat;
-    Eigen::Vector3d v1, v2, v3;
 
     if (latttype_in == Direct) {
         mat = mat_in.transpose();
@@ -473,16 +456,16 @@ double System::volume(const Eigen::Matrix3d &mat_in,
         exit("volume", "Invalid LatticeType is given");
     }
 
-    v1 = mat.row(0);
-    v2 = mat.row(1);
-    v3 = mat.row(2);
+    Eigen::Vector3d v1 = mat.row(0);
+    Eigen::Vector3d v2 = mat.row(1);
+    Eigen::Vector3d v3 = mat.row(2);
 
     const auto vol = std::abs(v1.dot(v2.cross(v3)));
     return vol;
 }
 
 
-void System::set_default_variables()
+auto System::set_default_variables() -> void
 {
     supercell.number_of_atoms = 0;
     supercell.number_of_elems = 0;
@@ -502,7 +485,7 @@ void System::set_default_variables()
     transmat_to_prim = Eigen::Matrix3d::Identity();
 }
 
-void System::deallocate_variables()
+auto System::deallocate_variables() -> void
 {
     if (is_periodic) {
         deallocate(is_periodic);
@@ -512,11 +495,8 @@ void System::deallocate_variables()
     }
 }
 
-void System::set_spin_variables(const size_t nat_in,
-                                const bool lspin_in,
-                                const int noncol_in,
-                                const int trev_sym_in,
-                                const double (*magmom_in)[3])
+auto System::set_spin_variables(const size_t nat_in, const bool lspin_in, const int noncol_in, const int trev_sym_in,
+                                const double (*magmom_in)[3]) -> void
 {
     spin_input.lspin = lspin_in;
     spin_input.noncollinear = noncol_in;
@@ -532,33 +512,32 @@ void System::set_spin_variables(const size_t nat_in,
     }
 }
 
-const Spin &System::get_spin(const std::string cell) const
+auto System::get_spin(const std::string &cell) const -> const Spin &
 {
     if (cell == "input") return spin_input;
     if (cell == "prim" || cell == "primitive") return spin_prim;
     return spin_super;
 }
 
-void System::set_str_magmom(std::string str_magmom_in)
+auto System::set_str_magmom(std::string str_magmom_in) -> void
 {
     str_magmom = std::move(str_magmom_in);
 }
 
-const std::string &System::get_str_magmom() const
+auto System::get_str_magmom() const -> const std::string &
 {
     return str_magmom;
 }
 
-const std::vector<std::vector<unsigned int>> &System::get_atomtype_group(const std::string cell) const
+auto System::get_atomtype_group(const std::string &cell) const -> const std::vector<std::vector<unsigned int>> &
 {
     if (cell == "prim" || cell == "primitive") return atomtype_group_prim;
     return atomtype_group_super;
 }
 
 
-void System::set_atomtype_group(const Cell &cell_in,
-                                const Spin &spin_in,
-                                std::vector<std::vector<unsigned int>> &atomtype_group_out)
+auto System::set_atomtype_group(const Cell &cell_in, const Spin &spin_in,
+                                std::vector<std::vector<unsigned int>> &atomtype_group_out) -> void
 {
     // In the case of collinear calculation, spin moments are considered as scalar
     // variables. Therefore, the same elements with different magnetic moments are
@@ -594,8 +573,7 @@ void System::set_atomtype_group(const Cell &cell_in,
                     atomtype_group_out[count].push_back(i);
                 }
             } else {
-                if ((cell_in.kind[i] == it.element)
-                    && (std::abs(spin_in.magmom[i][2] - it.magmom) < eps6)) {
+                if ((cell_in.kind[i] == it.element) && (std::abs(spin_in.magmom[i][2] - it.magmom) < eps6)) {
                     atomtype_group_out[count].push_back(i);
                 }
             }
@@ -605,9 +583,8 @@ void System::set_atomtype_group(const Cell &cell_in,
     set_type.clear();
 }
 
-void System::set_transformation_matrices(const double transmat_to_super_in[3][3],
-                                         const double transmat_to_prim_in[3][3],
-                                         const int autoset_primcell_in)
+auto System::set_transformation_matrices(const double transmat_to_super_in[3][3],
+                                         const double transmat_to_prim_in[3][3], const int autoset_primcell_in) -> void
 {
     for (auto i = 0; i < 3; ++i) {
         for (auto j = 0; j < 3; ++j) {
@@ -618,18 +595,15 @@ void System::set_transformation_matrices(const double transmat_to_super_in[3][3]
     autoset_primcell = autoset_primcell_in;
 }
 
-void System::find_primitive_cell(const Cell &cell_input,
-                                 const Spin &spin_input,
-                                 Cell &cell_out,
-                                 Spin &spin_out,
-                                 const double tolerance) const
+auto System::find_primitive_cell(const Cell &cell_input, const Spin &spin_input, Cell &cell_out, Spin &spin_out,
+                                 const double tolerance) const -> void
 {
     // const auto spg_major_version = spg_get_major_version();
     // TODO: identify the primitive lattice with the information of magnetic ordering
 
     size_t i, j;
     int *types_tmp;
-    double (*position)[3];
+    double(*position)[3];
     double aa_tmp[3][3];
 
     for (i = 0; i < 3; ++i) {
@@ -650,13 +624,7 @@ void System::find_primitive_cell(const Cell &cell_input,
     }
 
     // Do not idealize as we want to avoid the rigid rotation of the input cell.
-    const auto nat_prim_out = spg_standardize_cell(aa_tmp,
-                                                   position,
-                                                   types_tmp,
-                                                   nat,
-                                                   1,
-                                                   1,
-                                                   tolerance);
+    const auto nat_prim_out = spg_standardize_cell(aa_tmp, position, types_tmp, nat, 1, 1, tolerance);
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
             cell_out.lattice_vector(i, j) = aa_tmp[i][j];
@@ -673,34 +641,27 @@ void System::find_primitive_cell(const Cell &cell_input,
     }
     cell_out.x_cartesian = cell_out.x_fractional * cell_out.lattice_vector.transpose();
     cell_out.number_of_elems = cell_input.number_of_elems;
-    set_reciprocal_latt(cell_out.lattice_vector,
-                        cell_out.reciprocal_lattice_vector);
+    set_reciprocal_latt(cell_out.lattice_vector, cell_out.reciprocal_lattice_vector);
     cell_out.volume = volume(cell_out.lattice_vector, Direct);
 
     deallocate(position);
     deallocate(types_tmp);
 }
 
-Eigen::Matrix3d System::compute_transmat_to_prim_using_spglib(const Cell &cell_input,
-                                                              const double symprec) const
+auto System::compute_transmat_to_prim_using_spglib(const Cell &cell_input, const double symprec) const
+    -> Eigen::Matrix3d
 {
-    Eigen::Matrix3d transmat_out;
-
     Cell cell_out;
     Spin spin_out, spin_in;
-    find_primitive_cell(cell_input,
-                        spin_in,
-                        cell_out,
-                        spin_out,
-                        symprec);
+    find_primitive_cell(cell_input, spin_in, cell_out, spin_out, symprec);
 
-    transmat_out = cell_input.lattice_vector.inverse() * cell_out.lattice_vector;
+    Eigen::Matrix3d transmat_out = cell_input.lattice_vector.inverse() * cell_out.lattice_vector;
 
     return transmat_out;
 }
 
 
-void System::generate_coordinate_of_periodic_images()
+auto System::generate_coordinate_of_periodic_images() -> void
 {
     // Generate Cartesian coordinates of atoms in the neighboring 27 supercells
 
@@ -746,9 +707,9 @@ void System::generate_coordinate_of_periodic_images()
                 ++icell;
                 // When periodic flag is zero along an axis,
                 // periodic images along that axis cannot be considered.
-                if (((std::abs(ia) == 1) && (is_periodic[0] == 0)) ||
-                    ((std::abs(ja) == 1) && (is_periodic[1] == 0)) ||
-                    ((std::abs(ka) == 1) && (is_periodic[2] == 0))) {
+                if (((std::abs(ia) == 1) && (is_periodic[0] == 0)) || ((std::abs(ja) == 1) && (is_periodic[1] == 0)) ||
+                    ((std::abs(ka) == 1) && (is_periodic[2] == 0)))
+                {
                     exist_image[icell] = 0;
                 } else {
                     exist_image[icell] = 1;
@@ -759,7 +720,7 @@ void System::generate_coordinate_of_periodic_images()
 }
 
 
-void System::print_structure_stdout(const int verbosity)
+auto System::print_structure_stdout(const int verbosity) const -> void
 {
     using namespace std;
     size_t i;
@@ -897,8 +858,7 @@ void System::print_structure_stdout(const int verbosity)
     cout << " : a3\n\n";
 
     cout << "   Number of atoms : " << cell.number_of_atoms << "\n\n";
-    cout << "   Supercell contains " << std::setw(5) << cell.number_of_atoms / nat_prim
-        << " primitive cells\n\n";
+    cout << "   Supercell contains " << std::setw(5) << cell.number_of_atoms / nat_prim << " primitive cells\n\n";
 
     if (verbosity > 1) {
         cout << "   Cell volume = " << cell.volume << " (bohr^3)\n\n";
@@ -931,7 +891,7 @@ void System::print_structure_stdout(const int verbosity)
 }
 
 
-void System::print_magmom_stdout() const
+auto System::print_magmom_stdout() const -> void
 {
     using namespace std;
 
@@ -940,7 +900,7 @@ void System::print_magmom_stdout() const
     cout << " ====================\n\n";
 
     cout << "  MAGMOM is given.\n"
-        "  The magnetic moments of each atom in the primitive cell are as follows:\n";
+            "  The magnetic moments of each atom in the primitive cell are as follows:\n";
     for (size_t i = 0; i < primcell.number_of_atoms; ++i) {
         cout << setw(6) << i + 1;
         cout << setw(5) << spin_prim.magmom[i][0];
@@ -956,8 +916,8 @@ void System::print_magmom_stdout() const
         if (spin_prim.time_reversal_symm) {
             cout << "  TREVSYM = 1: Time-reversal symmetry will be considered for generating magnetic space group\n";
         } else {
-            cout <<
-                "  TREVSYM = 0: Time-reversal symmetry will NOT be considered for generating magnetic space group\n";
+            cout
+                << "  TREVSYM = 0: Time-reversal symmetry will NOT be considered for generating magnetic space group\n";
         }
     }
     cout << "\n\n";

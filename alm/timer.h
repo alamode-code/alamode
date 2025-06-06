@@ -10,15 +10,15 @@
 
 #pragma once
 
-#include <string>
 #include <map>
+#include <string>
 
 #if defined(WIN32) || defined(_WIN32)
 #include <Windows.h>
 #else
 
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
 #endif
 
@@ -31,24 +31,24 @@ public:
 
     ~Timer();
 
-    void print_elapsed() const;
+    auto print_elapsed() const -> void;
 
-    void start_clock(std::string);
+    auto start_clock(const std::string &) -> void;
 
-    void stop_clock(std::string);
+    auto stop_clock(const std::string &) -> void;
 
-    [[nodiscard]] double get_walltime(std::string);
+    [[nodiscard]] auto get_walltime(const std::string &) -> double;
 
-    [[nodiscard]] double get_cputime(std::string);
+    [[nodiscard]] auto get_cputime(const std::string &) -> double;
 
-    [[nodiscard]] static std::string DateAndTime();
+    [[nodiscard]] static auto DateAndTime() -> std::string;
 
 private:
-    void reset();
+    auto reset() -> void;
 
-    [[nodiscard]] double elapsed_walltime() const;
+    [[nodiscard]] auto elapsed_walltime() const -> double;
 
-    [[nodiscard]] double elapsed_cputime() const;
+    [[nodiscard]] auto elapsed_cputime() const -> double;
 
     std::map<std::string, double> walltime;
     std::map<std::string, double> cputime;
@@ -65,4 +65,4 @@ private:
     double cputime_ref;
 #endif
 };
-}
+} // namespace ALM_NS

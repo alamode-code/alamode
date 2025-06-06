@@ -3,13 +3,13 @@
 //
 
 #include "svd.h"
-#include "lapack_wrapper.h"
 #include <Eigen/Core>
 #include <Eigen/SVD>
-#include <iostream>
-#include <fstream>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 #include <tuple>
+#include "lapack_wrapper.h"
 
 /**
  * @brief Computes the SVD in thin U/V mode and returns the result as a tuple.
@@ -21,8 +21,8 @@
  *                   - S  : Singular values vector (length = r) as Eigen::VectorXd
  *                   - VT : Thin Vᵀ matrix (r×n) as Eigen::MatrixXd
  */
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd>
-compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
+auto compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
+    -> std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd>
 {
     const int m = static_cast<int>(A.rows());
     const int n = static_cast<int>(A.cols());
@@ -30,10 +30,7 @@ compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
 
     if (use_eigen) {
         // Eigen version: Compute thin U and V
-        Eigen::JacobiSVD svd_eig(
-            A,
-            Eigen::ComputeThinU | Eigen::ComputeThinV
-            );
+        Eigen::JacobiSVD svd_eig(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
         Eigen::MatrixXd U = svd_eig.matrixU();              // (m × min_mn)
         Eigen::VectorXd S = svd_eig.singularValues();       // (min_mn)
         Eigen::MatrixXd VT = svd_eig.matrixV().transpose(); // (min_mn × n)
@@ -65,22 +62,7 @@ compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
         double *work = new double[lwork];
         int info = 0;
 
-        dgesvd_(
-            &jobu,
-            &jobvt,
-            &mm,
-            &nn,
-            A_lap,
-            &lda,
-            S_lap,
-            U_lap,
-            &ldu,
-            VT_lap,
-            &ldvt,
-            work,
-            &lwork,
-            &info
-            );
+        dgesvd_(&jobu, &jobvt, &mm, &nn, A_lap, &lda, S_lap, U_lap, &ldu, VT_lap, &ldvt, work, &lwork, &info);
 
         if (info < 0) {
             std::cerr << "dgesvd_: Argument " << -info << " had an illegal value.\n";
@@ -89,10 +71,8 @@ compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
         }
 
         // Map the Fortran column-major buffers into Eigen matrices
-        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>>
-            U_map(U_lap, m, min_mn);
-        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>>
-            VT_map(VT_lap, min_mn, n);
+        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>> U_map(U_lap, m, min_mn);
+        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>> VT_map(VT_lap, min_mn, n);
         Eigen::Map<Eigen::VectorXd> S_map(S_lap, min_mn);
 
         Eigen::MatrixXd U = U_map;   // (m × min_mn)
@@ -126,14 +106,7 @@ compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
  *                   If <= 0, defaults to ε * max(m,n) * σ_max.
  * @return           0 on success, nonzero LAPACK info on failure.
  */
-int lapack_pseudoinverse(
-    int m,
-    int n,
-    double *A,
-    int &rank,
-    double *A_pinv,
-    const double tol_factor
-    )
+auto lapack_pseudoinverse(int m, int n, double *A, int &rank, double *A_pinv, const double tol_factor) -> int
 {
     assert(m > 0 && n > 0);
 
@@ -192,9 +165,7 @@ int lapack_pseudoinverse(
     // Determine tolerance
     double eps = dlamch_((char *)"E");
     double sigma_max = (min_mn > 0 ? S[0] : 0.0);
-    double tol = (tol_factor > 0.0)
-                     ? tol_factor * std::max(m, n) * sigma_max * eps
-                     : std::max(m, n) * sigma_max * eps;
+    double tol = (tol_factor > 0.0) ? tol_factor * std::max(m, n) * sigma_max * eps : std::max(m, n) * sigma_max * eps;
 
     // Build D (n×m) with Σ^+ on the diagonal
     std::vector<double> D(static_cast<size_t>(n) * static_cast<size_t>(m), 0.0);
@@ -221,19 +192,7 @@ int lapack_pseudoinverse(
         int mm = n, nn = m, kk = m;
         double alpha = 1.0, beta = 0.0;
         int ldda = n, lddb = m, lddc = n;
-        dgemm_(&transa,
-               &transb,
-               &mm,
-               &nn,
-               &kk,
-               &alpha,
-               D.data(),
-               &ldda,
-               UT.data(),
-               &lddb,
-               &beta,
-               M1.data(),
-               &lddc);
+        dgemm_(&transa, &transb, &mm, &nn, &kk, &alpha, D.data(), &ldda, UT.data(), &lddb, &beta, M1.data(), &lddc);
     }
 
     // Compute A_pinv = V * M1, where V = VT^T
@@ -272,16 +231,11 @@ int lapack_pseudoinverse(
  *               If ≤ 0, Eigen’s default threshold is used.
  * @return       Pseudoinverse A^+ (n×m).
  */
-Eigen::MatrixXd eigen_pseudoinverse(const Eigen::MatrixXd &A,
-                                    int &rank,
-                                    double tol_factor)
+auto eigen_pseudoinverse(const Eigen::MatrixXd &A, int &rank, double tol_factor) -> Eigen::MatrixXd
 {
     int m = static_cast<int>(A.rows());
     int n = static_cast<int>(A.cols());
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(
-        A,
-        Eigen::ComputeFullU | Eigen::ComputeFullV
-        );
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const auto &S = svd.singularValues();
     const auto &U = svd.matrixU();
     const auto &V = svd.matrixV();
@@ -289,9 +243,7 @@ Eigen::MatrixXd eigen_pseudoinverse(const Eigen::MatrixXd &A,
     int min_mn = std::min(m, n);
     double eps = std::numeric_limits<double>::epsilon();
     double sigma_max = (min_mn > 0 ? S(0) : 0.0);
-    double tol = (tol_factor > 0.0)
-                     ? tol_factor * std::max(m, n) * sigma_max * eps
-                     : eps * std::max(m, n) * sigma_max;
+    double tol = (tol_factor > 0.0) ? tol_factor * std::max(m, n) * sigma_max * eps : eps * std::max(m, n) * sigma_max;
 
     // Build Σ^+ (n×m)
     Eigen::MatrixXd Sigma_plus = Eigen::MatrixXd::Zero(n, m);

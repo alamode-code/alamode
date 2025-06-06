@@ -10,11 +10,11 @@
 
 #pragma once
 
+#include <Eigen/Core>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 #include "timer.h"
-#include <Eigen/Core>
 
 namespace ALM_NS
 {
@@ -65,28 +65,19 @@ public:
 
     ~System();
 
-    void init(const int,
-              std::unique_ptr<Timer> &timer);
+    void init(const int, std::unique_ptr<Timer> &timer);
 
-    void set_basecell(const double lavec_in[3][3],
-                      const size_t nat_in,
-                      const int *kind_in,
-                      const double xf_in[][3]);
+    void set_basecell(const double lavec_in[3][3], const size_t nat_in, const int *kind_in, const double xf_in[][3]);
 
     void set_kdname(const std::vector<std::string> &kdname_in);
 
-    void set_periodicity(const int [3]);
+    void set_periodicity(const int[3]);
 
-    void set_spin_variables(const size_t nat,
-                            const bool,
-                            const int,
-                            const int,
-                            const double (*)[3]);
+    void set_spin_variables(const size_t nat, const bool, const int, const int, const double (*)[3]);
 
     void set_str_magmom(std::string);
 
-    void set_transformation_matrices(const double transmat_to_super_in[3][3],
-                                     const double transmat_to_prim_in[3][3],
+    void set_transformation_matrices(const double transmat_to_super_in[3][3], const double transmat_to_prim_in[3][3],
                                      const int autoset_primcell_in = 0);
 
     void set_tolerance(const double tolerance);
@@ -105,12 +96,12 @@ public:
 
     [[nodiscard]] int *get_periodicity() const;
 
-    [[nodiscard]] const Spin &get_spin(const std::string cell = "super") const;
+    [[nodiscard]] const Spin &get_spin(const std::string &cell = "super") const;
 
     [[nodiscard]] const std::string &get_str_magmom() const;
 
     [[nodiscard]] const std::vector<std::vector<unsigned int>> &
-    get_atomtype_group(const std::string cell = "super") const;
+    get_atomtype_group(const std::string &cell = "super") const;
 
     [[nodiscard]] Eigen::Matrix3d compute_transmat_to_prim_using_spglib(const Cell &cell_input,
                                                                         const double symprec) const;
@@ -140,7 +131,8 @@ private:
 
     enum LatticeType
     {
-        Direct, Reciprocal
+        Direct,
+        Reciprocal
     };
 
     void build_cells();
@@ -149,30 +141,24 @@ private:
 
     void build_primcell();
 
-    void set_reciprocal_latt(const Eigen::Matrix3d &lavec_in,
-                             Eigen::Matrix3d &rlavec_out) const;
+    void set_reciprocal_latt(const Eigen::Matrix3d &lavec_in, Eigen::Matrix3d &rlavec_out) const;
 
     void set_default_variables();
 
     void deallocate_variables();
 
-    [[nodiscard]] double volume(const Eigen::Matrix3d &mat_in,
-                                const LatticeType latttype_in) const;
+    [[nodiscard]] double volume(const Eigen::Matrix3d &mat_in, const LatticeType latttype_in) const;
 
-    static void set_atomtype_group(const Cell &cell_in,
-                                   const Spin &spin_in,
+    static void set_atomtype_group(const Cell &cell_in, const Spin &spin_in,
                                    std::vector<std::vector<unsigned int>> &atomtype_group_out);
 
-    void find_primitive_cell(const Cell &cell_input,
-                             const Spin &spin_input,
-                             Cell &cell_out,
-                             Spin &spin_out,
+    void find_primitive_cell(const Cell &cell_input, const Spin &spin_input, Cell &cell_out, Spin &spin_out,
                              const double tolerance) const;
 
     void generate_coordinate_of_periodic_images();
 
-    void print_structure_stdout(const int verbosity);
+    void print_structure_stdout(const int verbosity) const;
 
     void print_magmom_stdout() const;
 };
-}
+} // namespace ALM_NS

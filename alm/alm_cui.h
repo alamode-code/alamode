@@ -20,7 +20,6 @@ public:
 
     ~ALMCUI();
 
-    void run(const int narg,
-             char **arg) const;
+    auto run(const int narg, char **arg) const -> void;
 };
-}
+} // namespace ALM_NS

@@ -10,11 +10,11 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <string>
 #include <vector>
 #include "system.h"
 #include "timer.h"
-#include <Eigen/Core>
 
 namespace ALM_NS
 {
@@ -30,12 +30,8 @@ public:
 
     SymmetryOperation();
 
-    SymmetryOperation(const Eigen::Matrix3i &rot_in,
-                      const Eigen::Vector3d &tran_in,
-                      const Eigen::Matrix3d &rot_cart_in,
-                      const bool compatibility_lat,
-                      const bool compatibility_cart,
-                      const bool is_trans_in)
+    SymmetryOperation(const Eigen::Matrix3i &rot_in, const Eigen::Vector3d &tran_in, const Eigen::Matrix3d &rot_cart_in,
+                      const bool compatibility_lat, const bool compatibility_cart, const bool is_trans_in)
     {
         rotation = rot_in;
         rotation_cart = rot_cart_in;
@@ -67,10 +63,7 @@ public:
                 v2.push_back(a.tran[i]);
             }
         }
-        return std::lexicographical_compare(v1.begin(),
-                                            v1.end(),
-                                            v2.begin(),
-                                            v2.end());
+        return std::lexicographical_compare(v1.begin(), v1.end(), v2.begin(), v2.end());
     }
 };
 
@@ -111,8 +104,7 @@ public:
 
     PrimitiveGroup();
 
-    PrimitiveGroup(const std::map<int, int> &map_index_p2s_in,
-                   const Eigen::Vector3i &shift_vector_in)
+    PrimitiveGroup(const std::map<int, int> &map_index_p2s_in, const Eigen::Vector3i &shift_vector_in)
     {
         map_index_p2s = map_index_p2s_in;
         shift_vector = shift_vector_in;
@@ -126,9 +118,7 @@ public:
 
     ~Symmetry();
 
-    void init(const std::unique_ptr<System> &system,
-              const int verbosity,
-              std::unique_ptr<Timer> &timer);
+    void init(const std::unique_ptr<System> &system, const int verbosity, std::unique_ptr<Timer> &timer);
 
     [[nodiscard]] double get_tolerance() const;
 
@@ -146,15 +136,15 @@ public:
 
     [[nodiscard]] const std::vector<std::vector<int>> &get_map_trueprim_to_prim() const;
 
-    [[nodiscard]] const std::vector<SymmetryOperation> &get_symmetry_data(const std::string cell = "super") const;
+    [[nodiscard]] const std::vector<SymmetryOperation> &get_symmetry_data(const std::string &cell = "super") const;
 
     [[nodiscard]] const std::vector<std::vector<int>> &get_map_sym() const;
 
-    [[nodiscard]] const std::vector<int> &get_symnum_tran(const std::string cell = "super") const;
+    [[nodiscard]] const std::vector<int> &get_symnum_tran(const std::string &cell = "super") const;
 
-    [[nodiscard]] size_t get_nsym(const std::string cell = "super") const;
+    [[nodiscard]] size_t get_nsym(const std::string &cell = "super") const;
 
-    [[nodiscard]] size_t get_ntran(const std::string cell = "super") const;
+    [[nodiscard]] size_t get_ntran(const std::string &cell = "super") const;
 
     [[nodiscard]] size_t get_nat_trueprim() const;
 
@@ -189,71 +179,50 @@ private:
 
     void deallocate_variables();
 
-    void setup_symmetry_operation(const Cell &pcell,
-                                  const Spin &spin_prim,
-                                  const std::vector<std::vector<unsigned int>> &atomtype_prim,
-                                  const Cell &scell,
-                                  const Spin &spin_super,
-                                  const std::vector<std::vector<unsigned int>> &atomtype_super,
-                                  const int is_periodic[3],
-                                  const int verbosity);
+    void setup_symmetry_operation(const Cell &pcell, const Spin &spin_prim,
+                                  const std::vector<std::vector<unsigned int>> &atomtype_prim, const Cell &scell,
+                                  const Spin &spin_super, const std::vector<std::vector<unsigned int>> &atomtype_super,
+                                  const int is_periodic[3], const int verbosity);
 
-    void gen_mapping_information(const Cell &scell,
-                                 const std::vector<std::vector<unsigned int>> &atomtype_group_super,
-                                 const std::vector<SymmetryOperation> &symm_super,
-                                 const Cell &pcell,
+    void gen_mapping_information(const Cell &scell, const std::vector<std::vector<unsigned int>> &atomtype_group_super,
+                                 const std::vector<SymmetryOperation> &symm_super, const Cell &pcell,
                                  const std::vector<std::vector<unsigned int>> &atomtype_group_prim,
                                  const std::vector<SymmetryOperation> &symm_prim);
 
-    void findsym_alm(const Cell &,
-                     const std::vector<std::vector<unsigned int>> &,
-                     const Spin &,
+    void findsym_alm(const Cell &, const std::vector<std::vector<unsigned int>> &, const Spin &,
                      std::vector<SymmetryOperation> &symm_out) const;
 
-    int findsym_spglib(const Cell &,
-                       const std::vector<std::vector<unsigned int>> &,
-                       const Spin &,
-                       std::string &,
+    int findsym_spglib(const Cell &, const std::vector<std::vector<unsigned int>> &, const Spin &, std::string &,
                        std::vector<SymmetryOperation> &symm_out) const;
 
-    [[nodiscard]] bool is_translation(const int [3][3]) const;
+    [[nodiscard]] bool is_translation(const int[3][3]) const;
 
     [[nodiscard]] bool is_translation(const Eigen::Matrix3i &rot) const;
 
     [[nodiscard]] bool is_proper(const Eigen::Matrix3d &rot) const;
 
-    void symop_in_cart(Eigen::Matrix3d &rot_cart,
-                       const Eigen::Matrix3i &rot_lattice,
-                       const Eigen::Matrix3d &lavec,
+    void symop_in_cart(Eigen::Matrix3d &rot_cart, const Eigen::Matrix3i &rot_lattice, const Eigen::Matrix3d &lavec,
                        const Eigen::Matrix3d &rlavec) const;
 
     void print_symminfo_stdout() const;
 
     template <typename T>
-    bool is_compatible(const T [3][3],
-                       double tolerance_zero = 1.0e-5) const;
+    bool is_compatible(const T[3][3], double tolerance_zero = 1.0e-5) const;
 
     template <typename T>
-    bool is_compatible(const Eigen::MatrixBase<T> &mat,
-                       double tolerance_zero = 1.0e-5) const;
+    bool is_compatible(const Eigen::MatrixBase<T> &mat, double tolerance_zero = 1.0e-5) const;
 
-    void find_lattice_symmetry(const Eigen::Matrix3d &aa,
-                               std::vector<RotationMatrix> &) const;
+    void find_lattice_symmetry(const Eigen::Matrix3d &aa, std::vector<RotationMatrix> &) const;
 
-    void find_crystal_symmetry(const Cell &,
-                               const std::vector<std::vector<unsigned int>> &,
-                               const Spin &,
-                               const std::vector<RotationMatrix> &,
-                               std::vector<SymmetryOperation> &symm_out) const;
+    void find_crystal_symmetry(const Cell &, const std::vector<std::vector<unsigned int>> &, const Spin &,
+                               const std::vector<RotationMatrix> &, std::vector<SymmetryOperation> &symm_out) const;
 
 
-    void assign_shift_vectors_supercell(const ALM_NS::Cell &cell_prim,
-                                        const std::vector<SymmetryOperation> &symm_prim,
+    void assign_shift_vectors_supercell(const ALM_NS::Cell &cell_prim, const std::vector<SymmetryOperation> &symm_prim,
                                         const ALM_NS::Cell &cell_super,
                                         std::vector<PrimitiveGroup> &atomgroup_out) const;
 
 
     void print_symmetry_infomation(const int verbosity) const;
-
 };
-}
+} // namespace ALM_NS

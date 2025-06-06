@@ -9,23 +9,23 @@
 */
 
 #include "fcs.h"
+#include <cmath>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <string>
+#include "cluster.h"
 #include "constraint.h"
 #include "error.h"
-#include "cluster.h"
 #include "memory.h"
 #include "rref.h"
 #include "symmetry.h"
 #include "timer.h"
-#include <iostream>
-#include <iomanip>
-#include <limits>
-#include <string>
-#include <cmath>
-#include <fstream>
 
-#include "../external/combination.hpp"
-#include <unordered_set>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
+#include <unordered_set>
+#include "../external/combination.hpp"
 
 #if defined(_WIN32) || defined(_WIN64)
 #undef min
@@ -44,11 +44,8 @@ Fcs::~Fcs()
     deallocate_variables();
 };
 
-void Fcs::init(const std::unique_ptr<Cluster> &cluster,
-               const std::unique_ptr<Symmetry> &symmetry,
-               const Cell &supercell,
-               const int verbosity,
-               std::unique_ptr<Timer> &timer)
+auto Fcs::init(const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Symmetry> &symmetry,
+               const Cell &supercell, const int verbosity, std::unique_ptr<Timer> &timer) -> void
 {
     int i;
     const auto maxorder = cluster->get_maxorder();
@@ -101,9 +98,7 @@ void Fcs::init(const std::unique_ptr<Cluster> &cluster,
     if (verbosity > 0) {
         std::cout << '\n';
         for (i = 0; i < maxorder; ++i) {
-            std::cout << "  Number of " << std::setw(9)
-                << cluster->get_ordername(i)
-                << " FCs : " << nequiv[i].size();
+            std::cout << "  Number of " << std::setw(9) << cluster->get_ordername(i) << " FCs : " << nequiv[i].size();
             std::cout << '\n';
         }
         std::cout << '\n';
@@ -116,7 +111,7 @@ void Fcs::init(const std::unique_ptr<Cluster> &cluster,
     timer->stop_clock("fcs");
 }
 
-void Fcs::set_default_variables()
+auto Fcs::set_default_variables() -> void
 {
     nequiv = nullptr;
     fc_table = nullptr;
@@ -128,7 +123,7 @@ void Fcs::set_default_variables()
     fc_zero_threshold = eps12;
 }
 
-void Fcs::deallocate_variables()
+auto Fcs::deallocate_variables() -> void
 {
     if (nequiv) {
         deallocate(nequiv);
@@ -145,15 +140,10 @@ void Fcs::deallocate_variables()
 }
 
 
-void Fcs::generate_force_constant_table(const int order,
-                                        const size_t nat,
-                                        const std::set<IntList> &pairs,
-                                        const std::unique_ptr<Symmetry> &symm_in,
-                                        const std::string &basis,
-                                        std::vector<FcProperty> &fc_vec,
-                                        std::vector<size_t> &ndup,
-                                        std::vector<FcProperty> &fc_zeros_out,
-                                        const bool store_zeros_in) const
+auto Fcs::generate_force_constant_table(const int order, const size_t nat, const std::set<IntList> &pairs,
+                                        const std::unique_ptr<Symmetry> &symm_in, const std::string &basis,
+                                        std::vector<FcProperty> &fc_vec, std::vector<size_t> &ndup,
+                                        std::vector<FcProperty> &fc_zeros_out, const bool store_zeros_in) -> void
 {
     size_t i;
     int *atmn, *atmn_mapped;
@@ -169,12 +159,7 @@ void Fcs::generate_force_constant_table(const int order,
 
     if (order < 0) return;
 
-    get_available_symmop(nat,
-                         symm_in,
-                         basis,
-                         map_sym,
-                         rotation,
-                         use_compatible);
+    get_available_symmop(nat, symm_in, basis, map_sym, rotation, use_compatible);
 
     const auto nsym_in_use = rotation.size();
 
@@ -205,7 +190,8 @@ void Fcs::generate_force_constant_table(const int order,
         }
 
         for (int i1 = 0; i1 < nxyz; ++i1) {
-            for (i = 0; i < order + 2; ++i) ind[i] = 3 * atmn[i] + xyzcomponent[i1][i];
+            for (i = 0; i < order + 2; ++i)
+                ind[i] = 3 * atmn[i] + xyzcomponent[i1][i];
 
             if (!is_ascending(order + 2, ind)) continue;
 
@@ -227,7 +213,8 @@ void Fcs::generate_force_constant_table(const int order,
 
             for (unsigned int isym = 0; isym < nsym_in_use; ++isym) {
 
-                for (i = 0; i < order + 2; ++i) atmn_mapped[i] = map_sym[atmn[i]][isym];
+                for (i = 0; i < order + 2; ++i)
+                    atmn_mapped[i] = map_sym[atmn[i]][isym];
 
                 if (!is_inprim(order + 2,
                                atmn_mapped,
@@ -237,10 +224,7 @@ void Fcs::generate_force_constant_table(const int order,
 
                 for (int i2 = 0; i2 < nxyz; ++i2) {
 
-                    double const c_tmp = coef_sym(order + 2,
-                                            rotation[isym],
-                                            xyzcomponent[i1],
-                                            xyzcomponent[i2]);
+                    double const c_tmp = coef_sym(order + 2, rotation[isym], xyzcomponent[i1], xyzcomponent[i2]);
 
                     if (std::abs(c_tmp) > eps12) {
                         for (i = 0; i < order + 2; ++i)
@@ -268,30 +252,27 @@ void Fcs::generate_force_constant_table(const int order,
                         if (list_found.find(IntList(order + 2, ind_mapped)) == list_found.end()) {
                             list_found.insert(IntList(order + 2, ind_mapped));
 
-                            fc_vec.emplace_back(order + 2,
-                                                c_tmp,
-                                                ind_mapped,
-                                                nmother);
+                            fc_vec.emplace_back(order + 2, c_tmp, ind_mapped, nmother);
                             ++ndeps;
 
                             // Add equivalent interaction list (permutation) if there are two or more indices,
                             // which belong to the primitive cell.
                             // This procedure is necessary for constructing a sensing matrix.
 
-                            for (i = 0; i < 3 * nat; ++i) is_searched[i] = false;
+                            for (i = 0; i < 3 * nat; ++i)
+                                is_searched[i] = false;
                             is_searched[ind_mapped[0]] = true;
                             for (i = 1; i < order + 2; ++i) {
                                 if ((!is_searched[ind_mapped[i]]) && is_inprim(ind_mapped[i],
                                                                                symm_in->get_nat_trueprim(),
-                                                                               symm_in->get_map_trueprim_to_super())) {
+                                                                               symm_in->get_map_trueprim_to_super()))
+                                {
 
-                                    for (size_t j = 0; j < order + 2; ++j) ind_mapped_tmp[j] = ind_mapped[j];
+                                    for (size_t j = 0; j < order + 2; ++j)
+                                        ind_mapped_tmp[j] = ind_mapped[j];
                                     std::swap(ind_mapped_tmp[0], ind_mapped_tmp[i]);
                                     sort_tail(order + 2, ind_mapped_tmp);
-                                    fc_vec.emplace_back(order + 2,
-                                                        c_tmp,
-                                                        ind_mapped_tmp,
-                                                        nmother);
+                                    fc_vec.emplace_back(order + 2, c_tmp, ind_mapped_tmp, nmother);
 
                                     ++ndeps;
 
@@ -310,14 +291,15 @@ void Fcs::generate_force_constant_table(const int order,
                         fc_zeros_out.push_back(*it);
                     }
                 }
-                for (i = 0; i < ndeps; ++i) fc_vec.pop_back();
+                for (i = 0; i < ndeps; ++i)
+                    fc_vec.pop_back();
             } else {
                 ndup.push_back(ndeps);
                 ++nmother;
             }
 
         } // close xyz component loop
-    }     // close atom number loop (iterator)
+    } // close atom number loop (iterator)
 
     deallocate(xyzcomponent);
     list_found.clear();
@@ -330,15 +312,10 @@ void Fcs::generate_force_constant_table(const int order,
     deallocate(is_searched);
 }
 
-void Fcs::get_constraint_symmetry(const size_t nat,
-                                  const std::unique_ptr<Symmetry> &symmetry,
-                                  const int order,
-                                  const std::string &basis,
-                                  const std::vector<FcProperty> &fc_table_in,
-                                  const size_t nparams,
-                                  const double tolerance,
-                                  ConstraintSparseForm &const_out,
-                                  const bool do_rref)
+auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmetry> &symmetry, const int order,
+                                  const std::string &basis, const std::vector<FcProperty> &fc_table_in,
+                                  const size_t nparams, const double tolerance, ConstraintSparseForm &const_out,
+                                  const bool do_rref) -> void
 {
     // Create constraint matrices arising from the crystal symmetry.
     // Necessary for hexagonal systems.
@@ -364,12 +341,7 @@ void Fcs::get_constraint_symmetry(const size_t nat,
 
     const auto nxyz = static_cast<int>(std::pow(static_cast<double>(3), order + 2));
 
-    get_available_symmop(nat,
-                         symmetry,
-                         basis,
-                         map_sym,
-                         rotation,
-                         use_compatible);
+    get_available_symmop(nat, symmetry, basis, map_sym, rotation, use_compatible);
 
     const auto nsym_in_use = rotation.size();
     if (nsym_in_use == 0) return;
@@ -383,11 +355,9 @@ void Fcs::get_constraint_symmetry(const size_t nat,
     // Generate temporary list of parameters
     list_found.clear();
     for (const auto &p: fc_table_in) {
-        for (i = 0; i < order + 2; ++i) index_tmp[i] = p.elems[i];
-        list_found.insert(FcProperty(order + 2,
-                                     p.sign,
-                                     index_tmp,
-                                     p.mother));
+        for (i = 0; i < order + 2; ++i)
+            index_tmp[i] = p.elems[i];
+        list_found.insert(FcProperty(order + 2, p.sign, index_tmp, p.mother));
     }
 
 
@@ -435,7 +405,8 @@ void Fcs::get_constraint_symmetry(const size_t nat,
                     atm_index_symm[i] = map_sym[atm_index[i]][isym];
                 if (!is_inprim(order + 2, atm_index_symm, natmin, symmetry->get_map_trueprim_to_super())) continue;
 
-                for (i = 0; i < nparams; ++i) const_now_omp[i] = 0.0;
+                for (i = 0; i < nparams; ++i)
+                    const_now_omp[i] = 0.0;
 
                 const_now_omp[fc_table_in[ii].mother] = -fc_table_in[ii].sign;
 
@@ -460,7 +431,8 @@ void Fcs::get_constraint_symmetry(const size_t nat,
 
                 if (!is_allzero(const_now_omp, eps8, loc_nonzero)) {
                     if (const_now_omp[loc_nonzero] < 0.0) {
-                        for (j = 0; j < nparams; ++j) const_now_omp[j] *= -1.0;
+                        for (j = 0; j < nparams; ++j)
+                            const_now_omp[j] *= -1.0;
                     }
 
                     const_tmp_omp.clear();
@@ -473,7 +445,7 @@ void Fcs::get_constraint_symmetry(const size_t nat,
                 }
 
             } // close isym loop
-        }     // close ii loop
+        } // close ii loop
 
         deallocate(ind);
         deallocate(atm_index);
@@ -493,9 +465,7 @@ void Fcs::get_constraint_symmetry(const size_t nat,
     deallocate(index_tmp);
 
     std::sort(constraint_all.begin(), constraint_all.end());
-    constraint_all.erase(std::unique(constraint_all.begin(),
-                                     constraint_all.end()),
-                         constraint_all.end());
+    constraint_all.erase(std::unique(constraint_all.begin(), constraint_all.end()), constraint_all.end());
 
     MapConstraintElement const_tmp2;
     const_out.clear();
@@ -547,18 +517,13 @@ void Fcs::get_constraint_symmetry(const size_t nat,
     //     }
     //     std::cout << "\n";
     // }
-
 }
 
-void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
-                                             const std::unique_ptr<Symmetry> &symmetry,
-                                             const int order,
-                                             const std::string &basis,
-                                             const std::vector<FcProperty> &fc_table_in,
-                                             const size_t nparams,
-                                             const double tolerance,
-                                             ConstraintSparseForm &const_out,
-                                             const bool do_rref)
+auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
+                                             const int order, const std::string &basis,
+                                             const std::vector<FcProperty> &fc_table_in, const size_t nparams,
+                                             const double tolerance, ConstraintSparseForm &const_out,
+                                             const bool do_rref) -> void
 {
     // Create constraint matrices arising from the crystal symmetry.
     // Necessary for hexagonal systems.
@@ -588,12 +553,7 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
 
     const auto nxyz = static_cast<int>(std::pow(static_cast<double>(3), order + 2));
 
-    get_available_symmop(nat,
-                         symmetry,
-                         basis,
-                         map_sym,
-                         rotation,
-                         use_compatible);
+    get_available_symmop(nat, symmetry, basis, map_sym, rotation, use_compatible);
 
     nsym_in_use = rotation.size();
     if (nsym_in_use == 0) {
@@ -609,11 +569,9 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
     // Generate temporary lists of parameters
     list_found.clear();
     for (const auto &p: fc_table_in) {
-        for (i = 0; i < order + 2; ++i) index_tmp[i] = p.elems[i];
-        list_found.insert(FcProperty(order + 2,
-                                     p.sign,
-                                     index_tmp,
-                                     p.mother));
+        for (i = 0; i < order + 2; ++i)
+            index_tmp[i] = p.elems[i];
+        list_found.insert(FcProperty(order + 2, p.sign, index_tmp, p.mother));
     }
 
 #ifdef _OPENMP
@@ -659,7 +617,8 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
                     atm_index_symm[i] = map_sym[atm_index[i]][isym];
                 if (!is_inprim(order + 2, atm_index_symm, natmin, symmetry->get_map_trueprim_to_super())) continue;
 
-                for (i = 0; i < nparams; ++i) const_now_omp[i] = 0;
+                for (i = 0; i < nparams; ++i)
+                    const_now_omp[i] = 0;
 
                 const_now_omp[fc_table_in[ii].mother] = -nint(fc_table_in[ii].sign);
 
@@ -684,7 +643,8 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
 
                 if (!is_allzero(const_now_omp, loc_nonzero)) {
                     if (const_now_omp[loc_nonzero] < 0) {
-                        for (j = 0; j < nparams; ++j) const_now_omp[j] *= -1;
+                        for (j = 0; j < nparams; ++j)
+                            const_now_omp[j] *= -1;
                     }
 
                     const_tmp_omp.clear();
@@ -697,7 +657,7 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
                 }
 
             } // close isym loop
-        }     // close ii loop
+        } // close ii loop
 
         deallocate(ind);
         deallocate(atm_index);
@@ -716,9 +676,7 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
     deallocate(xyzcomponent);
     deallocate(index_tmp);
     boost::sort::block_indirect_sort(constraint_all.begin(), constraint_all.end());
-    constraint_all.erase(std::unique(constraint_all.begin(),
-                                     constraint_all.end()),
-                         constraint_all.end());
+    constraint_all.erase(std::unique(constraint_all.begin(), constraint_all.end()), constraint_all.end());
 
     MapConstraintElement const_tmp2;
     auto division_factor = 1.0;
@@ -742,22 +700,22 @@ void Fcs::get_constraint_symmetry_in_integer(const size_t nat,
     if (do_rref) rref_sparse(nparams, const_out, tolerance);
 }
 
-std::vector<size_t> *Fcs::get_nequiv() const
+auto Fcs::get_nequiv() const -> std::vector<size_t> *
 {
     return nequiv;
 }
 
-std::vector<FcProperty> *Fcs::get_fc_table() const
+auto Fcs::get_fc_table() const -> std::vector<FcProperty> *
 {
     return fc_table;
 }
 
-std::vector<ForceConstantTable> *Fcs::get_fc_cart() const
+auto Fcs::get_fc_cart() const -> std::vector<ForceConstantTable> *
 {
     return fc_cart;
 }
 
-void Fcs::set_forceconstant_basis(const std::string &preferred_basis_in)
+auto Fcs::set_forceconstant_basis(const std::string &preferred_basis_in) -> void
 {
     if (preferred_basis_in[0] == 'c') {
         preferred_basis = "Cartesian";
@@ -768,13 +726,12 @@ void Fcs::set_forceconstant_basis(const std::string &preferred_basis_in)
     }
 }
 
-std::string Fcs::get_forceconstant_basis() const
+auto Fcs::get_forceconstant_basis() const -> std::string
 {
     return preferred_basis;
 }
 
-void Fcs::set_forceconstant_cartesian(const int maxorder,
-                                      double *param_in)
+auto Fcs::set_forceconstant_cartesian(const int maxorder, double *param_in) -> void
 {
     auto ishift = 0;
     int j;
@@ -806,8 +763,7 @@ void Fcs::set_forceconstant_cartesian(const int maxorder,
             fc_cart_tmp.clear();
 
             for (const auto &it: fc_table[i]) {
-                fc_latt.emplace_back(param_in[it.mother + ishift] * it.sign,
-                                     it.elems);
+                fc_latt.emplace_back(param_in[it.mother + ishift] * it.sign, it.elems);
             }
 
             change_basis_force_constants(fc_latt, fc_cart_tmp, 0);
@@ -822,9 +778,7 @@ void Fcs::set_forceconstant_cartesian(const int maxorder,
             nfc_cart_permu[i] = fc_cart[i].size();
             nfc_cart_nopermu[i] = std::count_if(fc_cart[i].begin(),
                                                 fc_cart[i].end(),
-                                                [](const ForceConstantTable &obj) {
-                                                    return obj.is_ascending_order;
-                                                });
+                                                [](const ForceConstantTable &obj) { return obj.is_ascending_order; });
         }
 
     } else if (preferred_basis == "Cartesian") {
@@ -847,8 +801,7 @@ void Fcs::set_forceconstant_cartesian(const int maxorder,
                                                 param_in[it.mother + ishift] * it.sign,
                                                 &atoms_now[0],
                                                 &coords_now[0]);
-                    } while (std::next_permutation(elems_permutation.begin() + 1,
-                                                   elems_permutation.end()));
+                    } while (std::next_permutation(elems_permutation.begin() + 1, elems_permutation.end()));
                 }
             }
 
@@ -857,16 +810,14 @@ void Fcs::set_forceconstant_cartesian(const int maxorder,
             nfc_cart_permu[i] = fc_cart[i].size();
             nfc_cart_nopermu[i] = std::count_if(fc_cart[i].begin(),
                                                 fc_cart[i].end(),
-                                                [](const ForceConstantTable &obj) {
-                                                    return obj.is_ascending_order;
-                                                });
+                                                [](const ForceConstantTable &obj) { return obj.is_ascending_order; });
         }
     }
 }
 
-void Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
-                                       std::vector<ForceConstantTable> &fc_out,
-                                       const int conversion_direction) const
+auto Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
+                                       std::vector<ForceConstantTable> &fc_out, const int conversion_direction) const
+    -> void
 {
     // Convert the basis of force constants between Cartesian basis and Lattice basis.
     // When conversion_direction == 0: fc_in is in Lattice and fc_out is in Cartesian
@@ -906,7 +857,8 @@ void Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc
     allocate(xyzcomponent, nxyz, nelems);
     get_xyzcomponent(nelems, xyzcomponent);
 
-    for (auto j = 0; j < nelems; ++j) atoms_old[j] = -1;
+    for (auto j = 0; j < nelems; ++j)
+        atoms_old[j] = -1;
     auto icount = 0;
 
     fc_table_copy.clear();
@@ -915,16 +867,12 @@ void Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc
     for (const auto &it: fc_in) {
         std::vector<int> elems_permutation = it.flattenarray;
         do {
-            fc_table_copy.emplace_back(it.fc_value,
-                                       elems_permutation);
-        } while (std::next_permutation(elems_permutation.begin() + 1,
-                                       elems_permutation.end()));
+            fc_table_copy.emplace_back(it.fc_value, elems_permutation);
+        } while (std::next_permutation(elems_permutation.begin() + 1, elems_permutation.end()));
     }
 
     // Sort fc_table_copy in ascending order of atomic indices.
-    std::sort(fc_table_copy.begin(),
-              fc_table_copy.end(),
-              ForceConstantTable::compare_atom_index);
+    std::sort(fc_table_copy.begin(), fc_table_copy.end(), ForceConstantTable::compare_atom_index);
 
     coord_list_grp.clear();
     fc_list_grp.clear();
@@ -989,16 +937,12 @@ void Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc
                 for (auto j = 0; j < nentry; ++j) {
                     double prod_matrix = 1.0;
                     for (auto k = 0; k < nelems; ++k) {
-                        prod_matrix *= convmat(coord_list_grp[igrp][j][k],
-                                               xyzcomponent[ixyz][k]);
+                        prod_matrix *= convmat(coord_list_grp[igrp][j][k], xyzcomponent[ixyz][k]);
                     }
                     fcs_tmp += prod_matrix * fc_list_grp[igrp][j];
                 }
 
-                fc_omp.emplace_back(nelems,
-                                    fcs_tmp,
-                                    &atoms_grp[igrp][0],
-                                    xyzcomponent[ixyz]);
+                fc_omp.emplace_back(nelems, fcs_tmp, &atoms_grp[igrp][0], xyzcomponent[ixyz]);
             }
         }
 
@@ -1012,20 +956,19 @@ void Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc
     }
 
     deallocate(xyzcomponent);
-
 }
 
-void Fcs::set_fc_zero_threshold(const double threshold_in)
+auto Fcs::set_fc_zero_threshold(const double threshold_in) -> void
 {
     fc_zero_threshold = threshold_in;
 }
 
-double Fcs::get_fc_zero_threshold() const
+auto Fcs::get_fc_zero_threshold() const -> double
 {
     return fc_zero_threshold;
 }
 
-std::vector<size_t> Fcs::get_nfc_cart(const int permutation) const
+auto Fcs::get_nfc_cart(const int permutation) const -> std::vector<size_t>
 {
     if (permutation) {
         return nfc_cart_permu;
@@ -1034,12 +977,9 @@ std::vector<size_t> Fcs::get_nfc_cart(const int permutation) const
     }
 }
 
-void Fcs::get_available_symmop(const size_t nat,
-                               const std::unique_ptr<Symmetry> &symmetry,
-                               const std::string &basis,
-                               std::vector<std::vector<int>> &mapping_symm,
-                               std::vector<Eigen::Matrix3d> &rotation,
-                               const bool use_compatible)
+auto Fcs::get_available_symmop(const size_t nat, const std::unique_ptr<Symmetry> &symmetry, const std::string &basis,
+                               std::vector<std::vector<int>> &mapping_symm, std::vector<Eigen::Matrix3d> &rotation,
+                               const bool use_compatible) -> void
 {
     // Return mapping information of atoms and the rotation matrices of symmetry operations
     // that are (compatible, incompatible) with the given lattice basis (Cartesian or Lattice).
@@ -1068,9 +1008,7 @@ void Fcs::get_available_symmop(const size_t nat,
 
         for (const auto &it: symmetry->get_symmetry_data()) {
             if (it.compatible_with_lattice == use_compatible) {
-                rotation.emplace_back(it.rotation.unaryExpr([](const int x) {
-                    return static_cast<double>(x);
-                }));
+                rotation.emplace_back(it.rotation.unaryExpr([](const int x) { return static_cast<double>(x); }));
                 isym_to_add.emplace_back(counter);
             }
             ++counter;
@@ -1091,10 +1029,7 @@ void Fcs::get_available_symmop(const size_t nat,
     }
 }
 
-double Fcs::coef_sym(const int n,
-                     const Eigen::Matrix3d &rot,
-                     const int *arr1,
-                     const int *arr2)
+auto Fcs::coef_sym(const int n, const Eigen::Matrix3d &rot, const int *arr1, const int *arr2) -> double
 {
     auto tmp = 1.0;
 
@@ -1104,8 +1039,7 @@ double Fcs::coef_sym(const int n,
     return tmp;
 }
 
-bool Fcs::is_ascending(const int n,
-                       const int *arr)
+auto Fcs::is_ascending(const int n, const int *arr) -> bool
 {
     for (auto i = 0; i < n - 1; ++i) {
         if (arr[i] > arr[i + 1]) return false;
@@ -1113,11 +1047,8 @@ bool Fcs::is_ascending(const int n,
     return true;
 }
 
-int Fcs::get_minimum_index_in_primitive(const int n,
-                                        const int *arr,
-                                        const size_t nat,
-                                        const size_t natmin,
-                                        const std::vector<std::vector<int>> &map_p2s)
+auto Fcs::get_minimum_index_in_primitive(const int n, const int *arr, const size_t nat, const size_t natmin,
+                                         const std::vector<std::vector<int>> &map_p2s) -> int
 {
     int i;
 
@@ -1147,10 +1078,8 @@ int Fcs::get_minimum_index_in_primitive(const int n,
     return minloc;
 }
 
-bool Fcs::is_inprim(const int n,
-                    const int *arr,
-                    const size_t natmin,
-                    const std::vector<std::vector<int>> &map_p2s)
+auto Fcs::is_inprim(const int n, const int *arr, const size_t natmin, const std::vector<std::vector<int>> &map_p2s)
+    -> bool
 {
     for (auto i = 0; i < n; ++i) {
         for (size_t j = 0; j < natmin; ++j) {
@@ -1160,9 +1089,7 @@ bool Fcs::is_inprim(const int n,
     return false;
 }
 
-bool Fcs::is_inprim(const int n,
-                    const size_t natmin,
-                    const std::vector<std::vector<int>> &map_p2s)
+auto Fcs::is_inprim(const int n, const size_t natmin, const std::vector<std::vector<int>> &map_p2s) -> bool
 {
     const auto atmn = n / 3;
 
@@ -1173,8 +1100,7 @@ bool Fcs::is_inprim(const int n,
     return false;
 }
 
-void Fcs::get_xyzcomponent(const int n,
-                           int **xyz)
+auto Fcs::get_xyzcomponent(const int n, int **xyz) -> void
 {
     // Return xyz component for the given order using boost algorithm library
 
@@ -1182,22 +1108,24 @@ void Fcs::get_xyzcomponent(const int n,
 
     std::vector<int> v(3 * n);
 
-    for (i = 0; i < n; ++i) v[i] = 0;
-    for (i = n; i < 2 * n; ++i) v[i] = 1;
-    for (i = 2 * n; i < 3 * n; ++i) v[i] = 2;
+    for (i = 0; i < n; ++i)
+        v[i] = 0;
+    for (i = n; i < 2 * n; ++i)
+        v[i] = 1;
+    for (i = 2 * n; i < 3 * n; ++i)
+        v[i] = 2;
 
     auto m = 0;
 
     do {
         xyz[m][0] = v[0];
-        for (i = 1; i < n; ++i) xyz[m][i] = v[i];
+        for (i = 1; i < n; ++i)
+            xyz[m][i] = v[i];
         ++m;
     } while (boost::next_partial_permutation(v.begin(), v.begin() + n, v.end()));
 }
 
-bool Fcs::is_allzero(const std::vector<double> &vec,
-                     const double tol,
-                     int &loc)
+auto Fcs::is_allzero(const std::vector<double> &vec, const double tol, int &loc) -> bool
 {
     loc = -1;
     const auto n = vec.size();
@@ -1210,8 +1138,7 @@ bool Fcs::is_allzero(const std::vector<double> &vec,
     return true;
 }
 
-bool Fcs::is_allzero(const std::vector<int> &vec,
-                     int &loc)
+auto Fcs::is_allzero(const std::vector<int> &vec, int &loc) -> bool
 {
     loc = -1;
     for (auto i = 0; i < vec.size(); ++i) {
@@ -1223,21 +1150,20 @@ bool Fcs::is_allzero(const std::vector<int> &vec,
     return true;
 }
 
-Eigen::Matrix3d Fcs::get_basis_conversion_matrix() const
+auto Fcs::get_basis_conversion_matrix() const -> Eigen::Matrix3d
 {
     return basis_conversion_matrix;
 }
 
-void Fcs::set_basis_conversion_matrix(const Cell &supercell)
+auto Fcs::set_basis_conversion_matrix(const Cell &supercell) -> void
 {
     if (preferred_basis == "Lattice") {
-        // multiply the scale factor for making the determinant of the basis_conversion_matrix 
+        // multiply the scale factor for making the determinant of the basis_conversion_matrix
         // as one.
         const auto scale_factor = std::pow(supercell.volume, 1.0 / 3.0) / (2.0 * pi);
         for (auto i = 0; i < 3; ++i) {
             for (auto j = 0; j < 3; ++j) {
-                basis_conversion_matrix(i, j)
-                    = supercell.reciprocal_lattice_vector(i, j) * scale_factor;
+                basis_conversion_matrix(i, j) = supercell.reciprocal_lattice_vector(i, j) * scale_factor;
             }
         }
     } else if (preferred_basis == "Cartesian") {
@@ -1253,8 +1179,8 @@ void Fcs::set_basis_conversion_matrix(const Cell &supercell)
     }
 }
 
-void Fcs::translate_forceconstant_index_to_centercell(const std::unique_ptr<Symmetry> &symmetry,
-                                                      std::vector<std::vector<int>> &index_inout)
+auto Fcs::translate_forceconstant_index_to_centercell(const std::unique_ptr<Symmetry> &symmetry,
+                                                      std::vector<std::vector<int>> &index_inout) -> void
 {
     const auto map_sym = symmetry->get_map_sym();
     const auto map_p2s = symmetry->get_map_trueprim_to_super();
@@ -1277,9 +1203,7 @@ void Fcs::translate_forceconstant_index_to_centercell(const std::unique_ptr<Symm
             coords[j] = index_inout[i][j] % 3;
         }
         int isym = -1;
-        if (!is_inprim(index_inout[i][0],
-                       natmin,
-                       map_p2s)) {
+        if (!is_inprim(index_inout[i][0], natmin, map_p2s)) {
             for (auto jsym = 0; jsym < symnum_tran.size(); ++jsym) {
                 index_tran[0] = 3 * map_sym[atoms[0]][symnum_tran[jsym]] + coords[0];
                 if (is_inprim(index_tran[0], natmin, map_p2s)) {
@@ -1288,8 +1212,7 @@ void Fcs::translate_forceconstant_index_to_centercell(const std::unique_ptr<Symm
                 }
             }
             if (isym == -1) {
-                exit("translate_forceconstant_index_to_centercell",
-                     "translational mapping to the center cell failed.");
+                exit("translate_forceconstant_index_to_centercell", "translational mapping to the center cell failed.");
             }
 
             for (size_t j = 0; j < nelems; ++j) {

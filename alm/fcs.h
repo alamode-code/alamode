@@ -11,15 +11,15 @@
 
 #pragma once
 
-#include <vector>
-#include <set>
-#include <map>
-#include <unordered_map>
+#include <Eigen/Core>
 #include <algorithm>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <vector>
 #include "cluster.h"
 #include "symmetry.h"
 #include "timer.h"
-#include <Eigen/Core>
 
 // By default, we use unordered_map for better performance of rref_sparse (in rref.cpp).
 #ifdef _USE_MAP_FOR_CONSTRAINT
@@ -42,10 +42,7 @@ public:
 
     FcProperty(const FcProperty &obj) = default;
 
-    FcProperty(const int n,
-               const double c,
-               const int *arr,
-               const size_t m)
+    FcProperty(const int n, const double c, const int *arr, const size_t m)
     {
         sign = c;
         mother = m;
@@ -54,15 +51,12 @@ public:
         }
     }
 
-    bool operator<(const FcProperty &a) const
+    auto operator<(const FcProperty &a) const -> bool
     {
-        return std::lexicographical_compare(elems.begin(),
-                                            elems.end(),
-                                            a.elems.begin(),
-                                            a.elems.end());
+        return std::lexicographical_compare(elems.begin(), elems.end(), a.elems.begin(), a.elems.end());
     }
 
-    bool operator==(const FcProperty &a) const
+    auto operator==(const FcProperty &a) const -> bool
     {
         auto n = elems.size();
         auto n_ = a.elems.size();
@@ -73,8 +67,7 @@ public:
         return true;
     }
 
-    static bool compare_atom_index(const FcProperty &a,
-                                   const FcProperty &b)
+    static auto compare_atom_index(const FcProperty &a, const FcProperty &b) -> bool
     {
         const auto n1 = a.elems.size();
         const auto n2 = b.elems.size();
@@ -104,10 +97,7 @@ public:
 
     ForceConstantTable(const ForceConstantTable &obj) = default;
 
-    ForceConstantTable(const int nelems,
-                       const double fc_in,
-                       const int *atoms_in,
-                       const int *coords_in)
+    ForceConstantTable(const int nelems, const double fc_in, const int *atoms_in, const int *coords_in)
     {
         atoms.resize(nelems);
         coords.resize(nelems);
@@ -128,8 +118,7 @@ public:
         }
     }
 
-    ForceConstantTable(const double fc_in,
-                       const std::vector<int> &flattenarray_in)
+    ForceConstantTable(const double fc_in, const std::vector<int> &flattenarray_in)
     {
         const auto nelems = flattenarray_in.size();
         atoms.resize(nelems);
@@ -150,7 +139,7 @@ public:
         }
     }
 
-    bool operator<(const ForceConstantTable &a) const
+    auto operator<(const ForceConstantTable &a) const -> bool
     {
         return std::lexicographical_compare(flattenarray.begin(),
                                             flattenarray.end(),
@@ -158,22 +147,18 @@ public:
                                             a.flattenarray.end());
     }
 
-    bool operator==(const ForceConstantTable &a) const
+    auto operator==(const ForceConstantTable &a) const -> bool
     {
         return flattenarray == a.flattenarray;
     }
 
-    static bool compare_atom_index(const ForceConstantTable &a,
-                                   const ForceConstantTable &b)
+    static auto compare_atom_index(const ForceConstantTable &a, const ForceConstantTable &b) -> bool
     {
         const auto n1 = a.atoms.size();
         const auto n2 = b.atoms.size();
         if (n1 != n2) return n1 < n2;
 
-        return std::lexicographical_compare(a.atoms.begin(),
-                                            a.atoms.end(),
-                                            b.atoms.begin(),
-                                            b.atoms.end());
+        return std::lexicographical_compare(a.atoms.begin(), a.atoms.end(), b.atoms.begin(), b.atoms.end());
     }
 };
 
@@ -184,72 +169,53 @@ public:
 
     ~Fcs();
 
-    void init(const std::unique_ptr<Cluster> &cluster,
-              const std::unique_ptr<Symmetry> &symmetry,
-              const Cell &supercell,
-              const int verbosity,
-              std::unique_ptr<Timer> &timer);
+    auto init(const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Symmetry> &symmetry, const Cell &supercell,
+              const int verbosity, std::unique_ptr<Timer> &timer) -> void;
 
-    static void get_xyzcomponent(int,
-                                 int **);
+    static auto get_xyzcomponent(int, int **) -> void;
 
-    void generate_force_constant_table(const int,
-                                       const size_t nat,
-                                       const std::set<IntList> &,
-                                       const std::unique_ptr<Symmetry> &symm_in,
-                                       const std::string &,
-                                       std::vector<FcProperty> &,
-                                       std::vector<size_t> &,
-                                       std::vector<FcProperty> &,
-                                       const bool) const;
+    static auto generate_force_constant_table(const int, const size_t nat, const std::set<IntList> &,
+                                              const std::unique_ptr<Symmetry> &symm_in, const std::string &,
+                                              std::vector<FcProperty> &, std::vector<size_t> &,
+                                              std::vector<FcProperty> &, const bool) -> void;
 
-    static void get_constraint_symmetry(const size_t nat,
-                                        const std::unique_ptr<Symmetry> &symmetry,
-                                        const int order,
-                                        const std::string &basis,
-                                        const std::vector<FcProperty> &fc_table_in,
-                                        const size_t nparams,
-                                        const double tolerance,
-                                        ConstraintSparseForm &const_out,
-                                        const bool do_rref = false);
+    static auto get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmetry> &symmetry, const int order,
+                                        const std::string &basis, const std::vector<FcProperty> &fc_table_in,
+                                        const size_t nparams, const double tolerance, ConstraintSparseForm &const_out,
+                                        const bool do_rref = false) -> void;
 
-    static void get_constraint_symmetry_in_integer(const size_t nat,
-                                                   const std::unique_ptr<Symmetry> &symmetry,
-                                                   const int order,
-                                                   const std::string &basis,
-                                                   const std::vector<FcProperty> &fc_table_in,
-                                                   const size_t nparams,
-                                                   const double tolerance,
-                                                   ConstraintSparseForm &const_out,
-                                                   const bool do_rref = false);
+    static auto get_constraint_symmetry_in_integer(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
+                                                   const int order, const std::string &basis,
+                                                   const std::vector<FcProperty> &fc_table_in, const size_t nparams,
+                                                   const double tolerance, ConstraintSparseForm &const_out,
+                                                   const bool do_rref = false) -> void;
 
-    [[nodiscard]] std::vector<size_t> *get_nequiv() const;
+    [[nodiscard]] auto get_nequiv() const -> std::vector<size_t> *;
 
-    [[nodiscard]] std::vector<FcProperty> *get_fc_table() const;
+    [[nodiscard]] auto get_fc_table() const -> std::vector<FcProperty> *;
 
-    [[nodiscard]] std::vector<ForceConstantTable> *get_fc_cart() const;
+    [[nodiscard]] auto get_fc_cart() const -> std::vector<ForceConstantTable> *;
 
-    [[nodiscard]] std::vector<size_t> get_nfc_cart(const int permutation) const;
+    [[nodiscard]] auto get_nfc_cart(const int permutation) const -> std::vector<size_t>;
 
-    void set_forceconstant_basis(const std::string &preferred_basis_in);
+    auto set_forceconstant_basis(const std::string &preferred_basis_in) -> void;
 
-    [[nodiscard]] std::string get_forceconstant_basis() const;
+    [[nodiscard]] auto get_forceconstant_basis() const -> std::string;
 
-    [[nodiscard]] Eigen::Matrix3d get_basis_conversion_matrix() const;
+    [[nodiscard]] auto get_basis_conversion_matrix() const -> Eigen::Matrix3d;
 
-    void set_forceconstant_cartesian(const int maxorder,
-                                     double *param_in);
+    auto set_forceconstant_cartesian(const int maxorder, double *param_in) -> void;
 
-    void set_fc_zero_threshold(const double threshold_in);
+    auto set_fc_zero_threshold(const double threshold_in) -> void;
 
-    [[nodiscard]] double get_fc_zero_threshold() const;
+    [[nodiscard]] auto get_fc_zero_threshold() const -> double;
 
-    static void translate_forceconstant_index_to_centercell(const std::unique_ptr<Symmetry> &symmetry,
-                                                            std::vector<std::vector<int>> &index_inout);
+    static auto translate_forceconstant_index_to_centercell(const std::unique_ptr<Symmetry> &symmetry,
+                                                            std::vector<std::vector<int>> &index_inout) -> void;
 
-    void change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
-                                      std::vector<ForceConstantTable> &fc_out,
-                                      const int conversion_direction) const;
+    auto change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
+                                      std::vector<ForceConstantTable> &fc_out, const int conversion_direction) const
+        -> void;
 
 private:
     std::vector<size_t> *nequiv;       // stores duplicate number of irreducible force constants
@@ -268,50 +234,35 @@ private:
     double fc_zero_threshold; // The threshold value to judge if the force constants are treated
     // as nonzero or not.
 
-    void set_default_variables();
+    auto set_default_variables() -> void;
 
-    void deallocate_variables();
+    auto deallocate_variables() -> void;
 
-    [[nodiscard]] static bool is_ascending(int,
-                                           const int *);
+    [[nodiscard]] static auto is_ascending(int, const int *) -> bool;
 
-    [[nodiscard]] static bool is_inprim(const int n,
-                                        const int *arr,
-                                        const size_t natmin,
-                                        const std::vector<std::vector<int>> &map_p2s);
+    [[nodiscard]] static auto is_inprim(const int n, const int *arr, const size_t natmin,
+                                        const std::vector<std::vector<int>> &map_p2s) -> bool;
 
-    [[nodiscard]] static bool is_inprim(const int n,
-                                        const size_t natmin,
-                                        const std::vector<std::vector<int>> &map_p2s);
+    [[nodiscard]] static auto is_inprim(const int n, const size_t natmin, const std::vector<std::vector<int>> &map_p2s)
+        -> bool;
 
-    [[nodiscard]] static bool is_allzero(const std::vector<double> &,
-                                         double,
-                                         int &);
+    [[nodiscard]] static auto is_allzero(const std::vector<double> &, double, int &) -> bool;
 
-    [[nodiscard]] static bool is_allzero(const std::vector<int> &,
-                                         int &);
+    [[nodiscard]] static auto is_allzero(const std::vector<int> &, int &) -> bool;
 
-    static void get_available_symmop(const size_t nat,
-                                     const std::unique_ptr<Symmetry> &symmetry,
-                                     const std::string &basis,
-                                     std::vector<std::vector<int>> &mapping_symm,
-                                     std::vector<Eigen::Matrix3d> &rotation,
-                                     const bool use_compatible);
+    static auto get_available_symmop(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
+                                     const std::string &basis, std::vector<std::vector<int>> &mapping_symm,
+                                     std::vector<Eigen::Matrix3d> &rotation, const bool use_compatible) -> void;
 
-    [[nodiscard]] static int get_minimum_index_in_primitive(const int n,
-                                                            const int *arr,
-                                                            const size_t nat,
-                                                            const size_t natmin,
-                                                            const std::vector<std::vector<int>> &map_p2s);
+    [[nodiscard]] static auto get_minimum_index_in_primitive(const int n, const int *arr, const size_t nat,
+                                                             const size_t natmin,
+                                                             const std::vector<std::vector<int>> &map_p2s) -> int;
 
-    [[nodiscard]] static double coef_sym(const int,
-                                         const Eigen::Matrix3d &rot,
-                                         const int *,
-                                         const int *);
+    [[nodiscard]] static auto coef_sym(const int, const Eigen::Matrix3d &rot, const int *, const int *) -> double;
 
-    void set_basis_conversion_matrix(const Cell &supercell);
+    auto set_basis_conversion_matrix(const Cell &supercell) -> void;
 };
-}
+} // namespace ALM_NS
 
 // Define a hash function for FcProperty class
 // Use boost::hash_combine
@@ -320,7 +271,7 @@ namespace std
 template <>
 struct hash<ALM_NS::FcProperty>
 {
-    std::size_t operator()(ALM_NS::FcProperty const &obj) const
+    auto operator()(ALM_NS::FcProperty const &obj) const -> std::size_t
     {
         hash<int> hasher;
         size_t seed = 0;
@@ -330,4 +281,4 @@ struct hash<ALM_NS::FcProperty>
         return seed;
     }
 };
-}
+} // namespace std

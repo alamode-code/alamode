@@ -1,14 +1,13 @@
-extern "C" {
+extern "C"
+{
 #include "../external/niggli.h"
 }
 
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-inline int niggli_reduction(const Eigen::Matrix3d &lat_in,
-                            Eigen::Matrix3d &lat_out,
-                            Eigen::Matrix3d &c_matrix,
-                            const double eps = 1.0e-8)
+inline auto niggli_reduction(const Eigen::Matrix3d &lat_in, Eigen::Matrix3d &lat_out, Eigen::Matrix3d &c_matrix,
+                             const double eps = 1.0e-8) -> int
 {
     // lat_in: 3x3 matrix in the form of (a_x, b_x, c_x)
     //                                   (a_y, b_y, c_y)
@@ -28,9 +27,7 @@ inline int niggli_reduction(const Eigen::Matrix3d &lat_in,
         }
     }
 
-    int succeeded;
-
-    succeeded = niggli_reduce(lat, eps);
+    int succeeded = niggli_reduce(lat, eps);
 
     k = 0;
     for (auto i = 0; i < 3; ++i) {
@@ -42,5 +39,4 @@ inline int niggli_reduction(const Eigen::Matrix3d &lat_in,
     c_matrix = lat_in.inverse() * lat_out;
 
     return succeeded;
-
 }

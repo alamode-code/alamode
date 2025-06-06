@@ -10,25 +10,22 @@
 
 #include <Eigen/Core>
 
-[[nodiscard]] int gcd(const int &a, const int &b);
+[[nodiscard]] auto gcd(const int &a, const int &b) -> int;
 
-[[nodiscard]] int exgcd(const int &a, const int &b, int &x, int &y);
+[[nodiscard]] auto exgcd(const int &a, const int &b, int &x, int &y) -> int;
 
-[[nodiscard]] bool is_lone(const Eigen::MatrixXi &A, const int s);
+[[nodiscard]] auto is_lone(const Eigen::MatrixXi &A, const int s) -> bool;
 
-[[nodiscard]] int locate_minval_lower_right(const Eigen::MatrixXi &A, const int s, int &irow, int &icol);
+[[nodiscard]] auto locate_minval_lower_right(const Eigen::MatrixXi &A, const int s, int &irow, int &icol) -> int;
 
-[[nodiscard]] bool check_divide_subelements(const Eigen::MatrixXi &A, const int s, int &irow, int &icol);
+[[nodiscard]] auto check_divide_subelements(const Eigen::MatrixXi &A, const int s, int &irow, int &icol) -> bool;
 
-void swap_rows(Eigen::MatrixXi &A, const int irow, const int jrow);
+auto swap_rows(Eigen::MatrixXi &A, const int irow, const int jrow) -> void;
 
-void swap_cols(Eigen::MatrixXi &A, const int icol, const int jcol);
+auto swap_cols(Eigen::MatrixXi &A, const int icol, const int jcol) -> void;
 
-void add_row_wise(Eigen::MatrixXi &A, const int irow, const int jrow, const int factor);
+auto add_row_wise(Eigen::MatrixXi &A, const int irow, const int jrow, const int factor) -> void;
 
-void add_col_wise(Eigen::MatrixXi &A, const int icol, const int jcol, const int factor);
+auto add_col_wise(Eigen::MatrixXi &A, const int icol, const int jcol, const int factor) -> void;
 
-void smith_decomposition(const Eigen::MatrixXi &A,
-                         Eigen::MatrixXi &D,
-                         Eigen::MatrixXi &U,
-                         Eigen::MatrixXi &V);
+auto smith_decomposition(const Eigen::MatrixXi &A, Eigen::MatrixXi &D, Eigen::MatrixXi &U, Eigen::MatrixXi &V) -> void;

@@ -9,30 +9,30 @@
 */
 
 #include "constraint.h"
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
+#include <boost/bimap.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <highfive/H5Easy.hpp>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <unordered_set>
+#include "cluster.h"
 #include "combination.h"
 #include "error.h"
 #include "fcs.h"
-#include "cluster.h"
+#include "hdf5_parser.h"
 #include "memory.h"
 #include "rref.h"
+#include "svd.h"
 #include "symmetry.h"
 #include "system.h"
 #include "timer.h"
 #include "xml_parser.h"
-#include "hdf5_parser.h"
-#include "svd.h"
-#include <iostream>
-#include <iomanip>
-#include <boost/bimap.hpp>
-#include <algorithm>
-#include <unordered_set>
-#include <map>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-#include <highfive/H5Easy.hpp>
 
 using namespace ALM_NS;
 
@@ -46,7 +46,7 @@ Constraint::~Constraint()
     deallocate_variables();
 }
 
-void Constraint::set_default_variables()
+auto Constraint::set_default_variables() -> void
 {
     constraint_mode = 11;
     rotation_axis = "";
@@ -69,7 +69,7 @@ void Constraint::set_default_variables()
     status_constraint_subset["huang"] = -1;
 }
 
-void Constraint::deallocate_variables()
+auto Constraint::deallocate_variables() -> void
 {
     if (index_bimap) {
         deallocate(index_bimap);
@@ -82,14 +82,10 @@ void Constraint::deallocate_variables()
     }
 }
 
-void Constraint::setup(const std::unique_ptr<System> &system,
-                       const std::unique_ptr<Fcs> &fcs,
-                       const std::unique_ptr<Cluster> &cluster,
-                       const std::unique_ptr<Symmetry> &symmetry,
-                       const int linear_model,
-                       const int periodic_image_conv,
-                       const int verbosity,
-                       std::unique_ptr<Timer> &timer)
+auto Constraint::setup(const std::unique_ptr<System> &system, const std::unique_ptr<Fcs> &fcs,
+                       const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Symmetry> &symmetry,
+                       const int linear_model, const int periodic_image_conv, const int verbosity,
+                       std::unique_ptr<Timer> &timer) -> void
 {
     timer->start_clock("constraint");
 
@@ -199,12 +195,7 @@ void Constraint::setup(const std::unique_ptr<System> &system,
         }
         std::vector<std::vector<int>> intpair_fix;
         std::vector<double> values_fix;
-        get_forceconstants_from_file(0,
-                                     symmetry,
-                                     fcs,
-                                     fc2_file,
-                                     intpair_fix,
-                                     values_fix);
+        get_forceconstants_from_file(0, symmetry, fcs, fc2_file, intpair_fix, values_fix);
 
         set_forceconstants_to_fix(intpair_fix, values_fix);
     }
@@ -217,25 +208,14 @@ void Constraint::setup(const std::unique_ptr<System> &system,
         }
         std::vector<std::vector<int>> intpair_fix;
         std::vector<double> values_fix;
-        get_forceconstants_from_file(1,
-                                     symmetry,
-                                     fcs,
-                                     fc3_file,
-                                     intpair_fix,
-                                     values_fix);
+        get_forceconstants_from_file(1, symmetry, fcs, fc3_file, intpair_fix, values_fix);
 
         set_forceconstants_to_fix(intpair_fix, values_fix);
     }
 
     status_constraint_subset["symmetry"] = 0;
 
-    update_constraint_matrix(system,
-                             symmetry,
-                             cluster,
-                             fcs,
-                             verbosity,
-                             periodic_image_conv,
-                             true);
+    update_constraint_matrix(system, symmetry, cluster, fcs, verbosity, periodic_image_conv, true);
 
     if (verbosity > 0) {
         print_constraint_information(cluster);
@@ -247,38 +227,26 @@ void Constraint::setup(const std::unique_ptr<System> &system,
     timer->stop_clock("constraint");
 }
 
-void Constraint::update_constraint_symmetry(const size_t nat,
-                                            const int maxorder,
+auto Constraint::update_constraint_symmetry(const size_t nat, const int maxorder,
                                             const std::unique_ptr<Symmetry> &symmetry,
-                                            const std::unique_ptr<Cluster> &cluster,
-                                            const std::unique_ptr<Fcs> &fcs,
-                                            const int verbosity,
-                                            const bool do_rref)
+                                            const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                            const int verbosity, const bool do_rref) -> void
 {
 
     if (const_symmetry.size() != maxorder) const_symmetry.resize(maxorder);
 
     if (status_constraint_subset["symmetry"] == 0) {
-        generate_symmetry_constraint(nat,
-                                     symmetry,
-                                     cluster,
-                                     fcs,
-                                     verbosity,
-                                     do_rref);
+        generate_symmetry_constraint(nat, symmetry, cluster, fcs, verbosity, do_rref);
 
         status_constraint_subset["symmetry"] = 1;
     }
-
 }
 
-void Constraint::update_constraint_translation(const Cell &supercell,
-                                               const int maxorder,
+auto Constraint::update_constraint_translation(const Cell &supercell, const int maxorder,
                                                const std::unique_ptr<Symmetry> &symmetry,
-                                               const std::unique_ptr<Cluster> &cluster,
-                                               const std::unique_ptr<Fcs> &fcs,
-                                               const int periodic_image_conv,
-                                               const int verbosity,
-                                               const bool do_rref)
+                                               const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                               const int periodic_image_conv, const int verbosity, const bool do_rref)
+    -> void
 {
     if (const_translation.size() != maxorder) const_translation.resize(maxorder);
 
@@ -289,32 +257,22 @@ void Constraint::update_constraint_translation(const Cell &supercell,
         }
     }
     if (status_constraint_subset["translation"] == 0) {
-        generate_translational_constraint(supercell,
-                                          symmetry,
-                                          cluster,
-                                          fcs,
-                                          periodic_image_conv,
-                                          verbosity,
-                                          do_rref);
+        generate_translational_constraint(supercell, symmetry, cluster, fcs, periodic_image_conv, verbosity, do_rref);
         status_constraint_subset["translation"] = 1;
     }
 }
 
 
-void Constraint::update_constraint_rotation(const std::unique_ptr<System> &system,
-                                            const int maxorder,
+auto Constraint::update_constraint_rotation(const std::unique_ptr<System> &system, const int maxorder,
                                             const std::unique_ptr<Symmetry> &symmetry,
-                                            const std::unique_ptr<Cluster> &cluster,
-                                            const std::unique_ptr<Fcs> &fcs,
-                                            const int periodic_image_conv,
-                                            const int verbosity,
-                                            const bool do_rref)
+                                            const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                            const int periodic_image_conv, const int verbosity, const bool do_rref)
+    -> void
 {
     if (const_rotation_self.size() != maxorder) const_rotation_self.resize(maxorder);
     if (const_rotation_cross.size() != maxorder) const_rotation_cross.resize(maxorder);
 
-    if (status_constraint_subset["rotation"] == -1
-        or status_constraint_subset["rotation_extra"] == -1) {
+    if (status_constraint_subset["rotation"] == -1 or status_constraint_subset["rotation_extra"] == -1) {
         for (auto order = 0; order < maxorder; ++order) {
             const_rotation_self[order].clear();
             const_rotation_cross[order].clear();
@@ -323,27 +281,18 @@ void Constraint::update_constraint_rotation(const std::unique_ptr<System> &syste
         }
     }
 
-    if (status_constraint_subset["rotation"] == 0
-        or status_constraint_subset["rotation_extra"] == 0) {
-        generate_rotational_constraint(system,
-                                       symmetry,
-                                       cluster,
-                                       fcs,
-                                       verbosity,
-                                       tolerance_constraint);
+    if (status_constraint_subset["rotation"] == 0 or status_constraint_subset["rotation_extra"] == 0) {
+        generate_rotational_constraint(system, symmetry, cluster, fcs, verbosity, tolerance_constraint);
 
         if (status_constraint_subset["rotation"] == 0) status_constraint_subset["rotation"] = 1;
         if (status_constraint_subset["rotation_extra"] == 0) status_constraint_subset["rotation_extra"] = 1;
-
     }
 }
 
-void Constraint::update_constraint_huang(const std::unique_ptr<System> &system,
+auto Constraint::update_constraint_huang(const std::unique_ptr<System> &system,
                                          const std::unique_ptr<Symmetry> &symmetry,
-                                         const std::unique_ptr<Cluster> &cluster,
-                                         const std::unique_ptr<Fcs> &fcs,
-                                         const int verbosity,
-                                         const bool do_rref)
+                                         const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                         const int verbosity, const bool do_rref) -> void
 {
     if (const_huang.size() != 1) const_huang.resize(1);
     if (status_constraint_subset["huang"] == -1) {
@@ -365,9 +314,8 @@ void Constraint::update_constraint_huang(const std::unique_ptr<System> &system,
     }
 }
 
-void Constraint::update_constraint_fix(const int maxorder,
-                                       const std::unique_ptr<Symmetry> &symmetry,
-                                       const std::unique_ptr<Fcs> &fcs)
+auto Constraint::update_constraint_fix(const int maxorder, const std::unique_ptr<Symmetry> &symmetry,
+                                       const std::unique_ptr<Fcs> &fcs) -> void
 {
     if (const_fix.size() != maxorder) const_fix.resize(maxorder);
     if (status_constraint_subset["fix2"] == -1 or status_constraint_subset["fix3"] == -1) {
@@ -376,21 +324,17 @@ void Constraint::update_constraint_fix(const int maxorder,
             const_fix[order].shrink_to_fit();
         }
     }
-    if (status_constraint_subset["fix2"] == 0
-        or status_constraint_subset["fix3"] == 0) {
-        generate_fix_constraint(symmetry,
-                                fcs);
+    if (status_constraint_subset["fix2"] == 0 or status_constraint_subset["fix3"] == 0) {
+        generate_fix_constraint(symmetry, fcs);
     }
 }
 
 
-void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
+auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                           const std::unique_ptr<Symmetry> &symmetry,
-                                          const std::unique_ptr<Cluster> &cluster,
-                                          const std::unique_ptr<Fcs> &fcs,
-                                          const int verbosity,
-                                          const int periodic_image_conv,
-                                          const bool do_rref)
+                                          const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                          const int verbosity, const int periodic_image_conv, const bool do_rref)
+    -> void
 {
     const auto maxorder = cluster->get_maxorder();
 
@@ -414,22 +358,10 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                   do_rref);
 
     // const_rotation_self and const_rotation_cross are updated.
-    update_constraint_rotation(system,
-                               maxorder,
-                               symmetry,
-                               cluster,
-                               fcs,
-                               periodic_image_conv,
-                               verbosity,
-                               do_rref);
+    update_constraint_rotation(system, maxorder, symmetry, cluster, fcs, periodic_image_conv, verbosity, do_rref);
 
     // Huang constraint is updated.
-    update_constraint_huang(system,
-                            symmetry,
-                            cluster,
-                            fcs,
-                            verbosity,
-                            do_rref);
+    update_constraint_huang(system, symmetry, cluster, fcs, verbosity, do_rref);
 
 
     // const_fix is updated.
@@ -455,9 +387,8 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
     for (auto order = 0; order < maxorder; ++order) {
         const auto nparam = fcs->get_nequiv()[order].size();
 
-        auto nlen_const = const_translation[order].size()
-                          + const_rotation_self[order].size()
-                          + const_symmetry[order].size();
+        auto nlen_const =
+            const_translation[order].size() + const_rotation_self[order].size() + const_symmetry[order].size();
 
         if (order == 0) {
             nlen_const += const_huang[order].size();
@@ -469,18 +400,14 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         // should not be changed since the rref_sparse is sensitive to
         // the numerical accuracy of the input matrix.
 
-        const_self[order].insert(const_self[order].end(),
-                                 const_symmetry[order].begin(),
-                                 const_symmetry[order].end());
+        const_self[order].insert(const_self[order].end(), const_symmetry[order].begin(), const_symmetry[order].end());
 
         const_self[order].insert(const_self[order].end(),
                                  const_translation[order].begin(),
                                  const_translation[order].end());
 
         if (order == 0) {
-            const_self[order].insert(const_self[order].end(),
-                                     const_huang[0].begin(),
-                                     const_huang[0].end());
+            const_self[order].insert(const_self[order].end(), const_huang[0].begin(), const_huang[0].end());
         }
 
         const_self[order].insert(const_self[order].end(),
@@ -495,8 +422,7 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         size_t Pmax = 0;
         size_t nparams = 0;
         for (auto order = 0; order < maxorder; ++order) {
-            Pmax += const_self[order].size()
-                + const_rotation_cross[order].size();
+            Pmax += const_self[order].size() + const_rotation_cross[order].size();
         }
         if (fix_harmonic) {
             Pmax -= const_self[0].size();
@@ -521,9 +447,7 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         allocate(const_rhs, Pmax);
 
         // const_mat and const_rhs are updated.
-        number_of_constraints = calc_constraint_matrix(maxorder,
-                                                       fcs->get_nequiv(),
-                                                       nparams);
+        number_of_constraints = calc_constraint_matrix(maxorder, fcs->get_nequiv(), nparams);
     }
 
     get_mapping_constraint(maxorder,
@@ -551,13 +475,12 @@ void Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         for (const auto &it: index_bimap[order]) {
             std::cout << std::setw(5) << it.left << " <--> " << it.right << '\n';
         }
-
     }
 
 #endif
 }
 
-void Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cluster) const
+auto Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cluster) const -> void
 {
     const auto maxorder = cluster->get_maxorder();
     auto extra_constraint_from_symmetry = false;
@@ -618,7 +541,7 @@ void Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cl
 
             for (order = 0; order < maxorder; ++order) {
                 std::cout << "  Number of free" << std::setw(9) << cluster->get_ordername(order)
-                    << " FCs : " << index_bimap[order].size() << '\n';
+                          << " FCs : " << index_bimap[order].size() << '\n';
             }
             std::cout << '\n';
         } else {
@@ -628,9 +551,8 @@ void Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cl
 }
 
 
-size_t Constraint::calc_constraint_matrix(const int maxorder,
-                                          const std::vector<size_t> *nequiv,
-                                          const size_t nparams) const
+auto Constraint::calc_constraint_matrix(const int maxorder, const std::vector<size_t> *nequiv,
+                                        const size_t nparams) const -> size_t
 {
     size_t i, j;
     int order;
@@ -646,7 +568,8 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
         const auto nelems = nequiv[order].size();
         if (const_fix[order].empty()) {
             for (auto &p: const_self[order]) {
-                for (i = 0; i < nparams; ++i) arr_tmp[i] = 0.0;
+                for (i = 0; i < nparams; ++i)
+                    arr_tmp[i] = 0.0;
                 for (const auto &it: p) {
                     arr_tmp[nshift + it.first] = it.second;
                 }
@@ -664,7 +587,8 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
         if (order > 0) {
             if (const_fix[order - 1].empty() && const_fix[order].empty()) {
                 for (auto &p: const_rotation_cross[order]) {
-                    for (i = 0; i < nparams; ++i) arr_tmp[i] = 0.0;
+                    for (i = 0; i < nparams; ++i)
+                        arr_tmp[i] = 0.0;
                     for (const auto &it: p) {
                         arr_tmp[nshift2 + it.first] = it.second;
                     }
@@ -677,8 +601,9 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
     }
     deallocate(arr_tmp);
 
-    if (nconst1 != const_total.size())
+    if (nconst1 != const_total.size()) {
         remove_redundant_rows(nparams, const_total, tolerance_constraint);
+    }
 
     auto nconst = const_total.size();
 
@@ -725,17 +650,43 @@ size_t Constraint::calc_constraint_matrix(const int maxorder,
         ++irow;
     }
     const_total.clear();
+    //
+    // for (i = 0; i < nconst; ++i) {
+    //     for (j = 0; j < nparams; ++j) {
+    //         if (std::abs(const_mat[i][j]) > eps12) {
+    //             std::cout << "const_mat[" << i << "][" << j << "] = "
+    //                       << std::scientific << std::setprecision(6)
+    //                       << const_mat[i][j] << '\n';
+    //         }
+    //     }
+    // }
+    //
+    // std::vector<double> C_red, d_red;
+    // int r;
+    // get_independent_rows(nparams, nconst, const_mat, const_rhs, 1, C_red, d_red, r);
+    // std::cout << "Number of independent rows = " << r << '\n';
+    // for (i = 0; i < r; ++i) {
+    //     for (j = 0; j < nparams; ++j) {
+    //         const auto v = C_red[j * r + i];
+    //
+    //         if (std::abs(v) > eps12) {
+    //             std::cout << "const_mat[" << i << "][" << j << "] = "
+    //                       << std::scientific << std::setprecision(6)
+    //                       << v << '\n';
+    //         }
+    //     }
+    // }
+
 
     return nconst;
 }
 
 
-void Constraint::get_mapping_constraint(const int nmax,
-                                        const std::vector<size_t> *nequiv,
+auto Constraint::get_mapping_constraint(const int nmax, const std::vector<size_t> *nequiv,
                                         const ConstraintSparseForm *const_in,
                                         std::vector<ConstraintTypeFix> *const_fix_out,
                                         std::vector<ConstraintTypeRelate> *const_relate_out,
-                                        boost::bimap<size_t, size_t> *index_bimap_out) const
+                                        boost::bimap<size_t, size_t> *index_bimap_out) const -> void
 {
     // If const_fix_out[order] is not empty as input, it assumes that fix_forceconstant[order] is true.
     // In this case, const_fix_out[order] is not updated.
@@ -776,21 +727,19 @@ void Constraint::get_mapping_constraint(const int nmax,
 
 #else
                 auto counter = 0;
-                for (const auto &p2 : (*p)) {
+                for (const auto &p2: (*p)) {
                     if (counter == 0) {
                         p_index_target = p2.first;
                     } else {
                         alpha_tmp.push_back(p2.second);
                         p_index_tmp.push_back(p2.first);
-                }
-                    ++counter;
                     }
+                    ++counter;
+                }
 #endif
 
                 if (!alpha_tmp.empty()) {
-                    const_relate_out[order].emplace_back(p_index_target,
-                                                         alpha_tmp,
-                                                         p_index_tmp);
+                    const_relate_out[order].emplace_back(p_index_target, alpha_tmp, p_index_tmp);
                 } else {
                     const_fix_out[order].emplace_back(p_index_target, 0.0);
                 }
@@ -820,8 +769,7 @@ void Constraint::get_mapping_constraint(const int nmax,
         size_t icount = 0;
         for (i = 0; i < nparam; ++i) {
             if (has_constraint[order][i] == 0) {
-                index_bimap_out[order].insert(
-                    boost::bimap<size_t, size_t>::value_type(icount, i));
+                index_bimap_out[order].insert(boost::bimap<size_t, size_t>::value_type(icount, i));
                 ++icount;
             }
         }
@@ -830,7 +778,7 @@ void Constraint::get_mapping_constraint(const int nmax,
     deallocate(has_constraint);
 }
 
-bool Constraint::ready_all_constraints() const
+auto Constraint::ready_all_constraints() const -> bool
 {
     for (const auto &[fst, snd]: status_constraint_subset) {
         if (snd == 0) return false;
@@ -839,22 +787,22 @@ bool Constraint::ready_all_constraints() const
     return true;
 }
 
-int Constraint::get_constraint_mode() const
+auto Constraint::get_constraint_mode() const -> int
 {
     return constraint_mode;
 }
 
-void Constraint::set_constraint_mode(const int constraint_mode_in)
+auto Constraint::set_constraint_mode(const int constraint_mode_in) -> void
 {
     constraint_mode = constraint_mode_in;
 }
 
-size_t Constraint::get_number_of_constraints() const
+auto Constraint::get_number_of_constraints() const -> size_t
 {
     return number_of_constraints;
 }
 
-std::string Constraint::get_fc_file(const int order) const
+auto Constraint::get_fc_file(const int order) const -> std::string
 {
     switch (order) {
     case 2:
@@ -866,8 +814,7 @@ std::string Constraint::get_fc_file(const int order) const
     }
 }
 
-void Constraint::set_fc_file(const int order,
-                             const std::string &fc_file)
+auto Constraint::set_fc_file(const int order, const std::string &fc_file) -> void
 {
     switch (order) {
     case 2:
@@ -881,57 +828,57 @@ void Constraint::set_fc_file(const int order,
     }
 }
 
-bool Constraint::get_fix_harmonic() const
+auto Constraint::get_fix_harmonic() const -> bool
 {
     return fix_harmonic;
 }
 
-void Constraint::set_fix_harmonic(const bool fix_harmonic_in)
+auto Constraint::set_fix_harmonic(const bool fix_harmonic_in) -> void
 {
     fix_harmonic = fix_harmonic_in;
 }
 
-bool Constraint::get_fix_cubic() const
+auto Constraint::get_fix_cubic() const -> bool
 {
     return fix_cubic;
 }
 
-void Constraint::set_fix_cubic(const bool fix_cubic_in)
+auto Constraint::set_fix_cubic(const bool fix_cubic_in) -> void
 {
     fix_cubic = fix_cubic_in;
 }
 
-void Constraint::set_constraint_algebraic(const int constraint_algebraic_in)
+auto Constraint::set_constraint_algebraic(const int constraint_algebraic_in) -> void
 {
     constraint_algebraic = constraint_algebraic_in;
 }
 
-int Constraint::get_constraint_algebraic() const
+auto Constraint::get_constraint_algebraic() const -> int
 {
     return constraint_algebraic;
 }
 
-double **Constraint::get_const_mat() const
+auto Constraint::get_const_mat() const -> double **
 {
     return const_mat;
 }
 
-double *Constraint::get_const_rhs() const
+auto Constraint::get_const_rhs() const -> double *
 {
     return const_rhs;
 }
 
-double Constraint::get_tolerance_constraint() const
+auto Constraint::get_tolerance_constraint() const -> double
 {
     return tolerance_constraint;
 }
 
-void Constraint::set_tolerance_constraint(const double tol)
+auto Constraint::set_tolerance_constraint(const double tol) -> void
 {
     tolerance_constraint = tol;
 }
 
-bool Constraint::get_exist_constraint() const
+auto Constraint::get_exist_constraint() const -> bool
 {
     if (constraint_algebraic) {
         if (!const_self.empty()) {
@@ -962,45 +909,42 @@ bool Constraint::get_exist_constraint() const
     return false;
 }
 
-std::string Constraint::get_rotation_axis() const
+auto Constraint::get_rotation_axis() const -> std::string
 {
     return rotation_axis;
 }
 
-void Constraint::set_rotation_axis(const std::string &rotation_axis_in)
+auto Constraint::set_rotation_axis(const std::string &rotation_axis_in) -> void
 {
     rotation_axis = rotation_axis_in;
 }
 
-const ConstraintSparseForm &Constraint::get_const_symmetry(const int order) const
+auto Constraint::get_const_symmetry(const int order) const -> const ConstraintSparseForm &
 {
     return const_symmetry[order];
 }
 
-const std::vector<ConstraintTypeFix> &Constraint::get_const_fix(const int order) const
+auto Constraint::get_const_fix(const int order) const -> const std::vector<ConstraintTypeFix> &
 {
     return const_fix[order];
 }
 
-void Constraint::set_const_fix_val_to_fix(const int order,
-                                          const size_t idx,
-                                          const double val)
+auto Constraint::set_const_fix_val_to_fix(const int order, const size_t idx, const double val) -> void
 {
     const_fix[order][idx].val_to_fix = val;
 }
 
-const std::vector<ConstraintTypeRelate> &Constraint::get_const_relate(const int order) const
+auto Constraint::get_const_relate(const int order) const -> const std::vector<ConstraintTypeRelate> &
 {
     return const_relate[order];
 }
 
-const boost::bimap<size_t, size_t> &Constraint::get_index_bimap(const int order) const
+auto Constraint::get_index_bimap(const int order) const -> const boost::bimap<size_t, size_t> &
 {
     return index_bimap[order];
 }
 
-void Constraint::set_constraint_flag(const std::string &const_name,
-                                     const int use_constraint)
+auto Constraint::set_constraint_flag(const std::string &const_name, const int use_constraint) -> void
 {
     auto it = status_constraint_subset.find(const_name);
 
@@ -1011,17 +955,13 @@ void Constraint::set_constraint_flag(const std::string &const_name,
             it->second = 0;
         }
     } else {
-        exit("set_constraint_flag",
-             "Invalid constraint name");
+        exit("set_constraint_flag", "Invalid constraint name");
     }
 }
 
-void Constraint::generate_symmetry_constraint(const size_t nat,
-                                              const std::unique_ptr<Symmetry> &symmetry,
-                                              const std::unique_ptr<Cluster> &cluster,
-                                              const std::unique_ptr<Fcs> &fcs,
-                                              const int verbosity,
-                                              const bool do_rref)
+auto Constraint::generate_symmetry_constraint(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
+                                              const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                              const int verbosity, const bool do_rref) -> void
 {
     // Create constraint matrices arising from the crystal symmetry.
     // This function clears and updates const_symmetry.
@@ -1094,13 +1034,10 @@ void Constraint::generate_symmetry_constraint(const size_t nat,
 }
 
 
-void Constraint::generate_translational_constraint(const Cell &supercell,
-                                                   const std::unique_ptr<Symmetry> &symmetry,
+auto Constraint::generate_translational_constraint(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
                                                    const std::unique_ptr<Cluster> &cluster,
-                                                   const std::unique_ptr<Fcs> &fcs,
-                                                   const int periodic_image_conv,
-                                                   const int verbosity,
-                                                   const bool do_rref)
+                                                   const std::unique_ptr<Fcs> &fcs, const int periodic_image_conv,
+                                                   const int verbosity, const bool do_rref) -> void
 {
     // Create constraint matrix for the translational invariance (aka acoustic sum rule).
     const auto maxorder = cluster->get_maxorder();
@@ -1116,8 +1053,7 @@ void Constraint::generate_translational_constraint(const Cell &supercell,
     }
 
     for (auto order = 0; order < maxorder; ++order) {
-        if (verbosity > 0)
-            std::cout << "   " << std::setw(8) << cluster->get_ordername(order) << " ...";
+        if (verbosity > 0) std::cout << "   " << std::setw(8) << cluster->get_ordername(order) << " ...";
 
         const_translation[order].clear();
 
@@ -1141,7 +1077,8 @@ void Constraint::generate_translational_constraint(const Cell &supercell,
         }
         // make translation constraint for each periodic image combination
         // if periodic_image_conv == 0 or order == 0, there is no need to impose additional ASR constraints.
-        else {
+        else
+        {
             // if(periodic_image_conv > 0 && order > 0)
             get_constraint_translation_for_periodic_images(supercell,
                                                            symmetry,
@@ -1159,15 +1096,11 @@ void Constraint::generate_translational_constraint(const Cell &supercell,
 }
 
 
-void Constraint::get_constraint_translation(const Cell &supercell,
-                                            const std::unique_ptr<Symmetry> &symmetry,
-                                            const std::unique_ptr<Cluster> &cluster,
-                                            const std::unique_ptr<Fcs> &fcs,
-                                            const int order,
-                                            const std::vector<FcProperty> &fc_table,
-                                            const size_t nparams,
-                                            ConstraintSparseForm &const_out,
-                                            const bool do_rref) const
+auto Constraint::get_constraint_translation(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
+                                            const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                            const int order, const std::vector<FcProperty> &fc_table,
+                                            const size_t nparams, ConstraintSparseForm &const_out,
+                                            const bool do_rref) const -> void
 {
     // Generate equality constraint for the acoustic sum rule.
 
@@ -1212,16 +1145,10 @@ void Constraint::get_constraint_translation(const Cell &supercell,
         for (i = 0; i < order + 2; ++i) {
             ind[i] = p.elems[i];
         }
-        if (list_found.find(FcProperty(order + 2,
-                                       p.sign,
-                                       ind,
-                                       p.mother)) != list_found.end()) {
+        if (list_found.find(FcProperty(order + 2, p.sign, ind, p.mother)) != list_found.end()) {
             exit("get_constraint_translation", "Duplicate interaction list found");
         }
-        list_found.insert(FcProperty(order + 2,
-                                     p.sign,
-                                     ind,
-                                     p.mother));
+        list_found.insert(FcProperty(order + 2, p.sign, ind, p.mother));
     }
 
     deallocate(ind);
@@ -1249,15 +1176,13 @@ void Constraint::get_constraint_translation(const Cell &supercell,
 
                 for (jcrd = 0; jcrd < 3; ++jcrd) {
                     // Reset the temporary array for another constraint
-                    for (j = 0; j < nparams; ++j) const_now[j] = 0;
+                    for (j = 0; j < nparams; ++j)
+                        const_now[j] = 0;
 
                     for (jat = 0; jat < 3 * nat; jat += 3) {
                         intarr[1] = jat + jcrd;
 
-                        iter_found = list_found.find(FcProperty(order + 2,
-                                                                1.0,
-                                                                intarr,
-                                                                1));
+                        iter_found = list_found.find(FcProperty(order + 2, 1.0, intarr, 1));
 
                         //  If found an IFC
                         if (iter_found != list_found.end()) {
@@ -1268,7 +1193,8 @@ void Constraint::get_constraint_translation(const Cell &supercell,
                     // Add to the constraint list
                     if (!is_allzero(const_now, loc_nonzero)) {
                         if (const_now[loc_nonzero] < 0) {
-                            for (j = 0; j < nparams; ++j) const_now[j] *= -1;
+                            for (j = 0; j < nparams; ++j)
+                                const_now[j] *= -1;
                         }
                         const_tmp.clear();
                         for (j = 0; j < nparams; ++j) {
@@ -1344,7 +1270,8 @@ void Constraint::get_constraint_translation(const Cell &supercell,
                         // Loop for the xyz index of the last atom
                         for (jcrd = 0; jcrd < 3; ++jcrd) {
                             // Reset the temporary array for another constraint
-                            for (j = 0; j < nparams; ++j) const_now_omp[j] = 0;
+                            for (j = 0; j < nparams; ++j)
+                                const_now_omp[j] = 0;
 
                             // Loop for the last atom index
                             for (jat = 0; jat < 3 * nat; jat += 3) {
@@ -1358,10 +1285,7 @@ void Constraint::get_constraint_translation(const Cell &supercell,
 
                                     sort_tail(order + 2, intarr_copy_omp);
 
-                                    iter_found = list_found.find(FcProperty(order + 2,
-                                                                            1.0,
-                                                                            intarr_copy_omp,
-                                                                            1));
+                                    iter_found = list_found.find(FcProperty(order + 2, 1.0, intarr_copy_omp, 1));
                                     if (iter_found != list_found.end()) {
                                         const_now_omp[iter_found->mother] += nint(iter_found->sign);
                                     }
@@ -1371,7 +1295,8 @@ void Constraint::get_constraint_translation(const Cell &supercell,
                             // Add the constraint to the private array
                             if (!is_allzero(const_now_omp, loc_nonzero)) {
                                 if (const_now_omp[loc_nonzero] < 0) {
-                                    for (j = 0; j < nparams; ++j) const_now_omp[j] *= -1;
+                                    for (j = 0; j < nparams; ++j)
+                                        const_now_omp[j] *= -1;
                                 }
 
                                 const_tmp_omp.clear();
@@ -1410,7 +1335,7 @@ void Constraint::get_constraint_translation(const Cell &supercell,
 
             intlist.clear();
         } // close if
-    }     // close loop i
+    } // close loop i
 
     if (xyzcomponent) {
         deallocate(xyzcomponent);
@@ -1426,9 +1351,7 @@ void Constraint::get_constraint_translation(const Cell &supercell,
     }
 
     std::sort(constraint_all.begin(), constraint_all.end());
-    constraint_all.erase(std::unique(constraint_all.begin(),
-                                     constraint_all.end()),
-                         constraint_all.end());
+    constraint_all.erase(std::unique(constraint_all.begin(), constraint_all.end()), constraint_all.end());
 
     MapConstraintElement const_tmp2;
     auto division_factor = 1.0;
@@ -1451,14 +1374,10 @@ void Constraint::get_constraint_translation(const Cell &supercell,
     if (do_rref) rref_sparse(nparams, const_out, eps8);
 }
 
-void Constraint::get_constraint_translation_for_periodic_images(const Cell &supercell,
-                                                                const std::unique_ptr<Symmetry> &symmetry,
-                                                                const std::unique_ptr<Cluster> &cluster,
-                                                                const int order,
-                                                                const std::vector<FcProperty> &fc_table,
-                                                                const size_t nparams,
-                                                                ConstraintSparseForm &const_out,
-                                                                const bool do_rref) const
+void Constraint::get_constraint_translation_for_periodic_images(
+    const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Cluster> &cluster,
+    const int order, const std::vector<FcProperty> &fc_table, const size_t nparams, ConstraintSparseForm &const_out,
+    const bool do_rref) const
 {
     // Generate equality constraint for the acoustic sum rule.
 
@@ -1504,16 +1423,10 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
         for (i = 0; i < order + 2; ++i) {
             ind[i] = p.elems[i];
         }
-        if (list_found.find(FcProperty(order + 2,
-                                       p.sign,
-                                       ind,
-                                       p.mother)) != list_found.end()) {
+        if (list_found.find(FcProperty(order + 2, p.sign, ind, p.mother)) != list_found.end()) {
             exit("get_constraint_translation", "Duplicate interaction list found");
         }
-        list_found.insert(FcProperty(order + 2,
-                                     p.sign,
-                                     ind,
-                                     p.mother));
+        list_found.insert(FcProperty(order + 2, p.sign, ind, p.mother));
     }
 
     deallocate(ind);
@@ -1648,13 +1561,10 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
 
                                     sort_tail(order + 2, intarr_copy_omp);
 
-                                    iter_found = list_found.find(FcProperty(order + 2,
-                                                                            1.0,
-                                                                            intarr_copy_omp,
-                                                                            1));
+                                    iter_found = list_found.find(FcProperty(order + 2, 1.0, intarr_copy_omp, 1));
 
-                                    auto cluster_found = cluster->get_interaction_cluster(order, i).find(
-                                        InteractionCluster(atom_tmp));
+                                    auto cluster_found =
+                                        cluster->get_interaction_cluster(order, i).find(InteractionCluster(atom_tmp));
 
                                     if (iter_found != list_found.end()) {
                                         if (cluster_found == cluster->get_interaction_cluster(order, i).end()) {
@@ -1672,8 +1582,8 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
                                                 }
 
                                                 // check if the same periodic image has already been found.
-                                                for (i_mi_tmp = 0;
-                                                     i_mi_tmp < periodic_images_found.size(); i_mi_tmp++) {
+                                                for (i_mi_tmp = 0; i_mi_tmp < periodic_images_found.size(); i_mi_tmp++)
+                                                {
                                                     if (periodic_images_found[i_mi_tmp] == i_periodic_images) {
                                                         break;
                                                     }
@@ -1697,7 +1607,8 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
                             for (i_mi_tmp = 0; i_mi_tmp < periodic_images_found.size(); i_mi_tmp++) {
                                 if (!is_allzero(consts_now_omp[i_mi_tmp], eps8, loc_nonzero, 0)) {
                                     if (consts_now_omp[i_mi_tmp][loc_nonzero] < 0) {
-                                        for (j = 0; j < nparams; ++j) consts_now_omp[i_mi_tmp][j] *= -1.0;
+                                        for (j = 0; j < nparams; ++j)
+                                            consts_now_omp[i_mi_tmp][j] *= -1.0;
                                     }
 
                                     const_tmp_omp.clear();
@@ -1731,16 +1642,14 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
 
             intlist.clear();
         } // close if
-    }     // close loop i
+    } // close loop i
 
     deallocate(xyzcomponent);
     deallocate(intarr);
     deallocate(intarr_copy);
 
     std::sort(constraint_all.begin(), constraint_all.end());
-    constraint_all.erase(std::unique(constraint_all.begin(),
-                                     constraint_all.end()),
-                         constraint_all.end());
+    constraint_all.erase(std::unique(constraint_all.begin(), constraint_all.end()), constraint_all.end());
 
     MapConstraintElement const_tmp2;
     auto division_factor = 1.0;
@@ -1763,13 +1672,11 @@ void Constraint::get_constraint_translation_for_periodic_images(const Cell &supe
     if (do_rref) rref_sparse(nparams, const_out, eps8);
 }
 
-void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &system,
+auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &system,
                                                 const std::unique_ptr<Symmetry> &symmetry,
                                                 const std::unique_ptr<Cluster> &cluster,
-                                                const std::unique_ptr<Fcs> &fcs,
-                                                const int verbosity,
-                                                const double tolerance,
-                                                const bool do_rref)
+                                                const std::unique_ptr<Fcs> &fcs, const int verbosity,
+                                                const double tolerance, const bool do_rref) -> void
 {
     // Create constraints for the rotational invariance
     const auto maxorder = cluster->get_maxorder();
@@ -1781,13 +1688,10 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
         const_rotation_cross.resize(maxorder);
     }
 
-    if (status_constraint_subset["rotation"] == -1
-        and status_constraint_subset["rotation_extra"] == -1)
-        return;
+    if (status_constraint_subset["rotation"] == -1 and status_constraint_subset["rotation_extra"] == -1) return;
 
 
-    if (verbosity > 0)
-        std::cout << "  Generating constraints for rotational invariance ...\n";
+    if (verbosity > 0) std::cout << "  Generating constraints for rotational invariance ...\n";
 
 
     int order;
@@ -1814,15 +1718,13 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
 
         if (order == 0) {
             if (verbosity > 0) {
-                std::cout << "   Constraints between " << std::setw(8)
-                    << "1st-order IFCs (which are zero) and "
-                    << std::setw(8) << cluster->get_ordername(order) << " ...";
+                std::cout << "   Constraints between " << std::setw(8) << "1st-order IFCs (which are zero) and "
+                          << std::setw(8) << cluster->get_ordername(order) << " ...";
             }
         } else {
             if (verbosity > 0) {
-                std::cout << "   Constraints between " << std::setw(8)
-                    << cluster->get_ordername(order - 1) << " and "
-                    << std::setw(8) << cluster->get_ordername(order) << " ...";
+                std::cout << "   Constraints between " << std::setw(8) << cluster->get_ordername(order - 1) << " and "
+                          << std::setw(8) << cluster->get_ordername(order) << " ...";
             }
         }
 
@@ -1836,12 +1738,8 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
         list_found.clear();
 
         // Accumulate sets of non-zero force constants.
-        for (auto p = fcs->get_fc_table()[order].begin();
-             p != fcs->get_fc_table()[order].end(); ++p) {
-            list_found.insert(FcProperty(order + 2,
-                                         p->sign,
-                                         p->elems.data(),
-                                         p->mother));
+        for (auto p = fcs->get_fc_table()[order].begin(); p != fcs->get_fc_table()[order].end(); ++p) {
+            list_found.insert(FcProperty(order + 2, p->sign, p->elems.data(), p->mother));
         }
 
         set_rotation_constraints(system,
@@ -1877,12 +1775,10 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
     for (order = 0; order < maxorder; ++order) {
         // Sort & unique
         std::sort(const_self_vec[order].begin(), const_self_vec[order].end());
-        const_self_vec[order].erase(std::unique(const_self_vec[order].begin(),
-                                                const_self_vec[order].end()),
+        const_self_vec[order].erase(std::unique(const_self_vec[order].begin(), const_self_vec[order].end()),
                                     const_self_vec[order].end());
         std::sort(const_cross_vec[order].begin(), const_cross_vec[order].end());
-        const_cross_vec[order].erase(std::unique(const_cross_vec[order].begin(),
-                                                 const_cross_vec[order].end()),
+        const_cross_vec[order].erase(std::unique(const_cross_vec[order].begin(), const_cross_vec[order].end()),
                                      const_cross_vec[order].end());
 
         // Copy to the return variable
@@ -1915,15 +1811,10 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
         const_cross_vec[order].clear();
 
         //  Perform rref
-        if (do_rref)
-            rref_sparse(nparams[order],
-                        const_rotation_self[order],
-                        eps6);
+        if (do_rref) rref_sparse(nparams[order], const_rotation_self[order], eps6);
 
         if (order > 0 && do_rref) {
-            rref_sparse(nparams[order - 1] + nparams[order],
-                        const_rotation_cross[order],
-                        eps6);
+            rref_sparse(nparams[order - 1] + nparams[order], const_rotation_cross[order], eps6);
         }
     }
 
@@ -1934,17 +1825,14 @@ void Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
     deallocate(const_cross_vec);
 }
 
-void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
+auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                           const std::unique_ptr<Symmetry> &symmetry,
-                                          const std::unique_ptr<Cluster> &cluster,
-                                          const std::unique_ptr<Fcs> &fcs,
-                                          const int order,
-                                          const bool valid_rotation_axis[3][3],
+                                          const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                          const int order, const bool valid_rotation_axis[3][3],
                                           const std::unordered_set<FcProperty> &list_found,
-                                          const std::unordered_set<FcProperty> &list_found_last,
-                                          const double tolerance,
+                                          const std::unordered_set<FcProperty> &list_found_last, const double tolerance,
                                           std::vector<std::vector<ConstraintDoubleElement>> *const_self_vec,
-                                          std::vector<std::vector<ConstraintDoubleElement>> *const_cross_vec)
+                                          std::vector<std::vector<ConstraintDoubleElement>> *const_cross_vec) -> void
 {
     const auto natmin = symmetry->get_nat_trueprim();
     const auto maxorder = cluster->get_maxorder();
@@ -2023,7 +1911,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
 
                         // Clear history
 
-                        for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] = 0.0;
+                        for (int j = 0; j < nparam_sub; ++j)
+                            arr_constraint[j] = 0.0;
 
                         for (auto &iter_list: interaction_list_now) {
                             jat = iter_list;
@@ -2031,8 +1920,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
 
                             atom_tmp.clear();
                             atom_tmp.push_back(jat);
-                            const auto iter_cluster = cluster->get_interaction_cluster(order, i).find(
-                                InteractionCluster(atom_tmp));
+                            const auto iter_cluster =
+                                cluster->get_interaction_cluster(order, i).find(InteractionCluster(atom_tmp));
 
                             // Compute vec_for_rot
                             vec_for_rot.setZero();
@@ -2040,8 +1929,7 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                 const auto nsize_equiv = iter_cluster->cell.size();
                                 for (int j = 0; j < nsize_equiv; ++j) {
                                     for (auto k = 0; k < 3; ++k) {
-                                        vec_for_rot[k]
-                                            += system->get_x_image()[iter_cluster->cell[j][0]](jat, k);
+                                        vec_for_rot[k] += system->get_x_image()[iter_cluster->cell[j][0]](jat, k);
                                     }
                                 }
                                 // Take average
@@ -2049,34 +1937,27 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                             }
 
                             interaction_index[1] = 3 * jat + mu;
-                            auto iter_found = list_found.find(FcProperty(order + 2,
-                                                                         1.0,
-                                                                         &interaction_index[0],
-                                                                         1));
+                            auto iter_found = list_found.find(FcProperty(order + 2, 1.0, &interaction_index[0], 1));
 
                             if (iter_found != list_found.end()) {
-                                arr_constraint[iter_found->mother]
-                                    += iter_found->sign * vec_for_rot[nu];
+                                arr_constraint[iter_found->mother] += iter_found->sign * vec_for_rot[nu];
                             }
 
                             // Exchange mu <--> nu and repeat.
                             // Note that the sign is inverted (+ --> -) in the summation
 
                             interaction_index[1] = 3 * jat + nu;
-                            iter_found = list_found.find(FcProperty(order + 2,
-                                                                    1.0,
-                                                                    &interaction_index[0],
-                                                                    1));
+                            iter_found = list_found.find(FcProperty(order + 2, 1.0, &interaction_index[0], 1));
                             if (iter_found != list_found.end()) {
-                                arr_constraint[iter_found->mother]
-                                    -= iter_found->sign * vec_for_rot[mu];
+                                arr_constraint[iter_found->mother] -= iter_found->sign * vec_for_rot[mu];
                             }
                         }
 
                         if (!is_allzero(arr_constraint, tolerance, loc_nonzero)) {
                             // Add to constraint list
                             if (arr_constraint[loc_nonzero] < 0.0) {
-                                for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] *= -1.0;
+                                for (int j = 0; j < nparam_sub; ++j)
+                                    arr_constraint[j] *= -1.0;
                             }
                             const_tmp.clear();
                             for (int j = 0; j < nparam_sub; ++j) {
@@ -2087,7 +1968,7 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                             const_self_vec[order].emplace_back(const_tmp);
                         }
                     } // nu
-                }     // mu
+                } // mu
             }
         } else {
             // Constraint between different orders
@@ -2139,7 +2020,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
 
                                     // Search for a new constraint below
 
-                                    for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] = 0.0;
+                                    for (int j = 0; j < nparam_sub; ++j)
+                                        arr_constraint[j] = 0.0;
 
                                     // Loop for m_{N+1}, a_{N+1}
                                     for (auto &iter_list: interaction_list) {
@@ -2149,7 +2031,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         if (!cluster->is_incutoff(order + 2,
                                                                   &interaction_atom[0],
                                                                   order,
-                                                                  system->get_supercell().kind)) {
+                                                                  system->get_supercell().kind))
+                                        {
                                             continue;
                                         }
 
@@ -2176,14 +2059,15 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                                 exit("generate_rotational_constraint", "This cannot happen.");
                                             }
 
-                                            for (int j = 0; j < 3; ++j) vec_for_rot[j] = 0.0;
+                                            for (int j = 0; j < 3; ++j)
+                                                vec_for_rot[j] = 0.0;
 
                                             const auto nsize_equiv = (*iter_cluster).cell.size();
 
                                             for (int j = 0; j < nsize_equiv; ++j) {
                                                 for (auto k = 0; k < 3; ++k) {
-                                                    vec_for_rot[k] += system->get_x_image()[(*iter_cluster).cell[j][
-                                                        iloc]](jat, k);
+                                                    vec_for_rot[k] +=
+                                                        system->get_x_image()[(*iter_cluster).cell[j][iloc]](jat, k);
                                                 }
                                             }
 
@@ -2196,29 +2080,31 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         // mu, nu
 
                                         interaction_index[order + 1] = 3 * jat + mu;
-                                        for (int j = 0; j < order + 2; ++j) interaction_tmp[j] = interaction_index[j];
+                                        for (int j = 0; j < order + 2; ++j)
+                                            interaction_tmp[j] = interaction_index[j];
 
                                         sort_tail(order + 2, interaction_tmp.data());
 
-                                        auto iter_found = list_found.
-                                            find(FcProperty(order + 2, 1.0, interaction_tmp.data(), 1));
+                                        auto iter_found =
+                                            list_found.find(FcProperty(order + 2, 1.0, interaction_tmp.data(), 1));
                                         if (iter_found != list_found.end()) {
-                                            arr_constraint[nparams[order - 1] + iter_found->mother]
-                                                += iter_found->sign * vec_for_rot[nu];
+                                            arr_constraint[nparams[order - 1] + iter_found->mother] +=
+                                                iter_found->sign * vec_for_rot[nu];
                                         }
 
                                         // Exchange mu <--> nu and repeat again.
 
                                         interaction_index[order + 1] = 3 * jat + nu;
-                                        for (int j = 0; j < order + 2; ++j) interaction_tmp[j] = interaction_index[j];
+                                        for (int j = 0; j < order + 2; ++j)
+                                            interaction_tmp[j] = interaction_index[j];
 
                                         sort_tail(order + 2, &interaction_tmp[0]);
 
-                                        iter_found = list_found.
-                                            find(FcProperty(order + 2, 1.0, &interaction_tmp[0], 1));
+                                        iter_found =
+                                            list_found.find(FcProperty(order + 2, 1.0, &interaction_tmp[0], 1));
                                         if (iter_found != list_found.end()) {
-                                            arr_constraint[nparams[order - 1] + iter_found->mother]
-                                                -= iter_found->sign * vec_for_rot[mu];
+                                            arr_constraint[nparams[order - 1] + iter_found->mother] -=
+                                                iter_found->sign * vec_for_rot[mu];
                                         }
                                     }
 
@@ -2235,21 +2121,18 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                             levi_factor = 0;
 
                                             for (int j = 0; j < 3; ++j) {
-                                                levi_factor += levi_civita(j, mu, nu)
-                                                    * levi_civita(j, mu_lambda, jcrd);
+                                                levi_factor += levi_civita(j, mu, nu) * levi_civita(j, mu_lambda, jcrd);
                                             }
 
                                             if (levi_factor == 0) continue;
 
                                             sort_tail(order + 1, &interaction_tmp[0]);
 
-                                            auto iter_found = list_found_last.find(FcProperty(order + 1,
-                                                1.0,
-                                                &interaction_tmp[0],
-                                                1));
+                                            auto iter_found = list_found_last.find(
+                                                FcProperty(order + 1, 1.0, &interaction_tmp[0], 1));
                                             if (iter_found != list_found_last.end()) {
-                                                arr_constraint[iter_found->mother]
-                                                    += iter_found->sign * static_cast<double>(levi_factor);
+                                                arr_constraint[iter_found->mother] +=
+                                                    iter_found->sign * static_cast<double>(levi_factor);
                                             }
                                         }
                                     }
@@ -2259,7 +2142,8 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         // Add to the appropriate set
 
                                         if (arr_constraint[loc_nonzero] < 0.0) {
-                                            for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] *= -1.0;
+                                            for (int j = 0; j < nparam_sub; ++j)
+                                                arr_constraint[j] *= -1.0;
                                         }
                                         for (int j = 0; j < nparams[order]; ++j) {
                                             arr_constraint_self[j] = arr_constraint[j + nparams[order - 1]];
@@ -2301,11 +2185,11 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         }
                                     }
                                 } // nu
-                            }     // mu
-                        }         // ixyz
+                            } // mu
+                        } // ixyz
                     } while (g.next());
                 } // direction
-            }     // icrd
+            } // icrd
         }
     } // iat
 
@@ -2314,16 +2198,12 @@ void Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
     status_constraint_subset["rotation"] = 1;
 }
 
-void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &system,
-                                                const std::unique_ptr<Symmetry> &symmetry,
-                                                const std::unique_ptr<Cluster> &cluster,
-                                                const std::unique_ptr<Fcs> &fcs,
-                                                const int order,
-                                                const bool valid_rotation_axis[3][3],
-                                                const std::unordered_set<FcProperty> &list_found,
-                                                const double tolerance,
-                                                std::vector<std::vector<ConstraintDoubleElement>> *const_self_vec,
-                                                std::vector<std::vector<ConstraintDoubleElement>> *const_cross_vec)
+auto Constraint::set_rotation_constraints_extra(
+    const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
+    const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs, const int order,
+    const bool valid_rotation_axis[3][3], const std::unordered_set<FcProperty> &list_found, const double tolerance,
+    std::vector<std::vector<ConstraintDoubleElement>> *const_self_vec,
+    std::vector<std::vector<ConstraintDoubleElement>> *const_cross_vec) -> void
 {
     const auto maxorder = cluster->get_maxorder();
 
@@ -2372,7 +2252,7 @@ void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &s
 
     nxyz = static_cast<int>(pow(static_cast<double>(3), order + 1));
     allocate(xyzcomponent, nxyz, order + 1);
-    fcs->get_xyzcomponent(order + 1, xyzcomponent);
+    Fcs::get_xyzcomponent(order + 1, xyzcomponent);
 
 
     for (int i = 0; i < natmin; ++i) {
@@ -2386,9 +2266,7 @@ void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &s
         for (icrd = 0; icrd < 3; ++icrd) {
             interaction_index[0] = 3 * interaction_atom[0] + icrd;
 
-            CombinationWithRepetition<int> g_now(interaction_list_now.begin(),
-                                                 interaction_list_now.end(),
-                                                 order + 1);
+            CombinationWithRepetition<int> g_now(interaction_list_now.begin(), interaction_list_now.end(), order + 1);
             do {
                 auto data = g_now.now();
 
@@ -2403,7 +2281,8 @@ void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &s
                         for (nu = 0; nu < 3; ++nu) {
                             if (!valid_rotation_axis[mu][nu]) continue;
 
-                            for (j = 0; j < nparams[order]; ++j) arr_constraint_self[j] = 0.0;
+                            for (j = 0; j < nparams[order]; ++j)
+                                arr_constraint_self[j] = 0.0;
 
                             for (lambda = 0; lambda < order + 2; ++lambda) {
                                 mu_lambda = interaction_index[lambda] % 3;
@@ -2423,20 +2302,19 @@ void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &s
 
                                     sort_tail(order + 2, &interaction_tmp[0]);
 
-                                    auto iter_found = list_found.find(FcProperty(order + 2,
-                                        1.0,
-                                        &interaction_tmp[0],
-                                        1));
+                                    auto iter_found =
+                                        list_found.find(FcProperty(order + 2, 1.0, &interaction_tmp[0], 1));
                                     if (iter_found != list_found.end()) {
-                                        arr_constraint_self[(*iter_found).mother]
-                                            += (*iter_found).sign * static_cast<double>(levi_factor);
+                                        arr_constraint_self[(*iter_found).mother] +=
+                                            (*iter_found).sign * static_cast<double>(levi_factor);
                                     }
                                 } // jcrd
-                            }     // lambda
+                            } // lambda
 
                             if (!is_allzero(arr_constraint_self, tolerance, loc_nonzero)) {
                                 if (arr_constraint_self[loc_nonzero] < 0.0) {
-                                    for (j = 0; j < nparams[order]; ++j) arr_constraint_self[j] *= -1.0;
+                                    for (j = 0; j < nparams[order]; ++j)
+                                        arr_constraint_self[j] *= -1.0;
                                 }
                                 const_tmp.clear();
                                 for (j = 0; j < nparams[order]; ++j) {
@@ -2447,24 +2325,22 @@ void Constraint::set_rotation_constraints_extra(const std::unique_ptr<System> &s
                                 const_self_vec[order].emplace_back(const_tmp);
                             }
                         } // nu
-                    }     // mu
-                }         // ixyz
+                    } // mu
+                } // ixyz
             } while (g_now.next());
         } // icrd
-    }     // iat
+    } // iat
     deallocate(xyzcomponent);
 }
 
 
-int Constraint::levi_civita(const int i,
-                            const int j,
-                            const int k)
+auto Constraint::levi_civita(const int i, const int j, const int k) -> int
 {
     return (j - i) * (k - i) * (k - j) / 2;
 }
 
 
-void Constraint::setup_rotation_axis(bool flag[3][3])
+auto Constraint::setup_rotation_axis(bool flag[3][3]) -> void
 {
     for (auto mu = 0; mu < 3; ++mu) {
         for (auto nu = 0; nu < 3; ++nu) {
@@ -2504,47 +2380,31 @@ void Constraint::setup_rotation_axis(bool flag[3][3])
     } else if (rotation_axis == "xyz") {
         // do nothing
     } else {
-        warn("setup_rotation_axis",
-             "Invalid rotation_axis. Default value(xyz) will be used.");
+        warn("setup_rotation_axis", "Invalid rotation_axis. Default value(xyz) will be used.");
     }
 }
 
 
-void Constraint::get_forceconstants_from_file(const int order,
-                                              const std::unique_ptr<Symmetry> &symmetry,
-                                              const std::unique_ptr<Fcs> &fcs,
-                                              const std::string &file_to_fix,
+auto Constraint::get_forceconstants_from_file(const int order, const std::unique_ptr<Symmetry> &symmetry,
+                                              const std::unique_ptr<Fcs> &fcs, const std::string &file_to_fix,
                                               std::vector<std::vector<int>> &intpair_fcs,
-                                              std::vector<double> &fcs_values)
+                                              std::vector<double> &fcs_values) -> void
 {
     const auto file_extension = file_to_fix.substr(file_to_fix.find_last_of('.') + 1);
 
     if (file_extension == "xml" || file_extension == "XML") {
-        parse_forceconstants_from_xml(order,
-                                      symmetry,
-                                      fcs,
-                                      file_to_fix,
-                                      intpair_fcs,
-                                      fcs_values);
+        parse_forceconstants_from_xml(order, symmetry, fcs, file_to_fix, intpair_fcs, fcs_values);
     } else if (file_extension == "h5" || file_extension == "hdf5") {
-        parse_forceconstants_from_h5(order,
-                                     symmetry,
-                                     fcs,
-                                     file_to_fix,
-                                     intpair_fcs,
-                                     fcs_values);
+        parse_forceconstants_from_h5(order, symmetry, fcs, file_to_fix, intpair_fcs, fcs_values);
     } else {
         exit("get_forceconstants_from_file", "unacceptable extension type");
     }
 }
 
-void Constraint::generate_huang_constraint(const Cell &supercell,
-                                           const std::unique_ptr<Symmetry> &symmetry,
-                                           const std::unique_ptr<Cluster> &cluster,
-                                           const std::unique_ptr<Fcs> &fcs,
-                                           const std::vector<Eigen::MatrixXd> &x_image,
-                                           const int verbosity,
-                                           const bool do_rref)
+auto Constraint::generate_huang_constraint(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
+                                           const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                           const std::vector<Eigen::MatrixXd> &x_image, const int verbosity,
+                                           const bool do_rref) -> void
 {
     // Create constraint matrix for the Huang constraints.
 
@@ -2570,10 +2430,7 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
 
     // Accumulate sets of non-zero force constants.
     for (auto &p: fcs->get_fc_table()[0]) {
-        list_found.insert(FcProperty(2,
-                                     p.sign,
-                                     p.elems.data(),
-                                     p.mother));
+        list_found.insert(FcProperty(2, p.sign, p.elems.data(), p.mother));
     }
 
 
@@ -2601,16 +2458,14 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
 
             relvec_tensor[iat][jat].setZero();
 
-            const auto iter_cluster = cluster->get_interaction_cluster(0, iat).find(
-                InteractionCluster(atom_tmp));
+            const auto iter_cluster = cluster->get_interaction_cluster(0, iat).find(InteractionCluster(atom_tmp));
 
             if (iter_cluster != cluster->get_interaction_cluster(0, iat).end()) {
                 const auto nsize_equiv = iter_cluster->cell.size();
                 // const auto nsize_equiv = 1;
                 for (int j = 0; j < nsize_equiv; ++j) {
                     for (auto k = 0; k < 3; ++k) {
-                        vec_tmp[k] = x_image[iter_cluster->cell[j][0]](jat, k)
-                                     - x_image[0](iat_s, k);
+                        vec_tmp[k] = x_image[iter_cluster->cell[j][0]](jat, k) - x_image[0](iat_s, k);
                     }
                     for (auto k = 0; k < 3; ++k) {
                         for (auto m = 0; m < 3; ++m) {
@@ -2651,23 +2506,15 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
                             pair1[1] = 3 * jat + nu1; // (l2k2;beta)
                             pair2[1] = 3 * jat + nu2; // (l2k2;delta)
 
-                            auto iter_found = list_found.find(FcProperty(2,
-                                                                         1.0,
-                                                                         &pair1[0],
-                                                                         1));
+                            auto iter_found = list_found.find(FcProperty(2, 1.0, &pair1[0], 1));
 
-                            auto iter_found2 = list_found.find(FcProperty(2,
-                                                                          1.0,
-                                                                          &pair2[0],
-                                                                          1));
+                            auto iter_found2 = list_found.find(FcProperty(2, 1.0, &pair2[0], 1));
 
                             if (iter_found != list_found.end()) {
-                                const_now[iter_found->mother] += iter_found->sign
-                                    * relvec_tensor[iat][jat](mu2, nu2);
+                                const_now[iter_found->mother] += iter_found->sign * relvec_tensor[iat][jat](mu2, nu2);
                             }
                             if (iter_found2 != list_found.end()) {
-                                const_now[iter_found2->mother] -= iter_found2->sign
-                                    * relvec_tensor[iat][jat](mu1, nu1);
+                                const_now[iter_found2->mother] -= iter_found2->sign * relvec_tensor[iat][jat](mu1, nu1);
                             }
                         }
                     }
@@ -2707,15 +2554,12 @@ void Constraint::generate_huang_constraint(const Cell &supercell,
     }
 
     if (do_rref) rref_sparse(nparams, const_huang[0], eps8);
-
 }
 
-void Constraint::parse_forceconstants_from_xml(const int order,
-                                               const std::unique_ptr<Symmetry> &symmetry,
-                                               const std::unique_ptr<Fcs> &fcs,
-                                               const std::string &file_to_fix,
+auto Constraint::parse_forceconstants_from_xml(const int order, const std::unique_ptr<Symmetry> &symmetry,
+                                               const std::unique_ptr<Fcs> &fcs, const std::string &file_to_fix,
                                                std::vector<std::vector<int>> &intpair_fcs,
-                                               std::vector<double> &fcs_values)
+                                               std::vector<double> &fcs_values) -> void
 {
     using namespace boost::property_tree;
     ptree pt;
@@ -2747,53 +2591,46 @@ void Constraint::parse_forceconstants_from_xml(const int order,
              " regenerate the FC2FIX or FC3FIX files");
     }
 
-    const auto nat_ref = boost::lexical_cast<size_t>(
-        get_value_from_xml(pt, "Data.Structure.NumberOfAtoms"));
-    const auto ntran_ref = boost::lexical_cast<size_t>(
-        get_value_from_xml(pt, "Data.Symmetry.NumberOfTranslations"));
+    const auto nat_ref = boost::lexical_cast<size_t>(get_value_from_xml(pt, "Data.Structure.NumberOfAtoms"));
+    const auto ntran_ref = boost::lexical_cast<size_t>(get_value_from_xml(pt, "Data.Symmetry.NumberOfTranslations"));
     const auto natmin_ref = nat_ref / ntran_ref;
 
     if (natmin_ref != symmetry->get_nat_trueprim()) {
-        exit("fix_forceconstants_to_file",
-             "The number of atoms in the primitive cell is not consistent.");
+        exit("fix_forceconstants_to_file", "The number of atoms in the primitive cell is not consistent.");
     }
 
     const auto nfcs = fcs->get_nequiv()[order].size();
 
     if (order == 0) {
-        const auto nfcs_ref = boost::lexical_cast<size_t>(
-            get_value_from_xml(pt, "Data.ForceConstants.HarmonicUnique.NFC2"));
+        const auto nfcs_ref =
+            boost::lexical_cast<size_t>(get_value_from_xml(pt, "Data.ForceConstants.HarmonicUnique.NFC2"));
 
         if (nfcs_ref != nfcs) {
-            exit("fix_forceconstants_to_file",
-                 "The number of harmonic force constants is not consistent.");
+            exit("fix_forceconstants_to_file", "The number of harmonic force constants is not consistent.");
         }
 
-        auto preferred_basis_ref = boost::lexical_cast<std::string>(
-            get_value_from_xml(pt, "Data.ForceConstants.HarmonicUnique.Basis", 0));
+        auto preferred_basis_ref =
+            boost::lexical_cast<std::string>(get_value_from_xml(pt, "Data.ForceConstants.HarmonicUnique.Basis", 0));
 
         if (preferred_basis_ref.empty()) preferred_basis_ref = "Cartesian";
 
         if (preferred_basis_ref != fcs->get_forceconstant_basis()) {
-            exit("fix_forceconstants_to_file",
-                 "The basis of harmonic force constants is not consistent.");
+            exit("fix_forceconstants_to_file", "The basis of harmonic force constants is not consistent.");
         }
     } else if (order == 1) {
-        const auto nfcs_ref = boost::lexical_cast<size_t>(
-            get_value_from_xml(pt, "Data.ForceConstants.CubicUnique.NFC3"));
+        const auto nfcs_ref =
+            boost::lexical_cast<size_t>(get_value_from_xml(pt, "Data.ForceConstants.CubicUnique.NFC3"));
 
         if (nfcs_ref != nfcs) {
-            exit("fix_forceconstants_to_file",
-                 "The number of cubic force constants is not consistent.");
+            exit("fix_forceconstants_to_file", "The number of cubic force constants is not consistent.");
         }
 
-        auto preferred_basis_ref = boost::lexical_cast<std::string>(
-            get_value_from_xml(pt, "Data.ForceConstants.CubicUnique.Basis", 0));
+        auto preferred_basis_ref =
+            boost::lexical_cast<std::string>(get_value_from_xml(pt, "Data.ForceConstants.CubicUnique.Basis", 0));
         if (preferred_basis_ref.empty()) preferred_basis_ref = "Cartesian";
 
         if (preferred_basis_ref != fcs->get_forceconstant_basis()) {
-            exit("fix_forceconstants_to_file",
-                 "The basis of cubic force constants is not consistent.");
+            exit("fix_forceconstants_to_file", "The basis of cubic force constants is not consistent.");
         }
     }
 
@@ -2805,8 +2642,7 @@ void Constraint::parse_forceconstants_from_xml(const int order,
 
     int counter = 0;
     if (order == 0) {
-        BOOST_FOREACH(const ptree::value_type &child_,
-                      pt.get_child("Data.ForceConstants.HarmonicUnique")) {
+        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.ForceConstants.HarmonicUnique")) {
             if (child_.first == "FC2") {
                 const auto &child = child_.second;
                 const auto str_intpair = child.get<std::string>("<xmlattr>.pairs");
@@ -2819,8 +2655,7 @@ void Constraint::parse_forceconstants_from_xml(const int order,
             }
         }
     } else if (order == 1) {
-        BOOST_FOREACH(const ptree::value_type &child_,
-                      pt.get_child("Data.ForceConstants.CubicUnique")) {
+        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.ForceConstants.CubicUnique")) {
             if (child_.first == "FC3") {
                 const auto &child = child_.second;
                 const auto str_intpair = child.get<std::string>("<xmlattr>.pairs");
@@ -2835,12 +2670,10 @@ void Constraint::parse_forceconstants_from_xml(const int order,
     }
 }
 
-void Constraint::parse_forceconstants_from_h5(const int order,
-                                              const std::unique_ptr<Symmetry> &symmetry,
-                                              const std::unique_ptr<Fcs> &fcs,
-                                              const std::string &file_to_fix,
+auto Constraint::parse_forceconstants_from_h5(const int order, const std::unique_ptr<Symmetry> &symmetry,
+                                              const std::unique_ptr<Fcs> &fcs, const std::string &file_to_fix,
                                               std::vector<std::vector<int>> &intpair_fcs,
-                                              std::vector<double> &fcs_values)
+                                              std::vector<double> &fcs_values) -> void
 {
     const H5Easy::File file(file_to_fix, H5Easy::File::ReadOnly);
 
@@ -2853,8 +2686,7 @@ void Constraint::parse_forceconstants_from_h5(const int order,
     const auto nat_trueprim_file = mapping_table.size();
 
     if (nat_trueprim_file != symmetry->get_nat_trueprim()) {
-        exit("parse_forceconstants_from_h5",
-             "The number of atoms in the true primitive cell is not consistent.");
+        exit("parse_forceconstants_from_h5", "The number of atoms in the true primitive cell is not consistent.");
     }
 
     Eigen::MatrixXi atom_indices_file, atom_indices_super_file;
@@ -2889,7 +2721,8 @@ void Constraint::parse_forceconstants_from_h5(const int order,
 
     fc_cart_unique.clear();
     fc_cart_copy.clear();
-    for (auto i = 0; i < order + 2; ++i) flatten_array[i] = -1;
+    for (auto i = 0; i < order + 2; ++i)
+        flatten_array[i] = -1;
     double fc_sum = 0.0;
     for (const auto &it: fc_cart) {
         if (flatten_array == it.flattenarray) {
@@ -2910,9 +2743,7 @@ void Constraint::parse_forceconstants_from_h5(const int order,
     std::copy_if(fc_cart_copy.begin(),
                  fc_cart_copy.end(),
                  std::back_inserter(fc_cart_unique),
-                 [](const ForceConstantTable &obj) {
-                     return obj.is_ascending_order;
-                 });
+                 [](const ForceConstantTable &obj) { return obj.is_ascending_order; });
 
     std::vector<int> index_tmp(order + 2);
 
@@ -2940,8 +2771,8 @@ void Constraint::parse_forceconstants_from_h5(const int order,
     }
 }
 
-void Constraint::set_forceconstants_to_fix(const std::vector<std::vector<int>> &intpair_fix,
-                                           const std::vector<double> &values_fix)
+auto Constraint::set_forceconstants_to_fix(const std::vector<std::vector<int>> &intpair_fix,
+                                           const std::vector<double> &values_fix) -> void
 {
     const auto nelems = intpair_fix[0].size();
     const auto order = nelems - 2;
@@ -2959,22 +2790,20 @@ void Constraint::set_forceconstants_to_fix(const std::vector<std::vector<int>> &
     }
 }
 
-void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmetry,
-                                         const std::unique_ptr<Fcs> &fcs)
+auto Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs)
+    -> void
 {
     if (status_constraint_subset["fix2"] == 0) {
-        const auto order = 0;
+        constexpr auto order = 0;
         auto intpair_to_fix = intpair_fix_fc2;
 
-        Fcs::translate_forceconstant_index_to_centercell(symmetry,
-                                                         intpair_to_fix);
+        Fcs::translate_forceconstant_index_to_centercell(symmetry, intpair_to_fix);
         std::set<ForceConstantTable> fc_fix_table;
 
         const auto nfcs = intpair_to_fix.size();
 
         for (auto i = 0; i < nfcs; ++i) {
-            fc_fix_table.insert(ForceConstantTable(values_fix_fc2[i],
-                                                   intpair_to_fix[i]));
+            fc_fix_table.insert(ForceConstantTable(values_fix_fc2[i], intpair_to_fix[i]));
         }
 
         size_t ihead = 0;
@@ -3002,8 +2831,7 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
             }
 
             if (found_element) {
-                const_fix[order].emplace_back(mother,
-                                              sign * it_found->fc_value);
+                const_fix[order].emplace_back(mother, sign * it_found->fc_value);
             } else {
                 const_fix[order].emplace_back(mother, 0.0);
             }
@@ -3014,19 +2842,17 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
     }
 
     if (status_constraint_subset["fix3"] == 0 and const_fix.size() > 1) {
-        const auto order = 1;
+        constexpr auto order = 1;
         auto intpair_to_fix = intpair_fix_fc3;
 
-        Fcs::translate_forceconstant_index_to_centercell(symmetry,
-                                                         intpair_to_fix);
+        Fcs::translate_forceconstant_index_to_centercell(symmetry, intpair_to_fix);
 
         const auto nfcs = intpair_to_fix.size();
 
         std::set<ForceConstantTable> fc_fix_table;
 
         for (auto i = 0; i < nfcs; ++i) {
-            fc_fix_table.insert(ForceConstantTable(values_fix_fc3[i],
-                                                   intpair_to_fix[i]));
+            fc_fix_table.insert(ForceConstantTable(values_fix_fc3[i], intpair_to_fix[i]));
         }
 
         size_t ihead = 0;
@@ -3053,8 +2879,7 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
             }
 
             if (found_element) {
-                const_fix[order].emplace_back(mother,
-                                              sign * it_found->fc_value);
+                const_fix[order].emplace_back(mother, sign * it_found->fc_value);
             } else {
                 const_fix[order].emplace_back(mother, 0.0);
             }
@@ -3066,9 +2891,7 @@ void Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
 }
 
 
-bool Constraint::is_allzero(const int n,
-                            const double *arr,
-                            const int nshift)
+auto Constraint::is_allzero(const int n, const double *arr, const int nshift) -> bool
 {
     for (auto i = nshift; i < n; ++i) {
         if (std::abs(arr[i]) > eps10) {
@@ -3078,8 +2901,7 @@ bool Constraint::is_allzero(const int n,
     return true;
 }
 
-bool Constraint::is_allzero(const std::vector<int> &vec,
-                            int &loc)
+auto Constraint::is_allzero(const std::vector<int> &vec, int &loc) -> bool
 {
     loc = -1;
     for (auto i = 0; i < vec.size(); ++i) {
@@ -3091,10 +2913,7 @@ bool Constraint::is_allzero(const std::vector<int> &vec,
     return true;
 }
 
-bool Constraint::is_allzero(const std::vector<double> &vec,
-                            const double tol,
-                            int &loc,
-                            const int nshift)
+auto Constraint::is_allzero(const std::vector<double> &vec, const double tol, int &loc, const int nshift) -> bool
 {
     loc = -1;
     const auto n = vec.size();
@@ -3108,9 +2927,8 @@ bool Constraint::is_allzero(const std::vector<double> &vec,
 }
 
 
-void Constraint::remove_redundant_rows(const size_t n,
-                                       std::vector<ConstraintClass> &Constraint_vec,
-                                       const double tolerance) const
+void Constraint::remove_redundant_rows(const size_t n, std::vector<ConstraintClass> &Constraint_vec,
+                                       const double tolerance)
 {
 
     auto nparam = n;
@@ -3139,7 +2957,8 @@ void Constraint::remove_redundant_rows(const size_t n,
         Constraint_vec.clear();
 
         for (i = 0; i < nrank; ++i) {
-            for (j = 0; j < nparam; ++j) arr_tmp[j] = 0.0;
+            for (j = 0; j < nparam; ++j)
+                arr_tmp[j] = 0.0;
             long iloc = -1;
             for (j = 0; j < nparam; ++j) {
                 if (std::abs(mat_tmp[i][j]) < tolerance) {
@@ -3162,7 +2981,7 @@ void Constraint::remove_redundant_rows(const size_t n,
     }
 }
 
-void Constraint::print_constraint(const ConstraintSparseForm &const_in)
+auto Constraint::print_constraint(const ConstraintSparseForm &const_in) -> void
 {
     const auto nconst = const_in.size();
     auto counter = 0;
@@ -3170,9 +2989,9 @@ void Constraint::print_constraint(const ConstraintSparseForm &const_in)
     std::cout << "TOTAL CONST SIZE :" << std::setw(6) << nconst << '\n';
     for (const auto &it: const_in) {
         std::cout << "CONST : " << std::setw(5) << counter + 1 << '\n';
-        for (const auto &it2: it) {
-            std::cout << std::setw(5) << it2.first + 1;
-            std::cout << std::setw(15) << it2.second << '\n';
+        for (const auto &[fst, snd]: it) {
+            std::cout << std::setw(5) << fst + 1;
+            std::cout << std::setw(15) << snd << '\n';
         }
         std::cout << '\n';
         ++counter;

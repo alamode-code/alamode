@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <Eigen/Sparse>
 #include <cstddef> // for size_t
 #include "constraint.h"
-#include <Eigen/Sparse>
 
 /**
  * @brief Solves an unconstrained least squares problem.
@@ -26,12 +26,8 @@
  * @param verbosity   If > 0, print diagnostic messages.
  * @return            0 for success, >0 for failure.
  */
-int least_squares_svd(const size_t N,
-                      const size_t M,
-                      double *amat,
-                      const double *bvec,
-                      double *param_out,
-                      const int verbosity);
+auto least_squares_svd(const size_t N, const size_t M, double *amat, const double *bvec, double *param_out,
+                       const int verbosity) -> int;
 
 /**
  * @brief Solves a constrained least squares problem using GQR-based decomposition.
@@ -57,15 +53,9 @@ int least_squares_svd(const size_t N,
  * @param verbosity   If > 0, print diagnostic messages.
  * @return            INFO from dgglse (0 for success, >0 for failure).
  */
-int least_squares_with_constraints_gqr(const size_t N,
-                                       const size_t M,
-                                       const size_t P,
-                                       double *amat,
-                                       const double *bvec,
-                                       double *param_out,
-                                       const double *const *cmat,
-                                       const double *dvec,
-                                       const int verbosity);
+auto least_squares_with_constraints_gqr(const size_t N, const size_t M, const size_t P, double *amat,
+                                        const double *bvec, double *param_out, const double *const *cmat,
+                                        const double *dvec, const int verbosity) -> int;
 
 /**
  * @brief Solves a constrained least squares problem using SVD-based decomposition.
@@ -91,15 +81,13 @@ int least_squares_with_constraints_gqr(const size_t N,
  * @param verbosity   If > 0, print diagnostic messages.
  * @return            0 for success, >0 for failure.
  */
-int least_squares_with_constraints_svd(const size_t N,
-                                       const size_t M,
-                                       const size_t P,
-                                       double *amat,              // A: (M×N) column-major, can be overwritten
-                                       double *bvec,              // b: (M) vector, can be overwritten
-                                       double *param_out,         // output x (length N)
-                                       const double *const *cmat, // C[i][j] pointer array (not contiguous)
-                                       const double *dvec_orig,   // d: (P) vector, will be copied locally
-                                       const int verbosity);
+auto least_squares_with_constraints_svd(const size_t N, const size_t M, const size_t P,
+                                        double *amat,              // A: (M×N) column-major, can be overwritten
+                                        double *bvec,              // b: (M) vector, can be overwritten
+                                        double *param_out,         // output x (length N)
+                                        const double *const *cmat, // C[i][j] pointer array (not contiguous)
+                                        const double *dvec_orig,   // d: (P) vector, will be copied locally
+                                        const int verbosity) -> int;
 
 
 /**
@@ -120,12 +108,9 @@ int least_squares_with_constraints_svd(const size_t N,
  * @param maxnum_iteration      Maximum number of iterations for the solver.
  * @return                      0 for success, >0 for failure.
  */
-int least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat,
-                                      const Eigen::VectorXd &sp_bvec,
-                                      Eigen::VectorXd &x_out,
-                                      const std::string &solver_type,
-                                      const double tolerance_iteration,
-                                      const int maxnum_iteration);
+auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat, const Eigen::VectorXd &sp_bvec,
+                                       Eigen::VectorXd &x_out, const std::string &solver_type,
+                                       const double tolerance_iteration, const int maxnum_iteration) -> int;
 
 
 /**
@@ -147,11 +132,5 @@ int least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat,
  *
  * @return  0 on success, nonzero LAPACK info code on failure
  */
-int get_independent_rows(const size_t N,
-                         const size_t P,
-                         const double *const *cmat,
-                         const double *dvec,
-                         const int verbosity,
-                         std::vector<double> &C_red,
-                         std::vector<double> &d_red,
-                         int &r);
+auto get_independent_rows(const size_t N, const size_t P, const double *const *cmat, const double *dvec,
+                          const int verbosity, std::vector<double> &C_red, std::vector<double> &d_red, int &r) -> int;

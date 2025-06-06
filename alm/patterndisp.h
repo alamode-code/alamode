@@ -11,14 +11,14 @@
 #pragma once
 
 //#include "pointers.h"
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <set>
 #include "cluster.h"
-#include "symmetry.h"
-#include "fcs.h"
 #include "constraint.h"
+#include "fcs.h"
+#include "symmetry.h"
 #include "system.h"
 
 namespace ALM_NS
@@ -30,8 +30,8 @@ public:
 
     DispAtomSet();
 
-    DispAtomSet(std::vector<int> atomset_in) :
-        atomset(std::move(atomset_in)) {}
+    DispAtomSet(std::vector<int> atomset_in) : atomset(std::move(atomset_in))
+    {}
 };
 
 class DirectionVec
@@ -43,7 +43,8 @@ public:
 
     DirectionVec(const double vec_in[3])
     {
-        for (auto i = 0; i < 3; ++i) direction[i] = vec_in[i];
+        for (auto i = 0; i < 3; ++i)
+            direction[i] = vec_in[i];
     }
 };
 
@@ -55,8 +56,7 @@ public:
 
     DispDirectionHarmonic();
 
-    DispDirectionHarmonic(const int n,
-                          const std::vector<DirectionVec> &list_in)
+    DispDirectionHarmonic(const int n, const std::vector<DirectionVec> &list_in)
     {
         atom = n;
         for (auto &it: list_in) {
@@ -73,13 +73,10 @@ public:
 
     AtomWithDirection();
 
-    AtomWithDirection(std::vector<int> a,
-                      std::vector<double> b) :
-        atoms(std::move(a)), directions(std::move(b)) {}
+    AtomWithDirection(std::vector<int> a, std::vector<double> b) : atoms(std::move(a)), directions(std::move(b))
+    {}
 
-    AtomWithDirection(const int n,
-                      const int *a,
-                      const double **b)
+    AtomWithDirection(const int n, const int *a, const double **b)
     {
         for (auto i = 0; i < n; ++i) {
             atoms.push_back(a[i]);
@@ -91,13 +88,9 @@ public:
 };
 
 
-inline bool operator<(const DispAtomSet &a,
-                      const DispAtomSet &b)
+inline auto operator<(const DispAtomSet &a, const DispAtomSet &b) -> bool
 {
-    return std::lexicographical_compare(a.atomset.begin(),
-                                        a.atomset.end(),
-                                        b.atomset.begin(),
-                                        b.atomset.end());
+    return std::lexicographical_compare(a.atomset.begin(), a.atomset.end(), b.atomset.begin(), b.atomset.end());
 }
 
 
@@ -108,16 +101,14 @@ public:
 
     IndexWithSign();
 
-    IndexWithSign(const int ind_in,
-                  const int sign_in)
+    IndexWithSign(const int ind_in, const int sign_in)
     {
         ind = ind_in;
         sign = sign_in;
     }
 };
 
-inline bool operator<(const IndexWithSign &a,
-                      const IndexWithSign &b)
+inline auto operator<(const IndexWithSign &a, const IndexWithSign &b) -> bool
 {
     return a.ind < b.ind;
 }
@@ -129,20 +120,17 @@ public:
 
     ~Displace();
 
-    void gen_displacement_pattern(const std::unique_ptr<Cluster> &cluster,
-                                  const std::unique_ptr<Symmetry> &symmetry,
-                                  const std::unique_ptr<Fcs> &fcs,
-                                  const std::unique_ptr<Constraint> &constraint,
-                                  const std::unique_ptr<System> &system,
-                                  const int verbosity);
+    auto gen_displacement_pattern(const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Symmetry> &symmetry,
+                                  const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
+                                  const std::unique_ptr<System> &system, const int verbosity) -> void;
 
-    void set_trim_dispsign_for_evenfunc(const bool);
+    auto set_trim_dispsign_for_evenfunc(const bool) -> void;
 
-    [[nodiscard]] std::string get_disp_basis() const;
+    [[nodiscard]] auto get_disp_basis() const -> std::string;
 
-    void set_disp_basis(const std::string &);
+    auto set_disp_basis(const std::string &) -> void;
 
-    [[nodiscard]] const std::vector<AtomWithDirection> &get_pattern_all(const int) const;
+    [[nodiscard]] auto get_pattern_all(const int) const -> const std::vector<AtomWithDirection> &;
 
 private:
     bool trim_dispsign_for_evenfunc;
@@ -151,27 +139,19 @@ private:
 
     std::vector<DispDirectionHarmonic> disp_harm, disp_harm_best;
 
-    void set_default_variables();
+    auto set_default_variables() -> void;
 
-    void deallocate_variables();
+    auto deallocate_variables() -> void;
 
-    void generate_pattern_all(const int maxorder,
-                              const size_t nat,
-                              const Eigen::Matrix3d &lavec,
-                              const std::unique_ptr<Symmetry> &symmetry,
-                              const std::set<DispAtomSet> *dispset_in,
-                              const std::string &preferred_basis) const;
+    auto generate_pattern_all(const int maxorder, const size_t nat, const Eigen::Matrix3d &lavec,
+                              const std::unique_ptr<Symmetry> &symmetry, const std::set<DispAtomSet> *dispset_in,
+                              const std::string &preferred_basis) const -> void;
 
-    void generate_signvecs(const int,
-                           std::vector<std::vector<int>> &,
-                           std::vector<int>) const;
+    auto generate_signvecs(const int, std::vector<std::vector<int>> &, std::vector<int>) const -> void;
 
-    void find_unique_sign_pairs(const int natom_disp_in,
-                                const size_t nat,
-                                const std::unique_ptr<Symmetry> &symmetry,
-                                const std::vector<std::vector<int>> &sign_in,
-                                const std::vector<int> &pair_in,
-                                std::vector<std::vector<int>> &sign_out,
-                                const std::string &preferred_basis) const;
+    auto find_unique_sign_pairs(const int natom_disp_in, const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
+                                const std::vector<std::vector<int>> &sign_in, const std::vector<int> &pair_in,
+                                std::vector<std::vector<int>> &sign_out, const std::string &preferred_basis) const
+        -> void;
 };
-}
+} // namespace ALM_NS

@@ -2,20 +2,20 @@
 // Created by Terumasa Tadano on 2023/02/09.
 //
 #include "smith.h"
-#include <algorithm>
-#include <limits>
 #include <Eigen/Core>
-#include <iostream>
+#include <algorithm>
 #include <iomanip>
+#include <iostream>
+#include <limits>
 
-int gcd(const int &a, const int &b)
+auto gcd(const int &a, const int &b) -> int
 {
     // Compute GCD of integer a and b
     if (b == 0) return a;
     return gcd(b, a % b);
 }
 
-int exgcd(const int &a, const int &b, int &x, int &y)
+auto exgcd(const int &a, const int &b, int &x, int &y) -> int
 {
     // Perform Extended Euclidean Algorithm to find
     // integers x and y satisfying ax + by = gcd(a,b).
@@ -31,7 +31,7 @@ int exgcd(const int &a, const int &b, int &x, int &y)
     return gcd;
 }
 
-bool is_lone(const Eigen::MatrixXi &A, const int s)
+auto is_lone(const Eigen::MatrixXi &A, const int s) -> bool
 {
     if (s < 0) return true;
 
@@ -50,7 +50,7 @@ bool is_lone(const Eigen::MatrixXi &A, const int s)
     return true;
 }
 
-int locate_minval_lower_right(const Eigen::MatrixXi &A, const int s, int &irow, int &icol)
+auto locate_minval_lower_right(const Eigen::MatrixXi &A, const int s, int &irow, int &icol) -> int
 {
     // Find the location of the minimum non-zero absolute value in
     // the right bottom submatrix of A(s:m, s:n)
@@ -80,7 +80,7 @@ int locate_minval_lower_right(const Eigen::MatrixXi &A, const int s, int &irow, 
     return minval;
 }
 
-bool check_divide_subelements(const Eigen::MatrixXi &A, const int s, int &irow, int &icol)
+auto check_divide_subelements(const Eigen::MatrixXi &A, const int s, int &irow, int &icol) -> bool
 {
 
     if (s < 0) return false;
@@ -102,7 +102,7 @@ bool check_divide_subelements(const Eigen::MatrixXi &A, const int s, int &irow, 
     return true;
 }
 
-void swap_rows(Eigen::MatrixXi &A, const int irow, const int jrow)
+auto swap_rows(Eigen::MatrixXi &A, const int irow, const int jrow) -> void
 {
     const size_t m = A.rows();
     if (irow >= 0 && jrow >= 0 && irow < m && jrow < m) {
@@ -110,7 +110,7 @@ void swap_rows(Eigen::MatrixXi &A, const int irow, const int jrow)
     }
 }
 
-void swap_cols(Eigen::MatrixXi &A, const int icol, const int jcol)
+auto swap_cols(Eigen::MatrixXi &A, const int icol, const int jcol) -> void
 {
     const size_t n = A.cols();
     if (icol >= 0 && jcol >= 0 && icol < n && jcol < n) {
@@ -118,7 +118,7 @@ void swap_cols(Eigen::MatrixXi &A, const int icol, const int jcol)
     }
 }
 
-void add_row_wise(Eigen::MatrixXi &A, const int irow, const int jrow, const int factor)
+auto add_row_wise(Eigen::MatrixXi &A, const int irow, const int jrow, const int factor) -> void
 {
     const size_t m = A.rows();
     if (irow >= 0 && jrow >= 0 && irow < m && jrow < m) {
@@ -126,7 +126,7 @@ void add_row_wise(Eigen::MatrixXi &A, const int irow, const int jrow, const int 
     }
 }
 
-void add_col_wise(Eigen::MatrixXi &A, const int icol, const int jcol, const int factor)
+auto add_col_wise(Eigen::MatrixXi &A, const int icol, const int jcol, const int factor) -> void
 {
     const size_t n = A.cols();
     if (icol >= 0 && jcol >= 0 && icol < n && jcol < n) {
@@ -134,10 +134,7 @@ void add_col_wise(Eigen::MatrixXi &A, const int icol, const int jcol, const int 
     }
 }
 
-void smith_decomposition(const Eigen::MatrixXi &A,
-                         Eigen::MatrixXi &D,
-                         Eigen::MatrixXi &L,
-                         Eigen::MatrixXi &R)
+auto smith_decomposition(const Eigen::MatrixXi &A, Eigen::MatrixXi &D, Eigen::MatrixXi &L, Eigen::MatrixXi &R) -> void
 {
     // Perform a Smith decomposition for an integer matrix A as
     // L*A*R = D where D is a diagonal matrix, and L and R are

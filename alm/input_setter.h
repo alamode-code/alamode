@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "alm.h"
 #include <string>
+#include "alm.h"
 
 namespace ALM_NS
 {
@@ -22,82 +22,53 @@ public:
 
     ~InputSetter();
 
-    void set_cell_parameter(const double a,
-                            const double lavec_in[3][3]);
+    auto set_cell_parameter(const double a, const double lavec_in[3][3]) -> void;
 
-    void set_cell_parameter(const Eigen::Matrix3d &lavec_in);
+    auto set_cell_parameter(const Eigen::Matrix3d &lavec_in) -> void;
 
-    void set_atomic_positions(const size_t nat_in,
-                              const int *kd_in,
-                              const double (*xcoord_in)[3]);
+    auto set_atomic_positions(const size_t nat_in, const int *kd_in, const double (*xcoord_in)[3]) -> void;
 
-    void set_atomic_positions(const Eigen::MatrixXd &positions_in);
+    auto set_atomic_positions(const Eigen::MatrixXd &positions_in) -> void;
 
-    void set_element_types(const std::vector<int> &kd_in,
-                           const std::vector<std::string> &kdnames_in);
+    auto set_element_types(const std::vector<int> &kd_in, const std::vector<std::string> &kdnames_in) -> void;
 
-    void set_transformation_matrices(const Eigen::Matrix3d &transmat_super_in,
-                                     const Eigen::Matrix3d &transmat_prim_in,
-                                     const int autoset_primcell_in,
-                                     const bool transpose = false);
+    auto set_transformation_matrices(const Eigen::Matrix3d &transmat_super_in, const Eigen::Matrix3d &transmat_prim_in,
+                                     const int autoset_primcell_in, const bool transpose = false) -> void;
 
-    void set_magnetic_vars(const int lspin_in,
-                           const Eigen::MatrixXd &magmom_in,
-                           const int noncollinear_in,
-                           const int time_reversal_symm_in);
+    auto set_magnetic_vars(const int lspin_in, const Eigen::MatrixXd &magmom_in, const int noncollinear_in,
+                           const int time_reversal_symm_in) -> void;
 
-    void set_geometric_structure(ALM *alm);
+    auto set_geometric_structure(ALM *alm) -> void;
 
-    void set_interaction_vars(const int maxorder_in,
-                              const int *nbody_include_in);
+    auto set_interaction_vars(const int maxorder_in, const int *nbody_include_in) -> void;
 
-    void set_cutoff_radii(const int maxorder_in,
-                          const size_t nkd_in,
-                          const std::vector<double> &cutoff_radii_in);
+    auto set_cutoff_radii(const int maxorder_in, const size_t nkd_in, const std::vector<double> &cutoff_radii_in)
+        -> void;
 
-    void define(ALM *alm) const;
+    auto define(ALM *alm) const -> void;
 
-    void set_general_vars(ALM *alm,
-                          const std::string &prefix,
-                          const std::string &mode,
-                          int verbosity,
-                          const std::string &str_disp_basis,
-                          int printsymmetry,
-                          const int is_periodic_in[3],
-                          bool trim_dispsign_for_evenfunc,
-                          int print_hessian,
-                          int print_fcs_alamode,
-                          int print_fc3_shengbte,
-                          int print_fc4_shengbte,
-                          int print_fc2_qefc,
-                          double tolerance,
-                          double tolerance_constraint,
-                          const std::string &basis_force_constant,
-                          const int nmaxsave,
-                          const double fc_zero_threshold,
-                          const int compression_level,
-                          const std::string &format_pattern);
+    auto set_general_vars(ALM *alm, const std::string &prefix, const std::string &mode, int verbosity,
+                          const std::string &str_disp_basis, int printsymmetry, const int is_periodic_in[3],
+                          bool trim_dispsign_for_evenfunc, int print_hessian, int print_fcs_alamode,
+                          int print_fc3_shengbte, int print_fc4_shengbte, int print_fc2_qefc, double tolerance,
+                          double tolerance_constraint, const std::string &basis_force_constant, const int nmaxsave,
+                          const double fc_zero_threshold, const int compression_level,
+                          const std::string &format_pattern) -> void;
 
-    void set_optimize_vars(ALM *alm,
-                           const std::vector<std::vector<double>> &u_train_in,
+    auto set_optimize_vars(ALM *alm, const std::vector<std::vector<double>> &u_train_in,
                            const std::vector<std::vector<double>> &f_train_in,
                            const std::vector<std::vector<double>> &u_validation_in,
                            const std::vector<std::vector<double>> &f_validation_in,
-                           const OptimizerControl &optcontrol_in) const;
+                           const OptimizerControl &optcontrol_in) const -> void;
 
-    void set_file_vars(ALM *alm,
-                       const DispForceFile &datfile_train_in,
-                       const DispForceFile &datfile_validation_in) const;
+    auto set_file_vars(ALM *alm, const DispForceFile &datfile_train_in,
+                       const DispForceFile &datfile_validation_in) const -> void;
 
-    void set_constraint_vars(ALM *alm,
-                             int constraint_flag,
-                             const std::string &rotation_axis,
-                             const std::string &fc2_file,
-                             const std::string &fc3_file,
-                             bool fix_harmonic,
-                             bool fix_cubic) const;
+    auto set_constraint_vars(ALM *alm, int constraint_flag, const std::string &rotation_axis,
+                             const std::string &fc2_file, const std::string &fc3_file, bool fix_harmonic,
+                             bool fix_cubic) const -> void;
 
-    void set_input_var_dict(ALM *alm, const std::map<std::string, std::string> &dict_in) const;
+    auto set_input_var_dict(ALM *alm, const std::map<std::string, std::string> &dict_in) const -> void;
 
 private:
     size_t nat_base, nkd;
@@ -120,4 +91,4 @@ private:
     Eigen::Matrix3d transmat_super, transmat_prim;
     int autoset_primcell;
 };
-}
+} // namespace ALM_NS

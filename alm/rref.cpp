@@ -1,13 +1,9 @@
 #include "rref.h"
-#include "constraint.h"
-#include <vector>
 #include <algorithm>
+#include <vector>
+#include "constraint.h"
 
-void rref(const size_t nrows,
-          const size_t ncols,
-          double **mat,
-          size_t &nrank,
-          const double tolerance)
+auto rref(const size_t nrows, const size_t ncols, double **mat, size_t &nrank, const double tolerance) -> void
 {
     // Return the reduced row echelon form (rref) of matrix mat.
     // In addition, rank of the matrix is estimated.
@@ -67,8 +63,7 @@ void rref(const size_t nrows,
 }
 
 
-void rref(std::vector<std::vector<double>> &mat,
-          const double tolerance)
+auto rref(std::vector<std::vector<double>> &mat, const double tolerance) -> void
 {
     // Return the reduced row echelon form (rref) of matrix mat.
     // In addition, rank of the matrix is estimated.
@@ -130,9 +125,7 @@ void rref(std::vector<std::vector<double>> &mat,
 }
 
 
-void rref_sparse(const size_t ncols,
-                 ConstraintSparseForm &sp_constraint,
-                 const double tolerance)
+auto rref_sparse(const size_t ncols, ConstraintSparseForm &sp_constraint, const double tolerance) -> void
 {
     // This function is somewhat sensitive to the numerical accuracy.
     // The loss of numerical digits can lead to instability.
@@ -178,8 +171,7 @@ void rref_sparse(const size_t ncols,
         if (std::abs(it_elem->second) >= tolerance) ++nrank;
 
         if (pivot != irow) {
-            std::iter_swap(sp_constraint.begin() + irow,
-                           sp_constraint.begin() + pivot);
+            std::iter_swap(sp_constraint.begin() + irow, sp_constraint.begin() + pivot);
         }
 
         const double division_factor = 1.0 / it_elem->second;
@@ -214,7 +206,7 @@ void rref_sparse(const size_t ncols,
                 }
             }
             // Make sure to erase the icol element from the target row if it exists.
-            // When the original pivot element is large, the element after subtraction can sometimes be 
+            // When the original pivot element is large, the element after subtraction can sometimes be
             // larger than the tolerance value because of the loss of significant digits.
             it_other = sp_constraint[jrow].find(icol);
             if (it_other != sp_constraint[jrow].end()) {
@@ -238,9 +230,7 @@ void rref_sparse(const size_t ncols,
     // Remove emptry entries from the sp_constraint vector
     sp_constraint.erase(std::remove_if(sp_constraint.begin(),
                                        sp_constraint.end(),
-                                       [](const MapConstraintElement &obj) {
-                                           return obj.empty();
-                                       }),
+                                       [](const MapConstraintElement &obj) { return obj.empty(); }),
                         sp_constraint.end());
     sp_constraint.shrink_to_fit();
 }

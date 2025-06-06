@@ -10,39 +10,33 @@
 
 #pragma once
 
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 
 
 namespace ALM_NS
 {
-inline void warn(const char *file,
-                 const char *message)
+inline auto warn(const char *file, const char *message) -> void
 {
     std::cout << '\n' << " WARNING in " << file << "  MESSAGE: " << message << '\n';
 }
 
-inline void exit(const char *file,
-                 const char *message)
+inline auto exit(const char *file, const char *message) -> void
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << '\n';
     std::exit(EXIT_FAILURE);
 }
 
 template <typename T>
-void exit(const char *file,
-          const char *message,
-          const T info)
+auto exit(const char *file, const char *message, const T info) -> void
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << info << '\n';
     std::exit(EXIT_FAILURE);
 }
 
-inline void exit(const char *file,
-                 const char *message,
-                 const char *info)
+inline auto exit(const char *file, const char *message, const char *info) -> void
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << info << '\n';
     std::exit(EXIT_FAILURE);
 }
-}
+} // namespace ALM_NS
