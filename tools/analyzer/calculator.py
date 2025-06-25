@@ -281,8 +281,10 @@ class Calculator:
 
         nk, nmode = gamma3.shape
 
+        nk_reducible = np.sum(self.qpoint_weight)
+
         print(
-            "# k-point index, mode index, frequency (cm^-1), 3-phonon linewidth", end=""
+            "# k-point index, k-point weight, mode index, frequency (cm^-1), 3-phonon linewidth", end=""
         )
         if four_phonon:
             print(", 4-phonon linewidth", end="")
@@ -297,8 +299,9 @@ class Calculator:
                 if isotope:
                     total += gamma_iso[ik, imode]
                 print(
-                    "{:4d} {:4d} {:12.6f} {:12.6f}".format(
-                        ik + 1, imode + 1, self.omega[ik, imode], gamma3[ik, imode]
+                    "{:4d} {:12.6f} {:4d} {:12.6f} {:12.6f}".format(
+                        ik + 1, self.qpoint_weight[ik] / nk_reducible,
+                        imode + 1, self.omega[ik, imode], gamma3[ik, imode]
                     ),
                     end="",
                 )
@@ -418,9 +421,11 @@ class Calculator:
         elif isotope:
             tau_total = self.get_lifetime(temperature, isotope=True)
 
+        nk_reducible = np.sum(self.qpoint_weight)
+
         print("# Phonon lifetime (ps) at {:6.2f} K".format(temperature))
         print(
-            "# k-point index, mode index, frequency (cm^-1), 3-phonon lifetime (ps)",
+            "# k-point index, k-point weight, mode index, frequency (cm^-1), 3-phonon lifetime (ps)",
             end="",
         )
         if four_phonon and isotope:
@@ -433,8 +438,9 @@ class Calculator:
         for ik in range(self.gamma3.shape[0]):
             for imode in range(self.gamma3.shape[1]):
                 print(
-                    "{:4d} {:4d} {:12.6f} {:12.6f}".format(
-                        ik + 1, imode + 1, self.omega[ik, imode], tau_3ph[ik, imode]
+                    "{:4d} {:12.6f} {:4d} {:12.6f} {:12.6f}".format(
+                        ik + 1, self.qpoint_weight[ik] / nk_reducible,
+                        imode + 1, self.omega[ik, imode], tau_3ph[ik, imode]
                     ),
                     end="",
                 )
