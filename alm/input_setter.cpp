@@ -163,6 +163,7 @@ auto InputSetter::set_constraint_vars(ALM *alm, const int constraint_flag, const
     alm->set_fc_fix(3, fix_cubic);
     const auto use_algebraic_constraint = constraint_flag / 10;
     alm->set_algebraic_constraint(use_algebraic_constraint);
+    alm->set_reduction_algo(ialgo_reduce);
 }
 
 

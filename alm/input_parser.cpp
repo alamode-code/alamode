@@ -1034,7 +1034,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
                                               "NWRITE",         "SOLUTION_PATH",
                                               "DEBIAS_OLS",     "PERIODIC_IMAGE_CONV",
                                               "STOP_CRITERION", "USE_CHOLESKY",
-                                              "CHUNKSIZE", "ALGO_REDUCTION"};
+                                              "CHUNKSIZE",      "ALGO_REDUCTION"};
 
     std::map<std::string, std::string> optimize_var_dict;
 
@@ -1261,8 +1261,14 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         assign_val(ialgo_reduce, "ALGO_REDUCTION", optimize_var_dict);
     }
 
-    input_setter->set_constraint_vars(alm, constraint_flag, rotation_axis, fc2_file, fc3_file, fix_harmonic, fix_cubic,
-        ialgo_reduce);
+    input_setter->set_constraint_vars(alm,
+                                      constraint_flag,
+                                      rotation_axis,
+                                      fc2_file,
+                                      fc3_file,
+                                      fix_harmonic,
+                                      fix_cubic,
+                                      ialgo_reduce);
 
     optimize_var_dict.clear();
 }

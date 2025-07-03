@@ -175,9 +175,9 @@ public:
 
     enum class ReductionAlgo
     {
+        none,
         rref,
-        qrd,
-        none
+        qrd
     };
 
     static auto get_xyzcomponent(int, int **) -> void;
