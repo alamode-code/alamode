@@ -682,7 +682,7 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
 #ifdef USE_ACCEL_BACKEND
     // 1) AccelerateLDLT
     {
-#LOG_IF(verbosity, 1, "Use AccelerateLDLT to solve the KKT problem.\n");
+        LOG_IF(verbosity, 1, "Use AccelerateLDLT to solve the KKT problem.\n");
         Eigen::AccelerateLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric> ldlt(K);
         if (ldlt.info() == Eigen::Success) {
             sol = ldlt.solve(rhs);
@@ -691,17 +691,16 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
             }
         }
         if (solved) {
-#LOG_IF(verbosity, 1, "KKT system solved with AccelerateLDLT.\n");
+            LOG_IF(verbosity, 1, "KKT system solved with AccelerateLDLT.\n");
         } else {
-#LOG_ERR_IF(verbosity, 0, "AccelerateLDLT failed to solve the KKT system.\n");
+            LOG_ERR_IF(verbosity, 0, "AccelerateLDLT failed to solve the KKT system.\n");
         }
     }
 #elif defined(USE_MKL_BACKEND)
     // 1) PardisoLDLT
     {
-#LOG_IF(verbosity, 1, "Use PardisoLDLT to solve the KKT problem.\n");
+        LOG_IF(verbosity, 1, "Use PardisoLDLT to solve the KKT problem.\n");
         Eigen::PardisoLDLT<Eigen::SparseMatrix<double>> pldlt;
-        pldlt.setMatrixType(Eigen::PardisoLDLT<Eigen::SparseMatrix<double>>::REAL_SYMMETRIC_INDEFINITE);
         pldlt.analyzePattern(K);
         pldlt.factorize(K);
         if (pldlt.info() == Eigen::Success) {
@@ -711,9 +710,9 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
             }
         }
         if (solved) {
-#LOG_IF(verbosity, 1, "KKT system solved with PardisoLDLT.\n");
+            LOG_IF(verbosity, 1, "KKT system solved with PardisoLDLT.\n");
         } else {
-#LOG_ERR_IF(verbosity, 0, "PardisoLDLT failed to solve the KKT system.\n");
+            LOG_ERR_IF(verbosity, 0, "PardisoLDLT failed to solve the KKT system.\n");
         }
     }
 #endif
