@@ -408,7 +408,7 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
             rref_sparse(nparam, const_self[order], tolerance_constraint);
         } else if (algo_in == ReductionAlgo::qrd) {
             int rank;
-            get_independent_rows_lapack_sparse(nparam, const_self[order], 1, eps12, rank);
+            get_independent_rows_lapack_sparse(nparam, const_self[order], verbosity, eps12, rank);
         }
     }
 
@@ -593,7 +593,8 @@ auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::v
     LOG_IF(verbosity, 1, "Constraint matrix is build in sparse format.\n");
 
     int rank;
-    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, 1, const_mat_sparse, const_rhs_vec, rank);
+    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, verbosity,
+        const_mat_sparse, const_rhs_vec, rank);
     LOG_IF(verbosity, 1, "Reduction of constraint matrix is completed.\n");
 }
 

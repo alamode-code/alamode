@@ -701,6 +701,7 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
     {
         LOG_IF(verbosity, 1, "Use PardisoLDLT to solve the KKT problem.\n");
         Eigen::PardisoLDLT<Eigen::SparseMatrix<double>> pldlt;
+        pldlt.pardisoParameterArray()[9] = 8;
         pldlt.analyzePattern(K);
         pldlt.factorize(K);
         if (pldlt.info() == Eigen::Success) {
