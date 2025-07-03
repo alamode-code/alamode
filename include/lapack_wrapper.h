@@ -9,6 +9,12 @@ extern "C"
 {
 #endif
 
+#ifdef USE_MKL_BACKEND
+#include <mkl_lapack.h>
+#include <mkl_blas.h>
+#define dgemv_ dgemv
+#define dgemm_ dgemm
+#else
 
     // LAPACK routines for GQR-based solver
     void dgeqp3_(const int *M, const int *N, double *A, const int *LDA, int *JPVT, double *TAU, double *WORK,
@@ -95,6 +101,8 @@ extern "C"
 
     void dgelss_(int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, double *s, double *rcond,
                  int *rank, double *work, int *lwork, int *info);
+
+#endif
 
 #ifdef __cplusplus
 }

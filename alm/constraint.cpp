@@ -436,12 +436,14 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         const_relate[order].shrink_to_fit();
     }
 
-    get_mapping_constraint(maxorder,
-                           fcs->get_nequiv(),
-                           const_self.data(),
-                           const_fix.data(),
-                           const_relate.data(),
-                           index_bimap);
+    if (constraint_algebraic) {
+        get_mapping_constraint(maxorder,
+                       fcs->get_nequiv(),
+                       const_self.data(),
+                       const_fix.data(),
+                       const_relate.data(),
+                       index_bimap);
+    }
 }
 
 auto Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cluster) const -> void
