@@ -5,6 +5,7 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <Eigen/SparseLU>
 #include <cstddef> // for size_t
 #include "constraint.h"
 
@@ -134,3 +135,66 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
  */
 auto get_independent_rows(const size_t N, const size_t P, const double *const *cmat, const double *dvec,
                           const int verbosity, std::vector<double> &C_red, std::vector<double> &d_red, int &r) -> int;
+
+
+/**
+ * @brief Solves a constrained least squares problem using sparse matrices.
+ *
+ * This function minimizes ||A x - b||_2 subject to C x = d, where:
+ * - A is the data matrix (M×N) in sparse format.
+ * - b is the observation vector (length M).
+ * - C is the constraint matrix (P×N) in sparse format.
+ * - d is the constraint vector (length P).
+ * - x is the solution vector (length N).
+ * - lambda is the vector of Lagrange multipliers (length P).
+ *
+ * The method uses QR decomposition with column pivoting to handle the constraints
+ * and solve the least squares problem efficiently in sparse form.
+ *
+ * @param[in] A       Sparse matrix A (M×N) representing the data matrix.
+ * @param[in] b       Observation vector b (length M).
+ * @param[in] C       Sparse matrix C (P×N) representing the constraint matrix.
+ * @param[in] d       Constraint vector d (length P).
+ * @param[out] x       Output solution vector x (length N).
+ * @param[out] lambda  Output vector of Lagrange multipliers (length P).
+ * @param[in] verbosity  Verbosity level (0: silent, >0: print info).
+ */
+auto solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd &b,
+                    const Eigen::SparseMatrix<double> &C, const Eigen::VectorXd &d, Eigen::VectorXd &x,
+                    Eigen::VectorXd &lambda, const int verbosity = 0) -> void;
+
+/**
+ * Given a dense column-major matrix A (size M×N) stored in
+ * `A_data` (length M*N), find which rows are independent.
+ *
+ * @param M       # rows of A
+ * @param N       # cols of A
+ * @param A_data  pointer to column-major data (size M*N)
+ * @param tol     optional tolerance; if ≤0, compute tol = max(M,N)*|R₀₀|*ε
+ * @param rank    [out] computed numerical rank
+ * @param pivots  [out] size-rank array of 0-based row indices in pivot order
+ * @param verbosity [in] verbosity level (0: silent, >0: print info)
+ *
+ * @returns      0 on success, LAPACK INFO otherwise.
+ */
+auto find_independent_rows_dense(int M, int N, double *A_data, double tol, int &rank, std::vector<int> &pivots,
+                                 const int verbosity = 0) -> int;
+
+
+/// Extract the independent rows of a (P×N) sparse matrix C_sparse,
+/// using LAPACK QR-with-pivoting on Cᵀ, just like your original code.
+///
+/// @param C_sparse  Input (P×N), row-major sparse
+/// @param dvec      Input length-P
+/// @param verbosity >1 prints debug
+/// @param C_red     Output (r×N) row-major sparse of independent rows
+/// @param d_red     Output length-r of corresponding dvec entries
+/// @param r         Output numerical row-rank
+/// @returns 0 on success, non-zero LAPACK INFO on failure
+auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_sparse, const Eigen::VectorXd &dvec,
+                                        const int verbosity, Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red,
+                                        int &r) -> int;
+
+
+auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm &C_sparse, const int verbosity,
+                                        const double tolerance, int &r) -> int;

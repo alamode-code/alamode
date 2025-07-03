@@ -154,7 +154,8 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/timer.h
             ${PROJECT_SOURCE_DIR}/write_phonons.h
             ${PROJECT_SOURCE_DIR}/../include/progress_bar.h
-        ../include/lapack_wrapper.h)
+        ../include/lapack_wrapper.h
+        ../include/logger.h)
 
 message("MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}")
 message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")

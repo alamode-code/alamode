@@ -22,8 +22,8 @@ inline auto get_value_from_xml(const boost::property_tree::ptree &pt_in, std::st
         return str_entry.get();
     } else {
         if (exit_when_error) {
-            std::cout << " Error in get_value_from_xml" << std::endl;
-            std::cout << " The following entry could not be found in the XML file : " << str << std::endl;
+            std::cout << " Error in get_value_from_xml\n";
+            std::cout << " The following entry could not be found in the XML file : " << str << '\n';
             exit(EXIT_FAILURE);
         } else {
             return "";

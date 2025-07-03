@@ -1,3 +1,6 @@
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
 cmake_minimum_required(VERSION 3.17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -24,7 +27,7 @@ endif ()
 #
 # Add openmp flag if available
 #
-find_package(OpenMP)
+find_package(OpenMP REQUIRED COMPONENTS CXX)
 if (OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(openmplibrary OpenMP::OpenMP_CXX)
@@ -43,18 +46,27 @@ else ()
     endif ()
 endif ()
 
-find_package(Eigen3)
-if (Eigen3_FOUND)
-    include_directories(${EIGEN3_INCLUDE_DIR})
-else ()
-    if (EIGEN3_INCLUDE)
-        include_directories(${EIGEN3_INCLUDE})
+option(EIGEN3_ROOT "Path to Eigen3 installation" "")
+
+if (EIGEN3_ROOT)
+    set(CMAKE_PREFIX_PATH ${EIGEN3_ROOT})
+    include_directories(${EIGEN3_ROOT}/include)
+else()
+    find_package(Eigen3)
+    if (Eigen3_FOUND)
+        include_directories(${EIGEN3_INCLUDE_DIR})
     else ()
-        message(FATAL_ERROR "Eigen3 was not found.
-        Please specify the location of boost include directories
-        via -DEIGEN3_INCLUDE option.")
+        if (EIGEN3_INCLUDE)
+            include_directories(${EIGEN3_INCLUDE})
+        else ()
+            message(FATAL_ERROR "Eigen3 was not found.
+            Please specify the location of boost include directories
+            via -DEIGEN3_INCLUDE option.")
+        endif ()
     endif ()
-endif ()
+endif()
+
+
 
 add_definitions(-D_HDF5)
 find_package(HDF5 COMPONENTS CXX)
@@ -74,9 +86,28 @@ endif ()
 
 include_directories("${PROJECT_SOURCE_DIR}/../external")
 
+option(USE_MKL_BACKEND     "Enable Intel MKL Pardiso" OFF)
+option(USE_ACCEL_BACKEND   "Enable Apple Accelerate LDLT" OFF)
 
-find_package(LAPACK REQUIRED)
-include_directories(${Lapack_INCLUDE_DIRS})
+if (USE_MKL_BACKEND)
+    find_package(MKL REQUIRED)
+    add_compile_definitions(USE_MKL_BACKEND EIGEN_USE_MKL_ALL)
+    set( BACKEND_LIBS MKL::MKL )
+elseif (USE_ACCEL_BACKEND)
+    find_library(ACCELERATE_FRAMEWORK Accelerate REQUIRED)
+    add_compile_definitions(USE_ACCEL_BACKEND EIGEN_USE_ACCELERATE)
+    set( BACKEND_LIBS ${ACCELERATE_FRAMEWORK} )
+else()
+    find_package(BLAS REQUIRED)
+    find_package(LAPACK REQUIRED)
+    include_directories(${BLAS_INCLUDE_DIRS} ${LAPACK_INCLUDE_DIRS})
+    set ( BACKEND_LIBS ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} )
+endif()
+
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+    message(STATUS "dir='${dir}'")
+endforeach()
 
 # Source code
 include_directories("${PROJECT_SOURCE_DIR}/../include")
@@ -114,7 +145,8 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
         ${PROJECT_SOURCE_DIR}/writer.h
         ${PROJECT_SOURCE_DIR}/smith.h
         ${PROJECT_SOURCE_DIR}/svd.h
-        ${PROJECT_SOURCE_DIR}/least_squares.h)
+        ${PROJECT_SOURCE_DIR}/least_squares.h
+        ../include/logger.h)
 
 # # Trick to use gcc to compile *.cpp: This doesn't work because of boost
 # SET_SOURCE_FILES_PROPERTIES(${SOURCES} PROPERTIES LANGUAGE C)
@@ -124,14 +156,26 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
 add_executable(alm ${PROJECT_SOURCE_DIR}/main.cpp
         ${PROJECT_SOURCE_DIR}/alm_cui.cpp
         ${SOURCES} ${HEADERS})
-target_link_libraries(alm ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${spglib} ${openmplibrary} ${hdf5library})
+
+
+if (EIGEN3_ROOT)
+    target_include_directories(alm PRIVATE ${EIGEN3_ROOT}/include/eigen3)
+endif()
+target_link_libraries(alm
+#        PRIVATE Eigen3::Eigen
+        ${Boost_LIBRARIES}
+        ${BACKEND_LIBS}
+        ${spglib}
+        ${openmplibrary}
+        ${hdf5library}
+)
 
 if (BUILD_LIBRARIES)
     set(serial "${alm_version}")
     set(soserial "1")
     # Shared library
     add_library(almcxx SHARED ${SOURCES})
-    target_link_libraries(almcxx ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${spglib} ${hdf5library})
+    target_link_libraries(almcxx ${BACKEND_LIBS} ${spglib} ${hdf5library})
     set_property(TARGET almcxx PROPERTY VERSION ${serial})
     set_property(TARGET almcxx PROPERTY SOVERSION ${soserial})
     install(TARGETS almcxx DESTINATION ${PROJECT_SOURCE_DIR}/lib)

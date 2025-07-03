@@ -21,6 +21,7 @@
 #include "symmetry.h"
 #include "timer.h"
 
+
 // By default, we use unordered_map for better performance of rref_sparse (in rref.cpp).
 #ifdef _USE_MAP_FOR_CONSTRAINT
 using MapConstraintElement = std::map<size_t, double>;
@@ -172,6 +173,13 @@ public:
     auto init(const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Symmetry> &symmetry, const Cell &supercell,
               const int verbosity, std::unique_ptr<Timer> &timer) -> void;
 
+    enum class ReductionAlgo
+    {
+        rref,
+        qrd,
+        none
+    };
+
     static auto get_xyzcomponent(int, int **) -> void;
 
     static auto generate_force_constant_table(const int, const size_t nat, const std::set<IntList> &,
@@ -182,13 +190,13 @@ public:
     static auto get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmetry> &symmetry, const int order,
                                         const std::string &basis, const std::vector<FcProperty> &fc_table_in,
                                         const size_t nparams, const double tolerance, ConstraintSparseForm &const_out,
-                                        const bool do_rref = false) -> void;
+                                        const ReductionAlgo algo_in) -> void;
 
     static auto get_constraint_symmetry_in_integer(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
                                                    const int order, const std::string &basis,
                                                    const std::vector<FcProperty> &fc_table_in, const size_t nparams,
                                                    const double tolerance, ConstraintSparseForm &const_out,
-                                                   const bool do_rref = false) -> void;
+                                                   const ReductionAlgo algo_in) -> void;
 
     [[nodiscard]] auto get_nequiv() const -> std::vector<size_t> *;
 

@@ -103,7 +103,7 @@ auto Displace::gen_displacement_pattern(const std::unique_ptr<Cluster> &cluster,
                                      nequiv[order].size(),
                                      constraint->get_tolerance_constraint(),
                                      constsym[order],
-                                     do_rref);
+                                     Fcs::ReductionAlgo::rref);
     }
 
     for (order = 0; order < maxorder; ++order) {

@@ -103,6 +103,8 @@ public:
 
     auto set_fc_fix(const int order, const bool fc_fix) const -> void;
 
+    auto set_reduction_algo(const int ialgo_reduce) const ->void;
+
     [[nodiscard]] auto ready_all_constraints() const -> bool;
 
     auto set_forceconstants_to_fix(const std::vector<std::vector<int>> &intpair_fix,

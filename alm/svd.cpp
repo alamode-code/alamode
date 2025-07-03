@@ -30,7 +30,7 @@ auto compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
 
     if (use_eigen) {
         // Eigen version: Compute thin U and V
-        Eigen::JacobiSVD svd_eig(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd_eig(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
         Eigen::MatrixXd U = svd_eig.matrixU();              // (m × min_mn)
         Eigen::VectorXd S = svd_eig.singularValues();       // (min_mn)
         Eigen::MatrixXd VT = svd_eig.matrixV().transpose(); // (min_mn × n)

@@ -172,7 +172,7 @@ private:
                              const std::unique_ptr<Fcs> &fcs, std::unique_ptr<Constraint> &constraint,
                              const int verbosity, std::vector<double> &param_out) -> int;
 
-    auto crossvalidation(const std::string job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+    auto crossvalidation(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
                          const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
                          const int verbosity) -> double;
 
@@ -281,7 +281,7 @@ private:
 
     auto run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec, std::vector<double> &param_out,
                                  const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
-                                 const std::unique_ptr<Constraint> &constraint, const std::string solver_type,
+                                 const std::unique_ptr<Constraint> &constraint, const std::string &solver_type,
                                  const int verbosity) const -> int;
 
     auto recover_original_forceconstants(const int maxorder, const std::vector<double> &param_in,

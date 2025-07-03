@@ -32,8 +32,8 @@
 #include <Eigen/SparseCholesky>
 #include <Eigen/SparseCore>
 #include <Eigen/SparseQR>
-
 #include <omp.h>
+#include "logger.h"
 
 using namespace ALM_NS;
 
@@ -116,7 +116,7 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
         std::cout << '\n';
     }
 
-    // Run optimization and obtain force constants
+    // Run optimization and get force constants
 
     std::vector<double> fcs_tmp(nparams, 0.0);
     if (optcontrol.linear_model == 1) {
@@ -211,7 +211,7 @@ auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_
     const bool compact = (constraint->get_constraint_algebraic() == 1);
     const bool return_ata = (optcontrol.use_cholesky == 1);
 
-    std::unique_ptr<SensingMatrix> matrix_out = std::make_unique<SensingMatrix>();
+    auto matrix_out = std::make_unique<SensingMatrix>();
 
     if (return_ata && (!compact) && constraint->get_exist_constraint()) {
         exit("least_squares",
@@ -219,11 +219,9 @@ auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_
              " Please use ICONST=10, 11, 12 instead.");
     }
 
-    if (sparse && (!compact) && constraint->get_exist_constraint()) {
-        exit("least_squares",
-             "The combination of ICONST=1, 2, 3 and SPARSE=1 is not supported.\n"
-             " Please use ICONST=10, 11, 12 instead.");
-    }
+    LOG_IF(verbosity, 1, " compact= ", compact, '\n');
+    LOG_IF(verbosity, 1, " sparse = ", sparse, '\n');
+    LOG_IF(verbosity, 1, " return_ata = ", return_ata, "\n\n");
 
     get_matrix_elements_unified(maxorder,
                                 matrix_out,
@@ -242,14 +240,17 @@ auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_
     }
     fnorm = std::sqrt(fnorm);
 
+    LOG_IF(verbosity, 1, "Sensing matrix is generated.\n");
+
     if (return_ata) {
         if (sparse) {
-            Eigen::VectorXd sp_bvec = Eigen::Map<Eigen::VectorXd>(matrix_out->bvec.data(), matrix_out->bvec.size());
+            const Eigen::VectorXd sp_bvec =
+                Eigen::Map<Eigen::VectorXd>(matrix_out->bvec.data(), matrix_out->bvec.size());
             if (verbosity > 0) {
                 std::cout << "  Now, start fitting ...\n";
             }
 
-            Eigen::SimplicialLDLT<SpMat> ldlt(matrix_out->amat_sparse);
+            const Eigen::SimplicialLDLT<SpMat> ldlt(matrix_out->amat_sparse);
             Eigen::VectorXd x = ldlt.solve(sp_bvec);
 
             const auto nparams = x.size();
@@ -287,15 +288,54 @@ auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_
             if (verbosity > 0) {
                 std::cout << "  Now, start fitting ...\n";
             }
-            info_fitting = run_eigen_sparse_solver(matrix_out->amat_sparse,
-                                                   sp_bvec,
-                                                   param_out,
-                                                   fnorm,
-                                                   maxorder,
-                                                   fcs,
-                                                   constraint,
-                                                   optcontrol.sparsesolver,
-                                                   verbosity);
+
+            if (compact) {
+                info_fitting = run_eigen_sparse_solver(matrix_out->amat_sparse,
+                                                       sp_bvec,
+                                                       param_out,
+                                                       fnorm,
+                                                       maxorder,
+                                                       fcs,
+                                                       constraint,
+                                                       optcontrol.sparsesolver,
+                                                       verbosity);
+            } else {
+                Eigen::VectorXd x, lambda;
+
+                solveGQRSparse(matrix_out->amat_sparse,
+                               sp_bvec,
+                               constraint->get_const_mat_sparse(),
+                               constraint->get_const_rhs_vec(),
+                               x,
+                               lambda,
+                               verbosity);
+
+                auto res = sp_bvec - matrix_out->amat_sparse * x;
+                const auto res2norm = res.squaredNorm();
+                const auto nparams = x.size();
+                std::vector<double> param_irred(nparams);
+
+                for (auto i = 0; i < nparams; ++i) {
+                    param_irred[i] = x(i);
+                }
+
+                // Recover reducible set of force constants
+
+                if (constraint->get_constraint_algebraic()) {
+                    recover_original_forceconstants(maxorder, param_irred, param_out, fcs->get_nequiv(), constraint);
+                } else {
+                    param_out.resize(nparams, 0.0);
+                    for (size_t i = 0; i < nparams; ++i) {
+                        param_out[i] = param_irred[i];
+                    }
+                }
+
+                if (verbosity > 0) {
+                    std::cout << "  Residual sum of squares for the solution: " << sqrt(res2norm) << '\n';
+                    std::cout << "  Fitting error (%) : " << sqrt(res2norm / (fnorm * fnorm)) * 100.0 << '\n';
+                }
+            }
+
         } else {
             // Use a direct solver for a dense matrix
 
@@ -415,7 +455,7 @@ auto Optimize::compressive_sensing(const std::string &job_prefix, const int maxo
 }
 
 
-auto Optimize::crossvalidation(const std::string job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
+auto Optimize::crossvalidation(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
                                const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
                                const int verbosity) -> double
 {
@@ -1875,8 +1915,9 @@ auto Optimize::get_matrix_elements_unified(const int maxorder, std::unique_ptr<S
                         static_cast<float>(nrows * ncols_new * 8) / static_cast<float>(1024 * 1024 * 1024);
                     const auto memory_chunk = static_cast<float>(optcontrol.chunk_size * ncols_new * 8) /
                                               static_cast<float>(1024 * 1024 * 1024);
+                    const auto memory_ata = static_cast<float>(ncols_new * ncols_new * 8) / (1024 * 1024 * 1024);
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                              << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
+                              << std::max(memory_ata, memory_chunk) << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(ncols_new * ncols_new, 0.0);
@@ -1898,7 +1939,7 @@ auto Optimize::get_matrix_elements_unified(const int maxorder, std::unique_ptr<S
             }
 
         } else {
-
+            // return A and b
             if (sparse) {
                 if (verbosity > 0) {
                     std::cout << "  Calculate the sensing matrix A using sparse data type\n";
@@ -1988,8 +2029,9 @@ auto Optimize::get_matrix_elements_unified(const int maxorder, std::unique_ptr<S
                         static_cast<float>(nrows * ncols * 8) / static_cast<float>(1024 * 1024 * 1024);
                     const auto memory_chunk =
                         static_cast<float>(optcontrol.chunk_size * ncols * 8) / static_cast<float>(1024 * 1024 * 1024);
+                    const auto memory_ata = static_cast<float>(ncols * ncols * 8) / (1024 * 1024 * 1024);
                     std::cout << "  At least " << std::fixed << std::setprecision(3)
-                              << std::min(memory_full, memory_chunk) << " GiB of memory will be allocated.\n";
+                              << std::max(memory_ata, memory_chunk) << " GiB of memory will be allocated.\n";
                 }
 
                 matrix_out->amat_dense.resize(ncols * ncols, 0.0);
@@ -2107,7 +2149,7 @@ auto Optimize::get_matrix_elements2(const int maxorder, const size_t ncycle, con
             fill_amat(maxorder, natmin, ncols, u_multi[irow], gamma_precomputed, symmetry, fcs, amat_orig_tmp);
 
             // When the force constants are defined in the fractional coordinate,
-            // we need to multiply the basis_conversion_matrix to obtain atomic forces
+            // we need to multiply the basis_conversion_matrix to get atomic forces
             // in the Cartesian coordinate.
             if (fcs->get_forceconstant_basis() == "Lattice") {
                 apply_basis_converter_amat(natmin3, ncols, amat_orig_tmp, fcs->get_basis_conversion_matrix());
@@ -2208,11 +2250,19 @@ auto Optimize::get_matrix_elements_normal_equation2(
         ++nsubset;
     }
 
+    // std::cout << "nsubset = " << nsubset << '\n';
+
     std::vector<double> bvec_orig(nrows, 0.0);
     std::vector<double> bvec_subset;
 
-    Eigen::MatrixXd ata_subset(ncols_compact, ncols_compact);
-    Eigen::VectorXd atb_subset(ncols_compact);
+    if (sparse) {
+        matrix_out->amat_sparse.resize(ncols_compact, ncols_compact);
+    }
+
+    // std::cout << "sparse = " << sparse << '\n';
+    // std::cout << "size of ata_subset = " << ncols_compact << " x " << ncols_compact << '\n';
+    // std::cout << std::flush;
+
 
     for (size_t isub = 0; isub < nsubset; ++isub) {
 
@@ -2223,6 +2273,9 @@ auto Optimize::get_matrix_elements_normal_equation2(
         }
 
         auto nrows_now = (iend - istart) * nat3;
+
+        // std::cout << "istart = " << istart << '\n';
+        // std::cout << "iend = " << iend << '\n';
 
         const long istart_cycle = istart * symmetry->get_ntran();
         const long iend_cycle = iend * symmetry->get_ntran();
@@ -2241,7 +2294,6 @@ auto Optimize::get_matrix_elements_normal_equation2(
             size_t ii, jj;
             size_t idata;
             double **amat_orig_tmp;
-            //std::vector<std::vector<double>> amat_mod_tmp;
             double **amat_mod_tmp;
 
             std::vector<T> nonzero_omp;
@@ -2249,11 +2301,16 @@ auto Optimize::get_matrix_elements_normal_equation2(
             ind.resize(maxorder + 1, 0);
             allocate(amat_orig_tmp, natmin3, ncols);
             allocate(amat_mod_tmp, natmin3, ncols_compact);
-            //amat_mod_tmp.resize(natmin3, std::vector<double>(ncols_compact, 0.0));
+
+            // std::cout << "OK" << std::flush;
+            // std::cout << "istart_cycle = " << istart_cycle << '\n';
+            // std::cout << "iend_cycle = " << iend_cycle << '\n';
 
 #pragma omp for
             for (irow = istart_cycle; irow < iend_cycle; ++irow) {
                 idata = natmin3 * (irow - istart_cycle);
+
+                // std::cout << "irow = " << irow << '\n';
 
                 // generate r.h.s vector B
                 fill_bvec(natmin,
@@ -2270,6 +2327,7 @@ auto Optimize::get_matrix_elements_normal_equation2(
                 // generate l.h.s. matrix A
                 fill_amat(maxorder, natmin, ncols, u_multi[irow], gamma_precomputed, symmetry, fcs, amat_orig_tmp);
 
+
                 // When the force constants are defined in the fractional coordinate,
                 // we need to multiply the basis_conversion_matrix to obtain atomic forces
                 // in the Cartesian coordinate.
@@ -2280,6 +2338,8 @@ auto Optimize::get_matrix_elements_normal_equation2(
                 if (constraint->get_constraint_algebraic()) {
 
                     // Project constraints
+                    // This operation increases non-zero entries of the originally sparse matrix.
+                    // The resulting matrix manipulation At * A will be more expensive.
                     project_constraints(maxorder,
                                         natmin,
                                         irow - istart_cycle,
@@ -2292,7 +2352,7 @@ auto Optimize::get_matrix_elements_normal_equation2(
                     if (sparse) {
                         for (ii = 0; ii < natmin3; ++ii) {
                             for (jj = 0; jj < ncols_compact; ++jj) {
-                                if (std::abs(amat_mod_tmp[ii][jj]) > eps) {
+                                if (std::abs(amat_mod_tmp[ii][jj]) > eps6) {
                                     nonzero_omp.emplace_back(idata + ii, jj, amat_mod_tmp[ii][jj]);
                                 }
                             }
@@ -2337,20 +2397,33 @@ auto Optimize::get_matrix_elements_normal_equation2(
                         nonzero_entries.emplace_back(it);
                     }
                 }
+                nonzero_omp.clear();
             }
+            // std::cout << "nonzero_entries.size() = " << nonzero_entries.size() << '\n';
         }
 
         if (sparse) {
             SpMat amat_subset_sparse, amat_subset_transpose_sparse, atb_tmp;
             amat_subset_sparse.resize(nrows_now, ncols_compact);
-            amat_subset_transpose_sparse.resize(ncols_compact, nrows_now);
+            // amat_subset_transpose_sparse.resize(ncols_compact, nrows_now);
+
+            // std::cout << "Memory allocated for amat_subset_sparse =" << amat_subset_sparse.size() << '\n';
 
             amat_subset_sparse.setFromTriplets(nonzero_entries.begin(), nonzero_entries.end());
-            amat_subset_transpose_sparse = amat_subset_sparse.transpose();
+            amat_subset_sparse.makeCompressed();
 
-            matrix_out->amat_sparse += amat_subset_transpose_sparse * amat_subset_sparse;
+            // std::cout << "Elements filled" << amat_subset_sparse.nonZeros() << '\n';
+
+            SpMat At = amat_subset_sparse.transpose();
+
+            // matrix_out->amat_sparse.reserve(matrix_out->amat_sparse.size() + AtA.nonZeros());
+
+            // std::cout << "Computed transpose:\n";
+
+            matrix_out->amat_sparse += At * amat_subset_sparse;
+            // std::cout << "Computed A^T A\n";
             Eigen::VectorXd bvec_subset2 = Eigen::Map<Eigen::VectorXd>(bvec_subset.data(), bvec_subset.size());
-            Eigen::VectorXd atb_tmp2 = amat_subset_transpose_sparse * bvec_subset2;
+            Eigen::VectorXd atb_tmp2 = At * bvec_subset2;
 
             for (size_t i = 0; i < ncols_compact; ++i) {
                 matrix_out->bvec[i] += atb_tmp2[i];
@@ -2358,8 +2431,9 @@ auto Optimize::get_matrix_elements_normal_equation2(
 
         } else {
             amat_subset_transpose = amat_subset.transpose();
-            ata_subset = amat_subset_transpose * amat_subset;
-            atb_subset = amat_subset_transpose * Eigen::Map<Eigen::VectorXd>(bvec_subset.data(), bvec_subset.size());
+            Eigen::MatrixXd ata_subset = amat_subset_transpose * amat_subset; // This is memory intensive
+            Eigen::VectorXd atb_subset =
+                amat_subset_transpose * Eigen::Map<Eigen::VectorXd>(bvec_subset.data(), bvec_subset.size());
 
             for (size_t i = 0; i < ncols_compact; ++i) {
                 for (size_t j = 0; j < ncols_compact; ++j) {
@@ -2435,11 +2509,10 @@ auto Optimize::project_constraints(const int maxorder, const size_t natmin, cons
 
     for (int order = 0; order < maxorder; ++order) {
 
-        for (size_t i = 0; i < constraint->get_const_fix(order).size(); ++i) {
+        for (const auto fix: constraint->get_const_fix(order)) {
 
             for (size_t j = 0; j < natmin3; ++j) {
-                bvec_mod[j + idata] -= constraint->get_const_fix(order)[i].val_to_fix *
-                                       amat_orig[j][ishift + constraint->get_const_fix(order)[i].p_index_target];
+                bvec_mod[j + idata] -= fix.val_to_fix * amat_orig[j][ishift + fix.p_index_target];
             }
         }
 
@@ -2628,7 +2701,7 @@ auto Optimize::factorial(const int n) const -> int
 auto Optimize::run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec,
                                        std::vector<double> &param_out, const double fnorm, const int maxorder,
                                        const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
-                                       const std::string solver_type, const int verbosity) const -> int
+                                       const std::string &solver_type, const int verbosity) const -> int
 {
     if (verbosity > 0) {
         std::cout << "  Solve least-squares problem by Eigen " + solver_type + ".\n";

@@ -1,6 +1,7 @@
 // least_squares.cpp
 
 #include "least_squares.h"
+#include <Eigen/Sparse>
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <cmath> // for std::pow, std::sqrt
@@ -8,8 +9,77 @@
 #include <limits>
 #include <numeric>
 #include <vector>
-#include "lapack_wrapper.h"
+#include "logger.h"
 #include "svd.h"
+#ifdef USE_MKL_BACKEND
+#define EIGEN_USE_MKL
+#include <Eigen/PardisoSupport>
+using KKT_Solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<double>>;
+#elif defined(USE_ACCEL_BACKEND)
+#include <Eigen/AccelerateSupport>
+#include <Eigen/SparseCholesky>
+using KKT_Solver = Eigen::AccelerateLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric>;
+#else
+#include <Eigen/SparseLU>
+using KKT_Solver = Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric>;
+#endif
+
+#ifndef EIGEN_USE_ACCELERATE
+#include "lapack_wrapper.h"
+#endif
+
+
+auto find_independent_rows_dense(int M, int N, double *A_data, double tol, int &rank, std::vector<int> &pivots,
+                                 const int verbosity) -> int
+{
+    // jpvt array holds pivot indices (1-based)
+    std::vector<int> jpvt(M, 0);
+    int minNP = std::min(N, M);
+    std::vector<double> tau(minNP);
+
+    // Query optimal workspace size for dgeqp3_
+    int lwork_qr = -1;
+    double work_qr_query = 0.0;
+    int INFO_qr = 0;
+    dgeqp3_(&N, &M, A_data, &N, jpvt.data(), tau.data(), &work_qr_query, &lwork_qr, &INFO_qr);
+    if (INFO_qr != 0) {
+        return INFO_qr;
+    }
+    int LWORK_qr = static_cast<int>(work_qr_query);
+    std::vector<double> WORK_qr(LWORK_qr);
+
+    LOG_IF(verbosity, 1, "dgeqp3_ workspace size query completed, INFO=", INFO_qr, ".\n");
+    // Perform QR with column pivoting to determine numerical row rank of A_data
+    dgeqp3_(&N, &M, A_data, &N, jpvt.data(), tau.data(), WORK_qr.data(), &LWORK_qr, &INFO_qr);
+    if (INFO_qr != 0) {
+        return INFO_qr;
+    }
+    LOG_IF(verbosity, 1, "dgeqp3_ completed successfully, INFO=", INFO_qr, ".\n");
+
+    // 4) Determine numerical row rank by inspecting diagonal of R in A_data
+    // R[k, k] is stored at A_qr[k + k*N_i] in column-major
+    double const R00 = std::abs(A_data[0 + 0 * N]);
+    if (tol <= 0.0) {
+        // If tol is not provided, compute it based on the maximum of M and N
+        tol = std::max(M, N) * R00 * std::numeric_limits<double>::epsilon();
+    }
+    rank = 0;
+    for (int k = 0; k < std::min(M, N); ++k) {
+        double const diag = std::abs(A_data[k + k * N]);
+        if (diag > tol) {
+            ++rank;
+        } else {
+            break;
+        }
+    }
+    //Extract the indices of the first r pivoted rows of A^T (which correspond to independent rows of A)
+    pivots.resize(rank);
+    for (int i = 0; i < rank; ++i) {
+        pivots[i] = jpvt[i] - 1; // convert 1-based to 0-based
+    }
+
+    return INFO_qr;
+}
 
 
 auto get_independent_rows(const size_t N, const size_t P, const double *const *cmat, const double *dvec,
@@ -27,9 +97,7 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
             C_mat[col * P_i + row] = cmat[row][col];
         }
     }
-    if (verbosity > 1) {
-        std::cout << "  [get_independent_rows] Copied C into column-major buffer (" << P_i << "×" << N_i << ").\n";
-    }
+    LOG_IF(verbosity, 1, "Copied C into column-major buffer (", P_i, "×", N_i, ").\n");
 
     // 2) Prepare to perform QR with column pivoting on C^T (size N×P)
     // Build A_qr = C^T in column-major layout
@@ -41,59 +109,14 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
         }
     }
 
-    // jpvt array holds pivot indices (1-based)
-    std::vector<int> jpvt(P_i, 0);
-    int minNP = std::min(N_i, P_i);
-    std::vector<double> tau(minNP);
-
-    // Query optimal workspace size for dgeqp3_
-    int lwork_qr = -1;
-    double work_qr_query = 0.0;
-    int INFO_qr = 0;
-    dgeqp3_(&N_i, &P_i, A_qr.data(), &N_i, jpvt.data(), tau.data(), &work_qr_query, &lwork_qr, &INFO_qr);
-    if (INFO_qr != 0) {
-        if (verbosity > 0) {
-            std::cerr << "  [get_independent_rows] dgeqp3_ (workspace query) failed, INFO=" << INFO_qr << "\n";
-        }
-        return INFO_qr;
+    // 3) Run QR with column pivoting on A_qr to determine numerical row rank
+    std::vector<int> independent_rows;
+    auto info_qr = find_independent_rows_dense(P_i, N_i, A_qr.data(), -1.0, r, independent_rows);
+    if (info_qr != 0) {
+        LOG_ERR_IF(verbosity, 0, "find_independent_rows_dense failed, INFO=", info_qr, ".\n");
+        return info_qr;
     }
-    int LWORK_qr = static_cast<int>(work_qr_query);
-    std::vector<double> WORK_qr(LWORK_qr);
-
-    // 3) Perform QR with column pivoting to determine numerical row rank of C
-    dgeqp3_(&N_i, &P_i, A_qr.data(), &N_i, jpvt.data(), tau.data(), WORK_qr.data(), &LWORK_qr, &INFO_qr);
-    if (INFO_qr != 0) {
-        if (verbosity > 0) {
-            std::cerr << "  [get_independent_rows] dgeqp3_ failed, INFO=" << INFO_qr << "\n";
-        }
-        return INFO_qr;
-    }
-
-    // 4) Determine numerical row rank r by inspecting diagonal of R in A_qr
-    // R[k, k] is stored at A_qr[k + k*N_i] in column-major
-    double R00 = std::abs(A_qr[0 + 0 * N_i]);
-    double tol = std::max(P_i, N_i) * R00 * std::numeric_limits<double>::epsilon();
-    r = 0;
-    for (int k = 0; k < std::min(P_i, N_i); ++k) {
-        double diag = std::abs(A_qr[k + k * N_i]);
-        if (diag > tol) {
-            ++r;
-        } else {
-            break;
-        }
-    }
-    if (verbosity > 1) {
-        std::cout << "  [get_independent_rows] Numerical row rank r = " << r
-                  << " (max possible = " << std::min(P_i, N_i) << ").\n";
-    }
-
-    // 5) Extract the indices of the first r pivoted rows of C^T (which correspond to independent rows of C)
-    std::vector<int> independent_rows(r);
-    for (int i = 0; i < r; ++i) {
-        independent_rows[i] = jpvt[i] - 1; // convert 1-based to 0-based
-    }
-
-    // 6) Build C_red (size r×N) and d_red (length r), both in column-major layout
+    // 4) Build C_red (size r×N) and d_red (length r), both in column-major layout
     C_red.assign(static_cast<size_t>(r) * static_cast<size_t>(N), 0.0);
     d_red.assign(static_cast<size_t>(r), 0.0);
     for (int ii = 0; ii < r; ++ii) {
@@ -107,10 +130,116 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
         // Copy corresponding entry from dvec
         d_red[ii] = dvec[orig_row];
     }
-    if (verbosity > 1) {
-        std::cout << "  [get_independent_rows] Constructed C_red (" << r << "×" << N_i << ") and d_red (length " << r
-                  << ").\n";
+    LOG_IF(verbosity, 1, "Constructed C_red (", r, "×", N_i, ") and d_red (length ", r, ").\n");
+    return 0;
+}
+
+auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm &C_sparse, const int verbosity,
+                                        const double tolerance, int &r) -> int
+{
+    Eigen::SparseMatrix<double> C_sparse_eigen, C_red_eigen;
+
+    // Copy the sparse matrix C_sparse to Eigen format
+    const auto nrows = C_sparse.size();
+    C_sparse_eigen.resize(nrows, ncols);
+    C_red_eigen.resize(nrows, ncols);
+
+    std::vector<Eigen::Triplet<double>> triplets;
+    size_t icount = 0;
+    for (const auto &row: C_sparse) {
+        for (const auto &elem: row) {
+            triplets.emplace_back(icount, elem.first, elem.second);
+        }
+        ++icount;
     }
+    C_sparse_eigen.setFromTriplets(triplets.begin(), triplets.end());
+    C_sparse_eigen.makeCompressed();
+    LOG_IF(verbosity,
+           1,
+           "Converted C_sparse to Eigen format (",
+           nrows,
+           "×",
+           ncols,
+           "), nnz=",
+           C_sparse_eigen.nonZeros(),
+           ".\n");
+
+    Eigen::VectorXd dvec(nrows), dvec_red(nrows);
+    const auto info = get_independent_rows_lapack_sparse(C_sparse_eigen, dvec, verbosity, C_red_eigen, dvec_red, r);
+
+    // update the sparse matrix C_sparse with the reduced rows
+    C_sparse.clear();
+    Eigen::SparseMatrix<double, Eigen::RowMajor> C_row = C_red_eigen;
+
+    MapConstraintElement const_tmp;
+    for (auto i = 0; i < r; ++i) {
+        const_tmp.clear();
+        for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(C_row, i); it; ++it) {
+            const_tmp[it.col()] = it.value();
+        }
+        C_sparse.emplace_back(const_tmp);
+    }
+
+    return info;
+}
+
+auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_sparse, const Eigen::VectorXd &dvec,
+                                        const int verbosity, Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red,
+                                        int &r) -> int
+{
+    const int P = C_sparse.rows();
+    const int N = C_sparse.cols();
+    int N_i = N, P_i = P;
+
+    LOG_IF(verbosity, 1, "P = ", P, ", N = ", N, ", nnz = ", C_sparse.nonZeros(), ".\n");
+
+    // 1) Copy sparse→dense column-major buffer C_mat (size P×N)
+    std::vector<double> C_mat(P_i * N_i, 0.0);
+    for (int col = 0; col < N; ++col) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(C_sparse, col); it; ++it) {
+            // it.row()==i, it.col()==j
+            const int row = it.row();
+            C_mat[col * P_i + row] = it.value();
+        }
+    }
+    LOG_IF(verbosity, 1, "build dense C_mat (", P_i, "×", N_i, ").\n");
+
+    // 2) Build A_qr = Cᵀ in column-major (size N×P)
+    std::vector<double> A_qr(N_i * P_i);
+    for (int i = 0; i < P_i; ++i)
+        for (int j = 0; j < N_i; ++j)
+            A_qr[j + i * N_i] = C_mat[i + j * P_i];
+
+    // 3) Run QR with column pivoting on A_qr to determine numerical row rank
+    std::vector<int> independent_rows;
+    auto info_qr = find_independent_rows_dense(P_i, N_i, A_qr.data(), -1.0, r, independent_rows, verbosity);
+    if (info_qr != 0) {
+        LOG_ERR_IF(verbosity, 0, "find_independent_rows_dense failed, INFO=", info_qr, ".\n");
+        return info_qr;
+    }
+
+    Eigen::SparseMatrix<double, Eigen::RowMajor> C_row = C_sparse;
+
+    // 4) Build C_red (r×N) as sparse
+    std::vector<Eigen::Triplet<double, size_t>> tri;
+    tri.reserve(C_sparse.nonZeros());
+    for (int new_i = 0; new_i < r; ++new_i) {
+        int orig_row = independent_rows[new_i];
+        for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(C_row, orig_row); it; ++it) {
+            tri.emplace_back(new_i, it.col(), it.value());
+        }
+    }
+    C_red.resize(r, N);
+    C_red.setFromTriplets(tri.begin(), tri.end());
+    C_red.makeCompressed();
+    LOG_IF(verbosity, 1, "built C_red (", r, "×", N, "), nnz=", C_red.nonZeros(), "\n");
+
+    // 5) Build d_red
+    d_red.resize(r);
+    for (int i = 0; i < r; ++i)
+        d_red[i] = dvec[independent_rows[i]];
+
+    LOG_IF(verbosity, 1, "built d_red (len=", r, ").\n");
 
     return 0;
 }
@@ -181,8 +310,7 @@ auto least_squares_svd(const size_t N, const size_t M, double *amat, const doubl
     }
 
     if (nrank < static_cast<int>(N)) {
-        std::cerr << "　　Warning [fit_without_constraints]: "
-                  << "Matrix is rank-deficient. Force constants could not be determined uniquely :(\n";
+        LOG_ERR_IF(verbosity, 0, "Matrix is rank-deficient. Force constants could not be determined uniquely.\n");
     }
 
     if (nrank == static_cast<int>(N) && verbosity > 0) {
@@ -224,9 +352,7 @@ auto least_squares_with_constraints_gqr(const size_t N, const size_t M, const si
         // If reduction fails, return the error code
         return ierr;
     }
-    if (verbosity > 1) {
-        std::cout << "  [least_squares_with_constraints_gqr] build_reduced_constraints returned r = " << r << ".\n";
-    }
+    LOG_IF(verbosity , 1, "get_independent_rows returned r = ", r, ".\n");
 
     // Step 5: Call dgglse to solve minimize ||A x - b||_2 subject to C_red x = d_red
     int M_i = static_cast<int>(M);
@@ -256,12 +382,10 @@ auto least_squares_with_constraints_gqr(const size_t N, const size_t M, const si
             &LWORK_lse,
             &INFO_lse);
 
-    if (verbosity > 1) {
-        if (INFO_lse == 0) {
-            std::cout << "　[least_squares_with_constraints_gqr] dgglse_ completed successfully.\n";
-        } else {
-            std::cerr << "　[least_squares_with_constraints_gqr] dgglse_ returned INFO = " << INFO_lse << "\n";
-        }
+    if (INFO_lse == 0) {
+        LOG_IF(verbosity, 1, "dgglse_ completed successfully.\n");
+    } else {
+        LOG_ERR_IF(verbosity, 0, "dgglse_ returned INFO =", INFO_lse, ".\n");
     }
 
     // Copy the solution into param_out
@@ -496,4 +620,175 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         }
     }
     return 0;
+}
+
+
+void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd &b,
+                    const Eigen::SparseMatrix<double> &C, const Eigen::VectorXd &d, Eigen::VectorXd &x,
+                    Eigen::VectorXd &lambda, const int verbosity)
+{
+#ifdef USE_MKL_BACKEND
+    constexpr auto ldlt_solver_name = "PardisoLDLT";
+#elif defined(USE_ACCEL_BACKEND)
+    constexpr auto ldlt_solver_name = "AccelerateLDLT";
+#else
+    constexpr auto ldlt_solver_name = "SimplicialLDLT";
+#endif
+
+    const int N = A.cols();
+    const int P = C.rows();
+
+    // Construct ATA and ATb
+    Eigen::SparseMatrix<double> ATA = A.transpose() * A;
+    Eigen::VectorXd ATb = A.transpose() * b;
+
+    LOG_IF(verbosity, 1, "ATA non-zeros: ", ATA.nonZeros(), ", C non-zeros: ", C.nonZeros(), "\n");
+
+    // KKT matrix K = [ATA  C^T;  C  0] in sparse format
+    Eigen::SparseMatrix<double> K(N + P, N + P);
+    std::vector<Eigen::Triplet<double>> triplets;
+    // 1) ATA part (column-major)
+    for (int col = 0; col < ATA.outerSize(); ++col) {
+        const int start = ATA.outerIndexPtr()[col];
+        const int end = ATA.outerIndexPtr()[col + 1];
+        for (int idx = start; idx < end; ++idx) {
+            int row = ATA.innerIndexPtr()[idx];
+            double value = ATA.valuePtr()[idx];
+            triplets.emplace_back(row, col, value);
+        }
+    }
+
+    // 2) C^T/C parts
+    for (int col = 0; col < C.outerSize(); ++col) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(C, col); it; ++it) {
+            // C^T part
+            triplets.emplace_back(it.col(), N + it.row(), it.value());
+            // C part
+            triplets.emplace_back(N + it.row(), it.col(), it.value());
+        }
+    }
+    K.setFromTriplets(triplets.begin(), triplets.end());
+    K.makeCompressed();
+
+    LOG_IF(verbosity, 1, "KKT matrix K constructed with size (", N + P, "×", N + P, "), non-zeros: ", K.nonZeros(), "\n");
+    // 3) generate [A^T b; d]
+    Eigen::VectorXd rhs(N + P);
+    rhs.head(N) = ATb;
+    rhs.tail(P) = d;
+
+    Eigen::VectorXd sol;
+    bool solved = false;
+
+#ifdef USE_ACCEL_BACKEND
+    // 1) AccelerateLDLT
+    {
+        if (verbosity > 1) {
+            std::cout << "  [solveGQRSparse] Use AccelerateLDLT to solve the KKT problem.\n";
+        }
+        Eigen::AccelerateLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric> ldlt(K);
+        if (ldlt.info() == Eigen::Success) {
+            sol = ldlt.solve(rhs);
+            if (ldlt.info() == Eigen::Success) {
+                solved = true;
+            }
+        }
+        if (solved && verbosity > 1) {
+            std::cout << "  [solveGQRSparse] KKT system solved with AccelerateLDLT.\n";
+        } else if (!solved && verbosity > 0) {
+            std::cerr << "  [solveGQRSparse] AccelerateLDLT failed to solve the KKT system.\n";
+        }
+    }
+#elif defined(USE_MKL_BACKEND)
+    // 1) PardisoLDLT
+    {
+        if (verbosity > 1) {
+            std::cout << "  [solveGQRSparse] Use PardisoLDLT to solve the KKT problem.\n";
+        }
+        Eigen::PardisoLDLT<Eigen::SparseMatrix<double>> p(K);
+        p.analyzePattern(K);
+        p.factorize(K);
+        if (p.info() == Eigen::Success) {
+            sol = p.solve(rhs);
+            if (p.info() == Eigen::Success) {
+                solved = true;
+            }
+        }
+        if (solved && verbosity > 1) {
+            std::cout << "  [solveGQRSparse] KKT system solved with PardisoLDLT.\n";
+        } else if (!solved && verbosity > 0) {
+            std::cerr << "  [solveGQRSparse] PardisoLDLT failed to solve the KKT system.\n";
+        }
+    }
+#endif
+
+    if (!solved) {
+        LOG_IF(verbosity,1, "Use Eigen::SparseLU to solve the KKT problem.\n");
+        Eigen::SparseLU<Eigen::SparseMatrix<double>> lu(K);
+        if (lu.info() == Eigen::Success) {
+            sol = lu.solve(rhs);
+            if (lu.info() == Eigen::Success) {
+                solved = true;
+            }
+        }
+        if (solved) {
+            LOG_IF(verbosity, 1, "KKT system solved with SparseLU.\n");
+        } else {
+            LOG_IF(verbosity, 0, "SparseLU failed to solve the KKT system.\n");
+        }
+    }
+
+    // // SimplicialLDLT is not stable for indefinite KKT matrices
+    // KKT_Solver ldlt(K);
+    // if (ldlt.info() == Eigen::Success) {
+    //     sol = ldlt.solve(rhs);
+    //     if (ldlt.info() == Eigen::Success) {
+    //         used_solver = ldlt_solver_name;
+    //         solved = true;
+    //         if (verbosity > 1) std::cout << "  [solveGQRSparse] solved by " << used_solver << "\n";
+    //     }
+    // }
+
+    // 2) SparseQR
+    if (!solved) {
+        LOG_IF(verbosity, 1, "Use Eigen::SparseQR to solve the KKT problem.\n");
+        Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr(K);
+        qr.analyzePattern(K);
+        qr.factorize(K);
+        if (qr.info() == Eigen::Success) {
+            sol = qr.solve(rhs);
+            if (qr.info() == Eigen::Success) {
+                solved = true;
+            }
+        }
+        if (solved) {
+            LOG_IF(verbosity, 1, "KKT system solved with SparseQR.\n");
+        } else {
+            LOG_IF(verbosity, 0, "SparseQR failed to solve the KKT system.\n");
+        }
+    }
+
+    // 3) BiCGSTAB
+    if (!solved) {
+        LOG_IF(verbosity, 1, "Use Eigen::BiCGSTAB to solve the KKT problem.\n");
+        Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> bicg(K);
+        bicg.setTolerance(1e-6);
+        bicg.setMaxIterations(1000);
+        sol = bicg.solve(rhs);
+        if (bicg.info() == Eigen::Success) {
+            solved = true;
+        }
+        if (solved) {
+            LOG_IF(verbosity, 1, "KKT system solved with BiCGSTAB.\n");
+        } else {
+            LOG_IF(verbosity, 0, "BiCGSTAB failed to solve the KKT system.\n");
+        }
+    }
+
+    // fill the output vectors x and lambda
+    if (solved) {
+        x = sol.head(A.cols());
+        lambda = sol.tail(C.rows());
+    } else {
+        LOG_ERR_IF(verbosity, 0, "All solvers failed to solve the KKT system.\n");
+    }
 }

@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <Eigen/SparseCore>
 #include <boost/bimap.hpp>
 #include <map>
 #include <string>
@@ -26,6 +27,9 @@
 
 namespace ALM_NS
 {
+
+using ReductionAlgo = Fcs::ReductionAlgo;
+
 class ConstraintClass
 {
 public:
@@ -215,6 +219,7 @@ public:
                                 std::vector<ConstraintTypeRelate> *const_relate_out,
                                 boost::bimap<size_t, size_t> *index_bimap_out) const -> void;
 
+
     [[nodiscard]] auto get_constraint_mode() const -> int;
 
     auto set_constraint_mode(const int) -> void;
@@ -240,6 +245,10 @@ public:
     [[nodiscard]] auto get_const_mat() const -> double **;
 
     [[nodiscard]] auto get_const_rhs() const -> double *;
+
+    [[nodiscard]] auto get_const_mat_sparse() const -> const Eigen::SparseMatrix<double> &;
+
+    [[nodiscard]] auto get_const_rhs_vec() const -> const Eigen::VectorXd &;
 
     [[nodiscard]] auto get_tolerance_constraint() const -> double;
 
@@ -270,10 +279,12 @@ public:
 
     auto update_constraint_matrix(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
                                   const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                  const int verbosity, const int periodic_image_conv, const bool do_rref = true)
+                                  const int verbosity, const int periodic_image_conv, const ReductionAlgo algo_in)
         -> void;
 
     [[nodiscard]] auto ready_all_constraints() const -> bool;
+
+    auto set_reduction_algorithm(const int ialgo_reduction) -> void;
 
 private:
     int constraint_mode;
@@ -285,7 +296,12 @@ private:
     double **const_mat;
     double *const_rhs;
 
+    Eigen::SparseMatrix<double> const_mat_sparse;
+    Eigen::VectorXd const_rhs_vec;
+
     double tolerance_constraint;
+
+    ReductionAlgo algo_reduction;
 
     std::string rotation_axis;
     std::vector<std::vector<ConstraintTypeFix>> const_fix;
@@ -320,20 +336,13 @@ private:
     auto generate_rotational_constraint(const std::unique_ptr<System> &system,
                                         const std::unique_ptr<Symmetry> &symmetry,
                                         const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                        const int verbosity, const double tolerance, const bool do_rref = true) -> void;
+                                        const int verbosity, const double tolerance, const ReductionAlgo algo_in)
+        -> void;
 
-
-    // const_mat and const_rhs are updated.
-    [[nodiscard]] auto calc_constraint_matrix(const int maxorder, const std::vector<size_t> *nequiv,
-                                              const size_t nparams) const -> size_t;
-
-    static auto print_constraint(const ConstraintSparseForm &) -> void;
 
     auto print_constraint_information(const std::unique_ptr<Cluster> &cluster) const -> void;
 
     auto setup_rotation_axis(bool[3][3]) -> void;
-
-    [[nodiscard]] static auto is_allzero(const int, const double *, const int nshift = 0) -> bool;
 
     [[nodiscard]] static auto is_allzero(const std::vector<int> &, int &) -> bool;
 
@@ -341,36 +350,34 @@ private:
         -> bool;
 
 
-    static auto remove_redundant_rows(const size_t n, std::vector<ConstraintClass> &Constraint_vec,
-                                      const double tolerance = eps12) -> void;
-
     // const_symmetry is updated.
     auto generate_symmetry_constraint(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
                                       const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                      const int verbosity, const bool do_rref = true) -> void;
+                                      const int verbosity, const ReductionAlgo algo_in) -> void;
 
     auto generate_fix_constraint(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs) -> void;
 
     auto get_constraint_translation(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
                                     const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
                                     const int order, const std::vector<FcProperty> &fc_table, const size_t nparams,
-                                    ConstraintSparseForm &const_out, const bool do_rref = false) const -> void;
+                                    ConstraintSparseForm &const_out, const ReductionAlgo algo_in) const -> void;
 
     auto get_constraint_translation_for_periodic_images(const Cell &supercell,
                                                         const std::unique_ptr<Symmetry> &symmetry,
                                                         const std::unique_ptr<Cluster> &cluster, int order,
                                                         const std::vector<FcProperty> &fc_table, size_t nparams,
-                                                        ConstraintSparseForm &const_out, bool do_rref) const -> void;
+                                                        ConstraintSparseForm &const_out,
+                                                        const ReductionAlgo algo_in) const -> void;
 
     // const_translation is updated.
     auto generate_translational_constraint(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
                                            const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                           const int, const int, const bool do_rref = true) -> void;
+                                           const int, const int, const ReductionAlgo algo_in) -> void;
 
     auto generate_huang_constraint(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
                                    const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
                                    const std::vector<Eigen::MatrixXd> &x_image, const int verbosity,
-                                   const bool do_rref = true) -> void;
+                                   const ReductionAlgo algo_in) -> void;
 
 
     static auto get_forceconstants_from_file(const int order, const std::unique_ptr<Symmetry> &symmetry,
@@ -406,26 +413,31 @@ private:
 
     auto update_constraint_symmetry(const size_t nat, const int maxorder, const std::unique_ptr<Symmetry> &symmetry,
                                     const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                    const int verbosity, const bool do_rref = true) -> void;
+                                    const int verbosity, const ReductionAlgo algo_in) -> void;
 
     auto update_constraint_translation(const Cell &supercell, const int maxorder,
                                        const std::unique_ptr<Symmetry> &symmetry,
                                        const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                       const int periodic_image_conv, const int verbosity, const bool do_rref = true)
+                                       const int periodic_image_conv, const int verbosity, const ReductionAlgo algo_in)
         -> void;
 
 
     auto update_constraint_rotation(const std::unique_ptr<System> &system, const int maxorder,
                                     const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Cluster> &cluster,
                                     const std::unique_ptr<Fcs> &fcs, const int periodic_image_conv, const int verbosity,
-                                    const bool do_rref = true) -> void;
+                                    const ReductionAlgo algo_in) -> void;
 
     auto update_constraint_huang(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
                                  const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                 const int verbosity, const bool do_rref = true) -> void;
+                                 const int verbosity, const ReductionAlgo algo_in) -> void;
 
     auto update_constraint_fix(const int maxorder, const std::unique_ptr<Symmetry> &symmetry,
                                const std::unique_ptr<Fcs> &fcs) -> void;
+
+    auto build_constraint_matrix_sparse(const int maxorder, const std::vector<size_t> *nequiv, const size_t nparams,
+                                        const int verbosity) -> void;
+
+    auto build_constraint_matrix_dense(const int verbosity) -> int;
 };
 
 

@@ -26,6 +26,8 @@
 #include "error.h"
 #include "fcs.h"
 #include "hdf5_parser.h"
+#include "least_squares.h"
+#include "logger.h"
 #include "memory.h"
 #include "rref.h"
 #include "svd.h"
@@ -67,6 +69,7 @@ auto Constraint::set_default_variables() -> void
     status_constraint_subset["fix2"] = -1;
     status_constraint_subset["fix3"] = -1;
     status_constraint_subset["huang"] = -1;
+    algo_reduction = ReductionAlgo::rref;
 }
 
 auto Constraint::deallocate_variables() -> void
@@ -215,7 +218,7 @@ auto Constraint::setup(const std::unique_ptr<System> &system, const std::unique_
 
     status_constraint_subset["symmetry"] = 0;
 
-    update_constraint_matrix(system, symmetry, cluster, fcs, verbosity, periodic_image_conv, true);
+    update_constraint_matrix(system, symmetry, cluster, fcs, verbosity, periodic_image_conv, algo_reduction);
 
     if (verbosity > 0) {
         print_constraint_information(cluster);
@@ -230,13 +233,13 @@ auto Constraint::setup(const std::unique_ptr<System> &system, const std::unique_
 auto Constraint::update_constraint_symmetry(const size_t nat, const int maxorder,
                                             const std::unique_ptr<Symmetry> &symmetry,
                                             const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                            const int verbosity, const bool do_rref) -> void
+                                            const int verbosity, const ReductionAlgo algo_in) -> void
 {
 
     if (const_symmetry.size() != maxorder) const_symmetry.resize(maxorder);
 
     if (status_constraint_subset["symmetry"] == 0) {
-        generate_symmetry_constraint(nat, symmetry, cluster, fcs, verbosity, do_rref);
+        generate_symmetry_constraint(nat, symmetry, cluster, fcs, verbosity, algo_in);
 
         status_constraint_subset["symmetry"] = 1;
     }
@@ -245,8 +248,8 @@ auto Constraint::update_constraint_symmetry(const size_t nat, const int maxorder
 auto Constraint::update_constraint_translation(const Cell &supercell, const int maxorder,
                                                const std::unique_ptr<Symmetry> &symmetry,
                                                const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                               const int periodic_image_conv, const int verbosity, const bool do_rref)
-    -> void
+                                               const int periodic_image_conv, const int verbosity,
+                                               const ReductionAlgo algo_in) -> void
 {
     if (const_translation.size() != maxorder) const_translation.resize(maxorder);
 
@@ -257,7 +260,7 @@ auto Constraint::update_constraint_translation(const Cell &supercell, const int 
         }
     }
     if (status_constraint_subset["translation"] == 0) {
-        generate_translational_constraint(supercell, symmetry, cluster, fcs, periodic_image_conv, verbosity, do_rref);
+        generate_translational_constraint(supercell, symmetry, cluster, fcs, periodic_image_conv, verbosity, algo_in);
         status_constraint_subset["translation"] = 1;
     }
 }
@@ -266,8 +269,8 @@ auto Constraint::update_constraint_translation(const Cell &supercell, const int 
 auto Constraint::update_constraint_rotation(const std::unique_ptr<System> &system, const int maxorder,
                                             const std::unique_ptr<Symmetry> &symmetry,
                                             const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                            const int periodic_image_conv, const int verbosity, const bool do_rref)
-    -> void
+                                            const int periodic_image_conv, const int verbosity,
+                                            const ReductionAlgo algo_in) -> void
 {
     if (const_rotation_self.size() != maxorder) const_rotation_self.resize(maxorder);
     if (const_rotation_cross.size() != maxorder) const_rotation_cross.resize(maxorder);
@@ -282,7 +285,7 @@ auto Constraint::update_constraint_rotation(const std::unique_ptr<System> &syste
     }
 
     if (status_constraint_subset["rotation"] == 0 or status_constraint_subset["rotation_extra"] == 0) {
-        generate_rotational_constraint(system, symmetry, cluster, fcs, verbosity, tolerance_constraint);
+        generate_rotational_constraint(system, symmetry, cluster, fcs, verbosity, tolerance_constraint, algo_in);
 
         if (status_constraint_subset["rotation"] == 0) status_constraint_subset["rotation"] = 1;
         if (status_constraint_subset["rotation_extra"] == 0) status_constraint_subset["rotation_extra"] = 1;
@@ -292,7 +295,7 @@ auto Constraint::update_constraint_rotation(const std::unique_ptr<System> &syste
 auto Constraint::update_constraint_huang(const std::unique_ptr<System> &system,
                                          const std::unique_ptr<Symmetry> &symmetry,
                                          const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                         const int verbosity, const bool do_rref) -> void
+                                         const int verbosity, const ReductionAlgo algo_in) -> void
 {
     if (const_huang.size() != 1) const_huang.resize(1);
     if (status_constraint_subset["huang"] == -1) {
@@ -309,7 +312,7 @@ auto Constraint::update_constraint_huang(const std::unique_ptr<System> &system,
                                   fcs,
                                   system->get_x_image(),
                                   verbosity,
-                                  do_rref);
+                                  algo_in);
         status_constraint_subset["huang"] = 1;
     }
 }
@@ -333,8 +336,8 @@ auto Constraint::update_constraint_fix(const int maxorder, const std::unique_ptr
 auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                           const std::unique_ptr<Symmetry> &symmetry,
                                           const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                          const int verbosity, const int periodic_image_conv, const bool do_rref)
-    -> void
+                                          const int verbosity, const int periodic_image_conv,
+                                          const ReductionAlgo algo_in) -> void
 {
     const auto maxorder = cluster->get_maxorder();
 
@@ -345,7 +348,7 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                cluster,
                                fcs,
                                verbosity,
-                               do_rref);
+                               algo_in);
 
     // const_translation is updated.
     update_constraint_translation(system->get_supercell(),
@@ -355,35 +358,26 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                   fcs,
                                   periodic_image_conv,
                                   verbosity,
-                                  do_rref);
+                                  algo_in);
 
     // const_rotation_self and const_rotation_cross are updated.
-    update_constraint_rotation(system, maxorder, symmetry, cluster, fcs, periodic_image_conv, verbosity, do_rref);
+    update_constraint_rotation(system, maxorder, symmetry, cluster, fcs, periodic_image_conv, verbosity, algo_in);
 
-    // Huang constraint is updated.
-    update_constraint_huang(system, symmetry, cluster, fcs, verbosity, do_rref);
-
+    // const_huang is updated.
+    update_constraint_huang(system, symmetry, cluster, fcs, verbosity, algo_in);
 
     // const_fix is updated.
     update_constraint_fix(maxorder, symmetry, fcs);
 
-    // Merge intra-order constraints and do reduction
     if (const_self.size() != maxorder) const_self.resize(maxorder);
-    if (const_relate.size() != maxorder) const_relate.resize(maxorder);
-    if (index_bimap) {
-        deallocate(index_bimap);
-        index_bimap = nullptr;
-    }
-    allocate(index_bimap, maxorder);
 
     for (auto order = 0; order < maxorder; ++order) {
         const_self[order].clear();
         const_self[order].shrink_to_fit();
-        const_relate[order].clear();
-        const_relate[order].shrink_to_fit();
-        index_bimap[order].clear();
     }
 
+    // Merge intra-order constraints and do reduction
+    // This part needs to be updated if the huang constraint is considered under finite strain.
     for (auto order = 0; order < maxorder; ++order) {
         const auto nparam = fcs->get_nequiv()[order].size();
 
@@ -395,10 +389,6 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         }
 
         const_self[order].reserve(nlen_const);
-
-        // The order of const_symmetry and const_translation
-        // should not be changed since the rref_sparse is sensitive to
-        // the numerical accuracy of the input matrix.
 
         const_self[order].insert(const_self[order].end(), const_symmetry[order].begin(), const_symmetry[order].end());
 
@@ -414,40 +404,36 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                  const_rotation_self[order].begin(),
                                  const_rotation_self[order].end());
 
-        if (do_rref) rref_sparse(nparam, const_self[order], tolerance_constraint);
+        if (algo_in == ReductionAlgo::rref) {
+            rref_sparse(nparam, const_self[order], tolerance_constraint);
+        } else if (algo_in == ReductionAlgo::qrd) {
+            int rank;
+            get_independent_rows_lapack_sparse(nparam, const_self[order], 1, eps12, rank);
+        }
     }
 
+    size_t nparams = 0;
+    for (auto order = 0; order < maxorder; ++order) {
+        nparams += fcs->get_nequiv()[order].size();
+    }
+    build_constraint_matrix_sparse(maxorder, fcs->get_nequiv(), nparams, verbosity);
+    number_of_constraints = const_mat_sparse.rows();
 
     if (!constraint_algebraic) {
-        size_t Pmax = 0;
-        size_t nparams = 0;
-        for (auto order = 0; order < maxorder; ++order) {
-            Pmax += const_self[order].size() + const_rotation_cross[order].size();
-        }
-        if (fix_harmonic) {
-            Pmax -= const_self[0].size();
-            Pmax += fcs->get_nequiv()[0].size();
-        }
-        if (fix_cubic) {
-            Pmax -= const_self[1].size();
-            Pmax += fcs->get_nequiv()[1].size();
-        }
-        for (auto order = 0; order < maxorder; ++order) {
-            nparams += fcs->get_nequiv()[order].size();
-        }
+        build_constraint_matrix_dense(verbosity);
+    }
 
-        if (const_mat) {
-            deallocate(const_mat);
-        }
-        allocate(const_mat, Pmax, nparams);
+    if (const_relate.size() != maxorder) const_relate.resize(maxorder);
 
-        if (const_rhs) {
-            deallocate(const_rhs);
-        }
-        allocate(const_rhs, Pmax);
-
-        // const_mat and const_rhs are updated.
-        number_of_constraints = calc_constraint_matrix(maxorder, fcs->get_nequiv(), nparams);
+    if (index_bimap) {
+        deallocate(index_bimap);
+        index_bimap = nullptr;
+    }
+    allocate(index_bimap, maxorder);
+    for (auto order = 0; order < maxorder; ++order) {
+        index_bimap[order].clear();
+        const_relate[order].clear();
+        const_relate[order].shrink_to_fit();
     }
 
     get_mapping_constraint(maxorder,
@@ -456,28 +442,6 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                            const_fix.data(),
                            const_relate.data(),
                            index_bimap);
-
-#ifdef _DEBUG
-    for (auto order = 0; order < maxorder; ++order) {
-        std::cout << "const_relate:\n";
-
-        for (const auto &it: const_relate[order]) {
-            std::cout << std::setw(5) << it.p_index_target;
-            std::cout << " : ";
-            for (auto m = 0; m < it.alpha.size(); ++m) {
-                std::cout << "(" << std::setw(15) << it.alpha[m] << ", " << std::setw(5) << it.p_index_orig[m] << ") ";
-            }
-            std::cout << '\n';
-        }
-
-        std::cout << "\nindex_bimap:\n";
-
-        for (const auto &it: index_bimap[order]) {
-            std::cout << std::setw(5) << it.left << " <--> " << it.right << '\n';
-        }
-    }
-
-#endif
 }
 
 auto Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cluster) const -> void
@@ -551,35 +515,32 @@ auto Constraint::print_constraint_information(const std::unique_ptr<Cluster> &cl
 }
 
 
-auto Constraint::calc_constraint_matrix(const int maxorder, const std::vector<size_t> *nequiv,
-                                        const size_t nparams) const -> size_t
+auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::vector<size_t> *nequiv,
+                                                const size_t nparams, const int verbosity) -> void
 {
-    size_t i, j;
-    int order;
-    double *arr_tmp;
-    std::vector<ConstraintClass> const_total;
+    // Create a sparse matrix by merging const_self, const_cross, and const_fix
+    // These constraints need to be constructed beforehand.
 
-    const_total.clear();
-    allocate(arr_tmp, nparams);
+    int order;
 
     size_t nshift = 0;
 
+    using tri = Eigen::Triplet<double, size_t>;
+    std::vector<tri> triplets;
+
+    size_t icount = 0;
     for (order = 0; order < maxorder; ++order) {
         const auto nelems = nequiv[order].size();
         if (const_fix[order].empty()) {
             for (auto &p: const_self[order]) {
-                for (i = 0; i < nparams; ++i)
-                    arr_tmp[i] = 0.0;
-                for (const auto &it: p) {
-                    arr_tmp[nshift + it.first] = it.second;
+                for (const auto &[fst, snd]: p) {
+                    triplets.emplace_back(icount, nshift + fst, snd);
                 }
-                const_total.emplace_back(nparams, arr_tmp);
+                ++icount;
             }
         }
         nshift += nelems;
     }
-
-    const auto nconst1 = const_total.size();
 
     // Inter-order constraints
     size_t nshift2 = 0;
@@ -587,98 +548,78 @@ auto Constraint::calc_constraint_matrix(const int maxorder, const std::vector<si
         if (order > 0) {
             if (const_fix[order - 1].empty() && const_fix[order].empty()) {
                 for (auto &p: const_rotation_cross[order]) {
-                    for (i = 0; i < nparams; ++i)
-                        arr_tmp[i] = 0.0;
-                    for (const auto &it: p) {
-                        arr_tmp[nshift2 + it.first] = it.second;
+                    for (const auto &[fst, snd]: p) {
+                        triplets.emplace_back(icount, nshift2 + fst, snd);
                     }
-                    const_total.emplace_back(nparams, arr_tmp);
+                    ++icount;
                 }
             }
-
             nshift2 += nequiv[order - 1].size();
         }
     }
-    deallocate(arr_tmp);
 
-    if (nconst1 != const_total.size()) {
-        remove_redundant_rows(nparams, const_total, tolerance_constraint);
-    }
+    auto nconst_so_far = icount;
+    if (fix_harmonic) nconst_so_far += nequiv[0].size();
+    if (fix_cubic) nconst_so_far += nequiv[1].size();
 
-    auto nconst = const_total.size();
-
-    if (fix_harmonic) nconst += nequiv[0].size();
-    if (fix_cubic) nconst += nequiv[1].size();
-
-    for (i = 0; i < nconst; ++i) {
-        for (j = 0; j < nparams; ++j) {
-            const_mat[i][j] = 0.0;
-        }
-        const_rhs[i] = 0.0;
-    }
-
-    size_t irow = 0;
-    size_t ishift = 0;
+    std::vector<double> const_rhs_tmp(nconst_so_far, 0.0);
 
     if (fix_harmonic) {
         for (const auto &p: const_fix[0]) {
-            i = p.p_index_target;
-            const_mat[i][i] = 1.0;
-            const_rhs[i] = p.val_to_fix;
+            triplets.emplace_back(icount, p.p_index_target, 1.0);
+            const_rhs_tmp[icount] = p.val_to_fix;
         }
-
-        irow += const_fix[0].size();
-        ishift += const_fix[0].size();
+        ++icount;
     }
 
     if (fix_cubic && maxorder > 1) {
         const auto ishift2 = nequiv[0].size();
 
         for (const auto &p: const_fix[1]) {
-            i = p.p_index_target;
-            const_mat[i + ishift][i + ishift2] = 1.0;
-            const_rhs[i + ishift] = p.val_to_fix;
+            triplets.emplace_back(icount, p.p_index_target + ishift2, 1.0);
+            const_rhs_tmp[icount] = p.val_to_fix;
         }
-
-        irow += const_fix[1].size();
+        ++icount;
     }
 
-    for (auto &p: const_total) {
-        for (i = 0; i < nparams; ++i) {
-            const_mat[irow][i] = p.w_const[i];
-        }
-        ++irow;
+    Eigen::SparseMatrix<double> const_mat_tmp;
+    const_mat_tmp.resize(nconst_so_far, nparams);
+    const_mat_tmp.setFromTriplets(triplets.begin(), triplets.end());
+    const_mat_tmp.makeCompressed();
+    Eigen::VectorXd const_rhs_tmp2 = Eigen::Map<Eigen::VectorXd>(const_rhs_tmp.data(), const_rhs_tmp.size());
+
+    LOG_IF(verbosity, 1, "Constraint matrix is build in sparse format.\n");
+
+    int rank;
+    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, 1, const_mat_sparse, const_rhs_vec, rank);
+    LOG_IF(verbosity, 1, "Reduction of constraint matrix is completed.\n");
+}
+
+
+auto Constraint::build_constraint_matrix_dense(const int verbosity) -> int
+{
+    auto num_const = const_mat_sparse.rows();
+    auto num_param = const_mat_sparse.cols();
+
+    if (const_mat) {
+        deallocate(const_mat);
     }
-    const_total.clear();
-    //
-    // for (i = 0; i < nconst; ++i) {
-    //     for (j = 0; j < nparams; ++j) {
-    //         if (std::abs(const_mat[i][j]) > eps12) {
-    //             std::cout << "const_mat[" << i << "][" << j << "] = "
-    //                       << std::scientific << std::setprecision(6)
-    //                       << const_mat[i][j] << '\n';
-    //         }
-    //     }
-    // }
-    //
-    // std::vector<double> C_red, d_red;
-    // int r;
-    // get_independent_rows(nparams, nconst, const_mat, const_rhs, 1, C_red, d_red, r);
-    // std::cout << "Number of independent rows = " << r << '\n';
-    // for (i = 0; i < r; ++i) {
-    //     for (j = 0; j < nparams; ++j) {
-    //         const auto v = C_red[j * r + i];
-    //
-    //         if (std::abs(v) > eps12) {
-    //             std::cout << "const_mat[" << i << "][" << j << "] = "
-    //                       << std::scientific << std::setprecision(6)
-    //                       << v << '\n';
-    //         }
-    //     }
-    // }
+    allocate(const_mat, num_const, num_param);
 
+    if (const_rhs) {
+        deallocate(const_rhs);
+    }
+    allocate(const_rhs, num_const);
 
-    return nconst;
+    // const_mat and const_rhs are updated.
+    for (int i = 0; i < num_const; ++i) {
+        for (int j = 0; j < num_param; ++j) {
+            const_mat[i][j] = const_mat_sparse.coeff(i, j);
+        }
+        const_rhs[i] = const_rhs_vec[i];
+    }
+    LOG_IF(verbosity, 1, "Constraint matrix is build in dense format.\n");
+    return num_const;
 }
 
 
@@ -786,6 +727,18 @@ auto Constraint::ready_all_constraints() const -> bool
 
     return true;
 }
+auto Constraint::set_reduction_algorithm(const int ialgo_reduction) -> void
+{
+    if (ialgo_reduction == 0) {
+        algo_reduction = ReductionAlgo::none;
+    } else if (ialgo_reduction == 1) {
+        algo_reduction = ReductionAlgo::rref;
+    } else if (ialgo_reduction == 2) {
+        algo_reduction = ReductionAlgo::qrd;
+    } else {
+        exit("set_reduction_algorithm", "unsupported ialgo_reduction");
+    }
+}
 
 auto Constraint::get_constraint_mode() const -> int
 {
@@ -866,6 +819,16 @@ auto Constraint::get_const_mat() const -> double **
 auto Constraint::get_const_rhs() const -> double *
 {
     return const_rhs;
+}
+
+auto Constraint::get_const_mat_sparse() const -> const Eigen::SparseMatrix<double> &
+{
+    return const_mat_sparse;
+}
+
+auto Constraint::get_const_rhs_vec() const -> const Eigen::VectorXd &
+{
+    return const_rhs_vec;
 }
 
 auto Constraint::get_tolerance_constraint() const -> double
@@ -961,7 +924,7 @@ auto Constraint::set_constraint_flag(const std::string &const_name, const int us
 
 auto Constraint::generate_symmetry_constraint(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
                                               const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                              const int verbosity, const bool do_rref) -> void
+                                              const int verbosity, const ReductionAlgo algo_in) -> void
 {
     // Create constraint matrices arising from the crystal symmetry.
     // This function clears and updates const_symmetry.
@@ -1010,7 +973,7 @@ auto Constraint::generate_symmetry_constraint(const size_t nat, const std::uniqu
                                                     fcs->get_nequiv()[order].size(),
                                                     tolerance_constraint,
                                                     const_symmetry[order],
-                                                    do_rref);
+                                                    algo_in);
         } else {
             Fcs::get_constraint_symmetry(nat,
                                          symmetry,
@@ -1020,7 +983,7 @@ auto Constraint::generate_symmetry_constraint(const size_t nat, const std::uniqu
                                          fcs->get_nequiv()[order].size(),
                                          tolerance_constraint,
                                          const_symmetry[order],
-                                         do_rref);
+                                         algo_in);
         }
 
         if (has_constraint_from_symm) {
@@ -1037,7 +1000,7 @@ auto Constraint::generate_symmetry_constraint(const size_t nat, const std::uniqu
 auto Constraint::generate_translational_constraint(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
                                                    const std::unique_ptr<Cluster> &cluster,
                                                    const std::unique_ptr<Fcs> &fcs, const int periodic_image_conv,
-                                                   const int verbosity, const bool do_rref) -> void
+                                                   const int verbosity, const ReductionAlgo algo_in) -> void
 {
     // Create constraint matrix for the translational invariance (aka acoustic sum rule).
     const auto maxorder = cluster->get_maxorder();
@@ -1073,7 +1036,7 @@ auto Constraint::generate_translational_constraint(const Cell &supercell, const 
                                        fcs->get_fc_table()[order],
                                        fcs->get_nequiv()[order].size(),
                                        const_translation[order],
-                                       do_rref);
+                                       algo_in);
         }
         // make translation constraint for each periodic image combination
         // if periodic_image_conv == 0 or order == 0, there is no need to impose additional ASR constraints.
@@ -1087,7 +1050,7 @@ auto Constraint::generate_translational_constraint(const Cell &supercell, const 
                                                            fcs->get_fc_table()[order],
                                                            fcs->get_nequiv()[order].size(),
                                                            const_translation[order],
-                                                           do_rref);
+                                                           algo_in);
         }
 
         if (verbosity > 0) std::cout << " done.\n" << std::flush;
@@ -1100,7 +1063,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
                                             const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
                                             const int order, const std::vector<FcProperty> &fc_table,
                                             const size_t nparams, ConstraintSparseForm &const_out,
-                                            const bool do_rref) const -> void
+                                            const ReductionAlgo algo_in) const -> void
 {
     // Generate equality constraint for the acoustic sum rule.
 
@@ -1371,13 +1334,18 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
         const_out.emplace_back(const_tmp2);
     }
     constraint_all.clear();
-    if (do_rref) rref_sparse(nparams, const_out, eps8);
+    if (algo_in == ReductionAlgo::rref) {
+        rref_sparse(nparams, const_out, eps8);
+    } else if (algo_in == ReductionAlgo::qrd) {
+        int rank;
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, eps12, rank);
+    }
 }
 
 void Constraint::get_constraint_translation_for_periodic_images(
     const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Cluster> &cluster,
     const int order, const std::vector<FcProperty> &fc_table, const size_t nparams, ConstraintSparseForm &const_out,
-    const bool do_rref) const
+    const ReductionAlgo algo_in) const
 {
     // Generate equality constraint for the acoustic sum rule.
 
@@ -1669,14 +1637,19 @@ void Constraint::get_constraint_translation_for_periodic_images(
         const_out.emplace_back(const_tmp2);
     }
     constraint_all.clear();
-    if (do_rref) rref_sparse(nparams, const_out, eps8);
+    if (algo_in == ReductionAlgo::rref) {
+        rref_sparse(nparams, const_out, eps8);
+    } else if (algo_in == ReductionAlgo::qrd) {
+        int rank;
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, eps12, rank);
+    }
 }
 
 auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &system,
                                                 const std::unique_ptr<Symmetry> &symmetry,
                                                 const std::unique_ptr<Cluster> &cluster,
                                                 const std::unique_ptr<Fcs> &fcs, const int verbosity,
-                                                const double tolerance, const bool do_rref) -> void
+                                                const double tolerance, const ReductionAlgo algo_in) -> void
 {
     // Create constraints for the rotational invariance
     const auto maxorder = cluster->get_maxorder();
@@ -1811,10 +1784,21 @@ auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
         const_cross_vec[order].clear();
 
         //  Perform rref
-        if (do_rref) rref_sparse(nparams[order], const_rotation_self[order], eps6);
-
-        if (order > 0 && do_rref) {
-            rref_sparse(nparams[order - 1] + nparams[order], const_rotation_cross[order], eps6);
+        if (algo_in == ReductionAlgo::rref) {
+            rref_sparse(nparams[order], const_rotation_self[order], eps6);
+            if (order > 0) {
+                rref_sparse(nparams[order - 1] + nparams[order], const_rotation_cross[order], eps6);
+            }
+        } else if (algo_in == ReductionAlgo::qrd) {
+            int rank;
+            auto info = get_independent_rows_lapack_sparse(nparams[order], const_rotation_self[order], 1, eps12, rank);
+            if (order > 0) {
+                auto info2 = get_independent_rows_lapack_sparse(nparams[order - 1] + nparams[order],
+                                                                const_rotation_cross[order],
+                                                                1,
+                                                                eps12,
+                                                                rank);
+            }
         }
     }
 
@@ -2404,7 +2388,7 @@ auto Constraint::get_forceconstants_from_file(const int order, const std::unique
 auto Constraint::generate_huang_constraint(const Cell &supercell, const std::unique_ptr<Symmetry> &symmetry,
                                            const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
                                            const std::vector<Eigen::MatrixXd> &x_image, const int verbosity,
-                                           const bool do_rref) -> void
+                                           const ReductionAlgo algo_in) -> void
 {
     // Create constraint matrix for the Huang constraints.
 
@@ -2553,7 +2537,12 @@ auto Constraint::generate_huang_constraint(const Cell &supercell, const std::uni
         const_huang[0].emplace_back(const_copy);
     }
 
-    if (do_rref) rref_sparse(nparams, const_huang[0], eps8);
+    if (algo_in == ReductionAlgo::rref) {
+        rref_sparse(nparams, const_huang[0], eps8);
+    } else if (algo_in == ReductionAlgo::qrd) {
+        int rank;
+        auto info = get_independent_rows_lapack_sparse(nparams, const_huang[0], 1, eps12, rank);
+    }
 }
 
 auto Constraint::parse_forceconstants_from_xml(const int order, const std::unique_ptr<Symmetry> &symmetry,
@@ -2890,17 +2879,6 @@ auto Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmet
     }
 }
 
-
-auto Constraint::is_allzero(const int n, const double *arr, const int nshift) -> bool
-{
-    for (auto i = nshift; i < n; ++i) {
-        if (std::abs(arr[i]) > eps10) {
-            return false;
-        }
-    }
-    return true;
-}
-
 auto Constraint::is_allzero(const std::vector<int> &vec, int &loc) -> bool
 {
     loc = -1;
@@ -2924,76 +2902,4 @@ auto Constraint::is_allzero(const std::vector<double> &vec, const double tol, in
         }
     }
     return true;
-}
-
-
-void Constraint::remove_redundant_rows(const size_t n, std::vector<ConstraintClass> &Constraint_vec,
-                                       const double tolerance)
-{
-
-    auto nparam = n;
-    const auto nconst = Constraint_vec.size();
-
-    if (nconst > 0) {
-        double **mat_tmp;
-        double *arr_tmp;
-        size_t nrank;
-        size_t j;
-        allocate(mat_tmp, nconst, nparam);
-
-        size_t i = 0;
-
-        for (auto &p: Constraint_vec) {
-            for (j = 0; j < nparam; ++j) {
-                mat_tmp[i][j] = p.w_const[j];
-            }
-            ++i;
-        }
-
-        rref(nconst, nparam, mat_tmp, nrank, tolerance);
-
-        allocate(arr_tmp, nparam);
-
-        Constraint_vec.clear();
-
-        for (i = 0; i < nrank; ++i) {
-            for (j = 0; j < nparam; ++j)
-                arr_tmp[j] = 0.0;
-            long iloc = -1;
-            for (j = 0; j < nparam; ++j) {
-                if (std::abs(mat_tmp[i][j]) < tolerance) {
-                    arr_tmp[j] = 0.0;
-                } else {
-                    arr_tmp[j] = mat_tmp[i][j];
-                }
-                if (std::abs(arr_tmp[j]) >= tolerance) {
-                    iloc = j;
-                }
-            }
-
-            if (iloc != -1) {
-                Constraint_vec.emplace_back(nparam, arr_tmp);
-            }
-        }
-
-        deallocate(mat_tmp);
-        deallocate(arr_tmp);
-    }
-}
-
-auto Constraint::print_constraint(const ConstraintSparseForm &const_in) -> void
-{
-    const auto nconst = const_in.size();
-    auto counter = 0;
-    std::cout << '\n';
-    std::cout << "TOTAL CONST SIZE :" << std::setw(6) << nconst << '\n';
-    for (const auto &it: const_in) {
-        std::cout << "CONST : " << std::setw(5) << counter + 1 << '\n';
-        for (const auto &[fst, snd]: it) {
-            std::cout << std::setw(5) << fst + 1;
-            std::cout << std::setw(15) << snd << '\n';
-        }
-        std::cout << '\n';
-        ++counter;
-    }
 }

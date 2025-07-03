@@ -153,7 +153,7 @@ auto InputSetter::set_file_vars(ALM *alm, const DispForceFile &datfile_train_in,
 
 auto InputSetter::set_constraint_vars(ALM *alm, const int constraint_flag, const std::string &rotation_axis,
                                       const std::string &fc2_file, const std::string &fc3_file, const bool fix_harmonic,
-                                      const bool fix_cubic) const -> void
+                                      const bool fix_cubic, const int ialgo_reduce) const -> void
 {
     alm->set_constraint_mode(constraint_flag);
     alm->set_rotation_axis(rotation_axis);

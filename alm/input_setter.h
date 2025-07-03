@@ -66,7 +66,7 @@ public:
 
     auto set_constraint_vars(ALM *alm, int constraint_flag, const std::string &rotation_axis,
                              const std::string &fc2_file, const std::string &fc3_file, bool fix_harmonic,
-                             bool fix_cubic) const -> void;
+                             bool fix_cubic, const int ialgo_reduce) const -> void;
 
     auto set_input_var_dict(ALM *alm, const std::map<std::string, std::string> &dict_in) const -> void;
 

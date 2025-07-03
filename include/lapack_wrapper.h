@@ -4,8 +4,12 @@
 
 #pragma once
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
+
+
     // LAPACK routines for GQR-based solver
     void dgeqp3_(const int *M, const int *N, double *A, const int *LDA, int *JPVT, double *TAU, double *WORK,
                  const int *LWORK, int *INFO);
@@ -32,7 +36,7 @@ extern "C"
                  int *iwork,   // integer workspace (size = 8*min(m,n))
                  int *info     // output: error code (0 = success)
     );
-
+#ifndef EIGEN_USE_ACCELERATE
     // DGEMV: y := alpha*A*x + beta*y  (A is column-major)
     void dgemv_(char *trans, // 'N' for A*x, 'T' for A^T*x
                 int *m,      // number of rows of A
@@ -46,6 +50,7 @@ extern "C"
                 double *y, // y: length m (if trans='N') or length n (if trans='T')
                 int *incy  // increment for elements of y (usually 1)
     );
+#endif
 
     // DGEMM: C := alpha*A*B + beta*C  (all matrices column-major)
     void dgemm_(char *transa, // 'N' or 'T' for A
@@ -90,4 +95,7 @@ extern "C"
 
     void dgelss_(int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, double *s, double *rcond,
                  int *rank, double *work, int *lwork, int *info);
+
+#ifdef __cplusplus
 }
+#endif

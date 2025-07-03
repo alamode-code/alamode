@@ -25,7 +25,9 @@
 
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <unordered_set>
+
 #include "../external/combination.hpp"
+#include "least_squares.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #undef min
@@ -315,7 +317,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
 auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmetry> &symmetry, const int order,
                                   const std::string &basis, const std::vector<FcProperty> &fc_table_in,
                                   const size_t nparams, const double tolerance, ConstraintSparseForm &const_out,
-                                  const bool do_rref) -> void
+                                  const ReductionAlgo algo_in) -> void
 {
     // Create constraint matrices arising from the crystal symmetry.
     // Necessary for hexagonal systems.
@@ -470,37 +472,6 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
     MapConstraintElement const_tmp2;
     const_out.clear();
 
-    /* // This is an alternative implementation using SVD.
-    Eigen::MatrixXd constraint_all_matrix(constraint_all.size(), nparams);
-    constraint_all_matrix.setZero();
-    for (i = 0; i < constraint_all.size(); ++i) {
-        for (const auto &p: constraint_all[i]) {
-            constraint_all_matrix(i, p.col) = p.val;
-        }
-    }
-
-    auto [U, S, VT] = compute_svd_thin(constraint_all_matrix, true);
-
-    int rank = 0;
-    for (i = 0; i < S.size(); ++i) {
-        if (S[i] > eps12) ++rank;
-        else break;
-    }
-    Eigen::MatrixXd B = VT.topRows(rank);
-
-    for (i = 0; i < rank; ++i) {
-        const_tmp2.clear();
-        for (int j = 0; j < nparams; ++j) {
-            const double v = B(i, j);
-            if (std::abs(v) > eps12) {
-                const_tmp2[j] = v;
-            }
-        }
-        const_out.emplace_back(const_tmp2);
-    }
-    */
-
-
     for (const auto &it: constraint_all) {
         const_tmp2.clear();
         for (const auto &p: it) {
@@ -509,21 +480,19 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
         const_out.emplace_back(const_tmp2);
     }
 
-    if (do_rref) rref_sparse(nparams, const_out, eps12);
-
-    // for (const auto &it : const_out) {
-    //     for (const auto &e: it) {
-    //         std::cout << "(" << std::setw(5) << e.first << "," << std::setw(15) << e.second << ") ";
-    //     }
-    //     std::cout << "\n";
-    // }
+    if (algo_in == ReductionAlgo::rref) {
+        rref_sparse(nparams, const_out, eps12);
+    } else if (algo_in == ReductionAlgo::qrd) {
+        int rank;
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, tolerance, rank);
+    }
 }
 
 auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique_ptr<Symmetry> &symmetry,
                                              const int order, const std::string &basis,
                                              const std::vector<FcProperty> &fc_table_in, const size_t nparams,
                                              const double tolerance, ConstraintSparseForm &const_out,
-                                             const bool do_rref) -> void
+                                             const ReductionAlgo algo_in) -> void
 {
     // Create constraint matrices arising from the crystal symmetry.
     // Necessary for hexagonal systems.
@@ -697,7 +666,12 @@ auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique
     }
     constraint_all.clear();
 
-    if (do_rref) rref_sparse(nparams, const_out, tolerance);
+    if (algo_in == ReductionAlgo::rref) {
+        rref_sparse(nparams, const_out, tolerance);
+    } else if (algo_in == ReductionAlgo::qrd) {
+        int rank;
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, tolerance, rank);
+    }
 }
 
 auto Fcs::get_nequiv() const -> std::vector<size_t> *

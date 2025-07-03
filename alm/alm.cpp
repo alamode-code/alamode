@@ -184,6 +184,11 @@ auto ALM::set_fc_fix(const int order, const bool fc_fix) const -> void
     }
 }
 
+auto ALM::set_reduction_algo(const int ialgo_reduce) const ->void
+{
+    constraint->set_reduction_algorithm(ialgo_reduce);
+}
+
 auto ALM::ready_all_constraints() const -> bool
 {
     return constraint->ready_all_constraints();
@@ -410,7 +415,8 @@ auto ALM::get_number_of_irred_fc_elements(const int fc_order) -> size_t // harmo
                                              cluster,
                                              fcs,
                                              verbosity,
-                                             get_optimizer_control().periodic_image_conv);
+                                             get_optimizer_control().periodic_image_conv,
+                                             ReductionAlgo::rref);
     }
 
     return constraint->get_index_bimap(order).size();
@@ -518,7 +524,8 @@ auto ALM::get_fc_irreducible(double *fc_values,
                                              cluster,
                                              fcs,
                                              verbosity,
-                                             get_optimizer_control().periodic_image_conv);
+                                             get_optimizer_control().periodic_image_conv,
+                                             ReductionAlgo::rref);
     }
 
     size_t ishift = 0;
@@ -642,7 +649,8 @@ auto ALM::get_matrix_elements(double *amat, double *bvec) -> void
                                              cluster,
                                              fcs,
                                              verbosity,
-                                             get_optimizer_control().periodic_image_conv);
+                                             get_optimizer_control().periodic_image_conv,
+                                             ReductionAlgo::rref);
     }
 
     std::unique_ptr<SensingMatrix> matrix_out = std::make_unique<SensingMatrix>();
@@ -704,7 +712,8 @@ auto ALM::run_optimize() -> int
                                              cluster,
                                              fcs,
                                              verbosity,
-                                             get_optimizer_control().periodic_image_conv);
+                                             get_optimizer_control().periodic_image_conv,
+                                             ReductionAlgo::rref);
     }
 
     const auto maxorder = cluster->get_maxorder();
