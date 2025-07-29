@@ -103,10 +103,10 @@ public:
     void get_sigma(const unsigned int k1, const unsigned int s1, double &sigma_out);
 
     void get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2, const unsigned int s2,
-                   double sigma_out[2]);
+                   std::array<double, 2> &sigma_out);
 
     void get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2, const unsigned int s2,
-                   const unsigned int k3, const unsigned int s3, double sigma_out[2]);
+                   const unsigned int k3, const unsigned int s3, std::array<double, 4> &sigma_out);
 
 private:
     double adaptive_factor;

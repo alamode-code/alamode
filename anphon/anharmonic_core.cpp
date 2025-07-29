@@ -636,7 +636,7 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
     const auto knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const auto knum_minus = kmesh_in->kindex_minus_xk[knum];
 
-    double epsilon2[2]; // for adaptive smearing
+    std::array<double, 2> epsilon2; // for adaptive smearing
 
 #ifdef _OPENMP
 #pragma omp parallel for private(multi, arr, k1, k2, is, js, omega_inner)
@@ -784,7 +784,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
     double multi;
 
     double xk_tmp[3];
-    double omega_inner[2];
+    std::array<double, 2> omega_inner;
 
     double ret_tmp;
 
@@ -981,8 +981,8 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     int k1, k2, k3;
 
     double T_tmp;
-    double n1, n2;
-    double omega_inner[3];
+    double n1;
+    std::array<double, 3> omega_inner;
 
     double multi;
 
@@ -1001,7 +1001,7 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
 
     kmesh_in->get_unique_quartet_k(ik_in, symmetry->SymmList, use_quartet_symmetry, sym_permutation, quartet);
 
-    unsigned int batchsize = 1e9 / (ns3 * 16);
+    unsigned int const batchsize = static_cast<unsigned int>(1e9) / (ns3 * 16);
     // 1e9 B ~ 1GB, the batch size will be choosen so that delta_arr will be approximately 1 GB
     // batchsize * ns3 * 2 * 8B ~ 1GB
 
@@ -1014,10 +1014,13 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     const int knum_minus = kmesh_in->kindex_minus_xk[knum];
 
     allocate(v4_arr, batchsize, ns3);
-    allocate(delta_arr, batchsize, ns3, 2);
+    allocate(delta_arr, batchsize, ns3, 4);
+
+    const double signs_omega[7][3] =
+        {{-1, -1, -1}, {1, 1, -1}, {-1, -1, 1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
 
     for (auto ibatch = 0; ibatch < num_batch; ++ibatch) {
-        unsigned int start_k = ibatch * batchsize;
+        const unsigned int start_k = ibatch * batchsize;
         unsigned int end_k = start_k + batchsize;
         end_k = std::min(end_k, npair_uniq);
         auto nk_batch = end_k - start_k;
@@ -1049,48 +1052,78 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                         omega_inner[2] = eval_in[k3][ks];
 
                         const auto jb = ns2 * is + ns * js + ks;
+                        double sum_omega[7];
+
+                        for (auto ii = 0; ii < 7; ++ii) {
+                            sum_omega[ii] = omega_in;
+                            for (auto jj = 0; jj < 3; ++jj) {
+                                sum_omega[ii] += signs_omega[ii][jj] * omega_inner[jj];
+                            }
+                        }
 
                         if (integration->ismear_4ph == 0) {
-                            delta_arr[ik0][jb][0] =
-                                delta_lorentz(omega_in - omega_inner[0] - omega_inner[1] - omega_inner[2], epsilon);
+                            delta_arr[ik0][jb][0] = delta_lorentz(sum_omega[0], epsilon);
                             delta_arr[ik0][jb][1] =
-                                delta_lorentz(omega_in - omega_inner[0] - omega_inner[1] + omega_inner[2], epsilon) -
-                                delta_lorentz(omega_in + omega_inner[0] + omega_inner[1] - omega_inner[2], epsilon);
+                                delta_lorentz(sum_omega[1], epsilon) - delta_lorentz(sum_omega[2], epsilon);
+                            delta_arr[ik0][jb][2] =
+                                delta_lorentz(sum_omega[3], epsilon) - delta_lorentz(sum_omega[4], epsilon);
+                            delta_arr[ik0][jb][3] =
+                                delta_lorentz(sum_omega[5], epsilon) - delta_lorentz(sum_omega[6], epsilon);
                         } else if (integration->ismear_4ph == 1) {
                             delta_arr[ik0][jb][0] = 0.0;
                             delta_arr[ik0][jb][1] = 0.0;
-                            const auto sum_omega1 = omega_in - omega_inner[0] - omega_inner[1] - omega_inner[2];
-                            const auto sum_omega2 = omega_in - omega_inner[0] - omega_inner[1] + omega_inner[2];
-                            const auto sum_omega3 = omega_in + omega_inner[0] + omega_inner[1] - omega_inner[2];
-
-                            if (std::abs(sum_omega1) < 2.0 * epsilon) {
-                                delta_arr[ik0][jb][0] = delta_gauss(sum_omega1, epsilon);
+                            delta_arr[ik0][jb][2] = 0.0;
+                            delta_arr[ik0][jb][3] = 0.0;
+                            if (std::abs(sum_omega[0]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][0] = delta_gauss(sum_omega[0], epsilon);
                             }
-                            if (std::abs(sum_omega2) < 2.0 * epsilon) {
-                                delta_arr[ik0][jb][1] += delta_gauss(sum_omega2, epsilon);
+                            if (std::abs(sum_omega[1]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][1] += delta_gauss(sum_omega[1], epsilon);
                             }
-                            if (std::abs(sum_omega3) < 2.0 * epsilon) {
-                                delta_arr[ik0][jb][1] -= delta_gauss(sum_omega3, epsilon);
+                            if (std::abs(sum_omega[2]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][1] -= delta_gauss(sum_omega[2], epsilon);
+                            }
+                            if (std::abs(sum_omega[3]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][2] += delta_gauss(sum_omega[3], epsilon);
+                            }
+                            if (std::abs(sum_omega[4]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][2] -= delta_gauss(sum_omega[4], epsilon);
+                            }
+                            if (std::abs(sum_omega[5]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][3] += delta_gauss(sum_omega[5], epsilon);
+                            }
+                            if (std::abs(sum_omega[6]) < 2.0 * epsilon) {
+                                delta_arr[ik0][jb][3] -= delta_gauss(sum_omega[6], epsilon);
                             }
                         } else if (integration->ismear_4ph == 2) {
                             // add adaptive smearing
-                            double epsilon2[2];
+                            std::array<double, 4> epsilon2;
                             integration->adaptive_sigma4->get_sigma(k1, is, k2, js, k3, ks, epsilon2);
                             //integration->adaptive_smearing(k1, is, k2, js, k3, ks, epsilon2);
                             delta_arr[ik0][jb][0] = 0.0;
                             delta_arr[ik0][jb][1] = 0.0;
-                            const auto sum_omega1 = omega_in - omega_inner[0] - omega_inner[1] - omega_inner[2];
-                            const auto sum_omega2 = omega_in - omega_inner[0] - omega_inner[1] + omega_inner[2];
-                            const auto sum_omega3 = omega_in + omega_inner[0] + omega_inner[1] - omega_inner[2];
-
-                            if (std::abs(sum_omega1) < 2.0 * epsilon2[0]) {
-                                delta_arr[ik0][jb][0] = delta_gauss(sum_omega1, epsilon2[0]);
+                            delta_arr[ik0][jb][2] = 0.0;
+                            delta_arr[ik0][jb][3] = 0.0;
+                            if (std::abs(sum_omega[0]) < 2.0 * epsilon2[0]) {
+                                delta_arr[ik0][jb][0] = delta_gauss(sum_omega[0], epsilon2[0]);
                             }
-                            if (std::abs(sum_omega2) < 2.0 * epsilon2[1]) {
-                                delta_arr[ik0][jb][1] += delta_gauss(sum_omega2, epsilon2[1]);
+                            if (std::abs(sum_omega[1]) < 2.0 * epsilon2[1]) {
+                                delta_arr[ik0][jb][1] += delta_gauss(sum_omega[1], epsilon2[1]);
                             }
-                            if (std::abs(sum_omega3) < 2.0 * epsilon2[1]) {
-                                delta_arr[ik0][jb][1] -= delta_gauss(sum_omega3, epsilon2[1]);
+                            if (std::abs(sum_omega[2]) < 2.0 * epsilon2[1]) {
+                                delta_arr[ik0][jb][1] -= delta_gauss(sum_omega[2], epsilon2[1]);
+                            }
+                            if (std::abs(sum_omega[3]) < 2.0 * epsilon2[2]) {
+                                delta_arr[ik0][jb][2] += delta_gauss(sum_omega[3], epsilon2[2]);
+                            }
+                            if (std::abs(sum_omega[4]) < 2.0 * epsilon2[2]) {
+                                delta_arr[ik0][jb][2] -= delta_gauss(sum_omega[4], epsilon2[2]);
+                            }
+                            if (std::abs(sum_omega[5]) < 2.0 * epsilon2[3]) {
+                                delta_arr[ik0][jb][3] += delta_gauss(sum_omega[5], epsilon2[3]);
+                            }
+                            if (std::abs(sum_omega[6]) < 2.0 * epsilon2[3]) {
+                                delta_arr[ik0][jb][3] -= delta_gauss(sum_omega[6], epsilon2[3]);
                             }
                         }
                     }
@@ -1112,7 +1145,9 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                 js = (ib - ns2 * is) / ns;
                 ks = ib % ns;
 
-                if (delta_arr[ik0][ib][0] > 0.0 || std::abs(delta_arr[ik0][ib][1]) > 0.0) {
+                if (delta_arr[ik0][ib][0] > 0.0 || std::abs(delta_arr[ik0][ib][1]) > 0.0 ||
+                    std::abs(delta_arr[ik0][ib][2]) > 0.0 || std::abs(delta_arr[ik0][ib][3]) > 0.0)
+                {
 
                     arr[0] = ns * knum_minus + is_in;
                     arr[1] = ns * k1 + is;
@@ -1120,7 +1155,6 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                     arr[3] = ns * k3 + ks;
 
                     v4_arr[ik0][ib] = std::norm(V4(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_in)) * multi;
-                    //std::cout << v4_arr[ik][ib] << std::endl;
                 } else {
                     v4_arr[ik0][ib] = 0.0;
                 }
@@ -1131,7 +1165,7 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
             T_tmp = temp_in[i];
             ret_tmp = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for private(k1, k2, k3, is, js, ks, omega_inner, n1, n2, f1, f2, f3), reduction(+ : ret_tmp)
+#pragma omp parallel for private(k1, k2, k3, is, js, ks, omega_inner, n1, f1, f2, f3), reduction(+ : ret_tmp)
 #endif
             for (ik0 = 0; ik0 < nk_batch; ++ik0) {
 
@@ -1159,19 +1193,22 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                                 f3 = thermodynamics->fC(omega_inner[2], T_tmp);
 
                                 n1 = f1 * f2 + f2 * f3 + f3 * f1 + f1 + f2 + f3;
-                                n2 = 3.0 * (f1 * f3 + f2 * f3 - f1 * f2 + f3);
                             } else {
                                 f1 = thermodynamics->fB(omega_inner[0], T_tmp);
                                 f2 = thermodynamics->fB(omega_inner[1], T_tmp);
                                 f3 = thermodynamics->fB(omega_inner[2], T_tmp);
 
                                 n1 = f1 * f2 + f2 * f3 + f3 * f1 + f1 + f2 + f3 + 1.0;
-                                n2 = 3.0 * (f1 * f3 + f2 * f3 - f1 * f2 + f3);
                             }
 
-                            ret_tmp += v4_arr[ik0][ns2 * is + ns * js + ks] *
-                                       (n1 * delta_arr[ik0][ns2 * is + ns * js + ks][0] +
-                                        n2 * delta_arr[ik0][ns2 * is + ns * js + ks][1]);
+                            const auto ib = ns2 * is + ns * js + ks;
+
+                            ret_tmp +=
+                                v4_arr[ik0][ib] *
+                                (n1 * delta_arr[ik0][ib][0] +
+                                 (f1 * f3 + f2 * f3 - f1 * f2 + f3) * delta_arr[ik0][ib][1] +
+                                 (f1 * f2 + f1 * f3 - f2 * f3 + f1) * delta_arr[ik0][ib][2] +
+                                 (f2 * f3 + f1 * f2 - f1 * f3 + f2) * delta_arr[ik0][ib][3]);
                         }
                     }
                 }
@@ -1184,7 +1221,6 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     deallocate(v4_arr);
     deallocate(delta_arr);
     quartet.clear();
-    // std::pow(0.5, 5)
     for (i = 0; i < ntemp; ++i)
         ret[i] *= pi * std::pow(0.5, 5) / (3.0 * static_cast<double>(nk * nk));
 }
@@ -1212,7 +1248,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     int k1, k2, k3;
 
     double T_tmp;
-    double n1, n2;
+    double n1;
     double omega_inner[3];
 
     double multi;
@@ -1244,7 +1280,10 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     const int npair_uniq = quartet.size();
 
     allocate(v4_arr, npair_uniq, ns3);
-    allocate(delta_arr, npair_uniq, ns3, 2);
+    allocate(delta_arr, npair_uniq, ns3, 4);
+
+    const double signs_omega[7][3] =
+        {{-1, -1, -1}, {1, 1, -1}, {-1, -1, 1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
 
     const int knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const int knum_minus = kmesh_in->kindex_minus_xk[knum];
@@ -1273,48 +1312,77 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
                     omega_inner[2] = eval_in[k3][ks];
 
                     const auto jb = ns2 * is + ns * js + ks;
+                    double sum_omega[7];
 
+                    for (auto ii = 0; ii < 7; ++ii) {
+                        sum_omega[ii] = omega_in;
+                        for (auto jj = 0; jj < 3; ++jj) {
+                            sum_omega[ii] += signs_omega[ii][jj] * omega_inner[jj];
+                        }
+                    }
                     if (integration->ismear_4ph == 0) {
-                        delta_arr[ik][jb][0] =
-                            delta_lorentz(omega_in - omega_inner[0] - omega_inner[1] - omega_inner[2], epsilon);
+                        delta_arr[ik][jb][0] = delta_lorentz(sum_omega[0], epsilon);
                         delta_arr[ik][jb][1] =
-                            delta_lorentz(omega_in - omega_inner[0] - omega_inner[1] + omega_inner[2], epsilon) -
-                            delta_lorentz(omega_in + omega_inner[0] + omega_inner[1] - omega_inner[2], epsilon);
+                            delta_lorentz(sum_omega[1], epsilon) - delta_lorentz(sum_omega[2], epsilon);
+                        delta_arr[ik][jb][2] =
+                            delta_lorentz(sum_omega[3], epsilon) - delta_lorentz(sum_omega[4], epsilon);
+                        delta_arr[ik][jb][3] =
+                            delta_lorentz(sum_omega[5], epsilon) - delta_lorentz(sum_omega[6], epsilon);
                     } else if (integration->ismear_4ph == 1) {
                         delta_arr[ik][jb][0] = 0.0;
                         delta_arr[ik][jb][1] = 0.0;
-                        const auto sum_omega1 = omega_in - omega_inner[0] - omega_inner[1] - omega_inner[2];
-                        const auto sum_omega2 = omega_in - omega_inner[0] - omega_inner[1] + omega_inner[2];
-                        const auto sum_omega3 = omega_in + omega_inner[0] + omega_inner[1] - omega_inner[2];
-
-                        if (std::abs(sum_omega1) < 2.0 * epsilon) {
-                            delta_arr[ik][jb][0] = delta_gauss(sum_omega1, epsilon);
+                        delta_arr[ik][jb][2] = 0.0;
+                        delta_arr[ik][jb][3] = 0.0;
+                        if (std::abs(sum_omega[0]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][0] = delta_gauss(sum_omega[0], epsilon);
                         }
-                        if (std::abs(sum_omega2) < 2.0 * epsilon) {
-                            delta_arr[ik][jb][1] += delta_gauss(sum_omega2, epsilon);
+                        if (std::abs(sum_omega[1]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][1] += delta_gauss(sum_omega[1], epsilon);
                         }
-                        if (std::abs(sum_omega3) < 2.0 * epsilon) {
-                            delta_arr[ik][jb][1] -= delta_gauss(sum_omega3, epsilon);
+                        if (std::abs(sum_omega[2]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][1] -= delta_gauss(sum_omega[2], epsilon);
+                        }
+                        if (std::abs(sum_omega[3]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][2] += delta_gauss(sum_omega[3], epsilon);
+                        }
+                        if (std::abs(sum_omega[4]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][2] -= delta_gauss(sum_omega[4], epsilon);
+                        }
+                        if (std::abs(sum_omega[5]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][3] += delta_gauss(sum_omega[5], epsilon);
+                        }
+                        if (std::abs(sum_omega[6]) < 2.0 * epsilon) {
+                            delta_arr[ik][jb][3] -= delta_gauss(sum_omega[6], epsilon);
                         }
                     } else if (integration->ismear_4ph == 2) {
                         // add adaptive smearing
-                        double epsilon2[2];
+                        std::array<double, 4> epsilon2;
                         integration->adaptive_sigma4->get_sigma(k1, is, k2, js, k3, ks, epsilon2);
                         //integration->adaptive_smearing(k1, is, k2, js, k3, ks, epsilon2);
                         delta_arr[ik][jb][0] = 0.0;
                         delta_arr[ik][jb][1] = 0.0;
-                        const auto sum_omega1 = omega_in - omega_inner[0] - omega_inner[1] - omega_inner[2];
-                        const auto sum_omega2 = omega_in - omega_inner[0] - omega_inner[1] + omega_inner[2];
-                        const auto sum_omega3 = omega_in + omega_inner[0] + omega_inner[1] - omega_inner[2];
-
-                        if (std::abs(sum_omega1) < 2.0 * epsilon2[0]) {
-                            delta_arr[ik][jb][0] = delta_gauss(sum_omega1, epsilon2[0]);
+                        delta_arr[ik][jb][2] = 0.0;
+                        delta_arr[ik][jb][3] = 0.0;
+                        if (std::abs(sum_omega[0]) < 2.0 * epsilon2[0]) {
+                            delta_arr[ik][jb][0] = delta_gauss(sum_omega[0], epsilon2[0]);
                         }
-                        if (std::abs(sum_omega2) < 2.0 * epsilon2[1]) {
-                            delta_arr[ik][jb][1] += delta_gauss(sum_omega2, epsilon2[1]);
+                        if (std::abs(sum_omega[1]) < 2.0 * epsilon2[1]) {
+                            delta_arr[ik][jb][1] += delta_gauss(sum_omega[1], epsilon2[1]);
                         }
-                        if (std::abs(sum_omega3) < 2.0 * epsilon2[1]) {
-                            delta_arr[ik][jb][1] -= delta_gauss(sum_omega3, epsilon2[1]);
+                        if (std::abs(sum_omega[2]) < 2.0 * epsilon2[1]) {
+                            delta_arr[ik][jb][1] -= delta_gauss(sum_omega[2], epsilon2[1]);
+                        }
+                        if (std::abs(sum_omega[3]) < 2.0 * epsilon2[2]) {
+                            delta_arr[ik][jb][2] += delta_gauss(sum_omega[3], epsilon2[2]);
+                        }
+                        if (std::abs(sum_omega[4]) < 2.0 * epsilon2[2]) {
+                            delta_arr[ik][jb][2] -= delta_gauss(sum_omega[4], epsilon2[2]);
+                        }
+                        if (std::abs(sum_omega[5]) < 2.0 * epsilon2[3]) {
+                            delta_arr[ik][jb][3] += delta_gauss(sum_omega[5], epsilon2[3]);
+                        }
+                        if (std::abs(sum_omega[6]) < 2.0 * epsilon2[3]) {
+                            delta_arr[ik][jb][3] -= delta_gauss(sum_omega[6], epsilon2[3]);
                         }
                     }
                 }
@@ -1335,7 +1403,9 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
             js = (ib - ns2 * is) / ns;
             ks = ib % ns;
 
-            if (delta_arr[ik][ib][0] > 0.0 || std::abs(delta_arr[ik][ib][1]) > 0.0) {
+            if (delta_arr[ik][ib][0] > 0.0 || std::abs(delta_arr[ik][ib][1]) > 0.0 ||
+                std::abs(delta_arr[ik][ib][2]) > 0.0 || std::abs(delta_arr[ik][ib][3]) > 0.0)
+            {
 
                 arr[0] = ns * knum_minus + is_in;
                 arr[1] = ns * k1 + is;
@@ -1354,7 +1424,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
         T_tmp = temp_in[i];
         ret_tmp = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for private(k1, k2, k3, is, js, ks, omega_inner, n1, n2, f1, f2, f3), reduction(+ : ret_tmp)
+#pragma omp parallel for private(k1, k2, k3, is, js, ks, omega_inner, n1, f1, f2, f3), reduction(+ : ret_tmp)
 #endif
         for (ik = 0; ik < npair_uniq; ++ik) {
 
@@ -1380,19 +1450,21 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
                             f3 = thermodynamics->fC(omega_inner[2], T_tmp);
 
                             n1 = f1 * f2 + f2 * f3 + f3 * f1 + f1 + f2 + f3;
-                            n2 = 3.0 * (f1 * f3 + f2 * f3 - f1 * f2 + f3);
                         } else {
                             f1 = thermodynamics->fB(omega_inner[0], T_tmp);
                             f2 = thermodynamics->fB(omega_inner[1], T_tmp);
                             f3 = thermodynamics->fB(omega_inner[2], T_tmp);
 
                             n1 = f1 * f2 + f2 * f3 + f3 * f1 + f1 + f2 + f3 + 1.0;
-                            n2 = 3.0 * (f1 * f3 + f2 * f3 - f1 * f2 + f3);
                         }
 
-                        ret_tmp +=
-                            v4_arr[ik][ns2 * is + ns * js + ks] * (n1 * delta_arr[ik][ns2 * is + ns * js + ks][0] +
-                                                                   n2 * delta_arr[ik][ns2 * is + ns * js + ks][1]);
+                        const auto ib = ns2 * is + ns * js + ks;
+
+                        ret_tmp += v4_arr[ik][ib] *
+                                   (n1 * delta_arr[ik][ib][0] +
+                                    (f1 * f3 + f2 * f3 - f1 * f2 + f3) * delta_arr[ik][ib][1] +
+                                    (f1 * f2 + f1 * f3 - f2 * f3 + f1) * delta_arr[ik][ib][2] +
+                                    (f2 * f3 + f1 * f2 - f1 * f3 + f2) * delta_arr[ik][ib][3]);
                     }
                 }
             }
@@ -1403,7 +1475,6 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     deallocate(v4_arr);
     deallocate(delta_arr);
     quartet.clear();
-    // std::pow(0.5, 5)
     for (i = 0; i < ntemp; ++i)
         ret[i] *= pi * std::pow(0.5, 5) / (3.0 * static_cast<double>(nk * nk)); // should we have 1/6
 }
@@ -1439,7 +1510,7 @@ std::vector<std::vector<QuartS>> AnharmonicCore::reduce_pair(const int k_in, con
     //    threshold = delta_gauss(2.0 * epsilon, epsilon);
     //}
 
-    double epsilon2[2];
+    std::array<double, 4> epsilon2;
     //for (auto ip = 0; ip < npair_uniq; ip++) {
     for (auto it = quartet.begin(); it != quartet.end();) {
 

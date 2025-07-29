@@ -213,7 +213,7 @@ double Integration::do_tetrahedron(const double *energy, const double *f, const 
     auto ret = 0.0;
     double I1, I2, I3, I4;
 
-    const auto frac3 = 1.0 / 3.0;
+    constexpr auto frac3 = 1.0 / 3.0;
     double g;
 
     tetra_pair pair{};
@@ -348,7 +348,7 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, con
         weight[k3] += I3;
         weight[k4] += I4;
     }
-    auto factor = 1.0 / static_cast<double>(ntetra);
+    const auto factor = 1.0 / static_cast<double>(ntetra);
     for (i = 0; i < nk_irreducible; ++i)
         weight[i] *= factor;
 }
@@ -392,7 +392,7 @@ void Integration::insertion_sort(double *a, int *ind, int n)
         ind[i] = i;
 
     for (i = 1; i < n; ++i) {
-        double tmp = a[i];
+        double const tmp = a[i];
 
         int j = i;
         while (j > 0 && tmp < a[j - 1]) {
@@ -419,12 +419,11 @@ void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class, const Kpoin
 
 void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int s1, double &sigma_out)
 {
-    double tmp;
     double parts = 0;
 
-    for (auto &u: dq) {
+    for (const auto &u: dq) {
 
-        tmp = 0;
+        double tmp = 0;
         for (auto a = 0; a < 3; ++a) {
             tmp += vel[k1][s1][a] * u[a];
         }
@@ -436,16 +435,15 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int 
 }
 
 void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2,
-                                      const unsigned int s2, double sigma_out[2])
+                                      const unsigned int s2, std::array<double, 2> &sigma_out)
 {
-    double parts[2];
-    double tmp[2];
+    std::array<double, 2> parts, tmp;
     int i;
 
     for (i = 0; i < 2; ++i)
         parts[i] = 0;
 
-    for (auto &u: dq) {
+    for (const auto &u: dq) {
 
         for (i = 0; i < 2; ++i)
             tmp[i] = 0;
@@ -459,39 +457,43 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int 
             parts[i] += std::pow(tmp[i], 2);
     }
 
-    sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[0]) / 12)); // for (w1 - w2 - w3)
-    sigma_out[1] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[1]) / 12)); // for (w1 + w3 - w3)
+    sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[0] / 12)); // for (w1 - w2 - w3)
+    sigma_out[1] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[1] / 12)); // for (w1 + w3 - w3)
     // 2.0e-5 ry ~ 3 cm^-1
 }
 
 void AdaptiveSmearingSigma::get_sigma(const unsigned int k2, const unsigned int s2, const unsigned int k3,
                                       const unsigned int s3, const unsigned int k4, const unsigned int s4,
-                                      double sigma_out[2])
+                                      std::array<double, 4> &sigma_out)
 {
-    double parts[3];
-    double tmp[3];
+    std::array<double, 4> parts;
+    std::array<double, 4> tmp;
     int i;
-    for (i = 0; i < 3; ++i)
+    for (i = 0; i < 4; ++i)
         parts[i] = 0;
 
     for (auto &u: dq) {
 
-        for (i = 0; i < 3; ++i)
+        for (i = 0; i < 4; ++i)
             tmp[i] = 0;
 
         for (auto a = 0; a < 3; ++a) {
             tmp[0] += (vel[k2][s2][a] - vel[k4][s4][a]) * u[a];
             tmp[1] += (vel[k3][s3][a] - vel[k4][s4][a]) * u[a];
             tmp[2] += (vel[k2][s2][a] + vel[k4][s4][a]) * u[a];
+            tmp[3] += (vel[k3][s3][a] + vel[k4][s4][a]) * u[a];
         }
 
-        for (i = 0; i < 3; ++i)
+        for (i = 0; i < 4; ++i)
             parts[i] += std::pow(tmp[i], 2);
     }
 
-    sigma_out[0] = std::max(2.0e-5,
-                            adaptive_factor * std::sqrt((parts[0] + parts[1]) / 12)); // for delta(w1 - w2 - w3 - w4)
-    sigma_out[1] = std::max(2.0e-5,
-                            adaptive_factor * std::sqrt((parts[2] + parts[1]) /
-                                                        12)); // for delta(w1 + w2 - w3 - w4) and (w1 - w2 + w3 + w4)
+    // for delta(w1 - w2 - w3 - w4)
+    sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[0] + parts[1]) / 12));
+    // for delta(w1 + w2 + w3 - w4) and (w1 - w2 - w3 + w4)
+    sigma_out[1] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[2] + parts[3]) / 12));
+    // for delta(w1 + w2 - w3 - w4) and (w1 - w2 + w3 + w4)
+    sigma_out[2] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[2] + parts[1]) / 12));
+    // for delta(w1 + w2 - w3 + w4) and (w1 - w2 + w3 - w4)
+    sigma_out[3] = std::max(2.0e-5, adaptive_factor * std::sqrt((parts[0] + parts[3]) / 12));
 }

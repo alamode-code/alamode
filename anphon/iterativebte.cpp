@@ -239,7 +239,7 @@ void Iterativebte::setup_L_smear()
     const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
     const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
 
-    double epsilon2[2];
+    std::array<double, 2> epsilon2;
 
     // emitt
     counter = 0;
