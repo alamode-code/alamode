@@ -1017,7 +1017,7 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     allocate(delta_arr, batchsize, ns3, 4);
 
     const double signs_omega[7][3] =
-        {{-1, -1, -1}, {1, 1, -1}, {-1, -1, 1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
+        {{-1, -1, -1}, {-1, -1, 1}, {1, 1, -1}, {1, -1, -1}, {-1, 1, 1}, {-1, 1, -1}, {1, -1, 1}};
 
     for (auto ibatch = 0; ibatch < num_batch; ++ibatch) {
         const unsigned int start_k = ibatch * batchsize;
@@ -1283,7 +1283,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     allocate(delta_arr, npair_uniq, ns3, 4);
 
     const double signs_omega[7][3] =
-        {{-1, -1, -1}, {1, 1, -1}, {-1, -1, 1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
+        {{-1, -1, -1}, {-1, -1, 1}, {1, 1, -1}, {1, -1, -1}, {-1, 1, 1}, {-1, 1, -1}, {1, -1, 1}};
 
     const int knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const int knum_minus = kmesh_in->kindex_minus_xk[knum];
