@@ -315,13 +315,28 @@ class VaspParser(object):
                     % (lavec[0][i], lavec[1][i], lavec[2][i])
                 )
 
-            for i in range(len(self._elements)):
-                f.write("%s " % self._elements[i])
+            for elem in self._elements:
+                f.write("%s " % elem)
             if len(self._elements) > 0:
                 f.write("\n")
 
-            for i in range(len(nat_elem)):
-                f.write("%d " % nat_elem[i])
+            counts = []
+            if len(kd) > 0:
+                current_value = kd[0]
+                current_count = 1
+
+                for i in range(1, len(kd)):
+                    if kd[i] == current_value:
+                        current_count += 1
+                    else:
+                        counts.append(current_count)
+                        current_value = kd[i]
+                        current_count = 1
+
+                counts.append(current_count)
+
+            for count in counts:
+                f.write("%d " % count)
             f.write("\n")
 
             f.write("Direct\n")
