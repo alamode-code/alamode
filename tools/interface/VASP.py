@@ -43,6 +43,7 @@ class VaspParser(object):
         self._inverse_lattice_vector = None
         self._elements = None
         self._kd = None
+        self._kd_dict = None
         self._nat_elem = None
         self._nat = 0
         self._x_fractional = None
@@ -100,9 +101,24 @@ class VaspParser(object):
             else:
                 xf = np.dot(x, invlavec.transpose())
 
-            kd = []
-            for i in range(len(nat_elem)):
-                kd.extend([i] * nat_elem[i])
+            if len(elements) == 0:
+                kd_dict = {}
+                for i in range(len(nat_elem)):
+                    kd_dict["Element {}".format(i+1)] = i
+                kd = []
+                for i in range(len(nat_elem)):
+                    kd.extend([i] * nat_elem[i])
+            else:
+                kd_dict = {}
+                icount_elem = 0
+                for elem in elements:
+                    if elem not in kd_dict:
+                        kd_dict[elem] = icount_elem
+                        icount_elem += 1
+
+                kd = []
+                for i, elem in enumerate(elements):
+                    kd.extend([kd_dict[elem]] * nat_elem[i])
 
         if self._vca_mode:
             nat = np.sum(nat_elem)
@@ -126,6 +142,7 @@ class VaspParser(object):
         self._inverse_lattice_vector = invlavec
         self._elements = elements
         self._kd = np.array(kd, dtype=int)
+        self._kd_dict = kd_dict
         self._nat_elem = nat_elem
         self._nat = np.sum(nat_elem)
         self._x_fractional = xf
@@ -251,17 +268,7 @@ class VaspParser(object):
     def _generate_input2(self, header, disp, updated_structure):
         filename = self._prefix + str(self._counter).zfill(self._nzerofills) + ".POSCAR"
         lavec = updated_structure["lattice_vector"] * self._BOHR_TO_ANGSTROM
-
         kd = updated_structure["kd"]
-        kd_uniq = []
-        for entry in kd:
-            if entry not in kd_uniq:
-                kd_uniq.append(entry)
-
-        nat_elem = []
-        for entry in kd_uniq:
-            nat_elem.append(kd.count(entry))
-
         x_fractional = updated_structure["x_fractional"]
 
         with open(filename, "w") as f:
@@ -278,8 +285,23 @@ class VaspParser(object):
             if len(self._elements) > 0:
                 f.write("\n")
 
-            for i in range(len(nat_elem)):
-                f.write("%d " % nat_elem[i])
+            counts = []
+            if len(kd) > 0:
+                current_value = kd[0]
+                current_count = 1
+
+                for i in range(1, len(kd)):
+                    if kd[i] == current_value:
+                        current_count += 1
+                    else:
+                        counts.append(current_count)
+                        current_value = kd[i]
+                        current_count = 1
+
+                counts.append(current_count)
+
+            for count in counts:
+                f.write("%d " % count)
             f.write("\n")
 
             f.write("Direct\n")
@@ -295,15 +317,6 @@ class VaspParser(object):
         filename = "SPOSCAR0"
         lavec = structure["lattice_vector"] * self._BOHR_TO_ANGSTROM
         kd = structure["kd"]
-        kd_uniq = []
-        for entry in kd:
-            if entry not in kd_uniq:
-                kd_uniq.append(entry)
-
-        nat_elem = []
-        for entry in kd_uniq:
-            nat_elem.append(kd.count(entry))
-
         x_fractional = structure["x_fractional"]
 
         with open(filename, "w") as f:
