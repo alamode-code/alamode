@@ -191,6 +191,14 @@ auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_spa
     const int N = C_sparse.cols();
     int N_i = N, P_i = P;
 
+    if (P == 0 || N == 0) {
+        LOG_IF(verbosity, 1, "C_sparse has zero rows or columns.\n");
+        C_red.resize(0, N);
+        C_red.makeCompressed();
+        d_red.resize(0);
+        return 0;
+    }
+
     LOG_IF(verbosity, 1, "P = ", P, ", N = ", N, ", nnz = ", C_sparse.nonZeros(), ".\n");
 
     // 1) Copy sparse→dense column-major buffer C_mat (size P×N)
@@ -550,8 +558,7 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         x_out = ldlt.solve(AtB);
 
         if (ldlt.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << ldlt.info() << '\n';
+            std::cerr << "  Fitting by " + solver_type + " failed with the error code " << ldlt.info() << ".\n";
             return 1;
         }
 
@@ -561,8 +568,7 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         x_out = qr.solve(sp_bvec);
 
         if (qr.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << qr.info() << '\n';
+            std::cerr << "  Fitting by " + solver_type + " failed with the error code " << qr.info() << ".\n";
             return 1;
         }
 
@@ -577,8 +583,7 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         x_out = cg.solve(AtB);
 
         if (cg.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << cg.info() << '\n';
+            std::cerr << "  Fitting by " + solver_type + " failed with the error code " << cg.info() << ".\n";
             return 1;
         }
 
@@ -592,8 +597,7 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         x_out = lscg.solve(sp_bvec);
 
         if (lscg.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << lscg.info() << '\n';
+            std::cerr << "  Fitting by " + solver_type + " failed with the error code " << lscg.info() << ".\n";
             return 1;
         }
 
@@ -614,8 +618,7 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         x_out = bicg.solve(AtB);
 
         if (bicg.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed.\n";
-            std::cerr << bicg.info() << '\n';
+            std::cerr << "  Fitting by " + solver_type + " failed with the error code " << bicg.info() << ".\n";
             return 1;
         }
     }

@@ -184,6 +184,9 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
         // Set calculated force constants in FCS class
         auto maxorder_min = std::min(maxorder, output_maxorder);
         fcs->set_forceconstant_cartesian(maxorder_min, params);
+    } else {
+        exit("optimize_main", "Fitting failed. \n"
+                              " Please check the input parameters and try other optimization algorithms.");
     }
 
     fcs_tmp.clear();
@@ -2741,7 +2744,7 @@ auto Optimize::run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorX
         std::cout << "  Fitting error (%) : " << sqrt(res2norm / (fnorm * fnorm)) * 100.0 << '\n';
     }
 
-    return 0;
+    return info_eigen;
 }
 
 

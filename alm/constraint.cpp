@@ -438,11 +438,11 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
 
     if (constraint_algebraic) {
         get_mapping_constraint(maxorder,
-                       fcs->get_nequiv(),
-                       const_self.data(),
-                       const_fix.data(),
-                       const_relate.data(),
-                       index_bimap);
+                               fcs->get_nequiv(),
+                               const_self.data(),
+                               const_fix.data(),
+                               const_relate.data(),
+                               index_bimap);
     }
 }
 
@@ -593,8 +593,8 @@ auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::v
     LOG_IF(verbosity, 1, "Constraint matrix is build in sparse format.\n");
 
     int rank;
-    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, verbosity,
-        const_mat_sparse, const_rhs_vec, rank);
+    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, verbosity, const_mat_sparse, const_rhs_vec, rank);
+
     LOG_IF(verbosity, 1, "Reduction of constraint matrix is completed.\n");
 }
 
@@ -730,6 +730,7 @@ auto Constraint::ready_all_constraints() const -> bool
 
     return true;
 }
+
 auto Constraint::set_reduction_algorithm(const int ialgo_reduction) -> void
 {
     if (ialgo_reduction == 0) {

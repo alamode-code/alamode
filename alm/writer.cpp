@@ -240,7 +240,6 @@ auto Writer::writeall(const std::unique_ptr<System> &system, const std::unique_p
 
     const auto fname_save = files->get_prefix() + ".fcs";
     write_force_constants(cluster, fcs, symmetry, optimize->get_params(), verbosity, fname_save);
-
     for (const auto &save_format_flag: save_format_flags) {
         if (save_format_flag.second) {
             save_fcs_with_specific_format(save_format_flag.first,
@@ -300,7 +299,6 @@ auto Writer::write_force_constants(const std::unique_ptr<Cluster> &cluster, cons
         if (!fcs->get_nequiv()[order].empty()) {
 
             ofs_fcs << '\n' << std::setw(6) << str_fcs[order] << '\n';
-
             for (unsigned int ui = 0; ui < fcs->get_nequiv()[order].size(); ++ui) {
 
                 ofs_fcs << std::setw(8) << k + 1 << std::setw(8) << ui + 1 << std::setw(18) << std::setprecision(7)
@@ -1033,7 +1031,6 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
         fcs_arrays[counter] = it.fcs_value;
         ++counter;
     }
-
     const std::string str_ordername = "Order" + std::to_string(order + 2);
     dump(file, "/ForceConstants/" + str_ordername + "/atom_indices", atom_indices, Compression(compression_level));
     dump(file,
