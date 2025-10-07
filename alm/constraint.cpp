@@ -335,7 +335,8 @@ auto Constraint::update_constraint_fix(const int maxorder, const std::unique_ptr
 
 auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                           const std::unique_ptr<Symmetry> &symmetry,
-                                          const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
+                                          const std::unique_ptr<Cluster> &cluster,
+                                          const std::unique_ptr<Fcs> &fcs,
                                           const int verbosity, const int periodic_image_conv,
                                           const ReductionAlgo algo_in) -> void
 {
@@ -437,6 +438,14 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
     }
 
     if (constraint_algebraic) {
+        // if rref is not used above, do it here as it is necessary to get the mapping
+        if (algo_in != ReductionAlgo::rref) {
+            for (auto order = 0; order < maxorder; ++order) {
+                const auto nparam = fcs->get_nequiv()[order].size();
+                rref_sparse(nparam, const_self[order], tolerance_constraint);
+            }
+        }
+
         get_mapping_constraint(maxorder,
                                fcs->get_nequiv(),
                                const_self.data(),
@@ -1641,12 +1650,13 @@ void Constraint::get_constraint_translation_for_periodic_images(
         const_out.emplace_back(const_tmp2);
     }
     constraint_all.clear();
-    if (algo_in == ReductionAlgo::rref) {
-        rref_sparse(nparams, const_out, eps8);
-    } else if (algo_in == ReductionAlgo::qrd) {
-        int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, eps12, rank);
-    }
+    // if (algo_in == ReductionAlgo::rref) {
+    //     rref_sparse(nparams, const_out, eps8);
+    // } else if (algo_in == ReductionAlgo::qrd) {
+    //     int rank;
+    //     auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, eps12, rank);
+    //     std::cout << "rank = " << rank << "\n";
+    // }
 }
 
 auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &system,

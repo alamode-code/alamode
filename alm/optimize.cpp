@@ -451,7 +451,7 @@ auto Optimize::compressive_sensing(const std::string &job_prefix, const int maxo
             finalize_scalers(maxorder, constraint);
         }
 
-        info_fitting = 1;
+        info_fitting = 0;
     }
 
     return info_fitting;
