@@ -390,6 +390,8 @@ class VaspParser(object):
                 ) from err
 
             disp_offset = x0_offset - x0
+            # Apply refold to handle periodic boundary conditions properly (not necessary?)
+            disp_offset = vec_refold(disp_offset)
 
             if len(epot_offset) > 1:
                 raise RuntimeError(
