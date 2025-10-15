@@ -24,11 +24,23 @@ class AlamodeDisplace(object):
         self,
         displacement_mode,
         codeobj_base,
-        random_seed=None,
+        random_seed=12345,
         file_evec=None,
         file_primitive=None,
         verbosity=1,
+        omega_min=None,
+        truncate_k=None,
+        cap_sigma_by_nn=False,
+        nn_frac=None
     ):
+        self._BOHR_TO_ANGSTROM = 0.5291772108
+        self._K_BOLTZMANN = 1.3806488e-23
+        self._RYDBERG_TO_JOULE = 4.35974394e-18 / 2.0
+        amu = 1.660538782e-27
+        electron_mass = 9.10938215e-31
+        self._AMU_RYD = amu / electron_mass / 2.0
+        self._KAYSER_TO_RYD = 1.0 / 109737.3
+    
         self._pattern = []
         self._primitive_lattice_vector = None
         self._inverse_primitive_lattice_vector = None
@@ -52,16 +64,42 @@ class AlamodeDisplace(object):
         self._nmode = None
         self._updated_structure = {}
 
+        # ===== Safety & robustness knobs (defaults chosen to be conservative) =====
+        # Floor for tiny positive ω (Rydberg a.u.). Tweak per system.
+        if omega_min is not None:
+            self._omega_min = omega_min * self._KAYSER_TO_RYD
+        else:
+            self._omega_min = 10.0 * self._KAYSER_TO_RYD
+
+        # Truncated normal (±kσ) to kill rare catastrophic draws.
+        # Implementation default is "clip". See _trunc_normal for alternatives.
+        if truncate_k is not None:
+            self._truncate_k = truncate_k
+        else:
+            self._truncate_k = 4.0
+        self._truncate_mode = "clip"  # "clip" | "reject" | "reject_varmatch"
+
+        # Option 1: cap σ so a single (q,ν) cannot move any atom more than
+        # a fraction of its nearest-neighbor distance in real space.
+        if cap_sigma_by_nn is not None:
+            self._cap_sigma_by_nn = cap_sigma_by_nn
+        else:
+            self._cap_sigma_by_nn = True
+
+        if nn_frac is not None:
+            self._nn_frac = nn_frac
+        else:
+            self._nn_frac = 0.20  # each mode limited so σ*C ≤ nn_frac * d_nn per atom
+
+        # Γ-acoustic identification by projection (no index assumptions)
+        self._gamma_overlap_thresh = 0.95
+
+        # Cache for diagnostics
+        self._omega_eff_cache = None
+
         self._displacement_mode = displacement_mode.lower()
         self._supercell = codeobj_base
         self._random_seed = random_seed
-
-        self._BOHR_TO_ANGSTROM = 0.5291772108
-        self._K_BOLTZMANN = 1.3806488e-23
-        self._RYDBERG_TO_JOULE = 4.35974394e-18 / 2.0
-        amu = 1.660538782e-27
-        electron_mass = 9.10938215e-31
-        self._AMU_RYD = amu / electron_mass / 2.0
 
         if file_primitive:
             primitive_cell = copy.deepcopy(codeobj_base)
@@ -89,7 +127,6 @@ class AlamodeDisplace(object):
 
         if file_evec:
             self._load_phonon_results(file_evec)
-
         else:
             if self._displacement_mode == "pes":
                 raise RuntimeError(
@@ -295,6 +332,9 @@ class AlamodeDisplace(object):
                 print(
                     " Displacement mode              : Random displacement in normal coordinate\n"
                 )
+            if temperature is None:
+                raise RuntimeError("The temperature must be given with the --temp option.")
+            if self._verbosity > 0:
                 print(
                     " %d randomly-displaced configurations are generated from\n"
                     " the original supercell structure" % number_of_displacements
@@ -309,6 +349,23 @@ class AlamodeDisplace(object):
                 else:
                     print(" Statistics  : Quantum (with zero-point vibration)")
                 print("")
+
+                if self._omega_min > 0.0:
+                    print(
+                        " A frequency floor of %.2f cm^-1 is applied to all modes"
+                        % (self._omega_min / self._KAYSER_TO_RYD)
+                    )
+                    print("")
+                    
+                if self._cap_sigma_by_nn:
+                    print(
+                        " σ is capped so that each mode cannot move any atom more than"
+                    )
+                    print(
+                        " %.2f times the nearest-neighbor distance in real space"
+                        % self._nn_frac
+                    )
+                    print("")
 
             disp_random = self._get_random_displacements_normalcoordinate(
                 number_of_displacements, temperature, ignore_imag
@@ -548,8 +605,9 @@ class AlamodeDisplace(object):
         disp_xyz = np.zeros(3)
         disp_random = np.zeros((ndata, self._supercell.nat, 3))
 
-        if self._random_seed:
+        if self._random_seed is not None:
             random.seed(self._random_seed)
+            np.random.seed(self._random_seed)
 
         if mode == "gauss":
             for idata in range(ndata):
@@ -604,21 +662,23 @@ class AlamodeDisplace(object):
         # get sigma in units of bohr*amu_ry^(1/2)
         sigma = self._get_gaussian_sigma(temperature, ignore_imag)
 
-        if self._random_seed:
+        if self._random_seed is not None:
             random.seed(self._random_seed)
+            np.random.seed(self._random_seed)
 
         for iq in range(nq):
             for imode in range(self._nmode):
-                if sigma[iq, imode] < 1.0e-10:
+                if sigma[iq, imode] < 1.0e-12:
                     Q_R[iq, imode, :] = 0.0
                     Q_I[iq, imode, :] = 0.0
                 else:
-                    Q_R[iq, imode, :] = np.random.normal(
-                        0.0, sigma[iq, imode], size=ndata
+                    Q_R[iq, imode, :] = self._trunc_normal(
+                        ndata, sigma[iq, imode], self._truncate_k
                     )
-                    Q_I[iq, imode, :] = np.random.normal(
-                        0.0, sigma[iq, imode], size=ndata
+                    Q_I[iq, imode, :] = self._trunc_normal(
+                        ndata, sigma[iq, imode], self._truncate_k
                     )
+                # print(self._omega2[iq, imode], Q_R[iq, imode, :], Q_I[iq, imode, :])
 
         disp = np.zeros((self._supercell.nat, 3, ndata))
 
@@ -663,7 +723,6 @@ class AlamodeDisplace(object):
                 disp[:, i, idata] = (
                     factor[:] * disp[:, i, idata] * self._BOHR_TO_ANGSTROM
                 )
-                # disp[:, i, idata] = factor[:] * disp[:, i, idata]
 
             # Transform to the fractional coordinate
             for iat in range(self._supercell.nat):
@@ -683,21 +742,23 @@ class AlamodeDisplace(object):
 
         nq = len(self._qpoints)
         nmode = self._nmode
-        omega = np.zeros((nq, nmode))
+        omega_raw = np.zeros((nq, nmode))
+        omega_eff = np.zeros((nq, nmode))
         sigma = np.zeros((nq, nmode))
 
+        # 1) Build ω from ω^2, handling imaginary mode policy
         for iq in range(nq):
             for imode in range(nmode):
                 if self._omega2[iq, imode] < 0.0:
                     if ignore_imag:
-                        omega[iq, imode] = 0.0
+                        omega_raw[iq, imode] = 0.0
                         if self._verbosity > 0:
                             print(
                                 "Warning: Detected imaginary mode at iq = %d, imode = %d.\n"
-                                "This more will be ignored.\n" % (iq + 1, imode + 1)
+                                "This mode will be ignored.\n" % (iq + 1, imode + 1)
                             )
                     else:
-                        omega[iq, imode] = math.sqrt(-self._omega2[iq, imode])
+                        omega_raw[iq, imode] = math.sqrt(-self._omega2[iq, imode])
                         if self._verbosity > 0:
                             print(
                                 "Warning: Detected imaginary mode at iq = %d, imode = %d.\n"
@@ -705,19 +766,117 @@ class AlamodeDisplace(object):
                                 % (iq + 1, imode + 1)
                             )
                 else:
-                    omega[iq, imode] = math.sqrt(self._omega2[iq, imode])
+                    omega_raw[iq, imode] = math.sqrt(self._omega2[iq, imode])
 
-                if omega[iq, imode] > 1.0e-6:
+        # 2) Γ-acoustic identification by projection; set huge ω to suppress σ
+        gamma_acoustic = self._identify_gamma_acoustic(
+            overlap_thresh=self._gamma_overlap_thresh,
+            max_modes=3,
+            verbose=True,
+        )
+
+        # 3) Apply ω floor + Γ-acoustic suppression to build ω_eff
+        n_floored = 0
+        floored_modes = []
+        for iq in range(nq):
+            for imode in range(nmode):
+                w = omega_raw[iq, imode]
+                # Check if this (q,mode) is tagged as Γ-acoustic
+                is_gamma_acoustic = iq in gamma_acoustic and gamma_acoustic[iq][imode]
+                
+                # If Γ-acoustic, force σ→0 by huge ω (skip frequency floor)
+                if is_gamma_acoustic:
+                    weff = 1.0e6
+                else:
+                    # Apply floor for tiny positive ω (only for non-acoustic modes)
+                    weff = max(w, self._omega_min) if w > 0.0 else w
+                    if w > 0.0 and w < self._omega_min:
+                        n_floored += 1
+                        if self._verbosity > 0:
+                            omega_kayser = w / self._KAYSER_TO_RYD
+                            floored_modes.append((iq + 1, imode + 1, omega_kayser))
+                
+                omega_eff[iq, imode] = weff
+
+        if self._verbosity > 0 and n_floored > 0:
+            print(f" [{n_floored} modes affected by frequency floor]")
+            print(f"  Frequency floor: {self._omega_min / self._KAYSER_TO_RYD:.2f} cm^-1")
+            if n_floored <= 10:
+                print("  Affected modes:")
+                for iq, imode, omega_kayser in floored_modes:
+                    print(f"    iq={iq}, imode={imode}: omega = {omega_kayser:.4f} cm^-1")
+            else:
+                print(f"  ({n_floored} modes total, showing first 10)")
+                print("  Affected modes:")
+                for iq, imode, omega_kayser in floored_modes[:10]:
+                    print(f"    iq={iq}, imode={imode}: omega = {omega_kayser:.4f} cm^-1")
+            print("")
+
+        # 4) Compute σ from ω_eff (quantum or classical)
+        for iq in range(nq):
+            for imode in range(nmode):
+                if omega_eff[iq, imode] > 1.0e-12:
                     if self._classical:
                         sigma[iq, imode] = math.sqrt(
-                            self._n_classical(omega[iq, imode], temp) / omega[iq, imode]
+                            self._n_classical(omega_eff[iq, imode], temp)
+                            / omega_eff[iq, imode]
                         )
                     else:
                         sigma[iq, imode] = math.sqrt(
-                            (1.0 + 2.0 * self._n_bose(omega[iq, imode], temp))
-                            / (2.0 * omega[iq, imode])
+                            (1.0 + 2.0 * self._n_bose(omega_eff[iq, imode], temp))
+                            / (2.0 * omega_eff[iq, imode])
                         )
+                else:
+                    sigma[iq, imode] = 0.0
 
+        # 5) Option 1: cap σ so typical displacement (σ*C) per mode
+        #    doesn't exceed nn-fraction. Note: truncation at ±k*σ may
+        #    occasionally allow slightly larger displacements.
+        if self._cap_sigma_by_nn:
+            dnn = self._nearest_neighbor_distances()  # Å, per atom
+            Cgain = self._per_mode_realspace_gain()  # Å per unit Q
+            f = self._nn_frac
+            n_capped = 0
+            capped_modes = []
+            for iq in range(nq):
+                for imode in range(nmode):
+                    if sigma[iq, imode] <= 0.0:
+                        continue
+                    Ci = Cgain[iq, imode, :]  # (nat,)
+                    with np.errstate(divide="ignore", invalid="ignore"):
+                        caps = np.where(Ci > 0.0, (f * dnn) / Ci, np.inf)
+                    sig_cap = np.min(caps)
+                    if np.isfinite(sig_cap) and sig_cap < sigma[iq, imode]:
+                        if self._verbosity > 0:
+                            sigma_old = sigma[iq, imode]
+                            # Use omega_eff (floor-corrected) for clarity
+                            omega_kayser = (omega_eff[iq, imode]
+                                            / self._KAYSER_TO_RYD)
+                            capped_modes.append((iq + 1, imode + 1, omega_kayser,
+                                                 sigma_old, sig_cap))
+                        n_capped += 1
+                        sigma[iq, imode] = sig_cap
+
+            if self._verbosity > 0 and n_capped > 0:
+                print(f" [{n_capped} modes affected by nearest-neighbor sigma capping]")
+                print(f"  Parameters: nn_frac={f:.2f}")
+                if n_capped <= 10:
+                    print("  Affected modes (sigma: old -> new):")
+                    for iq, imode, omega, s_old, s_new in capped_modes:
+                        print(f"    iq={iq}, imode={imode} "
+                              f"(omega={omega:.2f} cm^-1): "
+                              f"{s_old:.6f} -> {s_new:.6f}")
+                else:
+                    print(f"  ({n_capped} modes total, showing first 10)")
+                    print("  Affected modes (sigma: old -> new):")
+                    for iq, imode, omega, s_old, s_new in capped_modes[:10]:
+                        print(f"    iq={iq}, imode={imode} "
+                              f"(omega={omega:.2f} cm^-1): "
+                              f"{s_old:.6f} -> {s_new:.6f}")
+                print("")
+
+        # Cache ω_eff for diagnostics
+        self._omega_eff_cache = omega_eff.copy()
         return sigma
 
     def _generate_displacements_pes(self, Q_array, iq, imode, use_imaginary_part):
@@ -787,13 +946,6 @@ class AlamodeDisplace(object):
     def _find_fraction(self, x, tol=1e-6):
         """
         Find a fraction a/b that approximates the floating value x within a tolerance.
-
-        Parameters:
-        - x: float, the input floating-point number.
-        - tol: float, the tolerance within which the approximation should be.
-
-        Returns:
-        - (a, b): tuple of integers, the numerator (a) and denominator (b) of the fraction.
         """
         negative = x < 0
         x = abs(x)
@@ -817,6 +969,7 @@ class AlamodeDisplace(object):
 
             b = 1 / (b - a)
 
+    # The following get_commensurate_qlist is unused here, but kept for API parity.
     def get_commensurate_qlist(self):
         tol_zero = 1.0e-3
 
@@ -965,8 +1118,16 @@ class AlamodeDisplace(object):
         if abs(temperature) < 1.0e-15 or omega < 1.0e-10:
             return 0.0
         else:
-            temperature_au = self._K_BOLTZMANN * temperature / self._RYDBERG_TO_JOULE
+            temperature_au = (
+                self._K_BOLTZMANN * temperature / self._RYDBERG_TO_JOULE
+            )
             x = omega / temperature_au
+            # Prevent overflow when x is too large
+            # (e.g., when omega=1e6 for acoustic mode suppression)
+            # For x > ~700, exp(x) would overflow.
+            # At large x, n_BE ≈ exp(-x) ≈ 0
+            if x > 100.0:
+                return 0.0
             return 1.0 / (math.exp(x) - 1.0)
 
     def _n_classical(self, omega, temperature):
@@ -1056,3 +1217,207 @@ class AlamodeDisplace(object):
             return "y"
         if entry % 3 == 2:
             return "z"
+
+    def _trunc_normal(self, size, sigma, k):
+        """
+        Generate N(0, σ^2) with either clipping or rejection so that exactly 'size'
+        samples are returned. Mode controlled by self._truncate_mode.
+        """
+        if k is None or k <= 0:
+            return np.random.normal(0.0, sigma, size=size)
+
+        if self._truncate_mode == "clip":
+            x = np.random.normal(0.0, sigma, size=size)
+            lim = k * sigma
+            np.clip(x, -lim, lim, out=x)
+            return x
+
+        def _Phi(z):
+            return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+
+        def _phi(z):
+            return (1.0 / math.sqrt(2.0 * math.pi)) * math.exp(-0.5 * z * z)
+
+        if self._truncate_mode == "reject":
+            lim = k * sigma
+            out = np.empty(size, dtype=float)
+            n = 0
+            while n < size:
+                m = size - n
+                x = np.random.normal(0.0, sigma, size=m)
+                keep = np.abs(x) <= lim
+                nk = np.count_nonzero(keep)
+                if nk > 0:
+                    out[n : n + nk] = x[keep][:nk]
+                    n += nk
+            return out
+
+        if self._truncate_mode == "reject_varmatch":
+            # Adjust pre-draw scale so truncated variance ≈ σ^2
+            denom = (2.0 * _Phi(k) - 1.0)
+            var_std = 1.0 - (2.0 * k * _phi(k)) / denom
+            scale = sigma / math.sqrt(max(var_std, 1e-14))
+            lim = k * scale
+            out = np.empty(size, dtype=float)
+            n = 0
+            while n < size:
+                m = size - n
+                x = np.random.normal(0.0, scale, size=m)
+                keep = np.abs(x) <= lim
+                nk = np.count_nonzero(keep)
+                if nk > 0:
+                    out[n : n + nk] = x[keep][:nk]
+                    n += nk
+            return out
+
+        # Fallback
+        return np.random.normal(0.0, sigma, size=size)
+
+    def _gamma_indices(self, tol=1.0e-10):
+        """
+        Return indices iq where q ≡ (0,0,0) modulo 1 (wrapped to [-0.5,0.5)).
+        """
+        q = self._qpoints
+        qred = q % 1.0
+        qred = np.where(qred >= 0.5, qred - 1.0, qred)
+        is_gamma = np.linalg.norm(qred, axis=1) < tol
+        return np.where(is_gamma)[0]
+
+    def _translation_bases_prim(self):
+        """
+        Build 3 mass-weighted rigid translations (Tx, Ty, Tz) on the primitive basis,
+        shaped as (3*n_prim,), and L2-normalized.
+        """
+        nprim = self._nat_primitive
+        T = np.zeros((3, 3 * nprim), dtype=float)
+        for jat in range(nprim):
+            mj = self._mass[self._primitive_kd[jat]]  # amu
+            w = 1.0 / math.sqrt(mj)
+            base = 3 * jat
+            T[0, base + 0] = w
+            T[1, base + 1] = w
+            T[2, base + 2] = w
+        for a in range(3):
+            na = np.linalg.norm(T[a])
+            if na > 0:
+                T[a] /= na
+        return T
+
+    def _identify_gamma_acoustic(self, overlap_thresh=0.95, max_modes=3, verbose=True):
+        """
+        Identify Γ-acoustic modes by projection onto rigid translations.
+        Returns dict { iq_gamma: mask }, mask has shape (nmode,) bool.
+        """
+        gamma_ids = self._gamma_indices()
+        out = {}
+        if len(gamma_ids) == 0:
+            return out
+        T = self._translation_bases_prim()  # (3, 3*n_prim)
+        for iq in gamma_ids:
+            nmode = self._nmode
+            overlaps = np.zeros((nmode, 3))
+            for imode in range(nmode):
+                v = self._evec[iq, imode, :].real
+                nv = np.linalg.norm(v)
+                if nv > 0:
+                    v = v / nv
+                for a in range(3):
+                    overlaps[imode, a] = (np.dot(v, T[a])) ** 2
+            max_ov = overlaps.max(axis=1)
+            mask = max_ov >= overlap_thresh
+            if mask.sum() == 0:
+                order = np.argsort(-max_ov)
+                chosen = order[:max_modes]
+                if max_ov[chosen[0]] > 0.80:
+                    mask[chosen] = True
+            out[iq] = mask
+            if verbose and self._verbosity > 0:
+                k = int(mask.sum())
+                top3 = (np.sort(max_ov)[-3:][::-1] if nmode >= 3
+                        else np.sort(max_ov)[::-1])
+                print(f" [Gamma acoustic] iq={iq+1}: "
+                      f"tagged {k} modes. Top overlaps: {top3}")
+                # Print identified acoustic modes and their frequencies
+                acoustic_modes = np.where(mask)[0]
+                if len(acoustic_modes) > 0:
+                    print("  Identified acoustic modes:")
+                    for imode in acoustic_modes:
+                        omega2 = self._omega2[iq, imode]
+                        if omega2 >= 0:
+                            omega_kayser = (math.sqrt(omega2) /
+                                            self._KAYSER_TO_RYD)
+                        else:
+                            omega_kayser = -(math.sqrt(-omega2) /
+                                             self._KAYSER_TO_RYD)
+                        print(f"    Mode {imode+1}: "
+                              f"frequency = {omega_kayser:10.4f} cm^-1, "
+                              f"overlap = {max_ov[imode]:.4f}")
+        return out
+
+    def _pairwise_minimum_image(self, x_cart):
+        """
+        Compute nearest-neighbor distance per atom (Å) using minimum image
+        within the current supercell cell.
+        """
+        inv = self._supercell.inverse_lattice_vector
+        lat = self._supercell.lattice_vector
+        xf = x_cart @ inv.T  # fractional
+        nat = x_cart.shape[0]
+        dmin = np.full(nat, np.inf)
+        for i in range(nat):
+            df = xf - xf[i]
+            df -= np.round(df)  # wrap to [-0.5, 0.5)
+            dr = df @ lat.T
+            dist = np.linalg.norm(dr, axis=1)
+            dist[i] = np.inf
+            dmin[i] = dist.min()
+        return dmin
+
+    def _nearest_neighbor_distances(self):
+        """
+        Return per-atom nearest-neighbor distances (Å) in the current supercell.
+        """
+        x_cart = self._supercell.x_fractional @ self._supercell.lattice_vector.T
+        return self._pairwise_minimum_image(x_cart)
+
+    def _per_mode_realspace_gain(self):
+        """
+        C[iq, imode, iat] in Å per unit Q (bohr*amu_ry^(1/2)).
+        Mirrors the construction used in _get_random_displacements_normalcoordinate.
+        """
+        nq = len(self._qpoints)
+        nmode = self._nmode
+        nat = self._supercell.nat
+
+        # per-atom factor and mapping
+        factor = np.zeros(nat)
+        for iat in range(nat):
+            factor[iat] = 1.0 / math.sqrt(
+                self._mass[self._supercell.atomic_kinds[iat]]
+                * self._AMU_RYD
+                * float(nq)
+            )
+
+        is_real = np.zeros(nq, dtype=bool)
+        is_real[self._qlist_real] = True
+
+        C = np.zeros((nq, nmode, nat))
+        for iq in range(nq):
+            for imode in range(nmode):
+                if is_real[iq]:
+                    for iat in range(nat):
+                        jat = self._mapping_s2p[iat]
+                        e = self._evec[iq, imode, 3*jat: 3*jat + 3].real
+                        g_pre = np.linalg.norm(e)
+                        C[iq, imode, iat] = (
+                            factor[iat] * g_pre * self._BOHR_TO_ANGSTROM
+                        )
+                else:
+                    for iat in range(nat):
+                        jat = self._mapping_s2p[iat]
+                        e = self._evec[iq, imode, 3*jat: 3*jat + 3]
+                        g_pre = math.sqrt(2.0) * np.linalg.norm(e)
+                        C[iq, imode, iat] = (
+                            factor[iat] * g_pre * self._BOHR_TO_ANGSTROM
+                        )
+        return C

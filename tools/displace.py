@@ -174,6 +174,10 @@ def displace(displacement_mode, codeobj, args):
         file_primitive=args.prim,
         file_evec=args.evec,
         verbosity=verbosity,
+        omega_min=args.omega_min,
+        truncate_k=args.truncate_k,
+        cap_sigma_by_nn=args.cap_sigma_by_nn,
+        nn_frac=args.nn_frac,
     )
 
     return dispobj.generate(
@@ -396,19 +400,57 @@ if __name__ == "__main__":
     parser.add_argument(
         "--random_seed",
         type=int,
-        default=None,
+        default=12345,
         metavar='"random seed"',
-        help="Seed for random number generator",
+        help="Seed for random number generator (default: 12345)",
+    )
+
+    parser.add_argument(
+        "--omega_min",
+        type=float,
+        default=None,
+        metavar="frequency",
+        help="Frequency floor in cm^-1 for all modes. "
+        "Modes with frequencies below this value will be set to omega_min. "
+        "Used in --random_normalcoord mode (default: 10.0 cm^-1)",
+    )
+
+    parser.add_argument(
+        "--truncate_k",
+        type=float,
+        default=None,
+        metavar="k",
+        help="Truncation parameter for normal distribution in units of sigma. "
+        "Random samples will be clipped to ±k*sigma. "
+        "Used in --random_normalcoord mode (default: 4.0)",
+    )
+
+    parser.add_argument(
+        "--no_cap_sigma_by_nn",
+        action="store_false",
+        dest="cap_sigma_by_nn",
+        default=None,
+        help="Disable capping of sigma by nearest-neighbor distance. "
+        "Used in --random_normalcoord mode (default: enabled)",
+    )
+
+    parser.add_argument(
+        "--nn_frac",
+        type=float,
+        default=None,
+        metavar="fraction",
+        help="Fraction of nearest-neighbor distance (d_nn) used for sigma capping. "
+        "Each mode is limited so that sigma ≤ nn_frac * d_nn per atom. "
+        "Used in --random_normalcoord mode when sigma capping is enabled (default: 0.20)",
     )
 
     args = parser.parse_args()
 
     if not args.print_disp_stdout:
-        print("*****************************************************************")
-        print("    displace.py --  Generator of displaced configurations        ")
-        print("                      Version. 1.2.1                             ")
-        print("*****************************************************************")
-        print("")
+        print("\n" + "="*70)
+        print(" displace.py -- Generator of Displaced Configurations")
+        print(" Version 1.3.0")
+        print("="*70)
 
     code, file_original, struct_format, str_outfiles = check_code_options(args)
     displacement_mode = check_displace_options(args, code)
@@ -417,24 +459,68 @@ if __name__ == "__main__":
     codeobj.load_initial_structure(file_original)
 
     if not args.print_disp_stdout:
-        print(" Output format                  : %s" % struct_format)
-        print(" Structure before displacements : %s" % file_original)
-        print(" Output file names              : %s" % str_outfiles)
-        print(" Magnitude of displacements     : %s Angstrom" % args.mag)
-        print(" Number of atoms                : %i" % codeobj.nat)
-        print("")
+        print("\n" + "-"*70)
+        print(" Input Configuration")
+        print("-"*70)
+        print(f" {'Code format':<30} : {code}")
+        print(f" {'Output format':<30} : {struct_format}")
+        print(f" {'Reference structure':<30} : {file_original}")
+        print(f" {'Number of atoms':<30} : {codeobj.nat}")
+        
+        # Add displacement mode information
+        print("\n" + "-"*70)
+        print(" Displacement Mode")
+        print("-"*70)
+        if displacement_mode == "fd":
+            print(" Finite Difference")
+            print(f" {'Displacement magnitude':<30} : {args.mag} Å")
+        elif displacement_mode == "random":
+            print(" Random Cartesian Displacements")
+            print(f" {'Displacement magnitude':<30} : {args.mag} Å")
+        elif displacement_mode == "random_normalcoordinate":
+            print(" Random Normal Coordinate Displacements")
+            if args.temp:
+                temp_str = f"{args.temp} K"
+                if args.classical:
+                    temp_str += " (classical)"
+                else:
+                    temp_str += " (quantum)"
+                print(f" {'Temperature':<30} : {temp_str}")
+            if args.omega_min:
+                print(f" {'Frequency floor':<30} : {args.omega_min} cm⁻¹")
+            if args.truncate_k:
+                print(f" {'Truncation factor (k)':<30} : {args.truncate_k}σ")
+            if args.cap_sigma_by_nn:
+                print(f" {'Sigma capping':<30} : enabled (nn_frac={args.nn_frac})")
+            else:
+                print(f" {'Sigma capping':<30} : disabled")
+        elif displacement_mode == "pes":
+            print(" Potential Energy Surface Scan")
+            if args.pes:
+                print(f" {'Target mode (iq, imode)':<30} : {args.pes}")
+            if args.Qrange:
+                print(f" {'Q range':<30} : {args.Qrange}")
+        
+        if args.num_disp:
+            print(f" {'Number of displacements':<30} : {args.num_disp}")
+        if args.random_seed is not None:
+            print(f" {'Random seed':<30} : {args.random_seed}")
 
     header_list, disp_list, updated_structure = displace(
         displacement_mode, codeobj, args
     )
 
     if not args.print_disp_stdout:
-        print(" Number of displacements        : %i" % len(disp_list))
-        print("-----------------------------------------------------------------")
-        print("")
+        print("\n" + "-"*70)
+        print(" Output Information")
+        print("-"*70)
+        print(f" {'Number of displacements':<30} : {len(disp_list)}")
+        print(f" {'Output file pattern':<30} : {str_outfiles}")
+        print("-"*70)
         codeobj.generate_structures(
             args.prefix, header_list, disp_list, updated_structure
         )
-        print("All input files are created.")
+        print(f"\n ✓ Successfully created {len(disp_list)} displaced structure files.")
+        print("="*70 + "\n")
     else:
         print_displacement_stdout(disp_list, codeobj)
