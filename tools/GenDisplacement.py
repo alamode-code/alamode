@@ -1305,38 +1305,87 @@ class AlamodeDisplace(object):
 
     def _identify_gamma_acoustic(self, overlap_thresh=0.95, max_modes=3, verbose=True):
         """
-        Identify Γ-acoustic modes by projection onto rigid translations.
+        Identify Γ-acoustic modes by checking if all atoms have the same displacement vector.
+        For acoustic modes, the eigenvector should represent uniform translation:
+        all displacement vectors should be identical (within tolerance).
+        
         Returns dict { iq_gamma: mask }, mask has shape (nmode,) bool.
         """
         gamma_ids = self._gamma_indices()
         out = {}
         if len(gamma_ids) == 0:
             return out
-        T = self._translation_bases_prim()  # (3, 3*n_prim)
+        
         for iq in gamma_ids:
             nmode = self._nmode
-            overlaps = np.zeros((nmode, 3))
+            nprim = self._nat_primitive
+            mask = np.zeros(nmode, dtype=bool)
+            uniformity_scores = np.zeros(nmode)
+            
             for imode in range(nmode):
-                v = self._evec[iq, imode, :].real
-                nv = np.linalg.norm(v)
-                if nv > 0:
-                    v = v / nv
-                for a in range(3):
-                    overlaps[imode, a] = (np.dot(v, T[a])) ** 2
-            max_ov = overlaps.max(axis=1)
-            mask = max_ov >= overlap_thresh
+                # Extract eigenvector for this mode (3*nprim components)
+                evec = self._evec[iq, imode, :].copy()
+                
+                # Reshape to (nprim, 3) - displacement vectors for each atom
+                disp_vectors = evec.reshape(nprim, 3)
+                
+                # For acoustic modes, need to account for mass-weighting
+                # Divide by sqrt(mass) to get actual displacement directions
+                disp_physical = np.zeros_like(disp_vectors, dtype=complex)
+                for jat in range(nprim):
+                    mj = self._mass[self._primitive_kd[jat]]
+                    if mj > 0:
+                        disp_physical[jat] = disp_vectors[jat] / math.sqrt(mj)
+                
+                # Use real part for Gamma point modes
+                disp_real = disp_physical.real
+                
+                # Skip if all displacements are essentially zero
+                max_disp = np.max(np.abs(disp_real))
+                if max_disp < 1e-10:
+                    uniformity_scores[imode] = 0.0
+                    continue
+                
+                # For acoustic mode, all displacement vectors should be the same
+                # Compare each atom's displacement with the first atom
+                ref_disp = disp_real[0]
+                
+                # Compute maximum relative difference from reference
+                max_rel_diff = 0.0
+                for jat in range(1, nprim):
+                    diff = np.linalg.norm(disp_real[jat] - ref_disp)
+                    ref_norm = np.linalg.norm(ref_disp)
+                    if ref_norm > 1e-10:
+                        rel_diff = diff / ref_norm
+                        max_rel_diff = max(max_rel_diff, rel_diff)
+                    else:
+                        # If reference is near zero, check absolute difference
+                        if np.linalg.norm(disp_real[jat]) > 1e-10:
+                            max_rel_diff = 1.0  # Different from zero reference
+                
+                # Uniformity score: 1 - max_relative_difference
+                # Perfect acoustic mode: max_rel_diff = 0 → score = 1.0
+                # Non-uniform mode: max_rel_diff → ∞ → score → 0
+                uniformity_scores[imode] = 1.0 / (1.0 + max_rel_diff)
+            
+            # Mark modes with high uniformity score as acoustic
+            mask = uniformity_scores >= overlap_thresh
+            
+            # If no modes pass the threshold, take the top 3 with highest scores
             if mask.sum() == 0:
-                order = np.argsort(-max_ov)
+                order = np.argsort(-uniformity_scores)
                 chosen = order[:max_modes]
-                if max_ov[chosen[0]] > 0.80:
+                if uniformity_scores[chosen[0]] > 0.80:
                     mask[chosen] = True
+            
             out[iq] = mask
+            
             if verbose and self._verbosity > 0:
                 k = int(mask.sum())
-                top3 = (np.sort(max_ov)[-3:][::-1] if nmode >= 3
-                        else np.sort(max_ov)[::-1])
+                top3 = (np.sort(uniformity_scores)[-3:][::-1] if nmode >= 3
+                        else np.sort(uniformity_scores)[::-1])
                 print(f" [Gamma acoustic] iq={iq+1}: "
-                      f"tagged {k} modes. Top overlaps: {top3}")
+                      f"tagged {k} modes. Top uniformity scores: {top3}")
                 # Print identified acoustic modes and their frequencies
                 acoustic_modes = np.where(mask)[0]
                 if len(acoustic_modes) > 0:
@@ -1351,7 +1400,7 @@ class AlamodeDisplace(object):
                                              self._KAYSER_TO_RYD)
                         print(f"    Mode {imode+1}: "
                               f"frequency = {omega_kayser:10.4f} cm^-1, "
-                              f"overlap = {max_ov[imode]:.4f}")
+                              f"uniformity = {uniformity_scores[imode]:.4f}")
         return out
 
     def _pairwise_minimum_image(self, x_cart):
