@@ -79,7 +79,7 @@ class AlamodeDisplace(object):
             self._truncate_k = 4.0
         self._truncate_mode = "clip"  # "clip" | "reject" | "reject_varmatch"
 
-        # Option 1: cap σ so a single (q,ν) cannot move any atom more than
+        # Cap σ so a single (q,ν) cannot move any atom more than
         # a fraction of its nearest-neighbor distance in real space.
         if cap_sigma_by_nn is not None:
             self._cap_sigma_by_nn = cap_sigma_by_nn

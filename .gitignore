@@ -15,6 +15,9 @@ tests/results/*
 # Created by https://www.toptal.com/developers/gitignore/api/c++,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,python
 
+### CMake build files
+cmake-build*
+_build*/
 ### C++ ###
 # Prerequisites
 *.d
@@ -54,7 +57,7 @@ tests/results/*
 __pycache__/
 *.py[cod]
 *$py.class
-
+*py-e
 # C extensions
 
 # Distribution / packaging
