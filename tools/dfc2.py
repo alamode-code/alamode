@@ -23,6 +23,7 @@ class FC2Data:
             self.shift_vectors = h5file['ForceConstants/Order2/shift_vectors'][:]
             self.lattice_vectors = h5file['PrimitiveCell/lattice_vector'][:]
             self.fractional_coords = h5file['PrimitiveCell/fractional_coordinate'][:]
+            self.atomic_kinds = h5file['PrimitiveCell/atomic_kinds'][:]
     
     def calculate_fractional_shifts(self):
         """Calculate fractional shift vectors for each force constant entry."""
@@ -72,14 +73,14 @@ class DFC2Correction:
             
             # Read atomic positions and indices
             positions = []
-            indices = []
+            atomic_kinds = []
             for _ in range(natoms):
                 line = f.readline().split()
                 positions.append([float(x) for x in line[0:3]])
-                indices.append(int(line[3]) - 1)
+                atomic_kinds.append(int(line[3]) - 1)
             
             self.positions = np.array(positions)
-            self.indices = np.array(indices)
+            self.atomic_kinds = np.array(atomic_kinds)
             
             # Read corrections for the specified temperature
             self._read_corrections(f)
@@ -128,7 +129,7 @@ class FC2Updater:
         Create a structured array for efficient sorting and searching.
         
         Combines atom indices, coordinate indices, and shifts into a single
-        sortable key similar to std::tuple in C++.
+        sortable key
         """
         n = len(atoms)
         shifts_rounded = np.round(shifts).astype(np.int32)
@@ -158,7 +159,31 @@ class FC2Updater:
         Time complexity: O(M log M + N log M) where M is the number of
         force constants and N is the number of corrections.
         """
+
         fc2_updated = fc2_data.values.copy()
+
+        # update atom_indices and shifts_frac, 
+        # which are necessary when the primitive cell defined in dfc2 file 
+        # is different from that in HDF5 file
+        convmat = dfc2_correction.lattice @ np.linalg.inv(fc2_data.lattice_vectors)
+        convmat_int = np.rint(convmat).astype(int)
+
+        print(convmat)
+        print(convmat_int)
+
+        dfc2_positions_converted = dfc2_correction.positions @ convmat
+        map_dfc2_to_fc2 = {}
+        for i, pos in enumerate(dfc2_positions_converted):
+            diffs = fc2_data.fractional_coords - pos
+            dists = np.linalg.norm(diffs - np.rint(diffs), axis=1)
+            closest_atom = np.argmin(dists)
+            if dists[closest_atom] > 1e-5:
+                raise ValueError("Atomic positions in dfc2 file do not match those in HDF5 file.")
+            assert(dfc2_correction.atomic_kinds[i] == fc2_data.atomic_kinds[closest_atom])
+            shift_tmp = np.rint(pos - fc2_data.fractional_coords[closest_atom]).astype(int)
+            map_dfc2_to_fc2[i] = [int(closest_atom), shift_tmp]
+        
+        print(map_dfc2_to_fc2)
         
         # Create sorted lookup table for force constants
         fc2_keys = FC2Updater.create_composite_key(
@@ -175,17 +200,23 @@ class FC2Updater:
         
         for i in range(n_total):
             # Skip negligible corrections
-            if abs(dfc2_correction.values[i]) < 1e-10:
+            if abs(dfc2_correction.values[i]) < 1e-15:
                 continue
             
+            # Map dfc2 atom indices and shifts to fc2 data
+            atom0_dfc2 = dfc2_correction.atoms[i, 0]
+            atom1_dfc2 = dfc2_correction.atoms[i, 1]
+            atom0_fc2, shift0 = map_dfc2_to_fc2[atom0_dfc2]
+            atom1_fc2, shift1 = map_dfc2_to_fc2[atom1_dfc2]
+            shift_fc2 = shift1 - shift0 + dfc2_correction.shifts[i] @ convmat_int
             # Create query key
             query_key = FC2Updater.create_composite_key(
-                dfc2_correction.atoms[i:i+1],
+                np.array([atom0_fc2, atom1_fc2]).reshape(1, 2),
                 dfc2_correction.coords[i:i+1],
-                dfc2_correction.shifts[i:i+1]
+                shift_fc2.reshape(1, 3)
             )[0]
             
-            # Binary search (equivalent to C++ std::lower_bound)
+            # Binary search
             idx = np.searchsorted(fc2_keys_sorted, query_key)
             
             # Check if match found
