@@ -3813,7 +3813,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
             diff /= static_cast<double>(nk_interpolate * ns);
             if (verbosity > 0) {
                 std::cout << "  SCPH ITER " << std::setw(5) << iloop + 1 << " : ";
-                std::cout << " DIFF = " << std::setw(15) << std::sqrt(diff) << '\n';
+                std::cout << " DIFF = " << std::scientific << std::setw(15) << std::sqrt(diff) << '\n';
             }
 
             omega_old = omega_now;
@@ -4971,19 +4971,7 @@ void Scph::write_anharmonic_correction_fc2(std::complex<double> ****delta_dymat,
 
     allocate(delta_fc2, ns, ns, ncell);
 
-    xtmp.resize(system->get_primcell().number_of_atoms, 3);
-    //allocate(xtmp, system->get_primcell().number_of_atoms, 3);
-
     ofs_fc2.precision(10);
-
-    for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
-        for (j = 0; j < 3; ++j) {
-            xtmp(i, j) = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[i][0], j);
-        }
-    }
-    xtmp = xtmp * system->get_supercell(0).lattice_vector.transpose();
-    xtmp = xtmp * system->get_primcell().lattice_vector.inverse().transpose();
-
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
             ofs_fc2 << std::setw(20) << system->get_primcell().lattice_vector(j, i);
@@ -4999,12 +4987,10 @@ void Scph::write_anharmonic_correction_fc2(std::complex<double> ****delta_dymat,
 
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
         for (j = 0; j < 3; ++j) {
-            ofs_fc2 << std::setw(20) << xtmp(i, j);
+            ofs_fc2 << std::setw(20) << system->get_primcell().x_fractional(i, j);
         }
         ofs_fc2 << std::setw(5) << system->get_primcell().kind[i] + 1 << '\n';
     }
-
-    //deallocate(xtmp);
 
     for (unsigned int iT = 0; iT < NT; ++iT) {
         const auto temp = Tmin + dT * static_cast<double>(iT);
@@ -5019,8 +5005,8 @@ void Scph::write_anharmonic_correction_fc2(std::complex<double> ****delta_dymat,
 
                 for (icell = 0; icell < ncell; ++icell) {
                     delta_fc2[is][js][icell] = delta_dymat[iT][is][js][icell].real() *
-                                               std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[iat][0]] *
-                                                         system->get_mass_super()[system->get_map_p2s(0)[jat][0]]);
+                                               std::sqrt(system->get_mass_prim()[iat] *
+                                                         system->get_mass_prim()[jat]);
                 }
             }
         }
