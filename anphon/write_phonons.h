@@ -46,7 +46,8 @@ public:
     void setWriteOptions(const bool print_msd_, const bool print_xsf_, const bool print_anime_,
                          const std::string &anime_format_, const int anime_steps_,
                          const unsigned int anime_cellsize_[3], const double anime_kpoint_[3], const bool print_ucorr_,
-                         const int shift_ucorr_[3], const bool print_zmode_);
+                         const int shift_ucorr_[3], const bool print_zmode_,
+                         const bool print_eval_);
 
     void writePhononEnergies(const unsigned int nk_in, const double *const *const *eval_in, const bool is_qha = false,
                              const int bubble = 0) const;
@@ -103,8 +104,13 @@ private:
 
     void writeEigenvectors() const;
 
+    void writeEigenvalues() const;
+
     void writeEigenvectorsEach(const std::string &fname_evec, const unsigned int nk_in, const double *const *xk_in,
                                const double *const *eval_in, const std::complex<double> *const *const *evec_in) const;
+
+    void writeEigenvaluesEach(const std::string &fname_eval, const unsigned int nk_in, const double *const *xk_in,
+                              const double *const *eval_in) const;
 
     void printNormalmodeBorncharge() const;
 
@@ -115,6 +121,11 @@ private:
     void writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsigned int nk_in, const double *const *xk_in,
                                    const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                    const unsigned int kpmode_in) const;
+
+    void writeEigenvaluesHdf5() const;
+
+    void writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsigned int nk_in, const double *const *xk_in,
+                                  const double *const *eval_in, const unsigned int kpmode_in) const;
 
 #endif
 
@@ -145,6 +156,7 @@ private:
     bool print_msd;
     bool print_ucorr;
     bool print_anime;
+    bool print_eval;
 
     unsigned int anime_cellsize[3];
     double anime_kpoint[3];

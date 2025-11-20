@@ -53,6 +53,7 @@ Writes::Writes(PHON *phon) : Pointers(phon)
     print_anime = false;
     print_msd = false;
     print_zmode = false;
+    print_eval = false;
     anime_cellsize[0] = 0;
     anime_cellsize[1] = 0;
     anime_cellsize[2] = 0;
@@ -290,7 +291,8 @@ void Writes::writeInputVars()
 void Writes::setWriteOptions(const bool print_msd_, const bool print_xsf_, const bool print_anime_,
                              const std::string &anime_format_, const int anime_frames_,
                              const unsigned int anime_cellsize_[3], const double anime_kpoint_[3],
-                             const bool print_ucorr_, const int shift_ucorr_[3], const bool print_zmode_)
+                             const bool print_ucorr_, const int shift_ucorr_[3], const bool print_zmode_,
+                             const bool print_eval_)
 {
     print_msd = print_msd_;
     print_xsf = print_xsf_;
@@ -299,6 +301,7 @@ void Writes::setWriteOptions(const bool print_msd_, const bool print_xsf_, const
     anime_frames = anime_frames_;
     print_ucorr = print_ucorr_;
     print_zmode = print_zmode_;
+    print_eval = print_eval_;
 
     for (auto i = 0; i < 3; ++i) {
         anime_cellsize[i] = anime_cellsize_[i];
@@ -484,6 +487,13 @@ void Writes::writePhononInfo()
         writeEigenvectors();
 #ifdef _HDF5
         writeEigenvectorsHdf5();
+#endif
+    }
+
+    if (print_eval) {
+        writeEigenvalues();
+#ifdef _HDF5
+        writeEigenvaluesHdf5();
 #endif
     }
 
@@ -736,6 +746,8 @@ void Writes::writePhononVelAll() const
     deallocate(phvel);
     deallocate(phvel_xyz);
 }
+
+
 
 void Writes::writePhononDos() const
 {
@@ -1050,6 +1062,350 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_axsf;
     std::cout << " : XcrysDen AXSF file to visualize phonon mode directions\n";
 }
+
+void Writes::writeEigenvalues() const
+{
+    std::string fname_eval;
+
+    if (kpoint->kpoint_general && dynamical->dymat_general) {
+        fname_eval = input->job_title + ".eval";
+        writeEigenvaluesEach(fname_eval,
+                             kpoint->kpoint_general->nk,
+                             kpoint->kpoint_general->xk,
+                             dynamical->dymat_general->get_eigenvalues());
+    }
+
+    if (kpoint->kpoint_bs && dynamical->dymat_band) {
+        fname_eval = input->job_title + ".band.eval";
+        writeEigenvaluesEach(fname_eval,
+                             kpoint->kpoint_bs->nk,
+                             kpoint->kpoint_bs->xk,
+                             dynamical->dymat_band->get_eigenvalues());
+    }
+
+    if (dos->kmesh_dos && dos->dymat_dos) {
+        fname_eval = input->job_title + ".mesh.eval";
+        writeEigenvaluesEach(fname_eval,
+                             dos->kmesh_dos->nk,
+                             dos->kmesh_dos->xk,
+                             dos->dymat_dos->get_eigenvalues());
+    }
+}
+
+void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned int nk_in, const double *const *xk_in,
+                                   const double *const *eval_in) const
+{
+    unsigned int i, j, k;
+    std::ofstream ofs_eval;
+
+    ofs_eval.open(fname_eval.c_str(), std::ios::out);
+    if (!ofs_eval) exit("writeEigenvaluesEach", "cannot open file_eval");
+    ofs_eval.setf(std::ios::scientific);
+
+    ofs_eval << "# Lattice vectors of the primitive cell\n";
+
+    for (i = 0; i < 3; ++i) {
+        for (j = 0; j < 3; ++j) {
+            ofs_eval << std::setw(15) << system->get_primcell().lattice_vector(j, i);
+        }
+        ofs_eval << '\n';
+    }
+
+    ofs_eval << '\n';
+    ofs_eval << "# Reciprocal lattice vectors of the primitive cell\n";
+
+    for (i = 0; i < 3; ++i) {
+        for (j = 0; j < 3; ++j) {
+            ofs_eval << std::setw(15) << system->get_primcell().reciprocal_lattice_vector(i, j);
+        }
+        ofs_eval << '\n';
+    }
+
+    ofs_eval << '\n';
+    ofs_eval << "# Number of phonon modes: " << std::setw(10) << nbands << '\n';
+    ofs_eval << "# Number of k points : " << std::setw(10) << nk_in << '\n';
+    ofs_eval << "# Number of atomic kinds : " << std::setw(4) << system->get_primcell().number_of_elems << '\n';
+    ofs_eval << "# Atomic masses :";
+    for (i = 0; i < system->get_primcell().number_of_elems; ++i) {
+        ofs_eval << std::setw(15) << system->mass_kd[i];
+    }
+    ofs_eval << "\n\n";
+    ofs_eval << "# Eigenvalues (omega^2) for each phonon modes below:\n\n";
+
+    unsigned int **index_bconnect_tmp;
+    allocate(index_bconnect_tmp, nk_in, nbands);
+
+    if (dynamical->index_bconnect) {
+        for (i = 0; i < nk_in; ++i) {
+            for (j = 0; j < nbands; ++j) {
+                index_bconnect_tmp[i][j] = dynamical->index_bconnect[i][j];
+            }
+        }
+    } else {
+        for (i = 0; i < nk_in; ++i) {
+            for (j = 0; j < nbands; ++j) {
+                index_bconnect_tmp[i][j] = j;
+            }
+        }
+    }
+
+    for (i = 0; i < nk_in; ++i) {
+        ofs_eval << "## kpoint " << std::setw(7) << i + 1 << " : ";
+        for (j = 0; j < 3; ++j) {
+            ofs_eval << std::setw(15) << xk_in[i][j];
+        }
+        ofs_eval << '\n';
+        for (j = 0; j < nbands; ++j) {
+
+            k = index_bconnect_tmp[i][j];
+
+            auto omega2 = eval_in[i][k];
+            if (omega2 >= 0.0) {
+                omega2 = omega2 * omega2;
+            } else {
+                omega2 = -omega2 * omega2;
+            }
+
+            ofs_eval << std::setw(8) << j + 1 << " : ";
+            ofs_eval << std::setw(15) << omega2 << '\n';
+        }
+        ofs_eval << '\n';
+    }
+    ofs_eval.close();
+
+    deallocate(index_bconnect_tmp);
+
+    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_eval;
+    std::cout << " : Eigenvalues of all k points\n";
+}
+
+#ifdef _HDF5
+
+void Writes::writeEigenvaluesHdf5() const
+{
+    std::string fname_eval;
+
+    if (kpoint->kpoint_general && dynamical->dymat_general) {
+        fname_eval = input->job_title + ".eval.hdf5";
+        writeEigenvaluesEachHdf5(fname_eval,
+                                 kpoint->kpoint_general->nk,
+                                 kpoint->kpoint_general->xk,
+                                 dynamical->dymat_general->get_eigenvalues(),
+                                 0);
+    }
+
+    if (kpoint->kpoint_bs && dynamical->dymat_band) {
+        fname_eval = input->job_title + ".band.eval.hdf5";
+        writeEigenvaluesEachHdf5(fname_eval,
+                                 kpoint->kpoint_bs->nk,
+                                 kpoint->kpoint_bs->xk,
+                                 dynamical->dymat_band->get_eigenvalues(),
+                                 1);
+    }
+
+    if (dos->kmesh_dos && dos->dymat_dos) {
+        fname_eval = input->job_title + ".mesh.eval.hdf5";
+        writeEigenvaluesEachHdf5(fname_eval,
+                                 dos->kmesh_dos->nk,
+                                 dos->kmesh_dos->xk,
+                                 dos->dymat_dos->get_eigenvalues(),
+                                 2);
+    }
+}
+
+void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsigned int nk_in,
+                                      const double *const *xk_in, const double *const *eval_in,
+                                      const unsigned int kpmode_in) const
+{
+    using namespace H5;
+
+    unsigned int i, j, k;
+
+    H5File file(fname_eval, H5F_ACC_TRUNC);
+    Group group_cell(file.createGroup("/PrimitiveCell"));
+    Group group_band(file.createGroup("/Eigenvalues"));
+    Group group_kpoint(file.createGroup("/Kpoints"));
+
+    // Write setting information
+    hid_t str_datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(str_datatype, H5T_VARIABLE);
+    std::vector<const char *> arr_c_str;
+    for (unsigned int ii = 0; ii < system->get_primcell().number_of_elems; ++ii) {
+        arr_c_str.push_back(system->symbol_kd[ii].c_str());
+    }
+    hsize_t str_dim[1]{arr_c_str.size()};
+    DataSpace *dataspace = new DataSpace(1, str_dim);
+    DataSet *dataset = new DataSet(group_cell.createDataSet("elements", str_datatype, *dataspace));
+    dataset->write(&arr_c_str[0], str_datatype);
+    dataset->close();
+    dataspace->close();
+
+    std::vector<double> mass_tmp;
+    for (i = 0; i < system->get_primcell().number_of_elems; ++i) {
+        mass_tmp.push_back(system->mass_kd[i]);
+    }
+    dataspace = new DataSpace(1, str_dim);
+    dataset = new DataSet(group_cell.createDataSet("masses", PredType::NATIVE_DOUBLE, *dataspace));
+    dataset->write(&mass_tmp[0], PredType::NATIVE_DOUBLE);
+    dataset->close();
+    dataspace->close();
+
+
+    // Write primitive cell information
+    hsize_t dims[2];
+    dims[0] = 3;
+    dims[1] = 3;
+    double lavec_tmp[3][3];
+    for (i = 0; i < 3; ++i) {
+        for (j = 0; j < 3; ++j) {
+            lavec_tmp[i][j] = system->get_primcell().lattice_vector(j, i);
+        }
+    }
+    dataspace = new DataSpace(2, dims);
+    dataset = new DataSet(group_cell.createDataSet("lattice_vector", PredType::NATIVE_DOUBLE, *dataspace));
+    dataset->write(lavec_tmp, PredType::NATIVE_DOUBLE);
+    DataSpace attr_dataspace_str(H5S_SCALAR);
+    Attribute myatt_in = dataset->createAttribute("unit", str_datatype, attr_dataspace_str);
+    myatt_in.write(str_datatype, std::string("bohr"));
+    myatt_in.close();
+    dataset->close();
+    dataspace->close();
+
+    dims[0] = system->get_primcell().number_of_atoms;
+    dims[1] = 3;
+    std::vector<double> xfrac_1D(dims[0] * dims[1]);
+    hsize_t counter = 0;
+
+    double xtmp[3];
+    for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
+        for (j = 0; j < 3; ++j)
+            xtmp[j] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[i][0], j);
+        rotvec(xtmp, xtmp, system->get_supercell(0).lattice_vector);
+        rotvec(xtmp, xtmp, system->get_primcell().reciprocal_lattice_vector);
+        for (j = 0; j < 3; ++j)
+            xtmp[j] /= 2.0 * pi;
+        for (j = 0; j < 3; ++j) {
+            while (xtmp[j] >= 1.0) {
+                xtmp[j] -= 1.0;
+            }
+            while (xtmp[j] < 0.0) {
+                xtmp[j] += 1.0;
+            }
+        }
+        for (j = 0; j < 3; ++j) {
+            xfrac_1D[counter++] = xtmp[j];
+        }
+    }
+    dataspace = new DataSpace(2, dims);
+    dataset = new DataSet(group_cell.createDataSet("fractional_coordinate", PredType::NATIVE_DOUBLE, *dataspace));
+    dataset->write(&xfrac_1D[0], PredType::NATIVE_DOUBLE);
+    dataset->close();
+    dataspace->close();
+
+    hsize_t dims2[1];
+    dims2[0] = system->get_primcell().number_of_atoms;
+    dataspace = new DataSpace(1, dims2);
+    dataset = new DataSet(group_cell.createDataSet("atomic_kinds", PredType::NATIVE_INT, *dataspace));
+    int kdtmp[dims[0]];
+    for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
+        kdtmp[i] = system->get_primcell().kind[i];
+    }
+
+    dataset->write(&kdtmp[0], PredType::NATIVE_INT);
+    dataset->close();
+
+    // write eigenvalues
+
+    unsigned int **index_bconnect_tmp;
+    int band_index_reordered = 0;
+    allocate(index_bconnect_tmp, nk_in, nbands);
+
+    if (dynamical->index_bconnect) {
+        band_index_reordered = 1;
+        for (i = 0; i < nk_in; ++i) {
+            for (j = 0; j < nbands; ++j) {
+                index_bconnect_tmp[i][j] = dynamical->index_bconnect[i][j];
+            }
+        }
+    } else {
+        for (i = 0; i < nk_in; ++i) {
+            for (j = 0; j < nbands; ++j) {
+                index_bconnect_tmp[i][j] = j;
+            }
+        }
+    }
+
+    // Write band structure information
+    dims[0] = nk_in;
+    dims[1] = nbands;
+
+    double **freq_kayser;
+    allocate(freq_kayser, nk_in, nbands);
+
+    for (i = 0; i < nk_in; ++i) {
+        for (j = 0; j < nbands; ++j) {
+            k = index_bconnect_tmp[i][j];
+            freq_kayser[i][j] = in_kayser(eval_in[i][k]);
+        }
+    }
+
+    dataspace = new DataSpace(2, dims);
+    dataset = new DataSet(group_band.createDataSet("frequencies", PredType::NATIVE_DOUBLE, *dataspace));
+    IntType int_type(PredType::NATIVE_INT);
+    DataSpace attr_dataspace_int(H5S_SCALAR);
+    myatt_in = dataset->createAttribute("band_index_reordered", int_type, attr_dataspace_int);
+    myatt_in.write(int_type, &band_index_reordered);
+    myatt_in = dataset->createAttribute("unit", str_datatype, attr_dataspace_str);
+    myatt_in.write(str_datatype, std::string("kayser (cm^-1)"));
+
+    dataset->write(&freq_kayser[0][0], PredType::NATIVE_DOUBLE);
+    myatt_in.close();
+    dataset->close();
+    dataspace->close();
+    deallocate(freq_kayser);
+
+    deallocate(index_bconnect_tmp);
+
+    group_cell.close();
+    group_band.close();
+
+    dims[0] = nk_in;
+    dims[1] = 3;
+    std::vector<double> xk_1D(dims[0] * dims[1]);
+    counter = 0;
+
+    for (i = 0; i < nk_in; ++i) {
+        for (j = 0; j < 3; ++j) {
+            xk_1D[counter++] = xk_in[i][j];
+        }
+    }
+    dataspace = new DataSpace(2, dims);
+    dataset = new DataSet(group_kpoint.createDataSet("kpoint_coordinates", PredType::NATIVE_DOUBLE, *dataspace));
+
+    myatt_in = dataset->createAttribute("kpoint_mode", int_type, attr_dataspace_int);
+    myatt_in.write(int_type, &kpmode_in);
+    dataset->write(&xk_1D[0], PredType::NATIVE_DOUBLE);
+    myatt_in.close();
+    dataset->close();
+    dataspace->close();
+
+    if (kpmode_in == 1 && kpoint->kpoint_bs) {
+        const auto kaxis = kpoint->kpoint_bs->kaxis;
+        dims2[0] = nk_in;
+        dataspace = new DataSpace(1, dims2);
+        dataset = new DataSet(group_kpoint.createDataSet("bandstructure_xaxis", PredType::NATIVE_DOUBLE, *dataspace));
+        dataset->write(&kaxis[0], PredType::NATIVE_DOUBLE);
+        dataset->close();
+        dataspace->close();
+    }
+
+    group_kpoint.close();
+
+    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_eval;
+    std::cout << " : Eigenvalues of all k points (HDF5)\n";
+}
+
+#endif
 
 void Writes::writeEigenvectors() const
 {

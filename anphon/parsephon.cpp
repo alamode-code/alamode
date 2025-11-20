@@ -1164,7 +1164,8 @@ void Input::parse_analysis_vars(const bool use_default_values)
     // Read input parameters in the &analysis field.
     int i;
 
-    std::vector<std::string> input_list{"PRINTEVEC",
+    std::vector<std::string> input_list{"PRINTEVAL",
+                                        "PRINTEVEC",
                                         "PRINTXSF",
                                         "PRINTVEL",
                                         "QUARTIC",
@@ -1218,6 +1219,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
     auto print_anime = false;
 
     auto print_vel = false;
+    auto print_eval = false;
     auto print_evec = false;
     auto print_msd = false;
     auto print_ucorr = false;
@@ -1259,6 +1261,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
 
         assign_val(print_vel, "PRINTVEL", analysis_var_dict);
         assign_val(print_evec, "PRINTEVEC", analysis_var_dict);
+        assign_val(print_eval, "PRINTEVAL", analysis_var_dict);
         assign_val(print_msd, "PRINTMSD", analysis_var_dict);
         assign_val(print_ucorr, "UCORR", analysis_var_dict);
 
@@ -1412,7 +1415,8 @@ void Input::parse_analysis_vars(const bool use_default_values)
                             anime_kpoint_double,
                             print_ucorr,
                             shift_ucorr,
-                            print_zmode);
+                            print_zmode,
+                            print_eval);
 
 
     dos->compute_dos = compute_dos;
