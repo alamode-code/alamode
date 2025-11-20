@@ -200,7 +200,7 @@ class FC2Updater:
         
         for i in range(n_total):
             # Skip negligible corrections
-            if abs(dfc2_correction.values[i]) < 1e-15:
+            if abs(dfc2_correction.values[i]) < 1e-10:
                 continue
             
             # Map dfc2 atom indices and shifts to fc2 data
