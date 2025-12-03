@@ -212,8 +212,10 @@ private:
                                     int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q) const;
 
     void interpolate_to_dense_mesh(std::complex<double> ***dymat_q, std::complex<double> ***dymat_q_HA,
-                                   const std::vector<Eigen::MatrixXcd> &evec_initial, double **eval_interpolate,
-                                   std::complex<double> ***evec_new, std::complex<double> ***cmat_convert,
+                                   const std::vector<Eigen::MatrixXcd> &evec_initial,
+                                   Eigen::MatrixXd &eval_interpolate,
+                                   std::vector<Eigen::MatrixXcd> &evec_new,
+                                   std::complex<double> ***cmat_convert,
                                    Eigen::MatrixXd &omega_now) const;
 
     bool check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,

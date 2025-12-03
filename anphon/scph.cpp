@@ -974,8 +974,6 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
 
     std::complex<double> **delta_v2_renorm;
 
-    std::vector<double> vec_temp;
-
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
     // Compute matrix element of 4-phonon interaction
@@ -1033,7 +1031,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
     }
 
     if (mympi->my_rank == 0) {
-
+        std::vector<double> vec_temp;
         std::complex<double> ***cmat_convert;
         allocate(cmat_convert, nk, ns, ns);
 
@@ -1057,8 +1055,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
 
         auto converged_prev = false;
 
-        for (double temp: vec_temp) {
-            auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
+        for (const double temp: vec_temp) {
+            const auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
 
             // Initialize phonon eigenvectors with harmonic values
 
@@ -3683,8 +3681,10 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
 }
 
 void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q, std::complex<double> ***dymat_q_HA,
-                                     const std::vector<Eigen::MatrixXcd> &evec_initial, double **eval_interpolate,
-                                     std::complex<double> ***evec_new, std::complex<double> ***cmat_convert,
+                                     const std::vector<Eigen::MatrixXcd> &evec_initial,
+                                     Eigen::MatrixXd &eval_interpolate,
+                                     std::vector<Eigen::MatrixXcd> &evec_new,
+                                     std::complex<double> ***cmat_convert,
                                      Eigen::MatrixXd &omega_now) const
 {
     using namespace Eigen;
@@ -3723,14 +3723,19 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q, std::compl
     }
     fftw_destroy_plan(plan);
 
+    // Create temporary C-style arrays for exec_interpolation
+    double **eval_temp;
+    std::complex<double> ***evec_temp;
+    allocate(eval_temp, nk, ns);
+    allocate(evec_temp, nk, ns, ns);
 
     dynamical->exec_interpolation(kmesh_interpolate,
                                   dymat_r_new,
                                   nk,
                                   kmesh_dense->xk,
                                   kmesh_dense->kvec_na,
-                                  eval_interpolate,
-                                  evec_new,
+                                  eval_temp,
+                                  evec_temp,
                                   dymat_harm_short,
                                   dymat_harm_long,
                                   mindist_list_scph,
@@ -3741,22 +3746,31 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q, std::compl
     MatrixXcd Cmat(ns, ns);
 
     for (unsigned int ik = 0; ik < nk; ++ik) {
+        // Copy eigenvalues from temp array to Eigen matrix
+        for (unsigned int is = 0; is < ns; ++is) {
+            eval_interpolate(ik, is) = eval_temp[ik][is];
+        }
+
+        // Copy eigenvectors from temp array to Eigen matrix and transpose
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
-                evec_tmp(is, js) = evec_new[ik][js][is];
+                evec_tmp(is, js) = evec_temp[ik][js][is];
+                evec_new[ik](is, js) = evec_temp[ik][is][js];
             }
         }
 
         Cmat = evec_initial[ik].adjoint() * evec_tmp;
 
         for (unsigned int is = 0; is < ns; ++is) {
-            omega_now(ik, is) = eval_interpolate[ik][is];
+            omega_now(ik, is) = eval_interpolate(ik, is);
             for (unsigned int js = 0; js < ns; ++js) {
                 cmat_convert[ik][is][js] = Cmat(is, js);
             }
         }
     }
 
+    deallocate(eval_temp);
+    deallocate(evec_temp);
     deallocate(dymat_r_new);
 }
 
@@ -3824,7 +3838,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     unsigned int is, js;
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
-    unsigned int knum, knum_interpolate;
+    unsigned int knum;
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
     int iloop;
@@ -3835,35 +3849,39 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     MatrixXcd Fmat(ns, ns);
 
     double diff;
-    double conv_tol = tolerance_scph;
-    double alpha = mixalpha;
+    const double conv_tol = tolerance_scph;
+    const double alpha = mixalpha;
 
-    double **eval_interpolate;
+    // Use Eigen types for better memory management and performance
+    MatrixXd eval_interpolate(nk, ns);
+    std::vector<MatrixXcd> evec_new;
 
-    std::complex<double> ***evec_new;
     std::complex<double> ***dymat_q, ***dymat_q_HA;
 
     std::vector<MatrixXcd> dmat_convert, dmat_convert_old;
     std::vector<MatrixXcd> evec_initial, evec_initial_adjoint;
     std::vector<MatrixXcd> Fmat0;
 
-    dmat_convert.resize(nk);
-    dmat_convert_old.resize(nk);
-    evec_initial.resize(nk);
-    evec_initial_adjoint.resize(nk);
-    Fmat0.resize(nk_irred_interpolate);
+    // Reserve and construct Eigen matrices efficiently
+    dmat_convert.reserve(nk);
+    dmat_convert_old.reserve(nk);
+    evec_initial.reserve(nk);
+    evec_initial_adjoint.reserve(nk);
+    evec_new.reserve(nk);
 
     for (ik = 0; ik < nk; ++ik) {
-        dmat_convert[ik].resize(ns, ns);
-        dmat_convert_old[ik].resize(ns, ns);
-        evec_initial[ik].resize(ns, ns);
-    }
-    for (ik = 0; ik < nk_irred_interpolate; ++ik) {
-        Fmat0[ik].resize(ns, ns);
+        dmat_convert.emplace_back(ns, ns);
+        dmat_convert_old.emplace_back(ns, ns);
+        evec_initial.emplace_back(ns, ns);
+        evec_new.emplace_back(ns, ns);
     }
 
-    allocate(eval_interpolate, nk, ns);
-    allocate(evec_new, nk, ns, ns);
+    Fmat0.reserve(nk_irred_interpolate);
+    for (ik = 0; ik < nk_irred_interpolate; ++ik) {
+        Fmat0.emplace_back(ns, ns);
+    }
+
+    // dymat arrays still use C-style for FFTW compatibility
     allocate(dymat_q, ns, ns, nk_interpolate);
     allocate(dymat_q_HA, ns, ns, nk_interpolate);
 
@@ -3908,7 +3926,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         // TODO: This loop may be parallelized by MPI in the future.
         for (ik = 0; ik < nk_irred_interpolate; ++ik) {
 
-            knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
+            const unsigned int knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
             knum = kmap_interpolate_to_scph[knum_interpolate];
 
             // Update Fmat with V4 contribution
@@ -3966,17 +3984,17 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
 
     for (ik = 0; ik < nk; ++ik) {
         for (is = 0; is < ns; ++is) {
-            if (eval_interpolate[ik][is] < 0.0) {
-                if (std::abs(eval_interpolate[ik][is]) <= eps10) {
+            if (eval_interpolate(ik, is) < 0.0) {
+                if (std::abs(eval_interpolate(ik, is)) <= eps10) {
                     omega2_out[ik][is] = 0.0;
                 } else {
-                    omega2_out[ik][is] = -std::pow(eval_interpolate[ik][is], 2.0);
+                    omega2_out[ik][is] = -std::pow(eval_interpolate(ik, is), 2.0);
                 }
             } else {
-                omega2_out[ik][is] = std::pow(eval_interpolate[ik][is], 2.0);
+                omega2_out[ik][is] = std::pow(eval_interpolate(ik, is), 2.0);
             }
             for (js = 0; js < ns; ++js) {
-                evec_anharm_scph[ik][is][js] = evec_new[ik][is][js];
+                evec_anharm_scph[ik][is][js] = evec_new[ik](is, js);
             }
         }
     }
@@ -3994,8 +4012,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         }
     }
 
-    deallocate(eval_interpolate);
-    deallocate(evec_new);
+    // Eigen matrices are automatically deallocated
     deallocate(dymat_q);
     deallocate(dymat_q_HA);
 }
