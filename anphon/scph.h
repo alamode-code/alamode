@@ -186,57 +186,44 @@ private:
                                        std::complex<double> ***, bool, const unsigned int verbosity);
 
     // Helper methods for compute_anharmonic_frequency
-    void initialize_scph_iteration(const double temp, const bool flag_converged,
-                                    double **omega2_prev, const unsigned int verbosity,
-                                    Eigen::MatrixXd &omega_now, Eigen::MatrixXd &omega2_HA,
-                                    std::vector<Eigen::MatrixXcd> &evec_initial,
-                                    std::vector<Eigen::MatrixXcd> &evec_initial_adjoint,
-                                    std::complex<double> ***cmat_convert);
+    void initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,
+                                   const unsigned int verbosity, Eigen::MatrixXd &omega_now, Eigen::MatrixXd &omega2_HA,
+                                   std::vector<Eigen::MatrixXcd> &evec_initial,
+                                   std::vector<Eigen::MatrixXcd> &evec_initial_adjoint,
+                                   std::complex<double> ***cmat_convert) const;
 
     void setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
                                            const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                           std::complex<double> **delta_v2_renorm,
-                                           std::vector<Eigen::MatrixXcd> &Fmat0,
+                                           std::complex<double> **delta_v2_renorm, std::vector<Eigen::MatrixXcd> &Fmat0,
                                            std::complex<double> ***dymat_q_HA) const;
 
     void compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double temp,
-                               std::complex<double> ***cmat_convert,
-                               std::vector<Eigen::MatrixXcd> &dmat_convert) const;
+                               std::complex<double> ***cmat_convert, std::vector<Eigen::MatrixXcd> &dmat_convert) const;
 
     void update_fmat_with_v4(const std::vector<Eigen::MatrixXcd> &Fmat0,
-                             std::complex<double> * const * const *v4_array_all,
-                             const std::vector<Eigen::MatrixXcd> &dmat_convert,
-                             const bool offdiag, const unsigned int ik_irred,
-                             Eigen::MatrixXcd &Fmat) const;
+                             std::complex<double> *const *const *v4_array_all,
+                             const std::vector<Eigen::MatrixXcd> &dmat_convert, const bool offdiag,
+                             const unsigned int ik_irred, Eigen::MatrixXcd &Fmat) const;
 
-    void diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat,
-                                    const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                    std::complex<double> ***v4_array_all,
-                                    const unsigned int ik_irred, const unsigned int knum,
-                                    const unsigned int knum_interpolate,
-                                    const bool flag_converged, double **omega2_out,
-                                    const unsigned int verbosity, int &icount,
-                                    Eigen::VectorXd &eval_tmp,
-                                    std::complex<double> ***dymat_q) const;
+    void diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::vector<Eigen::MatrixXcd> &evec_initial,
+                                    std::complex<double> ***v4_array_all, const unsigned int ik_irred,
+                                    const unsigned int knum, const unsigned int knum_interpolate,
+                                    const bool flag_converged, double **omega2_out, const unsigned int verbosity,
+                                    int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q) const;
 
-    void interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
-                                   std::complex<double> ***dymat_q_HA,
-                                   const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                   double **eval_interpolate,
-                                   std::complex<double> ***evec_new,
-                                   std::complex<double> ***cmat_convert,
+    void interpolate_to_dense_mesh(std::complex<double> ***dymat_q, std::complex<double> ***dymat_q_HA,
+                                   const std::vector<Eigen::MatrixXcd> &evec_initial, double **eval_interpolate,
+                                   std::complex<double> ***evec_new, std::complex<double> ***cmat_convert,
                                    Eigen::MatrixXd &omega_now) const;
 
-    bool check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old,
-                          const double conv_tol, const unsigned int verbosity,
-                          const int iloop, double &diff) const;
+    bool check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,
+                           const unsigned int verbosity, const int iloop, double &diff) const;
 
     void update_frequency(const double temperature_in, const Eigen::MatrixXd &omega_in,
                           const std::vector<Eigen::MatrixXcd> &Fmat0, const std::vector<Eigen::MatrixXcd> &evec0,
                           std::complex<double> ***dymat0, std::complex<double> ***v4_array_all,
-                          std::complex<double> ***cmat_convert,
-                          std::complex<double> ***dymat_out, std::complex<double> ***evec_out,
-                          const bool offdiag, Eigen::MatrixXd &omega_out);
+                          std::complex<double> ***cmat_convert, std::complex<double> ***dymat_out,
+                          std::complex<double> ***evec_out, const bool offdiag, Eigen::MatrixXd &omega_out);
 
     void interpolate_dymat_coarse_to_dense();
 
