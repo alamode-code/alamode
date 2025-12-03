@@ -96,6 +96,7 @@ include_directories("${PROJECT_SOURCE_DIR}/../include")
 set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/conductivity.cpp
             ${PROJECT_SOURCE_DIR}/dielec.cpp
+            ${PROJECT_SOURCE_DIR}/diis.cpp
             ${PROJECT_SOURCE_DIR}/dynamical.cpp
             ${PROJECT_SOURCE_DIR}/ewald.cpp
             ${PROJECT_SOURCE_DIR}/fcs_phonon.cpp
@@ -121,11 +122,13 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/thermodynamics.cpp
             ${PROJECT_SOURCE_DIR}/timer.cpp
             ${PROJECT_SOURCE_DIR}/write_phonons.cpp
-            ${PROJECT_SOURCE_DIR}/../external/niggli.c)
+            ${PROJECT_SOURCE_DIR}/../external/niggli.c
+            )
 
 set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/conductivity.h
             ${PROJECT_SOURCE_DIR}/dielec.h
+            ${PROJECT_SOURCE_DIR}/diis.h
             ${PROJECT_SOURCE_DIR}/dynamical.h
             ${PROJECT_SOURCE_DIR}/error.h
             ${PROJECT_SOURCE_DIR}/ewald.h
@@ -154,8 +157,9 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/timer.h
             ${PROJECT_SOURCE_DIR}/write_phonons.h
             ${PROJECT_SOURCE_DIR}/../include/progress_bar.h
-        ../include/lapack_wrapper.h
-        ../include/logger.h)
+            ../include/lapack_wrapper.h
+            ../include/logger.h
+            )
 
 message("MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}")
 message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")
