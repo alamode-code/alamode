@@ -161,6 +161,10 @@ public:
                                          std::complex<double> ****mat_transform_sym,
                                          std::complex<double> ***dymat_inout) const;
 
+    void replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coarse,
+                                         std::complex<double> ****mat_transform_sym,
+                                         std::vector<Eigen::MatrixXcd> &dymat_inout) const;
+
     void diagonalize_interpolated_matrix(std::complex<double> **, double *, std::complex<double> **, bool) const;
 
     double **get_xrs_image() const;
@@ -169,7 +173,7 @@ public:
                             const unsigned int nk_dense, double **xk_dense, double **kvec_dense, double **eval_out,
                             std::complex<double> ***evec_out, const std::vector<Eigen::MatrixXcd> &dymat_short,
                             const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
-                            const bool use_precomputed_dymat = false, const bool return_sqrt = true);
+                            const bool use_precomputed_dymat = false, const bool return_sqrt = true) const;
 
 
     void calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,

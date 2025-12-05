@@ -1892,13 +1892,71 @@ void Dynamical::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_c
     deallocate(dymat_all);
 }
 
+void Dynamical::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coarse,
+                                                std::complex<double> ****mat_transform_sym,
+                                                std::vector<Eigen::MatrixXcd> &dymat_inout) const
+{
+    // Eigen version: works directly with vector of MatrixXcd
+    // Avoids temporary C-style array allocation
+
+    using namespace Eigen;
+    const auto ns = neval;
+    const auto nk = kmesh_coarse->nk;
+
+    MatrixXcd gamma(ns, ns);
+
+    // Temporary storage for replicated dynamical matrices
+    std::vector<MatrixXcd> dymat_all;
+    dymat_all.reserve(nk);
+    for (unsigned int i = 0; i < nk; ++i) {
+        dymat_all.emplace_back(ns, ns);
+    }
+
+    // Apply symmetry operations to replicate for all k-points
+    for (unsigned int i = 0; i < nk; ++i) {
+
+        const auto ik_irred = kmesh_coarse->kpoint_map_symmetry[i].knum_irred_orig;
+        const auto ik_orig = kmesh_coarse->kpoint_map_symmetry[i].knum_orig;
+        const auto isym = kmesh_coarse->kpoint_map_symmetry[i].symmetry_op;
+
+        if (isym >= 0) {
+            // Copy transformation matrix and dynamical matrix
+            for (unsigned int is = 0; is < ns; ++is) {
+                for (unsigned int js = 0; js < ns; ++js) {
+                    gamma(is, js) = mat_transform_sym[ik_irred][isym][is][js];
+                }
+            }
+
+            // Apply symmetry transformation: D'(k) = Γ D(k) Γ^†
+            dymat_all[i] = gamma * dymat_inout[ik_orig] * gamma.adjoint();;
+        }
+    }
+
+    // Handle time-reversal symmetry: D(k) = D(-k)^*
+    // When point group operation S_ which transforms k into -k doesn't exist,
+    // we set D(k) = D(-k)^* (holds even when time-reversal symmetry breaks)
+    for (unsigned int i = 0; i < nk; ++i) {
+        const auto ik_orig = kmesh_coarse->kpoint_map_symmetry[i].knum_orig;
+        const auto isym = kmesh_coarse->kpoint_map_symmetry[i].symmetry_op;
+
+        if (isym == -1) {
+            dymat_all[i] = dymat_all[ik_orig].conjugate();
+        }
+    }
+
+    // Copy results back to input/output vector
+    for (unsigned int i = 0; i < nk; ++i) {
+        dymat_inout[i] = dymat_all[i];
+    }
+}
+
 
 void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                                    const unsigned int nk_dense, double **xk_dense, double **kvec_dense,
                                    double **eval_out, std::complex<double> ***evec_out,
                                    const std::vector<Eigen::MatrixXcd> &dymat_short,
                                    const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
-                                   const bool use_precomputed_dymat, const bool return_sqrt)
+                                   const bool use_precomputed_dymat, const bool return_sqrt) const
 {
     unsigned int i, j, is;
     const auto ns = dynamical->neval;

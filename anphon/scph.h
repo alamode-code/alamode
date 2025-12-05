@@ -211,11 +211,16 @@ private:
                                     const bool flag_converged, double **omega2_out, const unsigned int verbosity,
                                     int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q) const;
 
-    void interpolate_to_dense_mesh(std::complex<double> ***dymat_q, std::complex<double> ***dymat_q_HA,
-                                   const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                   Eigen::MatrixXd &eval_interpolate,
-                                   std::vector<Eigen::MatrixXcd> &evec_new,
-                                   std::complex<double> ***cmat_convert,
+    void interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
+                                   const std::complex<double> *const *const *dymat_q_HA,
+                                   const std::vector<Eigen::MatrixXcd> &evec_initial, Eigen::MatrixXd &eval_interpolate,
+                                   std::vector<Eigen::MatrixXcd> &evec_new, std::complex<double> ***cmat_convert,
+                                   Eigen::MatrixXd &omega_now) const;
+
+    void interpolate_to_dense_mesh(std::vector<Eigen::MatrixXcd> &dymat_q_coarse,
+                                   const std::complex<double> *const *const *dymat_q_HA,
+                                   const std::vector<Eigen::MatrixXcd> &evec_initial, Eigen::MatrixXd &eval_interpolate,
+                                   std::vector<Eigen::MatrixXcd> &evec_new, std::complex<double> ***cmat_convert,
                                    Eigen::MatrixXd &omega_now) const;
 
     bool check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,
@@ -227,7 +232,6 @@ private:
                           std::complex<double> ***cmat_convert, std::complex<double> ***dymat_out,
                           std::complex<double> ***evec_out, const bool offdiag, Eigen::MatrixXd &omega_out);
 
-    void interpolate_dymat_coarse_to_dense();
 
     static void get_permutation_matrix(const int ns, std::complex<double> **cmat_in,
                                        Eigen::MatrixXd &permutation_matrix);

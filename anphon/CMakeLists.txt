@@ -102,6 +102,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/fcs_phonon.cpp
             ${PROJECT_SOURCE_DIR}/gruneisen.cpp
             ${PROJECT_SOURCE_DIR}/integration.cpp
+            ${PROJECT_SOURCE_DIR}/interpolation.cpp
             ${PROJECT_SOURCE_DIR}/isotope.cpp
             ${PROJECT_SOURCE_DIR}/iterativebte.cpp
             ${PROJECT_SOURCE_DIR}/kpoint.cpp
@@ -116,6 +117,8 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/qha.cpp
             ${PROJECT_SOURCE_DIR}/relaxation.cpp
             ${PROJECT_SOURCE_DIR}/scph.cpp
+            ${PROJECT_SOURCE_DIR}/scph_derivatives.cpp
+            ${PROJECT_SOURCE_DIR}/scph_v3v4_elements.cpp
             ${PROJECT_SOURCE_DIR}/selfenergy.cpp
             ${PROJECT_SOURCE_DIR}/symmetry_core.cpp
             ${PROJECT_SOURCE_DIR}/system.cpp
