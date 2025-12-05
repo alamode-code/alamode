@@ -117,6 +117,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/qha.cpp
             ${PROJECT_SOURCE_DIR}/relaxation.cpp
             ${PROJECT_SOURCE_DIR}/scph.cpp
+            ${PROJECT_SOURCE_DIR}/scph_bubble.cpp
             ${PROJECT_SOURCE_DIR}/scph_derivatives.cpp
             ${PROJECT_SOURCE_DIR}/scph_io.cpp
             ${PROJECT_SOURCE_DIR}/scph_v3v4_elements.cpp
