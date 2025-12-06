@@ -2207,9 +2207,9 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     VectorXd eval_tmp(ns);
     MatrixXcd Fmat(ns, ns);
 
-    double diff;
+    double diff, diff_prev = 1.0e10;
     const double conv_tol = tolerance_scph;
-    const double alpha = mixalpha;
+    double alpha = mixalpha;
 
     // Use Eigen types for better memory management and performance
     MatrixXd eval_interpolate(nk, ns);
@@ -2278,6 +2278,11 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
 
         // Mixing dmat
         if (iloop > 0) {
+            // if (diff > diff_prev) {
+            //     alpha = std::max(alpha * 0.7, 0.02);
+            // } else {
+            //     alpha = std::min(alpha * 1.1, 1.0);
+            // }
             for (ik = 0; ik < nk; ++ik) {
                 dmat_convert[ik] = alpha * dmat_convert[ik] + (1.0 - alpha) * dmat_convert_old[ik];
             }
@@ -2317,7 +2322,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
                                   cmat_convert,
                                   omega_now);
 
-        // Check convergence
+        // Check convergence on the coarse k points
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity, iloop, diff)) {
             break;
         }
@@ -2327,6 +2332,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         for (ik = 0; ik < nk; ++ik) {
             dmat_convert_old[ik] = dmat_convert[ik];
         }
+        diff_prev = diff;
     } // end loop iteration
 
     if (std::sqrt(diff) < conv_tol) {
@@ -2451,7 +2457,7 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
                                      dymat_harm_short, dymat_harm_long);
 
     // Initialize per-k-point DIIS mixer
-    const int diis_history = std::min(5, static_cast<int>(maxiter / 3));
+    const int diis_history = std::min(3, static_cast<int>(maxiter / 3));
     GDIIS_PerKpoint gdiis_mixer_perkpoint(nk, diis_history, mixalpha, verbosity);
 
     int icount = 0;
