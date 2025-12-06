@@ -21,7 +21,11 @@
  - mpi_bcast_complex: MPI broadcast utility for complex arrays
 */
 
-#include "scph.h"
+#include <complex>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <vector>
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -29,13 +33,9 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "parsephon.h"
+#include "scph.h"
 #include "system.h"
 #include "write_phonons.h"
-#include <complex>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <vector>
 
 using namespace PHON_NS;
 
@@ -353,4 +353,3 @@ void Scph::mpi_bcast_complex(std::complex<double> ****data, const unsigned int N
     MPI_Bcast(&data[0][0][0][0], _NT * _nk * _ns * _ns, MPI_COMPLEX16, 0, MPI_COMM_WORLD);
 #endif
 }
-

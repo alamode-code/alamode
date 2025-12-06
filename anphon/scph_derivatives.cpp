@@ -20,17 +20,17 @@
  - get_derivative_central_diff: Numerical derivatives using central difference
 */
 
-#include "scph.h"
+#include <Eigen/Dense>
+#include <cmath>
+#include <complex>
+#include <iostream>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "kpoint.h"
 #include "memory.h"
+#include "scph.h"
 #include "thermodynamics.h"
-#include <Eigen/Dense>
-#include <complex>
-#include <cmath>
-#include <iostream>
 
 using namespace PHON_NS;
 
@@ -350,4 +350,3 @@ void Scph::get_derivative_central_diff(const double delta_t, const unsigned int 
         }
     }
 }
-

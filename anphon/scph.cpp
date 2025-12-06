@@ -1678,7 +1678,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 //}
 
 
-
 void Scph::setup_kmesh()
 {
     // Setup k points for SCPH equation
@@ -2047,12 +2046,10 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
 }
 
 void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
-                                     const std::complex<double> * const * const *dymat_q_HA,
+                                     const std::complex<double> *const *const *dymat_q_HA,
                                      const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                     Eigen::MatrixXd &eval_interpolate,
-                                     std::vector<Eigen::MatrixXcd> &evec_new,
-                                     std::complex<double> ***cmat_convert,
-                                     Eigen::MatrixXd &omega_now) const
+                                     Eigen::MatrixXd &eval_interpolate, std::vector<Eigen::MatrixXcd> &evec_new,
+                                     std::complex<double> ***cmat_convert, Eigen::MatrixXd &omega_now) const
 {
     using namespace Eigen;
     const auto nk = kmesh_dense->nk;
@@ -2143,12 +2140,10 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
 
 
 void Scph::interpolate_to_dense_mesh(std::vector<Eigen::MatrixXcd> &dymat_q_coarse,
-                                     const std::complex<double> * const * const *dymat_q_HA,
+                                     const std::complex<double> *const *const *dymat_q_HA,
                                      const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                     Eigen::MatrixXd &eval_interpolate,
-                                     std::vector<Eigen::MatrixXcd> &evec_new,
-                                     std::complex<double> ***cmat_convert,
-                                     Eigen::MatrixXd &omega_now) const
+                                     Eigen::MatrixXd &eval_interpolate, std::vector<Eigen::MatrixXcd> &evec_new,
+                                     std::complex<double> ***cmat_convert, Eigen::MatrixXd &omega_now) const
 {
     // Non-FFT version: directly diagonalize at each dense k-point
     // This avoids FFT and temporary C-style arrays, working purely with Eigen types
@@ -3034,4 +3029,3 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
     deallocate(eval_tmp);
     deallocate(dymat_r_new);
 }
-

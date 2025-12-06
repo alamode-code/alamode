@@ -19,7 +19,10 @@
  - get_bubble_selfenergy: Compute bubble self-energy at specific k-point and mode
 */
 
-#include "scph.h"
+#include <complex>
+#include <iomanip>
+#include <iostream>
+#include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
@@ -29,13 +32,10 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
+#include "scph.h"
 #include "system.h"
 #include "thermodynamics.h"
 #include "write_phonons.h"
-#include <complex>
-#include <iomanip>
-#include <iostream>
-#include <vector>
 
 using namespace PHON_NS;
 
@@ -404,4 +404,3 @@ std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUn
 
     return se_bubble;
 }
-
