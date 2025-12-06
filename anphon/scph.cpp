@@ -63,6 +63,7 @@ void Scph::set_default_variables()
     maxiter = 100;
     print_self_consistent_fc2 = false;
     selfenergy_offdiagonal = true;
+    mix_anderson_ratio = 1.0;
 
     evec_harmonic = nullptr;
     omega2_harmonic = nullptr;
@@ -619,7 +620,6 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
                         std::cout << std::setw(3);
                     }
                 }
-
                 std::cout << "\n\n";
 
                 if (dos->compute_dos) {
@@ -923,14 +923,6 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                          delta_v2_renorm,
                                          writes->getVerbosity());
 
-            // compute_anharmonic_frequency2(v4_array_all,
-            //                               omega2_anharm[iT],
-            //                               evec_anharm_tmp,
-            //                               temp,
-            //                               converged_prev,
-            //                               cmat_convert,
-            //                               selfenergy_offdiagonal,
-            //                               writes->getVerbosity());
 
             dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                                 omega2_anharm[iT],
@@ -2139,86 +2131,6 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
 }
 
 
-void Scph::interpolate_to_dense_mesh(std::vector<Eigen::MatrixXcd> &dymat_q_coarse,
-                                     const std::complex<double> *const *const *dymat_q_HA,
-                                     const std::vector<Eigen::MatrixXcd> &evec_initial,
-                                     Eigen::MatrixXd &eval_interpolate, std::vector<Eigen::MatrixXcd> &evec_new,
-                                     std::complex<double> ***cmat_convert, Eigen::MatrixXd &omega_now) const
-{
-    // Non-FFT version: directly diagonalize at each dense k-point
-    // This avoids FFT and temporary C-style arrays, working purely with Eigen types
-    using namespace Eigen;
-    const auto nk = kmesh_dense->nk;
-    const auto ns = dynamical->neval;
-    const auto nk_interpolate = kmesh_coarse->nk;
-    const auto nk1 = kmesh_interpolate[0];
-    const auto nk2 = kmesh_interpolate[1];
-    const auto nk3 = kmesh_interpolate[2];
-
-    std::complex<double> ***dymat_r_new;
-    allocate(dymat_r_new, ns, ns, nk_interpolate);
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_q_coarse);
-
-    // Subtract harmonic contribution from the dynamical matrix
-    for (unsigned int ik = 0; ik < nk_interpolate; ++ik) {
-        for (unsigned int is = 0; is < ns; ++is) {
-            for (unsigned int js = 0; js < ns; ++js) {
-                dymat_q_coarse[ik](is, js) -= dymat_q_HA[is][js][ik];
-            }
-        }
-    }
-
-
-    // Create temporary C-style arrays for exec_interpolation
-    double **eval_temp;
-    std::complex<double> ***evec_temp;
-    allocate(eval_temp, nk, ns);
-    allocate(evec_temp, nk, ns, ns);
-
-    dynamical->exec_interpolation(kmesh_interpolate,
-                                  dymat_r_new,
-                                  nk,
-                                  kmesh_dense->xk,
-                                  kmesh_dense->kvec_na,
-                                  eval_temp,
-                                  evec_temp,
-                                  dymat_harm_short,
-                                  dymat_harm_long,
-                                  mindist_list_scph,
-                                  true,
-                                  true);
-
-    MatrixXcd evec_tmp(ns, ns);
-    MatrixXcd Cmat(ns, ns);
-
-    for (unsigned int ik = 0; ik < nk; ++ik) {
-        // Copy eigenvalues from temp array to Eigen matrix
-        for (unsigned int is = 0; is < ns; ++is) {
-            eval_interpolate(ik, is) = eval_temp[ik][is];
-        }
-
-        // Copy eigenvectors from temp array to Eigen matrix and transpose
-        for (unsigned int is = 0; is < ns; ++is) {
-            for (unsigned int js = 0; js < ns; ++js) {
-                evec_tmp(is, js) = evec_temp[ik][js][is];
-                evec_new[ik](is, js) = evec_temp[ik][is][js];
-            }
-        }
-
-        Cmat = evec_initial[ik].adjoint() * evec_tmp;
-
-        for (unsigned int is = 0; is < ns; ++is) {
-            omega_now(ik, is) = eval_interpolate(ik, is);
-            for (unsigned int js = 0; js < ns; ++js) {
-                cmat_convert[ik][is][js] = Cmat(is, js);
-            }
-        }
-    }
-
-    deallocate(eval_temp);
-    deallocate(evec_temp);
-    deallocate(dymat_r_new);
-}
 
 
 bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,
@@ -2467,355 +2379,205 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
 }
 
 
-void Scph::compute_anharmonic_frequency2(std::complex<double> ***v4_array_all, double **omega2_anharm,
-                                         std::complex<double> ***evec_anharm_scph, const double temp,
-                                         bool &flag_converged, std::complex<double> ***cmat_convert, const bool offdiag,
-                                         const unsigned int verbosity)
+void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v4_array_all, double **omega2_out,
+                                                        std::complex<double> ***evec_anharm_scph, const double temp,
+                                                        bool &flag_converged, std::complex<double> ***cmat_convert,
+                                                        const bool offdiag, std::complex<double> **delta_v2_renorm,
+                                                        const unsigned int verbosity)
 {
-    using namespace Eigen;
+    // SCPH with per-k-point DIIS using GDIIS_PerKpoint class
+    // Each k-point has independent DIIS history and coefficients
 
-    std::cout << std::scientific << std::setprecision(8);
-    constexpr auto complex_one = std::complex<double>(1.0, 0.0);
-    constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
+    using namespace Eigen;
 
     int ik;
     unsigned int is, js;
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
-    unsigned int knum, knum_interpolate;
+    unsigned int knum;
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
+    int iloop;
 
-    MatrixXd omega2_in(nk, ns), omega2_out(nk, ns);
+    MatrixXd omega_now(nk, ns), omega_old(nk, ns);
     MatrixXd omega2_HA(nk, ns);
-    MatrixXcd Dymat(ns, ns);
+    VectorXd eval_tmp(ns);
+    MatrixXcd Fmat(ns, ns);
 
+    double diff = 1.0;
     const double conv_tol = tolerance_scph;
-    double alpha = mixalpha;
 
-    std::complex<double> ***evec_new;
+    MatrixXd eval_interpolate(nk, ns);
+    std::vector<MatrixXcd> evec_new;
+
     std::complex<double> ***dymat_q, ***dymat_q_HA;
 
-    std::vector<MatrixXcd> evec0;
+    std::vector<MatrixXcd> dmat_convert, dmat_convert_old, dmat_input;
+    std::vector<MatrixXcd> evec_initial, evec_initial_adjoint;
     std::vector<MatrixXcd> Fmat0;
-    std::vector<MatrixXcd> dymat_in, dymat_out, diff_dymat;
 
-    evec0.resize(nk);
-    Fmat0.resize(nk_irred_interpolate);
-    dymat_in.resize(nk_interpolate);
-    dymat_out.resize(nk_interpolate);
-    diff_dymat.resize(nk_interpolate);
+    dmat_convert.reserve(nk);
+    dmat_convert_old.reserve(nk);
+    dmat_input.reserve(nk);
+    evec_initial.reserve(nk);
+    evec_initial_adjoint.reserve(nk);
+    evec_new.reserve(nk);
 
     for (ik = 0; ik < nk; ++ik) {
-        evec0[ik].resize(ns, ns);
-    }
-    for (ik = 0; ik < nk_irred_interpolate; ++ik) {
-        Fmat0[ik].resize(ns, ns);
-        dymat_in[ik].resize(ns, ns);
-        dymat_out[ik].resize(ns, ns);
-        diff_dymat[ik].resize(ns, ns);
+        dmat_convert.emplace_back(ns, ns);
+        dmat_convert_old.emplace_back(ns, ns);
+        dmat_input.emplace_back(ns, ns);
+        evec_initial.emplace_back(ns, ns);
+        evec_initial_adjoint.emplace_back(ns, ns);
+        evec_new.emplace_back(ns, ns);
     }
 
-    allocate(evec_new, nk, ns, ns);
+    Fmat0.reserve(nk_irred_interpolate);
+    for (ik = 0; ik < nk_irred_interpolate; ++ik) {
+        Fmat0.emplace_back(ns, ns);
+    }
+
     allocate(dymat_q, ns, ns, nk_interpolate);
     allocate(dymat_q_HA, ns, ns, nk_interpolate);
 
     const auto T_in = temp;
 
-    std::vector<unsigned int> is_acoustic(ns);
+    initialize_scph_iteration(T_in, flag_converged, omega2_out, verbosity,
+                              omega_now, omega2_HA, evec_initial, evec_initial_adjoint, cmat_convert);
 
-    std::cout << " Temperature = " << T_in << " K\n";
+    setup_harmonic_dynamical_matrices(omega2_HA, evec_initial, delta_v2_renorm, Fmat0, dymat_q_HA);
 
-    // Set initial values
-    for (ik = 0; ik < nk; ++ik) {
-        for (is = 0; is < ns; ++is) {
+    dynamical->precompute_dymat_harm(kmesh_dense->nk, kmesh_dense->xk, kmesh_dense->kvec_na,
+                                     dymat_harm_short, dymat_harm_long);
 
-            if (flag_converged) {
-                if (omega2_anharm[ik][is] < 0.0 && std::abs(omega2_anharm[ik][is]) > 1.0e-16 && verbosity > 0) {
-                    std::cout << "Warning : Large negative frequency detected\n";
-                }
+    // Initialize per-k-point DIIS mixer
+    const int diis_history = std::min(5, static_cast<int>(maxiter / 3));
+    GDIIS_PerKpoint gdiis_mixer_perkpoint(nk, diis_history, mixalpha, verbosity);
 
-                if (omega2_anharm[ik][is] < 0.0) {
-                    omega2_in(ik, is) = -omega2_anharm[ik][is];
-                } else {
-                    omega2_in(ik, is) = omega2_anharm[ik][is];
-                }
-            } else {
-                if (omega2_harmonic[ik][is] < 0.0) {
-                    omega2_in(ik, is) = -omega2_harmonic[ik][is];
-                } else {
-                    omega2_in(ik, is) = omega2_harmonic[ik][is];
-                }
-            }
+    int icount = 0;
+    bool use_diis = false;
+    int diis_fail_count = 0;
 
-            omega2_HA(ik, is) = omega2_harmonic[ik][is];
+    // Main SCPH iteration with per-k-point DIIS
+    for (iloop = 0; iloop < maxiter; ++iloop) {
 
-            for (js = 0; js < ns; ++js) {
-                // transpose evec so that evec_initial can be used as is.
-                evec0[ik](js, is) = evec_harmonic[ik][is][js];
-
-                if (!flag_converged) {
-                    // Initialize Cmat with identity matrix
-                    if (is == js) {
-                        cmat_convert[ik][is][js] = complex_one;
-                    } else {
-                        cmat_convert[ik][is][js] = complex_zero;
-                    }
-                }
-            }
-        }
-    }
-
-    int nacoustic;
-    auto threshould = 1.0e-24;
-    do {
-        nacoustic = 0;
-        for (is = 0; is < ns; ++is) {
-            if (std::abs(omega2_harmonic[0][is]) < threshould) {
-                is_acoustic[is] = 1;
-                ++nacoustic;
-            } else {
-                is_acoustic[is] = 0;
-            }
-        }
-        if (nacoustic > 3) {
-            exit("compute_anharmonic_frequency2", "Could not assign acoustic modes at Gamma.");
-        }
-        threshould *= 2.0;
-    } while (nacoustic < 3);
-
-    for (is = 0; is < ns; ++is) {
-        if (is_acoustic[is]) {
-            omega2_in(0, is) = 0.0;
-            omega2_HA(0, is) = 0.0;
-        }
-    }
-
-    // Set initial harmonic dymat and eigenvalues
-    // This part is common for all temperatures,
-    // so can be moved outside of this function to avoid recalculation
-    for (ik = 0; ik < nk_irred_interpolate; ++ik) {
-        knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-        knum = kmap_interpolate_to_scph[knum_interpolate];
-
-        // Harmonic Fmat
-        Fmat0[ik] = omega2_HA.row(knum).asDiagonal();
-
-        // Harmonic dynamical matrix
-        Dymat = evec0[knum] * Fmat0[ik] * evec0[knum].adjoint();
-        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse, mat_transform_sym, Dymat);
-        for (is = 0; is < ns; ++is) {
-            for (js = 0; js < ns; ++js) {
-                dymat_q_HA[is][js][knum_interpolate] = Dymat(is, js);
-            }
-        }
-
-    } // close loop ik
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_q_HA);
-
-    // Construct the input (pseudo) dynamical matrix using the input eigenvalues and eigenvectors
-    MatrixXcd evec_tmp(ns, ns);
-
-    for (ik = 0; ik < nk_interpolate; ++ik) {
-        knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-        knum = kmap_interpolate_to_scph[knum_interpolate];
-        for (is = 0; is < ns; ++is) {
-            for (js = 0; js < ns; ++js) {
-                evec_tmp(is, js) = cmat_convert[knum][is][js];
-            }
-        }
-        dymat_in[ik] = evec_tmp * omega2_in.row(ik).asDiagonal() * evec_tmp.adjoint();
-    }
-
-    // Main loop
-    int iloop = 0;
-
-    // First update
-    update_frequency(T_in,
-                     omega2_in,
-                     Fmat0,
-                     evec0,
-                     dymat_q_HA,
-                     v4_array_all,
-                     cmat_convert,
-                     dymat_q,
-                     evec_new,
-                     offdiag,
-                     omega2_out);
-
-
-    // Output (pseudo) dynamical matrix
-    for (ik = 0; ik < nk_interpolate; ++ik) {
-        knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-        knum = kmap_interpolate_to_scph[knum_interpolate];
-        for (is = 0; is < ns; ++is) {
-            for (js = 0; js < ns; ++js) {
-                evec_tmp(is, js) = cmat_convert[knum][is][js];
-            }
-        }
-        dymat_out[ik] = evec_tmp * omega2_out.row(ik).asDiagonal() * evec_tmp.adjoint();
-    }
-
-    for (ik = 0; ik < nk_interpolate; ++ik) {
-        diff_dymat[ik] = dymat_out[ik] - dymat_in[ik];
-        std::cout << "diff_dymat[" << ik << "]\n";
-        std::cout << diff_dymat[ik] << '\n';
-        std::cout << "omega2_diff = "
-                  << omega2_out.row(kmap_interpolate_to_scph[ik]) - omega2_in.row(kmap_interpolate_to_scph[ik]) << '\n';
-    }
-
-    if (verbosity > 0) {
-        std::cout << "  SCPH ITER " << std::setw(5) << iloop + 1 << " :  DIFF = N/A\n";
-    }
-
-    double diff;
-
-    omega2_in = (1.0 - alpha) * omega2_in + alpha * omega2_out;
-
-    for (ik = 0; ik < nk_interpolate; ++ik) {
-        dymat_in[ik] = (1.0 - alpha) * dymat_in[ik] + alpha * dymat_out[ik];
-    }
-
-    for (iloop = 1; iloop < maxiter; ++iloop) {
-
-        update_frequency(T_in,
-                         omega2_in,
-                         Fmat0,
-                         evec0,
-                         dymat_q_HA,
-                         v4_array_all,
-                         cmat_convert,
-                         dymat_q,
-                         evec_new,
-                         offdiag,
-                         omega2_out);
-
-        diff = 0.0;
-        double diff2 = 0.0;
-        double omega_in, omega_out;
-
-        for (ik = 0; ik < nk_interpolate; ++ik) {
-            knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
+        // Step 1: Use current D-matrix to build F and diagonalize
+        for (ik = 0; ik < nk_irred_interpolate; ++ik) {
+            const unsigned int knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
             knum = kmap_interpolate_to_scph[knum_interpolate];
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    evec_tmp(is, js) = cmat_convert[knum][is][js];
-                }
+
+            update_fmat_with_v4(Fmat0, v4_array_all, dmat_convert, offdiag, ik, Fmat);
+            diagonalize_and_symmetrize(Fmat, evec_initial, v4_array_all, ik, knum, knum_interpolate,
+                                       flag_converged, omega2_out, verbosity, icount, eval_tmp, dymat_q);
+        }
+
+        // Step 2: Interpolate to get new eigenvalues (output from using dmat_convert)
+        interpolate_to_dense_mesh(dymat_q, dymat_q_HA, evec_initial, eval_interpolate,
+                                  evec_new, cmat_convert, omega_now);
+
+        // Step 3: Check convergence before mixing
+        if (check_convergence(omega_now, omega_old, conv_tol, verbosity, iloop, diff)) {
+            break;
+        }
+
+        // Step 4: Push to DIIS - the D we USED and the ω we GOT (input-output pair!)
+        if (iloop >= 2 && diis_fail_count < 3) {
+            use_diis = true;
+        }
+
+        if (use_diis) {
+            gdiis_mixer_perkpoint.push(dmat_convert, omega_now);  // Correct: D_input → ω_output
+        }
+
+        // Step 5: Compute what D should be based on new eigenvalues
+        compute_qmat_and_dmat(omega_now, T_in, cmat_convert, dmat_input);
+
+        // Step 6: Mix - try per-k-point DIIS or fall back to simple mixing
+        std::vector<MatrixXcd> dmat_mixed(nk);
+
+        if (iloop > 0) {
+            // Default: simple mixing as fallback
+            for (ik = 0; ik < nk; ++ik) {
+                dmat_mixed[ik] = mixalpha * dmat_input[ik] + (1.0 - mixalpha) * dmat_convert[ik];
             }
-            dymat_out[ik] = evec_tmp * omega2_out.row(ik).asDiagonal() * evec_tmp.adjoint();
+        } else {
+            dmat_mixed = dmat_input;
         }
 
-        for (ik = 0; ik < nk_interpolate; ++ik) {
-            diff_dymat[ik] = dymat_out[ik] - dymat_in[ik];
-            std::cout << "diff_dymat[" << ik << "]\n";
-            std::cout << diff_dymat[ik] << '\n';
-            std::cout << "omega2_diff = "
-                      << omega2_out.row(kmap_interpolate_to_scph[ik]) - omega2_in.row(kmap_interpolate_to_scph[ik])
-                      << '\n';
-        }
-
-        for (ik = 0; ik < nk_interpolate; ++ik) {
-            knum = kmap_interpolate_to_scph[ik];
-            for (is = 0; is < ns; ++is) {
-                if (omega2_out(knum, is) >= 0.0) {
-                    omega_out = std::sqrt(omega2_out(knum, is));
-                } else {
-                    omega_out = -std::sqrt(-omega2_out(knum, is));
+        // Try per-k-point DIIS extrapolation if ready
+        if (use_diis && gdiis_mixer_perkpoint.is_ready()) {
+            bool diis_success = gdiis_mixer_perkpoint.extrapolate(dmat_mixed);
+            if (diis_success) {
+                diis_fail_count = 0;
+                if (verbosity > 1) {
+                    std::cout << "  Per-k-point DIIS extrapolation successful at iteration " << iloop + 1 << "\n";
                 }
-                if (omega2_in(knum, is) >= 0.0) {
-                    omega_in = std::sqrt(omega2_in(knum, is));
-                } else {
-                    omega_in = -std::sqrt(-omega2_in(knum, is));
+            } else {
+                // Fallback already set above
+                if (verbosity > 0) {
+                    std::cout << "  Per-k-point DIIS failed at iteration " << iloop + 1 << ", using simple mixing\n";
                 }
-                diff += (omega_out - omega_in) * (omega_out - omega_in);
-            }
-            diff2 += diff_dymat[ik].norm();
-        }
-        diff /= static_cast<double>(nk_interpolate * ns);
-        diff2 /= static_cast<double>(nk_interpolate * ns);
-        diff = std::sqrt(diff);
-        diff2 = std::sqrt(diff2);
-
-        if (verbosity > 0) {
-            std::cout << "  SCPH ITER " << std::setw(5) << iloop + 1 << " : ";
-            std::cout << " DIFF = " << std::setw(15) << diff2 << " " << diff << '\n';
-        }
-
-        if (diff < conv_tol) {
-            auto has_negative = false;
-
-            for (ik = 0; ik < nk_interpolate; ++ik) {
-                knum = kmap_interpolate_to_scph[ik];
-                for (is = 0; is < ns; ++is) {
-                    if (omega2_out(knum, is) < 0.0 && std::abs(omega2_out(knum, is)) > eps15) {
-                        has_negative = true;
-                        break;
+                diis_fail_count++;
+                if (diis_fail_count >= 3) {
+                    use_diis = false;
+                    gdiis_mixer_perkpoint.clear();
+                    if (verbosity > 0) {
+                        std::cout << "  Disabling per-k-point DIIS after 3 failures\n";
                     }
                 }
             }
-            if (!has_negative) {
-                if (verbosity > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
-                break;
-            }
-            if (verbosity > 0) std::cout << "  DIFF < SCPH_TOL but a negative frequency is detected.\n";
         }
 
-        omega2_in = (1.0 - alpha) * omega2_in + alpha * omega2_out;
-        for (ik = 0; ik < nk_interpolate; ++ik) {
-            dymat_in[ik] = (1.0 - alpha) * dymat_in[ik] + alpha * dymat_out[ik];
+        // Step 7: Update for next iteration
+        omega_old = omega_now;
+        for (ik = 0; ik < nk; ++ik) {
+            dmat_convert[ik] = dmat_mixed[ik];
         }
+    }
 
-    } // end loop iteration
-
-    if (diff < conv_tol) {
+    if (std::sqrt(diff) < conv_tol) {
         if (verbosity > 0) {
-            std::cout << " Temp = " << T_in;
-            std::cout << " : convergence achieved in " << std::setw(5) << iloop + 1 << " iterations.\n";
+            std::cout << " Temp = " << T_in << " : convergence achieved in " << std::setw(5) << iloop + 1
+                      << " iterations";
+            if (use_diis) {
+                std::cout << " (with per-k-point DIIS)";
+                auto stats = gdiis_mixer_perkpoint.get_success_stats();
+                int total_success = 0;
+                for (int s : stats) total_success += s;
+                if (verbosity > 1) {
+                    std::cout << "\n  Total DIIS successes: " << total_success;
+                }
+            }
+            std::cout << ".\n";
         }
         flag_converged = true;
     } else {
         if (verbosity > 0) {
-            std::cout << "Temp = " << T_in;
-            std::cout << " : not converged.\n";
+            std::cout << "Temp = " << T_in << " : not converged.\n";
         }
         flag_converged = false;
     }
 
     for (ik = 0; ik < nk; ++ik) {
         for (is = 0; is < ns; ++is) {
-            if (omega2_out(ik, is) < 0.0) {
-                if (std::abs(omega2_out(ik, is)) <= eps10) {
-                    omega2_anharm[ik][is] = 0.0;
+            if (eval_interpolate(ik, is) < 0.0) {
+                if (std::abs(eval_interpolate(ik, is)) <= eps10) {
+                    omega2_out[ik][is] = 0.0;
                 } else {
-                    omega2_anharm[ik][is] = omega2_out(ik, is);
+                    omega2_out[ik][is] = -std::pow(eval_interpolate(ik, is), 2.0);
                 }
             } else {
-                omega2_anharm[ik][is] = omega2_out(ik, is);
+                omega2_out[ik][is] = std::pow(eval_interpolate(ik, is), 2.0);
             }
             for (js = 0; js < ns; ++js) {
-                evec_anharm_scph[ik][is][js] = evec_new[ik][is][js];
+                evec_anharm_scph[ik][is][js] = evec_new[ik](is, js);
             }
         }
     }
 
-    if (verbosity > 1) {
-        std::cout << "New eigenvalues\n";
-        for (ik = 0; ik < nk_interpolate; ++ik) {
-            knum = kmap_interpolate_to_scph[ik];
-            for (is = 0; is < ns; ++is) {
-                std::cout << " ik_interpolate = " << std::setw(5) << ik + 1;
-                std::cout << " is = " << std::setw(5) << is + 1;
-                std::cout << " omega2 = " << std::setw(15) << omega2_anharm[knum][is] << '\n';
-            }
-            std::cout << '\n';
-        }
-    }
-
-    deallocate(evec_new);
     deallocate(dymat_q);
     deallocate(dymat_q_HA);
 }
-
 
 void Scph::get_permutation_matrix(const int ns, std::complex<double> **cmat_in, Eigen::MatrixXd &permutation_matrix)
 {
@@ -2864,8 +2626,10 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
     VectorXcd Kmat(ns);
     MatrixXcd Cmat(ns, ns), Dmat(ns, ns);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
+    std::complex<double> ***dymat_q;
     std::complex<double> ***dymat_r_new;
 
+    allocate(dymat_q, ns, ns, nk_interpolate);
     allocate(dymat_r_new, ns, ns, nk_interpolate);
 
     for (auto ik = 0; ik < nk; ++ik) {
@@ -3026,6 +2790,6 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
             }
         }
     }
-    deallocate(eval_tmp);
+    deallocate(dymat_q);
     deallocate(dymat_r_new);
 }

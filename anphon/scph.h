@@ -62,6 +62,7 @@ public:
     unsigned int maxiter;
     bool print_self_consistent_fc2;
     bool selfenergy_offdiagonal;
+    double mix_anderson_ratio;
 
 
     void write_anharmonic_correction_fc2(std::complex<double> ****delta_dymat, const unsigned int NT,
@@ -182,8 +183,9 @@ private:
                                       std::complex<double> ***, bool, std::complex<double> **,
                                       const unsigned int verbosity);
 
-    void compute_anharmonic_frequency2(std::complex<double> ***, double **, std::complex<double> ***, double, bool &,
-                                       std::complex<double> ***, bool, const unsigned int verbosity);
+    void compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***, double **, std::complex<double> ***, double, bool &,
+                                                      std::complex<double> ***, bool, std::complex<double> **,
+                                                      const unsigned int verbosity);
 
     // Helper methods for compute_anharmonic_frequency
     void initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,
@@ -212,12 +214,6 @@ private:
                                     int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q) const;
 
     void interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
-                                   const std::complex<double> *const *const *dymat_q_HA,
-                                   const std::vector<Eigen::MatrixXcd> &evec_initial, Eigen::MatrixXd &eval_interpolate,
-                                   std::vector<Eigen::MatrixXcd> &evec_new, std::complex<double> ***cmat_convert,
-                                   Eigen::MatrixXd &omega_now) const;
-
-    void interpolate_to_dense_mesh(std::vector<Eigen::MatrixXcd> &dymat_q_coarse,
                                    const std::complex<double> *const *const *dymat_q_HA,
                                    const std::vector<Eigen::MatrixXcd> &evec_initial, Eigen::MatrixXd &eval_interpolate,
                                    std::vector<Eigen::MatrixXcd> &evec_new, std::complex<double> ***cmat_convert,

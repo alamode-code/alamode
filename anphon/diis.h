@@ -208,3 +208,203 @@ private:
     bool solve_diis_equations(Eigen::VectorXd &coeffs);
 };
 
+/**
+ * @brief GDIIS optimizer for complex matrix extrapolation with eigenvalue-based error.
+ *
+ * This class performs DIIS extrapolation on matrices while using eigenvalues
+ * to compute the error vector for convergence acceleration. This is useful
+ * for cases where convergence is tested on eigenvalues but mixing is performed
+ * on matrices (e.g., D-matrices in SCPH).
+ *
+ * Algorithm:
+ * 1. Store history of matrices (nk x ns x ns complex matrices)
+ * 2. Compute eigenvalues from matrices at each iteration
+ * 3. Use eigenvalue differences as error vectors
+ * 4. DIIS extrapolation: M_new = Σ c_i M_i
+ * 5. Return extrapolated matrices
+ *
+ * Use case: SCPH D-matrix mixing with eigenvalue convergence criterion
+ */
+class GDIIS_Matrix
+{
+public:
+    /**
+     * @brief Constructor for matrix GDIIS optimizer.
+     *
+     * @param[in] max_history Maximum number of iterations to store
+     * @param[in] mixing_beta Mixing parameter (0 < beta <= 1)
+     * @param[in] verbosity   Verbosity level for logging (0: silent, >0: print info)
+     */
+    GDIIS_Matrix(int max_history = 10, double mixing_beta = 0.5, int verbosity = 0);
+
+    ~GDIIS_Matrix() = default;
+
+    /**
+     * @brief Updates the DIIS history with new matrices and eigenvalues.
+     *
+     * @param[in] matrices    Current matrices (vector of nk MatrixXcd, each ns × ns)
+     * @param[in] eigenvalues Current eigenvalues for error computation (MatrixXd: nk × ns)
+     */
+    void push(const std::vector<Eigen::MatrixXcd> &matrices,
+              const Eigen::MatrixXd &eigenvalues);
+
+    /**
+     * @brief Computes extrapolated matrices using DIIS.
+     *
+     * @param[out] matrices_new  Extrapolated matrices
+     * @return                   true if successful, false otherwise
+     */
+    bool extrapolate(std::vector<Eigen::MatrixXcd> &matrices_new);
+
+    /**
+     * @brief Clears the DIIS history.
+     */
+    void clear();
+
+    /**
+     * @brief Returns the current history size.
+     *
+     * @return Number of matrix sets stored
+     */
+    [[nodiscard]] int size() const { return static_cast<int>(history_matrices.size()); }
+
+    /**
+     * @brief Checks if DIIS has enough history for extrapolation.
+     *
+     * @return true if at least 2 sets are stored
+     */
+    [[nodiscard]] bool is_ready() const { return size() >= 2; }
+
+    /**
+     * @brief Sets the maximum history size.
+     *
+     * @param[in] max_hist New maximum history size
+     */
+    void set_max_history(int max_hist) { max_history_ = max_hist; }
+
+    /**
+     * @brief Sets the mixing parameter.
+     *
+     * @param[in] beta Mixing parameter (0 < beta <= 1)
+     */
+    void set_mixing_beta(double beta) { mixing_beta_ = beta; }
+
+private:
+    int max_history_;
+    double mixing_beta_;
+    int verbosity_;
+    std::deque<std::vector<Eigen::MatrixXcd>> history_matrices;
+    std::deque<Eigen::MatrixXd> history_eigenvalues;
+    std::deque<Eigen::VectorXd> history_error;
+
+    void find_permutation(const Eigen::MatrixXd &eigenvalues_old,
+                          const Eigen::MatrixXd &eigenvalues_new,
+                          std::vector<Eigen::VectorXi> &permutations);
+
+    Eigen::VectorXd flatten_eigenvalues(const Eigen::MatrixXd &eigenvalues) const;
+
+    bool solve_diis_equations(Eigen::VectorXd &coeffs);
+};
+
+/**
+ * @brief GDIIS optimizer with independent mixing for each k-point.
+ *
+ * This class maintains separate DIIS histories for each k-point, allowing
+ * for different convergence rates at different k-points. This can be more
+ * efficient than global mixing when some k-points converge faster than others.
+ *
+ * Algorithm:
+ * 1. Store history of matrices for each k-point independently
+ * 2. Compute eigenvalue-based error for each k-point
+ * 3. DIIS extrapolation: M_new[k] = Σ c_{i,k} * M_{i}[k] (coefficients differ per k)
+ * 4. Each k-point has its own DIIS equation to solve
+ *
+ * Use case: SCPH with varying convergence rates across k-space
+ */
+class GDIIS_PerKpoint
+{
+public:
+    /**
+     * @brief Constructor for per-k-point GDIIS optimizer.
+     *
+     * @param[in] nk          Number of k-points
+     * @param[in] max_history Maximum number of iterations to store per k-point
+     * @param[in] mixing_beta Mixing parameter (0 < beta <= 1)
+     * @param[in] verbosity   Verbosity level for logging (0: silent, >0: print info)
+     */
+    GDIIS_PerKpoint(int nk, int max_history = 5, double mixing_beta = 0.5, int verbosity = 0);
+
+    ~GDIIS_PerKpoint() = default;
+
+    /**
+     * @brief Updates the DIIS history with new matrices and eigenvalues.
+     *
+     * @param[in] matrices    Current matrices (vector of nk MatrixXcd, each ns × ns)
+     * @param[in] eigenvalues Current eigenvalues for error computation (MatrixXd: nk × ns)
+     */
+    void push(const std::vector<Eigen::MatrixXcd> &matrices,
+              const Eigen::MatrixXd &eigenvalues);
+
+    /**
+     * @brief Computes extrapolated matrices using per-k-point DIIS.
+     *
+     * Each k-point is extrapolated independently with its own coefficients.
+     *
+     * @param[out] matrices_new  Extrapolated matrices
+     * @return                   true if at least one k-point used DIIS successfully
+     */
+    bool extrapolate(std::vector<Eigen::MatrixXcd> &matrices_new);
+
+    /**
+     * @brief Clears the DIIS history for all k-points.
+     */
+    void clear();
+
+    /**
+     * @brief Returns the minimum history size across all k-points.
+     *
+     * @return Minimum number of iterations stored
+     */
+    [[nodiscard]] int size() const;
+
+    /**
+     * @brief Checks if DIIS has enough history for extrapolation.
+     *
+     * @return true if at least one k-point has >= 2 iterations stored
+     */
+    [[nodiscard]] bool is_ready() const;
+
+    /**
+     * @brief Sets the maximum history size for all k-points.
+     *
+     * @param[in] max_hist New maximum history size
+     */
+    void set_max_history(int max_hist);
+
+    /**
+     * @brief Sets the mixing parameter for all k-points.
+     *
+     * @param[in] beta Mixing parameter (0 < beta <= 1)
+     */
+    void set_mixing_beta(double beta);
+
+    /**
+     * @brief Get statistics on DIIS success rate per k-point.
+     *
+     * @return Vector of success counts for each k-point
+     */
+    [[nodiscard]] std::vector<int> get_success_stats() const { return success_count_; }
+
+private:
+    int nk_;                                      ///< Number of k-points
+    int max_history_;                             ///< Maximum history per k-point
+    double mixing_beta_;                          ///< Mixing parameter
+    int verbosity_;                               ///< Verbosity level
+
+    // Independent GDIIS instance for each k-point
+    std::vector<GDIIS_Matrix> diis_per_k_;
+
+    // Track success/failure statistics
+    std::vector<int> success_count_;
+    std::vector<int> failure_count_;
+};
