@@ -1196,11 +1196,8 @@ void Input::parse_analysis_vars(const bool use_default_values)
                                         "PRINTV4",
                                         "ZMODE",
                                         "PROJECTION_AXES",
-                                        "LONGITUDINAL_DOS"};
-
-#ifdef _FE_BUBBLE
-    input_list.push_back("FE_BUBBLE");
-#endif
+                                        "LONGITUDINAL_DOS",
+                                        "FE_BUBBLE"};
 
     unsigned int cellsize[3] = {1, 1, 1};
     int shift_ucorr[3] = {0, 0, 0};
@@ -1290,9 +1287,7 @@ void Input::parse_analysis_vars(const bool use_default_values)
         assign_val(print_fc2_ewald, "FC2_EWALD", analysis_var_dict);
         assign_val(calculate_dielectric_constant, "DIELEC", analysis_var_dict);
         assign_val(print_zmode, "ZMODE", analysis_var_dict);
-#ifdef _FE_BUBBLE
         assign_val(calc_FE_bubble, "FE_BUBBLE", analysis_var_dict);
-#endif
 
         if (analysis_var_dict.find("ANIME") == analysis_var_dict.end()) {
             print_anime = false;
