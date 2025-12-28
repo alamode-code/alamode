@@ -19,18 +19,15 @@
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "pointers.h"
+#include "progress_bar.h"
 #include "relaxation.h"
 #include "system.h"
-#include "progress_bar.h"
 
 using namespace PHON_NS;
 
-Thermodynamics::Thermodynamics(PHON *phon) : Pointers(phon)
-{
-    T_to_Ryd = k_Boltzmann / Ryd;
-    calc_FE_bubble = false;
-    FE_bubble = nullptr;
-}
+Thermodynamics::Thermodynamics(PHON *phon) :
+    Pointers(phon), T_to_Ryd(k_Boltzmann / Ryd), classical(false), calc_FE_bubble(false), FE_bubble(nullptr)
+{}
 
 Thermodynamics::~Thermodynamics()
 {
@@ -44,7 +41,7 @@ void Thermodynamics::setup()
     MPI_Bcast(&classical, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 }
 
-double Thermodynamics::Cv(const double omega, const double temp_in) const
+auto Thermodynamics::Cv(const double omega, const double temp_in) const -> double
 {
     if (std::abs(temp_in) < eps) return 0.0;
 
@@ -52,14 +49,14 @@ double Thermodynamics::Cv(const double omega, const double temp_in) const
     return k_Boltzmann * std::pow(x / (2.0 * sinh(0.5 * x)), 2);
 }
 
-double Thermodynamics::Cv_classical(const double omega, const double temp_in) const
+auto Thermodynamics::Cv_classical(const double omega, const double temp_in) -> double
 {
     if (std::abs(temp_in) < eps) return 0.0;
 
     return k_Boltzmann;
 }
 
-double Thermodynamics::fB(const double omega, const double temp_in) const
+auto Thermodynamics::fB(const double omega, const double temp_in) const -> double
 {
     if (std::abs(temp_in) < eps || omega < eps8) return 0.0;
 
@@ -67,7 +64,7 @@ double Thermodynamics::fB(const double omega, const double temp_in) const
     return 1.0 / (std::exp(x) - 1.0);
 }
 
-double Thermodynamics::fC(const double omega, const double temp_in) const
+auto Thermodynamics::fC(const double omega, const double temp_in) const -> double
 {
     if (std::abs(temp_in) < eps || omega < eps8) return 0.0;
 
@@ -75,9 +72,9 @@ double Thermodynamics::fC(const double omega, const double temp_in) const
     return 1.0 / x;
 }
 
-double Thermodynamics::Cv_tot(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
-                              const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
-                              const double *const *eval_in) const
+auto Thermodynamics::Cv_tot(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                            const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
+                            const double *const *eval_in) const -> double
 {
     int i;
     unsigned int ik, is;
@@ -118,10 +115,10 @@ double Thermodynamics::Cv_tot(const double temp_in, const unsigned int nk_irred,
     return ret;
 }
 
-double Thermodynamics::Cv_anharm_correction(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
-                                            const std::vector<std::vector<KpointList>> &kp_irred,
-                                            const double *weight_k_irred, const double *const *eval_in,
-                                            const double *const *del_eval_in) const
+auto Thermodynamics::Cv_anharm_correction(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                                          const std::vector<std::vector<KpointList>> &kp_irred,
+                                          const double *weight_k_irred, const double *const *eval_in,
+                                          const double *const *del_eval_in) const -> double
 {
     int i;
     unsigned int ik, is;
@@ -164,9 +161,9 @@ double Thermodynamics::Cv_anharm_correction(const double temp_in, const unsigned
     return ret;
 }
 
-double Thermodynamics::internal_energy(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
-                                       const std::vector<std::vector<KpointList>> &kp_irred,
-                                       const double *weight_k_irred, const double *const *eval_in) const
+auto Thermodynamics::internal_energy(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                                     const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
+                                     const double *const *eval_in) const -> double
 {
     int i;
     unsigned int ik, is;
@@ -206,9 +203,9 @@ double Thermodynamics::internal_energy(const double temp_in, const unsigned int 
     return ret * 0.5;
 }
 
-double Thermodynamics::vibrational_entropy(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
-                                           const std::vector<std::vector<KpointList>> &kp_irred,
-                                           const double *weight_k_irred, const double *const *eval_in) const
+auto Thermodynamics::vibrational_entropy(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                                         const std::vector<std::vector<KpointList>> &kp_irred,
+                                         const double *weight_k_irred, const double *const *eval_in) const -> double
 {
     int i;
     unsigned int ik, is;
@@ -249,9 +246,9 @@ double Thermodynamics::vibrational_entropy(const double temp_in, const unsigned 
     return -k_Boltzmann * ret;
 }
 
-double Thermodynamics::free_energy_QHA(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
-                                       const std::vector<std::vector<KpointList>> &kp_irred,
-                                       const double *weight_k_irred, const double *const *eval_in) const
+auto Thermodynamics::free_energy_QHA(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
+                                     const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
+                                     const double *const *eval_in) const -> double
 {
     int i;
     unsigned int ik, is;
@@ -302,25 +299,25 @@ double Thermodynamics::free_energy_QHA(const double temp_in, const unsigned int 
     return temp_in * T_to_Ryd * ret;
 }
 
-double Thermodynamics::disp2_avg(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
-                                 const unsigned int nk, const unsigned int ns, const double *const *xk_in,
-                                 const double *const *eval_in, std::complex<double> ***evec_in) const
+auto Thermodynamics::disp2_avg(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
+                               const unsigned int nk, const unsigned int ns, const double *const *xk_in,
+                               const double *const *eval_in, std::complex<double> ***evec_in) const -> double
 {
-    const double cell_shift[3]{0, 0, 0};
+    constexpr double cell_shift[3]{0, 0, 0};
     return disp_corrfunc(T_in, ncrd1, ncrd2, cell_shift, nk, ns, xk_in, eval_in, evec_in);
 }
 
-double Thermodynamics::disp_corrfunc(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
-                                     const double cell_shift[3], const unsigned int nk, const unsigned int ns,
-                                     const double *const *xk_in, const double *const *eval_in,
-                                     std::complex<double> ***evec_in) const
+auto Thermodynamics::disp_corrfunc(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
+                                   const double cell_shift[3], const unsigned int nk, const unsigned int ns,
+                                   const double *const *xk_in, const double *const *eval_in,
+                                   std::complex<double> ***evec_in) const -> double
 {
     int i;
-    int N = nk * ns;
+    int const N = nk * ns;
     unsigned int ik, is;
     double omega;
     double phase;
-    const std::complex<double> im(0.0, 1.0);
+    constexpr std::complex<double> im(0.0, 1.0);
     double ret = 0.0;
 
     if (classical) {
@@ -362,7 +359,7 @@ double Thermodynamics::disp_corrfunc(const double T_in, const unsigned int ncrd1
     return ret;
 }
 
-double Thermodynamics::coth_T(const double omega, const double T) const
+auto Thermodynamics::coth_T(const double omega, const double T) const -> double
 {
     // This function returns coth(hbar*omega/2*kB*T)
 
@@ -373,7 +370,7 @@ double Thermodynamics::coth_T(const double omega, const double T) const
     return 1.0 + 2.0 / (std::exp(2.0 * x) - 1.0);
 }
 
-void Thermodynamics::compute_free_energy_bubble()
+auto Thermodynamics::compute_free_energy_bubble() -> void
 {
     const auto NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
 
@@ -392,7 +389,7 @@ void Thermodynamics::compute_free_energy_bubble()
     }
 }
 
-void Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***evec, double *FE_bubble_out) const
+auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***evec, double *FE_bubble_out) const -> void
 {
     // This function calculates the free energy of the bubble diagram
     double omega_sum[2];
@@ -451,7 +448,7 @@ void Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
                                                  triplet,
                                                  1);
 
-            const int npair_uniq = triplet.size();
+            const size_t npair_uniq = triplet.size();
 
             arr_cubic[0] = ns * ik0 + is0;
 
@@ -523,24 +520,21 @@ void Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
     deallocate(FE_tmp);
 }
 
-void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble)
+auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in,
+                                            double *FE_bubble) const -> void
 {
     // This function calculates the free energy from the bubble diagram
     // at the given temperature and lattice dynamics wavefunction
-    int ik;
-    int multi;
-    double omega0, omega1, omega2, omega_sum[2];
+    double omega_sum[2];
     double n0, n1, n2, nsum[2];
     const auto nk = dos->kmesh_dos->nk;
     const auto nk_reduced = dos->kmesh_dos->nk_irred;
     const auto ns = dynamical->neval;
-    double v3_tmp;
-    unsigned int ik0, ik1, ik2, is0, is1, is2, i0, iT;
+    unsigned int i0, iT;
     unsigned int arr_cubic[3];
     const auto nks0 = nk_reduced * ns;
-    unsigned int NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
-    double temp;
-    double factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
+    const unsigned int NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
+    const double factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
     double *FE_local;
     double *FE_tmp;
@@ -558,9 +552,9 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
         }
     }
 
-    auto startTime = std::chrono::system_clock::now();
+    const auto startTime = std::chrono::system_clock::now();
     auto lastUpdate = startTime;
-    bool isConsole = isOutputToConsole();
+    const bool isConsole = isOutputToConsole();
 
     unsigned int nk_tmp;
 
@@ -573,11 +567,11 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
         vks_l.push_back(-1);
     }
 
-    auto nks_tmp = vks_l.size();
+    const auto nks_tmp = vks_l.size();
 
-
-    for (iT = 0; iT < NT; ++iT)
+    for (iT = 0; iT < NT; ++iT) {
         FE_local[iT] = 0.0;
+    }
 
     if (mympi->my_rank == 0) {
         std::cout << " Total number of modes per MPI process: " << nk_tmp << '\n';
@@ -587,8 +581,8 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
         if (vks_l[i0] != -1) {
 
-            ik0 = dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns][0].knum;
-            is0 = vks_l[i0] % ns;
+            unsigned int const ik0 = dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns][0].knum;
+            unsigned int const is0 = vks_l[i0] % ns;
 
             dos->kmesh_dos->get_unique_triplet_k(vks_l[i0] / ns,
                                                  symmetry->SymmList,
@@ -597,43 +591,44 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
                                                  triplet,
                                                  1);
 
-            int npair_uniq = triplet.size();
+            const size_t npair_uniq = triplet.size();
 
             arr_cubic[0] = ns * ik0 + is0;
 
             for (iT = 0; iT < NT; ++iT)
                 FE_tmp[iT] = 0.0;
 
-            for (ik = 0; ik < npair_uniq; ++ik) {
-                multi = static_cast<double>(triplet[ik].group.size());
+            for (size_t ik = 0; ik < npair_uniq; ++ik) {
+                const auto multi = static_cast<double>(triplet[ik].group.size());
 
                 arr_cubic[0] = ns * ik0 + is0;
 
-                ik1 = triplet[ik].group[0].ks[0];
-                ik2 = triplet[ik].group[0].ks[1];
+                const unsigned int ik1 = triplet[ik].group[0].ks[0];
+                const unsigned int ik2 = triplet[ik].group[0].ks[1];
 
-                for (is1 = 0; is1 < ns; ++is1) {
+                for (unsigned int is1 = 0; is1 < ns; ++is1) {
                     arr_cubic[1] = ns * ik1 + is1;
 
-                    for (is2 = 0; is2 < ns; ++is2) {
+                    for (unsigned int is2 = 0; is2 < ns; ++is2) {
                         arr_cubic[2] = ns * ik2 + is2;
 
                         for (iT = 0; iT < NT; ++iT) {
 
-                            temp = system->Tmin + static_cast<double>(iT) * system->dT;
+                            const double temp = system->Tmin + static_cast<double>(iT) * system->dT;
 
-                            omega0 = eval_in[iT][ik0][is0];
-                            omega1 = eval_in[iT][ik1][is1];
-                            omega2 = eval_in[iT][ik2][is2];
+                            const double omega0 = eval_in[iT][ik0][is0];
+                            const double omega1 = eval_in[iT][ik1][is1];
+                            const double omega2 = eval_in[iT][ik2][is2];
 
                             if (omega0 < eps8 || omega1 < eps8 || omega2 < eps8) continue;
 
                             omega_sum[0] = 1.0 / (omega0 + omega1 + omega2);
                             omega_sum[1] = 1.0 / (-omega0 + omega1 + omega2);
 
-                            v3_tmp = std::norm(
-                                         anharmonic_core->V3(arr_cubic, dos->kmesh_dos->xk, eval_in[iT], evec_in[iT])) *
-                                     static_cast<double>(multi);
+                            const double v3_tmp =
+                                std::norm(
+                                    anharmonic_core->V3(arr_cubic, dos->kmesh_dos->xk, eval_in[iT], evec_in[iT])) *
+                                multi;
 
                             if (classical) {
                                 n0 = fC(omega0, temp);
@@ -656,16 +651,17 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
                     }
                 }
             }
-            double weight = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns].size());
-            for (iT = 0; iT < NT; ++iT)
+            const double weight = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns].size());
+            for (iT = 0; iT < NT; ++iT) {
                 FE_local[iT] += FE_tmp[iT] * weight;
+            }
         }
         if (mympi->my_rank == 0) {
             auto currentTime = std::chrono::system_clock::now();
-            long long totalElapsedTime =
+            const long long totalElapsedTime =
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
-            long long avgTimePerStep = (i0 == 0) ? 0 : totalElapsedTime / i0;
-            long long timeRemaining = (i0 == 0) ? 0 : avgTimePerStep * (nks_tmp - i0 - 1);
+            const long long avgTimePerStep = (i0 == 0) ? 0 : totalElapsedTime / i0;
+            const long long timeRemaining = (i0 == 0) ? 0 : avgTimePerStep * (nks_tmp - i0 - 1);
             displayProgressBar(i0, nks_tmp - 1, std::cout, timeRemaining, isConsole, "Fe-bubble");
             lastUpdate = currentTime;
             if (i0 == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
@@ -682,9 +678,9 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
     deallocate(FE_tmp);
 }
 
-double Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::complex<double> ***evec,
-                                          double **eval_harm_renormalized,
-                                          std::complex<double> ***evec_harm_renormalized) const
+auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::complex<double> ***evec,
+                                        double **eval_harm_renormalized,
+                                        std::complex<double> ***evec_harm_renormalized) const -> double
 {
     using namespace Eigen;
     const auto nk = dos->kmesh_dos->nk;
@@ -735,7 +731,8 @@ double Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::c
     return ret / static_cast<double>(nk);
 }
 
-double Thermodynamics::compute_FE_total(unsigned int iT, double fe_qha, double dfe_scph = 0.0)
+auto Thermodynamics::compute_FE_total(const unsigned int iT, const double fe_qha, const double dfe_scph = 0.0) const
+    -> double
 {
     double fe_total = fe_qha;
     // skip scph correction for QHA + structural optimization

@@ -33,7 +33,7 @@ public:
 
     double Cv(const double omega, const double temp_in) const;
 
-    double Cv_classical(const double omega, const double temp_in) const;
+    static double Cv_classical(const double omega, const double temp_in);
 
     double fB(const double omega, const double temp_in) const;
 
@@ -74,12 +74,12 @@ public:
 
     void compute_FE_bubble(double **, std::complex<double> ***, double *) const;
 
-    void compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble);
+    void compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble) const;
 
     double FE_scph_correction(unsigned int, double **, std::complex<double> ***, double **,
                               std::complex<double> ***) const;
 
-    double compute_FE_total(unsigned int, double, double);
+    double compute_FE_total(unsigned int, double, double) const;
 };
 
 } // namespace PHON_NS
