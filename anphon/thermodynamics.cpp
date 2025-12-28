@@ -15,14 +15,13 @@
 #include "constants.h"
 #include "dynamical.h"
 #include "kpoint.h"
-#include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "pointers.h"
 #include "relaxation.h"
-#include "scph.h"
 #include "system.h"
+#include "progress_bar.h"
 
 using namespace PHON_NS;
 
@@ -559,6 +558,10 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
         }
     }
 
+    auto startTime = std::chrono::system_clock::now();
+    auto lastUpdate = startTime;
+    bool isConsole = isOutputToConsole();
+
     unsigned int nk_tmp;
 
     if (nks0 % mympi->nprocs != 0) {
@@ -569,6 +572,9 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
     if (vks_l.size() < nk_tmp) {
         vks_l.push_back(-1);
     }
+
+    auto nks_tmp = vks_l.size();
+
 
     for (iT = 0; iT < NT; ++iT)
         FE_local[iT] = 0.0;
@@ -653,6 +659,16 @@ void Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
             double weight = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns].size());
             for (iT = 0; iT < NT; ++iT)
                 FE_local[iT] += FE_tmp[iT] * weight;
+        }
+        if (mympi->my_rank == 0) {
+            auto currentTime = std::chrono::system_clock::now();
+            long long totalElapsedTime =
+                std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+            long long avgTimePerStep = (i0 == 0) ? 0 : totalElapsedTime / i0;
+            long long timeRemaining = (i0 == 0) ? 0 : avgTimePerStep * (nks_tmp - i0 - 1);
+            displayProgressBar(i0, nks_tmp - 1, std::cout, timeRemaining, isConsole, "Fe-bubble");
+            lastUpdate = currentTime;
+            if (i0 == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
         }
     }
 

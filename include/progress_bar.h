@@ -17,7 +17,7 @@
 #include <unistd.h> // POSIX header for isatty()
 #endif
 
-auto isOutputToConsole() -> bool
+inline auto isOutputToConsole() -> bool
 {
     // File descriptor 1 is stdout
     bool isConsoleOutput = getenv("FORCE_CONSOLE_OUTPUT") != nullptr;
@@ -25,8 +25,8 @@ auto isOutputToConsole() -> bool
     //return isConsoleOutput || isatty(fileno(stdout));
 }
 
-auto displayProgressBar(int current, int total, std::ostream& out, long long timeRemaining, bool isConsoleOutput,
-                        const std::string prefix = "3ph", const int width = 40) -> void
+inline auto displayProgressBar(int current, int total, std::ostream& out, long long timeRemaining, bool isConsoleOutput,
+                               const std::string prefix = "3ph", const int width = 40) -> void
 {
 
     float progress = (float)current / total;
