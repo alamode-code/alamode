@@ -2217,8 +2217,6 @@ void Scph::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out,
 	// Calculate the matrix elements of quartic terms in reciprocal space.
 	// This is the most expensive part of the SCPH calculation.
 
-	std::cout << "ANDERSON DEBUG" << std::endl;
-
 	const size_t nk_reduced_interpolate = kmesh_coarse_in->nk_irred;
 	const size_t ns = dynamical->neval;
 	const size_t ns2 = ns * ns;
