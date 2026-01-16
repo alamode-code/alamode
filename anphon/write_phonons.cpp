@@ -3131,7 +3131,7 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
 }
 
 void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity_correction, double *FE_QHA,
-                                    double *dFE_scph, double *FE_total, const bool is_qha) const
+                                    double *dFE_scph, double *FE_total, double *entropy, const bool is_qha) const
 {
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
@@ -3161,6 +3161,12 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     }
     if (thermodynamics->calc_FE_bubble) {
         ofs_thermo << "# The bubble free-energy calculated on top of the SCPH wavefunction is also shown.\n";
+        ofs_thermo << "# However, the bubble contributions to the heat capacity and entropy are not included.\n";
+        ofs_thermo << "# If these are needed, please fit the free energy data including the bubble term \n "
+                      "# by polynomial function and then estimate S and Cv by numerical derivatives.\n";
+    }
+    if (!is_qha) {
+        ofs_thermo << "# The Cv data accounts for the QHA-like term only.\n";
     }
 
     ofs_thermo << "# Temperature [K], Cv [in kB unit]";
@@ -3175,21 +3181,11 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     if (thermodynamics->calc_FE_bubble) {
         ofs_thermo << ", F_{vib} (Bubble correction) [Ry]";
     }
-    // write renormalized zero-th order IFC
+        // write renormalized zero-th order IFC
     if (relaxation->relax_str != 0) {
         ofs_thermo << ", Phi0 [Ry]";
     }
-    ofs_thermo << ", F_{total} [Ry]\n";
-
-    // if (thermodynamics->calc_FE_bubble) {
-    //     ofs_thermo << "# The bubble free-energy calculated on top of the SCPH wavefunction is also shown." << '\n';
-    //     ofs_thermo <<
-    //                "# Temperature [K], Cv [in kB unit], F_{vib} (QHA term) [Ry], F_{vib} (SCPH correction) [Ry], F_{vib} (Bubble correction) [Ry]"
-    //                << '\n';
-    // } else {
-    //     ofs_thermo << "# Temperature [K], Cv [in kB unit], F_{vib} (QHA term) [Ry], F_{vib} (SCPH correction) [Ry]"
-    //                << '\n';
-    // }
+    ofs_thermo << ", F_{total} [Ry], S_{vib} [in kB unit]\n";
 
     if (thermodynamics->classical) {
         ofs_thermo << "# CLASSICAL = 1: Use classical limit.\n";
@@ -3216,15 +3212,16 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
         if (relaxation->relax_str != 0) {
             ofs_thermo << std::setw(18) << relaxation->V0[iT];
         }
-        ofs_thermo << std::setw(18) << FE_total[iT] << '\n';
+        ofs_thermo << std::setw(18) << FE_total[iT];
+        ofs_thermo << std::setw(18) << entropy[iT] << '\n';
     }
 
     ofs_thermo.close();
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_thermo;
     if (is_qha) {
-        std::cout << " : QHA heat capcaity and free energy\n";
+        std::cout << " : QHA heat capcaity, free energy, entropy\n";
     } else {
-        std::cout << " : SCPH heat capcaity and free energy\n";
+        std::cout << " : SCPH heat capcaity, free energy, entropy\n";
     }
 }
 

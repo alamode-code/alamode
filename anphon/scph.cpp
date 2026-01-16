@@ -295,6 +295,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
         double *FE_QHA = nullptr;
         double *dFE_scph = nullptr;
         double *FE_total = nullptr;
+        double *entropy = nullptr;
         double **msd_update = nullptr;
         double ***ucorr_update = nullptr;
         double ****dielec_update = nullptr;
@@ -318,6 +319,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
             allocate(FE_QHA, NT);
             allocate(dFE_scph, NT);
             allocate(FE_total, NT);
+            allocate(entropy, NT);
 
             if (writes->getPrintMSD()) {
                 allocate(msd_update, NT, ns);
@@ -434,6 +436,14 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
 
                 FE_total[iT] = thermodynamics->compute_FE_total(iT, FE_QHA[iT], dFE_scph[iT]);
 
+                entropy[iT] = thermodynamics->vibrational_entropy(temperature,
+                                                                  dos->kmesh_dos->nk_irred,
+                                                                  ns,
+                                                                  dos->kmesh_dos->kpoint_irred_all,
+                                                                  dos->kmesh_dos->weight_k.data(),
+                                                                  eval_update[iT]) /
+                              k_Boltzmann;
+
                 if (writes->getPrintMSD()) {
                     double shift[3]{0.0, 0.0, 0.0};
 
@@ -501,7 +511,13 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
             if (dos->compute_dos) {
                 writes->writePhononDos(dos_update, is_qha, 0);
             }
-            writes->writeThermodynamicFunc(heat_capacity, heat_capacity_correction, FE_QHA, dFE_scph, FE_total, is_qha);
+            writes->writeThermodynamicFunc(heat_capacity,
+                                           heat_capacity_correction,
+                                           FE_QHA,
+                                           dFE_scph,
+                                           FE_total,
+                                           entropy,
+                                           is_qha);
             if (writes->getPrintMSD()) {
                 writes->writeMSD(msd_update, is_qha, 0);
             }
@@ -777,6 +793,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
         if (FE_QHA) deallocate(FE_QHA);
         if (dFE_scph) deallocate(dFE_scph);
         if (FE_total) deallocate(FE_total);
+        if (entropy) deallocate(entropy);
         if (dielec_update) deallocate(dielec_update);
 
         if (eval_gam) deallocate(eval_gam);
@@ -2131,8 +2148,6 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
 }
 
 
-
-
 bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,
                              const unsigned int verbosity, const int iloop, double &diff) const
 {
@@ -2386,10 +2401,10 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
 
 
 void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v4_array_all, double **omega2_out,
-                                                        std::complex<double> ***evec_anharm_scph, const double temp,
-                                                        bool &flag_converged, std::complex<double> ***cmat_convert,
-                                                        const bool offdiag, std::complex<double> **delta_v2_renorm,
-                                                        const unsigned int verbosity)
+                                                       std::complex<double> ***evec_anharm_scph, const double temp,
+                                                       bool &flag_converged, std::complex<double> ***cmat_convert,
+                                                       const bool offdiag, std::complex<double> **delta_v2_renorm,
+                                                       const unsigned int verbosity)
 {
     // SCPH with per-k-point DIIS using GDIIS_PerKpoint class
     // Each k-point has independent DIIS history and coefficients
@@ -2448,13 +2463,23 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
 
     const auto T_in = temp;
 
-    initialize_scph_iteration(T_in, flag_converged, omega2_out, verbosity,
-                              omega_now, omega2_HA, evec_initial, evec_initial_adjoint, cmat_convert);
+    initialize_scph_iteration(T_in,
+                              flag_converged,
+                              omega2_out,
+                              verbosity,
+                              omega_now,
+                              omega2_HA,
+                              evec_initial,
+                              evec_initial_adjoint,
+                              cmat_convert);
 
     setup_harmonic_dynamical_matrices(omega2_HA, evec_initial, delta_v2_renorm, Fmat0, dymat_q_HA);
 
-    dynamical->precompute_dymat_harm(kmesh_dense->nk, kmesh_dense->xk, kmesh_dense->kvec_na,
-                                     dymat_harm_short, dymat_harm_long);
+    dynamical->precompute_dymat_harm(kmesh_dense->nk,
+                                     kmesh_dense->xk,
+                                     kmesh_dense->kvec_na,
+                                     dymat_harm_short,
+                                     dymat_harm_long);
 
     // Initialize per-k-point DIIS mixer
     const int diis_history = std::min(3, static_cast<int>(maxiter / 3));
@@ -2473,13 +2498,28 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
             knum = kmap_interpolate_to_scph[knum_interpolate];
 
             update_fmat_with_v4(Fmat0, v4_array_all, dmat_convert, offdiag, ik, Fmat);
-            diagonalize_and_symmetrize(Fmat, evec_initial, v4_array_all, ik, knum, knum_interpolate,
-                                       flag_converged, omega2_out, verbosity, icount, eval_tmp, dymat_q);
+            diagonalize_and_symmetrize(Fmat,
+                                       evec_initial,
+                                       v4_array_all,
+                                       ik,
+                                       knum,
+                                       knum_interpolate,
+                                       flag_converged,
+                                       omega2_out,
+                                       verbosity,
+                                       icount,
+                                       eval_tmp,
+                                       dymat_q);
         }
 
         // Step 2: Interpolate to get new eigenvalues (output from using dmat_convert)
-        interpolate_to_dense_mesh(dymat_q, dymat_q_HA, evec_initial, eval_interpolate,
-                                  evec_new, cmat_convert, omega_now);
+        interpolate_to_dense_mesh(dymat_q,
+                                  dymat_q_HA,
+                                  evec_initial,
+                                  eval_interpolate,
+                                  evec_new,
+                                  cmat_convert,
+                                  omega_now);
 
         // Step 3: Check convergence before mixing
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity, iloop, diff)) {
@@ -2492,7 +2532,7 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
         }
 
         if (use_diis) {
-            gdiis_mixer_perkpoint.push(dmat_convert, omega_now);  // Correct: D_input → ω_output
+            gdiis_mixer_perkpoint.push(dmat_convert, omega_now); // Correct: D_input → ω_output
         }
 
         // Step 5: Compute what D should be based on new eigenvalues
@@ -2549,7 +2589,8 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
                 std::cout << " (with per-k-point DIIS)";
                 auto stats = gdiis_mixer_perkpoint.get_success_stats();
                 int total_success = 0;
-                for (int s : stats) total_success += s;
+                for (int s: stats)
+                    total_success += s;
                 if (verbosity > 1) {
                     std::cout << "\n  Total DIIS successes: " << total_success;
                 }

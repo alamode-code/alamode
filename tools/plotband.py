@@ -43,10 +43,10 @@ def get_kpath_and_kval(file_in):
         kval_float = [float(val) for val in kval[1:]]
         kpath_list = []
         for i in range(len(kpath[1:])):
-            if kpath[i + 1] == "G":
-                kpath_list.append("$\Gamma$")
+            if kpath[i + 1] == "G" or kpath[i + 1] == "GAMMA":
+                kpath_list.append(r"$\Gamma$")
             else:
-                kpath_list.append("$\mathrm{%s}$" % kpath[i + 1])
+                kpath_list.append(r"$\mathrm{%s}$" % kpath[i + 1])
 
         return kpath_list, kval_float
     else:

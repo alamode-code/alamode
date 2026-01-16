@@ -43,6 +43,9 @@ void Thermodynamics::setup()
 
 auto Thermodynamics::Cv(const double omega, const double temp_in) const -> double
 {
+    // Mode specific heat at constant volume.
+    // Exactly heat capacity only within the QHA.
+    // In other cases, Σ_q C_v is not equal to the total heat capacity.
     if (std::abs(temp_in) < eps) return 0.0;
 
     const auto x = omega / (T_to_Ryd * temp_in);
@@ -51,6 +54,7 @@ auto Thermodynamics::Cv(const double omega, const double temp_in) const -> doubl
 
 auto Thermodynamics::Cv_classical(const double omega, const double temp_in) -> double
 {
+    // Just return k_B
     if (std::abs(temp_in) < eps) return 0.0;
 
     return k_Boltzmann;
@@ -58,6 +62,7 @@ auto Thermodynamics::Cv_classical(const double omega, const double temp_in) -> d
 
 auto Thermodynamics::fB(const double omega, const double temp_in) const -> double
 {
+    // Bose-Einstein distribution function
     if (std::abs(temp_in) < eps || omega < eps8) return 0.0;
 
     const auto x = omega / (T_to_Ryd * temp_in);
@@ -66,6 +71,7 @@ auto Thermodynamics::fB(const double omega, const double temp_in) const -> doubl
 
 auto Thermodynamics::fC(const double omega, const double temp_in) const -> double
 {
+    // Classical limit of Bose-Einstein distribution function
     if (std::abs(temp_in) < eps || omega < eps8) return 0.0;
 
     const auto x = omega / (T_to_Ryd * temp_in);
@@ -76,6 +82,7 @@ auto Thermodynamics::Cv_tot(const double temp_in, const unsigned int nk_irred, c
                             const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                             const double *const *eval_in) const -> double
 {
+    // Total constant-volume heat capacity. Only the quasiharmonic term is included here.
     int i;
     unsigned int ik, is;
     double omega;
@@ -120,6 +127,10 @@ auto Thermodynamics::Cv_anharm_correction(const double temp_in, const unsigned i
                                           const double *weight_k_irred, const double *const *eval_in,
                                           const double *const *del_eval_in) const -> double
 {
+    // Anharmonic correction to constant-volume heat capacity
+    // We only use the adjacent temperature point for the numerical derivative, so the numerical accuracy
+    // may not be very high. For more reliable estimate, it is recommended to fit the entropy curve with
+    // respect to temperature by polynomial function and take the derivative of the fitted curve.
     int i;
     unsigned int ik, is;
     double omega, domega_dt;
@@ -165,6 +176,8 @@ auto Thermodynamics::internal_energy(const double temp_in, const unsigned int nk
                                      const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                                      const double *const *eval_in) const -> double
 {
+    // Vibrational internal energy within QHA.
+    // U = F + TS = Σ_q  0.5 * hw_q * coth(hw_q/2k_BT)] = Σ_q [hw_q (n_q + 0.5)]
     int i;
     unsigned int ik, is;
     double omega;
@@ -207,6 +220,8 @@ auto Thermodynamics::vibrational_entropy(const double temp_in, const unsigned in
                                          const std::vector<std::vector<KpointList>> &kp_irred,
                                          const double *weight_k_irred, const double *const *eval_in) const -> double
 {
+    // Vibrational entropy correct for QHA/SCP and other quasiparticle approaches
+    // S = -(∂F/∂T) = k_B * Σ_q [(n_q + 1)ln(n_q + 1) - n_q ln n_q]
     int i;
     unsigned int ik, is;
     double omega, x;
@@ -250,6 +265,8 @@ auto Thermodynamics::free_energy_QHA(const double temp_in, const unsigned int nk
                                      const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                                      const double *const *eval_in) const -> double
 {
+    // Vibrational free energy within QHA and QHA-like term within SCP.
+    // F = Σ_q [0.5 hw_q + k_B T ln(1 - exp(-hw_q/k_BT))] (quantum)
     int i;
     unsigned int ik, is;
     double omega, x;
@@ -682,6 +699,8 @@ auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::com
                                         double **eval_harm_renormalized,
                                         std::complex<double> ***evec_harm_renormalized) const -> double
 {
+    // The correction term to the free energy within SCPH theory.
+    // This term is necessary to result in S =
     using namespace Eigen;
     const auto nk = dos->kmesh_dos->nk;
     const auto ns = dynamical->neval;
