@@ -1017,24 +1017,43 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     std::vector<std::vector<double>> u_tmp1, f_tmp1;
     std::vector<std::vector<double>> u_tmp2, f_tmp2;
 
-    const std::vector<std::string> input_list{"LMODEL",         "SPARSE",
-                                              "SPARSESOLVER",   "ICONST",
-                                              "ROTAXIS",        "FC2XML",
-                                              "FC3XML",         "FC2FIX",
-                                              "FC3FIX",         "NDATA",
-                                              "NSTART",         "NEND",
-                                              "SKIP",           "DFSET",
-                                              "NDATA_CV",       "NSTART_CV",
-                                              "NEND_CV",        "DFSET_CV",
-                                              "L1_RATIO",       "STANDARDIZE",
-                                              "ENET_DNORM",     "L1_ALPHA",
-                                              "CV_MAXALPHA",    "CV_MINALPHA",
-                                              "CV_NALPHA",      "CV",
-                                              "MAXITER",        "CONV_TOL",
-                                              "NWRITE",         "SOLUTION_PATH",
-                                              "DEBIAS_OLS",     "PERIODIC_IMAGE_CONV",
-                                              "STOP_CRITERION", "USE_CHOLESKY",
-                                              "CHUNKSIZE",      "ALGO_REDUCTION"};
+    const std::vector<std::string> input_list{"LMODEL",
+                                              "SPARSE",
+                                              "SPARSESOLVER",
+                                              "ICONST",
+                                              "ROTAXIS",
+                                              "FC2XML",
+                                              "FC3XML",
+                                              "FC2FIX",
+                                              "FC3FIX",
+                                              "NDATA",
+                                              "NSTART",
+                                              "NEND",
+                                              "SKIP",
+                                              "DFSET",
+                                              "NDATA_CV",
+                                              "NSTART_CV",
+                                              "NEND_CV",
+                                              "DFSET_CV",
+                                              "L1_RATIO",
+                                              "STANDARDIZE",
+                                              "ENET_DNORM",
+                                              "L1_ALPHA",
+                                              "CV_MAXALPHA",
+                                              "CV_MINALPHA",
+                                              "CV_MINALPHA_RATIO",
+                                              "CV_NALPHA",
+                                              "CV",
+                                              "MAXITER",
+                                              "CONV_TOL",
+                                              "NWRITE",
+                                              "SOLUTION_PATH",
+                                              "DEBIAS_OLS",
+                                              "PERIODIC_IMAGE_CONV",
+                                              "STOP_CRITERION",
+                                              "USE_CHOLESKY",
+                                              "CHUNKSIZE",
+                                              "ALGO_REDUCTION"};
 
     std::map<std::string, std::string> optimize_var_dict;
 
@@ -1093,6 +1112,9 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     }
     if (!optimize_var_dict["CV_MAXALPHA"].empty()) {
         optcontrol.l1_alpha_max = boost::lexical_cast<double>(optimize_var_dict["CV_MAXALPHA"]);
+    }
+    if (!optimize_var_dict["CV_MINALPHA_RATIO"].empty()) {
+        optcontrol.l1_alpha_min_ratio = boost::lexical_cast<double>(optimize_var_dict["CV_MINALPHA_RATIO"]);
     }
     if (!optimize_var_dict["CV_NALPHA"].empty()) {
         optcontrol.num_l1_alpha = boost::lexical_cast<int>(optimize_var_dict["CV_NALPHA"]);

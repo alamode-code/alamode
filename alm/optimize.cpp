@@ -185,8 +185,9 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
         auto maxorder_min = std::min(maxorder, output_maxorder);
         fcs->set_forceconstant_cartesian(maxorder_min, params);
     } else {
-        exit("optimize_main", "Fitting failed. \n"
-                              " Please check the input parameters and try other optimization algorithms.");
+        exit("optimize_main",
+             "Fitting failed. \n"
+             " Please check the input parameters and try other optimization algorithms.");
     }
 
     fcs_tmp.clear();
@@ -475,7 +476,8 @@ auto Optimize::crossvalidation(const std::string &job_prefix, const int maxorder
         if (optcontrol.l1_alpha_min > 0) {
             std::cout << "   CV_MINALPHA = " << std::setw(15) << optcontrol.l1_alpha_min;
         } else {
-            std::cout << "   CV_MINALPHA = CV_MAXALPHA*1e-6 ";
+            std::cout << "   CV_MINALPHA = CV_MAXALPHA * CV_MINALPHA_RATIO (" << std::setw(10)
+                      << optcontrol.l1_alpha_min_ratio << ")";
         }
         if (optcontrol.l1_alpha_max > 0) {
             std::cout << "  CV_MAXALPHA = " << std::setw(15) << optcontrol.l1_alpha_max << '\n';
@@ -612,7 +614,10 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         if (optcontrol.l1_alpha_min > 0) {
             compute_alphas(estimated_max_alpha, optcontrol.l1_alpha_min, optcontrol.num_l1_alpha, alphas);
         } else {
-            compute_alphas(estimated_max_alpha, estimated_max_alpha * 1e-6, optcontrol.num_l1_alpha, alphas);
+            compute_alphas(estimated_max_alpha,
+                           estimated_max_alpha * optcontrol.l1_alpha_min_ratio,
+                           optcontrol.num_l1_alpha,
+                           alphas);
         }
     }
 
@@ -643,7 +648,7 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         if (ialpha == optcontrol.num_l1_alpha - 1) {
             warn("run_manual_cv",
                  "The minimum validation score occurs at CV_MINALPHA.\n"
-                 " Please use a smaller CV_MINALPHA to suppress this message.");
+                 " Please use a smaller CV_MINALPHA or CV_MINALPHA_RATIO to suppress this message.");
         }
     }
 
@@ -855,7 +860,10 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             if (optcontrol.l1_alpha_min > 0) {
                 compute_alphas(estimated_max_alpha, optcontrol.l1_alpha_min, optcontrol.num_l1_alpha, alphas);
             } else {
-                compute_alphas(estimated_max_alpha, estimated_max_alpha * 1e-6, optcontrol.num_l1_alpha, alphas);
+                compute_alphas(estimated_max_alpha,
+                               estimated_max_alpha * optcontrol.l1_alpha_min_ratio,
+                               optcontrol.num_l1_alpha,
+                               alphas);
             }
         }
 
@@ -919,6 +927,12 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             std::cout << " Average and standard deviation of the CV error are\n";
             std::cout << " saved in " << file_cvscore << '\n';
             std::cout << " Minimum CVSCORE at alpha = " << alphas[ialpha_minimum] << "\n\n";
+
+            if (ialpha_minimum == optcontrol.num_l1_alpha - 1) {
+                warn("run_auto_cv",
+                     "The minimum CVSCORE occurs at CV_MINALPHA.\n"
+                     " It is highly recommended to use CV_MINALPHA or CV_MINALPHA_RATIO.");
+            }
         }
     }
 

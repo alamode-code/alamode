@@ -47,6 +47,7 @@ public:
     double l1_alpha;      // L1-regularization coefficient
     double l1_alpha_min;
     double l1_alpha_max;
+    double l1_alpha_min_ratio; // l1_alpha_min = l1_alpha_max * l1_alpha_min_ratio
     int num_l1_alpha;
     double l1_ratio; // l1_ratio = 1 for LASSO; 0 < l1_ratio < 1 for Elastic net
     int save_solution_path;
@@ -73,6 +74,7 @@ public:
         l1_alpha = 0.0;
         l1_alpha_min = -1.0; // Recommended l1_alpha_max * 1e-6
         l1_alpha_max = -1.0; // Use recommended value
+        l1_alpha_min_ratio = 1.0e-6;
         l1_ratio = 1.0;
         num_l1_alpha = 50;
         save_solution_path = 0;
