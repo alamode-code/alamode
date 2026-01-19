@@ -2082,19 +2082,26 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
         }
     }
 
-    fftw_plan plan = fftw_plan_dft_3d(nk1, nk2, nk3, nullptr, nullptr, FFTW_FORWARD, FFTW_ESTIMATE);
-
+    // IMPORTANT: FFTW plan must be created inside the loop for each (is,js) pair
+    // because the plan is tied to specific memory addresses. Creating it once
+    // outside with nullptr or fftw_execute_dft() with different pointers
+    // causes incorrect results due to memory alignment assumptions in the plan.
     for (unsigned int is = 0; is < ns; ++is) {
         for (unsigned int js = 0; js < ns; ++js) {
-            fftw_execute_dft(plan,
-                             reinterpret_cast<fftw_complex *>(dymat_q[is][js]),
-                             reinterpret_cast<fftw_complex *>(dymat_r_new[is][js]));
+            fftw_plan plan = fftw_plan_dft_3d(nk1,
+                                              nk2,
+                                              nk3,
+                                              reinterpret_cast<fftw_complex *>(dymat_q[is][js]),
+                                              reinterpret_cast<fftw_complex *>(dymat_r_new[is][js]),
+                                              FFTW_FORWARD,
+                                              FFTW_ESTIMATE);
+            fftw_execute(plan);
+            fftw_destroy_plan(plan);
 
             for (unsigned int ik = 0; ik < nk_interpolate; ++ik)
                 dymat_r_new[is][js][ik] /= static_cast<double>(nk_interpolate);
         }
     }
-    fftw_destroy_plan(plan);
 
     // Create temporary C-style arrays for exec_interpolation
     double **eval_temp;
@@ -2342,6 +2349,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
             break;
         }
 
+        // Save current omega for next iteration's comparison
         omega_old = omega_now;
 
         for (ik = 0; ik < nk; ++ik) {
@@ -2526,6 +2534,9 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
             break;
         }
 
+        // Save current omega for next iteration's comparison
+        omega_old = omega_now;
+
         // Step 4: Push to DIIS - the D we USED and the ω we GOT (input-output pair!)
         if (iloop >= 2 && diis_fail_count < 3) {
             use_diis = true;
@@ -2574,8 +2585,7 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
             }
         }
 
-        // Step 7: Update for next iteration
-        omega_old = omega_now;
+        // Step 7: Update dmat_convert for next iteration
         for (ik = 0; ik < nk; ++ik) {
             dmat_convert[ik] = dmat_mixed[ik];
         }
