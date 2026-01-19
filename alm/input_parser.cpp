@@ -1077,7 +1077,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
             optcontrol.linear_model = 1;
         } else if (str_LMODEL == "enet" || str_LMODEL == "elastic-net" || str_LMODEL == "2") {
             optcontrol.linear_model = 2;
-        } else if (str_LMODEL == "adaptive-lasso" || str_LMODEL == "3") {
+        } else if (str_LMODEL == "adaptive-lasso" || str_LMODEL == "adalasso" || str_LMODEL == "3") {
             optcontrol.linear_model = 3;
         } else {
             exit("parse_optimize_vars", "Invalid OPTIMIZER-tag");
