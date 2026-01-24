@@ -592,8 +592,47 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         A_merged << A, A_validation;
         b_merged << b, b_validation;
 
-        Eigen::VectorXd x_ols = A_merged.colPivHouseholderQr().solve(b_merged);
+        // Use QR decomposition with pivoting to check if system is well-determined
+        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A_merged);
+
+        // Check if the system is underdetermined or rank-deficient
+        const auto rank = qr_solver.rank();
+
+        if (rank < N_new) {
+            std::string error_msg =
+                "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
+                "  Matrix rank = " + std::to_string(rank) +
+                ", Number of parameters = " + std::to_string(N_new) + "\n"
+                "  This typically occurs when there are too few training data\n"
+                "  or when some parameters cannot be uniquely determined.\n"
+                "  Please try one of the following:\n"
+                "  - Increase the amount of training data (DFSET)\n"
+                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                "  - Reduce the interaction cutoff distance\n";
+            ALM_NS::exit("optimize_main", error_msg.c_str());
+        }
+
+        Eigen::VectorXd x_ols = qr_solver.solve(b_merged);
         Eigen::VectorXd weight_adalasso = x_ols.cwiseAbs();
+
+        // Check if any weights are too small (could cause numerical issues)
+        const double min_weight_threshold = 1.0e-10;
+        int n_zero_weights = 0;
+        for (int i = 0; i < weight_adalasso.size(); ++i) {
+            if (weight_adalasso[i] < min_weight_threshold) {
+                n_zero_weights++;
+            }
+        }
+
+        if (n_zero_weights > 0) {
+            if (verbosity > 0) {
+                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights
+                         << " near-zero weights (< " << min_weight_threshold << ").\n";
+                std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
+                std::cout << "  The optimization will continue but results may be unreliable.\n";
+                std::cout << "  Consider using LMODEL = 2 (elastic-net) instead.\n\n";
+            }
+        }
 
         A = A * weight_adalasso.asDiagonal();
         A_validation = A_validation * weight_adalasso.asDiagonal();
@@ -716,8 +755,44 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
                                                              matrix_train->amat_dense.size() / N_new,
                                                              N_new);
         Eigen::VectorXd b_full = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
-        Eigen::VectorXd x_ols = A_full.colPivHouseholderQr().solve(b_full);
+
+        // Use QR decomposition with pivoting to check if system is well-determined
+        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A_full);
+
+        // Check if the system is underdetermined or rank-deficient
+        const auto rank = qr_solver.rank();
+
+        if (rank < N_new) {
+            std::string error_msg =
+                "Adaptive lasso failed in CV: The least squares problem is rank-deficient.\n"
+                "  Matrix rank = " + std::to_string(rank) +
+                ", Number of parameters = " + std::to_string(N_new) + "\n"
+                "  This typically occurs when there are too few training data\n"
+                "  or when some parameters cannot be uniquely determined.\n"
+                "  Please try one of the following:\n"
+                "  - Increase the amount of training data (DFSET)\n"
+                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                "  - Reduce the interaction cutoff distance\n";
+            ALM_NS::exit("optimize_main", error_msg.c_str());
+        }
+
+        Eigen::VectorXd x_ols = qr_solver.solve(b_full);
         weight_adalasso = x_ols.cwiseAbs();
+
+        // Check if any weights are too small (could cause numerical issues)
+        const double min_weight_threshold = 1.0e-10;
+        int n_zero_weights = 0;
+        for (int i = 0; i < weight_adalasso.size(); ++i) {
+            if (weight_adalasso[i] < min_weight_threshold) {
+                n_zero_weights++;
+            }
+        }
+
+        if (n_zero_weights > 0 && verbosity > 0) {
+            std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights
+                     << " near-zero weights (< " << min_weight_threshold << ").\n";
+            std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n\n";
+        }
     }
 
     if (optcontrol.l1_alpha_max <= 0) {
@@ -1273,8 +1348,52 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), M);
 
     if (optcontrol.linear_model == 3) {
-        Eigen::VectorXd x_ols = A.colPivHouseholderQr().solve(b);
+        // Use QR decomposition with pivoting to check if system is well-determined
+        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A);
+
+        // Check if the system is underdetermined or rank-deficient
+        const auto rank = qr_solver.rank();
+
+        if (rank < N_new) {
+            std::string error_msg =
+                "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
+                "  Matrix rank = " + std::to_string(rank) +
+                ", Number of parameters = " + std::to_string(N_new) + "\n"
+                "  Number of data points = " + std::to_string(M) + "\n"
+                "  This typically occurs when there are too few training data\n"
+                "  or when some parameters cannot be uniquely determined.\n"
+                "  Please try one of the following:\n"
+                "  - Increase the amount of training data (DFSET)\n"
+                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                "  - Reduce the interaction cutoff distance\n";
+            ALM_NS::exit("optimize_elasticnet", error_msg.c_str());
+        }
+
+        Eigen::VectorXd x_ols = qr_solver.solve(b);
         weight_adalasso = x_ols.cwiseAbs();
+
+        // Check if any weights are too small (could cause numerical issues)
+        const double min_weight_threshold = 1.0e-10;
+        int n_zero_weights = 0;
+        double max_weight = weight_adalasso.maxCoeff();
+
+        for (int i = 0; i < weight_adalasso.size(); ++i) {
+            if (weight_adalasso[i] < min_weight_threshold) {
+                n_zero_weights++;
+            }
+        }
+
+        if (n_zero_weights > 0) {
+            if (verbosity > 0) {
+                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights
+                         << " near-zero weights (< " << min_weight_threshold << ").\n";
+                std::cout << "  Maximum weight = " << max_weight << "\n";
+                std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
+                std::cout << "  The optimization will continue but results may be unreliable.\n";
+                std::cout << "  Consider using LMODEL = 2 (elastic-net) instead.\n\n";
+            }
+        }
+
         A = A * weight_adalasso.asDiagonal();
     }
 
