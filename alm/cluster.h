@@ -45,6 +45,12 @@ public:
         }
     }
 
+    // Constructor from std::vector for modern C++ style
+    explicit IntList(const std::vector<int> &vec) : iarray(vec)
+    {}
+    explicit IntList(std::vector<int> &&vec) : iarray(std::move(vec))
+    {}
+
     auto operator<(const IntList &a) const -> bool
     {
         return std::lexicographical_compare(iarray.begin(), iarray.end(), a.iarray.begin(), a.iarray.end());
@@ -52,13 +58,11 @@ public:
 
     auto operator==(const IntList &a) const -> bool
     {
-        const auto n = iarray.size();
-        const auto n_ = a.iarray.size();
-        if (n != n_) return false;
-        for (size_t i = 0; i < n; ++i) {
-            if (iarray[i] != a.iarray[i]) return false;
-        }
-        return true;
+        // Use vector's built-in equality operator for consistency
+        // This is required for std::unordered_set<IntList> in fcs.cpp
+        // and ensures consistent behavior across platforms
+        // std::cout << "== operator called\n";
+        return iarray == a.iarray;
     }
 };
 

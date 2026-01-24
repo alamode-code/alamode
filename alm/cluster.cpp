@@ -161,13 +161,13 @@ void Cluster::init(const std::unique_ptr<System> &system, const std::unique_ptr<
 void Cluster::generate_unique_clusters(const size_t natmin, const std::vector<std::vector<int>> &map_p2s,
                                        std::vector<std::set<IntList>> &cluster_out) const
 {
-    int *pair_tmp;
+    std::vector<int> pair_vec;
 
     for (auto order = 0; order < maxorder; ++order) {
 
         cluster_out[order].clear();
 
-        allocate(pair_tmp, order + 2);
+        pair_vec.resize(order + 2);
 
         for (size_t i = 0; i < natmin; ++i) {
 
@@ -175,18 +175,16 @@ void Cluster::generate_unique_clusters(const size_t natmin, const std::vector<st
 
             for (const auto &it: interaction_cluster[order][i]) {
 
-                pair_tmp[0] = iat;
+                pair_vec[0] = iat;
                 for (auto j = 0; j < order + 1; ++j) {
-                    pair_tmp[j + 1] = it.atom[j];
+                    pair_vec[j + 1] = it.atom[j];
                 }
-                insort(order + 2, pair_tmp);
 
-                // Ignore many-body case
-                // if (!satisfy_nbody_rule(order + 2, pair_tmp, order)) continue;
-                cluster_out[order].insert(IntList(order + 2, pair_tmp));
+                // Use std::sort for deterministic, stable ordering across platforms
+                std::sort(pair_vec.begin(), pair_vec.end());
+                cluster_out[order].insert(IntList(pair_vec));
             }
         }
-        deallocate(pair_tmp);
     }
 }
 
