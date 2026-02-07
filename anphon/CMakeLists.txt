@@ -1,9 +1,13 @@
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 cmake_minimum_required(VERSION 3.17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3") 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -O0 -D_DEBUG")
 
 project(anphon)
 
@@ -14,35 +18,97 @@ set(alm_version ${CMAKE_MATCH_1})
 MESSAGE("Setting up for ANPHON code (ALAMODE version: ${CMAKE_MATCH_1})")
 
 if (SPGLIB_ROOT)
-    include_directories("${SPGLIB_ROOT}/include")
-    set(spglib "-L${SPGLIB_ROOT}/lib -L${SPGLIB_ROOT}/lib64 -lsymspg")
+    list(APPEND CMAKE_PREFIX_PATH "${SPGLIB_ROOT}")
+endif()
+
+find_path(SPGLIB_INCLUDE_DIR spglib.h
+    HINTS ${SPGLIB_ROOT}
+    PATH_SUFFIXES include
+)
+find_library(SPGLIB_LIBRARY
+    NAMES symspg spglib
+    HINTS ${SPGLIB_ROOT}
+    PATH_SUFFIXES lib lib64
+)
+
+if (SPGLIB_INCLUDE_DIR AND SPGLIB_LIBRARY)
+    set(spglib_include ${SPGLIB_INCLUDE_DIR})
+    set(spglib ${SPGLIB_LIBRARY})
 else()
-    message("SPGLIB_ROOT is not given by -DSPGLIB_ROOT option. Just add -lsymspg.")
+    message("SPGLIB not found via hints. Falling back to -lsymspg.")
     set(spglib "-lsymspg")
 endif()
 
-if (FFTW3_ROOT)
-    include_directories("${FFTW3_ROOT}/include")
-    set(fftw3library "-L${FFTW3_ROOT}/lib -lfftw3")
-elseif(NOT USE_MKL_FFT)
-    set(fftw3library "-lfftw3")
-else()
+set(FFTW_BACKEND "AUTO" CACHE STRING "FFTW backend: AUTO, FFTW3, or MKL")
+set_property(CACHE FFTW_BACKEND PROPERTY STRINGS AUTO FFTW3 MKL)
+
+set(fftw_include_dir "")
+set(fftw3library "")
+set(using_mkl_fftw FALSE)
+
+if (FFTW_BACKEND STREQUAL "MKL" OR FFTW_BACKEND STREQUAL "AUTO")
     set(mkl_root "$ENV{MKLROOT}")
-    include_directories("${mkl_root}/include/fftw")
+    find_path(MKL_FFTW_INCLUDE_DIR fftw3.h
+        HINTS ${mkl_root}
+        PATH_SUFFIXES include/fftw include
+    )
+    find_library(MKL_FFTW_LIBRARY
+        NAMES mkl_rt
+        HINTS ${mkl_root}
+        PATH_SUFFIXES lib lib/intel64 lib64
+    )
+
+    if (MKL_FFTW_INCLUDE_DIR AND MKL_FFTW_LIBRARY)
+        set(using_mkl_fftw TRUE)
+        set(fftw_include_dir ${MKL_FFTW_INCLUDE_DIR})
+        set(fftw3library ${MKL_FFTW_LIBRARY})
+        message(STATUS "Using MKL FFTW wrappers: ${MKL_FFTW_LIBRARY}")
+    elseif(FFTW_BACKEND STREQUAL "MKL")
+        message(FATAL_ERROR "FFTW_BACKEND=MKL requested, but MKL FFTW wrappers were not found. Set MKLROOT or provide MKL libs/headers.")
+    endif()
+endif()
+
+if (NOT using_mkl_fftw)
+    if (FFTW3_ROOT)
+        find_path(FFTW3_INCLUDE_DIR fftw3.h HINTS "${FFTW3_ROOT}" PATH_SUFFIXES include)
+        find_library(FFTW3_LIBRARY NAMES fftw3 HINTS "${FFTW3_ROOT}" PATH_SUFFIXES lib lib64)
+    else()
+        find_path(FFTW3_INCLUDE_DIR fftw3.h)
+        find_library(FFTW3_LIBRARY NAMES fftw3)
+    endif()
+
+    if (FFTW3_INCLUDE_DIR AND FFTW3_LIBRARY)
+        set(fftw_include_dir ${FFTW3_INCLUDE_DIR})
+        set(fftw3library ${FFTW3_LIBRARY})
+    else()
+        message(FATAL_ERROR "FFTW3 was not found. Set FFTW3_ROOT or use FFTW_BACKEND=MKL with MKLROOT.")
+    endif()
+endif()
+
+if (fftw_include_dir)
+    include_directories(${fftw_include_dir})
 endif()
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set (openmplibrary OpenMP::OpenMP_CXX)
 endif()
 
+if (BOOST_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
+endif()
 find_package(Boost)
 if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
+    if (TARGET Boost::boost)
+        set(boost_target Boost::boost)
+    elseif (TARGET Boost::headers)
+        set(boost_target Boost::headers)
+    else()
+        set(boost_includes ${Boost_INCLUDE_DIRS})
+    endif()
 else()
     if (BOOST_INCLUDE)
-        include_directories(${BOOST_INCLUDE})
+        set(boost_includes ${BOOST_INCLUDE})
     else()
         message(FATAL_ERROR "Boost was not found.
         Please specify the location of boost include directories
@@ -50,12 +116,23 @@ else()
     endif()
 endif()
 
+if (EIGEN3_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${EIGEN3_ROOT}")
+endif()
+option(EIGEN3_ROOT "Path to Eigen3 installation" "")
+if (EIGEN3_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${EIGEN3_ROOT}")
+endif()
 find_package(Eigen3)
 if (Eigen3_FOUND)
-    include_directories(${EIGEN3_INCLUDE_DIR})
+    if (TARGET Eigen3::Eigen)
+        set(eigen_target Eigen3::Eigen)
+    else()
+        set(eigen_includes ${EIGEN3_INCLUDE_DIR})
+    endif()
 else()
     if (EIGEN3_INCLUDE)
-        include_directories(${EIGEN3_INCLUDE})
+        set(eigen_includes ${EIGEN3_INCLUDE})
     else()
         message(FATAL_ERROR "Eigen3 was not found.
         Please specify the location of boost include directories
@@ -63,19 +140,41 @@ else()
     endif()
 endif()
 
+if (NOT BLA_VENDOR AND DEFINED ENV{CONDA_PREFIX})
+    find_library(CONDA_OPENBLAS_LIB
+        NAMES openblas openblas64
+        HINTS "$ENV{CONDA_PREFIX}"
+        PATH_SUFFIXES lib
+    )
+    if (CONDA_OPENBLAS_LIB)
+        set(BLA_VENDOR OpenBLAS CACHE STRING "BLAS/LAPACK vendor" FORCE)
+    endif()
+endif()
 find_package(LAPACK REQUIRED)
-include_directories(${Lapack_INCLUDE_DIRS})
+if (TARGET LAPACK::LAPACK)
+    set(lapack_target LAPACK::LAPACK)
+else()
+    set(lapack_target ${LAPACK_LIBRARIES})
+endif()
 find_package(MPI REQUIRED)
-include_directories(${MPI_C_INCLUDE_DIRS})
+if (TARGET MPI::MPI_CXX)
+    set(mpi_target MPI::MPI_CXX)
+else()
+    set(mpi_target ${MPI_CXX_LIBRARIES})
+endif()
 
-add_definitions(-D_HDF5)
+if (HDF5_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}")
+endif()
 find_package(HDF5 COMPONENTS CXX)
 if (HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
     set(hdf5library ${HDF5_LIBRARIES})
+    if (TARGET HDF5::HDF5)
+        set(hdf5_target HDF5::HDF5)
+    endif()
 else()
     if (HDF5_ROOT)
-        include_directories("${HDF5_ROOT}/include")
+        set(hdf5_include "${HDF5_ROOT}/include")
         set(hdf5library "-L${HDF5_ROOT}/lib -lhdf5_cpp -lhdf5")
     else()
         message(FATAL_ERROR "HDF5 was not found.
@@ -84,15 +183,7 @@ else()
     endif()
 endif()
 
-include_directories("${PROJECT_SOURCE_DIR}/../external")
-
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-  message(STATUS "dir='${dir}'")
-endforeach()
-
 # Source code
-include_directories("${PROJECT_SOURCE_DIR}/../include")
 set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/conductivity.cpp
             ${PROJECT_SOURCE_DIR}/dielec.cpp
@@ -170,8 +261,35 @@ message("MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}")
 message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")
 # Executable
 add_executable(anphon ${SOURCES} ${HEADERS})
-target_link_libraries(anphon ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${MPI_CXX_LIBRARIES} ${spglib} ${openmplibrary})
-target_link_libraries(anphon ${hdf5library})
+target_compile_options(anphon PRIVATE
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Debug>:-g -Wall -O0>
+)
+target_compile_definitions(anphon PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+    _HDF5
+)
+target_include_directories(anphon PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${PROJECT_SOURCE_DIR}/../external
+    ${spglib_include}
+    ${boost_includes}
+    ${eigen_includes}
+    ${fftw_include_dir}
+    ${hdf5_include}
+)
+
+target_link_libraries(anphon
+    ${boost_target}
+    ${eigen_target}
+    ${Boost_LIBRARIES}
+    ${lapack_target}
+    ${mpi_target}
+    ${spglib}
+    ${openmplibrary}
+    ${hdf5_target}
+    ${hdf5library}
+)
 if (fftw3library)
     target_link_libraries(anphon ${fftw3library})
 endif()

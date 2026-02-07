@@ -1,13 +1,14 @@
 if(POLICY CMP0144)
     cmake_policy(SET CMP0144 NEW)
 endif()
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 cmake_minimum_required(VERSION 3.17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_CXX_FLAGS_RELEASE "-O2")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -O2 -D_DEBUG")
 
 project(alm)
 
@@ -18,10 +19,24 @@ set(alm_version ${CMAKE_MATCH_1})
 MESSAGE("Setting up for ALM code (ALAMODE version: ${CMAKE_MATCH_1})")
 
 if (SPGLIB_ROOT)
-    include_directories("${SPGLIB_ROOT}/include")
-    set(spglib "-L${SPGLIB_ROOT}/lib -L${SPGLIB_ROOT}/lib64 -lsymspg")
+    list(APPEND CMAKE_PREFIX_PATH "${SPGLIB_ROOT}")
+endif()
+
+find_path(SPGLIB_INCLUDE_DIR spglib.h
+    HINTS ${SPGLIB_ROOT}
+    PATH_SUFFIXES include
+)
+find_library(SPGLIB_LIBRARY
+    NAMES symspg spglib
+    HINTS ${SPGLIB_ROOT}
+    PATH_SUFFIXES lib lib64
+)
+
+if (SPGLIB_INCLUDE_DIR AND SPGLIB_LIBRARY)
+    set(spglib_include ${SPGLIB_INCLUDE_DIR})
+    set(spglib ${SPGLIB_LIBRARY})
 else ()
-    message("SPGLIB_ROOT is not given by -DSPGLIB_ROOT option. Just add -lsymspg.")
+    message("SPGLIB not found via hints. Falling back to -lsymspg.")
     set(spglib "-lsymspg")
 endif ()
 #
@@ -29,16 +44,24 @@ endif ()
 #
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 if (OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(openmplibrary OpenMP::OpenMP_CXX)
 endif ()
 
+if (BOOST_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
+endif()
 find_package(Boost)
 if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
+    if (TARGET Boost::boost)
+        set(boost_target Boost::boost)
+    elseif (TARGET Boost::headers)
+        set(boost_target Boost::headers)
+    else()
+        set(boost_includes ${Boost_INCLUDE_DIRS})
+    endif()
 else ()
     if (BOOST_INCLUDE)
-        include_directories(${BOOST_INCLUDE})
+        set(boost_includes ${BOOST_INCLUDE})
     else ()
         message(FATAL_ERROR "Boost was not found.
         Please specify the location of boost include directories
@@ -49,33 +72,39 @@ endif ()
 option(EIGEN3_ROOT "Path to Eigen3 installation" "")
 
 if (EIGEN3_ROOT)
-    set(CMAKE_PREFIX_PATH ${EIGEN3_ROOT})
-    include_directories(${EIGEN3_ROOT}/include)
-else()
-    find_package(Eigen3)
-    if (Eigen3_FOUND)
-        include_directories(${EIGEN3_INCLUDE_DIR})
-    else ()
-        if (EIGEN3_INCLUDE)
-            include_directories(${EIGEN3_INCLUDE})
-        else ()
-            message(FATAL_ERROR "Eigen3 was not found.
-            Please specify the location of boost include directories
-            via -DEIGEN3_INCLUDE option.")
-        endif ()
-    endif ()
+    list(APPEND CMAKE_PREFIX_PATH "${EIGEN3_ROOT}")
 endif()
+find_package(Eigen3)
+if (Eigen3_FOUND)
+    if (TARGET Eigen3::Eigen)
+        set(eigen_target Eigen3::Eigen)
+    else()
+        set(eigen_includes ${EIGEN3_INCLUDE_DIR})
+    endif()
+else ()
+    if (EIGEN3_INCLUDE)
+        set(eigen_includes ${EIGEN3_INCLUDE})
+    else ()
+        message(FATAL_ERROR "Eigen3 was not found.
+        Please specify the location of boost include directories
+        via -DEIGEN3_INCLUDE option.")
+    endif ()
+endif ()
 
 
 
-add_definitions(-D_HDF5)
+if (HDF5_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${HDF5_ROOT}")
+endif()
 find_package(HDF5 COMPONENTS CXX)
 if (HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
     set(hdf5library ${HDF5_LIBRARIES})
+    if (TARGET HDF5::HDF5)
+        set(hdf5_target HDF5::HDF5)
+    endif()
 else ()
     if (HDF5_ROOT)
-        include_directories("${HDF5_ROOT}/include")
+        set(hdf5_include "${HDF5_ROOT}/include")
         set(hdf5library "-L${HDF5_ROOT}/lib -lhdf5_cpp -lhdf5")
     else ()
         message(FATAL_ERROR "HDF5 was not found.
@@ -83,8 +112,6 @@ else ()
         via -DHDF5_ROOT option.")
     endif ()
 endif ()
-
-include_directories("${PROJECT_SOURCE_DIR}/../external")
 
 option(USE_MKL_BACKEND     "Enable Intel MKL Pardiso" OFF)
 option(USE_ACCEL_BACKEND   "Enable Apple Accelerate LDLT" OFF)
@@ -108,19 +135,33 @@ elseif (USE_ACCEL_BACKEND)
     add_compile_definitions(USE_ACCEL_BACKEND EIGEN_USE_ACCELERATE)
     set( BACKEND_LIBS ${ACCELERATE_FRAMEWORK} )
 else()
+    if (NOT BLA_VENDOR AND DEFINED ENV{CONDA_PREFIX})
+        find_library(CONDA_OPENBLAS_LIB
+            NAMES openblas openblas64
+            HINTS "$ENV{CONDA_PREFIX}"
+            PATH_SUFFIXES lib
+        )
+        if (CONDA_OPENBLAS_LIB)
+            set(BLA_VENDOR OpenBLAS CACHE STRING "BLAS/LAPACK vendor" FORCE)
+        endif()
+    endif()
     find_package(BLAS REQUIRED)
     find_package(LAPACK REQUIRED)
-    include_directories(${BLAS_INCLUDE_DIRS} ${LAPACK_INCLUDE_DIRS})
-    set ( BACKEND_LIBS ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} )
+    if (TARGET BLAS::BLAS)
+        set(blas_target BLAS::BLAS)
+    else()
+        set(blas_target ${BLAS_LIBRARIES})
+    endif()
+    if (TARGET LAPACK::LAPACK)
+        set(lapack_target LAPACK::LAPACK)
+    else()
+        set(lapack_target ${LAPACK_LIBRARIES})
+    endif()
+    set ( BACKEND_LIBS ${blas_target} ${lapack_target} )
 endif()
 
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-    message(STATUS "dir='${dir}'")
-endforeach()
 
 # Source code
-include_directories("${PROJECT_SOURCE_DIR}/../include")
 set(SOURCES ${PROJECT_SOURCE_DIR}/alm.cpp
         ${PROJECT_SOURCE_DIR}/cluster.cpp
         ${PROJECT_SOURCE_DIR}/constraint.cpp
@@ -167,16 +208,31 @@ add_executable(alm ${PROJECT_SOURCE_DIR}/main.cpp
         ${PROJECT_SOURCE_DIR}/alm_cui.cpp
         ${SOURCES} ${HEADERS})
 
-
-if (EIGEN3_ROOT)
-    target_include_directories(alm PRIVATE ${EIGEN3_ROOT}/include/eigen3)
-endif()
+target_compile_options(alm PRIVATE
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-g -Wall -O2>
+)
+target_compile_definitions(alm PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+    _HDF5
+)
+target_include_directories(alm PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${PROJECT_SOURCE_DIR}/../external
+    ${spglib_include}
+    ${boost_includes}
+    ${eigen_includes}
+    ${hdf5_include}
+)
 target_link_libraries(alm
 #        PRIVATE Eigen3::Eigen
+    ${boost_target}
+    ${eigen_target}
         ${Boost_LIBRARIES}
         ${BACKEND_LIBS}
         ${spglib}
         ${openmplibrary}
+    ${hdf5_target}
         ${hdf5library}
 )
 
@@ -185,13 +241,32 @@ if (BUILD_LIBRARIES)
     set(soserial "1")
     # Shared library
     add_library(almcxx SHARED ${SOURCES})
-    target_link_libraries(almcxx ${BACKEND_LIBS} ${spglib} ${hdf5library})
+    target_compile_definitions(almcxx PRIVATE _HDF5)
+    target_include_directories(almcxx PRIVATE
+        ${PROJECT_SOURCE_DIR}/../include
+        ${PROJECT_SOURCE_DIR}/../external
+        ${spglib_include}
+        ${boost_includes}
+        ${eigen_includes}
+        ${hdf5_include}
+    )
+    target_link_libraries(almcxx ${boost_target} ${eigen_target} ${BACKEND_LIBS} ${spglib} ${hdf5_target} ${hdf5library})
     set_property(TARGET almcxx PROPERTY VERSION ${serial})
     set_property(TARGET almcxx PROPERTY SOVERSION ${soserial})
     install(TARGETS almcxx DESTINATION ${PROJECT_SOURCE_DIR}/lib)
 
     # Static link library
     add_library(almcxx_static STATIC ${SOURCES})
+    target_compile_definitions(almcxx_static PRIVATE _HDF5)
+    target_include_directories(almcxx_static PRIVATE
+        ${PROJECT_SOURCE_DIR}/../include
+        ${PROJECT_SOURCE_DIR}/../external
+        ${spglib_include}
+        ${boost_includes}
+        ${eigen_includes}
+        ${hdf5_include}
+    )
+    target_link_libraries(almcxx_static ${boost_target} ${eigen_target})
     set_property(TARGET almcxx_static PROPERTY VERSION ${serial})
     set_property(TARGET almcxx_static PROPERTY SOVERSION ${soserial})
     set_property(TARGET almcxx_static PROPERTY OUTPUT_NAME almcxx)

@@ -1,9 +1,13 @@
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 cmake_minimum_required(VERSION 3.17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_CXX_FLAGS_RELEASE "-O2")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -O0 -D_DEBUG")
 
 project(tools)
 
@@ -15,15 +19,24 @@ MESSAGE("Setting up for TOOLS (ALAMODE version: ${CMAKE_MATCH_1})")
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(openmplibrary OpenMP::OpenMP_CXX)
 endif ()
 
+if (BOOST_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
+endif()
 find_package(Boost)
 if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
+    if (TARGET Boost::boost)
+        set(boost_target Boost::boost)
+    elseif (TARGET Boost::headers)
+        set(boost_target Boost::headers)
+    else()
+        set(boost_includes ${Boost_INCLUDE_DIRS})
+    endif()
 else ()
     if (BOOST_INCLUDE)
-        include_directories(${BOOST_INCLUDE})
+        set(boost_includes ${BOOST_INCLUDE})
     else ()
         message(FATAL_ERROR "Boost was not found.
         Please specify the location of boost include directories
@@ -31,12 +44,20 @@ else ()
     endif ()
 endif ()
 
+option(EIGEN3_ROOT "Path to Eigen3 installation" "")
+if (EIGEN3_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${EIGEN3_ROOT}")
+endif()
 find_package(Eigen3)
 if (Eigen3_FOUND)
-    include_directories(${EIGEN3_INCLUDE_DIR})
+    if (TARGET Eigen3::Eigen)
+        set(eigen_target Eigen3::Eigen)
+    else()
+        set(eigen_includes ${EIGEN3_INCLUDE_DIR})
+    endif()
 else()
     if (EIGEN3_INCLUDE)
-        include_directories(${EIGEN3_INCLUDE})
+        set(eigen_includes ${EIGEN3_INCLUDE})
     else()
         message(FATAL_ERROR "Eigen3 was not found.
         Please specify the location of boost include directories
@@ -45,7 +66,6 @@ else()
 endif()
 
 # Source code
-include_directories("${PROJECT_SOURCE_DIR}/../include")
 set(SOURCES ${PROJECT_SOURCE_DIR}/alm.cpp
         ${PROJECT_SOURCE_DIR}/cluster.cpp
         ${PROJECT_SOURCE_DIR}/constraint.cpp
@@ -80,23 +100,104 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
 add_executable(analyze_phonons
         ${PROJECT_SOURCE_DIR}/analyze_phonons.cpp
         ${PROJECT_SOURCE_DIR}/analyze_phonons.h)
+target_compile_options(analyze_phonons PRIVATE
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-g -Wall -O0>
+)
+target_compile_definitions(analyze_phonons PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+)
+target_include_directories(analyze_phonons PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${boost_includes}
+    ${eigen_includes}
+)
+if (boost_target)
+    target_link_libraries(analyze_phonons ${boost_target})
+endif()
+if (eigen_target)
+    target_link_libraries(analyze_phonons ${eigen_target})
+endif()
+if (openmplibrary)
+    target_link_libraries(analyze_phonons ${openmplibrary})
+endif()
 
 add_executable(dfc2
         ${PROJECT_SOURCE_DIR}/dfc2.cpp
         ${PROJECT_SOURCE_DIR}/dfc2.h)
-target_link_libraries(dfc2 ${Boost_LIBRARIES})
+target_compile_options(dfc2 PRIVATE
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-g -Wall -O0>
+)
+target_compile_definitions(dfc2 PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+)
+target_include_directories(dfc2 PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${boost_includes}
+    ${eigen_includes}
+)
+target_link_libraries(dfc2 ${boost_target} ${eigen_target} ${Boost_LIBRARIES})
+if (openmplibrary)
+    target_link_libraries(dfc2 ${openmplibrary})
+endif()
 
 add_executable(qe2alm
         ${PROJECT_SOURCE_DIR}/qe2alm.cpp
         ${PROJECT_SOURCE_DIR}/qe2alm.h)
-target_link_libraries(qe2alm ${Boost_LIBRARIES})
+target_compile_options(qe2alm PRIVATE
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-g -Wall -O0>
+)
+target_compile_definitions(qe2alm PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+)
+target_include_directories(qe2alm PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${boost_includes}
+    ${eigen_includes}
+)
+target_link_libraries(qe2alm ${boost_target} ${eigen_target} ${Boost_LIBRARIES})
+if (openmplibrary)
+    target_link_libraries(qe2alm ${openmplibrary})
+endif()
 
 add_executable(fc_virtual
         ${PROJECT_SOURCE_DIR}/fc_virtual.cpp
         ${PROJECT_SOURCE_DIR}/fc_virtual.h)
-target_link_libraries(qe2alm ${Boost_LIBRARIES})
+target_compile_options(fc_virtual PRIVATE
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-g -Wall -O0>
+)
+target_compile_definitions(fc_virtual PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+)
+target_include_directories(fc_virtual PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${boost_includes}
+    ${eigen_includes}
+)
+target_link_libraries(fc_virtual ${boost_target} ${eigen_target} ${Boost_LIBRARIES})
+if (openmplibrary)
+    target_link_libraries(fc_virtual ${openmplibrary})
+endif()
 
 add_executable(parse_fcsxml
         ${PROJECT_SOURCE_DIR}/parse_fcsxml.cpp
         ${PROJECT_SOURCE_DIR}/parse_fcsxml.h)
-target_link_libraries(parse_fcsxml ${Boost_LIBRARIES})
+target_compile_options(parse_fcsxml PRIVATE
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-g -Wall -O0>
+)
+target_compile_definitions(parse_fcsxml PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG>
+)
+target_include_directories(parse_fcsxml PRIVATE
+    ${PROJECT_SOURCE_DIR}/../include
+    ${boost_includes}
+    ${eigen_includes}
+)
+target_link_libraries(parse_fcsxml ${boost_target} ${eigen_target} ${Boost_LIBRARIES})
+if (openmplibrary)
+    target_link_libraries(parse_fcsxml ${openmplibrary})
+endif()
