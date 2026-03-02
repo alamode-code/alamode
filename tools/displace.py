@@ -447,10 +447,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.print_disp_stdout:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(" displace.py -- Generator of Displaced Configurations")
         print(" Version 1.3.0")
-        print("="*70)
+        print("=" * 70)
 
     code, file_original, struct_format, str_outfiles = check_code_options(args)
     displacement_mode = check_displace_options(args, code)
@@ -459,18 +459,18 @@ if __name__ == "__main__":
     codeobj.load_initial_structure(file_original)
 
     if not args.print_disp_stdout:
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
         print(" Input Configuration")
-        print("-"*70)
+        print("-" * 70)
         print(f" {'Code format':<30} : {code}")
         print(f" {'Output format':<30} : {struct_format}")
         print(f" {'Reference structure':<30} : {file_original}")
         print(f" {'Number of atoms':<30} : {codeobj.nat}")
-        
+
         # Add displacement mode information
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
         print(" Displacement Mode")
-        print("-"*70)
+        print("-" * 70)
         if displacement_mode == "fd":
             print(" Finite Difference")
             print(f" {'Displacement magnitude':<30} : {args.mag} Å")
@@ -500,7 +500,7 @@ if __name__ == "__main__":
                 print(f" {'Target mode (iq, imode)':<30} : {args.pes}")
             if args.Qrange:
                 print(f" {'Q range':<30} : {args.Qrange}")
-        
+
         if args.num_disp:
             print(f" {'Number of displacements':<30} : {args.num_disp}")
         if args.random_seed is not None:
@@ -511,16 +511,16 @@ if __name__ == "__main__":
     )
 
     if not args.print_disp_stdout:
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
         print(" Output Information")
-        print("-"*70)
+        print("-" * 70)
         print(f" {'Number of displacements':<30} : {len(disp_list)}")
         print(f" {'Output file pattern':<30} : {str_outfiles}")
-        print("-"*70)
+        print("-" * 70)
         codeobj.generate_structures(
             args.prefix, header_list, disp_list, updated_structure
         )
         print(f"\n ✓ Successfully created {len(disp_list)} displaced structure files.")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
     else:
         print_displacement_stdout(disp_list, codeobj)

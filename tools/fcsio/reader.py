@@ -60,6 +60,7 @@ class ForceConstantParser:
         self.transformation_matrix = None
         self.transformation_matrix_int = None
         self.shift_vector = None
+        self.shift_vector_vel = None
 
         self._parse_structure()
 
@@ -353,6 +354,7 @@ class ForceConstantParser:
                         xyz_indices,
                         shift_vectors,
                         fcs_entries,
+                        shift_vectors_vel,
                     ]
 
         return fcs_dic

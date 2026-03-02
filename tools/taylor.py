@@ -62,8 +62,6 @@ class TaylorExpansionPotential:
         - primitive_cell_alm: The primitive cell associated with the force constants.
         """
         self.fcs_dic = fcs_dic
-        print(self.primitive_cell)
-        print(primitive_cell_alm)
         self._check_consistency_primitive_cell(self.primitive_cell, primitive_cell_alm)
         self._set_taylor_indices()
 
