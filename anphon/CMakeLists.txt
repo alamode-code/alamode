@@ -191,6 +191,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/dynamical.cpp
             ${PROJECT_SOURCE_DIR}/ewald.cpp
             ${PROJECT_SOURCE_DIR}/fcs_phonon.cpp
+            ${PROJECT_SOURCE_DIR}/ifc_derivative.cpp
             ${PROJECT_SOURCE_DIR}/gruneisen.cpp
             ${PROJECT_SOURCE_DIR}/integration.cpp
             ${PROJECT_SOURCE_DIR}/interpolation.cpp
@@ -229,6 +230,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/error.h
             ${PROJECT_SOURCE_DIR}/ewald.h
             ${PROJECT_SOURCE_DIR}/fcs_phonon.h
+            ${PROJECT_SOURCE_DIR}/ifc_derivative.h
             ${PROJECT_SOURCE_DIR}/gruneisen.h
             ${PROJECT_SOURCE_DIR}/integration.h
             ${PROJECT_SOURCE_DIR}/interpolation.h

@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <complex>
 #include <memory>
+#include <utility>
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "optimizers.h"
@@ -21,6 +22,8 @@
 
 namespace PHON_NS
 {
+
+class DerivativeIFC;
 
 class DelVStrainData
 // TODO: implement the class for derivative of V by umn
@@ -81,6 +84,7 @@ public:
     std::string strain_IFC_dir;
 
     std::unique_ptr<Optimizer> optimizer;
+    std::unique_ptr<DerivativeIFC> derivative_ifc;
 
     void create_optimizer(const size_t num_modes);
 
@@ -233,13 +237,6 @@ private:
 
     void calculate_delv1_delumn_finite_difference(std::complex<double> **,
                                                   const std::complex<double> *const *const *const) const;
-
-    void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_in,
-                                             std::vector<FcsArrayWithCell> &delta_fcs, int ixyz1, int ixyz2) const;
-
-    void compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &, std::vector<FcsArrayWithCell> &,
-                                             int, int, int, int) const;
-
 
     void make_supercell_mapping_by_symmetry_operations(int **) const;
 

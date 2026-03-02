@@ -111,10 +111,15 @@ void Scph::setup_scph()
 {
     MPI_Bcast(&bubble, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
+    // Prepare coarse/dense q-point meshes used in SCPH iterations and postprocess.
     setup_kmesh();
+    // Allocate and cache harmonic eigenvectors/eigenvalues on the coarse mesh.
     setup_eigvecs();
+    // Build minimum-distance lookup for real-space IFC reconstruction.
     system->get_minimum_distances(kmesh_coarse->nk_i, mindist_list_scph);
+    // Precompute reciprocal-space anharmonic interactions (phi3/phi4).
     setup_pp_interaction();
+    // Build symmetry transformation matrices at Gamma for symmetrization.
     dynamical->get_symmetry_gamma_dynamical(kmesh_coarse,
                                             system->get_primcell().number_of_atoms,
                                             system->get_primcell().x_fractional,
@@ -164,6 +169,7 @@ void Scph::exec_scph()
         // Read anharmonic correction to the dynamical matrix from the existing file
         // SCPH calculation, no structural optimization
         if (relax_str == 0) {
+            // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
             load_scph_dymat_from_file(delta_dymat_scph,
                                       input->job_title + ".scph_dymat",
                                       kmesh_dense,
@@ -174,6 +180,7 @@ void Scph::exec_scph()
         // SCPH + structural optimization
         else if (phon->mode == "SCPH" && relax_str != 0)
         {
+            // Resume SCPH correction part.
             load_scph_dymat_from_file(delta_dymat_scph,
                                       input->job_title + ".scph_dymat",
                                       kmesh_dense,
@@ -181,6 +188,7 @@ void Scph::exec_scph()
                                       dynamical->nonanalytic,
                                       selfenergy_offdiagonal);
 
+            // Resume harmonic-dynamical-matrix renormalization used in structural relaxation.
             load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
                                       input->job_title + ".renorm_harm_dymat",
                                       kmesh_dense,
@@ -191,16 +199,19 @@ void Scph::exec_scph()
 
         // structural optimization
         if (relax_str != 0) {
+            // Load previously optimized static potential offset V0.
             relaxation->load_V0_from_file();
         }
 
     } else {
         if (relax_str == 0) {
+            // Run standard SCPH fixed-point iteration.
             exec_scph_main(delta_dymat_scph);
         }
         // SCPH + structural optimization
         else if (phon->mode == "SCPH" && relax_str != 0)
         {
+            // Run coupled SCPH + cell/coordinate relaxation loop.
             exec_scph_relax_cell_coordinate_main(delta_dymat_scph, delta_harmonic_dymat_renormalize);
         }
 
@@ -208,6 +219,7 @@ void Scph::exec_scph()
             // write dymat to file
             // write scph dynamical matrix when scph calculation is performed
             if (phon->mode == "SCPH") {
+                // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
                 store_scph_dymat_to_file(delta_dymat_scph,
                                          input->job_title + ".scph_dymat",
                                          kmesh_dense,
@@ -217,6 +229,7 @@ void Scph::exec_scph()
             }
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
             if (relax_str != 0) {
+                // Persist renormalized harmonic dynamical matrix and relaxation offset.
                 store_scph_dymat_to_file(delta_harmonic_dymat_renormalize,
                                          input->job_title + ".renorm_harm_dymat",
                                          kmesh_dense,
@@ -225,20 +238,24 @@ void Scph::exec_scph()
                                          selfenergy_offdiagonal);
                 relaxation->store_V0_to_file();
             }
+            // Convert dynamical-matrix correction back to real-space FC2 and write it out.
             write_anharmonic_correction_fc2(delta_dymat_scph, NT, kmesh_coarse, mindist_list_scph, false, 0);
         }
     }
 
     if (kpoint->kpoint_mode == 2) {
         if (thermodynamics->calc_FE_bubble) {
+            // Evaluate bubble correction to free energy on the interpolation mesh.
             compute_free_energy_bubble_SCPH(kmesh_interpolate, delta_dymat_scph);
         }
     }
 
     if (bubble) {
         allocate(delta_dymat_scph_plus_bubble, NT, ns, ns, kmesh_coarse->nk);
+        // Add bubble self-energy to SCPH dynamical-matrix correction.
         bubble_correction(delta_dymat_scph, delta_dymat_scph_plus_bubble);
         if (mympi->my_rank == 0) {
+            // Output FC2 after including bubble self-energy contribution.
             write_anharmonic_correction_fc2(delta_dymat_scph_plus_bubble,
                                             NT,
                                             kmesh_coarse,
@@ -351,6 +368,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
                 double eval_tmp;
                 for (auto iT = 0; iT < NT; ++iT) {
                     if (iT == 0 || (iT == NT - 1)) {
+                        // Interpolate SCPH frequencies on the DOS mesh (edge temperatures for energy-grid bounds).
                         dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
                                                       delta_dymat[iT],
                                                       dos->kmesh_dos->nk,
@@ -380,6 +398,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
             for (auto iT = 0; iT < NT; ++iT) {
                 auto temperature = Tmin + dT * static_cast<double>(iT);
 
+                // Interpolate SCPH-renormalized frequencies/eigenvectors onto DOS mesh.
                 dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
                                               delta_dymat[iT],
                                               dos->kmesh_dos->nk,
@@ -393,6 +412,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
                                               true);
 
                 // when is_qha = true, eval_harm_renorm is same as eval_update.
+                // Interpolate renormalized harmonic branch needed for SCPH free-energy correction.
                 dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
                                               delta_harmonic_dymat_renormalize[iT],
                                               dos->kmesh_dos->nk,
@@ -406,6 +426,7 @@ void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double
                                               true);
 
                 if (dos->compute_dos) {
+                    // Compute total DOS from interpolated frequencies via tetrahedron integration.
                     dos->calc_dos_from_given_frequency(dos->kmesh_dos,
                                                        eval_update[iT],
                                                        dos->tetra_nodes_dos->get_ntetra(),
@@ -1087,6 +1108,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     allocate(del2_v2_del_umn2, 81, nk, ns * ns);
     allocate(del_v3_del_umn, 9, nk, ns, ns * ns);
 
+    // This function precomputes the 1st, 2nd, and 3rd order derivatives of v1
+    // 1st and 2nd order derivatives of v2, and 1st order derivative of v3.
     relaxation->compute_del_v_strain(kmesh_coarse,
                                      kmesh_dense,
                                      del_v1_del_umn,

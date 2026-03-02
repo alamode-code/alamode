@@ -9,6 +9,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 */
 
 #include "relaxation.h"
+#include "ifc_derivative.h"
 #include <Eigen/Core>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <fftw3.h>
@@ -27,6 +28,7 @@ using namespace PHON_NS;
 Relaxation::Relaxation(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
+    derivative_ifc = std::make_unique<DerivativeIFC>(phon);
 }
 
 Relaxation::~Relaxation()
@@ -1202,7 +1204,7 @@ void Relaxation::compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
     for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
             // calculate renormalization in real space
-            compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+            derivative_ifc->compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
 
             for (int ik = 0; ik < nk; ik++) {
 
@@ -1269,7 +1271,7 @@ void Relaxation::compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del_um
             const int ixyz11 = itmp / 3;
 
             // calculate renormalization in real space
-            compute_del_v_strain_in_real_space2(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
+            derivative_ifc->compute_del_v_strain_in_real_space2(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
 
             for (int ik = 0; ik < nk; ik++) {
                 //anharmonic_core->calc_analytic_k_from_FcsArrayWithCell(xk_in[ik],
@@ -1339,7 +1341,7 @@ void Relaxation::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn,
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
 
             // calculate renormalization in real space
-            compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+            derivative_ifc->compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
 
             // prepare for the Fourier-transformation
             boost::sort::block_indirect_sort(delta_fcs.begin(), delta_fcs.end());
@@ -2031,20 +2033,20 @@ void Relaxation::calculate_delv2_delumn_finite_difference(double **omega2_harmon
     deallocate(symm_mapping_s);
     deallocate(inv_translation_mapping);
 
-    for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-        for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-            for (i1 = 0; i1 < natmin3; i1++) {
-                for (i2 = 0; i2 < nat3; i2++) {
-                    std::cout << "dhi2     : " << std::setw(3) << ixyz1 << std::setw(3) << ixyz2 << std::setw(6) << i1
-                              << std::setw(6) << i2 << " : " << std::setw(15) << std::scientific
-                              << dphi2_dumn_realspace_in[ixyz1][ixyz2][i1][i2] << '\n';
-                    std::cout << "dhi2_symm: " << std::setw(3) << ixyz1 << std::setw(3) << ixyz2 << std::setw(6) << i1
-                              << std::setw(6) << i2 << " : " << std::setw(15) << std::scientific
-                              << dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] << '\n';
-                }
-            }
-        }
-    }
+    // for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+    //     for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+    //         for (i1 = 0; i1 < natmin3; i1++) {
+    //             for (i2 = 0; i2 < nat3; i2++) {
+    //                 std::cout << "dhi2     : " << std::setw(3) << ixyz1 << std::setw(3) << ixyz2 << std::setw(6) << i1
+    //                           << std::setw(6) << i2 << " : " << std::setw(15) << std::scientific
+    //                           << dphi2_dumn_realspace_in[ixyz1][ixyz2][i1][i2] << '\n';
+    //                 std::cout << "dhi2_symm: " << std::setw(3) << ixyz1 << std::setw(3) << ixyz2 << std::setw(6) << i1
+    //                           << std::setw(6) << i2 << " : " << std::setw(15) << std::scientific
+    //                           << dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] << '\n';
+    //             }
+    //         }
+    //     }
+    // }
 
     // Fourier transform and interpolate
     allocate(dymat_q, ns, ns, nk_interpolate);
@@ -2557,303 +2559,6 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic, const KpointMe
 
     v0_renorm = v0_renorm_tmp.real();
 }
-
-void Relaxation::compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                     std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz1,
-                                                     const int ixyz2) const
-{
-    unsigned int i, j;
-    Eigen::Vector3d vec;
-    double fcs_tmp = 0.0;
-
-    std::vector<AtomCellSuper> pairs_vec;
-    std::vector<int> index_old, index_now;
-    std::vector<int> index_with_cell, index_with_cell_old;
-    AtomCellSuper pairs_tmp{};
-
-    std::vector<int> relvecs_int_old, relvecs_int_now;
-    std::vector<unsigned int> atoms_s_now, atoms_s_old;
-
-    std::vector<Eigen::Vector3d> relvecs_tmp, relvecs_tmp2;
-    std::vector<Eigen::Vector3d> relvecs_now, relvecs_old;
-    std::vector<Eigen::Vector3d> relvecs_vel_now, relvecs_vel_old;
-
-    delta_fcs.clear();
-
-    // const auto convmat = system->get_supercell(1).lattice_vector;
-    const auto convmat = system->get_primcell().lattice_vector;
-    const auto norder = fcs_aligned[0].pairs.size();
-    const auto nelems = norder - 1;
-
-    // calculate IFC renormalization separately for each periodic image combination.
-    index_old.clear();
-    for (i = 0; i < nelems; ++i) {
-        index_old.push_back(-1);
-    }
-    for (i = 0; i < nelems - 1; ++i) {
-        for (j = 0; j < 3; ++j) {
-            relvecs_int_old.push_back(1000000);
-        }
-    }
-    index_with_cell.clear();
-
-    relvecs_tmp.resize(nelems - 1);
-    relvecs_tmp2.resize(nelems - 1);
-
-    relvecs_now.resize(nelems - 1);
-    relvecs_old.resize(nelems - 1);
-    relvecs_vel_now.resize(nelems - 1);
-    relvecs_vel_old.resize(nelems - 1);
-
-    for (i = 0; i < 3 * (norder - 2) + 1; ++i)
-        index_with_cell_old.push_back(-1);
-
-    for (const auto &it: fcs_aligned) {
-
-        // if the xyz does not match the considering coponent
-        if (it.pairs[norder - 1].index % 3 != ixyz1) {
-            continue;
-        }
-
-        index_now.clear();
-        relvecs_int_now.clear();
-        index_with_cell.clear();
-        atoms_s_now.clear();
-
-        index_now.push_back(it.pairs[0].index);
-        index_with_cell.push_back(it.pairs[0].index);
-        atoms_s_now.emplace_back(it.atoms_s[0]);
-
-        for (i = 1; i < nelems; ++i) {
-            index_now.push_back(it.pairs[i].index);
-            for (j = 0; j < 3; ++j) {
-                relvecs_int_now.push_back(nint(it.relvecs[i - 1][j]));
-            }
-
-            index_with_cell.push_back(it.pairs[i].index);
-            index_with_cell.push_back(it.pairs[i].tran);
-            index_with_cell.push_back(it.pairs[i].cell_s);
-            atoms_s_now.emplace_back(it.atoms_s[i]);
-            relvecs_now[i - 1] = it.relvecs[i - 1];
-            relvecs_vel_now[i - 1] = it.relvecs_velocity[i - 1];
-        }
-
-        if ((index_now != index_old) || (relvecs_int_now != relvecs_int_old)) {
-
-            if (index_old[0] != -1) {
-
-                if (std::abs(fcs_tmp) > eps15) {
-
-                    pairs_vec.clear();
-                    pairs_tmp.index = index_with_cell_old[0];
-                    pairs_tmp.tran = 0;
-                    pairs_tmp.cell_s = 0;
-                    pairs_vec.push_back(pairs_tmp);
-                    for (i = 1; i < nelems; ++i) {
-                        pairs_tmp.index = index_with_cell_old[3 * i - 2];
-                        pairs_tmp.tran = index_with_cell_old[3 * i - 1];
-                        pairs_tmp.cell_s = index_with_cell_old[3 * i];
-                        pairs_vec.push_back(pairs_tmp);
-                    }
-                    delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
-                }
-            }
-
-            fcs_tmp = 0.0;
-            index_old = index_now;
-            relvecs_int_old = relvecs_int_now;
-            atoms_s_old = atoms_s_now;
-            relvecs_old = relvecs_now;
-            relvecs_vel_old = relvecs_vel_now;
-            index_with_cell_old = index_with_cell;
-        }
-
-        vec.setZero();
-
-        // // To activate this version, the definision of convmat should be changed at the same time.
-        // for (i = 0; i < 3; ++i) {
-        //     vec[i] = system->get_supercell(1).x_fractional(
-        //                  system->get_map_p2s(1)[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran],
-        //                  i)
-        //              + dynamical->get_xrs_image()[it.pairs[norder - 1].cell_s][i];
-        // }
-        // vec = convmat * vec;
-
-        vec = convmat * it.relvecs_velocity[norder - 2];
-        fcs_tmp += it.fcs_val * vec[ixyz2];
-    }
-
-    if (std::abs(fcs_tmp) > eps15) {
-        pairs_vec.clear();
-        pairs_tmp.index = index_with_cell[0];
-        pairs_tmp.tran = 0;
-        pairs_tmp.cell_s = 0;
-        pairs_vec.push_back(pairs_tmp);
-        for (i = 1; i < norder - 1; ++i) {
-            pairs_tmp.index = index_with_cell[3 * i - 2];
-            pairs_tmp.tran = index_with_cell[3 * i - 1];
-            pairs_tmp.cell_s = index_with_cell[3 * i];
-            pairs_vec.push_back(pairs_tmp);
-        }
-        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_now, relvecs_now, relvecs_vel_now);
-    }
-}
-
-
-void Relaxation::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                     std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz11,
-                                                     const int ixyz12, const int ixyz21, const int ixyz22) const
-{
-    unsigned int i, j;
-    Eigen::Vector3d vec1, vec2;
-
-    double fcs_tmp = 0.0;
-
-    std::vector<AtomCellSuper> pairs_vec;
-    std::vector<int> index_old, index_now;
-    std::vector<int> index_with_cell, index_with_cell_old;
-    AtomCellSuper pairs_tmp{};
-    std::vector<int> relvecs_int_old, relvecs_int_now;
-    std::vector<unsigned int> atoms_s_now, atoms_s_old;
-    std::vector<Eigen::Vector3d> relvecs_tmp, relvecs_tmp2;
-    std::vector<Eigen::Vector3d> relvecs_now, relvecs_old;
-    std::vector<Eigen::Vector3d> relvecs_vel_now, relvecs_vel_old;
-
-    delta_fcs.clear();
-
-    // calculate IFC renormalization separately for each mirror image combination.
-    // const auto convmat = system->get_supercell(2).lattice_vector;
-    const auto convmat = system->get_primcell().lattice_vector;
-    const auto norder = fcs_aligned[0].pairs.size();
-    const auto nelems = norder - 2;
-
-    index_old.clear();
-    for (i = 0; i < nelems; ++i) {
-        index_old.push_back(-1);
-    }
-    for (i = 0; i < nelems - 1; ++i) {
-        for (j = 0; j < 3; ++j) {
-            relvecs_int_old.push_back(1000000);
-        }
-    }
-    index_with_cell.clear();
-
-    relvecs_tmp.resize(nelems - 1);
-    relvecs_tmp2.resize(nelems - 1);
-
-    relvecs_now.resize(nelems - 1);
-    relvecs_old.resize(nelems - 1);
-    relvecs_vel_now.resize(nelems - 1);
-    relvecs_vel_old.resize(nelems - 1);
-
-    for (i = 0; i < 3 * (norder - 3) + 1; ++i)
-        index_with_cell_old.push_back(-1);
-
-    for (const auto &it: fcs_aligned) {
-
-        // if the xyz does not match the considering coponent
-        if (it.coords[norder - 2] != ixyz11 || it.coords[norder - 1] != ixyz21) {
-            continue;
-        }
-
-        index_now.clear();
-        relvecs_int_now.clear();
-        index_with_cell.clear();
-        atoms_s_now.clear();
-
-        index_now.push_back(it.pairs[0].index);
-        index_with_cell.push_back(it.pairs[0].index);
-        atoms_s_now.emplace_back(it.atoms_s[0]);
-
-        for (i = 1; i < nelems; ++i) {
-            index_now.push_back(it.pairs[i].index);
-            for (j = 0; j < 3; ++j) {
-                relvecs_int_now.push_back(nint(it.relvecs[i - 1][j]));
-            }
-
-            index_with_cell.push_back(it.pairs[i].index);
-            index_with_cell.push_back(it.pairs[i].tran);
-            index_with_cell.push_back(it.pairs[i].cell_s);
-            atoms_s_now.emplace_back(it.atoms_s[i]);
-            relvecs_now[i - 1] = it.relvecs[i - 1];
-            relvecs_vel_now[i - 1] = it.relvecs_velocity[i - 1];
-        }
-
-        if ((index_now != index_old) || (relvecs_int_now != relvecs_int_old)) {
-
-            if (index_old[0] != -1) {
-
-                if (std::abs(fcs_tmp) > eps15) {
-
-                    pairs_vec.clear();
-                    pairs_tmp.index = index_with_cell_old[0];
-                    pairs_tmp.tran = 0;
-                    pairs_tmp.cell_s = 0;
-                    pairs_vec.push_back(pairs_tmp);
-                    for (i = 1; i < nelems; ++i) {
-                        pairs_tmp.index = index_with_cell_old[3 * i - 2];
-                        pairs_tmp.tran = index_with_cell_old[3 * i - 1];
-                        pairs_tmp.cell_s = index_with_cell_old[3 * i];
-                        pairs_vec.push_back(pairs_tmp);
-                    }
-                    delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
-                }
-            }
-
-            fcs_tmp = 0.0;
-            index_old = index_now;
-            relvecs_int_old = relvecs_int_now;
-            atoms_s_old = atoms_s_now;
-            relvecs_old = relvecs_now;
-            relvecs_vel_old = relvecs_vel_now;
-            index_with_cell_old = index_with_cell;
-        }
-
-        // vec_origin.setZero();
-        vec1.setZero();
-        vec2.setZero();
-
-        // const auto atom1_tmp = map_tmp[it.pairs[0].index / 3][0];
-        // // To activate this version, the convmat definision should be changed at the same time.
-        // for (i = 0; i < 3; ++i) {
-        //     vec1[i] = xf_tmp(map_tmp[it.pairs[norder - 2].index / 3][it.pairs[norder - 2].tran], i)
-        //               + dynamical->get_xrs_image()[it.pairs[norder - 2].cell_s][i]
-        //               - xf_tmp(atom1_tmp, i);
-        //     vec2[i] = xf_tmp(map_tmp[it.pairs[norder - 1].index / 3][it.pairs[norder - 1].tran], i)
-        //               + dynamical->get_xrs_image()[it.pairs[norder - 1].cell_s][i]
-        //               - xf_tmp(atom1_tmp, i);
-        // }
-        //
-        // vec1 = convmat * vec1;
-        // vec2 = convmat * vec2;
-
-        // nelems = norder - 2;
-        vec1 = convmat * it.relvecs_velocity[nelems - 1];
-        vec2 = convmat * it.relvecs_velocity[nelems];
-
-
-        fcs_tmp += it.fcs_val * vec1[ixyz12] * vec2[ixyz22];
-        // xyz components of IFC have been checked
-    }
-
-    if (std::abs(fcs_tmp) > eps15) {
-
-        pairs_vec.clear();
-        pairs_tmp.index = index_with_cell_old[0];
-        pairs_tmp.tran = 0;
-        pairs_tmp.cell_s = 0;
-        pairs_vec.push_back(pairs_tmp);
-        for (i = 1; i < nelems; ++i) {
-            pairs_tmp.index = index_with_cell_old[3 * i - 2];
-            pairs_tmp.tran = index_with_cell_old[3 * i - 1];
-            pairs_tmp.cell_s = index_with_cell_old[3 * i];
-            pairs_vec.push_back(pairs_tmp);
-            //fcs_aligned.clear();
-        }
-        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
-    }
-}
-
 
 void Relaxation::make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const
 {
