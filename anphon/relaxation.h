@@ -208,24 +208,6 @@ private:
                                         MinimumDistList ***mindist_list);
 
 
-    void compute_del_v1_del_umn(std::complex<double> **, const std::complex<double> *const *const *const) const;
-
-    void compute_del2_v1_del_umn2(std::complex<double> **, const std::complex<double> *const *const *const) const;
-
-    void compute_del3_v1_del_umn3(std::complex<double> **, const std::complex<double> *const *const *const) const;
-
-
-    void compute_del_v2_del_umn(std::complex<double> ***, const std::complex<double> *const *const *, unsigned int nk,
-                                double **xk_in) const;
-
-    void compute_del2_v2_del_umn2(std::complex<double> ***, const std::complex<double> *const *const *const,
-                                  const unsigned int nk, double **xk_in) const;
-
-    void compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn, double **omega2_harmonic,
-                                const std::complex<double> *const *const *const evec_harmonic,
-                                const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
-                                const PhaseFactorStorage *phase_storage_in) const;
-
     void calculate_delv2_delumn_finite_difference(double **omega2_harmonic,
                                                   const std::complex<double> *const *const *const,
                                                   std::complex<double> ***, const KpointMeshUniform *kmesh_coarse,

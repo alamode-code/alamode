@@ -1,11 +1,15 @@
 #include "ifc_derivative.h"
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include "anharmonic_core.h"
 #include "constants.h"
+#include "dynamical.h"
 #include "error.h"
 #include "mpi_common.h"
+#include "scph.h"
 #include "system.h"
 
 using namespace PHON_NS;
@@ -140,6 +144,320 @@ bool are_same_fcs_array_with_cell_verbose(const std::vector<FcsArrayWithCell> &l
 
 DerivativeIFC::DerivativeIFC(PHON *phon): Pointers(phon)
 {}
+
+void DerivativeIFC::compute_del_v1_del_umn(std::complex<double> **del_v1_del_umn,
+                                           const std::complex<double> *const *const *const evec_harmonic) const
+{
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto ns = dynamical->neval;
+    const auto invsqrt_mass = system->get_invsqrt_mass();
+    Eigen::MatrixXd del_v1_del_umn_in_real_space(9, ns);
+
+    int ixyz1;
+
+    del_v1_del_umn_in_real_space.setZero();
+
+    for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
+        const int ind1 = it.pairs[0].index;
+        for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+            del_v1_del_umn_in_real_space(it.coords[1] * 3 + ixyz1, ind1) += it.fcs_val * it.relvecs_velocity[0][ixyz1];
+        }
+    }
+
+    for (int ixyz = 0; ixyz < 9; ixyz++) {
+        for (int is1 = 0; is1 < ns; is1++) {
+            del_v1_del_umn[ixyz][is1] = 0.0;
+            for (int i = 0; i < natmin; i++) {
+                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+                    del_v1_del_umn[ixyz][is1] += evec_harmonic[0][is1][i * 3 + ixyz1] * invsqrt_mass[i] *
+                                                 del_v1_del_umn_in_real_space(ixyz, i * 3 + ixyz1);
+                }
+            }
+        }
+    }
+}
+
+void DerivativeIFC::compute_del2_v1_del_umn2(std::complex<double> **del2_v1_del_umn2,
+                                             const std::complex<double> *const *const *const evec_harmonic) const
+{
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto ns = dynamical->neval;
+    const auto invsqrt_mass = system->get_invsqrt_mass();
+    Eigen::MatrixXd del2_v1_del_umn2_in_real_space(81, ns);
+
+    int ixyz1;
+
+    del2_v1_del_umn2_in_real_space.setZero();
+
+    for (auto &it: fcs_phonon->force_constant_with_cell[1]) {
+
+        const int ind1 = it.pairs[0].index;
+
+        for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+            for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+                int const ixyz_comb = it.coords[1] * 27 + ixyz1 * 9 + it.coords[2] * 3 + ixyz2;
+                del2_v1_del_umn2_in_real_space(ixyz_comb, ind1) +=
+                    it.fcs_val * it.relvecs_velocity[0][ixyz1] * it.relvecs_velocity[1][ixyz2];
+            }
+        }
+    }
+
+    for (int ixyz = 0; ixyz < 81; ixyz++) {
+        for (int is1 = 0; is1 < ns; is1++) {
+            del2_v1_del_umn2[ixyz][is1] = 0.0;
+            for (int i = 0; i < natmin; i++) {
+                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+                    del2_v1_del_umn2[ixyz][is1] += evec_harmonic[0][is1][i * 3 + ixyz1] * invsqrt_mass[i] *
+                                                   del2_v1_del_umn2_in_real_space(ixyz, i * 3 + ixyz1);
+                }
+            }
+        }
+    }
+}
+
+void DerivativeIFC::compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_umn3,
+                                             const std::complex<double> *const *const *const evec_harmonic) const
+{
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto ns = dynamical->neval;
+    const auto invsqrt_mass = system->get_invsqrt_mass();
+    Eigen::MatrixXd del3_v1_del_umn3_in_real_space(729, ns);
+
+    int ixyz1;
+
+    del3_v1_del_umn3_in_real_space.setZero();
+
+    for (auto &it: fcs_phonon->force_constant_with_cell[2]) {
+
+        int ind1 = it.pairs[0].index;
+
+        for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+            for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+                for (int ixyz3 = 0; ixyz3 < 3; ixyz3++) {
+                    const int ixyz_comb =
+                        it.coords[1] * 243 + ixyz1 * 81 + it.coords[2] * 27 + ixyz2 * 9 + it.coords[3] * 3 + ixyz3;
+                    del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) += it.fcs_val * it.relvecs_velocity[0][ixyz1] *
+                                                                       it.relvecs_velocity[1][ixyz2] *
+                                                                       it.relvecs_velocity[2][ixyz3];
+                }
+            }
+        }
+    }
+
+    for (int ixyz = 0; ixyz < 729; ixyz++) {
+        for (int is1 = 0; is1 < ns; is1++) {
+            del3_v1_del_umn3[ixyz][is1] = 0.0;
+            for (int i = 0; i < natmin; i++) {
+                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+                    del3_v1_del_umn3[ixyz][is1] += evec_harmonic[0][is1][i * 3 + ixyz1] * invsqrt_mass[i] *
+                                                   del3_v1_del_umn3_in_real_space(ixyz, i * 3 + ixyz1);
+                }
+            }
+        }
+    }
+}
+
+void DerivativeIFC::compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
+                                           const std::complex<double> *const *const *const evec_harmonic,
+                                           const unsigned int nk,
+                                           double **xk_in) const
+{
+    using namespace Eigen;
+
+    const auto ns = dynamical->neval;
+    int is1, is2;
+
+    std::vector<FcsArrayWithCell> delta_fcs;
+
+    std::complex<double> **mat_tmp;
+    allocate(mat_tmp, ns, ns);
+
+    MatrixXcd Dymat(ns, ns);
+    MatrixXcd evec_tmp(ns, ns);
+
+    std::vector<FcsArrayWithCell> fcs_aligned;
+
+    fcs_aligned.clear();
+
+    for (const auto &it: fcs_phonon->force_constant_with_cell[1]) {
+        fcs_aligned.emplace_back(it);
+    }
+    sort_by_heading_indices const operator_fcs(1);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
+
+    for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+        for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+            compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+
+            for (int ik = 0; ik < nk; ik++) {
+
+                dynamical->calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
+
+                for (is1 = 0; is1 < ns; is1++) {
+                    for (is2 = 0; is2 < ns; is2++) {
+                        Dymat(is1, is2) = mat_tmp[is1][is2];
+                        evec_tmp(is1, is2) = evec_harmonic[ik][is2][is1];
+                    }
+                }
+                Dymat = evec_tmp.adjoint() * Dymat * evec_tmp;
+
+                for (is1 = 0; is1 < ns; is1++) {
+                    for (is2 = 0; is2 < ns; is2++) {
+                        del_v2_del_umn[ixyz1 * 3 + ixyz2][ik][is1 * ns + is2] = Dymat(is1, is2);
+                    }
+                }
+            }
+        }
+    }
+
+    deallocate(mat_tmp);
+}
+
+void DerivativeIFC::compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del_umn2,
+                                             const std::complex<double> *const *const *const evec_harmonic,
+                                             const unsigned int nk,
+                                             double **xk_in) const
+{
+    using namespace Eigen;
+
+    const auto ns = dynamical->neval;
+
+    std::vector<FcsArrayWithCell> fcs_aligned;
+    fcs_aligned.clear();
+    for (const auto &it: fcs_phonon->force_constant_with_cell[2]) {
+        fcs_aligned.emplace_back(it);
+    }
+    sort_by_heading_indices const operator_fcs(2);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
+
+#pragma omp parallel
+    {
+        int ixyz;
+        int is1, is2;
+        std::vector<FcsArrayWithCell> delta_fcs;
+
+        std::complex<double> **mat_tmp;
+        allocate(mat_tmp, ns, ns);
+
+        MatrixXcd Dymat(ns, ns);
+        MatrixXcd evec_tmp(ns, ns);
+
+#pragma omp for
+        for (ixyz = 0; ixyz < 81; ixyz++) {
+            int itmp = ixyz;
+            const int ixyz22 = itmp % 3;
+            itmp /= 3;
+            const int ixyz21 = itmp % 3;
+            itmp /= 3;
+            const int ixyz12 = itmp % 3;
+            const int ixyz11 = itmp / 3;
+
+            compute_del_v_strain_in_real_space2(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
+
+            for (int ik = 0; ik < nk; ik++) {
+                dynamical->calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
+
+                for (is1 = 0; is1 < ns; is1++) {
+                    for (is2 = 0; is2 < ns; is2++) {
+                        Dymat(is1, is2) = mat_tmp[is1][is2];
+                        evec_tmp(is1, is2) = evec_harmonic[ik][is2][is1];
+                    }
+                }
+                Dymat = evec_tmp.adjoint() * Dymat * evec_tmp;
+
+                for (is1 = 0; is1 < ns; is1++) {
+                    for (is2 = 0; is2 < ns; is2++) {
+                        del2_v2_del_umn2[ixyz][ik][is1 * ns + is2] = Dymat(is1, is2);
+                    }
+                }
+            }
+        }
+
+        deallocate(mat_tmp);
+    }
+}
+
+void DerivativeIFC::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn,
+                                           double **omega2_harmonic,
+                                           const std::complex<double> *const *const *const evec_harmonic,
+                                           const KpointMeshUniform *kmesh_coarse_in,
+                                           const KpointMeshUniform *kmesh_dense_in,
+                                           const PhaseFactorStorage *phase_storage_in) const
+{
+    int ngroup_tmp;
+    double *invmass_v3_tmp;
+    int **evec_index_v3_tmp;
+    std::vector<double> *fcs_group_tmp;
+    std::vector<RelativeVector> *relvec_tmp;
+    std::complex<double> *phi3_reciprocal_tmp;
+
+    int i;
+    int ixyz1, ixyz2;
+
+    double *invsqrt_mass_p;
+    allocate(invsqrt_mass_p, system->get_primcell().number_of_atoms);
+    for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
+        invsqrt_mass_p[i] = std::sqrt(1.0 / system->get_mass_prim()[i]);
+    }
+
+    std::vector<FcsArrayWithCell> delta_fcs;
+    std::vector<FcsArrayWithCell> fcs_aligned;
+    fcs_aligned.clear();
+    for (const auto &it: fcs_phonon->force_constant_with_cell[2]) {
+        fcs_aligned.emplace_back(it);
+    }
+    const sort_by_heading_indices operator_fcs(1);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
+
+    for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+        for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+
+            compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+
+            boost::sort::block_indirect_sort(delta_fcs.begin(), delta_fcs.end());
+
+            anharmonic_core->prepare_group_of_force_constants(delta_fcs, ngroup_tmp, fcs_group_tmp);
+
+            allocate(invmass_v3_tmp, ngroup_tmp);
+            allocate(evec_index_v3_tmp, ngroup_tmp, 3);
+            allocate(relvec_tmp, ngroup_tmp);
+            allocate(phi3_reciprocal_tmp, ngroup_tmp);
+
+            anharmonic_core->prepare_relative_vector(delta_fcs, ngroup_tmp, fcs_group_tmp, relvec_tmp);
+
+            int k = 0;
+            for (i = 0; i < ngroup_tmp; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    evec_index_v3_tmp[i][j] = delta_fcs[k].pairs[j].index;
+                }
+                invmass_v3_tmp[i] = invsqrt_mass_p[evec_index_v3_tmp[i][0] / 3] *
+                                    invsqrt_mass_p[evec_index_v3_tmp[i][1] / 3] *
+                                    invsqrt_mass_p[evec_index_v3_tmp[i][2] / 3];
+                k += fcs_group_tmp[i].size();
+            }
+
+            scph->compute_V3_elements_for_given_IFCs(del_v3_del_umn[ixyz1 * 3 + ixyz2],
+                                                     omega2_harmonic,
+                                                     ngroup_tmp,
+                                                     fcs_group_tmp,
+                                                     relvec_tmp,
+                                                     invmass_v3_tmp,
+                                                     evec_index_v3_tmp,
+                                                     evec_harmonic,
+                                                     true,
+                                                     kmesh_coarse_in,
+                                                     kmesh_dense_in,
+                                                     phase_storage_in);
+
+            deallocate(fcs_group_tmp);
+            deallocate(invmass_v3_tmp);
+            deallocate(evec_index_v3_tmp);
+            deallocate(relvec_tmp);
+            deallocate(phi3_reciprocal_tmp);
+        }
+    }
+    deallocate(invsqrt_mass_p);
+}
 
 bool DerivativeIFC::check_del_v_strain_in_real_space_equivalence(
     const std::vector<FcsArrayWithCell> &fcs_aligned,
