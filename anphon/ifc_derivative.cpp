@@ -256,11 +256,14 @@ void DerivativeIFC::compute_del_v1_del_umn_legacy(std::complex<double> **del_v1_
     del_v1_del_umn_in_real_space.setZero();
 
     const auto &force_constants = fcs_phonon->force_constant_with_cell[0];
+    const auto convmat = system->get_primcell().lattice_vector;
+    Eigen::Vector3d vec;
 
     for (const auto &it: force_constants) {
         const int ind1 = it.pairs[0].index;
         for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-            del_v1_del_umn_in_real_space(it.coords[1] * 3 + ixyz1, ind1) += it.fcs_val * it.relvecs_velocity[0][ixyz1];
+            vec = convmat * it.relvecs_velocity[0];
+            del_v1_del_umn_in_real_space(it.coords[1] * 3 + ixyz1, ind1) += it.fcs_val * vec[ixyz1];
         }
     }
 
@@ -350,6 +353,8 @@ void DerivativeIFC::compute_del2_v1_del_umn2_legacy(std::complex<double> **del2_
     del2_v1_del_umn2_in_real_space.setZero();
 
     const auto &force_constants = fcs_phonon->force_constant_with_cell[1];
+    const auto convmat = system->get_primcell().lattice_vector;
+    Eigen::Vector3d vec1, vec2;
 
     for (const auto &it: force_constants) {
 
@@ -358,8 +363,10 @@ void DerivativeIFC::compute_del2_v1_del_umn2_legacy(std::complex<double> **del2_
         for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
                 int const ixyz_comb = it.coords[1] * 27 + ixyz1 * 9 + it.coords[2] * 3 + ixyz2;
+                vec1 = convmat * it.relvecs_velocity[0];
+                vec2 = convmat * it.relvecs_velocity[1];
                 del2_v1_del_umn2_in_real_space(ixyz_comb, ind1) +=
-                    it.fcs_val * it.relvecs_velocity[0][ixyz1] * it.relvecs_velocity[1][ixyz2];
+                    it.fcs_val * vec1[ixyz1] * vec2[ixyz2];
             }
         }
     }
@@ -458,6 +465,8 @@ void DerivativeIFC::compute_del3_v1_del_umn3_legacy(std::complex<double> **del3_
     del3_v1_del_umn3_in_real_space.setZero();
 
     const auto &force_constants = fcs_phonon->force_constant_with_cell[2];
+    const auto convmat = system->get_primcell().lattice_vector;
+    Eigen::Vector3d vec1, vec2, vec3;
 
     for (const auto &it: force_constants) {
 
@@ -468,9 +477,11 @@ void DerivativeIFC::compute_del3_v1_del_umn3_legacy(std::complex<double> **del3_
                 for (int ixyz3 = 0; ixyz3 < 3; ixyz3++) {
                     const int ixyz_comb =
                         it.coords[1] * 243 + ixyz1 * 81 + it.coords[2] * 27 + ixyz2 * 9 + it.coords[3] * 3 + ixyz3;
-                    del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) += it.fcs_val * it.relvecs_velocity[0][ixyz1] *
-                                                                       it.relvecs_velocity[1][ixyz2] *
-                                                                       it.relvecs_velocity[2][ixyz3];
+                    vec1 = convmat * it.relvecs_velocity[0];
+                    vec2 = convmat * it.relvecs_velocity[1];
+                    vec3 = convmat * it.relvecs_velocity[2];
+                    del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) +=
+                        it.fcs_val * vec1[ixyz1] * vec2[ixyz2] * vec3[ixyz3];
                 }
             }
         }
@@ -945,6 +956,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space1_legacy(const std::vector
 
     delta_fcs.clear();
 
+    const auto convmat = system->get_primcell().lattice_vector;
     const auto norder = fcs_aligned[0].pairs.size();
     const auto nelems = norder - 1;
 
@@ -1026,7 +1038,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space1_legacy(const std::vector
         }
 
         vec.setZero();
-        vec = it.relvecs_velocity[norder - 2];
+        vec = convmat * it.relvecs_velocity[norder - 2];
         fcs_tmp += it.fcs_val * vec[ixyz2];
     }
 
@@ -1069,6 +1081,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space2_legacy(const std::vector
 
     delta_fcs.clear();
 
+    const auto convmat = system->get_primcell().lattice_vector;
     const auto norder = fcs_aligned[0].pairs.size();
     const auto nelems = norder - 2;
 
@@ -1153,8 +1166,8 @@ void DerivativeIFC::compute_del_v_strain_in_real_space2_legacy(const std::vector
         vec1.setZero();
         vec2.setZero();
 
-        vec1 = it.relvecs_velocity[nelems - 1];
-        vec2 = it.relvecs_velocity[nelems];
+        vec1 = convmat * it.relvecs_velocity[nelems - 1];
+        vec2 = convmat * it.relvecs_velocity[nelems];
 
         fcs_tmp += it.fcs_val * vec1[ixyz12] * vec2[ixyz22];
     }
@@ -1205,6 +1218,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space(const std::vector<FcsArra
         }
     }
 
+    const auto convmat = system->get_primcell().lattice_vector;
     const auto nelems = norder - m;
 
     delta_fcs.clear();
@@ -1236,7 +1250,8 @@ void DerivativeIFC::compute_del_v_strain_in_real_space(const std::vector<FcsArra
         double term = it.fcs_val;
         for (std::size_t j = 0; j < m; ++j) {
             const auto nu = strain_components[j].second;
-            term *= it.relvecs_velocity[(nelems - 1) + j][nu];
+            const Eigen::Vector3d vec = convmat * it.relvecs_velocity[(nelems - 1) + j];
+            term *= vec[nu];
         }
         return term;
     };
