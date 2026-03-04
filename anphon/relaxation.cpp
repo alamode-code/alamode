@@ -9,13 +9,13 @@ or http://opensource.org/licenses/mit-license.php for information.
 */
 
 #include "relaxation.h"
-#include "ifc_derivative.h"
 #include <Eigen/Core>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <fftw3.h>
 #include <iomanip>
 #include "dynamical.h"
 #include "error.h"
+#include "ifc_derivative.h"
 #include "optimizers.h"
 #include "parsephon.h"
 #include "scph.h"

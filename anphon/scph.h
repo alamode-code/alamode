@@ -183,9 +183,9 @@ private:
                                       std::complex<double> ***, bool, std::complex<double> **,
                                       const unsigned int verbosity);
 
-    void compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***, double **, std::complex<double> ***, double, bool &,
-                                                      std::complex<double> ***, bool, std::complex<double> **,
-                                                      const unsigned int verbosity);
+    void compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***, double **, std::complex<double> ***,
+                                                     double, bool &, std::complex<double> ***, bool,
+                                                     std::complex<double> **, const unsigned int verbosity);
 
     // Helper methods for compute_anharmonic_frequency
     void initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,
