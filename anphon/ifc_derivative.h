@@ -28,9 +28,15 @@ public:
         const std::vector<std::pair<int, int>> &strain_components,
         std::string &mismatch_message) const;
 
+    bool compare_del_v_strain_in_real_space_with_timing(
+        const std::vector<FcsArrayWithCell> &fcs_aligned,
+        const std::vector<std::pair<int, int>> &strain_components,
+        std::string &report) const;
+
     void compute_del_v_strain_in_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                             std::vector<FcsArrayWithCell> &delta_fcs,
-                                            const std::vector<std::pair<int, int>> &strain_components) const;
+                                            const std::vector<std::pair<int, int>> &strain_components,
+                                            double emit_threshold) const;
 
     void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                              std::vector<FcsArrayWithCell> &delta_fcs,
@@ -59,11 +65,23 @@ public:
     void compute_del_v1_del_umn(std::complex<double> **del_v1_del_umn,
                                 const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_del_v1_del_umn_legacy(std::complex<double> **del_v1_del_umn,
+                                       const std::complex<double> *const *const *const evec_harmonic) const;
+
     void compute_del2_v1_del_umn2(std::complex<double> **del2_v1_del_umn2,
                                   const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_del2_v1_del_umn2_legacy(std::complex<double> **del2_v1_del_umn2,
+                                         const std::complex<double> *const *const *const evec_harmonic) const;
+
     void compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_umn3,
                                   const std::complex<double> *const *const *const evec_harmonic) const;
+
+    void compute_del3_v1_del_umn3_legacy(std::complex<double> **del3_v1_del_umn3,
+                                         const std::complex<double> *const *const *const evec_harmonic) const;
+
+    bool compare_v1_derivative_implementations(const std::complex<double> *const *const *const evec_harmonic,
+                                               std::string &report) const;
 
     void compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
                                 const std::complex<double> *const *const *const evec_harmonic,
