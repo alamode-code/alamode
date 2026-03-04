@@ -176,6 +176,104 @@ bool are_same_fcs_array_with_cell_verbose(const std::vector<FcsArrayWithCell> &l
 DerivativeIFC::DerivativeIFC(PHON *phon) : Pointers(phon)
 {}
 
+void DerivativeIFC::compute_dV1_dumn(std::complex<double> **dV1_dumn,
+                                     const std::complex<double> *const *const *const evec_harmonic) const
+{
+    compute_del_v1_del_umn(dV1_dumn, evec_harmonic);
+}
+
+void DerivativeIFC::compute_dV1_dumn_legacy(std::complex<double> **dV1_dumn,
+                                            const std::complex<double> *const *const *const evec_harmonic) const
+{
+    compute_del_v1_del_umn_legacy(dV1_dumn, evec_harmonic);
+}
+
+void DerivativeIFC::compute_d2V1_dumn2(std::complex<double> **d2V1_dumn2,
+                                       const std::complex<double> *const *const *const evec_harmonic) const
+{
+    compute_del2_v1_del_umn2(d2V1_dumn2, evec_harmonic);
+}
+
+void DerivativeIFC::compute_d2V1_dumn2_legacy(std::complex<double> **d2V1_dumn2,
+                                              const std::complex<double> *const *const *const evec_harmonic) const
+{
+    compute_del2_v1_del_umn2_legacy(d2V1_dumn2, evec_harmonic);
+}
+
+void DerivativeIFC::compute_d3V1_dumn3(std::complex<double> **d3V1_dumn3,
+                                       const std::complex<double> *const *const *const evec_harmonic) const
+{
+    compute_del3_v1_del_umn3(d3V1_dumn3, evec_harmonic);
+}
+
+void DerivativeIFC::compute_d3V1_dumn3_legacy(std::complex<double> **d3V1_dumn3,
+                                              const std::complex<double> *const *const *const evec_harmonic) const
+{
+    compute_del3_v1_del_umn3_legacy(d3V1_dumn3, evec_harmonic);
+}
+
+void DerivativeIFC::compute_dV2_dumn(std::complex<double> ***dV2_dumn,
+                                     const std::complex<double> *const *const *const evec_harmonic,
+                                     const unsigned int nk, double **xk_in) const
+{
+    compute_del_v2_del_umn(dV2_dumn, evec_harmonic, nk, xk_in);
+}
+
+void DerivativeIFC::compute_d2V2_dumn2(std::complex<double> ***d2V2_dumn2,
+                                       const std::complex<double> *const *const *const evec_harmonic,
+                                       const unsigned int nk, double **xk_in) const
+{
+    compute_del2_v2_del_umn2(d2V2_dumn2, evec_harmonic, nk, xk_in);
+}
+
+void DerivativeIFC::compute_dV3_dumn(std::complex<double> ****dV3_dumn, double **omega2_harmonic,
+                                     const std::complex<double> *const *const *const evec_harmonic,
+                                     const KpointMeshUniform *kmesh_coarse_in,
+                                     const KpointMeshUniform *kmesh_dense_in,
+                                     const PhaseFactorStorage *phase_storage_in) const
+{
+    compute_del_v3_del_umn(dV3_dumn, omega2_harmonic, evec_harmonic, kmesh_coarse_in, kmesh_dense_in,
+                           phase_storage_in);
+}
+
+void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                               std::vector<FcsArrayWithCell> &delta_fcs,
+                                               const std::vector<std::pair<int, int>> &strain_components,
+                                               const double emit_threshold) const
+{
+    compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs, strain_components, emit_threshold);
+}
+
+void DerivativeIFC::compute_dV_dumn_real_space_m1(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                  std::vector<FcsArrayWithCell> &delta_fcs,
+                                                  const int m1, const int n1) const
+{
+    compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, m1, n1);
+}
+
+void DerivativeIFC::compute_dV_dumn_real_space_m2(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                  std::vector<FcsArrayWithCell> &delta_fcs,
+                                                  const int m1, const int n1,
+                                                  const int m2, const int n2) const
+{
+    compute_del_v_strain_in_real_space2(fcs_aligned, delta_fcs, m1, n1, m2, n2);
+}
+
+void DerivativeIFC::compute_dV_dumn_real_space_m1_legacy(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                         std::vector<FcsArrayWithCell> &delta_fcs,
+                                                         const int m1, const int n1) const
+{
+    compute_del_v_strain_in_real_space1_legacy(fcs_aligned, delta_fcs, m1, n1);
+}
+
+void DerivativeIFC::compute_dV_dumn_real_space_m2_legacy(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                         std::vector<FcsArrayWithCell> &delta_fcs,
+                                                         const int m1, const int n1,
+                                                         const int m2, const int n2) const
+{
+    compute_del_v_strain_in_real_space2_legacy(fcs_aligned, delta_fcs, m1, n1, m2, n2);
+}
+
 void DerivativeIFC::compute_del_v1_del_umn(std::complex<double> **del_v1_del_umn,
                                            const std::complex<double> *const *const *const evec_harmonic) const
 {
@@ -228,7 +326,7 @@ void DerivativeIFC::compute_del_v1_del_umn(std::complex<double> **del_v1_del_umn
 #pragma omp for collapse(2) schedule(dynamic)
         for (int mu = 0; mu < 3; ++mu) {
             for (int nu = 0; nu < 3; ++nu) {
-                compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs, {{mu, nu}}, -1.0);
+                compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{mu, nu}}, -1.0);
                 const int ixyz = mu * 3 + nu;
                 for (const auto &entry: delta_fcs) {
                     const int ind1 = entry.pairs[0].index;
@@ -326,7 +424,7 @@ void DerivativeIFC::compute_del2_v1_del_umn2(std::complex<double> **del2_v1_del_
             for (int nu1 = 0; nu1 < 3; ++nu1) {
                 for (int mu2 = 0; mu2 < 3; ++mu2) {
                     for (int nu2 = 0; nu2 < 3; ++nu2) {
-                        compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs, {{mu1, nu1}, {mu2, nu2}}, -1.0);
+                        compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{mu1, nu1}, {mu2, nu2}}, -1.0);
                         const int ixyz_comb = mu1 * 27 + nu1 * 9 + mu2 * 3 + nu2;
                         for (const auto &entry: delta_fcs) {
                             const int ind1 = entry.pairs[0].index;
@@ -435,10 +533,10 @@ void DerivativeIFC::compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_
                     for (int nu2 = 0; nu2 < 3; ++nu2) {
                         for (int mu3 = 0; mu3 < 3; ++mu3) {
                             for (int nu3 = 0; nu3 < 3; ++nu3) {
-                                compute_del_v_strain_in_real_space(fcs_aligned,
-                                                                   delta_fcs,
-                                                                   {{mu1, nu1}, {mu2, nu2}, {mu3, nu3}},
-                                                                   -1.0);
+                                compute_dV_dumn_real_space(fcs_aligned,
+                                                            delta_fcs,
+                                                            {{mu1, nu1}, {mu2, nu2}, {mu3, nu3}},
+                                                            -1.0);
                                 const int ixyz_comb = mu1 * 243 + nu1 * 81 + mu2 * 27 + nu2 * 9 + mu3 * 3 + nu3;
                                 for (const auto &entry: delta_fcs) {
                                     const int ind1 = entry.pairs[0].index;
@@ -531,9 +629,9 @@ bool DerivativeIFC::compare_v1_derivative_implementations(const std::complex<dou
     }
 
     const auto t1 = std::chrono::steady_clock::now();
-    compute_del_v1_del_umn_legacy(legacy_v1_ptrs.data(), evec_harmonic);
+    compute_dV1_dumn_legacy(legacy_v1_ptrs.data(), evec_harmonic);
     const auto t2 = std::chrono::steady_clock::now();
-    compute_del_v1_del_umn(unified_v1_ptrs.data(), evec_harmonic);
+    compute_dV1_dumn(unified_v1_ptrs.data(), evec_harmonic);
     const auto t3 = std::chrono::steady_clock::now();
 
     std::vector<std::vector<std::complex<double>>> legacy_v2_storage(81, std::vector<std::complex<double>>(ns));
@@ -546,9 +644,9 @@ bool DerivativeIFC::compare_v1_derivative_implementations(const std::complex<dou
     }
 
     const auto t4 = std::chrono::steady_clock::now();
-    compute_del2_v1_del_umn2_legacy(legacy_v2_ptrs.data(), evec_harmonic);
+    compute_d2V1_dumn2_legacy(legacy_v2_ptrs.data(), evec_harmonic);
     const auto t5 = std::chrono::steady_clock::now();
-    compute_del2_v1_del_umn2(unified_v2_ptrs.data(), evec_harmonic);
+    compute_d2V1_dumn2(unified_v2_ptrs.data(), evec_harmonic);
     const auto t6 = std::chrono::steady_clock::now();
 
     std::vector<std::vector<std::complex<double>>> legacy_v3_storage(729, std::vector<std::complex<double>>(ns));
@@ -561,9 +659,9 @@ bool DerivativeIFC::compare_v1_derivative_implementations(const std::complex<dou
     }
 
     const auto t7 = std::chrono::steady_clock::now();
-    compute_del3_v1_del_umn3_legacy(legacy_v3_ptrs.data(), evec_harmonic);
+    compute_d3V1_dumn3_legacy(legacy_v3_ptrs.data(), evec_harmonic);
     const auto t8 = std::chrono::steady_clock::now();
-    compute_del3_v1_del_umn3(unified_v3_ptrs.data(), evec_harmonic);
+    compute_d3V1_dumn3(unified_v3_ptrs.data(), evec_harmonic);
     const auto t9 = std::chrono::steady_clock::now();
 
     auto max_diff = [](const auto &lhs, const auto &rhs) {
@@ -688,7 +786,7 @@ void DerivativeIFC::compute_del_v2_del_umn(std::complex<double> ***del_v2_del_um
 
     for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-            compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+            compute_dV_dumn_real_space_m1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
 
             for (int ik = 0; ik < nk; ik++) {
 
@@ -752,7 +850,7 @@ void DerivativeIFC::compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del
             const int ixyz12 = itmp % 3;
             const int ixyz11 = itmp / 3;
 
-            compute_del_v_strain_in_real_space2(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
+            compute_dV_dumn_real_space_m2(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
 
             for (int ik = 0; ik < nk; ik++) {
                 dynamical->calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
@@ -811,7 +909,7 @@ void DerivativeIFC::compute_del_v3_del_umn(std::complex<double> ****del_v3_del_u
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
 
-            compute_del_v_strain_in_real_space1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+            compute_dV_dumn_real_space_m1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
 
             boost::sort::block_indirect_sort(delta_fcs.begin(), delta_fcs.end());
 
@@ -873,23 +971,23 @@ bool DerivativeIFC::check_del_v_strain_in_real_space_equivalence_verbose(
     std::vector<FcsArrayWithCell> delta_fcs_new;
 
     if (strain_components.size() == 1) {
-        compute_del_v_strain_in_real_space1_legacy(fcs_aligned,
-                                                   delta_fcs_old,
-                                                   strain_components[0].first,
-                                                   strain_components[0].second);
+        compute_dV_dumn_real_space_m1_legacy(fcs_aligned,
+                             delta_fcs_old,
+                             strain_components[0].first,
+                             strain_components[0].second);
     } else if (strain_components.size() == 2) {
-        compute_del_v_strain_in_real_space2_legacy(fcs_aligned,
-                                                   delta_fcs_old,
-                                                   strain_components[0].first,
-                                                   strain_components[0].second,
-                                                   strain_components[1].first,
-                                                   strain_components[1].second);
+        compute_dV_dumn_real_space_m2_legacy(fcs_aligned,
+                             delta_fcs_old,
+                             strain_components[0].first,
+                             strain_components[0].second,
+                             strain_components[1].first,
+                             strain_components[1].second);
     } else {
         exit("check_del_v_strain_in_real_space_equivalence",
              "Legacy comparison is implemented only for m = 1 and m = 2.");
     }
 
-    compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs_new, strain_components, eps15);
+    compute_dV_dumn_real_space(fcs_aligned, delta_fcs_new, strain_components, eps15);
 
     return are_same_fcs_array_with_cell_verbose(delta_fcs_old, delta_fcs_new, mismatch_message);
 }
@@ -906,24 +1004,24 @@ bool DerivativeIFC::compare_del_v_strain_in_real_space_with_timing(
 
     const auto t0 = clock::now();
     if (strain_components.size() == 1) {
-        compute_del_v_strain_in_real_space1_legacy(fcs_aligned,
-                                                   delta_fcs_old,
-                                                   strain_components[0].first,
-                                                   strain_components[0].second);
+        compute_dV_dumn_real_space_m1_legacy(fcs_aligned,
+                             delta_fcs_old,
+                             strain_components[0].first,
+                             strain_components[0].second);
     } else if (strain_components.size() == 2) {
-        compute_del_v_strain_in_real_space2_legacy(fcs_aligned,
-                                                   delta_fcs_old,
-                                                   strain_components[0].first,
-                                                   strain_components[0].second,
-                                                   strain_components[1].first,
-                                                   strain_components[1].second);
+        compute_dV_dumn_real_space_m2_legacy(fcs_aligned,
+                             delta_fcs_old,
+                             strain_components[0].first,
+                             strain_components[0].second,
+                             strain_components[1].first,
+                             strain_components[1].second);
     } else {
         exit("compare_del_v_strain_in_real_space_with_timing",
              "Legacy timing-comparison is implemented only for m = 1 and m = 2.");
     }
     const auto t1 = clock::now();
 
-    compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs_new, strain_components, eps15);
+    compute_dV_dumn_real_space(fcs_aligned, delta_fcs_new, strain_components, eps15);
     const auto t2 = clock::now();
 
     const bool consistent = are_same_fcs_array_with_cell_verbose(delta_fcs_old, delta_fcs_new, mismatch_message);
@@ -1351,7 +1449,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space1(const std::vector<FcsArr
                                                         const int ixyz2) const
 {
     if (use_legacy_ifc_derivative_impl()) {
-        compute_del_v_strain_in_real_space1_legacy(fcs_aligned, delta_fcs, ixyz1, ixyz2);
+        compute_dV_dumn_real_space_m1_legacy(fcs_aligned, delta_fcs, ixyz1, ixyz2);
         return;
     }
 
@@ -1366,7 +1464,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space1(const std::vector<FcsArr
         }
     }
 
-    compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs, {{ixyz1, ixyz2}}, eps15);
+    compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz1, ixyz2}}, eps15);
 }
 
 void DerivativeIFC::compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &fcs_aligned,
@@ -1374,7 +1472,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space2(const std::vector<FcsArr
                                                         const int ixyz12, const int ixyz21, const int ixyz22) const
 {
     if (use_legacy_ifc_derivative_impl()) {
-        compute_del_v_strain_in_real_space2_legacy(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
+        compute_dV_dumn_real_space_m2_legacy(fcs_aligned, delta_fcs, ixyz11, ixyz12, ixyz21, ixyz22);
         return;
     }
 
@@ -1390,7 +1488,7 @@ void DerivativeIFC::compute_del_v_strain_in_real_space2(const std::vector<FcsArr
         }
     }
 
-    compute_del_v_strain_in_real_space(fcs_aligned, delta_fcs, {{ixyz11, ixyz12}, {ixyz21, ixyz22}}, eps15);
+    compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz11, ixyz12}, {ixyz21, ixyz22}}, eps15);
 }
 
 void DerivativeIFC::set_del_v_fixed_cell(const size_t nk, const size_t ns, std::complex<double> **del_v1_del_umn,
@@ -1460,7 +1558,7 @@ void DerivativeIFC::set_del_v_relax_cell(
     case 1:
         if (mympi->my_rank == 0)
             std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
-        compute_del_v1_del_umn(del_v1_del_umn, evec_harmonic);
+        compute_dV1_dumn(del_v1_del_umn, evec_harmonic);
         if (mympi->my_rank == 0) std::cout << "  done!\n";
         break;
     case 2:
@@ -1490,13 +1588,13 @@ void DerivativeIFC::set_del_v_relax_cell(
         break;
     case 1:
         if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
-        compute_del2_v1_del_umn2(del2_v1_del_umn2, evec_harmonic);
+        compute_d2V1_dumn2(del2_v1_del_umn2, evec_harmonic);
 
         if (mympi->my_rank == 0) {
             std::cout << "  done!\n";
             std::cout << "  - third-order derivatives of first-order IFCs (from quartic IFCs) ... ";
         }
-        compute_del3_v1_del_umn3(del3_v1_del_umn3, evec_harmonic);
+        compute_d3V1_dumn3(del3_v1_del_umn3, evec_harmonic);
 
         if (mympi->my_rank == 0) std::cout << "  done!\n";
         break;
@@ -1509,7 +1607,7 @@ void DerivativeIFC::set_del_v_relax_cell(
         if (mympi->my_rank == 0)
             std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... " << std::flush;
 
-        compute_del_v2_del_umn(del_v2_del_umn, evec_harmonic, nk_interpolate, kmesh_coarse->xk);
+        compute_dV2_dumn(del_v2_del_umn, evec_harmonic, nk_interpolate, kmesh_coarse->xk);
         break;
     case 2:
         if (mympi->my_rank == 0) {
@@ -1560,14 +1658,14 @@ void DerivativeIFC::set_del_v_relax_cell(
     if (mympi->my_rank == 0)
         std::cout << "  - second-order derivatives of harmonic IFCs (from quartic IFCs) ... " << std::flush;
 
-    compute_del2_v2_del_umn2(del2_v2_del_umn2, evec_harmonic, nk, kmesh_dense->xk);
+    compute_d2V2_dumn2(del2_v2_del_umn2, evec_harmonic, nk, kmesh_dense->xk);
 
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
         std::cout << "  - first-order derivatives of cubic IFCs (from quartic IFCs) ... " << std::flush;
     }
 
-    compute_del_v3_del_umn(del_v3_del_umn, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_storage_in);
+    compute_dV3_dumn(del_v3_del_umn, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_storage_in);
 
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -1595,7 +1693,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(
     } else if (renorm_2to1st == 1) {
         if (mympi->my_rank == 0)
             std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
-        compute_del_v1_del_umn(del_v1_del_umn, evec_harmonic);
+        compute_dV1_dumn(del_v1_del_umn, evec_harmonic);
 
     } else if (renorm_2to1st == 2) {
         if (mympi->my_rank == 0)
@@ -1616,7 +1714,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(
 
     } else if (renorm_34to1st == 1) {
         if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
-        compute_del2_v1_del_umn2(del2_v1_del_umn2, evec_harmonic);
+        compute_d2V1_dumn2(del2_v1_del_umn2, evec_harmonic);
     }
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -1625,7 +1723,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(
     if (renorm_3to2nd == 1) {
         if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
 
-        compute_del_v2_del_umn(del_v2_del_umn, evec_harmonic, nk, kmesh_coarse->xk);
+        compute_dV2_dumn(del_v2_del_umn, evec_harmonic, nk, kmesh_coarse->xk);
     } else if (renorm_3to2nd == 2 || renorm_3to2nd == 3) {
         if (mympi->my_rank == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";

@@ -32,59 +32,125 @@ public:
                                                         const std::vector<std::pair<int, int>> &strain_components,
                                                         std::string &report) const;
 
+    void compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                    std::vector<FcsArrayWithCell> &delta_fcs,
+                                    const std::vector<std::pair<int, int>> &strain_components,
+                                    double emit_threshold) const;
+
+    void compute_dV_dumn_real_space_m1(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                       std::vector<FcsArrayWithCell> &delta_fcs, int m1, int n1) const;
+
+    void compute_dV_dumn_real_space_m2(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                       std::vector<FcsArrayWithCell> &delta_fcs,
+                                       int m1, int n1,
+                                       int m2, int n2) const;
+
+    void compute_dV_dumn_real_space_m1_legacy(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                              std::vector<FcsArrayWithCell> &delta_fcs, int m1, int n1) const;
+
+    void compute_dV_dumn_real_space_m2_legacy(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                              std::vector<FcsArrayWithCell> &delta_fcs,
+                                              int m1, int n1,
+                                              int m2, int n2) const;
+
+    // DEPRECATED: Use compute_dV_dumn_real_space.
     void compute_del_v_strain_in_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                             std::vector<FcsArrayWithCell> &delta_fcs,
                                             const std::vector<std::pair<int, int>> &strain_components,
                                             double emit_threshold) const;
 
+    // DEPRECATED: Use compute_dV_dumn_real_space_m1.
     void compute_del_v_strain_in_real_space1(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                              std::vector<FcsArrayWithCell> &delta_fcs, int ixyz1, int ixyz2) const;
 
+    // DEPRECATED: Use compute_dV_dumn_real_space_m2.
     void compute_del_v_strain_in_real_space2(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                              std::vector<FcsArrayWithCell> &delta_fcs, int ixyz11, int ixyz12,
                                              int ixyz21, int ixyz22) const;
 
+    // DEPRECATED: Use compute_dV_dumn_real_space_m1_legacy.
     void compute_del_v_strain_in_real_space1_legacy(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                     std::vector<FcsArrayWithCell> &delta_fcs, int ixyz1,
                                                     int ixyz2) const;
 
+    // DEPRECATED: Use compute_dV_dumn_real_space_m2_legacy.
     void compute_del_v_strain_in_real_space2_legacy(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                     std::vector<FcsArrayWithCell> &delta_fcs, int ixyz11, int ixyz12,
                                                     int ixyz21, int ixyz22) const;
 
+    // DEPRECATED: Use compute_dV1_dumn.
     void compute_del_v1_del_umn(std::complex<double> **del_v1_del_umn,
                                 const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_dV1_dumn(std::complex<double> **dV1_dumn,
+                          const std::complex<double> *const *const *const evec_harmonic) const;
+
+    // DEPRECATED: Use compute_dV1_dumn_legacy.
     void compute_del_v1_del_umn_legacy(std::complex<double> **del_v1_del_umn,
                                        const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_dV1_dumn_legacy(std::complex<double> **dV1_dumn,
+                                 const std::complex<double> *const *const *const evec_harmonic) const;
+
+    // DEPRECATED: Use compute_d2V1_dumn2.
     void compute_del2_v1_del_umn2(std::complex<double> **del2_v1_del_umn2,
                                   const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_d2V1_dumn2(std::complex<double> **d2V1_dumn2,
+                            const std::complex<double> *const *const *const evec_harmonic) const;
+
+    // DEPRECATED: Use compute_d2V1_dumn2_legacy.
     void compute_del2_v1_del_umn2_legacy(std::complex<double> **del2_v1_del_umn2,
                                          const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_d2V1_dumn2_legacy(std::complex<double> **d2V1_dumn2,
+                                   const std::complex<double> *const *const *const evec_harmonic) const;
+
+    // DEPRECATED: Use compute_d3V1_dumn3.
     void compute_del3_v1_del_umn3(std::complex<double> **del3_v1_del_umn3,
                                   const std::complex<double> *const *const *const evec_harmonic) const;
 
+    void compute_d3V1_dumn3(std::complex<double> **d3V1_dumn3,
+                            const std::complex<double> *const *const *const evec_harmonic) const;
+
+    // DEPRECATED: Use compute_d3V1_dumn3_legacy.
     void compute_del3_v1_del_umn3_legacy(std::complex<double> **del3_v1_del_umn3,
                                          const std::complex<double> *const *const *const evec_harmonic) const;
+
+    void compute_d3V1_dumn3_legacy(std::complex<double> **d3V1_dumn3,
+                                   const std::complex<double> *const *const *const evec_harmonic) const;
 
     bool compare_v1_derivative_implementations(const std::complex<double> *const *const *const evec_harmonic,
                                                std::string &report) const;
 
+    // DEPRECATED: Use compute_dV2_dumn.
     void compute_del_v2_del_umn(std::complex<double> ***del_v2_del_umn,
                                 const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
                                 double **xk_in) const;
 
+    void compute_dV2_dumn(std::complex<double> ***dV2_dumn,
+                          const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
+                          double **xk_in) const;
+
+    // DEPRECATED: Use compute_d2V2_dumn2.
     void compute_del2_v2_del_umn2(std::complex<double> ***del2_v2_del_umn2,
                                   const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
                                   double **xk_in) const;
 
+    void compute_d2V2_dumn2(std::complex<double> ***d2V2_dumn2,
+                            const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
+                            double **xk_in) const;
+
+    // DEPRECATED: Use compute_dV3_dumn.
     void compute_del_v3_del_umn(std::complex<double> ****del_v3_del_umn, double **omega2_harmonic,
                                 const std::complex<double> *const *const *const evec_harmonic,
                                 const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                                 const PhaseFactorStorage *phase_storage_in) const;
+
+    void compute_dV3_dumn(std::complex<double> ****dV3_dumn, double **omega2_harmonic,
+                          const std::complex<double> *const *const *const evec_harmonic,
+                          const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+                          const PhaseFactorStorage *phase_storage_in) const;
 
     void set_del_v_fixed_cell(std::size_t nk, std::size_t ns, std::complex<double> **del_v1_del_umn,
                               std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
