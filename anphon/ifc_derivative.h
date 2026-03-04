@@ -13,6 +13,7 @@ namespace PHON_NS
 
 class KpointMeshUniform;
 class PhaseFactorStorage;
+class MinimumDistList;
 
 class DerivativeIFC: protected Pointers
 {
@@ -84,6 +85,48 @@ public:
                                 const std::complex<double> *const *const *const evec_harmonic,
                                 const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                                 const PhaseFactorStorage *phase_storage_in) const;
+
+    void set_del_v_fixed_cell(std::size_t nk, std::size_t ns, std::complex<double> **del_v1_del_umn,
+                              std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
+                              std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
+                              std::complex<double> ****del_v3_del_umn) const;
+
+    void set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
+                              std::size_t ns, std::complex<double> **del_v1_del_umn,
+                              std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
+                              std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
+                              std::complex<double> ****del_v3_del_umn, double **omega2_harmonic,
+                              std::complex<double> ***evec_harmonic, int renorm_2to1st, int renorm_34to1st,
+                              int renorm_3to2nd, const std::string &strain_ifc_dir, MinimumDistList ***mindist_list,
+                              const PhaseFactorStorage *phase_storage_in) const;
+
+    void set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
+                                        std::size_t ns, std::complex<double> **del_v1_del_umn,
+                                        std::complex<double> **del2_v1_del_umn2, std::complex<double> ***del_v2_del_umn,
+                                        double **omega2_harmonic, std::complex<double> ***evec_harmonic,
+                                        int renorm_2to1st, int renorm_34to1st, int renorm_3to2nd,
+                                        const std::string &strain_ifc_dir, MinimumDistList ***mindist_list) const;
+
+private:
+    void read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
+                                       const std::complex<double> *const *const *const evec_harmonic,
+                                       std::complex<double> ***del_v2_del_umn, unsigned int nk) const;
+
+    void calculate_delv1_delumn_finite_difference(std::complex<double> **del_v1_del_umn,
+                                                  const std::complex<double> *const *const *const evec_harmonic,
+                                                  const std::string &strain_ifc_dir) const;
+
+    void calculate_delv2_delumn_finite_difference(double **omega2_harmonic,
+                                                  const std::complex<double> *const *const *const evec_harmonic,
+                                                  std::complex<double> ***del_v2_del_umn,
+                                                  const KpointMeshUniform *kmesh_coarse,
+                                                  const KpointMeshUniform *kmesh_dense, int renorm_3to2nd,
+                                                  const std::string &strain_ifc_dir,
+                                                  MinimumDistList ***mindist_list) const;
+
+    void make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const;
+
+    void make_inverse_translation_mapping(int **inv_translation_mapping) const;
 };
 
 } // namespace PHON_NS

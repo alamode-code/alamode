@@ -13,8 +13,6 @@
 #include <Eigen/Core>
 #include <complex>
 #include <memory>
-#include <utility>
-#include "fcs_phonon.h"
 #include "kpoint.h"
 #include "optimizers.h"
 #include "pointers.h"
@@ -187,41 +185,5 @@ private:
 
 
     void set_initial_strain(double *const *const) const;
-
-    static void set_del_v_fixed_cell(const size_t nk, const size_t ns, std::complex<double> **del_v1_del_umn,
-                                     std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
-                                     std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
-                                     std::complex<double> ****del_v3_del_umn);
-
-    void set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                              const size_t ns, std::complex<double> **del_v1_del_umn,
-                              std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
-                              std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
-                              std::complex<double> ****del_v3_del_umn, double **omega2_harmonic,
-                              std::complex<double> ***evec_harmonic, MinimumDistList ***mindist_list,
-                              const PhaseFactorStorage *phase_storage_in);
-
-    void set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                        const size_t ns, std::complex<double> **del_v1_del_umn,
-                                        std::complex<double> **del2_v1_del_umn2, std::complex<double> ***del_v2_del_umn,
-                                        double **omega2_harmonic, std::complex<double> ***evec_harmonic,
-                                        MinimumDistList ***mindist_list);
-
-
-    void calculate_delv2_delumn_finite_difference(double **omega2_harmonic,
-                                                  const std::complex<double> *const *const *const,
-                                                  std::complex<double> ***, const KpointMeshUniform *kmesh_coarse,
-                                                  const KpointMeshUniform *kmesh_dense,
-                                                  MinimumDistList ***mindist_list) const;
-
-    void read_del_v2_del_umn_in_kspace(double **omega2_harmonic, const std::complex<double> *const *const *,
-                                       std::complex<double> ***, unsigned int nk) const;
-
-    void calculate_delv1_delumn_finite_difference(std::complex<double> **,
-                                                  const std::complex<double> *const *const *const) const;
-
-    void make_supercell_mapping_by_symmetry_operations(int **) const;
-
-    void make_inverse_translation_mapping(int **) const;
 };
 } // namespace PHON_NS
