@@ -23,12 +23,13 @@
 #include "scph.h"
 #include "timer.h"
 using namespace PHON_NS;
-void Scph::compute_V3_elements_mpi_over_kpoint(std::complex<double> ***v3_out, double **omega2_harmonic_in,
-                                               const std::complex<double> *const *const *evec_in,
-                                               const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in,
-                                               const KpointMeshUniform *kmesh_dense_in,
-                                               const PhaseFactorStorage *phase_storage_in,
-                                               std::complex<double> *phi3_reciprocal_inout)
+void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(std::complex<double> ***v3_out, double **omega2_harmonic_in,
+                                                        const std::complex<double> *const *const *evec_in,
+                                                        const bool self_offdiag,
+                                                        const KpointMeshUniform *kmesh_coarse_in,
+                                                        const KpointMeshUniform *kmesh_dense_in,
+                                                        const PhaseFactorStorage *phase_storage_in,
+                                                        std::complex<double> *phi3_reciprocal_inout)
 {
     // Calculate the matrix elements of quartic terms in reciprocal space.
     // This is the most expensive part of the SCPH calculation.
@@ -456,13 +457,14 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
 }
 
 
-void Scph::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
-                                               std::complex<double> ***evec_in, const bool self_offdiag,
-                                               const bool relax, const KpointMeshUniform *kmesh_coarse_in,
-                                               const KpointMeshUniform *kmesh_dense_in,
-                                               const std::vector<int> &kmap_coarse_to_dense,
-                                               const PhaseFactorStorage *phase_storage_in,
-                                               std::complex<double> *phi4_reciprocal_inout)
+void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
+                                                        std::complex<double> ***evec_in, const bool self_offdiag,
+                                                        const bool relax,
+                                                        const KpointMeshUniform *kmesh_coarse_in,
+                                                        const KpointMeshUniform *kmesh_dense_in,
+                                                        const std::vector<int> &kmap_coarse_to_dense,
+                                                        const PhaseFactorStorage *phase_storage_in,
+                                                        std::complex<double> *phi4_reciprocal_inout)
 {
     // Calculate the matrix elements of quartic terms in reciprocal space.
     // This is the most expensive part of the SCPH calculation.
@@ -761,13 +763,13 @@ void Scph::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, d
     }
 }
 
-void Scph::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, double **omega2_harmonic_in,
-                                             std::complex<double> ***evec_in, const bool self_offdiag,
-                                             const KpointMeshUniform *kmesh_coarse_in,
-                                             const KpointMeshUniform *kmesh_dense_in,
-                                             const std::vector<int> &kmap_coarse_to_dense,
-                                             const PhaseFactorStorage *phase_storage_in,
-                                             std::complex<double> *phi4_reciprocal_inout)
+void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, double **omega2_harmonic_in,
+                                                      std::complex<double> ***evec_in, const bool self_offdiag,
+                                                      const KpointMeshUniform *kmesh_coarse_in,
+                                                      const KpointMeshUniform *kmesh_dense_in,
+                                                      const std::vector<int> &kmap_coarse_to_dense,
+                                                      const PhaseFactorStorage *phase_storage_in,
+                                                      std::complex<double> *phi4_reciprocal_inout)
 {
     // Calculate the matrix elements of quartic terms in reciprocal space.
     // This is the most expensive part of the SCPH calculation.
@@ -1085,9 +1087,9 @@ void Scph::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, dou
     }
 }
 
-void Scph::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, const int fc_order,
-                                               const unsigned int nk_dense_in,
-                                               const unsigned int nk_irred_coarse_in) const
+void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems,
+                                                        const int fc_order, const unsigned int nk_dense_in,
+                                                        const unsigned int nk_irred_coarse_in) const
 {
     // Set V3 or V4 elements involving acoustic modes at Gamma point
     // exactly zero.

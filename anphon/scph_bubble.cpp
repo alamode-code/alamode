@@ -78,7 +78,7 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                       evec[iT],
                                       dymat_harm_short,
                                       dymat_harm_long,
-                                      mindist_list_scph);
+                                      mindist_list);
     }
 
     thermodynamics->compute_FE_bubble_SCPH(eval, evec, thermodynamics->FE_bubble);
@@ -144,7 +144,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                       evec,
                                       dymat_harm_short,
                                       dymat_harm_long,
-                                      mindist_list_scph);
+                                      mindist_list);
 
         find_degeneracy(degeneracy_at_k, nk_scph, eval);
 
@@ -153,7 +153,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
         for (auto ik = 0; ik < nk_irred_interpolate; ++ik) {
 
             auto knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-            auto knum = kmap_interpolate_to_scph[knum_interpolate];
+            auto knum = kmap_coarse_to_dense[knum_interpolate];
 
             if (mympi->my_rank == 0) {
                 std::cout << "  Irred. k: " << std::setw(5) << ik + 1 << " (";
@@ -291,7 +291,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                     eval_bubble[iT][knum][snum] =
                         eval[knum][snum] * eval[knum][snum] - 2.0 * eval[knum][snum] * real_self[snum];
                     for (auto jk = 1; jk < kmesh_coarse->kpoint_irred_all[ik].size(); ++jk) {
-                        auto knum2 = kmap_interpolate_to_scph[kmesh_coarse->kpoint_irred_all[ik][jk].knum];
+                        auto knum2 = kmap_coarse_to_dense[kmesh_coarse->kpoint_irred_all[ik][jk].knum];
                         eval_bubble[iT][knum2][snum] = eval_bubble[iT][knum][snum];
                     }
                 }
@@ -305,7 +305,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                                 eval_bubble[iT],
                                                 evec,
                                                 kmesh_coarse,
-                                                kmap_interpolate_to_scph);
+                                                kmap_coarse_to_dense);
         }
     }
 
@@ -370,7 +370,7 @@ std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUn
         arr_cubic[1] = ns_in * ik1 + is1;
         arr_cubic[2] = ns_in * ik2 + is2;
 
-        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_factor_scph));
+        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_factor));
 
         if (thermodynamics->classical) {
             n1 = thermodynamics->fC(omega1, temp_in);

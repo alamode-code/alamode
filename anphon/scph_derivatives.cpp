@@ -29,12 +29,12 @@
 #include "dynamical.h"
 #include "kpoint.h"
 #include "memory.h"
-#include "scph.h"
+#include "scph_qha_common.h"
 #include "thermodynamics.h"
 
 using namespace PHON_NS;
 
-void Scph::calculate_del_v0_del_umn_renorm(
+void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
     std::complex<double> *del_v0_del_umn_renorm, double *C1_array, double **C2_array, double ***C3_array,
     double **eta_tensor, double **u_tensor, std::complex<double> **del_v1_del_umn,
     std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
@@ -179,10 +179,10 @@ void Scph::calculate_del_v0_del_umn_renorm(
 }
 
 
-void Scph::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, std::complex<double> *v1_renorm,
-                                       std::complex<double> ***v3_renorm, std::complex<double> ***cmat_convert,
-                                       double **omega2_anharm_T, const double T_in,
-                                       const KpointMeshUniform *kmesh_dense_in)
+void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, std::complex<double> *v1_renorm,
+                                                std::complex<double> ***v3_renorm,
+                                                std::complex<double> ***cmat_convert, double **omega2_anharm_T,
+                                                const double T_in, const KpointMeshUniform *kmesh_dense_in)
 {
     using namespace Eigen;
 
@@ -241,13 +241,14 @@ void Scph::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, std::comple
     }
 }
 
-void Scph::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_v0_del_umn_SCP,
-                                             std::complex<double> *del_v0_del_umn_renorm,
-                                             std::complex<double> ***del_v2_del_umn,
-                                             std::complex<double> ***del2_v2_del_umn2,
-                                             std::complex<double> ****del_v3_del_umn, double **u_tensor, double *q0,
-                                             std::complex<double> ***cmat_convert, double **omega2_anharm_T,
-                                             const double T_in, const KpointMeshUniform *kmesh_dense_in)
+void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_v0_del_umn_SCP,
+                                                      std::complex<double> *del_v0_del_umn_renorm,
+                                                      std::complex<double> ***del_v2_del_umn,
+                                                      std::complex<double> ***del2_v2_del_umn2,
+                                                      std::complex<double> ****del_v3_del_umn, double **u_tensor,
+                                                      double *q0, std::complex<double> ***cmat_convert,
+                                                      double **omega2_anharm_T, const double T_in,
+                                                      const KpointMeshUniform *kmesh_dense_in)
 {
 
     using namespace Eigen;
@@ -338,8 +339,8 @@ void Scph::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_v0_del_um
     deallocate(del_v2_del_umn_renorm);
 }
 
-void Scph::get_derivative_central_diff(const double delta_t, const unsigned int nk, double **omega0, double **omega2,
-                                       double **domega_dt)
+void ScphQhaCommon::get_derivative_central_diff(const double delta_t, const unsigned int nk, double **omega0,
+                                                double **omega2, double **domega_dt)
 {
     const auto ns = dynamical->neval;
     const auto inv_dt = 1.0 / (2.0 * delta_t);

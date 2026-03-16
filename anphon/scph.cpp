@@ -43,7 +43,7 @@
 
 using namespace PHON_NS;
 
-Scph::Scph(PHON *phon) : Pointers(phon)
+Scph::Scph(PHON *phon) : ScphQhaCommon(phon)
 {
     set_default_variables();
 }
@@ -65,66 +65,30 @@ void Scph::set_default_variables()
     selfenergy_offdiagonal = true;
     mix_anderson_ratio = 1.0;
 
-    evec_harmonic = nullptr;
-    omega2_harmonic = nullptr;
-    mat_transform_sym = nullptr;
-    mindist_list_scph = nullptr;
-
     bubble = 0;
-    phi3_reciprocal = nullptr;
-    phi4_reciprocal = nullptr;
     compute_Cv_anharmonic = 0;
 
-    kmesh_coarse = nullptr;
-    kmesh_dense = nullptr;
-
-    phase_factor_scph = nullptr;
+    initialize_variables();
 }
 
-void Scph::deallocate_variables()
-{
-    if (mindist_list_scph) {
-        deallocate(mindist_list_scph);
-    }
-    if (evec_harmonic) {
-        deallocate(evec_harmonic);
-    }
-    if (omega2_harmonic) {
-        deallocate(omega2_harmonic);
-    }
-    if (mat_transform_sym) {
-        deallocate(mat_transform_sym);
-    }
-    if (phi3_reciprocal) {
-        deallocate(phi3_reciprocal);
-    }
-    if (phi4_reciprocal) {
-        deallocate(phi4_reciprocal);
-    }
-
-    delete kmesh_coarse;
-    delete kmesh_dense;
-    delete phase_factor_scph;
-}
 
 void Scph::setup_scph()
 {
     MPI_Bcast(&bubble, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     // Prepare coarse/dense q-point meshes used in SCPH iterations and postprocess.
-    setup_kmesh();
+    setup_kmesh(kmesh_scph,
+                kmesh_interpolate,
+                "SCPH",
+                "KMESH_INTERPOLATE should be a integral multiple of KMESH_SCPH");
     // Allocate and cache harmonic eigenvectors/eigenvalues on the coarse mesh.
     setup_eigvecs();
-    // Build minimum-distance lookup for real-space IFC reconstruction.
-    system->get_minimum_distances(kmesh_coarse->nk_i, mindist_list_scph);
+
     // Precompute reciprocal-space anharmonic interactions (phi3/phi4).
-    setup_pp_interaction();
-    // Build symmetry transformation matrices at Gamma for symmetrization.
-    dynamical->get_symmetry_gamma_dynamical(kmesh_coarse,
-                                            system->get_primcell().number_of_atoms,
-                                            system->get_primcell().x_fractional,
-                                            symmetry->SymmListWithMap,
-                                            mat_transform_sym);
+    const auto relax_str = relaxation->relax_str;
+    setup_pp_interaction(relax_str || bubble > 0);    
+    // Build structural/symmetry data used for IFC reconstruction and matrix symmetrization.
+    setup_structural_data();
 }
 
 void Scph::exec_scph()
@@ -178,7 +142,7 @@ void Scph::exec_scph()
                                       selfenergy_offdiagonal);
         }
         // SCPH + structural optimization
-        else if (phon->mode == "SCPH" && relax_str != 0)
+        else
         {
             // Resume SCPH correction part.
             load_scph_dymat_from_file(delta_dymat_scph,
@@ -209,7 +173,7 @@ void Scph::exec_scph()
             exec_scph_main(delta_dymat_scph);
         }
         // SCPH + structural optimization
-        else if (phon->mode == "SCPH" && relax_str != 0)
+        else 
         {
             // Run coupled SCPH + cell/coordinate relaxation loop.
             exec_scph_relax_cell_coordinate_main(delta_dymat_scph, delta_harmonic_dymat_renormalize);
@@ -218,7 +182,6 @@ void Scph::exec_scph()
         if (mympi->my_rank == 0) {
             // write dymat to file
             // write scph dynamical matrix when scph calculation is performed
-            if (phon->mode == "SCPH") {
                 // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
                 store_scph_dymat_to_file(delta_dymat_scph,
                                          input->job_title + ".scph_dymat",
@@ -226,7 +189,6 @@ void Scph::exec_scph()
                                          kmesh_coarse,
                                          dynamical->nonanalytic,
                                          selfenergy_offdiagonal);
-            }
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
             if (relax_str != 0) {
                 // Persist renormalized harmonic dynamical matrix and relaxation offset.
@@ -239,7 +201,7 @@ void Scph::exec_scph()
                 relaxation->store_V0_to_file();
             }
             // Convert dynamical-matrix correction back to real-space FC2 and write it out.
-            write_anharmonic_correction_fc2(delta_dymat_scph, NT, kmesh_coarse, mindist_list_scph, false, 0);
+            write_anharmonic_correction_fc2(delta_dymat_scph, NT, kmesh_coarse, mindist_list, false, 0);
         }
     }
 
@@ -259,7 +221,7 @@ void Scph::exec_scph()
             write_anharmonic_correction_fc2(delta_dymat_scph_plus_bubble,
                                             NT,
                                             kmesh_coarse,
-                                            mindist_list_scph,
+                                            mindist_list,
                                             false,
                                             bubble);
         }
@@ -269,7 +231,7 @@ void Scph::exec_scph()
                 delta_harmonic_dymat_renormalize,
                 delta_dymat_scph_plus_bubble,
                 kmesh_coarse,
-                mindist_list_scph,
+                mindist_list,
                 false,
                 bubble);
 
@@ -278,9 +240,11 @@ void Scph::exec_scph()
     if (delta_dymat_scph_plus_bubble) deallocate(delta_dymat_scph_plus_bubble);
 }
 
-void Scph::postprocess(std::complex<double> ****delta_dymat, std::complex<double> ****delta_harmonic_dymat_renormalize,
-                       std::complex<double> ****delta_dymat_scph_plus_bubble, const KpointMeshUniform *kmesh_coarse_in,
-                       MinimumDistList ***mindist_list_in, const bool is_qha, const int bubble_in)
+void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
+                                std::complex<double> ****delta_harmonic_dymat_renormalize,
+                                std::complex<double> ****delta_dymat_scph_plus_bubble,
+                                const KpointMeshUniform *kmesh_coarse_in, MinimumDistList ***mindist_list_in,
+                                const bool is_qha, const int bubble_in)
 {
     double ***eval_update = nullptr;
     double ***eval_harm_renorm = nullptr;
@@ -868,8 +832,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                           selfenergy_offdiagonal,
                                           kmesh_coarse,
                                           kmesh_dense,
-                                          kmap_interpolate_to_scph,
-                                          phase_factor_scph,
+                                          kmap_coarse_to_dense,
+                                          phase_factor,
                                           phi4_reciprocal);
     } else {
         compute_V4_elements_mpi_over_kpoint(v4_array_all,
@@ -879,8 +843,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                             relax_str,
                                             kmesh_coarse,
                                             kmesh_dense,
-                                            kmap_interpolate_to_scph,
-                                            phase_factor_scph,
+                                            kmap_coarse_to_dense,
+                                            phase_factor,
                                             phi4_reciprocal);
     }
 
@@ -893,7 +857,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                             selfenergy_offdiagonal,
                                             kmesh_coarse,
                                             kmesh_dense,
-                                            phase_factor_scph,
+                                            phase_factor,
                                             phi3_reciprocal);
     }
 
@@ -966,7 +930,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                                 omega2_anharm[iT],
                                                 evec_anharm_tmp,
                                                 kmesh_coarse,
-                                                kmap_interpolate_to_scph);
+                                                kmap_coarse_to_dense);
 
             if (!warmstart_scph) converged_prev = false;
         }
@@ -1121,8 +1085,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                      omega2_harmonic,
                                      evec_harmonic,
                                      relax_str,
-                                     mindist_list_scph,
-                                     phase_factor_scph);
+                                     mindist_list,
+                                     phase_factor);
 
     allocate(v4_ref, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
 
@@ -1139,8 +1103,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                           selfenergy_offdiagonal,
                                           kmesh_coarse,
                                           kmesh_dense,
-                                          kmap_interpolate_to_scph,
-                                          phase_factor_scph,
+                                          kmap_coarse_to_dense,
+                                          phase_factor,
                                           phi4_reciprocal);
     } else {
         compute_V4_elements_mpi_over_kpoint(v4_ref,
@@ -1150,8 +1114,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                             relax_str,
                                             kmesh_coarse,
                                             kmesh_dense,
-                                            kmap_interpolate_to_scph,
-                                            phase_factor_scph,
+                                            kmap_coarse_to_dense,
+                                            phase_factor,
                                             phi4_reciprocal);
     }
 
@@ -1165,7 +1129,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                         selfenergy_offdiagonal,
                                         kmesh_coarse,
                                         kmesh_dense,
-                                        phase_factor_scph,
+                                        phase_factor,
                                         phi3_reciprocal);
 
 
@@ -1360,7 +1324,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
-                                                    kmap_interpolate_to_scph,
+                                                    kmap_coarse_to_dense,
                                                     delta_v2_with_umn,
                                                     del_v2_del_umn,
                                                     del2_v2_del_umn2,
@@ -1390,7 +1354,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 relaxation->renormalize_v2_from_q0(evec_harmonic,
                                                    kmesh_coarse,
                                                    kmesh_dense,
-                                                   kmap_interpolate_to_scph,
+                                                   kmap_coarse_to_dense,
                                                    mat_transform_sym,
                                                    delta_v2_renorm,
                                                    delta_v2_with_umn,
@@ -1461,7 +1425,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     omega2_anharm[iT],
                                                     evec_anharm_tmp,
                                                     kmesh_coarse,
-                                                    kmap_interpolate_to_scph);
+                                                    kmap_coarse_to_dense);
 
                 // calculate SCP force
                 compute_anharmonic_v1_array(v1_SCP,
@@ -1614,16 +1578,16 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                                evec_harmonic,
                                                                kmesh_coarse,
                                                                kmesh_dense,
-                                                               kmap_interpolate_to_scph,
+                                                               kmap_coarse_to_dense,
                                                                mat_transform_sym,
-                                                               mindist_list_scph,
+                                                               mindist_list,
                                                                writes->getVerbosity());
 
             dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
                                                 omega2_harm_renorm[iT],
                                                 evec_harm_renorm_tmp,
                                                 kmesh_coarse,
-                                                kmap_interpolate_to_scph);
+                                                kmap_coarse_to_dense);
 
         } // close temperature loop
 
@@ -1710,110 +1674,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 //}
 
 
-void Scph::setup_kmesh()
-{
-    // Setup k points for SCPH equation
-    MPI_Bcast(&kmesh_scph[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&kmesh_interpolate[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-
-    kmesh_coarse = new KpointMeshUniform(kmesh_interpolate);
-    kmesh_dense = new KpointMeshUniform(kmesh_scph);
-    kmesh_coarse->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector, true);
-    kmesh_dense->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector, true);
-
-    if (mympi->my_rank == 0) {
-        //        if (verbosity > 0) {
-        std::cout << " Setting up the SCPH calculations ...\n\n";
-        std::cout << "  Gamma-centered uniform grid with the following mesh density:\n";
-        std::cout << "  nk1:" << std::setw(5) << kmesh_scph[0] << '\n';
-        std::cout << "  nk2:" << std::setw(5) << kmesh_scph[1] << '\n';
-        std::cout << "  nk3:" << std::setw(5) << kmesh_scph[2] << "\n\n";
-        std::cout << "  Number of k points : " << kmesh_dense->nk << '\n';
-        std::cout << "  Number of irreducible k points : " << kmesh_dense->nk_irred << "\n\n";
-        std::cout << "  Fourier interpolation from reciprocal to real space\n";
-        std::cout << "  will be performed with the following mesh density:\n";
-        std::cout << "  nk1:" << std::setw(5) << kmesh_interpolate[0] << '\n';
-        std::cout << "  nk2:" << std::setw(5) << kmesh_interpolate[1] << '\n';
-        std::cout << "  nk3:" << std::setw(5) << kmesh_interpolate[2] << "\n\n";
-        std::cout << "  Number of k points : " << kmesh_coarse->nk << '\n';
-        std::cout << "  Number of irreducible k points : " << kmesh_coarse->nk_irred << '\n';
-        //        }
-    }
-
-    auto info_mapping = kpoint->get_kmap_coarse_to_dense(kmesh_coarse, kmesh_dense, kmap_interpolate_to_scph);
-    if (info_mapping == 1) {
-        exit("setup_kmesh", "KMESH_INTERPOLATE should be a integral multiple of KMESH_SCPH");
-    }
-
-    kmesh_coarse->setup_kpoint_symmetry(symmetry->SymmListWithMap);
-}
-
-void Scph::setup_eigvecs()
-{
-    const auto ns = dynamical->neval;
-
-    if (mympi->my_rank == 0) {
-        std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
-    }
-
-    allocate(evec_harmonic, kmesh_dense->nk, ns, ns);
-    allocate(omega2_harmonic, kmesh_dense->nk, ns);
-
-    // Calculate phonon eigenvalues and eigenvectors for all k-points for scph
-
-    //#pragma omp parallel for
-    for (int ik = 0; ik < kmesh_dense->nk; ++ik) {
-
-        dynamical->eval_k(kmesh_dense->xk[ik],
-                          kmesh_dense->kvec_na[ik],
-                          fcs_phonon->force_constant_with_cell[0],
-                          omega2_harmonic[ik],
-                          evec_harmonic[ik],
-                          true);
-
-        for (auto is = 0; is < ns; ++is) {
-            if (std::abs(omega2_harmonic[ik][is]) < eps) {
-                omega2_harmonic[ik][is] = 1.0e-30;
-            }
-        }
-    }
-
-    if (mympi->my_rank == 0) {
-        std::cout << "done !\n";
-    }
-}
-
-void Scph::setup_pp_interaction()
-{
-    // Prepare information for calculating ph-ph interaction coefficients.
-
-    const auto relax_str = relaxation->relax_str;
-
-    if (mympi->my_rank == 0) {
-        if (relax_str || bubble > 0) {
-            std::cout << " Preparing for calculating V3 & V4  ...";
-        } else {
-            std::cout << " Preparing for calculating V4  ...";
-        }
-    }
-
-    if (anharmonic_core->quartic_mode != 1) {
-        exit("setup_pp_interaction", "quartic_mode should be 1 for SCPH");
-    }
-
-    // Setup for V3 if relax_str = True.
-    if (relax_str || bubble > 0) {
-        allocate(phi3_reciprocal, anharmonic_core->get_ngroup_fcs(3));
-    }
-    allocate(phi4_reciprocal, anharmonic_core->get_ngroup_fcs(4));
-
-    phase_factor_scph = new PhaseFactorStorage(kmesh_dense->nk_i);
-    phase_factor_scph->create(true);
-
-    if (mympi->my_rank == 0) {
-        std::cout << " done!\n";
-    }
-}
 
 void Scph::find_degeneracy(std::vector<int> *degeneracy_out, const unsigned int nk_in, double **eval_in) const
 {
@@ -1909,7 +1769,7 @@ void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
     // Set initial harmonic dymat and eigenvalues
     for (unsigned int ik = 0; ik < nk_irred_interpolate; ++ik) {
         const auto knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-        const auto knum = kmap_interpolate_to_scph[knum_interpolate];
+        const auto knum = kmap_coarse_to_dense[knum_interpolate];
 
         Dymat = omega2_HA.row(knum).asDiagonal();
         auto evec_tmp = evec_initial[knum];
@@ -2141,7 +2001,7 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
                                   evec_temp,
                                   dymat_harm_short,
                                   dymat_harm_long,
-                                  mindist_list_scph,
+                                  mindist_list,
                                   true,
                                   true);
 
@@ -2194,7 +2054,7 @@ bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::Matr
     diff = 0.0;
 
     for (unsigned int ik = 0; ik < nk_interpolate; ++ik) {
-        const auto knum = kmap_interpolate_to_scph[ik];
+        const auto knum = kmap_coarse_to_dense[ik];
         for (unsigned int is = 0; is < ns; ++is) {
             diff += std::pow(omega_now(knum, is) - omega_old(knum, is), 2.0);
         }
@@ -2209,7 +2069,7 @@ bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::Matr
         auto has_negative = false;
 
         for (unsigned int ik = 0; ik < nk_interpolate; ++ik) {
-            const auto knum = kmap_interpolate_to_scph[ik];
+            const auto knum = kmap_coarse_to_dense[ik];
             for (unsigned int is = 0; is < ns; ++is) {
                 if (omega_now(knum, is) < 0.0 && std::abs(omega_now(knum, is)) > eps8) {
                     has_negative = true;
@@ -2337,7 +2197,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         for (ik = 0; ik < nk_irred_interpolate; ++ik) {
 
             const unsigned int knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-            knum = kmap_interpolate_to_scph[knum_interpolate];
+            knum = kmap_coarse_to_dense[knum_interpolate];
 
             // Update Fmat with V4 contribution
             update_fmat_with_v4(Fmat0, v4_array_all, dmat_convert, offdiag, ik, Fmat);
@@ -2415,7 +2275,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     if (verbosity > 1) {
         std::cout << "New eigenvalues\n";
         for (ik = 0; ik < nk_interpolate; ++ik) {
-            knum = kmap_interpolate_to_scph[ik];
+            knum = kmap_coarse_to_dense[ik];
             for (is = 0; is < ns; ++is) {
                 std::cout << " ik_interpolate = " << std::setw(5) << ik + 1;
                 std::cout << " is = " << std::setw(5) << is + 1;
@@ -2526,7 +2386,7 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
         // Step 1: Use current D-matrix to build F and diagonalize
         for (ik = 0; ik < nk_irred_interpolate; ++ik) {
             const unsigned int knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-            knum = kmap_interpolate_to_scph[knum_interpolate];
+            knum = kmap_coarse_to_dense[knum_interpolate];
 
             update_fmat_with_v4(Fmat0, v4_array_all, dmat_convert, offdiag, ik, Fmat);
             diagonalize_and_symmetrize(Fmat,
@@ -2756,7 +2616,7 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
     for (auto ik = 0; ik < nk_irred_interpolate; ++ik) {
 
         const auto knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-        const auto knum = kmap_interpolate_to_scph[knum_interpolate];
+        const auto knum = kmap_coarse_to_dense[knum_interpolate];
 
         // Fmat harmonic
         Fmat = Fmat0[ik];
@@ -2847,7 +2707,7 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
                                   evec_out,
                                   dymat_harm_short,
                                   dymat_harm_long,
-                                  mindist_list_scph,
+                                  mindist_list,
                                   false,
                                   false);
 

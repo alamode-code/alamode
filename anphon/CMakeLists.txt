@@ -212,6 +212,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/scph_bubble.cpp
             ${PROJECT_SOURCE_DIR}/scph_derivatives.cpp
             ${PROJECT_SOURCE_DIR}/scph_io.cpp
+            ${PROJECT_SOURCE_DIR}/scph_qha_common.cpp
             ${PROJECT_SOURCE_DIR}/scph_v3v4_elements.cpp
             ${PROJECT_SOURCE_DIR}/selfenergy.cpp
             ${PROJECT_SOURCE_DIR}/symmetry_core.cpp

@@ -14,11 +14,11 @@
 #include "anharmonic_core.h"
 #include "kpoint.h"
 #include "pointers.h"
-#include "scph.h"
+#include "scph_qha_common.h"
 
 namespace PHON_NS
 {
-class Qha: protected Pointers
+class Qha: protected ScphQhaCommon
 {
 public:
     Qha(class PHON *phon);
@@ -42,14 +42,6 @@ public:
 
 private:
     void set_default_variables();
-
-    void deallocate_variables();
-
-    void setup_kmesh();
-
-    void setup_eigvecs();
-
-    void setup_pp_interaction();
 
     void exec_QHA_relax_main(std::complex<double> ****, std::complex<double> ****);
 
@@ -78,27 +70,5 @@ private:
     void compute_cmat(std::complex<double> ***, const std::complex<double> *const *const *const);
 
     void calc_v1_vib(std::complex<double> *, std::complex<double> ***, const double);
-
-    KpointMeshUniform *kmesh_coarse = nullptr;
-    KpointMeshUniform *kmesh_dense = nullptr;
-    std::vector<int> kmap_coarse_to_dense;
-
-    // Information of harmonic dynamical matrix
-    double **omega2_harmonic;
-    std::complex<double> ***evec_harmonic;
-    MinimumDistList ***mindist_list_qha;
-
-    // Information for calculating the ph-ph interaction coefficients
-    std::complex<double> *phi3_reciprocal, *phi4_reciprocal;
-
-    // Local variables for handling symmetry of dynamical matrix
-    std::complex<double> ****mat_transform_sym;
-
-    // Phase shift
-    PhaseFactorStorage *phase_factor_qha;
-
-    std::vector<Eigen::MatrixXcd> dymat_harm_short, dymat_harm_long;
-
-    void zerofill_harmonic_dymat_renormalize(std::complex<double> ****, unsigned int);
 };
 } // namespace PHON_NS
