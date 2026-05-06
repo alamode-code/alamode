@@ -38,7 +38,7 @@ Qha::~Qha()
 void Qha::set_default_variables()
 {
     restart_qha = false;
-    qha_scheme = 0;
+    qha_scheme = QhaScheme::Standard;
 
     initialize_variables();
 }
@@ -51,8 +51,8 @@ void Qha::setup_qha()
                 "QHA",
                 "KMESH_QHA should be a integral multiple of KMESH_INTERPOLATE.");    
     setup_eigvecs();
-    const auto relax_str = relaxation->relax_str;
-    setup_pp_interaction(relax_str > 0);
+    const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
+    setup_pp_interaction(relax_mode != RelaxationStrMode::None);
 
     setup_structural_data();
 }
@@ -71,7 +71,7 @@ void Qha::exec_qha_optimization()
     allocate(delta_dymat_qha, NT, ns, ns, kmesh_coarse->nk);
     allocate(delta_harmonic_dymat_renormalize, NT, ns, ns, kmesh_coarse->nk);
 
-    const auto relax_str = relaxation->relax_str;
+    const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
 
     zerofill_harmonic_dymat_renormalize(delta_harmonic_dymat_renormalize, NT);
 
@@ -96,17 +96,17 @@ void Qha::exec_qha_optimization()
                                   true);
 
         // structural optimization
-        if (relax_str != 0) {
+        if (relax_mode != RelaxationStrMode::None) {
             relaxation->load_V0_from_file();
         }
     } else {
 
         // QHA + structural optimization
-        if (relax_str == 1 || relax_str == 2) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly || relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             exec_QHA_relax_main(delta_dymat_qha, delta_harmonic_dymat_renormalize);
         }
         // lowest-order QHA
-        else if (relax_str == 3)
+        else if (relax_mode == RelaxationStrMode::PerturbativeQha)
         {
             exec_perturbative_QHA(delta_dymat_qha, delta_harmonic_dymat_renormalize);
         }
@@ -114,7 +114,7 @@ void Qha::exec_qha_optimization()
         if (mympi->my_rank == 0) {
             // write dymat to file
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
-            if (relax_str != 0) {
+            if (relax_mode != RelaxationStrMode::None) {
                 store_scph_dymat_to_file(delta_harmonic_dymat_renormalize,
                                          input->job_title + ".renorm_harm_dymat",
                                          kmesh_dense,
@@ -157,6 +157,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
+    const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
     // renormalization of harmonic dynamical matrix
     std::complex<double> **delta_v2_renorm;
     std::complex<double> **delta_v2_with_umn;
@@ -272,7 +273,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                             omega2_harmonic,
                                             evec_harmonic,
                                             true,
-                                            relaxation->relax_str,
+                                            relax_mode != RelaxationStrMode::None,
                                             kmesh_coarse,
                                             kmesh_dense,
                                             kmap_coarse_to_dense,
@@ -301,10 +302,10 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     // compute IFC renormalization by lattice relaxation
     if (mympi->my_rank == 0) {
         std::cout << " RELAX_STR = " << relaxation->relax_str << ": ";
-        if (relaxation->relax_str == 1) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
             std::cout << "Set zeros in derivatives of k-space IFCs by strain.\n\n";
         }
-        if (relaxation->relax_str == 2) {
+        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             std::cout << "Calculating derivatives of k-space IFCs by strain.\n\n";
         }
     }
@@ -326,7 +327,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                      del_v3_del_umn,
                                      omega2_harmonic,
                                      evec_harmonic,
-                                     relaxation->relax_str,
+                                     relax_mode,
                                      mindist_list,
                                      phase_factor);
 
@@ -388,7 +389,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         fout_q0.open(input->job_title + ".normal_disp");
         fout_u0.open(input->job_title + ".atom_disp");
         // if the unit cell is relaxed
-        if (relaxation->relax_str == 2) {
+        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             fout_step_u_tensor.open("step_u_tensor.txt");
             fout_u_tensor.open(input->job_title + ".umn_tensor");
         }
@@ -398,10 +399,10 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         i_temp_loop = -1;
 
         std::cout << " Start structural optimization.\n";
-        if (relaxation->relax_str == 1) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
             std::cout << "  Internal coordinates are relaxed.\n";
             std::cout << "  Shape of the unit cell is fixed.\n\n";
-        } else if (relaxation->relax_str == 2) {
+        } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             std::cout << "  Internal coordinates and shape of the unit cell are relaxed.\n\n";
         }
 
@@ -438,7 +439,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             }
             std::cout << '\n';
 
-            if (relaxation->relax_str == 2) {
+            if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                 std::cout << " Initial strain (displacement gradient tensor u_{mu nu}) : \n";
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                     std::cout << " ";
@@ -563,7 +564,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     }
                 }
 
-                if (relaxation->relax_str == 1) {
+                if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
                     for (i1 = 0; i1 < 9; i1++) {
                         del_v0_del_umn_renorm[i1] = 0.0;
                     }
@@ -573,7 +574,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                         }
                     }
 
-                } else if (relaxation->relax_str == 2) {
+                } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                     // calculate renormalized stress tensor
                     calculate_del_v0_del_umn_renorm(del_v0_del_umn_renorm,
                                                     C1_array,
@@ -646,11 +647,11 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                             temp,
                                             kmesh_dense);
 
-                if (relaxation->relax_str == 1) {
+                if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
                     for (i1 = 0; i1 < 9; i1++) {
                         del_v0_del_umn_QHA[i1] = complex_zero;
                     }
-                } else if (relaxation->relax_str == 2) {
+                } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                     compute_anharmonic_del_v0_del_umn(del_v0_del_umn_QHA,
                                                       del_v0_del_umn_renorm,
                                                       del_v2_del_umn,
@@ -673,7 +674,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                          harm_optical_modes);
 
                     // qha_scheme == 1 : ZSISA
-                    if (qha_scheme == 1) {
+                    if (qha_scheme == QhaScheme::ZSISA) {
                         // overwrite v1_QHA by zero-temperature first-order IFCs.
                         for (is = 0; is < ns; is++) {
                             v1_QHA[is] = v1_renorm[is];
@@ -705,7 +706,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
                     // qha_scheme == 2 : v-ZSISA
                     // overwrite finite-temperature force and stress tensor
-                    if (qha_scheme == 2) {
+                    if (qha_scheme == QhaScheme::VZSISA) {
                         for (is = 0; is < ns; is++) {
                             v1_QHA[is] = v1_renorm[is];
                         }
@@ -758,7 +759,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                 if (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol) {
                     std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
                               << std::setprecision(6) << relaxation->coord_conv_tol << '\n';
-                    if (relaxation->relax_str == 2) {
+                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                         std::cout << " du_tensor is smaller than CELL_CONV_TOL = " << std::scientific << std::setw(15)
                                   << std::setprecision(6) << relaxation->cell_conv_tol << '\n';
                     }
@@ -785,7 +786,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             }
             std::cout << '\n';
 
-            if (relaxation->relax_str == 2) {
+            if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                 std::cout << " Final strain (displacement gradient tensor u_{mu nu}) : \n";
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                     std::cout << " ";
@@ -825,7 +826,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         fout_step_u0.close();
         fout_q0.close();
         fout_u0.close();
-        if (relaxation->relax_str == 2) {
+        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             fout_step_u_tensor.close();
             fout_u_tensor.close();
         }
@@ -1008,7 +1009,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                      nullptr,
                                      omega2_harmonic,
                                      evec_harmonic,
-                                     relaxation->relax_str,
+                                     RelaxationStrMode::PerturbativeQha,
                                      mindist_list,
                                      phase_factor);
 

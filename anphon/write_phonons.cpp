@@ -154,6 +154,8 @@ void Writes::writeInputVars()
         for (i = 0; i < 3; ++i)
             std::cout << std::setw(5) << qha->kmesh_qha[i];
         std::cout << '\n';
+        std::cout << "  SELF_OFFDIAG = " << qha->selfenergy_offdiagonal << '\n';
+        std::cout << "  IALGO = " << qha->ialgo << '\n';
         std::cout << "  LOWER_TEMP = " << qha->lower_temp << '\n';
         // variables related to structural optimization
         std::cout << "  RELAX_STR = " << relaxation->relax_str << '\n';
@@ -188,7 +190,7 @@ void Writes::writeInputVars()
         std::cout << "  STAT_PRESSURE = " << relaxation->stat_pressure << '\n';
 
         if (phon->mode == "QHA" && relaxation->relax_str == 2) {
-            std::cout << "  QHA_SCHEME = " << qha->qha_scheme << '\n';
+            std::cout << "  QHA_SCHEME = " << to_int(qha->qha_scheme) << '\n';
         }
         if (relaxation->relax_str == 2 || relaxation->relax_str == 3) {
             std::cout << "  RENORM_3TO2ND = " << relaxation->renorm_3to2nd << '\n';

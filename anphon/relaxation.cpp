@@ -73,14 +73,16 @@ void Relaxation::setup_relaxation()
 
 void Relaxation::create_optimizer(const size_t num_modes)
 {
-    if (relax_str == 1 && relax_algo == 2) {
+    const auto relax_mode = to_relaxation_str_mode(relax_str);
+
+    if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 2) {
         optimizer = std::make_unique<Newton_Optimizer>(mixbeta_coord);
-    } else if (relax_str == 2 && relax_algo == 2) {
+    } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relax_algo == 2) {
         optimizer = std::make_unique<CellCoord_Newton_Optimizer>(mixbeta_cell, mixbeta_coord);
-    } else if (relax_str == 1 && relax_algo == 3) {
+    } else if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 3) {
         const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes - 3, num_modes - 3);
         optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
-    } else if (relax_str == 2 && relax_algo == 3) {
+    } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relax_algo == 3) {
         const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes + 3, num_modes + 3);
         optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
     }
@@ -159,17 +161,18 @@ void Relaxation::store_V0_to_file() const
 
 void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const
 {
+    const auto relax_mode = to_relaxation_str_mode(relax_str);
 
     // if the shape of the unit cell is relaxed,
     // read elastic constants from file
-    if (relax_str == 2 || relax_str == 3) {
+    if (relax_mode == RelaxationStrMode::CoordinatesAndCell || relax_mode == RelaxationStrMode::PerturbativeQha) {
         read_C1_array(C1_array);
         read_elastic_constants(C2_array, C3_array);
         return;
     }
     // if the unit cell is fixed,
     // dummy values are set in the elastic constants
-    if (relax_str == 1) {
+    if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
         int i1, i2;
         std::fill_n(C1_array, 9, 0.0);
 
@@ -255,6 +258,7 @@ void Relaxation::set_init_structure_atT(double *q0, double **u_tensor, double *u
                                         int &str_diverged, const int i_temp_loop, double **omega2_harmonic,
                                         std::complex<double> ***evec_harmonic) const
 {
+    const auto relax_mode = to_relaxation_str_mode(relax_str);
     int i1, i2;
 
     optimizer->initialize_flag = 1;
@@ -267,7 +271,7 @@ void Relaxation::set_init_structure_atT(double *q0, double **u_tensor, double *u
         calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
 
         // set initial strain
-        if (relax_str == 1) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
             for (i1 = 0; i1 < 3; i1++) {
                 for (i2 = 0; i2 < 3; i2++) {
                     u_tensor[i1][i2] = 0.0;
@@ -292,7 +296,7 @@ void Relaxation::set_init_structure_atT(double *q0, double **u_tensor, double *u
 
         set_initial_q0(q0, evec_harmonic);
         calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
-        if (relax_str == 1) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
             for (i1 = 0; i1 < 3; i1++) {
                 for (i2 = 0; i2 < 3; i2++) {
                     u_tensor[i1][i2] = 0.0;
@@ -310,7 +314,7 @@ void Relaxation::set_init_structure_atT(double *q0, double **u_tensor, double *u
 
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
-            if (relax_str == 1) {
+            if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
                 for (i1 = 0; i1 < 3; i1++) {
                     for (i2 = 0; i2 < 3; i2++) {
                         u_tensor[i1][i2] = 0.0;
@@ -332,7 +336,7 @@ void Relaxation::set_init_structure_atT(double *q0, double **u_tensor, double *u
 
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
-            if (relax_str == 1) {
+            if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
                 for (i1 = 0; i1 < 3; i1++) {
                     for (i2 = 0; i2 < 3; i2++) {
                         u_tensor[i1][i2] = 0.0;
@@ -417,6 +421,7 @@ void Relaxation::update_cell_coordinate(
     double &du_tensor, double **omega2_harmonic, std::complex<double> ***evec_harmonic) const
 {
     using namespace Eigen;
+    const auto relax_mode = to_relaxation_str_mode(relax_str);
 
     const auto ns = dynamical->neval;
     int is;
@@ -434,12 +439,12 @@ void Relaxation::update_cell_coordinate(
     constexpr double Ry_to_kayser_tmp = Hz_to_kayser / time_ry;
     const double add_hess_diag_omega2 = std::pow(add_hess_diag / Ry_to_kayser_tmp, 2);
 
-    if (relax_str == 1) {
+    if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
         delta_vec.assign(ns - 3, 0.0);
         state_vec.assign(ns - 3, 0.0);
         grad_vec.assign(ns - 3, 0.0);
         hessian_mat.assign(ns - 3, std::vector<double>(ns - 3, 0.0));
-    } else if (relax_str == 2) {
+    } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
         delta_vec.assign(ns + 3, 0.0);
         state_vec.assign(ns + 3, 0.0);
         grad_vec.assign(ns + 3, 0.0);
@@ -491,7 +496,7 @@ void Relaxation::update_cell_coordinate(
         }
 
 
-        if (relax_str == 1) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
             int i1, i2;
             // call optimizer
             optimizer->update_state(ns - 3, grad_vec, state_vec, hessian_mat, delta_vec);
@@ -521,7 +526,7 @@ void Relaxation::update_cell_coordinate(
             }
             std::cout << '\n';
 
-        } else if (relax_str == 2) {
+        } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             int itmp1, itmp2, itmp3, itmp4, itmp5, itmp6;
 
             // prepare matrix of elastic constants and vector of del_v0_strain_atT
@@ -676,15 +681,16 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
                                       std::complex<double> **del_v1_del_umn, std::complex<double> **del2_v1_del_umn2,
                                       std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del_v2_del_umn,
                                       std::complex<double> ***del2_v2_del_umn2, std::complex<double> ****del_v3_del_umn,
-                                      double **omega2_harmonic, std::complex<double> ***evec_harmonic, int relax_str,
+                                      double **omega2_harmonic, std::complex<double> ***evec_harmonic,
+                                      const RelaxationStrMode relax_mode,
                                       MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in)
 {
     const auto ns = dynamical->neval;
     const auto nk = kmesh_dense->nk;
 
-    // relax_str == 1: keep the unit cell fixed and relax internal coordinates
+    // CoordinatesOnly: keep the unit cell fixed and relax internal coordinates
     // set renormalization from strain as zero
-    if (relax_str == 1) {
+    if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
         derivative_ifc->set_del_v_fixed_cell(nk,
                                              ns,
                                              del_v1_del_umn,
@@ -698,8 +704,8 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
         return;
     }
 
-    // relax_str == 2: relax both the cell shape and the internal coordinates.
-    if (relax_str == 2) {
+    // CoordinatesAndCell: relax both the cell shape and the internal coordinates.
+    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
 
         derivative_ifc->set_del_v_relax_cell(kmesh_coarse,
                                              kmesh_dense,
@@ -724,8 +730,8 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
         return;
     }
 
-    // relax_str == 3: calculate lowest-order linear equation of QHA.
-    if (relax_str == 3) {
+    // PerturbativeQha: calculate lowest-order linear equation of QHA.
+    if (relax_mode == RelaxationStrMode::PerturbativeQha) {
 
         derivative_ifc->set_del_v_relax_cell_linearQHA(kmesh_coarse,
                                                        kmesh_dense,

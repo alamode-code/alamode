@@ -38,6 +38,7 @@
 #include "phonon_velocity.h"
 #include "qha.h"
 #include "relaxation.h"
+#include "relaxation_types.h"
 #include "scph.h"
 #include "symmetry_core.h"
 #include "system.h"
@@ -554,11 +555,14 @@ void Input::parse_scph_vars()
     assign_val(warm_start, "WARMSTART", scph_var_dict);
     assign_val(bubble, "BUBBLE", scph_var_dict);
     assign_val(relax_str, "RELAX_STR", scph_var_dict);
-    if (relax_str != 0 && !selfenergy_offdiagonal) {
+    if (!is_valid_relaxation_str_mode(relax_str)) {
+        exit("parse_scph_vars", "RELAX_STR must be 0, 1, 2, or 3.");
+    }
+    if (relax_str != to_int(RelaxationStrMode::None) && !selfenergy_offdiagonal) {
         exit("parse_scph_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
     }
 
-    if (relax_str) {
+    if (relax_str != to_int(RelaxationStrMode::None)) {
         auto file_harm_dymat = this->job_title + ".renorm_harm_dymat";
         auto file_v0 = this->job_title + ".V0";
         restart_scph = restart_scph && (stat(file_harm_dymat.c_str(), &st) == 0) && (stat(file_v0.c_str(), &st) == 0);
@@ -643,6 +647,8 @@ void Input::parse_qha_vars()
                                               "LOWER_TEMP",
                                               "RELAX_STR",
                                               "QHA_SCHEME",
+                                              "IALGO",
+                                              "SELF_OFFDIAG",
                                               "RESTART_QHA"};
     std::vector<std::string> no_defaults{"KMESH_QHA", "KMESH_INTERPOLATE"};
     std::vector<int> kmesh_v, kmesh_interpolate_v;
@@ -659,14 +665,27 @@ void Input::parse_qha_vars()
 
     auto lower_temp = true;
     int relax_str = 1;
-    int qha_scheme = 0;
+    int qha_scheme = to_int(QhaScheme::Standard);
+    auto selfenergy_offdiagonal = true;
+    unsigned int ialgo_scph = 0;
 
     assign_val(lower_temp, "LOWER_TEMP", qha_var_dict);
     assign_val(relax_str, "RELAX_STR", qha_var_dict);
     assign_val(qha_scheme, "QHA_SCHEME", qha_var_dict);
+    assign_val(selfenergy_offdiagonal, "SELF_OFFDIAG", qha_var_dict);
+    assign_val(ialgo_scph, "IALGO", qha_var_dict);
 
-    if (relax_str == 0) {
+    if (!is_valid_relaxation_str_mode(relax_str)) {
+        exit("parse_qha_vars", "RELAX_STR must be 1, 2, or 3 when mode = QHA.");
+    }
+    if (relax_str == to_int(RelaxationStrMode::None)) {
         exit("parse_qha_vars", "RELAX_STR = 0 is not supported when mode = QHA.");
+    }
+    if (!is_valid_qha_scheme(qha_scheme)) {
+        exit("parse_qha_vars", "QHA_SCHEME must be 0, 1, or 2.");
+    }
+    if (relax_str != to_int(RelaxationStrMode::None) && !selfenergy_offdiagonal) {
+        exit("parse_qha_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
     }
 
     auto str_tmp = qha_var_dict["KMESH_QHA"];
@@ -720,7 +739,9 @@ void Input::parse_qha_vars()
     }
     qha->lower_temp = lower_temp;
     relaxation->relax_str = relax_str;
-    qha->qha_scheme = qha_scheme;
+    qha->qha_scheme = to_qha_scheme(qha_scheme);
+    qha->selfenergy_offdiagonal = selfenergy_offdiagonal;
+    qha->ialgo = ialgo_scph;
 
     // Set other values
 

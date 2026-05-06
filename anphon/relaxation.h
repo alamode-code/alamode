@@ -16,6 +16,7 @@
 #include "kpoint.h"
 #include "optimizers.h"
 #include "pointers.h"
+#include "relaxation_types.h"
 #include "scph.h"
 
 namespace PHON_NS
@@ -92,7 +93,8 @@ public:
                               std::complex<double> **del_v1_del_umn, std::complex<double> **del2_v1_del_umn2,
                               std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del_v2_del_umn,
                               std::complex<double> ***del2_v2_del_umn2, std::complex<double> ****del_v3_del_umn,
-                              double **omega2_harmonic, std::complex<double> ***evec_harmonic, int relax_str,
+                              double **omega2_harmonic, std::complex<double> ***evec_harmonic,
+                              RelaxationStrMode relax_mode,
                               MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in);
 
     void setInitialDistortion(const double (*u_tensor_in)[3]);

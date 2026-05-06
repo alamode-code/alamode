@@ -14,6 +14,7 @@
 #include "anharmonic_core.h"
 #include "kpoint.h"
 #include "pointers.h"
+#include "relaxation_types.h"
 #include "scph_qha_common.h"
 
 namespace PHON_NS
@@ -31,7 +32,7 @@ public:
     unsigned int kmesh_interpolate[3];
 
     // optimization scheme used in QHA
-    int qha_scheme;
+    QhaScheme qha_scheme = QhaScheme::Standard;
 
     bool restart_qha;
     bool warmstart_qha;
@@ -39,6 +40,9 @@ public:
     double tolerance_qha;
 
     void exec_qha_optimization();
+
+    using ScphQhaCommon::ialgo;
+    using ScphQhaCommon::selfenergy_offdiagonal;
 
 private:
     void set_default_variables();
