@@ -46,10 +46,7 @@ void Qha::set_default_variables()
 
 void Qha::setup_qha()
 {
-    setup_kmesh(kmesh_qha,
-                kmesh_interpolate,
-                "QHA",
-                "KMESH_QHA should be a integral multiple of KMESH_INTERPOLATE.");    
+    setup_kmesh(kmesh_qha, kmesh_interpolate, "QHA", "KMESH_QHA should be a integral multiple of KMESH_INTERPOLATE.");
     setup_eigvecs();
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
     setup_pp_interaction(relax_mode != RelaxationStrMode::None);
@@ -116,11 +113,11 @@ void Qha::exec_qha_optimization()
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
             if (relax_mode != RelaxationStrMode::None) {
                 store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
-                                         input->job_title + ".renorm_harm_dymat",
-                                         kmesh_dense,
-                                         kmesh_coarse,
-                                         dynamical->nonanalytic,
-                                         true);
+                                                 input->job_title + ".renorm_harm_dymat",
+                                                 kmesh_dense,
+                                                 kmesh_coarse,
+                                                 dynamical->nonanalytic,
+                                                 true);
                 relaxation->store_V0_to_file();
             }
             write_anharmonic_correction_fc2(delta_dymat_qha, NT, kmesh_coarse, mindist_list, true);

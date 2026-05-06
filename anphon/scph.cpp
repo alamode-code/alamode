@@ -1306,14 +1306,14 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     u_tensor,
                                                     pvcell);
 
-                std::cout << "u_tensor\n";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                        std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u_tensor[ixyz1][ixyz2]
-                                  << " ";
-                    }
-                    std::cout << '\n';
-                }
+                // std::cout << "u_tensor\n";
+                // for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+                //     for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+                //         std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u_tensor[ixyz1][ixyz2]
+                //                   << " ";
+                //     }
+                //     std::cout << '\n';
+                // }
 
                 relaxation->renormalize_v1_from_umn(v1_with_umn,
                                                     v1_ref,
@@ -1394,10 +1394,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     pvcell,
                                                     kmesh_dense);
 
-                    for (i1 = 0; i1 < 9; i1++) {
-                        std::cout << " del_v0_del_umn_renorm[" << i1 << "] = " << std::scientific << std::setw(15)
-                                  << std::setprecision(6) << del_v0_del_umn_renorm[i1] << '\n';
-                    }
+                    // for (i1 = 0; i1 < 9; i1++) {
+                    //     std::cout << " del_v0_del_umn_renorm[" << i1 << "] = " << std::scientific << std::setw(15)
+                    //               << std::setprecision(6) << del_v0_del_umn_renorm[i1] << '\n';
+                    // }
                 }
 
 
@@ -1436,14 +1436,14 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                             temp,
                                             kmesh_dense);
 
-                std::cout << std::setw(15) << "v1_with_umn";
-                std::cout << std::setw(15) << "v1_renorm";
-                std::cout << std::setw(15) << "v1_SCP\n";
-                for (auto ii = 0; ii < ns; ++ii) {
-                    std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_with_umn[ii];
-                    std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_renorm[ii];
-                    std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_SCP[ii] << '\n';
-                }
+                // std::cout << std::setw(15) << "v1_with_umn";
+                // std::cout << std::setw(15) << "v1_renorm";
+                // std::cout << std::setw(15) << "v1_SCP\n";
+                // for (auto ii = 0; ii < ns; ++ii) {
+                //     std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_with_umn[ii];
+                //     std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_renorm[ii];
+                //     std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_SCP[ii] << '\n';
+                // }
 
                 // calculate SCP stress tensor
                 if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
@@ -1464,10 +1464,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                       kmesh_dense);
                 }
 
-                for (i1 = 0; i1 < 9; i1++) {
-                    std::cout << " del_v0_del_umn_SCP[" << i1 << "] = " << std::scientific << std::setw(15)
-                              << std::setprecision(6) << del_v0_del_umn_SCP[i1] << '\n';
-                }
+                // for (i1 = 0; i1 < 9; i1++) {
+                //     std::cout << " del_v0_del_umn_SCP[" << i1 << "] = " << std::scientific << std::setw(15)
+                //               << std::setprecision(6) << del_v0_del_umn_SCP[i1] << '\n';
+                // }
 
                 relaxation->update_cell_coordinate(q0,
                                                    u0,
@@ -1486,10 +1486,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                    omega2_harmonic,
                                                    evec_harmonic);
 
-                for (i1 = 0; i1 < ns; i1++) {
-                    std::cout << " q0[" << i1 << "] = " << std::scientific << std::setw(15) << std::setprecision(6)
-                              << q0[i1] << '\n';
-                }
+                // for (i1 = 0; i1 < ns; i1++) {
+                //     std::cout << " q0[" << i1 << "] = " << std::scientific << std::setw(15) << std::setprecision(6)
+                //               << q0[i1] << '\n';
+                // }
 
                 relaxation->write_stepresfile(q0,
                                               u_tensor,

@@ -515,16 +515,16 @@ void Relaxation::update_cell_coordinate(
                 }
             }
 
-            std::cout << "grad_vec = ";
-            for (auto &val: grad_vec) {
-                std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
-            }
-            std::cout << '\n';
-            std::cout << "state_vec = ";
-            for (auto &val: state_vec) {
-                std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
-            }
-            std::cout << '\n';
+            // std::cout << "grad_vec = ";
+            // for (auto &val: grad_vec) {
+            //     std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
+            // }
+            // std::cout << '\n';
+            // std::cout << "state_vec = ";
+            // for (auto &val: state_vec) {
+            //     std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
+            // }
+            // std::cout << '\n';
 
         } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             int itmp1, itmp2, itmp3, itmp4, itmp5, itmp6;
@@ -561,10 +561,10 @@ void Relaxation::update_cell_coordinate(
                 }
             }
 
-            std::cout << "del_v0_strain_vec\n";
-            std::cout << del_v0_strain_vec << '\n';
-            std::cout << "C2_mat_tmp = \n";
-            std::cout << C2_mat_tmp << '\n';
+            // std::cout << "del_v0_strain_vec\n";
+            // std::cout << del_v0_strain_vec << '\n';
+            // std::cout << "C2_mat_tmp = \n";
+            // std::cout << C2_mat_tmp << '\n';
 
             // write C2mat to hessian matrix
             for (itmp1 = 0; itmp1 < 6; itmp1++) {
@@ -585,27 +585,27 @@ void Relaxation::update_cell_coordinate(
                 }
             }
 
-            std::cout << "grad_vec = ";
-            for (auto &val: grad_vec) {
-                std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
-            }
-            std::cout << '\n';
-            std::cout << "state_vec = ";
-            for (auto &val: state_vec) {
-                std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
-            }
-            std::cout << '\n';
+            // std::cout << "grad_vec = ";
+            // for (auto &val: grad_vec) {
+            //     std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
+            // }
+            // std::cout << '\n';
+            // std::cout << "state_vec = ";
+            // for (auto &val: state_vec) {
+            //     std::cout << std::setw(15) << std::setprecision(6) << val << ' ';
+            // }
+            // std::cout << '\n';
 
 
             // call optimizer
             optimizer->update_state(ns + 3, grad_vec, state_vec, hessian_mat, delta_vec);
 
             // update q0
-            std::cout << "update state";
+            // std::cout << "update state";
             for (is = 0; is < ns - 3; is++) {
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];
-                std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]]
-                          << '\n';
+                // std::cout << "delta_q0[" << harm_optical_modes[is] << "] = " << delta_q0[harm_optical_modes[is]]
+                        //   << '\n';
                 q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
             // update u tensor
@@ -640,11 +640,11 @@ void Relaxation::update_cell_coordinate(
         }
     }
     du_tensor = std::sqrt(du_tensor);
-    std::cout << "delta_umn\n";
-    for (is = 0; is < 6; is++) {
-        std::cout << delta_umn[is] << '\n';
-    }
-    std::cout << "\n";
+    // std::cout << "delta_umn\n";
+    // for (is = 0; is < 6; is++) {
+    //     std::cout << delta_umn[is] << '\n';
+    // }
+    // std::cout << "\n";
 }
 
 void Relaxation::check_str_divergence(int &diverged, const double *const q0, const double *const u0,
