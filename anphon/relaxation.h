@@ -103,76 +103,77 @@ public:
 
     void store_V0_to_file() const;
 
-    void set_init_structure_atT(double *q0, double **u_tensor, double *u0, bool &converged_prev, int &str_diverged,
+    void set_init_structure_atT(RelaxationStructureState &structure_state, bool &converged_prev, int &str_diverged,
                                 const int i_temp_loop, double **omega2_harmonic,
                                 std::complex<double> ***evec_harmonic) const;
 
 
     void set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const;
 
-    static void renormalize_v0_from_umn(double &, double, double **, double *, double **, double ***, double **,
-                                        const double);
+    static void renormalize_v0_from_umn(double &, double, double **, double *, double **, double ***,
+                                        const std::array<std::array<double, 3>, 3> &, const double);
 
     void renormalize_v1_from_umn(std::complex<double> *, const std::complex<double> *const,
                                  const std::complex<double> *const *const, const std::complex<double> *const *const,
-                                 const std::complex<double> *const *const, const double *const *const) const;
+                                 const std::complex<double> *const *const,
+                                 const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse, const std::vector<int> &kmap_coarse_to_dense,
                                  std::complex<double> **, std::complex<double> ***, std::complex<double> ***,
-                                 double **) const;
+                                 const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                  std::complex<double> ***, std::complex<double> ***, std::complex<double> ****,
-                                 double **) const;
+                                 const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v1_from_q0(double **omega2_harmonic, const KpointMeshUniform *kmesh_coarse,
                                 const KpointMeshUniform *kmesh_dense, std::complex<double> *, std::complex<double> *,
                                 std::complex<double> **, std::complex<double> ***, std::complex<double> ***,
-                                double *) const;
+                                const std::vector<double> &) const;
 
     void renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, const KpointMeshUniform *kmesh_coarse,
                                 const KpointMeshUniform *kmesh_dense, const std::vector<int> &kmap_coarse_to_dense,
                                 std::complex<double> ****mat_transform_sym, std::complex<double> **delta_v2_renorm,
                                 std::complex<double> **delta_v2_array_original, std::complex<double> ***v3_ref,
-                                std::complex<double> ***v4_ref, double *q0) const;
+                                std::complex<double> ***v4_ref, const std::vector<double> &) const;
 
     void renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense, const KpointMeshUniform *kmesh_coarse,
                                 std::complex<double> ***, std::complex<double> ***, std::complex<double> ***,
-                                double *) const;
+                                const std::vector<double> &) const;
 
     void renormalize_v0_from_q0(double **omega2_harmonic, const KpointMeshUniform *kmesh_dense, double &, double,
                                 std::complex<double> *, std::complex<double> **, std::complex<double> ***,
-                                std::complex<double> ***, double *) const;
+                                std::complex<double> ***, const std::vector<double> &) const;
 
     void calculate_u0(const double *const q0, double *const u0, double **omega2_harmonic,
                       std::complex<double> ***evec_harmonic) const;
+    void calculate_u0(const std::vector<double> &q0, std::vector<double> &u0, double **omega2_harmonic,
+                      std::complex<double> ***evec_harmonic) const;
 
-    void update_cell_coordinate(double *, double *, double **, const std::complex<double> *const,
+    void update_cell_coordinate(RelaxationStructureState &, const std::complex<double> *const,
                                 const double *const *const, const std::complex<double> *const,
                                 const double *const *const, const std::complex<double> *const *const *const,
-                                const std::vector<int> &, double *, double *, double *, double &, double &,
-                                double **omega2_harmonic, std::complex<double> ***evec_harmonic) const;
+                                const std::vector<int> &, double **omega2_harmonic,
+                                std::complex<double> ***evec_harmonic) const;
 
-    void check_str_divergence(int &diverged, const double *const q0, const double *const u0,
-                              const double *const *const u_tensor) const;
+    void check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const;
 
 
     void write_resfile_header(std::ofstream &fout_q0, std::ofstream &fout_u0, std::ofstream &fout_u_tensor) const;
 
-    void write_resfile_atT(const double *const q0, const double *const *const u_tensor, const double *const u0,
-                           const double temperature, std::ofstream &fout_q0, std::ofstream &fout_u0,
-                           std::ofstream &fout_u_tensor) const;
+    void write_resfile_atT(const RelaxationStructureState &structure_state, const double temperature,
+                           std::ofstream &fout_q0, std::ofstream &fout_u0, std::ofstream &fout_u_tensor) const;
 
     void write_stepresfile_header_atT(std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
                                       std::ofstream &fout_step_u_tensor, const double temp) const;
 
-    void write_stepresfile(const double *const q0, const double *const *const u_tensor, const double *const u0,
-                           const int i_str_loop, std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
+    void write_stepresfile(const RelaxationStructureState &structure_state, const int i_str_loop,
+                           std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
                            std::ofstream &fout_step_u_tensor) const;
 
     static int get_xyz_string(const int, std::string &);
 
-    static void calculate_eta_tensor(double **, const double *const *const);
+    static void calculate_eta_tensor(double **, const std::array<std::array<double, 3>, 3> &);
 
 private:
     void set_default_variables();
@@ -183,9 +184,9 @@ private:
 
     void read_elastic_constants(double *const *const, double *const *const *const) const;
 
-    void set_initial_q0(double *const q0, std::complex<double> ***evec_harmonic) const;
+    void set_initial_q0(std::vector<double> &q0, std::complex<double> ***evec_harmonic) const;
 
 
-    void set_initial_strain(double *const *const) const;
+    void set_initial_strain(std::array<std::array<double, 3>, 3> &u_tensor) const;
 };
 } // namespace PHON_NS

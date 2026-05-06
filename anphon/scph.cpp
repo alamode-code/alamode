@@ -11,6 +11,7 @@
 #include "scph.h"
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -1004,14 +1005,11 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
     // structure optimization
     int i_str_loop, i_temp_loop;
-    double *q0, *u0;
-    double **u_tensor, **eta_tensor;
+    double **eta_tensor;
 
     // structure update
     double du0;
     double du_tensor;
-    double *delta_q0, *delta_u0;
-    double *delta_umn;
     std::vector<int> harm_optical_modes(ns - 3);
 
     // cell optimization
@@ -1039,14 +1037,13 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     allocate(v1_with_umn, ns);
     allocate(v1_renorm, ns);
 
-    allocate(q0, ns);
-    allocate(u0, ns);
-    allocate(u_tensor, 3, 3);
     allocate(eta_tensor, 3, 3);
 
-    allocate(delta_q0, ns);
-    allocate(delta_u0, ns);
-    allocate(delta_umn, 6);
+    RelaxationStructureState structure_state;
+    structure_state.resize(ns);
+    auto &q0 = structure_state.q0;
+    auto &u0 = structure_state.u0;
+    auto &u_tensor = structure_state.u_tensor;
 
     allocate(v1_SCP, ns);
     allocate(del_v0_del_umn_renorm, 9);
@@ -1244,9 +1241,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 }
             }
 
-            relaxation->set_init_structure_atT(q0,
-                                               u_tensor,
-                                               u0,
+            relaxation->set_init_structure_atT(structure_state,
                                                converged_prev,
                                                str_diverged,
                                                i_temp_loop,
@@ -1283,7 +1278,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
             relaxation->write_stepresfile_header_atT(fout_step_q0, fout_step_u0, fout_step_u_tensor, temp);
 
-            relaxation->write_stepresfile(q0, u_tensor, u0, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
+            relaxation->write_stepresfile(structure_state, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
 
             std::cout << " ----------------------------------------------------------------\n";
 
@@ -1469,37 +1464,30 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 //               << std::setprecision(6) << del_v0_del_umn_SCP[i1] << '\n';
                 // }
 
-                relaxation->update_cell_coordinate(q0,
-                                                   u0,
-                                                   u_tensor,
+                relaxation->update_cell_coordinate(structure_state,
                                                    v1_SCP,
                                                    omega2_anharm[iT],
                                                    del_v0_del_umn_SCP,
                                                    C2_array,
                                                    cmat_convert,
                                                    harm_optical_modes,
-                                                   delta_q0,
-                                                   delta_u0,
-                                                   delta_umn,
-                                                   du0,
-                                                   du_tensor,
                                                    omega2_harmonic,
                                                    evec_harmonic);
+                du0 = structure_state.du0;
+                du_tensor = structure_state.du_tensor;
 
                 // for (i1 = 0; i1 < ns; i1++) {
                 //     std::cout << " q0[" << i1 << "] = " << std::scientific << std::setw(15) << std::setprecision(6)
                 //               << q0[i1] << '\n';
                 // }
 
-                relaxation->write_stepresfile(q0,
-                                              u_tensor,
-                                              u0,
+                relaxation->write_stepresfile(structure_state,
                                               i_str_loop + 1,
                                               fout_step_q0,
                                               fout_step_u0,
                                               fout_step_u_tensor);
 
-                relaxation->check_str_divergence(str_diverged, q0, u0, u_tensor);
+                relaxation->check_str_divergence(str_diverged, structure_state);
 
                 if (str_diverged) {
                     converged_prev = false;
@@ -1566,7 +1554,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             // print obtained structure
             relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
 
-            relaxation->write_resfile_atT(q0, u_tensor, u0, temp, fout_q0, fout_u0, fout_u_tensor);
+            relaxation->write_resfile_atT(structure_state, temp, fout_q0, fout_u0, fout_u_tensor);
 
             if (!warmstart_scph) converged_prev = false;
 
@@ -1642,14 +1630,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(v1_SCP);
     deallocate(del_v0_del_umn_SCP);
 
-    deallocate(q0);
-    deallocate(u0);
-    deallocate(u_tensor);
     deallocate(eta_tensor);
-
-    deallocate(delta_q0);
-    deallocate(delta_u0);
-    deallocate(delta_umn);
 }
 
 

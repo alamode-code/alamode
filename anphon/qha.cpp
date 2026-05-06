@@ -10,6 +10,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include "qha.h"
 #include <Eigen/Core>
+#include <array>
 #include <iomanip>
 #include "constants.h"
 #include "dynamical.h"
@@ -196,14 +197,11 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
     // structure optimization
     int i_str_loop, i_temp_loop;
-    double *q0, *u0;
-    double **u_tensor, **eta_tensor;
+    double **eta_tensor;
 
     // structure update
     double du0;
     double du_tensor;
-    double *delta_q0, *delta_u0;
-    double *delta_umn;
     std::vector<int> harm_optical_modes(ns - 3);
 
     // cell optimization
@@ -225,14 +223,13 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     allocate(v1_with_umn, ns);
     allocate(v1_renorm, ns);
 
-    allocate(q0, ns);
-    allocate(u0, ns);
-    allocate(u_tensor, 3, 3);
     allocate(eta_tensor, 3, 3);
 
-    allocate(delta_q0, ns);
-    allocate(delta_u0, ns);
-    allocate(delta_umn, 6);
+    RelaxationStructureState structure_state;
+    structure_state.resize(ns);
+    auto &q0 = structure_state.q0;
+    auto &u0 = structure_state.u0;
+    auto &u_tensor = structure_state.u_tensor;
 
     allocate(v1_QHA, ns);
     allocate(del_v0_del_umn_renorm, 9);
@@ -412,9 +409,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             std::cout << " Temperature = " << temp << " K\n";
             std::cout << " Temperature index : " << std::setw(4) << i_temp_loop << "/" << std::setw(4) << NT << "\n\n";
 
-            relaxation->set_init_structure_atT(q0,
-                                               u_tensor,
-                                               u0,
+            relaxation->set_init_structure_atT(structure_state,
                                                converged_prev,
                                                str_diverged,
                                                i_temp_loop,
@@ -450,7 +445,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
             relaxation->write_stepresfile_header_atT(fout_step_q0, fout_step_u0, fout_step_u_tensor, temp);
 
-            relaxation->write_stepresfile(q0, u_tensor, u0, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
+            relaxation->write_stepresfile(structure_state, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
 
             std::cout << " ----------------------------------------------------------------\n";
 
@@ -714,32 +709,21 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     }
                 }
 
-                relaxation->update_cell_coordinate(q0,
-                                                   u0,
-                                                   u_tensor,
+                relaxation->update_cell_coordinate(structure_state,
                                                    v1_QHA,
                                                    omega2_harm_renorm[iT],
                                                    del_v0_del_umn_QHA,
                                                    C2_array,
                                                    cmat_convert,
                                                    harm_optical_modes,
-                                                   delta_q0,
-                                                   delta_u0,
-                                                   delta_umn,
-                                                   du0,
-                                                   du_tensor,
                                                    omega2_harmonic,
                                                    evec_harmonic);
+                du0 = structure_state.du0;
+                du_tensor = structure_state.du_tensor;
 
-                relaxation->write_stepresfile(q0,
-                                              u_tensor,
-                                              u0,
-                                              i_str_loop + 1,
-                                              fout_step_q0,
-                                              fout_step_u0,
+                relaxation->write_stepresfile(structure_state, i_str_loop + 1, fout_step_q0, fout_step_u0,
                                               fout_step_u_tensor);
-
-                relaxation->check_str_divergence(str_diverged, q0, u0, u_tensor);
+                relaxation->check_str_divergence(str_diverged, structure_state);
 
                 if (str_diverged) {
                     converged_prev = false;
@@ -815,7 +799,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             // print obtained structure
             relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
 
-            relaxation->write_resfile_atT(q0, u_tensor, u0, temp, fout_q0, fout_u0, fout_u_tensor);
+            relaxation->write_resfile_atT(structure_state, temp, fout_q0, fout_u0, fout_u_tensor);
         }
 
         // Output files of structural optimization
@@ -861,14 +845,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     deallocate(del2_v2_del_umn2);
     deallocate(del_v3_del_umn);
 
-    deallocate(q0);
-    deallocate(u0);
-    deallocate(u_tensor);
     deallocate(eta_tensor);
-
-    deallocate(delta_q0);
-    deallocate(delta_u0);
-    deallocate(delta_umn);
 
     deallocate(v1_QHA);
     deallocate(del_v1_del_umn_renorm);
@@ -934,8 +911,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
     // structural optimization
     int i_temp_loop;
-    double *q0, *u0;
-    double **u_tensor, **eta_tensor;
+    double **eta_tensor;
+    RelaxationStructureState structure_state;
     std::vector<int> harm_optical_modes(ns - 3);
 
     // temperature grid
@@ -957,10 +934,11 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     allocate(v1_vib, ns);
     allocate(del_v0_del_umn_vib, 9);
 
-    allocate(q0, ns);
-    allocate(u0, ns);
-    allocate(u_tensor, 3, 3);
     allocate(eta_tensor, 3, 3);
+    structure_state.resize(ns);
+    auto &q0 = structure_state.q0;
+    auto &u0 = structure_state.u0;
+    auto &u_tensor = structure_state.u_tensor;
 
     allocate(v4_array_dummy, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
 
@@ -1182,7 +1160,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
             // print obtained structure
             relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
 
-            relaxation->write_resfile_atT(q0, u_tensor, u0, temp, fout_q0, fout_u0, fout_u_tensor);
+            relaxation->write_resfile_atT(structure_state, temp, fout_q0, fout_u0, fout_u_tensor);
 
             // calculate renormalized IFCs for postprocess
             // Note that the cubic IFCs are fixed at the reference values in perturbative QHA.
@@ -1292,9 +1270,6 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     deallocate(delta_v2_renorm);
     deallocate(delta_v2_with_umn);
 
-    deallocate(q0);
-    deallocate(u0);
-    deallocate(u_tensor);
     deallocate(eta_tensor);
 
     deallocate(v4_array_dummy);
@@ -1359,13 +1334,15 @@ void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib, std:
     }
 }
 
-void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_renorm, double **u_tensor,
+void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_renorm,
+                                          const std::array<std::array<double, 3>, 3> &u_tensor,
                                           std::complex<double> **del_v1_del_umn,
                                           std::complex<double> **del2_v1_del_umn2,
                                           std::complex<double> **del3_v1_del_umn3,
                                           std::complex<double> ***del_v2_del_umn,
                                           std::complex<double> ***del2_v2_del_umn2,
-                                          std::complex<double> ****del_v3_del_umn, double *q0)
+                                          std::complex<double> ****del_v3_del_umn,
+                                          const std::vector<double> &q0)
 {
     int ns = dynamical->neval;
     int nk = kmesh_dense->nk;
@@ -1455,10 +1432,11 @@ void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_
 }
 
 
-void Qha::calculate_C2_array_renorm(double **C2_array_renorm, double **u_tensor, double **eta_tensor, double **C2_array,
-                                    double ***C3_array, std::complex<double> **del2_v1_del_umn2,
-                                    std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del2_v2_del_umn2,
-                                    double *q0)
+void Qha::calculate_C2_array_renorm(double **C2_array_renorm,
+                                    const std::array<std::array<double, 3>, 3> &u_tensor,
+                                    double **eta_tensor, double **C2_array, double ***C3_array,
+                                    std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
+                                    std::complex<double> ***del2_v2_del_umn2, const std::vector<double> &q0)
 {
     int ns = dynamical->neval;
     double **del_eta_del_u;
@@ -1629,7 +1607,7 @@ void Qha::compute_ZSISA_stress(double **delq_delu_ZSISA_out, std::complex<double
 
 void Qha::compute_vZSISA_stress(std::complex<double> *del_v0_del_umn_vZSISA, double **C2_array_ZSISA,
                                 std::complex<double> *del_v0_del_umn_renorm, std::complex<double> *del_v0_del_umn_ZSISA,
-                                double **u_tensor)
+                                const std::array<std::array<double, 3>, 3> &u_tensor)
 {
     using namespace Eigen;
 
