@@ -197,7 +197,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
     // structure optimization
     int i_str_loop, i_temp_loop;
-    double **eta_tensor;
 
     // structure update
     double du0;
@@ -223,13 +222,12 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     allocate(v1_with_umn, ns);
     allocate(v1_renorm, ns);
 
-    allocate(eta_tensor, 3, 3);
-
     RelaxationStructureState structure_state;
     structure_state.resize(ns);
     auto &q0 = structure_state.q0;
     auto &u0 = structure_state.u0;
     auto &u_tensor = structure_state.u_tensor;
+    auto &eta_tensor = structure_state.eta_tensor;
 
     allocate(v1_QHA, ns);
     allocate(del_v0_del_umn_renorm, 9);
@@ -458,15 +456,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                 // get eta tensor
                 relaxation->calculate_eta_tensor(eta_tensor, u_tensor);
 
-                // std::cout << "Eta tensor:\n";
-                // for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                //     std::cout << " ";
-                //     for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                //         std::cout << std::scientific << std::setw(15) << std::setprecision(6) << eta_tensor[ixyz1][ixyz2];
-                //     }
-                //     std::cout << '\n';
-                // }
-
                 // calculate IFCs under strain
                 relaxation->renormalize_v0_from_umn(v0_with_umn,
                                                     v0_ref,
@@ -501,20 +490,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                         }
                     }
                 }
-
-                // std::cout << "V0 with strain = " << v0_with_umn << '\n';
-                // std::cout << "V1_with_umn\n";
-                // for (i1 = 0; i1 < ns; ++i1) {
-                //     std::cout << "v1_with_umn[" << i1 << "] = " << v1_with_umn[i1] << '\n';
-                // }
-                // std::cout << "delta_v2_with_umn\n";
-                // for (i1 = 0; i1 < nk_interpolate; ++i1) {
-                //     for (size_t i2 = 0; i2 < ns * ns; ++i2) {
-                //         if (std::abs(delta_v2_with_umn[i1][i2]) > eps8) {
-                //             std::cout << "delta_v2_with_umn[" << i1 << "][" << i2 << "] = " << delta_v2_with_umn[i1][i2] << '\n';
-                //         }
-                //     }
-                // }
 
                 //renormalize IFC
                 relaxation->renormalize_v1_from_q0(omega2_harmonic,
@@ -583,10 +558,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                                     q0,
                                                     pvcell,
                                                     kmesh_dense);
-                    // std::cout << "\n";
-                    // for (i1 = 0; i1 < 9; ++i1) {
-                    //     std::cout << "del_v0_del_umn_renorm[" << i1 << "] = " << del_v0_del_umn_renorm[i1] << '\n';
-                    // }
+
                     // calculate renormalized strain-force coupling for ZSISA and v-ZSISA.
                     calculate_del_v1_del_umn_renorm(del_v1_del_umn_renorm,
                                                     u_tensor,
@@ -597,12 +569,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                                     del2_v2_del_umn2,
                                                     del_v3_del_umn,
                                                     q0);
-                    // std::cout << "\n";
-                    // for (i1 = 0; i1 < 9; ++i1) {
-                    //     for (is1 = 0; is1 < ns; ++is1) {
-                    //         std::cout << "del_v1_del_umn_renorm[" << i1 << "][" << is1 << "] = " << del_v1_del_umn_renorm[i1][is1] << '\n';
-                    //     }
-                    // }
                 }
 
                 dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm[iT],
@@ -845,8 +811,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     deallocate(del2_v2_del_umn2);
     deallocate(del_v3_del_umn);
 
-    deallocate(eta_tensor);
-
     deallocate(v1_QHA);
     deallocate(del_v1_del_umn_renorm);
     deallocate(del_v0_del_umn_QHA);
@@ -911,7 +875,6 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
     // structural optimization
     int i_temp_loop;
-    double **eta_tensor;
     RelaxationStructureState structure_state;
     std::vector<int> harm_optical_modes(ns - 3);
 
@@ -934,11 +897,11 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     allocate(v1_vib, ns);
     allocate(del_v0_del_umn_vib, 9);
 
-    allocate(eta_tensor, 3, 3);
     structure_state.resize(ns);
     auto &q0 = structure_state.q0;
     auto &u0 = structure_state.u0;
     auto &u_tensor = structure_state.u_tensor;
+    auto &eta_tensor = structure_state.eta_tensor;
 
     allocate(v4_array_dummy, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
 
@@ -1270,8 +1233,6 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     deallocate(delta_v2_renorm);
     deallocate(delta_v2_with_umn);
 
-    deallocate(eta_tensor);
-
     deallocate(v4_array_dummy);
     deallocate(v3_ref);
 
@@ -1434,7 +1395,8 @@ void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_
 
 void Qha::calculate_C2_array_renorm(double **C2_array_renorm,
                                     const std::array<std::array<double, 3>, 3> &u_tensor,
-                                    double **eta_tensor, double **C2_array, double ***C3_array,
+                                    std::array<std::array<double, 3>, 3> &eta_tensor, 
+                                    double **C2_array, double ***C3_array,
                                     std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
                                     std::complex<double> ***del2_v2_del_umn2, const std::vector<double> &q0)
 {

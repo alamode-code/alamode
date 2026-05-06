@@ -1005,7 +1005,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
     // structure optimization
     int i_str_loop, i_temp_loop;
-    double **eta_tensor;
 
     // structure update
     double du0;
@@ -1037,13 +1036,12 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     allocate(v1_with_umn, ns);
     allocate(v1_renorm, ns);
 
-    allocate(eta_tensor, 3, 3);
-
     RelaxationStructureState structure_state;
     structure_state.resize(ns);
     auto &q0 = structure_state.q0;
     auto &u0 = structure_state.u0;
     auto &u_tensor = structure_state.u_tensor;
+    auto &eta_tensor = structure_state.eta_tensor;
 
     allocate(v1_SCP, ns);
     allocate(del_v0_del_umn_renorm, 9);
@@ -1630,7 +1628,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(v1_SCP);
     deallocate(del_v0_del_umn_SCP);
 
-    deallocate(eta_tensor);
 }
 
 

@@ -36,7 +36,8 @@ using namespace PHON_NS;
 
 void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
     std::complex<double> *del_v0_del_umn_renorm, double *C1_array, double **C2_array, double ***C3_array,
-    double **eta_tensor, const std::array<std::array<double, 3>, 3> &u_tensor,
+    std::array<std::array<double, 3>, 3> &eta_tensor, 
+    const std::array<std::array<double, 3>, 3> &u_tensor,
     std::complex<double> **del_v1_del_umn,
     std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
     std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,

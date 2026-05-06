@@ -772,7 +772,8 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
     }
 }
 
-void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref, double **eta_tensor, double *C1_array,
+void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
+                                         std::array<std::array<double, 3>, 3> &eta_tensor, double *C1_array,
                                          double **C2_array, double ***C3_array,
                                          const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell)
 {
@@ -1323,7 +1324,8 @@ int Relaxation::get_xyz_string(const int ixyz, std::string &xyz_str)
     return 0;
 }
 
-void Relaxation::calculate_eta_tensor(double **eta_tensor, const std::array<std::array<double, 3>, 3> &u_tensor)
+void Relaxation::calculate_eta_tensor(std::array<std::array<double, 3>, 3> &eta_tensor,
+                                      const std::array<std::array<double, 3>, 3> &u_tensor)
 {
     for (auto i1 = 0; i1 < 3; i1++) {
         for (auto i2 = 0; i2 < 3; i2++) {

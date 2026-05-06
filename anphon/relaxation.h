@@ -94,8 +94,8 @@ public:
                               std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del_v2_del_umn,
                               std::complex<double> ***del2_v2_del_umn2, std::complex<double> ****del_v3_del_umn,
                               double **omega2_harmonic, std::complex<double> ***evec_harmonic,
-                              RelaxationStrMode relax_mode,
-                              MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in);
+                              RelaxationStrMode relax_mode, MinimumDistList ***mindist_list,
+                              const PhaseFactorStorage *phase_storage_in);
 
     void setInitialDistortion(const double (*u_tensor_in)[3]);
 
@@ -110,8 +110,10 @@ public:
 
     void set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const;
 
-    static void renormalize_v0_from_umn(double &, double, double **, double *, double **, double ***,
-                                        const std::array<std::array<double, 3>, 3> &, const double);
+    static void renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
+                                        std::array<std::array<double, 3>, 3> &eta_tensor, double *C1_array,
+                                        double **C2_array, double ***C3_array,
+                                        const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell);
 
     void renormalize_v1_from_umn(std::complex<double> *, const std::complex<double> *const,
                                  const std::complex<double> *const *const, const std::complex<double> *const *const,
@@ -173,7 +175,8 @@ public:
 
     static int get_xyz_string(const int, std::string &);
 
-    static void calculate_eta_tensor(double **, const std::array<std::array<double, 3>, 3> &);
+    static void calculate_eta_tensor(std::array<std::array<double, 3>, 3> &,
+                                     const std::array<std::array<double, 3>, 3> &);
 
 private:
     void set_default_variables();
