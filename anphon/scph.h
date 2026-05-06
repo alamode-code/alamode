@@ -66,7 +66,7 @@ public:
 
     using ScphQhaCommon::write_anharmonic_correction_fc2;
     using ScphQhaCommon::load_scph_dymat_from_file;
-    using ScphQhaCommon::store_scph_dymat_to_file;
+    using ScphQhaCommon::store_renormalized_dymat_to_file;
     using ScphQhaCommon::compute_V4_elements_mpi_over_kpoint;
     using ScphQhaCommon::compute_V4_elements_mpi_over_band;
     using ScphQhaCommon::compute_V3_elements_mpi_over_kpoint;

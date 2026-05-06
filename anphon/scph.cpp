@@ -183,7 +183,7 @@ void Scph::exec_scph()
             // write dymat to file
             // write scph dynamical matrix when scph calculation is performed
                 // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
-                store_scph_dymat_to_file(delta_dymat_scph,
+                store_renormalized_dymat_to_file(delta_dymat_scph,
                                          input->job_title + ".scph_dymat",
                                          kmesh_dense,
                                          kmesh_coarse,
@@ -192,7 +192,7 @@ void Scph::exec_scph()
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
             if (relax_mode != RelaxationStrMode::None) {
                 // Persist renormalized harmonic dynamical matrix and relaxation offset.
-                store_scph_dymat_to_file(delta_harmonic_dymat_renormalize,
+                store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
                                          input->job_title + ".renorm_harm_dymat",
                                          kmesh_dense,
                                          kmesh_coarse,

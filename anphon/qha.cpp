@@ -115,7 +115,7 @@ void Qha::exec_qha_optimization()
             // write dymat to file
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
             if (relax_mode != RelaxationStrMode::None) {
-                store_scph_dymat_to_file(delta_harmonic_dymat_renormalize,
+                store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
                                          input->job_title + ".renorm_harm_dymat",
                                          kmesh_dense,
                                          kmesh_coarse,

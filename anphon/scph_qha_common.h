@@ -80,7 +80,7 @@ protected:
                                    const KpointMeshUniform *kmesh_dense_in, const KpointMeshUniform *kmesh_coarse_in,
                                    const unsigned int nonanalytic_in, const bool selfenergy_offdiagonal_in);
 
-    void store_scph_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
+    void store_renormalized_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
                                   std::string filename_dymat, const KpointMeshUniform *kmesh_dense_in,
                                   const KpointMeshUniform *kmesh_coarse_in, const unsigned int nonanalytic_in,
                                   const bool selfenergy_offdiagonal_in);
