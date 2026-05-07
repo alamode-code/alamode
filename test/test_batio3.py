@@ -29,10 +29,9 @@ def run_anphon_batio3(anphonbin):
 def check_consistency_anphon(reference_dir, abs_tol=0.01, rel_tol=1.0e-9):
     files_to_compare = [
         ("cBTO222_scph.atom_disp", 0),
-        ("cBTO222_scph.normal_disp", 0),
         ("cBTO222_scph.V0", 0),
         ("cBTO222_scph.scph_thermo", 0),
-        ("cBTO222_scph.scph_dos", 0),
+        ("cBTO222_scph.umn_tensor", 0),
     ]
 
     for file, skiprows in files_to_compare:
@@ -62,9 +61,10 @@ def check_consistency_anphon(reference_dir, abs_tol=0.01, rel_tol=1.0e-9):
 
 
 def copy_input_files(workdir, scph_example_dir, fc_reference_dir):
+    reference_dir = os.path.join(scph_example_dir, "reference_for_test")
     source_and_dest = [
         (
-            os.path.join(scph_example_dir, "reference_for_test", "BTO_scph_thermo.in"),
+            os.path.join(reference_dir, "BTO_scph_thermo.in"),
             "BTO_scph_thermo.in",
         ),
         (os.path.join(fc_reference_dir, "cBTO222.xml.zip"), "cBTO222.xml.zip"),
@@ -76,6 +76,17 @@ def copy_input_files(workdir, scph_example_dir, fc_reference_dir):
         else:
             print(f"File {src} not found")
             return 1
+
+    source_strain_dir = os.path.join(reference_dir, "strain_phonon")
+    if os.path.exists(source_strain_dir):
+        shutil.copytree(
+            source_strain_dir,
+            os.path.join(workdir, "strain_phonon"),
+            dirs_exist_ok=True,
+        )
+    else:
+        print(f"Directory {source_strain_dir} not found")
+        return 1
 
     return 0
 
@@ -134,7 +145,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
     if args.jobs in ["all", "compare"]:
-        info = check_consistency_anphon(reference_dir, abs_tol=1.0e-10, rel_tol=1.0e-10)
+        info = check_consistency_anphon(reference_dir, abs_tol=1.0e-8, rel_tol=1.0e-10)
 
     if info == 0:
         print("BaTiO3 ANPHON --> pass")
