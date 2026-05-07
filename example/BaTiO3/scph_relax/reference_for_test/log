@@ -1,0 +1,3744 @@
+ +-----------------------------------------------------------------+
+ +                         Program ANPHON                          +
+ +                             Ver.  1.9.9                         +
+ +-----------------------------------------------------------------+
+
+ Job started at Thu May  7 13:06:06 2026
+
+ The number of MPI processes: 1
+ The number of OpenMP threads: 12
+
+
+ Input variables:
+ -----------------------------------------------------------------
+ General:
+  PREFIX = cBTO222_scph
+  MODE = SCPH
+  FCSXML = cBTO222.xml
+
+  MASS = 
+  NSYM = 0; TOLERANCE = 0.001; PRINTSYM = 0
+
+  NONANALYTIC = 0
+
+  TMIN = 280; TMAX = 300; DT = 10
+  EMIN = 0; EMAX = 1000; DELTA_E = 10
+
+  ISMEAR = -1; EPSILON = 10
+
+  CLASSICAL = 0
+  BCONNECT = 0
+
+ Scph:
+  KMESH_INTERPOLATE =     2    2    2
+  KMESH_SCPH        =     4    4    4
+  SELF_OFFDIAG = 1
+  IALGO = 0
+
+  RESTART_SCPH = 0
+  LOWER_TEMP = 1
+  WARMSTART = 1
+
+  TOL_SCPH = 1e-10
+  MAXITER = 500
+  MIXALPHA = 0.2
+
+  RELAX_STR = 1
+
+ Structure_opt:
+  RELAX_ALGO = 2
+  MAX_STR_ITER = 1000
+  COORD_CONV_TOL = 1e-05
+  MIXBETA_COORD = 0.4
+  SET_INIT_STR = 3
+  COOLING_U0_INDEX = 5
+  COOLING_U0_THR = 0.005
+  ADD_HESS_DIAG = 100
+  STAT_PRESSURE = 0
+
+ Kpoint:
+  KPMODE (1st entry for &kpoint) = 2
+
+
+ Analysis:
+
+
+ -----------------------------------------------------------------
+
+                        MODE = SCPH                          
+                                                             
+      Self-consistent phonon calculation to compute          
+      anharmonic phonon frequencies and crystal structure    
+      at finite temperatures.                                
+      Harmonic to quartic force constants will be used.      
+
+ -----------------------------------------------------------------
+
+ ===================
+  Crystal Structure 
+ ===================
+
+ Lattice Vectors:
+
+ * Primitive cell  (from input file)
+
+    7.531597e+00   0.000000e+00   0.000000e+00 : a1
+    0.000000e+00   7.531597e+00   0.000000e+00 : a2
+    0.000000e+00   0.000000e+00   7.531597e+00 : a3
+
+    8.342435e-01   0.000000e+00   0.000000e+00 : b1
+    0.000000e+00   8.342435e-01   0.000000e+00 : b2
+    0.000000e+00   0.000000e+00   8.342435e-01 : b3
+
+
+  Volume of the primitive cell : 4.272294e+02 (a.u.)^3
+
+  Number of atoms in the primitive cell: 5
+
+  Atomic positions in the primitive cell (fractional):
+   1:   0.000000e+00   0.000000e+00   0.000000e+00  Ba
+   2:   5.000000e-01   5.000000e-01   5.000000e-01  Ti
+   3:   0.000000e+00   5.000000e-01   5.000000e-01   O
+   4:   5.000000e-01   0.000000e+00   5.000000e-01   O
+   5:   5.000000e-01   5.000000e-01   0.000000e+00   O
+
+  Mass of atomic species (u):
+  Ba:  137.327000
+  Ti:   47.867000
+   O:   15.999400
+
+
+ * Supercell for harmonic 
+
+       15.063194       0.000000       0.000000 : a1
+        0.000000      15.063194       0.000000 : a2
+        0.000000       0.000000      15.063194 : a3
+
+  Transformation matrix:
+        2.000000        0.000000        0.000000
+        0.000000        2.000000        0.000000
+        0.000000        0.000000        2.000000
+
+  Number of atoms in the supercell     : 40
+
+
+ ==========
+  Symmetry 
+ ==========
+
+  Primitive cell   Space group: Pm-3m (221)
+  Distorted cell   Space group: P4mm ( 99)
+
+  Number of symmetry operations : 8
+  Number of symmetry operations in reference structure : 48
+
+
+ ==========
+  K points 
+ ==========
+
+  KPMODE = 2: Uniform grid
+  Gamma-centered uniform grid with the following mesh density: 
+  nk1:   8
+  nk2:   8
+  nk3:   8
+
+  Number of k points : 512
+  Number of irreducible k points : 120
+
+  List of irreducible k points (reciprocal coordinate, weight) : 
+      1:   0.00000e+00   0.00000e+00   0.00000e+00   0.001953
+      2:   0.00000e+00   0.00000e+00   1.25000e-01   0.001953
+      3:   0.00000e+00   0.00000e+00   2.50000e-01   0.001953
+      4:   0.00000e+00   0.00000e+00   3.75000e-01   0.001953
+      5:   0.00000e+00   0.00000e+00  -5.00000e-01   0.001953
+      6:   0.00000e+00   0.00000e+00  -3.75000e-01   0.001953
+      7:   0.00000e+00   0.00000e+00  -2.50000e-01   0.001953
+      8:   0.00000e+00   0.00000e+00  -1.25000e-01   0.001953
+      9:   0.00000e+00   1.25000e-01   0.00000e+00   0.007812
+     10:   0.00000e+00   1.25000e-01   1.25000e-01   0.007812
+     11:   0.00000e+00   1.25000e-01   2.50000e-01   0.007812
+     12:   0.00000e+00   1.25000e-01   3.75000e-01   0.007812
+     13:   0.00000e+00   1.25000e-01  -5.00000e-01   0.007812
+     14:   0.00000e+00   1.25000e-01  -3.75000e-01   0.007812
+     15:   0.00000e+00   1.25000e-01  -2.50000e-01   0.007812
+     16:   0.00000e+00   1.25000e-01  -1.25000e-01   0.007812
+     17:   0.00000e+00   2.50000e-01   0.00000e+00   0.007812
+     18:   0.00000e+00   2.50000e-01   1.25000e-01   0.007812
+     19:   0.00000e+00   2.50000e-01   2.50000e-01   0.007812
+     20:   0.00000e+00   2.50000e-01   3.75000e-01   0.007812
+     21:   0.00000e+00   2.50000e-01  -5.00000e-01   0.007812
+     22:   0.00000e+00   2.50000e-01  -3.75000e-01   0.007812
+     23:   0.00000e+00   2.50000e-01  -2.50000e-01   0.007812
+     24:   0.00000e+00   2.50000e-01  -1.25000e-01   0.007812
+     25:   0.00000e+00   3.75000e-01   0.00000e+00   0.007812
+     26:   0.00000e+00   3.75000e-01   1.25000e-01   0.007812
+     27:   0.00000e+00   3.75000e-01   2.50000e-01   0.007812
+     28:   0.00000e+00   3.75000e-01   3.75000e-01   0.007812
+     29:   0.00000e+00   3.75000e-01  -5.00000e-01   0.007812
+     30:   0.00000e+00   3.75000e-01  -3.75000e-01   0.007812
+     31:   0.00000e+00   3.75000e-01  -2.50000e-01   0.007812
+     32:   0.00000e+00   3.75000e-01  -1.25000e-01   0.007812
+     33:   0.00000e+00  -5.00000e-01   0.00000e+00   0.003906
+     34:   0.00000e+00  -5.00000e-01   1.25000e-01   0.003906
+     35:   0.00000e+00  -5.00000e-01   2.50000e-01   0.003906
+     36:   0.00000e+00  -5.00000e-01   3.75000e-01   0.003906
+     37:   0.00000e+00  -5.00000e-01  -5.00000e-01   0.003906
+     38:   0.00000e+00   5.00000e-01  -3.75000e-01   0.003906
+     39:   0.00000e+00   5.00000e-01  -2.50000e-01   0.003906
+     40:   0.00000e+00   5.00000e-01  -1.25000e-01   0.003906
+     41:   1.25000e-01   1.25000e-01   0.00000e+00   0.007812
+     42:   1.25000e-01   1.25000e-01   1.25000e-01   0.007812
+     43:   1.25000e-01   1.25000e-01   2.50000e-01   0.007812
+     44:   1.25000e-01   1.25000e-01   3.75000e-01   0.007812
+     45:   1.25000e-01   1.25000e-01  -5.00000e-01   0.007812
+     46:   1.25000e-01   1.25000e-01  -3.75000e-01   0.007812
+     47:   1.25000e-01   1.25000e-01  -2.50000e-01   0.007812
+     48:   1.25000e-01   1.25000e-01  -1.25000e-01   0.007812
+     49:   1.25000e-01   2.50000e-01   0.00000e+00   0.015625
+     50:   1.25000e-01   2.50000e-01   1.25000e-01   0.015625
+     51:   1.25000e-01   2.50000e-01   2.50000e-01   0.015625
+     52:   1.25000e-01   2.50000e-01   3.75000e-01   0.015625
+     53:   1.25000e-01   2.50000e-01  -5.00000e-01   0.015625
+     54:   1.25000e-01   2.50000e-01  -3.75000e-01   0.015625
+     55:   1.25000e-01   2.50000e-01  -2.50000e-01   0.015625
+     56:   1.25000e-01   2.50000e-01  -1.25000e-01   0.015625
+     57:   1.25000e-01   3.75000e-01   0.00000e+00   0.015625
+     58:   1.25000e-01   3.75000e-01   1.25000e-01   0.015625
+     59:   1.25000e-01   3.75000e-01   2.50000e-01   0.015625
+     60:   1.25000e-01   3.75000e-01   3.75000e-01   0.015625
+     61:   1.25000e-01   3.75000e-01  -5.00000e-01   0.015625
+     62:   1.25000e-01   3.75000e-01  -3.75000e-01   0.015625
+     63:   1.25000e-01   3.75000e-01  -2.50000e-01   0.015625
+     64:   1.25000e-01   3.75000e-01  -1.25000e-01   0.015625
+     65:   1.25000e-01  -5.00000e-01   0.00000e+00   0.007812
+     66:   1.25000e-01  -5.00000e-01   1.25000e-01   0.007812
+     67:   1.25000e-01  -5.00000e-01   2.50000e-01   0.007812
+     68:   1.25000e-01  -5.00000e-01   3.75000e-01   0.007812
+     69:   1.25000e-01  -5.00000e-01  -5.00000e-01   0.007812
+     70:   1.25000e-01   5.00000e-01  -3.75000e-01   0.007812
+     71:   1.25000e-01   5.00000e-01  -2.50000e-01   0.007812
+     72:   1.25000e-01   5.00000e-01  -1.25000e-01   0.007812
+     73:   2.50000e-01   2.50000e-01   0.00000e+00   0.007812
+     74:   2.50000e-01   2.50000e-01   1.25000e-01   0.007812
+     75:   2.50000e-01   2.50000e-01   2.50000e-01   0.007812
+     76:   2.50000e-01   2.50000e-01   3.75000e-01   0.007812
+     77:   2.50000e-01   2.50000e-01  -5.00000e-01   0.007812
+     78:   2.50000e-01   2.50000e-01  -3.75000e-01   0.007812
+     79:   2.50000e-01   2.50000e-01  -2.50000e-01   0.007812
+     80:   2.50000e-01   2.50000e-01  -1.25000e-01   0.007812
+     81:   2.50000e-01   3.75000e-01   0.00000e+00   0.015625
+     82:   2.50000e-01   3.75000e-01   1.25000e-01   0.015625
+     83:   2.50000e-01   3.75000e-01   2.50000e-01   0.015625
+     84:   2.50000e-01   3.75000e-01   3.75000e-01   0.015625
+     85:   2.50000e-01   3.75000e-01  -5.00000e-01   0.015625
+     86:   2.50000e-01   3.75000e-01  -3.75000e-01   0.015625
+     87:   2.50000e-01   3.75000e-01  -2.50000e-01   0.015625
+     88:   2.50000e-01   3.75000e-01  -1.25000e-01   0.015625
+     89:   2.50000e-01  -5.00000e-01   0.00000e+00   0.007812
+     90:   2.50000e-01  -5.00000e-01   1.25000e-01   0.007812
+     91:   2.50000e-01  -5.00000e-01   2.50000e-01   0.007812
+     92:   2.50000e-01  -5.00000e-01   3.75000e-01   0.007812
+     93:   2.50000e-01  -5.00000e-01  -5.00000e-01   0.007812
+     94:   2.50000e-01   5.00000e-01  -3.75000e-01   0.007812
+     95:   2.50000e-01   5.00000e-01  -2.50000e-01   0.007812
+     96:   2.50000e-01   5.00000e-01  -1.25000e-01   0.007812
+     97:   3.75000e-01   3.75000e-01   0.00000e+00   0.007812
+     98:   3.75000e-01   3.75000e-01   1.25000e-01   0.007812
+     99:   3.75000e-01   3.75000e-01   2.50000e-01   0.007812
+    100:   3.75000e-01   3.75000e-01   3.75000e-01   0.007812
+    101:   3.75000e-01   3.75000e-01  -5.00000e-01   0.007812
+    102:   3.75000e-01   3.75000e-01  -3.75000e-01   0.007812
+    103:   3.75000e-01   3.75000e-01  -2.50000e-01   0.007812
+    104:   3.75000e-01   3.75000e-01  -1.25000e-01   0.007812
+    105:   3.75000e-01  -5.00000e-01   0.00000e+00   0.007812
+    106:   3.75000e-01  -5.00000e-01   1.25000e-01   0.007812
+    107:   3.75000e-01  -5.00000e-01   2.50000e-01   0.007812
+    108:   3.75000e-01  -5.00000e-01   3.75000e-01   0.007812
+    109:   3.75000e-01  -5.00000e-01  -5.00000e-01   0.007812
+    110:   3.75000e-01   5.00000e-01  -3.75000e-01   0.007812
+    111:   3.75000e-01   5.00000e-01  -2.50000e-01   0.007812
+    112:   3.75000e-01   5.00000e-01  -1.25000e-01   0.007812
+    113:  -5.00000e-01  -5.00000e-01   0.00000e+00   0.001953
+    114:  -5.00000e-01  -5.00000e-01   1.25000e-01   0.001953
+    115:  -5.00000e-01  -5.00000e-01   2.50000e-01   0.001953
+    116:  -5.00000e-01  -5.00000e-01   3.75000e-01   0.001953
+    117:  -5.00000e-01  -5.00000e-01  -5.00000e-01   0.001953
+    118:   5.00000e-01   5.00000e-01  -3.75000e-01   0.001953
+    119:   5.00000e-01   5.00000e-01  -2.50000e-01   0.001953
+    120:   5.00000e-01   5.00000e-01  -1.25000e-01   0.001953
+
+
+ ==================
+  Dynamical matrix 
+ ==================
+
+  NONANALYTIC = 0 : No non-analytic correction. 
+
+
+ =================
+  Force Constants 
+ =================
+
+  Reading force constants from the FCSFILE ... done.
+
+  Number of non-zero IFCs for 2 order: 1593
+  Number of non-zero IFCs for 3 order: 145932
+  Number of non-zero IFCs for 4 order: 560127
+
+  Maximum deviation from the translational invariance: 
+   Order 2 : 3.003240e-16
+   Order 3 : 3.163702e-16
+   Order 4 : 3.455569e-15
+
+
+ ================
+  BZ integration 
+ ================
+
+  General settings for DOS and 3-phonon scattering rates:
+   ISMEAR = -1: Tetrahedron method
+
+  Additional settings for 4-phonon scattering rates:
+   ISMEAR_4PH = 1: Gaussian broadening with epsilon = 10.00 (cm^-1)
+
+ 
+ -----------------------------------------------------------------
+
+
+ Diagonalizing dynamical matrices for all k points ... done!
+ Setting up the SCPH calculations ...
+
+  Gamma-centered uniform grid with the following mesh density:
+  nk1:    4
+  nk2:    4
+  nk3:    4
+
+  Number of k points : 64
+  Number of irreducible k points : 24
+
+  Fourier interpolation from reciprocal to real space
+  will be performed with the following mesh density:
+  nk1:    2
+  nk2:    2
+  nk3:    2
+
+  Number of k points : 8
+  Number of irreducible k points : 6
+
+ Diagonalizing dynamical matrices for all k points ... done !
+ Preparing for calculating V3 & V4  ... done!
+ RELAX_STR = 1: Set zeros in derivatives of k-space IFCs by strain.
+
+
+ Time Elapsed: 2.29 sec.
+
+ SELF_OFFDIAG = 1: Calculating all components of v4_array ...  done !
+
+ Time Elapsed: 3.33 sec.
+
+ SELF_OFFDIAG = 1: Calculating all components of v3_array ...  done !
+
+ Time Elapsed: 3.36 sec.
+
+ Start structural optimization.
+  Internal coordinates are relaxed.
+  Shape of the unit cell is fixed.
+
+ ----------------------------------------------------------------
+ Temperature = 300.00 K
+ Temperature index :    0/   3
+
+ SET_INIT_STR = 3: read initial structure from input files.
+
+ Initial atomic displacements [Bohr] : 
+    u_{0,x}   u_{0,y}   u_{0,z} :  -3.140688e-19  -1.573302e-18   1.131778e-04
+    u_{1,x}   u_{1,y}   u_{1,z} :   6.984916e-19   1.408605e-18   1.882897e-02
+    u_{2,x}   u_{2,y}   u_{2,z} :   6.739297e-19  -2.873499e-18  -1.429815e-02
+    u_{3,x}   u_{3,y}   u_{3,z} :  -2.024029e-18  -2.343528e-18  -1.429815e-02
+    u_{4,x}   u_{4,y}   u_{4,z} :   2.300456e-18   5.591696e-19  -2.870764e-02
+
+ ----------------------------------------------------------------
+ Start structural optimization at 3.000000e+02 K.
+
+ Structure loop :    1 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.152168e-05
+  SCPH ITER     3 :  DIFF =    6.679995e-06
+  SCPH ITER     4 :  DIFF =    3.701220e-06
+  SCPH ITER     5 :  DIFF =    2.000348e-06
+  SCPH ITER     6 :  DIFF =    1.084775e-06
+  SCPH ITER     7 :  DIFF =    6.097312e-07
+  SCPH ITER     8 :  DIFF =    3.686692e-07
+  SCPH ITER     9 :  DIFF =    2.444555e-07
+  SCPH ITER    10 :  DIFF =    1.779724e-07
+  SCPH ITER    11 :  DIFF =    1.358564e-07
+  SCPH ITER    12 :  DIFF =    1.063307e-07
+  SCPH ITER    13 :  DIFF =    8.405951e-08
+  SCPH ITER    14 :  DIFF =    6.667342e-08
+  SCPH ITER    15 :  DIFF =    5.291872e-08
+  SCPH ITER    16 :  DIFF =    4.199186e-08
+  SCPH ITER    17 :  DIFF =    3.330627e-08
+  SCPH ITER    18 :  DIFF =    2.640604e-08
+  SCPH ITER    19 :  DIFF =    2.092851e-08
+  SCPH ITER    20 :  DIFF =    1.658341e-08
+  SCPH ITER    21 :  DIFF =    1.313850e-08
+  SCPH ITER    22 :  DIFF =    1.040835e-08
+  SCPH ITER    23 :  DIFF =    8.245225e-09
+  SCPH ITER    24 :  DIFF =    6.531642e-09
+  SCPH ITER    25 :  DIFF =    5.174323e-09
+  SCPH ITER    26 :  DIFF =    4.099214e-09
+  SCPH ITER    27 :  DIFF =    3.247653e-09
+  SCPH ITER    28 :  DIFF =    2.573165e-09
+  SCPH ITER    29 :  DIFF =    2.038889e-09
+  SCPH ITER    30 :  DIFF =    1.615669e-09
+  SCPH ITER    31 :  DIFF =    1.280421e-09
+  SCPH ITER    32 :  DIFF =    1.014852e-09
+  SCPH ITER    33 :  DIFF =    8.044646e-10
+  SCPH ITER    34 :  DIFF =    6.377280e-10
+  SCPH ITER    35 :  DIFF =    5.055359e-10
+  SCPH ITER    36 :  DIFF =    4.007797e-10
+  SCPH ITER    37 :  DIFF =    3.177589e-10
+  SCPH ITER    38 :  DIFF =    2.519684e-10
+  SCPH ITER    39 :  DIFF =    2.000635e-10
+  SCPH ITER    40 :  DIFF =    1.585546e-10
+  SCPH ITER    41 :  DIFF =    1.257396e-10
+  SCPH ITER    42 :  DIFF =    9.978672e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    42 iterations.
+ du0 =   2.758745e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    2 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.818679e-07
+  SCPH ITER     3 :  DIFF =    3.124770e-07
+  SCPH ITER     4 :  DIFF =    1.697418e-07
+  SCPH ITER     5 :  DIFF =    9.301158e-08
+  SCPH ITER     6 :  DIFF =    5.132705e-08
+  SCPH ITER     7 :  DIFF =    2.850104e-08
+  SCPH ITER     8 :  DIFF =    1.592562e-08
+  SCPH ITER     9 :  DIFF =    8.965414e-09
+  SCPH ITER    10 :  DIFF =    5.100051e-09
+  SCPH ITER    11 :  DIFF =    2.948417e-09
+  SCPH ITER    12 :  DIFF =    1.748540e-09
+  SCPH ITER    13 :  DIFF =    1.077215e-09
+  SCPH ITER    14 :  DIFF =    6.978002e-10
+  SCPH ITER    15 :  DIFF =    4.777974e-10
+  SCPH ITER    16 :  DIFF =    3.439877e-10
+  SCPH ITER    17 :  DIFF =    2.574702e-10
+  SCPH ITER    18 :  DIFF =    1.971769e-10
+  SCPH ITER    19 :  DIFF =    1.534681e-10
+  SCPH ITER    20 :  DIFF =    1.207424e-10
+  SCPH ITER    21 :  DIFF =    9.562959e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    21 iterations.
+ du0 =   2.578466e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    3 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.188433e-07
+  SCPH ITER     3 :  DIFF =    2.768934e-07
+  SCPH ITER     4 :  DIFF =    1.493812e-07
+  SCPH ITER     5 :  DIFF =    8.126512e-08
+  SCPH ITER     6 :  DIFF =    4.451516e-08
+  SCPH ITER     7 :  DIFF =    2.453731e-08
+  SCPH ITER     8 :  DIFF =    1.361331e-08
+  SCPH ITER     9 :  DIFF =    7.613236e-09
+  SCPH ITER    10 :  DIFF =    4.306961e-09
+  SCPH ITER    11 :  DIFF =    2.481102e-09
+  SCPH ITER    12 :  DIFF =    1.471035e-09
+  SCPH ITER    13 :  DIFF =    9.100834e-10
+  SCPH ITER    14 :  DIFF =    5.946139e-10
+  SCPH ITER    15 :  DIFF =    4.116174e-10
+  SCPH ITER    16 :  DIFF =    2.992886e-10
+  SCPH ITER    17 :  DIFF =    2.255560e-10
+  SCPH ITER    18 :  DIFF =    1.739922e-10
+  SCPH ITER    19 :  DIFF =    1.359452e-10
+  SCPH ITER    20 :  DIFF =    1.068736e-10
+  SCPH ITER    21 :  DIFF =    8.417581e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    21 iterations.
+ du0 =   2.456557e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    4 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.614151e-07
+  SCPH ITER     3 :  DIFF =    2.448523e-07
+  SCPH ITER     4 :  DIFF =    1.312746e-07
+  SCPH ITER     5 :  DIFF =    7.095040e-08
+  SCPH ITER     6 :  DIFF =    3.860839e-08
+  SCPH ITER     7 :  DIFF =    2.114267e-08
+  SCPH ITER     8 :  DIFF =    1.165711e-08
+  SCPH ITER     9 :  DIFF =    6.483158e-09
+  SCPH ITER    10 :  DIFF =    3.652252e-09
+  SCPH ITER    11 :  DIFF =    2.100261e-09
+  SCPH ITER    12 :  DIFF =    1.247921e-09
+  SCPH ITER    13 :  DIFF =    7.775790e-10
+  SCPH ITER    14 :  DIFF =    5.137081e-10
+  SCPH ITER    15 :  DIFF =    3.598405e-10
+  SCPH ITER    16 :  DIFF =    2.644249e-10
+  SCPH ITER    17 :  DIFF =    2.007864e-10
+  SCPH ITER    18 :  DIFF =    1.553538e-10
+  SCPH ITER    19 :  DIFF =    1.215544e-10
+  SCPH ITER    20 :  DIFF =    9.626485e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.345864e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    5 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.086206e-07
+  SCPH ITER     3 :  DIFF =    2.157367e-07
+  SCPH ITER     4 :  DIFF =    1.150198e-07
+  SCPH ITER     5 :  DIFF =    6.180295e-08
+  SCPH ITER     6 :  DIFF =    3.343286e-08
+  SCPH ITER     7 :  DIFF =    1.820315e-08
+  SCPH ITER     8 :  DIFF =    9.982558e-09
+  SCPH ITER     9 :  DIFF =    5.526656e-09
+  SCPH ITER    10 :  DIFF =    3.104299e-09
+  SCPH ITER    11 :  DIFF =    1.785095e-09
+  SCPH ITER    12 :  DIFF =    1.065297e-09
+  SCPH ITER    13 :  DIFF =    6.699891e-10
+  SCPH ITER    14 :  DIFF =    4.484068e-10
+  SCPH ITER    15 :  DIFF =    3.185634e-10
+  SCPH ITER    16 :  DIFF =    2.363020e-10
+  SCPH ITER    17 :  DIFF =    1.805175e-10
+  SCPH ITER    18 :  DIFF =    1.402346e-10
+  SCPH ITER    19 :  DIFF =    1.100737e-10
+  SCPH ITER    20 :  DIFF =    8.710722e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.231938e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    6 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.600476e-07
+  SCPH ITER     3 :  DIFF =    1.892377e-07
+  SCPH ITER     4 :  DIFF =    1.003920e-07
+  SCPH ITER     5 :  DIFF =    5.366411e-08
+  SCPH ITER     6 :  DIFF =    2.887925e-08
+  SCPH ITER     7 :  DIFF =    1.564491e-08
+  SCPH ITER     8 :  DIFF =    8.540549e-09
+  SCPH ITER     9 :  DIFF =    4.711418e-09
+  SCPH ITER    10 :  DIFF =    2.641945e-09
+  SCPH ITER    11 :  DIFF =    1.521699e-09
+  SCPH ITER    12 :  DIFF =    9.140987e-10
+  SCPH ITER    13 :  DIFF =    5.814667e-10
+  SCPH ITER    14 :  DIFF =    3.944569e-10
+  SCPH ITER    15 :  DIFF =    2.834610e-10
+  SCPH ITER    16 :  DIFF =    2.125139e-10
+  SCPH ITER    17 :  DIFF =    1.632756e-10
+  SCPH ITER    18 :  DIFF =    1.274209e-10
+  SCPH ITER    19 :  DIFF =    1.000554e-10
+  SCPH ITER    20 :  DIFF =    7.908321e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.112580e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    7 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.155551e-07
+  SCPH ITER     3 :  DIFF =    1.651987e-07
+  SCPH ITER     4 :  DIFF =    8.725647e-08
+  SCPH ITER     5 :  DIFF =    4.643027e-08
+  SCPH ITER     6 :  DIFF =    2.487275e-08
+  SCPH ITER     7 :  DIFF =    1.341611e-08
+  SCPH ITER     8 :  DIFF =    7.296146e-09
+  SCPH ITER     9 :  DIFF =    4.014306e-09
+  SCPH ITER    10 :  DIFF =    2.250027e-09
+  SCPH ITER    11 :  DIFF =    1.300182e-09
+  SCPH ITER    12 :  DIFF =    7.874134e-10
+  SCPH ITER    13 :  DIFF =    5.073832e-10
+  SCPH ITER    14 :  DIFF =    3.491363e-10
+  SCPH ITER    15 :  DIFF =    2.539829e-10
+  SCPH ITER    16 :  DIFF =    1.918034e-10
+  SCPH ITER    17 :  DIFF =    1.483655e-10
+  SCPH ITER    18 :  DIFF =    1.161386e-10
+  SCPH ITER    19 :  DIFF =    9.132691e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    19 iterations.
+ du0 =   1.989465e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    8 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.750932e-07
+  SCPH ITER     3 :  DIFF =    1.435216e-07
+  SCPH ITER     4 :  DIFF =    7.551737e-08
+  SCPH ITER     5 :  DIFF =    4.002403e-08
+  SCPH ITER     6 :  DIFF =    2.135639e-08
+  SCPH ITER     7 :  DIFF =    1.147701e-08
+  SCPH ITER     8 :  DIFF =    6.222579e-09
+  SCPH ITER     9 :  DIFF =    3.417680e-09
+  SCPH ITER    10 :  DIFF =    1.917021e-09
+  SCPH ITER    11 :  DIFF =    1.113090e-09
+  SCPH ITER    12 :  DIFF =    6.808169e-10
+  SCPH ITER    13 :  DIFF =    4.448267e-10
+  SCPH ITER    14 :  DIFF =    3.103956e-10
+  SCPH ITER    15 :  DIFF =    2.282426e-10
+  SCPH ITER    16 :  DIFF =    1.737948e-10
+  SCPH ITER    17 :  DIFF =    1.347485e-10
+  SCPH ITER    18 :  DIFF =    1.056823e-10
+  SCPH ITER    19 :  DIFF =    8.326233e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    19 iterations.
+ du0 =   1.865053e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    9 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.386086e-07
+  SCPH ITER     3 :  DIFF =    1.241171e-07
+  SCPH ITER     4 :  DIFF =    6.509082e-08
+  SCPH ITER     5 :  DIFF =    3.437924e-08
+  SCPH ITER     6 :  DIFF =    1.828238e-08
+  SCPH ITER     7 :  DIFF =    9.794828e-09
+  SCPH ITER     8 :  DIFF =    5.298053e-09
+  SCPH ITER     9 :  DIFF =    2.907418e-09
+  SCPH ITER    10 :  DIFF =    1.633955e-09
+  SCPH ITER    11 :  DIFF =    9.547076e-10
+  SCPH ITER    12 :  DIFF =    5.906002e-10
+  SCPH ITER    13 :  DIFF =    3.913810e-10
+  SCPH ITER    14 :  DIFF =    2.770001e-10
+  SCPH ITER    15 :  DIFF =    2.060958e-10
+  SCPH ITER    16 :  DIFF =    1.574997e-10
+  SCPH ITER    17 :  DIFF =    1.225243e-10
+  SCPH ITER    18 :  DIFF =    9.627026e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.741663e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   10 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.059933e-07
+  SCPH ITER     3 :  DIFF =    1.068779e-07
+  SCPH ITER     4 :  DIFF =    5.588982e-08
+  SCPH ITER     5 :  DIFF =    2.943217e-08
+  SCPH ITER     6 :  DIFF =    1.560671e-08
+  SCPH ITER     7 :  DIFF =    8.340339e-09
+  SCPH ITER     8 :  DIFF =    4.503718e-09
+  SCPH ITER     9 :  DIFF =    2.471517e-09
+  SCPH ITER    10 :  DIFF =    1.393234e-09
+  SCPH ITER    11 :  DIFF =    8.203435e-10
+  SCPH ITER    12 :  DIFF =    5.137956e-10
+  SCPH ITER    13 :  DIFF =    3.454142e-10
+  SCPH ITER    14 :  DIFF =    2.475494e-10
+  SCPH ITER    15 :  DIFF =    1.853624e-10
+  SCPH ITER    16 :  DIFF =    1.431821e-10
+  SCPH ITER    17 :  DIFF =    1.120755e-10
+  SCPH ITER    18 :  DIFF =    8.762286e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.621092e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   11 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.770836e-07
+  SCPH ITER     3 :  DIFF =    9.167763e-08
+  SCPH ITER     4 :  DIFF =    4.782368e-08
+  SCPH ITER     5 :  DIFF =    2.512096e-08
+  SCPH ITER     6 :  DIFF =    1.328871e-08
+  SCPH ITER     7 :  DIFF =    7.087496e-09
+  SCPH ITER     8 :  DIFF =    3.823185e-09
+  SCPH ITER     9 :  DIFF =    2.099845e-09
+  SCPH ITER    10 :  DIFF =    1.188731e-09
+  SCPH ITER    11 :  DIFF =    7.061704e-10
+  SCPH ITER    12 :  DIFF =    4.482364e-10
+  SCPH ITER    13 :  DIFF =    3.056926e-10
+  SCPH ITER    14 :  DIFF =    2.216397e-10
+  SCPH ITER    15 :  DIFF =    1.675067e-10
+  SCPH ITER    16 :  DIFF =    1.293444e-10
+  SCPH ITER    17 :  DIFF =    1.012035e-10
+  SCPH ITER    18 :  DIFF =    7.970604e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.504702e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   12 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.516554e-07
+  SCPH ITER     3 :  DIFF =    7.836710e-08
+  SCPH ITER     4 :  DIFF =    4.079490e-08
+  SCPH ITER     5 :  DIFF =    2.138322e-08
+  SCPH ITER     6 :  DIFF =    1.128919e-08
+  SCPH ITER     7 :  DIFF =    6.012048e-09
+  SCPH ITER     8 :  DIFF =    3.241665e-09
+  SCPH ITER     9 :  DIFF =    1.783441e-09
+  SCPH ITER    10 :  DIFF =    1.015002e-09
+  SCPH ITER    11 :  DIFF =    6.091267e-10
+  SCPH ITER    12 :  DIFF =    3.920836e-10
+  SCPH ITER    13 :  DIFF =    2.712883e-10
+  SCPH ITER    14 :  DIFF =    1.986504e-10
+  SCPH ITER    15 :  DIFF =    1.509866e-10
+  SCPH ITER    16 :  DIFF =    1.176001e-10
+  SCPH ITER    17 :  DIFF =    9.232200e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.393440e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   13 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.294432e-07
+  SCPH ITER     3 :  DIFF =    6.678339e-08
+  SCPH ITER     4 :  DIFF =    3.470334e-08
+  SCPH ITER     5 :  DIFF =    1.815781e-08
+  SCPH ITER     6 :  DIFF =    9.571141e-09
+  SCPH ITER     7 :  DIFF =    5.091790e-09
+  SCPH ITER     8 :  DIFF =    2.745911e-09
+  SCPH ITER     9 :  DIFF =    1.514469e-09
+  SCPH ITER    10 :  DIFF =    8.675420e-10
+  SCPH ITER    11 :  DIFF =    5.264075e-10
+  SCPH ITER    12 :  DIFF =    3.435111e-10
+  SCPH ITER    13 :  DIFF =    2.407610e-10
+  SCPH ITER    14 :  DIFF =    1.785819e-10
+  SCPH ITER    15 :  DIFF =    1.362067e-10
+  SCPH ITER    16 :  DIFF =    1.064483e-10
+  SCPH ITER    17 :  DIFF =    8.325890e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.287872e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   14 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.101642e-07
+  SCPH ITER     3 :  DIFF =    5.676102e-08
+  SCPH ITER     4 :  DIFF =    2.945143e-08
+  SCPH ITER     5 :  DIFF =    1.538721e-08
+  SCPH ITER     6 :  DIFF =    8.100740e-09
+  SCPH ITER     7 :  DIFF =    4.306934e-09
+  SCPH ITER     8 :  DIFF =    2.324411e-09
+  SCPH ITER     9 :  DIFF =    1.286292e-09
+  SCPH ITER    10 :  DIFF =    7.422406e-10
+  SCPH ITER    11 :  DIFF =    4.559362e-10
+  SCPH ITER    12 :  DIFF =    3.018294e-10
+  SCPH ITER    13 :  DIFF =    2.141373e-10
+  SCPH ITER    14 :  DIFF =    1.598620e-10
+  SCPH ITER    15 :  DIFF =    1.230038e-10
+  SCPH ITER    16 :  DIFF =    9.584487e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    16 iterations.
+ du0 =   1.188361e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   15 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.351679e-08
+  SCPH ITER     3 :  DIFF =    4.812936e-08
+  SCPH ITER     4 :  DIFF =    2.494165e-08
+  SCPH ITER     5 :  DIFF =    1.301544e-08
+  SCPH ITER     6 :  DIFF =    6.845857e-09
+  SCPH ITER     7 :  DIFF =    3.639027e-09
+  SCPH ITER     8 :  DIFF =    1.966530e-09
+  SCPH ITER     9 :  DIFF =    1.092810e-09
+  SCPH ITER    10 :  DIFF =    6.361111e-10
+  SCPH ITER    11 :  DIFF =    3.957380e-10
+  SCPH ITER    12 :  DIFF =    2.656435e-10
+  SCPH ITER    13 :  DIFF =    1.910489e-10
+  SCPH ITER    14 :  DIFF =    1.433672e-10
+  SCPH ITER    15 :  DIFF =    1.105369e-10
+  SCPH ITER    16 :  DIFF =    8.691195e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    16 iterations.
+ du0 =   1.095011e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   16 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.921504e-08
+  SCPH ITER     3 :  DIFF =    4.073048e-08
+  SCPH ITER     4 :  DIFF =    2.108570e-08
+  SCPH ITER     5 :  DIFF =    1.099286e-08
+  SCPH ITER     6 :  DIFF =    5.778505e-09
+  SCPH ITER     7 :  DIFF =    3.072318e-09
+  SCPH ITER     8 :  DIFF =    1.663472e-09
+  SCPH ITER     9 :  DIFF =    9.290584e-10
+  SCPH ITER    10 :  DIFF =    5.458394e-10
+  SCPH ITER    11 :  DIFF =    3.440517e-10
+  SCPH ITER    12 :  DIFF =    2.342188e-10
+  SCPH ITER    13 :  DIFF =    1.701115e-10
+  SCPH ITER    14 :  DIFF =    1.286281e-10
+  SCPH ITER    15 :  DIFF =    9.981833e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    15 iterations.
+ du0 =   1.007837e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   17 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.697078e-08
+  SCPH ITER     3 :  DIFF =    3.440763e-08
+  SCPH ITER     4 :  DIFF =    1.779739e-08
+  SCPH ITER     5 :  DIFF =    9.271771e-09
+  SCPH ITER     6 :  DIFF =    4.872178e-09
+  SCPH ITER     7 :  DIFF =    2.591984e-09
+  SCPH ITER     8 :  DIFF =    1.406933e-09
+  SCPH ITER     9 :  DIFF =    7.904154e-10
+  SCPH ITER    10 :  DIFF =    4.692679e-10
+  SCPH ITER    11 :  DIFF =    2.999909e-10
+  SCPH ITER    12 :  DIFF =    2.068581e-10
+  SCPH ITER    13 :  DIFF =    1.515477e-10
+  SCPH ITER    14 :  DIFF =    1.153834e-10
+  SCPH ITER    15 :  DIFF =    8.998240e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    15 iterations.
+ du0 =   9.266816e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   18 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.653293e-08
+  SCPH ITER     3 :  DIFF =    2.902613e-08
+  SCPH ITER     4 :  DIFF =    1.500369e-08
+  SCPH ITER     5 :  DIFF =    7.812285e-09
+  SCPH ITER     6 :  DIFF =    4.105013e-09
+  SCPH ITER     7 :  DIFF =    2.186065e-09
+  SCPH ITER     8 :  DIFF =    1.190338e-09
+  SCPH ITER     9 :  DIFF =    6.732827e-10
+  SCPH ITER    10 :  DIFF =    4.041999e-10
+  SCPH ITER    11 :  DIFF =    2.619663e-10
+  SCPH ITER    12 :  DIFF =    1.832731e-10
+  SCPH ITER    13 :  DIFF =    1.353404e-10
+  SCPH ITER    14 :  DIFF =    1.038585e-10
+  SCPH ITER    15 :  DIFF =    8.116586e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    15 iterations.
+ du0 =   8.513620e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   19 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.765735e-08
+  SCPH ITER     3 :  DIFF =    2.445606e-08
+  SCPH ITER     4 :  DIFF =    1.263473e-08
+  SCPH ITER     5 :  DIFF =    6.576590e-09
+  SCPH ITER     6 :  DIFF =    3.456411e-09
+  SCPH ITER     7 :  DIFF =    1.843238e-09
+  SCPH ITER     8 :  DIFF =    1.007487e-09
+  SCPH ITER     9 :  DIFF =    5.742774e-10
+  SCPH ITER    10 :  DIFF =    3.489250e-10
+  SCPH ITER    11 :  DIFF =    2.293731e-10
+  SCPH ITER    12 :  DIFF =    1.624676e-10
+  SCPH ITER    13 :  DIFF =    1.215624e-10
+  SCPH ITER    14 :  DIFF =    9.296973e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    14 iterations.
+ du0 =   7.816399e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   20 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.012358e-08
+  SCPH ITER     3 :  DIFF =    2.058095e-08
+  SCPH ITER     4 :  DIFF =    1.062842e-08
+  SCPH ITER     5 :  DIFF =    5.531343e-09
+  SCPH ITER     6 :  DIFF =    2.908405e-09
+  SCPH ITER     7 :  DIFF =    1.553782e-09
+  SCPH ITER     8 :  DIFF =    8.530370e-10
+  SCPH ITER     9 :  DIFF =    4.903703e-10
+  SCPH ITER    10 :  DIFF =    3.017576e-10
+  SCPH ITER    11 :  DIFF =    2.011578e-10
+  SCPH ITER    12 :  DIFF =    1.439106e-10
+  SCPH ITER    13 :  DIFF =    1.081892e-10
+  SCPH ITER    14 :  DIFF =    8.377821e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    14 iterations.
+ du0 =   7.171973e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   21 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.375258e-08
+  SCPH ITER     3 :  DIFF =    1.730707e-08
+  SCPH ITER     4 :  DIFF =    8.935221e-09
+  SCPH ITER     5 :  DIFF =    4.650157e-09
+  SCPH ITER     6 :  DIFF =    2.446803e-09
+  SCPH ITER     7 :  DIFF =    1.310116e-09
+  SCPH ITER     8 :  DIFF =    7.229935e-10
+  SCPH ITER     9 :  DIFF =    4.195180e-10
+  SCPH ITER    10 :  DIFF =    2.615900e-10
+  SCPH ITER    11 :  DIFF =    1.768318e-10
+  SCPH ITER    12 :  DIFF =    1.282753e-10
+  SCPH ITER    13 :  DIFF =    9.728286e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    13 iterations.
+ du0 =   6.577636e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   22 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.836218e-08
+  SCPH ITER     3 :  DIFF =    1.453900e-08
+  SCPH ITER     4 :  DIFF =    7.504723e-09
+  SCPH ITER     5 :  DIFF =    3.906250e-09
+  SCPH ITER     6 :  DIFF =    2.057330e-09
+  SCPH ITER     7 :  DIFF =    1.104557e-09
+  SCPH ITER     8 :  DIFF =    6.132256e-10
+  SCPH ITER     9 :  DIFF =    3.593655e-10
+  SCPH ITER    10 :  DIFF =    2.280326e-10
+  SCPH ITER    11 :  DIFF =    1.564324e-10
+  SCPH ITER    12 :  DIFF =    1.140207e-10
+  SCPH ITER    13 :  DIFF =    8.674273e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    13 iterations.
+ du0 =   6.029934e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   23 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.382263e-08
+  SCPH ITER     3 :  DIFF =    1.220950e-08
+  SCPH ITER     4 :  DIFF =    6.301798e-09
+  SCPH ITER     5 :  DIFF =    3.281127e-09
+  SCPH ITER     6 :  DIFF =    1.730208e-09
+  SCPH ITER     7 :  DIFF =    9.318370e-10
+  SCPH ITER     8 :  DIFF =    5.205893e-10
+  SCPH ITER     9 :  DIFF =    3.085237e-10
+  SCPH ITER    10 :  DIFF =    1.977111e-10
+  SCPH ITER    11 :  DIFF =    1.373890e-10
+  SCPH ITER    12 :  DIFF =    1.010980e-10
+  SCPH ITER    13 :  DIFF =    7.724897e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    13 iterations.
+ du0 =   5.525948e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   24 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.999803e-08
+  SCPH ITER     3 :  DIFF =    1.024790e-08
+  SCPH ITER     4 :  DIFF =    5.289401e-09
+  SCPH ITER     5 :  DIFF =    2.755261e-09
+  SCPH ITER     6 :  DIFF =    1.455085e-09
+  SCPH ITER     7 :  DIFF =    7.865177e-10
+  SCPH ITER     8 :  DIFF =    4.425267e-10
+  SCPH ITER     9 :  DIFF =    2.653410e-10
+  SCPH ITER    10 :  DIFF =    1.724385e-10
+  SCPH ITER    11 :  DIFF =    1.210433e-10
+  SCPH ITER    12 :  DIFF =    9.033794e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    12 iterations.
+ du0 =   5.062785e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   25 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.677032e-08
+  SCPH ITER     3 :  DIFF =    8.592924e-09
+  SCPH ITER     4 :  DIFF =    4.435532e-09
+  SCPH ITER     5 :  DIFF =    2.311817e-09
+  SCPH ITER     6 :  DIFF =    1.222972e-09
+  SCPH ITER     7 :  DIFF =    6.636740e-10
+  SCPH ITER     8 :  DIFF =    3.764096e-10
+  SCPH ITER     9 :  DIFF =    2.283680e-10
+  SCPH ITER    10 :  DIFF =    1.505972e-10
+  SCPH ITER    11 :  DIFF =    1.073308e-10
+  SCPH ITER    12 :  DIFF =    7.998886e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    12 iterations.
+ du0 =   4.637176e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   26 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.406524e-08
+  SCPH ITER     3 :  DIFF =    7.206595e-09
+  SCPH ITER     4 :  DIFF =    3.720587e-09
+  SCPH ITER     5 :  DIFF =    1.940605e-09
+  SCPH ITER     6 :  DIFF =    1.028662e-09
+  SCPH ITER     7 :  DIFF =    5.607182e-10
+  SCPH ITER     8 :  DIFF =    3.206786e-10
+  SCPH ITER     9 :  DIFF =    1.969867e-10
+  SCPH ITER    10 :  DIFF =    1.320087e-10
+  SCPH ITER    11 :  DIFF =    9.683284e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    11 iterations.
+ du0 =   4.246652e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   27 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.178019e-08
+  SCPH ITER     3 :  DIFF =    6.035596e-09
+  SCPH ITER     4 :  DIFF =    3.116682e-09
+  SCPH ITER     5 :  DIFF =    1.626972e-09
+  SCPH ITER     6 :  DIFF =    8.643203e-10
+  SCPH ITER     7 :  DIFF =    4.735439e-10
+  SCPH ITER     8 :  DIFF =    2.731938e-10
+  SCPH ITER     9 :  DIFF =    1.698484e-10
+  SCPH ITER    10 :  DIFF =    1.147628e-10
+  SCPH ITER    11 :  DIFF =    8.357540e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    11 iterations.
+ du0 =   3.888198e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   28 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.873756e-09
+  SCPH ITER     3 :  DIFF =    5.059033e-09
+  SCPH ITER     4 :  DIFF =    2.613234e-09
+  SCPH ITER     5 :  DIFF =    1.365517e-09
+  SCPH ITER     6 :  DIFF =    7.272100e-10
+  SCPH ITER     7 :  DIFF =    4.004394e-10
+  SCPH ITER     8 :  DIFF =    2.331189e-10
+  SCPH ITER     9 :  DIFF =    1.472672e-10
+  SCPH ITER    10 :  DIFF =    1.011702e-10
+  SCPH ITER    11 :  DIFF =    7.331187e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    11 iterations.
+ du0 =   3.559499e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   29 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.273834e-09
+  SCPH ITER     3 :  DIFF =    4.239587e-09
+  SCPH ITER     4 :  DIFF =    2.190750e-09
+  SCPH ITER     5 :  DIFF =    1.146051e-09
+  SCPH ITER     6 :  DIFF =    6.119498e-10
+  SCPH ITER     7 :  DIFF =    3.388644e-10
+  SCPH ITER     8 :  DIFF =    1.992660e-10
+  SCPH ITER     9 :  DIFF =    1.270542e-10
+  SCPH ITER    10 :  DIFF =    8.793501e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    10 iterations.
+ du0 =   3.258356e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   30 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.917759e-09
+  SCPH ITER     3 :  DIFF =    3.544862e-09
+  SCPH ITER     4 :  DIFF =    1.832439e-09
+  SCPH ITER     5 :  DIFF =    9.597037e-10
+  SCPH ITER     6 :  DIFF =    5.139685e-10
+  SCPH ITER     7 :  DIFF =    2.863464e-10
+  SCPH ITER     8 :  DIFF =    1.700038e-10
+  SCPH ITER     9 :  DIFF =    1.096404e-10
+  SCPH ITER    10 :  DIFF =    7.649781e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in    10 iterations.
+ du0 =   2.982240e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   31 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.794678e-09
+  SCPH ITER     3 :  DIFF =    2.969736e-09
+  SCPH ITER     4 :  DIFF =    1.535903e-09
+  SCPH ITER     5 :  DIFF =    8.054466e-10
+  SCPH ITER     6 :  DIFF =    4.326764e-10
+  SCPH ITER     7 :  DIFF =    2.424397e-10
+  SCPH ITER     8 :  DIFF =    1.452176e-10
+  SCPH ITER     9 :  DIFF =    9.470939e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.729460e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   32 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.834161e-09
+  SCPH ITER     3 :  DIFF =    2.477610e-09
+  SCPH ITER     4 :  DIFF =    1.281921e-09
+  SCPH ITER     5 :  DIFF =    6.731321e-10
+  SCPH ITER     6 :  DIFF =    3.627296e-10
+  SCPH ITER     7 :  DIFF =    2.045251e-10
+  SCPH ITER     8 :  DIFF =    1.236881e-10
+  SCPH ITER     9 :  DIFF =    8.140941e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.497768e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   33 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.048344e-09
+  SCPH ITER     3 :  DIFF =    2.075194e-09
+  SCPH ITER     4 :  DIFF =    1.074261e-09
+  SCPH ITER     5 :  DIFF =    5.650234e-10
+  SCPH ITER     6 :  DIFF =    3.053656e-10
+  SCPH ITER     7 :  DIFF =    1.731568e-10
+  SCPH ITER     8 :  DIFF =    1.056284e-10
+  SCPH ITER     9 :  DIFF =    7.027760e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.285611e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   34 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.389805e-09
+  SCPH ITER     3 :  DIFF =    1.737928e-09
+  SCPH ITER     4 :  DIFF =    9.001768e-10
+  SCPH ITER     5 :  DIFF =    4.740374e-10
+  SCPH ITER     6 :  DIFF =    2.572175e-10
+  SCPH ITER     7 :  DIFF =    1.465762e-10
+  SCPH ITER     8 :  DIFF =    9.019119e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     8 iterations.
+ du0 =   2.091530e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   35 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.816511e-09
+  SCPH ITER     3 :  DIFF =    1.444064e-09
+  SCPH ITER     4 :  DIFF =    7.483583e-10
+  SCPH ITER     5 :  DIFF =    3.946179e-10
+  SCPH ITER     6 :  DIFF =    2.149495e-10
+  SCPH ITER     7 :  DIFF =    1.236747e-10
+  SCPH ITER     8 :  DIFF =    7.686403e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     8 iterations.
+ du0 =   1.913693e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   36 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.358258e-09
+  SCPH ITER     3 :  DIFF =    1.209338e-09
+  SCPH ITER     4 :  DIFF =    6.270174e-10
+  SCPH ITER     5 :  DIFF =    3.311150e-10
+  SCPH ITER     6 :  DIFF =    1.809057e-10
+  SCPH ITER     7 :  DIFF =    1.045700e-10
+  SCPH ITER     8 :  DIFF =    6.518914e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     8 iterations.
+ du0 =   1.750918e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   37 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.974178e-09
+  SCPH ITER     3 :  DIFF =    1.012625e-09
+  SCPH ITER     4 :  DIFF =    5.255304e-10
+  SCPH ITER     5 :  DIFF =    2.778391e-10
+  SCPH ITER     6 :  DIFF =    1.522026e-10
+  SCPH ITER     7 :  DIFF =    8.950457e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.602094e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   38 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.628089e-09
+  SCPH ITER     3 :  DIFF =    8.351613e-10
+  SCPH ITER     4 :  DIFF =    4.334164e-10
+  SCPH ITER     5 :  DIFF =    2.298212e-10
+  SCPH ITER     6 :  DIFF =    1.261723e-10
+  SCPH ITER     7 :  DIFF =    7.392713e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.465733e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   39 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.363407e-09
+  SCPH ITER     3 :  DIFF =    6.994350e-10
+  SCPH ITER     4 :  DIFF =    3.632392e-10
+  SCPH ITER     5 :  DIFF =    1.926491e-10
+  SCPH ITER     6 :  DIFF =    1.062748e-10
+  SCPH ITER     7 :  DIFF =    6.279897e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.340952e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   40 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.141190e-09
+  SCPH ITER     3 :  DIFF =    5.855737e-10
+  SCPH ITER     4 :  DIFF =    3.042145e-10
+  SCPH ITER     5 :  DIFF =    1.614806e-10
+  SCPH ITER     6 :  DIFF =    8.916818e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.226919e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   41 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.275416e-10
+  SCPH ITER     3 :  DIFF =    4.760316e-10
+  SCPH ITER     4 :  DIFF =    2.474719e-10
+  SCPH ITER     5 :  DIFF =    1.317278e-10
+  SCPH ITER     6 :  DIFF =    7.316710e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.122420e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   42 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.777311e-10
+  SCPH ITER     3 :  DIFF =    3.991535e-10
+  SCPH ITER     4 :  DIFF =    2.077489e-10
+  SCPH ITER     5 :  DIFF =    1.106929e-10
+  SCPH ITER     6 :  DIFF =    6.179771e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.026812e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   43 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.508591e-10
+  SCPH ITER     3 :  DIFF =    3.340719e-10
+  SCPH ITER     4 :  DIFF =    1.738630e-10
+  SCPH ITER     5 :  DIFF =    9.268343e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     5 iterations.
+ du0 =   9.394774e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   44 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.139935e-10
+  SCPH ITER     3 :  DIFF =    2.640283e-10
+  SCPH ITER     4 :  DIFF =    1.376481e-10
+  SCPH ITER     5 :  DIFF =    7.383585e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     5 iterations.
+ du0 =   8.594229e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   45 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.332270e-10
+  SCPH ITER     3 :  DIFF =    2.224866e-10
+  SCPH ITER     4 :  DIFF =    1.160104e-10
+  SCPH ITER     5 :  DIFF =    6.216254e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     5 iterations.
+ du0 =   7.861865e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   46 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.621504e-10
+  SCPH ITER     3 :  DIFF =    1.860757e-10
+  SCPH ITER     4 :  DIFF =    9.761002e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     4 iterations.
+ du0 =   7.193207e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   47 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.696191e-10
+  SCPH ITER     3 :  DIFF =    1.390541e-10
+  SCPH ITER     4 :  DIFF =    7.311694e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     4 iterations.
+ du0 =   6.580025e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   48 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.320042e-10
+  SCPH ITER     3 :  DIFF =    1.193553e-10
+  SCPH ITER     4 :  DIFF =    6.280584e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     4 iterations.
+ du0 =   6.019114e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   49 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.929671e-10
+  SCPH ITER     3 :  DIFF =    1.000387e-10
+  SCPH ITER     4 :  DIFF =    5.211084e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     4 iterations.
+ du0 =   5.505998e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   50 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.616561e-10
+  SCPH ITER     3 :  DIFF =    8.327408e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     3 iterations.
+ du0 =   5.037782e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   51 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.060082e-10
+  SCPH ITER     3 :  DIFF =    5.524374e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     3 iterations.
+ du0 =   4.608174e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   52 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.962155e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   4.216451e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   53 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.506274e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.856751e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   54 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.586853e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.527778e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   55 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.477346e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.226849e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   56 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.443919e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.951595e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   57 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.623457e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.699812e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   58 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.052277e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.469509e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   59 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.842717e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.258848e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   60 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.031931e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.066158e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   61 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.528328e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.889904e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   62 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.874449e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.728685e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   63 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.085205e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.581218e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   64 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.048771e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.446331e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   65 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.127211e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.322950e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   66 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.110599e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.210095e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   67 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.535339e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.106866e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   68 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.409965e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.012443e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   69 Temperature = 3.000000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.333257e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 3.000000e+02 : convergence achieved in     2 iterations.
+ du0 =   9.260753e-06 [Bohr] du_tensor =   0.000000e+00
+
+
+ du0 is smaller than COORD_CONV_TOL =    1.000000e-05
+ Structural optimization converged in 69-th loop.
+ break structural loop.
+
+ ----------------------------------------------------------------
+ Final atomic displacements [Bohr] at 3.000000e+02 K
+    u_{0,x}   u_{0,y}   u_{0,z} :  -4.034223e-18   8.445660e-20   9.226484e-07
+    u_{1,x}   u_{1,y}   u_{1,z} :  -3.846897e-18  -1.969354e-18   4.664055e-05
+    u_{2,x}   u_{2,y}   u_{2,z} :   2.036151e-17   5.034435e-19  -4.063024e-05
+    u_{3,x}   u_{3,y}   u_{3,z} :   1.288941e-17   2.928587e-18  -4.063024e-05
+    u_{4,x}   u_{4,y}   u_{4,z} :   1.288640e-17   1.701587e-18  -6.619804e-05
+
+
+ ----------------------------------------------------------------
+ Temperature = 2.900000e+02 K
+ Temperature index :    1/   3
+
+ SET_INIT_STR = 3:
+ u0[5] <    5.000000e-03 is satisfied.
+ the structure is back to the high-symmetry phase.
+ set again initial displacement from input file.
+
+ Initial atomic displacements [Bohr] : 
+    u_{0,x}   u_{0,y}   u_{0,z} :  -3.140688e-19  -1.573302e-18   1.131778e-04
+    u_{1,x}   u_{1,y}   u_{1,z} :   6.984916e-19   1.408605e-18   1.882897e-02
+    u_{2,x}   u_{2,y}   u_{2,z} :   6.739297e-19  -2.873499e-18  -1.429815e-02
+    u_{3,x}   u_{3,y}   u_{3,z} :  -2.024029e-18  -2.343528e-18  -1.429815e-02
+    u_{4,x}   u_{4,y}   u_{4,z} :   2.300456e-18   5.591696e-19  -2.870764e-02
+
+ ----------------------------------------------------------------
+ Start structural optimization at 2.900000e+02 K.
+
+ Structure loop :    1 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.777005e-06
+  SCPH ITER     3 :  DIFF =    4.982671e-06
+  SCPH ITER     4 :  DIFF =    2.730084e-06
+  SCPH ITER     5 :  DIFF =    1.486489e-06
+  SCPH ITER     6 :  DIFF =    8.243729e-07
+  SCPH ITER     7 :  DIFF =    4.915036e-07
+  SCPH ITER     8 :  DIFF =    3.185154e-07
+  SCPH ITER     9 :  DIFF =    2.254639e-07
+  SCPH ITER    10 :  DIFF =    1.696243e-07
+  SCPH ITER    11 :  DIFF =    1.317676e-07
+  SCPH ITER    12 :  DIFF =    1.038036e-07
+  SCPH ITER    13 :  DIFF =    8.220638e-08
+  SCPH ITER    14 :  DIFF =    6.520527e-08
+  SCPH ITER    15 :  DIFF =    5.172911e-08
+  SCPH ITER    16 :  DIFF =    4.102692e-08
+  SCPH ITER    17 :  DIFF =    3.252750e-08
+  SCPH ITER    18 :  DIFF =    2.578112e-08
+  SCPH ITER    19 :  DIFF =    2.042943e-08
+  SCPH ITER    20 :  DIFF =    1.618626e-08
+  SCPH ITER    21 :  DIFF =    1.282327e-08
+  SCPH ITER    22 :  DIFF =    1.015858e-08
+  SCPH ITER    23 :  DIFF =    8.047553e-09
+  SCPH ITER    24 :  DIFF =    6.375316e-09
+  SCPH ITER    25 :  DIFF =    5.050734e-09
+  SCPH ITER    26 :  DIFF =    4.001550e-09
+  SCPH ITER    27 :  DIFF =    3.170520e-09
+  SCPH ITER    28 :  DIFF =    2.512168e-09
+  SCPH ITER    29 :  DIFF =    1.990716e-09
+  SCPH ITER    30 :  DIFF =    1.577568e-09
+  SCPH ITER    31 :  DIFF =    1.250299e-09
+  SCPH ITER    32 :  DIFF =    9.910687e-10
+  SCPH ITER    33 :  DIFF =    7.855880e-10
+  SCPH ITER    34 :  DIFF =    6.226991e-10
+  SCPH ITER    35 :  DIFF =    4.937286e-10
+  SCPH ITER    36 :  DIFF =    3.914952e-10
+  SCPH ITER    37 :  DIFF =    3.104034e-10
+  SCPH ITER    38 :  DIFF =    2.462208e-10
+  SCPH ITER    39 :  DIFF =    1.953375e-10
+  SCPH ITER    40 :  DIFF =    1.553228e-10
+  SCPH ITER    41 :  DIFF =    1.228032e-10
+  SCPH ITER    42 :  DIFF =    9.777156e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    42 iterations.
+ du0 =   2.630338e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    2 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.739633e-07
+  SCPH ITER     3 :  DIFF =    3.058637e-07
+  SCPH ITER     4 :  DIFF =    1.649480e-07
+  SCPH ITER     5 :  DIFF =    8.975845e-08
+  SCPH ITER     6 :  DIFF =    4.919775e-08
+  SCPH ITER     7 :  DIFF =    2.713713e-08
+  SCPH ITER     8 :  DIFF =    1.506345e-08
+  SCPH ITER     9 :  DIFF =    8.424535e-09
+  SCPH ITER    10 :  DIFF =    4.761772e-09
+  SCPH ITER    11 :  DIFF =    2.736517e-09
+  SCPH ITER    12 :  DIFF =    1.614936e-09
+  SCPH ITER    13 :  DIFF =    9.919752e-10
+  SCPH ITER    14 :  DIFF =    6.422507e-10
+  SCPH ITER    15 :  DIFF =    4.406326e-10
+  SCPH ITER    16 :  DIFF =    3.182022e-10
+  SCPH ITER    17 :  DIFF =    2.387400e-10
+  SCPH ITER    18 :  DIFF =    1.833635e-10
+  SCPH ITER    19 :  DIFF =    1.429756e-10
+  SCPH ITER    20 :  DIFF =    1.127099e-10
+  SCPH ITER    21 :  DIFF =    8.884182e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    21 iterations.
+ du0 =   2.454919e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    3 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.149003e-07
+  SCPH ITER     3 :  DIFF =    2.726679e-07
+  SCPH ITER     4 :  DIFF =    1.460339e-07
+  SCPH ITER     5 :  DIFF =    7.889198e-08
+  SCPH ITER     6 :  DIFF =    4.292282e-08
+  SCPH ITER     7 :  DIFF =    2.350174e-08
+  SCPH ITER     8 :  DIFF =    1.295219e-08
+  SCPH ITER     9 :  DIFF =    7.195532e-09
+  SCPH ITER    10 :  DIFF =    4.044104e-09
+  SCPH ITER    11 :  DIFF =    2.315411e-09
+  SCPH ITER    12 :  DIFF =    1.365751e-09
+  SCPH ITER    13 :  DIFF =    8.421693e-10
+  SCPH ITER    14 :  DIFF =    5.498288e-10
+  SCPH ITER    15 :  DIFF =    3.812208e-10
+  SCPH ITER    16 :  DIFF =    2.779690e-10
+  SCPH ITER    17 :  DIFF =    2.097093e-10
+  SCPH ITER    18 :  DIFF =    1.618548e-10
+  SCPH ITER    19 :  DIFF =    1.266591e-10
+  SCPH ITER    20 :  DIFF =    9.965125e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.345495e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    4 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.612412e-07
+  SCPH ITER     3 :  DIFF =    2.428465e-07
+  SCPH ITER     4 :  DIFF =    1.292433e-07
+  SCPH ITER     5 :  DIFF =    6.936149e-08
+  SCPH ITER     6 :  DIFF =    3.748554e-08
+  SCPH ITER     7 :  DIFF =    2.038915e-08
+  SCPH ITER     8 :  DIFF =    1.116588e-08
+  SCPH ITER     9 :  DIFF =    6.167988e-09
+  SCPH ITER    10 :  DIFF =    3.451400e-09
+  SCPH ITER    11 :  DIFF =    1.972087e-09
+  SCPH ITER    12 :  DIFF =    1.165404e-09
+  SCPH ITER    13 :  DIFF =    7.234954e-10
+  SCPH ITER    14 :  DIFF =    4.774027e-10
+  SCPH ITER    15 :  DIFF =    3.347249e-10
+  SCPH ITER    16 :  DIFF =    2.464352e-10
+  SCPH ITER    17 :  DIFF =    1.873387e-10
+  SCPH ITER    18 :  DIFF =    1.454265e-10
+  SCPH ITER    19 :  DIFF =    1.137807e-10
+  SCPH ITER    20 :  DIFF =    8.985234e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.249954e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    5 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.117919e-07
+  SCPH ITER     3 :  DIFF =    2.156800e-07
+  SCPH ITER     4 :  DIFF =    1.141301e-07
+  SCPH ITER     5 :  DIFF =    6.088610e-08
+  SCPH ITER     6 :  DIFF =    3.270747e-08
+  SCPH ITER     7 :  DIFF =    1.768561e-08
+  SCPH ITER     8 :  DIFF =    9.631918e-09
+  SCPH ITER     9 :  DIFF =    5.295511e-09
+  SCPH ITER    10 :  DIFF =    2.953853e-09
+  SCPH ITER    11 :  DIFF =    1.687212e-09
+  SCPH ITER    12 :  DIFF =    1.001166e-09
+  SCPH ITER    13 :  DIFF =    6.272021e-10
+  SCPH ITER    14 :  DIFF =    4.192899e-10
+  SCPH ITER    15 :  DIFF =    2.976334e-10
+  SCPH ITER    16 :  DIFF =    2.212193e-10
+  SCPH ITER    17 :  DIFF =    1.693774e-10
+  SCPH ITER    18 :  DIFF =    1.317422e-10
+  SCPH ITER    19 :  DIFF =    1.038680e-10
+  SCPH ITER    20 :  DIFF =    8.156002e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.151612e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    6 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.660095e-07
+  SCPH ITER     3 :  DIFF =    1.908053e-07
+  SCPH ITER     4 :  DIFF =    1.004498e-07
+  SCPH ITER     5 :  DIFF =    5.330199e-08
+  SCPH ITER     6 :  DIFF =    2.847985e-08
+  SCPH ITER     7 :  DIFF =    1.531965e-08
+  SCPH ITER     8 :  DIFF =    8.303719e-09
+  SCPH ITER     9 :  DIFF =    4.547851e-09
+  SCPH ITER    10 :  DIFF =    2.531731e-09
+  SCPH ITER    11 :  DIFF =    1.447980e-09
+  SCPH ITER    12 :  DIFF =    8.644038e-10
+  SCPH ITER    13 :  DIFF =    5.475916e-10
+  SCPH ITER    14 :  DIFF =    3.710605e-10
+  SCPH ITER    15 :  DIFF =    2.666752e-10
+  SCPH ITER    16 :  DIFF =    1.999530e-10
+  SCPH ITER    17 :  DIFF =    1.540429e-10
+  SCPH ITER    18 :  DIFF =    1.202638e-10
+  SCPH ITER    19 :  DIFF =    9.489443e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    19 iterations.
+ du0 =   2.047255e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    7 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.237023e-07
+  SCPH ITER     3 :  DIFF =    1.680505e-07
+  SCPH ITER     4 :  DIFF =    8.806677e-08
+  SCPH ITER     5 :  DIFF =    4.650932e-08
+  SCPH ITER     6 :  DIFF =    2.473253e-08
+  SCPH ITER     7 :  DIFF =    1.324352e-08
+  SCPH ITER     8 :  DIFF =    7.149501e-09
+  SCPH ITER     9 :  DIFF =    3.904179e-09
+  SCPH ITER    10 :  DIFF =    2.171634e-09
+  SCPH ITER    11 :  DIFF =    1.245600e-09
+  SCPH ITER    12 :  DIFF =    7.494314e-10
+  SCPH ITER    13 :  DIFF =    4.808416e-10
+  SCPH ITER    14 :  DIFF =    3.303329e-10
+  SCPH ITER    15 :  DIFF =    2.406848e-10
+  SCPH ITER    16 :  DIFF =    1.817418e-10
+  SCPH ITER    17 :  DIFF =    1.403730e-10
+  SCPH ITER    18 :  DIFF =    1.099261e-10
+  SCPH ITER    19 :  DIFF =    8.650429e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    19 iterations.
+ du0 =   1.938053e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    8 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.848314e-07
+  SCPH ITER     3 :  DIFF =    1.473312e-07
+  SCPH ITER     4 :  DIFF =    7.689768e-08
+  SCPH ITER     5 :  DIFF =    4.044066e-08
+  SCPH ITER     6 :  DIFF =    2.141586e-08
+  SCPH ITER     7 :  DIFF =    1.142260e-08
+  SCPH ITER     8 :  DIFF =    6.145970e-09
+  SCPH ITER     9 :  DIFF =    3.349198e-09
+  SCPH ITER    10 :  DIFF =    1.863511e-09
+  SCPH ITER    11 :  DIFF =    1.073529e-09
+  SCPH ITER    12 :  DIFF =    6.522445e-10
+  SCPH ITER    13 :  DIFF =    4.240090e-10
+  SCPH ITER    14 :  DIFF =    2.952995e-10
+  SCPH ITER    15 :  DIFF =    2.170626e-10
+  SCPH ITER    16 :  DIFF =    1.654771e-10
+  SCPH ITER    17 :  DIFF =    1.285081e-10
+  SCPH ITER    18 :  DIFF =    1.007032e-10
+  SCPH ITER    19 :  DIFF =    7.939290e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    19 iterations.
+ du0 =   1.826289e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    9 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.493881e-07
+  SCPH ITER     3 :  DIFF =    1.285869e-07
+  SCPH ITER     4 :  DIFF =    6.687699e-08
+  SCPH ITER     5 :  DIFF =    3.504171e-08
+  SCPH ITER     6 :  DIFF =    1.848964e-08
+  SCPH ITER     7 :  DIFF =    9.828951e-09
+  SCPH ITER     8 :  DIFF =    5.274442e-09
+  SCPH ITER     9 :  DIFF =    2.870680e-09
+  SCPH ITER    10 :  DIFF =    1.599567e-09
+  SCPH ITER    11 :  DIFF =    9.267693e-10
+  SCPH ITER    12 :  DIFF =    5.691537e-10
+  SCPH ITER    13 :  DIFF =    3.753762e-10
+  SCPH ITER    14 :  DIFF =    2.652074e-10
+  SCPH ITER    15 :  DIFF =    1.969050e-10
+  SCPH ITER    16 :  DIFF =    1.506426e-10
+  SCPH ITER    17 :  DIFF =    1.173266e-10
+  SCPH ITER    18 :  DIFF =    9.235018e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.714184e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   10 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.173367e-07
+  SCPH ITER     3 :  DIFF =    1.117506e-07
+  SCPH ITER     4 :  DIFF =    5.794140e-08
+  SCPH ITER     5 :  DIFF =    3.026281e-08
+  SCPH ITER     6 :  DIFF =    1.591832e-08
+  SCPH ITER     7 :  DIFF =    8.438432e-09
+  SCPH ITER     8 :  DIFF =    4.519084e-09
+  SCPH ITER     9 :  DIFF =    2.458492e-09
+  SCPH ITER    10 :  DIFF =    1.373371e-09
+  SCPH ITER    11 :  DIFF =    8.013649e-10
+  SCPH ITER    12 :  DIFF =    4.980731e-10
+  SCPH ITER    13 :  DIFF =    3.331894e-10
+  SCPH ITER    14 :  DIFF =    2.383451e-10
+  SCPH ITER    15 :  DIFF =    1.783508e-10
+  SCPH ITER    16 :  DIFF =    1.373118e-10
+  SCPH ITER    17 :  DIFF =    1.075002e-10
+  SCPH ITER    18 :  DIFF =    8.437555e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.603532e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   11 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.885943e-07
+  SCPH ITER     3 :  DIFF =    9.673975e-08
+  SCPH ITER     4 :  DIFF =    5.002449e-08
+  SCPH ITER     5 :  DIFF =    2.605582e-08
+  SCPH ITER     6 :  DIFF =    1.366908e-08
+  SCPH ITER     7 :  DIFF =    7.229577e-09
+  SCPH ITER     8 :  DIFF =    3.866220e-09
+  SCPH ITER     9 :  DIFF =    2.104110e-09
+  SCPH ITER    10 :  DIFF =    1.179647e-09
+  SCPH ITER    11 :  DIFF =    6.941929e-10
+  SCPH ITER    12 :  DIFF =    4.369762e-10
+  SCPH ITER    13 :  DIFF =    2.965712e-10
+  SCPH ITER    14 :  DIFF =    2.143572e-10
+  SCPH ITER    15 :  DIFF =    1.618359e-10
+  SCPH ITER    16 :  DIFF =    1.252377e-10
+  SCPH ITER    17 :  DIFF =    9.862604e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.495754e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   12 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.630171e-07
+  SCPH ITER     3 :  DIFF =    8.344760e-08
+  SCPH ITER     4 :  DIFF =    4.305167e-08
+  SCPH ITER     5 :  DIFF =    2.237097e-08
+  SCPH ITER     6 :  DIFF =    1.170979e-08
+  SCPH ITER     7 :  DIFF =    6.182117e-09
+  SCPH ITER     8 :  DIFF =    3.303286e-09
+  SCPH ITER     9 :  DIFF =    1.799792e-09
+  SCPH ITER    10 :  DIFF =    1.013790e-09
+  SCPH ITER    11 :  DIFF =    6.021851e-10
+  SCPH ITER    12 :  DIFF =    3.842298e-10
+  SCPH ITER    13 :  DIFF =    2.643056e-10
+  SCPH ITER    14 :  DIFF =    1.931315e-10
+  SCPH ITER    15 :  DIFF =    1.468835e-10
+  SCPH ITER    16 :  DIFF =    1.139156e-10
+  SCPH ITER    17 :  DIFF =    8.939361e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.391831e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   13 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.404240e-07
+  SCPH ITER     3 :  DIFF =    7.175546e-08
+  SCPH ITER     4 :  DIFF =    3.694647e-08
+  SCPH ITER     5 :  DIFF =    1.915999e-08
+  SCPH ITER     6 :  DIFF =    1.001055e-08
+  SCPH ITER     7 :  DIFF =    5.277818e-09
+  SCPH ITER     8 :  DIFF =    2.819334e-09
+  SCPH ITER     9 :  DIFF =    1.539051e-09
+  SCPH ITER    10 :  DIFF =    8.718676e-10
+  SCPH ITER    11 :  DIFF =    5.232865e-10
+  SCPH ITER    12 :  DIFF =    3.385619e-10
+  SCPH ITER    13 :  DIFF =    2.359428e-10
+  SCPH ITER    14 :  DIFF =    1.741482e-10
+  SCPH ITER    15 :  DIFF =    1.331468e-10
+  SCPH ITER    16 :  DIFF =    1.035276e-10
+  SCPH ITER    17 :  DIFF =    8.144876e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.292470e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   14 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.205933e-07
+  SCPH ITER     3 :  DIFF =    6.152931e-08
+  SCPH ITER     4 :  DIFF =    3.162775e-08
+  SCPH ITER     5 :  DIFF =    1.637404e-08
+  SCPH ITER     6 :  DIFF =    8.542197e-09
+  SCPH ITER     7 :  DIFF =    4.499412e-09
+  SCPH ITER     8 :  DIFF =    2.404188e-09
+  SCPH ITER     9 :  DIFF =    1.315983e-09
+  SCPH ITER    10 :  DIFF =    7.504420e-10
+  SCPH ITER    11 :  DIFF =    4.555923e-10
+  SCPH ITER    12 :  DIFF =    2.990308e-10
+  SCPH ITER    13 :  DIFF =    2.111953e-10
+  SCPH ITER    14 :  DIFF =    1.569467e-10
+  SCPH ITER    15 :  DIFF =    1.205701e-10
+  SCPH ITER    16 :  DIFF =    9.429860e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    16 iterations.
+ du0 =   1.198128e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   15 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.032837e-07
+  SCPH ITER     3 :  DIFF =    5.262981e-08
+  SCPH ITER     4 :  DIFF =    2.701448e-08
+  SCPH ITER     5 :  DIFF =    1.396597e-08
+  SCPH ITER     6 :  DIFF =    7.277357e-09
+  SCPH ITER     7 :  DIFF =    3.831054e-09
+  SCPH ITER     8 :  DIFF =    2.048722e-09
+  SCPH ITER     9 :  DIFF =    1.125287e-09
+  SCPH ITER    10 :  DIFF =    6.466031e-10
+  SCPH ITER    11 :  DIFF =    3.973256e-10
+  SCPH ITER    12 :  DIFF =    2.642529e-10
+  SCPH ITER    13 :  DIFF =    1.887250e-10
+  SCPH ITER    14 :  DIFF =    1.417850e-10
+  SCPH ITER    15 :  DIFF =    1.091225e-10
+  SCPH ITER    16 :  DIFF =    8.538672e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    16 iterations.
+ du0 =   1.109018e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   16 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.825575e-08
+  SCPH ITER     3 :  DIFF =    4.492314e-08
+  SCPH ITER     4 :  DIFF =    2.303097e-08
+  SCPH ITER     5 :  DIFF =    1.189281e-08
+  SCPH ITER     6 :  DIFF =    6.191636e-09
+  SCPH ITER     7 :  DIFF =    3.258930e-09
+  SCPH ITER     8 :  DIFF =    1.745126e-09
+  SCPH ITER     9 :  DIFF =    9.626280e-10
+  SCPH ITER    10 :  DIFF =    5.579308e-10
+  SCPH ITER    11 :  DIFF =    3.472995e-10
+  SCPH ITER    12 :  DIFF =    2.342008e-10
+  SCPH ITER    13 :  DIFF =    1.691250e-10
+  SCPH ITER    14 :  DIFF =    1.277887e-10
+  SCPH ITER    15 :  DIFF =    9.966783e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    15 iterations.
+ du0 =   1.025265e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   17 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.525825e-08
+  SCPH ITER     3 :  DIFF =    3.827187e-08
+  SCPH ITER     4 :  DIFF =    1.960122e-08
+  SCPH ITER     5 :  DIFF =    1.011228e-08
+  SCPH ITER     6 :  DIFF =    5.261437e-09
+  SCPH ITER     7 :  DIFF =    2.769828e-09
+  SCPH ITER     8 :  DIFF =    1.486011e-09
+  SCPH ITER     9 :  DIFF =    8.238417e-10
+  SCPH ITER    10 :  DIFF =    4.820325e-10
+  SCPH ITER    11 :  DIFF =    3.041505e-10
+  SCPH ITER    12 :  DIFF =    2.077187e-10
+  SCPH ITER    13 :  DIFF =    1.515318e-10
+  SCPH ITER    14 :  DIFF =    1.153361e-10
+  SCPH ITER    15 :  DIFF =    8.929226e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    15 iterations.
+ du0 =   9.468145e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   18 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.406770e-08
+  SCPH ITER     3 :  DIFF =    3.255579e-08
+  SCPH ITER     4 :  DIFF =    1.665981e-08
+  SCPH ITER     5 :  DIFF =    8.588568e-09
+  SCPH ITER     6 :  DIFF =    4.467083e-09
+  SCPH ITER     7 :  DIFF =    2.352949e-09
+  SCPH ITER     8 :  DIFF =    1.265424e-09
+  SCPH ITER     9 :  DIFF =    7.055711e-10
+  SCPH ITER    10 :  DIFF =    4.171275e-10
+  SCPH ITER    11 :  DIFF =    2.665814e-10
+  SCPH ITER    12 :  DIFF =    1.845977e-10
+  SCPH ITER    13 :  DIFF =    1.357634e-10
+  SCPH ITER    14 :  DIFF =    1.037525e-10
+  SCPH ITER    15 :  DIFF =    8.075909e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    15 iterations.
+ du0 =   8.735789e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   19 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.446012e-08
+  SCPH ITER     3 :  DIFF =    2.765579e-08
+  SCPH ITER     4 :  DIFF =    1.414271e-08
+  SCPH ITER     5 :  DIFF =    7.286970e-09
+  SCPH ITER     6 :  DIFF =    3.789680e-09
+  SCPH ITER     7 :  DIFF =    1.997917e-09
+  SCPH ITER     8 :  DIFF =    1.077704e-09
+  SCPH ITER     9 :  DIFF =    6.048821e-10
+  SCPH ITER    10 :  DIFF =    3.615606e-10
+  SCPH ITER    11 :  DIFF =    2.344229e-10
+  SCPH ITER    12 :  DIFF =    1.648878e-10
+  SCPH ITER    13 :  DIFF =    1.219946e-10
+  SCPH ITER    14 :  DIFF =    9.356929e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    14 iterations.
+ du0 =   8.054072e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   20 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.622875e-08
+  SCPH ITER     3 :  DIFF =    2.346290e-08
+  SCPH ITER     4 :  DIFF =    1.199189e-08
+  SCPH ITER     5 :  DIFF =    6.176413e-09
+  SCPH ITER     6 :  DIFF =    3.212450e-09
+  SCPH ITER     7 :  DIFF =    1.695709e-09
+  SCPH ITER     8 :  DIFF =    9.179270e-10
+  SCPH ITER     9 :  DIFF =    5.191147e-10
+  SCPH ITER    10 :  DIFF =    3.139699e-10
+  SCPH ITER    11 :  DIFF =    2.061835e-10
+  SCPH ITER    12 :  DIFF =    1.461768e-10
+  SCPH ITER    13 :  DIFF =    1.107509e-10
+  SCPH ITER    14 :  DIFF =    8.518941e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    14 iterations.
+ du0 =   7.420603e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   21 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.920369e-08
+  SCPH ITER     3 :  DIFF =    1.988853e-08
+  SCPH ITER     4 :  DIFF =    1.016069e-08
+  SCPH ITER     5 :  DIFF =    5.232088e-09
+  SCPH ITER     6 :  DIFF =    2.722216e-09
+  SCPH ITER     7 :  DIFF =    1.439287e-09
+  SCPH ITER     8 :  DIFF =    7.823251e-10
+  SCPH ITER     9 :  DIFF =    4.460495e-10
+  SCPH ITER    10 :  DIFF =    2.732033e-10
+  SCPH ITER    11 :  DIFF =    1.819968e-10
+  SCPH ITER    12 :  DIFF =    1.301200e-10
+  SCPH ITER    13 :  DIFF =    9.831147e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    13 iterations.
+ du0 =   6.833372e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   22 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.320726e-08
+  SCPH ITER     3 :  DIFF =    1.684011e-08
+  SCPH ITER     4 :  DIFF =    8.600429e-09
+  SCPH ITER     5 :  DIFF =    4.428247e-09
+  SCPH ITER     6 :  DIFF =    2.305261e-09
+  SCPH ITER     7 :  DIFF =    1.221194e-09
+  SCPH ITER     8 :  DIFF =    6.669380e-10
+  SCPH ITER     9 :  DIFF =    3.836048e-10
+  SCPH ITER    10 :  DIFF =    2.377381e-10
+  SCPH ITER    11 :  DIFF =    1.604586e-10
+  SCPH ITER    12 :  DIFF =    1.162570e-10
+  SCPH ITER    13 :  DIFF =    8.796967e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    13 iterations.
+ du0 =   6.289537e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   23 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.811277e-08
+  SCPH ITER     3 :  DIFF =    1.425240e-08
+  SCPH ITER     4 :  DIFF =    7.277207e-09
+  SCPH ITER     5 :  DIFF =    3.747155e-09
+  SCPH ITER     6 :  DIFF =    1.952180e-09
+  SCPH ITER     7 :  DIFF =    1.036563e-09
+  SCPH ITER     8 :  DIFF =    5.690660e-10
+  SCPH ITER     9 :  DIFF =    3.303428e-10
+  SCPH ITER    10 :  DIFF =    2.075606e-10
+  SCPH ITER    11 :  DIFF =    1.416673e-10
+  SCPH ITER    12 :  DIFF =    1.034905e-10
+  SCPH ITER    13 :  DIFF =    7.948453e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    13 iterations.
+ du0 =   5.786714e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   24 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.378397e-08
+  SCPH ITER     3 :  DIFF =    1.205502e-08
+  SCPH ITER     4 :  DIFF =    6.154365e-09
+  SCPH ITER     5 :  DIFF =    3.169545e-09
+  SCPH ITER     6 :  DIFF =    1.652876e-09
+  SCPH ITER     7 :  DIFF =    8.800213e-10
+  SCPH ITER     8 :  DIFF =    4.859843e-10
+  SCPH ITER     9 :  DIFF =    2.849892e-10
+  SCPH ITER    10 :  DIFF =    1.812537e-10
+  SCPH ITER    11 :  DIFF =    1.255542e-10
+  SCPH ITER    12 :  DIFF =    9.228980e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    12 iterations.
+ du0 =   5.322481e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   25 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.010057e-08
+  SCPH ITER     3 :  DIFF =    1.018602e-08
+  SCPH ITER     4 :  DIFF =    5.199746e-09
+  SCPH ITER     5 :  DIFF =    2.678663e-09
+  SCPH ITER     6 :  DIFF =    1.398498e-09
+  SCPH ITER     7 :  DIFF =    7.468566e-10
+  SCPH ITER     8 :  DIFF =    4.150658e-10
+  SCPH ITER     9 :  DIFF =    2.459255e-10
+  SCPH ITER    10 :  DIFF =    1.586867e-10
+  SCPH ITER    11 :  DIFF =    1.116010e-10
+  SCPH ITER    12 :  DIFF =    8.235361e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    12 iterations.
+ du0 =   4.893965e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   26 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.698767e-08
+  SCPH ITER     3 :  DIFF =    8.607422e-09
+  SCPH ITER     4 :  DIFF =    4.393929e-09
+  SCPH ITER     5 :  DIFF =    2.264454e-09
+  SCPH ITER     6 :  DIFF =    1.183872e-09
+  SCPH ITER     7 :  DIFF =    6.343375e-10
+  SCPH ITER     8 :  DIFF =    3.549014e-10
+  SCPH ITER     9 :  DIFF =    2.125595e-10
+  SCPH ITER    10 :  DIFF =    1.391415e-10
+  SCPH ITER    11 :  DIFF =    9.835959e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    11 iterations.
+ du0 =   4.499050e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   27 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.433728e-08
+  SCPH ITER     3 :  DIFF =    7.263572e-09
+  SCPH ITER     4 :  DIFF =    3.708034e-09
+  SCPH ITER     5 :  DIFF =    1.911924e-09
+  SCPH ITER     6 :  DIFF =    1.001094e-09
+  SCPH ITER     7 :  DIFF =    5.383639e-10
+  SCPH ITER     8 :  DIFF =    3.034297e-10
+  SCPH ITER     9 :  DIFF =    1.837390e-10
+  SCPH ITER    10 :  DIFF =    1.214052e-10
+  SCPH ITER    11 :  DIFF =    8.667134e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    11 iterations.
+ du0 =   4.135011e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   28 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.210781e-08
+  SCPH ITER     3 :  DIFF =    6.133730e-09
+  SCPH ITER     4 :  DIFF =    3.131632e-09
+  SCPH ITER     5 :  DIFF =    1.615695e-09
+  SCPH ITER     6 :  DIFF =    8.475278e-10
+  SCPH ITER     7 :  DIFF =    4.576358e-10
+  SCPH ITER     8 :  DIFF =    2.598416e-10
+  SCPH ITER     9 :  DIFF =    1.591598e-10
+  SCPH ITER    10 :  DIFF =    1.065464e-10
+  SCPH ITER    11 :  DIFF =    7.698094e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    11 iterations.
+ du0 =   3.799787e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   29 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.022204e-08
+  SCPH ITER     3 :  DIFF =    5.178292e-09
+  SCPH ITER     4 :  DIFF =    2.644277e-09
+  SCPH ITER     5 :  DIFF =    1.365166e-09
+  SCPH ITER     6 :  DIFF =    7.173973e-10
+  SCPH ITER     7 :  DIFF =    3.889579e-10
+  SCPH ITER     8 :  DIFF =    2.225596e-10
+  SCPH ITER     9 :  DIFF =    1.377737e-10
+  SCPH ITER    10 :  DIFF =    9.366769e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    10 iterations.
+ du0 =   3.491404e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   30 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.611647e-09
+  SCPH ITER     3 :  DIFF =    4.362230e-09
+  SCPH ITER     4 :  DIFF =    2.227888e-09
+  SCPH ITER     5 :  DIFF =    1.151075e-09
+  SCPH ITER     6 :  DIFF =    6.060953e-10
+  SCPH ITER     7 :  DIFF =    3.301563e-10
+  SCPH ITER     8 :  DIFF =    1.906261e-10
+  SCPH ITER     9 :  DIFF =    1.191642e-10
+  SCPH ITER    10 :  DIFF =    8.130467e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    10 iterations.
+ du0 =   3.207502e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   31 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.267112e-09
+  SCPH ITER     3 :  DIFF =    3.681238e-09
+  SCPH ITER     4 :  DIFF =    1.880565e-09
+  SCPH ITER     5 :  DIFF =    9.724028e-10
+  SCPH ITER     6 :  DIFF =    5.132576e-10
+  SCPH ITER     7 :  DIFF =    2.807814e-10
+  SCPH ITER     8 :  DIFF =    1.631197e-10
+  SCPH ITER     9 :  DIFF =    1.031460e-10
+  SCPH ITER    10 :  DIFF =    7.108674e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in    10 iterations.
+ du0 =   2.946388e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   32 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.131380e-09
+  SCPH ITER     3 :  DIFF =    3.106049e-09
+  SCPH ITER     4 :  DIFF =    1.587153e-09
+  SCPH ITER     5 :  DIFF =    8.213675e-10
+  SCPH ITER     6 :  DIFF =    4.343018e-10
+  SCPH ITER     7 :  DIFF =    2.387755e-10
+  SCPH ITER     8 :  DIFF =    1.397957e-10
+  SCPH ITER     9 :  DIFF =    9.006578e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.706456e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   33 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.153318e-09
+  SCPH ITER     3 :  DIFF =    2.610457e-09
+  SCPH ITER     4 :  DIFF =    1.334205e-09
+  SCPH ITER     5 :  DIFF =    6.910886e-10
+  SCPH ITER     6 :  DIFF =    3.662452e-10
+  SCPH ITER     7 :  DIFF =    2.021942e-10
+  SCPH ITER     8 :  DIFF =    1.195920e-10
+  SCPH ITER     9 :  DIFF =    7.725834e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.485725e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   34 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.346833e-09
+  SCPH ITER     3 :  DIFF =    2.202082e-09
+  SCPH ITER     4 :  DIFF =    1.125860e-09
+  SCPH ITER     5 :  DIFF =    5.836663e-10
+  SCPH ITER     6 :  DIFF =    3.099975e-10
+  SCPH ITER     7 :  DIFF =    1.720546e-10
+  SCPH ITER     8 :  DIFF =    1.023442e-10
+  SCPH ITER     9 :  DIFF =    6.640772e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.282858e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   35 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.666065e-09
+  SCPH ITER     3 :  DIFF =    1.857346e-09
+  SCPH ITER     4 :  DIFF =    9.499209e-10
+  SCPH ITER     5 :  DIFF =    4.928950e-10
+  SCPH ITER     6 :  DIFF =    2.623526e-10
+  SCPH ITER     7 :  DIFF =    1.461509e-10
+  SCPH ITER     8 :  DIFF =    8.765887e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     8 iterations.
+ du0 =   2.096593e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   36 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.069260e-09
+  SCPH ITER     3 :  DIFF =    1.554881e-09
+  SCPH ITER     4 :  DIFF =    7.953812e-10
+  SCPH ITER     5 :  DIFF =    4.131324e-10
+  SCPH ITER     6 :  DIFF =    2.203856e-10
+  SCPH ITER     7 :  DIFF =    1.235496e-10
+  SCPH ITER     8 :  DIFF =    7.444379e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     8 iterations.
+ du0 =   1.925289e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   37 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.588412e-09
+  SCPH ITER     3 :  DIFF =    1.311410e-09
+  SCPH ITER     4 :  DIFF =    6.710360e-10
+  SCPH ITER     5 :  DIFF =    3.488183e-10
+  SCPH ITER     6 :  DIFF =    1.864420e-10
+  SCPH ITER     7 :  DIFF =    1.052145e-10
+  SCPH ITER     8 :  DIFF =    6.398403e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     8 iterations.
+ du0 =   1.767919e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   38 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.182499e-09
+  SCPH ITER     3 :  DIFF =    1.105848e-09
+  SCPH ITER     4 :  DIFF =    5.660093e-10
+  SCPH ITER     5 :  DIFF =    2.945381e-10
+  SCPH ITER     6 :  DIFF =    1.578744e-10
+  SCPH ITER     7 :  DIFF =    8.926405e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.623510e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   39 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.813958e-09
+  SCPH ITER     3 :  DIFF =    9.190112e-10
+  SCPH ITER     4 :  DIFF =    4.705320e-10
+  SCPH ITER     5 :  DIFF =    2.449933e-10
+  SCPH ITER     6 :  DIFF =    1.317681e-10
+  SCPH ITER     7 :  DIFF =    7.458601e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.490708e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   40 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.529999e-09
+  SCPH ITER     3 :  DIFF =    7.752122e-10
+  SCPH ITER     4 :  DIFF =    3.970701e-10
+  SCPH ITER     5 :  DIFF =    2.073533e-10
+  SCPH ITER     6 :  DIFF =    1.113247e-10
+  SCPH ITER     7 :  DIFF =    6.429805e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.368741e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   41 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.289832e-09
+  SCPH ITER     3 :  DIFF =    6.535938e-10
+  SCPH ITER     4 :  DIFF =    3.348305e-10
+  SCPH ITER     5 :  DIFF =    1.746079e-10
+  SCPH ITER     6 :  DIFF =    9.516986e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.256874e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   42 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.056889e-09
+  SCPH ITER     3 :  DIFF =    5.354578e-10
+  SCPH ITER     4 :  DIFF =    2.743979e-10
+  SCPH ITER     5 :  DIFF =    1.432924e-10
+  SCPH ITER     6 :  DIFF =    7.751708e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.153987e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   43 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.924525e-10
+  SCPH ITER     3 :  DIFF =    4.521925e-10
+  SCPH ITER     4 :  DIFF =    2.319436e-10
+  SCPH ITER     5 :  DIFF =    1.211062e-10
+  SCPH ITER     6 :  DIFF =    6.567498e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.059509e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   44 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.521989e-10
+  SCPH ITER     3 :  DIFF =    3.811939e-10
+  SCPH ITER     4 :  DIFF =    1.954303e-10
+  SCPH ITER     5 :  DIFF =    1.023776e-10
+  SCPH ITER     6 :  DIFF =    5.595746e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     6 iterations.
+ du0 =   9.727559e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   45 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.340840e-10
+  SCPH ITER     3 :  DIFF =    3.213263e-10
+  SCPH ITER     4 :  DIFF =    1.649260e-10
+  SCPH ITER     5 :  DIFF =    8.683707e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     5 iterations.
+ du0 =   8.932258e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   46 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.049275e-10
+  SCPH ITER     3 :  DIFF =    2.558769e-10
+  SCPH ITER     4 :  DIFF =    1.313128e-10
+  SCPH ITER     5 :  DIFF =    6.900243e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     5 iterations.
+ du0 =   8.200617e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   47 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.284078e-10
+  SCPH ITER     3 :  DIFF =    2.172702e-10
+  SCPH ITER     4 :  DIFF =    1.114708e-10
+  SCPH ITER     5 :  DIFF =    5.902417e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     5 iterations.
+ du0 =   7.528873e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   48 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.608927e-10
+  SCPH ITER     3 :  DIFF =    1.829196e-10
+  SCPH ITER     4 :  DIFF =    9.407566e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     4 iterations.
+ du0 =   6.913359e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   49 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.707732e-10
+  SCPH ITER     3 :  DIFF =    1.374301e-10
+  SCPH ITER     4 :  DIFF =    7.076159e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     4 iterations.
+ du0 =   6.346871e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   50 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.345799e-10
+  SCPH ITER     3 :  DIFF =    1.189799e-10
+  SCPH ITER     4 :  DIFF =    6.139660e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     4 iterations.
+ du0 =   5.826801e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   51 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.965045e-10
+  SCPH ITER     3 :  DIFF =    9.982184e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     3 iterations.
+ du0 =   5.350532e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   52 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.300165e-10
+  SCPH ITER     3 :  DIFF =    6.626929e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     3 iterations.
+ du0 =   4.911947e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   53 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.227632e-10
+  SCPH ITER     3 :  DIFF =    6.279672e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     3 iterations.
+ du0 =   4.509333e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   54 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.855029e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   4.140873e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   55 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.062665e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.801315e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   56 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.677676e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.489637e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   57 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.747354e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.203500e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   58 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.754169e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.940828e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   59 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.818467e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.699687e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   60 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.265564e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.478321e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   61 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.104110e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.275102e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   62 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.197623e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.088548e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   63 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.889363e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.917288e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   64 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.543664e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.760072e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   65 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.201564e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.615747e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   66 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.075799e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.483256e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   67 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.991282e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.361629e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   68 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.393939e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.249975e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   69 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.105641e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.147477e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   70 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.170517e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.053384e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   71 Temperature = 2.900000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.382245e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.900000e+02 : convergence achieved in     2 iterations.
+ du0 =   9.670057e-06 [Bohr] du_tensor =   0.000000e+00
+
+
+ du0 is smaller than COORD_CONV_TOL =    1.000000e-05
+ Structural optimization converged in 71-th loop.
+ break structural loop.
+
+ ----------------------------------------------------------------
+ Final atomic displacements [Bohr] at 2.900000e+02 K
+    u_{0,x}   u_{0,y}   u_{0,z} :  -3.961624e-18   1.109708e-19   1.005028e-06
+    u_{1,x}   u_{1,y}   u_{1,z} :  -2.168153e-18  -1.468460e-18   5.085304e-05
+    u_{2,x}   u_{2,y}   u_{2,z} :   1.777295e-17   7.640829e-20  -4.430782e-05
+    u_{3,x}   u_{3,y}   u_{3,z} :   1.121468e-17   1.983820e-18  -4.430782e-05
+    u_{4,x}   u_{4,y}   u_{4,z} :   1.150418e-17   1.338110e-18  -7.215288e-05
+
+
+ ----------------------------------------------------------------
+ Temperature = 2.800000e+02 K
+ Temperature index :    2/   3
+
+ SET_INIT_STR = 3:
+ u0[5] <    5.000000e-03 is satisfied.
+ the structure is back to the high-symmetry phase.
+ set again initial displacement from input file.
+
+ Initial atomic displacements [Bohr] : 
+    u_{0,x}   u_{0,y}   u_{0,z} :  -3.140688e-19  -1.573302e-18   1.131778e-04
+    u_{1,x}   u_{1,y}   u_{1,z} :   6.984916e-19   1.408605e-18   1.882897e-02
+    u_{2,x}   u_{2,y}   u_{2,z} :   6.739297e-19  -2.873499e-18  -1.429815e-02
+    u_{3,x}   u_{3,y}   u_{3,z} :  -2.024029e-18  -2.343528e-18  -1.429815e-02
+    u_{4,x}   u_{4,y}   u_{4,z} :   2.300456e-18   5.591696e-19  -2.870764e-02
+
+ ----------------------------------------------------------------
+ Start structural optimization at 2.800000e+02 K.
+
+ Structure loop :    1 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.905492e-06
+  SCPH ITER     3 :  DIFF =    3.338965e-06
+  SCPH ITER     4 :  DIFF =    1.866971e-06
+  SCPH ITER     5 :  DIFF =    1.051979e-06
+  SCPH ITER     6 :  DIFF =    6.335966e-07
+  SCPH ITER     7 :  DIFF =    4.083619e-07
+  SCPH ITER     8 :  DIFF =    2.855372e-07
+  SCPH ITER     9 :  DIFF =    2.123523e-07
+  SCPH ITER    10 :  DIFF =    1.636696e-07
+  SCPH ITER    11 :  DIFF =    1.283461e-07
+  SCPH ITER    12 :  DIFF =    1.013901e-07
+  SCPH ITER    13 :  DIFF =    8.031678e-08
+  SCPH ITER    14 :  DIFF =    6.367507e-08
+  SCPH ITER    15 :  DIFF =    5.048477e-08
+  SCPH ITER    16 :  DIFF =    4.001990e-08
+  SCPH ITER    17 :  DIFF =    3.171764e-08
+  SCPH ITER    18 :  DIFF =    2.513331e-08
+  SCPH ITER    19 :  DIFF =    1.991335e-08
+  SCPH ITER    20 :  DIFF =    1.577632e-08
+  SCPH ITER    21 :  DIFF =    1.249829e-08
+  SCPH ITER    22 :  DIFF =    9.901296e-09
+  SCPH ITER    23 :  DIFF =    7.844034e-09
+  SCPH ITER    24 :  DIFF =    6.214416e-09
+  SCPH ITER    25 :  DIFF =    4.923574e-09
+  SCPH ITER    26 :  DIFF =    3.901041e-09
+  SCPH ITER    27 :  DIFF =    3.091062e-09
+  SCPH ITER    28 :  DIFF =    2.449418e-09
+  SCPH ITER    29 :  DIFF =    1.941079e-09
+  SCPH ITER    30 :  DIFF =    1.538369e-09
+  SCPH ITER    31 :  DIFF =    1.219300e-09
+  SCPH ITER    32 :  DIFF =    9.665385e-10
+  SCPH ITER    33 :  DIFF =    7.661500e-10
+  SCPH ITER    34 :  DIFF =    6.073923e-10
+  SCPH ITER    35 :  DIFF =    4.815255e-10
+  SCPH ITER    36 :  DIFF =    3.819295e-10
+  SCPH ITER    37 :  DIFF =    3.028467e-10
+  SCPH ITER    38 :  DIFF =    2.401655e-10
+  SCPH ITER    39 :  DIFF =    1.904710e-10
+  SCPH ITER    40 :  DIFF =    1.510760e-10
+  SCPH ITER    41 :  DIFF =    1.198487e-10
+  SCPH ITER    42 :  DIFF =    9.525890e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    42 iterations.
+ du0 =   2.497903e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    2 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.637443e-07
+  SCPH ITER     3 :  DIFF =    2.979800e-07
+  SCPH ITER     4 :  DIFF =    1.594707e-07
+  SCPH ITER     5 :  DIFF =    8.614396e-08
+  SCPH ITER     6 :  DIFF =    4.688094e-08
+  SCPH ITER     7 :  DIFF =    2.567805e-08
+  SCPH ITER     8 :  DIFF =    1.415443e-08
+  SCPH ITER     9 :  DIFF =    7.861599e-09
+  SCPH ITER    10 :  DIFF =    4.413754e-09
+  SCPH ITER    11 :  DIFF =    2.520853e-09
+  SCPH ITER    12 :  DIFF =    1.480323e-09
+  SCPH ITER    13 :  DIFF =    9.067230e-10
+  SCPH ITER    14 :  DIFF =    5.872197e-10
+  SCPH ITER    15 :  DIFF =    4.037034e-10
+  SCPH ITER    16 :  DIFF =    2.925399e-10
+  SCPH ITER    17 :  DIFF =    2.201138e-10
+  SCPH ITER    18 :  DIFF =    1.697692e-10
+  SCPH ITER    19 :  DIFF =    1.324196e-10
+  SCPH ITER    20 :  DIFF =    1.042460e-10
+  SCPH ITER    21 :  DIFF =    8.221922e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    21 iterations.
+ du0 =   2.324868e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    3 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.088016e-07
+  SCPH ITER     3 :  DIFF =    2.672503e-07
+  SCPH ITER     4 :  DIFF =    1.420412e-07
+  SCPH ITER     5 :  DIFF =    7.617519e-08
+  SCPH ITER     6 :  DIFF =    4.115050e-08
+  SCPH ITER     7 :  DIFF =    2.237360e-08
+  SCPH ITER     8 :  DIFF =    1.224453e-08
+  SCPH ITER     9 :  DIFF =    6.755145e-09
+  SCPH ITER    10 :  DIFF =    3.770697e-09
+  SCPH ITER    11 :  DIFF =    2.145123e-09
+  SCPH ITER    12 :  DIFF =    1.258772e-09
+  SCPH ITER    13 :  DIFF =    7.737257e-10
+  SCPH ITER    14 :  DIFF =    5.048400e-10
+  SCPH ITER    15 :  DIFF =    3.505311e-10
+  SCPH ITER    16 :  DIFF =    2.561154e-10
+  SCPH ITER    17 :  DIFF =    1.940796e-10
+  SCPH ITER    18 :  DIFF =    1.502851e-10
+  SCPH ITER    19 :  DIFF =    1.181406e-10
+  SCPH ITER    20 :  DIFF =    9.259727e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.226739e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    4 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.591649e-07
+  SCPH ITER     3 :  DIFF =    2.397721e-07
+  SCPH ITER     4 :  DIFF =    1.266267e-07
+  SCPH ITER     5 :  DIFF =    6.745786e-08
+  SCPH ITER     6 :  DIFF =    3.619617e-08
+  SCPH ITER     7 :  DIFF =    1.954893e-08
+  SCPH ITER     8 :  DIFF =    1.063036e-08
+  SCPH ITER     9 :  DIFF =    5.830724e-09
+  SCPH ITER    10 :  DIFF =    3.239888e-09
+  SCPH ITER    11 :  DIFF =    1.838981e-09
+  SCPH ITER    12 :  DIFF =    1.080727e-09
+  SCPH ITER    13 :  DIFF =    6.686530e-10
+  SCPH ITER    14 :  DIFF =    4.407859e-10
+  SCPH ITER    15 :  DIFF =    3.095769e-10
+  SCPH ITER    16 :  DIFF =    2.284820e-10
+  SCPH ITER    17 :  DIFF =    1.740927e-10
+  SCPH ITER    18 :  DIFF =    1.352819e-10
+  SCPH ITER    19 :  DIFF =    1.059079e-10
+  SCPH ITER    20 :  DIFF =    8.356297e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    20 iterations.
+ du0 =   2.145914e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    5 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.133851e-07
+  SCPH ITER     3 :  DIFF =    2.147119e-07
+  SCPH ITER     4 :  DIFF =    1.127317e-07
+  SCPH ITER     5 :  DIFF =    5.969181e-08
+  SCPH ITER     6 :  DIFF =    3.183340e-08
+  SCPH ITER     7 :  DIFF =    1.708967e-08
+  SCPH ITER     8 :  DIFF =    9.240613e-09
+  SCPH ITER     9 :  DIFF =    5.043639e-09
+  SCPH ITER    10 :  DIFF =    2.792978e-09
+  SCPH ITER    11 :  DIFF =    1.584314e-09
+  SCPH ITER    12 :  DIFF =    9.345284e-10
+  SCPH ITER    13 :  DIFF =    5.832829e-10
+  SCPH ITER    14 :  DIFF =    3.892539e-10
+  SCPH ITER    15 :  DIFF =    2.765631e-10
+  SCPH ITER    16 :  DIFF =    2.058932e-10
+  SCPH ITER    17 :  DIFF =    1.577751e-10
+  SCPH ITER    18 :  DIFF =    1.235633e-10
+  SCPH ITER    19 :  DIFF =    9.721130e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    19 iterations.
+ du0 =   2.063130e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    6 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.707645e-07
+  SCPH ITER     3 :  DIFF =    1.916416e-07
+  SCPH ITER     4 :  DIFF =    1.000871e-07
+  SCPH ITER     5 :  DIFF =    5.270557e-08
+  SCPH ITER     6 :  DIFF =    2.795275e-08
+  SCPH ITER     7 :  DIFF =    1.492601e-08
+  SCPH ITER     8 :  DIFF =    8.030855e-09
+  SCPH ITER     9 :  DIFF =    4.365609e-09
+  SCPH ITER    10 :  DIFF =    2.412022e-09
+  SCPH ITER    11 :  DIFF =    1.369528e-09
+  SCPH ITER    12 :  DIFF =    8.124448e-10
+  SCPH ITER    13 :  DIFF =    5.125781e-10
+  SCPH ITER    14 :  DIFF =    3.467201e-10
+  SCPH ITER    15 :  DIFF =    2.493896e-10
+  SCPH ITER    16 :  DIFF =    1.873848e-10
+  SCPH ITER    17 :  DIFF =    1.443054e-10
+  SCPH ITER    18 :  DIFF =    1.127340e-10
+  SCPH ITER    19 :  DIFF =    8.992063e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    19 iterations.
+ du0 =   1.973974e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    7 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.310381e-07
+  SCPH ITER     3 :  DIFF =    1.703639e-07
+  SCPH ITER     4 :  DIFF =    8.855148e-08
+  SCPH ITER     5 :  DIFF =    4.640086e-08
+  SCPH ITER     6 :  DIFF =    2.448762e-08
+  SCPH ITER     7 :  DIFF =    1.301376e-08
+  SCPH ITER     8 :  DIFF =    6.972211e-09
+  SCPH ITER     9 :  DIFF =    3.777914e-09
+  SCPH ITER    10 :  DIFF =    2.084819e-09
+  SCPH ITER    11 :  DIFF =    1.186579e-09
+  SCPH ITER    12 :  DIFF =    7.092627e-10
+  SCPH ITER    13 :  DIFF =    4.529542e-10
+  SCPH ITER    14 :  DIFF =    3.106121e-10
+  SCPH ITER    15 :  DIFF =    2.259149e-10
+  SCPH ITER    16 :  DIFF =    1.710217e-10
+  SCPH ITER    17 :  DIFF =    1.323317e-10
+  SCPH ITER    18 :  DIFF =    1.037069e-10
+  SCPH ITER    19 :  DIFF =    8.203681e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    19 iterations.
+ du0 =   1.879115e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    8 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.941484e-07
+  SCPH ITER     3 :  DIFF =    1.507937e-07
+  SCPH ITER     4 :  DIFF =    7.804644e-08
+  SCPH ITER     5 :  DIFF =    4.071617e-08
+  SCPH ITER     6 :  DIFF =    2.139347e-08
+  SCPH ITER     7 :  DIFF =    1.132219e-08
+  SCPH ITER     8 :  DIFF =    6.044136e-09
+  SCPH ITER     9 :  DIFF =    3.267125e-09
+  SCPH ITER    10 :  DIFF =    1.802763e-09
+  SCPH ITER    11 :  DIFF =    1.030014e-09
+  SCPH ITER    12 :  DIFF =    6.212941e-10
+  SCPH ITER    13 :  DIFF =    4.021270e-10
+  SCPH ITER    14 :  DIFF =    2.797933e-10
+  SCPH ITER    15 :  DIFF =    2.056078e-10
+  SCPH ITER    16 :  DIFF =    1.565390e-10
+  SCPH ITER    17 :  DIFF =    1.221211e-10
+  SCPH ITER    18 :  DIFF =    9.544112e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.780569e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :    9 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.601137e-07
+  SCPH ITER     3 :  DIFF =    1.328903e-07
+  SCPH ITER     4 :  DIFF =    6.852108e-08
+  SCPH ITER     5 :  DIFF =    3.560739e-08
+  SCPH ITER     6 :  DIFF =    1.863698e-08
+  SCPH ITER     7 :  DIFF =    9.827883e-09
+  SCPH ITER     8 :  DIFF =    5.230854e-09
+  SCPH ITER     9 :  DIFF =    2.822892e-09
+  SCPH ITER    10 :  DIFF =    1.559129e-09
+  SCPH ITER    11 :  DIFF =    8.955052e-10
+  SCPH ITER    12 :  DIFF =    5.458280e-10
+  SCPH ITER    13 :  DIFF =    3.582108e-10
+  SCPH ITER    14 :  DIFF =    2.523043e-10
+  SCPH ITER    15 :  DIFF =    1.874119e-10
+  SCPH ITER    16 :  DIFF =    1.438026e-10
+  SCPH ITER    17 :  DIFF =    1.121223e-10
+  SCPH ITER    18 :  DIFF =    8.827457e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.680393e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   10 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.289584e-07
+  SCPH ITER     3 :  DIFF =    1.166224e-07
+  SCPH ITER     4 :  DIFF =    5.993343e-08
+  SCPH ITER     5 :  DIFF =    3.103784e-08
+  SCPH ITER     6 :  DIFF =    1.619054e-08
+  SCPH ITER     7 :  DIFF =    8.511576e-09
+  SCPH ITER     8 :  DIFF =    4.519560e-09
+  SCPH ITER     9 :  DIFF =    2.436944e-09
+  SCPH ITER    10 :  DIFF =    1.348640e-09
+  SCPH ITER    11 :  DIFF =    7.796832e-10
+  SCPH ITER    12 :  DIFF =    4.808636e-10
+  SCPH ITER    13 :  DIFF =    3.201445e-10
+  SCPH ITER    14 :  DIFF =    2.284163e-10
+  SCPH ITER    15 :  DIFF =    1.714584e-10
+  SCPH ITER    16 :  DIFF =    1.323482e-10
+  SCPH ITER    17 :  DIFF =    1.029083e-10
+  SCPH ITER    18 :  DIFF =    8.106311e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    18 iterations.
+ du0 =   1.580381e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   11 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.006672e-07
+  SCPH ITER     3 :  DIFF =    1.019442e-07
+  SCPH ITER     4 :  DIFF =    5.223776e-08
+  SCPH ITER     5 :  DIFF =    2.697126e-08
+  SCPH ITER     6 :  DIFF =    1.402824e-08
+  SCPH ITER     7 :  DIFF =    7.355813e-09
+  SCPH ITER     8 :  DIFF =    3.898895e-09
+  SCPH ITER     9 :  DIFF =    2.102026e-09
+  SCPH ITER    10 :  DIFF =    1.166829e-09
+  SCPH ITER    11 :  DIFF =    6.798237e-10
+  SCPH ITER    12 :  DIFF =    4.244277e-10
+  SCPH ITER    13 :  DIFF =    2.864554e-10
+  SCPH ITER    14 :  DIFF =    2.066388e-10
+  SCPH ITER    15 :  DIFF =    1.558365e-10
+  SCPH ITER    16 :  DIFF =    1.205359e-10
+  SCPH ITER    17 :  DIFF =    9.462812e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.481953e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   12 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.751759e-07
+  SCPH ITER     3 :  DIFF =    8.879104e-08
+  SCPH ITER     4 :  DIFF =    4.538245e-08
+  SCPH ITER     5 :  DIFF =    2.337061e-08
+  SCPH ITER     6 :  DIFF =    1.212510e-08
+  SCPH ITER     7 :  DIFF =    6.344407e-09
+  SCPH ITER     8 :  DIFF =    3.358653e-09
+  SCPH ITER     9 :  DIFF =    1.811890e-09
+  SCPH ITER    10 :  DIFF =    1.009777e-09
+  SCPH ITER    11 :  DIFF =    5.935425e-10
+  SCPH ITER    12 :  DIFF =    3.755715e-10
+  SCPH ITER    13 :  DIFF =    2.568547e-10
+  SCPH ITER    14 :  DIFF =    1.872248e-10
+  SCPH ITER    15 :  DIFF =    1.421869e-10
+  SCPH ITER    16 :  DIFF =    1.103552e-10
+  SCPH ITER    17 :  DIFF =    8.705332e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.386141e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   13 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.523796e-07
+  SCPH ITER     3 :  DIFF =    7.708391e-08
+  SCPH ITER     4 :  DIFF =    3.931208e-08
+  SCPH ITER     5 :  DIFF =    2.019900e-08
+  SCPH ITER     6 :  DIFF =    1.045744e-08
+  SCPH ITER     7 :  DIFF =    5.462595e-09
+  SCPH ITER     8 :  DIFF =    2.889842e-09
+  SCPH ITER     9 :  DIFF =    1.561049e-09
+  SCPH ITER    10 :  DIFF =    8.744140e-10
+  SCPH ITER    11 :  DIFF =    5.191385e-10
+  SCPH ITER    12 :  DIFF =    3.327371e-10
+  SCPH ITER    13 :  DIFF =    2.306784e-10
+  SCPH ITER    14 :  DIFF =    1.698343e-10
+  SCPH ITER    15 :  DIFF =    1.297222e-10
+  SCPH ITER    16 :  DIFF =    1.010017e-10
+  SCPH ITER    17 :  DIFF =    7.942409e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    17 iterations.
+ du0 =   1.293731e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   14 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.321281e-07
+  SCPH ITER     3 :  DIFF =    6.672545e-08
+  SCPH ITER     4 :  DIFF =    3.396470e-08
+  SCPH ITER     5 :  DIFF =    1.741781e-08
+  SCPH ITER     6 :  DIFF =    9.001644e-09
+  SCPH ITER     7 :  DIFF =    4.696082e-09
+  SCPH ITER     8 :  DIFF =    2.483860e-09
+  SCPH ITER     9 :  DIFF =    1.344523e-09
+  SCPH ITER    10 :  DIFF =    7.575080e-10
+  SCPH ITER    11 :  DIFF =    4.544759e-10
+  SCPH ITER    12 :  DIFF =    2.953984e-10
+  SCPH ITER    13 :  DIFF =    2.072914e-10
+  SCPH ITER    14 :  DIFF =    1.543967e-10
+  SCPH ITER    15 :  DIFF =    1.180732e-10
+  SCPH ITER    16 :  DIFF =    9.222522e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    16 iterations.
+ du0 =   1.205269e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   15 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.142424e-07
+  SCPH ITER     3 :  DIFF =    5.760832e-08
+  SCPH ITER     4 :  DIFF =    2.927591e-08
+  SCPH ITER     5 :  DIFF =    1.498866e-08
+  SCPH ITER     6 :  DIFF =    7.735020e-09
+  SCPH ITER     7 :  DIFF =    4.031631e-09
+  SCPH ITER     8 :  DIFF =    2.133105e-09
+  SCPH ITER     9 :  DIFF =    1.157857e-09
+  SCPH ITER    10 :  DIFF =    6.567653e-10
+  SCPH ITER    11 :  DIFF =    3.985487e-10
+  SCPH ITER    12 :  DIFF =    2.625301e-10
+  SCPH ITER    13 :  DIFF =    1.864480e-10
+  SCPH ITER    14 :  DIFF =    1.394797e-10
+  SCPH ITER    15 :  DIFF =    1.075093e-10
+  SCPH ITER    16 :  DIFF =    8.427982e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    16 iterations.
+ du0 =   1.121069e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   16 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.853555e-08
+  SCPH ITER     3 :  DIFF =    4.962542e-08
+  SCPH ITER     4 :  DIFF =    2.518385e-08
+  SCPH ITER     5 :  DIFF =    1.287583e-08
+  SCPH ITER     6 :  DIFF =    6.637006e-09
+  SCPH ITER     7 :  DIFF =    3.457429e-09
+  SCPH ITER     8 :  DIFF =    1.830812e-09
+  SCPH ITER     9 :  DIFF =    9.971855e-10
+  SCPH ITER    10 :  DIFF =    5.700185e-10
+  SCPH ITER    11 :  DIFF =    3.500954e-10
+  SCPH ITER    12 :  DIFF =    2.337859e-10
+  SCPH ITER    13 :  DIFF =    1.679930e-10
+  SCPH ITER    14 :  DIFF =    1.264780e-10
+  SCPH ITER    15 :  DIFF =    9.841552e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    15 iterations.
+ du0 =   1.041356e-03 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   17 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.479968e-08
+  SCPH ITER     3 :  DIFF =    4.266147e-08
+  SCPH ITER     4 :  DIFF =    2.162396e-08
+  SCPH ITER     5 :  DIFF =    1.104302e-08
+  SCPH ITER     6 :  DIFF =    5.687187e-09
+  SCPH ITER     7 :  DIFF =    2.962001e-09
+  SCPH ITER     8 :  DIFF =    1.570425e-09
+  SCPH ITER     9 :  DIFF =    8.589676e-10
+  SCPH ITER    10 :  DIFF =    4.951765e-10
+  SCPH ITER    11 :  DIFF =    3.079904e-10
+  SCPH ITER    12 :  DIFF =    2.083531e-10
+  SCPH ITER    13 :  DIFF =    1.509989e-10
+  SCPH ITER    14 :  DIFF =    1.146971e-10
+  SCPH ITER    15 :  DIFF =    8.900355e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    15 iterations.
+ du0 =   9.661752e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   18 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.284498e-08
+  SCPH ITER     3 :  DIFF =    3.661358e-08
+  SCPH ITER     4 :  DIFF =    1.853979e-08
+  SCPH ITER     5 :  DIFF =    9.459079e-09
+  SCPH ITER     6 :  DIFF =    4.868343e-09
+  SCPH ITER     7 :  DIFF =    2.535833e-09
+  SCPH ITER     8 :  DIFF =    1.346922e-09
+  SCPH ITER     9 :  DIFF =    7.403244e-10
+  SCPH ITER    10 :  DIFF =    4.308186e-10
+  SCPH ITER    11 :  DIFF =    2.715314e-10
+  SCPH ITER    12 :  DIFF =    1.860136e-10
+  SCPH ITER    13 :  DIFF =    1.360174e-10
+  SCPH ITER    14 :  DIFF =    1.037001e-10
+  SCPH ITER    15 :  DIFF =    8.100651e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    15 iterations.
+ du0 =   8.955336e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   19 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.247350e-08
+  SCPH ITER     3 :  DIFF =    3.137609e-08
+  SCPH ITER     4 :  DIFF =    1.587430e-08
+  SCPH ITER     5 :  DIFF =    8.093038e-09
+  SCPH ITER     6 :  DIFF =    4.163572e-09
+  SCPH ITER     7 :  DIFF =    2.169697e-09
+  SCPH ITER     8 :  DIFF =    1.155029e-09
+  SCPH ITER     9 :  DIFF =    6.383967e-10
+  SCPH ITER    10 :  DIFF =    3.752254e-10
+  SCPH ITER    11 :  DIFF =    2.394917e-10
+  SCPH ITER    12 :  DIFF =    1.661000e-10
+  SCPH ITER    13 :  DIFF =    1.229886e-10
+  SCPH ITER    14 :  DIFF =    9.487403e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    14 iterations.
+ du0 =   8.293676e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   20 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.349732e-08
+  SCPH ITER     3 :  DIFF =    2.685000e-08
+  SCPH ITER     4 :  DIFF =    1.357475e-08
+  SCPH ITER     5 :  DIFF =    6.916577e-09
+  SCPH ITER     6 :  DIFF =    3.557608e-09
+  SCPH ITER     7 :  DIFF =    1.855291e-09
+  SCPH ITER     8 :  DIFF =    9.903649e-10
+  SCPH ITER     9 :  DIFF =    5.507888e-10
+  SCPH ITER    10 :  DIFF =    3.271831e-10
+  SCPH ITER    11 :  DIFF =    2.115435e-10
+  SCPH ITER    12 :  DIFF =    1.484133e-10
+  SCPH ITER    13 :  DIFF =    1.103005e-10
+  SCPH ITER    14 :  DIFF =    8.479591e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    14 iterations.
+ du0 =   7.675184e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   21 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.576011e-08
+  SCPH ITER     3 :  DIFF =    2.295389e-08
+  SCPH ITER     4 :  DIFF =    1.159827e-08
+  SCPH ITER     5 :  DIFF =    5.906972e-09
+  SCPH ITER     6 :  DIFF =    3.038332e-09
+  SCPH ITER     7 :  DIFF =    1.586164e-09
+  SCPH ITER     8 :  DIFF =    8.494405e-10
+  SCPH ITER     9 :  DIFF =    4.757448e-10
+  SCPH ITER    10 :  DIFF =    2.857717e-10
+  SCPH ITER    11 :  DIFF =    1.872817e-10
+  SCPH ITER    12 :  DIFF =    1.328148e-10
+  SCPH ITER    13 :  DIFF =    9.973306e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    13 iterations.
+ du0 =   7.098574e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   22 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.909244e-08
+  SCPH ITER     3 :  DIFF =    1.959984e-08
+  SCPH ITER     4 :  DIFF =    9.898777e-09
+  SCPH ITER     5 :  DIFF =    5.039866e-09
+  SCPH ITER     6 :  DIFF =    2.592810e-09
+  SCPH ITER     7 :  DIFF =    1.355421e-09
+  SCPH ITER     8 :  DIFF =    7.285413e-10
+  SCPH ITER     9 :  DIFF =    4.112029e-10
+  SCPH ITER    10 :  DIFF =    2.498733e-10
+  SCPH ITER    11 :  DIFF =    1.658256e-10
+  SCPH ITER    12 :  DIFF =    1.188825e-10
+  SCPH ITER    13 :  DIFF =    8.972526e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    13 iterations.
+ du0 =   6.561649e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   23 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.337368e-08
+  SCPH ITER     3 :  DIFF =    1.672605e-08
+  SCPH ITER     4 :  DIFF =    8.444261e-09
+  SCPH ITER     5 :  DIFF =    4.298596e-09
+  SCPH ITER     6 :  DIFF =    2.212315e-09
+  SCPH ITER     7 :  DIFF =    1.158421e-09
+  SCPH ITER     8 :  DIFF =    6.252877e-10
+  SCPH ITER     9 :  DIFF =    3.557395e-10
+  SCPH ITER    10 :  DIFF =    2.187924e-10
+  SCPH ITER    11 :  DIFF =    1.470101e-10
+  SCPH ITER    12 :  DIFF =    1.062892e-10
+  SCPH ITER    13 :  DIFF =    8.059668e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    13 iterations.
+ du0 =   6.062598e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   24 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.846965e-08
+  SCPH ITER     3 :  DIFF =    1.426363e-08
+  SCPH ITER     4 :  DIFF =    7.199055e-09
+  SCPH ITER     5 :  DIFF =    3.664522e-09
+  SCPH ITER     6 :  DIFF =    1.887079e-09
+  SCPH ITER     7 :  DIFF =    9.900707e-10
+  SCPH ITER     8 :  DIFF =    5.369385e-10
+  SCPH ITER     9 :  DIFF =    3.080941e-10
+  SCPH ITER    10 :  DIFF =    1.918569e-10
+  SCPH ITER    11 :  DIFF =    1.307134e-10
+  SCPH ITER    12 :  DIFF =    9.522542e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    12 iterations.
+ du0 =   5.599505e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   25 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.425962e-08
+  SCPH ITER     3 :  DIFF =    1.215084e-08
+  SCPH ITER     4 :  DIFF =    6.131301e-09
+  SCPH ITER     5 :  DIFF =    3.121116e-09
+  SCPH ITER     6 :  DIFF =    1.608402e-09
+  SCPH ITER     7 :  DIFF =    8.457750e-10
+  SCPH ITER     8 :  DIFF =    4.609417e-10
+  SCPH ITER     9 :  DIFF =    2.672450e-10
+  SCPH ITER    10 :  DIFF =    1.684727e-10
+  SCPH ITER    11 :  DIFF =    1.158213e-10
+  SCPH ITER    12 :  DIFF =    8.533104e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    12 iterations.
+ du0 =   5.169929e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   26 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.066959e-08
+  SCPH ITER     3 :  DIFF =    1.035048e-08
+  SCPH ITER     4 :  DIFF =    5.222118e-09
+  SCPH ITER     5 :  DIFF =    2.658700e-09
+  SCPH ITER     6 :  DIFF =    1.371274e-09
+  SCPH ITER     7 :  DIFF =    7.228744e-10
+  SCPH ITER     8 :  DIFF =    3.961710e-10
+  SCPH ITER     9 :  DIFF =    2.317022e-10
+  SCPH ITER    10 :  DIFF =    1.482796e-10
+  SCPH ITER    11 :  DIFF =    1.026342e-10
+  SCPH ITER    12 :  DIFF =    7.597674e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    12 iterations.
+ du0 =   4.771974e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   27 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.760239e-08
+  SCPH ITER     3 :  DIFF =    8.813023e-09
+  SCPH ITER     4 :  DIFF =    4.446079e-09
+  SCPH ITER     5 :  DIFF =    2.264137e-09
+  SCPH ITER     6 :  DIFF =    1.169004e-09
+  SCPH ITER     7 :  DIFF =    6.179039e-10
+  SCPH ITER     8 :  DIFF =    3.407466e-10
+  SCPH ITER     9 :  DIFF =    2.014881e-10
+  SCPH ITER    10 :  DIFF =    1.298240e-10
+  SCPH ITER    11 :  DIFF =    9.121413e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    11 iterations.
+ du0 =   4.403760e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   28 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.497112e-08
+  SCPH ITER     3 :  DIFF =    7.494320e-09
+  SCPH ITER     4 :  DIFF =    3.780564e-09
+  SCPH ITER     5 :  DIFF =    1.925801e-09
+  SCPH ITER     6 :  DIFF =    9.954257e-10
+  SCPH ITER     7 :  DIFF =    5.277174e-10
+  SCPH ITER     8 :  DIFF =    2.927456e-10
+  SCPH ITER     9 :  DIFF =    1.748191e-10
+  SCPH ITER    10 :  DIFF =    1.143903e-10
+  SCPH ITER    11 :  DIFF =    8.100117e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    11 iterations.
+ du0 =   4.062977e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   29 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.273985e-08
+  SCPH ITER     3 :  DIFF =    6.376722e-09
+  SCPH ITER     4 :  DIFF =    3.216846e-09
+  SCPH ITER     5 :  DIFF =    1.639292e-09
+  SCPH ITER     6 :  DIFF =    8.484043e-10
+  SCPH ITER     7 :  DIFF =    4.511964e-10
+  SCPH ITER     8 :  DIFF =    2.518550e-10
+  SCPH ITER     9 :  DIFF =    1.517019e-10
+  SCPH ITER    10 :  DIFF =    1.001925e-10
+  SCPH ITER    11 :  DIFF =    7.320217e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    11 iterations.
+ du0 =   3.747919e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   30 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.083788e-08
+  SCPH ITER     3 :  DIFF =    5.424316e-09
+  SCPH ITER     4 :  DIFF =    2.736564e-09
+  SCPH ITER     5 :  DIFF =    1.395143e-09
+  SCPH ITER     6 :  DIFF =    7.230717e-10
+  SCPH ITER     7 :  DIFF =    3.857953e-10
+  SCPH ITER     8 :  DIFF =    2.167776e-10
+  SCPH ITER     9 :  DIFF =    1.317465e-10
+  SCPH ITER    10 :  DIFF =    8.788775e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    10 iterations.
+ du0 =   3.456940e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   31 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.201539e-09
+  SCPH ITER     3 :  DIFF =    4.604801e-09
+  SCPH ITER     4 :  DIFF =    2.323209e-09
+  SCPH ITER     5 :  DIFF =    1.184924e-09
+  SCPH ITER     6 :  DIFF =    6.149924e-10
+  SCPH ITER     7 :  DIFF =    3.293076e-10
+  SCPH ITER     8 :  DIFF =    1.865871e-10
+  SCPH ITER     9 :  DIFF =    1.146988e-10
+  SCPH ITER    10 :  DIFF =    7.725725e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in    10 iterations.
+ du0 =   3.187998e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   32 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.824162e-09
+  SCPH ITER     3 :  DIFF =    3.915388e-09
+  SCPH ITER     4 :  DIFF =    1.975599e-09
+  SCPH ITER     5 :  DIFF =    1.008199e-09
+  SCPH ITER     6 :  DIFF =    5.240446e-10
+  SCPH ITER     7 :  DIFF =    2.819206e-10
+  SCPH ITER     8 :  DIFF =    1.603697e-10
+  SCPH ITER     9 :  DIFF =    9.943841e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.939834e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   33 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.628770e-09
+  SCPH ITER     3 :  DIFF =    3.316795e-09
+  SCPH ITER     4 :  DIFF =    1.673687e-09
+  SCPH ITER     5 :  DIFF =    8.545254e-10
+  SCPH ITER     6 :  DIFF =    4.449720e-10
+  SCPH ITER     7 :  DIFF =    2.398962e-10
+  SCPH ITER     8 :  DIFF =    1.376724e-10
+  SCPH ITER     9 :  DIFF =    8.594591e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.710576e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   34 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.634668e-09
+  SCPH ITER     3 :  DIFF =    2.819367e-09
+  SCPH ITER     4 :  DIFF =    1.422921e-09
+  SCPH ITER     5 :  DIFF =    7.271027e-10
+  SCPH ITER     6 :  DIFF =    3.792905e-10
+  SCPH ITER     7 :  DIFF =    2.051485e-10
+  SCPH ITER     8 :  DIFF =    1.183346e-10
+  SCPH ITER     9 :  DIFF =    7.472676e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.499005e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   35 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.788877e-09
+  SCPH ITER     3 :  DIFF =    2.396211e-09
+  SCPH ITER     4 :  DIFF =    1.209495e-09
+  SCPH ITER     5 :  DIFF =    6.182641e-10
+  SCPH ITER     6 :  DIFF =    3.232496e-10
+  SCPH ITER     7 :  DIFF =    1.754640e-10
+  SCPH ITER     8 :  DIFF =    1.017509e-10
+  SCPH ITER     9 :  DIFF =    6.464893e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     9 iterations.
+ du0 =   2.303798e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   36 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.069582e-09
+  SCPH ITER     3 :  DIFF =    2.036310e-09
+  SCPH ITER     4 :  DIFF =    1.028035e-09
+  SCPH ITER     5 :  DIFF =    5.259087e-10
+  SCPH ITER     6 :  DIFF =    2.753086e-10
+  SCPH ITER     7 :  DIFF =    1.499069e-10
+  SCPH ITER     8 :  DIFF =    8.748823e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     8 iterations.
+ du0 =   2.123872e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   37 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.434347e-09
+  SCPH ITER     3 :  DIFF =    1.718201e-09
+  SCPH ITER     4 :  DIFF =    8.674781e-10
+  SCPH ITER     5 :  DIFF =    4.439225e-10
+  SCPH ITER     6 :  DIFF =    2.325412e-10
+  SCPH ITER     7 :  DIFF =    1.274460e-10
+  SCPH ITER     8 :  DIFF =    7.489641e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     8 iterations.
+ du0 =   1.957755e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   38 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.918241e-09
+  SCPH ITER     3 :  DIFF =    1.460051e-09
+  SCPH ITER     4 :  DIFF =    7.372845e-10
+  SCPH ITER     5 :  DIFF =    3.775113e-10
+  SCPH ITER     6 :  DIFF =    1.980969e-10
+  SCPH ITER     7 :  DIFF =    1.087239e-10
+  SCPH ITER     8 :  DIFF =    6.448938e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     8 iterations.
+ du0 =   1.804560e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   39 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.479273e-09
+  SCPH ITER     3 :  DIFF =    1.240461e-09
+  SCPH ITER     4 :  DIFF =    6.265359e-10
+  SCPH ITER     5 :  DIFF =    3.209427e-10
+  SCPH ITER     6 :  DIFF =    1.686419e-10
+  SCPH ITER     7 :  DIFF =    9.278781e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.663443e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   40 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.077548e-09
+  SCPH ITER     3 :  DIFF =    1.039258e-09
+  SCPH ITER     4 :  DIFF =    5.249216e-10
+  SCPH ITER     5 :  DIFF =    2.690922e-10
+  SCPH ITER     6 :  DIFF =    1.416689e-10
+  SCPH ITER     7 :  DIFF =    7.827269e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.533168e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   41 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.765528e-09
+  SCPH ITER     3 :  DIFF =    8.832234e-10
+  SCPH ITER     4 :  DIFF =    4.462235e-10
+  SCPH ITER     5 :  DIFF =    2.287857e-10
+  SCPH ITER     6 :  DIFF =    1.212040e-10
+  SCPH ITER     7 :  DIFF =    6.679167e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.413063e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   42 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.499685e-09
+  SCPH ITER     3 :  DIFF =    7.502356e-10
+  SCPH ITER     4 :  DIFF =    3.792641e-10
+  SCPH ITER     5 :  DIFF =    1.946604e-10
+  SCPH ITER     6 :  DIFF =    1.025466e-10
+  SCPH ITER     7 :  DIFF =    5.700127e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     7 iterations.
+ du0 =   1.302339e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   43 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.273842e-09
+  SCPH ITER     3 :  DIFF =    6.372872e-10
+  SCPH ITER     4 :  DIFF =    3.220081e-10
+  SCPH ITER     5 :  DIFF =    1.653833e-10
+  SCPH ITER     6 :  DIFF =    8.852079e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.200404e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   44 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.052620e-09
+  SCPH ITER     3 :  DIFF =    5.265674e-10
+  SCPH ITER     4 :  DIFF =    2.660665e-10
+  SCPH ITER     5 :  DIFF =    1.369676e-10
+  SCPH ITER     6 :  DIFF =    7.246719e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.106296e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   45 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.954815e-10
+  SCPH ITER     3 :  DIFF =    4.479723e-10
+  SCPH ITER     4 :  DIFF =    2.263790e-10
+  SCPH ITER     5 :  DIFF =    1.163294e-10
+  SCPH ITER     6 :  DIFF =    6.167759e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     6 iterations.
+ du0 =   1.019554e-04 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   46 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    7.604509e-10
+  SCPH ITER     3 :  DIFF =    3.805482e-10
+  SCPH ITER     4 :  DIFF =    1.924295e-10
+  SCPH ITER     5 :  DIFF =    9.940016e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     5 iterations.
+ du0 =   9.397333e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   47 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.108396e-10
+  SCPH ITER     3 :  DIFF =    3.055242e-10
+  SCPH ITER     4 :  DIFF =    1.545789e-10
+  SCPH ITER     5 :  DIFF =    7.975381e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     5 iterations.
+ du0 =   8.660219e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   48 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.220644e-10
+  SCPH ITER     3 :  DIFF =    2.611823e-10
+  SCPH ITER     4 :  DIFF =    1.320714e-10
+  SCPH ITER     5 :  DIFF =    6.818593e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     5 iterations.
+ du0 =   7.980878e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   49 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.430445e-10
+  SCPH ITER     3 :  DIFF =    2.217491e-10
+  SCPH ITER     4 :  DIFF =    1.124200e-10
+  SCPH ITER     5 :  DIFF =    5.813728e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     5 iterations.
+ du0 =   7.354779e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   50 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.762820e-10
+  SCPH ITER     3 :  DIFF =    1.883002e-10
+  SCPH ITER     4 :  DIFF =    9.534257e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     4 iterations.
+ du0 =   6.778935e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   51 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.848094e-10
+  SCPH ITER     3 :  DIFF =    1.426471e-10
+  SCPH ITER     4 :  DIFF =    7.252799e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     4 iterations.
+ du0 =   6.246951e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   52 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.484231e-10
+  SCPH ITER     3 :  DIFF =    1.248949e-10
+  SCPH ITER     4 :  DIFF =    6.328686e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     4 iterations.
+ du0 =   5.756713e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   53 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.097819e-10
+  SCPH ITER     3 :  DIFF =    1.052116e-10
+  SCPH ITER     4 :  DIFF =    5.365658e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     4 iterations.
+ du0 =   5.304928e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   54 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.783427e-10
+  SCPH ITER     3 :  DIFF =    8.937424e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     3 iterations.
+ du0 =   4.889645e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   55 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.187705e-10
+  SCPH ITER     3 :  DIFF =    5.960581e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     3 iterations.
+ du0 =   4.505776e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   56 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.130234e-10
+  SCPH ITER     3 :  DIFF =    5.727808e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     3 iterations.
+ du0 =   4.152061e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   57 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    9.139853e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.827142e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   58 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.584224e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.526577e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   59 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    6.262452e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   3.249649e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   60 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.565280e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.994453e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   61 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    4.385103e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.759302e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   62 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.740815e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.542610e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   63 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    3.206608e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.342937e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   64 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.109834e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   2.158941e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   65 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    2.172714e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.989395e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   66 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.619969e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.833162e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   67 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.550249e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.689199e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   68 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.289479e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.556540e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   69 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.296777e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.434300e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   70 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.388212e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.321659e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   71 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.322552e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.217864e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   72 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    1.305770e-11
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.122221e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   73 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    8.883721e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   1.034088e-05 [Bohr] du_tensor =   0.000000e+00
+
+
+ Structure loop :   74 Temperature = 2.800000e+02 K
+  SCPH ITER     1 :  DIFF = N/A
+  SCPH ITER     2 :  DIFF =    5.290088e-12
+  DIFF < SCPH_TOL : break SCPH loop
+ Temp = 2.800000e+02 : convergence achieved in     2 iterations.
+ du0 =   9.528770e-06 [Bohr] du_tensor =   0.000000e+00
+
+
+ du0 is smaller than COORD_CONV_TOL =    1.000000e-05
+ Structural optimization converged in 74-th loop.
+ break structural loop.
+
+ ----------------------------------------------------------------
+ Final atomic displacements [Bohr] at 2.800000e+02 K
+    u_{0,x}   u_{0,y}   u_{0,z} :  -3.758582e-18   1.862315e-19   1.036976e-06
+    u_{1,x}   u_{1,y}   u_{1,z} :  -2.611604e-18  -5.488643e-19   5.252399e-05
+    u_{2,x}   u_{2,y}   u_{2,z} :   1.768638e-17  -8.343534e-19  -4.577097e-05
+    u_{3,x}   u_{3,y}   u_{3,z} :   1.131817e-17   5.162338e-19  -4.577097e-05
+    u_{4,x}   u_{4,y}   u_{4,z} :   1.107130e-17   3.184597e-19  -7.449994e-05
+
+ ----------------------------------------------------------------
+
+  cBTO222_scph.scph_dymat  : Anharmonic dynamical matrix (restart file)
+  cBTO222_scph.renorm_harm_dymat : Anharmonic dynamical matrix (restart file)
+  cBTO222_scph.V0          : Renormalized static potential V0 (restart file)
+  cBTO222_scph.scph_dfc2   : Anharmonic corrections to the second-order IFCs (SCPH)
+
+ Running postprocess of SCPH/QHA (calculation of free energy, MSD, DOS)
+ The number of temperature points: 3   
+   ...
+
+  cBTO222_scph.scph_dos    : SCPH DOS
+  cBTO222_scph.scph_thermo : SCPH heat capcaity, free energy, entropy
+
+ Job finished at Thu May  7 13:06:54 2026
+

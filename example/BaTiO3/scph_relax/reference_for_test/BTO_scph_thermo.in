@@ -1,0 +1,58 @@
+&general
+  PREFIX = cBTO222_scph
+  MODE = SCPH
+  FCSFILE = cBTO222.xml
+  KD = Ba Ti O
+
+  TMIN = 280
+  TMAX = 300
+  DT = 10
+/
+&scph
+  SELF_OFFDIAG = 1
+  MAXITER = 500
+  MIXALPHA = 0.2
+  KMESH_INTERPOLATE = 2 2 2
+  KMESH_SCPH = 4 4 4
+
+  RELAX_STR = 1
+/
+
+&relax
+  RELAX_ALGO = 2
+  MAX_STR_ITER = 1000
+  COORD_CONV_TOL = 1.0e-5
+  MIXBETA_COORD = 0.4
+  SET_INIT_STR = 3
+
+  COOLING_U0_INDEX = 5
+  COOLING_U0_THR = 0.005
+
+/
+
+&cell
+  7.53159676409 # cell parameter of primitive cell in Bohr unit
+  1.0 0.0 0.0 # a1
+  0.0 1.0 0.0 # a2
+  0.0 0.0 1.0 # a3
+/
+
+&displace
+0
+  7.53159676409
+  1.0 0.0 0.0
+  0.0 1.0 0.0
+  0.0 0.0 1.0
+0.0000000000 0.0000000000 1.502999E-05
+0.0000000000 0.0000000000 2.500000E-03
+0.0000000000 0.0000000000 -1.898419E-03
+0.0000000000 0.0000000000 -1.898419E-03
+0.0000000000 0.0000000000 -3.811625E-03
+/
+
+
+&kpoint
+  2
+  8 8 8
+/
+

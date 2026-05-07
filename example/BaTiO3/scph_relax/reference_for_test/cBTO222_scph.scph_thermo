@@ -1,0 +1,6 @@
+# The renormalized static potential Phi_0 is also shown.
+# The Cv data accounts for the QHA-like term only.
+# Temperature [K], Cv [in kB unit], F_{vib} (QHA term) [Ry], F_{vib} (SCPH correction) [Ry], Phi0 [Ry], F_{total} [Ry], S_{vib} [in kB unit]
+      280.000000      1.195436e+01      1.177506e-02     -1.223922e-03     -4.909944e-10      1.055114e-02      1.193526e+01
+      290.000000      1.211591e+01      1.103350e-02     -1.255839e-03     -4.638701e-10      9.777659e-03      1.234531e+01
+      300.000000      1.226576e+01      1.026659e-02     -1.288059e-03     -3.931480e-10      8.978526e-03      1.274646e+01
