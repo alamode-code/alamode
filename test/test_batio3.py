@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+import zipfile
+
+import numpy as np
+
+
+def isclose(a, b, rel_tol=1e-5, abs_tol=1.0e-12):
+    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
+def run_anphon_batio3(anphonbin):
+    try:
+        with open("BTO_scph_thermo.log", "w") as f:
+            proc = subprocess.run([anphonbin, "BTO_scph_thermo.in"], stdout=f)
+        if proc.returncode != 0:
+            return 1
+    except Exception:
+        return 1
+
+    return 0
+
+
+def check_consistency_anphon(reference_dir, abs_tol=0.01, rel_tol=1.0e-9):
+    files_to_compare = [
+        ("cBTO222_scph.atom_disp", 0),
+        ("cBTO222_scph.normal_disp", 0),
+        ("cBTO222_scph.V0", 0),
+        ("cBTO222_scph.scph_thermo", 0),
+        ("cBTO222_scph.scph_dos", 0),
+    ]
+
+    for file, skiprows in files_to_compare:
+        path_ref = os.path.join(reference_dir, file)
+        path_now = file
+
+        data_ref = np.loadtxt(path_ref, skiprows=skiprows)
+        data_now = np.loadtxt(path_now, skiprows=skiprows)
+
+        if np.shape(data_ref) != np.shape(data_now):
+            print("Failed to match shape of %s" % file)
+            return 1
+
+        isclose_all = True
+        data_ref_flat = np.ravel(data_ref)
+        data_now_flat = np.ravel(data_now)
+        for val_ref, val_now in zip(data_ref_flat, data_now_flat):
+            isclose_all = isclose_all & isclose(
+                val_ref, val_now, rel_tol=rel_tol, abs_tol=abs_tol
+            )
+
+        if not isclose_all:
+            print("Failed to match %s" % file)
+            return 1
+
+    return 0
+
+
+def copy_input_files(workdir, scph_example_dir, fc_reference_dir):
+    source_and_dest = [
+        (
+            os.path.join(scph_example_dir, "reference_for_test", "BTO_scph_thermo.in"),
+            "BTO_scph_thermo.in",
+        ),
+        (os.path.join(fc_reference_dir, "cBTO222.xml.zip"), "cBTO222.xml.zip"),
+    ]
+
+    for src, dest in source_and_dest:
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(workdir, dest))
+        else:
+            print(f"File {src} not found")
+            return 1
+
+    return 0
+
+
+def uncompress_files(workdir):
+    try:
+        with zipfile.ZipFile("cBTO222.xml.zip", "r") as zip_ref:
+            zip_ref.extractall(workdir)
+    except Exception:
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--jobs", type=str, default="all", help="Job types (all, copy, run, compare)"
+    )
+    args = parser.parse_args()
+
+    build_dir = os.getcwd()
+    project_root = os.path.dirname(build_dir)
+
+    scph_example_dir = os.path.join(project_root, "example/BaTiO3/scph_relax")
+    reference_dir = os.path.join(scph_example_dir, "reference_for_test")
+    fc_reference_dir = os.path.join(
+        project_root, "example/BaTiO3/anharm_IFCs/4_optimize/reference"
+    )
+
+    workdir = f"{project_root}/test/batio3"
+    if not os.path.exists(workdir):
+        os.mkdir(workdir)
+    os.chdir(workdir)
+
+    anphonbin = "%s/_build/anphon/anphon" % project_root
+    info = 0
+
+    if args.jobs in ["all", "copy"]:
+        info = copy_input_files(workdir, scph_example_dir, fc_reference_dir)
+        if info > 0:
+            sys.exit(1)
+
+        info = uncompress_files(workdir)
+        if info > 0:
+            print("Failed to uncompress files")
+            sys.exit(1)
+
+    if args.jobs in ["all", "run"]:
+        info = run_anphon_batio3(anphonbin)
+        if info > 0:
+            print(
+                "ANPHON code failed to execute.\nPlease check if the anphon binary exists at %s"
+                % anphonbin
+            )
+            sys.exit(1)
+
+    if args.jobs in ["all", "compare"]:
+        info = check_consistency_anphon(reference_dir, abs_tol=1.0e-10, rel_tol=1.0e-10)
+
+    if info == 0:
+        print("BaTiO3 ANPHON --> pass")
+    else:
+        print("BaTiO3 ANPHON --> failed")
+
+    if info == 0:
+        sys.exit(0)
+    else:
+        sys.exit(1)
