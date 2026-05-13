@@ -989,13 +989,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     double ***C3_array;
 
     // strain-derivative of k-space IFCs
-    // (calculated by real-space IFC renormalization or finite-difference method)
-    std::complex<double> **del_v1_del_umn;
-    std::complex<double> **del2_v1_del_umn2;
-    std::complex<double> **del3_v1_del_umn3;
-    std::complex<double> ***del_v2_del_umn;
-    std::complex<double> ***del2_v2_del_umn2;
-    std::complex<double> ****del_v3_del_umn;
+    DelVStrainData del_v_strain;
 
     std::complex<double> *del_v0_del_umn_renorm;
 
@@ -1060,23 +1054,13 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         std::cout << "Calculating derivatives of k-space IFCs by strain.\n\n";
     }
 
-    allocate(del_v1_del_umn, 9, ns);
-    allocate(del2_v1_del_umn2, 81, ns);
-    allocate(del3_v1_del_umn3, 729, ns);
-    allocate(del_v2_del_umn, 9, nk, ns * ns);
-    allocate(del2_v2_del_umn2, 81, nk, ns * ns);
-    allocate(del_v3_del_umn, 9, nk, ns, ns * ns);
+    del_v_strain.resize(nk, ns);
 
     // This function precomputes the 1st, 2nd, and 3rd order derivatives of v1
     // 1st and 2nd order derivatives of v2, and 1st order derivative of v3.
     relaxation->compute_del_v_strain(kmesh_coarse,
                                      kmesh_dense,
-                                     del_v1_del_umn,
-                                     del2_v1_del_umn2,
-                                     del3_v1_del_umn3,
-                                     del_v2_del_umn,
-                                     del2_v2_del_umn2,
-                                     del_v3_del_umn,
+                                     del_v_strain,
                                      omega2_harmonic,
                                      evec_harmonic,
                                      relax_mode,
@@ -1310,20 +1294,21 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
                 relaxation->renormalize_v1_from_umn(v1_with_umn,
                                                     v1_ref,
-                                                    del_v1_del_umn,
-                                                    del2_v1_del_umn2,
-                                                    del3_v1_del_umn3,
+                                                    del_v_strain,
                                                     u_tensor);
 
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
                                                     kmap_coarse_to_dense,
                                                     delta_v2_with_umn,
-                                                    del_v2_del_umn,
-                                                    del2_v2_del_umn2,
+                                                    del_v_strain,
                                                     u_tensor);
-                relaxation
-                    ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, v3_with_umn, v3_ref, del_v3_del_umn, u_tensor);
+                relaxation->renormalize_v3_from_umn(kmesh_coarse,
+                                                    kmesh_dense,
+                                                    v3_with_umn,
+                                                    v3_ref,
+                                                    del_v_strain,
+                                                    u_tensor);
 
                 //                for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
                 //                    for (is = 0; is < ns * ns; is++) {
@@ -1377,12 +1362,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     C3_array,
                                                     eta_tensor,
                                                     u_tensor,
-                                                    del_v1_del_umn,
-                                                    del2_v1_del_umn2,
-                                                    del3_v1_del_umn3,
-                                                    del_v2_del_umn,
-                                                    del2_v2_del_umn2,
-                                                    del_v3_del_umn,
+                                                    del_v_strain,
                                                     q0,
                                                     pvcell,
                                                     kmesh_dense);
@@ -1446,9 +1426,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                     compute_anharmonic_del_v0_del_umn(del_v0_del_umn_SCP,
                                                       del_v0_del_umn_renorm,
-                                                      del_v2_del_umn,
-                                                      del2_v2_del_umn2,
-                                                      del_v3_del_umn,
+                                                      del_v_strain,
                                                       u_tensor,
                                                       q0,
                                                       cmat_convert,
@@ -1615,14 +1593,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(v4_ref);
     //    deallocate(v4_renorm);
     //    deallocate(v4_with_umn);
-
-
-    deallocate(del_v1_del_umn);
-    deallocate(del2_v1_del_umn2);
-    deallocate(del3_v1_del_umn3);
-    deallocate(del_v2_del_umn);
-    deallocate(del2_v2_del_umn2);
-    deallocate(del_v3_del_umn);
 
     deallocate(del_v0_del_umn_renorm);
     deallocate(v1_SCP);

@@ -33,6 +33,8 @@
 
 namespace PHON_NS
 {
+class DelVStrainData;
+
 class ScphQhaCommon: protected Pointers
 {
 public:
@@ -125,11 +127,7 @@ protected:
                                          double **C2_array, double ***C3_array, 
                                          std::array<std::array<double, 3>, 3> &eta_tensor,
                                          const std::array<std::array<double, 3>, 3> &u_tensor,
-                                         std::complex<double> **del_v1_del_umn, std::complex<double> **del2_v1_del_umn2,
-                                         std::complex<double> **del3_v1_del_umn3,
-                                         std::complex<double> ***del_v2_del_umn,
-                                         std::complex<double> ***del2_v2_del_umn2,
-                                         std::complex<double> ****del_v3_del_umn, const std::vector<double> &q0,
+                                         const DelVStrainData &del_v_strain, const std::vector<double> &q0,
                                          double pvcell,
                                          const KpointMeshUniform *kmesh_dense_in);
 
@@ -139,9 +137,7 @@ protected:
 
     void compute_anharmonic_del_v0_del_umn(std::complex<double> *del_v0_del_umn_SCP,
                                            std::complex<double> *del_v0_del_umn_renorm,
-                                           std::complex<double> ***del_v2_del_umn,
-                                           std::complex<double> ***del2_v2_del_umn2,
-                                           std::complex<double> ****del_v3_del_umn,
+                                           const DelVStrainData &del_v_strain,
                                            const std::array<std::array<double, 3>, 3> &u_tensor,
                                            const std::vector<double> &q0,
                                            std::complex<double> ***cmat_convert, double **omega2_anharm_T,

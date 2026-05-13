@@ -699,12 +699,9 @@ void Relaxation::check_str_divergence(int &diverged, const RelaxationStructureSt
 
 
 void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                      std::complex<double> **del_v1_del_umn, std::complex<double> **del2_v1_del_umn2,
-                                      std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del_v2_del_umn,
-                                      std::complex<double> ***del2_v2_del_umn2, std::complex<double> ****del_v3_del_umn,
-                                      double **omega2_harmonic, std::complex<double> ***evec_harmonic,
-                                      const RelaxationStrMode relax_mode, MinimumDistList ***mindist_list,
-                                      const PhaseFactorStorage *phase_storage_in)
+                                      DelVStrainData &del_v_strain, double **omega2_harmonic,
+                                      std::complex<double> ***evec_harmonic, const RelaxationStrMode relax_mode,
+                                      MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in)
 {
     const auto ns = dynamical->neval;
     const auto nk = kmesh_dense->nk;
@@ -712,14 +709,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
     // CoordinatesOnly: keep the unit cell fixed and relax internal coordinates
     // set renormalization from strain as zero
     if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-        derivative_ifc->set_del_v_fixed_cell(nk,
-                                             ns,
-                                             del_v1_del_umn,
-                                             del2_v1_del_umn2,
-                                             del3_v1_del_umn3,
-                                             del_v2_del_umn,
-                                             del2_v2_del_umn2,
-                                             del_v3_del_umn);
+        derivative_ifc->set_del_v_fixed_cell(nk, ns, del_v_strain);
         if (mympi->my_rank == 0) timer->print_elapsed();
 
         return;
@@ -731,12 +721,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
         derivative_ifc->set_del_v_relax_cell(kmesh_coarse,
                                              kmesh_dense,
                                              ns,
-                                             del_v1_del_umn,
-                                             del2_v1_del_umn2,
-                                             del3_v1_del_umn3,
-                                             del_v2_del_umn,
-                                             del2_v2_del_umn2,
-                                             del_v3_del_umn,
+                                             del_v_strain,
                                              omega2_harmonic,
                                              evec_harmonic,
                                              renorm_2to1st,
@@ -757,9 +742,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
         derivative_ifc->set_del_v_relax_cell_linearQHA(kmesh_coarse,
                                                        kmesh_dense,
                                                        ns,
-                                                       del_v1_del_umn,
-                                                       del2_v1_del_umn2,
-                                                       del_v2_del_umn,
+                                                       del_v_strain,
                                                        omega2_harmonic,
                                                        evec_harmonic,
                                                        renorm_2to1st,
@@ -819,9 +802,7 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
 }
 
 void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, const std::complex<double> *const v1_ref,
-                                         const std::complex<double> *const *const del_v1_del_umn,
-                                         const std::complex<double> *const *const del2_v1_del_umn2,
-                                         const std::complex<double> *const *const del3_v1_del_umn3,
+                                         const DelVStrainData &del_v_strain,
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
     const auto ns = dynamical->neval;
@@ -836,21 +817,23 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, cons
         for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
                 // renormalization from harmonic IFCs
-                v1_with_umn[is] += del_v1_del_umn[ixyz1 * 3 + ixyz2][is] * u_tensor[ixyz1][ixyz2];
+                v1_with_umn[is] += del_v_strain.del_v1(ixyz1 * 3 + ixyz2, is) * u_tensor[ixyz1][ixyz2];
 
                 for (int ixyz3 = 0; ixyz3 < 3; ixyz3++) {
                     for (int ixyz4 = 0; ixyz4 < 3; ixyz4++) {
                         // renormalization from cubic IFCs
                         int ixyz_comb = ixyz1 * 27 + ixyz2 * 9 + ixyz3 * 3 + ixyz4;
                         v1_with_umn[is] +=
-                            factor1 * del2_v1_del_umn2[ixyz_comb][is] * u_tensor[ixyz1][ixyz2] * u_tensor[ixyz3][ixyz4];
+                            factor1 * del_v_strain.del2_v1(ixyz_comb, is) * u_tensor[ixyz1][ixyz2] *
+                            u_tensor[ixyz3][ixyz4];
 
                         for (int ixyz5 = 0; ixyz5 < 3; ixyz5++) {
                             for (int ixyz6 = 0; ixyz6 < 3; ixyz6++) {
                                 // renormalization from quartic IFCs
                                 ixyz_comb = ixyz1 * 243 + ixyz2 * 81 + ixyz3 * 27 + ixyz4 * 9 + ixyz5 * 3 + ixyz6;
-                                v1_with_umn[is] += factor2 * del3_v1_del_umn3[ixyz_comb][is] * u_tensor[ixyz1][ixyz2] *
-                                                   u_tensor[ixyz3][ixyz4] * u_tensor[ixyz5][ixyz6];
+                                v1_with_umn[is] += factor2 * del_v_strain.del3_v1(ixyz_comb, is) *
+                                                   u_tensor[ixyz1][ixyz2] * u_tensor[ixyz3][ixyz4] *
+                                                   u_tensor[ixyz5][ixyz6];
                             }
                         }
                     }
@@ -862,8 +845,7 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, cons
 
 void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
                                          const std::vector<int> &kmap_coarse_to_dense,
-                                         std::complex<double> **delta_v2_renorm, std::complex<double> ***del_v2_del_umn,
-                                         std::complex<double> ***del2_v2_del_umn2,
+                                         std::complex<double> **delta_v2_renorm, const DelVStrainData &del_v_strain,
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
     const auto nk_interpolate = kmesh_coarse->nk;
@@ -891,7 +873,7 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
                 delta_v2_renorm[ik][is1 * ns + is2] +=
-                    del_v2_del_umn[ixyz1 * 3 + ixyz2][knum][is1 * ns + is2] * u_tensor[ixyz1][ixyz2];
+                    del_v_strain.del_v2[ixyz1 * 3 + ixyz2](knum, is1 * ns + is2) * u_tensor[ixyz1][ixyz2];
             }
         }
 
@@ -905,7 +887,7 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
             ixyz12 = itmp % 3;
             ixyz11 = itmp / 3;
 
-            delta_v2_renorm[ik][is1 * ns + is2] += 0.5 * del2_v2_del_umn2[ixyz][knum][is1 * ns + is2] *
+            delta_v2_renorm[ik][is1 * ns + is2] += 0.5 * del_v_strain.del2_v2[ixyz](knum, is1 * ns + is2) *
                                                    u_tensor[ixyz11][ixyz12] * u_tensor[ixyz21][ixyz22];
         }
     }
@@ -913,7 +895,7 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
 
 void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                          std::complex<double> ***v3_with_umn, std::complex<double> ***v3_ref,
-                                         std::complex<double> ****del_v3_del_umn,
+                                         const DelVStrainData &del_v_strain,
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
     const auto nk_scph = kmesh_dense->nk;
@@ -941,7 +923,7 @@ void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, 
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
                 v3_with_umn[ik][is1][is2 * ns + is3] +=
-                    del_v3_del_umn[ixyz1 * 3 + ixyz2][ik][is1][is2 * ns + is3] * u_tensor[ixyz1][ixyz2];
+                    del_v_strain.del_v3[ixyz1 * 3 + ixyz2][ik](is1, is2 * ns + is3) * u_tensor[ixyz1][ixyz2];
             }
         }
     }

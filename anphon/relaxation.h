@@ -25,24 +25,140 @@ namespace PHON_NS
 class DerivativeIFC;
 
 class DelVStrainData
-// TODO: implement the class for derivative of V by umn
 {
 public:
-    Eigen::MatrixXcd del_v1;                           // del_v1_del_umn
-    Eigen::MatrixXcd del2_v1;                          // del2_v1_del_umn2
-    Eigen::MatrixXcd del3_v1;                          // del3_v1_del_umn3
-    std::vector<Eigen::MatrixXcd> del_v2;              // del_v2_del_umn
-    std::vector<Eigen::MatrixXcd> del2_v2;             // del2_v2_del_umn2
-    std::vector<std::vector<Eigen::MatrixXcd>> del_v3; // del_v3_del_umn
+    using MatrixXcdRowMajor = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+    MatrixXcdRowMajor del_v1;                          // [9][ns]
+    MatrixXcdRowMajor del2_v1;                         // [81][ns]
+    MatrixXcdRowMajor del3_v1;                         // [729][ns]
+    std::vector<MatrixXcdRowMajor> del_v2;             // [9][nk][ns*ns]
+    std::vector<MatrixXcdRowMajor> del2_v2;            // [81][nk][ns*ns]
+    std::vector<std::vector<MatrixXcdRowMajor>> del_v3;// [9][nk][ns][ns*ns]
 
     DelVStrainData() = default;
     ~DelVStrainData() = default;
 
     void resize(const int nk, const int nmode)
     {
+        nk_ = nk;
+        nmode_ = nmode;
+        const auto nmode2 = nmode * nmode;
+
         del_v1.resize(9, nmode);
         del2_v1.resize(81, nmode);
         del3_v1.resize(729, nmode);
+
+        del_v2.resize(9);
+        for (auto &mat: del_v2) {
+            mat.resize(nk, nmode2);
+        }
+
+        del2_v2.resize(81);
+        for (auto &mat: del2_v2) {
+            mat.resize(nk, nmode2);
+        }
+
+        del_v3.resize(9);
+        for (auto &per_strain: del_v3) {
+            per_strain.resize(nk);
+            for (auto &mat: per_strain) {
+                mat.resize(nmode, nmode2);
+            }
+        }
+
+        build_pointer_views();
+    }
+
+    int nk() const { return nk_; }
+    int nmode() const { return nmode_; }
+
+    std::complex<double> **del_v1_raw() { return del_v1_rows_.data(); }
+    std::complex<double> *const *del_v1_raw() const { return del_v1_rows_.data(); }
+    std::complex<double> **del2_v1_raw() { return del2_v1_rows_.data(); }
+    std::complex<double> *const *del2_v1_raw() const { return del2_v1_rows_.data(); }
+    std::complex<double> **del3_v1_raw() { return del3_v1_rows_.data(); }
+    std::complex<double> *const *del3_v1_raw() const { return del3_v1_rows_.data(); }
+    std::complex<double> ***del_v2_raw() { return del_v2_ptrs_.data(); }
+    std::complex<double> **const *del_v2_raw() const { return del_v2_ptrs_.data(); }
+    std::complex<double> ***del2_v2_raw() { return del2_v2_ptrs_.data(); }
+    std::complex<double> **const *del2_v2_raw() const { return del2_v2_ptrs_.data(); }
+    std::complex<double> ****del_v3_raw() { return del_v3_ptrs_.data(); }
+    std::complex<double> ***const *del_v3_raw() const { return del_v3_ptrs_.data(); }
+
+private:
+    int nk_{0};
+    int nmode_{0};
+
+    std::vector<std::complex<double> *> del_v1_rows_;
+    std::vector<std::complex<double> *> del2_v1_rows_;
+    std::vector<std::complex<double> *> del3_v1_rows_;
+
+    std::vector<std::vector<std::complex<double> *>> del_v2_rows_;
+    std::vector<std::complex<double> **> del_v2_ptrs_;
+
+    std::vector<std::vector<std::complex<double> *>> del2_v2_rows_;
+    std::vector<std::complex<double> **> del2_v2_ptrs_;
+
+    std::vector<std::vector<std::vector<std::complex<double> *>>> del_v3_rows_;
+    std::vector<std::vector<std::complex<double> **>> del_v3_kptrs_;
+    std::vector<std::complex<double> ***> del_v3_ptrs_;
+
+    void build_pointer_views()
+    {
+        const auto nmode2 = nmode_ * nmode_;
+
+        del_v1_rows_.resize(9);
+        for (int i = 0; i < 9; ++i) {
+            del_v1_rows_[i] = del_v1.data() + static_cast<std::size_t>(i) * nmode_;
+        }
+
+        del2_v1_rows_.resize(81);
+        for (int i = 0; i < 81; ++i) {
+            del2_v1_rows_[i] = del2_v1.data() + static_cast<std::size_t>(i) * nmode_;
+        }
+
+        del3_v1_rows_.resize(729);
+        for (int i = 0; i < 729; ++i) {
+            del3_v1_rows_[i] = del3_v1.data() + static_cast<std::size_t>(i) * nmode_;
+        }
+
+        del_v2_rows_.resize(9);
+        del_v2_ptrs_.resize(9);
+        for (int i = 0; i < 9; ++i) {
+            del_v2_rows_[i].resize(nk_);
+            for (int ik = 0; ik < nk_; ++ik) {
+                del_v2_rows_[i][ik] = del_v2[i].data() + static_cast<std::size_t>(ik) * nmode2;
+            }
+            del_v2_ptrs_[i] = del_v2_rows_[i].data();
+        }
+
+        del2_v2_rows_.resize(81);
+        del2_v2_ptrs_.resize(81);
+        for (int i = 0; i < 81; ++i) {
+            del2_v2_rows_[i].resize(nk_);
+            for (int ik = 0; ik < nk_; ++ik) {
+                del2_v2_rows_[i][ik] = del2_v2[i].data() + static_cast<std::size_t>(ik) * nmode2;
+            }
+            del2_v2_ptrs_[i] = del2_v2_rows_[i].data();
+        }
+
+        del_v3_rows_.resize(9);
+        del_v3_kptrs_.resize(9);
+        del_v3_ptrs_.resize(9);
+        for (int i = 0; i < 9; ++i) {
+            del_v3_rows_[i].resize(nk_);
+            del_v3_kptrs_[i].resize(nk_);
+            for (int ik = 0; ik < nk_; ++ik) {
+                del_v3_rows_[i][ik].resize(nmode_);
+                for (int is = 0; is < nmode_; ++is) {
+                    del_v3_rows_[i][ik][is] =
+                        del_v3[i][ik].data() + static_cast<std::size_t>(is) * nmode2;
+                }
+                del_v3_kptrs_[i][ik] = del_v3_rows_[i][ik].data();
+            }
+            del_v3_ptrs_[i] = del_v3_kptrs_[i].data();
+        }
     }
 };
 
@@ -90,12 +206,9 @@ public:
     void setup_relaxation();
 
     void compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                              std::complex<double> **del_v1_del_umn, std::complex<double> **del2_v1_del_umn2,
-                              std::complex<double> **del3_v1_del_umn3, std::complex<double> ***del_v2_del_umn,
-                              std::complex<double> ***del2_v2_del_umn2, std::complex<double> ****del_v3_del_umn,
-                              double **omega2_harmonic, std::complex<double> ***evec_harmonic,
-                              RelaxationStrMode relax_mode, MinimumDistList ***mindist_list,
-                              const PhaseFactorStorage *phase_storage_in);
+                              DelVStrainData &del_v_strain, double **omega2_harmonic,
+                              std::complex<double> ***evec_harmonic, RelaxationStrMode relax_mode,
+                              MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in);
 
     void setInitialDistortion(const double (*u_tensor_in)[3]);
 
@@ -116,16 +229,15 @@ public:
                                         const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell);
 
     void renormalize_v1_from_umn(std::complex<double> *, const std::complex<double> *const,
-                                 const std::complex<double> *const *const, const std::complex<double> *const *const,
-                                 const std::complex<double> *const *const,
+                                 const DelVStrainData &,
                                  const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse, const std::vector<int> &kmap_coarse_to_dense,
-                                 std::complex<double> **, std::complex<double> ***, std::complex<double> ***,
+                                 std::complex<double> **, const DelVStrainData &,
                                  const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                 std::complex<double> ***, std::complex<double> ***, std::complex<double> ****,
+                                 std::complex<double> ***, std::complex<double> ***, const DelVStrainData &,
                                  const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v1_from_q0(double **omega2_harmonic, const KpointMeshUniform *kmesh_coarse,

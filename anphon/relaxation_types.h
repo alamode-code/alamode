@@ -72,15 +72,11 @@ inline constexpr QhaScheme to_qha_scheme(const int scheme)
 class KpointMeshUniform;
 struct MinimumDistList;
 class PhaseFactorStorage;
+class DelVStrainData;
 
 struct DelVStrainOutputs
 {
-    std::complex<double> **del_v1_del_umn{};
-    std::complex<double> **del2_v1_del_umn2{};
-    std::complex<double> **del3_v1_del_umn3{};
-    std::complex<double> ***del_v2_del_umn{};
-    std::complex<double> ***del2_v2_del_umn2{};
-    std::complex<double> ****del_v3_del_umn{};
+    DelVStrainData *del_v_strain{};
 };
 
 struct DelVStrainComputeInputs

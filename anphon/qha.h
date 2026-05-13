@@ -20,6 +20,8 @@
 
 namespace PHON_NS
 {
+class DelVStrainData;
+
 class Qha: protected ScphQhaCommon
 {
 public:
@@ -52,20 +54,17 @@ private:
 
     void exec_perturbative_QHA(std::complex<double> ****, std::complex<double> ****);
 
-    void calc_del_v0_del_umn_vib(std::complex<double> *, std::complex<double> ***, double);
+    void calc_del_v0_del_umn_vib(std::complex<double> *, const DelVStrainData &, double);
 
 
     void calculate_del_v1_del_umn_renorm(std::complex<double> **, const std::array<std::array<double, 3>, 3> &,
-                                         std::complex<double> **, std::complex<double> **, std::complex<double> **,
-                                         std::complex<double> ***, std::complex<double> ***, std::complex<double> ****,
-                                         const std::vector<double> &);
+                                         const DelVStrainData &, const std::vector<double> &);
 
     void calculate_C2_array_renorm(double **C2_array_renorm,
                                     const std::array<std::array<double, 3>, 3> &u_tensor,
                                     std::array<std::array<double, 3>, 3> &eta_tensor, 
                                     double **C2_array, double ***C3_array,
-                                    std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
-                                    std::complex<double> ***del2_v2_del_umn2, const std::vector<double> &q0);
+                                    const DelVStrainData &, const std::vector<double> &q0);
 
     void calculate_C2_array_ZSISA(double **, double **, std::complex<double> **, double **);
 

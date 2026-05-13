@@ -24,11 +24,13 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "kpoint.h"
 #include "memory.h"
+#include "relaxation.h"
 #include "scph_qha_common.h"
 #include "thermodynamics.h"
 
@@ -38,10 +40,7 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
     std::complex<double> *del_v0_del_umn_renorm, double *C1_array, double **C2_array, double ***C3_array,
     std::array<std::array<double, 3>, 3> &eta_tensor, 
     const std::array<std::array<double, 3>, 3> &u_tensor,
-    std::complex<double> **del_v1_del_umn,
-    std::complex<double> **del2_v1_del_umn2, std::complex<double> **del3_v1_del_umn3,
-    std::complex<double> ***del_v2_del_umn, std::complex<double> ***del2_v2_del_umn2,
-    std::complex<double> ****del_v3_del_umn, const std::vector<double> &q0, double pvcell,
+    const DelVStrainData &del_v_strain, const std::vector<double> &q0, double pvcell,
     const KpointMeshUniform *kmesh_dense_in)
 {
 
@@ -134,11 +133,12 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
     // calculate del_v1_del_umn
     for (i1 = 0; i1 < 9; i1++) {
         for (is1 = 0; is1 < ns; is1++) {
-            del_v1_del_umn_with_umn[i1][is1] = del_v1_del_umn[i1][is1];
+            del_v1_del_umn_with_umn[i1][is1] = del_v_strain.del_v1(i1, is1);
             for (i2 = 0; i2 < 9; i2++) {
-                del_v1_del_umn_with_umn[i1][is1] += del2_v1_del_umn2[i1 * 9 + i2][is1] * u_tensor[i2 / 3][i2 % 3];
+                del_v1_del_umn_with_umn[i1][is1] +=
+                    del_v_strain.del2_v1(i1 * 9 + i2, is1) * u_tensor[i2 / 3][i2 % 3];
                 for (i3 = 0; i3 < 9; i3++) {
-                    del_v1_del_umn_with_umn[i1][is1] += 0.5 * del3_v1_del_umn3[i1 * 81 + i2 * 9 + i3][is1] *
+                    del_v1_del_umn_with_umn[i1][is1] += 0.5 * del_v_strain.del3_v1(i1 * 81 + i2 * 9 + i3, is1) *
                                                         u_tensor[i2 / 3][i2 % 3] * u_tensor[i3 / 3][i3 % 3];
                 }
             }
@@ -149,10 +149,10 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
     for (i1 = 0; i1 < 9; i1++) {
         for (is1 = 0; is1 < ns; is1++) {
             for (is2 = 0; is2 < ns; is2++) {
-                del_v2_del_umn_with_umn[i1][is1][is2] = del_v2_del_umn[i1][0][is1 * ns + is2];
+                del_v2_del_umn_with_umn[i1][is1][is2] = del_v_strain.del_v2[i1](0, is1 * ns + is2);
                 for (i2 = 0; i2 < 9; i2++) {
                     del_v2_del_umn_with_umn[i1][is1][is2] +=
-                        del2_v2_del_umn2[i1 * 9 + i2][0][is1 * ns + is2] * u_tensor[i2 / 3][i2 % 3];
+                        del_v_strain.del2_v2[i1 * 9 + i2](0, is1 * ns + is2) * u_tensor[i2 / 3][i2 % 3];
                 }
             }
         }
@@ -167,7 +167,7 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
                 del_v0_del_umn_renorm[i1] += 0.5 * del_v2_del_umn_with_umn[i1][is1][is2] * q0[is1] * q0[is2];
                 for (is3 = 0; is3 < ns; is3++) {
                     del_v0_del_umn_renorm[i1] +=
-                        factor * del_v3_del_umn[i1][0][is1][is2 * ns + is3] * q0[is1] * q0[is2] * q0[is3];
+                        factor * del_v_strain.del_v3[i1][0](is1, is2 * ns + is3) * q0[is1] * q0[is2] * q0[is3];
                 }
             }
         }
@@ -246,9 +246,7 @@ void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, st
 
 void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_v0_del_umn_SCP,
                                                       std::complex<double> *del_v0_del_umn_renorm,
-                                                      std::complex<double> ***del_v2_del_umn,
-                                                      std::complex<double> ***del2_v2_del_umn2,
-                                                      std::complex<double> ****del_v3_del_umn,
+                                                      const DelVStrainData &del_v_strain,
                                                       const std::array<std::array<double, 3>, 3> &u_tensor,
                                                       const std::vector<double> &q0,
                                                       std::complex<double> ***cmat_convert,
@@ -262,9 +260,7 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     int ns = dynamical->neval;
     double factor = 4.0 * static_cast<double>(nk);
     double factor2 = 1.0 / factor;
-
-    std::complex<double> ***del_v2_del_umn_renorm;
-    allocate(del_v2_del_umn_renorm, 9, nk, ns * ns);
+    std::vector<Eigen::MatrixXcd> del_v2_del_umn_renorm(9, Eigen::MatrixXcd::Zero(nk, ns * ns));
 
     int i1, i2;
     int ik;
@@ -281,16 +277,16 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
         for (ik = 0; ik < nk; ik++) {
             for (is1 = 0; is1 < ns; is1++) {
                 for (is2 = 0; is2 < ns; is2++) {
-                    del_v2_del_umn_renorm[i1][ik][is1 * ns + is2] = del_v2_del_umn[i1][ik][is1 * ns + is2];
+                    del_v2_del_umn_renorm[i1](ik, is1 * ns + is2) = del_v_strain.del_v2[i1](ik, is1 * ns + is2);
                     // renormalization by strain
                     for (i2 = 0; i2 < 9; i2++) {
-                        del_v2_del_umn_renorm[i1][ik][is1 * ns + is2] +=
-                            del2_v2_del_umn2[i1 * 9 + i2][ik][is1 * ns + is2] * u_tensor[i2 / 3][i2 % 3];
+                        del_v2_del_umn_renorm[i1](ik, is1 * ns + is2) +=
+                            del_v_strain.del2_v2[i1 * 9 + i2](ik, is1 * ns + is2) * u_tensor[i2 / 3][i2 % 3];
                     }
                     // renormalization by displace
                     for (is3 = 0; is3 < ns; is3++) {
-                        del_v2_del_umn_renorm[i1][ik][is1 * ns + is2] +=
-                            factor * del_v3_del_umn[i1][ik][is3][is2 * ns + is1] * q0[is3];
+                        del_v2_del_umn_renorm[i1](ik, is1 * ns + is2) +=
+                            factor * del_v_strain.del_v3[i1][ik](is3, is2 * ns + is1) * q0[is3];
                     }
                 }
             }
@@ -309,7 +305,7 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
             for (js1 = 0; js1 < ns; js1++) {
                 for (js2 = 0; js2 < ns; js2++) {
                     Cmat(js1, js2) = cmat_convert[ik][js1][js2];
-                    del_v2_strain_mat_original_mode(js1, js2) = del_v2_del_umn_renorm[i1][ik][js1 * ns + js2];
+                    del_v2_strain_mat_original_mode(js1, js2) = del_v2_del_umn_renorm[i1](ik, js1 * ns + js2);
                 }
             }
             del_v2_strain_mat = Cmat.adjoint() * del_v2_strain_mat_original_mode * Cmat;
@@ -341,7 +337,6 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
         }
     }
 
-    deallocate(del_v2_del_umn_renorm);
 }
 
 void ScphQhaCommon::get_derivative_central_diff(const double delta_t, const unsigned int nk, double **omega0,
