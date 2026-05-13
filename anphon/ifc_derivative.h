@@ -19,6 +19,8 @@ class DelVStrainData;
 class DerivativeIFC: protected Pointers
 {
 public:
+    using MatrixXcdRowMajor = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
     explicit DerivativeIFC(class PHON *phon);
     ~DerivativeIFC() = default;
 
@@ -35,24 +37,24 @@ public:
                                        int m1, int n1,
                                        int m2, int n2) const;
 
-    void compute_dV1_dumn(std::complex<double> **dV1_dumn,
+    void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,
                           const std::complex<double> *const *const *const evec_harmonic) const;
 
-    void compute_d2V1_dumn2(std::complex<double> **d2V1_dumn2,
+    void compute_d2V1_dumn2(MatrixXcdRowMajor &d2V1_dumn2,
                             const std::complex<double> *const *const *const evec_harmonic) const;
 
-    void compute_d3V1_dumn3(std::complex<double> **d3V1_dumn3,
+    void compute_d3V1_dumn3(MatrixXcdRowMajor &d3V1_dumn3,
                             const std::complex<double> *const *const *const evec_harmonic) const;
 
-    void compute_dV2_dumn(std::complex<double> ***dV2_dumn,
+    void compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &dV2_dumn,
                           const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
                           double **xk_in) const;
 
-    void compute_d2V2_dumn2(std::complex<double> ***d2V2_dumn2,
+    void compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &d2V2_dumn2,
                             const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
                             double **xk_in) const;
 
-    void compute_dV3_dumn(std::complex<double> ****dV3_dumn, double **omega2_harmonic,
+    void compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &dV3_dumn, double **omega2_harmonic,
                           const std::complex<double> *const *const *const evec_harmonic,
                           const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                           const PhaseFactorStorage *phase_storage_in) const;
@@ -74,15 +76,15 @@ public:
 private:
     void read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
                                        const std::complex<double> *const *const *const evec_harmonic,
-                                       std::complex<double> ***del_v2_del_umn, unsigned int nk) const;
+                                       std::vector<MatrixXcdRowMajor> &del_v2_del_umn, unsigned int nk) const;
 
-    void calculate_delv1_delumn_finite_difference(std::complex<double> **del_v1_del_umn,
+    void calculate_delv1_delumn_finite_difference(MatrixXcdRowMajor &del_v1_del_umn,
                                                   const std::complex<double> *const *const *const evec_harmonic,
                                                   const std::string &strain_ifc_dir) const;
 
     void calculate_delv2_delumn_finite_difference(double **omega2_harmonic,
                                                   const std::complex<double> *const *const *const evec_harmonic,
-                                                  std::complex<double> ***del_v2_del_umn,
+                                                  std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
                                                   const KpointMeshUniform *kmesh_coarse,
                                                   const KpointMeshUniform *kmesh_dense, int renorm_3to2nd,
                                                   const std::string &strain_ifc_dir,
