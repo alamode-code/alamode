@@ -330,12 +330,14 @@ void DerivativeIFC::compute_dV3_dumn(std::complex<double> ****del_v3_del_umn, do
                                            const KpointMeshUniform *kmesh_dense_in,
                                            const PhaseFactorStorage *phase_storage_in) const
 {
+    const auto ns = dynamical->neval;
+    const auto ns2 = ns * ns;
+    const auto nk_dense = static_cast<int>(kmesh_dense_in->nk);
     int ngroup_tmp;
     double *invmass_v3_tmp;
     int **evec_index_v3_tmp;
     std::vector<double> *fcs_group_tmp;
     std::vector<RelativeVector> *relvec_tmp;
-    std::complex<double> *phi3_reciprocal_tmp;
 
     int i;
     int ixyz1, ixyz2;
@@ -360,14 +362,34 @@ void DerivativeIFC::compute_dV3_dumn(std::complex<double> ****del_v3_del_umn, do
 
             compute_dV_dumn_real_space_m1(fcs_aligned, delta_fcs, ixyz1, ixyz2);
 
+            if (delta_fcs.empty()) {
+#pragma omp parallel for collapse(2) schedule(static)
+                for (int ik = 0; ik < nk_dense; ++ik) {
+                    for (int is = 0; is < ns; ++is) {
+                        std::fill_n(del_v3_del_umn[ixyz1 * 3 + ixyz2][ik][is], ns2, std::complex<double>(0.0, 0.0));
+                    }
+                }
+                continue;
+            }
+
             boost::sort::block_indirect_sort(delta_fcs.begin(), delta_fcs.end());
 
             anharmonic_core->prepare_group_of_force_constants(delta_fcs, ngroup_tmp, fcs_group_tmp);
 
+            if (ngroup_tmp == 0) {
+#pragma omp parallel for collapse(2) schedule(static)
+                for (int ik = 0; ik < nk_dense; ++ik) {
+                    for (int is = 0; is < ns; ++is) {
+                        std::fill_n(del_v3_del_umn[ixyz1 * 3 + ixyz2][ik][is], ns2, std::complex<double>(0.0, 0.0));
+                    }
+                }
+                deallocate(fcs_group_tmp);
+                continue;
+            }
+
             allocate(invmass_v3_tmp, ngroup_tmp);
             allocate(evec_index_v3_tmp, ngroup_tmp, 3);
             allocate(relvec_tmp, ngroup_tmp);
-            allocate(phi3_reciprocal_tmp, ngroup_tmp);
 
             anharmonic_core->prepare_relative_vector(delta_fcs, ngroup_tmp, fcs_group_tmp, relvec_tmp);
 
@@ -399,7 +421,6 @@ void DerivativeIFC::compute_dV3_dumn(std::complex<double> ****del_v3_del_umn, do
             deallocate(invmass_v3_tmp);
             deallocate(evec_index_v3_tmp);
             deallocate(relvec_tmp);
-            deallocate(phi3_reciprocal_tmp);
         }
     }
     deallocate(invsqrt_mass_p);
@@ -808,7 +829,6 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
 {
     using namespace Eigen;
 
-    const auto natmin = system->get_primcell().number_of_atoms;
     const auto ns = dynamical->neval;
 
     int ixyz1, ixyz2;
@@ -860,8 +880,7 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
     }
     deallocate(del_v2_del_umn_alphamu);
 
-    int *is_acoustic;
-    allocate(is_acoustic, 3 * natmin);
+    std::vector<int> is_acoustic(ns, 0);
 
     constexpr double threshold_acoustic = 1.0e-16;
     int count_acoustic = 0;

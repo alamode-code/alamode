@@ -215,21 +215,34 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(std::complex<double> ***
 
     deallocate(v3_array_at_kpair);
     deallocate(ind);
+    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
+    // to be contiguous across the k-point dimension. Reduce to a contiguous buffer first.
+    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 #ifdef MPI_CXX_DOUBLE_COMPLEX
     MPI_Allreduce(&v3_mpi[0][0][0],
-                  &v3_out[0][0][0],
+                  v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_CXX_DOUBLE_COMPLEX,
                   MPI_SUM,
                   MPI_COMM_WORLD);
 #else
     MPI_Allreduce(&v3_mpi[0][0][0],
-                  &v3_out[0][0][0],
+                  v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_COMPLEX16,
                   MPI_SUM,
                   MPI_COMM_WORLD);
 #endif
+
+#pragma omp parallel for collapse(3) schedule(static)
+    for (unsigned int ik = 0; ik < nk_scph; ++ik) {
+        for (unsigned int is_local = 0; is_local < ns; ++is_local) {
+            for (unsigned int js_local = 0; js_local < ns2; ++js_local) {
+                const auto idx = (static_cast<std::size_t>(ik) * ns + is_local) * ns2 + js_local;
+                v3_out[ik][is_local][js_local] = v3_allreduce_buffer[idx];
+            }
+        }
+    }
 
     deallocate(v3_mpi);
     deallocate(v3_tmp0);
@@ -276,6 +289,19 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
     std::complex<double> *phi3_reciprocal_tmp;
 
     std::complex<double> **v3_tmp0, **v3_tmp1, **v3_tmp2, **v3_tmp3;
+
+    if (ngroup_v3_in == 0) {
+#pragma omp parallel for collapse(3) schedule(static)
+        for (unsigned int ik = 0; ik < nk_scph; ++ik) {
+            for (unsigned int is_local = 0; is_local < ns; ++is_local) {
+                for (unsigned int js_local = 0; js_local < ns2; ++js_local) {
+                    v3_out[ik][is_local][js_local] = complex_zero;
+                }
+            }
+        }
+        zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
+        return;
+    }
 
     allocate(phi3_reciprocal_tmp, ngroup_v3_in);
     allocate(v3_array_at_kpair, ngroup_v3_in);
@@ -431,21 +457,34 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
 
     deallocate(v3_array_at_kpair);
     deallocate(ind);
+    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
+    // to be contiguous across the k-point dimension. Reduce to a contiguous buffer first.
+    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 #ifdef MPI_CXX_DOUBLE_COMPLEX
     MPI_Allreduce(&v3_mpi[0][0][0],
-                  &v3_out[0][0][0],
+                  v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_CXX_DOUBLE_COMPLEX,
                   MPI_SUM,
                   MPI_COMM_WORLD);
 #else
     MPI_Allreduce(&v3_mpi[0][0][0],
-                  &v3_out[0][0][0],
+                  v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_COMPLEX16,
                   MPI_SUM,
                   MPI_COMM_WORLD);
 #endif
+
+#pragma omp parallel for collapse(3) schedule(static)
+    for (unsigned int ik = 0; ik < nk_scph; ++ik) {
+        for (unsigned int is_local = 0; is_local < ns; ++is_local) {
+            for (unsigned int js_local = 0; js_local < ns2; ++js_local) {
+                const auto idx = (static_cast<std::size_t>(ik) * ns + is_local) * ns2 + js_local;
+                v3_out[ik][is_local][js_local] = v3_allreduce_buffer[idx];
+            }
+        }
+    }
 
     deallocate(v3_mpi);
     deallocate(v3_tmp0);
