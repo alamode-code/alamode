@@ -134,6 +134,27 @@ class FC2Updater:
 
     # Geometric tolerance (Bohr) used when matching folded positions.
     CART_TOL = 1.0e-2
+    # When --allow-cell-mismatch is used, warn if the matched atomic positions
+    # of the two cells differ by more than this (Bohr).
+    MISMATCH_WARN_CART = 0.2
+
+    @staticmethod
+    def _cell_mismatch_report(dfc2_lat, prim_lat):
+        """Human-readable summary of how the two primitive cells differ."""
+        dfc2_len = np.linalg.norm(dfc2_lat, axis=1)
+        prim_len = np.linalg.norm(prim_lat, axis=1)
+        vol_dfc2 = abs(np.linalg.det(dfc2_lat))
+        vol_prim = abs(np.linalg.det(prim_lat))
+        deform = dfc2_lat @ np.linalg.inv(prim_lat)   # dfc2 = deform @ HDF5
+        lines = [
+            "  dfc2 lattice |a_i| (Bohr): " + np.array2string(dfc2_len, precision=5),
+            "  HDF5 lattice |a_i| (Bohr): " + np.array2string(prim_len, precision=5),
+            "  length ratio dfc2/HDF5   : " + np.array2string(dfc2_len / prim_len, precision=5),
+            f"  volume ratio dfc2/HDF5   : {vol_dfc2 / vol_prim:.5f}",
+            "  lattice map (dfc2 = M @ HDF5):",
+            "    " + np.array2string(deform, precision=5).replace("\n", "\n    "),
+        ]
+        return "\n".join(lines)
 
     @classmethod
     def _match_atom(cls, frac, prim_frac, prim_lat):
@@ -170,31 +191,68 @@ class FC2Updater:
         return atom, trans
 
     @classmethod
-    def update(cls, fc2_data, dfc2_correction, tol, verbose=False):
+    def update(cls, fc2_data, dfc2_correction, tol, verbose=False,
+               allow_cell_mismatch=False):
         """Return the renormalized FC2 values (bare + dfc2 corrections)."""
         prim_lat = fc2_data.lattice_vectors          # rows = conventional lattice vectors (Bohr)
         prim_frac = fc2_data.fractional_coords        # (n_conv, 3)
         prim_kind = fc2_data.atomic_kinds
         inv_prim = np.linalg.inv(prim_lat)            # cart @ inv_prim -> fractional
 
-        # --- 1. The dfc2 cell must be the same cell as the HDF5 PrimitiveCell.
-        #        (ANPHON prints its own primitive cell as the dfc2 header.)
-        if not np.allclose(dfc2_correction.lattice, prim_lat, atol=1.0e-3):
-            raise ValueError(
-                "The dfc2 lattice does not match the HDF5 PrimitiveCell lattice. "
-                "Only the case where ANPHON's primitive cell equals the HDF5 "
-                "PrimitiveCell is supported."
-            )
+        # --- 1. The dfc2 cell should be the same cell as the HDF5 PrimitiveCell
+        #        (ANPHON prints its own primitive cell as the dfc2 header).  If
+        #        they differ only in size/shape -- e.g. corrections fitted at a
+        #        different volume -- the atomic correspondence can still be
+        #        established from fractional coordinates, but the transferred
+        #        force constants are only an approximation.
+        lattice_match = np.allclose(dfc2_correction.lattice, prim_lat, atol=1.0e-3)
+        if not lattice_match:
+            report = cls._cell_mismatch_report(dfc2_correction.lattice, prim_lat)
+            if not allow_cell_mismatch:
+                raise ValueError(
+                    "The dfc2 lattice does not match the HDF5 PrimitiveCell lattice:\n"
+                    + report +
+                    "\nThe corrections were computed for a different cell. Re-run the "
+                    "fit/SCPH on the matching structure, or pass --allow-cell-mismatch "
+                    "to apply them anyway (atoms are matched by fractional coordinates "
+                    "and the result is approximate)."
+                )
+            print("WARNING: applying corrections across mismatched primitive cells.")
+            print(report)
 
-        # Map each dfc2 atom onto a PrimitiveCell atom index (usually identity).
-        dfc2_to_prim = np.empty(len(dfc2_correction.positions), dtype=np.int64)
+        # Map each dfc2 atom onto a PrimitiveCell atom index by nearest position
+        # modulo a lattice translation (an identity map when the cells agree).
+        # Require a one-to-one correspondence so a deformed/mismatched cell that
+        # cannot be aligned is rejected rather than silently mis-mapped.
+        dfc2_to_prim = np.full(len(dfc2_correction.positions), -1, dtype=np.int64)
+        used = {}
+        max_frac_res = 0.0
+        max_cart_res = 0.0
         for i, pos in enumerate(dfc2_correction.positions):
-            j, dist, _ = cls._match_atom(pos, prim_frac, prim_lat)
-            if dist > cls.CART_TOL:
+            residual = (pos - prim_frac) - np.rint(pos - prim_frac)
+            fdist = np.linalg.norm(residual, axis=1)
+            cdist = np.linalg.norm(residual @ prim_lat, axis=1)
+            j = int(np.argmin(cdist))
+            if lattice_match and cdist[j] > cls.CART_TOL:
                 raise ValueError(f"dfc2 atom {i} has no counterpart in the HDF5 PrimitiveCell.")
             if dfc2_correction.atomic_kinds[i] != prim_kind[j]:
-                raise ValueError(f"Atomic-kind mismatch for dfc2 atom {i}.")
+                raise ValueError(f"Atomic-kind mismatch for dfc2 atom {i} "
+                                 f"(nearest HDF5 atom {j}).")
+            if j in used:
+                raise ValueError(f"dfc2 atoms {used[j]} and {i} both map to HDF5 atom {j}; "
+                                 f"cannot establish a one-to-one atom correspondence "
+                                 f"between the two cells.")
+            used[j] = i
             dfc2_to_prim[i] = j
+            max_frac_res = max(max_frac_res, float(fdist[j]))
+            max_cart_res = max(max_cart_res, float(cdist[j]))
+
+        if not lattice_match:
+            print(f"  atoms matched 1:1 by fractional coordinates; max residual "
+                  f"{max_frac_res:.4f} (fractional), {max_cart_res:.4f} Bohr.")
+            if max_cart_res > cls.MISMATCH_WARN_CART:
+                print(f"  CAUTION: internal coordinates differ by up to {max_cart_res:.3f} "
+                      f"Bohr between the two cells; the correction transfer is approximate.")
 
         # --- 2. Build the correction lookup keyed in PrimitiveCell coordinates:
         #        (sx, sy, sz, atom0, coord0, atom1, coord1) -> value.
@@ -390,6 +448,12 @@ def main():
                              "(default: 1e-10)")
     parser.add_argument('--verbose', action='store_true',
                         help="List all unmatched corrections")
+    parser.add_argument('--allow-cell-mismatch', action='store_true',
+                        help="Apply the corrections even if the dfc2 primitive cell "
+                             "differs in size/shape from the HDF5 PrimitiveCell "
+                             "(e.g. fitted at a different volume). Atoms are matched "
+                             "by fractional coordinates; the result is approximate "
+                             "and a diagnosis is printed.")
     args = parser.parse_args()
 
     print(f"Loading force constants from: {args.input}")
@@ -399,7 +463,8 @@ def main():
     dfc2_correction = DFC2Correction(args.dfc2, args.temp)
 
     print("Applying corrections...")
-    fc2_updated = FC2Updater.update(fc2_data, dfc2_correction, args.tol, args.verbose)
+    fc2_updated = FC2Updater.update(fc2_data, dfc2_correction, args.tol, args.verbose,
+                                    args.allow_cell_mismatch)
 
     print("Writing results...")
     provenance = {
