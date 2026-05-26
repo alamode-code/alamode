@@ -10,14 +10,18 @@
 
 #pragma once
 
+#include <array>
 #include <complex>
 #include "anharmonic_core.h"
 #include "kpoint.h"
 #include "pointers.h"
+#include "relaxation_types.h"
 #include "scph_qha_common.h"
 
 namespace PHON_NS
 {
+class DelVStrainData;
+
 class Qha: protected ScphQhaCommon
 {
 public:
@@ -31,7 +35,7 @@ public:
     unsigned int kmesh_interpolate[3];
 
     // optimization scheme used in QHA
-    int qha_scheme;
+    QhaScheme qha_scheme = QhaScheme::Standard;
 
     bool restart_qha;
     bool warmstart_qha;
@@ -40,6 +44,9 @@ public:
 
     void exec_qha_optimization();
 
+    using ScphQhaCommon::ialgo;
+    using ScphQhaCommon::selfenergy_offdiagonal;
+
 private:
     void set_default_variables();
 
@@ -47,15 +54,17 @@ private:
 
     void exec_perturbative_QHA(std::complex<double> ****, std::complex<double> ****);
 
-    void calc_del_v0_del_umn_vib(std::complex<double> *, std::complex<double> ***, double);
+    void calc_del_v0_del_umn_vib(std::complex<double> *, const DelVStrainData &, double);
 
 
-    void calculate_del_v1_del_umn_renorm(std::complex<double> **, double **, std::complex<double> **,
-                                         std::complex<double> **, std::complex<double> **, std::complex<double> ***,
-                                         std::complex<double> ***, std::complex<double> ****, double *);
+    void calculate_del_v1_del_umn_renorm(std::complex<double> **, const std::array<std::array<double, 3>, 3> &,
+                                         const DelVStrainData &, const std::vector<double> &);
 
-    void calculate_C2_array_renorm(double **, double **, double **, double **, double ***, std::complex<double> **,
-                                   std::complex<double> **, std::complex<double> ***, double *);
+    void calculate_C2_array_renorm(double **C2_array_renorm,
+                                    const std::array<std::array<double, 3>, 3> &u_tensor,
+                                    std::array<std::array<double, 3>, 3> &eta_tensor, 
+                                    double **C2_array, double ***C3_array,
+                                    const DelVStrainData &, const std::vector<double> &q0);
 
     void calculate_C2_array_ZSISA(double **, double **, std::complex<double> **, double **);
 
@@ -64,7 +73,7 @@ private:
                               std::vector<int> &);
 
     void compute_vZSISA_stress(std::complex<double> *, double **, std::complex<double> *, std::complex<double> *,
-                               double **);
+                               const std::array<std::array<double, 3>, 3> &);
 
     // QHA
     void compute_cmat(std::complex<double> ***, const std::complex<double> *const *const *const);

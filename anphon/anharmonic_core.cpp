@@ -152,6 +152,11 @@ void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArray
 
     number_of_groups = 0;
 
+    if (fcs_in.empty()) {
+        fcs_group_out = nullptr;
+        return;
+    }
+
     const auto nsize_pair = fcs_in.begin()->pairs.size();
     std::vector<int> arr_old(nsize_pair, -1);
     std::vector<int> arr_tmp(nsize_pair);

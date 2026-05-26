@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <cassert>
 
 auto gcd(const int &a, const int &b) -> int
 {

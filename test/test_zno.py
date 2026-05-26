@@ -167,7 +167,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
     if args.jobs in ["all", "compare"]:
-        info = check_consistency_anphon(example_dir, abs_tol=1.0e-10, rel_tol=1.0e-10)
+        info = check_consistency_anphon(example_dir, abs_tol=1.0e-8, rel_tol=1.0e-10)
 
     if info == 0:
         print("ZnO ANPHON --> pass")

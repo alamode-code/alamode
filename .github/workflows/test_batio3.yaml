@@ -1,0 +1,61 @@
+name: Run BaTiO3 SCPH relax test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 2.0dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: alamode
+          python-version: "3.10"
+
+      - name: Get date
+        id: get-date
+        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> "${GITHUB_OUTPUT}"
+
+      - name: Cache Conda env
+        uses: actions/cache@v4
+        env:
+          CACHE_NUMBER: 0
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('etc/alamode-environment.yml') }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: conda env update -n alamode -f etc/alamode-environment.yml
+
+      - name: Build alm and anphon
+        run: |
+          mkdir -p _build
+          cd _build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make alm anphon -j
+
+      - name: Prepare BaTiO3 test files
+        working-directory: ./test
+        run: python test_batio3.py --jobs copy
+
+      - name: Run BaTiO3 SCPH calculation
+        working-directory: ./test
+        run: python test_batio3.py --jobs run
+
+      - name: Compare BaTiO3 results
+        working-directory: ./test
+        run: python test_batio3.py --jobs compare

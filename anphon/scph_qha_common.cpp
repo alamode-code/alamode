@@ -326,7 +326,7 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
     mpi_bcast_complex(dymat_out, NT, kmesh_coarse_in->nk, ns);
 }
 
-void ScphQhaCommon::store_scph_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
+void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
                                              std::string filename_dymat, const KpointMeshUniform *kmesh_dense_in,
                                              const KpointMeshUniform *kmesh_coarse_in,
                                              const unsigned int nonanalytic_in,

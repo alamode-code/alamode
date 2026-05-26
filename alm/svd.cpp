@@ -5,6 +5,7 @@
 #include "svd.h"
 #include <Eigen/Core>
 #include <Eigen/SVD>
+#include <cassert>
 #include <chrono>
 #include <fstream>
 #include <iostream>
