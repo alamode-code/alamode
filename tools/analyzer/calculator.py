@@ -404,6 +404,16 @@ class Calculator:
                     tau[i, j] = 0.0
         return tau
 
+    def get_group_velocity_norm(self):
+        """
+        Computes the magnitude of the phonon group velocity |v| (m/s) for each
+        k-point and mode.
+
+        Returns:
+            numpy.ndarray: Group velocity magnitudes with shape (nk, nmode).
+        """
+        return np.linalg.norm(self.vel[:, :, 0, :], axis=2)
+
     def print_lifetime(self, temperature, four_phonon=False, isotope=False):
         """
         Prints the phonon lifetime for a given temperature.
@@ -421,31 +431,47 @@ class Calculator:
         elif isotope:
             tau_total = self.get_lifetime(temperature, isotope=True)
 
+        # Group velocity magnitude |v| in m/s; mean free path l = |v| * tau in nm.
+        velnorm = self.get_group_velocity_norm()
+
         nk_reducible = np.sum(self.qpoint_weight)
 
-        print("# Phonon lifetime (ps) at {:6.2f} K".format(temperature))
         print(
-            "# k-point index, k-point weight, mode index, frequency (cm^-1), 3-phonon lifetime (ps)",
+            "# Phonon lifetime (ps), group velocity (m/s), and mean free path (nm) "
+            "at {:6.2f} K".format(temperature)
+        )
+        print(
+            "# k-point index, k-point weight, mode index, frequency (cm^-1), "
+            "|v| (m/s), 3-phonon lifetime (ps), 3-phonon mean free path (nm)",
             end="",
         )
         if four_phonon and isotope:
-            print(", lifetime with isotope and 4ph (ps)")
+            print(", lifetime with isotope and 4ph (ps), mean free path with isotope and 4ph (nm)")
         elif four_phonon:
-            print(", lifetime with 4ph (ps)")
+            print(", lifetime with 4ph (ps), mean free path with 4ph (nm)")
         elif isotope:
-            print(", lifetime with isotope (ps)")
+            print(", lifetime with isotope (ps), mean free path with isotope (nm)")
+        else:
+            print()
 
         for ik in range(self.gamma3.shape[0]):
             for imode in range(self.gamma3.shape[1]):
+                vq = velnorm[ik, imode]
+                mfp_3ph = vq * tau_3ph[ik, imode] * 0.001
                 print(
-                    "{:4d} {:12.6f} {:4d} {:12.6f} {:12.6f}".format(
+                    "{:4d} {:12.6f} {:4d} {:12.6f} {:15.4f} {:12.6f} {:15.6f}".format(
                         ik + 1, self.qpoint_weight[ik] / nk_reducible,
-                        imode + 1, self.omega[ik, imode], tau_3ph[ik, imode]
+                        imode + 1, self.omega[ik, imode], vq,
+                        tau_3ph[ik, imode], mfp_3ph
                     ),
                     end="",
                 )
                 if four_phonon or isotope:
-                    print("{:12.6f}".format(tau_total[ik, imode]), end="")
+                    mfp_total = vq * tau_total[ik, imode] * 0.001
+                    print(
+                        "{:12.6f} {:15.6f}".format(tau_total[ik, imode], mfp_total),
+                        end="",
+                    )
                 print()
 
     def print_lifetime_mode(
@@ -465,19 +491,26 @@ class Calculator:
             index_k, index_mode, four_phonon, isotope
         )
 
+        # Group velocity magnitude |v| (m/s) is temperature-independent; the mean
+        # free path l = |v| * tau (nm) varies with temperature through tau.
+        vq = np.linalg.norm(self.vel[index_k, index_mode, 0, :])
+
         print(
             "# Phonon lifetime (ps) of mode {:d} at k-point {:d}".format(
                 index_mode + 1, index_k + 1
             )
         )
         print("# Phonon frequency: {:12.6f}".format(self.omega[index_k, index_mode]))
-        print("# temperature, 3-phonon lifetime (ps)", end="")
+        print("# Group velocity |v|: {:15.4f} m/s".format(vq))
+        print("# temperature, 3-phonon lifetime (ps), 3-phonon mean free path (nm)", end="")
         if four_phonon and isotope:
-            print(", lifetime with isotope and 4ph (ps)")
+            print(", lifetime with isotope and 4ph (ps), mean free path with isotope and 4ph (nm)")
         elif four_phonon:
-            print(", lifetime with 4ph (ps)")
+            print(", lifetime with 4ph (ps), mean free path with 4ph (nm)")
         elif isotope:
-            print(", lifetime with isotope (ps)")
+            print(", lifetime with isotope (ps), mean free path with isotope (nm)")
+        else:
+            print()
 
         for itemp in range(len(self.temperatures)):
             total = gamma3[itemp]
@@ -485,22 +518,27 @@ class Calculator:
                 total += gamma4[itemp]
             if isotope:
                 total += gamma_iso
+
             if gamma3[itemp] <= 1.0e-12:
-                print("{:12.6f} {:12.6f}".format(self.temperatures[itemp], 0.0), end="")
+                tau_3ph = 0.0
             else:
-                print(
-                    "{:12.6f} {:12.6f}".format(
-                        self.temperatures[itemp],
-                        self._factor_gamma_to_tau / gamma3[itemp],
-                    ),
-                    end="",
-                )
+                tau_3ph = self._factor_gamma_to_tau / gamma3[itemp]
+            print(
+                "{:12.6f} {:12.6f} {:15.6f}".format(
+                    self.temperatures[itemp], tau_3ph, vq * tau_3ph * 0.001
+                ),
+                end="",
+            )
 
             if four_phonon or isotope:
                 if total <= 1.0e-12:
-                    print("{:12.6f}".format(0.0), end="")
+                    tau_total = 0.0
                 else:
-                    print("{:12.6f}".format(self._factor_gamma_to_tau / total), end="")
+                    tau_total = self._factor_gamma_to_tau / total
+                print(
+                    "{:12.6f} {:15.6f}".format(tau_total, vq * tau_total * 0.001),
+                    end="",
+                )
             print("")
 
     def get_thermal_conductivity(
