@@ -25,6 +25,11 @@ class ParseResult:
         with open(filename, "r") as f:
             while True:
                 line = f.readline()
+                if line == "":
+                    raise EOFError(
+                        "Reached end of file before finishing parsing '{}'. "
+                        "The file may be incomplete or corrupted.".format(filename)
+                    )
                 if "#SYSTEM" in line:
                     line = f.readline().rstrip().split()
                     self.nat = int(line[0])  # number of atoms

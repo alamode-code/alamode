@@ -53,7 +53,11 @@ class Interpolator:
                     cl += 1
             if self.weight_xqc is not None:
                 if cl != int(self.weight_xqc[i]):
-                    print("unfolding goes wrong")
+                    raise RuntimeError(
+                        "Symmetry unfolding failed for irreducible q-point {}: "
+                        "the number of star members ({}) does not match the "
+                        "expected weight ({}).".format(i, cl, int(self.weight_xqc[i]))
+                    )
 
     def run(
         self,

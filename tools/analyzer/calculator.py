@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import spglib
 
@@ -118,7 +120,7 @@ class Calculator:
         """
         Sets the variables related to isotope scattering.
         """
-        result = np.loadtxt(self.file_isotope)
+        result = np.atleast_2d(np.loadtxt(self.file_isotope))
         nk = round(np.max(result[:, 0]))
         ns = round(np.max(result[:, 1]))
         omega = result[:, 2].reshape((nk, ns))
@@ -162,6 +164,7 @@ class Calculator:
                 )
             else:
                 self.set_variables_4ph()
+                self.interpol_gamma4()
 
         if isotope and (self.gamma_iso is None):
             if self.file_isotope is None:
@@ -204,7 +207,7 @@ class Calculator:
 
             is_index = 0
 
-            # Average the tau values for each set of degenerate modes
+            # Average the gamma values for each set of degenerate modes
             for deg in degeneracy_at_k:
                 damp_sum = np.zeros(nt)
                 for k in range(is_index, is_index + deg):
@@ -235,13 +238,15 @@ class Calculator:
         index = np.argsort(tempdiff)
 
         if tempdiff[index[0]] > 0:
-            raise RuntimeWarning(
-                "The data at exactly at {} K not found. "
-                "Return the values at {} K instead".format(
+            warnings.warn(
+                "The data exactly at {} K was not found. "
+                "Returning the values at {} K instead".format(
                     temperature, self.temperatures[index[0]]
                 )
             )
-        out = self.gamma3[:, :, index[0]]
+        # Copy so that accumulating other contributions does not mutate self.gamma3
+        # (integer indexing of the last axis returns a view).
+        out = self.gamma3[:, :, index[0]].copy()
         if four_phonon:
             out += self.gamma4_interpolated[:, :, index[0]]
         if isotope:
@@ -262,9 +267,9 @@ class Calculator:
         index = np.argsort(tempdiff)
 
         if tempdiff[index[0]] > 0:
-            raise RuntimeWarning(
-                "The data at exactly at {} K not found. "
-                "Return the values at {} K instead".format(
+            warnings.warn(
+                "The data exactly at {} K was not found. "
+                "Returning the values at {} K instead".format(
                     temperature, self.temperatures[index[0]]
                 )
             )
@@ -494,6 +499,7 @@ class Calculator:
         # Group velocity magnitude |v| (m/s) is temperature-independent; the mean
         # free path l = |v| * tau (nm) varies with temperature through tau.
         vq = np.linalg.norm(self.vel[index_k, index_mode, 0, :])
+        omega_q = self.omega[index_k, index_mode]
 
         print(
             "# Phonon lifetime (ps) of mode {:d} at k-point {:d}".format(
@@ -519,7 +525,7 @@ class Calculator:
             if isotope:
                 total += gamma_iso
 
-            if gamma3[itemp] <= 1.0e-12:
+            if omega_q <= 1.0e-8 or gamma3[itemp] <= 1.0e-12:
                 tau_3ph = 0.0
             else:
                 tau_3ph = self._factor_gamma_to_tau / gamma3[itemp]
@@ -531,7 +537,7 @@ class Calculator:
             )
 
             if four_phonon or isotope:
-                if total <= 1.0e-12:
+                if omega_q <= 1.0e-8 or total <= 1.0e-12:
                     tau_total = 0.0
                 else:
                     tau_total = self._factor_gamma_to_tau / total
@@ -733,6 +739,10 @@ class Calculator:
             length_vec = np.linspace(min_mfp, max_mfp, nsamples)
         elif gridtype == "log" or gridtype == "logarithmic":
             length_vec = np.geomspace(min_mfp, max_mfp, nsamples)
+        else:
+            raise ValueError(
+                "Unknown gridtype '{}'. Use 'linear' or 'log'.".format(gridtype)
+            )
 
         kappa = np.zeros((nsamples, 3, 3), dtype=float)
 
@@ -813,5 +823,3 @@ class Calculator:
                         if omegas[i, j] < 1.0e-8:
                             ret[i, j] = 0.0
                 return ret
-
-    # Additional methods will be defined here.

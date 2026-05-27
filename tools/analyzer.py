@@ -119,7 +119,10 @@ def main():
     calc = options.calc
 
     postproc = Calculator(
-        options.file_3ph, file_result_4ph=options.file_4ph, file_isotope=options.iso
+        options.file_3ph,
+        file_result_4ph=options.file_4ph,
+        file_isotope=options.iso,
+        average_gamma=options.average_gamma,
     )
 
     if calc == "gamma":
