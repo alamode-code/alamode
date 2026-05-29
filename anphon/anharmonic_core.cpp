@@ -872,8 +872,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
     }
 
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
-    auto get_degenerate_blocks = [&](const unsigned int knum_in)
-    {
+    auto get_degenerate_blocks = [&](const unsigned int knum_in) {
         std::vector<std::pair<unsigned int, unsigned int>> blocks;
         auto begin = 0U;
         auto omega_ref = eval_in[knum_in][0];
@@ -900,8 +899,8 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
         for (const auto &block1: blocks1) {
             for (const auto &block2: blocks2) {
 
-                const auto nblock = static_cast<double>((block1.second - block1.first) *
-                                                        (block2.second - block2.first));
+                const auto nblock =
+                    static_cast<double>((block1.second - block1.first) * (block2.second - block2.first));
 
                 if (nblock <= 1.0) continue;
 

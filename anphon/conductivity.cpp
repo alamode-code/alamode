@@ -355,14 +355,11 @@ void Conductivity::prepare_restart(const int mode)
 
                 fs_result3 << "##Phonon Frequency\n";
                 fs_result3 << "#K-point (irreducible), Branch, Omega (cm^-1)\n";
-                fs_result3 << std::scientific << std::setprecision(16);
-
                 for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
                     const auto ik = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
                     for (auto is = 0; is < dynamical->neval; ++is) {
                         fs_result3 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result3 << ' ' << std::setw(24)
-                                   << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
+                        fs_result3 << std::setw(15) << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
                                    << '\n';
                     }
                 }
@@ -426,14 +423,11 @@ void Conductivity::prepare_restart(const int mode)
             if (!restart_flag_4ph) {
                 fs_result4 << "##Phonon Frequency\n";
                 fs_result4 << "#K-point (irreducible), Branch, Omega (cm^-1)\n";
-                fs_result4 << std::scientific << std::setprecision(16);
-
                 for (i = 0; i < kmesh_4ph->nk_irred; ++i) {
                     const int ik = kmesh_4ph->kpoint_irred_all[i][0].knum;
                     for (auto is = 0; is < dynamical->neval; ++is) {
                         fs_result4 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result4 << ' ' << std::setw(24)
-                                   << writes->in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
+                        fs_result4 << std::setw(15) << writes->in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
                     }
                 }
 
@@ -520,8 +514,8 @@ void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std:
         }
 
         if (nk_tmp < 1 || nk_tmp > nk_irred || ns_tmp < 1 || ns_tmp > ns) {
-            const auto message = std::string("Invalid k-point or branch index in the ") + label
-                                 + " restart (.result) file.";
+            const auto message =
+                std::string("Invalid k-point or branch index in the ") + label + " restart (.result) file.";
             exit("prepare_restart", message.c_str());
         }
 
@@ -558,8 +552,8 @@ void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std:
     }
 
     if (truncate_tail) {
-        const auto message = std::string("Ignoring an incomplete ") + label
-                             + " #GAMMA_EACH block at the end of " + file_result + ".";
+        const auto message =
+            std::string("Ignoring an incomplete ") + label + " #GAMMA_EACH block at the end of " + file_result + ".";
         warn("prepare_restart", message.c_str());
 
         fs_result.clear();
@@ -567,8 +561,8 @@ void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std:
 
         const auto truncate_offset = static_cast<off_t>(static_cast<std::streamoff>(truncate_pos));
         if (truncate(file_result.c_str(), truncate_offset) != 0) {
-            const auto error_message = std::string("Could not truncate incomplete restart block in ")
-                                       + file_result + ": " + std::strerror(errno);
+            const auto error_message = std::string("Could not truncate incomplete restart block in ") + file_result +
+                                       ": " + std::strerror(errno);
             exit("prepare_restart", error_message.c_str());
         }
 
@@ -926,7 +920,6 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
     if (mode == 1) {
         // damping 3
         std::ostringstream result_block;
-        result_block << std::scientific << std::setprecision(16);
         for (unsigned int j = 0; j < np; ++j) {
 
             const auto iks_g = ik * np + j + nshift;
@@ -941,13 +934,13 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
             result_block << nk_equiv << '\n';
             for (k = 0; k < nk_equiv; ++k) {
                 const auto ktmp = dos->kmesh_dos->kpoint_irred_all[iks_g / ns][k].knum;
-                result_block << std::setw(24) << vel_in[ktmp][iks_g % ns][0];
-                result_block << ' ' << std::setw(24) << vel_in[ktmp][iks_g % ns][1];
-                result_block << ' ' << std::setw(24) << vel_in[ktmp][iks_g % ns][2] << '\n';
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
             }
 
             for (k = 0; k < ntemp; ++k) {
-                result_block << std::setw(24) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
+                result_block << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
             }
             result_block << "#END GAMMA_EACH\n";
         }
@@ -960,7 +953,6 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
     } else if (mode == -1) {
         // damping 4
         std::ostringstream result_block;
-        result_block << std::scientific << std::setprecision(16);
         for (unsigned int j = 0; j < np; ++j) {
 
             const auto iks_g = ik * np + j + nshift;
@@ -975,13 +967,13 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
             result_block << nk_equiv << '\n';
             for (k = 0; k < nk_equiv; ++k) {
                 const auto ktmp = kmesh_4ph->kpoint_irred_all[iks_g / ns][k].knum;
-                result_block << std::setw(24) << vel_in[ktmp][iks_g % ns][0];
-                result_block << ' ' << std::setw(24) << vel_in[ktmp][iks_g % ns][1];
-                result_block << ' ' << std::setw(24) << vel_in[ktmp][iks_g % ns][2] << '\n';
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
             }
 
             for (k = 0; k < ntemp; ++k) {
-                result_block << std::setw(24) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
+                result_block << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
             }
             result_block << "#END GAMMA_EACH\n";
         }
@@ -1010,10 +1002,7 @@ void Conductivity::compute_kappa()
         allocate(lifetime, dos->kmesh_dos->nk_irred * ns, ntemp);
         allocate(gamma_total, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-        average_self_energy_at_degenerate_point(ntemp,
-                                                dos->kmesh_dos,
-                                                dos->dymat_dos->get_eigenvalues(),
-                                                damping3);
+        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), damping3);
 
         for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks) {
             for (i = 0; i < ntemp; ++i) {
@@ -1048,10 +1037,7 @@ void Conductivity::compute_kappa()
             }
         }
 
-        average_self_energy_at_degenerate_point(ntemp,
-                                                dos->kmesh_dos,
-                                                dos->dymat_dos->get_eigenvalues(),
-                                                gamma_total);
+        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), gamma_total);
 
         // kappa_spec must be allocated before the FPH_RTA block below, because
         // compute_kappa_intraband() writes into it on the intermediate 3-phonon-only
@@ -1076,10 +1062,7 @@ void Conductivity::compute_kappa()
 
             deallocate(lifetime_3only);
 
-            average_self_energy_at_degenerate_point(ntemp,
-                                                    kmesh_4ph,
-                                                    dymat_4ph->get_eigenvalues(),
-                                                    damping4);
+            average_self_energy_at_degenerate_point(ntemp, kmesh_4ph, dymat_4ph->get_eigenvalues(), damping4);
 
             double **damping4_dense = nullptr;
 
@@ -1326,14 +1309,14 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                                 const auto ktmp = kmesh_in->kpoint_irred_all[ik][ieq].knum;
                                 vv_tmp += velmat[ktmp][is][js][j] * velmat[ktmp][js][is][k];
                             }
-                            auto kcelem_tmp = 2.0 * (omega1 * omega2) / (omega1 + omega2)
-                                              * (thermodynamics->Cv(omega1, temperature[i]) / omega1
-                                                 + thermodynamics->Cv(omega2, temperature[i]) / omega2)
-                                              * 2.0 * (gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i])
-                                              / (4.0 * std::pow(omega1 - omega2, 2.0)
-                                                 + 4.0 * std::pow(gamma_total[ik * ns + is][i]
-                                                                  + gamma_total[ik * ns + js][i], 2.0))
-                                              * vv_tmp;
+                            auto kcelem_tmp =
+                                2.0 * (omega1 * omega2) / (omega1 + omega2) *
+                                (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
+                                 thermodynamics->Cv(omega2, temperature[i]) / omega2) *
+                                2.0 * (gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i]) /
+                                (4.0 * std::pow(omega1 - omega2, 2.0) +
+                                 4.0 * std::pow(gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i], 2.0)) *
+                                vv_tmp;
                             kappa_tmp[ib] += kcelem_tmp;
 
                             if (calc_coherent == 2 && j == k) {
@@ -1387,10 +1370,8 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
     }
 }
 
-void Conductivity::compute_kappa_coherent_block(const KpointMeshUniform *kmesh_in,
-                                                const double *const *eval_in,
-                                                const double *const *gamma_total,
-                                                double ***kappa_coherent_out) const
+void Conductivity::compute_kappa_coherent_block(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                                const double *const *gamma_total, double ***kappa_coherent_out) const
 {
     const auto factor_toSI = 1.0e+18 / (std::pow(Bohr_in_Angstrom, 3) * system->get_primcell().volume);
     const auto common_factor = factor_toSI * 1.0e+12 * time_ry / static_cast<double>(kmesh_in->nk);
@@ -1462,14 +1443,15 @@ void Conductivity::compute_kappa_coherent_block(const KpointMeshUniform *kmesh_i
                     if (std::abs(domega) < tol_omega) continue;
 
                     const auto denominator = domega * domega + gamma_sum * gamma_sum;
-                    if (omega_j < eps8 || denominator <= 0.0 || !std::isfinite(omega_j)
-                        || !std::isfinite(gamma_j) || !std::isfinite(denominator)) {
+                    if (omega_j < eps8 || denominator <= 0.0 || !std::isfinite(omega_j) || !std::isfinite(gamma_j) ||
+                        !std::isfinite(denominator))
+                    {
                         continue;
                     }
 
-                    const auto population_factor = (thermodynamics->Cv(omega_i, temperature[itemp]) * omega_j
-                                                    + thermodynamics->Cv(omega_j, temperature[itemp]) * omega_i)
-                                                   / (omega_i + omega_j);
+                    const auto population_factor = (thermodynamics->Cv(omega_i, temperature[itemp]) * omega_j +
+                                                    thermodynamics->Cv(omega_j, temperature[itemp]) * omega_i) /
+                                                   (omega_i + omega_j);
                     if (!std::isfinite(population_factor)) continue;
 
                     const auto prefactor = population_factor * gamma_sum / denominator;
@@ -1577,17 +1559,13 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
 
     ofs << "# Velocity-matrix consistency diagnostic\n";
     ofs << "# max |Re[v_ii] - group_velocity|\n";
-    ofs << std::scientific << std::setprecision(16)
-        << max_abs << ' ' << max_rel << ' '
-        << max_k + 1 << ' ' << max_mode + 1 << ' ' << max_mu + 1 << ' '
-        << writes->in_kayser(eval_in[max_k][max_mode]) << ' '
-        << vel[max_k][max_mode][max_mu] << ' '
-        << velmat[max_k][max_mode][max_mode][max_mu].real() << ' '
+    ofs << std::scientific << std::setprecision(16) << max_abs << ' ' << max_rel << ' ' << max_k + 1 << ' '
+        << max_mode + 1 << ' ' << max_mu + 1 << ' ' << writes->in_kayser(eval_in[max_k][max_mode]) << ' '
+        << vel[max_k][max_mode][max_mu] << ' ' << velmat[max_k][max_mode][max_mode][max_mu].real() << ' '
         << velmat[max_k][max_mode][max_mode][max_mu].imag() << '\n';
     ofs << "# max |v_ij - conj(v_ji)|\n";
-    ofs << max_hermiticity << ' ' << max_hermiticity_rel << ' '
-        << max_herm_k + 1 << ' ' << max_herm_i + 1 << ' ' << max_herm_j + 1 << ' ' << max_herm_mu + 1 << ' '
-        << writes->in_kayser(eval_in[max_herm_k][max_herm_i]) << ' '
+    ofs << max_hermiticity << ' ' << max_hermiticity_rel << ' ' << max_herm_k + 1 << ' ' << max_herm_i + 1 << ' '
+        << max_herm_j + 1 << ' ' << max_herm_mu + 1 << ' ' << writes->in_kayser(eval_in[max_herm_k][max_herm_i]) << ' '
         << writes->in_kayser(eval_in[max_herm_k][max_herm_j]) << ' '
         << velmat[max_herm_k][max_herm_i][max_herm_j][max_herm_mu].real() << ' '
         << velmat[max_herm_k][max_herm_i][max_herm_j][max_herm_mu].imag() << ' '
@@ -1598,8 +1576,8 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
     const auto flags = std::cout.flags();
     const auto precision = std::cout.precision();
     std::cout << " Velocity-matrix diagnostic (ALAMODE_CHECK_VELMAT=1):\n"
-              << "   max |Re[v_ii] - group_velocity| = " << std::scientific << max_abs
-              << " at k=" << max_k + 1 << ", mode=" << max_mode + 1 << ", component=" << max_mu + 1 << '\n'
+              << "   max |Re[v_ii] - group_velocity| = " << std::scientific << max_abs << " at k=" << max_k + 1
+              << ", mode=" << max_mode + 1 << ", component=" << max_mu + 1 << '\n'
               << "   max relative difference          = " << max_rel << '\n'
               << "   max |Im[v_ii]|                   = " << max_imag_diag << '\n'
               << "   max |v_ij - conj(v_ji)|          = " << max_hermiticity << '\n'

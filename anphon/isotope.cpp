@@ -300,8 +300,7 @@ void Isotope::calc_isotope_selfenergy_all() const
 
         const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
         const auto eval_dos = dos->dymat_dos->get_eigenvalues();
-        auto get_averaged_omega = [&](const unsigned int knum, const unsigned int snum)
-        {
+        auto get_averaged_omega = [&](const unsigned int knum, const unsigned int snum) {
             auto begin = snum;
             while (begin > 0 && std::abs(eval_dos[knum][begin] - eval_dos[knum][begin - 1]) < tol_degenerate) {
                 --begin;

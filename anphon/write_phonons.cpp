@@ -2307,7 +2307,7 @@ void Writes::writeKappa() const
                 ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                        << conductivity->temperature[i];
                 for (j = 0; j < 3; ++j) {
-                    ofs_kl << std::setw(20) << std::fixed << std::setprecision(12)
+                    ofs_kl << std::setw(15) << std::fixed << std::setprecision(4)
                            << conductivity->kappa_coherent[i][j][j];
                 }
                 ofs_kl << '\n';
@@ -2332,7 +2332,7 @@ void Writes::writeKappa() const
                 ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                        << conductivity->temperature[i];
                 for (j = 0; j < 3; ++j) {
-                    ofs_kl << std::setw(20) << std::fixed << std::setprecision(12)
+                    ofs_kl << std::setw(15) << std::fixed << std::setprecision(4)
                            << conductivity->kappa_coherent_block[i][j][j];
                 }
                 ofs_kl << '\n';
