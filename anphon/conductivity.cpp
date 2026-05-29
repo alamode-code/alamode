@@ -358,6 +358,8 @@ void Conductivity::prepare_restart(const int mode)
                 fs_result3 << "##END Phonon Frequency\n\n";
                 fs_result3 << "##Phonon Relaxation Time\n";
             } else {
+                fs_result3.clear();
+                fs_result3.seekg(0, std::ios::beg);
                 while (fs_result3 >> line_tmp) {
 
                     if (line_tmp == "#GAMMA_EACH") {
@@ -384,6 +386,7 @@ void Conductivity::prepare_restart(const int mode)
                 }
             }
 
+            fs_result3.clear();
             fs_result3.close();
             fs_result3.open(file_result3.c_str(), std::ios::app | std::ios::out);
         }
@@ -441,6 +444,8 @@ void Conductivity::prepare_restart(const int mode)
                 fs_result4 << "##END Phonon Frequency\n\n";
                 fs_result4 << "##Phonon Relaxation Time\n";
             } else {
+                fs_result4.clear();
+                fs_result4.seekg(0, std::ios::beg);
                 while (fs_result4 >> line_tmp) {
 
                     if (line_tmp == "#GAMMA_EACH") {
@@ -466,6 +471,7 @@ void Conductivity::prepare_restart(const int mode)
                     }
                 }
             }
+            fs_result4.clear();
             fs_result4.close();
             fs_result4.open(file_result4.c_str(), std::ios::app | std::ios::out);
         }
