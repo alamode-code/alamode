@@ -149,21 +149,48 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
     const auto nk = kmesh_in->nk;
     const auto ns = dynamical->neval;
     const auto natmin = system->get_primcell().number_of_atoms;
+    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
 
     ret = 0.0;
 
     double *eval;
+    double **eval_tetra;
     double **prod_omega;
     double **weight_tetra;
     unsigned int *kmap_identity;
 
     allocate(eval, nk);
+    allocate(eval_tetra, ns, nk);
     allocate(prod_omega, ns, nk);
     allocate(weight_tetra, ns, nk);
     allocate(kmap_identity, nk);
 
     for (ik = 0; ik < nk; ++ik) {
         kmap_identity[ik] = ik;
+
+        auto begin = 0;
+        auto omega_ref = eval_in[ik][0];
+        auto omega_sum = eval_in[ik][0];
+
+        for (is = 1; is < ns; ++is) {
+            const auto omega_now = eval_in[ik][is];
+            if (std::abs(omega_now - omega_ref) < tol_degenerate) {
+                omega_sum += omega_now;
+            } else {
+                const auto omega_avg = omega_sum / static_cast<double>(is - begin);
+                for (auto js = begin; js < is; ++js) {
+                    eval_tetra[js][ik] = omega_avg;
+                }
+                begin = is;
+                omega_ref = omega_now;
+                omega_sum = omega_now;
+            }
+        }
+
+        const auto omega_avg = omega_sum / static_cast<double>(ns - begin);
+        for (auto js = begin; js < ns; ++js) {
+            eval_tetra[js][ik] = omega_avg;
+        }
     }
 
     for (is = 0; is < ns; ++is) {
@@ -181,8 +208,8 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
                 prod += isotope_factor[system->get_primcell().kind[iat]] * std::norm(dprod);
             }
 
-            prod_omega[is][ik] = prod * eval_in[ik][is];
-            eval[ik] = eval_in[ik][is];
+            prod_omega[is][ik] = prod * eval_tetra[is][ik];
+            eval[ik] = eval_tetra[is][ik];
         }
         integration->calc_weight_tetrahedron(nk,
                                              kmap_identity,
@@ -193,14 +220,13 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
                                              weight_tetra[is]);
     }
 
-    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
     for (ik = 0; ik < nk; ++ik) {
         std::vector<std::pair<int, int>> blocks;
         auto begin = 0;
-        auto omega_ref = eval_in[ik][0];
+        auto omega_ref = eval_tetra[0][ik];
 
         for (is = 1; is < ns; ++is) {
-            const auto omega_now = eval_in[ik][is];
+            const auto omega_now = eval_tetra[is][ik];
             if (std::abs(omega_now - omega_ref) >= tol_degenerate) {
                 blocks.emplace_back(begin, is);
                 begin = is;
@@ -233,6 +259,7 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
     ret *= pi * omega * 0.25;
 
     deallocate(eval);
+    deallocate(eval_tetra);
     deallocate(prod_omega);
     deallocate(weight_tetra);
     deallocate(kmap_identity);
@@ -271,16 +298,37 @@ void Isotope::calc_isotope_selfenergy_all() const
         for (i = 0; i < nks; ++i)
             gamma_loc[i] = 0.0;
 
+        const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
+        const auto eval_dos = dos->dymat_dos->get_eigenvalues();
+        auto get_averaged_omega = [&](const unsigned int knum, const unsigned int snum)
+        {
+            auto begin = snum;
+            while (begin > 0 && std::abs(eval_dos[knum][begin] - eval_dos[knum][begin - 1]) < tol_degenerate) {
+                --begin;
+            }
+
+            auto end = snum + 1;
+            while (end < ns && std::abs(eval_dos[knum][end] - eval_dos[knum][end - 1]) < tol_degenerate) {
+                ++end;
+            }
+
+            auto omega_sum = 0.0;
+            for (auto is = begin; is < end; ++is) {
+                omega_sum += eval_dos[knum][is];
+            }
+            return omega_sum / static_cast<double>(end - begin);
+        };
+
         for (i = mympi->my_rank; i < nks; i += mympi->nprocs) {
             const auto knum = dos->kmesh_dos->kpoint_irred_all[i / ns][0].knum;
             const auto snum = i % ns;
-            const auto omega = dos->dymat_dos->get_eigenvalues()[knum][snum];
+            const auto omega = get_averaged_omega(knum, snum);
             if (integration->ismear == -1) {
                 calc_isotope_selfenergy_tetra(knum,
                                               snum,
                                               omega,
                                               dos->kmesh_dos,
-                                              dos->dymat_dos->get_eigenvalues(),
+                                              eval_dos,
                                               dos->dymat_dos->get_eigenvectors(),
                                               tmp);
             } else {
@@ -288,7 +336,7 @@ void Isotope::calc_isotope_selfenergy_all() const
                                         snum,
                                         omega,
                                         dos->kmesh_dos,
-                                        dos->dymat_dos->get_eigenvalues(),
+                                        eval_dos,
                                         dos->dymat_dos->get_eigenvectors(),
                                         tmp);
             }
@@ -301,6 +349,34 @@ void Isotope::calc_isotope_selfenergy_all() const
             for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
                 for (int j = 0; j < ns; ++j) {
                     gamma_isotope[i][j] = gamma_tmp[ns * i + j];
+                }
+            }
+
+            for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
+                const auto knum = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
+                auto begin = 0;
+                auto omega_ref = eval_dos[knum][0];
+
+                for (auto is = 1; is <= ns; ++is) {
+                    if (is < ns && std::abs(eval_dos[knum][is] - omega_ref) < tol_degenerate) {
+                        continue;
+                    }
+
+                    if (is - begin > 1) {
+                        auto gamma_sum = 0.0;
+                        for (auto js = begin; js < is; ++js) {
+                            gamma_sum += gamma_isotope[i][js];
+                        }
+                        const auto gamma_avg = gamma_sum / static_cast<double>(is - begin);
+                        for (auto js = begin; js < is; ++js) {
+                            gamma_isotope[i][js] = gamma_avg;
+                        }
+                    }
+
+                    if (is < ns) {
+                        begin = is;
+                        omega_ref = eval_dos[knum][is];
+                    }
                 }
             }
         }
