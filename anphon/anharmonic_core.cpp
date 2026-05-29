@@ -1006,9 +1006,12 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
 
     kmesh_in->get_unique_quartet_k(ik_in, symmetry->SymmList, use_quartet_symmetry, sym_permutation, quartet);
 
-    unsigned int const batchsize = static_cast<unsigned int>(1e9) / (ns3 * 16);
+    unsigned int batchsize = static_cast<unsigned int>(1e9) / (ns3 * 16);
     // 1e9 B ~ 1GB, the batch size will be choosen so that delta_arr will be approximately 1 GB
     // batchsize * ns3 * 2 * 8B ~ 1GB
+    // For very large cells ns3*16 can exceed 1e9, making batchsize 0; clamp to at
+    // least 1 to avoid a divide-by-zero in num_batch and a zero-size allocation.
+    if (batchsize == 0) batchsize = 1;
 
     const unsigned int npair_uniq = quartet.size();
 

@@ -412,8 +412,6 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
     auto knum_sym = kmesh_in->kpoint_irred_all[ik_irred][0].knum;
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum_sym] + snum;
 
-    std::cout << "knum = " << knum << " knum_sym = " << knum_sym << '\n';
-
     for (unsigned int ik = mympi->my_rank; ik < npair_uniq; ik += mympi->nprocs) {
 
         unsigned int ik1 = quartet[ik].group[0].ks[0];

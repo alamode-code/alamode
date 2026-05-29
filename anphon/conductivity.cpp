@@ -365,6 +365,10 @@ void Conductivity::prepare_restart(const int mode)
                         fs_result3 >> nk_tmp >> ns_tmp;
                         fs_result3 >> multiplicity;
 
+                        if (nk_tmp < 1 || nk_tmp > dos->kmesh_dos->nk_irred || ns_tmp < 1 || ns_tmp > ns) {
+                            exit("prepare_restart",
+                                 "Invalid k-point or branch index in the 3-phonon restart (.result) file.");
+                        }
                         const auto nks_tmp = (nk_tmp - 1) * ns + ns_tmp - 1;
 
                         for (i = 0; i < multiplicity; ++i) {
@@ -444,6 +448,10 @@ void Conductivity::prepare_restart(const int mode)
                         fs_result4 >> nk_tmp >> ns_tmp;
                         fs_result4 >> multiplicity;
 
+                        if (nk_tmp < 1 || nk_tmp > kmesh_4ph->nk_irred || ns_tmp < 1 || ns_tmp > ns) {
+                            exit("prepare_restart",
+                                 "Invalid k-point or branch index in the 4-phonon restart (.result) file.");
+                        }
                         const auto nks_tmp = (nk_tmp - 1) * ns + ns_tmp - 1;
 
                         for (i = 0; i < multiplicity; ++i) {
@@ -607,7 +615,10 @@ void Conductivity::calc_anharmonic_imagself3()
     }
 
     auto nks_tmp = vks_l.size();
-    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, &nks_thread[mympi->my_rank], 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    // Only root's recvbuf is significant; pass nks_thread directly (it is the
+    // start of the buffer on root and nullptr on other ranks) to avoid forming
+    // &nks_thread[my_rank] from a null pointer on non-root ranks.
+    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, nks_thread, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -727,7 +738,10 @@ void Conductivity::calc_anharmonic_imagself4()
     double *damping4_loc;
 
     auto nks_tmp = vks_l.size();
-    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, &nks_thread[mympi->my_rank], 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    // Only root's recvbuf is significant; pass nks_thread directly (it is the
+    // start of the buffer on root and nullptr on other ranks) to avoid forming
+    // &nks_thread[my_rank] from a null pointer on non-root ranks.
+    MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, nks_thread, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -1211,13 +1225,14 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                                 const auto ktmp = kmesh_in->kpoint_irred_all[ik][ieq].knum;
                                 vv_tmp += velmat[ktmp][is][js][j] * velmat[ktmp][js][is][k];
                             }
+                            const auto domega = omega1 - omega2;
+                            const auto gamma_sum = gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i];
                             auto kcelem_tmp =
                                 2.0 * (omega1 * omega2) / (omega1 + omega2) *
                                 (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
                                  thermodynamics->Cv(omega2, temperature[i]) / omega2) *
-                                2.0 * (gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i]) /
-                                (4.0 * std::pow(omega1 - omega2, 2.0) +
-                                 4.0 * std::pow(gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i], 2.0)) *
+                                2.0 * gamma_sum /
+                                (4.0 * domega * domega + 4.0 * gamma_sum * gamma_sum) *
                                 vv_tmp;
                             kappa_tmp[ib] += kcelem_tmp;
 

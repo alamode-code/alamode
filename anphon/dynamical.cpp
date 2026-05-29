@@ -417,6 +417,9 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
 
     // Perform diagonalization
     zheev_(&JOBZ, &UPLO, &n, amat, &n, eval_out, WORK, &LWORK, RWORK, &INFO);
+    if (INFO != 0) {
+        exit("Dynamical::diagonalize", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
+    }
 
     if (eigenvectors && require_evec) {
         k = 0;
@@ -515,6 +518,9 @@ void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const s
 
     // Perform diagonalization
     zheev_(&JOBZ, &UPLO, &n, amat, &n, eval_out, WORK, &LWORK, RWORK, &INFO);
+    if (INFO != 0) {
+        exit("Dynamical::diagonalize", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
+    }
 
     if (eigenvectors && require_evec) {
         k = 0;
@@ -2107,6 +2113,10 @@ void Dynamical::diagonalize_interpolated_matrix(std::complex<double> **mat_in, d
     }
 
     zheev_(&JOBZ, &UPLO, &ns, amat, &ns, eval_out, WORK, &LWORK, RWORK, &INFO);
+    if (INFO != 0) {
+        exit("Dynamical::diagonalize_interpolated_matrix",
+             "zheev failed to diagonalize the interpolated matrix (INFO != 0).");
+    }
 
     k = 0;
 

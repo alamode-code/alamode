@@ -139,6 +139,7 @@ auto deallocate(T *&arr) -> void
 template <typename T>
 auto deallocate(T **&arr) -> void
 {
+    if (!arr) return;
     delete[] arr[0];
     delete[] arr;
     arr = nullptr;
@@ -147,6 +148,7 @@ auto deallocate(T **&arr) -> void
 template <typename T>
 auto deallocate(T ***&arr) -> void
 {
+    if (!arr) return;
     delete[] arr[0][0];
     delete[] arr[0];
     delete[] arr;
@@ -156,6 +158,7 @@ auto deallocate(T ***&arr) -> void
 template <typename T>
 auto deallocate(T ****&arr) -> void
 {
+    if (!arr) return;
     delete[] arr[0][0][0];
     delete[] arr[0][0];
     delete[] arr[0];

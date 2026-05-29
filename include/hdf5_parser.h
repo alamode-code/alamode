@@ -19,20 +19,26 @@
 #endif
 #include <highfive/H5Easy.hpp>
 
+// Resolve a user-facing cell-type string ("prim"/"super"/...) to the HDF5 group
+// name ("PrimitiveCell"/"SuperCell"). Shared by the get_*_from_h5 helpers below.
+inline auto resolve_h5_cell_name(const std::string &celltype) -> std::string
+{
+    if (celltype == "prim" || celltype == "primitive" || celltype == "PrimitiveCell") {
+        return "PrimitiveCell";
+    }
+    if (celltype == "super" || celltype == "supercell" || celltype == "SuperCell") {
+        return "SuperCell";
+    }
+    std::cout << "resolve_h5_cell_name: Invalid celltype " << celltype << '\n';
+    exit(1);
+}
+
 inline auto get_structures_from_h5(const H5Easy::File &file, const std::string &celltype, Eigen::Matrix3d &lavec,
                                    Eigen::MatrixXd &x_fractional, std::vector<int> &kind_index,
                                    std::vector<std::string> &element_names) -> void
 {
     using namespace H5Easy;
-    std::string search_cell;
-    if (celltype == "prim" || celltype == "primitive" || celltype == "PrimitiveCell") {
-        search_cell = "PrimitiveCell";
-    } else if (celltype == "super" || celltype == "supercell" || celltype == "SuperCell") {
-        search_cell = "SuperCell";
-    } else {
-        std::cout << "get_structure_from_h5: Invalid celltype " << celltype << '\n';
-        exit(1);
-    }
+    const std::string search_cell = resolve_h5_cell_name(celltype);
 
     lavec = load<Eigen::Matrix3d>(file, "/" + search_cell + "/lattice_vector");
     lavec.transposeInPlace();
@@ -44,15 +50,7 @@ inline auto get_structures_from_h5(const H5Easy::File &file, const std::string &
 inline auto get_mapping_table_from_h5(const H5Easy::File &file, const std::string &celltype,
                                       std::vector<std::vector<int>> &mapping_table) -> void
 {
-    std::string search_cell;
-    if (celltype == "prim" || celltype == "primitive" || celltype == "PrimitiveCell") {
-        search_cell = "PrimitiveCell";
-    } else if (celltype == "super" || celltype == "supercell" || celltype == "SuperCell") {
-        search_cell = "SuperCell";
-    } else {
-        std::cout << "get_structure_from_h5: Invalid celltype " << celltype << '\n';
-        exit(1);
-    }
+    const std::string search_cell = resolve_h5_cell_name(celltype);
     mapping_table = H5Easy::load<std::vector<std::vector<int>>>(file, "/" + search_cell + "/mapping_table");
 }
 
@@ -61,15 +59,7 @@ inline auto get_magnetism_from_h5(const H5Easy::File &file, const std::string &c
                                   int &time_reversal_symmetry) -> void
 {
     using namespace H5Easy;
-    std::string search_cell;
-    if (celltype == "prim" || celltype == "primitive" || celltype == "PrimitiveCell") {
-        search_cell = "PrimitiveCell";
-    } else if (celltype == "super" || celltype == "supercell" || celltype == "SuperCell") {
-        search_cell = "SuperCell";
-    } else {
-        std::cout << "get_structure_from_h5: Invalid celltype " << celltype << '\n';
-        exit(1);
-    }
+    const std::string search_cell = resolve_h5_cell_name(celltype);
 
     lspin = load<int>(file, "/" + search_cell + "/spin_polarized");
     if (lspin > 0) {

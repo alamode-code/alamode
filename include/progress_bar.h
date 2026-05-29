@@ -29,7 +29,7 @@ inline auto displayProgressBar(int current, int total, std::ostream& out, long l
                                const std::string prefix = "3ph", const int width = 40) -> void
 {
 
-    float progress = (float)current / total;
+    float progress = (total > 0) ? static_cast<float>(current) / static_cast<float>(total) : 0.0f;
     int pos = width * progress;
 
     // Calculate remaining time in minutes and seconds

@@ -322,9 +322,10 @@ void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], con
     for (iat = 0; iat < nat; ++iat) {
         for (jat = 0; jat < nat; ++jat) {
             for (icell = 0; icell < ncell; ++icell) {
-                dist_tmp = std::sqrt(std::pow(xcrd[0][iat][0] - xcrd[icell][jat][0], 2.0) +
-                                     std::pow(xcrd[0][iat][1] - xcrd[icell][jat][1], 2.0) +
-                                     std::pow(xcrd[0][iat][2] - xcrd[icell][jat][2], 2.0));
+                const auto dx = xcrd[0][iat][0] - xcrd[icell][jat][0];
+                const auto dy = xcrd[0][iat][1] - xcrd[icell][jat][1];
+                const auto dz = xcrd[0][iat][2] - xcrd[icell][jat][2];
+                dist_tmp = std::sqrt(dx * dx + dy * dy + dz * dz);
 
                 distall_ewald[iat][jat].emplace_back(icell, dist_tmp);
             }

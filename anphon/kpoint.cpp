@@ -141,7 +141,12 @@ void Kpoint::kpoint_setups(const std::string mode)
         nk_tmp[2] = 0;
         if (mympi->my_rank == 0) {
             for (auto i = 0; i < 3; ++i) {
-                nk_tmp[i] = std::atoi(kpInp[0].kpelem[i].c_str());
+                const auto nk_in = std::atoi(kpInp[0].kpelem[i].c_str());
+                if (nk_in < 1) {
+                    exit("kpoint_setups",
+                         "Each k-point mesh dimension (KPMODE=2) must be a positive integer.");
+                }
+                nk_tmp[i] = nk_in;
             }
         }
         MPI_Bcast(&nk_tmp[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -254,7 +259,12 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
                 k_start[i][j] = std::atof(it.kpelem[j + 1].c_str());
                 k_end[i][j] = std::atof(it.kpelem[j + 5].c_str());
             }
-            nk_path[i] = std::atoi(it.kpelem[8].c_str());
+            const auto nk_path_in = std::atoi(it.kpelem[8].c_str());
+            if (nk_path_in < 2) {
+                exit("setup_kpoint_band",
+                     "The number of points along a band-structure segment must be an integer >= 2.");
+            }
+            nk_path[i] = nk_path_in;
             n += nk_path[i];
             ++i;
         }
@@ -922,6 +932,11 @@ void Kpoint::gen_kpoints_plane(const std::vector<KpointInp> &kplist, std::vector
     for (int i = 0; i < nplane; ++i) {
         const auto N1 = std::atoi(kplist[i].kpelem[3].c_str());
         const auto N2 = std::atoi(kplist[i].kpelem[7].c_str());
+
+        if (N1 < 2 || N2 < 2) {
+            exit("gen_kpoints_plane",
+                 "The number of grid points along each k-plane axis must be an integer >= 2.");
+        }
 
         n_in[0] = N1;
         n_in[1] = N2;

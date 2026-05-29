@@ -759,6 +759,10 @@ void PhononVelocity::diagonalize_hermite_mat(const int n, std::complex<double> *
     }
 
     zheev_(&JOBZ, &UPLO, &n_, mat_1D, &n_, eval_out, WORK, &LWORK, RWORK, &INFO);
+    if (INFO != 0) {
+        exit("PhononVelocity::diagonalize_hermite_mat",
+             "zheev failed to diagonalize the Hermitian matrix (INFO != 0).");
+    }
 
     deallocate(RWORK);
     deallocate(WORK);
