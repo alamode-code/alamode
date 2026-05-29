@@ -78,8 +78,14 @@ jobs:
           ASAN_OPTIONS: detect_leaks=0
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=0
         run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq gdb || true
           echo "=== output files present ==="; ls -la
-          echo "=== anphon phband.in (phonons) ==="
-          ../../_build/anphon/anphon phband.in 2>&1 | tail -80 || true
-          echo "=== anphon RTA.in (RTA) ==="
-          ../../_build/anphon/anphon RTA.in 2>&1 | tail -80 || true
+          # The crash is a hard trap (SIGILL) with no message, so run under gdb to
+          # capture the backtrace (file:line) of the faulting frame. -g is already on
+          # (Debug build). Works whether the trap is a libstdc++ hardened-assert
+          # (_GLIBCXX_ASSERTIONS) or an ASan/UBSan abort.
+          for inp in phband.in RTA.in; do
+            echo "=================== anphon $inp ==================="
+            gdb -batch -nx -ex run -ex bt -ex quit \
+                --args ../../_build/anphon/anphon "$inp" 2>&1 | tail -50 || true
+          done
