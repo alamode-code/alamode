@@ -97,6 +97,10 @@ private:
 
     void prepare_restart(const int mode);
 
+    void load_restart_gamma_blocks(std::fstream &fs_result, const std::string &file_result,
+                                   const unsigned int nk_irred, double **damping,
+                                   std::vector<int> &vks_done_out, const char *label);
+
     void check_consistency_restart(std::fstream &fs_result, const std::string &file_result_in,
                                    const unsigned int nk_in[3], const unsigned int nk_irred_in, const Cell &primcell,
                                    const bool classical_in, const int ismear_in, const double epsilon_in,

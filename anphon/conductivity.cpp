@@ -9,8 +9,12 @@
 */
 
 #include "conductivity.h"
+#include <cerrno>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <unistd.h>
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
@@ -330,12 +334,7 @@ void Conductivity::prepare_restart(const int mode)
 {
     // prepare restart for either 3ph or 4ph
     int i;
-    std::string line_tmp;
-    unsigned int nk_tmp, ns_tmp;
-    unsigned int multiplicity;
     int nks_done = 0, *arr_done;
-
-    double vel_dummy[3];
 
     if (mode == 1) {
         // 3ph
@@ -358,37 +357,20 @@ void Conductivity::prepare_restart(const int mode)
                 fs_result3 << "##END Phonon Frequency\n\n";
                 fs_result3 << "##Phonon Relaxation Time\n";
             } else {
-                fs_result3.clear();
-                fs_result3.seekg(0, std::ios::beg);
-                while (fs_result3 >> line_tmp) {
-
-                    if (line_tmp == "#GAMMA_EACH") {
-
-                        fs_result3 >> nk_tmp >> ns_tmp;
-                        fs_result3 >> multiplicity;
-
-                        if (nk_tmp < 1 || nk_tmp > dos->kmesh_dos->nk_irred || ns_tmp < 1 || ns_tmp > ns) {
-                            exit("prepare_restart",
-                                 "Invalid k-point or branch index in the 3-phonon restart (.result) file.");
-                        }
-                        const auto nks_tmp = (nk_tmp - 1) * ns + ns_tmp - 1;
-
-                        for (i = 0; i < multiplicity; ++i) {
-                            fs_result3 >> vel_dummy[0] >> vel_dummy[1] >> vel_dummy[2];
-                        }
-
-                        for (i = 0; i < ntemp; ++i) {
-                            fs_result3 >> damping3[nks_tmp][i];
-                            damping3[nks_tmp][i] *= time_ry / Hz_to_kayser;
-                        }
-                        vks_done.push_back(nks_tmp);
-                    }
-                }
+                load_restart_gamma_blocks(fs_result3,
+                                          file_result3,
+                                          dos->kmesh_dos->nk_irred,
+                                          damping3,
+                                          vks_done,
+                                          "3-phonon");
             }
 
             fs_result3.clear();
             fs_result3.close();
             fs_result3.open(file_result3.c_str(), std::ios::app | std::ios::out);
+            if (!fs_result3) {
+                exit("prepare_restart", "Could not open 3-phonon result file for append.");
+            }
         }
 
         if (mympi->my_rank == 0) {
@@ -444,36 +426,19 @@ void Conductivity::prepare_restart(const int mode)
                 fs_result4 << "##END Phonon Frequency\n\n";
                 fs_result4 << "##Phonon Relaxation Time\n";
             } else {
-                fs_result4.clear();
-                fs_result4.seekg(0, std::ios::beg);
-                while (fs_result4 >> line_tmp) {
-
-                    if (line_tmp == "#GAMMA_EACH") {
-
-                        fs_result4 >> nk_tmp >> ns_tmp;
-                        fs_result4 >> multiplicity;
-
-                        if (nk_tmp < 1 || nk_tmp > kmesh_4ph->nk_irred || ns_tmp < 1 || ns_tmp > ns) {
-                            exit("prepare_restart",
-                                 "Invalid k-point or branch index in the 4-phonon restart (.result) file.");
-                        }
-                        const auto nks_tmp = (nk_tmp - 1) * ns + ns_tmp - 1;
-
-                        for (i = 0; i < multiplicity; ++i) {
-                            fs_result4 >> vel_dummy[0] >> vel_dummy[1] >> vel_dummy[2];
-                        }
-
-                        for (i = 0; i < ntemp; ++i) {
-                            fs_result4 >> damping4[nks_tmp][i];
-                            damping4[nks_tmp][i] *= time_ry / Hz_to_kayser;
-                        }
-                        vks_done4.push_back(nks_tmp);
-                    }
-                }
+                load_restart_gamma_blocks(fs_result4,
+                                          file_result4,
+                                          kmesh_4ph->nk_irred,
+                                          damping4,
+                                          vks_done4,
+                                          "4-phonon");
             }
             fs_result4.clear();
             fs_result4.close();
             fs_result4.open(file_result4.c_str(), std::ios::app | std::ios::out);
+            if (!fs_result4) {
+                exit("prepare_restart", "Could not open 4-phonon result file for append.");
+            }
         }
 
         if (mympi->my_rank == 0) {
@@ -510,6 +475,93 @@ void Conductivity::prepare_restart(const int mode)
         vks_done4.clear();
     } else {
         exit("prepare_restart", "this could not happen");
+    }
+}
+
+
+void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std::string &file_result,
+                                             const unsigned int nk_irred, double **damping,
+                                             std::vector<int> &vks_done_out, const char *label)
+{
+    std::string line_tmp;
+    unsigned int nk_tmp, ns_tmp;
+    unsigned int multiplicity;
+    double vel_dummy[3];
+    bool truncate_tail = false;
+    std::streampos truncate_pos = std::streampos(0);
+
+    fs_result.clear();
+    fs_result.seekg(0, std::ios::beg);
+
+    while (true) {
+        const auto block_start = fs_result.tellg();
+        if (!(fs_result >> line_tmp)) break;
+        if (line_tmp != "#GAMMA_EACH") continue;
+
+        truncate_pos = block_start;
+
+        if (!(fs_result >> nk_tmp >> ns_tmp >> multiplicity)) {
+            truncate_tail = true;
+            break;
+        }
+
+        if (nk_tmp < 1 || nk_tmp > nk_irred || ns_tmp < 1 || ns_tmp > ns) {
+            const auto message = std::string("Invalid k-point or branch index in the ") + label
+                                 + " restart (.result) file.";
+            exit("prepare_restart", message.c_str());
+        }
+
+        const auto nks_tmp = (nk_tmp - 1) * ns + ns_tmp - 1;
+
+        for (unsigned int i = 0; i < multiplicity; ++i) {
+            if (!(fs_result >> vel_dummy[0] >> vel_dummy[1] >> vel_dummy[2])) {
+                truncate_tail = true;
+                break;
+            }
+        }
+        if (truncate_tail) break;
+
+        std::vector<double> damping_tmp(ntemp);
+        for (unsigned int i = 0; i < ntemp; ++i) {
+            if (!(fs_result >> damping_tmp[i])) {
+                truncate_tail = true;
+                break;
+            }
+            damping_tmp[i] *= time_ry / Hz_to_kayser;
+        }
+        if (truncate_tail) break;
+
+        std::string end_tag, end_name;
+        if (!(fs_result >> end_tag >> end_name) || end_tag != "#END" || end_name != "GAMMA_EACH") {
+            truncate_tail = true;
+            break;
+        }
+
+        for (unsigned int i = 0; i < ntemp; ++i) {
+            damping[nks_tmp][i] = damping_tmp[i];
+        }
+        vks_done_out.push_back(nks_tmp);
+    }
+
+    if (truncate_tail) {
+        const auto message = std::string("Ignoring an incomplete ") + label
+                             + " #GAMMA_EACH block at the end of " + file_result + ".";
+        warn("prepare_restart", message.c_str());
+
+        fs_result.clear();
+        fs_result.close();
+
+        const auto truncate_offset = static_cast<off_t>(static_cast<std::streamoff>(truncate_pos));
+        if (truncate(file_result.c_str(), truncate_offset) != 0) {
+            const auto error_message = std::string("Could not truncate incomplete restart block in ")
+                                       + file_result + ": " + std::strerror(errno);
+            exit("prepare_restart", error_message.c_str());
+        }
+
+        fs_result.open(file_result.c_str(), std::ios::in | std::ios::out);
+        if (!fs_result) {
+            exit("prepare_restart", "Could not reopen restart file after truncating incomplete block.");
+        }
     }
 }
 
@@ -859,56 +911,68 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
 
     if (mode == 1) {
         // damping 3
+        std::ostringstream result_block;
         for (unsigned int j = 0; j < np; ++j) {
 
             const auto iks_g = ik * np + j + nshift;
 
             if (iks_g >= dos->kmesh_dos->nk_irred * ns) break;
 
-            fs_result3 << "#GAMMA_EACH\n";
-            fs_result3 << iks_g / ns + 1 << " " << iks_g % ns + 1 << '\n';
+            result_block << "#GAMMA_EACH\n";
+            result_block << iks_g / ns + 1 << " " << iks_g % ns + 1 << '\n';
 
             const auto nk_equiv = dos->kmesh_dos->kpoint_irred_all[iks_g / ns].size();
 
-            fs_result3 << nk_equiv << '\n';
+            result_block << nk_equiv << '\n';
             for (k = 0; k < nk_equiv; ++k) {
                 const auto ktmp = dos->kmesh_dos->kpoint_irred_all[iks_g / ns][k].knum;
-                fs_result3 << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
-                fs_result3 << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
-                fs_result3 << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
             }
 
             for (k = 0; k < ntemp; ++k) {
-                fs_result3 << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
+                result_block << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
             }
-            fs_result3 << "#END GAMMA_EACH\n";
+            result_block << "#END GAMMA_EACH\n";
+        }
+        fs_result3 << result_block.str();
+        fs_result3.flush();
+        if (!fs_result3) {
+            exit("write_result_gamma", "Could not write 3-phonon restart block.");
         }
 
     } else if (mode == -1) {
         // damping 4
+        std::ostringstream result_block;
         for (unsigned int j = 0; j < np; ++j) {
 
             const auto iks_g = ik * np + j + nshift;
 
             if (iks_g >= kmesh_4ph->nk_irred * ns) break;
 
-            fs_result4 << "#GAMMA_EACH\n";
-            fs_result4 << iks_g / ns + 1 << " " << iks_g % ns + 1 << '\n';
+            result_block << "#GAMMA_EACH\n";
+            result_block << iks_g / ns + 1 << " " << iks_g % ns + 1 << '\n';
 
             const auto nk_equiv = kmesh_4ph->kpoint_irred_all[iks_g / ns].size();
 
-            fs_result4 << nk_equiv << '\n';
+            result_block << nk_equiv << '\n';
             for (k = 0; k < nk_equiv; ++k) {
                 const auto ktmp = kmesh_4ph->kpoint_irred_all[iks_g / ns][k].knum;
-                fs_result4 << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
-                fs_result4 << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
-                fs_result4 << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
+                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
             }
 
             for (k = 0; k < ntemp; ++k) {
-                fs_result4 << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
+                result_block << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
             }
-            fs_result4 << "#END GAMMA_EACH\n";
+            result_block << "#END GAMMA_EACH\n";
+        }
+        fs_result4 << result_block.str();
+        fs_result4.flush();
+        if (!fs_result4) {
+            exit("write_result_gamma", "Could not write 4-phonon restart block.");
         }
     }
 }
