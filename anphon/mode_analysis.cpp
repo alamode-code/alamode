@@ -1409,7 +1409,7 @@ void ModeAnalysis::print_momentum_resolved_final_state(const unsigned int NT, do
 
             double diff = 0.0;
             for (j = 0; j < 3; ++j) {
-                diff += std::pow(std::fmod(xk_sym[j] - xk1[j], 1.0), 2);
+                diff += pow2(std::fmod(xk_sym[j] - xk1[j], 1.0));
             }
             if (std::sqrt(diff) < eps8) {
                 small_group_k.push_back(isym);
@@ -1754,7 +1754,7 @@ void ModeAnalysis::calc_V3norm2(const unsigned int ik_in, const unsigned int snu
     unsigned int arr[3];
     const auto ns = dynamical->neval;
     const size_t ns2 = ns * ns;
-    const auto factor = std::pow(0.5, 3) * std::pow(Hz_to_kayser / time_ry, 2);
+    const auto factor = std::pow(0.5, 3) * pow2(Hz_to_kayser / time_ry);
 
     const auto knum = dos->kmesh_dos->kpoint_irred_all[ik_in][0].knum;
     const auto knum_minus = dos->kmesh_dos->kindex_minus_xk[knum];
@@ -1814,7 +1814,7 @@ void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum
     const size_t ns2 = ns * ns;
     const size_t ns3 = ns2 * ns;
 
-    const double factor = std::pow(0.5, 4) * std::pow(Hz_to_kayser / time_ry, 2);
+    const double factor = std::pow(0.5, 4) * pow2(Hz_to_kayser / time_ry);
     const auto nquartet = quartet.size();
 
     double **ret_loc = nullptr;
@@ -2124,7 +2124,7 @@ void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, c
     const size_t ns2 = ns * ns;
     const size_t ns3 = ns2 * ns;
 
-    double factor = std::pow(amu_ry, 2.0);
+    double factor = pow2(amu_ry);
     const auto nquartet = quartet.size();
 
     std::complex<double> **ret_loc = nullptr;

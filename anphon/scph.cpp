@@ -755,9 +755,9 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                 for (auto is = 0; is < ns; ++is) {
                     if (eval_gam[0][is] < 0.0) {
-                        eval_gam[0][is] = -std::pow(eval_gam[0][is], 2.0);
+                        eval_gam[0][is] = -pow2(eval_gam[0][is]);
                     } else {
-                        eval_gam[0][is] = std::pow(eval_gam[0][is], 2.0);
+                        eval_gam[0][is] = pow2(eval_gam[0][is]);
                     }
                 }
                 dielec->compute_dielectric_function(nomega_dielec,
@@ -2004,7 +2004,7 @@ bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::Matr
     for (unsigned int ik = 0; ik < nk_interpolate; ++ik) {
         const auto knum = kmap_coarse_to_dense[ik];
         for (unsigned int is = 0; is < ns; ++is) {
-            diff += std::pow(omega_now(knum, is) - omega_old(knum, is), 2.0);
+            diff += pow2(omega_now(knum, is) - omega_old(knum, is));
         }
     }
     diff /= static_cast<double>(nk_interpolate * ns);
@@ -2209,10 +2209,10 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
                 if (std::abs(eval_interpolate(ik, is)) <= eps10) {
                     omega2_out[ik][is] = 0.0;
                 } else {
-                    omega2_out[ik][is] = -std::pow(eval_interpolate(ik, is), 2.0);
+                    omega2_out[ik][is] = -pow2(eval_interpolate(ik, is));
                 }
             } else {
-                omega2_out[ik][is] = std::pow(eval_interpolate(ik, is), 2.0);
+                omega2_out[ik][is] = pow2(eval_interpolate(ik, is));
             }
             for (js = 0; js < ns; ++js) {
                 evec_anharm_scph[ik][is][js] = evec_new[ik](is, js);
@@ -2452,10 +2452,10 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
                 if (std::abs(eval_interpolate(ik, is)) <= eps10) {
                     omega2_out[ik][is] = 0.0;
                 } else {
-                    omega2_out[ik][is] = -std::pow(eval_interpolate(ik, is), 2.0);
+                    omega2_out[ik][is] = -pow2(eval_interpolate(ik, is));
                 }
             } else {
-                omega2_out[ik][is] = std::pow(eval_interpolate(ik, is), 2.0);
+                omega2_out[ik][is] = pow2(eval_interpolate(ik, is));
             }
             for (js = 0; js < ns; ++js) {
                 evec_anharm_scph[ik][is][js] = evec_new[ik](is, js);

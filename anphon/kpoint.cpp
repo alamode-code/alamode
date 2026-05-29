@@ -282,7 +282,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
             }
 
             rotvec(direc_tmp, direc_tmp, rlavec_p, 'T');
-            auto norm = std::pow(direc_tmp[0], 2) + std::pow(direc_tmp[1], 2) + std::pow(direc_tmp[2], 2);
+            auto norm = pow2(direc_tmp[0]) + pow2(direc_tmp[1]) + pow2(direc_tmp[2]);
             norm = std::sqrt(norm);
 
             if (norm > eps) {
@@ -1140,7 +1140,7 @@ void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int
             xk_diff[i] = std::fmod(xk_sym[i] - xk_orig[i], 1.0);
         }
 
-        if (std::sqrt(std::pow(xk_diff[0], 2) + std::pow(xk_diff[1], 2) + std::pow(xk_diff[2], 2)) < eps10) {
+        if (std::sqrt(pow2(xk_diff[0]) + pow2(xk_diff[1]) + pow2(xk_diff[2])) < eps10) {
             sym_list.push_back(isym);
 
             for (i = 0; i < 3; ++i) {

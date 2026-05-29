@@ -242,7 +242,7 @@ double Integration::do_tetrahedron(const double *energy, const double *f, const 
         const auto f4 = tetra_data[3].f;
 
         if (e3 <= e_ref && e_ref < e4) {
-            g = 3.0 * std::pow(e4 - e_ref, 2) / ((e4 - e1) * (e4 - e2) * (e4 - e3));
+            g = 3.0 * pow2(e4 - e_ref) / ((e4 - e1) * (e4 - e2) * (e4 - e3));
 
             I1 = frac3 * fij(e1, e4, e_ref);
             I2 = frac3 * fij(e2, e4, e_ref);
@@ -254,20 +254,20 @@ double Integration::do_tetrahedron(const double *energy, const double *f, const 
         } else if (e2 <= e_ref && e_ref < e3) {
             g = 3.0 *
                 (e2 - e1 + 2.0 * (e_ref - e2) -
-                 (e4 + e3 - e2 - e1) * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
+                 (e4 + e3 - e2 - e1) * pow2(e_ref - e2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = frac3 * fij(e1, e4, e_ref) * g +
                  fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 - e1);
-            I2 = frac3 * fij(e2, e3, e_ref) * g + std::pow(fij(e2, e4, e_ref), 2) * fij(e3, e2, e_ref) / (e4 - e1);
-            I3 = frac3 * fij(e3, e2, e_ref) * g + std::pow(fij(e3, e1, e_ref), 2) * fij(e2, e3, e_ref) / (e4 - e1);
+            I2 = frac3 * fij(e2, e3, e_ref) * g + pow2(fij(e2, e4, e_ref)) * fij(e3, e2, e_ref) / (e4 - e1);
+            I3 = frac3 * fij(e3, e2, e_ref) * g + pow2(fij(e3, e1, e_ref)) * fij(e2, e3, e_ref) / (e4 - e1);
             I4 = frac3 * fij(e4, e1, e_ref) * g +
                  fij(e4, e2, e_ref) * fij(e2, e4, e_ref) * fij(e3, e2, e_ref) / (e4 - e1);
 
             ret += I1 * f1 + I2 * f2 + I3 * f3 + I4 * f4;
 
         } else if (e1 <= e_ref && e_ref < e2) {
-            g = 3.0 * std::pow(e_ref - e1, 2) / ((e2 - e1) * (e3 - e1) * (e4 - e1));
+            g = 3.0 * pow2(e_ref - e1) / ((e2 - e1) * (e3 - e1) * (e4 - e1));
 
             I1 = frac3 * (fij(e1, e2, e_ref) + fij(e1, e3, e_ref) + fij(e1, e4, e_ref));
             I2 = frac3 * fij(e2, e1, e_ref);
@@ -318,7 +318,7 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, con
         auto I4 = 0.0;
 
         if (e3 <= e_ref && e_ref < e4) {
-            g = std::pow(e4 - e_ref, 2) / ((e4 - e1) * (e4 - e2) * (e4 - e3));
+            g = pow2(e4 - e_ref) / ((e4 - e1) * (e4 - e2) * (e4 - e3));
 
             I1 = g * fij(e1, e4, e_ref);
             I2 = g * fij(e2, e4, e_ref);
@@ -327,16 +327,16 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, con
 
         } else if (e2 <= e_ref && e_ref < e3) {
             g = (e2 - e1 + 2.0 * (e_ref - e2) -
-                 (e4 + e3 - e2 - e1) * std::pow(e_ref - e2, 2) / ((e3 - e2) * (e4 - e2))) /
+                 (e4 + e3 - e2 - e1) * pow2(e_ref - e2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = g * fij(e1, e4, e_ref) + fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 - e1);
-            I2 = g * fij(e2, e3, e_ref) + std::pow(fij(e2, e4, e_ref), 2) * fij(e3, e2, e_ref) / (e4 - e1);
-            I3 = g * fij(e3, e2, e_ref) + std::pow(fij(e3, e1, e_ref), 2) * fij(e2, e3, e_ref) / (e4 - e1);
+            I2 = g * fij(e2, e3, e_ref) + pow2(fij(e2, e4, e_ref)) * fij(e3, e2, e_ref) / (e4 - e1);
+            I3 = g * fij(e3, e2, e_ref) + pow2(fij(e3, e1, e_ref)) * fij(e2, e3, e_ref) / (e4 - e1);
             I4 = g * fij(e4, e1, e_ref) + fij(e4, e2, e_ref) * fij(e2, e4, e_ref) * fij(e3, e2, e_ref) / (e4 - e1);
 
         } else if (e1 <= e_ref && e_ref < e2) {
-            g = std::pow(e_ref - e1, 2) / ((e2 - e1) * (e3 - e1) * (e4 - e1));
+            g = pow2(e_ref - e1) / ((e2 - e1) * (e3 - e1) * (e4 - e1));
 
             I1 = g * (fij(e1, e2, e_ref) + fij(e1, e3, e_ref) + fij(e1, e4, e_ref));
             I2 = g * fij(e2, e1, e_ref);
@@ -428,7 +428,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int 
             tmp += vel[k1][s1][a] * u[a];
         }
 
-        parts += std::pow(tmp, 2);
+        parts += pow2(tmp);
     }
 
     sigma_out = std::max(2.0e-5, adaptive_factor * std::sqrt(parts / 12)); // for (w1 - w2)
@@ -454,7 +454,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int 
         }
 
         for (i = 0; i < 2; ++i)
-            parts[i] += std::pow(tmp[i], 2);
+            parts[i] += pow2(tmp[i]);
     }
 
     sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[0] / 12)); // for (w1 - w2 - w3)
@@ -485,7 +485,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k2, const unsigned int 
         }
 
         for (i = 0; i < 4; ++i)
-            parts[i] += std::pow(tmp[i], 2);
+            parts[i] += pow2(tmp[i]);
     }
 
     // for delta(w1 - w2 - w3 - w4)

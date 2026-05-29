@@ -16,6 +16,15 @@
 #include <iostream>
 #include <vector>
 
+// Square of a scalar: a single multiplication instead of a general power
+// call (faster than raising to the power of two), with the argument
+// evaluated exactly once. Works for double and std::complex<double>.
+template <typename T>
+inline auto pow2(const T x) -> T
+{
+    return x * x;
+}
+
 template <typename T>
 inline auto matmul3(T ret[3][3], const T amat[3][3], const T bmat[3][3]) -> void
 {
@@ -249,7 +258,7 @@ inline auto sort_tail(const int n, int *arr) -> void
 
 inline auto distance(double *x1, double *x2) -> double
 {
-    auto dist = std::pow(x1[0] - x2[0], 2) + std::pow(x1[1] - x2[1], 2) + std::pow(x1[2] - x2[2], 2);
+    auto dist = pow2(x1[0] - x2[0]) + pow2(x1[1] - x2[1]) + pow2(x1[2] - x2[2]);
     dist = std::sqrt(dist);
 
     return dist;

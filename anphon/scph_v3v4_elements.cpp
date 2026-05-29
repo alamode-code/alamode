@@ -49,7 +49,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(std::complex<double> ***
 
     const auto nk_scph = kmesh_dense_in->nk;
     const auto ngroup_v3 = anharmonic_core->get_ngroup_fcs(3);
-    const auto factor = std::pow(0.5, 2) / static_cast<double>(nk_scph);
+    const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
     std::complex<double> *v3_array_at_kpair;
     std::complex<double> ***v3_mpi;
@@ -282,7 +282,7 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
     long int ii;
 
     const auto nk_scph = kmesh_dense_in->nk;
-    const auto factor = std::pow(0.5, 2) / static_cast<double>(nk_scph);
+    const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     static auto complex_zero = std::complex<double>(0.0, 0.0);
     std::complex<double> *v3_array_at_kpair;
     std::complex<double> ***v3_mpi;
@@ -522,7 +522,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
 
     const auto nk_scph = kmesh_dense_in->nk;
     const auto ngroup_v4 = anharmonic_core->get_ngroup_fcs(4);
-    const auto factor = std::pow(0.5, 2) / static_cast<double>(nk_scph);
+    const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
     std::complex<double> *v4_array_at_kpair;
     std::complex<double> ***v4_mpi;
@@ -829,7 +829,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
 
     const auto nk_scph = kmesh_dense_in->nk;
     const auto ngroup_v4 = anharmonic_core->get_ngroup_fcs(4);
-    auto factor = std::pow(0.5, 2) / static_cast<double>(nk_scph);
+    auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
     std::complex<double> *v4_array_at_kpair;
     std::complex<double> ***v4_mpi;

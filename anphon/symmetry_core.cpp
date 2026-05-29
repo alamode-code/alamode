@@ -247,7 +247,7 @@ void Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa, std::vector<Rota
                                         double res = 0.0;
                                         for (i = 0; i < 3; ++i) {
                                             for (j = 0; j < 3; ++j) {
-                                                res += std::pow(metric_tensor[i][j] - metric_tensor_rot[i][j], 2.0);
+                                                res += pow2(metric_tensor[i][j] - metric_tensor_rot[i][j]);
                                             }
                                         }
 
@@ -431,11 +431,11 @@ void Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
                         }
                     }
 
-                    mag_sym1 = (std::pow(mag[0] - mag_rot[0], 2.0) + std::pow(mag[1] - mag_rot[1], 2.0) +
-                                std::pow(mag[2] - mag_rot[2], 2.0)) < eps6;
+                    mag_sym1 = (pow2(mag[0] - mag_rot[0]) + pow2(mag[1] - mag_rot[1]) +
+                                pow2(mag[2] - mag_rot[2])) < eps6;
 
-                    mag_sym2 = (std::pow(mag[0] + mag_rot[0], 2.0) + std::pow(mag[1] + mag_rot[1], 2.0) +
-                                std::pow(mag[2] + mag_rot[2], 2.0)) < eps6;
+                    mag_sym2 = (pow2(mag[0] + mag_rot[0]) + pow2(mag[1] + mag_rot[1]) +
+                                pow2(mag[2] + mag_rot[2])) < eps6;
 
                     if (!mag_sym1 && !mag_sym2) {
                         isok = false;

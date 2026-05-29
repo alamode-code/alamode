@@ -476,7 +476,7 @@ void Relaxation::update_cell_coordinate(
 
 
     constexpr double Ry_to_kayser_tmp = Hz_to_kayser / time_ry;
-    const double add_hess_diag_omega2 = std::pow(add_hess_diag / Ry_to_kayser_tmp, 2);
+    const double add_hess_diag_omega2 = pow2(add_hess_diag / Ry_to_kayser_tmp);
 
     if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
         delta_vec.assign(ns - 3, 0.0);

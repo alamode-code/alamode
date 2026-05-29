@@ -659,7 +659,7 @@ void Ewald::calc_reciprocal_space_sum_ewald_fcs(const int iat, const int jat, do
                 x_tmp = lavec * (x_frac_super.col(iat) - x_frac_super.col(kat));
 
                 common_tmp =
-                    factor * std::exp(-0.25 * gnorm2 / std::pow(lambda_fcs, 2.0)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
+                    factor * std::exp(-0.25 * gnorm2 / pow2(lambda_fcs)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
 
                 for (icrd = 0; icrd < 3; ++icrd) {
                     for (jcrd = 0; jcrd < 3; ++jcrd) {
@@ -689,7 +689,7 @@ void Ewald::calc_reciprocal_space_sum_ewald_fcs(const int iat, const int jat, do
         gnorm2 = g_tmp.dot(epsilon_gvector);
         x_tmp = lavec * (x_frac_super.col(iat) - x_frac_super.col(jat));
         common_tmp =
-            2.0 * factor * std::exp(-0.25 * gnorm2 / std::pow(lambda_fcs, 2.0)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
+            2.0 * factor * std::exp(-0.25 * gnorm2 / pow2(lambda_fcs)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
 
         for (icrd = 0; icrd < 3; ++icrd) {
             for (jcrd = 0; jcrd < 3; ++jcrd) {
@@ -943,7 +943,7 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat, const int jat, const 
                         tmp += xk_in[acrd] * xk_in[bcrd] * Born_charge[iat][acrd][icrd] * Born_charge[jat][bcrd][jcrd];
                     }
                 }
-                mat_out[icrd][jcrd] += 2.0 * tmp / kd * exp_phase * std::exp(-0.25 * kd / std::pow(lambda_dymat, 2.0));
+                mat_out[icrd][jcrd] += 2.0 * tmp / kd * exp_phase * std::exp(-0.25 * kd / pow2(lambda_dymat));
             }
         }
     } else {
@@ -984,7 +984,7 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat, const int jat, const 
             g_tmp = epsilon_mat * g;
             const auto gd = g.dot(g_tmp);
 
-            common = std::exp(-0.25 * gd / std::pow(lambda_dymat, 2.0)) / gd;
+            common = std::exp(-0.25 * gd / pow2(lambda_dymat)) / gd;
 
             for (int kat = 0; kat < system->get_primcell().number_of_atoms; ++kat) {
                 int atm_s3 = system->get_map_p2s(0)[kat][0];
@@ -1020,7 +1020,7 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat, const int jat, const 
         const double gkd = gk.dot(gk_tmp);
         const double phase_g2 = gk.dot(vec);
 
-        common = 2.0 * std::exp(-0.25 * gkd / std::pow(lambda_dymat, 2.0)) / gkd;
+        common = 2.0 * std::exp(-0.25 * gkd / pow2(lambda_dymat)) / gkd;
         exp_phase = std::exp(im * phase_g2);
 
         for (icrd = 0; icrd < 3; ++icrd) {
@@ -1097,7 +1097,7 @@ void Ewald::calc_anisotropic_hmat(const double lambda_in, const double *x, Eigen
         exit("ewald->calc_anisotropic_hmat", "components of hmat diverge.");
     }
     double const yd_inv = 1.0 / yd;
-    double const yd2 = std::pow(yd, 2.0);
+    double const yd2 = pow2(yd);
     double const yd2_inv = yd_inv * yd_inv;
     const double erfc_y = boost::math::erfc(yd);
     const double exp_y2 = std::exp(-yd2);

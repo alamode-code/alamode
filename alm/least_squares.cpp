@@ -283,7 +283,7 @@ auto least_squares_svd(const size_t N, const size_t M, double *amat, const doubl
     // Copy bvec into fsum2 and compute its norm-squared
     for (size_t i = 0; i < M; ++i) {
         fsum2[i] = bvec[i];
-        f_square += std::pow(bvec[i], 2);
+        f_square += pow2(bvec[i]);
     }
     // Zero out any remaining entries of fsum2 if M < LMAX
     for (size_t i = M; i < static_cast<size_t>(LMAX); ++i) {
@@ -325,7 +325,7 @@ auto least_squares_svd(const size_t N, const size_t M, double *amat, const doubl
         // Compute residual sum of squares: sum of squares of entries fsum2[N..M-1]
         double f_residual = 0.0;
         for (int i = static_cast<int>(N); i < static_cast<int>(M); ++i) {
-            f_residual += std::pow(fsum2[i], 2);
+            f_residual += pow2(fsum2[i]);
         }
         std::cout << '\n' << "  Residual sum of squares for the solution: " << std::sqrt(f_residual) << '\n';
         std::cout << "  Fitting error (%) : " << std::sqrt(f_residual / f_square) * 100.0 << '\n';

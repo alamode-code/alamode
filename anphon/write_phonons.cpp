@@ -700,8 +700,8 @@ void Writes::writePhononVelAll() const
 #endif
     for (ik = 0; ik < nk; ++ik) {
         for (is = 0; is < ns; ++is) {
-            phvel[ik][is] = std::sqrt(std::pow(phvel_xyz[ik][is][0], 2) + std::pow(phvel_xyz[ik][is][1], 2) +
-                                      std::pow(phvel_xyz[ik][is][2], 2));
+            phvel[ik][is] = std::sqrt(pow2(phvel_xyz[ik][is][0]) + pow2(phvel_xyz[ik][is][1]) +
+                                      pow2(phvel_xyz[ik][is][2]));
         }
     }
 
@@ -1032,7 +1032,7 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
 
             for (j = 0; j < 3 * natmin; ++j) {
                 auto evec_tmp = evec_in[ik][imode][j];
-                norm += std::pow(evec_tmp.real(), 2) + std::pow(evec_tmp.imag(), 2);
+                norm += pow2(evec_tmp.real()) + pow2(evec_tmp.imag());
             }
 
             norm *= force_factor / static_cast<double>(natmin);
@@ -1977,7 +1977,7 @@ void Writes::writeMSD() const
 
         for (unsigned int j = 0; j < ns; ++j) {
             const auto d2_tmp = thermodynamics->disp2_avg(T, j, j, nk, ns, xk, eval, evec);
-            ofs_rmsd << std::setw(15) << d2_tmp * std::pow(Bohr_in_Angstrom, 2.0);
+            ofs_rmsd << std::setw(15) << d2_tmp * pow2(Bohr_in_Angstrom);
         }
         ofs_rmsd << '\n';
     }
@@ -2021,7 +2021,7 @@ void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) cons
 
         ofs_msd << std::setw(15) << temp;
         for (unsigned int i = 0; i < ns; ++i) {
-            ofs_msd << std::setw(15) << msd_in[iT][i] * std::pow(Bohr_in_Angstrom, 2.0);
+            ofs_msd << std::setw(15) << msd_in[iT][i] * pow2(Bohr_in_Angstrom);
         }
         ofs_msd << '\n';
     }
@@ -2095,7 +2095,7 @@ void Writes::writeDispCorrelation() const
                 ofs << std::setw(4) << shift_ucorr[0];
                 ofs << std::setw(4) << shift_ucorr[1];
                 ofs << std::setw(4) << shift_ucorr[2];
-                ofs << std::setw(15) << ucorr * std::pow(Bohr_in_Angstrom, 2.0);
+                ofs << std::setw(15) << ucorr * pow2(Bohr_in_Angstrom);
                 ofs << '\n';
             }
         }
@@ -2164,7 +2164,7 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
                 ofs << std::setw(4) << writes->shift_ucorr[0];
                 ofs << std::setw(4) << writes->shift_ucorr[1];
                 ofs << std::setw(4) << writes->shift_ucorr[2];
-                ofs << std::setw(15) << ucorr_in[i][j][k] * std::pow(Bohr_in_Angstrom, 2.0);
+                ofs << std::setw(15) << ucorr_in[i][j][k] * pow2(Bohr_in_Angstrom);
                 ofs << '\n';
             }
         }
@@ -2522,7 +2522,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
         for (j = 0; j < natmin; ++j) {
             auto disp_mag_tmp = 0.0;
             for (k = 0; k < 3; ++k)
-                disp_mag_tmp += std::pow(disp_mag[iband][3 * j + k], 2);
+                disp_mag_tmp += pow2(disp_mag[iband][3 * j + k]);
             disp_mag_tmp = std::sqrt(disp_mag_tmp);
             max_disp_mag = std::max(max_disp_mag, disp_mag_tmp);
         }

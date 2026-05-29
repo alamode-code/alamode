@@ -1887,7 +1887,7 @@ auto Optimize::fit_algebraic_constraints(const size_t N, const size_t M, double 
     if (nrank == N && verbosity > 0) {
         auto f_residual = 0.0;
         for (i = N; i < M; ++i) {
-            f_residual += std::pow(fsum2[i], 2);
+            f_residual += pow2(fsum2[i]);
         }
         std::cout << '\n';
         std::cout << "  Residual sum of squares for the solution: " << sqrt(f_residual) << '\n';

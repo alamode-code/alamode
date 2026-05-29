@@ -167,7 +167,7 @@ void Gruneisen::calc_gruneisen()
                 if (std::abs(eval[ik][is]) < eps8) {
                     gruneisen_bs[ik][is] = 0.0;
                 } else {
-                    gruneisen_bs[ik][is] /= -6.0 * std::pow(eval[ik][is], 2);
+                    gruneisen_bs[ik][is] /= -6.0 * pow2(eval[ik][is]);
                 }
             }
         }
@@ -201,7 +201,7 @@ void Gruneisen::calc_gruneisen()
                 if (std::abs(eval[ik][is]) < eps8) {
                     gruneisen_dos[ik][is] = 0.0;
                 } else {
-                    gruneisen_dos[ik][is] /= -6.0 * std::pow(eval[ik][is], 2);
+                    gruneisen_dos[ik][is] /= -6.0 * pow2(eval[ik][is]);
                 }
             }
         }

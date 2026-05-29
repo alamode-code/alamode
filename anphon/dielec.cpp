@@ -184,7 +184,7 @@ void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verb
     double res = 0.0;
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
-            res += std::pow(sum_born[i][j], 2);
+            res += pow2(sum_born[i][j]);
         }
     }
 

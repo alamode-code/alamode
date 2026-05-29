@@ -1029,7 +1029,7 @@ void Iterativebte::iterative_solver()
                                 // unstability in convergence happens sometime at low temperature.
                                 dFnew[k1][s1][ix] =
                                     dFnew[k1][s1][ix] * mixing_factor + dFold[k1][s1][ix] * (1.0 - mixing_factor);
-                                local_difference += std::pow(dFnew[k1][s1][ix] - dFold[k1][s1][ix], 2.0);
+                                local_difference += pow2(dFnew[k1][s1][ix] - dFold[k1][s1][ix]);
                             }
                         }
                     }
@@ -1143,7 +1143,7 @@ void Iterativebte::calc_boson(int itemp, double **&b_out, double **&dndt_out)
         for (auto is = 0; is < ns; ++is) {
             omega = dos->dymat_dos->get_eigenvalues()[k1][is];
             auto x = omega / (t_to_ryd * etemp);
-            dndt_out[ik][is] = std::pow(1.0 / (2.0 * sinh(0.5 * x)), 2) * x / etemp;
+            dndt_out[ik][is] = pow2(1.0 / (2.0 * sinh(0.5 * x))) * x / etemp;
         }
     }
 }

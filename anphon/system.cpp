@@ -830,7 +830,7 @@ void System::update_primitive_lattice()
                     if (spin_super.lspin) {
                         double norm_magmom = 0.0;
                         for (auto kk = 0; kk < 3; ++kk) {
-                            norm_magmom += std::pow(spin_super.magmom[i][kk] - magmom_unique[k][kk], 2);
+                            norm_magmom += pow2(spin_super.magmom[i][kk] - magmom_unique[k][kk]);
                         }
                         if (std::sqrt(norm_magmom) > eps6) {
                             exit("update_primitive_lattice",

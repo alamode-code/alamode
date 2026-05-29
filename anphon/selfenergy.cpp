@@ -366,7 +366,7 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 5) * 3.0);
+    double factor = -1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 5) * 3.0);
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -467,7 +467,7 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(kmesh_in->nk), 2) * std::pow(2.0, 5) * 3.0);
+    double factor = -1.0 / (pow2(static_cast<double>(kmesh_in->nk)) * std::pow(2.0, 5) * 3.0);
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -587,7 +587,7 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
+    double factor = -1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 7));
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -802,8 +802,8 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 6));
-    //	factor = -1.0 / (std::pow(static_cast<double>(nk_3ph), 2) * std::pow(2.0, 7));
+    double factor = -1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 6));
+    //	factor = -1.0 / (pow2(static_cast<double>(nk_3ph)) * std::pow(2.0, 7));
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -1018,7 +1018,7 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = 1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
+    double factor = 1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 7));
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -1147,7 +1147,7 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 6));
+    double factor = -1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 6));
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -1316,7 +1316,7 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = 1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
+    double factor = 1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 7));
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -1510,7 +1510,7 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 7));
+    double factor = -1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 7));
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;
 
@@ -1635,7 +1635,7 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
         }
     }
 
-    double factor = -1.0 / (std::pow(static_cast<double>(nk), 2) * std::pow(2.0, 6));
+    double factor = -1.0 / (pow2(static_cast<double>(nk)) * std::pow(2.0, 6));
 
     for (i = 0; i < N; ++i)
         ret_mpi[i] *= factor;

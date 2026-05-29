@@ -49,7 +49,7 @@ auto Thermodynamics::Cv(const double omega, const double temp_in) const -> doubl
     if (std::abs(temp_in) < eps) return 0.0;
 
     const auto x = omega / (T_to_Ryd * temp_in);
-    return k_Boltzmann * std::pow(x / (2.0 * sinh(0.5 * x)), 2);
+    return k_Boltzmann * pow2(x / (2.0 * sinh(0.5 * x)));
 }
 
 auto Thermodynamics::Cv_classical(const double omega, const double temp_in) -> double
@@ -733,9 +733,9 @@ auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::com
 
         for (int js = 0; js < ns; js++) {
             if (eval_harm_renormalized[ik][js] < 0.0) {
-                omega2_harm = -std::pow(eval_harm_renormalized[ik][js], 2);
+                omega2_harm = -pow2(eval_harm_renormalized[ik][js]);
             } else {
-                omega2_harm = std::pow(eval_harm_renormalized[ik][js], 2);
+                omega2_harm = pow2(eval_harm_renormalized[ik][js]);
             }
             tmp_c += std::conj(Cmat(js, is)) * omega2_harm * Cmat(js, is);
         }

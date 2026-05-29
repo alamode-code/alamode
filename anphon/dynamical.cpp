@@ -335,7 +335,7 @@ void Dynamical::prepare_mindist_list(std::vector<int> **mindist_out) const
 
 double Dynamical::distance(double *x1, double *x2)
 {
-    return std::sqrt(std::pow(x1[0] - x2[0], 2) + std::pow(x1[1] - x2[1], 2) + std::pow(x1[2] - x2[2], 2));
+    return std::sqrt(pow2(x1[0] - x2[0]) + pow2(x1[1] - x2[1]) + pow2(x1[2] - x2[2]));
 }
 
 void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
@@ -375,8 +375,8 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
     // Force the dynamical matrix be real when k point is
     // zone-center or zone-boundaries.
 
-    if (std::sqrt(std::pow(std::fmod(xk_in[0], 0.5), 2.0) + std::pow(std::fmod(xk_in[1], 0.5), 2.0) +
-                  std::pow(std::fmod(xk_in[2], 0.5), 2.0)) < eps)
+    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) +
+                  pow2(std::fmod(xk_in[2], 0.5))) < eps)
     {
 
         for (i = 0; i < neval; ++i) {
@@ -676,7 +676,7 @@ void Dynamical::calc_nonanalytic_k(const double *xk_in, const double *kvec_na_in
     xk_tmp = pcell.reciprocal_lattice_vector.transpose() * xk_tmp;
     const auto norm2 = xk_tmp.squaredNorm();
 
-    const auto factor = 8.0 * pi / system->get_primcell().volume * std::exp(-norm2 / std::pow(na_sigma, 2));
+    const auto factor = 8.0 * pi / system->get_primcell().volume * std::exp(-norm2 / pow2(na_sigma));
 
     for (i = 0; i < neval; ++i) {
         for (j = 0; j < neval; ++j) {
@@ -1086,8 +1086,8 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
 
     calc_analytic_k(xk_in, fc2_in, dymat_tmp);
 
-    if (std::sqrt(std::pow(std::fmod(xk_in[0], 0.5), 2.0) + std::pow(std::fmod(xk_in[1], 0.5), 2.0) +
-                  std::pow(std::fmod(xk_in[2], 0.5), 2.0)) < eps)
+    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) +
+                  pow2(std::fmod(xk_in[2], 0.5))) < eps)
     {
 
         for (i = 0; i < neval; ++i) {
@@ -1774,10 +1774,10 @@ void Dynamical::compute_renormalized_harmonic_frequency(
                 if (std::abs(eval_interpolate[ik][is]) <= eps10) {
                     omega2_out[ik][is] = 0.0;
                 } else {
-                    omega2_out[ik][is] = -std::pow(eval_interpolate[ik][is], 2.0);
+                    omega2_out[ik][is] = -pow2(eval_interpolate[ik][is]);
                 }
             } else {
-                omega2_out[ik][is] = std::pow(eval_interpolate[ik][is], 2.0);
+                omega2_out[ik][is] = pow2(eval_interpolate[ik][is]);
             }
         }
     }

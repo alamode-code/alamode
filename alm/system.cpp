@@ -249,7 +249,7 @@ auto System::build_primcell() -> void
                 if (spin_input.lspin) {
                     double norm_magmom = 0.0;
                     for (auto kk = 0; kk < 3; ++kk) {
-                        norm_magmom += std::pow(spin_input.magmom[i][kk] - magmom_unique[k][kk], 2);
+                        norm_magmom += pow2(spin_input.magmom[i][kk] - magmom_unique[k][kk]);
                     }
                     if (std::sqrt(norm_magmom) > eps6) {
                         exit("build_primcell",
