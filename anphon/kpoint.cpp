@@ -1135,7 +1135,8 @@ void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int
 
         for (i = 0; i < 3; ++i) {
             xk_sym[i] = xk_sym[i] - nint(xk_sym[i]);
-            xk_diff[i] = std::fmod(xk_sym[i] - xk_orig[i], 1.0);
+            const auto diff = xk_sym[i] - xk_orig[i];
+            xk_diff[i] = diff - nint(diff);
         }
 
         if (std::sqrt(pow2(xk_diff[0]) + pow2(xk_diff[1]) + pow2(xk_diff[2])) < eps10) {
