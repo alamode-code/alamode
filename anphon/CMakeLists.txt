@@ -264,9 +264,14 @@ message("MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}")
 message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")
 # Executable
 add_executable(anphon ${SOURCES} ${HEADERS})
+# Warnings on for all build types. -Wno-sign-compare silences ~1500 benign
+# signed/unsigned loop-counter comparisons so that the genuinely useful warnings
+# (unused/uninitialized variables, VLAs, deprecated copies, ...) are visible.
+# Drop -Wno-sign-compare once the loop counters have been cleaned up.
 target_compile_options(anphon PRIVATE
+    -Wall -Wextra -Wno-sign-compare
     $<$<CONFIG:Release>:-O3>
-    $<$<CONFIG:Debug>:-g -Wall -O0>
+    $<$<CONFIG:Debug>:-g -O0>
 )
 target_compile_definitions(anphon PRIVATE
     $<$<CONFIG:Debug>:_DEBUG>

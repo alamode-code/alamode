@@ -1,0 +1,56 @@
+name: Sanitizer build (ASan/UBSan)
+
+# Builds ALM/ANPHON with AddressSanitizer + UndefinedBehaviorSanitizer and runs
+# the small Si example. This catches out-of-bounds accesses, use-after-free and
+# undefined behaviour that ordinary Release builds silently ignore.
+#
+# Notes:
+#  * detect_leaks=0 — the code intentionally relies on process exit to release
+#    memory, so leak detection is disabled to avoid noise. Heap-overflow and
+#    use-after-free detection (the valuable part of ASan) stays on.
+#  * If third-party libraries (Eigen/Boost/HDF5) produce false positives, add a
+#    suppressions file via ASAN_OPTIONS/UBSAN_OPTIONS rather than disabling here.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 2.0dev
+
+jobs:
+  sanitize:
+    runs-on: ubuntu-latest
+    name: ASan/UBSan build + Si test
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: alamode
+          python-version: '3.10'
+
+      - name: Update environment
+        run: conda env update -n alamode -f etc/alamode-environment.yml
+
+      - name: Build alm and anphon with sanitizers
+        run: |
+          mkdir -p _build_san
+          cd _build_san
+          cmake -DCMAKE_BUILD_TYPE=Debug \
+                -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined" \
+                -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" \
+                ..
+          make -j
+          cd ..
+
+      - name: Run test Si under sanitizers
+        working-directory: ./test
+        env:
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: python test_si.py

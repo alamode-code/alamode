@@ -26,3 +26,11 @@ repos:
         require_serial: true
         additional_dependencies: []
         minimum_pre_commit_version: "2.9.2"
+# clang-format for C/C++ sources (uses the repository .clang-format).
+# The vendored third-party code under external/ is excluded.
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+        exclude: '^external/'

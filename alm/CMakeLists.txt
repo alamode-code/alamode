@@ -208,9 +208,14 @@ add_executable(alm ${PROJECT_SOURCE_DIR}/main.cpp
         ${PROJECT_SOURCE_DIR}/alm_cui.cpp
         ${SOURCES} ${HEADERS})
 
+# Warnings on for all build types. -Wno-sign-compare silences ~1500 benign
+# signed/unsigned loop-counter comparisons so that the genuinely useful warnings
+# (unused/uninitialized variables, VLAs, deprecated copies, ...) are visible.
+# Drop -Wno-sign-compare once the loop counters have been cleaned up.
 target_compile_options(alm PRIVATE
+    -Wall -Wextra -Wno-sign-compare
     $<$<CONFIG:Release>:-O2>
-    $<$<CONFIG:Debug>:-g -Wall -O2>
+    $<$<CONFIG:Debug>:-g -O2>
 )
 target_compile_definitions(alm PRIVATE
     $<$<CONFIG:Debug>:_DEBUG>
