@@ -285,12 +285,12 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
 
     deallocate(vel);
 
-    MPI_Gatherv(&phvel3_loc[0][0][0],
+    MPI_Gatherv(nk_loc > 0 ? &phvel3_loc[0][0][0] : nullptr,
                 sendcount[mympi->my_rank],
                 MPI_DOUBLE,
-                &phvel3_out[0][0][0],
-                &recvcount[0],
-                &displs[0],
+                mympi->my_rank == 0 ? &phvel3_out[0][0][0] : nullptr,
+                mympi->my_rank == 0 ? &recvcount[0] : nullptr,
+                mympi->my_rank == 0 ? &displs[0] : nullptr,
                 MPI_DOUBLE,
                 0,
                 MPI_COMM_WORLD);
@@ -409,13 +409,19 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
         //        std::cout << '\n';
     }
 
-    MPI_Gatherv(&velmat_loc[0][0][0][0],
+#ifdef MPI_CXX_DOUBLE_COMPLEX
+    const auto mpi_complex_type = MPI_CXX_DOUBLE_COMPLEX;
+#else
+    const auto mpi_complex_type = MPI_COMPLEX16;
+#endif
+
+    MPI_Gatherv(nk_loc > 0 ? &velmat_loc[0][0][0][0] : nullptr,
                 sendcount[mympi->my_rank],
-                MPI_COMPLEX16,
-                &velmat_out[0][0][0][0],
-                &recvcount[0],
-                &displs[0],
-                MPI_COMPLEX16,
+                mpi_complex_type,
+                mympi->my_rank == 0 ? &velmat_out[0][0][0][0] : nullptr,
+                mympi->my_rank == 0 ? &recvcount[0] : nullptr,
+                mympi->my_rank == 0 ? &displs[0] : nullptr,
+                mpi_complex_type,
                 0,
                 MPI_COMM_WORLD);
 

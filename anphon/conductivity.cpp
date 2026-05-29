@@ -10,6 +10,7 @@
 
 #include "conductivity.h"
 #include <cerrno>
+#include <cmath>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -1297,11 +1298,14 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                             }
                             const auto domega = omega1 - omega2;
                             const auto gamma_sum = gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i];
+                            const auto denominator = 4.0 * domega * domega + 4.0 * gamma_sum * gamma_sum;
+                            if (denominator <= 0.0 || !std::isfinite(denominator) || !std::isfinite(gamma_sum)) {
+                                continue;
+                            }
                             auto kcelem_tmp = 2.0 * (omega1 * omega2) / (omega1 + omega2) *
                                               (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
                                                thermodynamics->Cv(omega2, temperature[i]) / omega2) *
-                                              2.0 * gamma_sum / (4.0 * domega * domega + 4.0 * gamma_sum * gamma_sum) *
-                                              vv_tmp;
+                                              2.0 * gamma_sum / denominator * vv_tmp;
                             kappa_tmp[ib] += kcelem_tmp;
 
                             if (calc_coherent == 2 && j == k) {
