@@ -640,6 +640,12 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     if (mympi->my_rank == 0) n = sym.size();
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+    // Nothing to broadcast for an empty symmetry list (e.g. SymmList_ref is only
+    // populated for SCPH/QHA structural relaxation; it is empty in other modes).
+    // Returning here also avoids calling allocate() with a leading dimension of
+    // zero, which would write past a zero-size allocation.
+    if (n == 0) return;
+
     allocate(rot_tmp, n, 3, 3);
     allocate(rot_tmp2, n, 3, 3);
     allocate(tran_tmp, n, 3);

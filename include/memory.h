@@ -60,6 +60,12 @@ auto allocate(T *&arr, const size_t n1) -> T *
 template <typename T>
 auto allocate(T **&arr, const size_t n1, const size_t n2) -> T **
 {
+    // A zero leading dimension has no rows to point into; return a null pointer
+    // (handled by deallocate) instead of writing arr[0] past a zero-size array.
+    if (n1 == 0) {
+        arr = nullptr;
+        return arr;
+    }
     try {
         arr = new T *[n1];
         arr[0] = new T[n1 * n2];
@@ -78,6 +84,10 @@ auto allocate(T **&arr, const size_t n1, const size_t n2) -> T **
 template <typename T>
 auto allocate(T ***&arr, const size_t n1, const size_t n2, const size_t n3) -> T ***
 {
+    if (n1 == 0) {
+        arr = nullptr;
+        return arr;
+    }
     try {
         arr = new T **[n1];
         arr[0] = new T *[n1 * n2];
@@ -100,6 +110,10 @@ auto allocate(T ***&arr, const size_t n1, const size_t n2, const size_t n3) -> T
 template <typename T>
 auto allocate(T ****&arr, const size_t n1, const size_t n2, const size_t n3, const size_t n4) -> T ****
 {
+    if (n1 == 0) {
+        arr = nullptr;
+        return arr;
+    }
     try {
         arr = new T ***[n1];
         arr[0] = new T **[n1 * n2];
