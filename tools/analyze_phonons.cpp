@@ -8,18 +8,17 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
+#include "analyze_phonons.h"
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <vector>
 #include "memory.h"
-#include "analyze_phonons.h"
 
 using namespace std;
 
-int main(int argc,
-         char *argv[])
+int main(int argc, char *argv[])
 {
     string str;
 
@@ -56,7 +55,8 @@ int main(int argc,
     if (abs(dt) < eps && (tmin == tmax)) dt = 1.0;
     nt = static_cast<int>((tmax - tmin) / dt) + 1;
     allocate(temp, nt);
-    for (i = 0; i < nt; ++i) temp[i] = tmin + dt * static_cast<double>(i);
+    for (i = 0; i < nt; ++i)
+        temp[i] = tmin + dt * static_cast<double>(i);
 
     if (!locate_tag("#CLASSICAL")) {
         classical = false;
@@ -109,7 +109,8 @@ int main(int argc,
             for (k = 0; k < n_weight[i]; ++k) {
                 ifs >> vel_tmp[0] >> vel_tmp[1] >> vel_tmp[2];
 
-                for (l = 0; l < 3; ++l) vel[i][j][k][l] = vel_tmp[l];
+                for (l = 0; l < 3; ++l)
+                    vel[i][j][k][l] = vel_tmp[l];
             }
 
             for (k = 0; k < nt; ++k) {
@@ -139,9 +140,8 @@ int main(int argc,
         if (end_k == 0) end_k = nk;
 
         if (beg_k < 0 || beg_k >= nk || end_k < 0 || end_k > nk) {
-            cout << "ERROR: kpoint index out-of-range ["
-                 << 1 << ":" << nk << "] : "
-                 << setw(5) << beg_k + 1 << setw(5) << end_k << '\n';
+            cout << "ERROR: kpoint index out-of-range [" << 1 << ":" << nk << "] : " << setw(5) << beg_k + 1 << setw(5)
+                 << end_k << '\n';
             exit(1);
         }
 
@@ -151,9 +151,8 @@ int main(int argc,
         if (end_s == 0) end_s = ns;
 
         if (beg_s < 0 || beg_s >= ns || end_s < 0 || end_s > ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << beg_s + 1 << setw(5) << end_s << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << beg_s + 1 << setw(5)
+                 << end_s << '\n';
             exit(1);
         }
 
@@ -183,15 +182,11 @@ int main(int argc,
         target_s = atoi(argv[5]) - 1;
 
         if (target_k < 0 || target_k >= nk) {
-            cout << "ERROR: kpoint index out-of-range ["
-                 << 1 << ":" << nk << "] : "
-                 << setw(5) << target_k + 1 << '\n';
+            cout << "ERROR: kpoint index out-of-range [" << 1 << ":" << nk << "] : " << setw(5) << target_k + 1 << '\n';
             exit(1);
         }
         if (target_s < 0 || target_s >= ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << target_s + 1 << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << target_s + 1 << '\n';
             exit(1);
         }
 
@@ -211,9 +206,8 @@ int main(int argc,
         if (end_s == 0) end_s = ns;
 
         if (beg_s < 0 || beg_s >= ns || end_s < 0 || end_s > ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << beg_s + 1 << setw(5) << end_s << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << beg_s + 1 << setw(5)
+                 << end_s << '\n';
             exit(1);
         }
 
@@ -238,9 +232,8 @@ int main(int argc,
         if (end_s == 0) end_s = ns;
 
         if (beg_s < 0 || beg_s >= ns || end_s < 0 || end_s > ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << beg_s + 1 << setw(5) << end_s << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << beg_s + 1 << setw(5)
+                 << end_s << '\n';
             exit(1);
         }
         isotope = atoi(argv[6]);
@@ -279,9 +272,8 @@ int main(int argc,
         if (end_s == 0) end_s = ns;
 
         if (beg_s < 0 || beg_s >= ns || end_s < 0 || end_s > ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << beg_s + 1 << setw(5) << end_s << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << beg_s + 1 << setw(5)
+                 << end_s << '\n';
             exit(1);
         }
 
@@ -325,9 +317,8 @@ int main(int argc,
         if (end_s == 0) end_s = ns;
 
         if (beg_s < 0 || beg_s >= ns || end_s < 0 || end_s > ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << beg_s + 1 << setw(5) << end_s << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << beg_s + 1 << setw(5)
+                 << end_s << '\n';
             exit(1);
         }
 
@@ -365,9 +356,8 @@ int main(int argc,
         if (end_s == 0) end_s = ns;
 
         if (beg_s < 0 || beg_s >= ns || end_s < 0 || end_s > ns) {
-            cout << "ERROR: mode index out-of-range ["
-                 << 1 << ":" << ns << "] : "
-                 << setw(5) << beg_s + 1 << setw(5) << end_s << '\n';
+            cout << "ERROR: mode index out-of-range [" << 1 << ":" << ns << "] : " << setw(5) << beg_s + 1 << setw(5)
+                 << end_s << '\n';
             exit(1);
         }
         isotope = atoi(argv[6]);
@@ -419,17 +409,13 @@ void calc_tau(int itemp)
             for (k = 0; k < n_weight[ik]; ++k) {
                 for (i = 0; i < 3; ++i) {
                     for (j = 0; j < 3; ++j) {
-                        kappa[i][j] += c_tmp
-                                       * vel[ik][is][k][i]
-                                       * vel[ik][is][k][j]
-                                       * tau_tmp;
+                        kappa[i][j] += c_tmp * vel[ik][is][k][i] * vel[ik][is][k][j] * tau_tmp;
                     }
                 }
             }
 
-            vel_norm = sqrt(vel[ik][is][0][0] * vel[ik][is][0][0]
-                            + vel[ik][is][0][1] * vel[ik][is][0][1]
-                            + vel[ik][is][0][2] * vel[ik][is][0][2]);
+            vel_norm = sqrt(vel[ik][is][0][0] * vel[ik][is][0][0] + vel[ik][is][0][1] * vel[ik][is][0][1] +
+                            vel[ik][is][0][2] * vel[ik][is][0][2]);
             cout << setw(5) << ik + 1 << setw(5) << is + 1;
             cout << setw(15) << omega[ik][is] << setw(15) << tau_tmp;
             cout << setw(15) << vel_norm << setw(15) << tau_tmp * vel_norm * 0.001;
@@ -445,14 +431,13 @@ void calc_tau(int itemp)
     }
 }
 
-void calc_tau_temp(int target_k,
-                   int target_s)
+void calc_tau_temp(int target_k, int target_s)
 {
     double vel_norm;
 
-    vel_norm = sqrt(vel[target_k][target_s][0][0] * vel[target_k][target_s][0][0]
-                    + vel[target_k][target_s][0][1] * vel[target_k][target_s][0][1]
-                    + vel[target_k][target_s][0][2] * vel[target_k][target_s][0][2]);
+    vel_norm = sqrt(vel[target_k][target_s][0][0] * vel[target_k][target_s][0][0] +
+                    vel[target_k][target_s][0][1] * vel[target_k][target_s][0][1] +
+                    vel[target_k][target_s][0][2] * vel[target_k][target_s][0][2]);
 
     cout << "# Temperature dependence of the damping function will be printed\n";
     cout << "# for phonon specified by kpoint " << target_k + 1 << " and mode " << target_s + 1 << '\n';
@@ -506,14 +491,10 @@ void calc_kappa()
                 for (i = 0; i < n_weight[ik]; ++i) {
                     for (j = 0; j < 3; ++j) {
                         for (k = 0; k < 3; ++k) {
-                            kappa[it][j][k] += c_tmp
-                                               * vel[ik][is][i][j]
-                                               * vel[ik][is][i][k]
-                                               * tau_tmp;
+                            kappa[it][j][k] += c_tmp * vel[ik][is][i][j] * vel[ik][is][i][k] * tau_tmp;
                         }
                     }
                 }
-
             }
         }
 
@@ -524,17 +505,13 @@ void calc_kappa()
             }
         }
         cout << '\n';
-
     }
 
     deallocate(kappa);
 }
 
 
-void calc_kappa_cumulative(double max_length,
-                           double delta_length,
-                           int itemp,
-                           const int nsample,
+void calc_kappa_cumulative(double max_length, double delta_length, int itemp, const int nsample,
                            const std::string &gridtype)
 {
     double length;
@@ -571,9 +548,7 @@ void calc_kappa_cumulative(double max_length,
         for (ik = 0; ik < nk; ++ik) {
             for (is = beg_s; is < end_s; ++is) {
                 tau_tmp = tau[itemp][ik][is];
-                vel_tmp = pow(vel[ik][is][0][0], 2)
-                          + pow(vel[ik][is][0][1], 2)
-                          + pow(vel[ik][is][0][2], 2);
+                vel_tmp = pow(vel[ik][is][0][0], 2) + pow(vel[ik][is][0][1], 2) + pow(vel[ik][is][0][2], 2);
                 mfp_tmp = tau_tmp * sqrt(vel_tmp) * 0.001; // in nm unit
                 if (mfp_tmp > eps6) {
                     mfp_min = min(mfp_min, mfp_tmp);
@@ -591,8 +566,8 @@ void calc_kappa_cumulative(double max_length,
             }
         } else if (gridtype == "log" || gridtype == "logarithmic") {
             for (il = 0; il < nlength; ++il) {
-                length_vec[il] = mfp_min * std::pow(mfp_max / mfp_min,
-                                                    static_cast<double>(il) / static_cast<double>(nlength - 1));
+                length_vec[il] =
+                    mfp_min * std::pow(mfp_max / mfp_min, static_cast<double>(il) / static_cast<double>(nlength - 1));
             }
         }
     }
@@ -628,19 +603,14 @@ void calc_kappa_cumulative(double max_length,
                         c_tmp = Cv(omega[ik][is], temp[itemp]);
                     }
 
-                    vel_tmp = pow(vel[ik][is][0][0], 2)
-                              + pow(vel[ik][is][0][1], 2)
-                              + pow(vel[ik][is][0][2], 2);
+                    vel_tmp = pow(vel[ik][is][0][0], 2) + pow(vel[ik][is][0][1], 2) + pow(vel[ik][is][0][2], 2);
                     mfp_tmp = tau_tmp * sqrt(vel_tmp) * 0.001;
 
                     if (mfp_tmp < length) {
                         for (i = 0; i < nsame; ++i) {
                             for (j = 0; j < 3; ++j) {
                                 for (k = 0; k < 3; ++k) {
-                                    kappa_omp[j][k] += c_tmp
-                                                       * vel[ik][is][i][j]
-                                                       * vel[ik][is][i][k]
-                                                       * tau_tmp;
+                                    kappa_omp[j][k] += c_tmp * vel[ik][is][i][j] * vel[ik][is][i][k] * tau_tmp;
                                 }
                             }
                         }
@@ -667,11 +637,7 @@ void calc_kappa_cumulative(double max_length,
     }
 }
 
-void calc_kappa_cumulative2(double max_length,
-                            double delta_length,
-                            int itemp,
-                            int flag[3],
-                            const int nsample,
+void calc_kappa_cumulative2(double max_length, double delta_length, int itemp, int flag[3], const int nsample,
                             const std::string &gridtype)
 {
     double length;
@@ -714,9 +680,7 @@ void calc_kappa_cumulative2(double max_length,
         for (ik = 0; ik < nk; ++ik) {
             for (is = beg_s; is < end_s; ++is) {
                 tau_tmp = tau[itemp][ik][is];
-                vel_tmp = pow(vel[ik][is][0][0], 2)
-                          + pow(vel[ik][is][0][1], 2)
-                          + pow(vel[ik][is][0][2], 2);
+                vel_tmp = pow(vel[ik][is][0][0], 2) + pow(vel[ik][is][0][1], 2) + pow(vel[ik][is][0][2], 2);
                 mfp_norm = tau_tmp * sqrt(vel_tmp) * 0.001; // in nm unit
                 if (mfp_norm > eps6) {
                     mfp_min = min(mfp_min, mfp_norm);
@@ -734,8 +698,8 @@ void calc_kappa_cumulative2(double max_length,
             }
         } else if (gridtype == "log" || gridtype == "logarithmic") {
             for (il = 0; il < nlength; ++il) {
-                length_vec[il] = mfp_min * std::pow(mfp_max / mfp_min,
-                                                    static_cast<double>(il) / static_cast<double>(nlength - 1));
+                length_vec[il] =
+                    mfp_min * std::pow(mfp_max / mfp_min, static_cast<double>(il) / static_cast<double>(nlength - 1));
             }
         }
     }
@@ -780,17 +744,13 @@ void calc_kappa_cumulative2(double max_length,
                             is_longer_than_L[j] = mfp_tmp[j] > length;
                         }
 
-                        if ((flag[0] && is_longer_than_L[0]) |
-                            (flag[1] && is_longer_than_L[1]) |
+                        if ((flag[0] && is_longer_than_L[0]) | (flag[1] && is_longer_than_L[1]) |
                             (flag[2] && is_longer_than_L[2]))
                             continue;
 
                         for (j = 0; j < 3; ++j) {
                             for (k = 0; k < 3; ++k) {
-                                kappa_omp[j][k] += c_tmp
-                                                   * vel[ik][is][i][j]
-                                                   * vel[ik][is][i][k]
-                                                   * tau_tmp;
+                                kappa_omp[j][k] += c_tmp * vel[ik][is][i][j] * vel[ik][is][i][k] * tau_tmp;
                             }
                         }
                     }
@@ -854,23 +814,18 @@ void calc_kappa_boundary(const double len_boundary)
                     c_tmp = Cv(omega[ik][is], temp[it]);
                 }
 
-                vel_norm = vel[ik][is][0][0] * vel[ik][is][0][0]
-                           + vel[ik][is][0][1] * vel[ik][is][0][1]
-                           + vel[ik][is][0][2] * vel[ik][is][0][2];
+                vel_norm = vel[ik][is][0][0] * vel[ik][is][0][0] + vel[ik][is][0][1] * vel[ik][is][0][1] +
+                           vel[ik][is][0][2] * vel[ik][is][0][2];
                 mfp_tmp = std::sqrt(vel_norm) * tau_tmp * 0.001;
 
                 for (i = 0; i < n_weight[ik]; ++i) {
                     for (j = 0; j < 3; ++j) {
                         for (k = 0; k < 3; ++k) {
-                            kappa[it][j][k] += c_tmp
-                                               * vel[ik][is][i][j]
-                                               * vel[ik][is][i][k]
-                                               * tau_tmp
-                                               * len_boundary / (len_boundary + 2.0 * mfp_tmp);
+                            kappa[it][j][k] += c_tmp * vel[ik][is][i][j] * vel[ik][is][i][k] * tau_tmp * len_boundary /
+                                               (len_boundary + 2.0 * mfp_tmp);
                         }
                     }
                 }
-
             }
         }
 
@@ -881,16 +836,12 @@ void calc_kappa_boundary(const double len_boundary)
             }
         }
         cout << '\n';
-
     }
 
     deallocate(kappa);
 }
 
-void calc_kappa_boundary2(double max_length,
-                          double delta_length,
-                          int itemp,
-                          int flag[3])
+void calc_kappa_boundary2(double max_length, double delta_length, int itemp, int flag[3])
 {
     int nlength = static_cast<int>(max_length / delta_length);
     double length;
@@ -939,22 +890,15 @@ void calc_kappa_boundary2(double max_length,
 
                         if (flag[j]) {
                             for (k = 0; k < 3; ++k) {
-                                kappa[j][k] += c_tmp
-                                               * vel[ik][is][i][j]
-                                               * vel[ik][is][i][k]
-                                               * tau_tmp
-                                               * length / (length + 2.0 * mfp_tmp[j]);
+                                kappa[j][k] += c_tmp * vel[ik][is][i][j] * vel[ik][is][i][k] * tau_tmp * length /
+                                               (length + 2.0 * mfp_tmp[j]);
                             }
                         } else {
                             for (k = 0; k < 3; ++k) {
-                                kappa[j][k] += c_tmp
-                                               * vel[ik][is][i][j]
-                                               * vel[ik][is][i][k]
-                                               * tau_tmp;
+                                kappa[j][k] += c_tmp * vel[ik][is][i][j] * vel[ik][is][i][k] * tau_tmp;
                             }
                         }
                     }
-
                 }
             }
         }
@@ -991,8 +935,7 @@ int locate_tag(string key)
     return ret;
 }
 
-double Cv(double omega,
-          double temp)
+double Cv(double omega, double temp)
 {
     double x;
 
@@ -1002,12 +945,7 @@ double Cv(double omega,
     return k_Boltzmann * pow(x / (2.0 * sinh(0.5 * x)), 2.0);
 }
 
-void update_tau_isotope(const std::string file,
-                        double **omega,
-                        double ***tau,
-                        const int nt,
-                        const int nk,
-                        const int ns)
+void update_tau_isotope(const std::string file, double **omega, double ***tau, const int nt, const int nk, const int ns)
 {
     int i;
     int ik, is, jk, js;
@@ -1025,7 +963,8 @@ void update_tau_isotope(const std::string file,
 
     allocate(tau_isotope, nk, ns);
 
-    for (i = 0; i < 3; ++i) getline(ifs, line);
+    for (i = 0; i < 3; ++i)
+        getline(ifs, line);
 
     for (ik = 0; ik < nk; ++ik) {
         getline(ifs, line);
@@ -1046,7 +985,6 @@ void update_tau_isotope(const std::string file,
             } else {
                 tau_isotope[ik][is] = 1.0e+12 * Hz_to_kayser * 0.5 / tau_tmp;
             }
-
         }
         ifs.ignore();
         getline(ifs, line);
@@ -1072,11 +1010,7 @@ void update_tau_isotope(const std::string file,
 }
 
 
-void average_gamma_at_degenerate_point(double **e,
-                                       double ***tau,
-                                       const int nt,
-                                       const int nk,
-                                       const int ns)
+void average_gamma_at_degenerate_point(double **e, double ***tau, const int nt, const int nk, const int ns)
 {
     int ideg, is;
     double omega_prev, omega_now;
@@ -1113,31 +1047,30 @@ void average_gamma_at_degenerate_point(double **e,
 
             if (ideg > 1) {
 
-                for (k = 0; k < nt; ++k) damp_sum[k] = 0.0;
+                for (k = 0; k < nt; ++k)
+                    damp_sum[k] = 0.0;
 
                 for (k = is; k < is + ideg; ++k) {
-                    for (l = 0; l < nt; ++l) damp_sum[l] += 1.0 / tau[l][i][k];
+                    for (l = 0; l < nt; ++l)
+                        damp_sum[l] += 1.0 / tau[l][i][k];
                 }
 
 
                 for (k = is; k < is + ideg; ++k) {
-                    for (l = 0; l < nt; ++l) tau[l][i][k] = static_cast<double>(ideg) / damp_sum[l];
+                    for (l = 0; l < nt; ++l)
+                        tau[l][i][k] = static_cast<double>(ideg) / damp_sum[l];
                 }
             }
 
             is += ideg;
         }
-
     }
 
     deallocate(damp_sum);
 }
 
 
-void average_gamma_isotope_at_degenerate_point(double **e,
-                                               double **tau,
-                                               const int nk,
-                                               const int ns)
+void average_gamma_isotope_at_degenerate_point(double **e, double **tau, const int nk, const int ns)
 {
     int ideg, is;
     double omega_prev, omega_now;
@@ -1185,6 +1118,5 @@ void average_gamma_isotope_at_degenerate_point(double **e,
 
             is += ideg;
         }
-
     }
 }

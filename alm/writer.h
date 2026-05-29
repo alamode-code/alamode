@@ -180,12 +180,12 @@ private:
                                                       const int compression_level = 9) -> void;
 
     auto write_hessian(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
-                       const std::unique_ptr<Fcs> &fcs, const std::string &fname_out, const int verbosity) const
-        -> void;
+                       const std::unique_ptr<Fcs> &fcs, const std::string &fname_out,
+                       const int verbosity) const -> void;
 
     static auto save_fc2_QEfc_format(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
-                                     const std::unique_ptr<Fcs> &fcs, const std::string fname_out, const int verbosity)
-        -> void;
+                                     const std::unique_ptr<Fcs> &fcs, const std::string fname_out,
+                                     const int verbosity) -> void;
 
     static auto save_fc3_shengbte_format(const std::unique_ptr<System> &system,
                                          const std::unique_ptr<Symmetry> &symmetry,

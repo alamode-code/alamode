@@ -750,8 +750,8 @@ auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::com
     return ret / static_cast<double>(nk);
 }
 
-auto Thermodynamics::compute_FE_total(const unsigned int iT, const double fe_qha, const double dfe_scph = 0.0) const
-    -> double
+auto Thermodynamics::compute_FE_total(const unsigned int iT, const double fe_qha,
+                                      const double dfe_scph = 0.0) const -> double
 {
     double fe_total = fe_qha;
     // skip scph correction for QHA + structural optimization

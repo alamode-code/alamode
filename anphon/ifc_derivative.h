@@ -33,9 +33,7 @@ public:
                                        std::vector<FcsArrayWithCell> &delta_fcs, int m1, int n1) const;
 
     void compute_dV_dumn_real_space_m2(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                       std::vector<FcsArrayWithCell> &delta_fcs,
-                                       int m1, int n1,
-                                       int m2, int n2) const;
+                                       std::vector<FcsArrayWithCell> &delta_fcs, int m1, int n1, int m2, int n2) const;
 
     void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,
                           const std::complex<double> *const *const *const evec_harmonic) const;
@@ -69,9 +67,9 @@ public:
 
     void set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                         std::size_t ns, DelVStrainData &del_v_strain, double **omega2_harmonic,
-                                        std::complex<double> ***evec_harmonic,
-                                        int renorm_2to1st, int renorm_34to1st, int renorm_3to2nd,
-                                        const std::string &strain_ifc_dir, MinimumDistList ***mindist_list) const;
+                                        std::complex<double> ***evec_harmonic, int renorm_2to1st, int renorm_34to1st,
+                                        int renorm_3to2nd, const std::string &strain_ifc_dir,
+                                        MinimumDistList ***mindist_list) const;
 
 private:
     void read_del_v2_del_umn_in_kspace(double **omega2_harmonic,

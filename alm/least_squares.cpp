@@ -360,7 +360,7 @@ auto least_squares_with_constraints_gqr(const size_t N, const size_t M, const si
         // If reduction fails, return the error code
         return ierr;
     }
-    LOG_IF(verbosity , 1, "get_independent_rows returned r = ", r, ".\n");
+    LOG_IF(verbosity, 1, "get_independent_rows returned r = ", r, ".\n");
 
     // Step 5: Call dgglse to solve minimize ||A x - b||_2 subject to C_red x = d_red
     int M_i = static_cast<int>(M);
@@ -673,7 +673,15 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
     K.setFromTriplets(triplets.begin(), triplets.end());
     K.makeCompressed();
 
-    LOG_IF(verbosity, 1, "KKT matrix K constructed with size (", N + P, "×", N + P, "), non-zeros: ", K.nonZeros(), "\n");
+    LOG_IF(verbosity,
+           1,
+           "KKT matrix K constructed with size (",
+           N + P,
+           "×",
+           N + P,
+           "), non-zeros: ",
+           K.nonZeros(),
+           "\n");
     // 3) generate [A^T b; d]
     Eigen::VectorXd rhs(N + P);
     rhs.head(N) = ATb;
@@ -722,7 +730,7 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
 #endif
 
     if (!solved) {
-        LOG_IF(verbosity,1, "Use Eigen::SparseLU to solve the KKT problem.\n");
+        LOG_IF(verbosity, 1, "Use Eigen::SparseLU to solve the KKT problem.\n");
         Eigen::SparseLU<Eigen::SparseMatrix<double>> lu(K);
         if (lu.info() == Eigen::Success) {
             sol = lu.solve(rhs);

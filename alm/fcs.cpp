@@ -790,8 +790,8 @@ auto Fcs::set_forceconstant_cartesian(const int maxorder, double *param_in) -> v
 }
 
 auto Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
-                                       std::vector<ForceConstantTable> &fc_out, const int conversion_direction) const
-    -> void
+                                       std::vector<ForceConstantTable> &fc_out,
+                                       const int conversion_direction) const -> void
 {
     // Convert the basis of force constants between Cartesian basis and Lattice basis.
     // When conversion_direction == 0: fc_in is in Lattice and fc_out is in Cartesian
@@ -1052,8 +1052,8 @@ auto Fcs::get_minimum_index_in_primitive(const int n, const int *arr, const size
     return minloc;
 }
 
-auto Fcs::is_inprim(const int n, const int *arr, const size_t natmin, const std::vector<std::vector<int>> &map_p2s)
-    -> bool
+auto Fcs::is_inprim(const int n, const int *arr, const size_t natmin,
+                    const std::vector<std::vector<int>> &map_p2s) -> bool
 {
     for (auto i = 0; i < n; ++i) {
         for (size_t j = 0; j < natmin; ++j) {

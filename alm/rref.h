@@ -2,8 +2,8 @@
 
 #include "fcs.h"
 
-auto rref(const size_t nrows, const size_t ncols, double **mat, size_t &nrank, const double tolerance = 1.0e-12)
-    -> void;
+auto rref(const size_t nrows, const size_t ncols, double **mat, size_t &nrank,
+          const double tolerance = 1.0e-12) -> void;
 
 auto rref(std::vector<std::vector<double>> &mat, const double tolerance = 1.0e-12) -> void;
 

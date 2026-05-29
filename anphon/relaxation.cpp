@@ -823,9 +823,8 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, cons
                     for (int ixyz4 = 0; ixyz4 < 3; ixyz4++) {
                         // renormalization from cubic IFCs
                         int ixyz_comb = ixyz1 * 27 + ixyz2 * 9 + ixyz3 * 3 + ixyz4;
-                        v1_with_umn[is] +=
-                            factor1 * del_v_strain.del2_v1(ixyz_comb, is) * u_tensor[ixyz1][ixyz2] *
-                            u_tensor[ixyz3][ixyz4];
+                        v1_with_umn[is] += factor1 * del_v_strain.del2_v1(ixyz_comb, is) * u_tensor[ixyz1][ixyz2] *
+                                           u_tensor[ixyz3][ixyz4];
 
                         for (int ixyz5 = 0; ixyz5 < 3; ixyz5++) {
                             for (int ixyz6 = 0; ixyz6 < 3; ixyz6++) {

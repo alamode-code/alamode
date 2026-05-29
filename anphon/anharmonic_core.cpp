@@ -1211,12 +1211,10 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
 
                             const auto ib = ns2 * is + ns * js + ks;
 
-                            ret_tmp +=
-                                v4_arr[ik0][ib] *
-                                (n1 * delta_arr[ik0][ib][0] +
-                                 (f1 * f3 + f2 * f3 - f1 * f2 + f3) * delta_arr[ik0][ib][1] +
-                                 (f1 * f2 + f1 * f3 - f2 * f3 + f1) * delta_arr[ik0][ib][2] +
-                                 (f2 * f3 + f1 * f2 - f1 * f3 + f2) * delta_arr[ik0][ib][3]);
+                            ret_tmp += v4_arr[ik0][ib] * (n1 * delta_arr[ik0][ib][0] +
+                                                          (f1 * f3 + f2 * f3 - f1 * f2 + f3) * delta_arr[ik0][ib][1] +
+                                                          (f1 * f2 + f1 * f3 - f2 * f3 + f1) * delta_arr[ik0][ib][2] +
+                                                          (f2 * f3 + f1 * f2 - f1 * f3 + f2) * delta_arr[ik0][ib][3]);
                         }
                     }
                 }
@@ -1468,11 +1466,10 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
 
                         const auto ib = ns2 * is + ns * js + ks;
 
-                        ret_tmp += v4_arr[ik][ib] *
-                                   (n1 * delta_arr[ik][ib][0] +
-                                    (f1 * f3 + f2 * f3 - f1 * f2 + f3) * delta_arr[ik][ib][1] +
-                                    (f1 * f2 + f1 * f3 - f2 * f3 + f1) * delta_arr[ik][ib][2] +
-                                    (f2 * f3 + f1 * f2 - f1 * f3 + f2) * delta_arr[ik][ib][3]);
+                        ret_tmp += v4_arr[ik][ib] * (n1 * delta_arr[ik][ib][0] +
+                                                     (f1 * f3 + f2 * f3 - f1 * f2 + f3) * delta_arr[ik][ib][1] +
+                                                     (f1 * f2 + f1 * f3 - f2 * f3 + f1) * delta_arr[ik][ib][2] +
+                                                     (f2 * f3 + f1 * f2 - f1 * f3 + f2) * delta_arr[ik][ib][3]);
                     }
                 }
             }

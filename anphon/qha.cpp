@@ -450,10 +450,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                                     u_tensor,
                                                     pvcell);
 
-                relaxation->renormalize_v1_from_umn(v1_with_umn,
-                                                    v1_ref,
-                                                    del_v_strain,
-                                                    u_tensor);
+                relaxation->renormalize_v1_from_umn(v1_with_umn, v1_ref, del_v_strain, u_tensor);
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
                                                     kmap_coarse_to_dense,
@@ -461,12 +458,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                                     del_v_strain,
                                                     u_tensor);
 
-                relaxation->renormalize_v3_from_umn(kmesh_coarse,
-                                                    kmesh_dense,
-                                                    v3_with_umn,
-                                                    v3_ref,
-                                                    del_v_strain,
-                                                    u_tensor);
+                relaxation
+                    ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, v3_with_umn, v3_ref, del_v_strain, u_tensor);
 
                 for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
                     for (is = 0; is < ns * ns; is++) {
@@ -614,7 +607,12 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     }
 
                     // calculate renormalized second-order elastic constants
-                    calculate_C2_array_renorm(C2_array_renorm, u_tensor, eta_tensor, C2_array, C3_array, del_v_strain,
+                    calculate_C2_array_renorm(C2_array_renorm,
+                                              u_tensor,
+                                              eta_tensor,
+                                              C2_array,
+                                              C3_array,
+                                              del_v_strain,
                                               q0);
 
                     calculate_C2_array_ZSISA(C2_array_ZSISA, C2_array_renorm, del_v1_del_umn_renorm, delq_delu_ZSISA);
@@ -650,7 +648,10 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                 du0 = structure_state.du0;
                 du_tensor = structure_state.du_tensor;
 
-                relaxation->write_stepresfile(structure_state, i_str_loop + 1, fout_step_q0, fout_step_u0,
+                relaxation->write_stepresfile(structure_state,
+                                              i_str_loop + 1,
+                                              fout_step_q0,
+                                              fout_step_u0,
                                               fout_step_u_tensor);
                 relaxation->check_str_divergence(str_diverged, structure_state);
 
@@ -988,8 +989,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                     ixyz3 = (ixyz1 + 2) % 3;
 
                     elastic_mat_tmp(is1, ns + ixyz1) =
-                        del_v_strain.del_v1(ixyz2 * 3 + ixyz3, is2) +
-                        del_v_strain.del_v1(ixyz3 * 3 + ixyz2, is2);
+                        del_v_strain.del_v1(ixyz2 * 3 + ixyz3, is2) + del_v_strain.del_v1(ixyz3 * 3 + ixyz2, is2);
                     elastic_mat_tmp(ns + ixyz1, is1) = elastic_mat_tmp(is1, ns + ixyz1);
                 }
             }
@@ -1066,10 +1066,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                 u_tensor,
                                                 0.0); // pressure is limited to zero
 
-            relaxation->renormalize_v1_from_umn(v1_with_umn,
-                                                v1_ref,
-                                                del_v_strain,
-                                                u_tensor);
+            relaxation->renormalize_v1_from_umn(v1_with_umn, v1_ref, del_v_strain, u_tensor);
 
             relaxation->renormalize_v2_from_umn(kmesh_coarse,
                                                 kmap_coarse_to_dense,
@@ -1165,8 +1162,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     deallocate(C3_array);
 }
 
-void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib,
-                                  const DelVStrainData &del_v_strain,
+void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib, const DelVStrainData &del_v_strain,
                                   double T_in)
 {
     const auto nk = kmesh_dense->nk;
@@ -1215,8 +1211,7 @@ void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib,
 
 void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_renorm,
                                           const std::array<std::array<double, 3>, 3> &u_tensor,
-                                          const DelVStrainData &del_v_strain,
-                                          const std::vector<double> &q0)
+                                          const DelVStrainData &del_v_strain, const std::vector<double> &q0)
 {
     int ns = dynamical->neval;
     int nk = kmesh_dense->nk;
@@ -1241,8 +1236,7 @@ void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_
             del_v1_del_umn_renorm[i1][is1] = del_v_strain.del_v1(i1, is1);
 
             for (i2 = 0; i2 < 9; i2++) {
-                del_v1_del_umn_renorm[i1][is1] +=
-                    del_v_strain.del2_v1(i1 * 9 + i2, is1) * u_tensor[i2 / 3][i2 % 3];
+                del_v1_del_umn_renorm[i1][is1] += del_v_strain.del2_v1(i1 * 9 + i2, is1) * u_tensor[i2 / 3][i2 % 3];
                 for (i3 = 0; i3 < 9; i3++) {
                     del_v1_del_umn_renorm[i1][is1] += 0.5 * del_v_strain.del3_v1(i1 * 81 + i2 * 9 + i3, is1) *
                                                       u_tensor[i2 / 3][i2 % 3] * u_tensor[i3 / 3][i3 % 3];
@@ -1300,15 +1294,12 @@ void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_
             }
         }
     }
-
 }
 
 
-void Qha::calculate_C2_array_renorm(double **C2_array_renorm,
-                                    const std::array<std::array<double, 3>, 3> &u_tensor,
-                                    std::array<std::array<double, 3>, 3> &eta_tensor, 
-                                    double **C2_array, double ***C3_array,
-                                    const DelVStrainData &del_v_strain,
+void Qha::calculate_C2_array_renorm(double **C2_array_renorm, const std::array<std::array<double, 3>, 3> &u_tensor,
+                                    std::array<std::array<double, 3>, 3> &eta_tensor, double **C2_array,
+                                    double ***C3_array, const DelVStrainData &del_v_strain,
                                     const std::vector<double> &q0)
 {
     int ns = dynamical->neval;
@@ -1385,8 +1376,7 @@ void Qha::calculate_C2_array_renorm(double **C2_array_renorm,
             for (is1 = 0; is1 < ns; is1++) {
                 for (i3 = 0; i3 < 9; i3++) {
                     C2_array_renorm[i1][i2] +=
-                        del_v_strain.del3_v1(i1 * 81 + i2 * 9 + i3, is1).real() * q0[is1] *
-                        u_tensor[i3 / 3][i3 % 3];
+                        del_v_strain.del3_v1(i1 * 81 + i2 * 9 + i3, is1).real() * q0[is1] * u_tensor[i3 / 3][i3 % 3];
                 }
             }
         }

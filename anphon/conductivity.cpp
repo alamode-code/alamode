@@ -1227,13 +1227,11 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                             }
                             const auto domega = omega1 - omega2;
                             const auto gamma_sum = gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i];
-                            auto kcelem_tmp =
-                                2.0 * (omega1 * omega2) / (omega1 + omega2) *
-                                (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
-                                 thermodynamics->Cv(omega2, temperature[i]) / omega2) *
-                                2.0 * gamma_sum /
-                                (4.0 * domega * domega + 4.0 * gamma_sum * gamma_sum) *
-                                vv_tmp;
+                            auto kcelem_tmp = 2.0 * (omega1 * omega2) / (omega1 + omega2) *
+                                              (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
+                                               thermodynamics->Cv(omega2, temperature[i]) / omega2) *
+                                              2.0 * gamma_sum / (4.0 * domega * domega + 4.0 * gamma_sum * gamma_sum) *
+                                              vv_tmp;
                             kappa_tmp[ib] += kcelem_tmp;
 
                             if (calc_coherent == 2 && j == k) {

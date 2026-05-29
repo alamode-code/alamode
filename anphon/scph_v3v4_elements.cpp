@@ -23,13 +23,10 @@
 #include "scph.h"
 #include "timer.h"
 using namespace PHON_NS;
-void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(std::complex<double> ***v3_out, double **omega2_harmonic_in,
-                                                        const std::complex<double> *const *const *evec_in,
-                                                        const bool self_offdiag,
-                                                        const KpointMeshUniform *kmesh_coarse_in,
-                                                        const KpointMeshUniform *kmesh_dense_in,
-                                                        const PhaseFactorStorage *phase_storage_in,
-                                                        std::complex<double> *phi3_reciprocal_inout)
+void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
+    std::complex<double> ***v3_out, double **omega2_harmonic_in, const std::complex<double> *const *const *evec_in,
+    const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+    const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi3_reciprocal_inout)
 {
     // Calculate the matrix elements of quartic terms in reciprocal space.
     // This is the most expensive part of the SCPH calculation.
@@ -299,7 +296,11 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
                 }
             }
         }
-        zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
+        zerofill_elements_acoustic_at_gamma(omega2_harmonic_in,
+                                            v3_out,
+                                            3,
+                                            kmesh_dense_in->nk,
+                                            kmesh_coarse_in->nk_irred);
         return;
     }
 
@@ -498,8 +499,7 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
 
 void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
                                                         std::complex<double> ***evec_in, const bool self_offdiag,
-                                                        const bool relax,
-                                                        const KpointMeshUniform *kmesh_coarse_in,
+                                                        const bool relax, const KpointMeshUniform *kmesh_coarse_in,
                                                         const KpointMeshUniform *kmesh_dense_in,
                                                         const std::vector<int> &kmap_coarse_to_dense,
                                                         const PhaseFactorStorage *phase_storage_in,

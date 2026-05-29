@@ -700,8 +700,8 @@ void Writes::writePhononVelAll() const
 #endif
     for (ik = 0; ik < nk; ++ik) {
         for (is = 0; is < ns; ++is) {
-            phvel[ik][is] = std::sqrt(pow2(phvel_xyz[ik][is][0]) + pow2(phvel_xyz[ik][is][1]) +
-                                      pow2(phvel_xyz[ik][is][2]));
+            phvel[ik][is] =
+                std::sqrt(pow2(phvel_xyz[ik][is][0]) + pow2(phvel_xyz[ik][is][1]) + pow2(phvel_xyz[ik][is][2]));
         }
     }
 
@@ -748,7 +748,6 @@ void Writes::writePhononVelAll() const
     deallocate(phvel);
     deallocate(phvel_xyz);
 }
-
 
 
 void Writes::writePhononDos() const
@@ -1087,15 +1086,12 @@ void Writes::writeEigenvalues() const
 
     if (dos->kmesh_dos && dos->dymat_dos) {
         fname_eval = input->job_title + ".mesh.eval";
-        writeEigenvaluesEach(fname_eval,
-                             dos->kmesh_dos->nk,
-                             dos->kmesh_dos->xk,
-                             dos->dymat_dos->get_eigenvalues());
+        writeEigenvaluesEach(fname_eval, dos->kmesh_dos->nk, dos->kmesh_dos->xk, dos->dymat_dos->get_eigenvalues());
     }
 }
 
 void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned int nk_in, const double *const *xk_in,
-                                   const double *const *eval_in) const
+                                  const double *const *eval_in) const
 {
     unsigned int i, j, k;
     std::ofstream ofs_eval;
@@ -3183,7 +3179,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     if (thermodynamics->calc_FE_bubble) {
         ofs_thermo << ", F_{vib} (Bubble correction) [Ry]";
     }
-        // write renormalized zero-th order IFC
+    // write renormalized zero-th order IFC
     if (relaxation->relax_str != 0) {
         ofs_thermo << ", Phi0 [Ry]";
     }

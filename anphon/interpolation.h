@@ -13,9 +13,9 @@
 #include <cmath>
 #include <iomanip>
 #include <vector>
+#include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
-#include "kpoint.h"
 
 namespace PHON_NS
 {
@@ -204,8 +204,7 @@ public:
     FourierInterpolator() = default;
     ~FourierInterpolator() = default;
 
-    FourierInterpolator(const KpointMeshUniform &kmesh_coarse_in,
-                        const KpointMeshUniform &kmesh_dense_in,
+    FourierInterpolator(const KpointMeshUniform &kmesh_coarse_in, const KpointMeshUniform &kmesh_dense_in,
                         const bool subtract_harmonic_term_in = true);
 
 private:
@@ -214,10 +213,8 @@ private:
     std::vector<int> map_corase_to_dense;
     bool subtract_harmonic_term = true;
 
-    static void get_map_coarse_to_dense(const KpointMeshUniform &kmesh_coarse,
-                                        const KpointMeshUniform &kmesh_dense,
+    static void get_map_coarse_to_dense(const KpointMeshUniform &kmesh_coarse, const KpointMeshUniform &kmesh_dense,
                                         std::vector<int> &kmap);
 };
 
 } // namespace PHON_NS
-

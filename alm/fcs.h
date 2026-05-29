@@ -222,8 +222,8 @@ public:
                                                             std::vector<std::vector<int>> &index_inout) -> void;
 
     auto change_basis_force_constants(const std::vector<ForceConstantTable> &fc_in,
-                                      std::vector<ForceConstantTable> &fc_out, const int conversion_direction) const
-        -> void;
+                                      std::vector<ForceConstantTable> &fc_out,
+                                      const int conversion_direction) const -> void;
 
 private:
     std::vector<size_t> *nequiv;       // stores duplicate number of irreducible force constants
@@ -251,8 +251,8 @@ private:
     [[nodiscard]] static auto is_inprim(const int n, const int *arr, const size_t natmin,
                                         const std::vector<std::vector<int>> &map_p2s) -> bool;
 
-    [[nodiscard]] static auto is_inprim(const int n, const size_t natmin, const std::vector<std::vector<int>> &map_p2s)
-        -> bool;
+    [[nodiscard]] static auto is_inprim(const int n, const size_t natmin,
+                                        const std::vector<std::vector<int>> &map_p2s) -> bool;
 
     [[nodiscard]] static auto is_allzero(const std::vector<double> &, double, int &) -> bool;
 

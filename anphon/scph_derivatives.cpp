@@ -36,12 +36,12 @@
 
 using namespace PHON_NS;
 
-void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
-    std::complex<double> *del_v0_del_umn_renorm, double *C1_array, double **C2_array, double ***C3_array,
-    std::array<std::array<double, 3>, 3> &eta_tensor, 
-    const std::array<std::array<double, 3>, 3> &u_tensor,
-    const DelVStrainData &del_v_strain, const std::vector<double> &q0, double pvcell,
-    const KpointMeshUniform *kmesh_dense_in)
+void ScphQhaCommon::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0_del_umn_renorm, double *C1_array,
+                                                    double **C2_array, double ***C3_array,
+                                                    std::array<std::array<double, 3>, 3> &eta_tensor,
+                                                    const std::array<std::array<double, 3>, 3> &u_tensor,
+                                                    const DelVStrainData &del_v_strain, const std::vector<double> &q0,
+                                                    double pvcell, const KpointMeshUniform *kmesh_dense_in)
 {
 
     const auto ns = dynamical->neval;
@@ -135,8 +135,7 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
         for (is1 = 0; is1 < ns; is1++) {
             del_v1_del_umn_with_umn[i1][is1] = del_v_strain.del_v1(i1, is1);
             for (i2 = 0; i2 < 9; i2++) {
-                del_v1_del_umn_with_umn[i1][is1] +=
-                    del_v_strain.del2_v1(i1 * 9 + i2, is1) * u_tensor[i2 / 3][i2 % 3];
+                del_v1_del_umn_with_umn[i1][is1] += del_v_strain.del2_v1(i1 * 9 + i2, is1) * u_tensor[i2 / 3][i2 % 3];
                 for (i3 = 0; i3 < 9; i3++) {
                     del_v1_del_umn_with_umn[i1][is1] += 0.5 * del_v_strain.del3_v1(i1 * 81 + i2 * 9 + i3, is1) *
                                                         u_tensor[i2 / 3][i2 % 3] * u_tensor[i3 / 3][i3 % 3];
@@ -183,9 +182,9 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(
 
 
 void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, std::complex<double> *v1_renorm,
-                                                std::complex<double> ***v3_renorm,
-                                                std::complex<double> ***cmat_convert, double **omega2_anharm_T,
-                                                const double T_in, const KpointMeshUniform *kmesh_dense_in)
+                                                std::complex<double> ***v3_renorm, std::complex<double> ***cmat_convert,
+                                                double **omega2_anharm_T, const double T_in,
+                                                const KpointMeshUniform *kmesh_dense_in)
 {
     using namespace Eigen;
 
@@ -249,9 +248,8 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
                                                       const DelVStrainData &del_v_strain,
                                                       const std::array<std::array<double, 3>, 3> &u_tensor,
                                                       const std::vector<double> &q0,
-                                                      std::complex<double> ***cmat_convert,
-                                                      double **omega2_anharm_T, const double T_in,
-                                                      const KpointMeshUniform *kmesh_dense_in)
+                                                      std::complex<double> ***cmat_convert, double **omega2_anharm_T,
+                                                      const double T_in, const KpointMeshUniform *kmesh_dense_in)
 {
 
     using namespace Eigen;
@@ -336,7 +334,6 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
             }
         }
     }
-
 }
 
 void ScphQhaCommon::get_derivative_central_diff(const double delta_t, const unsigned int nk, double **omega0,

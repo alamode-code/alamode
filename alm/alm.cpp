@@ -184,7 +184,7 @@ auto ALM::set_fc_fix(const int order, const bool fc_fix) const -> void
     }
 }
 
-auto ALM::set_reduction_algo(const int ialgo_reduce) const ->void
+auto ALM::set_reduction_algo(const int ialgo_reduce) const -> void
 {
     constraint->set_reduction_algorithm(ialgo_reduce);
 }
@@ -237,8 +237,8 @@ auto ALM::get_compression_level() const -> int
     return writer->get_compression_level();
 }
 
-auto ALM::define(const int maxorder, const size_t nkd, const int *nbody_include, const double *cutoff_radii) const
-    -> void
+auto ALM::define(const int maxorder, const size_t nkd, const int *nbody_include,
+                 const double *cutoff_radii) const -> void
 {
     // nkd = 0 means cutoff_radii undefined (hopefully nullptr).
     cluster->define(maxorder, nkd, nbody_include, cutoff_radii);

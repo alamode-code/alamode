@@ -60,11 +60,9 @@ private:
     void calculate_del_v1_del_umn_renorm(std::complex<double> **, const std::array<std::array<double, 3>, 3> &,
                                          const DelVStrainData &, const std::vector<double> &);
 
-    void calculate_C2_array_renorm(double **C2_array_renorm,
-                                    const std::array<std::array<double, 3>, 3> &u_tensor,
-                                    std::array<std::array<double, 3>, 3> &eta_tensor, 
-                                    double **C2_array, double ***C3_array,
-                                    const DelVStrainData &, const std::vector<double> &q0);
+    void calculate_C2_array_renorm(double **C2_array_renorm, const std::array<std::array<double, 3>, 3> &u_tensor,
+                                   std::array<std::array<double, 3>, 3> &eta_tensor, double **C2_array,
+                                   double ***C3_array, const DelVStrainData &, const std::vector<double> &q0);
 
     void calculate_C2_array_ZSISA(double **, double **, std::complex<double> **, double **);
 

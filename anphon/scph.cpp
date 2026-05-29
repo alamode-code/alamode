@@ -11,8 +11,8 @@
 #include "scph.h"
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
-#include <array>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <cstdlib>
@@ -78,10 +78,7 @@ void Scph::setup_scph()
     MPI_Bcast(&bubble, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     // Prepare coarse/dense q-point meshes used in SCPH iterations and postprocess.
-    setup_kmesh(kmesh_scph,
-                kmesh_interpolate,
-                "SCPH",
-                "KMESH_INTERPOLATE should be a integral multiple of KMESH_SCPH");
+    setup_kmesh(kmesh_scph, kmesh_interpolate, "SCPH", "KMESH_INTERPOLATE should be a integral multiple of KMESH_SCPH");
     // Allocate and cache harmonic eigenvectors/eigenvalues on the coarse mesh.
     setup_eigvecs();
 
@@ -174,7 +171,7 @@ void Scph::exec_scph()
             exec_scph_main(delta_dymat_scph);
         }
         // SCPH + structural optimization
-        else 
+        else
         {
             // Run coupled SCPH + cell/coordinate relaxation loop.
             exec_scph_relax_cell_coordinate_main(delta_dymat_scph, delta_harmonic_dymat_renormalize);
@@ -183,22 +180,22 @@ void Scph::exec_scph()
         if (mympi->my_rank == 0) {
             // write dymat to file
             // write scph dynamical matrix when scph calculation is performed
-                // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
-                store_renormalized_dymat_to_file(delta_dymat_scph,
-                                         input->job_title + ".scph_dymat",
-                                         kmesh_dense,
-                                         kmesh_coarse,
-                                         dynamical->nonanalytic,
-                                         selfenergy_offdiagonal);
+            // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
+            store_renormalized_dymat_to_file(delta_dymat_scph,
+                                             input->job_title + ".scph_dymat",
+                                             kmesh_dense,
+                                             kmesh_coarse,
+                                             dynamical->nonanalytic,
+                                             selfenergy_offdiagonal);
             // write renormalized harmonic dynamical matrix when the crystal structure is optimized
             if (relax_mode != RelaxationStrMode::None) {
                 // Persist renormalized harmonic dynamical matrix and relaxation offset.
                 store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
-                                         input->job_title + ".renorm_harm_dymat",
-                                         kmesh_dense,
-                                         kmesh_coarse,
-                                         dynamical->nonanalytic,
-                                         selfenergy_offdiagonal);
+                                                 input->job_title + ".renorm_harm_dymat",
+                                                 kmesh_dense,
+                                                 kmesh_coarse,
+                                                 dynamical->nonanalytic,
+                                                 selfenergy_offdiagonal);
                 relaxation->store_V0_to_file();
             }
             // Convert dynamical-matrix correction back to real-space FC2 and write it out.
@@ -1292,10 +1289,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 //     std::cout << '\n';
                 // }
 
-                relaxation->renormalize_v1_from_umn(v1_with_umn,
-                                                    v1_ref,
-                                                    del_v_strain,
-                                                    u_tensor);
+                relaxation->renormalize_v1_from_umn(v1_with_umn, v1_ref, del_v_strain, u_tensor);
 
 
                 relaxation->renormalize_v2_from_umn(kmesh_coarse,
@@ -1303,12 +1297,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     delta_v2_with_umn,
                                                     del_v_strain,
                                                     u_tensor);
-                relaxation->renormalize_v3_from_umn(kmesh_coarse,
-                                                    kmesh_dense,
-                                                    v3_with_umn,
-                                                    v3_ref,
-                                                    del_v_strain,
-                                                    u_tensor);
+                relaxation
+                    ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, v3_with_umn, v3_ref, del_v_strain, u_tensor);
 
                 //                for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
                 //                    for (is = 0; is < ns * ns; is++) {
@@ -1597,7 +1587,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(del_v0_del_umn_renorm);
     deallocate(v1_SCP);
     deallocate(del_v0_del_umn_SCP);
-
 }
 
 
@@ -1620,7 +1609,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 //        }
 //    }
 //}
-
 
 
 void Scph::find_degeneracy(std::vector<int> *degeneracy_out, const unsigned int nk_in, double **eval_in) const

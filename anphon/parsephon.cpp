@@ -117,7 +117,8 @@ void Input::parse_general_vars()
     // Read input parameters in the &general-field.
 
     int i;
-    struct stat st{};
+    struct stat st
+    {};
     std::string str_tmp;
     const std::vector<std::string> input_list{"PREFIX",
                                               "MODE",
@@ -497,7 +498,8 @@ void Input::parse_scph_vars()
 {
     // Read input parameters in the &scph-field.
 
-    struct stat st{};
+    struct stat st
+    {};
     const std::vector<std::string> input_list{"KMESH_SCPH",
                                               "KMESH_INTERPOLATE",
                                               "MIXALPHA",
@@ -641,7 +643,8 @@ void Input::parse_qha_vars()
 {
     // Read input parameters in the &qha-field.
 
-    struct stat st{};
+    struct stat st
+    {};
     const std::vector<std::string> input_list{"KMESH_QHA",
                                               "KMESH_INTERPOLATE",
                                               "LOWER_TEMP",
@@ -1743,7 +1746,7 @@ void Input::get_var_dict(const std::vector<std::string> &input_list, std::map<st
             if (line_wo_comment.empty()) continue;
             if (is_endof_entry(line_wo_comment)) break;
 
-            // Split the input line by ';'
+                // Split the input line by ';'
 #ifdef _USE_BOOST
             boost::split(str_entry, line_wo_comment, boost::is_any_of(";"));
 #else
@@ -1818,7 +1821,7 @@ void Input::get_var_dict(const std::vector<std::string> &input_list, std::map<st
             if (line_wo_comment.empty()) continue;
             if (is_endof_entry(line_wo_comment)) break;
 
-            // Split the input line by ';'
+                // Split the input line by ';'
 #ifdef _USE_BOOST
             boost::split(str_entry, line_wo_comment, boost::is_any_of(";"));
 #else

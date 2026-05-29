@@ -217,18 +217,18 @@ private:
     auto get_standardizer(const Eigen::MatrixXd &Amat, Eigen::VectorXd &mean, Eigen::VectorXd &dev,
                           Eigen::VectorXd &factor_std, Eigen::VectorXd &scale_beta) const -> void;
 
-    auto apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean, const Eigen::VectorXd &dev) const
-        -> void;
+    auto apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean,
+                            const Eigen::VectorXd &dev) const -> void;
 
-    [[nodiscard]] auto get_estimated_max_alpha(const Eigen::MatrixXd &Amat, const Eigen::VectorXd &bvec) const
-        -> double;
+    [[nodiscard]] auto get_estimated_max_alpha(const Eigen::MatrixXd &Amat,
+                                               const Eigen::VectorXd &bvec) const -> double;
 
     static auto apply_scaler_displacement(std::vector<std::vector<double>> &u_inout, const double normalization_factor,
                                           const bool scale_back = false) -> void;
 
     static auto apply_scaler_constraint(const int maxorder, const double normalization_factor,
-                                        const std::unique_ptr<Constraint> &constraint, const bool scale_back = false)
-        -> void;
+                                        const std::unique_ptr<Constraint> &constraint,
+                                        const bool scale_back = false) -> void;
 
     static auto apply_scaler_force_constants(const int maxorder, const double normalization_factor,
                                              const std::unique_ptr<Constraint> &constraint,

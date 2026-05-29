@@ -22,8 +22,8 @@
  *                   - S  : Singular values vector (length = r) as Eigen::VectorXd
  *                   - VT : Thin Vᵀ matrix (r×n) as Eigen::MatrixXd
  */
-auto compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
-    -> std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd>
+auto compute_svd_thin(const Eigen::MatrixXd &A,
+                      const bool use_eigen) -> std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXd>
 {
     const int m = static_cast<int>(A.rows());
     const int n = static_cast<int>(A.cols());

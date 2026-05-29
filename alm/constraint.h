@@ -279,8 +279,8 @@ public:
 
     auto update_constraint_matrix(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
                                   const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                  const int verbosity, const int periodic_image_conv, const ReductionAlgo algo_in)
-        -> void;
+                                  const int verbosity, const int periodic_image_conv,
+                                  const ReductionAlgo algo_in) -> void;
 
     [[nodiscard]] auto ready_all_constraints() const -> bool;
 
@@ -336,8 +336,8 @@ private:
     auto generate_rotational_constraint(const std::unique_ptr<System> &system,
                                         const std::unique_ptr<Symmetry> &symmetry,
                                         const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                        const int verbosity, const double tolerance, const ReductionAlgo algo_in)
-        -> void;
+                                        const int verbosity, const double tolerance,
+                                        const ReductionAlgo algo_in) -> void;
 
 
     auto print_constraint_information(const std::unique_ptr<Cluster> &cluster) const -> void;
@@ -346,8 +346,8 @@ private:
 
     [[nodiscard]] static auto is_allzero(const std::vector<int> &, int &) -> bool;
 
-    [[nodiscard]] static auto is_allzero(const std::vector<double> &, const double, int &, const int nshift = 0)
-        -> bool;
+    [[nodiscard]] static auto is_allzero(const std::vector<double> &, const double, int &,
+                                         const int nshift = 0) -> bool;
 
 
     // const_symmetry is updated.
@@ -418,8 +418,8 @@ private:
     auto update_constraint_translation(const Cell &supercell, const int maxorder,
                                        const std::unique_ptr<Symmetry> &symmetry,
                                        const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
-                                       const int periodic_image_conv, const int verbosity, const ReductionAlgo algo_in)
-        -> void;
+                                       const int periodic_image_conv, const int verbosity,
+                                       const ReductionAlgo algo_in) -> void;
 
 
     auto update_constraint_rotation(const std::unique_ptr<System> &system, const int maxorder,

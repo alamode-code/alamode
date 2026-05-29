@@ -64,18 +64,18 @@ public:
     double mix_anderson_ratio;
 
 
-    using ScphQhaCommon::write_anharmonic_correction_fc2;
-    using ScphQhaCommon::load_scph_dymat_from_file;
-    using ScphQhaCommon::store_renormalized_dymat_to_file;
-    using ScphQhaCommon::compute_V4_elements_mpi_over_kpoint;
-    using ScphQhaCommon::compute_V4_elements_mpi_over_band;
-    using ScphQhaCommon::compute_V3_elements_mpi_over_kpoint;
+    using ScphQhaCommon::calculate_del_v0_del_umn_renorm;
     using ScphQhaCommon::compute_anharmonic_del_v0_del_umn;
     using ScphQhaCommon::compute_anharmonic_v1_array;
-    using ScphQhaCommon::calculate_del_v0_del_umn_renorm;
-    using ScphQhaCommon::postprocess;
+    using ScphQhaCommon::compute_V3_elements_mpi_over_kpoint;
+    using ScphQhaCommon::compute_V4_elements_mpi_over_band;
+    using ScphQhaCommon::compute_V4_elements_mpi_over_kpoint;
     using ScphQhaCommon::ialgo;
+    using ScphQhaCommon::load_scph_dymat_from_file;
+    using ScphQhaCommon::postprocess;
     using ScphQhaCommon::selfenergy_offdiagonal;
+    using ScphQhaCommon::store_renormalized_dymat_to_file;
+    using ScphQhaCommon::write_anharmonic_correction_fc2;
 
     void compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in,
                                             const int ngroup_v3_in, std::vector<double> *fcs_group_v3_in,
@@ -158,7 +158,6 @@ private:
                                                             const unsigned int knum, const unsigned int snum,
                                                             const double temp_in,
                                                             const std::vector<std::complex<double>> &omegalist);
-
 };
 
 extern "C"

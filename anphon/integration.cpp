@@ -253,8 +253,7 @@ double Integration::do_tetrahedron(const double *energy, const double *f, const 
 
         } else if (e2 <= e_ref && e_ref < e3) {
             g = 3.0 *
-                (e2 - e1 + 2.0 * (e_ref - e2) -
-                 (e4 + e3 - e2 - e1) * pow2(e_ref - e2) / ((e3 - e2) * (e4 - e2))) /
+                (e2 - e1 + 2.0 * (e_ref - e2) - (e4 + e3 - e2 - e1) * pow2(e_ref - e2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = frac3 * fij(e1, e4, e_ref) * g +
@@ -326,8 +325,7 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, con
             I4 = g * (fij(e4, e1, e_ref) + fij(e4, e2, e_ref) + fij(e4, e3, e_ref));
 
         } else if (e2 <= e_ref && e_ref < e3) {
-            g = (e2 - e1 + 2.0 * (e_ref - e2) -
-                 (e4 + e3 - e2 - e1) * pow2(e_ref - e2) / ((e3 - e2) * (e4 - e2))) /
+            g = (e2 - e1 + 2.0 * (e_ref - e2) - (e4 + e3 - e2 - e1) * pow2(e_ref - e2) / ((e3 - e2) * (e4 - e2))) /
                 ((e3 - e1) * (e4 - e1));
 
             I1 = g * fij(e1, e4, e_ref) + fij(e1, e3, e_ref) * fij(e3, e1, e_ref) * fij(e2, e3, e_ref) / (e4 - e1);

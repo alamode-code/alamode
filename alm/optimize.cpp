@@ -599,16 +599,16 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         const auto rank = qr_solver.rank();
 
         if (rank < N_new) {
-            std::string error_msg =
-                "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
-                "  Matrix rank = " + std::to_string(rank) +
-                ", Number of parameters = " + std::to_string(N_new) + "\n"
-                "  This typically occurs when there are too few training data\n"
-                "  or when some parameters cannot be uniquely determined.\n"
-                "  Please try one of the following:\n"
-                "  - Increase the amount of training data (DFSET)\n"
-                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
-                "  - Reduce the interaction cutoff distance\n";
+            std::string error_msg = "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
+                                    "  Matrix rank = " +
+                                    std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
+                                    "\n"
+                                    "  This typically occurs when there are too few training data\n"
+                                    "  or when some parameters cannot be uniquely determined.\n"
+                                    "  Please try one of the following:\n"
+                                    "  - Increase the amount of training data (DFSET)\n"
+                                    "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                                    "  - Reduce the interaction cutoff distance\n";
             ALM_NS::exit("optimize_main", error_msg.c_str());
         }
 
@@ -626,8 +626,8 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
 
         if (n_zero_weights > 0) {
             if (verbosity > 0) {
-                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights
-                         << " near-zero weights (< " << min_weight_threshold << ").\n";
+                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
+                          << min_weight_threshold << ").\n";
                 std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
                 std::cout << "  The optimization will continue but results may be unreliable.\n";
                 std::cout << "  Consider using LMODEL = 2 (elastic-net) instead.\n\n";
@@ -763,16 +763,16 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
         const auto rank = qr_solver.rank();
 
         if (rank < N_new) {
-            std::string error_msg =
-                "Adaptive lasso failed in CV: The least squares problem is rank-deficient.\n"
-                "  Matrix rank = " + std::to_string(rank) +
-                ", Number of parameters = " + std::to_string(N_new) + "\n"
-                "  This typically occurs when there are too few training data\n"
-                "  or when some parameters cannot be uniquely determined.\n"
-                "  Please try one of the following:\n"
-                "  - Increase the amount of training data (DFSET)\n"
-                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
-                "  - Reduce the interaction cutoff distance\n";
+            std::string error_msg = "Adaptive lasso failed in CV: The least squares problem is rank-deficient.\n"
+                                    "  Matrix rank = " +
+                                    std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
+                                    "\n"
+                                    "  This typically occurs when there are too few training data\n"
+                                    "  or when some parameters cannot be uniquely determined.\n"
+                                    "  Please try one of the following:\n"
+                                    "  - Increase the amount of training data (DFSET)\n"
+                                    "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                                    "  - Reduce the interaction cutoff distance\n";
             ALM_NS::exit("optimize_main", error_msg.c_str());
         }
 
@@ -789,8 +789,8 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
         }
 
         if (n_zero_weights > 0 && verbosity > 0) {
-            std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights
-                     << " near-zero weights (< " << min_weight_threshold << ").\n";
+            std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
+                      << min_weight_threshold << ").\n";
             std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n\n";
         }
     }
@@ -1355,17 +1355,19 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
         const auto rank = qr_solver.rank();
 
         if (rank < N_new) {
-            std::string error_msg =
-                "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
-                "  Matrix rank = " + std::to_string(rank) +
-                ", Number of parameters = " + std::to_string(N_new) + "\n"
-                "  Number of data points = " + std::to_string(M) + "\n"
-                "  This typically occurs when there are too few training data\n"
-                "  or when some parameters cannot be uniquely determined.\n"
-                "  Please try one of the following:\n"
-                "  - Increase the amount of training data (DFSET)\n"
-                "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
-                "  - Reduce the interaction cutoff distance\n";
+            std::string error_msg = "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
+                                    "  Matrix rank = " +
+                                    std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
+                                    "\n"
+                                    "  Number of data points = " +
+                                    std::to_string(M) +
+                                    "\n"
+                                    "  This typically occurs when there are too few training data\n"
+                                    "  or when some parameters cannot be uniquely determined.\n"
+                                    "  Please try one of the following:\n"
+                                    "  - Increase the amount of training data (DFSET)\n"
+                                    "  - Use LMODEL = 1 (least-squares) or 2 (elastic-net) instead\n"
+                                    "  - Reduce the interaction cutoff distance\n";
             ALM_NS::exit("optimize_elasticnet", error_msg.c_str());
         }
 
@@ -1385,8 +1387,8 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
 
         if (n_zero_weights > 0) {
             if (verbosity > 0) {
-                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights
-                         << " near-zero weights (< " << min_weight_threshold << ").\n";
+                std::cout << "  WARNING: Adaptive lasso detected " << n_zero_weights << " near-zero weights (< "
+                          << min_weight_threshold << ").\n";
                 std::cout << "  Maximum weight = " << max_weight << "\n";
                 std::cout << "  This may indicate an underdetermined or ill-conditioned problem.\n";
                 std::cout << "  The optimization will continue but results may be unreliable.\n";
@@ -1492,8 +1494,8 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
 
 auto Optimize::run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in, const Eigen::VectorXd &b_in,
                                                     const Eigen::VectorXd &factor_std,
-                                                    std::vector<double> &params_inout, const int verbosity) const
-    -> void
+                                                    std::vector<double> &params_inout,
+                                                    const int verbosity) const -> void
 {
     // Perform OLS fitting to the features selected by LASSO for reducing the bias.
 
@@ -1581,8 +1583,8 @@ auto Optimize::get_standardizer(const Eigen::MatrixXd &Amat, Eigen::VectorXd &me
     }
 }
 
-auto Optimize::apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean, const Eigen::VectorXd &dev) const
-    -> void
+auto Optimize::apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean,
+                                  const Eigen::VectorXd &dev) const -> void
 {
     const auto ncols = Amat.cols();
     const auto nrows = Amat.rows();

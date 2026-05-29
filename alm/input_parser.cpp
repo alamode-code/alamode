@@ -504,8 +504,8 @@ auto InputParser::parse_general_vars(ALM *alm) -> void
 
 auto InputParser::parse_transformation_matrix_string(const std::string &string_celldim,
                                                      const std::vector<std::string> &celldim_v,
-                                                     Eigen::Matrix3d &transform_matrix, const int checkmode_determinant)
-    -> void
+                                                     Eigen::Matrix3d &transform_matrix,
+                                                     const int checkmode_determinant) -> void
 {
     // Split the SUPERCELL or PRIMCELL entry by space and convert the data into
     // 3x3 double matrix in the Eigen::Matrix3d type.
@@ -519,7 +519,8 @@ auto InputParser::parse_transformation_matrix_string(const std::string &string_c
         boost::split(str_vec, celldim_v[0], boost::is_any_of("/"));
 
         if (str_vec.size() == 2) {
-            transform_matrix = stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str()) * mat_identity;
+            transform_matrix = stod_checked(str_vec[0], string_celldim.c_str()) /
+                               stod_checked(str_vec[1], string_celldim.c_str()) * mat_identity;
         } else {
             transform_matrix = stod_checked(str_vec[0], string_celldim.c_str()) * mat_identity;
         }
@@ -531,7 +532,8 @@ auto InputParser::parse_transformation_matrix_string(const std::string &string_c
             boost::split(str_vec, celldim_v[i], boost::is_any_of("/"));
 
             if (str_vec.size() == 2) {
-                transform_matrix(i, i) = stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str());
+                transform_matrix(i, i) =
+                    stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str());
             } else {
                 transform_matrix(i, i) = stod_checked(str_vec[0], string_celldim.c_str());
             }
@@ -543,7 +545,8 @@ auto InputParser::parse_transformation_matrix_string(const std::string &string_c
                 std::vector<std::string> str_vec;
                 boost::split(str_vec, celldim_v[k++], boost::is_any_of("/"));
                 if (str_vec.size() == 2) {
-                    transform_matrix(i, j) = stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str());
+                    transform_matrix(i, j) = stod_checked(str_vec[0], string_celldim.c_str()) /
+                                             stod_checked(str_vec[1], string_celldim.c_str());
                 } else {
                     transform_matrix(i, j) = stod_checked(str_vec[0], string_celldim.c_str());
                 }
@@ -1501,8 +1504,8 @@ auto InputParser::parse_cutoff_radii() -> void
     input_setter->set_cutoff_radii(maxorder, nkd_in, cutoff_information_flatten);
 }
 
-auto InputParser::get_var_dict(const std::vector<std::string> &input_list, std::map<std::string, std::string> &var_dict)
-    -> void
+auto InputParser::get_var_dict(const std::vector<std::string> &input_list,
+                               std::map<std::string, std::string> &var_dict) -> void
 {
     std::string line, key, val;
     std::string line_wo_comment;

@@ -32,8 +32,8 @@ inline auto memsize_in_MB(const size_t size_of_one, const size_t n1, const size_
     return n / 1000000;
 }
 
-inline auto memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2, const size_t n3, const size_t n4)
-    -> size_t
+inline auto memsize_in_MB(const size_t size_of_one, const size_t n1, const size_t n2, const size_t n3,
+                          const size_t n4) -> size_t
 {
     const auto n = n1 * n2 * n3 * n4 * size_of_one;
     return n / 1000000;
@@ -118,8 +118,7 @@ auto allocate(T ****&arr, const size_t n1, const size_t n2, const size_t n3, con
     } catch (std::bad_alloc &ba) {
         std::cout << " Caught an exception when trying to allocate 4-dimensional array" << '\n';
         std::cout << " " << ba.what() << " : Array shape = " << n1 << "x" << n2 << "x" << n3 << "x" << n4 << '\n';
-        std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3, n4)
-                  << '\n';
+        std::cout << " " << ba.what() << " : Array size (MB) = " << memsize_in_MB(sizeof(T), n1, n2, n3, n4) << '\n';
         std::exit(EXIT_FAILURE);
     }
     return arr;

@@ -10,13 +10,14 @@
 
 #pragma once
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <algorithm>
 #include <vector>
 
-class AtomProperty {
+class AtomProperty
+{
 public:
     double x, y, z;
     int kind;
@@ -24,14 +25,10 @@ public:
 
     AtomProperty() {};
 
-    AtomProperty(const AtomProperty &other)
-            : x(other.x), y(other.y), z(other.z),
-              kind(other.kind), atom(other.atom), tran(other.tran) {};
+    AtomProperty(const AtomProperty &other) :
+        x(other.x), y(other.y), z(other.z), kind(other.kind), atom(other.atom), tran(other.tran) {};
 
-    AtomProperty(const double *pos,
-                 const int kind_in,
-                 const int atom_in,
-                 const int tran_in)
+    AtomProperty(const double *pos, const int kind_in, const int atom_in, const int tran_in)
     {
         x = pos[0];
         y = pos[1];
@@ -42,7 +39,8 @@ public:
     }
 };
 
-class StructureProperty {
+class StructureProperty
+{
 public:
     double lattice_vector[3][3];
     std::vector<AtomProperty> atoms;
@@ -54,28 +52,28 @@ public:
     StructureProperty() {};
 };
 
-struct AtomCellSuper {
+struct AtomCellSuper
+{
     unsigned int index;
     unsigned int tran;
     unsigned int cell_s;
 };
 
-inline bool operator<(const AtomCellSuper &a,
-                      const AtomCellSuper &b)
+inline bool operator<(const AtomCellSuper &a, const AtomCellSuper &b)
 {
     return a.index < b.index;
 }
 
-class FcsArrayWithCell {
+class FcsArrayWithCell
+{
 public:
     std::vector<AtomCellSuper> pairs;
     double fcs_val;
 
     FcsArrayWithCell() {};
 
-    FcsArrayWithCell(const double fcs_in,
-                     const std::vector<AtomCellSuper> &pairs_in)
-            : pairs(pairs_in), fcs_val(fcs_in) {};
+    FcsArrayWithCell(const double fcs_in, const std::vector<AtomCellSuper> &pairs_in) :
+        pairs(pairs_in), fcs_val(fcs_in) {};
 
     bool operator==(const FcsArrayWithCell &obj) const
     {
@@ -114,22 +112,13 @@ public:
             index_b.push_back(obj.pairs[i].tran);
             index_b.push_back(obj.pairs[i].cell_s);
         }
-        return std::lexicographical_compare(index_a.begin(), index_a.end(),
-                                            index_b.begin(), index_b.end());
+        return std::lexicographical_compare(index_a.begin(), index_a.end(), index_b.begin(), index_b.end());
     }
 };
 
-void load_fcs_xml(const std::string, const int,
-                  StructureProperty &,
-                  std::vector<FcsArrayWithCell> *);
+void load_fcs_xml(const std::string, const int, StructureProperty &, std::vector<FcsArrayWithCell> *);
 
-void write_fcs_to_file(const std::string fname_fc,
-                       const int order,
-                       const StructureProperty &structure,
-                       double ***x_image,
-                       int **map_p2s,
-                       const std::vector<FcsArrayWithCell> &fc_in);
+void write_fcs_to_file(const std::string fname_fc, const int order, const StructureProperty &structure,
+                       double ***x_image, int **map_p2s, const std::vector<FcsArrayWithCell> &fc_in);
 
-void frac2cart(double **xf,
-               const int nat,
-               const double lattice_vector[3][3]);
+void frac2cart(double **xf, const int nat, const double lattice_vector[3][3]);

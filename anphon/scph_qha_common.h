@@ -28,8 +28,8 @@
 #include "mpi.h"
 #include "mpi_common.h"
 #include "pointers.h"
-#include "system.h"
 #include "symmetry_core.h"
+#include "system.h"
 
 namespace PHON_NS
 {
@@ -67,8 +67,8 @@ protected:
 
     void deallocate_variables();
 
-    void setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int kmesh_coarse_input[3],
-                     const char *mode_name, const char *mapping_error_message);
+    void setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int kmesh_coarse_input[3], const char *mode_name,
+                     const char *mapping_error_message);
 
     void setup_eigvecs();
 
@@ -84,9 +84,9 @@ protected:
                                    const unsigned int nonanalytic_in, const bool selfenergy_offdiagonal_in);
 
     void store_renormalized_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
-                                  std::string filename_dymat, const KpointMeshUniform *kmesh_dense_in,
-                                  const KpointMeshUniform *kmesh_coarse_in, const unsigned int nonanalytic_in,
-                                  const bool selfenergy_offdiagonal_in);
+                                          std::string filename_dymat, const KpointMeshUniform *kmesh_dense_in,
+                                          const KpointMeshUniform *kmesh_coarse_in, const unsigned int nonanalytic_in,
+                                          const bool selfenergy_offdiagonal_in);
 
     static void mpi_bcast_complex(std::complex<double> ****data, const unsigned int NT, const unsigned int nk,
                                   const unsigned int ns);
@@ -96,9 +96,8 @@ protected:
                                          bool is_qha = false, int type = 0);
 
     void postprocess(std::complex<double> ****delta_dymat, std::complex<double> ****delta_harmonic_dymat_renormalize,
-                     std::complex<double> ****delta_dymat_scph_plus_bubble,
-                     const KpointMeshUniform *kmesh_coarse_in, MinimumDistList ***mindist_list_in,
-                     bool is_qha = false, int bubble_in = 0);
+                     std::complex<double> ****delta_dymat_scph_plus_bubble, const KpointMeshUniform *kmesh_coarse_in,
+                     MinimumDistList ***mindist_list_in, bool is_qha = false, int bubble_in = 0);
 
     void compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
                                              std::complex<double> ***evec_in, bool self_offdiag, bool relax,
@@ -124,12 +123,11 @@ protected:
                                              std::complex<double> *phi3_reciprocal_inout);
 
     void calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0_del_umn_renorm, double *C1_array,
-                                         double **C2_array, double ***C3_array, 
+                                         double **C2_array, double ***C3_array,
                                          std::array<std::array<double, 3>, 3> &eta_tensor,
                                          const std::array<std::array<double, 3>, 3> &u_tensor,
                                          const DelVStrainData &del_v_strain, const std::vector<double> &q0,
-                                         double pvcell,
-                                         const KpointMeshUniform *kmesh_dense_in);
+                                         double pvcell, const KpointMeshUniform *kmesh_dense_in);
 
     void compute_anharmonic_v1_array(std::complex<double> *v1_SCP, std::complex<double> *v1_renorm,
                                      std::complex<double> ***v3_renorm, std::complex<double> ***cmat_convert,
@@ -139,9 +137,9 @@ protected:
                                            std::complex<double> *del_v0_del_umn_renorm,
                                            const DelVStrainData &del_v_strain,
                                            const std::array<std::array<double, 3>, 3> &u_tensor,
-                                           const std::vector<double> &q0,
-                                           std::complex<double> ***cmat_convert, double **omega2_anharm_T,
-                                           double T_in, const KpointMeshUniform *kmesh_dense_in);
+                                           const std::vector<double> &q0, std::complex<double> ***cmat_convert,
+                                           double **omega2_anharm_T, double T_in,
+                                           const KpointMeshUniform *kmesh_dense_in);
 
     void get_derivative_central_diff(double delta_t, unsigned int nk, double **omega0, double **omega2,
                                      double **domega_dt);

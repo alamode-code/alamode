@@ -9,8 +9,8 @@
 */
 
 #include "interpolation.h"
-#include "error.h"
 #include <cmath>
+#include "error.h"
 
 using namespace PHON_NS;
 
@@ -144,8 +144,7 @@ void TriLinearInterpolator::get_corners_regular(double *xk_i, int *corner_index,
 // FourierInterpolator implementations
 
 FourierInterpolator::FourierInterpolator(const KpointMeshUniform &kmesh_coarse_in,
-                                         const KpointMeshUniform &kmesh_dense_in,
-                                         const bool subtract_harmonic_term_in)
+                                         const KpointMeshUniform &kmesh_dense_in, const bool subtract_harmonic_term_in)
 {
     kmesh_coarse = kmesh_coarse_in;
     kmesh_dense = kmesh_dense_in;
@@ -155,8 +154,7 @@ FourierInterpolator::FourierInterpolator(const KpointMeshUniform &kmesh_coarse_i
 }
 
 void FourierInterpolator::get_map_coarse_to_dense(const KpointMeshUniform &kmesh_coarse,
-                                                   const KpointMeshUniform &kmesh_dense,
-                                                   std::vector<int> &kmap)
+                                                  const KpointMeshUniform &kmesh_dense, std::vector<int> &kmap)
 {
     kmap.resize(kmesh_coarse.nk);
     double xtmp[3];
@@ -175,4 +173,3 @@ void FourierInterpolator::get_map_coarse_to_dense(const KpointMeshUniform &kmesh
         kmap[ik] = loc;
     }
 }
-

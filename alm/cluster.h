@@ -261,8 +261,8 @@ public:
 
     auto is_incutoff(const int n, const int *atomnumlist, const size_t order, const std::vector<int> &kd) const -> bool;
 
-    auto define(const int maxorder_in, const size_t nkd, const int *nbody_include_in, const double *cutoff_radii_in)
-        -> void;
+    auto define(const int maxorder_in, const size_t nkd, const int *nbody_include_in,
+                const double *cutoff_radii_in) -> void;
 
     [[nodiscard]] auto get_maxorder() const -> int;
 
@@ -272,11 +272,11 @@ public:
 
     [[nodiscard]] auto get_unique_clusters(const unsigned int order) const -> const std::set<IntList> &;
 
-    [[nodiscard]] auto get_atoms_in_cutoff(const unsigned int order, const size_t atom_index) const
-        -> const std::vector<int> &;
+    [[nodiscard]] auto get_atoms_in_cutoff(const unsigned int order,
+                                           const size_t atom_index) const -> const std::vector<int> &;
 
-    [[nodiscard]] auto get_interaction_cluster(const unsigned int order, const size_t atom_index) const
-        -> const std::set<InteractionCluster> &;
+    [[nodiscard]] auto get_interaction_cluster(const unsigned int order,
+                                               const size_t atom_index) const -> const std::set<InteractionCluster> &;
 
 private:
     int maxorder;
@@ -307,10 +307,10 @@ private:
     auto print_neighborlist(const size_t, const size_t, const std::vector<std::vector<int>> &, const std::vector<int> &,
                             const std::vector<std::string> &) const -> void;
 
-    auto print_interaction_information(const size_t natmin, const std::vector<std::vector<int>> &map_p2s,
-                                       const std::vector<int> &kd, const std::vector<std::string> &kdname,
-                                       const std::vector<std::vector<std::vector<int>>> &interaction_list) const
-        -> void;
+    auto
+    print_interaction_information(const size_t natmin, const std::vector<std::vector<int>> &map_p2s,
+                                  const std::vector<int> &kd, const std::vector<std::string> &kdname,
+                                  const std::vector<std::vector<std::vector<int>>> &interaction_list) const -> void;
 
     [[nodiscard]] auto distance(const Eigen::MatrixXd &x1, const Eigen::MatrixXd &x2) const -> double;
 

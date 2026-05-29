@@ -6,11 +6,11 @@
 
 #include "diis.h"
 #include <Eigen/Dense>
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
-GDIIS::GDIIS(int max_history, double mixing_beta, int verbosity)
-    : max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
+GDIIS::GDIIS(int max_history, double mixing_beta, int verbosity) :
+    max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
 {
     if (max_history_ < 2) {
         std::cerr << "Warning: GDIIS max_history must be at least 2. Setting to 2.\n";
@@ -105,7 +105,7 @@ bool GDIIS::solve_diis_equations(Eigen::VectorXd &coeffs)
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j <= i; ++j) {
             B(i, j) = history_error[i].dot(history_error[j]);
-            B(j, i) = B(i, j);  // Symmetric
+            B(j, i) = B(i, j); // Symmetric
         }
     }
 
@@ -118,11 +118,10 @@ bool GDIIS::solve_diis_equations(Eigen::VectorXd &coeffs)
     // Check condition number - if too large, reduce history
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(B.topLeftCorner(n, n));
     if (eigensolver.info() == Eigen::Success) {
-        double cond = eigensolver.eigenvalues().maxCoeff() /
-                     (eigensolver.eigenvalues().minCoeff() + 1e-20);
+        double cond = eigensolver.eigenvalues().maxCoeff() / (eigensolver.eigenvalues().minCoeff() + 1e-20);
         if (cond > 1e12) {
             std::cerr << "Warning: GDIIS matrix ill-conditioned (cond=" << cond
-                     << "), using only most recent vector.\n";
+                      << "), using only most recent vector.\n";
             return false;
         }
     }
@@ -137,7 +136,7 @@ bool GDIIS::solve_diis_equations(Eigen::VectorXd &coeffs)
     // Right-hand side vector
     Eigen::VectorXd rhs(n + 1);
     rhs.setZero();
-    rhs(n) = 1.0;  // Constraint: sum c_i = 1
+    rhs(n) = 1.0; // Constraint: sum c_i = 1
 
     // Solve the linear system B * [c; lambda] = rhs
     // Use ColPivHouseholderQR for more robust solving
@@ -145,12 +144,12 @@ bool GDIIS::solve_diis_equations(Eigen::VectorXd &coeffs)
     if (qr.rank() < n + 1) {
         // Only report if errors are still significant
         double max_error = 0.0;
-        for (const auto& e : history_error) {
+        for (const auto &e: history_error) {
             max_error = std::max(max_error, e.norm());
         }
         if (max_error > 1e-6) {
-            std::cerr << "Warning: GDIIS matrix rank deficient (rank=" << qr.rank()
-                     << ", expected=" << (n+1) << "), max error=" << max_error << "\n";
+            std::cerr << "Warning: GDIIS matrix rank deficient (rank=" << qr.rank() << ", expected=" << (n + 1)
+                      << "), max error=" << max_error << "\n";
         }
         return false;
     }
@@ -170,8 +169,7 @@ bool GDIIS::solve_diis_equations(Eigen::VectorXd &coeffs)
     // Verify that coefficients sum to approximately 1
     double sum_coeffs = coeffs.sum();
     if (std::abs(sum_coeffs - 1.0) > 1e-3) {
-        std::cerr << "Warning: GDIIS coefficients sum to " << sum_coeffs
-                  << " instead of 1.0, rejecting.\n";
+        std::cerr << "Warning: GDIIS coefficients sum to " << sum_coeffs << " instead of 1.0, rejecting.\n";
         return false;
     }
 
@@ -183,8 +181,8 @@ bool GDIIS::solve_diis_equations(Eigen::VectorXd &coeffs)
 // GDIIS_Eigen Implementation - Eigenvalue/Eigenvector Tracking
 // ========================================================================
 
-GDIIS_Eigen::GDIIS_Eigen(int max_history, double mixing_beta, int verbosity)
-    : max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
+GDIIS_Eigen::GDIIS_Eigen(int max_history, double mixing_beta, int verbosity) :
+    max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
 {
     if (max_history_ < 2) {
         std::cerr << "Warning: GDIIS_Eigen max_history must be at least 2. Setting to 2.\n";
@@ -196,8 +194,7 @@ GDIIS_Eigen::GDIIS_Eigen(int max_history, double mixing_beta, int verbosity)
     }
 }
 
-void GDIIS_Eigen::push(const Eigen::MatrixXd &eigenvalues,
-                       const std::vector<Eigen::MatrixXcd> &eigenvectors)
+void GDIIS_Eigen::push(const Eigen::MatrixXd &eigenvalues, const std::vector<Eigen::MatrixXcd> &eigenvectors)
 {
     if (eigenvalues.rows() == 0 || eigenvectors.empty()) {
         std::cerr << "Error: GDIIS_Eigen::push - eigenvalues or eigenvectors are empty.\n";
@@ -239,8 +236,7 @@ void GDIIS_Eigen::push(const Eigen::MatrixXd &eigenvalues,
     }
 }
 
-bool GDIIS_Eigen::extrapolate(Eigen::MatrixXd &eigenvalues_new,
-                              std::vector<Eigen::MatrixXcd> &eigenvectors_new)
+bool GDIIS_Eigen::extrapolate(Eigen::MatrixXd &eigenvalues_new, std::vector<Eigen::MatrixXcd> &eigenvectors_new)
 {
     const int n = size();
     if (n < 1) {
@@ -280,8 +276,7 @@ bool GDIIS_Eigen::extrapolate(Eigen::MatrixXd &eigenvalues_new,
     const int nk = static_cast<int>(history_matrices.front().size());
     const int ns = history_matrices.front().front().rows();
 
-    eigenvalues_new = Eigen::MatrixXd::Zero(history_eigenvalues.front().rows(),
-                                            history_eigenvalues.front().cols());
+    eigenvalues_new = Eigen::MatrixXd::Zero(history_eigenvalues.front().rows(), history_eigenvalues.front().cols());
     eigenvectors_new.assign(nk, Eigen::MatrixXcd(ns, ns));
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> solver;
@@ -333,8 +328,7 @@ bool GDIIS_Eigen::solve_diis_equations(Eigen::VectorXd &coeffs)
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(B.topLeftCorner(n, n));
     if (eigensolver.info() == Eigen::Success) {
-        const double cond = eigensolver.eigenvalues().maxCoeff() /
-                            (eigensolver.eigenvalues().minCoeff() + 1e-20);
+        const double cond = eigensolver.eigenvalues().maxCoeff() / (eigensolver.eigenvalues().minCoeff() + 1e-20);
         if (cond > 1e12) {
             if (verbosity_ > 0) {
                 std::cerr << "Warning: GDIIS_Eigen matrix ill-conditioned (cond=" << cond << ")\n";
@@ -356,7 +350,7 @@ bool GDIIS_Eigen::solve_diis_equations(Eigen::VectorXd &coeffs)
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(B);
     if (qr.rank() < n + 1) {
         double max_error = 0.0;
-        for (const auto &e : history_error) {
+        for (const auto &e: history_error) {
             max_error = std::max(max_error, e.norm());
         }
         if (max_error > 1e-6 && verbosity_ > 0) {
@@ -386,8 +380,7 @@ bool GDIIS_Eigen::solve_diis_equations(Eigen::VectorXd &coeffs)
     return true;
 }
 
-void GDIIS_Eigen::find_permutation(const Eigen::MatrixXd &eigenvalues_old,
-                                   const Eigen::MatrixXd &eigenvalues_new,
+void GDIIS_Eigen::find_permutation(const Eigen::MatrixXd &eigenvalues_old, const Eigen::MatrixXd &eigenvalues_new,
                                    std::vector<Eigen::VectorXi> &permutations)
 {
     const int nk = static_cast<int>(eigenvalues_old.rows());
@@ -414,8 +407,7 @@ void GDIIS_Eigen::find_permutation(const Eigen::MatrixXd &eigenvalues_old,
     }
 }
 
-void GDIIS_Eigen::apply_permutation(Eigen::MatrixXd &eigenvalues,
-                                    std::vector<Eigen::MatrixXcd> &eigenvectors,
+void GDIIS_Eigen::apply_permutation(Eigen::MatrixXd &eigenvalues, std::vector<Eigen::MatrixXcd> &eigenvectors,
                                     const std::vector<Eigen::VectorXi> &permutations)
 {
     for (size_t k = 0; k < permutations.size(); ++k) {
@@ -435,7 +427,7 @@ void GDIIS_Eigen::apply_permutation(Eigen::MatrixXd &eigenvalues,
 }
 
 Eigen::MatrixXcd GDIIS_Eigen::reconstruct_hermitian_matrix(const Eigen::VectorXd &eigenvalues,
-                                                            const Eigen::MatrixXcd &eigenvectors)
+                                                           const Eigen::MatrixXcd &eigenvectors)
 {
     Eigen::MatrixXcd diag = eigenvalues.asDiagonal();
     return eigenvectors * diag * eigenvectors.adjoint();
@@ -458,8 +450,8 @@ Eigen::VectorXd GDIIS_Eigen::flatten_eigenvalues(const Eigen::MatrixXd &eigenval
 // GDIIS_Matrix Implementation - Matrix Mixing with Eigenvalue Error
 // ========================================================================
 
-GDIIS_Matrix::GDIIS_Matrix(int max_history, double mixing_beta, int verbosity)
-    : max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
+GDIIS_Matrix::GDIIS_Matrix(int max_history, double mixing_beta, int verbosity) :
+    max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
 {
     if (max_history_ < 2) {
         std::cerr << "Warning: GDIIS_Matrix max_history must be at least 2. Setting to 2.\n";
@@ -471,8 +463,7 @@ GDIIS_Matrix::GDIIS_Matrix(int max_history, double mixing_beta, int verbosity)
     }
 }
 
-void GDIIS_Matrix::push(const std::vector<Eigen::MatrixXcd> &matrices,
-                        const Eigen::MatrixXd &eigenvalues)
+void GDIIS_Matrix::push(const std::vector<Eigen::MatrixXcd> &matrices, const Eigen::MatrixXd &eigenvalues)
 {
     if (matrices.empty()) {
         std::cerr << "Error: GDIIS_Matrix::push - matrices are empty.\n";
@@ -509,7 +500,7 @@ void GDIIS_Matrix::push(const std::vector<Eigen::MatrixXcd> &matrices,
                 const double old_val = history_eigenvalues.back()(k, i);
                 const double new_val = aligned_eigenvalues(k, i);
                 const double abs_old = std::abs(old_val);
-                const double denominator = std::max(abs_old, 1e-6);  // Avoid division by zero
+                const double denominator = std::max(abs_old, 1e-6); // Avoid division by zero
                 error_matrix(k, i) = (new_val - old_val) / denominator;
             }
         }
@@ -556,7 +547,7 @@ bool GDIIS_Matrix::extrapolate(std::vector<Eigen::MatrixXcd> &matrices_new)
     // If so, reduce history to most recent points for better stability
     const double latest_error_norm = history_error.back().norm();
     if (n >= 2) {
-        const double prev_error_norm = history_error[n-2].norm();
+        const double prev_error_norm = history_error[n - 2].norm();
         // If error is very small or increasing, be conservative with history
         if (latest_error_norm < 1e-6 || latest_error_norm > 2.0 * prev_error_norm) {
             while (size() > 2) {
@@ -564,14 +555,14 @@ bool GDIIS_Matrix::extrapolate(std::vector<Eigen::MatrixXcd> &matrices_new)
                 history_eigenvalues.pop_front();
                 history_error.pop_front();
             }
-            n = size();  // Update n after modification
+            n = size(); // Update n after modification
         }
     }
 
     // If errors are oscillating wildly, clear history and restart
     if (n >= 3) {
-        const double ratio1 = history_error[n-1].norm() / (history_error[n-2].norm() + 1e-12);
-        const double ratio2 = history_error[n-2].norm() / (history_error[n-3].norm() + 1e-12);
+        const double ratio1 = history_error[n - 1].norm() / (history_error[n - 2].norm() + 1e-12);
+        const double ratio2 = history_error[n - 2].norm() / (history_error[n - 3].norm() + 1e-12);
         if (ratio1 > 100.0 || ratio2 > 100.0) {
             if (verbosity_ > 1) {
                 std::cout << "  GDIIS_Matrix: error oscillating, clearing history\n";
@@ -614,7 +605,7 @@ bool GDIIS_Matrix::extrapolate(std::vector<Eigen::MatrixXcd> &matrices_new)
     // Compute extrapolated matrices: M_new[k] = sum_i c_i * M_i[k]
     const int nk = static_cast<int>(history_matrices.front().size());
     const int ns = history_matrices.front().front().rows();
-    const int current_size = size();  // Get current size for the loop
+    const int current_size = size(); // Get current size for the loop
 
     matrices_new.clear();
     matrices_new.reserve(nk);
@@ -648,7 +639,7 @@ bool GDIIS_Matrix::solve_diis_equations(Eigen::VectorXd &coeffs)
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j <= i; ++j) {
             B(i, j) = history_error[i].dot(history_error[j]);
-            B(j, i) = B(i, j);  // Symmetric
+            B(j, i) = B(i, j); // Symmetric
         }
     }
 
@@ -661,8 +652,7 @@ bool GDIIS_Matrix::solve_diis_equations(Eigen::VectorXd &coeffs)
     // If errors are very small, don't use DIIS (would be numerically unstable)
     if (max_error_norm < 1e-8) {
         if (verbosity_ > 1) {
-            std::cout << "  GDIIS_Matrix: errors too small (" << max_error_norm
-                     << "), skipping DIIS\n";
+            std::cout << "  GDIIS_Matrix: errors too small (" << max_error_norm << "), skipping DIIS\n";
         }
         return false;
     }
@@ -684,8 +674,8 @@ bool GDIIS_Matrix::solve_diis_equations(Eigen::VectorXd &coeffs)
         // Be more conservative with condition number
         if (cond > 1e10 || min_eval < 1e-14) {
             if (verbosity_ > 0) {
-                std::cerr << "Warning: GDIIS_Matrix ill-conditioned (cond=" << cond
-                         << ", min_eval=" << min_eval << ")\n";
+                std::cerr << "Warning: GDIIS_Matrix ill-conditioned (cond=" << cond << ", min_eval=" << min_eval
+                          << ")\n";
             }
             return false;
         }
@@ -701,14 +691,14 @@ bool GDIIS_Matrix::solve_diis_equations(Eigen::VectorXd &coeffs)
     // Right-hand side vector
     Eigen::VectorXd rhs(n + 1);
     rhs.setZero();
-    rhs(n) = 1.0;  // Constraint: sum c_i = 1
+    rhs(n) = 1.0; // Constraint: sum c_i = 1
 
     // Solve the linear system - use more robust solver
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(B);
     if (qr.rank() < n + 1) {
         if (verbosity_ > 0) {
-            std::cerr << "Warning: GDIIS_Matrix rank deficient (rank=" << qr.rank()
-                     << ", expected=" << (n+1) << ")\n";
+            std::cerr << "Warning: GDIIS_Matrix rank deficient (rank=" << qr.rank() << ", expected=" << (n + 1)
+                      << ")\n";
         }
         return false;
     }
@@ -756,8 +746,7 @@ bool GDIIS_Matrix::solve_diis_equations(Eigen::VectorXd &coeffs)
     return true;
 }
 
-void GDIIS_Matrix::find_permutation(const Eigen::MatrixXd &eigenvalues_old,
-                                    const Eigen::MatrixXd &eigenvalues_new,
+void GDIIS_Matrix::find_permutation(const Eigen::MatrixXd &eigenvalues_old, const Eigen::MatrixXd &eigenvalues_new,
                                     std::vector<Eigen::VectorXi> &permutations)
 {
     const int nk = static_cast<int>(eigenvalues_old.rows());
@@ -801,8 +790,8 @@ Eigen::VectorXd GDIIS_Matrix::flatten_eigenvalues(const Eigen::MatrixXd &eigenva
 // GDIIS_PerKpoint Implementation - Independent DIIS for Each K-point
 // ========================================================================
 
-GDIIS_PerKpoint::GDIIS_PerKpoint(int nk, int max_history, double mixing_beta, int verbosity)
-    : nk_(nk), max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
+GDIIS_PerKpoint::GDIIS_PerKpoint(int nk, int max_history, double mixing_beta, int verbosity) :
+    nk_(nk), max_history_(max_history), mixing_beta_(mixing_beta), verbosity_(verbosity)
 {
     if (max_history_ < 2) {
         std::cerr << "Warning: GDIIS_PerKpoint max_history must be at least 2. Setting to 2.\n";
@@ -816,15 +805,14 @@ GDIIS_PerKpoint::GDIIS_PerKpoint(int nk, int max_history, double mixing_beta, in
     // Create one GDIIS_Matrix instance for each k-point
     diis_per_k_.reserve(nk_);
     for (int k = 0; k < nk_; ++k) {
-        diis_per_k_.emplace_back(max_history_, mixing_beta_, 0);  // verbosity 0 for individual k-points
+        diis_per_k_.emplace_back(max_history_, mixing_beta_, 0); // verbosity 0 for individual k-points
     }
 
     success_count_.resize(nk_, 0);
     failure_count_.resize(nk_, 0);
 }
 
-void GDIIS_PerKpoint::push(const std::vector<Eigen::MatrixXcd> &matrices,
-                            const Eigen::MatrixXd &eigenvalues)
+void GDIIS_PerKpoint::push(const std::vector<Eigen::MatrixXcd> &matrices, const Eigen::MatrixXd &eigenvalues)
 {
     if (static_cast<int>(matrices.size()) != nk_ || eigenvalues.rows() != nk_) {
         std::cerr << "Error: GDIIS_PerKpoint::push - size mismatch.\n";

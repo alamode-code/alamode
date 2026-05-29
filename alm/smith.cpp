@@ -4,10 +4,10 @@
 #include "smith.h"
 #include <Eigen/Core>
 #include <algorithm>
+#include <cassert>
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <cassert>
 
 auto gcd(const int &a, const int &b) -> int
 {

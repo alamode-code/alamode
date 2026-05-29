@@ -23,7 +23,7 @@ DerivativeIFC::DerivativeIFC(PHON *phon) : Pointers(phon)
 {}
 
 void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
-                                           const std::complex<double> *const *const *const evec_harmonic) const
+                                     const std::complex<double> *const *const *const evec_harmonic) const
 {
     const auto natmin = system->get_primcell().number_of_atoms;
     const auto ns = dynamical->neval;
@@ -79,7 +79,7 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
 }
 
 void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
-                                             const std::complex<double> *const *const *const evec_harmonic) const
+                                       const std::complex<double> *const *const *const evec_harmonic) const
 {
     // Calculates the second-order derivative of IFC1 with respect to strain in real space and transforms it to the reciprocal space representation.
     // It can be obtained from the IFC3 in the unstrained system.
@@ -141,7 +141,7 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
 }
 
 void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
-                                             const std::complex<double> *const *const *const evec_harmonic) const
+                                       const std::complex<double> *const *const *const evec_harmonic) const
 {
     // Calculates the third-order derivative of IFC1 with respect to strain in real space and transforms it to the reciprocal space representation.
     // It can be obtained from the IFC4 in the unstrained system.
@@ -177,9 +177,9 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
                         for (int mu3 = 0; mu3 < 3; ++mu3) {
                             for (int nu3 = 0; nu3 < 3; ++nu3) {
                                 compute_dV_dumn_real_space(fcs_aligned,
-                                                            delta_fcs,
-                                                            {{mu1, nu1}, {mu2, nu2}, {mu3, nu3}},
-                                                            -1.0);
+                                                           delta_fcs,
+                                                           {{mu1, nu1}, {mu2, nu2}, {mu3, nu3}},
+                                                           -1.0);
                                 const int ixyz_comb = mu1 * 243 + nu1 * 81 + mu2 * 27 + nu2 * 9 + mu3 * 3 + nu3;
                                 for (const auto &entry: delta_fcs) {
                                     const int ind1 = entry.pairs[0].index;
@@ -210,8 +210,8 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
 }
 
 void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
-                                           const std::complex<double> *const *const *const evec_harmonic,
-                                           const unsigned int nk, double **xk_in) const
+                                     const std::complex<double> *const *const *const evec_harmonic,
+                                     const unsigned int nk, double **xk_in) const
 {
     using namespace Eigen;
 
@@ -266,8 +266,8 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
 }
 
 void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_del_umn2,
-                                             const std::complex<double> *const *const *const evec_harmonic,
-                                             const unsigned int nk, double **xk_in) const
+                                       const std::complex<double> *const *const *const evec_harmonic,
+                                       const unsigned int nk, double **xk_in) const
 {
     using namespace Eigen;
 
@@ -330,11 +330,10 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
 }
 
 void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &del_v3_del_umn,
-                                           double **omega2_harmonic,
-                                           const std::complex<double> *const *const *const evec_harmonic,
-                                           const KpointMeshUniform *kmesh_coarse_in,
-                                           const KpointMeshUniform *kmesh_dense_in,
-                                           const PhaseFactorStorage *phase_storage_in) const
+                                     double **omega2_harmonic,
+                                     const std::complex<double> *const *const *const evec_harmonic,
+                                     const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+                                     const PhaseFactorStorage *phase_storage_in) const
 {
     const auto ns = dynamical->neval;
     const auto ns2 = static_cast<std::size_t>(ns) * ns;
@@ -459,9 +458,9 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
 }
 
 void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                       std::vector<FcsArrayWithCell> &delta_fcs,
-                                                       const std::vector<std::pair<int, int>> &strain_components,
-                                                       const double emit_threshold) const
+                                               std::vector<FcsArrayWithCell> &delta_fcs,
+                                               const std::vector<std::pair<int, int>> &strain_components,
+                                               const double emit_threshold) const
 {
 
     if (fcs_aligned.empty()) {
@@ -606,15 +605,15 @@ void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCel
 }
 
 void DerivativeIFC::compute_dV_dumn_real_space_m1(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                        std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz1,
-                                                        const int ixyz2) const
+                                                  std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz1,
+                                                  const int ixyz2) const
 {
     compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz1, ixyz2}}, eps15);
 }
 
 void DerivativeIFC::compute_dV_dumn_real_space_m2(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                        std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz11,
-                                                        const int ixyz12, const int ixyz21, const int ixyz22) const
+                                                  std::vector<FcsArrayWithCell> &delta_fcs, const int ixyz11,
+                                                  const int ixyz12, const int ixyz21, const int ixyz22) const
 {
     compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz11, ixyz12}, {ixyz21, ixyz22}}, eps15);
 }
@@ -767,12 +766,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         std::cout << "  - first-order derivatives of cubic IFCs (from quartic IFCs) ... " << std::flush;
     }
 
-    compute_dV3_dumn(del_v_strain.del_v3,
-                     omega2_harmonic,
-                     evec_harmonic,
-                     kmesh_coarse,
-                     kmesh_dense,
-                     phase_storage_in);
+    compute_dV3_dumn(del_v_strain.del_v3, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_storage_in);
 
     if (mympi->my_rank == 0) {
         std::cout << "  done!\n";
@@ -780,12 +774,12 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
 }
 
 void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse,
-                                                    const KpointMeshUniform *kmesh_dense, const size_t ns,
-                                                    DelVStrainData &del_v_strain, double **omega2_harmonic,
-                                                    std::complex<double> ***evec_harmonic, const int renorm_2to1st,
-                                                    const int renorm_34to1st, const int renorm_3to2nd,
-                                                    const std::string &strain_ifc_dir,
-                                                    MinimumDistList ***mindist_list) const
+                                                   const KpointMeshUniform *kmesh_dense, const size_t ns,
+                                                   DelVStrainData &del_v_strain, double **omega2_harmonic,
+                                                   std::complex<double> ***evec_harmonic, const int renorm_2to1st,
+                                                   const int renorm_34to1st, const int renorm_3to2nd,
+                                                   const std::string &strain_ifc_dir,
+                                                   MinimumDistList ***mindist_list) const
 {
     const auto nk = kmesh_dense->nk;
     if (static_cast<int>(ns) != del_v_strain.nmode() || static_cast<int>(nk) != del_v_strain.nk()) {
@@ -1075,8 +1069,7 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
             std::complex<double> sum(0.0, 0.0);
             for (iat1 = 0; iat1 < natmin; iat1++) {
                 for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                    sum += evec_harmonic[0][is1][iat1 * 3 + ixyz2] *
-                           system->get_invsqrt_mass()[iat1] *
+                    sum += evec_harmonic[0][is1][iat1 * 3 + ixyz2] * system->get_invsqrt_mass()[iat1] *
                            del_v1_del_umn_in_real_space_symm[ixyz1][iat1 * 3 + ixyz2];
                 }
             }

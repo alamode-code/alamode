@@ -375,8 +375,8 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
     // Force the dynamical matrix be real when k point is
     // zone-center or zone-boundaries.
 
-    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) +
-                  pow2(std::fmod(xk_in[2], 0.5))) < eps)
+    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) + pow2(std::fmod(xk_in[2], 0.5))) <
+        eps)
     {
 
         for (i = 0; i < neval; ++i) {
@@ -1086,8 +1086,8 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
 
     calc_analytic_k(xk_in, fc2_in, dymat_tmp);
 
-    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) +
-                  pow2(std::fmod(xk_in[2], 0.5))) < eps)
+    if (std::sqrt(pow2(std::fmod(xk_in[0], 0.5)) + pow2(std::fmod(xk_in[1], 0.5)) + pow2(std::fmod(xk_in[2], 0.5))) <
+        eps)
     {
 
         for (i = 0; i < neval; ++i) {
@@ -1934,7 +1934,8 @@ void Dynamical::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_c
             }
 
             // Apply symmetry transformation: D'(k) = Γ D(k) Γ^†
-            dymat_all[i] = gamma * dymat_inout[ik_orig] * gamma.adjoint();;
+            dymat_all[i] = gamma * dymat_inout[ik_orig] * gamma.adjoint();
+            ;
         }
     }
 

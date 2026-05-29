@@ -95,7 +95,8 @@ auto Timer::DateAndTime() -> std::string
     std::time(&current);
 
 #if defined(WIN32) || defined(_WIN32)
-    struct tm local{};
+    struct tm local
+    {};
     char str_now[32];
 
     auto err_t = localtime_s(&local, &current);

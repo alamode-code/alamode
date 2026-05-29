@@ -431,11 +431,11 @@ void Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
                         }
                     }
 
-                    mag_sym1 = (pow2(mag[0] - mag_rot[0]) + pow2(mag[1] - mag_rot[1]) +
-                                pow2(mag[2] - mag_rot[2])) < eps6;
+                    mag_sym1 =
+                        (pow2(mag[0] - mag_rot[0]) + pow2(mag[1] - mag_rot[1]) + pow2(mag[2] - mag_rot[2])) < eps6;
 
-                    mag_sym2 = (pow2(mag[0] + mag_rot[0]) + pow2(mag[1] + mag_rot[1]) +
-                                pow2(mag[2] + mag_rot[2])) < eps6;
+                    mag_sym2 =
+                        (pow2(mag[0] + mag_rot[0]) + pow2(mag[1] + mag_rot[1]) + pow2(mag[2] + mag_rot[2])) < eps6;
 
                     if (!mag_sym1 && !mag_sym2) {
                         isok = false;

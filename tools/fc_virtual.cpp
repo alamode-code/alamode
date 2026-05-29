@@ -9,17 +9,17 @@
 */
 
 #include "fc_virtual.h"
-#include "xml_parser.h"
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <map>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
-#include <boost/version.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/version.hpp>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <map>
 #include "memory.h"
+#include "xml_parser.h"
 
 using namespace std;
 
@@ -91,9 +91,7 @@ int main(int argc, char *argv[])
 }
 
 
-void load_fcs_xml(const std::string file_in,
-                  const int maxorder,
-                  StructureProperty &StructProp,
+void load_fcs_xml(const std::string file_in, const int maxorder, StructureProperty &StructProp,
                   std::vector<FcsArrayWithCell> *force_constant_with_cell)
 {
     using namespace boost::property_tree;
@@ -103,41 +101,28 @@ void load_fcs_xml(const std::string file_in,
 
     try {
         read_xml(file_in, pt);
-    }
-    catch (exception &e) {
+    } catch (exception &e) {
         cout << "Cannot open file " + file_in << endl;
         exit(EXIT_FAILURE);
     }
 
-    StructProp.nat = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Structure.NumberOfAtoms"));
-    StructProp.nspecies = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Structure.NumberOfElements"));
+    StructProp.nat = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Structure.NumberOfAtoms"));
+    StructProp.nspecies = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Structure.NumberOfElements"));
 
-    StructProp.ntran = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Symmetry.NumberOfTranslations"));
+    StructProp.ntran = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Symmetry.NumberOfTranslations"));
 
 
     for (auto i = 0; i < 3; ++i) {
         ss.str("");
         ss.clear();
-        ss << get_value_from_xml(pt,
-                                 "Data.Structure.LatticeVector.a"
-                                 + boost::lexical_cast<string>(i + 1));
-        ss >> StructProp.lattice_vector[0][i]
-           >> StructProp.lattice_vector[1][i]
-           >> StructProp.lattice_vector[2][i];
+        ss << get_value_from_xml(pt, "Data.Structure.LatticeVector.a" + boost::lexical_cast<string>(i + 1));
+        ss >> StructProp.lattice_vector[0][i] >> StructProp.lattice_vector[1][i] >> StructProp.lattice_vector[2][i];
     }
 
     ss.str("");
     ss.clear();
     ss << get_value_from_xml(pt, "Data.Structure.Periodicity");
-    ss >> StructProp.is_periodic[0]
-       >> StructProp.is_periodic[1]
-       >> StructProp.is_periodic[2];
+    ss >> StructProp.is_periodic[0] >> StructProp.is_periodic[1] >> StructProp.is_periodic[2];
 
     // Parse atomic elements and coordinates
 
@@ -146,38 +131,34 @@ void load_fcs_xml(const std::string file_in,
 
     int i = 0;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
-                    const ptree &child = child_.second;
-                    const unsigned int icount_kd = child.get<unsigned int>("<xmlattr>.number");
-                    dict_atomic_kind[boost::lexical_cast<string>(child_.second.data())] = icount_kd - 1;
-                    StructProp.kd_symbol[i++] = boost::lexical_cast<string>(child_.second.data());
-                }
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
+        const ptree &child = child_.second;
+        const unsigned int icount_kd = child.get<unsigned int>("<xmlattr>.number");
+        dict_atomic_kind[boost::lexical_cast<string>(child_.second.data())] = icount_kd - 1;
+        StructProp.kd_symbol[i++] = boost::lexical_cast<string>(child_.second.data());
+    }
 
     unsigned int index;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
-                    const ptree &child = child_.second;
-                    const string str_index = child.get<string>("<xmlattr>.index");
-                    const string str_element = child.get<string>("<xmlattr>.element");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
+        const ptree &child = child_.second;
+        const string str_index = child.get<string>("<xmlattr>.index");
+        const string str_element = child.get<string>("<xmlattr>.element");
 
-                    ss.str("");
-                    ss.clear();
-                    ss << child.data();
+        ss.str("");
+        ss.clear();
+        ss << child.data();
 
-                    index = boost::lexical_cast<unsigned int>(str_index) - 1;
+        index = boost::lexical_cast<unsigned int>(str_index) - 1;
 
-                    if (index >= StructProp.nat) {
-                        cout << "index is out of range" << endl;
-                        exit(EXIT_FAILURE);
-                    }
+        if (index >= StructProp.nat) {
+            cout << "index is out of range" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-                    StructProp.atoms[index].kind = dict_atomic_kind[str_element];
-                    ss >> StructProp.atoms[index].x
-                       >> StructProp.atoms[index].y
-                       >> StructProp.atoms[index].z;
-                }
+        StructProp.atoms[index].kind = dict_atomic_kind[str_element];
+        ss >> StructProp.atoms[index].x >> StructProp.atoms[index].y >> StructProp.atoms[index].z;
+    }
 
     dict_atomic_kind.clear();
 
@@ -187,24 +168,23 @@ void load_fcs_xml(const std::string file_in,
 
     unsigned int tran, atom_p, atom_s;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
-                    const ptree &child = child_.second;
-                    const string str_tran = child.get<string>("<xmlattr>.tran");
-                    const string str_atom = child.get<string>("<xmlattr>.atom");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
+        const ptree &child = child_.second;
+        const string str_tran = child.get<string>("<xmlattr>.tran");
+        const string str_atom = child.get<string>("<xmlattr>.atom");
 
-                    tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
-                    atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
-                    atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
+        tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
+        atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
+        atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
 
-                    if (tran >= StructProp.ntran || atom_p >= StructProp.natmin || atom_s >= StructProp.nat) {
-                        cout << "index is out of range" << endl;
-                        exit(EXIT_FAILURE);
-                    }
+        if (tran >= StructProp.ntran || atom_p >= StructProp.natmin || atom_s >= StructProp.nat) {
+            cout << "index is out of range" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-                    StructProp.atoms[atom_s].atom = atom_p;
-                    StructProp.atoms[atom_s].tran = tran;
-                }
+        StructProp.atoms[atom_s].atom = atom_p;
+        StructProp.atoms[atom_s].tran = tran;
+    }
 
     // Parse force constants
 
@@ -231,57 +211,50 @@ void load_fcs_xml(const std::string file_in,
             exit(EXIT_FAILURE);
         }
 
-        BOOST_FOREACH(
-                const ptree::value_type &child_, pt.get_child(str_tag)) {
-                        const ptree &child = child_.second;
+        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child(str_tag)) {
+            const ptree &child = child_.second;
 
-                        fcs_val = boost::lexical_cast<double>(child.data());
+            fcs_val = boost::lexical_cast<double>(child.data());
 
-                        ivec_with_cell.clear();
+            ivec_with_cell.clear();
 
-                        for (i = 0; i < order + 2; ++i) {
-                            str_attr = "<xmlattr>.pair" + std::to_string(i + 1);
-                            str_pairs = child.get<std::string>(str_attr);
+            for (i = 0; i < order + 2; ++i) {
+                str_attr = "<xmlattr>.pair" + std::to_string(i + 1);
+                str_pairs = child.get<std::string>(str_attr);
 
-                            ss.str("");
-                            ss.clear();
-                            ss << str_pairs;
+                ss.str("");
+                ss.clear();
+                ss << str_pairs;
 
-                            if (i == 0) {
-                                ss >> atmn >> xyz;
-                                ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
-                                ivec_tmp.cell_s = 0;
-                                ivec_tmp.tran = 0; // dummy
-                                ivec_with_cell.push_back(ivec_tmp);
+                if (i == 0) {
+                    ss >> atmn >> xyz;
+                    ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
+                    ivec_tmp.cell_s = 0;
+                    ivec_tmp.tran = 0; // dummy
+                    ivec_with_cell.push_back(ivec_tmp);
 
-                            } else {
-                                ss >> atmn >> xyz >> cell_s;
-                                ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
-                                ivec_tmp.cell_s = cell_s - 1;
-                                ivec_tmp.tran = 0; // dummy
-                                ivec_with_cell.push_back(ivec_tmp);
-                            }
-                        }
+                } else {
+                    ss >> atmn >> xyz >> cell_s;
+                    ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
+                    ivec_tmp.cell_s = cell_s - 1;
+                    ivec_tmp.tran = 0; // dummy
+                    ivec_with_cell.push_back(ivec_tmp);
+                }
+            }
 
-                        force_constant_with_cell[order].emplace_back(fcs_val, ivec_with_cell);
-
-                    }
-
+            force_constant_with_cell[order].emplace_back(fcs_val, ivec_with_cell);
+        }
     }
-
 }
 
-void mix_structure(const StructureProperty &Structure1,
-                   const StructureProperty &Structure2,
-                   StructureProperty &Structure_out,
-                   const double alpha)
+void mix_structure(const StructureProperty &Structure1, const StructureProperty &Structure2,
+                   StructureProperty &Structure_out, const double alpha)
 {
     // First, check the consistency of the two structures.
 
-    if (Structure1.nat != Structure2.nat ||
-        Structure1.nspecies != Structure2.nspecies ||
-        Structure1.ntran != Structure2.ntran ||
-        Structure1.atoms.size() != Structure2.atoms.size()) {
+    if (Structure1.nat != Structure2.nat || Structure1.nspecies != Structure2.nspecies ||
+        Structure1.ntran != Structure2.ntran || Structure1.atoms.size() != Structure2.atoms.size())
+    {
         std::cout << " Atomic structures of two XML files are different." << std::endl;
         exit(EXIT_FAILURE);
     }
@@ -304,7 +277,8 @@ void mix_structure(const StructureProperty &Structure1,
 
     for (auto i = 0; i < Structure1.nat; ++i) {
         if (Structure1.atoms[i].atom != Structure2.atoms[i].atom ||
-            Structure1.atoms[i].tran != Structure2.atoms[i].tran) {
+            Structure1.atoms[i].tran != Structure2.atoms[i].tran)
+        {
             std::cout << " The mapping information doesn't match." << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -316,7 +290,8 @@ void mix_structure(const StructureProperty &Structure1,
     Structure_out.nspecies = Structure1.nspecies;
     Structure_out.ntran = Structure1.ntran;
     Structure_out.natmin = Structure1.natmin;
-    for (auto i = 0; i < 3; ++i) Structure_out.is_periodic[i] = Structure1.is_periodic[i];
+    for (auto i = 0; i < 3; ++i)
+        Structure_out.is_periodic[i] = Structure1.is_periodic[i];
 
     for (const auto &it: Structure1.kd_symbol) {
         Structure_out.kd_symbol.push_back(it);
@@ -326,9 +301,8 @@ void mix_structure(const StructureProperty &Structure1,
 
     for (auto i = 0; i < 3; ++i) {
         for (auto j = 0; j < 3; ++j) {
-            Structure_out.lattice_vector[i][j]
-                    = alpha * Structure1.lattice_vector[i][j]
-                      + (1.0 - alpha) * Structure2.lattice_vector[i][j];
+            Structure_out.lattice_vector[i][j] =
+                alpha * Structure1.lattice_vector[i][j] + (1.0 - alpha) * Structure2.lattice_vector[i][j];
         }
     }
 
@@ -351,10 +325,8 @@ void mix_structure(const StructureProperty &Structure1,
 }
 
 
-void mix_forceconstant(std::vector<FcsArrayWithCell> *fc_orig1,
-                       std::vector<FcsArrayWithCell> *fc_orig2,
-                       std::vector<FcsArrayWithCell> *fc_new,
-                       const double alpha, const int maxorder)
+void mix_forceconstant(std::vector<FcsArrayWithCell> *fc_orig1, std::vector<FcsArrayWithCell> *fc_orig2,
+                       std::vector<FcsArrayWithCell> *fc_new, const double alpha, const int maxorder)
 {
     // Mix force constants with the given mixing fraction "alpha"
 
@@ -390,11 +362,8 @@ void mix_forceconstant(std::vector<FcsArrayWithCell> *fc_orig1,
 }
 
 
-void write_new_xml(const std::string file_xml,
-                   const std::string file_xml1,
-                   const std::string file_xml2,
-                   const int maxorder, const double alpha,
-                   const StructureProperty &structure,
+void write_new_xml(const std::string file_xml, const std::string file_xml1, const std::string file_xml2,
+                   const int maxorder, const double alpha, const StructureProperty &structure,
                    std::vector<FcsArrayWithCell> *fcs)
 {
     int i, j, k;
@@ -408,8 +377,7 @@ void write_new_xml(const std::string file_xml,
     pt.put("Data.Structure.NumberOfElements", structure.nspecies);
 
     for (i = 0; i < structure.nspecies; ++i) {
-        ptree &child = pt.add("Data.Structure.AtomicElements.element",
-                              structure.kd_symbol[i]);
+        ptree &child = pt.add("Data.Structure.AtomicElements.element", structure.kd_symbol[i]);
         child.put("<xmlattr>.number", i + 1);
     }
 
@@ -426,9 +394,7 @@ void write_new_xml(const std::string file_xml,
     pt.put("Data.Structure.LatticeVector.a3", str_pos[2]);
 
     std::stringstream ss;
-    ss << structure.is_periodic[0] << " "
-       << structure.is_periodic[1] << " "
-       << structure.is_periodic[2];
+    ss << structure.is_periodic[0] << " " << structure.is_periodic[1] << " " << structure.is_periodic[2];
     pt.put("Data.Structure.Periodicity", ss.str());
 
     pt.put("Data.Structure.Position", "");
@@ -436,9 +402,8 @@ void write_new_xml(const std::string file_xml,
 
     for (i = 0; i < structure.nat; ++i) {
         str_tmp.clear();
-        str_tmp = " " + double2string(structure.atoms[i].x)
-                  + " " + double2string(structure.atoms[i].y)
-                  + " " + double2string(structure.atoms[i].z);
+        str_tmp = " " + double2string(structure.atoms[i].x) + " " + double2string(structure.atoms[i].y) + " " +
+                  double2string(structure.atoms[i].z);
         ptree &child = pt.add("Data.Structure.Position.pos", str_tmp);
         child.put("<xmlattr>.index", i + 1);
         child.put("<xmlattr>.element", structure.kd_symbol[structure.atoms[i].kind]);
@@ -453,8 +418,7 @@ void write_new_xml(const std::string file_xml,
     pt.put("Data.Symmetry.NumberOfTranslations", structure.ntran);
     for (i = 0; i < structure.ntran; ++i) {
         for (j = 0; j < structure.natmin; ++j) {
-            ptree &child = pt.add("Data.Symmetry.Translations.map",
-                                  map_p2s[j][i] + 1);
+            ptree &child = pt.add("Data.Symmetry.Translations.map", map_p2s[j][i] + 1);
             child.put("<xmlattr>.tran", i + 1);
             child.put("<xmlattr>.atom", j + 1);
         }
@@ -468,36 +432,33 @@ void write_new_xml(const std::string file_xml,
         if (order == 0) {
             elementname = "Data.ForceConstants.HARMONIC.FC2";
         } else {
-            elementname = "Data.ForceConstants.ANHARM" + std::to_string(order + 2)
-                          + ".FC" + std::to_string(order + 2);
+            elementname = "Data.ForceConstants.ANHARM" + std::to_string(order + 2) + ".FC" + std::to_string(order + 2);
         }
 
         for (const auto &it: fcs[order]) {
 
             ptree &child = pt.add(elementname, double2string(it.fcs_val));
-            child.put("<xmlattr>.pair1", std::to_string(it.pairs[0].index / 3 + 1)
-                                         + " " + std::to_string(it.pairs[0].index % 3 + 1));
+            child.put("<xmlattr>.pair1",
+                      std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
 
             for (k = 1; k < order + 2; ++k) {
                 child.put("<xmlattr>.pair" + std::to_string(k + 1),
-                          std::to_string(it.pairs[k].index / 3 + 1)
-                          + " " + std::to_string(it.pairs[k].index % 3 + 1)
-                          + " " + std::to_string(it.pairs[k].cell_s + 1));
+                          std::to_string(it.pairs[k].index / 3 + 1) + " " + std::to_string(it.pairs[k].index % 3 + 1) +
+                              " " + std::to_string(it.pairs[k].cell_s + 1));
             }
         }
-
     }
 
     using namespace boost::property_tree::xml_parser;
     const int indent = 2;
 
 #if BOOST_VERSION >= 105600
-    write_xml(file_xml, pt, std::locale(),
-              xml_writer_make_settings<ptree::key_type>(' ', indent,
-                                                        widen<std::string>("utf-8")));
+    write_xml(file_xml,
+              pt,
+              std::locale(),
+              xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
 #else
-    write_xml(file_xml, pt, std::locale(),
-              xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
+    write_xml(file_xml, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
 #endif
 }
 

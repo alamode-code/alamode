@@ -335,8 +335,7 @@ auto Constraint::update_constraint_fix(const int maxorder, const std::unique_ptr
 
 auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                           const std::unique_ptr<Symmetry> &symmetry,
-                                          const std::unique_ptr<Cluster> &cluster,
-                                          const std::unique_ptr<Fcs> &fcs,
+                                          const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
                                           const int verbosity, const int periodic_image_conv,
                                           const ReductionAlgo algo_in) -> void
 {
@@ -2793,8 +2792,8 @@ auto Constraint::set_forceconstants_to_fix(const std::vector<std::vector<int>> &
     }
 }
 
-auto Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs)
-    -> void
+auto Constraint::generate_fix_constraint(const std::unique_ptr<Symmetry> &symmetry,
+                                         const std::unique_ptr<Fcs> &fcs) -> void
 {
     if (status_constraint_subset["fix2"] == 0) {
         constexpr auto order = 0;

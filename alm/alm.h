@@ -86,8 +86,8 @@ public:
 
     auto set_f_train(const std::vector<std::vector<double>> &f) const -> void;
 
-    auto set_validation_data(const std::vector<std::vector<double>> &u, const std::vector<std::vector<double>> &f) const
-        -> void;
+    auto set_validation_data(const std::vector<std::vector<double>> &u,
+                             const std::vector<std::vector<double>> &f) const -> void;
 
     auto set_optimizer_control(const OptimizerControl &optcontrol_in) const -> void;
 
@@ -103,7 +103,7 @@ public:
 
     auto set_fc_fix(const int order, const bool fc_fix) const -> void;
 
-    auto set_reduction_algo(const int ialgo_reduce) const ->void;
+    auto set_reduction_algo(const int ialgo_reduce) const -> void;
 
     [[nodiscard]] auto ready_all_constraints() const -> bool;
 
@@ -126,8 +126,8 @@ public:
 
     //void set_fitting_filenames(std::string dfile,
     //                           std::string ffile) const;
-    auto define(const int maxorder, const size_t nkd, const int *nbody_include, const double *cutoff_radii) const
-        -> void;
+    auto define(const int maxorder, const size_t nkd, const int *nbody_include,
+                const double *cutoff_radii) const -> void;
 
     //int get_ndata_used() const;
     [[nodiscard]] auto get_optimizer_control() const -> OptimizerControl;

@@ -42,8 +42,8 @@ public:
 
     auto set_interaction_vars(const int maxorder_in, const int *nbody_include_in) -> void;
 
-    auto set_cutoff_radii(const int maxorder_in, const size_t nkd_in, const std::vector<double> &cutoff_radii_in)
-        -> void;
+    auto set_cutoff_radii(const int maxorder_in, const size_t nkd_in,
+                          const std::vector<double> &cutoff_radii_in) -> void;
 
     auto define(ALM *alm) const -> void;
 

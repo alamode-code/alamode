@@ -954,8 +954,8 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
                                                    const std::vector<ForceConstantTable> &fc_cart,
                                                    const std::vector<Eigen::MatrixXd> &x_image,
                                                    const std::vector<Maps> &map_s2tp,
-                                                   const std::unique_ptr<Cluster> &cluster, const int compression_level)
-    -> void
+                                                   const std::unique_ptr<Cluster> &cluster,
+                                                   const int compression_level) -> void
 {
     using namespace H5Easy;
     std::vector<ForceConstantsWithShifts> fc;
@@ -1053,8 +1053,8 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
 
 
 auto Writer::write_hessian(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
-                           const std::unique_ptr<Fcs> &fcs, const std::string &fname_out, const int verbosity) const
-    -> void
+                           const std::unique_ptr<Fcs> &fcs, const std::string &fname_out,
+                           const int verbosity) const -> void
 {
     size_t i, j;
     int pair_tmp[2];
@@ -1118,8 +1118,8 @@ auto Writer::double2string(const double d, const int nprec) -> std::string
 }
 
 auto Writer::save_fc2_QEfc_format(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
-                                  const std::unique_ptr<Fcs> &fcs, const std::string fname_out, const int verbosity)
-    -> void
+                                  const std::unique_ptr<Fcs> &fcs, const std::string fname_out,
+                                  const int verbosity) -> void
 {
     size_t i, j;
     int pair_tmp[2];

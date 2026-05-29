@@ -7,8 +7,8 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <vector>
 #include <deque>
+#include <vector>
 
 /**
  * @brief Generalized Direct Inversion in the Iterative Subspace (GDIIS) optimizer.
@@ -57,35 +57,47 @@ public:
      *
      * @return Number of vectors currently stored
      */
-    [[nodiscard]] int size() const { return static_cast<int>(history_x.size()); }
+    [[nodiscard]] int size() const
+    {
+        return static_cast<int>(history_x.size());
+    }
 
     /**
      * @brief Checks if DIIS has enough history for extrapolation.
      *
      * @return true if at least 2 vectors are stored
      */
-    [[nodiscard]] bool is_ready() const { return size() >= 2; }
+    [[nodiscard]] bool is_ready() const
+    {
+        return size() >= 2;
+    }
 
     /**
      * @brief Sets the maximum history size.
      *
      * @param[in] max_hist New maximum history size
      */
-    void set_max_history(int max_hist) { max_history_ = max_hist; }
+    void set_max_history(int max_hist)
+    {
+        max_history_ = max_hist;
+    }
 
     /**
      * @brief Sets the mixing parameter.
      *
      * @param[in] beta Mixing parameter (0 < beta <= 1)
      */
-    void set_mixing_beta(double beta) { mixing_beta_ = beta; }
+    void set_mixing_beta(double beta)
+    {
+        mixing_beta_ = beta;
+    }
 
 private:
-    int max_history_;                           ///< Maximum number of vectors to keep
-    double mixing_beta_;                        ///< Mixing parameter for simple mixing fallback
-    int verbosity_;                             ///< Verbosity level for logging
-    std::deque<Eigen::VectorXd> history_x;      ///< History of trial vectors
-    std::deque<Eigen::VectorXd> history_error;  ///< History of error vectors
+    int max_history_;                          ///< Maximum number of vectors to keep
+    double mixing_beta_;                       ///< Mixing parameter for simple mixing fallback
+    int verbosity_;                            ///< Verbosity level for logging
+    std::deque<Eigen::VectorXd> history_x;     ///< History of trial vectors
+    std::deque<Eigen::VectorXd> history_error; ///< History of error vectors
 
     /**
      * @brief Solves the DIIS linear system to find optimal coefficients.
@@ -134,8 +146,7 @@ public:
      * @param[in] eigenvalues  Current eigenvalues (MatrixXd: nk × ns)
      * @param[in] eigenvectors Current eigenvectors (vector of nk MatrixXcd, each ns × ns)
      */
-    void push(const Eigen::MatrixXd &eigenvalues,
-              const std::vector<Eigen::MatrixXcd> &eigenvectors);
+    void push(const Eigen::MatrixXd &eigenvalues, const std::vector<Eigen::MatrixXcd> &eigenvectors);
 
     /**
      * @brief Computes extrapolated eigenvalues and eigenvectors using DIIS.
@@ -147,8 +158,7 @@ public:
      * @param[out] eigenvectors_new Extrapolated eigenvectors
      * @return                      true if successful, false otherwise
      */
-    bool extrapolate(Eigen::MatrixXd &eigenvalues_new,
-                     std::vector<Eigen::MatrixXcd> &eigenvectors_new);
+    bool extrapolate(Eigen::MatrixXd &eigenvalues_new, std::vector<Eigen::MatrixXcd> &eigenvectors_new);
 
     /**
      * @brief Clears the DIIS history.
@@ -160,28 +170,40 @@ public:
      *
      * @return Number of eigenvalue-eigenvector pairs stored
      */
-    [[nodiscard]] int size() const { return static_cast<int>(history_eigenvalues.size()); }
+    [[nodiscard]] int size() const
+    {
+        return static_cast<int>(history_eigenvalues.size());
+    }
 
     /**
      * @brief Checks if DIIS has enough history for extrapolation.
      *
      * @return true if at least 2 pairs are stored
      */
-    [[nodiscard]] bool is_ready() const { return size() >= 2; }
+    [[nodiscard]] bool is_ready() const
+    {
+        return size() >= 2;
+    }
 
     /**
      * @brief Sets the maximum history size.
      *
      * @param[in] max_hist New maximum history size
      */
-    void set_max_history(int max_hist) { max_history_ = max_hist; }
+    void set_max_history(int max_hist)
+    {
+        max_history_ = max_hist;
+    }
 
     /**
      * @brief Sets the mixing parameter.
      *
      * @param[in] beta Mixing parameter (0 < beta <= 1)
      */
-    void set_mixing_beta(double beta) { mixing_beta_ = beta; }
+    void set_mixing_beta(double beta)
+    {
+        mixing_beta_ = beta;
+    }
 
 private:
     int max_history_;
@@ -192,12 +214,10 @@ private:
     std::deque<std::vector<Eigen::MatrixXcd>> history_matrices;
     std::deque<Eigen::VectorXd> history_error;
 
-    void find_permutation(const Eigen::MatrixXd &eigenvalues_old,
-                          const Eigen::MatrixXd &eigenvalues_new,
+    void find_permutation(const Eigen::MatrixXd &eigenvalues_old, const Eigen::MatrixXd &eigenvalues_new,
                           std::vector<Eigen::VectorXi> &permutations);
 
-    void apply_permutation(Eigen::MatrixXd &eigenvalues,
-                           std::vector<Eigen::MatrixXcd> &eigenvectors,
+    void apply_permutation(Eigen::MatrixXd &eigenvalues, std::vector<Eigen::MatrixXcd> &eigenvectors,
                            const std::vector<Eigen::VectorXi> &permutations);
 
     Eigen::MatrixXcd reconstruct_hermitian_matrix(const Eigen::VectorXd &eigenvalues,
@@ -245,8 +265,7 @@ public:
      * @param[in] matrices    Current matrices (vector of nk MatrixXcd, each ns × ns)
      * @param[in] eigenvalues Current eigenvalues for error computation (MatrixXd: nk × ns)
      */
-    void push(const std::vector<Eigen::MatrixXcd> &matrices,
-              const Eigen::MatrixXd &eigenvalues);
+    void push(const std::vector<Eigen::MatrixXcd> &matrices, const Eigen::MatrixXd &eigenvalues);
 
     /**
      * @brief Computes extrapolated matrices using DIIS.
@@ -266,28 +285,40 @@ public:
      *
      * @return Number of matrix sets stored
      */
-    [[nodiscard]] int size() const { return static_cast<int>(history_matrices.size()); }
+    [[nodiscard]] int size() const
+    {
+        return static_cast<int>(history_matrices.size());
+    }
 
     /**
      * @brief Checks if DIIS has enough history for extrapolation.
      *
      * @return true if at least 2 sets are stored
      */
-    [[nodiscard]] bool is_ready() const { return size() >= 2; }
+    [[nodiscard]] bool is_ready() const
+    {
+        return size() >= 2;
+    }
 
     /**
      * @brief Sets the maximum history size.
      *
      * @param[in] max_hist New maximum history size
      */
-    void set_max_history(int max_hist) { max_history_ = max_hist; }
+    void set_max_history(int max_hist)
+    {
+        max_history_ = max_hist;
+    }
 
     /**
      * @brief Sets the mixing parameter.
      *
      * @param[in] beta Mixing parameter (0 < beta <= 1)
      */
-    void set_mixing_beta(double beta) { mixing_beta_ = beta; }
+    void set_mixing_beta(double beta)
+    {
+        mixing_beta_ = beta;
+    }
 
 private:
     int max_history_;
@@ -297,8 +328,7 @@ private:
     std::deque<Eigen::MatrixXd> history_eigenvalues;
     std::deque<Eigen::VectorXd> history_error;
 
-    void find_permutation(const Eigen::MatrixXd &eigenvalues_old,
-                          const Eigen::MatrixXd &eigenvalues_new,
+    void find_permutation(const Eigen::MatrixXd &eigenvalues_old, const Eigen::MatrixXd &eigenvalues_new,
                           std::vector<Eigen::VectorXi> &permutations);
 
     Eigen::VectorXd flatten_eigenvalues(const Eigen::MatrixXd &eigenvalues) const;
@@ -342,8 +372,7 @@ public:
      * @param[in] matrices    Current matrices (vector of nk MatrixXcd, each ns × ns)
      * @param[in] eigenvalues Current eigenvalues for error computation (MatrixXd: nk × ns)
      */
-    void push(const std::vector<Eigen::MatrixXcd> &matrices,
-              const Eigen::MatrixXd &eigenvalues);
+    void push(const std::vector<Eigen::MatrixXcd> &matrices, const Eigen::MatrixXd &eigenvalues);
 
     /**
      * @brief Computes extrapolated matrices using per-k-point DIIS.
@@ -393,13 +422,16 @@ public:
      *
      * @return Vector of success counts for each k-point
      */
-    [[nodiscard]] std::vector<int> get_success_stats() const { return success_count_; }
+    [[nodiscard]] std::vector<int> get_success_stats() const
+    {
+        return success_count_;
+    }
 
 private:
-    int nk_;                                      ///< Number of k-points
-    int max_history_;                             ///< Maximum history per k-point
-    double mixing_beta_;                          ///< Mixing parameter
-    int verbosity_;                               ///< Verbosity level
+    int nk_;             ///< Number of k-points
+    int max_history_;    ///< Maximum history per k-point
+    double mixing_beta_; ///< Mixing parameter
+    int verbosity_;      ///< Verbosity level
 
     // Independent GDIIS instance for each k-point
     std::vector<GDIIS_Matrix> diis_per_k_;

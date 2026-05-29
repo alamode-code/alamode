@@ -658,8 +658,7 @@ void Ewald::calc_reciprocal_space_sum_ewald_fcs(const int iat, const int jat, do
 
                 x_tmp = lavec * (x_frac_super.col(iat) - x_frac_super.col(kat));
 
-                common_tmp =
-                    factor * std::exp(-0.25 * gnorm2 / pow2(lambda_fcs)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
+                common_tmp = factor * std::exp(-0.25 * gnorm2 / pow2(lambda_fcs)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
 
                 for (icrd = 0; icrd < 3; ++icrd) {
                     for (jcrd = 0; jcrd < 3; ++jcrd) {
@@ -688,8 +687,7 @@ void Ewald::calc_reciprocal_space_sum_ewald_fcs(const int iat, const int jat, do
         epsilon_gvector = epsilon_mat * g_tmp;
         gnorm2 = g_tmp.dot(epsilon_gvector);
         x_tmp = lavec * (x_frac_super.col(iat) - x_frac_super.col(jat));
-        common_tmp =
-            2.0 * factor * std::exp(-0.25 * gnorm2 / pow2(lambda_fcs)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
+        common_tmp = 2.0 * factor * std::exp(-0.25 * gnorm2 / pow2(lambda_fcs)) / gnorm2 * std::cos(g_tmp.dot(x_tmp));
 
         for (icrd = 0; icrd < 3; ++icrd) {
             for (jcrd = 0; jcrd < 3; ++jcrd) {

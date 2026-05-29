@@ -8,24 +8,24 @@ Please see the file 'LICENCE.txt' in the root directory
 or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include <iostream>
-#include <fstream>
+#include <Eigen/Core>
+#include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/version.hpp>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <vector>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/foreach.hpp>
-#include <boost/version.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-#include <Eigen/Core>
 
+#include "constants.h"
+#include "dfc2.h"
+#include "mathfunctions.h"
 #include "memory.h"
 #include "xml_parser.h"
-#include "dfc2.h"
-#include "constants.h"
-#include "mathfunctions.h"
 
 using namespace std;
 
@@ -94,31 +94,22 @@ void load_fc2_xml(const std::string file_in)
 
     try {
         read_xml(file_in, pt);
-    }
-    catch (exception &e) {
+    } catch (exception &e) {
         cout << "Cannot open file " + file_in << endl;
         exit(EXIT_FAILURE);
     }
 
-    nat = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Structure.NumberOfAtoms"));
-    nkd = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Structure.NumberOfElements"));
+    nat = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Structure.NumberOfAtoms"));
+    nkd = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Structure.NumberOfElements"));
 
-    ntran = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Symmetry.NumberOfTranslations"));
+    ntran = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Symmetry.NumberOfTranslations"));
 
     natmin = nat / ntran;
 
     for (i = 0; i < 3; ++i) {
         ss1.str("");
         ss1.clear();
-        ss1 << get_value_from_xml(pt,
-                                  "Data.Structure.LatticeVector.a"
-                                  + std::to_string(i + 1));
+        ss1 << get_value_from_xml(pt, "Data.Structure.LatticeVector.a" + std::to_string(i + 1));
         ss1 >> lavec_s[0][i] >> lavec_s[1][i] >> lavec_s[2][i];
     }
 
@@ -135,36 +126,34 @@ void load_fc2_xml(const std::string file_in)
 
     i = 0;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
-                    const ptree &child = child_.second;
-                    const auto icount_kd = child.get<unsigned int>("<xmlattr>.number");
-                    dict_atomic_kind[boost::lexical_cast<string>(child_.second.data())] = icount_kd - 1;
-                    kd_symbol[i++] = boost::lexical_cast<string>(child_.second.data());
-                }
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
+        const ptree &child = child_.second;
+        const auto icount_kd = child.get<unsigned int>("<xmlattr>.number");
+        dict_atomic_kind[boost::lexical_cast<string>(child_.second.data())] = icount_kd - 1;
+        kd_symbol[i++] = boost::lexical_cast<string>(child_.second.data());
+    }
 
     unsigned int index;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
-                    const ptree &child = child_.second;
-                    const string str_index = child.get<string>("<xmlattr>.index");
-                    const string str_element = child.get<string>("<xmlattr>.element");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
+        const ptree &child = child_.second;
+        const string str_index = child.get<string>("<xmlattr>.index");
+        const string str_element = child.get<string>("<xmlattr>.element");
 
-                    ss1.str("");
-                    ss1.clear();
-                    ss1 << child.data();
+        ss1.str("");
+        ss1.clear();
+        ss1 << child.data();
 
-                    index = boost::lexical_cast<unsigned int>(str_index) - 1;
+        index = boost::lexical_cast<unsigned int>(str_index) - 1;
 
-                    if (index >= nat) {
-                        cout << "index is out of range" << endl;
-                        exit(EXIT_FAILURE);
-                    }
+        if (index >= nat) {
+            cout << "index is out of range" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-                    kd[index] = dict_atomic_kind[str_element];
-                    ss1 >> xr_s[index][0] >> xr_s[index][1] >> xr_s[index][2];
-                }
+        kd[index] = dict_atomic_kind[str_element];
+        ss1 >> xr_s[index][0] >> xr_s[index][1] >> xr_s[index][2];
+    }
 
     dict_atomic_kind.clear();
 
@@ -175,53 +164,51 @@ void load_fc2_xml(const std::string file_in)
 
     unsigned int tran, atom_p, atom_s;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
-                    const ptree &child = child_.second;
-                    const string str_tran = child.get<string>("<xmlattr>.tran");
-                    const string str_atom = child.get<string>("<xmlattr>.atom");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
+        const ptree &child = child_.second;
+        const string str_tran = child.get<string>("<xmlattr>.tran");
+        const string str_atom = child.get<string>("<xmlattr>.atom");
 
-                    tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
-                    atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
-                    atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
+        tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
+        atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
+        atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
 
-                    if (tran >= ntran || atom_p >= natmin || atom_s >= nat) {
-                        cout << "index is out of range" << endl;
-                        exit(EXIT_FAILURE);
-                    }
+        if (tran >= ntran || atom_p >= natmin || atom_s >= nat) {
+            cout << "index is out of range" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-                    map_p2s[atom_p][tran] = atom_s;
-                    map_s2p[atom_s].atom_num = atom_p;
-                    map_s2p[atom_s].tran_num = tran;
-                }
+        map_p2s[atom_p][tran] = atom_s;
+        map_s2p[atom_s].atom_num = atom_p;
+        map_s2p[atom_s].tran_num = tran;
+    }
 
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.ForceConstants.HARMONIC")) {
-                    const ptree &child = child_.second;
-                    const string str_p1 = child.get<string>("<xmlattr>.pair1");
-                    const string str_p2 = child.get<string>("<xmlattr>.pair2");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.ForceConstants.HARMONIC")) {
+        const ptree &child = child_.second;
+        const string str_p1 = child.get<string>("<xmlattr>.pair1");
+        const string str_p2 = child.get<string>("<xmlattr>.pair2");
 
-                    ss1.str("");
-                    ss2.str("");
-                    ss1.clear();
-                    ss2.clear();
+        ss1.str("");
+        ss2.str("");
+        ss1.clear();
+        ss2.clear();
 
-                    ss1 << str_p1;
-                    ss2 << str_p2;
+        ss1 << str_p1;
+        ss2 << str_p2;
 
-                    ss1 >> atm1 >> xyz1;
-                    ss2 >> atm2 >> xyz2 >> cell_s;
+        ss1 >> atm1 >> xyz1;
+        ss2 >> atm2 >> xyz2 >> cell_s;
 
-                    fcext_tmp.atm1 = atm1 - 1;
-                    fcext_tmp.xyz1 = xyz1 - 1;
-                    fcext_tmp.atm2 = atm2 - 1;
-                    fcext_tmp.xyz2 = xyz2 - 1;
-                    fcext_tmp.cell_s = cell_s - 1;
-                    fcext_tmp.fcs_val = boost::lexical_cast<double>(child.data());
+        fcext_tmp.atm1 = atm1 - 1;
+        fcext_tmp.xyz1 = xyz1 - 1;
+        fcext_tmp.atm2 = atm2 - 1;
+        fcext_tmp.xyz2 = xyz2 - 1;
+        fcext_tmp.cell_s = cell_s - 1;
+        fcext_tmp.fcs_val = boost::lexical_cast<double>(child.data());
 
-                    fc2_orig.push_back(fcext_tmp);
-                }
+        fc2_orig.push_back(fcext_tmp);
+    }
 }
 
 
@@ -293,15 +280,13 @@ void load_delta_fc2(const std::string file_in, const double temp)
 
             delta_fc2.emplace_back(DeltaFcs(sx, sy, sz, atm1, xyz1, atm2, xyz2, dfc2_tmp));
         }
-
     }
 
     ifs_in.close();
 }
 
 
-void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in,
-                       std::vector<DeltaFcs> delta_fc2,
+void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in, std::vector<DeltaFcs> delta_fc2,
                        std::vector<FcsClassExtent> &fc2_out)
 {
     int i, j, k;
@@ -311,7 +296,8 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in,
 
     allocate(xshift_s, 27, 3);
 
-    for (i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
+    for (i = 0; i < 3; ++i)
+        xshift_s[0][i] = 0.0;
 
     icell = 0;
 
@@ -357,8 +343,7 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in,
         arr_tmp.clear();
 
         for (i = 0; i < 3; ++i) {
-            vec[i] = xr_s[it.atm2][i] + xshift_s[it.cell_s][i]
-                     - xr_s[map_p2s[map_s2p[it.atm2].atom_num][0]][i];
+            vec[i] = xr_s[it.atm2][i] + xshift_s[it.cell_s][i] - xr_s[map_p2s[map_s2p[it.atm2].atom_num][0]][i];
         }
 
         rotvec(vec, vec, mat_convert);
@@ -367,15 +352,16 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in,
         arr_tmp.push_back(it.xyz1);
         arr_tmp.push_back(map_s2p[it.atm2].atom_num);
         arr_tmp.push_back(it.xyz2);
-        for (i = 0; i < 3; ++i) arr_tmp.push_back(nint(vec[i]));
+        for (i = 0; i < 3; ++i)
+            arr_tmp.push_back(nint(vec[i]));
 
-//        std::cout << std::setw(5) << vec[0];
-//        std::cout << std::setw(5) << vec[1];
-//        std::cout << std::setw(5) << vec[2];
-//
-//        std::cout << std::setw(5) << it.atm1 << std::setw(5) << it.xyz1;
-//        std::cout << std::setw(5) << map_super_to_trueprim[it.atm2].atom_num << std::setw(5) << it.xyz2;
-//        std::cout << std::setw(15) << it.fcs_val << '\n';
+        //        std::cout << std::setw(5) << vec[0];
+        //        std::cout << std::setw(5) << vec[1];
+        //        std::cout << std::setw(5) << vec[2];
+        //
+        //        std::cout << std::setw(5) << it.atm1 << std::setw(5) << it.xyz1;
+        //        std::cout << std::setw(5) << map_super_to_trueprim[it.atm2].atom_num << std::setw(5) << it.xyz2;
+        //        std::cout << std::setw(15) << it.fcs_val << '\n';
 
         fc2_data.emplace_back(arr_tmp, icount);
         ++icount;
@@ -400,8 +386,7 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in,
             arr_tmp.push_back(it.sy);
             arr_tmp.push_back(it.sz);
 
-            iter_found = lower_bound(fc2_data.begin(), fc2_data.end(),
-                                     FcsTrans(arr_tmp, index_tmp));
+            iter_found = lower_bound(fc2_data.begin(), fc2_data.end(), FcsTrans(arr_tmp, index_tmp));
 
             if (iter_found != fc2_data.end() && arr_tmp == (*iter_found).arr) {
                 fc2_new[(*iter_found).fcs_index].fcs_val += it.dfc2;
@@ -442,12 +427,8 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in,
 void recips(double vec[3][3], double inverse[3][3])
 {
     double det;
-    det = vec[0][0] * vec[1][1] * vec[2][2]
-          + vec[1][0] * vec[2][1] * vec[0][2]
-          + vec[2][0] * vec[0][1] * vec[1][2]
-          - vec[0][0] * vec[2][1] * vec[1][2]
-          - vec[2][0] * vec[1][1] * vec[0][2]
-          - vec[1][0] * vec[0][1] * vec[2][2];
+    det = vec[0][0] * vec[1][1] * vec[2][2] + vec[1][0] * vec[2][1] * vec[0][2] + vec[2][0] * vec[0][1] * vec[1][2] -
+          vec[0][0] * vec[2][1] * vec[1][2] - vec[2][0] * vec[1][1] * vec[0][2] - vec[1][0] * vec[0][1] * vec[2][2];
 
     if (abs(det) < eps12) {
         cout << "Lattice vector is singular" << endl;
@@ -470,8 +451,7 @@ void recips(double vec[3][3], double inverse[3][3])
 }
 
 
-void write_new_xml(const std::vector<FcsClassExtent> fc2_in,
-                   const std::string xml_out)
+void write_new_xml(const std::vector<FcsClassExtent> fc2_in, const std::string xml_out)
 {
     // Write to XML file
 
@@ -506,16 +486,15 @@ void write_new_xml(const std::vector<FcsClassExtent> fc2_in,
     pt.put("Data.Structure.LatticeVector.a3", str_pos[2]);
 
     std::stringstream ss;
-    ss << is_periodic[0] << " "
-       << is_periodic[1] << " "
-       << is_periodic[2];
+    ss << is_periodic[0] << " " << is_periodic[1] << " " << is_periodic[2];
     pt.put("Data.Structure.Periodicity", ss.str());
 
     pt.put("Data.Structure.Position", "");
 
     for (i = 0; i < nat; ++i) {
         str_tmp.clear();
-        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(xr_s[i][j]);
+        for (j = 0; j < 3; ++j)
+            str_tmp += " " + double2string(xr_s[i][j]);
         ptree &child = pt.add("Data.Structure.Position.pos", str_tmp);
         child.put("<xmlattr>.index", i + 1);
         child.put("<xmlattr>.element", kd_symbol[kd[i]]);
@@ -537,22 +516,22 @@ void write_new_xml(const std::vector<FcsClassExtent> fc2_in,
     for (const auto &it: fc2_in) {
         ptree &child = pt.add("Data.ForceConstants.HARMONIC.FC2", double2string(it.fcs_val));
 
-        child.put("<xmlattr>.pair1", std::to_string(it.atm1 + 1)
-                                     + " " + std::to_string(it.xyz1 + 1));
-        child.put("<xmlattr>.pair2", std::to_string(it.atm2 + 1)
-                                     + " " + std::to_string(it.xyz2 + 1)
-                                     + " " + std::to_string(it.cell_s + 1));
+        child.put("<xmlattr>.pair1", std::to_string(it.atm1 + 1) + " " + std::to_string(it.xyz1 + 1));
+        child.put("<xmlattr>.pair2",
+                  std::to_string(it.atm2 + 1) + " " + std::to_string(it.xyz2 + 1) + " " +
+                      std::to_string(it.cell_s + 1));
     }
 
     using namespace boost::property_tree::xml_parser;
     const int indent = 2;
 
 #if BOOST_VERSION >= 105600
-    write_xml(xml_out, pt, std::locale(),
+    write_xml(xml_out,
+              pt,
+              std::locale(),
               xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
 #else
-    write_xml(xml_out, pt, std::locale(),
-              xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
+    write_xml(xml_out, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
 #endif
 }
 

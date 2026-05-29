@@ -9,18 +9,18 @@
 */
 
 #include "parse_fcsxml.h"
-#include "xml_parser.h"
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <map>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
-#include <boost/version.hpp>
 #include <boost/lexical_cast.hpp>
-#include "memory.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/version.hpp>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <map>
 #include "../include/mathfunctions.h"
+#include "memory.h"
+#include "xml_parser.h"
 
 using namespace std;
 
@@ -87,12 +87,7 @@ int main(int argc, char *argv[])
 
     for (auto order = 0; order < maxorder; ++order) {
         std::string fname_fc = prefix + ".fc" + std::to_string(order + 2);
-        write_fcs_to_file(fname_fc,
-                          order,
-                          structure,
-                          x_image,
-                          map_p2s,
-                          fc[order]);
+        write_fcs_to_file(fname_fc, order, structure, x_image, map_p2s, fc[order]);
     }
 
     deallocate(fc);
@@ -101,9 +96,7 @@ int main(int argc, char *argv[])
 }
 
 
-void load_fcs_xml(const std::string file_in,
-                  const int maxorder,
-                  StructureProperty &StructProp,
+void load_fcs_xml(const std::string file_in, const int maxorder, StructureProperty &StructProp,
                   std::vector<FcsArrayWithCell> *force_constant_with_cell)
 {
     using namespace boost::property_tree;
@@ -113,41 +106,28 @@ void load_fcs_xml(const std::string file_in,
 
     try {
         read_xml(file_in, pt);
-    }
-    catch (exception &e) {
+    } catch (exception &e) {
         cout << "Cannot open file " + file_in << endl;
         exit(EXIT_FAILURE);
     }
 
-    StructProp.nat = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Structure.NumberOfAtoms"));
-    StructProp.nspecies = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Structure.NumberOfElements"));
+    StructProp.nat = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Structure.NumberOfAtoms"));
+    StructProp.nspecies = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Structure.NumberOfElements"));
 
-    StructProp.ntran = boost::lexical_cast<unsigned int>(
-            get_value_from_xml(pt,
-                               "Data.Symmetry.NumberOfTranslations"));
+    StructProp.ntran = boost::lexical_cast<unsigned int>(get_value_from_xml(pt, "Data.Symmetry.NumberOfTranslations"));
 
 
     for (auto i = 0; i < 3; ++i) {
         ss.str("");
         ss.clear();
-        ss << get_value_from_xml(pt,
-                                 "Data.Structure.LatticeVector.a"
-                                 + boost::lexical_cast<string>(i + 1));
-        ss >> StructProp.lattice_vector[0][i]
-           >> StructProp.lattice_vector[1][i]
-           >> StructProp.lattice_vector[2][i];
+        ss << get_value_from_xml(pt, "Data.Structure.LatticeVector.a" + boost::lexical_cast<string>(i + 1));
+        ss >> StructProp.lattice_vector[0][i] >> StructProp.lattice_vector[1][i] >> StructProp.lattice_vector[2][i];
     }
 
     ss.str("");
     ss.clear();
     ss << get_value_from_xml(pt, "Data.Structure.Periodicity");
-    ss >> StructProp.is_periodic[0]
-       >> StructProp.is_periodic[1]
-       >> StructProp.is_periodic[2];
+    ss >> StructProp.is_periodic[0] >> StructProp.is_periodic[1] >> StructProp.is_periodic[2];
 
     // Parse atomic elements and coordinates
 
@@ -156,38 +136,34 @@ void load_fcs_xml(const std::string file_in,
 
     int i = 0;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
-                    const ptree &child = child_.second;
-                    const unsigned int icount_kd = child.get<unsigned int>("<xmlattr>.number");
-                    dict_atomic_kind[boost::lexical_cast<string>(child_.second.data())] = icount_kd - 1;
-                    StructProp.kd_symbol[i++] = boost::lexical_cast<string>(child_.second.data());
-                }
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
+        const ptree &child = child_.second;
+        const unsigned int icount_kd = child.get<unsigned int>("<xmlattr>.number");
+        dict_atomic_kind[boost::lexical_cast<string>(child_.second.data())] = icount_kd - 1;
+        StructProp.kd_symbol[i++] = boost::lexical_cast<string>(child_.second.data());
+    }
 
     unsigned int index;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
-                    const ptree &child = child_.second;
-                    const string str_index = child.get<string>("<xmlattr>.index");
-                    const string str_element = child.get<string>("<xmlattr>.element");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.Position")) {
+        const ptree &child = child_.second;
+        const string str_index = child.get<string>("<xmlattr>.index");
+        const string str_element = child.get<string>("<xmlattr>.element");
 
-                    ss.str("");
-                    ss.clear();
-                    ss << child.data();
+        ss.str("");
+        ss.clear();
+        ss << child.data();
 
-                    index = boost::lexical_cast<unsigned int>(str_index) - 1;
+        index = boost::lexical_cast<unsigned int>(str_index) - 1;
 
-                    if (index >= StructProp.nat) {
-                        cout << "index is out of range" << endl;
-                        exit(EXIT_FAILURE);
-                    }
+        if (index >= StructProp.nat) {
+            cout << "index is out of range" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-                    StructProp.atoms[index].kind = dict_atomic_kind[str_element];
-                    ss >> StructProp.atoms[index].x
-                       >> StructProp.atoms[index].y
-                       >> StructProp.atoms[index].z;
-                }
+        StructProp.atoms[index].kind = dict_atomic_kind[str_element];
+        ss >> StructProp.atoms[index].x >> StructProp.atoms[index].y >> StructProp.atoms[index].z;
+    }
 
     dict_atomic_kind.clear();
 
@@ -197,24 +173,23 @@ void load_fcs_xml(const std::string file_in,
 
     unsigned int tran, atom_p, atom_s;
 
-    BOOST_FOREACH(
-            const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
-                    const ptree &child = child_.second;
-                    const string str_tran = child.get<string>("<xmlattr>.tran");
-                    const string str_atom = child.get<string>("<xmlattr>.atom");
+    BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
+        const ptree &child = child_.second;
+        const string str_tran = child.get<string>("<xmlattr>.tran");
+        const string str_atom = child.get<string>("<xmlattr>.atom");
 
-                    tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
-                    atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
-                    atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
+        tran = boost::lexical_cast<unsigned int>(str_tran) - 1;
+        atom_p = boost::lexical_cast<unsigned int>(str_atom) - 1;
+        atom_s = boost::lexical_cast<unsigned int>(child.data()) - 1;
 
-                    if (tran >= StructProp.ntran || atom_p >= StructProp.natmin || atom_s >= StructProp.nat) {
-                        cout << "index is out of range" << endl;
-                        exit(EXIT_FAILURE);
-                    }
+        if (tran >= StructProp.ntran || atom_p >= StructProp.natmin || atom_s >= StructProp.nat) {
+            cout << "index is out of range" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-                    StructProp.atoms[atom_s].atom = atom_p;
-                    StructProp.atoms[atom_s].tran = tran;
-                }
+        StructProp.atoms[atom_s].atom = atom_p;
+        StructProp.atoms[atom_s].tran = tran;
+    }
 
     // Parse force constants
 
@@ -241,49 +216,44 @@ void load_fcs_xml(const std::string file_in,
             exit(EXIT_FAILURE);
         }
 
-        BOOST_FOREACH(
-                const ptree::value_type &child_, pt.get_child(str_tag)) {
-                        const ptree &child = child_.second;
+        BOOST_FOREACH (const ptree::value_type &child_, pt.get_child(str_tag)) {
+            const ptree &child = child_.second;
 
-                        fcs_val = boost::lexical_cast<double>(child.data());
+            fcs_val = boost::lexical_cast<double>(child.data());
 
-                        ivec_with_cell.clear();
+            ivec_with_cell.clear();
 
-                        for (i = 0; i < order + 2; ++i) {
-                            str_attr = "<xmlattr>.pair" + std::to_string(i + 1);
-                            str_pairs = child.get<std::string>(str_attr);
+            for (i = 0; i < order + 2; ++i) {
+                str_attr = "<xmlattr>.pair" + std::to_string(i + 1);
+                str_pairs = child.get<std::string>(str_attr);
 
-                            ss.str("");
-                            ss.clear();
-                            ss << str_pairs;
+                ss.str("");
+                ss.clear();
+                ss << str_pairs;
 
-                            if (i == 0) {
-                                ss >> atmn >> xyz;
-                                ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
-                                ivec_tmp.cell_s = 0;
-                                ivec_tmp.tran = 0; // dummy
-                                ivec_with_cell.push_back(ivec_tmp);
+                if (i == 0) {
+                    ss >> atmn >> xyz;
+                    ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
+                    ivec_tmp.cell_s = 0;
+                    ivec_tmp.tran = 0; // dummy
+                    ivec_with_cell.push_back(ivec_tmp);
 
-                            } else {
-                                ss >> atmn >> xyz >> cell_s;
-                                ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
-                                ivec_tmp.cell_s = cell_s - 1;
-                                ivec_tmp.tran = 0; // dummy
-                                ivec_with_cell.push_back(ivec_tmp);
-                            }
-                        }
+                } else {
+                    ss >> atmn >> xyz >> cell_s;
+                    ivec_tmp.index = 3 * (atmn - 1) + xyz - 1;
+                    ivec_tmp.cell_s = cell_s - 1;
+                    ivec_tmp.tran = 0; // dummy
+                    ivec_with_cell.push_back(ivec_tmp);
+                }
+            }
 
-                        force_constant_with_cell[order].emplace_back(fcs_val, ivec_with_cell);
-                    }
+            force_constant_with_cell[order].emplace_back(fcs_val, ivec_with_cell);
+        }
     }
 }
 
-void write_fcs_to_file(const std::string fname_fc,
-                       const int order,
-                       const StructureProperty &structure,
-                       double ***x_image,
-                       int **map_p2s,
-                       const std::vector<FcsArrayWithCell> &fc_in)
+void write_fcs_to_file(const std::string fname_fc, const int order, const StructureProperty &structure,
+                       double ***x_image, int **map_p2s, const std::vector<FcsArrayWithCell> &fc_in)
 {
 
     std::ofstream ofs;
@@ -316,8 +286,8 @@ void write_fcs_to_file(const std::string fname_fc,
 
         for (auto i = 1; i < nelems; ++i) {
             for (auto j = 0; j < 3; ++j) {
-                xdiff[j] = x_image[it.pairs[i].cell_s][it.pairs[i].index / 3][j]
-                           - x_image[0][map_p2s[it.pairs[0].index / 3][0]][j];
+                xdiff[j] = x_image[it.pairs[i].cell_s][it.pairs[i].index / 3][j] -
+                           x_image[0][map_p2s[it.pairs[0].index / 3][0]][j];
             }
             distance = std::sqrt(xdiff[0] * xdiff[0] + xdiff[1] * xdiff[1] + xdiff[2] * xdiff[2]);
             ofs << std::setw(10) << distance;
@@ -328,9 +298,7 @@ void write_fcs_to_file(const std::string fname_fc,
     ofs.close();
 }
 
-void frac2cart(double **xf,
-               const int nat,
-               const double lattice_vector[3][3])
+void frac2cart(double **xf, const int nat, const double lattice_vector[3][3])
 {
     // x_cartesian = A x_fractional
 

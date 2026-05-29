@@ -143,8 +143,7 @@ void Kpoint::kpoint_setups(const std::string mode)
             for (auto i = 0; i < 3; ++i) {
                 const auto nk_in = std::atoi(kpInp[0].kpelem[i].c_str());
                 if (nk_in < 1) {
-                    exit("kpoint_setups",
-                         "Each k-point mesh dimension (KPMODE=2) must be a positive integer.");
+                    exit("kpoint_setups", "Each k-point mesh dimension (KPMODE=2) must be a positive integer.");
                 }
                 nk_tmp[i] = nk_in;
             }
@@ -934,8 +933,7 @@ void Kpoint::gen_kpoints_plane(const std::vector<KpointInp> &kplist, std::vector
         const auto N2 = std::atoi(kplist[i].kpelem[7].c_str());
 
         if (N1 < 2 || N2 < 2) {
-            exit("gen_kpoints_plane",
-                 "The number of grid points along each k-plane axis must be an integer >= 2.");
+            exit("gen_kpoints_plane", "The number of grid points along each k-plane axis must be an integer >= 2.");
         }
 
         n_in[0] = N1;

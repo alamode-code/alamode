@@ -306,8 +306,8 @@ auto Symmetry::findsym_alm(const Cell &cell, const std::vector<std::vector<unsig
     LatticeSymmList.clear();
 }
 
-auto Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa, std::vector<RotationMatrix> &LatticeSymmList) const
-    -> void
+auto Symmetry::find_lattice_symmetry(const Eigen::Matrix3d &aa,
+                                     std::vector<RotationMatrix> &LatticeSymmList) const -> void
 {
     /*
     Find the rotational matrices that leave the metric tensor invariant.
@@ -590,11 +590,11 @@ auto Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
                         }
                     }
 
-                    mag_sym1 = (pow2(mag[0] - mag_rot[0]) + pow2(mag[1] - mag_rot[1]) +
-                                pow2(mag[2] - mag_rot[2])) < eps6;
+                    mag_sym1 =
+                        (pow2(mag[0] - mag_rot[0]) + pow2(mag[1] - mag_rot[1]) + pow2(mag[2] - mag_rot[2])) < eps6;
 
-                    mag_sym2 = (pow2(mag[0] + mag_rot[0]) + pow2(mag[1] + mag_rot[1]) +
-                                pow2(mag[2] + mag_rot[2])) < eps6;
+                    mag_sym2 =
+                        (pow2(mag[0] + mag_rot[0]) + pow2(mag[1] + mag_rot[1]) + pow2(mag[2] + mag_rot[2])) < eps6;
 
                     if (!mag_sym1 && !mag_sym2) {
                         isok = false;
@@ -620,8 +620,8 @@ auto Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
 }
 
 auto Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<unsigned int>> &atomtype_group,
-                              const Spin &spin, std::string &spgsymbol, std::vector<SymmetryOperation> &symm_out) const
-    -> int
+                              const Spin &spin, std::string &spgsymbol,
+                              std::vector<SymmetryOperation> &symm_out) const -> int
 {
     int i, j;
     double(*position)[3];

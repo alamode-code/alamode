@@ -8,13 +8,13 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
+#include "scph_qha_common.h"
 #include <complex>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 #include "parsephon.h"
-#include "scph_qha_common.h"
 
 using namespace PHON_NS;
 
@@ -227,8 +227,7 @@ bool ScphQhaCommon::use_band_parallel_v4() const
 void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out, std::string filename_dymat,
                                               const KpointMeshUniform *kmesh_dense_in,
                                               const KpointMeshUniform *kmesh_coarse_in,
-                                              const unsigned int nonanalytic_in,
-                                              const bool selfenergy_offdiagonal_in)
+                                              const unsigned int nonanalytic_in, const bool selfenergy_offdiagonal_in)
 {
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
@@ -327,10 +326,11 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
 }
 
 void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> *const *const *const *dymat_in,
-                                             std::string filename_dymat, const KpointMeshUniform *kmesh_dense_in,
-                                             const KpointMeshUniform *kmesh_coarse_in,
-                                             const unsigned int nonanalytic_in,
-                                             const bool selfenergy_offdiagonal_in)
+                                                     std::string filename_dymat,
+                                                     const KpointMeshUniform *kmesh_dense_in,
+                                                     const KpointMeshUniform *kmesh_coarse_in,
+                                                     const unsigned int nonanalytic_in,
+                                                     const bool selfenergy_offdiagonal_in)
 {
     int i;
     const auto ns = dynamical->neval;

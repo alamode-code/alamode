@@ -29,12 +29,12 @@ class DelVStrainData
 public:
     using MatrixXcdRowMajor = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-    MatrixXcdRowMajor del_v1;                          // [9][ns]
-    MatrixXcdRowMajor del2_v1;                         // [81][ns]
-    MatrixXcdRowMajor del3_v1;                         // [729][ns]
-    std::vector<MatrixXcdRowMajor> del_v2;             // [9][nk][ns*ns]
-    std::vector<MatrixXcdRowMajor> del2_v2;            // [81][nk][ns*ns]
-    std::vector<std::vector<MatrixXcdRowMajor>> del_v3;// [9][nk][ns][ns*ns]
+    MatrixXcdRowMajor del_v1;                           // [9][ns]
+    MatrixXcdRowMajor del2_v1;                          // [81][ns]
+    MatrixXcdRowMajor del3_v1;                          // [729][ns]
+    std::vector<MatrixXcdRowMajor> del_v2;              // [9][nk][ns*ns]
+    std::vector<MatrixXcdRowMajor> del2_v2;             // [81][nk][ns*ns]
+    std::vector<std::vector<MatrixXcdRowMajor>> del_v3; // [9][nk][ns][ns*ns]
 
     DelVStrainData() = default;
     ~DelVStrainData() = default;
@@ -70,21 +70,63 @@ public:
         build_pointer_views();
     }
 
-    int nk() const { return nk_; }
-    int nmode() const { return nmode_; }
+    int nk() const
+    {
+        return nk_;
+    }
+    int nmode() const
+    {
+        return nmode_;
+    }
 
-    std::complex<double> **del_v1_raw() { return del_v1_rows_.data(); }
-    std::complex<double> *const *del_v1_raw() const { return del_v1_rows_.data(); }
-    std::complex<double> **del2_v1_raw() { return del2_v1_rows_.data(); }
-    std::complex<double> *const *del2_v1_raw() const { return del2_v1_rows_.data(); }
-    std::complex<double> **del3_v1_raw() { return del3_v1_rows_.data(); }
-    std::complex<double> *const *del3_v1_raw() const { return del3_v1_rows_.data(); }
-    std::complex<double> ***del_v2_raw() { return del_v2_ptrs_.data(); }
-    std::complex<double> **const *del_v2_raw() const { return del_v2_ptrs_.data(); }
-    std::complex<double> ***del2_v2_raw() { return del2_v2_ptrs_.data(); }
-    std::complex<double> **const *del2_v2_raw() const { return del2_v2_ptrs_.data(); }
-    std::complex<double> ****del_v3_raw() { return del_v3_ptrs_.data(); }
-    std::complex<double> ***const *del_v3_raw() const { return del_v3_ptrs_.data(); }
+    std::complex<double> **del_v1_raw()
+    {
+        return del_v1_rows_.data();
+    }
+    std::complex<double> *const *del_v1_raw() const
+    {
+        return del_v1_rows_.data();
+    }
+    std::complex<double> **del2_v1_raw()
+    {
+        return del2_v1_rows_.data();
+    }
+    std::complex<double> *const *del2_v1_raw() const
+    {
+        return del2_v1_rows_.data();
+    }
+    std::complex<double> **del3_v1_raw()
+    {
+        return del3_v1_rows_.data();
+    }
+    std::complex<double> *const *del3_v1_raw() const
+    {
+        return del3_v1_rows_.data();
+    }
+    std::complex<double> ***del_v2_raw()
+    {
+        return del_v2_ptrs_.data();
+    }
+    std::complex<double> **const *del_v2_raw() const
+    {
+        return del_v2_ptrs_.data();
+    }
+    std::complex<double> ***del2_v2_raw()
+    {
+        return del2_v2_ptrs_.data();
+    }
+    std::complex<double> **const *del2_v2_raw() const
+    {
+        return del2_v2_ptrs_.data();
+    }
+    std::complex<double> ****del_v3_raw()
+    {
+        return del_v3_ptrs_.data();
+    }
+    std::complex<double> ***const *del_v3_raw() const
+    {
+        return del_v3_ptrs_.data();
+    }
 
 private:
     int nk_{0};
@@ -152,8 +194,7 @@ private:
             for (int ik = 0; ik < nk_; ++ik) {
                 del_v3_rows_[i][ik].resize(nmode_);
                 for (int is = 0; is < nmode_; ++is) {
-                    del_v3_rows_[i][ik][is] =
-                        del_v3[i][ik].data() + static_cast<std::size_t>(is) * nmode2;
+                    del_v3_rows_[i][ik][is] = del_v3[i][ik].data() + static_cast<std::size_t>(is) * nmode2;
                 }
                 del_v3_kptrs_[i][ik] = del_v3_rows_[i][ik].data();
             }
@@ -228,8 +269,7 @@ public:
                                         double **C2_array, double ***C3_array,
                                         const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell);
 
-    void renormalize_v1_from_umn(std::complex<double> *, const std::complex<double> *const,
-                                 const DelVStrainData &,
+    void renormalize_v1_from_umn(std::complex<double> *, const std::complex<double> *const, const DelVStrainData &,
                                  const std::array<std::array<double, 3>, 3> &) const;
 
     void renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse, const std::vector<int> &kmap_coarse_to_dense,

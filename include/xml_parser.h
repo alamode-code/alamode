@@ -15,8 +15,8 @@
 #include <iostream>
 #include <string>
 
-inline auto get_value_from_xml(const boost::property_tree::ptree &pt_in, std::string str, const int exit_when_error = 1)
-    -> std::string
+inline auto get_value_from_xml(const boost::property_tree::ptree &pt_in, std::string str,
+                               const int exit_when_error = 1) -> std::string
 {
     if (boost::optional<std::string> str_entry = pt_in.get_optional<std::string>(str)) {
         return str_entry.get();

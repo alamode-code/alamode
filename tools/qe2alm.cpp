@@ -8,17 +8,17 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/version.hpp>
+#include "qe2alm.h"
 #include <boost/lexical_cast.hpp>
-#include "memory.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/version.hpp>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include "constants.h"
 #include "mathfunctions.h"
-#include "qe2alm.h"
+#include "memory.h"
 
 using namespace std;
 
@@ -50,9 +50,7 @@ int main()
 
     // Read structural parameters
 
-    ifs_fc2qe >> nkd >> natmin >> ibrav
-              >> celldm[0] >> celldm[1] >> celldm[2]
-              >> celldm[3] >> celldm[4] >> celldm[5];
+    ifs_fc2qe >> nkd >> natmin >> ibrav >> celldm[0] >> celldm[1] >> celldm[2] >> celldm[3] >> celldm[4] >> celldm[5];
 
     if (ibrav == 0) {
         for (i = 0; i < 3; ++i) {
@@ -80,8 +78,7 @@ int main()
     // remove ' characters from the string and then convert second character to lower case.
     for (i = 0; i < nkd; ++i) {
         ifs_fc2qe >> dummy >> kd_symbol[i] >> str_dummy >> tmp;
-        kd_symbol[i].erase(std::remove(kd_symbol[i].begin(),
-                                       kd_symbol[i].end(), '\''), kd_symbol[i].end());
+        kd_symbol[i].erase(std::remove(kd_symbol[i].begin(), kd_symbol[i].end(), '\''), kd_symbol[i].end());
     }
 
     allocate(kd, natmin);
@@ -273,7 +270,8 @@ int main()
 
         for (j = 0; j < natmin; ++j) {
             str_tmp.clear();
-            for (k = 0; k < 3; ++k) str_tmp += " " + double2string(xcrd_super[map_p2s[i][j]][k]);
+            for (k = 0; k < 3; ++k)
+                str_tmp += " " + double2string(xcrd_super[map_p2s[i][j]][k]);
             ptree &child = pt.add("Data.Structure.Position.pos", str_tmp);
             child.put("<xmlattr>.index", icount + 1);
             child.put("<xmlattr>.element", kd_symbol[kd_super[i][j] - 1]);
@@ -310,12 +308,13 @@ int main()
                                                   double2string(fc2[3 * iat + icrd][3 * jat + jcrd][icell] /
                                                                 static_cast<double>(nmulti)));
 
-                            child.put("<xmlattr>.pair1", boost::lexical_cast<std::string>(iat + 1)
-                                                         + " " + boost::lexical_cast<std::string>(icrd + 1));
-                            child.put("<xmlattr>.pair2", boost::lexical_cast<std::string>(kat + 1)
-                                                         + " " + boost::lexical_cast<std::string>(jcrd + 1)
-                                                         + " " + boost::lexical_cast<std::string>(
-                                    mindist[iat][kat][i].cell + 1));
+                            child.put("<xmlattr>.pair1",
+                                      boost::lexical_cast<std::string>(iat + 1) + " " +
+                                          boost::lexical_cast<std::string>(icrd + 1));
+                            child.put("<xmlattr>.pair2",
+                                      boost::lexical_cast<std::string>(kat + 1) + " " +
+                                          boost::lexical_cast<std::string>(jcrd + 1) + " " +
+                                          boost::lexical_cast<std::string>(mindist[iat][kat][i].cell + 1));
                         }
                     }
                 }
@@ -328,11 +327,12 @@ int main()
     const int indent = 2;
 
 #if BOOST_VERSION >= 105600
-    write_xml(file_xmlout, pt, std::locale(),
+    write_xml(file_xmlout,
+              pt,
+              std::locale(),
               xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
 #else
-    write_xml(file_xmlout, pt, std::locale(),
-              xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
+    write_xml(file_xmlout, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
 #endif
 
 
@@ -359,286 +359,287 @@ void calc_lattice_vector(const int ibrav, double celldm[6], double aa[3][3])
     double cosalpha, a_prime, u, v;
 
     switch (ibrav) {
-        case 1:
-            a = celldm[0];
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
-            aa[0][2] = 0.0;
+    case 1:
+        a = celldm[0];
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = 0.0;
+        aa[1][1] = a;
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.0;
+        aa[2][1] = 0.0;
+        aa[2][2] = a;
+
+        break;
+
+    case 2:
+        a = celldm[0] / 2.0;
+        aa[0][0] = -a;
+        aa[0][1] = 0.0;
+        aa[0][2] = a;
+        aa[1][0] = 0.0;
+        aa[1][1] = a;
+        aa[1][2] = a;
+        aa[2][0] = -a;
+        aa[2][1] = a;
+        aa[2][2] = 0.0;
+
+        break;
+
+    case 3:
+        a = celldm[0] / 2.0;
+        aa[0][0] = a;
+        aa[0][1] = a;
+        aa[0][2] = a;
+        aa[1][0] = -a;
+        aa[1][1] = a;
+        aa[1][2] = a;
+        aa[2][0] = -a;
+        aa[2][1] = -a;
+        aa[2][2] = a;
+
+        break;
+
+    case 4:
+        a = celldm[0];
+        c = celldm[0] * celldm[2];
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = -0.5 * a;
+        aa[1][1] = sqrt(3.0) / 2.0 * a;
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.0;
+        aa[2][1] = 0.0;
+        aa[2][2] = c;
+
+        break;
+
+    case 5:
+    case -5:
+        a = celldm[0];
+        cosalpha = celldm[3];
+        tx = a * sqrt((1.0 - cosalpha) / 2.0);
+        ty = a * sqrt((1.0 - cosalpha) / 6.0);
+        tz = a * sqrt((1.0 + 2.0 * cosalpha) / 3.0);
+
+        if (ibrav == 5) {
+            aa[0][0] = tx;
+            aa[0][1] = -ty;
+            aa[0][2] = tz;
             aa[1][0] = 0.0;
-            aa[1][1] = a;
-            aa[1][2] = 0.0;
-            aa[2][0] = 0.0;
-            aa[2][1] = 0.0;
-            aa[2][2] = a;
+            aa[1][1] = 2.0 * ty;
+            aa[1][2] = tz;
+            aa[2][0] = -tx;
+            aa[2][1] = -ty;
+            aa[2][2] = tz;
+        } else {
+            a_prime = a / sqrt(3.0);
+            u = tz - 2.0 * sqrt(2.0) * ty;
+            v = tz + sqrt(2.0) * ty;
+            aa[0][0] = u;
+            aa[0][1] = v;
+            aa[0][2] = v;
+            aa[1][0] = v;
+            aa[1][1] = u;
+            aa[1][2] = v;
+            aa[2][0] = v;
+            aa[2][1] = v;
+            aa[2][2] = u;
+        }
 
-            break;
+        break;
 
-        case 2:
-            a = celldm[0] / 2.0;
-            aa[0][0] = -a;
-            aa[0][1] = 0.0;
-            aa[0][2] = a;
-            aa[1][0] = 0.0;
-            aa[1][1] = a;
-            aa[1][2] = a;
-            aa[2][0] = -a;
-            aa[2][1] = a;
-            aa[2][2] = 0.0;
+    case 6:
+        a = celldm[0];
+        c = celldm[0] * celldm[2];
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = 0.0;
+        aa[1][1] = a;
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.0;
+        aa[2][1] = 0.0;
+        aa[2][2] = c;
 
-            break;
+        break;
 
-        case 3:
-            a = celldm[0] / 2.0;
-            aa[0][0] = a;
-            aa[0][1] = a;
-            aa[0][2] = a;
-            aa[1][0] = -a;
-            aa[1][1] = a;
-            aa[1][2] = a;
-            aa[2][0] = -a;
-            aa[2][1] = -a;
-            aa[2][2] = a;
+    case 7:
+        a = celldm[0];
+        c = celldm[0] * celldm[2];
+        a2 = a * 0.5;
+        c2 = c * 0.5;
+        aa[0][0] = a2;
+        aa[0][1] = -a2;
+        aa[0][2] = c2;
+        aa[1][0] = a2;
+        aa[1][1] = a2;
+        aa[1][2] = c2;
+        aa[2][0] = -a2;
+        aa[2][1] = -a2;
+        aa[2][2] = c2;
 
-            break;
+        break;
 
-        case 4:
-            a = celldm[0];
-            c = celldm[0] * celldm[2];
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
-            aa[0][2] = 0.0;
-            aa[1][0] = -0.5 * a;
-            aa[1][1] = sqrt(3.0) / 2.0 * a;
-            aa[1][2] = 0.0;
-            aa[2][0] = 0.0;
-            aa[2][1] = 0.0;
-            aa[2][2] = c;
+    case 8:
+        a = celldm[0];
+        b = celldm[0] * celldm[1];
+        c = celldm[0] * celldm[2];
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = 0.0;
+        aa[1][1] = b;
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.0;
+        aa[2][1] = 0.0;
+        aa[2][2] = c;
 
-            break;
+        break;
 
-        case 5:
-        case -5:
-            a = celldm[0];
-            cosalpha = celldm[3];
-            tx = a * sqrt((1.0 - cosalpha) / 2.0);
-            ty = a * sqrt((1.0 - cosalpha) / 6.0);
-            tz = a * sqrt((1.0 + 2.0 * cosalpha) / 3.0);
+    case 9:
+    case -9:
+        a = celldm[0];
+        b = celldm[0] * celldm[1];
+        c = celldm[0] * celldm[2];
+        a2 = a * 0.5;
+        b2 = b * 0.5;
 
-            if (ibrav == 5) {
-                aa[0][0] = tx;
-                aa[0][1] = -ty;
-                aa[0][2] = tz;
-                aa[1][0] = 0.0;
-                aa[1][1] = 2.0 * ty;
-                aa[1][2] = tz;
-                aa[2][0] = -tx;
-                aa[2][1] = -ty;
-                aa[2][2] = tz;
-            } else {
-                a_prime = a / sqrt(3.0);
-                u = tz - 2.0 * sqrt(2.0) * ty;
-                v = tz + sqrt(2.0) * ty;
-                aa[0][0] = u;
-                aa[0][1] = v;
-                aa[0][2] = v;
-                aa[1][0] = v;
-                aa[1][1] = u;
-                aa[1][2] = v;
-                aa[2][0] = v;
-                aa[2][1] = v;
-                aa[2][2] = u;
-            }
-
-            break;
-
-        case 6:
-            a = celldm[0];
-            c = celldm[0] * celldm[2];
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
-            aa[0][2] = 0.0;
-            aa[1][0] = 0.0;
-            aa[1][1] = a;
-            aa[1][2] = 0.0;
-            aa[2][0] = 0.0;
-            aa[2][1] = 0.0;
-            aa[2][2] = c;
-
-            break;
-
-        case 7:
-            a = celldm[0];
-            c = celldm[0] * celldm[2];
-            a2 = a * 0.5;
-            c2 = c * 0.5;
-            aa[0][0] = a2;
-            aa[0][1] = -a2;
-            aa[0][2] = c2;
-            aa[1][0] = a2;
-            aa[1][1] = a2;
-            aa[1][2] = c2;
-            aa[2][0] = -a2;
-            aa[2][1] = -a2;
-            aa[2][2] = c2;
-
-            break;
-
-        case 8:
-            a = celldm[0];
-            b = celldm[0] * celldm[1];
-            c = celldm[0] * celldm[2];
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
-            aa[0][2] = 0.0;
-            aa[1][0] = 0.0;
-            aa[1][1] = b;
-            aa[1][2] = 0.0;
-            aa[2][0] = 0.0;
-            aa[2][1] = 0.0;
-            aa[2][2] = c;
-
-            break;
-
-        case 9:
-        case -9:
-            a = celldm[0];
-            b = celldm[0] * celldm[1];
-            c = celldm[0] * celldm[2];
-            a2 = a * 0.5;
-            b2 = b * 0.5;
-
-            if (ibrav == 9) {
-                aa[0][0] = a2;
-                aa[0][1] = b2;
-                aa[0][2] = 0.0;
-                aa[1][0] = -a2;
-                aa[1][1] = b2;
-                aa[1][2] = 0.0;
-                aa[2][0] = 0.0;
-                aa[2][1] = 0.0;
-                aa[2][2] = c;
-            } else {
-                aa[0][0] = a2;
-                aa[0][1] = -b2;
-                aa[0][2] = 0.0;
-                aa[1][0] = a2;
-                aa[1][1] = b2;
-                aa[1][2] = 0.0;
-                aa[2][0] = 0.0;
-                aa[2][1] = 0.0;
-                aa[2][2] = c;
-            }
-
-            break;
-
-        case 10:
-            a2 = celldm[0] * 0.5;
-            b2 = celldm[0] * celldm[1] * 0.5;
-            c2 = celldm[0] * celldm[2] * 0.5;
-            aa[0][0] = a2;
-            aa[0][1] = 0.0;
-            aa[0][2] = c2;
-            aa[1][0] = a2;
-            aa[1][1] = b2;
-            aa[1][2] = 0.0;
-            aa[2][0] = 0.0;
-            aa[2][1] = b2;
-            aa[2][2] = c2;
-
-            break;
-
-        case 11:
-            a2 = celldm[0] * 0.5;
-            b2 = celldm[0] * celldm[1] * 0.5;
-            c2 = celldm[0] * celldm[2] * 0.5;
+        if (ibrav == 9) {
             aa[0][0] = a2;
             aa[0][1] = b2;
-            aa[0][2] = c2;
+            aa[0][2] = 0.0;
             aa[1][0] = -a2;
             aa[1][1] = b2;
-            aa[1][2] = c2;
-            aa[2][0] = -a2;
-            aa[2][1] = -b2;
-            aa[2][2] = c2;
-
-            break;
-
-        case 12:
-            a = celldm[0];
-            b = celldm[0] * celldm[1];
-            c = celldm[0] * celldm[2];
-            gamma = acos(celldm[3]);
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
-            aa[0][2] = 0.0;
-            aa[1][0] = b * cos(gamma);
-            aa[1][1] = b * sin(gamma);
             aa[1][2] = 0.0;
             aa[2][0] = 0.0;
             aa[2][1] = 0.0;
             aa[2][2] = c;
-
-            break;
-
-        case -12:
-            a = celldm[0];
-            b = celldm[0] * celldm[1];
-            c = celldm[0] * celldm[2];
-            beta = acos(celldm[4]);
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
+        } else {
+            aa[0][0] = a2;
+            aa[0][1] = -b2;
             aa[0][2] = 0.0;
-            aa[1][0] = 0.0;
-            aa[1][1] = b;
+            aa[1][0] = a2;
+            aa[1][1] = b2;
             aa[1][2] = 0.0;
-            aa[2][0] = c * cos(beta);
+            aa[2][0] = 0.0;
             aa[2][1] = 0.0;
-            aa[2][2] = c * sin(beta);
+            aa[2][2] = c;
+        }
 
-            break;
+        break;
 
-        case 13:
-            a = celldm[0];
-            b = celldm[0] * celldm[1];
-            c = celldm[0] * celldm[2];
-            gamma = acos(celldm[3]);
-            aa[0][0] = 0.5 * a;
-            aa[0][1] = 0.0;
-            aa[0][2] = -0.5 * c;
-            aa[1][0] = b * cos(gamma);
-            aa[1][1] = b * sin(gamma);
-            aa[1][2] = 0.0;
-            aa[2][0] = 0.5 * a;
-            aa[2][1] = 0.0;
-            aa[2][2] = 0.5 * c;
+    case 10:
+        a2 = celldm[0] * 0.5;
+        b2 = celldm[0] * celldm[1] * 0.5;
+        c2 = celldm[0] * celldm[2] * 0.5;
+        aa[0][0] = a2;
+        aa[0][1] = 0.0;
+        aa[0][2] = c2;
+        aa[1][0] = a2;
+        aa[1][1] = b2;
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.0;
+        aa[2][1] = b2;
+        aa[2][2] = c2;
 
-            break;
+        break;
 
-        case 14:
-            a = celldm[0];
-            b = celldm[0] * celldm[1];
-            c = celldm[0] * celldm[2];
-            alpha = acos(celldm[3]);
-            beta = acos(celldm[4]);
-            gamma = acos(celldm[5]);
-            aa[0][0] = a;
-            aa[0][1] = 0.0;
-            aa[0][2] = 0.0;
-            aa[1][0] = b * cos(gamma);
-            aa[1][1] = b * sin(gamma);
-            aa[1][2] = 0.0;
-            aa[2][0] = c * cos(beta);
-            aa[2][1] = c * (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma);
-            aa[2][2] = c * sqrt(1.0 + 2.0 * cos(alpha) * cos(beta) * cos(gamma)
-                                - cos(alpha) * cos(alpha) - cos(beta) * cos(beta) - cos(gamma) * cos(gamma)) /
-                       sin(gamma);
+    case 11:
+        a2 = celldm[0] * 0.5;
+        b2 = celldm[0] * celldm[1] * 0.5;
+        c2 = celldm[0] * celldm[2] * 0.5;
+        aa[0][0] = a2;
+        aa[0][1] = b2;
+        aa[0][2] = c2;
+        aa[1][0] = -a2;
+        aa[1][1] = b2;
+        aa[1][2] = c2;
+        aa[2][0] = -a2;
+        aa[2][1] = -b2;
+        aa[2][2] = c2;
 
-            break;
+        break;
 
-        default:
+    case 12:
+        a = celldm[0];
+        b = celldm[0] * celldm[1];
+        c = celldm[0] * celldm[2];
+        gamma = acos(celldm[3]);
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = b * cos(gamma);
+        aa[1][1] = b * sin(gamma);
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.0;
+        aa[2][1] = 0.0;
+        aa[2][2] = c;
 
-            cout << "ERROR: Invalid ibrav." << endl;
-            exit(EXIT_FAILURE);
+        break;
+
+    case -12:
+        a = celldm[0];
+        b = celldm[0] * celldm[1];
+        c = celldm[0] * celldm[2];
+        beta = acos(celldm[4]);
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = 0.0;
+        aa[1][1] = b;
+        aa[1][2] = 0.0;
+        aa[2][0] = c * cos(beta);
+        aa[2][1] = 0.0;
+        aa[2][2] = c * sin(beta);
+
+        break;
+
+    case 13:
+        a = celldm[0];
+        b = celldm[0] * celldm[1];
+        c = celldm[0] * celldm[2];
+        gamma = acos(celldm[3]);
+        aa[0][0] = 0.5 * a;
+        aa[0][1] = 0.0;
+        aa[0][2] = -0.5 * c;
+        aa[1][0] = b * cos(gamma);
+        aa[1][1] = b * sin(gamma);
+        aa[1][2] = 0.0;
+        aa[2][0] = 0.5 * a;
+        aa[2][1] = 0.0;
+        aa[2][2] = 0.5 * c;
+
+        break;
+
+    case 14:
+        a = celldm[0];
+        b = celldm[0] * celldm[1];
+        c = celldm[0] * celldm[2];
+        alpha = acos(celldm[3]);
+        beta = acos(celldm[4]);
+        gamma = acos(celldm[5]);
+        aa[0][0] = a;
+        aa[0][1] = 0.0;
+        aa[0][2] = 0.0;
+        aa[1][0] = b * cos(gamma);
+        aa[1][1] = b * sin(gamma);
+        aa[1][2] = 0.0;
+        aa[2][0] = c * cos(beta);
+        aa[2][1] = c * (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma);
+        aa[2][2] = c *
+                   sqrt(1.0 + 2.0 * cos(alpha) * cos(beta) * cos(gamma) - cos(alpha) * cos(alpha) -
+                        cos(beta) * cos(beta) - cos(gamma) * cos(gamma)) /
+                   sin(gamma);
+
+        break;
+
+    default:
+
+        cout << "ERROR: Invalid ibrav." << endl;
+        exit(EXIT_FAILURE);
     }
 
 
@@ -678,12 +679,8 @@ void recips(double aa[3][3], double bb[3][3])
     */
 
     double det;
-    det = aa[0][0] * aa[1][1] * aa[2][2]
-          + aa[1][0] * aa[2][1] * aa[0][2]
-          + aa[2][0] * aa[0][1] * aa[1][2]
-          - aa[0][0] * aa[2][1] * aa[1][2]
-          - aa[2][0] * aa[1][1] * aa[0][2]
-          - aa[1][0] * aa[0][1] * aa[2][2];
+    det = aa[0][0] * aa[1][1] * aa[2][2] + aa[1][0] * aa[2][1] * aa[0][2] + aa[2][0] * aa[0][1] * aa[1][2] -
+          aa[0][0] * aa[2][1] * aa[1][2] - aa[2][0] * aa[1][1] * aa[0][2] - aa[1][0] * aa[0][1] * aa[2][2];
 
     if (std::abs(det) < eps12) {
         cout << " ERROR: Lattice vector is singular" << endl;
@@ -717,8 +714,8 @@ string double2string(const double d)
 }
 
 
-void get_pairs_of_minimum_distance(const int natmin, const int nat, int **map_p2s,
-                                   double **xf, std::vector<DistInfo> **mindist_pairs)
+void get_pairs_of_minimum_distance(const int natmin, const int nat, int **map_p2s, double **xf,
+                                   std::vector<DistInfo> **mindist_pairs)
 {
     int icell = 0;
     int i, j, k;
@@ -770,7 +767,8 @@ void get_pairs_of_minimum_distance(const int natmin, const int nat, int **map_p2
 
                 dist_tmp = distance(xcrd[0][iat], xcrd[icell][j]);
 
-                for (k = 0; k < 3; ++k) vec[k] = xcrd[icell][j][k] - xcrd[0][iat][k];
+                for (k = 0; k < 3; ++k)
+                    vec[k] = xcrd[icell][j][k] - xcrd[0][iat][k];
 
                 distall[i][j].push_back(DistInfo(icell, dist_tmp, vec));
             }
@@ -807,4 +805,3 @@ void get_pairs_of_minimum_distance(const int natmin, const int nat, int **map_p2
     deallocate(distall);
     deallocate(xcrd);
 }
-

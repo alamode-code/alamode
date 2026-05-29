@@ -70,8 +70,8 @@ auto System::init(const int verbosity, std::unique_ptr<Timer> &timer) -> void
     timer->stop_clock("system");
 }
 
-auto System::set_basecell(const double lavec_in[3][3], const size_t nat_in, const int *kind_in, const double xf_in[][3])
-    -> void
+auto System::set_basecell(const double lavec_in[3][3], const size_t nat_in, const int *kind_in,
+                          const double xf_in[][3]) -> void
 {
     size_t i, j;
     std::vector<int> unique_nums(nat_in);
@@ -648,8 +648,8 @@ auto System::find_primitive_cell(const Cell &cell_input, const Spin &spin_input,
     deallocate(types_tmp);
 }
 
-auto System::compute_transmat_to_prim_using_spglib(const Cell &cell_input, const double symprec) const
-    -> Eigen::Matrix3d
+auto System::compute_transmat_to_prim_using_spglib(const Cell &cell_input,
+                                                   const double symprec) const -> Eigen::Matrix3d
 {
     Cell cell_out;
     Spin spin_out, spin_in;
