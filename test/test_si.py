@@ -106,12 +106,16 @@ def run_alm_si(almbin, project_root):
     gen_alminput_si("ALM2.in", 2, dfset="DFSET_merged", prefix="si222_cubic")
     try:
         with open("ALM1.log", "w") as f:
-            subprocess.run([almbin, "ALM1.in"], stdout=f)
+            ret = subprocess.run([almbin, "ALM1.in"], stdout=f)
+        if ret.returncode != 0:
+            return 1
     except Exception:
         return 1
     try:
         with open("ALM2.log", "w") as f:
-            subprocess.run([almbin, "ALM2.in"], stdout=f)
+            ret = subprocess.run([almbin, "ALM2.in"], stdout=f)
+        if ret.returncode != 0:
+            return 1
     except Exception:
         return 1
 
@@ -196,12 +200,16 @@ def run_anphon_si(anphonbin, project_root):
     gen_anphoninput_si(prefix="si222", mode="RTA", fname="RTA.in")
     try:
         with open("phband.log", "w") as f:
-            subprocess.run([anphonbin, "phband.in"], stdout=f)
+            ret = subprocess.run([anphonbin, "phband.in"], stdout=f)
+        if ret.returncode != 0:
+            return 1
     except Exception:
         return 1
     try:
         with open("RTA.log", "w") as f:
-            subprocess.run([anphonbin, "RTA.in"], stdout=f)
+            ret = subprocess.run([anphonbin, "RTA.in"], stdout=f)
+        if ret.returncode != 0:
+            return 1
     except Exception:
         return 1
 
