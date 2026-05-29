@@ -10,7 +10,9 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include "anharmonic_core.h"
 #include <algorithm>
+#include <array>
 #include <boost/lexical_cast.hpp>
+#include <utility>
 #include <vector>
 #include "constants.h"
 #include "dynamical.h"
@@ -867,6 +869,64 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
         deallocate(energy_tmp);
         deallocate(weight_tetra);
+    }
+
+    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
+    auto get_degenerate_blocks = [&](const unsigned int knum_in)
+    {
+        std::vector<std::pair<unsigned int, unsigned int>> blocks;
+        auto begin = 0U;
+        auto omega_ref = eval_in[knum_in][0];
+
+        for (auto s = 1U; s < ns; ++s) {
+            const auto omega_now = eval_in[knum_in][s];
+            if (std::abs(omega_now - omega_ref) >= tol_degenerate) {
+                blocks.emplace_back(begin, s);
+                begin = s;
+                omega_ref = omega_now;
+            }
+        }
+        blocks.emplace_back(begin, ns);
+        return blocks;
+    };
+
+    for (ik = 0; ik < npair_uniq; ++ik) {
+        k1 = triplet[ik].group[0].ks[0];
+        k2 = triplet[ik].group[0].ks[1];
+
+        const auto blocks1 = get_degenerate_blocks(k1);
+        const auto blocks2 = get_degenerate_blocks(k2);
+
+        for (const auto &block1: blocks1) {
+            for (const auto &block2: blocks2) {
+
+                const auto nblock = static_cast<double>((block1.second - block1.first) *
+                                                        (block2.second - block2.first));
+
+                if (nblock <= 1.0) continue;
+
+                std::array<double, 2> delta_sum{};
+
+                for (is = block1.first; is < block1.second; ++is) {
+                    for (js = block2.first; js < block2.second; ++js) {
+                        const auto iblock = ns * is + js;
+                        delta_sum[0] += delta_arr[ik][iblock][0];
+                        delta_sum[1] += delta_arr[ik][iblock][1];
+                    }
+                }
+
+                delta_sum[0] /= nblock;
+                delta_sum[1] /= nblock;
+
+                for (is = block1.first; is < block1.second; ++is) {
+                    for (js = block2.first; js < block2.second; ++js) {
+                        const auto iblock = ns * is + js;
+                        delta_arr[ik][iblock][0] = delta_sum[0];
+                        delta_arr[ik][iblock][1] = delta_sum[1];
+                    }
+                }
+            }
+        }
     }
 
     for (ik = 0; ik < npair_uniq; ++ik) {

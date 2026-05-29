@@ -363,6 +363,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
                                               "ISOTOPE",
                                               "ISOFACT",
                                               "KAPPA_COHERENT",
+                                              "KAPPA_COHERENT_BLOCK",
                                               "KAPPA_SPEC",
                                               "WRITE_INTERPOL",
                                               "ADAPTIVE_FACTOR",
@@ -391,6 +392,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
     double len_boundary = 0.0;
     auto include_isotope = 0;
     auto calc_coherent = 0;
+    auto calc_coherent_block = 0;
     auto calculate_kappa_spec = 0;
     auto write_interpol = 0;
 
@@ -410,6 +412,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
         assign_val(write_interpol, "WRITE_INTERPOL", kappa_var_dict);
         assign_val(len_boundary, "LEN_BOUNDARY", kappa_var_dict);
         assign_val(calc_coherent, "KAPPA_COHERENT", kappa_var_dict);
+        assign_val(calc_coherent_block, "KAPPA_COHERENT_BLOCK", kappa_var_dict);
         assign_val(include_isotope, "ISOTOPE", kappa_var_dict);
         assign_val(calculate_kappa_spec, "KAPPA_SPEC", kappa_var_dict);
         str_tmp = kappa_var_dict["KMESH_COARSE"];
@@ -427,6 +430,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
     conductivity->len_boundary = len_boundary; // m
     conductivity->calc_kappa_spec = calculate_kappa_spec;
     conductivity->calc_coherent = calc_coherent;
+    conductivity->calc_coherent_block = calc_coherent_block;
     conductivity->write_interpolation = write_interpol;
 
     iterativebte->do_iterative = iterative;

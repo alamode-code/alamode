@@ -45,8 +45,10 @@ public:
     double ***kappa_3only;
     double ***kappa_spec;
     double ***kappa_coherent;
+    double ***kappa_coherent_block;
     double *temperature;
     int calc_coherent;
+    int calc_coherent_block;
     int write_interpolation;
 
     int fph_rta;
@@ -122,7 +124,7 @@ private:
 
     void write_result_gamma(unsigned int, unsigned int, double ***, double **, int);
 
-    void average_self_energy_at_degenerate_point(const int n, const int m, const KpointMeshUniform *kmesh_in,
+    void average_self_energy_at_degenerate_point(const int m, const KpointMeshUniform *kmesh_in,
                                                  const double *const *eval_in, double **damping) const;
 
     void compute_frequency_resolved_kappa(const int ntemp, const int smearing_method, const KpointMeshUniform *kmesh_in,
@@ -134,6 +136,11 @@ private:
 
     void compute_kappa_coherent(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                 const double *const *gamma_total, double ***kappa_coherent_out) const;
+
+    void compute_kappa_coherent_block(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                      const double *const *gamma_total, double ***kappa_coherent_out) const;
+
+    void check_velocity_matrix_consistency(const KpointMeshUniform *kmesh_in, const double *const *eval_in) const;
 
     void interpolate_data(const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                           const double *const *val_coarse_in, double **val_dense_out) const;
