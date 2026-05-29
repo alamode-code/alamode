@@ -66,3 +66,20 @@ jobs:
           ASAN_OPTIONS: detect_leaks=0
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=0
         run: python test_si.py
+
+      # On failure, re-run the two anphon modes directly (the inputs and FCS file
+      # were generated under test/si by test_si.py) with stderr captured, so the
+      # exact AddressSanitizer/UBSan report and the failing mode are visible in
+      # the log instead of just a downstream "failed to execute" message.
+      - name: Show sanitizer report on failure
+        if: failure()
+        working-directory: ./test/si
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=0
+        run: |
+          echo "=== output files present ==="; ls -la
+          echo "=== anphon phband.in (phonons) ==="
+          ../../_build/anphon/anphon phband.in 2>&1 | tail -80 || true
+          echo "=== anphon RTA.in (RTA) ==="
+          ../../_build/anphon/anphon RTA.in 2>&1 | tail -80 || true
