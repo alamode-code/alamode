@@ -30,6 +30,31 @@
 
 using namespace ALM_NS;
 
+namespace
+{
+// Parse a string to a number, aborting with a clear message instead of
+// throwing an uncaught std::invalid_argument/out_of_range on malformed input.
+auto stod_checked(const std::string &str, const char *context) -> double
+{
+    try {
+        return std::stod(str);
+    } catch (const std::exception &) {
+        std::cout << " Error: could not parse \"" << str << "\" as a real number (" << context << ").\n";
+        std::exit(EXIT_FAILURE);
+    }
+}
+
+auto stoi_checked(const std::string &str, const char *context) -> int
+{
+    try {
+        return std::stoi(str);
+    } catch (const std::exception &) {
+        std::cout << " Error: could not parse \"" << str << "\" as an integer (" << context << ").\n";
+        std::exit(EXIT_FAILURE);
+    }
+}
+} // namespace
+
 InputParser::InputParser()
 {
     input_setter = std::make_unique<InputSetter>();
@@ -494,9 +519,9 @@ auto InputParser::parse_transformation_matrix_string(const std::string &string_c
         boost::split(str_vec, celldim_v[0], boost::is_any_of("/"));
 
         if (str_vec.size() == 2) {
-            transform_matrix = std::stod(str_vec[0]) / std::stod(str_vec[1]) * mat_identity;
+            transform_matrix = stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str()) * mat_identity;
         } else {
-            transform_matrix = std::stod(str_vec[0]) * mat_identity;
+            transform_matrix = stod_checked(str_vec[0], string_celldim.c_str()) * mat_identity;
         }
 
     } else if (celldim_v.size() == 3) {
@@ -506,9 +531,9 @@ auto InputParser::parse_transformation_matrix_string(const std::string &string_c
             boost::split(str_vec, celldim_v[i], boost::is_any_of("/"));
 
             if (str_vec.size() == 2) {
-                transform_matrix(i, i) = std::stod(str_vec[0]) / std::stod(str_vec[1]);
+                transform_matrix(i, i) = stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str());
             } else {
-                transform_matrix(i, i) = std::stod(str_vec[0]);
+                transform_matrix(i, i) = stod_checked(str_vec[0], string_celldim.c_str());
             }
         }
     } else if (celldim_v.size() == 9) {
@@ -518,9 +543,9 @@ auto InputParser::parse_transformation_matrix_string(const std::string &string_c
                 std::vector<std::string> str_vec;
                 boost::split(str_vec, celldim_v[k++], boost::is_any_of("/"));
                 if (str_vec.size() == 2) {
-                    transform_matrix(i, j) = std::stod(str_vec[0]) / std::stod(str_vec[1]);
+                    transform_matrix(i, j) = stod_checked(str_vec[0], string_celldim.c_str()) / stod_checked(str_vec[1], string_celldim.c_str());
                 } else {
-                    transform_matrix(i, j) = std::stod(str_vec[0]);
+                    transform_matrix(i, j) = stod_checked(str_vec[0], string_celldim.c_str());
                 }
             }
         }
@@ -797,7 +822,7 @@ auto InputParser::parse_structure_poscar(const std::string &fname_poscar, Eigen:
 
     std::vector<int> num_kinds_vec;
     for (auto &it: num_kinds_split) {
-        num_kinds_vec.push_back(std::stoi(it));
+        num_kinds_vec.push_back(stoi_checked(it, "POSCAR: number of atoms for each element"));
     }
     counter = 0;
     atomic_types_out.clear();
@@ -834,7 +859,7 @@ auto InputParser::parse_structure_poscar(const std::string &fname_poscar, Eigen:
             exit("parse_structure_poscar", "The number of entries for the position is too few.");
         }
         for (auto j = 0; j < 3; ++j) {
-            coordinates_out(i, j) = std::stod(coordinate_entry_split[j]);
+            coordinates_out(i, j) = stod_checked(coordinate_entry_split[j], "POSCAR: atomic coordinate");
         }
     }
     ifs.close();
