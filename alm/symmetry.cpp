@@ -660,6 +660,11 @@ auto Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<un
     }
 
     auto spgdataset = spg_get_dataset(aa_tmp, position, types_tmp, nat, tolerance);
+    if (!spgdataset) {
+        exit("findsym_spglib",
+             "spg_get_dataset returned NULL. Symmetry detection failed; "
+             "check the structure and the symmetry tolerance (TOLERANCE).");
+    }
     auto nsym_out = spgdataset->n_operations;
     if (nsym_out == 0) exit("findsym_spglib", "Error occurred in spg_get_dataset");
 

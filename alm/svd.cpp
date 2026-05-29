@@ -38,16 +38,17 @@ auto compute_svd_thin(const Eigen::MatrixXd &A, const bool use_eigen)
         return {U, S, VT};
     } else {
         // LAPACK version: use 'S' for thin U and 'S' for thin VT
-        // Prepare a column-major buffer for Fortran
-        double *A_lap = new double[m * n];
+        // Prepare a column-major buffer for Fortran.
+        // Cast to size_t before multiplying to avoid int overflow for large matrices.
+        double *A_lap = new double[static_cast<size_t>(m) * n];
         double *S_lap = new double[min_mn];
-        double *U_lap = new double[m * min_mn];
-        double *VT_lap = new double[min_mn * n];
+        double *U_lap = new double[static_cast<size_t>(m) * min_mn];
+        double *VT_lap = new double[static_cast<size_t>(min_mn) * n];
 
         // Copy A into A_lap in column-major order: A_lap[i + j*m] = A(i, j)
         for (int j = 0; j < n; ++j) {
             for (int i = 0; i < m; ++i) {
-                A_lap[i + j * m] = A(i, j);
+                A_lap[static_cast<size_t>(i) + static_cast<size_t>(j) * m] = A(i, j);
             }
         }
 

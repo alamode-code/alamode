@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace PHON_NS;
 
@@ -27,14 +28,20 @@ MyMPI::~MyMPI()
 
 void MyMPI::MPI_Bcast_string(std::string &str, int root, MPI_Comm comm) const
 {
-    int len = str.length();
+    int len = 0;
+    if (my_rank == root) {
+        len = static_cast<int>(str.length());
+    }
     MPI_Bcast(&len, 1, MPI_INT, root, comm);
 
-    // limited to 512 characters
-    char ctmp[512];
-    std::strcpy(ctmp, str.c_str());
-    MPI_Bcast(&ctmp, len + 1, MPI_CHAR, root, comm);
-    str = std::string(ctmp);
+    // Use a heap buffer sized to the actual string length to avoid the
+    // fixed-size stack buffer overflow that the previous 512-byte array had.
+    std::vector<char> ctmp(len + 1);
+    if (my_rank == root) {
+        std::memcpy(ctmp.data(), str.c_str(), len + 1);
+    }
+    MPI_Bcast(ctmp.data(), len + 1, MPI_CHAR, root, comm);
+    str = std::string(ctmp.data());
 }
 
 
@@ -70,7 +77,26 @@ void MyMPI::MPI_Bcast_SpinClass(Spin &spin, int root, MPI_Comm comm) const
     if (my_rank != root) {
         spin.magmom.resize(natoms, std::vector<double>(3));
     }
-    MPI_Bcast(spin.magmom.data(), 3 * natoms, MPI_DOUBLE, root, comm);
+
+    // std::vector<std::vector<double>> is not contiguous in memory, so it cannot
+    // be broadcast directly via magmom.data(). Pack into a flat buffer, broadcast,
+    // then unpack.
+    std::vector<double> magmom_flat(static_cast<size_t>(natoms) * 3);
+    if (my_rank == root) {
+        for (int i = 0; i < natoms; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                magmom_flat[3 * i + j] = spin.magmom[i][j];
+            }
+        }
+    }
+    MPI_Bcast(magmom_flat.data(), 3 * natoms, MPI_DOUBLE, root, comm);
+    if (my_rank != root) {
+        for (int i = 0; i < natoms; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                spin.magmom[i][j] = magmom_flat[3 * i + j];
+            }
+        }
+    }
 }
 
 void MyMPI::MPI_Bcast_MappingTable(MappingTable &mapping, int root, MPI_Comm comm) const

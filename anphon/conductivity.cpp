@@ -943,8 +943,18 @@ void Conductivity::compute_kappa()
         if (isotope->include_isotope) {
             for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks) {
                 const auto snum = iks % ns;
-                gamma_total[iks][i] += isotope->gamma_isotope[iks / ns][snum];
+                const auto gamma_iso = isotope->gamma_isotope[iks / ns][snum];
+                for (i = 0; i < ntemp; ++i) {
+                    gamma_total[iks][i] += gamma_iso;
+                }
             }
+        }
+
+        // kappa_spec must be allocated before the FPH_RTA block below, because
+        // compute_kappa_intraband() writes into it on the intermediate 3-phonon-only
+        // call when KAPPA_SPEC = 1. The final full call overwrites it cleanly.
+        if (calc_kappa_spec) {
+            allocate(kappa_spec, dos->n_energy, ntemp, 3);
         }
 
         if (fph_rta > 0) {
@@ -988,10 +998,7 @@ void Conductivity::compute_kappa()
 
         allocate(kappa, ntemp, 3, 3);
 
-        if (calc_kappa_spec) {
-            allocate(kappa_spec, dos->n_energy, ntemp, 3);
-        }
-
+        // kappa_spec is already allocated above (before the FPH_RTA block).
         compute_kappa_intraband(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), lifetime, kappa, kappa_spec);
         deallocate(lifetime);
 

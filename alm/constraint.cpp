@@ -579,8 +579,8 @@ auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::v
         for (const auto &p: const_fix[0]) {
             triplets.emplace_back(icount, p.p_index_target, 1.0);
             const_rhs_tmp[icount] = p.val_to_fix;
+            ++icount;
         }
-        ++icount;
     }
 
     if (fix_cubic && maxorder > 1) {
@@ -589,8 +589,8 @@ auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::v
         for (const auto &p: const_fix[1]) {
             triplets.emplace_back(icount, p.p_index_target + ishift2, 1.0);
             const_rhs_tmp[icount] = p.val_to_fix;
+            ++icount;
         }
-        ++icount;
     }
 
     Eigen::SparseMatrix<double> const_mat_tmp;
