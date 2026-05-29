@@ -1149,9 +1149,20 @@ void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int
         }
     }
 
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            S_avg[i][j] /= static_cast<double>(sym_list.size());
+    if (sym_list.empty()) {
+        static bool warning_issued = false;
+        if (!warning_issued) {
+            warn("get_symmetrization_matrix_at_k", "No small-group operation found. Identity symmetrizer is used.");
+            warning_issued = true;
+        }
+        for (i = 0; i < 3; ++i) {
+            S_avg[i][i] = 1.0;
+        }
+    } else {
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 3; ++j) {
+                S_avg[i][j] /= static_cast<double>(sym_list.size());
+            }
         }
     }
 }

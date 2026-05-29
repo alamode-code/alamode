@@ -829,8 +829,15 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::ve
 
     for (i = 0; i < nmode; ++i) {
         for (j = 0; j < nmode; ++j) {
+            if (omega_in[i] < eps8 || omega_in[j] < eps8) {
+                for (k = 0; k < 3; ++k) {
+                    velmat_out[i][j][k] = std::complex<double>(0.0, 0.0);
+                }
+                continue;
+            }
+            const auto inv_omega = 0.5 * im / std::sqrt(omega_in[i] * omega_in[j]);
             for (k = 0; k < 3; ++k) {
-                velmat_out[i][j][k] *= 0.5 * im / std::sqrt(omega_in[i] * omega_in[j]);
+                velmat_out[i][j][k] *= inv_omega;
             }
         }
     }

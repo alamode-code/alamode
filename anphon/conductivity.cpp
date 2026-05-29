@@ -1296,16 +1296,25 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                                 const auto ktmp = kmesh_in->kpoint_irred_all[ik][ieq].knum;
                                 vv_tmp += velmat[ktmp][is][js][j] * velmat[ktmp][js][is][k];
                             }
+                            if (!std::isfinite(vv_tmp.real()) || !std::isfinite(vv_tmp.imag())) {
+                                continue;
+                            }
                             const auto domega = omega1 - omega2;
                             const auto gamma_sum = gamma_total[ik * ns + is][i] + gamma_total[ik * ns + js][i];
                             const auto denominator = 4.0 * domega * domega + 4.0 * gamma_sum * gamma_sum;
                             if (denominator <= 0.0 || !std::isfinite(denominator) || !std::isfinite(gamma_sum)) {
                                 continue;
                             }
-                            auto kcelem_tmp = 2.0 * (omega1 * omega2) / (omega1 + omega2) *
-                                              (thermodynamics->Cv(omega1, temperature[i]) / omega1 +
-                                               thermodynamics->Cv(omega2, temperature[i]) / omega2) *
-                                              2.0 * gamma_sum / denominator * vv_tmp;
+                            const auto population_factor = thermodynamics->Cv(omega1, temperature[i]) / omega1
+                                                           + thermodynamics->Cv(omega2, temperature[i]) / omega2;
+                            if (!std::isfinite(population_factor)) {
+                                continue;
+                            }
+                            auto kcelem_tmp = 2.0 * (omega1 * omega2) / (omega1 + omega2) * population_factor
+                                              * 2.0 * gamma_sum / denominator * vv_tmp;
+                            if (!std::isfinite(kcelem_tmp.real()) || !std::isfinite(kcelem_tmp.imag())) {
+                                continue;
+                            }
                             kappa_tmp[ib] += kcelem_tmp;
 
                             if (calc_coherent == 2 && j == k) {
