@@ -24,6 +24,15 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+    env:
+      # OpenMPI's memory "patcher" binary-rewrites malloc/mprotect during MPI_Init,
+      # which is incompatible with AddressSanitizer (ASan has already intercepted
+      # those functions) and traps with SIGILL inside libasan -- not an ALAMODE bug.
+      # Backtrace: PMPI_Init -> opal_memory_base_open -> patcher_open -> mprotect.
+      # Disable the patcher and the UCX PML that pulls it in; neither is needed for
+      # a single-node CI run over TCP/shared memory.
+      OMPI_MCA_memory: "^patcher"
+      OMPI_MCA_pml: "^ucx"
     steps:
       - uses: actions/checkout@v4
 
