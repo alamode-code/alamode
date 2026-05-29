@@ -11,6 +11,8 @@
 #include "isotope.h"
 #include <complex>
 #include <iomanip>
+#include <utility>
+#include <vector>
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -151,10 +153,18 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
     ret = 0.0;
 
     double *eval;
-    double *weight;
+    double **prod_omega;
+    double **weight_tetra;
+    unsigned int *kmap_identity;
 
     allocate(eval, nk);
-    allocate(weight, nk);
+    allocate(prod_omega, ns, nk);
+    allocate(weight_tetra, ns, nk);
+    allocate(kmap_identity, nk);
+
+    for (ik = 0; ik < nk; ++ik) {
+        kmap_identity[ik] = ik;
+    }
 
     for (is = 0; is < ns; ++is) {
 #pragma omp parallel for
@@ -171,20 +181,61 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
                 prod += isotope_factor[system->get_primcell().kind[iat]] * std::norm(dprod);
             }
 
-            weight[ik] = prod * eval_in[ik][is];
+            prod_omega[is][ik] = prod * eval_in[ik][is];
             eval[ik] = eval_in[ik][is];
         }
-        ret += integration->do_tetrahedron(eval,
-                                           weight,
-                                           dos->tetra_nodes_dos->get_ntetra(),
-                                           dos->tetra_nodes_dos->get_tetras(),
-                                           omega);
+        integration->calc_weight_tetrahedron(nk,
+                                             kmap_identity,
+                                             eval,
+                                             omega,
+                                             dos->tetra_nodes_dos->get_ntetra(),
+                                             dos->tetra_nodes_dos->get_tetras(),
+                                             weight_tetra[is]);
+    }
+
+    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
+    for (ik = 0; ik < nk; ++ik) {
+        std::vector<std::pair<int, int>> blocks;
+        auto begin = 0;
+        auto omega_ref = eval_in[ik][0];
+
+        for (is = 1; is < ns; ++is) {
+            const auto omega_now = eval_in[ik][is];
+            if (std::abs(omega_now - omega_ref) >= tol_degenerate) {
+                blocks.emplace_back(begin, is);
+                begin = is;
+                omega_ref = omega_now;
+            }
+        }
+        blocks.emplace_back(begin, ns);
+
+        for (const auto &block: blocks) {
+            if (block.second - block.first <= 1) continue;
+
+            auto weight_sum = 0.0;
+            for (is = block.first; is < block.second; ++is) {
+                weight_sum += weight_tetra[is][ik];
+            }
+            weight_sum /= static_cast<double>(block.second - block.first);
+
+            for (is = block.first; is < block.second; ++is) {
+                weight_tetra[is][ik] = weight_sum;
+            }
+        }
+    }
+
+    for (is = 0; is < ns; ++is) {
+        for (ik = 0; ik < nk; ++ik) {
+            ret += weight_tetra[is][ik] * prod_omega[is][ik];
+        }
     }
 
     ret *= pi * omega * 0.25;
 
     deallocate(eval);
-    deallocate(weight);
+    deallocate(prod_omega);
+    deallocate(weight_tetra);
+    deallocate(kmap_identity);
 }
 
 void Isotope::calc_isotope_selfenergy_all() const

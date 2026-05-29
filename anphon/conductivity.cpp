@@ -1048,6 +1048,11 @@ void Conductivity::compute_kappa()
             }
         }
 
+        average_self_energy_at_degenerate_point(ntemp,
+                                                dos->kmesh_dos,
+                                                dos->dymat_dos->get_eigenvalues(),
+                                                gamma_total);
+
         // kappa_spec must be allocated before the FPH_RTA block below, because
         // compute_kappa_intraband() writes into it on the intermediate 3-phonon-only
         // call when KAPPA_SPEC = 1. The final full call overwrites it cleanly.
@@ -1089,6 +1094,11 @@ void Conductivity::compute_kappa()
                     }
                 }
             }
+
+            average_self_energy_at_degenerate_point(ntemp,
+                                                    dos->kmesh_dos,
+                                                    dos->dymat_dos->get_eigenvalues(),
+                                                    gamma_total);
         }
 
         lifetime_from_gamma(gamma_total, lifetime);
