@@ -1462,18 +1462,70 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     break;
                 }
 
+                // Residual gradient norms over the optimized degrees of freedom (the same
+                // gradients the optimizer acts on). A small step (du0/du_tensor) does not by
+                // itself imply a small gradient for the GDIIS optimizer (relax_algo == 3), so
+                // these are printed for diagnostics and, when the corresponding tolerance is
+                // > 0, also required for convergence to guard against false convergence at a
+                // non-stationary point. The coordinate force (gradient w.r.t. q0) and the
+                // cell gradient (stress conjugate to the strain tensor) have different units,
+                // so they are checked separately (cf. COORD_CONV_TOL vs CELL_CONV_TOL).
+                double grad_norm = 0.0;
+                for (is = 0; is < ns - 3; is++) {
+                    const double f = v1_SCP[harm_optical_modes[is]].real();
+                    grad_norm += f * f;
+                }
+                grad_norm = std::sqrt(grad_norm);
+
+                double cell_grad_norm = 0.0;
+                if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+                    for (i1 = 0; i1 < 3; i1++) {
+                        const double fd = del_v0_del_umn_SCP[i1 * 3 + i1].real();
+                        const int j1 = (i1 + 1) % 3;
+                        const int j2 = (i1 + 2) % 3;
+                        const double fs = del_v0_del_umn_SCP[j1 * 3 + j2].real();
+                        cell_grad_norm += fd * fd + fs * fs;
+                    }
+                    cell_grad_norm = std::sqrt(cell_grad_norm);
+                }
+
                 // check convergence
                 std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0 << " [Bohr]";
 
                 std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
                           << '\n';
 
-                if (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol) {
+                std::cout << " |residual force| =" << std::scientific << std::setw(15) << std::setprecision(6)
+                          << grad_norm;
+                if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+                    std::cout << " |residual stress| =" << std::scientific << std::setw(15) << std::setprecision(6)
+                              << cell_grad_norm;
+                }
+                std::cout << '\n';
+
+                const bool step_converged =
+                    (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol);
+                const bool force_converged =
+                    (relaxation->gradient_conv_tol <= 0.0) || (grad_norm < relaxation->gradient_conv_tol);
+                const bool cell_force_converged = (relax_mode != RelaxationStrMode::CoordinatesAndCell) ||
+                                                  (relaxation->cell_gradient_conv_tol <= 0.0) ||
+                                                  (cell_grad_norm < relaxation->cell_gradient_conv_tol);
+
+                if (step_converged && force_converged && cell_force_converged) {
                     std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
                               << std::setprecision(6) << relaxation->coord_conv_tol << '\n';
                     if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
                         std::cout << " du_tensor is smaller than CELL_CONV_TOL = " << std::scientific << std::setw(15)
                                   << std::setprecision(6) << relaxation->cell_conv_tol << '\n';
+                    }
+                    if (relaxation->gradient_conv_tol > 0.0) {
+                        std::cout << " |residual force| is smaller than GRADIENT_CONV_TOL = " << std::scientific
+                                  << std::setw(15) << std::setprecision(6) << relaxation->gradient_conv_tol << '\n';
+                    }
+                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell &&
+                        relaxation->cell_gradient_conv_tol > 0.0) {
+                        std::cout << " |residual stress| is smaller than CELL_GRADIENT_CONV_TOL = " << std::scientific
+                                  << std::setw(15) << std::setprecision(6) << relaxation->cell_gradient_conv_tol << '\n';
                     }
                     std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
                     std::cout << " break structural loop.\n\n";

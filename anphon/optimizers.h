@@ -54,6 +54,21 @@ public:
                       const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
 };
 
+class SteepestDescent_Optimizer: public Optimizer
+{
+public:
+    double alpha = 1.0;
+
+    SteepestDescent_Optimizer() = default;
+
+    ~SteepestDescent_Optimizer() = default;
+
+    explicit SteepestDescent_Optimizer(double alpha);
+
+    void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
+                      const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
+};
+
 class CellCoord_Newton_Optimizer: public Optimizer
 {
 public:
@@ -161,9 +176,19 @@ public:
         Eigen::VectorXd point_DIIS = result_point + result_residual;
         Eigen::VectorXd diff_REF = point_BFGS - point;
         Eigen::VectorXd diff_DIIS = point_DIIS - point;
-        double cos_angle = diff_DIIS.dot(diff_REF) / (diff_DIIS.norm() * diff_REF.norm());
-        if (cos_angle < threshold_angle) {
+        const double norm_DIIS = diff_DIIS.norm();
+        const double norm_REF = diff_REF.norm();
+        // Fall back to the plain BFGS step when the DIIS direction deviates too much from it.
+        // If either step has (near-)zero length the cosine is undefined (0/0 -> NaN); fall
+        // back to BFGS in that case too, so a spurious near-zero DIIS extrapolation at a
+        // non-stationary point cannot be accepted and reported as a (false) converged step.
+        if (norm_DIIS < eps15 || norm_REF < eps15) {
             point_DIIS = point_BFGS;
+        } else {
+            const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
+            if (!(cos_angle >= threshold_angle)) { // the negated form also catches NaN
+                point_DIIS = point_BFGS;
+            }
         }
 
         // return point_GRAD; // gradient method

@@ -47,6 +47,8 @@ void Relaxation::set_default_variables()
     alpha_steepest_decent = 1.0e4;
     cell_conv_tol = 1.0e-5;
     mixbeta_cell = 0.5;
+    gradient_conv_tol = 0.0;      // disabled by default (step-size convergence only)
+    cell_gradient_conv_tol = 0.0; // disabled by default (step-size convergence only)
 
     set_init_str = 1;
     cooling_u0_index = 0;
@@ -75,7 +77,10 @@ void Relaxation::create_optimizer(const size_t num_modes)
 {
     const auto relax_mode = to_relaxation_str_mode(relax_str);
 
-    if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 2) {
+    if (relax_algo == 1) {
+        // Steepest descent is independent of the relaxation mode and dimension.
+        optimizer = std::make_unique<SteepestDescent_Optimizer>(alpha_steepest_decent);
+    } else if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 2) {
         optimizer = std::make_unique<Newton_Optimizer>(mixbeta_coord);
     } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relax_algo == 2) {
         optimizer = std::make_unique<CellCoord_Newton_Optimizer>(mixbeta_cell, mixbeta_coord);
@@ -264,7 +269,9 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
     auto &u_tensor = structure_state.u_tensor;
     int i1, i2;
 
-    optimizer->initialize_flag = 1;
+    // The optimizer is null for relaxation modes that do not use a coordinate
+    // optimizer (e.g. PerturbativeQha), so guard every access to it here.
+    if (optimizer) optimizer->initialize_flag = 1;
 
     if (str_diverged) {
         std::cout << " The crystal structure at the previous temperature is divergent.\n";
@@ -287,7 +294,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
         str_diverged = 0;
 
         // set the flag to initialize the optimizer
-        optimizer->initialize_flag = 1;
+        if (optimizer) optimizer->initialize_flag = 1;
 
         return;
     }
@@ -309,7 +316,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             set_initial_strain(u_tensor);
         }
         converged_prev = false;
-        optimizer->initialize_flag = 1;
+        if (optimizer) optimizer->initialize_flag = 1;
 
     } else if (set_init_str == 2) {
         if (i_temp_loop == 0) {
@@ -327,7 +334,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
                 set_initial_strain(u_tensor);
             }
             converged_prev = false;
-            optimizer->initialize_flag = 1;
+            if (optimizer) optimizer->initialize_flag = 1;
         } else {
             std::cout << " start from structure from the previous temperature.\n\n";
         }
@@ -348,7 +355,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             } else {
                 set_initial_strain(u_tensor);
             }
-            optimizer->initialize_flag = 1;
+            if (optimizer) optimizer->initialize_flag = 1;
         }
         // read initial DISPLACEMENT if the structure converges
         // to the high-symmetry one.
@@ -363,7 +370,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
             converged_prev = false;
-            optimizer->initialize_flag = 1;
+            if (optimizer) optimizer->initialize_flag = 1;
         } else {
             std::cout << " start from the structure at the previous temperature.\n\n";
         }
@@ -497,47 +504,56 @@ void Relaxation::update_cell_coordinate(
         delta_umn[is] = 0.0;
     }
 
-    if (relax_algo == 1) {
-        // steepest decent
-        for (is = 0; is < ns; is++) {
-            // skip acoustic mode
-            if (std::fabs(omega2_harmonic[0][is]) < eps8) {
-                continue;
-            }
-            delta_q0[is] = -alpha_steepest_decent * v1_array_atT[is].real();
-            q0[is] += delta_q0[is];
-        }
-    } else if (relax_algo >= 2) {
-        int js;
-        // iterative solution of linear equation
+    if (relax_algo >= 1) {
 
-        // prepare harmonic IFC matrix
-        for (is = 0; is < ns; is++) {
-            for (js = 0; js < ns; js++) {
-                Cmat(js, is) = cmat_convert[0][is][js]; // transpose
-                v2_mat_full(is, js) = 0.0;
+        // Newton (relax_algo == 2) and BFGS+GDIIS (relax_algo == 3) use the harmonic IFC
+        // matrix as the (initial) Hessian. Steepest descent (relax_algo == 1) ignores the
+        // Hessian, so skip building it.
+        if (relax_algo >= 2) {
+            int js;
+            // prepare harmonic IFC matrix
+            for (is = 0; is < ns; is++) {
+                for (js = 0; js < ns; js++) {
+                    Cmat(js, is) = cmat_convert[0][is][js]; // transpose
+                    v2_mat_full(is, js) = 0.0;
+                }
+                v2_mat_full(is, is) = omega2_array[0][is];
             }
-            v2_mat_full(is, is) = omega2_array[0][is];
-        }
-        v2_mat_full = Cmat.adjoint() * v2_mat_full * Cmat;
+            v2_mat_full = Cmat.adjoint() * v2_mat_full * Cmat;
 
-        // set gradient, hessian, and current state
-        for (is = 0; is < ns - 3; is++) {
-            for (js = 0; js < ns - 3; js++) {
-                hessian_mat[is][js] = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]).real();
+            // set hessian
+            for (is = 0; is < ns - 3; is++) {
+                for (js = 0; js < ns - 3; js++) {
+                    hessian_mat[is][js] = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]).real();
+                }
+                hessian_mat[is][is] += add_hess_diag_omega2;
             }
-            hessian_mat[is][is] += add_hess_diag_omega2;
         }
 
+        // set gradient and current state over the optical modes
         for (is = 0; is < ns - 3; is++) {
             grad_vec[is] = v1_array_atT[harm_optical_modes[is]].real();
             state_vec[is] = q0[harm_optical_modes[is]];
         }
 
+        // Steepest descent (relax_algo == 1) historically froze near-acoustic modes using a
+        // coarser cutoff (|omega2_harmonic| < eps8) than the eps10 used to build
+        // harm_optical_modes. Zero their gradient so their steepest-descent step stays
+        // exactly zero, reproducing the original behavior.
+        if (relax_algo == 1) {
+            for (is = 0; is < ns - 3; is++) {
+                if (std::fabs(omega2_harmonic[0][harm_optical_modes[is]]) < eps8) {
+                    grad_vec[is] = 0.0;
+                }
+            }
+        }
 
-        if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
+
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly || relax_algo == 1) {
             int i1, i2;
-            // call optimizer
+            // Relax the internal coordinates only. This covers CoordinatesOnly mode (any
+            // algorithm) and steepest descent (relax_algo == 1), which keeps the cell shape
+            // fixed even in CoordinatesAndCell mode.
             optimizer->update_state(ns - 3, grad_vec, state_vec, hessian_mat, delta_vec);
 
             // update q0
@@ -545,12 +561,17 @@ void Relaxation::update_cell_coordinate(
                 delta_q0[harm_optical_modes[is]] = delta_vec[is];
                 q0[harm_optical_modes[is]] += delta_q0[harm_optical_modes[is]];
             }
+            // keep the cell fixed: no strain step
             for (i1 = 0; i1 < 6; i1++) {
                 delta_umn[i1] = 0.0;
             }
-            for (i1 = 0; i1 < 3; i1++) {
-                for (i2 = 0; i2 < 3; i2++) {
-                    u_tensor[i1][i2] = 0.0;
+            // reset the strain to zero only in CoordinatesOnly mode (in CoordinatesAndCell
+            // mode the current strain is left untouched)
+            if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
+                for (i1 = 0; i1 < 3; i1++) {
+                    for (i2 = 0; i2 < 3; i2++) {
+                        u_tensor[i1][i2] = 0.0;
+                    }
                 }
             }
 

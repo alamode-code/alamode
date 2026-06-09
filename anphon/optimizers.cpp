@@ -40,6 +40,24 @@ void Newton_Optimizer::update_state(const int dim, const std::vector<double> &gr
 }
 
 
+SteepestDescent_Optimizer::SteepestDescent_Optimizer(double alpha) : alpha(alpha)
+{}
+
+void SteepestDescent_Optimizer::update_state(const int dim, const std::vector<double> &grad_vec,
+                                             std::vector<double> &state_vec,
+                                             const std::vector<std::vector<double>> &hessian,
+                                             std::vector<double> &delta)
+{
+    // Steepest descent: take a fixed step along the negative gradient.
+    // The Hessian is not used.
+    (void)hessian;
+    for (int i = 0; i < dim; ++i) {
+        delta[i] = -alpha * grad_vec[i];
+        state_vec[i] = state_vec[i] + delta[i];
+    }
+}
+
+
 CellCoord_Newton_Optimizer::CellCoord_Newton_Optimizer(double mixbeta_cell, double mixbeta_coord)
 {
     this->mixbeta_cell = mixbeta_cell;

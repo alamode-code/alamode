@@ -168,8 +168,14 @@ void Writes::writeInputVars()
         std::cout << "  RELAX_ALGO = " << relaxation->relax_algo << '\n';
         std::cout << "  MAX_STR_ITER = " << relaxation->max_str_iter << '\n';
         std::cout << "  COORD_CONV_TOL = " << relaxation->coord_conv_tol << '\n';
+        if (relaxation->gradient_conv_tol > 0.0) {
+            std::cout << "  GRADIENT_CONV_TOL = " << relaxation->gradient_conv_tol << '\n';
+        }
         if (relaxation->relax_str == 2) {
             std::cout << "  CELL_CONV_TOL = " << relaxation->cell_conv_tol << '\n';
+            if (relaxation->cell_gradient_conv_tol > 0.0) {
+                std::cout << "  CELL_GRADIENT_CONV_TOL = " << relaxation->cell_gradient_conv_tol << '\n';
+            }
         }
         if (relaxation->relax_algo == 1) {
             std::cout << "  ALPHA_STEEPEST_DECENT = " << relaxation->alpha_steepest_decent << '\n';

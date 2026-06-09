@@ -773,6 +773,8 @@ void Input::parse_relax_vars()
     const std::vector<std::string> input_list{"RELAX_ALGO",
                                               "MAX_STR_ITER",
                                               "COORD_CONV_TOL",
+                                              "GRADIENT_CONV_TOL",
+                                              "CELL_GRADIENT_CONV_TOL",
                                               "MIXBETA_COORD",
                                               "ALPHA_STDECENT",
                                               "CELL_CONV_TOL",
@@ -807,6 +809,8 @@ void Input::parse_relax_vars()
     double coord_conv_tol = 1.0e-5;
     double mixbeta_coord = 0.5;
     double alpha_steepest_decent = 1.0e4;
+    double gradient_conv_tol = 0.0;
+    double cell_gradient_conv_tol = 0.0;
 
     double cell_conv_tol = 1.0e-5;
     double mixbeta_cell = 0.5;
@@ -827,6 +831,12 @@ void Input::parse_relax_vars()
     assign_val(relax_algo, "RELAX_ALGO", stropt_var_dict);
     assign_val(max_str_iter, "MAX_STR_ITER", stropt_var_dict);
     assign_val(coord_conv_tol, "COORD_CONV_TOL", stropt_var_dict);
+    assign_val(gradient_conv_tol, "GRADIENT_CONV_TOL", stropt_var_dict);
+    assign_val(cell_gradient_conv_tol, "CELL_GRADIENT_CONV_TOL", stropt_var_dict);
+
+    if (relax_algo < 1 || relax_algo > 3) {
+        exit("parse_relax_vars", "RELAX_ALGO must be 1 (steepest decent), 2 (Newton), or 3 (BFGS+GDIIS).");
+    }
 
     if (relax_algo == 1) {
         assign_val(alpha_steepest_decent, "ALPHA_STEEPEST_DECENT", stropt_var_dict);
@@ -861,6 +871,8 @@ void Input::parse_relax_vars()
     relaxation->max_str_iter = max_str_iter;
 
     relaxation->coord_conv_tol = coord_conv_tol;
+    relaxation->gradient_conv_tol = gradient_conv_tol;
+    relaxation->cell_gradient_conv_tol = cell_gradient_conv_tol;
     relaxation->mixbeta_coord = mixbeta_coord;
     relaxation->alpha_steepest_decent = alpha_steepest_decent;
 

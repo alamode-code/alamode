@@ -227,6 +227,18 @@ public:
     double alpha_steepest_decent;
     double cell_conv_tol;
     double mixbeta_cell;
+    // Optional residual-force convergence threshold for the internal coordinates (gradient
+    // w.r.t. q0). When > 0, structural optimization is declared converged only if the
+    // coordinate force norm is also below this value, in addition to the step-size criteria.
+    // Guards against false convergence (small step at a non-stationary point), which can
+    // occur with the GDIIS optimizer (relax_algo == 3).
+    double gradient_conv_tol;
+    // Optional residual convergence threshold for the cell gradient (the stress-like
+    // quantity conjugate to the strain tensor, including the applied-pressure term). When > 0
+    // and the cell is relaxed (relax_str == 2), convergence also requires the strain-gradient
+    // norm to be below this value. Its units differ from gradient_conv_tol, hence a separate
+    // threshold (cf. coord_conv_tol vs cell_conv_tol).
+    double cell_gradient_conv_tol;
 
     int set_init_str;
     int cooling_u0_index;  // used if set_init_str is 3
