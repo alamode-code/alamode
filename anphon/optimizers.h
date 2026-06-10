@@ -90,7 +90,8 @@ public:
 class FarkasIII_Optimizer: public Optimizer
 {
 public:
-    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini) : max_vectors(max_vectors), H(H_ini)
+    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini, bool guard_degenerate_step)
+        : max_vectors(max_vectors), guard_degenerate_step(guard_degenerate_step), H(H_ini)
     {
         gradient_old = Eigen::VectorXd::Zero(H_ini.size());
         threshold_angle = 0.0; // We set angle threshold to be zero when we store more than 9 vectors
@@ -178,15 +179,28 @@ public:
         Eigen::VectorXd diff_DIIS = point_DIIS - point;
         const double norm_DIIS = diff_DIIS.norm();
         const double norm_REF = diff_REF.norm();
-        // Fall back to the plain BFGS step when the DIIS direction deviates too much from it.
-        // If either step has (near-)zero length the cosine is undefined (0/0 -> NaN); fall
-        // back to BFGS in that case too, so a spurious near-zero DIIS extrapolation at a
-        // non-stationary point cannot be accepted and reported as a (false) converged step.
-        if (norm_DIIS < eps15 || norm_REF < eps15) {
-            point_DIIS = point_BFGS;
+        if (guard_degenerate_step) {
+            // Fall back to the plain BFGS step when the DIIS direction deviates too much from
+            // it. If either step has (near-)zero length the cosine is undefined (0/0 -> NaN);
+            // fall back to BFGS in that case too, so a spurious near-zero DIIS extrapolation at
+            // a non-stationary point cannot be accepted and reported as a (false) converged
+            // step. NOTE: near a high-symmetry structure the symmetry-breaking force vanishes,
+            // so this guard can also freeze the optimizer on an unstable (saddle) structure
+            // below Tc; set GDIIS_ANGLE_GUARD = 0 to recover the original behavior.
+            if (norm_DIIS < eps15 || norm_REF < eps15) {
+                point_DIIS = point_BFGS;
+            } else {
+                const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
+                if (!(cos_angle >= threshold_angle)) { // the negated form also catches NaN
+                    point_DIIS = point_BFGS;
+                }
+            }
         } else {
+            // Original behavior: a (near-)zero-length step makes the cosine NaN, which keeps
+            // point_DIIS (no fallback). This preserves the original symmetry-breaking kick that
+            // lets the optimizer escape an unstable high-symmetry structure below Tc.
             const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
-            if (!(cos_angle >= threshold_angle)) { // the negated form also catches NaN
+            if (cos_angle < threshold_angle) {
                 point_DIIS = point_BFGS;
             }
         }
@@ -203,6 +217,7 @@ public:
 
 private:
     int max_vectors;
+    bool guard_degenerate_step; // guard against (near-)zero-length DIIS/BFGS steps in update()
     Eigen::VectorXd point_old;
     Eigen::VectorXd gradient_old;
     double threshold_angle;

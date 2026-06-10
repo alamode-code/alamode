@@ -775,6 +775,7 @@ void Input::parse_relax_vars()
                                               "COORD_CONV_TOL",
                                               "GRADIENT_CONV_TOL",
                                               "CELL_GRADIENT_CONV_TOL",
+                                              "GDIIS_ANGLE_GUARD",
                                               "MIXBETA_COORD",
                                               "ALPHA_STDECENT",
                                               "CELL_CONV_TOL",
@@ -811,6 +812,7 @@ void Input::parse_relax_vars()
     double alpha_steepest_decent = 1.0e4;
     double gradient_conv_tol = 0.0;
     double cell_gradient_conv_tol = 0.0;
+    int gdiis_angle_guard = 0;
 
     double cell_conv_tol = 1.0e-5;
     double mixbeta_cell = 0.5;
@@ -833,6 +835,7 @@ void Input::parse_relax_vars()
     assign_val(coord_conv_tol, "COORD_CONV_TOL", stropt_var_dict);
     assign_val(gradient_conv_tol, "GRADIENT_CONV_TOL", stropt_var_dict);
     assign_val(cell_gradient_conv_tol, "CELL_GRADIENT_CONV_TOL", stropt_var_dict);
+    assign_val(gdiis_angle_guard, "GDIIS_ANGLE_GUARD", stropt_var_dict);
 
     if (relax_algo < 1 || relax_algo > 3) {
         exit("parse_relax_vars", "RELAX_ALGO must be 1 (steepest decent), 2 (Newton), or 3 (BFGS+GDIIS).");
@@ -873,6 +876,7 @@ void Input::parse_relax_vars()
     relaxation->coord_conv_tol = coord_conv_tol;
     relaxation->gradient_conv_tol = gradient_conv_tol;
     relaxation->cell_gradient_conv_tol = cell_gradient_conv_tol;
+    relaxation->gdiis_angle_guard = gdiis_angle_guard;
     relaxation->mixbeta_coord = mixbeta_coord;
     relaxation->alpha_steepest_decent = alpha_steepest_decent;
 

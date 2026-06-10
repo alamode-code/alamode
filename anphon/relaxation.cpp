@@ -49,6 +49,7 @@ void Relaxation::set_default_variables()
     mixbeta_cell = 0.5;
     gradient_conv_tol = 0.0;      // disabled by default (step-size convergence only)
     cell_gradient_conv_tol = 0.0; // disabled by default (step-size convergence only)
+    gdiis_angle_guard = 0;        // disabled by default (original GDIIS angle check)
 
     set_init_str = 1;
     cooling_u0_index = 0;
@@ -86,10 +87,10 @@ void Relaxation::create_optimizer(const size_t num_modes)
         optimizer = std::make_unique<CellCoord_Newton_Optimizer>(mixbeta_cell, mixbeta_coord);
     } else if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 3) {
         const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes - 3, num_modes - 3);
-        optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
+        optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init, gdiis_angle_guard != 0);
     } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relax_algo == 3) {
         const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes + 3, num_modes + 3);
-        optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init);
+        optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init, gdiis_angle_guard != 0);
     }
 }
 
