@@ -207,7 +207,10 @@ Eigen::MatrixXd FarkasIII_Optimizer::effective_inverse_Hessian() const
         if (nui > eps15 || nui < -eps15) {
             mu(i) = 1.0 / nui; // keeps the sign: negative nu -> negative (soft/unstable) curvature
         } else {
-            mu(i) = 1.0 / eps15; // ~zero inverse eigenvalue -> very stiff mode
+            // |nu_i| <= eps15: a machine-noise-scale inverse eigenvalue. Treat it as a very stiff
+            // positive mode (its direct curvature is enormous either way); a near-zero negative
+            // nu_i thus has its sign dropped, which is harmless at this scale.
+            mu(i) = 1.0 / eps15;
         }
         if (i == 0 || mu(i) < mu_min) mu_min = mu(i);
     }
