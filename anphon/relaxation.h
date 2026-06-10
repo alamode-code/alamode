@@ -239,11 +239,10 @@ public:
     // norm to be below this value. Its units differ from gradient_conv_tol, hence a separate
     // threshold (cf. coord_conv_tol vs cell_conv_tol).
     double cell_gradient_conv_tol;
-    // For relax_algo == 3 (GDIIS): if nonzero, guard the angle check against (near-)zero-length
-    // DIIS/BFGS steps (avoids accepting a spurious near-zero extrapolation as converged). The
-    // guard can also freeze the optimizer on an unstable high-symmetry structure below Tc, so
-    // it defaults to 0 (original behavior); set GDIIS_ANGLE_GUARD = 1 to enable it.
-    int gdiis_angle_guard;
+    // For relax_algo == 3 (GDIIS): if nonzero, apply the Farkas-Schlegel "controlled GDIIS"
+    // step-acceptance criteria (step-length cap, coefficient/extrapolation cap, and
+    // near-singularity rejection with error-vector rescaling). Defaults to 0 (regular GDIIS).
+    int gdiis_control;
 
     int set_init_str;
     int cooling_u0_index;  // used if set_init_str is 3

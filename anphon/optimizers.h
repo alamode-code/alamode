@@ -90,8 +90,8 @@ public:
 class FarkasIII_Optimizer: public Optimizer
 {
 public:
-    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini, bool guard_degenerate_step)
-        : max_vectors(max_vectors), guard_degenerate_step(guard_degenerate_step), H(H_ini)
+    FarkasIII_Optimizer(int max_vectors, const Eigen::MatrixXd &H_ini, bool gdiis_control)
+        : max_vectors(max_vectors), gdiis_control(gdiis_control), H(H_ini)
     {
         gradient_old = Eigen::VectorXd::Zero(H_ini.size());
         threshold_angle = 0.0; // We set angle threshold to be zero when we store more than 9 vectors
@@ -153,11 +153,24 @@ public:
 
         if (size == 1) return point_BFGS;
 
+        // (d, part 1) Rescale the error vectors so the smallest has unit length before solving
+        // the DIIS equations (Farkas-Schlegel eqn 9). The coefficients are invariant to this
+        // uniform scaling; it only improves the conditioning of the bordered system.
+        double escale = 1.0;
+        if (gdiis_control) {
+            double emin = residuals[0].norm();
+            for (int i = 1; i < size; ++i) {
+                const double ni = residuals[i].norm();
+                if (ni < emin) emin = ni;
+            }
+            if (emin > eps15) escale = 1.0 / emin;
+        }
+
         Eigen::MatrixXd B(size + 1, size + 1);
         B.setZero();
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
-                B(i, j) = residuals[i].dot(residuals[j]);
+                B(i, j) = (escale * escale) * residuals[i].dot(residuals[j]);
             }
         }
         for (int i = 0; i < size; ++i) {
@@ -179,30 +192,40 @@ public:
         Eigen::VectorXd diff_DIIS = point_DIIS - point;
         const double norm_DIIS = diff_DIIS.norm();
         const double norm_REF = diff_REF.norm();
-        if (guard_degenerate_step) {
-            // Fall back to the plain BFGS step when the DIIS direction deviates too much from
-            // it. If either step has (near-)zero length the cosine is undefined (0/0 -> NaN);
-            // fall back to BFGS in that case too, so a spurious near-zero DIIS extrapolation at
-            // a non-stationary point cannot be accepted and reported as a (false) converged
-            // step. NOTE: near a high-symmetry structure the symmetry-breaking force vanishes,
-            // so this guard can also freeze the optimizer on an unstable (saddle) structure
-            // below Tc; set GDIIS_ANGLE_GUARD = 0 to recover the original behavior.
-            if (norm_DIIS < eps15 || norm_REF < eps15) {
-                point_DIIS = point_BFGS;
-            } else {
-                const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
-                if (!(cos_angle >= threshold_angle)) { // the negated form also catches NaN
-                    point_DIIS = point_BFGS;
-                }
+
+        // --- GDIIS step acceptance (Farkas-Schlegel "controlled GDIIS") ---
+        bool reject = false;
+
+        // (a) Angle criterion (eqn 8): fall back to the reference (BFGS) step when the GDIIS
+        // direction deviates too much from it. A (near-)zero-length step makes the cosine NaN,
+        // and NaN < threshold is false, so point_DIIS is kept; the near-singularity test (d)
+        // under GDIIS_CONTROL handles the genuinely degenerate (linear-dependent) case.
+        const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
+        if (cos_angle < threshold_angle) reject = true;
+
+        // (b), (c), (d) controlled-GDIIS acceptance criteria (Farkas-Schlegel, p. 2-3).
+        if (gdiis_control) {
+            // (b) Step-length criterion: the GDIIS step must be no longer than 10x the
+            // reference step.
+            if (norm_DIIS > 10.0 * norm_REF) reject = true;
+
+            // (c) Extrapolation criterion: the sum of the positive coefficients measures the
+            // extrapolation; reject if it exceeds 15.
+            double sum_pos = 0.0;
+            for (int i = 0; i < size; ++i) {
+                if (coeffs(i) > 0.0) sum_pos += coeffs(i);
             }
-        } else {
-            // Original behavior: a (near-)zero-length step makes the cosine NaN, which keeps
-            // point_DIIS (no fallback). This preserves the original symmetry-breaking kick that
-            // lets the optimizer escape an unstable high-symmetry structure below Tc.
-            const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
-            if (cos_angle < threshold_angle) {
-                point_DIIS = point_BFGS;
-            }
+            if (sum_pos > 15.0) reject = true;
+
+            // (d, part 2) Numerical-stability criterion: a near-singular DIIS matrix makes the
+            // (rescaled) |r|^2 small and c/|r|^2 large. A spurious r ~ 0 would otherwise be
+            // reported as a (false) converged step. |r_hat|^2 = escale^2 * |r|^2.
+            const double r2 = (escale * escale) * result_residual.squaredNorm();
+            if (!(coeffs.head(size).norm() <= 1.0e8 * r2)) reject = true; // also catches r2 ~ 0 / NaN
+        }
+
+        if (reject) {
+            point_DIIS = point_BFGS;
         }
 
         // return point_GRAD; // gradient method
@@ -217,7 +240,7 @@ public:
 
 private:
     int max_vectors;
-    bool guard_degenerate_step; // guard against (near-)zero-length DIIS/BFGS steps in update()
+    bool gdiis_control; // apply the controlled-GDIIS step-acceptance criteria (b),(c),(d)
     Eigen::VectorXd point_old;
     Eigen::VectorXd gradient_old;
     double threshold_angle;

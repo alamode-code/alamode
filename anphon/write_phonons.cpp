@@ -185,7 +185,7 @@ void Writes::writeInputVars()
                 std::cout << "  MIXBETA_CELL = " << relaxation->mixbeta_cell << '\n';
             }
         } else if (relaxation->relax_algo == 3) {
-            std::cout << "  GDIIS_ANGLE_GUARD = " << relaxation->gdiis_angle_guard << '\n';
+            std::cout << "  GDIIS_CONTROL = " << relaxation->gdiis_control << '\n';
         }
 
         std::cout << "  SET_INIT_STR = " << relaxation->set_init_str << '\n';
