@@ -1178,6 +1178,11 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
         i_temp_loop = -1;
 
+        // per-temperature benchmark accumulators (step counts to convergence)
+        std::vector<double> bench_temp;
+        std::vector<int> bench_steps;
+        std::vector<bool> bench_converged;
+
         std::cout << " Start structural optimization.\n";
 
         if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
@@ -1263,6 +1268,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
             std::cout << " Start structural optimization at " << temp << " K.";
 
+            bool converged_this_temp = false;
             for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
 
                 std::cout << "\n\n Structure loop :" << std::setw(5) << i_str_loop + 1;
@@ -1529,10 +1535,18 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     }
                     std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
                     std::cout << " break structural loop.\n\n";
+                    converged_this_temp = true;
                     break;
                 }
 
             } // close structure loop
+
+            bench_temp.push_back(temp);
+            // i_str_loop == max_str_iter only when the loop ran to completion without a break;
+            // a converged or diverged break leaves i_str_loop at the 0-based loop index.
+            bench_steps.push_back(i_str_loop >= relaxation->max_str_iter ? relaxation->max_str_iter
+                                                                         : i_str_loop + 1);
+            bench_converged.push_back(converged_this_temp);
 
             std::cout << " ----------------------------------------------------------------\n";
             std::cout << " Final atomic displacements [Bohr] at " << temp << " K\n";
@@ -1596,6 +1610,24 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                 kmap_coarse_to_dense);
 
         } // close temperature loop
+
+        // ---- structural-optimization benchmark summary (step counts to convergence) ----
+        std::cout << " ============ Structural-optimization benchmark summary ============\n";
+        std::cout << "  RELAX_ALGO = " << relaxation->relax_algo;
+        if (relaxation->relax_algo == 3) std::cout << "   GDIIS_CONTROL = " << relaxation->gdiis_control;
+        std::cout << '\n';
+        std::cout << "  " << std::setw(15) << "Temp [K]" << std::setw(12) << "steps" << std::setw(12) << "converged"
+                  << '\n';
+        int bench_total = 0;
+        for (std::size_t ib = 0; ib < bench_temp.size(); ++ib) {
+            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp[ib]
+                      << std::setw(12) << bench_steps[ib] << std::setw(12) << (bench_converged[ib] ? "yes" : "no")
+                      << '\n';
+            bench_total += bench_steps[ib];
+        }
+        std::cout << "  " << std::setw(15) << "Total" << std::setw(12) << bench_total << '\n';
+        std::cout << " ===================================================================\n\n";
+        std::cout.unsetf(std::ios::fixed);
 
         // output files of structural optimization
         fout_step_q0.close();

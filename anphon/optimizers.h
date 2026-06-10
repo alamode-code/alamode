@@ -153,24 +153,11 @@ public:
 
         if (size == 1) return point_BFGS;
 
-        // (d, part 1) Rescale the error vectors so the smallest has unit length before solving
-        // the DIIS equations (Farkas-Schlegel eqn 9). The coefficients are invariant to this
-        // uniform scaling; it only improves the conditioning of the bordered system.
-        double escale = 1.0;
-        if (gdiis_control) {
-            double emin = residuals[0].norm();
-            for (int i = 1; i < size; ++i) {
-                const double ni = residuals[i].norm();
-                if (ni < emin) emin = ni;
-            }
-            if (emin > eps15) escale = 1.0 / emin;
-        }
-
         Eigen::MatrixXd B(size + 1, size + 1);
         B.setZero();
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
-                B(i, j) = (escale * escale) * residuals[i].dot(residuals[j]);
+                B(i, j) = residuals[i].dot(residuals[j]);
             }
         }
         for (int i = 0; i < size; ++i) {
@@ -190,48 +177,20 @@ public:
         Eigen::VectorXd point_DIIS = result_point + result_residual;
         Eigen::VectorXd diff_REF = point_BFGS - point;
         Eigen::VectorXd diff_DIIS = point_DIIS - point;
-        const double norm_DIIS = diff_DIIS.norm();
-        const double norm_REF = diff_REF.norm();
-
-        // --- GDIIS step acceptance (Farkas-Schlegel "controlled GDIIS") ---
-        bool reject = false;
-
-        // (a) Angle criterion (eqn 8): fall back to the reference (BFGS) step when the GDIIS
-        // direction deviates too much from it. A (near-)zero-length step makes the cosine NaN,
-        // and NaN < threshold is false, so point_DIIS is kept; the near-singularity test (d)
-        // under GDIIS_CONTROL handles the genuinely degenerate (linear-dependent) case.
-        const double cos_angle = diff_DIIS.dot(diff_REF) / (norm_DIIS * norm_REF);
-        if (cos_angle < threshold_angle) reject = true;
-
-        // (b), (c), (d) controlled-GDIIS acceptance criteria (Farkas-Schlegel, p. 2-3).
-        if (gdiis_control) {
-            // (b) Step-length criterion: the GDIIS step must be no longer than 10x the
-            // reference step.
-            if (norm_DIIS > 10.0 * norm_REF) reject = true;
-
-            // (c) Extrapolation criterion: the sum of the positive coefficients measures the
-            // extrapolation; reject if it exceeds 15.
-            double sum_pos = 0.0;
-            for (int i = 0; i < size; ++i) {
-                if (coeffs(i) > 0.0) sum_pos += coeffs(i);
-            }
-            if (sum_pos > 15.0) reject = true;
-
-            // (d, part 2) Numerical-stability criterion: a near-singular DIIS matrix makes the
-            // (rescaled) |r|^2 small and c/|r|^2 large. A spurious r ~ 0 would otherwise be
-            // reported as a (false) converged step. |r_hat|^2 = escale^2 * |r|^2.
-            const double r2 = (escale * escale) * result_residual.squaredNorm();
-            if (!(coeffs.head(size).norm() <= 1.0e8 * r2)) reject = true; // also catches r2 ~ 0 / NaN
-        }
-
-        if (reject) {
+        double cos_angle = diff_DIIS.dot(diff_REF) / (diff_DIIS.norm() * diff_REF.norm());
+        if (cos_angle < threshold_angle) {
             point_DIIS = point_BFGS;
         }
 
-        // return point_GRAD; // gradient method
-        // return point_BFGS; // BFGS method
-        return point_DIIS; //
+        return point_DIIS;
     }
+
+    // Farkas-Schlegel "controlled GDIIS" (Phys. Chem. Chem. Phys. 2002, 4, 11): recomputes the
+    // error vectors with a per-step RFO level-shifted Hessian, grows the DIIS subspace from the
+    // most recent point keeping the last acceptable step, applies the four acceptance criteria
+    // (a) angle, (b) step length, (c) coefficient sum, (d) near-singularity, and permanently
+    // discards points when the angle exceeds 90 degrees. Selected by GDIIS_CONTROL = 1.
+    Eigen::VectorXd update_controlled(const Eigen::VectorXd &point, const Eigen::VectorXd &gradient);
 
 
     void set_inverse_Hessian(const int dim, const std::vector<std::vector<double>> &hessian);
@@ -239,12 +198,22 @@ public:
     void initialize_history();
 
 private:
+    // RFO level-shifted effective inverse Hessian: returns (H_direct + lambda*I)^{-1} (the member
+    // H stores the inverse Hessian). Used by update_controlled() for the reference step and the
+    // error vectors.
+    Eigen::MatrixXd effective_inverse_Hessian() const;
+
+    // Farkas-Schlegel angle cut-off for cos(theta) as a function of the subspace size.
+    static double angle_threshold(int n_vectors);
+
     int max_vectors;
-    bool gdiis_control; // apply the controlled-GDIIS step-acceptance criteria (b),(c),(d)
+    bool gdiis_control; // false: regular GDIIS (update); true: controlled GDIIS (update_controlled)
     Eigen::VectorXd point_old;
     Eigen::VectorXd gradient_old;
     double threshold_angle;
+    double curvature_floor = 0.0; // min curvature of the initial (regularized) Hessian
     Eigen::MatrixXd H;
     std::vector<Eigen::VectorXd> points;
-    std::vector<Eigen::VectorXd> residuals;
+    std::vector<Eigen::VectorXd> residuals; // regular GDIIS (update)
+    std::vector<Eigen::VectorXd> gradients; // controlled GDIIS (update_controlled)
 };
