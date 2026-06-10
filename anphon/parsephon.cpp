@@ -340,6 +340,7 @@ void Input::parse_general_vars()
     dynamical->na_sigma = na_sigma;
     dielec->symmetrize_borncharge = bornsym;
     writes->nbands = nbands;
+    writes->setVerbosity(verbosity);
     dielec->file_born = borninfo;
     dynamical->band_connection = band_connection;
     integration->epsilon = epsilon;
@@ -510,6 +511,7 @@ void Input::parse_scph_vars()
                                               "MAXITER",
                                               "RESTART_SCPH",
                                               "IALGO",
+                                              "IMIX",
                                               "SELF_OFFDIAG",
                                               "TOL_SCPH",
                                               "LOWER_TEMP",
@@ -545,6 +547,7 @@ void Input::parse_scph_vars()
     auto mixalpha = 0.1;
     auto selfenergy_offdiagonal = true;
     unsigned int ialgo_scph = 0;
+    unsigned int imix_scph = 0;
     auto lower_temp = true;
     auto warm_start = true;
     unsigned int bubble = 0;
@@ -556,6 +559,13 @@ void Input::parse_scph_vars()
     assign_val(mixalpha, "MIXALPHA", scph_var_dict);
     assign_val(selfenergy_offdiagonal, "SELF_OFFDIAG", scph_var_dict);
     assign_val(ialgo_scph, "IALGO", scph_var_dict);
+    assign_val(imix_scph, "IMIX", scph_var_dict);
+    if (imix_scph > 1) {
+        exit("parse_scph_vars", "IMIX must be 0 (simple mixing) or 1 (DIIS mixing).");
+    }
+    if (imix_scph == 1 && (mixalpha <= 0.0 || mixalpha > 1.0)) {
+        exit("parse_scph_vars", "MIXALPHA must be in (0, 1] when IMIX = 1.");
+    }
     assign_val(tolerance_scph, "TOL_SCPH", scph_var_dict);
     assign_val(lower_temp, "LOWER_TEMP", scph_var_dict);
     assign_val(warm_start, "WARMSTART", scph_var_dict);
@@ -627,6 +637,7 @@ void Input::parse_scph_vars()
         scph->kmesh_interpolate[i] = kmesh_interpolate_v[i];
     }
     scph->mixalpha = mixalpha;
+    scph->imix_scph = imix_scph;
     scph->maxiter = maxiter;
     scph->restart_scph = restart_scph;
     scph->selfenergy_offdiagonal = selfenergy_offdiagonal;

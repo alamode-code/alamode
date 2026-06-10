@@ -140,6 +140,7 @@ void Writes::writeInputVars()
         std::cout << "  TOL_SCPH = " << scph->tolerance_scph << '\n';
         std::cout << "  MAXITER = " << scph->maxiter << '\n';
         std::cout << "  MIXALPHA = " << scph->mixalpha << '\n';
+        std::cout << "  IMIX = " << scph->imix_scph << '\n';
 
         // variables related to structural optimization
         std::cout << '\n';

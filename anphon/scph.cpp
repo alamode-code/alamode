@@ -65,6 +65,7 @@ void Scph::set_default_variables()
     print_self_consistent_fc2 = false;
     selfenergy_offdiagonal = true;
     mix_anderson_ratio = 1.0;
+    imix_scph = 0;
 
     bubble = 0;
     compute_Cv_anharmonic = 0;
@@ -106,6 +107,7 @@ void Scph::exec_scph()
     MPI_Bcast(&restart_scph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&selfenergy_offdiagonal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ialgo, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&imix_scph, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     allocate(delta_dymat_scph, NT, ns, ns, kmesh_coarse->nk);
     allocate(delta_harmonic_dymat_renormalize, NT, ns, ns, kmesh_coarse->nk);
@@ -913,15 +915,27 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                 }
             }
 
-            compute_anharmonic_frequency(v4_array_all,
-                                         omega2_anharm[iT],
-                                         evec_anharm_tmp,
-                                         temp,
-                                         converged_prev,
-                                         cmat_convert,
-                                         selfenergy_offdiagonal,
-                                         delta_v2_renorm,
-                                         writes->getVerbosity());
+            if (imix_scph == 1) {
+                compute_anharmonic_frequency_diis(v4_array_all,
+                                                  omega2_anharm[iT],
+                                                  evec_anharm_tmp,
+                                                  temp,
+                                                  converged_prev,
+                                                  cmat_convert,
+                                                  selfenergy_offdiagonal,
+                                                  delta_v2_renorm,
+                                                  writes->getVerbosity());
+            } else {
+                compute_anharmonic_frequency(v4_array_all,
+                                             omega2_anharm[iT],
+                                             evec_anharm_tmp,
+                                             temp,
+                                             converged_prev,
+                                             cmat_convert,
+                                             selfenergy_offdiagonal,
+                                             delta_v2_renorm,
+                                             writes->getVerbosity());
+            }
 
 
             dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
@@ -1380,15 +1394,27 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 //                }
 
                 // solve SCP equation
-                compute_anharmonic_frequency(v4_ref,
-                                             omega2_anharm[iT],
-                                             evec_anharm_tmp,
-                                             temp,
-                                             converged_prev,
-                                             cmat_convert,
-                                             selfenergy_offdiagonal,
-                                             delta_v2_renorm,
-                                             writes->getVerbosity());
+                if (imix_scph == 1) {
+                    compute_anharmonic_frequency_diis(v4_ref,
+                                                      omega2_anharm[iT],
+                                                      evec_anharm_tmp,
+                                                      temp,
+                                                      converged_prev,
+                                                      cmat_convert,
+                                                      selfenergy_offdiagonal,
+                                                      delta_v2_renorm,
+                                                      writes->getVerbosity());
+                } else {
+                    compute_anharmonic_frequency(v4_ref,
+                                                 omega2_anharm[iT],
+                                                 evec_anharm_tmp,
+                                                 temp,
+                                                 converged_prev,
+                                                 cmat_convert,
+                                                 selfenergy_offdiagonal,
+                                                 delta_v2_renorm,
+                                                 writes->getVerbosity());
+                }
 
                 dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                                     omega2_anharm[iT],
@@ -1899,7 +1925,8 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
                                       std::complex<double> ***v4_array_all, const unsigned int ik_irred,
                                       const unsigned int knum, const unsigned int knum_interpolate,
                                       const bool flag_converged, double **omega2_out, const unsigned int verbosity,
-                                      int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q) const
+                                      int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q,
+                                      bool *eval_repaired) const
 {
     using namespace Eigen;
     const auto ns = dynamical->neval;
@@ -1936,6 +1963,9 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
                     ++icount;
                     eval_tmp(is) = -eval_tmp(is) * std::pow(0.99, icount);
                 }
+                // This repair depends on the global icount counter, i.e., the
+                // effective fixed-point map changes between iterations.
+                if (eval_repaired) *eval_repaired = true;
             } else {
                 if (verbosity > 1) {
                     std::cout << "  onsite V4 is negative\n\n";
@@ -2311,14 +2341,26 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
 }
 
 
-void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v4_array_all, double **omega2_out,
-                                                       std::complex<double> ***evec_anharm_scph, const double temp,
-                                                       bool &flag_converged, std::complex<double> ***cmat_convert,
-                                                       const bool offdiag, std::complex<double> **delta_v2_renorm,
-                                                       const unsigned int verbosity)
+void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_all, double **omega2_out,
+                                             std::complex<double> ***evec_anharm_scph, const double temp,
+                                             bool &flag_converged, std::complex<double> ***cmat_convert,
+                                             const bool offdiag, std::complex<double> **delta_v2_renorm,
+                                             const unsigned int verbosity)
 {
-    // SCPH with per-k-point DIIS using GDIIS_PerKpoint class
-    // Each k-point has independent DIIS history and coefficients
+    // SCPH iteration accelerated by Pulay/Anderson (DIIS) mixing.
+    //
+    // The fixed-point variable is the full set of D matrices on the dense k mesh,
+    //   x = {D_k},   g(x) = K(omega(x), C(x)),
+    // and the residual handed to DIIS is r_n = g(x_n) - x_n of the same iterate.
+    // The update x_{n+1} = sum_m c_m (x_m + beta * r_m) with beta = mixalpha
+    // reduces exactly to the simple mixing of compute_anharmonic_frequency when
+    // the history holds a single pair, so the early iterations are identical to
+    // the reference implementation.
+    //
+    // A single DIIS history is kept for the concatenated state of all k points
+    // because the SCP equation couples the k points through the inner sum
+    // over q1; mixing D (rather than the eigenvalues) makes the residual
+    // basis-free, so no mode tracking across iterations is required.
 
     using namespace Eigen;
 
@@ -2344,21 +2386,21 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
 
     std::complex<double> ***dymat_q, ***dymat_q_HA;
 
-    std::vector<MatrixXcd> dmat_convert, dmat_convert_old, dmat_input;
+    std::vector<MatrixXcd> dmat_convert, dmat_new, dmat_trial;
     std::vector<MatrixXcd> evec_initial, evec_initial_adjoint;
     std::vector<MatrixXcd> Fmat0;
 
     dmat_convert.reserve(nk);
-    dmat_convert_old.reserve(nk);
-    dmat_input.reserve(nk);
+    dmat_new.reserve(nk);
+    dmat_trial.reserve(nk);
     evec_initial.reserve(nk);
     evec_initial_adjoint.reserve(nk);
     evec_new.reserve(nk);
 
     for (ik = 0; ik < nk; ++ik) {
         dmat_convert.emplace_back(ns, ns);
-        dmat_convert_old.emplace_back(ns, ns);
-        dmat_input.emplace_back(ns, ns);
+        dmat_new.emplace_back(ns, ns);
+        dmat_trial.emplace_back(ns, ns);
         evec_initial.emplace_back(ns, ns);
         evec_initial_adjoint.emplace_back(ns, ns);
         evec_new.emplace_back(ns, ns);
@@ -2392,23 +2434,72 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
                                      dymat_harm_short,
                                      dymat_harm_long);
 
-    // Initialize per-k-point DIIS mixer
-    const int diis_history = std::min(3, static_cast<int>(maxiter / 3));
-    GDIIS_PerKpoint gdiis_mixer_perkpoint(nk, diis_history, mixalpha, verbosity);
+    // ---- DIIS controls ----
+    const int diis_history = 6;          // depth of the DIIS subspace
+    const int diis_start = 3;            // number of plain simple-mixing iterations before DIIS
+    const double growth_tol = 2.0;       // residual-growth factor that triggers a history reset
+    const double psd_tol = 1.0e-6;       // relative tolerance of the PSD safeguard for extrapolated D
+    const double resid_rel_tol = 1.0e-6; // relative D-space residual required on top of the frequency criterion
+
+    GDIIS gdiis(diis_history, mixalpha, static_cast<int>(verbosity));
+
+    const Index blocksize = 2 * static_cast<Index>(ns) * static_cast<Index>(ns);
+    const Index ndim = static_cast<Index>(nk) * blocksize;
+    VectorXd xvec(ndim), gvec(ndim), rvec(ndim), xvec_new(ndim);
+    double rnorm_prev = -1.0;
+    int ndiis_accepted = 0;
+    int ndiis_fallback = 0;
+
+    // Each D_k is column-major contiguous; a complex entry is two consecutive doubles.
+    auto flatten_dmat = [&](const std::vector<MatrixXcd> &dmat, VectorXd &vec) {
+        for (unsigned int k = 0; k < nk; ++k) {
+            vec.segment(static_cast<Index>(k) * blocksize, blocksize)
+                = Map<const VectorXd>(reinterpret_cast<const double *>(dmat[k].data()), blocksize);
+        }
+    };
+    auto unflatten_dmat = [&](const VectorXd &vec, std::vector<MatrixXcd> &dmat) {
+        for (unsigned int k = 0; k < nk; ++k) {
+            Map<VectorXd>(reinterpret_cast<double *>(dmat[k].data()), blocksize)
+                = vec.segment(static_cast<Index>(k) * blocksize, blocksize);
+            // Remove the Hermiticity-breaking roundoff of the linear combination.
+            dmat[k] = (0.5 * (dmat[k] + dmat[k].adjoint())).eval();
+        }
+    };
+
+    SelfAdjointEigenSolver<MatrixXcd> saes_check;
+    auto is_positive_semidefinite = [&](const std::vector<MatrixXcd> &dmat) {
+        for (unsigned int k = 0; k < nk; ++k) {
+            saes_check.compute(dmat[k], EigenvaluesOnly);
+            if (saes_check.info() != Success) return false;
+            const double emax = saes_check.eigenvalues().cwiseAbs().maxCoeff();
+            if (saes_check.eigenvalues().minCoeff() < -psd_tol * std::max(emax, 1.0e-12)) {
+                return false;
+            }
+        }
+        return true;
+    };
 
     int icount = 0;
-    bool use_diis = false;
-    int diis_fail_count = 0;
+    bool scp_converged = false;
 
-    // Main SCPH iteration with per-k-point DIIS
+    // x_0: D matrices built from the initial frequencies. This matches the
+    // first iterate of compute_anharmonic_frequency.
+    compute_qmat_and_dmat(omega_now, T_in, cmat_convert, dmat_convert);
+
+    // Main loop
     for (iloop = 0; iloop < maxiter; ++iloop) {
 
-        // Step 1: Use current D-matrix to build F and diagonalize
+        // Evaluate g(x_n): build F from the current D, diagonalize on the
+        // coarse mesh, and interpolate to the dense mesh.
+        bool eval_repaired = false;
+
         for (ik = 0; ik < nk_irred_interpolate; ++ik) {
+
             const unsigned int knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
             knum = kmap_coarse_to_dense[knum_interpolate];
 
             update_fmat_with_v4(Fmat0, v4_array_all, dmat_convert, offdiag, ik, Fmat);
+
             diagonalize_and_symmetrize(Fmat,
                                        evec_initial,
                                        v4_array_all,
@@ -2420,10 +2511,10 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
                                        verbosity,
                                        icount,
                                        eval_tmp,
-                                       dymat_q);
+                                       dymat_q,
+                                       &eval_repaired);
         }
 
-        // Step 2: Interpolate to get new eigenvalues (output from using dmat_convert)
         interpolate_to_dense_mesh(dymat_q,
                                   dymat_q_HA,
                                   evec_initial,
@@ -2432,88 +2523,97 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
                                   cmat_convert,
                                   omega_now);
 
-        // Step 3: Check convergence before mixing
+        // g(x_n) expressed in D space and the residual r_n = g(x_n) - x_n.
+        compute_qmat_and_dmat(omega_now, T_in, cmat_convert, dmat_new);
+
+        flatten_dmat(dmat_convert, xvec);
+        flatten_dmat(dmat_new, gvec);
+        rvec = gvec - xvec;
+
+        const double rnorm = rvec.norm();
+        const double rnorm_rel = rnorm / std::max(xvec.norm(), 1.0e-100);
+
+        // The icount-dependent imaginary-mode repair in diagonalize_and_symmetrize
+        // makes g(x) history-dependent, which formally violates the DIIS
+        // assumptions. The pairs are pushed anyway: in soft-mode tests
+        // (SrTiO3, cold start at T = 0) the repair stays active for most of
+        // the run and DIIS still converges where simple mixing fails, with
+        // the residual-growth reset below absorbing the resulting noise.
+        // Excluding repaired iterations from the history would leave DIIS
+        // disabled exactly where it is needed most.
+        if (verbosity > 1) {
+            std::cout << "  DIIS: |r|/|x| = " << std::scientific << rnorm_rel;
+            if (eval_repaired) std::cout << "  (imaginary-mode repair active)";
+            std::cout << '\n';
+        }
+
+        // The frequency criterion compares two successive outputs and can in
+        // principle be fooled by extrapolated inputs that happen to yield
+        // nearly identical frequencies away from self-consistency, so the
+        // fixed-point residual in D space is additionally required to be small.
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity, iloop, diff)) {
-            break;
+            if (rnorm_rel < resid_rel_tol) {
+                scp_converged = true;
+                break;
+            }
+            if (verbosity > 1) {
+                std::cout << "  DIIS: frequency criterion met but |r|/|x| = "
+                          << std::scientific << rnorm_rel << " is still large; continuing.\n";
+            }
         }
-
-        // Save current omega for next iteration's comparison
         omega_old = omega_now;
+        if (rnorm_prev >= 0.0 && rnorm > growth_tol * rnorm_prev && gdiis.size() > 1) {
+            // The iteration left the region where the stored subspace is
+            // approximately linear; discard it and rebuild from here.
+            gdiis.clear();
+            if (verbosity > 1) {
+                std::cout << "  DIIS: residual norm grew by more than a factor of " << growth_tol
+                          << ", resetting the DIIS history.\n";
+            }
+        }
+        gdiis.push(xvec, rvec);
+        rnorm_prev = rnorm;
 
-        // Step 4: Push to DIIS - the D we USED and the ω we GOT (input-output pair!)
-        if (iloop >= 2 && diis_fail_count < 3) {
-            use_diis = true;
+        // Update x_{n+1}.
+        bool diis_accepted = false;
+        const bool diis_active = (iloop + 1 >= diis_start) && gdiis.is_ready();
+
+        if (diis_active && gdiis.extrapolate(xvec_new)) {
+            unflatten_dmat(xvec_new, dmat_trial);
+            if (is_positive_semidefinite(dmat_trial)) {
+                diis_accepted = true;
+            } else if (verbosity > 1) {
+                std::cout << "  DIIS: extrapolated D matrix is not positive semidefinite, "
+                             "falling back to simple mixing.\n";
+            }
         }
 
-        if (use_diis) {
-            gdiis_mixer_perkpoint.push(dmat_convert, omega_now); // Correct: D_input → ω_output
-        }
-
-        // Step 5: Compute what D should be based on new eigenvalues
-        compute_qmat_and_dmat(omega_now, T_in, cmat_convert, dmat_input);
-
-        // Step 6: Mix - try per-k-point DIIS or fall back to simple mixing
-        std::vector<MatrixXcd> dmat_mixed(nk);
-
-        if (iloop > 0) {
-            // Default: simple mixing as fallback
+        if (diis_accepted) {
+            ++ndiis_accepted;
             for (ik = 0; ik < nk; ++ik) {
-                dmat_mixed[ik] = mixalpha * dmat_input[ik] + (1.0 - mixalpha) * dmat_convert[ik];
+                dmat_convert[ik] = dmat_trial[ik];
             }
         } else {
-            dmat_mixed = dmat_input;
-        }
-
-        // Try per-k-point DIIS extrapolation if ready
-        if (use_diis && gdiis_mixer_perkpoint.is_ready()) {
-            bool diis_success = gdiis_mixer_perkpoint.extrapolate(dmat_mixed);
-            if (diis_success) {
-                diis_fail_count = 0;
-                if (verbosity > 1) {
-                    std::cout << "  Per-k-point DIIS extrapolation successful at iteration " << iloop + 1 << "\n";
-                }
-            } else {
-                // Fallback already set above
-                if (verbosity > 0) {
-                    std::cout << "  Per-k-point DIIS failed at iteration " << iloop + 1 << ", using simple mixing\n";
-                }
-                diis_fail_count++;
-                if (diis_fail_count >= 3) {
-                    use_diis = false;
-                    gdiis_mixer_perkpoint.clear();
-                    if (verbosity > 0) {
-                        std::cout << "  Disabling per-k-point DIIS after 3 failures\n";
-                    }
-                }
+            if (diis_active) ++ndiis_fallback;
+            // Simple mixing, identical to compute_anharmonic_frequency.
+            for (ik = 0; ik < nk; ++ik) {
+                dmat_convert[ik] = mixalpha * dmat_new[ik] + (1.0 - mixalpha) * dmat_convert[ik];
             }
         }
+    } // end loop iteration
 
-        // Step 7: Update dmat_convert for next iteration
-        for (ik = 0; ik < nk; ++ik) {
-            dmat_convert[ik] = dmat_mixed[ik];
-        }
-    }
-
-    if (std::sqrt(diff) < conv_tol) {
+    if (scp_converged) {
         if (verbosity > 0) {
-            std::cout << " Temp = " << T_in << " : convergence achieved in " << std::setw(5) << iloop + 1
-                      << " iterations";
-            if (use_diis) {
-                std::cout << " (with per-k-point DIIS)";
-                auto stats = gdiis_mixer_perkpoint.get_success_stats();
-                int total_success = 0;
-                for (int s: stats)
-                    total_success += s;
-                if (verbosity > 1) {
-                    std::cout << "\n  Total DIIS successes: " << total_success;
-                }
-            }
-            std::cout << ".\n";
+            std::cout << " Temp = " << T_in;
+            std::cout << " : convergence achieved in " << std::setw(5) << iloop + 1 << " iterations.\n";
+            std::cout << "  DIIS steps accepted: " << ndiis_accepted
+                      << ", fallbacks to simple mixing: " << ndiis_fallback << '\n';
         }
         flag_converged = true;
     } else {
         if (verbosity > 0) {
-            std::cout << "Temp = " << T_in << " : not converged.\n";
+            std::cout << "Temp = " << T_in;
+            std::cout << " : not converged.\n";
         }
         flag_converged = false;
     }
@@ -2535,9 +2635,23 @@ void Scph::compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***v
         }
     }
 
+    if (verbosity > 1) {
+        std::cout << "New eigenvalues\n";
+        for (ik = 0; ik < nk_interpolate; ++ik) {
+            knum = kmap_coarse_to_dense[ik];
+            for (is = 0; is < ns; ++is) {
+                std::cout << " ik_interpolate = " << std::setw(5) << ik + 1;
+                std::cout << " is = " << std::setw(5) << is + 1;
+                std::cout << " omega2 = " << std::setw(15) << omega2_out[knum][is] << '\n';
+            }
+            std::cout << '\n';
+        }
+    }
+
     deallocate(dymat_q);
     deallocate(dymat_q_HA);
 }
+
 
 void Scph::get_permutation_matrix(const int ns, std::complex<double> **cmat_in, Eigen::MatrixXd &permutation_matrix)
 {

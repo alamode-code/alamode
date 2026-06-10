@@ -62,6 +62,7 @@ public:
     unsigned int maxiter;
     bool print_self_consistent_fc2;
     double mix_anderson_ratio;
+    unsigned int imix_scph;
 
 
     using ScphQhaCommon::calculate_del_v0_del_umn_renorm;
@@ -97,9 +98,9 @@ private:
                                       std::complex<double> ***, bool, std::complex<double> **,
                                       const unsigned int verbosity);
 
-    void compute_anharmonic_frequency_diis_perkpoint(std::complex<double> ***, double **, std::complex<double> ***,
-                                                     double, bool &, std::complex<double> ***, bool,
-                                                     std::complex<double> **, const unsigned int verbosity);
+    void compute_anharmonic_frequency_diis(std::complex<double> ***, double **, std::complex<double> ***,
+                                           double, bool &, std::complex<double> ***, bool,
+                                           std::complex<double> **, const unsigned int verbosity);
 
     // Helper methods for compute_anharmonic_frequency
     void initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,
@@ -125,7 +126,8 @@ private:
                                     std::complex<double> ***v4_array_all, const unsigned int ik_irred,
                                     const unsigned int knum, const unsigned int knum_interpolate,
                                     const bool flag_converged, double **omega2_out, const unsigned int verbosity,
-                                    int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q) const;
+                                    int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q,
+                                    bool *eval_repaired = nullptr) const;
 
     void interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
                                    const std::complex<double> *const *const *dymat_q_HA,
