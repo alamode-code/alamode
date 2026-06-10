@@ -20,10 +20,14 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "optimizers.h"
 #include "parsephon.h"
 #include "scph.h"
-#include "spglib.h"
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
+
+extern "C"
+{
+#include "spglib.h"
+}
 // #include <boost/range/algorithm.hpp> // boost/range may induce compile error
 
 using namespace PHON_NS;
