@@ -387,9 +387,10 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             i_temp_loop++;
             auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
 
-            std::cout << " ----------------------------------------------------------------\n";
-            std::cout << " Temperature = " << temp << " K\n";
-            std::cout << " Temperature index : " << std::setw(4) << i_temp_loop << "/" << std::setw(4) << NT << "\n\n";
+            std::cout << "\n ================================================================\n";
+            std::cout << "  Temperature = " << temp << " K    (" << std::setw(4) << i_temp_loop + 1 << " of "
+                      << std::setw(4) << NT << ")\n";
+            std::cout << " ================================================================\n\n";
 
             relaxation->set_init_structure_atT(structure_state,
                                                converged_prev,
@@ -429,13 +430,17 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
             relaxation->write_stepresfile(structure_state, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
 
-            std::cout << " ----------------------------------------------------------------\n";
-
             std::cout << " Start structural optimization at " << temp << " K.\n";
+
+            // per-step records for the optimization-history table printed below
+            std::vector<StructOptStepRecord> step_history;
 
             for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
 
-                std::cout << " Structure loop :" << std::setw(5) << i_str_loop + 1;
+                std::cout << "\n ----------------------------------------------------------------\n";
+                std::cout << "  Structure opt. step " << std::setw(4) << i_str_loop + 1 << " of "
+                          << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
+                std::cout << " ----------------------------------------------------------------\n";
 
                 // get eta tensor
                 relaxation->calculate_eta_tensor(eta_tensor, u_tensor);
@@ -636,6 +641,15 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     }
                 }
 
+                // Print the structure the QHA forces were evaluated at, together with the
+                // stress used for the update (cell relaxation only) and the space group
+                // detected by spglib.
+                std::cout << "\n Structure at this step :\n";
+                const auto spg_label = relaxation->print_structure_and_symmetry(
+                    structure_state,
+                    relax_mode == RelaxationStrMode::CoordinatesAndCell ? del_v0_del_umn_QHA : nullptr);
+                std::cout << '\n';
+
                 relaxation->update_cell_coordinate(structure_state,
                                                    v1_QHA,
                                                    omega2_harm_renorm[iT],
@@ -659,13 +673,45 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     converged_prev = false;
                     std::cout << " The crystal structure diverged.";
                     std::cout << " Break from the structure loop.\n";
+                    step_history.push_back({true, du0, du_tensor, -1.0, -1.0, spg_label});
                     break;
+                }
+
+                // Residual gradient norms of the degrees of freedom being optimized
+                // (same definitions as in the SCPH structural optimization).
+                double grad_norm = 0.0;
+                for (is = 0; is < ns - 3; is++) {
+                    const double f = v1_QHA[harm_optical_modes[is]].real();
+                    grad_norm += f * f;
+                }
+                grad_norm = std::sqrt(grad_norm);
+
+                double cell_grad_norm = -1.0;
+                if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+                    cell_grad_norm = 0.0;
+                    for (i1 = 0; i1 < 3; i1++) {
+                        const double fd = del_v0_del_umn_QHA[i1 * 3 + i1].real();
+                        const int j1 = (i1 + 1) % 3;
+                        const int j2 = (i1 + 2) % 3;
+                        const double fs = del_v0_del_umn_QHA[j1 * 3 + j2].real();
+                        cell_grad_norm += fd * fd + fs * fs;
+                    }
+                    cell_grad_norm = std::sqrt(cell_grad_norm);
                 }
 
                 // check convergence
                 std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0 << " [Bohr]";
                 std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
                           << '\n';
+                std::cout << " |residual force| =" << std::scientific << std::setw(15) << std::setprecision(6)
+                          << grad_norm;
+                if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+                    std::cout << " |residual stress| =" << std::scientific << std::setw(15) << std::setprecision(6)
+                              << cell_grad_norm;
+                }
+                std::cout << '\n';
+
+                step_history.push_back({true, du0, du_tensor, grad_norm, cell_grad_norm, spg_label});
 
                 if (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol) {
                     std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
@@ -680,6 +726,11 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                 }
 
             } // close structure loop
+
+            // At-a-glance history of the structural optimization at this temperature.
+            // QHA has no inner self-consistency loop, so the SCP column is omitted.
+            Relaxation::print_optimization_history(step_history, temp,
+                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell, false);
 
             std::cout << " ----------------------------------------------------------------\n";
             std::cout << " Final atomic displacements [Bohr] at " << temp << " K\n";
@@ -707,6 +758,10 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     std::cout << '\n';
                 }
             }
+
+            std::cout << "\n Final structure at " << temp << " K :\n";
+            relaxation->print_structure_and_symmetry(structure_state, nullptr);
+
             if (i_temp_loop == NT - 1) {
                 std::cout << " ----------------------------------------------------------------\n\n";
             } else {

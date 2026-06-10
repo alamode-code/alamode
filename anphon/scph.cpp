@@ -1288,16 +1288,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             std::cout << " Start structural optimization at " << temp << " K.\n";
 
             // per-step records for the optimization-history table printed below
-            struct StructStepRecord
-            {
-                bool scp_ok;
-                double du0;
-                double du_tensor;
-                double grad_norm;      // < 0 : not available (SCP failed)
-                double cell_grad_norm; // < 0 : not available
-                std::string spacegroup;
-            };
-            std::vector<StructStepRecord> step_history;
+            std::vector<StructOptStepRecord> step_history;
 
             bool converged_this_temp = false;
             int n_scp_failures = 0;
@@ -1672,41 +1663,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             bench_converged.push_back(converged_this_temp);
 
             // At-a-glance history of the structural optimization at this temperature.
-            if (!step_history.empty()) {
-                const bool with_cell = (relax_mode == RelaxationStrMode::CoordinatesAndCell);
-                std::cout << "\n Optimization history at " << temp << " K :\n";
-                std::cout << " ------------------------------------------------------------";
-                if (with_cell) std::cout << "-------------";
-                std::cout << '\n';
-                std::cout << "   step   SCP      du0 [Bohr]    du_tensor      |force|   ";
-                if (with_cell) std::cout << "    |stress|  ";
-                std::cout << "  space group\n";
-                std::cout << " ------------------------------------------------------------";
-                if (with_cell) std::cout << "-------------";
-                std::cout << '\n';
-                std::cout << std::scientific << std::setprecision(3);
-                for (std::size_t istep = 0; istep < step_history.size(); ++istep) {
-                    const auto &rec = step_history[istep];
-                    std::cout << std::setw(7) << istep + 1 << (rec.scp_ok ? "   conv " : "   FAIL ");
-                    std::cout << std::setw(14) << rec.du0 << std::setw(13) << rec.du_tensor;
-                    if (rec.grad_norm >= 0.0) {
-                        std::cout << std::setw(13) << rec.grad_norm;
-                    } else {
-                        std::cout << std::setw(13) << "-";
-                    }
-                    if (with_cell) {
-                        if (rec.cell_grad_norm >= 0.0) {
-                            std::cout << std::setw(14) << rec.cell_grad_norm;
-                        } else {
-                            std::cout << std::setw(14) << "-";
-                        }
-                    }
-                    std::cout << "    " << rec.spacegroup << '\n';
-                }
-                std::cout << " ------------------------------------------------------------";
-                if (with_cell) std::cout << "-------------";
-                std::cout << '\n';
-            }
+            Relaxation::print_optimization_history(step_history, temp,
+                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell, true);
 
             std::cout << " ----------------------------------------------------------------\n";
             std::cout << " Final atomic displacements [Bohr] at " << temp << " K\n";

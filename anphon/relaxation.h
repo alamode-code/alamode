@@ -334,6 +334,9 @@ public:
     std::string print_structure_and_symmetry(const RelaxationStructureState &structure_state,
                                              const std::complex<double> *del_v0_del_umn_atT) const;
 
+    static void print_optimization_history(const std::vector<StructOptStepRecord> &step_history, const double temp,
+                                           const bool with_cell, const bool show_scp_column);
+
     void check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const;
 
 

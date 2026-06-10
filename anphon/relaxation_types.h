@@ -13,6 +13,7 @@
 #include <array>
 #include <complex>
 #include <iosfwd>
+#include <string>
 #include <vector>
 
 namespace PHON_NS
@@ -88,6 +89,17 @@ struct DelVStrainComputeInputs
     RelaxationStrMode relax_str{RelaxationStrMode::None};
     MinimumDistList ***mindist_list{};
     const PhaseFactorStorage *phase_storage{};
+};
+
+// One row of the per-temperature structural-optimization history table.
+struct StructOptStepRecord
+{
+    bool scp_ok{true};           // false when the SCP equation did not converge at this step
+    double du0{};
+    double du_tensor{};
+    double grad_norm{-1.0};      // < 0 : not available
+    double cell_grad_norm{-1.0}; // < 0 : not available
+    std::string spacegroup;
 };
 
 struct RelaxationStructureState

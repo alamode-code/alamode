@@ -904,6 +904,53 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
     return spg_label;
 }
 
+void Relaxation::print_optimization_history(const std::vector<StructOptStepRecord> &step_history, const double temp,
+                                            const bool with_cell, const bool show_scp_column)
+{
+    // At-a-glance summary table of a structural optimization at one temperature.
+    // show_scp_column controls the column marking whether the SCP equation
+    // converged at each step (meaningless for QHA, which has no inner
+    // self-consistency loop).
+
+    if (step_history.empty()) return;
+
+    auto print_rule = [&]() {
+        std::cout << " ------------------------------------------------------------";
+        if (with_cell) std::cout << "-------------";
+        std::cout << '\n';
+    };
+
+    std::cout << "\n Optimization history at " << temp << " K :\n";
+    print_rule();
+    std::cout << "   step  ";
+    if (show_scp_column) std::cout << " SCP    ";
+    std::cout << "  du0 [Bohr]    du_tensor      |force|   ";
+    if (with_cell) std::cout << "    |stress|  ";
+    std::cout << "  space group\n";
+    print_rule();
+    std::cout << std::scientific << std::setprecision(3);
+    for (std::size_t istep = 0; istep < step_history.size(); ++istep) {
+        const auto &rec = step_history[istep];
+        std::cout << std::setw(7) << istep + 1;
+        if (show_scp_column) std::cout << (rec.scp_ok ? "   conv " : "   FAIL ");
+        std::cout << std::setw(14) << rec.du0 << std::setw(13) << rec.du_tensor;
+        if (rec.grad_norm >= 0.0) {
+            std::cout << std::setw(13) << rec.grad_norm;
+        } else {
+            std::cout << std::setw(13) << "-";
+        }
+        if (with_cell) {
+            if (rec.cell_grad_norm >= 0.0) {
+                std::cout << std::setw(14) << rec.cell_grad_norm;
+            } else {
+                std::cout << std::setw(14) << "-";
+            }
+        }
+        std::cout << "    " << rec.spacegroup << '\n';
+    }
+    print_rule();
+}
+
 void Relaxation::check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const
 {
     const auto &q0 = structure_state.q0;
