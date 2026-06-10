@@ -326,6 +326,14 @@ public:
                                 const std::vector<int> &, double **omega2_harmonic,
                                 std::complex<double> ***evec_harmonic) const;
 
+    void rescue_step_after_scp_failure(RelaxationStructureState &structure_state,
+                                       const std::complex<double> *const v1_array_atT,
+                                       const std::vector<int> &harm_optical_modes, double **omega2_harmonic,
+                                       std::complex<double> ***evec_harmonic) const;
+
+    std::string print_structure_and_symmetry(const RelaxationStructureState &structure_state,
+                                             const std::complex<double> *del_v0_del_umn_atT) const;
+
     void check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const;
 
 

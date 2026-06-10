@@ -1210,9 +1210,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             i_temp_loop++;
             auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
 
-            std::cout << " ----------------------------------------------------------------\n";
-            std::cout << " Temperature = " << temp << " K\n";
-            std::cout << " Temperature index : " << std::setw(4) << i_temp_loop << "/" << std::setw(4) << NT << "\n\n";
+            std::cout << "\n ================================================================\n";
+            std::cout << "  Temperature = " << temp << " K    (" << std::setw(4) << i_temp_loop + 1 << " of "
+                      << std::setw(4) << NT << ")\n";
+            std::cout << " ================================================================\n\n";
 
             // Initialize phonon eigenvectors with harmonic values
 
@@ -1246,6 +1247,12 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                omega2_harmonic,
                                                evec_harmonic);
 
+            // Forget the step history of the previous temperature so that the
+            // backtracking rescue for unconverged SCP steps never undoes a step
+            // taken at a different temperature.
+            std::fill(structure_state.delta_q0.begin(), structure_state.delta_q0.end(), 0.0);
+            structure_state.delta_umn.fill(0.0);
+
 
             std::cout << " Initial atomic displacements [Bohr] : \n";
             for (iat1 = 0; iat1 < system->get_primcell().number_of_atoms; iat1++) {
@@ -1278,14 +1285,29 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
             relaxation->write_stepresfile(structure_state, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
 
-            std::cout << " ----------------------------------------------------------------\n";
+            std::cout << " Start structural optimization at " << temp << " K.\n";
 
-            std::cout << " Start structural optimization at " << temp << " K.";
+            // per-step records for the optimization-history table printed below
+            struct StructStepRecord
+            {
+                bool scp_ok;
+                double du0;
+                double du_tensor;
+                double grad_norm;      // < 0 : not available (SCP failed)
+                double cell_grad_norm; // < 0 : not available
+                std::string spacegroup;
+            };
+            std::vector<StructStepRecord> step_history;
 
             bool converged_this_temp = false;
+            int n_scp_failures = 0;
+            const int max_consecutive_scp_failures = 10;
             for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
 
-                std::cout << "\n\n Structure loop :" << std::setw(5) << i_str_loop + 1;
+                std::cout << "\n ----------------------------------------------------------------\n";
+                std::cout << "  Structure opt. step " << std::setw(4) << i_str_loop + 1 << " of "
+                          << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
+                std::cout << " ----------------------------------------------------------------\n";
 
                 // get eta tensor
                 relaxation->calculate_eta_tensor(eta_tensor, u_tensor);
@@ -1403,7 +1425,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                       cmat_convert,
                                                       selfenergy_offdiagonal,
                                                       delta_v2_renorm,
-                                                      writes->getVerbosity());
+                                                      writes->getVerbosity(),
+                                                      true);
                 } else {
                     compute_anharmonic_frequency(v4_ref,
                                                  omega2_anharm[iT],
@@ -1413,8 +1436,13 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                  cmat_convert,
                                                  selfenergy_offdiagonal,
                                                  delta_v2_renorm,
-                                                 writes->getVerbosity());
+                                                 writes->getVerbosity(),
+                                                 true);
                 }
+
+                // SCP convergence of this structure step. converged_prev is reused as the
+                // warm-start flag of the next SCP solve, so keep a snapshot here.
+                const bool scp_converged_step = converged_prev;
 
                 dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                                     omega2_anharm[iT],
@@ -1462,6 +1490,70 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 //               << std::setprecision(6) << del_v0_del_umn_SCP[i1] << '\n';
                 // }
 
+                // Print the structure the SCP equation was solved at, together with the
+                // SCP stress (cell relaxation only) and the space group detected by spglib.
+                std::cout << "\n Structure at this step";
+                if (!scp_converged_step) std::cout << " (SCP NOT converged)";
+                std::cout << " :\n";
+                const auto spg_label =
+                    relaxation->print_structure_and_symmetry(structure_state,
+                                                             (relax_mode == RelaxationStrMode::CoordinatesAndCell &&
+                                                              scp_converged_step)
+                                                                 ? del_v0_del_umn_SCP
+                                                                 : nullptr);
+                std::cout << '\n';
+
+                if (!scp_converged_step) {
+                    // The forces and stress from an unconverged SCP solution are unreliable.
+                    // They are not passed to the optimizer; instead the structure is moved by
+                    // a rescue step built from the accepted (converged) data only.
+                    ++n_scp_failures;
+                    std::cout << " Warning: the SCP equation did not converge at this structure.\n"
+                              << " The SCP forces and stress are unreliable and are not passed to the optimizer.\n";
+
+                    if (n_scp_failures >= max_consecutive_scp_failures) {
+                        std::cout << " The SCP equation failed " << n_scp_failures
+                                  << " times in a row. Give up the structural optimization at this temperature.\n";
+                        step_history.push_back({false, 0.0, 0.0, -1.0, -1.0, spg_label});
+                        break;
+                    }
+
+                    relaxation->rescue_step_after_scp_failure(structure_state,
+                                                              v1_SCP,
+                                                              harm_optical_modes,
+                                                              omega2_harmonic,
+                                                              evec_harmonic);
+                    du0 = structure_state.du0;
+                    du_tensor = structure_state.du_tensor;
+
+                    step_history.push_back({false, du0, du_tensor, -1.0, -1.0, spg_label});
+
+                    relaxation->write_stepresfile(structure_state,
+                                                  i_str_loop + 1,
+                                                  fout_step_q0,
+                                                  fout_step_u0,
+                                                  fout_step_u_tensor);
+
+                    relaxation->check_str_divergence(str_diverged, structure_state);
+
+                    if (str_diverged) {
+                        converged_prev = false;
+                        std::cout << " The crystal structure diverged.";
+                        std::cout << " Break from the structure loop.\n";
+                        break;
+                    }
+
+                    std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0
+                              << " [Bohr]";
+                    std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6)
+                              << du_tensor << '\n';
+
+                    // Do not test convergence on this step: du0/du_tensor describe the rescue
+                    // step and the gradients are unreliable.
+                    continue;
+                }
+                n_scp_failures = 0;
+
                 relaxation->update_cell_coordinate(structure_state,
                                                    v1_SCP,
                                                    omega2_anharm[iT],
@@ -1491,6 +1583,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     converged_prev = false;
                     std::cout << " The crystal structure diverged.";
                     std::cout << " Break from the structure loop.\n";
+                    step_history.push_back({true, du0, du_tensor, -1.0, -1.0, spg_label});
                     break;
                 }
 
@@ -1535,6 +1628,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 }
                 std::cout << '\n';
 
+                step_history.push_back({true, du0, du_tensor, grad_norm,
+                                        relax_mode == RelaxationStrMode::CoordinatesAndCell ? cell_grad_norm : -1.0,
+                                        spg_label});
+
                 const bool step_converged =
                     (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol);
                 const bool force_converged =
@@ -1574,6 +1671,43 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                                          : i_str_loop + 1);
             bench_converged.push_back(converged_this_temp);
 
+            // At-a-glance history of the structural optimization at this temperature.
+            if (!step_history.empty()) {
+                const bool with_cell = (relax_mode == RelaxationStrMode::CoordinatesAndCell);
+                std::cout << "\n Optimization history at " << temp << " K :\n";
+                std::cout << " ------------------------------------------------------------";
+                if (with_cell) std::cout << "-------------";
+                std::cout << '\n';
+                std::cout << "   step   SCP      du0 [Bohr]    du_tensor      |force|   ";
+                if (with_cell) std::cout << "    |stress|  ";
+                std::cout << "  space group\n";
+                std::cout << " ------------------------------------------------------------";
+                if (with_cell) std::cout << "-------------";
+                std::cout << '\n';
+                std::cout << std::scientific << std::setprecision(3);
+                for (std::size_t istep = 0; istep < step_history.size(); ++istep) {
+                    const auto &rec = step_history[istep];
+                    std::cout << std::setw(7) << istep + 1 << (rec.scp_ok ? "   conv " : "   FAIL ");
+                    std::cout << std::setw(14) << rec.du0 << std::setw(13) << rec.du_tensor;
+                    if (rec.grad_norm >= 0.0) {
+                        std::cout << std::setw(13) << rec.grad_norm;
+                    } else {
+                        std::cout << std::setw(13) << "-";
+                    }
+                    if (with_cell) {
+                        if (rec.cell_grad_norm >= 0.0) {
+                            std::cout << std::setw(14) << rec.cell_grad_norm;
+                        } else {
+                            std::cout << std::setw(14) << "-";
+                        }
+                    }
+                    std::cout << "    " << rec.spacegroup << '\n';
+                }
+                std::cout << " ------------------------------------------------------------";
+                if (with_cell) std::cout << "-------------";
+                std::cout << '\n';
+            }
+
             std::cout << " ----------------------------------------------------------------\n";
             std::cout << " Final atomic displacements [Bohr] at " << temp << " K\n";
             for (iat1 = 0; iat1 < system->get_primcell().number_of_atoms; iat1++) {
@@ -1600,6 +1734,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     std::cout << '\n';
                 }
             }
+
+            std::cout << "\n Final structure at " << temp << " K :\n";
+            relaxation->print_structure_and_symmetry(structure_state, nullptr);
+
             if (i_temp_loop == NT - 1) {
                 std::cout << " ----------------------------------------------------------------\n\n";
             } else {
@@ -1763,8 +1901,6 @@ void Scph::initialize_scph_iteration(const double temp, const bool flag_converge
 
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
-
-    std::cout << " Temperature = " << temp << " K\n";
 
     // Set initial values
     for (unsigned int ik = 0; ik < nk; ++ik) {
@@ -2140,7 +2276,8 @@ bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::Matr
 void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, double **omega2_out,
                                         std::complex<double> ***evec_anharm_scph, const double temp,
                                         bool &flag_converged, std::complex<double> ***cmat_convert, const bool offdiag,
-                                        std::complex<double> **delta_v2_renorm, const unsigned int verbosity)
+                                        std::complex<double> **delta_v2_renorm, const unsigned int verbosity,
+                                        const bool compact_progress)
 {
     // This is the main function of the SCPH equation.
     // The detailed algorithm can be found in PRB 92, 054301 (2015).
@@ -2201,6 +2338,12 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     allocate(dymat_q_HA, ns, ns, nk_interpolate);
 
     const auto T_in = temp;
+
+    // In the structural-optimization loop (compact_progress), the caller prints its
+    // own step header including the temperature, and the per-iteration DIFF lines
+    // are suppressed at default verbosity (VERBOSITY >= 2 restores them).
+    if (!compact_progress) std::cout << " Temperature = " << T_in << " K\n";
+    const unsigned int verbosity_iter = (compact_progress && verbosity <= 1) ? 0 : verbosity;
 
     // Initialize iteration
     initialize_scph_iteration(T_in,
@@ -2278,7 +2421,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
                                   omega_now);
 
         // Check convergence on the coarse k points
-        if (check_convergence(omega_now, omega_old, conv_tol, verbosity, iloop, diff)) {
+        if (check_convergence(omega_now, omega_old, conv_tol, verbosity_iter, iloop, diff)) {
             break;
         }
 
@@ -2345,7 +2488,7 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
                                              std::complex<double> ***evec_anharm_scph, const double temp,
                                              bool &flag_converged, std::complex<double> ***cmat_convert,
                                              const bool offdiag, std::complex<double> **delta_v2_renorm,
-                                             const unsigned int verbosity)
+                                             const unsigned int verbosity, const bool compact_progress)
 {
     // SCPH iteration accelerated by Pulay/Anderson (DIIS) mixing.
     //
@@ -2415,6 +2558,10 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
     allocate(dymat_q_HA, ns, ns, nk_interpolate);
 
     const auto T_in = temp;
+
+    // See compute_anharmonic_frequency for the meaning of compact_progress.
+    if (!compact_progress) std::cout << " Temperature = " << T_in << " K\n";
+    const unsigned int verbosity_iter = (compact_progress && verbosity <= 1) ? 0 : verbosity;
 
     initialize_scph_iteration(T_in,
                               flag_converged,
@@ -2551,7 +2698,7 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
         // principle be fooled by extrapolated inputs that happen to yield
         // nearly identical frequencies away from self-consistency, so the
         // fixed-point residual in D space is additionally required to be small.
-        if (check_convergence(omega_now, omega_old, conv_tol, verbosity, iloop, diff)) {
+        if (check_convergence(omega_now, omega_old, conv_tol, verbosity_iter, iloop, diff)) {
             if (rnorm_rel < resid_rel_tol) {
                 scp_converged = true;
                 break;

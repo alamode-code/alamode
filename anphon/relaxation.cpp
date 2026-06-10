@@ -16,9 +16,12 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "dynamical.h"
 #include "error.h"
 #include "ifc_derivative.h"
+#include "memory.h"
 #include "optimizers.h"
 #include "parsephon.h"
 #include "scph.h"
+#include "spglib.h"
+#include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
 // #include <boost/range/algorithm.hpp> // boost/range may induce compile error
@@ -687,6 +690,218 @@ void Relaxation::update_cell_coordinate(
         }
     }
     du_tensor = std::sqrt(du_tensor);
+}
+
+void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structure_state,
+                                               const std::complex<double> *const v1_array_atT,
+                                               const std::vector<int> &harm_optical_modes,
+                                               double **omega2_harmonic,
+                                               std::complex<double> ***evec_harmonic) const
+{
+    // Called instead of update_cell_coordinate when the SCP equation did not
+    // converge at the current structure. The forces and stress evaluated from an
+    // unconverged SCP solution are unreliable, so they are not given to the
+    // optimizer: its history keeps only data from converged SCP solutions.
+    // The structure is moved back halfway along the last step, so repeated
+    // failures bisect toward the last structure where the SCP equation was
+    // solvable. If there is no previous step to undo (failure at the first
+    // structure iteration), a strongly damped steepest-descent step on the
+    // unreliable force is taken so that the optimization can leave the initial
+    // structure; the cell is kept fixed in that case.
+
+    auto &q0 = structure_state.q0;
+    auto &u0 = structure_state.u0;
+    auto &u_tensor = structure_state.u_tensor;
+    auto &delta_q0 = structure_state.delta_q0;
+    auto &delta_u0 = structure_state.delta_u0;
+    auto &delta_umn = structure_state.delta_umn;
+    auto &du0 = structure_state.du0;
+    auto &du_tensor = structure_state.du_tensor;
+
+    const auto ns = dynamical->neval;
+    int is, i1, i2;
+
+    double last_step_norm = 0.0;
+    for (is = 0; is < ns; is++) {
+        last_step_norm += delta_q0[is] * delta_q0[is];
+    }
+    for (is = 0; is < 6; is++) {
+        last_step_norm += delta_umn[is] * delta_umn[is];
+    }
+    last_step_norm = std::sqrt(last_step_norm);
+
+    if (last_step_norm > eps12) {
+        constexpr double backtrack_ratio = 0.5;
+        for (is = 0; is < ns; is++) {
+            delta_q0[is] *= -backtrack_ratio;
+            q0[is] += delta_q0[is];
+        }
+        for (is = 0; is < 6; is++) {
+            delta_umn[is] *= -backtrack_ratio;
+            if (is < 3) {
+                u_tensor[is][is] += delta_umn[is];
+            } else {
+                i1 = (is + 1) % 3;
+                i2 = (is + 2) % 3;
+                u_tensor[i1][i2] += delta_umn[is];
+                u_tensor[i2][i1] += delta_umn[is];
+            }
+        }
+        std::cout << " Moving back halfway along the last step and retrying.\n";
+    } else {
+        // No accepted step exists yet: use the unreliable force, but with a very
+        // small weight.
+        const double alpha_rescue = 0.1 * alpha_steepest_decent;
+        for (is = 0; is < ns; is++) {
+            delta_q0[is] = 0.0;
+        }
+        for (const auto mode: harm_optical_modes) {
+            delta_q0[mode] = -alpha_rescue * v1_array_atT[mode].real();
+            q0[mode] += delta_q0[mode];
+        }
+        for (is = 0; is < 6; is++) {
+            delta_umn[is] = 0.0;
+        }
+        std::cout << " No accepted step exists yet: taking a strongly damped steepest-descent\n"
+                     " step on the unreliable force (the cell shape is kept fixed).\n";
+    }
+
+    calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
+
+    du0 = 0.0;
+    calculate_u0(delta_q0, delta_u0, omega2_harmonic, evec_harmonic);
+    for (is = 0; is < ns; is++) {
+        du0 += delta_u0[is] * delta_u0[is];
+    }
+    du0 = std::sqrt(du0);
+
+    du_tensor = 0.0;
+    for (is = 0; is < 6; is++) {
+        du_tensor += delta_umn[is] * delta_umn[is];
+        if (is >= 3) {
+            du_tensor += delta_umn[is] * delta_umn[is];
+        }
+    }
+    du_tensor = std::sqrt(du_tensor);
+}
+
+std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureState &structure_state,
+                                                     const std::complex<double> *del_v0_del_umn_atT) const
+{
+    // Print the crystal structure described by structure_state (strained lattice
+    // and displaced atomic positions), the Cauchy stress tensor and pressure when
+    // the strain gradient is available (del_v0_del_umn_atT != nullptr), and the
+    // space group detected by spglib. Returns the space group label, e.g.
+    // "P4mm (#99)", for use in summary tables.
+
+    using namespace Eigen;
+
+    const auto &primcell = system->get_primcell();
+    const auto natmin = primcell.number_of_atoms;
+
+    // deformation gradient F = I + u
+    Matrix3d Fmat = Matrix3d::Identity();
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            Fmat(i, j) += structure_state.u_tensor[i][j];
+        }
+    }
+
+    const Matrix3d lavec_new = Fmat * primcell.lattice_vector; // columns are a1, a2, a3
+    const Matrix3d lavec_new_inv = lavec_new.inverse();
+
+    std::cout << "  Lattice vectors [Bohr]:\n";
+    for (auto j = 0; j < 3; ++j) {
+        std::cout << "   a" << j + 1 << " :";
+        for (auto i = 0; i < 3; ++i) {
+            std::cout << std::setw(15) << std::setprecision(8) << std::fixed << lavec_new(i, j);
+        }
+        std::cout << '\n';
+    }
+
+    std::vector<Vector3d> xf_new(natmin);
+    std::cout << "  Atomic positions (fractional):\n";
+    for (size_t iat = 0; iat < natmin; ++iat) {
+        const Vector3d x_ref = primcell.x_fractional.row(iat).transpose();
+        Vector3d r_cart = Fmat * (primcell.lattice_vector * x_ref);
+        for (auto i = 0; i < 3; ++i) {
+            r_cart(i) += structure_state.u0[3 * iat + i];
+        }
+        xf_new[iat] = lavec_new_inv * r_cart;
+
+        std::cout << "   " << std::setw(4) << std::left << system->symbol_kd[primcell.kind[iat]] << std::right
+                  << " :";
+        for (auto i = 0; i < 3; ++i) {
+            std::cout << std::setw(15) << std::setprecision(8) << std::fixed << xf_new[iat](i);
+        }
+        std::cout << '\n';
+    }
+    std::cout << std::scientific;
+
+    if (del_v0_del_umn_atT) {
+        // Cauchy stress sigma = (dE/dF) F^T / (V_ref det F). del_v0_del_umn_atT is the
+        // gradient of the optimized potential including the external-pressure term
+        // p V, so the p V gradient p V F^{-T} is subtracted to recover the internal
+        // stress. At full equilibrium, the pressure printed here equals the applied
+        // pressure (STAT_PRESSURE).
+        const auto detF = Fmat.determinant();
+        const auto vol = primcell.volume * detF; // Bohr^3
+        const auto gpa_to_ry_bohr3 = 1.0e9 / Ryd * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30;
+        const auto p_ext = stat_pressure * gpa_to_ry_bohr3; // Ry/Bohr^3
+
+        Matrix3d grad_total;
+        for (auto i = 0; i < 3; ++i) {
+            for (auto j = 0; j < 3; ++j) {
+                grad_total(i, j) = del_v0_del_umn_atT[3 * i + j].real();
+            }
+        }
+        const Matrix3d grad_internal = grad_total - p_ext * vol * Fmat.inverse().transpose();
+        const Matrix3d stress = grad_internal * Fmat.transpose() / vol; // Ry/Bohr^3, tension positive
+
+        const auto pressure_gpa = -stress.trace() / 3.0 / gpa_to_ry_bohr3;
+
+        std::cout << "  Stress tensor [GPa]:\n";
+        for (auto i = 0; i < 3; ++i) {
+            std::cout << "   ";
+            for (auto j = 0; j < 3; ++j) {
+                std::cout << std::setw(15) << std::setprecision(6) << stress(i, j) / gpa_to_ry_bohr3;
+            }
+            std::cout << '\n';
+        }
+        std::cout << "  Pressure :" << std::setw(15) << std::setprecision(6) << pressure_gpa << " [GPa]\n";
+    }
+
+    // space group detection by spglib
+    double aa[3][3];
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            aa[i][j] = lavec_new(i, j);
+        }
+    }
+    double(*position)[3];
+    int *types;
+    allocate(position, natmin);
+    allocate(types, natmin);
+    for (size_t iat = 0; iat < natmin; ++iat) {
+        for (auto i = 0; i < 3; ++i) {
+            position[iat][i] = xf_new[iat](i);
+        }
+        types[iat] = primcell.kind[iat];
+    }
+
+    std::string spg_label = "detection failed";
+    const auto spgdataset = spg_get_dataset(aa, position, types, static_cast<int>(natmin), symmetry->tolerance);
+    if (spgdataset && spgdataset->spacegroup_number > 0) {
+        spg_label = std::string(spgdataset->international_symbol) + " (#" +
+                    std::to_string(spgdataset->spacegroup_number) + ")";
+    }
+    std::cout << "  Space group :  " << spg_label << '\n';
+    if (spgdataset) spg_free_dataset(spgdataset);
+
+    deallocate(position);
+    deallocate(types);
+
+    return spg_label;
 }
 
 void Relaxation::check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const

@@ -96,11 +96,12 @@ private:
 
     void compute_anharmonic_frequency(std::complex<double> ***, double **, std::complex<double> ***, double, bool &,
                                       std::complex<double> ***, bool, std::complex<double> **,
-                                      const unsigned int verbosity);
+                                      const unsigned int verbosity, const bool compact_progress = false);
 
     void compute_anharmonic_frequency_diis(std::complex<double> ***, double **, std::complex<double> ***,
                                            double, bool &, std::complex<double> ***, bool,
-                                           std::complex<double> **, const unsigned int verbosity);
+                                           std::complex<double> **, const unsigned int verbosity,
+                                           const bool compact_progress = false);
 
     // Helper methods for compute_anharmonic_frequency
     void initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,
