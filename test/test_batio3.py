@@ -115,7 +115,7 @@ def copy_input_files(workdir, scph_example_dir, fc_reference_dir):
             os.path.join(reference_dir, "BTO_scph_thermo.in"),
             "BTO_scph_thermo.in",
         ),
-        (os.path.join(fc_reference_dir, "cBTO222.xml.zip"), "cBTO222.xml.zip"),
+        (os.path.join(fc_reference_dir, "cBTO222.h5"), "cBTO222.h5"),
     ]
 
     for src, dest in source_and_dest:
@@ -134,16 +134,6 @@ def copy_input_files(workdir, scph_example_dir, fc_reference_dir):
         )
     else:
         print(f"Directory {source_strain_dir} not found")
-        return 1
-
-    return 0
-
-
-def uncompress_files(workdir):
-    try:
-        with zipfile.ZipFile("cBTO222.xml.zip", "r") as zip_ref:
-            zip_ref.extractall(workdir)
-    except Exception:
         return 1
 
     return 0
@@ -176,11 +166,6 @@ if __name__ == "__main__":
     if args.jobs in ["all", "copy"]:
         info = copy_input_files(workdir, scph_example_dir, fc_reference_dir)
         if info > 0:
-            sys.exit(1)
-
-        info = uncompress_files(workdir)
-        if info > 0:
-            print("Failed to uncompress files")
             sys.exit(1)
 
     if args.jobs in ["all", "run"]:
