@@ -12,6 +12,53 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
+def format_index(index):
+    if index == ():
+        return "scalar"
+    return str(tuple(int(i) for i in index))
+
+
+def print_max_errors(file, data_ref, data_now, rel_min_scale=1.0e-15):
+    data_ref = np.asarray(data_ref)
+    data_now = np.asarray(data_now)
+    abs_errors = np.abs(data_now - data_ref)
+    scale = np.maximum(np.abs(data_ref), np.abs(data_now))
+    rel_mask = scale >= rel_min_scale
+    rel_errors = np.divide(
+        abs_errors,
+        scale,
+        out=np.zeros_like(abs_errors, dtype=float),
+        where=rel_mask,
+    )
+
+    abs_index = np.unravel_index(np.argmax(abs_errors), abs_errors.shape)
+    print(
+        "Max absolute error in %s at index %s: %.6e"
+        % (file, format_index(abs_index), abs_errors[abs_index])
+    )
+    print(
+        "  reference = %.16e, current = %.16e"
+        % (data_ref[abs_index], data_now[abs_index])
+    )
+    if np.any(rel_mask):
+        rel_index = np.unravel_index(
+            np.argmax(np.where(rel_mask, rel_errors, -np.inf)), rel_errors.shape
+        )
+        print(
+            "Max relative error in %s at index %s (scale >= %.1e): %.6e"
+            % (file, format_index(rel_index), rel_min_scale, rel_errors[rel_index])
+        )
+        print(
+            "  reference = %.16e, current = %.16e"
+            % (data_ref[rel_index], data_now[rel_index])
+        )
+    else:
+        print(
+            "Max relative error in %s: skipped (all scales < %.1e)"
+            % (file, rel_min_scale)
+        )
+
+
 def gen_alminput_si(fname, norder=1, prefix="si222", dfset="DFSET"):
     pos = [
         [0.000, 0.000, 0.000],
@@ -147,6 +194,8 @@ def check_consistency_alm(project_root, abs_tol=0.01, rel_tol=1.0e-9):
         isclose_all = isclose_all & isclose(val1, val2, abs_tol)
 
     if not isclose_all:
+        print("Failed to match si222.fcs")
+        print_max_errors("si222.fcs", data_ref, data_now)
         return 1
 
     fname_ref = "%s/example/Si/reference/si222_cubic.fcs" % project_root
@@ -174,6 +223,8 @@ def check_consistency_alm(project_root, abs_tol=0.01, rel_tol=1.0e-9):
     #        print(isclose_all, isclose(val1, val2, rel_tol, abs_tol), val1, val2, val1-val2)
 
     if not isclose_all:
+        print("Failed to match si222_cubic.fcs")
+        print_max_errors("si222_cubic.fcs", data_ref, data_now)
         return 1
 
     return 0
@@ -233,6 +284,8 @@ def check_consistency_anphon(project_root, abs_tol=0.01, rel_tol=1.0e-9):
             isclose_all = isclose_all & isclose(data_ref[i, j], data_now[i, j], abs_tol)
 
     if not isclose_all:
+        print("Failed to match si222.bands")
+        print_max_errors("si222.bands", data_ref, data_now)
         return 1
 
     fname_ref = "%s/example/Si/reference/si222.kl" % project_root
@@ -252,6 +305,8 @@ def check_consistency_anphon(project_root, abs_tol=0.01, rel_tol=1.0e-9):
             # print(data_ref[i,j], data_now[i,j], data_ref[i,j]- data_now[i,j])
 
     if not isclose_all:
+        print("Failed to match si222.kl")
+        print_max_errors("si222.kl", data_ref, data_now)
         return 1
 
     return 0

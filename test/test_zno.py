@@ -15,6 +15,53 @@ def isclose(a, b, rel_tol=1e-5, abs_tol=1.0e-12):
     return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
+def format_index(index):
+    if index == ():
+        return "scalar"
+    return str(tuple(int(i) for i in index))
+
+
+def print_max_errors(file, data_ref, data_now, rel_min_scale=1.0e-15):
+    data_ref = np.asarray(data_ref)
+    data_now = np.asarray(data_now)
+    abs_errors = np.abs(data_now - data_ref)
+    scale = np.maximum(np.abs(data_ref), np.abs(data_now))
+    rel_mask = scale >= rel_min_scale
+    rel_errors = np.divide(
+        abs_errors,
+        scale,
+        out=np.zeros_like(abs_errors, dtype=float),
+        where=rel_mask,
+    )
+
+    abs_index = np.unravel_index(np.argmax(abs_errors), abs_errors.shape)
+    print(
+        "Max absolute error in %s at index %s: %.6e"
+        % (file, format_index(abs_index), abs_errors[abs_index])
+    )
+    print(
+        "  reference = %.16e, current = %.16e"
+        % (data_ref[abs_index], data_now[abs_index])
+    )
+    if np.any(rel_mask):
+        rel_index = np.unravel_index(
+            np.argmax(np.where(rel_mask, rel_errors, -np.inf)), rel_errors.shape
+        )
+        print(
+            "Max relative error in %s at index %s (scale >= %.1e): %.6e"
+            % (file, format_index(rel_index), rel_min_scale, rel_errors[rel_index])
+        )
+        print(
+            "  reference = %.16e, current = %.16e"
+            % (data_ref[rel_index], data_now[rel_index])
+        )
+    else:
+        print(
+            "Max relative error in %s: skipped (all scales < %.1e)"
+            % (file, rel_min_scale)
+        )
+
+
 def run_anphon_zno(anphonbin):
     try:
         with open("ZnO_qha_thermo.log", "w") as f:
@@ -50,6 +97,7 @@ def check_consistency_anphon(example_dir, abs_tol=0.01, rel_tol=1.0e-9):
                 )
         if not isclose_all:
             print("Failed to match %s" % file)
+            print_max_errors(file, data_ref, data_now)
             return 1
 
     if not isclose_all:
