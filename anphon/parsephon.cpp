@@ -547,7 +547,7 @@ void Input::parse_scph_vars()
     auto mixalpha = 0.1;
     auto selfenergy_offdiagonal = true;
     unsigned int ialgo_scph = 0;
-    unsigned int imix_scph = 0;
+    unsigned int imix_scph = 1; // DIIS mixing by default; IMIX = 0 restores simple mixing
     auto lower_temp = true;
     auto warm_start = true;
     unsigned int bubble = 0;
@@ -787,6 +787,7 @@ void Input::parse_relax_vars()
                                               "GRADIENT_CONV_TOL",
                                               "CELL_GRADIENT_CONV_TOL",
                                               "GDIIS_CONTROL",
+                                              "GDIIS_PLAIN",
                                               "MIXBETA_COORD",
                                               "ALPHA_STDECENT",
                                               "CELL_CONV_TOL",
@@ -823,7 +824,12 @@ void Input::parse_relax_vars()
     double alpha_steepest_decent = 1.0e4;
     double gradient_conv_tol = 0.0;
     double cell_gradient_conv_tol = 0.0;
-    int gdiis_control = 0;
+    // The Farkas-Schlegel controlled GDIIS is the default for RELAX_ALGO = 3.
+    // GDIIS_PLAIN = 1 switches it off (regular GDIIS without the step-acceptance
+    // tests). GDIIS_CONTROL is kept as a deprecated alias of the old enabling
+    // switch; an explicit GDIIS_PLAIN takes precedence over it.
+    int gdiis_control = 1;
+    int gdiis_plain = 0;
 
     double cell_conv_tol = 1.0e-5;
     double mixbeta_cell = 0.5;
@@ -846,7 +852,15 @@ void Input::parse_relax_vars()
     assign_val(coord_conv_tol, "COORD_CONV_TOL", stropt_var_dict);
     assign_val(gradient_conv_tol, "GRADIENT_CONV_TOL", stropt_var_dict);
     assign_val(cell_gradient_conv_tol, "CELL_GRADIENT_CONV_TOL", stropt_var_dict);
-    assign_val(gdiis_control, "GDIIS_CONTROL", stropt_var_dict);
+    assign_val(gdiis_control, "GDIIS_CONTROL", stropt_var_dict); // deprecated
+    assign_val(gdiis_plain, "GDIIS_PLAIN", stropt_var_dict);
+    if (stropt_var_dict.find("GDIIS_CONTROL") != stropt_var_dict.end()) {
+        warn("parse_relax_vars",
+             "GDIIS_CONTROL is deprecated: controlled GDIIS is now the default. Use GDIIS_PLAIN = 1 to disable it.");
+    }
+    if (stropt_var_dict.find("GDIIS_PLAIN") != stropt_var_dict.end()) {
+        gdiis_control = gdiis_plain ? 0 : 1;
+    }
 
     if (relax_algo < 1 || relax_algo > 3) {
         exit("parse_relax_vars", "RELAX_ALGO must be 1 (steepest decent), 2 (Newton), or 3 (BFGS+GDIIS).");

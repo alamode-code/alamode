@@ -241,7 +241,8 @@ public:
     double cell_gradient_conv_tol;
     // For relax_algo == 3 (GDIIS): if nonzero, apply the Farkas-Schlegel "controlled GDIIS"
     // step-acceptance criteria (step-length cap, coefficient/extrapolation cap, and
-    // near-singularity rejection with error-vector rescaling). Defaults to 0 (regular GDIIS).
+    // near-singularity rejection with error-vector rescaling). Enabled by default;
+    // GDIIS_PLAIN = 1 in the &relax field switches back to the regular GDIIS.
     int gdiis_control;
 
     int set_init_str;

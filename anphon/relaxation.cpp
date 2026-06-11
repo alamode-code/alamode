@@ -56,7 +56,7 @@ void Relaxation::set_default_variables()
     mixbeta_cell = 0.5;
     gradient_conv_tol = 0.0;      // disabled by default (step-size convergence only)
     cell_gradient_conv_tol = 0.0; // disabled by default (step-size convergence only)
-    gdiis_control = 0;            // disabled by default (regular GDIIS, no extra acceptance tests)
+    gdiis_control = 1;            // controlled GDIIS by default; GDIIS_PLAIN = 1 disables it
 
     set_init_str = 1;
     cooling_u0_index = 0;

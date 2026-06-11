@@ -189,7 +189,7 @@ public:
     // error vectors with a per-step RFO level-shifted Hessian, grows the DIIS subspace from the
     // most recent point keeping the last acceptable step, applies the four acceptance criteria
     // (a) angle, (b) step length, (c) coefficient sum, (d) near-singularity, and permanently
-    // discards points when the angle exceeds 90 degrees. Selected by GDIIS_CONTROL = 1.
+    // discards points when the angle exceeds 90 degrees. Enabled by default; disabled by GDIIS_PLAIN = 1.
     Eigen::VectorXd update_controlled(const Eigen::VectorXd &point, const Eigen::VectorXd &gradient);
 
 

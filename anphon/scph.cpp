@@ -65,7 +65,7 @@ void Scph::set_default_variables()
     print_self_consistent_fc2 = false;
     selfenergy_offdiagonal = true;
     mix_anderson_ratio = 1.0;
-    imix_scph = 0;
+    imix_scph = 1;
 
     bubble = 0;
     compute_Cv_anharmonic = 0;
@@ -1736,7 +1736,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         // ---- structural-optimization benchmark summary (step counts to convergence) ----
         std::cout << " ============ Structural-optimization benchmark summary ============\n";
         std::cout << "  RELAX_ALGO = " << relaxation->relax_algo;
-        if (relaxation->relax_algo == 3) std::cout << "   GDIIS_CONTROL = " << relaxation->gdiis_control;
+        if (relaxation->relax_algo == 3)
+            std::cout << "   GDIIS_PLAIN = " << (relaxation->gdiis_control ? 0 : 1);
         std::cout << '\n';
         std::cout << "  " << std::setw(15) << "Temp [K]" << std::setw(12) << "steps" << std::setw(12) << "converged"
                   << '\n';
