@@ -11,7 +11,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <fftw3.h>
 #include <iomanip>
 #include "constants.h"
 #include "dynamical.h"

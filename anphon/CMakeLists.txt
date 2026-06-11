@@ -39,56 +39,6 @@ else()
     set(spglib "-lsymspg")
 endif()
 
-set(FFTW_BACKEND "AUTO" CACHE STRING "FFTW backend: AUTO, FFTW3, or MKL")
-set_property(CACHE FFTW_BACKEND PROPERTY STRINGS AUTO FFTW3 MKL)
-
-set(fftw_include_dir "")
-set(fftw3library "")
-set(using_mkl_fftw FALSE)
-
-if (FFTW_BACKEND STREQUAL "MKL" OR FFTW_BACKEND STREQUAL "AUTO")
-    set(mkl_root "$ENV{MKLROOT}")
-    find_path(MKL_FFTW_INCLUDE_DIR fftw3.h
-        HINTS ${mkl_root}
-        PATH_SUFFIXES include/fftw include
-    )
-    find_library(MKL_FFTW_LIBRARY
-        NAMES mkl_rt
-        HINTS ${mkl_root}
-        PATH_SUFFIXES lib lib/intel64 lib64
-    )
-
-    if (MKL_FFTW_INCLUDE_DIR AND MKL_FFTW_LIBRARY)
-        set(using_mkl_fftw TRUE)
-        set(fftw_include_dir ${MKL_FFTW_INCLUDE_DIR})
-        set(fftw3library ${MKL_FFTW_LIBRARY})
-        message(STATUS "Using MKL FFTW wrappers: ${MKL_FFTW_LIBRARY}")
-    elseif(FFTW_BACKEND STREQUAL "MKL")
-        message(FATAL_ERROR "FFTW_BACKEND=MKL requested, but MKL FFTW wrappers were not found. Set MKLROOT or provide MKL libs/headers.")
-    endif()
-endif()
-
-if (NOT using_mkl_fftw)
-    if (FFTW3_ROOT)
-        find_path(FFTW3_INCLUDE_DIR fftw3.h HINTS "${FFTW3_ROOT}" PATH_SUFFIXES include)
-        find_library(FFTW3_LIBRARY NAMES fftw3 HINTS "${FFTW3_ROOT}" PATH_SUFFIXES lib lib64)
-    else()
-        find_path(FFTW3_INCLUDE_DIR fftw3.h)
-        find_library(FFTW3_LIBRARY NAMES fftw3)
-    endif()
-
-    if (FFTW3_INCLUDE_DIR AND FFTW3_LIBRARY)
-        set(fftw_include_dir ${FFTW3_INCLUDE_DIR})
-        set(fftw3library ${FFTW3_LIBRARY})
-    else()
-        message(FATAL_ERROR "FFTW3 was not found. Set FFTW3_ROOT or use FFTW_BACKEND=MKL with MKLROOT.")
-    endif()
-endif()
-
-if (fftw_include_dir)
-    include_directories(${fftw_include_dir})
-endif()
-
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (openmplibrary OpenMP::OpenMP_CXX)
@@ -283,7 +233,6 @@ target_include_directories(anphon PRIVATE
     ${spglib_include}
     ${boost_includes}
     ${eigen_includes}
-    ${fftw_include_dir}
     ${hdf5_include}
 )
 
@@ -298,6 +247,3 @@ target_link_libraries(anphon
     ${hdf5_target}
     ${hdf5library}
 )
-if (fftw3library)
-    target_link_libraries(anphon ${fftw3library})
-endif()

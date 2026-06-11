@@ -142,6 +142,10 @@ public:
                     const unsigned int ns, MinimumDistList ***mindist_list_in, std::complex<double> ***dymat_r_in,
                     std::complex<double> **dymat_k_out);
 
+    static void fourier_dymat_k_to_r(const unsigned int nk1, const unsigned int nk2, const unsigned int nk3,
+                                     const unsigned int ns, const std::complex<double> *const *const *dymat_k,
+                                     std::complex<double> ***dymat_r);
+
     void precompute_dymat_harm(const unsigned int nk_in, double **xk_in, double **kvec_in,
                                std::vector<Eigen::MatrixXcd> &dymat_short,
                                std::vector<Eigen::MatrixXcd> &dymat_long) const;

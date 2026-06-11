@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <cstdlib>
-#include <fftw3.h>
 #include <fstream>
 #include <iostream>
 #include "anharmonic_core.h"
@@ -1452,23 +1451,7 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
                 }
             }
 
-            for (is1 = 0; is1 < ns; is1++) {
-                for (is2 = 0; is2 < ns; is2++) {
-                    fftw_plan plan = fftw_plan_dft_3d(nk1,
-                                                      nk2,
-                                                      nk3,
-                                                      reinterpret_cast<fftw_complex *>(dymat_q[is1][is2]),
-                                                      reinterpret_cast<fftw_complex *>(dymat_new[is1][is2]),
-                                                      FFTW_FORWARD,
-                                                      FFTW_ESTIMATE);
-                    fftw_execute(plan);
-                    fftw_destroy_plan(plan);
-
-                    for (ik = 0; ik < nk_interpolate; ++ik) {
-                        dymat_new[is1][is2][ik] /= static_cast<double>(nk_interpolate);
-                    }
-                }
-            }
+            Dynamical::fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_q, dymat_new);
 
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (ik = 0; ik < static_cast<int>(nk); ik++) {

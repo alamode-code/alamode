@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <cmath>
 #include <complex>
-#include <fftw3.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -1647,6 +1646,53 @@ void Dynamical::precompute_dymat_harm(const unsigned int nk_in, double **xk_in, 
 }
 
 
+void Dynamical::fourier_dymat_k_to_r(const unsigned int nk1, const unsigned int nk2, const unsigned int nk3,
+                                     const unsigned int ns, const std::complex<double> *const *const *dymat_k,
+                                     std::complex<double> ***dymat_r)
+{
+    // Forward DFT (k -> r), including the 1/N normalization, of all (is, js)
+    // components of a coarse-mesh dynamical-matrix array at once:
+    //   dymat_r[is][js][r] = (1/N) sum_k dymat_k[is][js][k] e^{-2 pi i k.r}.
+    //
+    // This used to be done with one FFTW plan per (is, js) pair, re-created at
+    // every call: fftw_execute() always transforms the arrays its plan was
+    // created with, and fftw_execute_dft() on different arrays carries strict
+    // alignment requirements, so the plan could not be hoisted safely. The
+    // coarse mesh is tiny, so plan creation dominated the transform itself.
+    // The explicit DFT matrix below reproduces the FFTW_FORWARD convention
+    // (row-major multi-index, negative exponent) exactly, is alignment-free,
+    // and applies to all ns^2 components as a single matrix product; the arrays
+    // from allocate() are contiguous, with (is, js) blocks of length
+    // nk1*nk2*nk3 each.
+
+    using namespace Eigen;
+
+    const auto nk_coarse = nk1 * nk2 * nk3;
+
+    MatrixXcd dft_matrix(nk_coarse, nk_coarse);
+    for (unsigned int ir = 0; ir < nk_coarse; ++ir) {
+        const auto r1 = ir / (nk2 * nk3);
+        const auto r2 = (ir / nk3) % nk2;
+        const auto r3 = ir % nk3;
+        for (unsigned int ik = 0; ik < nk_coarse; ++ik) {
+            const auto k1 = ik / (nk2 * nk3);
+            const auto k2 = (ik / nk3) % nk2;
+            const auto k3 = ik % nk3;
+            const auto phase = -2.0 * pi
+                               * (static_cast<double>(r1 * k1) / static_cast<double>(nk1)
+                                  + static_cast<double>(r2 * k2) / static_cast<double>(nk2)
+                                  + static_cast<double>(r3 * k3) / static_cast<double>(nk3));
+            dft_matrix(ir, ik) = std::complex<double>(std::cos(phase), std::sin(phase));
+        }
+    }
+    // 1/N normalization previously applied after the FFT
+    dft_matrix /= static_cast<double>(nk_coarse);
+
+    Map<const MatrixXcd> dymat_k_flat(dymat_k[0][0], nk_coarse, ns * ns);
+    Map<MatrixXcd> dymat_r_flat(dymat_r[0][0], nk_coarse, ns * ns);
+    dymat_r_flat.noalias() = dft_matrix * dymat_k_flat;
+}
+
 void Dynamical::compute_renormalized_harmonic_frequency(
     double **omega2_out, std::complex<double> ***evec_harm_renormalized, std::complex<double> **delta_v2_renorm,
     const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
@@ -1738,22 +1784,7 @@ void Dynamical::compute_renormalized_harmonic_frequency(
         }
     }
 
-    for (is = 0; is < ns; ++is) {
-        for (js = 0; js < ns; ++js) {
-            fftw_plan plan = fftw_plan_dft_3d(nk1,
-                                              nk2,
-                                              nk3,
-                                              reinterpret_cast<fftw_complex *>(dymat_q[is][js]),
-                                              reinterpret_cast<fftw_complex *>(dymat_new[is][js]),
-                                              FFTW_FORWARD,
-                                              FFTW_ESTIMATE);
-            fftw_execute(plan);
-            fftw_destroy_plan(plan);
-
-            for (ik = 0; ik < nk_interpolate; ++ik)
-                dymat_new[is][js][ik] /= static_cast<double>(nk_interpolate);
-        }
-    }
+    fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_q, dymat_new);
 
     std::vector<Eigen::MatrixXcd> dymat_short, dymat_long;
 

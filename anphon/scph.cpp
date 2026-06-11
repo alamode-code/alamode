@@ -16,7 +16,6 @@
 #include <cmath>
 #include <complex>
 #include <cstdlib>
-#include <fftw3.h>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -1946,33 +1945,37 @@ void Scph::compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double 
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
 
-    MatrixXcd Qmat(ns, ns);
-    MatrixXcd Cmat(ns, ns), Dmat(ns, ns);
+#pragma omp parallel
+    {
+        MatrixXcd Qmat(ns, ns);
+        MatrixXcd Cmat(ns, ns);
 
-    for (unsigned int ik = 0; ik < nk; ++ik) {
-        Qmat.setZero();
-        for (unsigned int is = 0; is < ns; ++is) {
-            const auto omega1 = omega_now(ik, is);
-            if (std::abs(omega1) > eps8) {
-                // Note that the missing factor 2 in the denominator of Qmat is
-                // already considered in the v4_array_all.
-                if (thermodynamics->classical) {
-                    Qmat(is, is) = std::complex<double>(2.0 * temp * thermodynamics->T_to_Ryd / (omega1 * omega1), 0.0);
-                } else {
-                    const auto n1 = thermodynamics->fB(omega1, temp);
-                    Qmat(is, is) = std::complex<double>((2.0 * n1 + 1.0) / omega1, 0.0);
+#pragma omp for
+        for (int ik = 0; ik < static_cast<int>(nk); ++ik) {
+            Qmat.setZero();
+            for (unsigned int is = 0; is < ns; ++is) {
+                const auto omega1 = omega_now(ik, is);
+                if (std::abs(omega1) > eps8) {
+                    // Note that the missing factor 2 in the denominator of Qmat is
+                    // already considered in the v4_array_all.
+                    if (thermodynamics->classical) {
+                        Qmat(is, is) =
+                            std::complex<double>(2.0 * temp * thermodynamics->T_to_Ryd / (omega1 * omega1), 0.0);
+                    } else {
+                        const auto n1 = thermodynamics->fB(omega1, temp);
+                        Qmat(is, is) = std::complex<double>((2.0 * n1 + 1.0) / omega1, 0.0);
+                    }
                 }
             }
-        }
 
-        for (unsigned int is = 0; is < ns; ++is) {
-            for (unsigned int js = 0; js < ns; ++js) {
-                Cmat(is, js) = cmat_convert[ik][is][js];
+            for (unsigned int is = 0; is < ns; ++is) {
+                for (unsigned int js = 0; js < ns; ++js) {
+                    Cmat(is, js) = cmat_convert[ik][is][js];
+                }
             }
-        }
 
-        Dmat = Cmat * Qmat * Cmat.adjoint();
-        dmat_convert[ik] = Dmat;
+            dmat_convert[ik] = Cmat * Qmat * Cmat.adjoint();
+        }
     }
 }
 
@@ -2001,16 +2004,44 @@ void Scph::update_fmat_with_v4(const std::vector<Eigen::MatrixXcd> &Fmat0,
             }
         }
     } else {
+        // Fmat is Hermitian and is consumed by SelfAdjointEigenSolver, which
+        // references only the lower triangle, so only the elements with is >= js
+        // are computed (half the work); the upper triangle is filled by conjugation.
+        // The contraction over (jk, ks, ls) is evaluated as vectorized dot products
+        // between the contiguous rows of v4_array_all and the D matrices flattened
+        // in the matching (row-major) order.
+
+        // dvec[jk * ns2 + ns * ks + ls] = dmat_convert[jk](ks, ls)
+        VectorXcd dvec(static_cast<Index>(nk) * ns2);
 #pragma omp parallel for
-        for (int ijs = 0; ijs < ns2; ++ijs) {
-            auto is = ijs / ns;
-            auto js = ijs % ns;
+        for (int jk = 0; jk < static_cast<int>(nk); ++jk) {
+            Map<MatrixXcd>(dvec.data() + static_cast<Index>(jk) * ns2, ns, ns) = dmat_convert[jk].transpose();
+        }
+
+        std::vector<int> ijs_lower;
+        ijs_lower.reserve(ns * (ns + 1) / 2);
+        for (int is = 0; is < ns; ++is) {
+            for (int js = 0; js <= is; ++js) {
+                ijs_lower.push_back(is * ns + js);
+            }
+        }
+
+#pragma omp parallel for
+        for (int ip = 0; ip < static_cast<int>(ijs_lower.size()); ++ip) {
+            const auto ijs = ijs_lower[ip];
+            std::complex<double> sum(0.0, 0.0);
             for (unsigned int jk = 0; jk < nk; ++jk) {
-                for (unsigned int ks = 0; ks < ns; ++ks) {
-                    for (unsigned int ls = 0; ls < ns; ++ls) {
-                        Fmat(is, js) += v4_array_all[nk * ik_irred + jk][ijs][ns * ks + ls] * dmat_convert[jk](ks, ls);
-                    }
-                }
+                sum += Map<const VectorXcd>(v4_array_all[nk * ik_irred + jk][ijs], ns2)
+                           .cwiseProduct(dvec.segment(static_cast<Index>(jk) * ns2, ns2))
+                           .sum();
+            }
+            Fmat(ijs / ns, ijs % ns) += sum;
+        }
+
+        // Hermitian completion of the upper triangle
+        for (int is = 0; is < ns; ++is) {
+            for (int js = is + 1; js < ns; ++js) {
+                Fmat(is, js) = std::conj(Fmat(js, is));
             }
         }
     }
@@ -2092,9 +2123,6 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
     const auto nk_interpolate = kmesh_coarse->nk;
-    const auto nk1 = kmesh_interpolate[0];
-    const auto nk2 = kmesh_interpolate[1];
-    const auto nk3 = kmesh_interpolate[2];
 
     std::complex<double> ***dymat_r_new;
     allocate(dymat_r_new, ns, ns, nk_interpolate);
@@ -2110,26 +2138,8 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
         }
     }
 
-    // IMPORTANT: FFTW plan must be created inside the loop for each (is,js) pair
-    // because the plan is tied to specific memory addresses. Creating it once
-    // outside with nullptr or fftw_execute_dft() with different pointers
-    // causes incorrect results due to memory alignment assumptions in the plan.
-    for (unsigned int is = 0; is < ns; ++is) {
-        for (unsigned int js = 0; js < ns; ++js) {
-            fftw_plan plan = fftw_plan_dft_3d(nk1,
-                                              nk2,
-                                              nk3,
-                                              reinterpret_cast<fftw_complex *>(dymat_q[is][js]),
-                                              reinterpret_cast<fftw_complex *>(dymat_r_new[is][js]),
-                                              FFTW_FORWARD,
-                                              FFTW_ESTIMATE);
-            fftw_execute(plan);
-            fftw_destroy_plan(plan);
-
-            for (unsigned int ik = 0; ik < nk_interpolate; ++ik)
-                dymat_r_new[is][js][ik] /= static_cast<double>(nk_interpolate);
-        }
-    }
+    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0], kmesh_interpolate[1], kmesh_interpolate[2],
+                                    ns, dymat_q, dymat_r_new);
 
     // Create temporary C-style arrays for exec_interpolation
     double **eval_temp;
@@ -2558,13 +2568,15 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
 
     // Each D_k is column-major contiguous; a complex entry is two consecutive doubles.
     auto flatten_dmat = [&](const std::vector<MatrixXcd> &dmat, VectorXd &vec) {
-        for (unsigned int k = 0; k < nk; ++k) {
+#pragma omp parallel for
+        for (int k = 0; k < static_cast<int>(nk); ++k) {
             vec.segment(static_cast<Index>(k) * blocksize, blocksize)
                 = Map<const VectorXd>(reinterpret_cast<const double *>(dmat[k].data()), blocksize);
         }
     };
     auto unflatten_dmat = [&](const VectorXd &vec, std::vector<MatrixXcd> &dmat) {
-        for (unsigned int k = 0; k < nk; ++k) {
+#pragma omp parallel for
+        for (int k = 0; k < static_cast<int>(nk); ++k) {
             Map<VectorXd>(reinterpret_cast<double *>(dmat[k].data()), blocksize)
                 = vec.segment(static_cast<Index>(k) * blocksize, blocksize);
             // Remove the Hermiticity-breaking roundoff of the linear combination.
@@ -2572,17 +2584,25 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
         }
     };
 
-    SelfAdjointEigenSolver<MatrixXcd> saes_check;
     auto is_positive_semidefinite = [&](const std::vector<MatrixXcd> &dmat) {
-        for (unsigned int k = 0; k < nk; ++k) {
-            saes_check.compute(dmat[k], EigenvaluesOnly);
-            if (saes_check.info() != Success) return false;
-            const double emax = saes_check.eigenvalues().cwiseAbs().maxCoeff();
-            if (saes_check.eigenvalues().minCoeff() < -psd_tol * std::max(emax, 1.0e-12)) {
-                return false;
+        bool ok = true;
+#pragma omp parallel reduction(&& : ok)
+        {
+            SelfAdjointEigenSolver<MatrixXcd> saes_check;
+#pragma omp for
+            for (int k = 0; k < static_cast<int>(nk); ++k) {
+                saes_check.compute(dmat[k], EigenvaluesOnly);
+                if (saes_check.info() != Success) {
+                    ok = false;
+                    continue;
+                }
+                const double emax = saes_check.eigenvalues().cwiseAbs().maxCoeff();
+                if (saes_check.eigenvalues().minCoeff() < -psd_tol * std::max(emax, 1.0e-12)) {
+                    ok = false;
+                }
             }
         }
-        return true;
+        return ok;
     };
 
     int icount = 0;
@@ -2913,26 +2933,8 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
         }
     }
 
-    const auto nk1 = kmesh_interpolate[0];
-    const auto nk2 = kmesh_interpolate[1];
-    const auto nk3 = kmesh_interpolate[2];
-
-    for (auto is = 0; is < ns; ++is) {
-        for (auto js = 0; js < ns; ++js) {
-            fftw_plan plan = fftw_plan_dft_3d(nk1,
-                                              nk2,
-                                              nk3,
-                                              reinterpret_cast<fftw_complex *>(dymat_out[is][js]),
-                                              reinterpret_cast<fftw_complex *>(dymat_r_new[is][js]),
-                                              FFTW_FORWARD,
-                                              FFTW_ESTIMATE);
-            fftw_execute(plan);
-            fftw_destroy_plan(plan);
-
-            for (auto ik = 0; ik < nk_interpolate; ++ik)
-                dymat_r_new[is][js][ik] /= static_cast<double>(nk_interpolate);
-        }
-    }
+    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0], kmesh_interpolate[1], kmesh_interpolate[2],
+                                    ns, dymat_out, dymat_r_new);
 
     double **eval_tmp;
 
