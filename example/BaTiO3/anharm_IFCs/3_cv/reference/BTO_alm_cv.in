@@ -3,6 +3,7 @@
   MODE = optimize
   NAT = 40; NKD = 3
   KD = Ba Ti O
+  PRIMCELL = 1/2 0 0 0 1/2 0 0 0 1/2
 /
 
 
@@ -19,7 +20,7 @@
   LMODEL = elastic-net
   NDATA = 80
   DFSET = ../2_vasp_dfset/DFSET_AIMD_random
-  FC2XML = ../cBTO222_harmonic.xml
+  FC2FIX = ../cBTO222_harmonic.xml
 
   CV = 4 # split the DFSET to 4 sets and perform CV
   L1_RATIO = 1.0 # LASSO

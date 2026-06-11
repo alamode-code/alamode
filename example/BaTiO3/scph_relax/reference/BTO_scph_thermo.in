@@ -1,9 +1,7 @@
 &general
   PREFIX = cBTO222_scph
   MODE = SCPH
-  NKD = 3
-  FCSXML = cBTO222.xml
-  KD = Ba Ti O
+  FCSFILE = cBTO222.h5
 
   TMIN = 50
   TMAX = 400
@@ -20,7 +18,7 @@
 /
 
 &relax
-  RELAX_ALGO = 2
+  RELAX_ALGO = 3
   MAX_STR_ITER = 1000
   COORD_CONV_TOL = 1.0e-5
   MIXBETA_COORD = 0.4
@@ -29,13 +27,6 @@
   COOLING_U0_INDEX = 5
   COOLING_U0_THR = 0.005
 
-/
-
-&cell
-  7.53159676409 # cell parameter of primitive cell in Bohr unit
-  1.0 0.0 0.0 # a1
-  0.0 1.0 0.0 # a2
-  0.0 0.0 1.0 # a3
 /
 
 &displace

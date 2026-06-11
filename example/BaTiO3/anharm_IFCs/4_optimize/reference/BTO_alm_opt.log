@@ -1,11 +1,11 @@
  +-----------------------------------------------------------------+
  +                         Program ALM                             +
- +                             Ver.  1.5.0                         +
+ +                             Ver.  1.9.9                         +
  +-----------------------------------------------------------------+
 
- Number of OpenMP threads = 1
+ Number of OpenMP threads = 12
 
- Job started at Sun Feb 25 16:24:28 2024
+ Job started at Thu Jun 11 17:20:22 2026
 
 
  Input variables:
@@ -13,14 +13,15 @@
  General:
   PREFIX = cBTO222
   MODE = optimize
-  NAT = 40; NKD = 3
+  NAT = 0; NKD = 0
   PRINTSYM = 0; TOLERANCE = 0.001
-  KD =   Ba  Ti   O
+  KD = 
   FCSYM_BASIS = Lattice
   PERIODIC =   1  1  1
   MAGMOM = 
   FCS_ALAMODE = 1;  NMAXSAVE = 5
   FC3_SHENGBTE = 0
+  FC4_SHENGBTE = 0
   FC2_QEFC = 0
   HESSIAN = 0
   FC_ZERO_THR = 1e-12
@@ -31,13 +32,13 @@
 
  Optimize:
   LMODEL = elastic-net
-  DFSET = ../2_vasp_dfset/DFSET_AIMD_random
+  DFSET = DFSET_AIMD_random
   NDATA = 80; NSTART = 1; NEND = 80   SKIP = 
 
   ICONST = 11
   ROTAXIS = 
-  FC2XML = ../cBTO222_harmonic.xml
-  FC3XML = 
+  FC2FIX = ../../cBTO222_harmonic.xml
+  FC3FIX = 
 
   SPARSE = 0
   SPARSESOLVER = SimplicialLDLT
@@ -47,8 +48,8 @@
 
  Elastic-net related variables:
   CV =     0
-  DFSET_CV = ../2_vasp_dfset/DFSET_AIMD_random
-  NDATA_CV = 80; NSTART_CV = 1; NEND_CV = 80
+  DFSET_CV = DFSET_AIMD_random
+  NDATA_CV = 0; NSTART_CV = 0; NEND_CV = 0
 
   L1_RATIO = 1
   L1_ALPHA = 2.51189e-06
@@ -60,108 +61,105 @@
 
  -------------------------------------------------------------------
 
- SYSTEM
- ======
+ ===================
+  CRYSTAL STRUCTURE 
+ ===================
 
-  Lattice Vector
+  ++++++++++++
+   Input Cell 
+  ++++++++++++
+
+   Lattice Vector (bohr)
     1.506319e+01   0.000000e+00   0.000000e+00 : a1
     0.000000e+00   1.506319e+01   0.000000e+00 : a2
     0.000000e+00   0.000000e+00   1.506319e+01 : a3
 
-  Cell volume = 3.417836e+03
+   Number of atoms : 40
 
-  Reciprocal Lattice Vector
-    4.171217e-01   0.000000e+00   0.000000e+00 : b1
-    0.000000e+00   4.171217e-01   0.000000e+00 : b2
-    0.000000e+00   0.000000e+00   4.171217e-01 : b3
-
-  Atomic species:
+   Atomic species:
      1   Ba
      2   Ti
      3    O
 
-  Atomic positions in fractional basis and atomic species
-     1   0.000000e+00   0.000000e+00   0.000000e+00    1
-     2   0.000000e+00   0.000000e+00   5.000000e-01    1
-     3   0.000000e+00   5.000000e-01   0.000000e+00    1
-     4   0.000000e+00   5.000000e-01   5.000000e-01    1
-     5   5.000000e-01   0.000000e+00   0.000000e+00    1
-     6   5.000000e-01   0.000000e+00   5.000000e-01    1
-     7   5.000000e-01   5.000000e-01   0.000000e+00    1
-     8   5.000000e-01   5.000000e-01   5.000000e-01    1
-     9   2.500000e-01   2.500000e-01   2.500000e-01    2
-    10   2.500000e-01   2.500000e-01   7.500000e-01    2
-    11   2.500000e-01   7.500000e-01   2.500000e-01    2
-    12   2.500000e-01   7.500000e-01   7.500000e-01    2
-    13   7.500000e-01   2.500000e-01   2.500000e-01    2
-    14   7.500000e-01   2.500000e-01   7.500000e-01    2
-    15   7.500000e-01   7.500000e-01   2.500000e-01    2
-    16   7.500000e-01   7.500000e-01   7.500000e-01    2
-    17   0.000000e+00   2.500000e-01   2.500000e-01    3
-    18   0.000000e+00   2.500000e-01   7.500000e-01    3
-    19   0.000000e+00   7.500000e-01   2.500000e-01    3
-    20   0.000000e+00   7.500000e-01   7.500000e-01    3
-    21   2.500000e-01   0.000000e+00   2.500000e-01    3
-    22   2.500000e-01   0.000000e+00   7.500000e-01    3
-    23   2.500000e-01   2.500000e-01   0.000000e+00    3
-    24   2.500000e-01   2.500000e-01   5.000000e-01    3
-    25   2.500000e-01   5.000000e-01   2.500000e-01    3
-    26   2.500000e-01   5.000000e-01   7.500000e-01    3
-    27   2.500000e-01   7.500000e-01   0.000000e+00    3
-    28   2.500000e-01   7.500000e-01   5.000000e-01    3
-    29   5.000000e-01   2.500000e-01   2.500000e-01    3
-    30   5.000000e-01   2.500000e-01   7.500000e-01    3
-    31   5.000000e-01   7.500000e-01   2.500000e-01    3
-    32   5.000000e-01   7.500000e-01   7.500000e-01    3
-    33   7.500000e-01   0.000000e+00   2.500000e-01    3
-    34   7.500000e-01   0.000000e+00   7.500000e-01    3
-    35   7.500000e-01   2.500000e-01   0.000000e+00    3
-    36   7.500000e-01   2.500000e-01   5.000000e-01    3
-    37   7.500000e-01   5.000000e-01   2.500000e-01    3
-    38   7.500000e-01   5.000000e-01   7.500000e-01    3
-    39   7.500000e-01   7.500000e-01   0.000000e+00    3
-    40   7.500000e-01   7.500000e-01   5.000000e-01    3
+
+  ++++++++++++++++
+   Primitive Cell 
+  ++++++++++++++++
+
+   Lattice Vector (bohr)
+    7.531597e+00   0.000000e+00   0.000000e+00 : a1
+    0.000000e+00   7.531597e+00   0.000000e+00 : a2
+    0.000000e+00   0.000000e+00   7.531597e+00 : a3
+
+   Number of atoms : 5
+
+   Atomic positions in fractional basis and atomic species
+     1   0.000000e+00   0.000000e+00   0.000000e+00   Ba
+     2   5.000000e-01   5.000000e-01   5.000000e-01   Ti
+     3   0.000000e+00   5.000000e-01   5.000000e-01    O
+     4   5.000000e-01   0.000000e+00   5.000000e-01    O
+     5   5.000000e-01   5.000000e-01   0.000000e+00    O
 
 
-  Time Elapsed: 0.015678 sec.
+  ++++++++++++
+   Super Cell 
+  ++++++++++++
+
+   Lattice Vector (bohr)
+    1.506319e+01   0.000000e+00   0.000000e+00 : a1
+    0.000000e+00   1.506319e+01   0.000000e+00 : a2
+    0.000000e+00   0.000000e+00   1.506319e+01 : a3
+
+   Number of atoms : 40
+
+   Supercell contains     8 primitive cells
+
+
+
+  Time Elapsed: 0.017924 sec.
 
  -------------------------------------------------------------------
 
- SYMMETRY
- ========
+ ==========
+  SYMMETRY 
+ ==========
 
   Space group: Pm-3m (221)
-  Number of symmetry operations = 384
+  Number of symmetry operations of the primitive cell = 48
 
-  Given system is not a primitive cell.
-  There are     8 translation operations.
-  Primitive cell contains 5 atoms
 
-  **Cell-Atom Correspondens Below**
-  CELL |  ATOM
-     1 |     1    9   17   21   23
-       | 
-     2 |     2   10   18   22   24
-       | 
-     3 |     3   11   19   25   27
-       | 
-     4 |     4   12   20   26   28
-       | 
-     5 |     5   13   29   33   35
-       | 
-     6 |     6   14   30   34   36
-       | 
-     7 |     7   15   31   37   39
-       | 
-     8 |     8   16   32   38   40
-       | 
+  ---------------------------------------------------------
+         List of primitive cell translation vectors        
+  ---------------------------------------------------------
 
-  Time Elapsed: 0.03266 sec.
+  ┌────────┬───────────────────┬──────────────────────────┐
+  │ Cell # │   Shift  vector   │        Atom index        │
+  │        │ (Primitive basis) │(Numbers in the supercell)│
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      1 │   (   0  0  0 )   │    1    9   17   21   23 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      2 │   (   0  0  1 )   │    2   10   18   22   24 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      3 │   (   0  1  0 )   │    3   11   19   25   27 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      4 │   (   0  1  1 )   │    4   12   20   26   28 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      5 │   (   1  0  0 )   │    5   13   29   33   35 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      6 │   (   1  0  1 )   │    6   14   30   34   36 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      7 │   (   1  1  0 )   │    7   15   31   37   39 │
+  ├────────┼───────────────────┼──────────────────────────┤
+  │      8 │   (   1  1  1 )   │    8   16   32   38   40 │
+  └────────┴───────────────────┴──────────────────────────┘
+
+  Time Elapsed: 0.02752 sec.
 
  -------------------------------------------------------------------
 
- INTERACTION
- ===========
+ =============
+  INTERACTION 
+ =============
 
 check permutation symmetry of the clusters.
 (if no message is printed out, the permutation symmetry is satisfied.)
@@ -254,12 +252,13 @@ done.
                8   13.0451 (  1) -  40(  O)
 
   For  ANHARM4, interactions related to more than 3 atoms will be neglected.
-  Time Elapsed: 0.081948 sec.
+  Time Elapsed: 0.107517 sec.
 
  -------------------------------------------------------------------
 
- FORCE CONSTANT
- ==============
+ ================
+  FORCE CONSTANT 
+ ================
 
   Symmetry is handled in crystallographic (fractional) coordinates.
 
@@ -267,18 +266,19 @@ done.
   Number of   ANHARM3 FCs : 746
   Number of   ANHARM4 FCs : 1208
 
-  Time Elapsed: 0.57483 sec.
+  Time Elapsed: 0.339762 sec.
 
  -------------------------------------------------------------------
 
- CONSTRAINT
- ==========
+ ============
+  CONSTRAINT 
+ ============
 
   ICONST = 1: Constraints for translational invariance
               will be considered.
 
-  FC2XML is given : Harmonic force constants will be 
-                    fixed to the values given in ../cBTO222_harmonic.xml
+  FC2FIX is given : Harmonic force constants will be 
+                    fixed to the values given in ../../cBTO222_harmonic.xml
 
   Generating constraints for translational invariance ...
    HARMONIC ... done.
@@ -289,7 +289,7 @@ done.
   Number of constraints [T-inv, R-inv (self), R-inv (cross)]:
    HARMONIC      4    0    0
     ANHARM3     97    0    0
-    ANHARM4    666    0    0
+    ANHARM4    704    0    0
 
   Constraints of T-inv and R-inv (self) are merged.
   If there are redundant constraints, they are removed in this process.
@@ -305,16 +305,17 @@ done.
   Number of free  ANHARM3 FCs : 649
   Number of free  ANHARM4 FCs : 542
 
-  Time Elapsed: 1.59187 sec.
+  Time Elapsed: 0.540273 sec.
 
  -------------------------------------------------------------------
 
- OPTIMIZATION
- ============
+ ==============
+  OPTIMIZATION 
+ ==============
 
   LMODEL = elastic-net
 
-  Training data file (DFSET) : ../2_vasp_dfset/DFSET_AIMD_random
+  Training data file (DFSET) : DFSET_AIMD_random
 
   NSTART = 1; NEND = 80
   80 entries will be used for training.
@@ -338,7 +339,7 @@ done.
   Number of non-zero   ANHARM4 FCs : 416
 
 
-  Time Elapsed: 24.3207 sec.
+  Time Elapsed: 3.42999 sec.
 
  -------------------------------------------------------------------
 
@@ -346,6 +347,7 @@ done.
 
  Force constants in a human-readable format : cBTO222.fcs
  Input data for the phonon code ANPHON      : cBTO222.xml
+ Input data for the phonon code ANPHON      : cBTO222.h5
 
- Job finished at Sun Feb 25 16:24:55 2024
+ Job finished at Thu Jun 11 17:20:38 2026
 
