@@ -1195,6 +1195,66 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         std::vector<double> bench_temp;
         std::vector<int> bench_steps;
         std::vector<bool> bench_converged;
+        RelaxationStructureState last_converged_structure_state;
+        last_converged_structure_state.resize(ns);
+        auto has_last_converged_structure = false;
+        auto last_converged_iT = 0U;
+
+        auto structure_state_is_finite = [](const RelaxationStructureState &state) {
+            for (const auto value: state.q0) {
+                if (!std::isfinite(value)) return false;
+            }
+            for (const auto value: state.u0) {
+                if (!std::isfinite(value)) return false;
+            }
+            for (const auto &row: state.u_tensor) {
+                for (const auto value: row) {
+                    if (!std::isfinite(value)) return false;
+                }
+            }
+            return true;
+        };
+
+        auto copy_temperature_result = [&](const unsigned int dst, const unsigned int src) {
+            for (ik = 0; ik < nk; ++ik) {
+                for (is = 0; is < ns; ++is) {
+                    omega2_anharm[dst][ik][is] = omega2_anharm[src][ik][is];
+                    omega2_harm_renorm[dst][ik][is] = omega2_harm_renorm[src][ik][is];
+                }
+            }
+            for (is = 0; is < ns; ++is) {
+                for (js = 0; js < ns; ++js) {
+                    for (ik = 0; ik < nk_interpolate; ++ik) {
+                        dymat_anharm[dst][is][js][ik] = dymat_anharm[src][is][js][ik];
+                        delta_harmonic_dymat_renormalize[dst][is][js][ik] =
+                            delta_harmonic_dymat_renormalize[src][is][js][ik];
+                    }
+                }
+            }
+            relaxation->V0[dst] = relaxation->V0[src];
+        };
+
+        auto set_harmonic_temperature_result = [&](const unsigned int dst) {
+            for (ik = 0; ik < nk; ++ik) {
+                for (is = 0; is < ns; ++is) {
+                    omega2_anharm[dst][ik][is] = omega2_harmonic[ik][is];
+                    omega2_harm_renorm[dst][ik][is] = omega2_harmonic[ik][is];
+                }
+            }
+            dynamical->calc_new_dymat_with_evec(dymat_anharm[dst],
+                                                omega2_anharm[dst],
+                                                evec_harmonic,
+                                                kmesh_coarse,
+                                                kmap_coarse_to_dense);
+            for (is = 0; is < ns; ++is) {
+                for (js = 0; js < ns; ++js) {
+                    for (ik = 0; ik < nk_interpolate; ++ik) {
+                        delta_harmonic_dymat_renormalize[dst][is][js][ik] = 0.0;
+                    }
+                }
+            }
+            relaxation->V0[dst] = v0_ref;
+        };
 
         std::cout << " Start structural optimization.\n";
 
@@ -1251,6 +1311,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             // taken at a different temperature.
             std::fill(structure_state.delta_q0.begin(), structure_state.delta_q0.end(), 0.0);
             structure_state.delta_umn.fill(0.0);
+            const auto initial_structure_state_this_temp = structure_state;
 
 
             std::cout << " Initial atomic displacements [Bohr] : \n";
@@ -1659,7 +1720,38 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             // a converged or diverged break leaves i_str_loop at the 0-based loop index.
             bench_steps.push_back(i_str_loop >= relaxation->max_str_iter ? relaxation->max_str_iter
                                                                          : i_str_loop + 1);
-            bench_converged.push_back(converged_this_temp);
+
+            const auto final_structure_is_finite = structure_state_is_finite(structure_state);
+            const auto accepted_this_temp = converged_this_temp && final_structure_is_finite;
+            bench_converged.push_back(accepted_this_temp);
+
+            if (accepted_this_temp) {
+                last_converged_structure_state = structure_state;
+                last_converged_iT = iT;
+                has_last_converged_structure = true;
+            } else {
+                converged_this_temp = false;
+                converged_prev = false;
+                if (!final_structure_is_finite) str_diverged = 1;
+
+                std::cout << "\n Structural optimization at " << temp << " K did not converge";
+                if (!final_structure_is_finite) std::cout << " and produced non-finite structural parameters";
+                std::cout << ".\n";
+
+                if (has_last_converged_structure) {
+                    structure_state = last_converged_structure_state;
+                    copy_temperature_result(iT, last_converged_iT);
+                    std::cout << " The failed structure and SCP data are discarded; the last converged"
+                              << " temperature point is kept as the restart state for the next temperature.\n";
+                } else {
+                    structure_state = initial_structure_state_this_temp;
+                    set_harmonic_temperature_result(iT);
+                    std::cout << " No converged temperature point is available yet; the initial structure and"
+                              << " harmonic dynamical matrix are kept as the restart state.\n";
+                }
+
+                str_diverged = 0;
+            }
 
             // At-a-glance history of the structural optimization at this temperature.
             Relaxation::print_optimization_history(step_history, temp,
@@ -1702,33 +1794,35 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             }
 
             // record zero-th order term of PES
-            relaxation->V0[iT] = v0_renorm;
+            if (converged_this_temp) relaxation->V0[iT] = v0_renorm;
 
             // print obtained structure
             relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
 
             relaxation->write_resfile_atT(structure_state, temp, fout_q0, fout_u0, fout_u_tensor);
 
-            if (!warmstart_scph) converged_prev = false;
+            if (converged_this_temp) {
+                // get renormalization of harmonic dymat
+                dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm[iT],
+                                                                   evec_harm_renorm_tmp,
+                                                                   delta_v2_renorm,
+                                                                   omega2_harmonic,
+                                                                   evec_harmonic,
+                                                                   kmesh_coarse,
+                                                                   kmesh_dense,
+                                                                   kmap_coarse_to_dense,
+                                                                   mat_transform_sym,
+                                                                   mindist_list,
+                                                                   writes->getVerbosity());
 
-            // get renormalization of harmonic dymat
-            dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm[iT],
-                                                               evec_harm_renorm_tmp,
-                                                               delta_v2_renorm,
-                                                               omega2_harmonic,
-                                                               evec_harmonic,
-                                                               kmesh_coarse,
-                                                               kmesh_dense,
-                                                               kmap_coarse_to_dense,
-                                                               mat_transform_sym,
-                                                               mindist_list,
-                                                               writes->getVerbosity());
+                dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
+                                                    omega2_harm_renorm[iT],
+                                                    evec_harm_renorm_tmp,
+                                                    kmesh_coarse,
+                                                    kmap_coarse_to_dense);
+            }
 
-            dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
-                                                omega2_harm_renorm[iT],
-                                                evec_harm_renorm_tmp,
-                                                kmesh_coarse,
-                                                kmap_coarse_to_dense);
+            converged_prev = warmstart_scph && converged_this_temp;
 
         } // close temperature loop
 
@@ -1787,9 +1881,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(v3_renorm);
     deallocate(v3_with_umn);
     deallocate(v4_ref);
-    //    deallocate(v4_renorm);
-    //    deallocate(v4_with_umn);
-
     deallocate(del_v0_del_umn_renorm);
     deallocate(v1_SCP);
     deallocate(del_v0_del_umn_SCP);
