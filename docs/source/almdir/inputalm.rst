@@ -766,16 +766,16 @@ This field is necessary when ``MODE = optimize``.
 * DEBIAS_OLS-tag = 0 | 1
 
  ===== =============================================================================================
-   0    Save the solution of the elastic net problem to ``PREFIX``.fcs and ``PREFIX``.xml.
-   1    | After the solution of the elastic net optimization problem is obtained, 
-        | only non-zero coefficients are collected, and the ordinary least-squares fitting is 
+   0    Save the solution of the L1-regularized problem to ``PREFIX``.fcs and ``PREFIX``.xml.
+   1    | After the solution of the elastic net or adaptive LASSO optimization problem is obtained,
+        | only non-zero coefficients are collected, and the ordinary least-squares fitting is
         | solved again with the non-zero coefficients before saving the results to ``PREFIX``.fcs and
-        | ``PREFIX``.xml. This might be useful to reduce the bias of the elastic net solution.
+        | ``PREFIX``.xml. This might be useful to reduce the bias of the L1-regularized solution.
  ===== =============================================================================================
 
  :Default: 0
  :Type: Integer
- :Description: Effective when ``LMODEL = enet`` and ``CV = 0``.
+ :Description: Effective when ``LMODEL = enet | adaptive-lasso`` and ``CV = 0``.
 
 
 ````

@@ -1486,8 +1486,15 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
 
     deallocate(has_prod);
 
-    if (optcontrol.debiase_after_l1opt && optcontrol.linear_model == 2) {
-        run_least_squares_with_nonzero_coefs(A, b, factor_std, param_out, verbosity);
+    if (optcontrol.debiase_after_l1opt) {
+        if (optcontrol.linear_model == 2) {
+            run_least_squares_with_nonzero_coefs(A, b, factor_std, param_out, verbosity);
+        } else if (optcontrol.linear_model == 3) {
+            // The columns of A are scaled by the adaptive lasso weights,
+            // so the OLS solution must be scaled back by them as well.
+            const Eigen::VectorXd factor_adalasso = factor_std.cwiseProduct(weight_adalasso);
+            run_least_squares_with_nonzero_coefs(A, b, factor_adalasso, param_out, verbosity);
+        }
     }
 }
 
