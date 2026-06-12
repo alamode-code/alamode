@@ -67,18 +67,46 @@ class TaylorExpansionPotential:
 
         self.fcs_values = {}
         self.gamma_scaled_fcs_values = {}
+        self.coord_indices_taylor = {}
+        self._force_segment_starts = {}
+        self._force_group_atoms = {}
+        self._force_group_coords = {}
         for fckey in self.fcs_dic.keys():
             order = int(fckey[2:])
             if order > self.maxorder:
                 continue
-            self.fcs_values[fckey] = self.fcs_dic[fckey][-1]
+            self.fcs_values[fckey] = self.fcs_dic[fckey][3]
             atom_indices_taylor = self.atom_indices_taylor[fckey]
+            coord_indices_taylor = self.fcs_dic[fckey][1]
             flatten_indices = (
                 self.supercell0.get_global_number_of_atoms() * atom_indices_taylor
-                + self.fcs_dic[fckey][1]
+                + coord_indices_taylor
             )
             gamma_values = self.gamma(flatten_indices)
-            self.gamma_scaled_fcs_values[fckey] = gamma_values * self.fcs_values[fckey]
+            gamma_scaled_fcs = gamma_values * self.fcs_values[fckey]
+
+            # Sort the entries by (first atom, first coordinate) so that the
+            # force contributions sharing the same target component become
+            # contiguous segments. The grouping is independent of the
+            # translation because each translation permutes the atoms.
+            sort_keys = 3 * atom_indices_taylor[:, 0] + coord_indices_taylor[:, 0]
+            sort_order = np.argsort(sort_keys, kind="stable")
+            keys_sorted = sort_keys[sort_order]
+            segment_starts = np.flatnonzero(
+                np.concatenate(([True], keys_sorted[1:] != keys_sorted[:-1]))
+            )
+
+            self.fcs_values[fckey] = self.fcs_values[fckey][sort_order]
+            self.atom_indices_taylor[fckey] = atom_indices_taylor[sort_order]
+            self.coord_indices_taylor[fckey] = coord_indices_taylor[sort_order]
+            self.gamma_scaled_fcs_values[fckey] = gamma_scaled_fcs[sort_order]
+            self._force_segment_starts[fckey] = segment_starts
+            self._force_group_atoms[fckey] = self.atom_indices_taylor[fckey][
+                segment_starts, 0
+            ]
+            self._force_group_coords[fckey] = self.coord_indices_taylor[fckey][
+                segment_starts, 0
+            ]
 
     def compute(self, displacements):
         """
@@ -100,30 +128,47 @@ class TaylorExpansionPotential:
         potential_energy = {}
         atomic_forces = {}
 
+        nsnapshots = displacements.shape[0]
+        natoms = self.supercell0.get_global_number_of_atoms()
+        displacements_flat = displacements.reshape(nsnapshots, natoms * 3)
+
         for fckey in self.gamma_scaled_fcs_values.keys():
             order = int(fckey[2:])
-            forces_taylor = np.zeros_like(displacements)
-            energy_taylor = np.zeros(displacements.shape[0], dtype=float)
+            forces_flat = np.zeros((nsnapshots, natoms * 3), dtype=float)
+            energy_taylor = np.zeros(nsnapshots, dtype=float)
 
             atom_indices_taylor = self.atom_indices_taylor[fckey]
-            coord_indices_taylor = self.fcs_dic[fckey][1]
+            coord_indices_taylor = self.coord_indices_taylor[fckey]
             gamma_scaled_fcs = self.gamma_scaled_fcs_values[fckey]
+            segment_starts = self._force_segment_starts[fckey]
+            group_atoms = self._force_group_atoms[fckey]
+            group_coords = self._force_group_coords[fckey]
 
             for itran in range(self.map_translation.shape[1]):
                 atom_indices_mapped = self.map_translation[atom_indices_taylor, itran]
-                u_map = displacements[:, atom_indices_mapped, coord_indices_taylor]
-                u_product = u_map[:, :, 1:].prod(axis=2)
-                ff_tmp = u_product * gamma_scaled_fcs
+                flat_indices = 3 * atom_indices_mapped + coord_indices_taylor
 
-                for i in range(ff_tmp.shape[1]):
-                    forces_taylor[
-                        :, atom_indices_mapped[i, 0], coord_indices_taylor[i, 0]
-                    ] += ff_tmp[:, i]
-                    energy_taylor[:] += ff_tmp[:, i] * u_map[:, i, 0]
+                ff_tmp = displacements_flat[:, flat_indices[:, 1]] * gamma_scaled_fcs
+                for j in range(2, order):
+                    ff_tmp *= displacements_flat[:, flat_indices[:, j]]
+
+                energy_taylor += np.einsum(
+                    "ij,ij->i", ff_tmp, displacements_flat[:, flat_indices[:, 0]]
+                )
+
+                # The entries are pre-sorted by (first atom, first coordinate),
+                # so the contributions to each force component form contiguous
+                # segments and the scatter-add stays buffered.
+                target_indices = (
+                    3 * self.map_translation[group_atoms, itran] + group_coords
+                )
+                forces_flat[:, target_indices] += np.add.reduceat(
+                    ff_tmp, segment_starts, axis=1
+                )
 
             energy_taylor[:] *= 1.0 / float(order)
             potential_energy[fckey] = energy_taylor
-            atomic_forces[fckey] = -forces_taylor
+            atomic_forces[fckey] = -forces_flat.reshape(nsnapshots, natoms, 3)
 
         energy_taylor = np.zeros(displacements.shape[0], dtype=float)
         for fckey in potential_energy.keys():
@@ -227,20 +272,51 @@ class TaylorExpansionPotential:
         """
         Sets the indices for the Taylor expansion calculation based on the force constants and the structure.
         """
-        shift_fcs_unique = np.unique(self.fcs_dic["fc2"][2], axis=0)
-        atom_indices_super = []
+        shift_fcs_unique = np.unique(self.fcs_dic["fc2"][2], axis=0).reshape(-1, 3)
         transmat_inv = np.linalg.inv(self.transformation_matrix)
+        natom_prim = self.primitive_cell[2].shape[0]
+        xf_super = self.supercell0.get_scaled_positions()
+
         # First generate the mapping table from (iat_prim, shifts) to (iat_super)
-        for atom in range(self.primitive_cell[2].shape[0]):
-            dic_tmp = {}
-            for shift_fcs in shift_fcs_unique:
-                xf_prim_shifted = self.primitive_cell[1][atom] + shift_fcs[0]
-                xf_super_shifted = np.mod(np.dot(xf_prim_shifted, transmat_inv), 1.0)
-                distances = np.linalg.norm(
-                    self.supercell0.get_scaled_positions() - xf_super_shifted, axis=1
+        map_to_super = np.zeros((natom_prim, len(shift_fcs_unique)), dtype=int)
+        for atom in range(natom_prim):
+            xf_prim_shifted = self.primitive_cell[1][atom] + shift_fcs_unique
+            xf_super_shifted = np.mod(np.dot(xf_prim_shifted, transmat_inv), 1.0)
+            distances = np.linalg.norm(
+                xf_super[np.newaxis, :, :] - xf_super_shifted[:, np.newaxis, :], axis=2
+            )
+            map_to_super[atom] = np.argmin(distances, axis=1)
+
+        # Encode each integer shift triplet into a single integer so that
+        # entries can be located in shift_fcs_unique with a vectorized search.
+        shift_min = shift_fcs_unique.min()
+        shift_base = shift_fcs_unique.max() - shift_min + 1
+
+        def encode_shifts(shifts):
+            shifts_offset = shifts - shift_min
+            return (
+                shifts_offset[..., 0] * shift_base + shifts_offset[..., 1]
+            ) * shift_base + shifts_offset[..., 2]
+
+        codes_unique = encode_shifts(shift_fcs_unique)
+        sort_order = np.argsort(codes_unique)
+        codes_sorted = codes_unique[sort_order]
+        map_to_super_sorted = map_to_super[:, sort_order]
+
+        def lookup_shift_ids(shifts):
+            if shifts.min() < shift_min or shifts.max() >= shift_min + shift_base:
+                raise RuntimeError(
+                    "A shift vector is outside the set found in fc2 entries."
                 )
-                dic_tmp[tuple(shift_fcs[0])] = np.argmin(distances)
-            atom_indices_super.append(dic_tmp)
+            codes = encode_shifts(shifts)
+            shift_ids = np.searchsorted(codes_sorted, codes)
+            if np.any(codes_sorted[np.minimum(shift_ids, len(codes_sorted) - 1)] != codes):
+                raise RuntimeError(
+                    "A shift vector is outside the set found in fc2 entries."
+                )
+            return shift_ids
+
+        zero_shift_id = lookup_shift_ids(np.zeros((1, 3), dtype=int))[0]
 
         # Then, for each force constant entry, we map the indices (iat_prim, shifts) to (iat_super)
         self.atom_indices_taylor = {}
@@ -248,17 +324,18 @@ class TaylorExpansionPotential:
             order = int(fckey[2:])
             if order > self.maxorder:
                 continue
-            atom_indices_tmp = np.zeros((len(self.fcs_dic[fckey][0]), order), dtype=int)
-            for i, (atom_indices, shift_fcs) in enumerate(
-                zip(self.fcs_dic[fckey][0], self.fcs_dic[fckey][2])
-            ):
-                atom_indices_tmp[i, 0] = atom_indices_super[atom_indices[0]][
-                    tuple([0, 0, 0])
+            atom_indices = self.fcs_dic[fckey][0]
+            shift_fcs = np.asarray(self.fcs_dic[fckey][2]).reshape(-1, order - 1, 3)
+
+            atom_indices_tmp = np.zeros((len(atom_indices), order), dtype=int)
+            atom_indices_tmp[:, 0] = map_to_super_sorted[
+                atom_indices[:, 0], zero_shift_id
+            ]
+            if order > 1:
+                shift_ids = lookup_shift_ids(shift_fcs)
+                atom_indices_tmp[:, 1:] = map_to_super_sorted[
+                    atom_indices[:, 1:], shift_ids
                 ]
-                for j in range(1, order):
-                    atom_indices_tmp[i, j] = atom_indices_super[atom_indices[j]][
-                        tuple(shift_fcs[j - 1])
-                    ]
 
             self.atom_indices_taylor[fckey] = atom_indices_tmp
 
@@ -303,8 +380,9 @@ class TaylorExpansionPotential:
 
             nsame_to_front += (flatten_indicies[:, i] == ind_front).astype(int)
 
+        factorials = np.array([factorial(k) for k in range(n + 1)], dtype=int)
         denom = np.ones(flatten_indicies.shape[0], dtype=int)
         for i in range(n):
-            denom *= np.vectorize(factorial)(nsame[:, i])
+            denom *= factorials[nsame[:, i]]
 
         return nsame_to_front / denom

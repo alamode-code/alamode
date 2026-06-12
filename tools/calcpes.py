@@ -52,9 +52,9 @@ def print_energies(energies, unit="rydberg"):
 
     for i, key in enumerate(key_list):
         if i == 0:
-            print("{:>14s}".format(key), end="")
+            print("{:>16s}".format(key), end="")
         else:
-            print("{:>15s}".format(key), end="")
+            print("{:>17s}".format(key), end="")
     print("")
 
     energies_array = np.zeros((energies["total"].shape[0], len(key_list)), dtype=float)
@@ -64,7 +64,7 @@ def print_energies(energies, unit="rydberg"):
 
     for i in range(energies["total"].shape[0]):
         for j in range(len(key_list)):
-            print("{:15.8e}".format(energies_array[i, j] * factor), end="")
+            print("{:17.8e}".format(energies_array[i, j] * factor), end="")
         print("")
 
 
