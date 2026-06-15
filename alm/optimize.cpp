@@ -3235,28 +3235,50 @@ auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, co
         evec_out[c] = e_train[c] + e_rhs;  // A_E_compact . theta_c fits (E_ref + e_rhs)
     }
 
-    // Energy-block centering (Frisch-Waugh): subtract column means and the target mean over the
-    // n_ene energy rows. This makes the fit invariant to any constant in E_ref without an intercept.
-    const auto inv_me = 1.0 / static_cast<double>(n_ene);
+    // Per-configuration weights W_c = exp(-(E_c - E_min)/escale) (escale in eV), emphasizing
+    // low-energy (e.g. well-minimum) configs; escale <= 0 gives uniform weights (W_c = 1).
+    const double RyToeV = 13.605693122994;
+    std::vector<double> wts(n_ene, 1.0);
+    if (optcontrol.efit_escale > 0.0) {
+        double emin = e_train[0];
+        for (size_t c = 0; c < n_ene; ++c) emin = std::min(emin, e_train[c]);
+        for (size_t c = 0; c < n_ene; ++c)
+            wts[c] = std::exp(-(e_train[c] - emin) * RyToeV / optcontrol.efit_escale);
+    }
+    double wsum = 0.0;
+    for (size_t c = 0; c < n_ene; ++c) wsum += wts[c];
+    const double inv_wsum = 1.0 / wsum;
+
+    // Weighted Frisch-Waugh centering: subtract the WEIGHTED column/target means. This keeps the
+    // fit invariant to any constant in E_ref (no intercept) even for non-uniform weights.
     for (size_t q = 0; q < ncols_compact; ++q) {
         double colmean = 0.0;
-        for (size_t c = 0; c < n_ene; ++c) colmean += amat_energy_out[c * ncols_compact + q];
-        colmean *= inv_me;
+        for (size_t c = 0; c < n_ene; ++c) colmean += wts[c] * amat_energy_out[c * ncols_compact + q];
+        colmean *= inv_wsum;
         for (size_t c = 0; c < n_ene; ++c) amat_energy_out[c * ncols_compact + q] -= colmean;
     }
     double emean = 0.0;
-    for (size_t c = 0; c < n_ene; ++c) emean += evec_out[c];
-    emean *= inv_me;
+    for (size_t c = 0; c < n_ene; ++c) emean += wts[c] * evec_out[c];
+    emean *= inv_wsum;
     for (size_t c = 0; c < n_ene; ++c) evec_out[c] -= emean;
 
-    // Scale by the energy weight w.
+    // Scale row c by w*sqrt(W_c) so the loss term is w^2 * sum_c W_c (A_E[c]·θ − target[c])^2.
     const double w = optcontrol.efit_weight;
-    for (auto &v: amat_energy_out) v *= w;
-    for (auto &v: evec_out) v *= w;
+    for (size_t c = 0; c < n_ene; ++c) {
+        const double s = w * std::sqrt(wts[c]);
+        for (size_t q = 0; q < ncols_compact; ++q) amat_energy_out[c * ncols_compact + q] *= s;
+        evec_out[c] *= s;
+    }
 
     if (verbosity > 0) {
-        std::cout << "  Energy term: " << n_ene << " reference energies, weight w = " << w
-                  << " (centered, constraint-compacted; ncols_compact = " << ncols_compact << ")\n";
+        std::cout << "  Energy term: " << n_ene << " reference energies, weight w = " << w;
+        if (optcontrol.efit_escale > 0.0) {
+            double wsq = 0.0;
+            for (const auto v: wts) wsq += v * v;
+            std::cout << ", escale = " << optcontrol.efit_escale
+                      << " eV (effective N_configs = " << wsum * wsum / wsq << ")";
+        }
+        std::cout << " (weighted-centered, compacted; ncols_compact = " << ncols_compact << ")\n";
     }
 }
 

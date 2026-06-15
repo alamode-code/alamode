@@ -11,6 +11,7 @@
 #include "input_parser.h"
 #include <Eigen/Core>
 #include <algorithm>
+#include <cmath>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iomanip>
@@ -213,6 +214,7 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
             std::istringstream iss(line.substr(colon + 1));
             double eval;
             if (!(iss >> eval)) exit("parse_energies", "Could not parse the E_pot value from a DFSET header.");
+            if (!std::isfinite(eval)) exit("parse_energies", "Non-finite E_pot value in a DFSET header.");
             pending_energy = eval * factor;
             have_header = true;
             continue;
@@ -1158,6 +1160,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
                                               "SOLUTION_PATH",
                                               "DEBIAS_OLS",
                                               "EFIT_WEIGHT",
+                                              "EFIT_ESCALE",
                                               "PERIODIC_IMAGE_CONV",
                                               "STOP_CRITERION",
                                               "USE_CHOLESKY",
@@ -1256,6 +1259,12 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         optcontrol.efit_weight = boost::lexical_cast<double>(optimize_var_dict["EFIT_WEIGHT"]);
         if (optcontrol.efit_weight < 0.0) {
             exit("parse_optimize_vars", "EFIT_WEIGHT must be non-negative.");
+        }
+    }
+    if (!optimize_var_dict["EFIT_ESCALE"].empty()) {
+        optcontrol.efit_escale = boost::lexical_cast<double>(optimize_var_dict["EFIT_ESCALE"]);
+        if (!std::isfinite(optcontrol.efit_escale)) {
+            exit("parse_optimize_vars", "EFIT_ESCALE must be a finite number.");
         }
     }
     if (!optimize_var_dict["L1_RATIO"].empty()) {
