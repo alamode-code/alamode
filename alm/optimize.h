@@ -277,6 +277,24 @@ private:
                           const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
                           double **&amat_orig) -> void;
 
+    // Phase 1 (energy term): build a single energy row for one displacement image.
+    // energy_row[iparam] += gamma_energy_precomputed * prod_{j=0..order+1} u_sub[elems[j]]
+    // (product over ALL order+2 indices; cf. fill_amat which drops elems[0] for the force).
+    static auto fill_amat_energy(const int maxorder, const size_t ncols, const std::vector<double> &u_sub,
+                                 const std::vector<std::vector<double>> &gamma_energy_precomputed,
+                                 const std::unique_ptr<Fcs> &fcs, std::vector<double> &energy_row) -> void;
+
+    // Per-entry energy multiplicity factor = gamma(n,arr)/n (NOT 1/denom; the two coincide only
+    // for diagonal clusters). Matches tools/taylor.py (E_order *= 1/order). Caller multiplies by
+    // fc_table.sign, exactly as for the force gamma table.
+    [[nodiscard]] auto gamma_energy(const int n, const int *arr) const -> double;
+
+    // Self-contained verification (env ALM_ENERGY_SELFTEST): checks the energy-row builder
+    // against the trusted force builder via the per-order Euler identity
+    // E_order == -(1/n) * sum_a u_a F_a(theta).  Returns true on PASS. Does not touch the fit path.
+    auto run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                             const int maxorder, const int verbosity) const -> bool;
+
     static auto project_constraints(const int maxorder, const size_t natmin, const size_t irow,
                                     const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
                                     double **amat_orig, double **&amat_mod, std::vector<double> &bvec_mod) -> void;

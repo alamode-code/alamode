@@ -10,7 +10,9 @@
 
 #include "optimize.h"
 #include <boost/algorithm/string.hpp>
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -67,6 +69,17 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
                              const int output_maxorder, std::unique_ptr<Timer> &timer) -> int
 {
     timer->start_clock("optimize");
+
+    // Phase-1 energy-term self-test: validate the energy-row builder against the force builder
+    // (Euler identity) and exit, without running any fit. Zero-impact on the normal path.
+    if (std::getenv("ALM_ENERGY_SELFTEST")) {
+        const bool selftest_ok = run_energy_selftest(symmetry, fcs, maxorder, verbosity);
+        // Diagnostic mode: terminate before FC writing, which would use the (uncomputed) params.
+        // Propagate PASS/FAIL via the exit code so CI/scripts can detect a regression.
+        std::cout << std::flush;
+        timer->stop_clock("optimize");
+        std::exit(selftest_ok ? EXIT_SUCCESS : EXIT_FAILURE);
+    }
 
     const auto ndata_used =
         filedata_train.nend - filedata_train.nstart + 1 - filedata_train.skip_e + filedata_train.skip_s;
@@ -2826,6 +2839,177 @@ auto Optimize::gamma(const int n, const int *arr) const -> double
     }
 
     return static_cast<double>(nsame_to_front) / static_cast<double>(denom);
+}
+
+
+auto Optimize::gamma_energy(const int n, const int *arr) const -> double
+{
+    // Per-entry energy multiplicity factor = gamma(n,arr) / n, matching the ALAMODE energy
+    // convention (cf. tools/taylor.py: E_order = (1/order) * sum gamma * Phi * prod_u).
+    // The fc_table enumerates all index orderings (so the force builder fill_amat, which writes
+    // only the lead atom, is complete); the energy therefore needs the extra 1/n to avoid
+    // overcounting. With this factor the per-order Euler identity
+    //   E_order = -(1/n) * sum_a u_a F_a   holds exactly against the force matrix.
+    return gamma(n, arr) / static_cast<double>(n);
+}
+
+
+auto Optimize::fill_amat_energy(const int maxorder, const size_t ncols, const std::vector<double> &u_sub,
+                                const std::vector<std::vector<double>> &gamma_energy_precomputed,
+                                const std::unique_ptr<Fcs> &fcs, std::vector<double> &energy_row) -> void
+{
+    // Single energy row for one displacement image, in the full (non-compact) ncols basis.
+    // iparam advances once per symmetry-irreducible group (cf. fill_amat).
+    for (size_t j = 0; j < ncols; ++j) energy_row[j] = 0.0;
+
+    size_t iparam = 0;
+
+    for (int order = 0; order < maxorder; ++order) {
+        size_t mm = 0;
+        for (const auto &iter: fcs->get_nequiv()[order]) {
+            for (size_t i = 0; i < iter; ++i) {
+                double prod = 1.0;
+                // product over ALL order+2 indices (energy), incl. elems[0]
+                for (int j = 0; j < order + 2; ++j) {
+                    prod *= u_sub[fcs->get_fc_table()[order][mm].elems[j]];
+                }
+                energy_row[iparam] += gamma_energy_precomputed[order][mm] * prod;
+                ++mm;
+            }
+            ++iparam;
+        }
+    }
+}
+
+
+auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                   const int maxorder, const int verbosity) const -> bool
+{
+    // Phase-1 verification: the energy-row builder must satisfy the per-order Euler identity
+    //   A_E[c][p] == -(1/n_p) * sum_{supercell atoms a} u_a * A_F[a][p],   n_p = order(p) + 2,
+    // where A_F is the existing (trusted) force matrix. The supercell sum is realized by summing
+    // the natmin primitive force rows over the ntran translation images (cf. fill_bvec mapping).
+    std::cout << "\n  [ALM_ENERGY_SELFTEST] Verifying energy-row builder vs force builder (Euler's theorem)\n";
+
+    const auto natmin = symmetry->get_nat_trueprim();
+    const auto natmin3 = 3 * natmin;
+    const auto ntran = symmetry->get_ntran();
+    const auto ndata_fit = u_train.size();
+
+    if (ndata_fit == 0) {
+        std::cout << "  No training data loaded; skipping self-test.\n\n";
+        return false;
+    }
+
+    size_t ncols = 0;
+    for (auto i = 0; i < maxorder; ++i) ncols += fcs->get_nequiv()[i].size();
+
+    // order index for each parameter column (iparam -> order)
+    std::vector<int> order_of_param(ncols);
+    {
+        size_t ip = 0;
+        for (int o = 0; o < maxorder; ++o)
+            for (size_t g = 0; g < fcs->get_nequiv()[o].size(); ++g) order_of_param[ip++] = o;
+    }
+
+    // translation-replicated displacements (same preprocessing as the force matrix builder)
+    std::vector<std::vector<double>> u_multi;
+    data_multiplier(u_train, u_multi, symmetry);
+    if (fcs->get_forceconstant_basis() == "Lattice") {
+        apply_basis_converter(u_multi, fcs->get_basis_conversion_matrix());
+    }
+
+    // gamma tables (force and energy), including the FC-table sign factor
+    std::vector<int> ind_tmp(maxorder + 1);
+    std::vector<std::vector<double>> gamma_precomputed(maxorder), gamma_energy_precomputed(maxorder);
+    for (int order = 0; order < maxorder; ++order) {
+        gamma_precomputed[order].resize(fcs->get_fc_table()[order].size(), 0.0);
+        gamma_energy_precomputed[order].resize(fcs->get_fc_table()[order].size(), 0.0);
+        size_t ii = 0;
+        for (const auto &iter: fcs->get_nequiv()[order]) {
+            for (size_t i = 0; i < iter; ++i) {
+                for (int j = 0; j < order + 2; ++j) ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
+                const double sign = fcs->get_fc_table()[order][ii].sign;
+                gamma_precomputed[order][ii] = gamma(order + 2, ind_tmp.data()) * sign;
+                gamma_energy_precomputed[order][ii] = gamma_energy(order + 2, ind_tmp.data()) * sign;
+                ++ii;
+            }
+        }
+    }
+
+    // Arbitrary, varied, deterministic parameter vector. We contract A_E and A_F with theta:
+    // the assembled force A_F * theta is the COMPLETE physical force on each atom (it sums every
+    // FC entry leading on that atom), so the per-order Euler identity
+    //   E_order(theta) == -(1/n) * sum_a u_a * F_a^order(theta)
+    // holds. (A single A_F column carries only the lead atom's share, so a column-wise check
+    // would spuriously fail by (n-1)/n; the theta contraction is the correct test.)
+    std::vector<double> theta(ncols);
+    for (size_t p = 0; p < ncols; ++p) theta[p] = 1.5 + std::sin(0.3 * static_cast<double>(p) + 1.0);
+
+    double **amat_orig;
+    allocate(amat_orig, natmin3, ncols);
+    std::vector<double> energy_row(ncols);
+
+    double max_abs = 0.0, max_rel = 0.0, max_scale = 0.0;
+
+    for (size_t c = 0; c < ndata_fit; ++c) {
+        std::vector<double> e_order(maxorder, 0.0);   // energy per order, contracted with theta
+        std::vector<double> fu_order(maxorder, 0.0);  // sum_a u_a F_a per order, contracted with theta
+
+        for (size_t itran = 0; itran < ntran; ++itran) {
+            const size_t irow = c * ntran + itran;
+
+            // energy contribution of this image, accumulated per order
+            fill_amat_energy(maxorder, ncols, u_multi[irow], gamma_energy_precomputed, fcs, energy_row);
+            for (size_t p = 0; p < ncols; ++p) e_order[order_of_param[p]] += energy_row[p] * theta[p];
+
+            // complete force F_a(theta) for this image, contracted with u_a, per order
+            fill_amat(maxorder, natmin, ncols, u_multi[irow], gamma_precomputed, symmetry, fcs, amat_orig);
+            for (size_t i = 0; i < natmin; ++i) {
+                const auto sat = symmetry->get_map_trueprim_to_super()[i][0];
+                for (int cc = 0; cc < 3; ++cc) {
+                    const size_t k = 3 * i + cc;
+                    const double uk = u_multi[irow][3 * sat + cc];
+                    for (size_t p = 0; p < ncols; ++p) {
+                        fu_order[order_of_param[p]] += uk * amat_orig[k][p] * theta[p];
+                    }
+                }
+            }
+        }
+
+        for (int o = 0; o < maxorder; ++o) {
+            const double euler = -(1.0 / static_cast<double>(o + 2)) * fu_order[o];
+            const double d = std::abs(e_order[o] - euler);
+            max_abs = std::max(max_abs, d);
+            const double scale = std::max(std::abs(e_order[o]), std::abs(euler));
+            if (scale > 1.0e-14) max_rel = std::max(max_rel, d / scale);
+            max_scale = std::max(max_scale, scale);
+            if (c == 0 && verbosity > 0) {
+                std::cout << std::scientific << std::setprecision(6)
+                          << "    [c=0] order " << o << " (n=" << o + 2 << "): E = " << e_order[o]
+                          << ", -1/n*sum u.F = " << euler
+                          << ", E/euler = " << (std::abs(euler) > 1e-30 ? e_order[o] / euler : 0.0) << "\n"
+                          << std::defaultfloat;
+            }
+        }
+    }
+
+    deallocate(amat_orig);
+
+    std::cout << "  configs = " << ndata_fit << ", ntran = " << ntran << ", ncols = " << ncols
+              << ", maxorder = " << maxorder << "\n";
+    std::cout << std::scientific << std::setprecision(6);
+    std::cout << "  max |E_order - Euler(A_F.theta)| = " << max_abs << "\n";
+    std::cout << "  max relative deviation           = " << max_rel << "\n";
+    std::cout << "  max |energy scale|               = " << max_scale << "\n";
+    const bool passed = (max_rel < 1.0e-10);
+    if (passed) {
+        std::cout << "  RESULT: PASS (per-order Euler identity holds to machine precision)\n\n";
+    } else {
+        std::cout << "  RESULT: FAIL (deviation exceeds tolerance)\n\n";
+    }
+    std::cout << std::defaultfloat;
+    return passed;
 }
 
 
