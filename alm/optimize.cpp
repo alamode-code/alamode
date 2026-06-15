@@ -73,7 +73,7 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
     // Phase-1 energy-term self-test: validate the energy-row builder against the force builder
     // (Euler identity) and exit, without running any fit. Zero-impact on the normal path.
     if (std::getenv("ALM_ENERGY_SELFTEST")) {
-        const bool selftest_ok = run_energy_selftest(symmetry, fcs, maxorder, verbosity);
+        const bool selftest_ok = run_energy_selftest(symmetry, fcs, constraint, maxorder, verbosity);
         // Diagnostic mode: terminate before FC writing, which would use the (uncomputed) params.
         // Propagate PASS/FAIL via the exit code so CI/scripts can detect a regression.
         std::cout << std::flush;
@@ -2711,6 +2711,56 @@ auto Optimize::project_constraints(const int maxorder, const size_t natmin, cons
     }
 }
 
+auto Optimize::project_energy_row(const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                                  const std::unique_ptr<Constraint> &constraint,
+                                  const std::vector<double> &e_full, std::vector<double> &e_compact,
+                                  double &e_rhs) -> void
+{
+    // Single-row analogue of project_constraints for the energy row. e_full is indexed by the full
+    // symmetry-irreducible parameter index (one per nequiv group); e_compact by the constraint-
+    // compacted free parameter index. The FC2FIX-fixed-coefficient energy is moved onto e_rhs,
+    // exactly mirroring the const_fix RHS handling for forces (project_constraints, optimize.cpp).
+    std::fill(e_compact.begin(), e_compact.end(), 0.0);
+    e_rhs = 0.0;
+
+    size_t ishift = 0;
+    size_t iparam = 0;
+
+    for (int order = 0; order < maxorder; ++order) {
+
+        for (const auto fix: constraint->get_const_fix(order)) {
+            e_rhs -= fix.val_to_fix * e_full[ishift + fix.p_index_target];
+        }
+
+        for (const auto &it: constraint->get_index_bimap(order)) {
+            const auto inew = it.left + iparam;
+            const auto iold = it.right + ishift;
+            e_compact[inew] = e_full[iold];
+        }
+
+        const auto &bimap_right = constraint->get_index_bimap(order).right;
+        for (size_t i = 0; i < constraint->get_const_relate(order).size(); ++i) {
+            const auto iold = constraint->get_const_relate(order)[i].p_index_target + ishift;
+            for (size_t j = 0; j < constraint->get_const_relate(order)[i].alpha.size(); ++j) {
+                // Guarded lookup (the force projector uses an unchecked .at() here): a const_relate
+                // origin index that is not a free parameter would otherwise throw std::out_of_range.
+                const auto found = bimap_right.find(constraint->get_const_relate(order)[i].p_index_orig[j]);
+                if (found == bimap_right.end()) {
+                    exit("project_energy_row",
+                         "const_relate references a parameter index absent from index_bimap "
+                         "(unsupported constraint chain).");
+                }
+                const auto inew = found->second + iparam;
+                e_compact[inew] -= e_full[iold] * constraint->get_const_relate(order)[i].alpha[j];
+            }
+        }
+
+        ishift += fcs->get_nequiv()[order].size();
+        iparam += constraint->get_index_bimap(order).size();
+    }
+}
+
+
 auto Optimize::recover_original_forceconstants(const int maxorder, const std::vector<double> &param_in,
                                                std::vector<double> &param_out, const std::vector<size_t> *nequiv,
                                                const std::unique_ptr<Constraint> &constraint) const -> void
@@ -2883,7 +2933,8 @@ auto Optimize::fill_amat_energy(const int maxorder, const size_t ncols, const st
 
 
 auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
-                                   const int maxorder, const int verbosity) const -> bool
+                                   const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                                   const int verbosity) const -> bool
 {
     // Phase-1 verification: the energy-row builder must satisfy the per-order Euler identity
     //   A_E[c][p] == -(1/n_p) * sum_{supercell atoms a} u_a * A_F[a][p],   n_p = order(p) + 2,
@@ -2946,6 +2997,20 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     std::vector<double> theta(ncols);
     for (size_t p = 0; p < ncols; ++p) theta[p] = 1.5 + std::sin(0.3 * static_cast<double>(p) + 1.0);
 
+    // Phase 2: compact-projection validation of project_energy_row. We verify, per config,
+    //   A_E_full . theta_full == A_E_compact . theta_c - e_rhs,   theta_full = recover(theta_c),
+    // which ties the projected energy row to the Phase-1-validated full builder through ALM's own
+    // parameter-recovery map and exercises the FC2FIX fixed-coefficient energy subtraction (e_rhs).
+    const bool algebraic = constraint->get_constraint_algebraic();
+    size_t ncols_c = 0;
+    for (int o = 0; o < maxorder; ++o) ncols_c += constraint->get_index_bimap(o).size();
+    std::vector<double> theta_c(ncols_c), theta_full, e_compact_c(ncols_c);
+    for (size_t q = 0; q < ncols_c; ++q) theta_c[q] = 1.3 + std::sin(0.4 * static_cast<double>(q) + 0.5);
+    if (algebraic) {
+        recover_original_forceconstants(maxorder, theta_c, theta_full, fcs->get_nequiv(), constraint);
+    }
+    double max_abs_proj = 0.0, max_rel_proj = 0.0, max_scale_proj = 0.0;
+
     double **amat_orig;
     allocate(amat_orig, natmin3, ncols);
     std::vector<double> energy_row(ncols);
@@ -2955,13 +3020,17 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     for (size_t c = 0; c < ndata_fit; ++c) {
         std::vector<double> e_order(maxorder, 0.0);   // energy per order, contracted with theta
         std::vector<double> fu_order(maxorder, 0.0);  // sum_a u_a F_a per order, contracted with theta
+        std::vector<double> e_full_c(ncols, 0.0);     // full-basis energy row for this config (sum over images)
 
         for (size_t itran = 0; itran < ntran; ++itran) {
             const size_t irow = c * ntran + itran;
 
-            // energy contribution of this image, accumulated per order
+            // energy contribution of this image, accumulated per order and into the full row
             fill_amat_energy(maxorder, ncols, u_multi[irow], gamma_energy_precomputed, fcs, energy_row);
-            for (size_t p = 0; p < ncols; ++p) e_order[order_of_param[p]] += energy_row[p] * theta[p];
+            for (size_t p = 0; p < ncols; ++p) {
+                e_order[order_of_param[p]] += energy_row[p] * theta[p];
+                e_full_c[p] += energy_row[p];
+            }
 
             // complete force F_a(theta) for this image, contracted with u_a, per order
             fill_amat(maxorder, natmin, ncols, u_multi[irow], gamma_precomputed, symmetry, fcs, amat_orig);
@@ -2992,22 +3061,44 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
                           << std::defaultfloat;
             }
         }
+
+        // compact-projection check: A_E_full . theta_full == A_E_compact . theta_c - e_rhs
+        if (algebraic) {
+            double e_rhs = 0.0;
+            project_energy_row(maxorder, fcs, constraint, e_full_c, e_compact_c, e_rhs);
+            double lhs = 0.0;
+            for (size_t p = 0; p < ncols; ++p) lhs += e_full_c[p] * theta_full[p];
+            double rhs = -e_rhs;
+            for (size_t q = 0; q < ncols_c; ++q) rhs += e_compact_c[q] * theta_c[q];
+            const double d = std::abs(lhs - rhs);
+            max_abs_proj = std::max(max_abs_proj, d);
+            const double sc = std::max(std::abs(lhs), std::abs(rhs));
+            max_scale_proj = std::max(max_scale_proj, sc);
+            if (sc > 1.0e-14) max_rel_proj = std::max(max_rel_proj, d / sc);
+        }
     }
 
     deallocate(amat_orig);
 
     std::cout << "  configs = " << ndata_fit << ", ntran = " << ntran << ", ncols = " << ncols
-              << ", maxorder = " << maxorder << "\n";
+              << ", ncols_compact = " << ncols_c << ", maxorder = " << maxorder << "\n";
     std::cout << std::scientific << std::setprecision(6);
-    std::cout << "  max |E_order - Euler(A_F.theta)| = " << max_abs << "\n";
-    std::cout << "  max relative deviation           = " << max_rel << "\n";
-    std::cout << "  max |energy scale|               = " << max_scale << "\n";
-    const bool passed = (max_rel < 1.0e-10);
-    if (passed) {
-        std::cout << "  RESULT: PASS (per-order Euler identity holds to machine precision)\n\n";
+    std::cout << "  [full-basis Euler]   max |E_order - Euler(A_F.theta)| = " << max_abs
+              << ", max rel = " << max_rel << "\n";
+    // Require non-trivial magnitude so an all-zero/degenerate case fails rather than passing vacuously.
+    const bool euler_ok = (max_rel < 1.0e-10) && (max_scale > 1.0e-8);
+    bool proj_ok = true;
+    if (algebraic) {
+        std::cout << "  [compact projection] max |A_E_full.th_f - (A_E_comp.th_c - e_rhs)| = " << max_abs_proj
+                  << ", max rel = " << max_rel_proj << ", scale = " << max_scale_proj << "\n";
+        proj_ok = (max_rel_proj < 1.0e-10) && (max_scale_proj > 1.0e-8);
     } else {
-        std::cout << "  RESULT: FAIL (deviation exceeds tolerance)\n\n";
+        std::cout << "  [compact projection] skipped (no algebraic constraint; compact basis == full)\n";
     }
+    const bool passed = euler_ok && proj_ok;
+    std::cout << "  RESULT: " << (passed ? "PASS" : "FAIL")
+              << " (energy row validated vs force builder"
+              << (algebraic ? " and constraint projection" : "") << ")\n\n";
     std::cout << std::defaultfloat;
     return passed;
 }

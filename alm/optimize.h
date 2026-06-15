@@ -293,11 +293,20 @@ private:
     // against the trusted force builder via the per-order Euler identity
     // E_order == -(1/n) * sum_a u_a F_a(theta).  Returns true on PASS. Does not touch the fit path.
     auto run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
-                             const int maxorder, const int verbosity) const -> bool;
+                             const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                             const int verbosity) const -> bool;
 
     static auto project_constraints(const int maxorder, const size_t natmin, const size_t irow,
                                     const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
                                     double **amat_orig, double **&amat_mod, std::vector<double> &bvec_mod) -> void;
+
+    // Phase 2: project one full-basis energy row (e_full, length ncols) into the constraint-compacted
+    // basis (e_compact, length ncols_compact), moving the FC2FIX-fixed-coefficient energy onto the
+    // RHS scalar e_rhs. Single-row analogue of project_constraints' const_fix/index_bimap/const_relate.
+    static auto project_energy_row(const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                                   const std::unique_ptr<Constraint> &constraint,
+                                   const std::vector<double> &e_full, std::vector<double> &e_compact,
+                                   double &e_rhs) -> void;
 
     auto run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec, std::vector<double> &param_out,
                                  const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
