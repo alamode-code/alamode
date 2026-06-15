@@ -549,6 +549,27 @@ auto Optimize::crossvalidation(const std::string &job_prefix, const int maxorder
     }
 }
 
+// Stack a (row-major n x N_new) energy block and its target onto (A, b) in place.
+static void append_energy_block(Eigen::MatrixXd &A, Eigen::VectorXd &b, const std::vector<double> &amat_e,
+                                const std::vector<double> &evec_e, const size_t N_new)
+{
+    const size_t n = evec_e.size();
+    if (n == 0) return;
+    if (amat_e.size() != n * N_new || static_cast<size_t>(A.cols()) != N_new) {
+        exit("append_energy_block", "Energy block size is inconsistent with the design matrix.");
+    }
+    const size_t m0 = A.rows();
+    Eigen::MatrixXd A2(m0 + n, N_new);
+    A2.topRows(m0) = A;
+    for (size_t c = 0; c < n; ++c)
+        for (size_t q = 0; q < N_new; ++q) A2(m0 + c, q) = amat_e[c * N_new + q];
+    Eigen::VectorXd b2(m0 + n);
+    b2.head(m0) = b;
+    for (size_t c = 0; c < n; ++c) b2(m0 + c) = evec_e[c];
+    A.swap(A2);
+    b.swap(b2);
+}
+
 auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, const std::unique_ptr<Fcs> &fcs,
                              const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Constraint> &constraint,
                              const int verbosity) const -> double
@@ -612,6 +633,31 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         fnorm_validation += it * it;
     }
     fnorm_validation = std::sqrt(fnorm_validation);
+
+    // Energy term inside CV (EFIT_CV): append the centered/weighted/w-scaled energy rows to both
+    // the training and validation systems, so each fold's fit AND its held-out error include the
+    // energy; alpha is then selected by the combined (force + w·energy) relative residual. The
+    // combined norm sqrt(fnorm^2 + enorm^2) keeps the reported error dimensionless.
+    if (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv) {
+        if (!constraint->get_constraint_algebraic())
+            exit("run_manual_cv", "EFIT_CV requires an algebraic constraint (ICONST = 10 or 11).");
+        if (e_train.empty() || e_validation.empty())
+            exit("run_manual_cv", "EFIT_CV is set but training/validation reference energies were not read.");
+        double emin = e_train[0];
+        for (const auto v: e_train) emin = std::min(emin, v);
+        std::vector<double> amat_e, evec_e, amat_e_val, evec_e_val;
+        double enorm = 0.0, enorm_val = 0.0;
+        build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train, e_train, emin, amat_e, evec_e, enorm);
+        build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_validation, e_validation, emin,
+                           amat_e_val, evec_e_val, enorm_val);
+        append_energy_block(A, b, amat_e, evec_e, N_new);
+        append_energy_block(A_validation, b_validation, amat_e_val, evec_e_val, N_new);
+        fnorm = std::sqrt(fnorm * fnorm + enorm * enorm);
+        fnorm_validation = std::sqrt(fnorm_validation * fnorm_validation + enorm_val * enorm_val);
+        if (verbosity > 0)
+            std::cout << "  EFIT_CV: energy term included in CV; errors are combined "
+                         "(force + w*energy) relative residuals.\n";
+    }
 
     if (optcontrol.linear_model == 3) {
         // Merge training and validation sets and run OLS once to get the weight in adalasso.
@@ -749,8 +795,25 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
         }
     }
 
+    // EFIT_CV: include the energy term inside each CV fold. emin_energy (global training E_min)
+    // is the weight reference, kept identical across folds so the per-config weighting is consistent.
+    const bool fe_cv = (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv);
+    double emin_energy = 0.0;
+    if (fe_cv) {
+        if (!constraint->get_constraint_algebraic())
+            exit("run_auto_cv", "EFIT_CV requires an algebraic constraint (ICONST = 10 or 11).");
+        if (e_train.size() != nstructures)
+            exit("run_auto_cv", "EFIT_CV is set but the number of reference energies != training configs.");
+        emin_energy = e_train[0];
+        for (const auto v: e_train) emin_energy = std::min(emin_energy, v);
+        if (verbosity > 0)
+            std::cout << "  EFIT_CV: energy term included in CV; CV errors are combined "
+                         "(force + w*energy) relative residuals.\n\n";
+    }
+
     std::vector<std::vector<double>> u_train_tmp, u_validation_tmp;
     std::vector<std::vector<double>> f_train_tmp, f_validation_tmp;
+    std::vector<double> e_train_tmp, e_validation_tmp;
 
     std::vector<double> alphas, training_error, validation_error;
     std::vector<std::vector<int>> nonzeros;
@@ -783,6 +846,16 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
                                                              matrix_train->amat_dense.size() / N_new,
                                                              N_new);
         Eigen::VectorXd b_full = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
+
+        // Include the energy rows in the OLS that defines the adaptive-LASSO weights (consistency
+        // with the augmented per-fold fits).
+        if (fe_cv) {
+            std::vector<double> amat_e, evec_e;
+            double enorm_full = 0.0;
+            build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train, e_train, emin_energy,
+                               amat_e, evec_e, enorm_full);
+            append_energy_block(A_full, b_full, amat_e, evec_e, N_new);
+        }
 
         // Use QR decomposition with pivoting to check if system is well-determined
         Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A_full);
@@ -833,6 +906,7 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             f_train_tmp.clear();
             u_validation_tmp.clear();
             f_validation_tmp.clear();
+            e_train_tmp.clear();
 
             for (auto idata = 0; idata < nstructures; ++idata) {
                 if (idata >= istart_validation && idata < iend_validation) {
@@ -841,6 +915,7 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
                 } else {
                     u_train_tmp.emplace_back(u_train[idata]);
                     f_train_tmp.emplace_back(f_train[idata]);
+                    if (fe_cv) e_train_tmp.emplace_back(e_train[idata]);
                 }
             }
             ishift += ndata_block[iset];
@@ -860,6 +935,14 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
                                                             matrix_train->amat_dense.size() / N_new,
                                                             N_new);
             Eigen::VectorXd b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), matrix_train->bvec.size());
+            // Match the energy augmentation used in the actual fold fits so the alpha grid is consistent.
+            if (fe_cv) {
+                std::vector<double> amat_e, evec_e;
+                double enorm_pre = 0.0;
+                build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train_tmp, e_train_tmp, emin_energy,
+                                   amat_e, evec_e, enorm_pre);
+                append_energy_block(A, b, amat_e, evec_e, N_new);
+            }
             if (optcontrol.linear_model == 3) A = A * weight_adalasso.asDiagonal();
             const auto this_estimated_max_alpha = get_estimated_max_alpha(A, b);
 
@@ -888,14 +971,18 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
         f_train_tmp.clear();
         u_validation_tmp.clear();
         f_validation_tmp.clear();
+        e_train_tmp.clear();
+        e_validation_tmp.clear();
 
         for (auto idata = 0; idata < nstructures; ++idata) {
             if (idata >= istart_validation && idata < iend_validation) {
                 u_validation_tmp.emplace_back(u_train[idata]);
                 f_validation_tmp.emplace_back(f_train[idata]);
+                if (fe_cv) e_validation_tmp.emplace_back(e_train[idata]);
             } else {
                 u_train_tmp.emplace_back(u_train[idata]);
                 f_train_tmp.emplace_back(f_train[idata]);
+                if (fe_cv) e_train_tmp.emplace_back(e_train[idata]);
             }
         }
         ishift += ndata_block[iset];
@@ -944,6 +1031,20 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             fnorm_validation += it * it;
         }
         fnorm_validation = std::sqrt(fnorm_validation);
+
+        // Append this fold's energy rows to both train and held-out systems (combined-score CV).
+        if (fe_cv) {
+            std::vector<double> amat_e, evec_e, amat_e_val, evec_e_val;
+            double enorm = 0.0, enorm_val = 0.0;
+            build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train_tmp, e_train_tmp, emin_energy,
+                               amat_e, evec_e, enorm);
+            build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_validation_tmp, e_validation_tmp,
+                               emin_energy, amat_e_val, evec_e_val, enorm_val);
+            append_energy_block(A, b, amat_e, evec_e, N_new);
+            append_energy_block(A_validation, b_validation, amat_e_val, evec_e_val, N_new);
+            fnorm = std::sqrt(fnorm * fnorm + enorm * enorm);
+            fnorm_validation = std::sqrt(fnorm_validation * fnorm_validation + enorm_val * enorm_val);
+        }
 
         if (optcontrol.linear_model == 3) {
             A = A * weight_adalasso.asDiagonal();
@@ -1057,6 +1158,10 @@ auto Optimize::write_cvresult_to_file(const std::string &file_out, const std::ve
     ofs_cv << "# ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor << '\n';
     ofs_cv << "# STANDARDIZE = " << optcontrol.standardize << '\n';
     ofs_cv << "# CONV_TOL = " << std::setw(15) << optcontrol.tolerance_iteration << '\n';
+    if (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv) {
+        ofs_cv << "# EFIT_CV = 1: errors are COMBINED (force + w*energy) dimensionless relative\n";
+        ofs_cv << "#                residuals ||A_aug x - b_aug|| / ||b_aug|| (NOT a pure force error).\n";
+    }
     ofs_cv << "# L1 ALPHA, Fitting error, Validation error, Num. zero IFCs (2nd, 3rd, ...) \n";
 
     const auto maxorder = nonzeros[0].size();
@@ -1089,6 +1194,12 @@ auto Optimize::write_cvscore_to_file(const std::string &file_out, const std::vec
     ofs_cv << "# STANDARDIZE = " << optcontrol.standardize << '\n';
     ofs_cv << "# CONV_TOL = " << std::setw(15) << optcontrol.tolerance_iteration << '\n';
     ofs_cv << "# " << nsets << "-fold cross-validation scores\n";
+    if (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv) {
+        ofs_cv << "# EFIT_CV = 1, EFIT_WEIGHT = " << optcontrol.efit_weight
+               << ", EFIT_ESCALE = " << optcontrol.efit_escale << " eV\n";
+        ofs_cv << "# NOTE: the errors below are the COMBINED (force + w*energy) dimensionless relative\n";
+        ofs_cv << "#       residuals  ||A_aug x - b_aug|| / ||b_aug||  (NOT a pure force error).\n";
+    }
     ofs_cv << "# L1 ALPHA, Fitting error (mean, std), Validation error (mean, std) \n";
 
     const auto nsize = std::min(nalphas, n_terr);
@@ -3191,6 +3302,13 @@ auto Optimize::build_energy_block(const std::unique_ptr<Symmetry> &symmetry, con
     // fold (train and held-out subsets). `emin` is the per-config-weight reference (pass the global
     // training E_min so the weighting is identical across folds). Requires an algebraic constraint.
     const size_t n_ene = u_in.size();
+    amat_out.clear();
+    evec_out.clear();
+    enorm_out = 0.0;
+    if (n_ene == 0) return;  // empty fold/set: emit no energy rows (avoids 1/wsum division by zero)
+    if (e_in.size() != n_ene) {
+        exit("build_energy_block", "Number of reference energies != number of configurations.");
+    }
 
     size_t ncols = 0;
     for (auto i = 0; i < maxorder; ++i) ncols += fcs->get_nequiv()[i].size();

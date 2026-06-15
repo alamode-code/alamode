@@ -1270,6 +1270,9 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     }
     if (!optimize_var_dict["EFIT_CV"].empty()) {
         optcontrol.efit_cv = boost::lexical_cast<int>(optimize_var_dict["EFIT_CV"]);
+        if (optcontrol.efit_cv != 0 && optcontrol.efit_cv != 1) {
+            exit("parse_optimize_vars", "EFIT_CV must be 0 or 1.");
+        }
     }
     if (!optimize_var_dict["L1_RATIO"].empty()) {
         optcontrol.l1_ratio = boost::lexical_cast<double>(optimize_var_dict["L1_RATIO"]);
