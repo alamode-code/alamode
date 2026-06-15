@@ -81,6 +81,21 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
         std::exit(selftest_ok ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 
+    // The energy term is wired only through the LASSO/elastic-net path (optimize_with_given_l1alpha);
+    // refuse the plain least-squares path rather than silently ignoring EFIT_WEIGHT.
+    if (optcontrol.efit_weight > 0.0 && optcontrol.linear_model != 2 && optcontrol.linear_model != 3) {
+        exit("optimize_main",
+             "EFIT_WEIGHT > 0 is currently supported only with LMODEL = 2 or 3 (elastic-net / adaptive LASSO).");
+    }
+    // Elastic-net applies global column standardization (apply_standardizer), which re-centers the
+    // columns over ALL rows and breaks the energy-block (Frisch-Waugh) centering. Adaptive LASSO
+    // (LMODEL=3) never calls apply_standardizer, so it is unaffected. Refuse the unsafe combination.
+    if (optcontrol.efit_weight > 0.0 && optcontrol.linear_model == 2 && optcontrol.standardize) {
+        exit("optimize_main",
+             "EFIT_WEIGHT > 0 with LMODEL = 2 (elastic-net) requires STANDARDIZE = 0; global "
+             "standardization is incompatible with the energy-block centering.");
+    }
+
     const auto ndata_used =
         filedata_train.nend - filedata_train.nstart + 1 - filedata_train.skip_e + filedata_train.skip_s;
     const auto ndata_used_validation = filedata_validation.nend - filedata_validation.nstart + 1;
@@ -1360,6 +1375,31 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     A = Eigen::Map<Eigen::MatrixXd>(matrix_train->amat_dense.data(), M, N_new);
     b = Eigen::Map<Eigen::VectorXd>(matrix_train->bvec.data(), M);
 
+    // Energy-difference term: append w·(centered, constraint-compacted) energy rows so the whole
+    // pipeline (rank check, adaptive weights, standardization, coordinate descent, DEBIAS refit)
+    // sees the augmented system. Only the row count grows (M -> M_eff); N_new is unchanged.
+    size_t M_eff = M;
+    if (optcontrol.efit_weight > 0.0) {
+        if (optcontrol.use_sparse_solver || optcontrol.use_cholesky) {
+            exit("optimize_with_given_l1alpha",
+                 "EFIT_WEIGHT > 0 is not yet supported with the sparse / Cholesky solver path.");
+        }
+        std::vector<double> amat_e, evec_e;
+        build_energy_matrix(symmetry, fcs, constraint, maxorder, N_new, amat_e, evec_e, verbosity);
+        const size_t n_ene = evec_e.size();
+        Eigen::MatrixXd A_aug(M + n_ene, N_new);
+        A_aug.topRows(M) = A;
+        for (size_t c = 0; c < n_ene; ++c) {
+            for (size_t q = 0; q < N_new; ++q) A_aug(M + c, q) = amat_e[c * N_new + q];
+        }
+        Eigen::VectorXd b_aug(M + n_ene);
+        b_aug.head(M) = b;
+        for (size_t c = 0; c < n_ene; ++c) b_aug(M + c) = evec_e[c];
+        A = A_aug;
+        b = b_aug;
+        M_eff = M + n_ene;
+    }
+
     if (optcontrol.linear_model == 3) {
         // Use QR decomposition with pivoting to check if system is well-determined
         Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A);
@@ -1373,7 +1413,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
                                     std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
                                     "\n"
                                     "  Number of data points = " +
-                                    std::to_string(M) +
+                                    std::to_string(M_eff) +
                                     "\n"
                                     "  This typically occurs when there are too few training data\n"
                                     "  or when some parameters cannot be uniquely determined.\n"
@@ -1418,7 +1458,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     x.setZero(N_new);
     scale_beta.resize(N_new);
     factor_std.resize(N_new);
-    fdiff.resize(M);
+    fdiff.resize(M_eff);
 
     allocate(has_prod, N_new);
 
@@ -1462,7 +1502,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     }
 
     // Coordinate Descent Method
-    coordinate_descent(M,
+    coordinate_descent(M_eff,
                        N_new,
                        optcontrol.l1_alpha,
                        0,
@@ -1492,9 +1532,20 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
         for (size_t i = 0; i < N_new; ++i) {
             correction_intercept += x(i) * mean(i) * factor_std(i);
         }
-        fdiff = A * x - b + correction_intercept * Eigen::VectorXd::Ones(M);
-        const auto res1 = fdiff.dot(fdiff) / (fnorm * fnorm);
-        std::cout << "  RESIDUAL (%): " << std::sqrt(res1) * 100.0 << '\n';
+        fdiff = A * x - b + correction_intercept * Eigen::VectorXd::Ones(M_eff);
+        if (M_eff > M) {
+            // Report force and energy block residuals separately (the blocks have different units).
+            const size_t n_ene = M_eff - M;
+            const double r_force = fdiff.head(M).squaredNorm();
+            const double r_energy = fdiff.tail(n_ene).squaredNorm();
+            const double enorm = b.tail(n_ene).norm();  // norm of w·centered target
+            std::cout << "  RESIDUAL force  (%): " << std::sqrt(r_force) / fnorm * 100.0 << '\n';
+            std::cout << "  RESIDUAL energy (%): "
+                      << (enorm > 0.0 ? std::sqrt(r_energy) / enorm * 100.0 : 0.0) << '\n';
+        } else {
+            const auto res1 = fdiff.dot(fdiff) / (fnorm * fnorm);
+            std::cout << "  RESIDUAL (%): " << std::sqrt(res1) * 100.0 << '\n';
+        }
     }
 
     deallocate(has_prod);
@@ -3118,6 +3169,95 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
               << (algebraic ? " and constraint projection" : "") << ")\n\n";
     std::cout << std::defaultfloat;
     return passed;
+}
+
+
+auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                   const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                                   const size_t ncols_compact, std::vector<double> &amat_energy_out,
+                                   std::vector<double> &evec_out, const int verbosity) const -> void
+{
+    // Build the energy block of the augmented least-squares system for the training configs:
+    //   amat_energy_out (row-major n_ene x ncols_compact) and evec_out (length n_ene),
+    // already constraint-compacted, energy-block-centered (Frisch-Waugh: absorbs the constant
+    // offset, incl. the absolute DFT zero), and scaled by w = efit_weight. The per-config target
+    // is E_ref + e_rhs (project_energy_row's e_rhs is the negative fixed-fc energy), so that
+    // A_E_compact . theta_c fits it. Requires an algebraic (ICONST>=10) constraint.
+    if (!constraint->get_constraint_algebraic()) {
+        exit("build_energy_matrix",
+             "EFIT_WEIGHT > 0 currently requires an algebraic constraint (ICONST = 10 or 11).");
+    }
+    const size_t n_ene = e_train.size();
+    if (n_ene == 0) exit("build_energy_matrix", "EFIT_WEIGHT > 0 but no reference energies were read.");
+    if (n_ene != u_train.size()) {
+        exit("build_energy_matrix", "Number of reference energies != number of training configurations.");
+    }
+
+    size_t ncols = 0;
+    for (auto i = 0; i < maxorder; ++i) ncols += fcs->get_nequiv()[i].size();
+
+    std::vector<std::vector<double>> u_multi;
+    data_multiplier(u_train, u_multi, symmetry);
+    if (fcs->get_forceconstant_basis() == "Lattice") {
+        apply_basis_converter(u_multi, fcs->get_basis_conversion_matrix());
+    }
+
+    std::vector<int> ind_tmp(maxorder + 1);
+    std::vector<std::vector<double>> gamma_energy_precomputed(maxorder);
+    for (int order = 0; order < maxorder; ++order) {
+        gamma_energy_precomputed[order].resize(fcs->get_fc_table()[order].size(), 0.0);
+        size_t ii = 0;
+        for (const auto &iter: fcs->get_nequiv()[order]) {
+            for (size_t i = 0; i < iter; ++i) {
+                for (int j = 0; j < order + 2; ++j) ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
+                gamma_energy_precomputed[order][ii] =
+                    gamma_energy(order + 2, ind_tmp.data()) * fcs->get_fc_table()[order][ii].sign;
+                ++ii;
+            }
+        }
+    }
+
+    const auto ntran = symmetry->get_ntran();
+    amat_energy_out.assign(n_ene * ncols_compact, 0.0);
+    evec_out.assign(n_ene, 0.0);
+
+    std::vector<double> e_full(ncols), e_compact(ncols_compact), energy_row(ncols);
+    for (size_t c = 0; c < n_ene; ++c) {
+        std::fill(e_full.begin(), e_full.end(), 0.0);
+        for (size_t itran = 0; itran < ntran; ++itran) {
+            const size_t irow = c * ntran + itran;
+            fill_amat_energy(maxorder, ncols, u_multi[irow], gamma_energy_precomputed, fcs, energy_row);
+            for (size_t p = 0; p < ncols; ++p) e_full[p] += energy_row[p];
+        }
+        double e_rhs = 0.0;
+        project_energy_row(maxorder, fcs, constraint, e_full, e_compact, e_rhs);
+        for (size_t q = 0; q < ncols_compact; ++q) amat_energy_out[c * ncols_compact + q] = e_compact[q];
+        evec_out[c] = e_train[c] + e_rhs;  // A_E_compact . theta_c fits (E_ref + e_rhs)
+    }
+
+    // Energy-block centering (Frisch-Waugh): subtract column means and the target mean over the
+    // n_ene energy rows. This makes the fit invariant to any constant in E_ref without an intercept.
+    const auto inv_me = 1.0 / static_cast<double>(n_ene);
+    for (size_t q = 0; q < ncols_compact; ++q) {
+        double colmean = 0.0;
+        for (size_t c = 0; c < n_ene; ++c) colmean += amat_energy_out[c * ncols_compact + q];
+        colmean *= inv_me;
+        for (size_t c = 0; c < n_ene; ++c) amat_energy_out[c * ncols_compact + q] -= colmean;
+    }
+    double emean = 0.0;
+    for (size_t c = 0; c < n_ene; ++c) emean += evec_out[c];
+    emean *= inv_me;
+    for (size_t c = 0; c < n_ene; ++c) evec_out[c] -= emean;
+
+    // Scale by the energy weight w.
+    const double w = optcontrol.efit_weight;
+    for (auto &v: amat_energy_out) v *= w;
+    for (auto &v: evec_out) v *= w;
+
+    if (verbosity > 0) {
+        std::cout << "  Energy term: " << n_ene << " reference energies, weight w = " << w
+                  << " (centered, constraint-compacted; ncols_compact = " << ncols_compact << ")\n";
+    }
 }
 
 

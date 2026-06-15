@@ -199,6 +199,10 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
         if (line[first] == '#') {
             const auto pos = line.find("E_pot");
             if (pos == std::string::npos) continue;  // unrelated comment
+            if (have_header) {
+                exit("parse_energies",
+                     "Two E_pot headers found before a snapshot's data block (exactly one E_pot per snapshot is required).");
+            }
             double factor;
             if (line.find("(eV)", pos) != std::string::npos) factor = 1.0 / Ryd_in_eV;
             else if (line.find("(Ry)", pos) != std::string::npos) factor = 1.0;
