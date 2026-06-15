@@ -637,23 +637,31 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
     // Energy term inside CV (EFIT_CV): append the centered/weighted/w-scaled energy rows to both
     // the training and validation systems, so each fold's fit AND its held-out error include the
     // energy; alpha is then selected by the combined (force + w·energy) relative residual. The
-    // combined norm sqrt(fnorm^2 + enorm^2) keeps the reported error dimensionless.
-    if (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv) {
+    // combined norm sqrt(fnorm^2 + enorm^2) keeps the reported error dimensionless. The pre-augment
+    // force-row counts/norms are kept so solution_path can also report the separate force/energy errors.
+    const bool efit_in_cv = (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv);
+    size_t nrow_force_train = 0, nrow_force_val = 0;
+    double fnorm_force_train = 0.0, fnorm_force_val = 0.0, enorm_train_cv = 0.0, enorm_val_cv = 0.0;
+    if (efit_in_cv) {
         if (!constraint->get_constraint_algebraic())
             exit("run_manual_cv", "EFIT_CV requires an algebraic constraint (ICONST = 10 or 11).");
         if (e_train.empty() || e_validation.empty())
             exit("run_manual_cv", "EFIT_CV is set but training/validation reference energies were not read.");
+        nrow_force_train = A.rows();
+        nrow_force_val = A_validation.rows();
+        fnorm_force_train = fnorm;
+        fnorm_force_val = fnorm_validation;
         double emin = e_train[0];
         for (const auto v: e_train) emin = std::min(emin, v);
         std::vector<double> amat_e, evec_e, amat_e_val, evec_e_val;
-        double enorm = 0.0, enorm_val = 0.0;
-        build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train, e_train, emin, amat_e, evec_e, enorm);
+        build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train, e_train, emin, amat_e, evec_e,
+                           enorm_train_cv);
         build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_validation, e_validation, emin,
-                           amat_e_val, evec_e_val, enorm_val);
+                           amat_e_val, evec_e_val, enorm_val_cv);
         append_energy_block(A, b, amat_e, evec_e, N_new);
         append_energy_block(A_validation, b_validation, amat_e_val, evec_e_val, N_new);
-        fnorm = std::sqrt(fnorm * fnorm + enorm * enorm);
-        fnorm_validation = std::sqrt(fnorm_validation * fnorm_validation + enorm_val * enorm_val);
+        fnorm = std::sqrt(fnorm * fnorm + enorm_train_cv * enorm_train_cv);
+        fnorm_validation = std::sqrt(fnorm_validation * fnorm_validation + enorm_val_cv * enorm_val_cv);
         if (verbosity > 0)
             std::cout << "  EFIT_CV: energy term included in CV; errors are combined "
                          "(force + w*energy) relative residuals.\n";
@@ -734,6 +742,7 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         }
     }
 
+    std::vector<double> terr_force, terr_energy, verr_force, verr_energy;
     solution_path(maxorder,
                   A,
                   b,
@@ -747,9 +756,14 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
                   alphas,
                   training_error,
                   validation_error,
-                  nonzeros);
+                  nonzeros,
+                  nrow_force_train, nrow_force_val, fnorm_force_train, enorm_train_cv,
+                  fnorm_force_val, enorm_val_cv,
+                  efit_in_cv ? &terr_force : nullptr, efit_in_cv ? &terr_energy : nullptr,
+                  efit_in_cv ? &verr_force : nullptr, efit_in_cv ? &verr_energy : nullptr);
 
-    write_cvresult_to_file(file_cv, alphas, training_error, validation_error, nonzeros);
+    write_cvresult_to_file(file_cv, alphas, training_error, validation_error, nonzeros,
+                           efit_in_cv, terr_force, terr_energy, verr_force, verr_energy);
 
     const auto ialpha = get_ialpha_at_minimum_validation_error(validation_error);
 
@@ -818,6 +832,7 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
     std::vector<double> alphas, training_error, validation_error;
     std::vector<std::vector<int>> nonzeros;
     std::vector<std::vector<double>> training_error_accum, validation_error_accum;
+    std::vector<std::vector<double>> terr_force_accum, terr_energy_accum, verr_force_accum, verr_energy_accum;
     double fnorm, fnorm_validation, estimated_max_alpha;
     Eigen::VectorXd weight_adalasso;
 
@@ -1033,17 +1048,23 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
         fnorm_validation = std::sqrt(fnorm_validation);
 
         // Append this fold's energy rows to both train and held-out systems (combined-score CV).
+        // Capture the pre-augmentation force-row counts/norms so solution_path can also report the
+        // separate force and energy errors.
+        const size_t nrow_force_train = A.rows();
+        const size_t nrow_force_val = A_validation.rows();
+        const double fnorm_force_train = fnorm;
+        const double fnorm_force_val = fnorm_validation;
+        double enorm_t = 0.0, enorm_v = 0.0;
         if (fe_cv) {
             std::vector<double> amat_e, evec_e, amat_e_val, evec_e_val;
-            double enorm = 0.0, enorm_val = 0.0;
             build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_train_tmp, e_train_tmp, emin_energy,
-                               amat_e, evec_e, enorm);
+                               amat_e, evec_e, enorm_t);
             build_energy_block(symmetry, fcs, constraint, maxorder, N_new, u_validation_tmp, e_validation_tmp,
-                               emin_energy, amat_e_val, evec_e_val, enorm_val);
+                               emin_energy, amat_e_val, evec_e_val, enorm_v);
             append_energy_block(A, b, amat_e, evec_e, N_new);
             append_energy_block(A_validation, b_validation, amat_e_val, evec_e_val, N_new);
-            fnorm = std::sqrt(fnorm * fnorm + enorm * enorm);
-            fnorm_validation = std::sqrt(fnorm_validation * fnorm_validation + enorm_val * enorm_val);
+            fnorm = std::sqrt(fnorm * fnorm + enorm_t * enorm_t);
+            fnorm_validation = std::sqrt(fnorm_validation * fnorm_validation + enorm_v * enorm_v);
         }
 
         if (optcontrol.linear_model == 3) {
@@ -1071,6 +1092,7 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             }
         }
 
+        std::vector<double> terr_force, terr_energy, verr_force, verr_energy;
         solution_path(maxorder,
                       A,
                       b,
@@ -1084,10 +1106,15 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
                       alphas,
                       training_error,
                       validation_error,
-                      nonzeros);
+                      nonzeros,
+                      nrow_force_train, nrow_force_val, fnorm_force_train, enorm_t,
+                      fnorm_force_val, enorm_v,
+                      fe_cv ? &terr_force : nullptr, fe_cv ? &terr_energy : nullptr,
+                      fe_cv ? &verr_force : nullptr, fe_cv ? &verr_energy : nullptr);
 
         if (!job_prefix.empty()) {
-            write_cvresult_to_file(file_cv, alphas, training_error, validation_error, nonzeros);
+            write_cvresult_to_file(file_cv, alphas, training_error, validation_error, nonzeros,
+                                   fe_cv, terr_force, terr_energy, verr_force, verr_energy);
         }
 
         if (verbosity > 0) {
@@ -1108,6 +1135,12 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
 
         training_error_accum.emplace_back(training_error);
         validation_error_accum.emplace_back(validation_error);
+        if (fe_cv) {
+            terr_force_accum.emplace_back(terr_force);
+            terr_energy_accum.emplace_back(terr_energy);
+            verr_force_accum.emplace_back(verr_force);
+            verr_energy_accum.emplace_back(verr_energy);
+        }
     }
 
     std::vector<double> terr_mean, terr_std;
@@ -1121,11 +1154,21 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
     verr_std.resize(nalphas);
 
     set_errors_of_cvscore(terr_mean, terr_std, verr_mean, verr_std, training_error_accum, validation_error_accum);
+
+    // Per-fold averages of the separate force and energy errors (for the extra cvscore columns).
+    std::vector<double> tf_mean, tf_std, te_mean, te_std, vf_mean, vf_std, ve_mean, ve_std;
+    if (fe_cv) {
+        tf_mean.resize(nalphas); tf_std.resize(nalphas); te_mean.resize(nalphas); te_std.resize(nalphas);
+        vf_mean.resize(nalphas); vf_std.resize(nalphas); ve_mean.resize(nalphas); ve_std.resize(nalphas);
+        set_errors_of_cvscore(tf_mean, tf_std, vf_mean, vf_std, terr_force_accum, verr_force_accum);
+        set_errors_of_cvscore(te_mean, te_std, ve_mean, ve_std, terr_energy_accum, verr_energy_accum);
+    }
     const auto ialpha_minimum = get_ialpha_at_minimum_validation_error(verr_mean);
 
     if (!job_prefix.empty()) {
         const auto file_cvscore = job_prefix + ".cvscore";
-        write_cvscore_to_file(file_cvscore, alphas, terr_mean, terr_std, verr_mean, verr_std, ialpha_minimum, nsets);
+        write_cvscore_to_file(file_cvscore, alphas, terr_mean, terr_std, verr_mean, verr_std, ialpha_minimum, nsets,
+                              fe_cv, tf_mean, tf_std, te_mean, te_std, vf_mean, vf_std, ve_mean, ve_std);
 
         if (verbosity > 0) {
             std::cout << " Average and standard deviation of the CV error are\n";
@@ -1147,7 +1190,10 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
 auto Optimize::write_cvresult_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                       const std::vector<double> &training_error,
                                       const std::vector<double> &validation_error,
-                                      const std::vector<std::vector<int>> &nonzeros) const -> void
+                                      const std::vector<std::vector<int>> &nonzeros, const bool with_components,
+                                      const std::vector<double> &terr_force, const std::vector<double> &terr_energy,
+                                      const std::vector<double> &verr_force,
+                                      const std::vector<double> &verr_energy) const -> void
 {
     std::vector<std::string> str_linearmodel{"Elastic-net", "Adaptive LASSO"};
     std::ofstream ofs_cv;
@@ -1162,13 +1208,24 @@ auto Optimize::write_cvresult_to_file(const std::string &file_out, const std::ve
         ofs_cv << "# EFIT_CV = 1: errors are COMBINED (force + w*energy) dimensionless relative\n";
         ofs_cv << "#                residuals ||A_aug x - b_aug|| / ||b_aug|| (NOT a pure force error).\n";
     }
-    ofs_cv << "# L1 ALPHA, Fitting error, Validation error, Num. zero IFCs (2nd, 3rd, ...) \n";
+    if (with_components) {
+        ofs_cv << "# L1 ALPHA, Fitting error, Validation error, Fit force, Fit energy, Val force, "
+                  "Val energy, Num. zero IFCs (2nd, 3rd, ...) \n";
+    } else {
+        ofs_cv << "# L1 ALPHA, Fitting error, Validation error, Num. zero IFCs (2nd, 3rd, ...) \n";
+    }
 
     const auto maxorder = nonzeros[0].size();
     for (auto ialpha = 0; ialpha < training_error.size(); ++ialpha) {
         ofs_cv << std::setw(15) << alphas[ialpha];
         ofs_cv << std::setw(15) << training_error[ialpha];
         ofs_cv << std::setw(15) << validation_error[ialpha];
+        if (with_components) {
+            ofs_cv << std::setw(15) << terr_force[ialpha];
+            ofs_cv << std::setw(15) << terr_energy[ialpha];
+            ofs_cv << std::setw(15) << verr_force[ialpha];
+            ofs_cv << std::setw(15) << verr_energy[ialpha];
+        }
         for (auto i = 0; i < maxorder; ++i) {
             ofs_cv << std::setw(10) << nonzeros[ialpha][i];
         }
@@ -1180,7 +1237,11 @@ auto Optimize::write_cvresult_to_file(const std::string &file_out, const std::ve
 auto Optimize::write_cvscore_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                      const std::vector<double> &terr_mean, const std::vector<double> &terr_std,
                                      const std::vector<double> &verr_mean, const std::vector<double> &verr_std,
-                                     const int ialpha_minimum, const size_t nsets) const -> void
+                                     const int ialpha_minimum, const size_t nsets, const bool with_components,
+                                     const std::vector<double> &tf_mean, const std::vector<double> &tf_std,
+                                     const std::vector<double> &te_mean, const std::vector<double> &te_std,
+                                     const std::vector<double> &vf_mean, const std::vector<double> &vf_std,
+                                     const std::vector<double> &ve_mean, const std::vector<double> &ve_std) const -> void
 {
     const auto nalphas = alphas.size();
     const auto n_terr = terr_mean.size();
@@ -1200,7 +1261,12 @@ auto Optimize::write_cvscore_to_file(const std::string &file_out, const std::vec
         ofs_cv << "# NOTE: the errors below are the COMBINED (force + w*energy) dimensionless relative\n";
         ofs_cv << "#       residuals  ||A_aug x - b_aug|| / ||b_aug||  (NOT a pure force error).\n";
     }
-    ofs_cv << "# L1 ALPHA, Fitting error (mean, std), Validation error (mean, std) \n";
+    if (with_components) {
+        ofs_cv << "# L1 ALPHA, Fitting error (mean, std), Validation error (mean, std), "
+                  "Fit force (mean, std), Fit energy (mean, std), Val force (mean, std), Val energy (mean, std)\n";
+    } else {
+        ofs_cv << "# L1 ALPHA, Fitting error (mean, std), Validation error (mean, std) \n";
+    }
 
     const auto nsize = std::min(nalphas, n_terr);
     for (size_t ialpha = 0; ialpha < nsize; ++ialpha) {
@@ -1209,6 +1275,12 @@ auto Optimize::write_cvscore_to_file(const std::string &file_out, const std::vec
         ofs_cv << std::setw(15) << terr_std[ialpha];
         ofs_cv << std::setw(15) << verr_mean[ialpha];
         ofs_cv << std::setw(15) << verr_std[ialpha];
+        if (with_components) {
+            ofs_cv << std::setw(15) << tf_mean[ialpha] << std::setw(15) << tf_std[ialpha];
+            ofs_cv << std::setw(15) << te_mean[ialpha] << std::setw(15) << te_std[ialpha];
+            ofs_cv << std::setw(15) << vf_mean[ialpha] << std::setw(15) << vf_std[ialpha];
+            ofs_cv << std::setw(15) << ve_mean[ialpha] << std::setw(15) << ve_std[ialpha];
+        }
         ofs_cv << '\n';
     }
 
@@ -1271,7 +1343,12 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
                              const std::string &file_coef, const int verbosity,
                              const std::unique_ptr<Constraint> &constraint, const std::vector<double> &alphas,
                              std::vector<double> &training_error, std::vector<double> &validation_error,
-                             std::vector<std::vector<int>> &nonzeros) const -> void
+                             std::vector<std::vector<int>> &nonzeros,
+                             const size_t nrow_force_train, const size_t nrow_force_val,
+                             const double fnorm_force_train, const double enorm_train,
+                             const double fnorm_force_val, const double enorm_val,
+                             std::vector<double> *terr_force, std::vector<double> *terr_energy,
+                             std::vector<double> *verr_force, std::vector<double> *verr_energy) const -> void
 {
     int initialize_mode;
     int ncount_verr_consecutive_increase = 0;
@@ -1378,6 +1455,21 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
         training_error.push_back(std::sqrt(res1));
         validation_error.push_back(std::sqrt(res2));
         nonzeros.push_back(nzero_lasso);
+
+        // Optional split of the (combined) residual into force-only and energy-only relative errors.
+        // All four outputs are filled together (require all pointers). A zero reference norm (no force
+        // data, or a degenerate all-equal energy set) yields 0.0 — the relative error is then undefined
+        // but trivially satisfied; this does not occur for a normal energy-in-CV run.
+        if (terr_force != nullptr && terr_energy != nullptr && verr_force != nullptr && verr_energy != nullptr) {
+            const double fres_t = fdiff.head(nrow_force_train).squaredNorm();
+            const double eres_t = fdiff.tail(M - nrow_force_train).squaredNorm();
+            const double fres_v = fdiff_validation.head(nrow_force_val).squaredNorm();
+            const double eres_v = fdiff_validation.tail(M_validation - nrow_force_val).squaredNorm();
+            terr_force->push_back(fnorm_force_train > 0.0 ? std::sqrt(fres_t) / fnorm_force_train : 0.0);
+            terr_energy->push_back(enorm_train > 0.0 ? std::sqrt(eres_t) / enorm_train : 0.0);
+            verr_force->push_back(fnorm_force_val > 0.0 ? std::sqrt(fres_v) / fnorm_force_val : 0.0);
+            verr_energy->push_back(enorm_val > 0.0 ? std::sqrt(eres_v) / enorm_val : 0.0);
+        }
 
         if (optcontrol.save_solution_path) {
             ofs_coef << std::setw(15) << l1_alpha;

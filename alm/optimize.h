@@ -228,12 +228,20 @@ private:
 
     auto write_cvresult_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                 const std::vector<double> &training_error, const std::vector<double> &validation_error,
-                                const std::vector<std::vector<int>> &nonzeros) const -> void;
+                                const std::vector<std::vector<int>> &nonzeros, const bool with_components = false,
+                                const std::vector<double> &terr_force = {}, const std::vector<double> &terr_energy = {},
+                                const std::vector<double> &verr_force = {},
+                                const std::vector<double> &verr_energy = {}) const -> void;
 
     auto write_cvscore_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                const std::vector<double> &terr_mean, const std::vector<double> &terr_std,
                                const std::vector<double> &verr_mean, const std::vector<double> &verr_std,
-                               const int ialpha_minimum, const size_t nsets) const -> void;
+                               const int ialpha_minimum, const size_t nsets, const bool with_components = false,
+                               const std::vector<double> &tf_mean = {}, const std::vector<double> &tf_std = {},
+                               const std::vector<double> &te_mean = {}, const std::vector<double> &te_std = {},
+                               const std::vector<double> &vf_mean = {}, const std::vector<double> &vf_std = {},
+                               const std::vector<double> &ve_mean = {},
+                               const std::vector<double> &ve_std = {}) const -> void;
 
     auto set_errors_of_cvscore(std::vector<double> &terr_mean, std::vector<double> &terr_std,
                                std::vector<double> &verr_mean, std::vector<double> &verr_std,
@@ -370,7 +378,16 @@ private:
                        Eigen::VectorXd &b_validation, const double fnorm, const double fnorm_validation,
                        const std::string &file_coef, const int verbosity, const std::unique_ptr<Constraint> &constraint,
                        const std::vector<double> &alphas, std::vector<double> &training_error,
-                       std::vector<double> &validation_error, std::vector<std::vector<int>> &nonzeros) const -> void;
+                       std::vector<double> &validation_error, std::vector<std::vector<int>> &nonzeros,
+                       // Optional force/energy component reporting (energy-in-CV). When the output
+                       // pointers are non-null, fill the separate force-only and energy-only relative
+                       // errors using the force-row split nrow_force_* and the component norms.
+                       const size_t nrow_force_train = 0, const size_t nrow_force_val = 0,
+                       const double fnorm_force_train = 0.0, const double enorm_train = 0.0,
+                       const double fnorm_force_val = 0.0, const double enorm_val = 0.0,
+                       std::vector<double> *terr_force = nullptr, std::vector<double> *terr_energy = nullptr,
+                       std::vector<double> *verr_force = nullptr,
+                       std::vector<double> *verr_energy = nullptr) const -> void;
 
     static auto compute_alphas(const double l1_alpha_max, const double l1_alpha_min, const int num_l1_alpha,
                                std::vector<double> &alphas) -> void;
