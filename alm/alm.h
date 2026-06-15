@@ -86,6 +86,8 @@ public:
 
     auto set_f_train(const std::vector<std::vector<double>> &f) const -> void;
 
+    auto set_e_train(const std::vector<double> &e) const -> void;
+
     auto set_validation_data(const std::vector<std::vector<double>> &u,
                              const std::vector<std::vector<double>> &f) const -> void;
 

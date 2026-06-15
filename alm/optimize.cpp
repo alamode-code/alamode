@@ -1787,6 +1787,13 @@ auto Optimize::set_f_train(const std::vector<std::vector<double>> &f_train_in) -
     f_train.shrink_to_fit();
 }
 
+auto Optimize::set_e_train(const std::vector<double> &e_train_in) -> void
+{
+    e_train.clear();
+    e_train = e_train_in;
+    e_train.shrink_to_fit();
+}
+
 auto Optimize::set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
                                    const std::vector<std::vector<double>> &f_validation_in) -> void
 {
@@ -2941,6 +2948,16 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     // where A_F is the existing (trusted) force matrix. The supercell sum is realized by summing
     // the natmin primitive force rows over the ntran translation images (cf. fill_bvec mapping).
     std::cout << "\n  [ALM_ENERGY_SELFTEST] Verifying energy-row builder vs force builder (Euler's theorem)\n";
+
+    if (!e_train.empty()) {
+        double emin = e_train[0], emax = e_train[0], esum = 0.0;
+        for (const auto v: e_train) { emin = std::min(emin, v); emax = std::max(emax, v); esum += v; }
+        std::cout << std::scientific << std::setprecision(6)
+                  << "  reference energies read (Ry): n = " << e_train.size()
+                  << ", min = " << emin << ", max = " << emax
+                  << ", mean = " << esum / static_cast<double>(e_train.size()) << "\n"
+                  << std::defaultfloat;
+    }
 
     const auto natmin = symmetry->get_nat_trueprim();
     const auto natmin3 = 3 * natmin;

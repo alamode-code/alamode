@@ -172,6 +172,81 @@ auto InputParser::parse_displacement_and_force_files(std::vector<std::vector<dou
     value_arr.clear();
 }
 
+auto InputParser::parse_energies(std::vector<double> &energies, const DispForceFile &datfile_in) const -> void
+{
+    // Parse total-supercell reference energies from the "E_pot (unit):" token in each snapshot's
+    // comment header of the DFSET, convert to Rydberg, and apply the SAME NSTART/NEND/SKIP filtering
+    // as parse_displacement_and_force_files so that `energies` aligns with u_train/f_train.
+    // Exactly one parseable E_pot per ORIGINAL snapshot is required (validated before filtering).
+    const auto nat = nat_in * static_cast<int>(transmat_to_super.determinant());
+    const auto ntoken_per_snapshot = static_cast<size_t>(6 * nat);
+    const double Ryd_in_eV = 13.605693122994;  // 1 Ry in eV
+
+    std::ifstream ifs_data;
+    ifs_data.open(datfile_in.filename.c_str(), std::ios::in);
+    if (!ifs_data) exit("parse_energies", "cannot open DFSET file for energy parsing");
+
+    std::vector<double> energy_all;  // one entry per original snapshot, in Rydberg
+    std::string line;
+    bool have_header = false;
+    double pending_energy = 0.0;
+    size_t ndata_tokens = 0;
+
+    while (std::getline(ifs_data, line)) {
+        const auto first = line.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos) continue;
+
+        if (line[first] == '#') {
+            const auto pos = line.find("E_pot");
+            if (pos == std::string::npos) continue;  // unrelated comment
+            double factor;
+            if (line.find("(eV)", pos) != std::string::npos) factor = 1.0 / Ryd_in_eV;
+            else if (line.find("(Ry)", pos) != std::string::npos) factor = 1.0;
+            else if (line.find("(Ha)", pos) != std::string::npos) factor = 2.0;
+            else { exit("parse_energies", "E_pot present but unit (eV/Ry/Ha) not recognized in DFSET header."); }
+            const auto colon = line.find(':', pos);
+            if (colon == std::string::npos) exit("parse_energies", "Malformed E_pot header (missing ':').");
+            std::istringstream iss(line.substr(colon + 1));
+            double eval;
+            if (!(iss >> eval)) exit("parse_energies", "Could not parse the E_pot value from a DFSET header.");
+            pending_energy = eval * factor;
+            have_header = true;
+            continue;
+        }
+
+        std::istringstream iss(line);
+        double v;
+        while (iss >> v) ++ndata_tokens;
+        while (ndata_tokens >= ntoken_per_snapshot) {
+            if (!have_header) {
+                exit("parse_energies",
+                     "A snapshot has no parseable E_pot header (required when EFIT_WEIGHT>0).");
+            }
+            energy_all.push_back(pending_energy);
+            have_header = false;
+            ndata_tokens -= ntoken_per_snapshot;
+        }
+        // Stop once the first NDATA snapshots have been read (matches the force parser, which reads
+        // only the first NDATA snapshots when NDATA is given).
+        if (datfile_in.ndata > 0 && energy_all.size() >= datfile_in.ndata) break;
+    }
+    ifs_data.close();
+
+    if (energy_all.size() != datfile_in.ndata) {
+        exit("parse_energies",
+             "Number of E_pot headers does not match NDATA; energy and force data are inconsistent.");
+    }
+
+    auto idata = 0;
+    for (size_t i = 0; i < datfile_in.ndata; ++i) {
+        if (i < datfile_in.nstart - 1) continue;
+        if (i >= datfile_in.skip_s - 1 && i < datfile_in.skip_e - 1) continue;
+        if (i > datfile_in.nend - 1) break;
+        energies.push_back(energy_all[i]);
+        ++idata;
+    }
+}
+
 auto InputParser::parse_input(ALM *alm) -> void
 {
     // The order of calling methods in this method is important.
@@ -1044,6 +1119,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     OptimizerControl optcontrol;
     std::vector<std::vector<double>> u_tmp1, f_tmp1;
     std::vector<std::vector<double>> u_tmp2, f_tmp2;
+    std::vector<double> e_tmp1;
 
     const std::vector<std::string> input_list{"LMODEL",
                                               "SPARSE",
@@ -1077,6 +1153,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
                                               "NWRITE",
                                               "SOLUTION_PATH",
                                               "DEBIAS_OLS",
+                                              "EFIT_WEIGHT",
                                               "PERIODIC_IMAGE_CONV",
                                               "STOP_CRITERION",
                                               "USE_CHOLESKY",
@@ -1171,6 +1248,12 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     if (!optimize_var_dict["DEBIAS_OLS"].empty()) {
         optcontrol.debiase_after_l1opt = boost::lexical_cast<int>(optimize_var_dict["DEBIAS_OLS"]);
     }
+    if (!optimize_var_dict["EFIT_WEIGHT"].empty()) {
+        optcontrol.efit_weight = boost::lexical_cast<double>(optimize_var_dict["EFIT_WEIGHT"]);
+        if (optcontrol.efit_weight < 0.0) {
+            exit("parse_optimize_vars", "EFIT_WEIGHT must be non-negative.");
+        }
+    }
     if (!optimize_var_dict["L1_RATIO"].empty()) {
         optcontrol.l1_ratio = boost::lexical_cast<double>(optimize_var_dict["L1_RATIO"]);
     }
@@ -1232,6 +1315,18 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         exit("parse_optimize_vars", "NDATA, NSTART, NEND and SKIP tags are inconsistent.");
     }
 
+    // Energy-difference loss term: read reference energies from the DFSET headers, but only for a
+    // production (non-CV) fit. During CV the energy pass is skipped entirely so legacy headerless
+    // DFSETs are unaffected (alpha selection stays force-only).
+    if (optcontrol.efit_weight > 0.0) {
+        if (optcontrol.cross_validation != 0) {
+            warn("parse_optimize_vars",
+                 "EFIT_WEIGHT > 0 is ignored during cross-validation; energy term applies only to the final fit.");
+        } else {
+            parse_energies(e_tmp1, datfile_train);
+        }
+    }
+
     datfile_validation.skip_s = 0;
     datfile_validation.skip_e = 0;
 
@@ -1264,7 +1359,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         }
     }
 
-    input_setter->set_optimize_vars(alm, u_tmp1, f_tmp1, u_tmp2, f_tmp2, optcontrol);
+    input_setter->set_optimize_vars(alm, u_tmp1, f_tmp1, u_tmp2, f_tmp2, e_tmp1, optcontrol);
 
     input_setter->set_file_vars(alm, datfile_train, datfile_validation);
 

@@ -42,6 +42,10 @@ public:
     double displacement_normalization_factor;
     int debiase_after_l1opt;
 
+    // Energy-difference loss term: weight w in  ||A_F θ − b_F||² + w² ||Ã_E θ − Ẽ_ref||².
+    // 0 disables the term (default; behavior identical to the force-only fit).
+    double efit_weight;
+
     // cross-validation related variables
     int cross_validation; // 0 : No CV mode, -1 or > 0: CV mode
     double l1_alpha;      // L1-regularization coefficient
@@ -70,6 +74,7 @@ public:
         standardize = 1;
         displacement_normalization_factor = 1.0;
         debiase_after_l1opt = 0;
+        efit_weight = 0.0;
         cross_validation = 0;
         l1_alpha = 0.0;
         l1_alpha_min = -1.0; // Recommended l1_alpha_max * 1e-6
@@ -118,6 +123,16 @@ public:
 
     auto set_f_train(const std::vector<std::vector<double>> &f_train_in) -> void;
 
+    auto set_e_train(const std::vector<double> &e_train_in) -> void;
+
+    // Phase 2b: build the centered, constraint-compacted energy sensing matrix and target for the
+    // training configs. amat_energy_out is row-major [M_E * ncols_compact]; evec_out length M_E
+    // holds w·(centered (E_ref + e_rhs)). Columns of amat_energy_out are already ·w and centered.
+    auto build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                             const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                             const size_t ncols_compact, std::vector<double> &amat_energy_out,
+                             std::vector<double> &evec_out, const int verbosity) const -> void;
+
     auto set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
                              const std::vector<std::vector<double>> &f_validation_in) -> void;
 
@@ -153,6 +168,7 @@ private:
 
     std::vector<std::vector<double>> u_train, f_train;
     std::vector<std::vector<double>> u_validation, f_validation;
+    std::vector<double> e_train;  // reference (DFT) total-supercell energies, Ry, one per training config
 
     OptimizerControl optcontrol;
 

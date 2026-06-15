@@ -91,5 +91,7 @@ private:
 
     auto parse_displacement_and_force_files(std::vector<std::vector<double>> &u, std::vector<std::vector<double>> &f,
                                             DispForceFile &datfile_in) const -> void;
+
+    auto parse_energies(std::vector<double> &energies, const DispForceFile &datfile_in) const -> void;
 };
 } // namespace ALM_NS
