@@ -59,6 +59,8 @@ public:
                            const std::vector<std::vector<double>> &f_train_in,
                            const std::vector<std::vector<double>> &u_validation_in,
                            const std::vector<std::vector<double>> &f_validation_in,
+                           const std::vector<double> &e_train_in,
+                           const std::vector<double> &e_validation_in,
                            const OptimizerControl &optcontrol_in) const -> void;
 
     auto set_file_vars(ALM *alm, const DispForceFile &datfile_train_in,

@@ -42,6 +42,17 @@ public:
     double displacement_normalization_factor;
     int debiase_after_l1opt;
 
+    // Energy-difference loss term: weight w in  ||A_F θ − b_F||² + w² Σ_c W_c (Ã_E[c]·θ − Ẽ_ref[c])².
+    // 0 disables the term (default; behavior identical to the force-only fit).
+    double efit_weight;
+    // Per-configuration energy weighting scale (eV): W_c = exp(−(E_c − E_min)/efit_escale),
+    // emphasizing low-energy (e.g. well-minimum) configs. <=0 => uniform weights (W_c = 1).
+    double efit_escale;
+    // Include the energy term inside cross-validation (1) or keep CV force-only (0, default).
+    // When 1, each fold's train AND held-out matrices carry the energy rows, and α is selected by
+    // the combined (force + w·energy) dimensionless relative validation error.
+    int efit_cv;
+
     // cross-validation related variables
     int cross_validation; // 0 : No CV mode, -1 or > 0: CV mode
     double l1_alpha;      // L1-regularization coefficient
@@ -70,6 +81,9 @@ public:
         standardize = 1;
         displacement_normalization_factor = 1.0;
         debiase_after_l1opt = 0;
+        efit_weight = 0.0;
+        efit_escale = 0.0;
+        efit_cv = 0;
         cross_validation = 0;
         l1_alpha = 0.0;
         l1_alpha_min = -1.0; // Recommended l1_alpha_max * 1e-6
@@ -118,6 +132,30 @@ public:
 
     auto set_f_train(const std::vector<std::vector<double>> &f_train_in) -> void;
 
+    auto set_e_train(const std::vector<double> &e_train_in) -> void;
+
+    auto set_e_validation(const std::vector<double> &e_validation_in) -> void;
+
+    // Build the weighted, constraint-compacted, w-scaled, (Frisch-Waugh) centered energy block for an
+    // arbitrary configuration set (u_in/e_in). Per-config weights W_c = exp(-(E_c - emin)/escale)
+    // (escale<=0 => uniform); rows are weighted-centered (E_ref + e_rhs target) then scaled by
+    // w·sqrt(W_c), so the loss term is w^2 * sum_c W_c (A_E[c]·θ - target[c])^2. `emin` is the weight
+    // reference (use the global training E_min so the weighting is consistent across CV folds).
+    // Returns row-major [n * ncols_compact] in amat_out, the target in evec_out, and
+    // enorm_out = ||evec_out|| for the dimensionless relative energy error.
+    auto build_energy_block(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                            const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                            const size_t ncols_compact, const std::vector<std::vector<double>> &u_in,
+                            const std::vector<double> &e_in, const double emin,
+                            std::vector<double> &amat_out, std::vector<double> &evec_out,
+                            double &enorm_out) const -> void;
+
+    // Production entry: builds the energy block for the full training set (u_train/e_train).
+    auto build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                             const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                             const size_t ncols_compact, std::vector<double> &amat_energy_out,
+                             std::vector<double> &evec_out, const int verbosity) const -> void;
+
     auto set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
                              const std::vector<std::vector<double>> &f_validation_in) -> void;
 
@@ -153,6 +191,8 @@ private:
 
     std::vector<std::vector<double>> u_train, f_train;
     std::vector<std::vector<double>> u_validation, f_validation;
+    std::vector<double> e_train;       // reference (DFT) total-supercell energies, Ry, one per training config
+    std::vector<double> e_validation;  // reference energies for the manual-CV validation set (EFIT_CV)
 
     OptimizerControl optcontrol;
 
@@ -188,12 +228,20 @@ private:
 
     auto write_cvresult_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                 const std::vector<double> &training_error, const std::vector<double> &validation_error,
-                                const std::vector<std::vector<int>> &nonzeros) const -> void;
+                                const std::vector<std::vector<int>> &nonzeros, const bool with_components = false,
+                                const std::vector<double> &terr_force = {}, const std::vector<double> &terr_energy = {},
+                                const std::vector<double> &verr_force = {},
+                                const std::vector<double> &verr_energy = {}) const -> void;
 
     auto write_cvscore_to_file(const std::string &file_out, const std::vector<double> &alphas,
                                const std::vector<double> &terr_mean, const std::vector<double> &terr_std,
                                const std::vector<double> &verr_mean, const std::vector<double> &verr_std,
-                               const int ialpha_minimum, const size_t nsets) const -> void;
+                               const int ialpha_minimum, const size_t nsets, const bool with_components = false,
+                               const std::vector<double> &tf_mean = {}, const std::vector<double> &tf_std = {},
+                               const std::vector<double> &te_mean = {}, const std::vector<double> &te_std = {},
+                               const std::vector<double> &vf_mean = {}, const std::vector<double> &vf_std = {},
+                               const std::vector<double> &ve_mean = {},
+                               const std::vector<double> &ve_std = {}) const -> void;
 
     auto set_errors_of_cvscore(std::vector<double> &terr_mean, std::vector<double> &terr_std,
                                std::vector<double> &verr_mean, std::vector<double> &verr_std,
@@ -277,9 +325,36 @@ private:
                           const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
                           double **&amat_orig) -> void;
 
+    // Phase 1 (energy term): build a single energy row for one displacement image.
+    // energy_row[iparam] += gamma_energy_precomputed * prod_{j=0..order+1} u_sub[elems[j]]
+    // (product over ALL order+2 indices; cf. fill_amat which drops elems[0] for the force).
+    static auto fill_amat_energy(const int maxorder, const size_t ncols, const std::vector<double> &u_sub,
+                                 const std::vector<std::vector<double>> &gamma_energy_precomputed,
+                                 const std::unique_ptr<Fcs> &fcs, std::vector<double> &energy_row) -> void;
+
+    // Per-entry energy multiplicity factor = gamma(n,arr)/n (NOT 1/denom; the two coincide only
+    // for diagonal clusters). Matches tools/taylor.py (E_order *= 1/order). Caller multiplies by
+    // fc_table.sign, exactly as for the force gamma table.
+    [[nodiscard]] auto gamma_energy(const int n, const int *arr) const -> double;
+
+    // Self-contained verification (env ALM_ENERGY_SELFTEST): checks the energy-row builder
+    // against the trusted force builder via the per-order Euler identity
+    // E_order == -(1/n) * sum_a u_a F_a(theta).  Returns true on PASS. Does not touch the fit path.
+    auto run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                             const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                             const int verbosity) const -> bool;
+
     static auto project_constraints(const int maxorder, const size_t natmin, const size_t irow,
                                     const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
                                     double **amat_orig, double **&amat_mod, std::vector<double> &bvec_mod) -> void;
+
+    // Phase 2: project one full-basis energy row (e_full, length ncols) into the constraint-compacted
+    // basis (e_compact, length ncols_compact), moving the FC2FIX-fixed-coefficient energy onto the
+    // RHS scalar e_rhs. Single-row analogue of project_constraints' const_fix/index_bimap/const_relate.
+    static auto project_energy_row(const int maxorder, const std::unique_ptr<Fcs> &fcs,
+                                   const std::unique_ptr<Constraint> &constraint,
+                                   const std::vector<double> &e_full, std::vector<double> &e_compact,
+                                   double &e_rhs) -> void;
 
     auto run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec, std::vector<double> &param_out,
                                  const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
@@ -303,7 +378,16 @@ private:
                        Eigen::VectorXd &b_validation, const double fnorm, const double fnorm_validation,
                        const std::string &file_coef, const int verbosity, const std::unique_ptr<Constraint> &constraint,
                        const std::vector<double> &alphas, std::vector<double> &training_error,
-                       std::vector<double> &validation_error, std::vector<std::vector<int>> &nonzeros) const -> void;
+                       std::vector<double> &validation_error, std::vector<std::vector<int>> &nonzeros,
+                       // Optional force/energy component reporting (energy-in-CV). When the output
+                       // pointers are non-null, fill the separate force-only and energy-only relative
+                       // errors using the force-row split nrow_force_* and the component norms.
+                       const size_t nrow_force_train = 0, const size_t nrow_force_val = 0,
+                       const double fnorm_force_train = 0.0, const double enorm_train = 0.0,
+                       const double fnorm_force_val = 0.0, const double enorm_val = 0.0,
+                       std::vector<double> *terr_force = nullptr, std::vector<double> *terr_energy = nullptr,
+                       std::vector<double> *verr_force = nullptr,
+                       std::vector<double> *verr_energy = nullptr) const -> void;
 
     static auto compute_alphas(const double l1_alpha_max, const double l1_alpha_min, const int num_l1_alpha,
                                std::vector<double> &alphas) -> void;
