@@ -1161,6 +1161,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
                                               "DEBIAS_OLS",
                                               "EFIT_WEIGHT",
                                               "EFIT_ESCALE",
+                                              "EFIT_CV",
                                               "PERIODIC_IMAGE_CONV",
                                               "STOP_CRITERION",
                                               "USE_CHOLESKY",
@@ -1267,6 +1268,9 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
             exit("parse_optimize_vars", "EFIT_ESCALE must be a finite number.");
         }
     }
+    if (!optimize_var_dict["EFIT_CV"].empty()) {
+        optcontrol.efit_cv = boost::lexical_cast<int>(optimize_var_dict["EFIT_CV"]);
+    }
     if (!optimize_var_dict["L1_RATIO"].empty()) {
         optcontrol.l1_ratio = boost::lexical_cast<double>(optimize_var_dict["L1_RATIO"]);
     }
@@ -1332,11 +1336,13 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     // production (non-CV) fit. During CV the energy pass is skipped entirely so legacy headerless
     // DFSETs are unaffected (alpha selection stays force-only).
     if (optcontrol.efit_weight > 0.0) {
-        if (optcontrol.cross_validation != 0) {
-            warn("parse_optimize_vars",
-                 "EFIT_WEIGHT > 0 is ignored during cross-validation; energy term applies only to the final fit.");
-        } else {
+        if (optcontrol.cross_validation == 0 || optcontrol.efit_cv) {
+            // Production fit (CV=0), or CV with EFIT_CV=1: the training energies are needed.
             parse_energies(e_tmp1, datfile_train);
+        } else {
+            warn("parse_optimize_vars",
+                 "EFIT_WEIGHT > 0 is ignored during cross-validation (set EFIT_CV = 1 to include "
+                 "the energy term in CV); it otherwise applies only to the final fit.");
         }
     }
 
@@ -1364,15 +1370,20 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         exit("parse_optimize_vars", "NDATA_CV, NSTART_CV and NEND_CV tags are inconsistent.");
     }
 
+    std::vector<double> e_tmp2;
     if (optcontrol.cross_validation == -1) {
         parse_displacement_and_force_files(u_tmp2, f_tmp2, datfile_validation);
 
         if (!is_data_range_consistent(datfile_validation)) {
             exit("parse_optimize_vars", "NDATA_CV, NSTART_CV and NEND_CV tags are inconsistent.");
         }
+        // Manual-CV validation energies (only when the energy term is in CV).
+        if (optcontrol.efit_weight > 0.0 && optcontrol.efit_cv) {
+            parse_energies(e_tmp2, datfile_validation);
+        }
     }
 
-    input_setter->set_optimize_vars(alm, u_tmp1, f_tmp1, u_tmp2, f_tmp2, e_tmp1, optcontrol);
+    input_setter->set_optimize_vars(alm, u_tmp1, f_tmp1, u_tmp2, f_tmp2, e_tmp1, e_tmp2, optcontrol);
 
     input_setter->set_file_vars(alm, datfile_train, datfile_validation);
 

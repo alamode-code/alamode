@@ -1845,6 +1845,13 @@ auto Optimize::set_e_train(const std::vector<double> &e_train_in) -> void
     e_train.shrink_to_fit();
 }
 
+auto Optimize::set_e_validation(const std::vector<double> &e_validation_in) -> void
+{
+    e_validation.clear();
+    e_validation = e_validation_in;
+    e_validation.shrink_to_fit();
+}
+
 auto Optimize::set_validation_data(const std::vector<std::vector<double>> &u_validation_in,
                                    const std::vector<std::vector<double>> &f_validation_in) -> void
 {
@@ -3172,32 +3179,24 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
 }
 
 
-auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
-                                   const std::unique_ptr<Constraint> &constraint, const int maxorder,
-                                   const size_t ncols_compact, std::vector<double> &amat_energy_out,
-                                   std::vector<double> &evec_out, const int verbosity) const -> void
+auto Optimize::build_energy_block(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                  const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                                  const size_t ncols_compact, const std::vector<std::vector<double>> &u_in,
+                                  const std::vector<double> &e_in, const double emin,
+                                  std::vector<double> &amat_out, std::vector<double> &evec_out,
+                                  double &enorm_out) const -> void
 {
-    // Build the energy block of the augmented least-squares system for the training configs:
-    //   amat_energy_out (row-major n_ene x ncols_compact) and evec_out (length n_ene),
-    // already constraint-compacted, energy-block-centered (Frisch-Waugh: absorbs the constant
-    // offset, incl. the absolute DFT zero), and scaled by w = efit_weight. The per-config target
-    // is E_ref + e_rhs (project_energy_row's e_rhs is the negative fixed-fc energy), so that
-    // A_E_compact . theta_c fits it. Requires an algebraic (ICONST>=10) constraint.
-    if (!constraint->get_constraint_algebraic()) {
-        exit("build_energy_matrix",
-             "EFIT_WEIGHT > 0 currently requires an algebraic constraint (ICONST = 10 or 11).");
-    }
-    const size_t n_ene = e_train.size();
-    if (n_ene == 0) exit("build_energy_matrix", "EFIT_WEIGHT > 0 but no reference energies were read.");
-    if (n_ene != u_train.size()) {
-        exit("build_energy_matrix", "Number of reference energies != number of training configurations.");
-    }
+    // Build the constraint-compacted, weighted-Frisch-Waugh-centered, w-scaled energy block for the
+    // configuration set (u_in, e_in). Used by the production fit (full training set) and by each CV
+    // fold (train and held-out subsets). `emin` is the per-config-weight reference (pass the global
+    // training E_min so the weighting is identical across folds). Requires an algebraic constraint.
+    const size_t n_ene = u_in.size();
 
     size_t ncols = 0;
     for (auto i = 0; i < maxorder; ++i) ncols += fcs->get_nequiv()[i].size();
 
     std::vector<std::vector<double>> u_multi;
-    data_multiplier(u_train, u_multi, symmetry);
+    data_multiplier(u_in, u_multi, symmetry);
     if (fcs->get_forceconstant_basis() == "Lattice") {
         apply_basis_converter(u_multi, fcs->get_basis_conversion_matrix());
     }
@@ -3218,7 +3217,7 @@ auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, co
     }
 
     const auto ntran = symmetry->get_ntran();
-    amat_energy_out.assign(n_ene * ncols_compact, 0.0);
+    amat_out.assign(n_ene * ncols_compact, 0.0);
     evec_out.assign(n_ene, 0.0);
 
     std::vector<double> e_full(ncols), e_compact(ncols_compact), energy_row(ncols);
@@ -3231,31 +3230,27 @@ auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, co
         }
         double e_rhs = 0.0;
         project_energy_row(maxorder, fcs, constraint, e_full, e_compact, e_rhs);
-        for (size_t q = 0; q < ncols_compact; ++q) amat_energy_out[c * ncols_compact + q] = e_compact[q];
-        evec_out[c] = e_train[c] + e_rhs;  // A_E_compact . theta_c fits (E_ref + e_rhs)
+        for (size_t q = 0; q < ncols_compact; ++q) amat_out[c * ncols_compact + q] = e_compact[q];
+        evec_out[c] = e_in[c] + e_rhs;  // A_E_compact . theta_c fits (E_ref + e_rhs)
     }
 
-    // Per-configuration weights W_c = exp(-(E_c - E_min)/escale) (escale in eV), emphasizing
-    // low-energy (e.g. well-minimum) configs; escale <= 0 gives uniform weights (W_c = 1).
+    // Per-configuration weights W_c = exp(-(E_c - emin)/escale) (escale in eV); escale<=0 => uniform.
     const double RyToeV = 13.605693122994;
     std::vector<double> wts(n_ene, 1.0);
     if (optcontrol.efit_escale > 0.0) {
-        double emin = e_train[0];
-        for (size_t c = 0; c < n_ene; ++c) emin = std::min(emin, e_train[c]);
         for (size_t c = 0; c < n_ene; ++c)
-            wts[c] = std::exp(-(e_train[c] - emin) * RyToeV / optcontrol.efit_escale);
+            wts[c] = std::exp(-(e_in[c] - emin) * RyToeV / optcontrol.efit_escale);
     }
     double wsum = 0.0;
     for (size_t c = 0; c < n_ene; ++c) wsum += wts[c];
     const double inv_wsum = 1.0 / wsum;
 
-    // Weighted Frisch-Waugh centering: subtract the WEIGHTED column/target means. This keeps the
-    // fit invariant to any constant in E_ref (no intercept) even for non-uniform weights.
+    // Weighted Frisch-Waugh centering over THIS config set (offset-invariant; consistent across folds).
     for (size_t q = 0; q < ncols_compact; ++q) {
         double colmean = 0.0;
-        for (size_t c = 0; c < n_ene; ++c) colmean += wts[c] * amat_energy_out[c * ncols_compact + q];
+        for (size_t c = 0; c < n_ene; ++c) colmean += wts[c] * amat_out[c * ncols_compact + q];
         colmean *= inv_wsum;
-        for (size_t c = 0; c < n_ene; ++c) amat_energy_out[c * ncols_compact + q] -= colmean;
+        for (size_t c = 0; c < n_ene; ++c) amat_out[c * ncols_compact + q] -= colmean;
     }
     double emean = 0.0;
     for (size_t c = 0; c < n_ene; ++c) emean += wts[c] * evec_out[c];
@@ -3264,20 +3259,41 @@ auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, co
 
     // Scale row c by w*sqrt(W_c) so the loss term is w^2 * sum_c W_c (A_E[c]·θ − target[c])^2.
     const double w = optcontrol.efit_weight;
+    double e2 = 0.0;
     for (size_t c = 0; c < n_ene; ++c) {
         const double s = w * std::sqrt(wts[c]);
-        for (size_t q = 0; q < ncols_compact; ++q) amat_energy_out[c * ncols_compact + q] *= s;
+        for (size_t q = 0; q < ncols_compact; ++q) amat_out[c * ncols_compact + q] *= s;
         evec_out[c] *= s;
+        e2 += evec_out[c] * evec_out[c];
     }
+    enorm_out = std::sqrt(e2);  // norm of the w-scaled centered target (for the relative energy error)
+}
+
+auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                                   const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                                   const size_t ncols_compact, std::vector<double> &amat_energy_out,
+                                   std::vector<double> &evec_out, const int verbosity) const -> void
+{
+    // Production entry: energy block for the full training set, used by optimize_with_given_l1alpha.
+    if (!constraint->get_constraint_algebraic()) {
+        exit("build_energy_matrix",
+             "EFIT_WEIGHT > 0 currently requires an algebraic constraint (ICONST = 10 or 11).");
+    }
+    const size_t n_ene = e_train.size();
+    if (n_ene == 0) exit("build_energy_matrix", "EFIT_WEIGHT > 0 but no reference energies were read.");
+    if (n_ene != u_train.size()) {
+        exit("build_energy_matrix", "Number of reference energies != number of training configurations.");
+    }
+    double emin = e_train[0];
+    for (size_t c = 0; c < n_ene; ++c) emin = std::min(emin, e_train[c]);
+
+    double enorm;
+    build_energy_block(symmetry, fcs, constraint, maxorder, ncols_compact, u_train, e_train, emin,
+                       amat_energy_out, evec_out, enorm);
 
     if (verbosity > 0) {
-        std::cout << "  Energy term: " << n_ene << " reference energies, weight w = " << w;
-        if (optcontrol.efit_escale > 0.0) {
-            double wsq = 0.0;
-            for (const auto v: wts) wsq += v * v;
-            std::cout << ", escale = " << optcontrol.efit_escale
-                      << " eV (effective N_configs = " << wsum * wsum / wsq << ")";
-        }
+        std::cout << "  Energy term: " << n_ene << " reference energies, weight w = " << optcontrol.efit_weight;
+        if (optcontrol.efit_escale > 0.0) std::cout << ", escale = " << optcontrol.efit_escale << " eV";
         std::cout << " (weighted-centered, compacted; ncols_compact = " << ncols_compact << ")\n";
     }
 }

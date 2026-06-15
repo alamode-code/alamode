@@ -48,6 +48,10 @@ public:
     // Per-configuration energy weighting scale (eV): W_c = exp(−(E_c − E_min)/efit_escale),
     // emphasizing low-energy (e.g. well-minimum) configs. <=0 => uniform weights (W_c = 1).
     double efit_escale;
+    // Include the energy term inside cross-validation (1) or keep CV force-only (0, default).
+    // When 1, each fold's train AND held-out matrices carry the energy rows, and α is selected by
+    // the combined (force + w·energy) dimensionless relative validation error.
+    int efit_cv;
 
     // cross-validation related variables
     int cross_validation; // 0 : No CV mode, -1 or > 0: CV mode
@@ -79,6 +83,7 @@ public:
         debiase_after_l1opt = 0;
         efit_weight = 0.0;
         efit_escale = 0.0;
+        efit_cv = 0;
         cross_validation = 0;
         l1_alpha = 0.0;
         l1_alpha_min = -1.0; // Recommended l1_alpha_max * 1e-6
@@ -129,11 +134,23 @@ public:
 
     auto set_e_train(const std::vector<double> &e_train_in) -> void;
 
-    // Build the weighted, constraint-compacted energy sensing matrix and target for the training
-    // configs. amat_energy_out is row-major [M_E * ncols_compact]; evec_out length M_E. Per-config
-    // weights W_c = exp(-(E_c - E_min)/efit_escale) (escale<=0 => uniform); rows are
-    // WEIGHTED-Frisch-Waugh-centered (E_ref + e_rhs target) then scaled by w·sqrt(W_c), so the loss
-    // term is w^2 * sum_c W_c (A_E[c]·θ - target[c])^2.
+    auto set_e_validation(const std::vector<double> &e_validation_in) -> void;
+
+    // Build the weighted, constraint-compacted, w-scaled, (Frisch-Waugh) centered energy block for an
+    // arbitrary configuration set (u_in/e_in). Per-config weights W_c = exp(-(E_c - emin)/escale)
+    // (escale<=0 => uniform); rows are weighted-centered (E_ref + e_rhs target) then scaled by
+    // w·sqrt(W_c), so the loss term is w^2 * sum_c W_c (A_E[c]·θ - target[c])^2. `emin` is the weight
+    // reference (use the global training E_min so the weighting is consistent across CV folds).
+    // Returns row-major [n * ncols_compact] in amat_out, the target in evec_out, and
+    // enorm_out = ||evec_out|| for the dimensionless relative energy error.
+    auto build_energy_block(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
+                            const std::unique_ptr<Constraint> &constraint, const int maxorder,
+                            const size_t ncols_compact, const std::vector<std::vector<double>> &u_in,
+                            const std::vector<double> &e_in, const double emin,
+                            std::vector<double> &amat_out, std::vector<double> &evec_out,
+                            double &enorm_out) const -> void;
+
+    // Production entry: builds the energy block for the full training set (u_train/e_train).
     auto build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
                              const std::unique_ptr<Constraint> &constraint, const int maxorder,
                              const size_t ncols_compact, std::vector<double> &amat_energy_out,
@@ -174,7 +191,8 @@ private:
 
     std::vector<std::vector<double>> u_train, f_train;
     std::vector<std::vector<double>> u_validation, f_validation;
-    std::vector<double> e_train;  // reference (DFT) total-supercell energies, Ry, one per training config
+    std::vector<double> e_train;       // reference (DFT) total-supercell energies, Ry, one per training config
+    std::vector<double> e_validation;  // reference energies for the manual-CV validation set (EFIT_CV)
 
     OptimizerControl optcontrol;
 

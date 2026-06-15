@@ -143,6 +143,11 @@ auto ALM::set_e_train(const std::vector<double> &e) const -> void
     optimize->set_e_train(e);
 }
 
+auto ALM::set_e_validation(const std::vector<double> &e) const -> void
+{
+    optimize->set_e_validation(e);
+}
+
 auto ALM::set_validation_data(const std::vector<std::vector<double>> &u,
                               const std::vector<std::vector<double>> &f) const -> void
 {
