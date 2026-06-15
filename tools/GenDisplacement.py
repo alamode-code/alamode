@@ -172,6 +172,7 @@ class AlamodeDisplace(object):
         option_qrange=None,
         ignore_imag=False,
         imag_evec=False,
+        softmode_only=False,
     ):
         self._counter = 1
         self._displacement_magnitude = magnitude
@@ -348,9 +349,11 @@ class AlamodeDisplace(object):
                     print(" Statistics  : Classical (no zero-point vibration)")
                 else:
                     print(" Statistics  : Quantum (with zero-point vibration)")
+                if softmode_only:
+                    print(" Mode filter : Soft modes only (omega^2 < 0)")
                 print("")
 
-                if self._omega_min > 0.0:
+                if self._omega_min > 0.0 and not softmode_only:
                     print(
                         " A frequency floor of %.2f cm^-1 is applied to all modes"
                         % (self._omega_min / self._KAYSER_TO_RYD)
@@ -368,7 +371,7 @@ class AlamodeDisplace(object):
                     print("")
 
             disp_random = self._get_random_displacements_normalcoordinate(
-                number_of_displacements, temperature, ignore_imag
+                number_of_displacements, temperature, ignore_imag, softmode_only
             )
             for i in range(number_of_displacements):
                 header = "Random disp. in normal coordinates at T = %f K: %i" % (
@@ -385,7 +388,7 @@ class AlamodeDisplace(object):
             if option_pes is None or option_qrange is None:
                 raise RuntimeError("--pes and --Qrange options should be given.")
 
-            target_q, target_mode = [int(t) - 1 for t in option_pes.split()]
+            target_modes = self._parse_pes_targets(option_pes)
             Qmin, Qmax = option_qrange.split()
             Qlist = np.linspace(float(Qmin), float(Qmax), number_of_displacements)
 
@@ -398,32 +401,42 @@ class AlamodeDisplace(object):
                     " the original supercell structure" % number_of_displacements
                 )
                 print(
-                    " The normal coordinate of the following phonon mode is excited:\n\n"
-                    " xk = %f %f %f"
-                    % (
-                        self._qpoints[target_q, 0],
-                        self._qpoints[target_q, 1],
-                        self._qpoints[target_q, 2],
-                    )
+                    " The following normal-coordinate direction is excited:\n"
                 )
-                print(" branch : %d" % (target_mode + 1))
+                for target_q, target_mode, coefficient in target_modes:
+                    print(
+                        " xk = %f %f %f, branch : %d, coefficient : %g"
+                        % (
+                            self._qpoints[target_q, 0],
+                            self._qpoints[target_q, 1],
+                            self._qpoints[target_q, 2],
+                            target_mode + 1,
+                            coefficient,
+                        )
+                    )
                 print("")
 
             disp_pes = self._generate_displacements_pes(
-                np.array(Qlist), target_q, target_mode, imag_evec
+                np.array(Qlist), target_modes, imag_evec
             )
 
             for i in range(number_of_displacements):
+                mode_label = " + ".join(
+                    [
+                        "%g*(q=%f %f %f, branch=%d)"
+                        % (
+                            coefficient,
+                            self._qpoints[target_q, 0],
+                            self._qpoints[target_q, 1],
+                            self._qpoints[target_q, 2],
+                            target_mode + 1,
+                        )
+                        for target_q, target_mode, coefficient in target_modes
+                    ]
+                )
                 header = (
-                    "Displacement along normal coordinate Q (q= %f %f %f, branch : %d), "
-                    "magnitude = %f (u^{1/2} ang)"
-                    % (
-                        self._qpoints[target_q, 0],
-                        self._qpoints[target_q, 1],
-                        self._qpoints[target_q, 2],
-                        target_mode + 1,
-                        Qlist[i],
-                    )
+                    "Displacement along normal coordinate Q [%s], "
+                    "magnitude = %f (u^{1/2} ang)" % (mode_label, Qlist[i])
                 )
 
                 header_list.append(header)
@@ -650,7 +663,7 @@ class AlamodeDisplace(object):
         return disp_random
 
     def _get_random_displacements_normalcoordinate(
-        self, ndata, temperature, ignore_imag
+        self, ndata, temperature, ignore_imag, softmode_only=False
     ):
         if temperature is None:
             raise RuntimeError("The temperature must be given with the --temp option.")
@@ -660,7 +673,7 @@ class AlamodeDisplace(object):
         Q_I = np.zeros((nq, self._nmode, ndata))
 
         # get sigma in units of bohr*amu_ry^(1/2)
-        sigma = self._get_gaussian_sigma(temperature, ignore_imag)
+        sigma = self._get_gaussian_sigma(temperature, ignore_imag, softmode_only)
 
         if self._random_seed is not None:
             random.seed(self._random_seed)
@@ -733,7 +746,7 @@ class AlamodeDisplace(object):
 
         return disp
 
-    def _get_gaussian_sigma(self, temp, ignore_imag):
+    def _get_gaussian_sigma(self, temp, ignore_imag, softmode_only=False):
         """
         Computes the deviation of Q, i.e., sqrt{<Q^2>} from the phonon frequency
         and input temperature. Since omega is defined in the Rydberg atomic unit,
@@ -747,9 +760,11 @@ class AlamodeDisplace(object):
         sigma = np.zeros((nq, nmode))
 
         # 1) Build ω from ω^2, handling imaginary mode policy
+        n_soft_modes = 0
         for iq in range(nq):
             for imode in range(nmode):
                 if self._omega2[iq, imode] < 0.0:
+                    n_soft_modes += 1
                     if ignore_imag:
                         omega_raw[iq, imode] = 0.0
                         if self._verbosity > 0:
@@ -766,7 +781,16 @@ class AlamodeDisplace(object):
                                 % (iq + 1, imode + 1)
                             )
                 else:
-                    omega_raw[iq, imode] = math.sqrt(self._omega2[iq, imode])
+                    if softmode_only:
+                        omega_raw[iq, imode] = 0.0
+                    else:
+                        omega_raw[iq, imode] = math.sqrt(self._omega2[iq, imode])
+
+        if softmode_only and self._verbosity > 0:
+            print(" [%d soft modes with omega^2 < 0 will be sampled]" % n_soft_modes)
+            if n_soft_modes == 0:
+                print(" Warning: No soft modes were found. Displacements will be zero.")
+            print("")
 
         # 2) Γ-acoustic identification by projection; set huge ω to suppress σ
         gamma_acoustic = self._identify_gamma_acoustic(
@@ -879,44 +903,115 @@ class AlamodeDisplace(object):
         self._omega_eff_cache = omega_eff.copy()
         return sigma
 
-    def _generate_displacements_pes(self, Q_array, iq, imode, use_imaginary_part):
+    def _parse_pes_targets(self, option_pes):
+        """
+        Parse --pes targets.
+
+        Accepted forms:
+          "iq imode"
+          "iq imode coefficient"
+          "iq1 imode1; iq2 imode2"
+          "iq1 imode1 c1; iq2 imode2 c2"
+        Indices are one-based in the input and converted to zero-based here.
+        """
+        targets = []
+        entries = [entry.strip() for entry in option_pes.split(";") if entry.strip()]
+
+        if len(entries) == 1:
+            tokens = entries[0].split()
+            if len(tokens) > 3:
+                if len(tokens) % 2 == 0:
+                    entries = [
+                        "%s %s" % (tokens[i], tokens[i + 1])
+                        for i in range(0, len(tokens), 2)
+                    ]
+                else:
+                    raise RuntimeError(
+                        "Invalid --pes format. Use 'iq imode [coef]' entries "
+                        "separated by semicolons for linear combinations."
+                    )
+
+        for entry in entries:
+            tokens = entry.split()
+            if len(tokens) not in (2, 3):
+                raise RuntimeError(
+                    "Invalid --pes entry '%s'. Expected 'iq imode [coef]'." % entry
+                )
+            try:
+                iq = int(tokens[0]) - 1
+                imode = int(tokens[1]) - 1
+                coefficient = float(tokens[2]) if len(tokens) == 3 else 1.0
+            except ValueError as err:
+                raise RuntimeError(
+                    "Invalid --pes entry '%s'. iq and imode must be integers "
+                    "and coefficient must be numeric." % entry
+                ) from err
+
+            if iq < 0 or iq >= len(self._qpoints):
+                raise RuntimeError(
+                    "Invalid q index in --pes: %d. Valid range is 1-%d."
+                    % (iq + 1, len(self._qpoints))
+                )
+            if imode < 0 or imode >= self._nmode:
+                raise RuntimeError(
+                    "Invalid branch index in --pes: %d. Valid range is 1-%d."
+                    % (imode + 1, self._nmode)
+                )
+
+            targets.append((iq, imode, coefficient))
+
+        if not targets:
+            raise RuntimeError("No valid target modes were specified by --pes.")
+
+        return targets
+
+    def _generate_displacements_pes(self, Q_array, target_modes, use_imaginary_part):
         tol_zero = 1.0e-3
         Q_R = Q_array  # in units of u^{1/2} Angstrom
 
         ndata = len(Q_R)
-        xq_tmp = self._qpoints[iq, :]
 
-        is_commensurate = False
-        for xq in self._commensurate_qpoints:
-            xtmp = (xq - xq_tmp) % 1.0
-            if math.sqrt(np.dot(xtmp, xtmp)) < tol_zero:
-                is_commensurate = True
-                break
-        if not is_commensurate:
-            raise RuntimeWarning(
-                "The q point specified by --pes is not commensurate with the supercell."
-            )
+        for iq, _imode, _coefficient in target_modes:
+            xq_tmp = self._qpoints[iq, :]
+            is_commensurate = False
+            for xq in self._commensurate_qpoints:
+                xtmp = (xq - xq_tmp) % 1.0
+                if math.sqrt(np.dot(xtmp, xtmp)) < tol_zero:
+                    is_commensurate = True
+                    break
+            if not is_commensurate:
+                raise RuntimeWarning(
+                    "The q point specified by --pes is not commensurate with the supercell."
+                )
 
         disp = np.zeros((self._supercell.nat, 3, ndata))
 
         for iat in range(self._supercell.nat):
             xshift = self._mapping_shift[iat, :]
             jat = self._mapping_s2p[iat]
-            phase_base = 2.0 * math.pi * np.dot(xq_tmp, xshift)
-            cexp_phase = cmath.exp(1.0j * phase_base)
+            for iq, imode, coefficient in target_modes:
+                xq_tmp = self._qpoints[iq, :]
+                phase_base = 2.0 * math.pi * np.dot(xq_tmp, xshift)
+                cexp_phase = cmath.exp(1.0j * phase_base)
 
-            if use_imaginary_part:
-                for icrd in range(3):
-                    disp[iat, icrd, :] += (
-                        Q_R[:]
-                        * (self._evec[iq, imode, 3 * jat + icrd] * cexp_phase).imag
-                    )
-            else:
-                for icrd in range(3):
-                    disp[iat, icrd, :] += (
-                        Q_R[:]
-                        * (self._evec[iq, imode, 3 * jat + icrd] * cexp_phase).real
-                    )
+                if use_imaginary_part:
+                    for icrd in range(3):
+                        disp[iat, icrd, :] += (
+                            coefficient
+                            * Q_R[:]
+                            * (
+                                self._evec[iq, imode, 3 * jat + icrd] * cexp_phase
+                            ).imag
+                        )
+                else:
+                    for icrd in range(3):
+                        disp[iat, icrd, :] += (
+                            coefficient
+                            * Q_R[:]
+                            * (
+                                self._evec[iq, imode, 3 * jat + icrd] * cexp_phase
+                            ).real
+                        )
 
         factor = np.zeros(self._supercell.nat)
         for iat in range(self._supercell.nat):
