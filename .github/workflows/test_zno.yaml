@@ -3,7 +3,6 @@ name: Run ZnO example
 on:
   push:
     branches:
-      - develop
       - 2.0dev
     # paths:
     #   - '**.cpp'
