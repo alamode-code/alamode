@@ -1,0 +1,43 @@
+/* Floating multi-version switcher injected by version-switcher.js.
+   Uses Furo's CSS variables so it adapts to light/dark mode automatically,
+   and degrades to sensible fallbacks under other themes. */
+.version-switcher {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 0.4rem;
+  background: var(--color-background-secondary, #f4f4f5);
+  color: var(--color-foreground-primary, #1a1a1a);
+  border: 1px solid var(--color-background-border, #d0d0d0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.version-switcher__label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.version-switcher__select {
+  font: inherit;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: var(--color-background-primary, #ffffff);
+  color: var(--color-foreground-primary, #1a1a1a);
+  border: 1px solid var(--color-background-border, #d0d0d0);
+  cursor: pointer;
+}
+
+/* Keep the switcher out of the way on narrow screens. */
+@media (max-width: 46em) {
+  .version-switcher {
+    bottom: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.75rem;
+  }
+}

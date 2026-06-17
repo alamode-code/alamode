@@ -1,0 +1,141 @@
+name: Build and deploy documentation
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - 2.0dev
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+# Allow the deploy job to publish to GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment; do not cancel an in-progress
+# production deploy, but skip queued runs in between.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# Versions published in the switcher. The first entry is treated as the
+# default (the site root redirects to it). Keep PAGES_VERSIONS, the
+# versions.json manifest, and the landing redirect below in sync.
+env:
+  PAGES_VERSIONS: 'master develop 2.0dev'
+  PAGES_DEFAULT: 'master'
+
+jobs:
+  build:
+    name: Build HTML
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash  # explicit: the manifest step relies on bash word-splitting
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need every documentation branch for the multi-version build
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # --- Pull request: validate that the changed docs build, do not deploy ---
+      - name: Build (pull request validation)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/venv-pr"
+          "$RUNNER_TEMP/venv-pr/bin/pip" install --upgrade pip
+          "$RUNNER_TEMP/venv-pr/bin/pip" install -r docs/requirements.txt
+          "$RUNNER_TEMP/venv-pr/bin/sphinx-build" -b html docs/source "$RUNNER_TEMP/_site_pr"
+
+      # --- Push / manual run: build every version and assemble the site ---
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+        with:
+          # Switch the Pages source to "GitHub Actions" (off the legacy
+          # gh-pages branch) on the first run, and enable Pages if needed.
+          enablement: true
+
+      - name: Fetch documentation branches
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          for v in $PAGES_VERSIONS; do
+            git fetch --no-tags origin "+refs/heads/$v:refs/remotes/origin/$v"
+          done
+
+      - name: Build all versions
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          for v in $PAGES_VERSIONS; do
+            echo "::group::Build $v"
+            worktree="$RUNNER_TEMP/wt-$v"
+            venv="$RUNNER_TEMP/venv-$v"
+            git worktree add --force "$worktree" "origin/$v"
+            # Each branch is built with its own pinned requirements, so a venv
+            # per version keeps incompatible Sphinx/theme versions isolated.
+            python -m venv "$venv"
+            "$venv/bin/pip" install --upgrade pip
+            "$venv/bin/pip" install -r "$worktree/docs/requirements.txt"
+            DOCS_VERSION="$v" "$venv/bin/sphinx-build" -b html \
+              "$worktree/docs/source" "_site/$v"
+            git worktree remove --force "$worktree"
+            echo "::endgroup::"
+          done
+
+      - name: Generate manifest and landing page
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          # versions.json: the manifest the switcher reads at runtime.
+          json=$(printf '"%s",' $PAGES_VERSIONS); json="[${json%,}]"
+          printf '%s\n' "$json" > _site/versions.json
+          # Root landing page: redirect to the default version.
+          {
+            echo '<!DOCTYPE html>'
+            echo '<html lang="en"><head><meta charset="utf-8">'
+            echo "<meta http-equiv=\"refresh\" content=\"0; url=./$PAGES_DEFAULT/\">"
+            echo "<link rel=\"canonical\" href=\"./$PAGES_DEFAULT/\">"
+            echo '<title>ALAMODE documentation</title></head>'
+            echo "<body>Redirecting to the <a href=\"./$PAGES_DEFAULT/\">$PAGES_DEFAULT documentation</a>&hellip;</body></html>"
+          } > _site/index.html
+          # Defensive: GitHub Actions Pages does not run Jekyll, but this keeps
+          # underscore-prefixed Sphinx dirs (_static, _sources) safe anywhere.
+          touch _site/.nojekyll
+
+      - name: Upload artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    # Never publish from pull requests.
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
