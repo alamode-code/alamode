@@ -104,13 +104,19 @@ pygments_style = "sphinx"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-# html_theme = 'sphinx_book_theme'
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-# html_theme_options = {}
+html_theme_options = {
+    "source_repository": "https://github.com/alamode-team/alamode/",
+    "source_branch": "develop",
+    "source_directory": "docs/source/",
+}
+
+# The canonical base URL of the published site (used for sitemap / <link>).
+html_baseurl = "https://alamode-team.github.io/alamode/"
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -134,7 +140,12 @@ html_logo = "../img/alamode.png"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
+html_static_path = ["_static"]
+
+# Multi-version switcher: a small theme-agnostic dropdown that reads the
+# versions.json published at the site root by the docs deploy workflow.
+html_js_files = ["version-switcher.js"]
+html_css_files = ["version-switcher.css"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -341,4 +352,4 @@ epub_exclude_files = ["search.html"]
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"http://docs.python.org/": None}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
