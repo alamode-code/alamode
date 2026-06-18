@@ -76,6 +76,13 @@ jobs:
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=0
         run: python test_si.py
 
+      - name: Run test ALGO_REDUCTION consistency under sanitizers
+        working-directory: ./test
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=0
+        run: python test_algo_reduction.py
+
       # On failure, re-run the two anphon modes directly (the inputs and FCS file
       # were generated under test/si by test_si.py) with stderr captured, so the
       # exact AddressSanitizer/UBSan report and the failing mode are visible in

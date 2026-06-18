@@ -70,3 +70,7 @@ jobs:
       - name: Run test Si
         working-directory: ./test
         run: python test_si.py
+
+      - name: Run test ALGO_REDUCTION consistency
+        working-directory: ./test
+        run: python test_algo_reduction.py

@@ -59,7 +59,7 @@ def print_max_errors(file, data_ref, data_now, rel_min_scale=1.0e-15):
         )
 
 
-def gen_alminput_si(fname, norder=1, prefix="si222", dfset="DFSET"):
+def gen_alminput_si(fname, norder=1, prefix="si222", dfset="DFSET", algo_reduction=None):
     pos = [
         [0.000, 0.000, 0.000],
         [0.000, 0.000, 0.500],
@@ -132,7 +132,10 @@ def gen_alminput_si(fname, norder=1, prefix="si222", dfset="DFSET"):
             "&general\n PREFIX = %s; MODE = opt; NAT = 64; NKD = 1; KD = Si\n/\n"
             % prefix
         )
-        f.write("&optimize\nDFSET = %s\n/\n" % dfset)
+        opt_block = "DFSET = %s\n" % dfset
+        if algo_reduction is not None:
+            opt_block += "ALGO_REDUCTION = %d\n" % algo_reduction
+        f.write("&optimize\n%s/\n" % opt_block)
         f.write("&interaction\nNORDER = %d\n/\n" % norder)
         f.write("&cell\n 20.406\n 1.0 0.0 0.0\n 0.0 1.0 0.0\n 0.0 0.0 1.0\n/\n")
         f.write("&cutoff\n Si-Si None 7.6\n/\n")
