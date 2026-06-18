@@ -10,6 +10,7 @@
 
 #include "constraint.h"
 #include <algorithm>
+#include <chrono>
 #include <boost/algorithm/string.hpp>
 #include <boost/bimap.hpp>
 #include <boost/foreach.hpp>
@@ -69,7 +70,9 @@ auto Constraint::set_default_variables() -> void
     status_constraint_subset["fix2"] = -1;
     status_constraint_subset["fix3"] = -1;
     status_constraint_subset["huang"] = -1;
-    algo_reduction = ReductionAlgo::rref;
+    // Default reduction backend: coord_factorization (partial-pivot RREF). Stable replacement
+    // for the legacy rref; ALGO_REDUCTION = 1 restores rref. Kept in sync with input_parser.
+    algo_reduction = ReductionAlgo::coord_factorization;
 }
 
 auto Constraint::deallocate_variables() -> void
@@ -378,6 +381,8 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
 
     // Merge intra-order constraints and do reduction
     // This part needs to be updated if the huang constraint is considered under finite strain.
+    const auto t_reduce_start = std::chrono::steady_clock::now();
+
     for (auto order = 0; order < maxorder; ++order) {
         const auto nparam = fcs->get_nequiv()[order].size();
 
@@ -409,17 +414,30 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         } else if (algo_in == ReductionAlgo::qrd) {
             int rank;
             get_independent_rows_lapack_sparse(nparam, const_self[order], verbosity, eps12, rank);
+        } else if (algo_in == ReductionAlgo::coord_factorization) {
+            // Stable, coordinate-preserving echelon form (Policy A). Produces the same
+            // structure as rref_sparse so get_mapping_constraint below is reused as-is.
+            rref_sparse_pivot(nparam, const_self[order], tolerance_constraint);
         }
     }
 
-    size_t nparams = 0;
-    for (auto order = 0; order < maxorder; ++order) {
-        nparams += fcs->get_nequiv()[order].size();
-    }
-    build_constraint_matrix_sparse(maxorder, fcs->get_nequiv(), nparams, verbosity);
-    number_of_constraints = const_mat_sparse.rows();
-
+    // The merged (full) constraint matrix const_mat_sparse and its rank reduction are only
+    // consumed by the non-algebraic solvers (build_constraint_matrix_dense and the dense
+    // least_squares_with_constraints_gqr / sparse solveGQRSparse paths). In the algebraic
+    // path (ICONST >= 10, used by elastic-net / adaptive-lasso) the solve instead uses the
+    // per-order elimination map (const_fix / const_relate / index_bimap) built below, and
+    // get_exist_constraint() inspects const_self / const_fix / const_relate directly without
+    // reading number_of_constraints. Building/reducing the merged matrix here is therefore
+    // wasted work in the algebraic path -- and for large maxorder it dominates the reduction
+    // time, because get_independent_rows_lapack_sparse densifies to a P x N buffer and runs a
+    // dense LAPACK QR. Skip it entirely; number_of_constraints is set from the mapping below.
     if (!constraint_algebraic) {
+        size_t nparams = 0;
+        for (auto order = 0; order < maxorder; ++order) {
+            nparams += fcs->get_nequiv()[order].size();
+        }
+        build_constraint_matrix_sparse(maxorder, fcs->get_nequiv(), nparams, verbosity);
+        number_of_constraints = const_mat_sparse.rows();
         build_constraint_matrix_dense(verbosity);
     }
 
@@ -437,8 +455,10 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
     }
 
     if (constraint_algebraic) {
-        // if rref is not used above, do it here as it is necessary to get the mapping
-        if (algo_in != ReductionAlgo::rref) {
+        // The mapping requires const_self in reduced row echelon form. rref and
+        // coord_factorization already produced it in the per-order loop above; only the qrd /
+        // none paths still need an explicit echelon reduction here.
+        if (algo_in != ReductionAlgo::rref && algo_in != ReductionAlgo::coord_factorization) {
             for (auto order = 0; order < maxorder; ++order) {
                 const auto nparam = fcs->get_nequiv()[order].size();
                 rref_sparse(nparam, const_self[order], tolerance_constraint);
@@ -451,6 +471,27 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
                                const_fix.data(),
                                const_relate.data(),
                                index_bimap);
+
+        // number_of_constraints is not consumed by the algebraic solve, but keep it
+        // meaningful for reporting and get_exist_constraint(): each fixed or related
+        // parameter corresponds to one independent constraint that eliminates a parameter.
+        number_of_constraints = 0;
+        for (auto order = 0; order < maxorder; ++order) {
+            number_of_constraints += const_fix[order].size() + const_relate[order].size();
+        }
+    }
+
+    const auto t_reduce_end = std::chrono::steady_clock::now();
+    if (verbosity > 0) {
+        const auto elapsed_reduce = std::chrono::duration<double>(t_reduce_end - t_reduce_start).count();
+        // Save/restore cout formatting: std::fixed/std::setprecision are sticky and would
+        // otherwise alter the formatting of all subsequent floating-point output.
+        const auto saved_flags = std::cout.flags();
+        const auto saved_prec = std::cout.precision();
+        std::cout << "  Constraint reduction (merge + rank reduction + mapping) took "
+                  << std::fixed << std::setprecision(3) << elapsed_reduce << " sec.\n\n";
+        std::cout.flags(saved_flags);
+        std::cout.precision(saved_prec);
     }
 }
 
@@ -747,9 +788,16 @@ auto Constraint::set_reduction_algorithm(const int ialgo_reduction) -> void
         algo_reduction = ReductionAlgo::rref;
     } else if (ialgo_reduction == 2) {
         algo_reduction = ReductionAlgo::qrd;
+    } else if (ialgo_reduction == 3) {
+        algo_reduction = ReductionAlgo::coord_factorization;
     } else {
         exit("set_reduction_algorithm", "unsupported ialgo_reduction");
     }
+}
+
+auto Constraint::get_reduction_algorithm() const -> ReductionAlgo
+{
+    return algo_reduction;
 }
 
 auto Constraint::get_constraint_mode() const -> int
@@ -1811,6 +1859,15 @@ auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
                                                                 1,
                                                                 eps12,
                                                                 rank);
+            }
+        } else if (algo_in == ReductionAlgo::coord_factorization) {
+            // Mirror the rref branch with the stable partial-pivot kernel. const_rotation_cross
+            // is inter-order and is NOT merged into const_self, so (unlike the other subsets) it
+            // must be reduced here; otherwise it would reach build_constraint_matrix_sparse raw
+            // in the non-algebraic path (ICONST = 2/3).
+            rref_sparse_pivot(nparams[order], const_rotation_self[order], eps6);
+            if (order > 0) {
+                rref_sparse_pivot(nparams[order - 1] + nparams[order], const_rotation_cross[order], eps6);
             }
         }
     }

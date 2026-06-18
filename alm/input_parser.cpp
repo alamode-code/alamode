@@ -1428,7 +1428,10 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
 
     int ialgo_reduce;
     if (optimize_var_dict["ALGO_REDUCTION"].empty()) {
-        ialgo_reduce = 1;
+        // Default: 3 = coord_factorization (partial-pivot RREF). Stable replacement for the
+        // legacy 1 = rref backend; produces identical maps but never divides by a small pivot.
+        // Set ALGO_REDUCTION = 1 to reproduce the legacy rref behavior.
+        ialgo_reduce = 3;
     } else {
         assign_val(ialgo_reduce, "ALGO_REDUCTION", optimize_var_dict);
     }

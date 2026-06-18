@@ -286,6 +286,8 @@ public:
 
     auto set_reduction_algorithm(const int ialgo_reduction) -> void;
 
+    [[nodiscard]] auto get_reduction_algorithm() const -> ReductionAlgo;
+
 private:
     int constraint_mode;
     size_t number_of_constraints;

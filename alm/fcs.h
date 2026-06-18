@@ -177,7 +177,8 @@ public:
     {
         none,
         rref,
-        qrd
+        qrd,
+        coord_factorization
     };
 
     static auto get_xyzcomponent(int, int **) -> void;

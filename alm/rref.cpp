@@ -234,3 +234,109 @@ auto rref_sparse(const size_t ncols, ConstraintSparseForm &sp_constraint, const 
                         sp_constraint.end());
     sp_constraint.shrink_to_fit();
 }
+
+
+auto rref_sparse_pivot(const size_t ncols, ConstraintSparseForm &sp_constraint, const double tolerance) -> void
+{
+    // Same Gauss-Jordan elimination as rref_sparse(), but with PARTIAL (maximum-magnitude) row
+    // pivoting. For each pivot column we move the row with the largest |entry| in that column to
+    // the pivot position before normalizing, instead of accepting the first entry above the
+    // tolerance. The set of pivot columns (the left-to-right linearly independent columns) is
+    // unchanged, so the reduced echelon form -- and therefore the const_fix / const_relate /
+    // index_bimap map derived from it -- is mathematically identical to rref_sparse() up to
+    // round-off, but never divides by a small accepted pivot. This is the coordinate-preserving,
+    // numerically stable replacement (Policy A) for rref_sparse() in the algebraic path.
+
+    const auto nrows = sp_constraint.size();
+    if (nrows == 0) return;
+
+    // Threshold for dropping numerically-zero fill, mirroring rref_sparse().
+    constexpr auto zero_criterion = eps10;
+
+    size_t icol = 0;
+    MapConstraintElement::iterator it_other;
+
+    for (size_t irow = 0; irow < nrows; ++irow) {
+
+        // Find the leftmost column (>= icol) that has a usable pivot among rows [irow, nrows),
+        // and within that column pick the row with the maximum-magnitude entry.
+        size_t pivot = nrows;
+        double pivot_abs = 0.0;
+        while (icol < ncols) {
+            pivot = nrows;
+            pivot_abs = 0.0;
+            for (size_t r = irow; r < nrows; ++r) {
+                const auto it = sp_constraint[r].find(icol);
+                if (it != sp_constraint[r].end()) {
+                    const auto a = std::abs(it->second);
+                    if (a > pivot_abs) {
+                        pivot_abs = a;
+                        pivot = r;
+                    }
+                }
+            }
+            if (pivot_abs >= tolerance) break; // pivot column found
+            ++icol;                            // column has no pivot -> free column
+        }
+        if (icol == ncols) break;
+
+        // Move the chosen pivot row to position irow.
+        if (pivot != irow) {
+            std::iter_swap(sp_constraint.begin() + irow, sp_constraint.begin() + pivot);
+        }
+
+        // Normalize the pivot row so the pivot entry becomes 1.
+        const double division_factor = 1.0 / sp_constraint[irow].find(icol)->second;
+        for (auto &[fst, snd]: sp_constraint[irow]) {
+            snd *= division_factor;
+        }
+
+        // Eliminate column icol from every other row.
+        for (size_t jrow = 0; jrow < nrows; ++jrow) {
+            if (jrow == irow) continue;
+
+            it_other = sp_constraint[jrow].find(icol);
+            if (it_other == sp_constraint[jrow].end()) continue;
+            const double scaling_factor = it_other->second;
+
+            for (const auto &[fst, snd]: sp_constraint[irow]) {
+                if (fst < icol) {
+                    continue;
+                }
+                it_other = sp_constraint[jrow].find(fst);
+                if (it_other != sp_constraint[jrow].end()) {
+                    it_other->second -= scaling_factor * snd;
+                    if (std::abs(it_other->second) < zero_criterion) {
+                        sp_constraint[jrow].erase(it_other);
+                    }
+                } else {
+                    sp_constraint[jrow][fst] = -scaling_factor * snd;
+                }
+            }
+            // Make sure the pivot column is exactly cleared from this row.
+            it_other = sp_constraint[jrow].find(icol);
+            if (it_other != sp_constraint[jrow].end()) {
+                sp_constraint[jrow].erase(it_other);
+            }
+        }
+    }
+
+    // Erase all elements smaller than the tolerance value.
+    for (size_t jrow = 0; jrow < nrows; ++jrow) {
+        it_other = sp_constraint[jrow].begin();
+        while (it_other != sp_constraint[jrow].end()) {
+            if (std::abs(it_other->second) <= tolerance) {
+                sp_constraint[jrow].erase(it_other++);
+            } else {
+                ++it_other;
+            }
+        }
+    }
+
+    // Remove empty entries from the sp_constraint vector.
+    sp_constraint.erase(std::remove_if(sp_constraint.begin(),
+                                       sp_constraint.end(),
+                                       [](const MapConstraintElement &obj) { return obj.empty(); }),
+                        sp_constraint.end());
+    sp_constraint.shrink_to_fit();
+}

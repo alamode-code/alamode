@@ -426,7 +426,7 @@ auto ALM::get_number_of_irred_fc_elements(const int fc_order) -> size_t // harmo
                                              fcs,
                                              verbosity,
                                              get_optimizer_control().periodic_image_conv,
-                                             ReductionAlgo::rref);
+                                             constraint->get_reduction_algorithm());
     }
 
     return constraint->get_index_bimap(order).size();
@@ -535,7 +535,7 @@ auto ALM::get_fc_irreducible(double *fc_values,
                                              fcs,
                                              verbosity,
                                              get_optimizer_control().periodic_image_conv,
-                                             ReductionAlgo::rref);
+                                             constraint->get_reduction_algorithm());
     }
 
     size_t ishift = 0;
@@ -660,7 +660,7 @@ auto ALM::get_matrix_elements(double *amat, double *bvec) -> void
                                              fcs,
                                              verbosity,
                                              get_optimizer_control().periodic_image_conv,
-                                             ReductionAlgo::rref);
+                                             constraint->get_reduction_algorithm());
     }
 
     std::unique_ptr<SensingMatrix> matrix_out = std::make_unique<SensingMatrix>();
@@ -723,7 +723,7 @@ auto ALM::run_optimize() -> int
                                              fcs,
                                              verbosity,
                                              get_optimizer_control().periodic_image_conv,
-                                             ReductionAlgo::rref);
+                                             constraint->get_reduction_algorithm());
     }
 
     const auto maxorder = cluster->get_maxorder();
