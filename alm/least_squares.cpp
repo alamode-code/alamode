@@ -65,7 +65,7 @@ auto find_independent_rows_dense(int M, int N, double *A_data, double tol, int &
     }
     rank = 0;
     for (int k = 0; k < std::min(M, N); ++k) {
-        double const diag = std::abs(A_data[k + k * N]);
+        double const diag = std::abs(A_data[static_cast<size_t>(k) + static_cast<size_t>(k) * N]);
         if (diag > tol) {
             ++rank;
         } else {
@@ -90,22 +90,22 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
     int P_i = static_cast<int>(P);
 
     // 1) Copy original C into a contiguous column-major buffer C_mat (size P×N)
-    std::vector<double> C_mat(P_i * N_i);
+    std::vector<double> C_mat(static_cast<size_t>(P_i) * static_cast<size_t>(N_i));
     for (int row = 0; row < P_i; ++row) {
         for (int col = 0; col < N_i; ++col) {
             // C_mat is stored column-major: index = col * P_i + row
-            C_mat[col * P_i + row] = cmat[row][col];
+            C_mat[static_cast<size_t>(col) * P_i + row] = cmat[row][col];
         }
     }
     LOG_IF(verbosity, 1, "Copied C into column-major buffer (", P_i, "×", N_i, ").\n");
 
     // 2) Prepare to perform QR with column pivoting on C^T (size N×P)
     // Build A_qr = C^T in column-major layout
-    std::vector<double> A_qr(N_i * P_i);
+    std::vector<double> A_qr(static_cast<size_t>(N_i) * static_cast<size_t>(P_i));
     for (int i = 0; i < P_i; ++i) {
         for (int j = 0; j < N_i; ++j) {
             // Copy element (row=i, col=j) of C_mat into (row=j, col=i) of A_qr
-            A_qr[j + i * N_i] = C_mat[i + j * P_i];
+            A_qr[static_cast<size_t>(j) + static_cast<size_t>(i) * N_i] = C_mat[static_cast<size_t>(i) + static_cast<size_t>(j) * P_i];
         }
     }
 
@@ -125,7 +125,7 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
             // Copy C_mat[orig_row, col] into C_red[ii, col]
             // C_mat index: col * P_i + orig_row
             // C_red is r×N in column-major: index = col * r + ii
-            C_red[col * r + ii] = C_mat[col * P_i + orig_row];
+            C_red[static_cast<size_t>(col) * r + ii] = C_mat[static_cast<size_t>(col) * P_i + orig_row];
         }
         // Copy corresponding entry from dvec
         d_red[ii] = dvec[orig_row];
@@ -202,21 +202,21 @@ auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_spa
     LOG_IF(verbosity, 1, "P = ", P, ", N = ", N, ", nnz = ", C_sparse.nonZeros(), ".\n");
 
     // 1) Copy sparse→dense column-major buffer C_mat (size P×N)
-    std::vector<double> C_mat(P_i * N_i, 0.0);
+    std::vector<double> C_mat(static_cast<size_t>(P_i) * static_cast<size_t>(N_i), 0.0);
     for (int col = 0; col < N; ++col) {
         for (Eigen::SparseMatrix<double>::InnerIterator it(C_sparse, col); it; ++it) {
             // it.row()==i, it.col()==j
             const int row = it.row();
-            C_mat[col * P_i + row] = it.value();
+            C_mat[static_cast<size_t>(col) * P_i + row] = it.value();
         }
     }
     LOG_IF(verbosity, 1, "build dense C_mat (", P_i, "×", N_i, ").\n");
 
     // 2) Build A_qr = Cᵀ in column-major (size N×P)
-    std::vector<double> A_qr(N_i * P_i);
+    std::vector<double> A_qr(static_cast<size_t>(N_i) * static_cast<size_t>(P_i));
     for (int i = 0; i < P_i; ++i)
         for (int j = 0; j < N_i; ++j)
-            A_qr[j + i * N_i] = C_mat[i + j * P_i];
+            A_qr[static_cast<size_t>(j) + static_cast<size_t>(i) * N_i] = C_mat[static_cast<size_t>(i) + static_cast<size_t>(j) * P_i];
 
     // 3) Run QR with column pivoting on A_qr to determine numerical row rank
     std::vector<int> independent_rows;
