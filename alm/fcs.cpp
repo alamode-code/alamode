@@ -483,8 +483,7 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
     if (algo_in == ReductionAlgo::rref) {
         rref_sparse(nparams, const_out, eps12);
     } else if (algo_in == ReductionAlgo::qrd) {
-        int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, tolerance, rank);
+        rref_sparse_pivot(nparams, const_out, tolerance);
     }
 }
 
@@ -669,8 +668,7 @@ auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique
     if (algo_in == ReductionAlgo::rref) {
         rref_sparse(nparams, const_out, tolerance);
     } else if (algo_in == ReductionAlgo::qrd) {
-        int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, tolerance, rank);
+        rref_sparse_pivot(nparams, const_out, tolerance);
     }
 }
 

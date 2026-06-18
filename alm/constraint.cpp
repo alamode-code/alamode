@@ -412,8 +412,9 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         if (algo_in == ReductionAlgo::rref) {
             rref_sparse(nparam, const_self[order], tolerance_constraint);
         } else if (algo_in == ReductionAlgo::qrd) {
-            int rank;
-            get_independent_rows_lapack_sparse(nparam, const_self[order], verbosity, eps12, rank);
+            // Sparse echelon reduction (no densification). Without a GPL sparse rank-revealing
+            // QR available, the qrd backend reuses the partial-pivot kernel like coord.
+            rref_sparse_pivot(nparam, const_self[order], eps12);
         } else if (algo_in == ReductionAlgo::coord_factorization) {
             // Stable, coordinate-preserving echelon form (Policy A). Produces the same
             // structure as rref_sparse so get_mapping_constraint below is reused as-is.
@@ -455,10 +456,10 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
     }
 
     if (constraint_algebraic) {
-        // The mapping requires const_self in reduced row echelon form. rref and
-        // coord_factorization already produced it in the per-order loop above; only the qrd /
-        // none paths still need an explicit echelon reduction here.
-        if (algo_in != ReductionAlgo::rref && algo_in != ReductionAlgo::coord_factorization) {
+        // The mapping requires const_self in reduced row echelon form. rref, coord_factorization
+        // and qrd all produced it in the per-order loop above (qrd via rref_sparse_pivot too);
+        // only the 'none' path still needs an explicit echelon reduction here.
+        if (algo_in == ReductionAlgo::none) {
             for (auto order = 0; order < maxorder; ++order) {
                 const auto nparam = fcs->get_nequiv()[order].size();
                 rref_sparse(nparam, const_self[order], tolerance_constraint);
@@ -633,16 +634,66 @@ auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::v
         }
     }
 
-    Eigen::SparseMatrix<double> const_mat_tmp;
-    const_mat_tmp.resize(nconst_so_far, nparams);
-    const_mat_tmp.setFromTriplets(triplets.begin(), triplets.end());
-    const_mat_tmp.makeCompressed();
-    Eigen::VectorXd const_rhs_tmp2 = Eigen::Map<Eigen::VectorXd>(const_rhs_tmp.data(), const_rhs_tmp.size());
+    // Reduce the merged inhomogeneous system [C | h] to a full-rank set of rows with a sparse
+    // partial-pivot Gauss-Jordan elimination (no densification). The right-hand side h (nonzero
+    // for the FC2FIX/FC3FIX constraints Dx = h) is carried as an extra column at index nparams
+    // so it is transformed consistently with the coefficients; passing ncols = nparams keeps the
+    // pivot search restricted to the coefficient columns [0, nparams), so the RHS column is never
+    // chosen as a pivot. Row operations preserve the solution set {x : Cx = h}, so the reduced
+    // (C', h') is an equivalent, full-rank constraint system for the downstream solvers
+    // (least_squares_with_constraints_gqr / solveGQRSparse). This replaces a densifying
+    // P x N LAPACK QR that dominated the non-algebraic constraint setup for large systems.
+    ConstraintSparseForm aug(nconst_so_far);
+    for (const auto &t: triplets) {
+        aug[t.row()][t.col()] += t.value();
+    }
+    for (size_t i = 0; i < nconst_so_far; ++i) {
+        if (const_rhs_tmp[i] != 0.0) {
+            aug[i][nparams] = const_rhs_tmp[i];
+        }
+    }
 
     LOG_IF(verbosity, 1, "Constraint matrix is build in sparse format.\n");
 
-    int rank;
-    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, verbosity, const_mat_sparse, const_rhs_vec, rank);
+    rref_sparse_pivot(nparams, aug, tolerance_constraint);
+
+    // Split the reduced augmented rows back into const_mat_sparse (coefficients) and
+    // const_rhs_vec (the carried RHS column at index nparams). A reduced row whose
+    // coefficients all vanished but whose RHS survived is an inconsistent constraint
+    // (0 = d, d != 0) -- the RREF cleanup only keeps RHS entries above the tolerance, so any
+    // such row signals a fixed force constant (FC2FIX/FC3FIX) that conflicts with the imposed
+    // invariances. The old row-selection silently discarded the dependent row; reproduce that
+    // (drop it) but warn so the conflict is not hidden. Output rows are renumbered to stay
+    // contiguous after any drop.
+    const auto nrow_red = aug.size();
+    std::vector<Eigen::Triplet<double, size_t>> red_triplets;
+    std::vector<double> rhs_vals;
+    rhs_vals.reserve(nrow_red);
+    size_t out_row = 0;
+    for (size_t i = 0; i < nrow_red; ++i) {
+        double row_rhs = 0.0;
+        bool has_coeff = false;
+        for (const auto &[col, val]: aug[i]) {
+            if (col == nparams) {
+                row_rhs = val;
+            } else {
+                red_triplets.emplace_back(out_row, col, val);
+                has_coeff = true;
+            }
+        }
+        if (!has_coeff) {
+            std::cerr << "  WARNING: dropped an inconsistent constraint (0 = " << row_rhs
+                      << ") while building the constraint matrix; check FC2FIX/FC3FIX values "
+                         "against the translational/rotational/symmetry invariances.\n";
+            continue;
+        }
+        rhs_vals.push_back(row_rhs);
+        ++out_row;
+    }
+    const_mat_sparse.resize(out_row, nparams);
+    const_mat_sparse.setFromTriplets(red_triplets.begin(), red_triplets.end());
+    const_mat_sparse.makeCompressed();
+    const_rhs_vec = Eigen::Map<Eigen::VectorXd>(rhs_vals.data(), static_cast<Eigen::Index>(rhs_vals.size()));
 
     LOG_IF(verbosity, 1, "Reduction of constraint matrix is completed.\n");
 }
@@ -1397,8 +1448,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
     if (algo_in == ReductionAlgo::rref) {
         rref_sparse(nparams, const_out, eps8);
     } else if (algo_in == ReductionAlgo::qrd) {
-        int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 1, eps12, rank);
+        rref_sparse_pivot(nparams, const_out, eps12);
     }
 }
 
@@ -1851,14 +1901,9 @@ auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
                 rref_sparse(nparams[order - 1] + nparams[order], const_rotation_cross[order], eps6);
             }
         } else if (algo_in == ReductionAlgo::qrd) {
-            int rank;
-            auto info = get_independent_rows_lapack_sparse(nparams[order], const_rotation_self[order], 1, eps12, rank);
+            rref_sparse_pivot(nparams[order], const_rotation_self[order], eps12);
             if (order > 0) {
-                auto info2 = get_independent_rows_lapack_sparse(nparams[order - 1] + nparams[order],
-                                                                const_rotation_cross[order],
-                                                                1,
-                                                                eps12,
-                                                                rank);
+                rref_sparse_pivot(nparams[order - 1] + nparams[order], const_rotation_cross[order], eps12);
             }
         } else if (algo_in == ReductionAlgo::coord_factorization) {
             // Mirror the rref branch with the stable partial-pivot kernel. const_rotation_cross
@@ -2610,8 +2655,7 @@ auto Constraint::generate_huang_constraint(const Cell &supercell, const std::uni
     if (algo_in == ReductionAlgo::rref) {
         rref_sparse(nparams, const_huang[0], eps8);
     } else if (algo_in == ReductionAlgo::qrd) {
-        int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_huang[0], 1, eps12, rank);
+        rref_sparse_pivot(nparams, const_huang[0], eps12);
     }
 }
 
