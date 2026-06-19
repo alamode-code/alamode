@@ -124,23 +124,27 @@ option(USE_ACCEL_BACKEND   "Enable Apple Accelerate LDLT" OFF)
 option(USE_EIGEN_BLAS      "Use Eigen's BLAS backend (EIGEN_USE_BLAS) with the detected BLAS" OFF)
 
 if (USE_MKL_BACKEND)
-#    set(MKL_INTERFACE LP64 CACHE STRING "Use LP64 interface for MKL" FORCE)
-    find_package(MKL REQUIRED)
-    add_compile_definitions(USE_MKL_BACKEND EIGEN_USE_MKL_ALL)
-    add_compile_definitions(EIGEN_USE_MKL_ALL)
-    add_compile_definitions(EIGEN_MKL_BACKEND)
-    add_compile_definitions(USE_MKL_BACKEND)
-    # Prevent Eigen from enabling MKL's MKL_DIRECT_CALL when including mkl.h.
-    # Otherwise BLAS routines (dtrsm/ztrsm/...) become direct-call macros that
-    # clash with Eigen's own typed BLAS backend, breaking compilation.
-    add_compile_definitions(EIGEN_MKL_NO_DIRECT_CALL)
-#    if(MKL_INTERFACE STREQUAL "ILP64")
-#        message(WARNING "MKL was detected as ILP64; switching to explicit LP64 interface.")
+    # MKL integer interface. LP64 (32-bit MKL_INT) is the only interface ALAMODE supports today:
+    # Eigen's EIGEN_USE_MKL_ALL and Eigen::PardisoLDLT are LP64-only, and include/lapack_wrapper.h
+    # passes 32-bit int to the MKL BLAS/LAPACK prototypes. Set before find_package(MKL) so the
+    # detected MKL::MKL target matches (MKLConfig.cmake reads MKL_INTERFACE; default is intel_ilp64).
+    set(MKL_INTERFACE "lp64" CACHE STRING "MKL integer interface: lp64 (default) or ilp64")
+    set_property(CACHE MKL_INTERFACE PROPERTY STRINGS lp64 ilp64)
+    if (NOT MKL_INTERFACE STREQUAL "lp64")
+        message(FATAL_ERROR
+            "USE_MKL_BACKEND currently supports only -DMKL_INTERFACE=lp64 (got '${MKL_INTERFACE}').\n"
+            "ILP64 would require widening 32-bit int to MKL_INT throughout include/lapack_wrapper.h and "
+            "its callers, and disabling the LP64-only Eigen paths (EIGEN_USE_MKL_ALL, Eigen::PardisoLDLT) "
+            "-- a code change beyond CMake, and unnecessary for ALAMODE's problem sizes (< 2^31). "
+            "Re-run with -DMKL_INTERFACE=lp64.")
+    endif()
 
+    find_package(MKL REQUIRED)
+    add_compile_definitions(USE_MKL_BACKEND EIGEN_USE_MKL_ALL EIGEN_MKL_BACKEND)
+    # Prevent Eigen from enabling MKL's MKL_DIRECT_CALL when including mkl.h. Otherwise BLAS routines
+    # (dtrsm/ztrsm/...) become direct-call macros that clash with Eigen's own typed BLAS backend.
+    add_compile_definitions(EIGEN_MKL_NO_DIRECT_CALL)
     set(BACKEND_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5)
-#    else()
-#        set( BACKEND_LIBS MKL::MKL )
-#    endif()
 elseif (USE_ACCEL_BACKEND)
     find_library(ACCELERATE_FRAMEWORK Accelerate REQUIRED)
     add_compile_definitions(USE_ACCEL_BACKEND EIGEN_USE_ACCELERATE)
