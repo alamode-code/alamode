@@ -115,6 +115,11 @@ endif ()
 
 option(USE_MKL_BACKEND     "Enable Intel MKL Pardiso" OFF)
 option(USE_ACCEL_BACKEND   "Enable Apple Accelerate LDLT" OFF)
+# Route Eigen's dense matrix products through the detected (Fortran) BLAS -- e.g. OpenBLAS or Apple
+# Accelerate -- via EIGEN_USE_BLAS. Layered on top of the generic find_package(BLAS/LAPACK) path
+# below; choose the vendor with -DBLA_VENDOR=... (OpenBLAS, Apple, ...). Ignored under the MKL or
+# Accelerate-sparse backends. Relies on the guarded BLAS prototypes in include/blas_wrapper.h.
+option(USE_EIGEN_BLAS      "Use Eigen's BLAS backend (EIGEN_USE_BLAS) with the detected BLAS" OFF)
 
 if (USE_MKL_BACKEND)
 #    set(MKL_INTERFACE LP64 CACHE STRING "Use LP64 interface for MKL" FORCE)
@@ -162,6 +167,15 @@ else()
         set(lapack_target ${LAPACK_LIBRARIES})
     endif()
     set ( BACKEND_LIBS ${blas_target} ${lapack_target} )
+    if (USE_EIGEN_BLAS)
+        add_compile_definitions(EIGEN_USE_BLAS)
+        message(STATUS "EIGEN_USE_BLAS enabled: Eigen dense products routed through BLAS (${BLAS_LIBRARIES})")
+    endif()
+endif()
+
+if (USE_EIGEN_BLAS AND (USE_MKL_BACKEND OR USE_ACCEL_BACKEND))
+    message(WARNING "USE_EIGEN_BLAS is ignored when USE_MKL_BACKEND or USE_ACCEL_BACKEND is enabled "
+                    "(those backends already route BLAS through MKL / Accelerate).")
 endif()
 
 
@@ -259,7 +273,7 @@ if (BUILD_LIBRARIES)
         ${eigen_includes}
         ${hdf5_include}
     )
-    target_link_libraries(almcxx ${boost_target} ${eigen_target} ${BACKEND_LIBS} ${spglib} ${hdf5_target} ${hdf5library})
+    target_link_libraries(almcxx ${boost_target} ${eigen_target} ${BACKEND_LIBS} ${spglib} ${openmplibrary} ${hdf5_target} ${hdf5library})
     set_property(TARGET almcxx PROPERTY VERSION ${serial})
     set_property(TARGET almcxx PROPERTY SOVERSION ${soserial})
     install(TARGETS almcxx DESTINATION ${PROJECT_SOURCE_DIR}/lib)
@@ -275,7 +289,7 @@ if (BUILD_LIBRARIES)
         ${eigen_includes}
         ${hdf5_include}
     )
-    target_link_libraries(almcxx_static ${boost_target} ${eigen_target})
+    target_link_libraries(almcxx_static ${boost_target} ${eigen_target} ${BACKEND_LIBS} ${spglib} ${openmplibrary} ${hdf5_target} ${hdf5library})
     set_property(TARGET almcxx_static PROPERTY VERSION ${serial})
     set_property(TARGET almcxx_static PROPERTY SOVERSION ${soserial})
     set_property(TARGET almcxx_static PROPERTY OUTPUT_NAME almcxx)
