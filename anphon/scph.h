@@ -12,6 +12,7 @@
 
 #include <Eigen/Dense>
 #include <complex>
+#include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
 #include "anharmonic_core.h"
 #include "dynamical.h"
 #include "gruneisen.h"
@@ -163,11 +164,6 @@ private:
                                                             const std::vector<std::complex<double>> &omegalist);
 };
 
-extern "C"
-{
-    void zgemm_(const char *transa, const char *transb, int *m, int *n, int *k, std::complex<double> *alpha,
-                std::complex<double> *a, int *lda, std::complex<double> *b, int *ldb, std::complex<double> *beta,
-                std::complex<double> *c, int *ldc);
-}
+// zgemm_ is declared in blas_wrapper.h (call it via zgemm_cpx).
 
 } // namespace PHON_NS

@@ -2228,8 +2228,8 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
             }
         }
 
-        zgemm_(TRANSA, TRANSB, &ns, &ns, &ns, &alpha, eigval_matrix, &ns, polarization_matrix, &ns, beta, mat_tmp, &ns);
-        zgemm_(TRANSA, TRANSA, &ns, &ns, &ns, &alpha, polarization_matrix, &ns, mat_tmp, &ns, beta, dmat, &ns);
+        zgemm_cpx(TRANSA, TRANSB, &ns, &ns, &ns, &alpha, eigval_matrix, &ns, polarization_matrix, &ns, beta, mat_tmp, &ns);
+        zgemm_cpx(TRANSA, TRANSA, &ns, &ns, &ns, &alpha, polarization_matrix, &ns, mat_tmp, &ns, beta, dmat, &ns);
 
         m = 0;
 

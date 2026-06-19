@@ -100,11 +100,30 @@ if (NOT BLA_VENDOR AND DEFINED ENV{CONDA_PREFIX})
         set(BLA_VENDOR OpenBLAS CACHE STRING "BLAS/LAPACK vendor" FORCE)
     endif()
 endif()
+# Route Eigen's dense matrix products through the detected BLAS (EIGEN_USE_BLAS) -- e.g. OpenBLAS or
+# Apple Accelerate; choose the vendor with -DBLA_VENDOR=... Relies on the guarded prototypes /
+# zgemm_cpx wrapper in include/blas_wrapper.h. anphon's only BLAS call is the complex zgemm_.
+option(USE_EIGEN_BLAS "Use Eigen's BLAS backend (EIGEN_USE_BLAS) with the detected BLAS" OFF)
 find_package(LAPACK REQUIRED)
 if (TARGET LAPACK::LAPACK)
     set(lapack_target LAPACK::LAPACK)
 else()
     set(lapack_target ${LAPACK_LIBRARIES})
+endif()
+if (USE_EIGEN_BLAS)
+    # Only the EIGEN_USE_BLAS path needs a standalone BLAS to link Eigen's dense kernels; the default
+    # build resolves BLAS transitively through LAPACK, so keep find_package(BLAS) opt-in to avoid
+    # breaking configurations where a standalone BLAS is not separately discoverable.
+    find_package(BLAS REQUIRED)
+    if (TARGET BLAS::BLAS)
+        set(blas_target BLAS::BLAS)
+    else()
+        set(blas_target ${BLAS_LIBRARIES})
+    endif()
+    add_compile_definitions(EIGEN_USE_BLAS)
+    message(STATUS "EIGEN_USE_BLAS enabled (anphon): Eigen dense products routed through BLAS (${BLAS_LIBRARIES}).")
+    message(STATUS "  Under MPI, pin the BLAS thread count to 1 (e.g. OPENBLAS_NUM_THREADS=1 / "
+                   "VECLIB_MAXIMUM_THREADS=1) to avoid rank x thread oversubscription.")
 endif()
 find_package(MPI REQUIRED)
 if (TARGET MPI::MPI_CXX)
@@ -241,6 +260,7 @@ target_link_libraries(anphon
     ${eigen_target}
     ${Boost_LIBRARIES}
     ${lapack_target}
+    ${blas_target}
     ${mpi_target}
     ${spglib}
     ${openmplibrary}
