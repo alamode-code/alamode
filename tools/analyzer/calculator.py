@@ -289,7 +289,8 @@ class Calculator:
         nk_reducible = np.sum(self.qpoint_weight)
 
         print(
-            "# k-point index, k-point weight, mode index, frequency (cm^-1), 3-phonon linewidth", end=""
+            "# k-point index, k-point weight, mode index, frequency (cm^-1), 3-phonon linewidth",
+            end="",
         )
         if four_phonon:
             print(", 4-phonon linewidth", end="")
@@ -305,8 +306,11 @@ class Calculator:
                     total += gamma_iso[ik, imode]
                 print(
                     "{:4d} {:12.6f} {:4d} {:12.6f} {:12.6f}".format(
-                        ik + 1, self.qpoint_weight[ik] / nk_reducible,
-                        imode + 1, self.omega[ik, imode], gamma3[ik, imode]
+                        ik + 1,
+                        self.qpoint_weight[ik] / nk_reducible,
+                        imode + 1,
+                        self.omega[ik, imode],
+                        gamma3[ik, imode],
                     ),
                     end="",
                 )
@@ -451,7 +455,9 @@ class Calculator:
             end="",
         )
         if four_phonon and isotope:
-            print(", lifetime with isotope and 4ph (ps), mean free path with isotope and 4ph (nm)")
+            print(
+                ", lifetime with isotope and 4ph (ps), mean free path with isotope and 4ph (nm)"
+            )
         elif four_phonon:
             print(", lifetime with 4ph (ps), mean free path with 4ph (nm)")
         elif isotope:
@@ -465,9 +471,13 @@ class Calculator:
                 mfp_3ph = vq * tau_3ph[ik, imode] * 0.001
                 print(
                     "{:4d} {:12.6f} {:4d} {:12.6f} {:15.4f} {:12.6f} {:15.6f}".format(
-                        ik + 1, self.qpoint_weight[ik] / nk_reducible,
-                        imode + 1, self.omega[ik, imode], vq,
-                        tau_3ph[ik, imode], mfp_3ph
+                        ik + 1,
+                        self.qpoint_weight[ik] / nk_reducible,
+                        imode + 1,
+                        self.omega[ik, imode],
+                        vq,
+                        tau_3ph[ik, imode],
+                        mfp_3ph,
                     ),
                     end="",
                 )
@@ -508,9 +518,14 @@ class Calculator:
         )
         print("# Phonon frequency: {:12.6f}".format(self.omega[index_k, index_mode]))
         print("# Group velocity |v|: {:15.4f} m/s".format(vq))
-        print("# temperature, 3-phonon lifetime (ps), 3-phonon mean free path (nm)", end="")
+        print(
+            "# temperature, 3-phonon lifetime (ps), 3-phonon mean free path (nm)",
+            end="",
+        )
         if four_phonon and isotope:
-            print(", lifetime with isotope and 4ph (ps), mean free path with isotope and 4ph (nm)")
+            print(
+                ", lifetime with isotope and 4ph (ps), mean free path with isotope and 4ph (nm)"
+            )
         elif four_phonon:
             print(", lifetime with 4ph (ps), mean free path with 4ph (nm)")
         elif isotope:

@@ -95,7 +95,9 @@ def runtest_algo_reduction(almbin, project_root, rtol=1.0e-8, atol=1.0e-10):
 
     # 1) coord_factorization must match rref (legacy compatibility / Policy A).
     if not np.allclose(fc_coord, fc_rref, rtol=rtol, atol=atol):
-        print("ALGO_REDUCTION=3 (coord_factorization) disagrees with ALGO_REDUCTION=1 (rref)")
+        print(
+            "ALGO_REDUCTION=3 (coord_factorization) disagrees with ALGO_REDUCTION=1 (rref)"
+        )
         print_max_errors("si_coord.fcs", fc_rref, fc_coord)
         return 1
     print("coord_factorization == rref (%d force constants) --> pass" % fc_coord.size)

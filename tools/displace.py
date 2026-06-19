@@ -135,9 +135,7 @@ def check_displace_options(args, code):
                 "--softmode-only is available only with --random_normalcoord."
             )
         if args.ignore_imag:
-            raise RuntimeError(
-                "--softmode-only cannot be combined with --ignore_imag."
-            )
+            raise RuntimeError("--softmode-only cannot be combined with --ignore_imag.")
 
     if args.load_mddata and (code == "OpenMX" or code == "LAMMPS" or code == "xTAPP"):
         print(

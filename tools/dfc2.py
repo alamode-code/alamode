@@ -48,20 +48,24 @@ class FC2Data:
 
     def __init__(self, fname_h5):
         """Load force constant data and cell information from the HDF5 file."""
-        with h5py.File(fname_h5, 'r') as h5file:
-            self.values = h5file['ForceConstants/Order2/force_constant_values'][:]
-            self.atom_indices = h5file['ForceConstants/Order2/atom_indices'][:]
-            self.atom_indices_supercell = h5file['ForceConstants/Order2/atom_indices_supercell'][:]
-            self.coord_indices = h5file['ForceConstants/Order2/coord_indices'][:]
-            self.shift_vectors = h5file['ForceConstants/Order2/shift_vectors'][:]
+        with h5py.File(fname_h5, "r") as h5file:
+            self.values = h5file["ForceConstants/Order2/force_constant_values"][:]
+            self.atom_indices = h5file["ForceConstants/Order2/atom_indices"][:]
+            self.atom_indices_supercell = h5file[
+                "ForceConstants/Order2/atom_indices_supercell"
+            ][:]
+            self.coord_indices = h5file["ForceConstants/Order2/coord_indices"][:]
+            self.shift_vectors = h5file["ForceConstants/Order2/shift_vectors"][:]
             # PrimitiveCell here is the cell ANPHON treats as its primitive
             # cell (the conventional cell in the present workflow).
-            self.lattice_vectors = h5file['PrimitiveCell/lattice_vector'][:]
-            self.fractional_coords = h5file['PrimitiveCell/fractional_coordinate'][:]
-            self.atomic_kinds = h5file['PrimitiveCell/atomic_kinds'][:]
-            self.supercell_lattice_vectors = h5file['SuperCell/lattice_vector'][:]
-            self.supercell_fractional_coords = h5file['SuperCell/fractional_coordinate'][:]
-            self.supercell_atomic_kinds = h5file['SuperCell/atomic_kinds'][:]
+            self.lattice_vectors = h5file["PrimitiveCell/lattice_vector"][:]
+            self.fractional_coords = h5file["PrimitiveCell/fractional_coordinate"][:]
+            self.atomic_kinds = h5file["PrimitiveCell/atomic_kinds"][:]
+            self.supercell_lattice_vectors = h5file["SuperCell/lattice_vector"][:]
+            self.supercell_fractional_coords = h5file[
+                "SuperCell/fractional_coordinate"
+            ][:]
+            self.supercell_atomic_kinds = h5file["SuperCell/atomic_kinds"][:]
 
 
 class DFC2Correction:
@@ -80,7 +84,7 @@ class DFC2Correction:
 
     def _parse_file(self, fname_dfc2):
         """Parse the dfc2 file format (header + corrections at the target T)."""
-        with open(fname_dfc2, 'r') as f:
+        with open(fname_dfc2, "r") as f:
             # Primitive-cell lattice vectors (rows = lattice vectors, Bohr).
             lattice = [[float(x) for x in f.readline().split()] for _ in range(3)]
             self.lattice = np.array(lattice)
@@ -106,9 +110,9 @@ class DFC2Correction:
         current_temp_match = False
 
         for line in f:
-            if line.startswith('#'):
-                if 'Temp' in line:
-                    temp_in_file = float(line.split('=')[1].strip())
+            if line.startswith("#"):
+                if "Temp" in line:
+                    temp_in_file = float(line.split("=")[1].strip())
                     current_temp_match = abs(temp_in_file - self.temperature) < 0.01
             elif current_temp_match:
                 parts = line.split()
@@ -145,11 +149,12 @@ class FC2Updater:
         prim_len = np.linalg.norm(prim_lat, axis=1)
         vol_dfc2 = abs(np.linalg.det(dfc2_lat))
         vol_prim = abs(np.linalg.det(prim_lat))
-        deform = dfc2_lat @ np.linalg.inv(prim_lat)   # dfc2 = deform @ HDF5
+        deform = dfc2_lat @ np.linalg.inv(prim_lat)  # dfc2 = deform @ HDF5
         lines = [
             "  dfc2 lattice |a_i| (Bohr): " + np.array2string(dfc2_len, precision=5),
             "  HDF5 lattice |a_i| (Bohr): " + np.array2string(prim_len, precision=5),
-            "  length ratio dfc2/HDF5   : " + np.array2string(dfc2_len / prim_len, precision=5),
+            "  length ratio dfc2/HDF5   : "
+            + np.array2string(dfc2_len / prim_len, precision=5),
             f"  volume ratio dfc2/HDF5   : {vol_dfc2 / vol_prim:.5f}",
             "  lattice map (dfc2 = M @ HDF5):",
             "    " + np.array2string(deform, precision=5).replace("\n", "\n    "),
@@ -185,19 +190,24 @@ class FC2Updater:
         frac = cart @ inv_prim
         atom, dist, trans = cls._match_atom(frac, prim_frac, prim_lat)
         if dist > cls.CART_TOL:
-            raise ValueError("Could not fold a Cartesian position into the "
-                             "primitive cell; check that the supercell is an "
-                             "integer tiling of the PrimitiveCell.")
+            raise ValueError(
+                "Could not fold a Cartesian position into the "
+                "primitive cell; check that the supercell is an "
+                "integer tiling of the PrimitiveCell."
+            )
         return atom, trans
 
     @classmethod
-    def update(cls, fc2_data, dfc2_correction, tol, verbose=False,
-               allow_cell_mismatch=False):
+    def update(
+        cls, fc2_data, dfc2_correction, tol, verbose=False, allow_cell_mismatch=False
+    ):
         """Return the renormalized FC2 values (bare + dfc2 corrections)."""
-        prim_lat = fc2_data.lattice_vectors          # rows = conventional lattice vectors (Bohr)
-        prim_frac = fc2_data.fractional_coords        # (n_conv, 3)
+        prim_lat = (
+            fc2_data.lattice_vectors
+        )  # rows = conventional lattice vectors (Bohr)
+        prim_frac = fc2_data.fractional_coords  # (n_conv, 3)
         prim_kind = fc2_data.atomic_kinds
-        inv_prim = np.linalg.inv(prim_lat)            # cart @ inv_prim -> fractional
+        inv_prim = np.linalg.inv(prim_lat)  # cart @ inv_prim -> fractional
 
         # --- 1. The dfc2 cell should be the same cell as the HDF5 PrimitiveCell
         #        (ANPHON prints its own primitive cell as the dfc2 header).  If
@@ -211,8 +221,8 @@ class FC2Updater:
             if not allow_cell_mismatch:
                 raise ValueError(
                     "The dfc2 lattice does not match the HDF5 PrimitiveCell lattice:\n"
-                    + report +
-                    "\nThe corrections were computed for a different cell. Re-run the "
+                    + report
+                    + "\nThe corrections were computed for a different cell. Re-run the "
                     "fit/SCPH on the matching structure, or pass --allow-cell-mismatch "
                     "to apply them anyway (atoms are matched by fractional coordinates "
                     "and the result is approximate)."
@@ -234,25 +244,34 @@ class FC2Updater:
             cdist = np.linalg.norm(residual @ prim_lat, axis=1)
             j = int(np.argmin(cdist))
             if lattice_match and cdist[j] > cls.CART_TOL:
-                raise ValueError(f"dfc2 atom {i} has no counterpart in the HDF5 PrimitiveCell.")
+                raise ValueError(
+                    f"dfc2 atom {i} has no counterpart in the HDF5 PrimitiveCell."
+                )
             if dfc2_correction.atomic_kinds[i] != prim_kind[j]:
-                raise ValueError(f"Atomic-kind mismatch for dfc2 atom {i} "
-                                 f"(nearest HDF5 atom {j}).")
+                raise ValueError(
+                    f"Atomic-kind mismatch for dfc2 atom {i} (nearest HDF5 atom {j})."
+                )
             if j in used:
-                raise ValueError(f"dfc2 atoms {used[j]} and {i} both map to HDF5 atom {j}; "
-                                 f"cannot establish a one-to-one atom correspondence "
-                                 f"between the two cells.")
+                raise ValueError(
+                    f"dfc2 atoms {used[j]} and {i} both map to HDF5 atom {j}; "
+                    f"cannot establish a one-to-one atom correspondence "
+                    f"between the two cells."
+                )
             used[j] = i
             dfc2_to_prim[i] = j
             max_frac_res = max(max_frac_res, float(fdist[j]))
             max_cart_res = max(max_cart_res, float(cdist[j]))
 
         if not lattice_match:
-            print(f"  atoms matched 1:1 by fractional coordinates; max residual "
-                  f"{max_frac_res:.4f} (fractional), {max_cart_res:.4f} Bohr.")
+            print(
+                f"  atoms matched 1:1 by fractional coordinates; max residual "
+                f"{max_frac_res:.4f} (fractional), {max_cart_res:.4f} Bohr."
+            )
             if max_cart_res > cls.MISMATCH_WARN_CART:
-                print(f"  CAUTION: internal coordinates differ by up to {max_cart_res:.3f} "
-                      f"Bohr between the two cells; the correction transfer is approximate.")
+                print(
+                    f"  CAUTION: internal coordinates differ by up to {max_cart_res:.3f} "
+                    f"Bohr between the two cells; the correction transfer is approximate."
+                )
 
         # --- 2. Build the correction lookup keyed in PrimitiveCell coordinates:
         #        (sx, sy, sz, atom0, coord0, atom1, coord1) -> value.
@@ -283,15 +302,19 @@ class FC2Updater:
             lookup[key] = val
 
         # --- 3. Fold every supercell atom into the (conventional) primitive cell.
-        sc_cart = fc2_data.supercell_fractional_coords @ fc2_data.supercell_lattice_vectors
-        sc_to_prim = [cls._fold_into_primcell(sc_cart[a], prim_frac, prim_lat, inv_prim)
-                      for a in range(sc_cart.shape[0])]
+        sc_cart = (
+            fc2_data.supercell_fractional_coords @ fc2_data.supercell_lattice_vectors
+        )
+        sc_to_prim = [
+            cls._fold_into_primcell(sc_cart[a], prim_frac, prim_lat, inv_prim)
+            for a in range(sc_cart.shape[0])
+        ]
 
         # --- 4. Express each stored FC2 entry in PrimitiveCell coordinates and
         #        add the single matching dfc2 correction.
         fc2_updated = fc2_data.values.copy()
         consumed = set()
-        consumed_count = {}        # key -> number of stored FC2 entries it was applied to
+        consumed_count = {}  # key -> number of stored FC2 entries it was applied to
         n_applied = 0
         n_nonzero_applied = 0
 
@@ -307,9 +330,15 @@ class FC2Updater:
 
             # Bring the central atom into the home cell (the dfc2 convention).
             shift = trans1 - trans0
-            key = (int(shift[0]), int(shift[1]), int(shift[2]),
-                   atom0, int(fc2_data.coord_indices[i, 0]),
-                   atom1, int(fc2_data.coord_indices[i, 1]))
+            key = (
+                int(shift[0]),
+                int(shift[1]),
+                int(shift[2]),
+                atom0,
+                int(fc2_data.coord_indices[i, 0]),
+                atom1,
+                int(fc2_data.coord_indices[i, 1]),
+            )
 
             val = lookup.get(key)
             if val is not None:
@@ -333,11 +362,15 @@ class FC2Updater:
             a0 = int(dfc2_to_prim[dfc2_correction.atoms[n, 0]])
             a1 = int(dfc2_to_prim[dfc2_correction.atoms[n, 1]])
             vec = (prim_frac[a1] + dfc2_correction.shifts[n] - prim_frac[a0]) @ prim_lat
-            return (int(dfc2_correction.coords[n, 0]),
-                    int(dfc2_correction.coords[n, 1]),
-                    tuple(np.round(vec, 3)))
+            return (
+                int(dfc2_correction.coords[n, 0]),
+                int(dfc2_correction.coords[n, 1]),
+                tuple(np.round(vec, 3)),
+            )
 
-        consumed_sig = {signature(n) for n, key in enumerate(dfc2_keys) if key in consumed}
+        consumed_sig = {
+            signature(n) for n, key in enumerate(dfc2_keys) if key in consumed
+        }
 
         n_redundant = 0
         unmatched = []
@@ -352,27 +385,41 @@ class FC2Updater:
 
         n_shared = sum(1 for c in consumed_count.values() if c > 1)
 
-        print(f"Applied corrections to {n_applied} FC2 entries "
-              f"({n_nonzero_applied} with |delta| > {tol:g}).")
-        print(f"dfc2 nonzero rows: translational duplicates skipped {n_redundant}, "
-              f"unmatched {len(unmatched)}.")
+        print(
+            f"Applied corrections to {n_applied} FC2 entries "
+            f"({n_nonzero_applied} with |delta| > {tol:g})."
+        )
+        print(
+            f"dfc2 nonzero rows: translational duplicates skipped {n_redundant}, "
+            f"unmatched {len(unmatched)}."
+        )
         if n_dup_rows:
-            print(f"Note: collapsed {n_dup_rows} duplicate dfc2 row(s) with "
-                  f"identical keys (values consistent within tol).")
+            print(
+                f"Note: collapsed {n_dup_rows} duplicate dfc2 row(s) with "
+                f"identical keys (values consistent within tol)."
+            )
         if n_shared:
-            print(f"Note: {n_shared} correction(s) applied to multiple "
-                  f"symmetry-equivalent FC2 entries.")
+            print(
+                f"Note: {n_shared} correction(s) applied to multiple "
+                f"symmetry-equivalent FC2 entries."
+            )
 
         if unmatched:
-            print("\nWarning: the following nonzero corrections have no matching "
-                  "force constant in the original HDF5 file:")
+            print(
+                "\nWarning: the following nonzero corrections have no matching "
+                "force constant in the original HDF5 file:"
+            )
             shown = unmatched if verbose else unmatched[:10]
             for key, val in shown:
                 sx, sy, sz, a0, c0, a1, c1 = key
-                print(f"  shift=({sx:d},{sy:d},{sz:d}) atom0={a0} coord0={c0} "
-                      f"atom1={a1} coord1={c1} value={val:.8e}")
+                print(
+                    f"  shift=({sx:d},{sy:d},{sz:d}) atom0={a0} coord0={c0} "
+                    f"atom1={a1} coord1={c1} value={val:.8e}"
+                )
             if not verbose and len(unmatched) > len(shown):
-                print(f"  ... and {len(unmatched) - len(shown)} more (use --verbose to list all).")
+                print(
+                    f"  ... and {len(unmatched) - len(shown)} more (use --verbose to list all)."
+                )
             print(
                 "\n If the values above are small enough (e.g. < 1e-8) this is\n"
                 " usually harmless.  Otherwise, make sure the q-point grid set by\n"
@@ -394,11 +441,10 @@ class HDF5Writer:
         All other datasets and attributes are preserved.  Optional provenance
         information is recorded as root attributes.
         """
-        with h5py.File(fname_in, 'r') as f_in, \
-             h5py.File(fname_out, 'w') as f_out:
+        with h5py.File(fname_in, "r") as f_in, h5py.File(fname_out, "w") as f_out:
 
             def copy_item(name, obj):
-                if name == 'ForceConstants/Order2/force_constant_values':
+                if name == "ForceConstants/Order2/force_constant_values":
                     dset = f_out.create_dataset(name, data=fc2_updated)
                     for attr_name, attr_value in obj.attrs.items():
                         dset.attrs[attr_name] = attr_value
@@ -435,25 +481,42 @@ def main():
     parser = argparse.ArgumentParser(
         description="Apply SCPH/QHA corrections to FC2 in an ALAMODE HDF5 file"
     )
-    parser.add_argument('--input', '-i', required=True,
-                        help="Input HDF5 file with the bare force constants")
-    parser.add_argument('--output', '-o', required=True,
-                        help="Output HDF5 file for the renormalized force constants")
-    parser.add_argument('--dfc2', required=True,
-                        help="dfc2 correction file (*.scph_dfc2 / *.qha_dfc2)")
-    parser.add_argument('--temp', type=float, required=True,
-                        help="Temperature (K) for the corrections")
-    parser.add_argument('--tol', type=float, default=1.0e-10,
-                        help="Ignore |dfc2| below this threshold for diagnostics "
-                             "(default: 1e-10)")
-    parser.add_argument('--verbose', action='store_true',
-                        help="List all unmatched corrections")
-    parser.add_argument('--allow-cell-mismatch', action='store_true',
-                        help="Apply the corrections even if the dfc2 primitive cell "
-                             "differs in size/shape from the HDF5 PrimitiveCell "
-                             "(e.g. fitted at a different volume). Atoms are matched "
-                             "by fractional coordinates; the result is approximate "
-                             "and a diagnosis is printed.")
+    parser.add_argument(
+        "--input",
+        "-i",
+        required=True,
+        help="Input HDF5 file with the bare force constants",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        required=True,
+        help="Output HDF5 file for the renormalized force constants",
+    )
+    parser.add_argument(
+        "--dfc2", required=True, help="dfc2 correction file (*.scph_dfc2 / *.qha_dfc2)"
+    )
+    parser.add_argument(
+        "--temp", type=float, required=True, help="Temperature (K) for the corrections"
+    )
+    parser.add_argument(
+        "--tol",
+        type=float,
+        default=1.0e-10,
+        help="Ignore |dfc2| below this threshold for diagnostics (default: 1e-10)",
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="List all unmatched corrections"
+    )
+    parser.add_argument(
+        "--allow-cell-mismatch",
+        action="store_true",
+        help="Apply the corrections even if the dfc2 primitive cell "
+        "differs in size/shape from the HDF5 PrimitiveCell "
+        "(e.g. fitted at a different volume). Atoms are matched "
+        "by fractional coordinates; the result is approximate "
+        "and a diagnosis is printed.",
+    )
     args = parser.parse_args()
 
     print(f"Loading force constants from: {args.input}")
@@ -463,14 +526,15 @@ def main():
     dfc2_correction = DFC2Correction(args.dfc2, args.temp)
 
     print("Applying corrections...")
-    fc2_updated = FC2Updater.update(fc2_data, dfc2_correction, args.tol, args.verbose,
-                                    args.allow_cell_mismatch)
+    fc2_updated = FC2Updater.update(
+        fc2_data, dfc2_correction, args.tol, args.verbose, args.allow_cell_mismatch
+    )
 
     print("Writing results...")
     provenance = {
-        'dfc2_original_file': args.input,
-        'dfc2_correction_file': args.dfc2,
-        'dfc2_temperature': args.temp,
+        "dfc2_original_file": args.input,
+        "dfc2_correction_file": args.dfc2,
+        "dfc2_temperature": args.temp,
     }
     HDF5Writer.copy_with_updated_fc2(args.input, args.output, fc2_updated, provenance)
 

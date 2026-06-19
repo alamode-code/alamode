@@ -310,7 +310,9 @@ class TaylorExpansionPotential:
                 )
             codes = encode_shifts(shifts)
             shift_ids = np.searchsorted(codes_sorted, codes)
-            if np.any(codes_sorted[np.minimum(shift_ids, len(codes_sorted) - 1)] != codes):
+            if np.any(
+                codes_sorted[np.minimum(shift_ids, len(codes_sorted) - 1)] != codes
+            ):
                 raise RuntimeError(
                     "A shift vector is outside the set found in fc2 entries."
                 )

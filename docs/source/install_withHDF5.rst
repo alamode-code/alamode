@@ -10,7 +10,7 @@ Mandatory requirements
 * C++ compiler (Intel compiler is recommended.)
 * LAPACK library
 * MPI library (OpenMPI, MPICH2, IntelMPI, etc.)
-* `Boost C++ library <http://www.boost.org>`_
+* `Boost C++ library <http://www.boost.org>`_ (version >= 1.66)
 * FFTW3 library (not necessary when Intel MKL is available)
 * `Eigen3 library <http://eigen.tuxfamily.org/>`_
 * `spglib <https://atztogo.github.io/spglib/>`_

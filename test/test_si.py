@@ -59,7 +59,9 @@ def print_max_errors(file, data_ref, data_now, rel_min_scale=1.0e-15):
         )
 
 
-def gen_alminput_si(fname, norder=1, prefix="si222", dfset="DFSET", algo_reduction=None):
+def gen_alminput_si(
+    fname, norder=1, prefix="si222", dfset="DFSET", algo_reduction=None
+):
     pos = [
         [0.000, 0.000, 0.000],
         [0.000, 0.000, 0.500],

@@ -104,7 +104,7 @@ class VaspParser(object):
             if len(elements) == 0:
                 kd_dict = {}
                 for i in range(len(nat_elem)):
-                    kd_dict["Element {}".format(i+1)] = i
+                    kd_dict["Element {}".format(i + 1)] = i
                 kd = []
                 for i in range(len(nat_elem)):
                     kd.extend([i] * nat_elem[i])
