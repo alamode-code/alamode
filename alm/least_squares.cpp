@@ -12,7 +12,6 @@
 #include "logger.h"
 #include "svd.h"
 #ifdef USE_MKL_BACKEND
-#define EIGEN_USE_MKL
 #include <Eigen/PardisoSupport>
 using KKT_Solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<double>>;
 #elif defined(USE_ACCEL_BACKEND)
@@ -24,9 +23,8 @@ using KKT_Solver = Eigen::AccelerateLDLT<Eigen::SparseMatrix<double>, Eigen::Low
 using KKT_Solver = Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric>;
 #endif
 
-#ifndef EIGEN_USE_ACCELERATE
+// lapack_wrapper.h is included unconditionally; its BLAS prototypes self-guard for EIGEN_USE_BLAS.
 #include "lapack_wrapper.h"
-#endif
 
 
 auto find_independent_rows_dense(int M, int N, double *A_data, double tol, int &rank, std::vector<int> &pivots,

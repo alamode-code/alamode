@@ -4,6 +4,10 @@
 
 #pragma once
 
+// Guarded BLAS prototypes (dgemv_/dgemm_). Self-guards against EIGEN_USE_BLAS / USE_MKL_BACKEND so
+// an EIGEN_USE_BLAS build does not clash with Eigen's own declarations in <misc/blas.h>.
+#include "blas_wrapper.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -42,37 +46,7 @@ void dgesdd_(char *jobz,   // 'A' to compute all columns of U and rows of VT
              int *iwork,   // integer workspace (size = 8*min(m,n))
              int *info     // output: error code (0 = success)
 );
-#ifndef EIGEN_USE_ACCELERATE
-// DGEMV: y := alpha*A*x + beta*y  (A is column-major)
-void dgemv_(char *trans, // 'N' for A*x, 'T' for A^T*x
-            int *m,      // number of rows of A
-            int *n,      // number of columns of A
-            double *alpha,
-            double *a, // A: (m×n) column-major
-            int *lda,  // leading dimension of A (>= m)
-            double *x, // x: length n (if trans='N') or length m (if trans='T')
-            int *incx, // increment for elements of x (usually 1)
-            double *beta,
-            double *y, // y: length m (if trans='N') or length n (if trans='T')
-            int *incy  // increment for elements of y (usually 1)
-);
-#endif
-
-// DGEMM: C := alpha*A*B + beta*C  (all matrices column-major)
-void dgemm_(char *transa, // 'N' or 'T' for A
-            char *transb, // 'N' or 'T' for B
-            int *m,       // number of rows of A and C
-            int *n,       // number of columns of B and C
-            int *k,       // number of columns of A and rows of B
-            double *alpha,
-            double *a, // A: (m×k) if transa='N', else (k×m), column-major
-            int *lda,  // leading dimension of A (>= m if 'N', >= k if 'T')
-            double *b, // B: (k×n) if transb='N', else (n×k), column-major
-            int *ldb,  // leading dimension of B (>= k if 'N', >= n if 'T')
-            double *beta,
-            double *c, // C: (m×n), column-major
-            int *ldc   // leading dimension of C (>= m)
-);
+// dgemv_ / dgemm_ are declared in blas_wrapper.h (guarded for EIGEN_USE_BLAS / USE_MKL_BACKEND).
 
 // DGELS: solves least‐squares A*X = B or A^T*X = B for over/underdetermined systems
 void dgels_(char *trans,  // 'N' for A*X=B, 'T' for A^T*X=B
