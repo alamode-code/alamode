@@ -48,7 +48,9 @@ option(EIGEN3_ROOT "Path to Eigen3 installation" "")
 if (EIGEN3_ROOT)
     list(APPEND CMAKE_PREFIX_PATH "${EIGEN3_ROOT}")
 endif()
-find_package(Eigen3)
+# QUIET: config-mode lookup may fail when Eigen is provided only as headers via -DEIGEN3_INCLUDE;
+# that is a supported fallback below, so do not warn about the missing Eigen3Config.cmake.
+find_package(Eigen3 QUIET)
 if (Eigen3_FOUND)
     if (TARGET Eigen3::Eigen)
         set(eigen_target Eigen3::Eigen)
