@@ -123,6 +123,10 @@ if (USE_MKL_BACKEND)
     add_compile_definitions(EIGEN_USE_MKL_ALL)
     add_compile_definitions(EIGEN_MKL_BACKEND)
     add_compile_definitions(USE_MKL_BACKEND)
+    # Prevent Eigen from enabling MKL's MKL_DIRECT_CALL when including mkl.h.
+    # Otherwise BLAS routines (dtrsm/ztrsm/...) become direct-call macros that
+    # clash with Eigen's own typed BLAS backend, breaking compilation.
+    add_compile_definitions(EIGEN_MKL_NO_DIRECT_CALL)
 #    if(MKL_INTERFACE STREQUAL "ILP64")
 #        message(WARNING "MKL was detected as ILP64; switching to explicit LP64 interface.")
 
