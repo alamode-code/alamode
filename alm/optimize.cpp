@@ -3612,8 +3612,10 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
 {
     int i, j;
     double diff{0.0};
+    // Below this width the OpenMP fork/join for the lazy Gram-column build costs more than the work.
+    constexpr int cd_parallel_grain = 256;
     Eigen::VectorXd beta(N), delta(N);
-    Eigen::VectorXd res(N);
+    Eigen::VectorXd res(M); // only used for the verbosity>1 diagnostic A*beta - b (length M)
     bool do_print_log;
 
     if (warm_start) {
@@ -3648,36 +3650,28 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
                 delta(i) -= beta(i);
                 if (std::abs(delta(i)) > 0.0) {
                     if (!has_prod[i]) {
-#pragma omp parallel for
+#pragma omp parallel for if (N >= cd_parallel_grain)
                         for (j = 0; j < N; ++j) {
                             Prod(j, i) = A.col(j).dot(A.col(i));
                         }
                         has_prod[i] = true;
                     }
-                    grad = grad + Prod.col(i) * delta(i);
+                    grad.noalias() += Prod.col(i) * delta(i);
                 }
             }
             ++iloop;
-            diff = 0.0;
-#pragma omp parallel for reduction(+ : diff)
-            for (i = 0; i < N; ++i) {
-                diff += delta(i) * delta(i);
-            }
-            diff = std::sqrt(diff / static_cast<double>(N));
-            //diff = std::sqrt(delta.dot(delta) / static_cast<double>(N));
+            // Eigen SIMD reduction instead of an every-sweep OpenMP parallel-for: the work is a
+            // tiny O(N) memory-bound sum, so fork/join dominated it. Also deterministic, whereas
+            // the OpenMP reduction's sum order (and thus the converged iteration) depended on the
+            // thread count.
+            diff = std::sqrt(delta.squaredNorm() / static_cast<double>(N));
 
             if (diff < optcontrol.tolerance_iteration) break;
 
             if (do_print_log) {
                 std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
                           << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
-                auto tmp = 0.0;
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+ : tmp)
-#endif
-                for (i = 0; i < N; ++i) {
-                    tmp += std::abs(beta(i));
-                }
+                auto tmp = beta.lpNorm<1>();
                 std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
                 res = A * beta - b;
                 tmp = res.dot(res);
@@ -3706,36 +3700,28 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
                 delta(i) -= beta(i);
                 if (std::abs(delta(i)) > 0.0) {
                     if (!has_prod[i]) {
-#pragma omp parallel for
+#pragma omp parallel for if (N >= cd_parallel_grain)
                         for (j = 0; j < N; ++j) {
                             Prod(j, i) = A.col(j).dot(A.col(i));
                         }
                         has_prod[i] = true;
                     }
-                    grad = grad + Prod.col(i) * delta(i);
+                    grad.noalias() += Prod.col(i) * delta(i);
                 }
             }
             ++iloop;
-            diff = 0.0;
-#pragma omp parallel for reduction(+ : diff)
-            for (i = 0; i < N; ++i) {
-                diff += delta(i) * delta(i);
-            }
-            diff = std::sqrt(diff / static_cast<double>(N));
-            //diff = std::sqrt(delta.dot(delta) / static_cast<double>(N));
+            // Eigen SIMD reduction instead of an every-sweep OpenMP parallel-for: the work is a
+            // tiny O(N) memory-bound sum, so fork/join dominated it. Also deterministic, whereas
+            // the OpenMP reduction's sum order (and thus the converged iteration) depended on the
+            // thread count.
+            diff = std::sqrt(delta.squaredNorm() / static_cast<double>(N));
 
             if (diff < optcontrol.tolerance_iteration) break;
 
             if (do_print_log) {
                 std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
                           << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
-                auto tmp = 0.0;
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+ : tmp)
-#endif
-                for (i = 0; i < N; ++i) {
-                    tmp += std::abs(beta(i));
-                }
+                auto tmp = beta.lpNorm<1>();
                 std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
                 res = A * beta - b;
                 tmp = res.dot(res);
@@ -3760,13 +3746,7 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
             std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
                       << diff * std::sqrt(static_cast<double>(N) / param2norm) << '\n';
         }
-        double tmp = 0.0;
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+ : tmp)
-#endif
-        for (i = 0; i < N; ++i) {
-            tmp += std::abs(beta(i));
-        }
+        double tmp = beta.lpNorm<1>();
         std::cout << "    2': ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
         res = A * beta - b;
         tmp = res.dot(res);
