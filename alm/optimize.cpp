@@ -39,6 +39,22 @@
 
 using namespace ALM_NS;
 
+namespace {
+// Coordinate descent builds the Gram matrix Prod = A^T A column by column, lazily: each column is a
+// separate OpenMP-parallel GEMV inside the sweep. When the full Gram is affordable -- N (columns)
+// not much larger than M (rows) -- building it up front with one BLAS-3 GEMM is markedly faster than
+// that per-column build, even if the elastic-net solution does not use every column (the GEMM's
+// efficiency beats the lazy build's per-column overhead). For strongly underdetermined problems
+// (N >> M) only a few columns are ever needed, so the lazy build wins. The active set is bounded by
+// min(N, M), so N <= factor * M is the affordability test. Set ALM_GRAM_LAZY to force the lazy path.
+constexpr Eigen::Index gram_dense_factor = 2;
+
+inline auto use_full_gram(const Eigen::MatrixXd &A) -> bool
+{
+    return A.cols() <= gram_dense_factor * A.rows() && std::getenv("ALM_GRAM_LAZY") == nullptr;
+}
+} // namespace
+
 Optimize::Optimize()
 {
     set_default_variables();
@@ -1409,6 +1425,13 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
     grad0 = A.transpose() * b;
     grad = grad0;
 
+    // Build the whole Gram up front with one parallel GEMM when it is affordable (see use_full_gram),
+    // so coordinate_descent never fills columns lazily. Falls back to the lazy build when N >> M.
+    if (use_full_gram(A)) {
+        Prod.noalias() = A.transpose() * A;
+        std::fill(has_prod, has_prod + N_new, true);
+    }
+
     if (verbosity == 1) std::cout << std::setw(3);
 
     for (size_t ialpha = 0; ialpha < alphas.size(); ++ialpha) {
@@ -1702,6 +1725,12 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
 #pragma omp parallel for
     for (i = 0; i < N_new; ++i) {
         scale_beta(i) = 1.0 / (1.0 / scale_beta(i) + (1.0 - optcontrol.l1_ratio) * optcontrol.l1_alpha);
+    }
+
+    // Build the whole Gram up front with one parallel GEMM when affordable (see use_full_gram).
+    if (use_full_gram(A)) {
+        Prod.noalias() = A.transpose() * A;
+        std::fill(has_prod, has_prod + N_new, true);
     }
 
     // Coordinate Descent Method
