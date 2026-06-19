@@ -47,7 +47,9 @@ endif()
 if (BOOST_ROOT)
     list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
 endif()
-find_package(Boost)
+# boost::sort::block_indirect_sort requires Boost >= 1.66; require it here so an
+# older system Boost is rejected at configure time instead of failing the build.
+find_package(Boost 1.66.0)
 if (Boost_FOUND)
     if (TARGET Boost::boost)
         set(boost_target Boost::boost)
@@ -60,7 +62,7 @@ else()
     if (BOOST_INCLUDE)
         set(boost_includes ${BOOST_INCLUDE})
     else()
-        message(FATAL_ERROR "Boost was not found.
+        message(FATAL_ERROR "Boost (>= 1.66) was not found.
         Please specify the location of boost include directories
         via -DBOOST_INCLUDE option.")
     endif()

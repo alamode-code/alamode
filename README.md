@@ -54,7 +54,7 @@ linewidth, and other anharmonic phonon properties from first principles.
 * C++ compiler
 * LAPACK library
 * MPI library
-* Boost C++ library
+* Boost C++ library (version >= 1.66)
 * FFT library
 * Eigen3 library
 * spglib
