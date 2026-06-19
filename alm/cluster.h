@@ -38,6 +38,8 @@ public:
 
     IntList(const IntList &a) = default;
 
+    IntList &operator=(const IntList &a) = default;
+
     IntList(const int n, const int *arr)
     {
         for (auto i = 0; i < n; ++i) {

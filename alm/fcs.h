@@ -43,6 +43,8 @@ public:
 
     FcProperty(const FcProperty &obj) = default;
 
+    FcProperty &operator=(const FcProperty &obj) = default;
+
     FcProperty(const int n, const double c, const int *arr, const size_t m)
     {
         sign = c;
@@ -97,6 +99,8 @@ public:
     ForceConstantTable();
 
     ForceConstantTable(const ForceConstantTable &obj) = default;
+
+    ForceConstantTable &operator=(const ForceConstantTable &obj) = default;
 
     ForceConstantTable(const int nelems, const double fc_in, const int *atoms_in, const int *coords_in)
     {

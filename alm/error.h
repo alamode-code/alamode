@@ -21,20 +21,20 @@ inline auto warn(const char *file, const char *message) -> void
     std::cout << '\n' << " WARNING in " << file << "  MESSAGE: " << message << '\n';
 }
 
-inline auto exit(const char *file, const char *message) -> void
+[[noreturn]] inline auto exit(const char *file, const char *message) -> void
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << '\n';
     std::exit(EXIT_FAILURE);
 }
 
 template <typename T>
-auto exit(const char *file, const char *message, const T info) -> void
+[[noreturn]] auto exit(const char *file, const char *message, const T info) -> void
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << info << '\n';
     std::exit(EXIT_FAILURE);
 }
 
-inline auto exit(const char *file, const char *message, const char *info) -> void
+[[noreturn]] inline auto exit(const char *file, const char *message, const char *info) -> void
 {
     std::cout << '\n' << " ERROR in " << file << "  MESSAGE: " << message << info << '\n';
     std::exit(EXIT_FAILURE);

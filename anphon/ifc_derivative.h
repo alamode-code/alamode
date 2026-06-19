@@ -13,7 +13,7 @@ namespace PHON_NS
 
 class KpointMeshUniform;
 class PhaseFactorStorage;
-class MinimumDistList;
+struct MinimumDistList;
 class DelVStrainData;
 
 class DerivativeIFC: protected Pointers

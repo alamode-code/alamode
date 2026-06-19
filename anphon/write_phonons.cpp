@@ -1314,7 +1314,7 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     dims2[0] = system->get_primcell().number_of_atoms;
     dataspace = new DataSpace(1, dims2);
     dataset = new DataSet(group_cell.createDataSet("atomic_kinds", PredType::NATIVE_INT, *dataspace));
-    int kdtmp[dims[0]];
+    std::vector<int> kdtmp(dims[0]);
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
         kdtmp[i] = system->get_primcell().kind[i];
     }
@@ -1675,7 +1675,7 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     dims2[0] = system->get_primcell().number_of_atoms;
     dataspace = new DataSpace(1, dims2);
     dataset = new DataSet(group_cell.createDataSet("atomic_kinds", PredType::NATIVE_INT, *dataspace));
-    int kdtmp[dims[0]];
+    std::vector<int> kdtmp(dims[0]);
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
         kdtmp[i] = system->get_primcell().kind[i];
     }

@@ -48,6 +48,8 @@ public:
 
     DistInfo(const DistInfo &obj) : cell(obj.cell), dist(obj.dist) {};
 
+    DistInfo &operator=(const DistInfo &obj) = default;
+
     bool operator<(const DistInfo &obj) const
     {
         return dist < obj.dist;

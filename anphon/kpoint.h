@@ -30,6 +30,8 @@ public:
 
     KpointList(const KpointList &obj) : kval(obj.kval), knum(obj.knum) {};
 
+    KpointList &operator=(const KpointList &obj) = default;
+
     KpointList(const unsigned int knum_in, const std::vector<double> &vec) : kval(vec), knum(knum_in) {};
 };
 
