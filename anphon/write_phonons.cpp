@@ -82,9 +82,9 @@ void Writes::writeInputVars()
     std::cout << " General:\n";
     std::cout << "  PREFIX = " << input->job_title << '\n';
     std::cout << "  MODE = " << phon->mode << '\n';
-    std::cout << "  FCSXML = " << fcs_phonon->file_fcs << '\n';
+    std::cout << "  FCSFILE = " << fcs_phonon->file_fcs << '\n';
     if (fcs_phonon->update_fc2) {
-        std::cout << "  FC2XML = " << fcs_phonon->file_fc2 << '\n';
+        std::cout << "  FC2FILE = " << fcs_phonon->file_fc2 << '\n';
     }
     std::cout << '\n';
 

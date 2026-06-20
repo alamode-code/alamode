@@ -353,7 +353,7 @@ void Gruneisen::write_new_fcsxml_all() const
     std::cout << '\n';
 
     if (fcs_phonon->update_fc2) {
-        warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with the FC2XML.");
+        warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with the FC2FILE.");
     } else {
         std::cout << " NEWFCS = 1 : Following XML files are created. \n";
 

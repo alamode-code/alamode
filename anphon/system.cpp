@@ -364,7 +364,7 @@ void System::load_system_info_from_file()
     } else {
         if (symbol_kd.size() != elements_base.size()) {
             exit("load_system_info_from_file",
-                 "The number of elements in the input file (KD) and that from the FCSXML file are different.");
+                 "The number of elements in the input file (KD) and that from the FCSFILE are different.");
         }
     }
 }
@@ -1078,9 +1078,9 @@ void System::recips(const Eigen::Matrix3d &mat_in, Eigen::Matrix3d &rmat_out)
 //void System::check_consistency_primitive_lattice() const
 //{
 //    // Check if the ordering of atoms in the primitive cells derived
-//    // from FCSXML and FC2XML are same or not. If not, the ordering for the
-//    // FCSXML (anharmonic terms) will be changed so that it becomes equivalent
-//    // to that of FC2XML.
+//    // from FCSFILE and FC2FILE are same or not. If not, the ordering for the
+//    // FCSFILE (anharmonic terms) will be changed so that it becomes equivalent
+//    // to that of FC2FILE.
 //    // This operation is necessary for obtaining correct computational results.
 //
 //    int i, j, k;
