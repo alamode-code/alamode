@@ -42,6 +42,8 @@ public:
 
     AtomProperty(const AtomProperty &other) = default;
 
+    AtomProperty &operator=(const AtomProperty &other) = default;
+
     AtomProperty(const double *pos, const int kind_in, const int atom_in, const int tran_in)
     {
         x = pos[0];

@@ -16,7 +16,9 @@
 //     dgemv_ / dgemm_. MKL does NOT, however, expose a zgemm_ (only zgemm), so we still declare the
 //     generic Fortran zgemm_ here; it binds to MKL's Fortran zgemm_ library symbol at link time
 //     (standard double-pair ABI). This also keeps zgemm_cpx below compilable in the MKL build even
-//     though alm never calls it.
+//     though alm never calls it. NOTE: EIGEN_USE_MKL_ALL makes Eigen define EIGEN_USE_BLAS
+//     transitively, so the zgemm_ guard below must check USE_MKL_BACKEND explicitly rather than rely
+//     on EIGEN_USE_BLAS being absent.
 //
 //   * otherwise (generic system BLAS/LAPACK): this header declares all three.
 //
@@ -56,11 +58,16 @@ void dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha, d
 
 #endif // !defined(EIGEN_USE_BLAS) && !defined(USE_MKL_BACKEND)
 
-// zgemm_: declared for every backend EXCEPT EIGEN_USE_BLAS (where Eigen's blas.h declares it).
-// MKL exposes the complex GEMM as zgemm (no trailing underscore) and does not provide zgemm_, so we
-// declare the generic Fortran zgemm_ here too; it resolves to MKL's Fortran zgemm_ symbol at link
-// time. Complex args are passed as double* per the BLAS double-pair convention.
-#if !defined(EIGEN_USE_BLAS)
+// zgemm_: declared for every backend EXCEPT a pure EIGEN_USE_BLAS build (where Eigen's blas.h
+// declares it). MKL exposes the complex GEMM as zgemm (no trailing underscore) and does not provide
+// zgemm_, so we declare the generic Fortran zgemm_ here too; it resolves to MKL's Fortran zgemm_
+// symbol at link time. Complex args are passed as double* per the BLAS double-pair convention.
+//
+// USE_MKL_BACKEND is checked explicitly because EIGEN_USE_MKL_ALL makes Eigen define EIGEN_USE_BLAS
+// transitively (MKL_support.h) WITHOUT including misc/blas.h (that include is guarded by
+// EIGEN_USE_BLAS && !EIGEN_USE_MKL). So in the MKL build EIGEN_USE_BLAS is set but zgemm_ is never
+// declared by Eigen -- we must declare it here.
+#if !defined(EIGEN_USE_BLAS) || defined(USE_MKL_BACKEND)
 
 #ifdef __cplusplus
 extern "C"

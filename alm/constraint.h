@@ -39,6 +39,8 @@ public:
 
     ConstraintClass(const ConstraintClass &a) = default;
 
+    ConstraintClass &operator=(const ConstraintClass &a) = default;
+
     ConstraintClass(std::vector<double> vec) : w_const(std::move(vec))
     {}
 
