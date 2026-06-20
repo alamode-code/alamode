@@ -67,10 +67,10 @@ at http://sourceforge.net/projects/alamode .
 You can also clone the repository as
 
 ```
-$ git clone http://github.com/ttadano/alamode.git
+$ git clone https://github.com/ttadano/alamode.git
 ```
 
-If you download the GitHub version, please use the 'master' branch.
+If you download the GitHub version, please use the 'develop' branch.
 
 ## Install
 The directories alm/, anphon/, and tools/ contain separate Makefiles.

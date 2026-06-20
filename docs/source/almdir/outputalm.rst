@@ -20,15 +20,37 @@ ALM: Output files
 
  An XML file containing the necessary information for performing
  phonon calculations.
- The files can be read by *anphon* using the ``FCSXML``-tag.
- Created when ``MODE = optimize``. 
+ The file can be read by *anphon* using the ``FCSFILE``-tag.
+ Created by default when ``MODE = optimize`` (controlled by ``FCS_ALAMODE``).
+ When ``LMODEL = enet | adaptive-lasso``, the file is created only when the cross-validation mode is off (``CV = 0``).
+
+* ``PREFIX``.h5
+
+ An HDF5 file containing the same information as ``PREFIX``.xml in the HDF5 format.
+ It can also be read by *anphon* using the ``FCSFILE``-tag.
+ Created by default when ``MODE = optimize``.
  When ``LMODEL = enet | adaptive-lasso``, the file is created only when the cross-validation mode is off (``CV = 0``).
 
 * ``PREFIX``.FORCE_CONSTANT_3RD
 
  Third-order force constants in the FORCE_CONSTANT_3RD format of the ShengBTE code.
- Created when ``MODE = optimize`` and ``FC3_SHENGBTE = 1``. 
+ Created when ``MODE = optimize`` and ``FC3_SHENGBTE = 1``.
  When ``LMODEL = enet | adaptive-lasso``, the file is created only when the cross-validation mode is off (``CV = 0``).
+
+* ``PREFIX``.FORCE_CONSTANT_4TH
+
+ Fourth-order force constants in the FORCE_CONSTANT_4TH format of the ShengBTE (FourPhonon) code.
+ Created when ``MODE = optimize``, ``FC4_SHENGBTE = 1``, and ``NORDER > 2``.
+
+* ``PREFIX``.fc
+
+ Second-order force constants in the Quantum ESPRESSO ``.fc`` format.
+ Created when ``MODE = optimize`` and ``FC2_QEFC = 1``.
+
+* ``PREFIX``.hessian
+
+ The entire Hessian matrix of the supercell.
+ Created when ``MODE = optimize`` and ``HESSIAN = 1``.
 
 * ``PREFIX``.cvset 
  

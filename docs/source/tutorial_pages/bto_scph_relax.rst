@@ -1,4 +1,4 @@
-.. _label_tutorial_sto_scph:
+.. _label_tutorial_bto_scph_relax:
 
 .. raw:: html
 
@@ -6,7 +6,7 @@
 
 .. role:: red
 
-.. |Angstrom|   unicode:: U+00C5 
+.. |Angstrom|   unicode:: U+00C5
 
 BaTiO\ :sub:`3` : An SCPH-based structural optimization example
 ---------------------------------------------------
@@ -90,7 +90,7 @@ Then, write the low-temperature structure to the ``&displace``-field.
   The convergence of the structure gets significantly slower right at the vicinity of 
   the phase transition because the gradient of the free energy almost vanishes.
   In such cases, getting a smooth :math:`T`-dependence for materials 
-  with more complicated structures is sometimes difficult..
+  with more complicated structures is sometimes difficult.
   This problem can be partially avoided by choosing a larger :math:`T`-step 
   and estimating the transition temperature from the crossing point of
   the free energies with different phases.

@@ -75,7 +75,7 @@ The information on the :math:`q`-points are written out in :red:`si_anphon.in` a
   &general
     PREFIX = si222_harmonic
     MODE   = phonons
-    FCSXML = si222_harmonic.xml
+    FCSFILE = si222_harmonic.xml
 
     NKD = 1; KD = Si
   /
@@ -126,7 +126,7 @@ With these preparations, we can generate supercells with random displacements by
   $ python3 ${ALAMODE_ROOT}/tools/displace.py --VASP POSCAR_supercell --prim POSCAR_primitive_cell --random_normalcoord --evec si222_harmonic.evec --temp 300 --prefix randomQ_ -nd 100
 
 Here, we generated ``-nd 100`` configurations by randomly sampling from the distribution
-at ``-temp 300`` K in the harmonic PES.
+at ``--temp 300`` K in the harmonic PES.
 
 Please run the DFT calculation for each generated supercell
 using the VASP input in **example/Si/anharm_IFCs/1_harmonic/VASP_input**.

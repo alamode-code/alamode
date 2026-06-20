@@ -298,7 +298,7 @@ which is given by
      &= \sum_{\ell^{\prime\prime},\kappa^{\prime\prime},\lambda}\Phi_{\mu\nu\lambda}(\ell\kappa;\ell^{\prime}\kappa^{\prime};\ell^{\prime\prime}\kappa^{\prime\prime})r_{\lambda}(\ell^{\prime\prime}\kappa^{\prime\prime}).
     \end{align}
 
-Please set ``GRUNEISEN = 1`` and give an appropriate ``FCSXML`` file containing cubic IFCs to print Gr\ |umulaut_u|\ neisen parameters.
+Please set ``GRUNEISEN = 1`` and give an appropriate ``FCSFILE`` file containing cubic IFCs to print Gr\ |umulaut_u|\ neisen parameters.
 
 
 Anharmonic self-energy
@@ -528,7 +528,7 @@ When ``SELF_OFFDIAG = 1``, the off-diagonal elements are also calculated, and th
 
 .. [4] S\. -I. Tamura, Phys. Rev. B **27**, 858 (1983).
 
-.. [5] P\. E. Bl\ |umulaut_o|\ chl, O. Jepsen, and O. K. Andersen, Phys. Rev. B **49**, 1450555 (1994).
+.. [5] P\. E. Bl\ |umulaut_o|\ chl, O. Jepsen, and O. K. Andersen, Phys. Rev. B **49**, 16223 (1994).
 
 .. [6] T\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**, 054301 (2015).
 

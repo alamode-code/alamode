@@ -9,8 +9,8 @@
 SrTiO\ :sub:`3` : A self-consistent phonon example
 ---------------------------------------------------
 
-This page explains how to run an self-consistent phonon (SCP) calculation using ALAMODE.
-The target materials is cubic SrTiO\ :sub:`3`, which is a well-known perovskite solid exhibiting soft phonons.
+This page explains how to run a self-consistent phonon (SCP) calculation using ALAMODE.
+The target material is cubic SrTiO\ :sub:`3`, which is a well-known perovskite solid exhibiting soft phonons.
 
 The example input files are provided in **example/SrTiO3/reference**.
 
@@ -117,7 +117,7 @@ We can see that the SCPH loop converged except for :math:`T = 0` K.
 In the working directory, the following files are created:
 
 - ``STO_scph2-2.scph_dymat`` : Anharmonic corrections to the dynamical matrix, :math:`\Delta D(\boldsymbol{q}, T) = D_{\mathrm{SCPH}}(\boldsymbol{q}, T) - D_{\mathrm{HA}}(\boldsymbol{q})`, are stored. This file can be used to restart an SCP calculation with the same ``KMESH_*`` and ``SELF_OFFDIAG`` parameters.
-- ``STO_scph2-2.scph_dfc2`` : Anharmonic corrrections to the second-order force constants, :math:`\Delta \Phi(\boldsymbol{r}(\ell), T) = M^{\frac{1}{2}} \Delta D(\boldsymbol{r}(\ell), T) M^{\frac{1}{2}}`, are stored, where :math:`M` is the diagonal matrix whose elements are atomic masses, and :math:`\Delta D(\boldsymbol{r}(\ell), T) = N_{q}^{-1} \sum_{\boldsymbol{q}} \Delta D(\boldsymbol{q}, T) e^{-i\boldsymbol{q}\cdot\boldsymbol{r}(\ell)}`. This file is used to create effective second-order force constants via ``dfc2`` (for ALAMODE FCSXML format) or ``scph_to_qefc.py`` (Quantum-ESPRESSO fc format).
+- ``STO_scph2-2.scph_dfc2`` : Anharmonic corrections to the second-order force constants, :math:`\Delta \Phi(\boldsymbol{r}(\ell), T) = M^{\frac{1}{2}} \Delta D(\boldsymbol{r}(\ell), T) M^{\frac{1}{2}}`, are stored, where :math:`M` is the diagonal matrix whose elements are atomic masses, and :math:`\Delta D(\boldsymbol{r}(\ell), T) = N_{q}^{-1} \sum_{\boldsymbol{q}} \Delta D(\boldsymbol{q}, T) e^{-i\boldsymbol{q}\cdot\boldsymbol{r}(\ell)}`. This file is used to create effective second-order force constants via ``dfc2`` (for the ALAMODE force-constant XML format) or ``scph_to_qefc.py`` (Quantum-ESPRESSO fc format).
 - ``STO_scph2-2.scph_bands`` : Self-consistent phonon band structures at various temperatures.
 
 Let's plot the finite-temperature band structures.

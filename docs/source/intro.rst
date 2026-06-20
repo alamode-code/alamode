@@ -62,15 +62,16 @@ Anharmonic properties
    The standard SCPH dispersion and thermodynamic properties are correctly calculated for relaxed configurations.
 
 .. Note::
-   The tutorials for the structural optimizations are temporarily provided in
-   https://github.com/r-masuki/StructuralOptimizationTutorial. The tutorial for the new feature will be included in this page in the future. 
+   Tutorials for structural optimization at finite temperatures are now included in this
+   documentation; see :doc:`tutorial_pages/bto_scph_relax` (SCPH-based) and
+   :doc:`tutorial_pages/zno_qha_relax` (QHA-based).
 
 Links
 -----
 
-* Download page  : http://sourceforge.net/projects/alamode 
-* Documentation  : http://alamode.readthedocs.io (this page)
-* Git repository : http://github.com/ttadano/alamode
+* Download page  : https://sourceforge.net/projects/alamode
+* Documentation  : https://alamode.readthedocs.io (this page)
+* Git repository : https://github.com/ttadano/alamode
 
 
 License
@@ -78,7 +79,7 @@ License
 
 .. |copy|   unicode:: U+000A9 
 
-Copyright |copy| 2014-2023 Terumasa Tadano
+Copyright |copy| 2014-2026 Terumasa Tadano
 
 This software is distributed under the MIT license.
 See the LICENSE.txt file for license rights and limitations. 

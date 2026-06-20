@@ -123,9 +123,10 @@ If you used VASP, the ``BORNINFO`` file can be created by issuing
 
 .. code-block:: bash
 
-    $ python ${ALAMODE_ROOT}/tools/extract.py --POSCAR --get born vasprun.xml > PbTe.born
+    $ python ${ALAMODE_ROOT}/tools/extract.py --VASP SPOSCAR --get born vasprun.xml > PbTe.born
 
-Currently, this parsing feature is supported only for VASP.
+Here, ``SPOSCAR`` is the VASP POSCAR file of the structure used in the DFPT calculation.
+Currently, this parsing feature is supported only for VASP and Quantum-ESPRESSO.
 
 We provide the pre-generated file ``PbTe.born`` in the ``reference/`` directory, so you can copy it to the working directory to move forward.
 
@@ -145,7 +146,7 @@ Please run **anphon** and plot the bands file
 
 .. code-block:: bash
 
-    $ ${ALAMODE_ROOT}/bin/anphon/anphon phband.in > phband.log
+    $ ${ALAMODE_ROOT}/anphon/anphon phband.in > phband.log
     $ python ${ALAMODE_ROOT}/tools/plotband.py PbTe_NA0.bands
 
 .. image:: ../../img/PbTe_harm_na0.png
@@ -167,7 +168,7 @@ After running **anphon** again, we can compare phonon dispersion curves with and
 
 .. code-block:: bash
 
-    $ ${ALAMODE_ROOT}/bin/anphon/anphon phband.in > phband.log2
+    $ ${ALAMODE_ROOT}/anphon/anphon phband.in > phband.log2
     $ python ${ALAMODE_ROOT}/tools/plotband.py PbTe_NA0.bands PbTe_NA1.bands
 
 .. image:: ../../img/PbTe_harm_na1.png
@@ -191,4 +192,4 @@ Finally, we plot all results together to see the difference.
 We can see that ``NONANALYTIC = 2`` and ``NONANALYTIC = 3`` give smoother dispersion than ``NONANALYTIC = 1``. 
 For these two method, the NA correction becomes exactly zero at the commensurate :math:`\boldsymbol{q}` points (other than :math:`\boldsymbol{q}\longrightarrow 0`). In the present calculation, we used a 4x4x4 supercell of the primitive cell. Hence, the NA correction should be zero at the Brillouin zone boundaries (X and L points) as well as the midpoint of the each high-symmetry line (e.g., :math:`\boldsymbol{q}=(1/4, 1/4, 0)`). We can confirm this from the above figure, where the blue, red, and magenta curves perfectly intersect with each other at these commensurate points, whereas the green curve does not.
 
-In general, we recommend using ``NONANALYTIC = 3`` as it correctly separates the short- and long-range terms and calculates the NA correction in the reciprocal space accurately using the Ewald summation method. It can also avoid abrupt jumps or discontinuties in dispersion curves at Brillouin zone boundaries, which can happen with ``NONALALYTIC = 2`` when the BZ boundary is not commensurate with the supercell size.
+In general, we recommend using ``NONANALYTIC = 3`` as it correctly separates the short- and long-range terms and calculates the NA correction in the reciprocal space accurately using the Ewald summation method. It can also avoid abrupt jumps or discontinuities in dispersion curves at Brillouin zone boundaries, which can happen with ``NONANALYTIC = 2`` when the BZ boundary is not commensurate with the supercell size.

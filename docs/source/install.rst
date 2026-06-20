@@ -5,15 +5,16 @@ Requirement
 -----------
 
 Mandatory requirements
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-* C++ compiler (Intel compiler is recommended.)
-* LAPACK library
+* C++ compiler (supporting the C++17 standard)
+* LAPACK and BLAS libraries
 * MPI library (OpenMPI, MPICH2, IntelMPI, etc.)
 * `Boost C++ library <http://www.boost.org>`_ (version >= 1.66)
-* FFTW3 library (not necessary when Intel MKL is available)
 * `Eigen3 library <http://eigen.tuxfamily.org/>`_
 * `spglib <https://atztogo.github.io/spglib/>`_
+* `HDF5 library <https://www.hdfgroup.org/solutions/hdf5/>`_
+* `CMake <https://cmake.org>`_ (version >= 3.17 and < 4.0)
 
 No worries! All of these libraries can be installed easily by using conda.
 
@@ -21,26 +22,26 @@ In addition to the above requirements, users have to get and install a first-pri
 (such as VASP_, QUANTUM-ESPRESSO_, OpenMX_, or xTAPP_) or another force field package (such as
 LAMMPS_) by themselves in order to compute harmonic and anharmonic force constants.
 
-.. _VASP : http://www.vasp.at
-.. _OpenMX : http://www.openmx-square.org
-.. _QUANTUM-ESPRESSO : http://www.quantum-espresso.org
-.. _xTAPP : http://frodo.wpi-aimr.tohoku.ac.jp/xtapp/index.html
-.. _LAMMPS : http://lammps.sandia.gov
+.. _VASP: http://www.vasp.at
+.. _OpenMX: http://www.openmx-square.org
+.. _QUANTUM-ESPRESSO: http://www.quantum-espresso.org
+.. _xTAPP: http://frodo.wpi-aimr.tohoku.ac.jp/xtapp/index.html
+.. _LAMMPS: http://lammps.sandia.gov
 
 
 Optional requirements
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
-* Python (> 2.6), Numpy, and Matplotlib
+* Python (>= 3.x), Numpy, and Matplotlib
 * XcrySDen_ or VMD_
 
 We provide some small scripts written in Python for visualizing phonon dispersion relations, phonon DOSs, etc.
-To use these scripts, one need to install the above Python packages.
+To use these scripts, one needs to install the above Python packages.
 Additionally, XcrySDen is necessary to visualize the normal mode directions and animate the normal mode.
 VMD may be more useful to make an animation, but it may be replaced by any other visualization software which supports the XYZ format.
 
-.. _XcrySDen : http://www.xcrysden.org
-.. _VMD : http://www.ks.uiuc.edu/Research/vmd/
+.. _XcrySDen: http://www.xcrysden.org
+.. _VMD: http://www.ks.uiuc.edu/Research/vmd/
 
 
 Install using conda (recommended for non-experts)
@@ -69,7 +70,7 @@ To build binaries on linux or macOS, the conda packages need to be installed by
 
 ::
 
-   % conda install -c conda-forge compilers openmpi boost eigen cmake spglib fftw scipy numpy h5py ipython
+   % conda install -c conda-forge compilers openmpi boost eigen cmake spglib hdf5 scipy numpy h5py ipython
 
 
 Step 2. Download source 
@@ -117,13 +118,13 @@ The meaning of each subdirectory is as follows:
 Step 3. Build by CMake 
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to bulid all binaries (**alm**, **anphon**, and the others), please use ``CMakeLists.txt`` in the ``$HOME/alamode`` directory.
+If you want to build all binaries (**alm**, **anphon**, and the others), please use ``CMakeLists.txt`` in the ``$HOME/alamode`` directory.
 ::
 
   % pwd
   * $HOME/alamode
   % mkdir _build; cd _build
-  % cmake -DUSE_MKL_FFT=no ..
+  % cmake ..
 
 Please make sure that cmake detected the C++ compiler correctly. If the automatic detection fails, you can specify the compilers
 by using the ``-DCMAKE_C_COMPILER`` and ``-DCMAKE_CXX_COMPILER`` options. If ``${CC}`` and ``${CXX}`` variables are not set properly,
@@ -146,21 +147,34 @@ You can specify the binary to build, for example, as
     please add the ``-DSPGLIB_ROOT`` option as
     ::
       
-      % cmake -DUSE_MKL_FFT=no -DSPGLIB_ROOT=$CONDA_PREFIX ..
+      % cmake -DSPGLIB_ROOT=$CONDA_PREFIX ..
 
     Also, when using the binaries, it may be necessary to set ``$LD_LIBRARY_PATH`` as
     ::
 
       % export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib64:$LD_LIBRARY_PATH
-          
+
+
+Optional linear-algebra backends
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, ALAMODE links against the LAPACK/BLAS libraries detected by CMake
+(the conda OpenBLAS is detected automatically). The following options select an
+alternative backend for the dense/sparse linear algebra:
+
+* ``-DUSE_MKL_BACKEND=yes`` : Use the Intel MKL (PARDISO) backend. Only the LP64
+  interface is supported, so it is combined with ``-DMKL_INTERFACE=lp64`` (the default).
+* ``-DUSE_ACCEL_BACKEND=yes`` : Use the Apple Accelerate framework (macOS only).
+* ``-DUSE_EIGEN_BLAS=yes`` : Route Eigen's dense products through the detected BLAS
+  (``EIGEN_USE_BLAS``). The vendor can be chosen with, e.g., ``-DBLA_VENDOR=OpenBLAS``.
 
 
 Install using native environment (optional for experts)
 -------------------------------------------------------
 
-If you are familier with unix OS and you want to use the Intel compiler, 
+If you are familiar with unix OS and you want to use the Intel compiler,
 please follow the instruction below.
-Here, the Intel C++ compiler and the Intel MKL, including the FFTW3 wrapper, will be used for the demonstration.
+Here, the Intel C++ compiler and the Intel MKL backend (``-DUSE_MKL_BACKEND=yes``) will be used for the demonstration.
 
 
 Step 1. Install all required libraries
@@ -188,7 +202,7 @@ This can be done as follows::
   % ln -s ../etc/boost_x_yy_z/boost .
 
 In this example, we place the boost files in ``$(HOME)/etc`` and create a symbolic link to the ``$(HOME)/boost_x_yy_z/boost`` in ``$(HOME)/include``.
-Instead of installing from source, you can install the Boost library with `Homebrew <http://brew.sh>`_ on macOS and ``apt-get`` or ``yum`` command on unix..
+Instead of installing from source, you can install the Boost library with `Homebrew <http://brew.sh>`_ on macOS and the ``apt-get`` or ``yum`` command on unix.
 
 In the same way, please install the Eigen3 include files as follows::
 
@@ -217,11 +231,13 @@ spglib
 Please install spglib by following the instruction on the `spglib webpage <https://atztogo.github.io/spglib/install.html>`_.
 Here, we assume spglib is installed in ``$SPGLIB_ROOT``.
 
-FFTW
-+++++
+HDF5
+++++
 
-If you use the MKL wrapper of FFT, this step can be skipped. 
-If you want to use the native FFTW library, please follow the instruction on the `FFTW webpage <http://www.fftw.org>`_.
+ALAMODE requires the HDF5 library. Please install it by following the instruction on the
+`HDF5 webpage <https://www.hdfgroup.org/solutions/hdf5/>`_, or via your system package
+manager. If HDF5 is installed in a non-standard location, pass its path to CMake via the
+``-DHDF5_ROOT`` option.
 
 
 Step 2. Download source
@@ -263,22 +279,22 @@ The directory structure supposed in this section is shown as below::
     ├── include
     └── lib
 
-   $FFTW3_ROOT (optional)
+   $HDF5_ROOT
     ├── include
     └── lib
 
-Step 3-1. Build by CMake 
+Step 3-1. Build by CMake
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Building by CMake is recommended as of version 1.2.0 of alamode. To use this approach, 
-you need to install cmake version 3.1 or later.
+CMake is the recommended (and supported) way to build ALAMODE. To use this approach,
+you need to install cmake version 3.17 or later (and below 4.0).
 
 To build Makefiles with CMake, please issue the following commands::
 
   % cd alamode
   % mkdir _build; cd _build
-  % cmake -DUSE_MKL_FFT=yes -DSPGLIB_ROOT=${SPGLIB_ROOT} \ 
-    -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_CXX_FLAGS="-O2 -xHOST" ..
+  % cmake -DUSE_MKL_BACKEND=yes -DMKL_INTERFACE=lp64 -DSPGLIB_ROOT=${SPGLIB_ROOT} \
+    -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_CXX_FLAGS="-O2 -xHOST" ..
 
 .. You can use ``-DCMAKE_C_COMPILER`` and ``-DCMAKE_CXX_COMPILER`` options to specify the compilers to build ALAMODE binaries. 
 .. If these options are not given, cmake will detect the compilers automatically by referencing the environmental variables 
@@ -302,13 +318,13 @@ To build Makefiles with CMake, please issue the following commands::
 
 .. note::
 
-    If cmake cannot find Boost, Eigen3, or FFTW automatically, you need to tell where these libraries 
-    are installed by using ``-DBOOST_INCLUDE``, ``-DEIGEN3_INCLUDE``, and ``-DFFTW3_ROOT`` options.
+    If cmake cannot find Boost, Eigen3, or HDF5 automatically, you need to tell where these libraries
+    are installed by using the ``-DBOOST_INCLUDE``, ``-DEIGEN3_INCLUDE``, and ``-DHDF5_ROOT`` options.
     For example, if the directory structure of Step 2 is used, the cmake option will be::
-    
-        % cmake -DUSE_MKL_FFT=yes -DSPGLIB_ROOT=${SPGLIB_ROOT} \
+
+        % cmake -DUSE_MKL_BACKEND=yes -DMKL_INTERFACE=lp64 -DSPGLIB_ROOT=${SPGLIB_ROOT} \
           -DBOOST_INCLUDE=${HOME}/include -DEIGEN3_INCLUDE=${HOME}/include \
-          -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_CXX_FLAGS="-O2 -xHOST" .. 
+          -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DCMAKE_CXX_FLAGS="-O2 -xHOST" ..
 
 After the configuration finishes successfully, please issue
 ::
@@ -331,45 +347,13 @@ You can specify the binary to build, for example, as
       % export LD_LIBRARY_PATH=$SPGLIB_ROOT/lib:$LD_LIBRARY_PATH
 
 
-Step 3-2. Build by Makefile 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 3-2. Build by Makefile (deprecated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Instead of using CMake, you can build each binary of ALAMODE by using the Makefile.{linux,osx,..}. 
+.. warning::
 
-In directories ``alm/``, ``anphon/``, and ``tools``, we provide sample Makefiles for Linux (Intel compiler) and Mac OSX (gcc, clang).
-Please copy either of them, edit the options appropriately, and issue ``make`` command as follows::
-
-    % export SPGLIB_ROOT=/path/to/spglib/installdir
-
-    % cd alm/
-    % cp Makefile.linux Makefile
-    (Edit Makefile here)
-    % make -j
-
-    % cd ../anphon/
-    % cp Makefile.linux Makefile
-    (Edit Makefile here)
-    % make -j
-
-    % cd ../tools/
-    % cp Makefile.linux Makefile
-    (Edit Makefile here)
-    % make -j
-
-An example of the Makefiles is shown below:
-
-.. literalinclude:: ../../alm/Makefile.linux
-    :caption: **ALM Makefile.linux**
-    :language: makefile
-    :linenos:
-    :lines: 7-17
-
-The default options are expected to work with modern Intel compilers.
-
-.. note::
-
-    When using the binaries, it may be necessary to set ``$LD_LIBRARY_PATH`` as
-    ::
-
-      % export SPGLIB_ROOT=/path/to/spglib/installdir
-      % export LD_LIBRARY_PATH=$SPGLIB_ROOT/lib:$LD_LIBRARY_PATH
+    The legacy ``Makefile.{linux,osx,...}`` files under ``alm/``, ``anphon/``, and ``tools/``
+    are no longer maintained and are not kept in sync with the current build system. For
+    example, they still target the C++11 standard and do not link the now-mandatory HDF5
+    library, so they will not produce working binaries without manual editing. Please build
+    ALAMODE with CMake as described above.

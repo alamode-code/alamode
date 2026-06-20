@@ -57,7 +57,7 @@ List of supported input variables
    **&optimize**
    :ref:`CONV_TOL <alm_conv_tol>`, :ref:`CV <alm_cv>`, :ref:`CV_MINALPHA <alm_cv_minalpha>`, :ref:`DEBIAS_OLS <alm_debias_ols>`
    :ref:`DFSET <alm_dfset>`, :ref:`DFSET_CV <alm_dfset_cv>`, :ref:`ENET_DNORM <alm_enet_dnorm>`
-   :ref:`FC2XML <alm_fc2xml>`, :ref:`FC3XML <alm_fc3xml>`, :ref:`ICONST <alm_iconst>`
+   :ref:`FC2FIX <alm_fc2fix>`, :ref:`FC3FIX <alm_fc3fix>`, :ref:`ICONST <alm_iconst>`
    :ref:`L1_ALPHA <alm_l1_alpha>`, :ref:`L1_RATIO <alm_l1_ratio>`, :ref:`LMODEL <alm_lmodel>`, :ref:`MAXITER <alm_maxiter>`
    :ref:`NDATA <alm_ndata>`, :ref:`NDATA_CV <alm_ndata_cv>`, :ref:`NSTART NEND <alm_nstart>`, :ref:`NSTART_CV NEND_CV <alm_nstart_cv>`
    :ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`, :ref:`ROTAXIS <alm_rotaxis>`, :ref:`SKIP <alm_skip>`
@@ -88,8 +88,8 @@ Description of input variables
   optimize (:red:`>= 1.1.0`)         | Estimate harmonic and anharmonic IFCs. 
                                      | This mode requires an appropriate &optimize field.
 
-  suggest                            | Suggests the displacement patterns necessary 
-                                     | to estimate harmonic and anharmonic IFCS.
+  suggest                            | Suggests the displacement patterns necessary
+                                     | to estimate harmonic and anharmonic IFCs.
  =================================== ====================================================================
 
  :Default: None
@@ -279,10 +279,10 @@ Description of input variables
   
  :Default: 1.0e-12
  :Type: Double
- :Description: ``FC_ZERO_THR`` defines the threshold of force constants to be saved in an XML file. If the absolute value of force constant is smaller than ``FC_ZERO_THR``, it will NOT be printed out. 
+ :Description: ``FC_ZERO_THR`` defines the threshold of force constants to be saved in an XML file. If the absolute value of a force constant is smaller than ``FC_ZERO_THR``, it will NOT be printed out.
 
  .. note::
-    If the harmonic force constants are calculated using a model potential (e.g., classical FF) where the interaction becomes zero beyond a certain cutoff raius, the default value of ``FC_ZERO_THR`` may raise a warning when creating a renormalize harmonic FCSXML using ``tools/dfc2``. This issue may be resolved by using a smaller ``FC_ZERO_THR``, say ``FC_ZERO_THR = 1.0e-15``. The force constants that become exactly zero due to symmetry and acoustic sum rule constraints will not be printed even when setting ``FC_ZERO_THR = 0``.
+    If the harmonic force constants are calculated using a model potential (e.g., classical FF) where the interaction becomes zero beyond a certain cutoff radius, the default value of ``FC_ZERO_THR`` may raise a warning when creating a renormalized harmonic force constant file using ``tools/dfc2``. This issue may be resolved by using a smaller ``FC_ZERO_THR``, say ``FC_ZERO_THR = 1.0e-15``. The force constants that become exactly zero due to symmetry and acoustic sum rule constraints will not be printed even when setting ``FC_ZERO_THR = 0``.
 
 ````
 
@@ -296,7 +296,7 @@ Description of input variables
 
  :Default: None
  :Type: Integer
- :Example: ``NORDER = 1`` for calculate harmonic terms only, ``NORDER = 2`` to include cubic terms as well, and so on.
+ :Example: ``NORDER = 1`` to calculate harmonic terms only, ``NORDER = 2`` to include cubic terms as well, and so on.
 
 ````
 
@@ -439,7 +439,7 @@ This field is necessary when ``MODE = optimize``.
  :Type: String
  :Description: When ``LMODEL = ols``, the force constants are estimated from the displacement-force datasets via the ordinary least-squares (OLS), which is usually sufficient to calculate harmonic and third-order force constants. 
 
-               The elastic net (``LMODEL = enet``) or adaptive LASSO (``LMODEL = adaptive-lasso``) are useful for calculating fourth-order (and higher-order) force constants. When the elastic net or adaptive LASSO is selected, the users have to set the following related tags: ``CV``, ``L1_RATIO``, ``L1_ALPHA``, ``CV_MAXALPHA``, ``CV_MINALPHA``, ``CV_NALPHA``, ``STANDARDIZE``, ``ENET_DNORM``, ``MAXITER``, ``CONV_TOL``, ``NWRITE``, ``SOLUTION_PATH``, ``DEBIAS_OLS``, ``STOP_CRITERION``. Please be noted that ``STANDARDIZE`` will be effective only for the elastic net.
+               The elastic net (``LMODEL = enet``) or adaptive LASSO (``LMODEL = adaptive-lasso``) are useful for calculating fourth-order (and higher-order) force constants. When the elastic net or adaptive LASSO is selected, the users have to set the following related tags: ``CV``, ``L1_RATIO``, ``L1_ALPHA``, ``CV_MAXALPHA``, ``CV_MINALPHA``, ``CV_NALPHA``, ``STANDARDIZE``, ``ENET_DNORM``, ``MAXITER``, ``CONV_TOL``, ``NWRITE``, ``SOLUTION_PATH``, ``DEBIAS_OLS``, ``STOP_CRITERION``. Please note that ``STANDARDIZE`` will be effective only for the elastic net.
 
 ````
 
@@ -487,7 +487,7 @@ This field is necessary when ``MODE = optimize``.
 
 .. _alm_iconst:
 
-* ICONST-tag = 0 | 1 | 2 | 3 | 11
+* ICONST-tag = 0 | 1 | 2 | 3 | 4 | 11
 
  ===== =============================================================================================
    0    No constraints
@@ -495,10 +495,12 @@ This field is necessary when ``MODE = optimize``.
        | Available only when ``LMODEL = ols``.
   11   | Same as ``ICONST = 1`` but the constraint is imposed *algebraically* rather than numerically.
        | Select this option when ``LMODEL = enet``.
-   2   | In addition to ``ICONST = 1``, constraints for rotational invariance will be 
+   2   | In addition to ``ICONST = 1``, constraints for rotational invariance will be
        | imposed up to (``NORDER`` + 1)th order. Available only when ``LMODEL = ols``.
-   3   | In addition to ``ICONST = 2``, constraints for rotational invariance between (``NORDER`` + 1)th order 
-       | and (``NORDER`` + 2)th order, which are zero, will be considered. 
+   3   | In addition to ``ICONST = 2``, constraints for rotational invariance between (``NORDER`` + 1)th order
+       | and (``NORDER`` + 2)th order, which are zero, will be considered.
+       | Available only when ``LMODEL = ols``.
+   4   | In addition to ``ICONST = 2``, constraints for the Huang invariance will be imposed.
        | Available only when ``LMODEL = ols``.
  ===== =============================================================================================
 
@@ -529,7 +531,7 @@ This field is necessary when ``MODE = optimize``.
 .. _alm_rotaxis:
 
 
-* ROTAXIS-tag : Rotation axis used to estimate constraints for rotational invariance. This entry is necessary when ``ICONST = 2, 3``.
+* ROTAXIS-tag : Rotation axis used to estimate constraints for rotational invariance. This entry is necessary when ``ICONST = 2, 3, 4``.
 
  :Default: None
  :Type: String
@@ -537,31 +539,35 @@ This field is necessary when ``MODE = optimize``.
 
 ````
 
-.. _alm_fc2xml:
+.. _alm_fc2fix:
 
-* FC2XML-tag : XML file to which the harmonic terms are fixed upon training
+* FC2FIX-tag : File to which the harmonic terms are fixed upon training
 
  :Default: None
  :Type: String
- :Description: When ``FC2XML``-tag is given, harmonic force constants are fixed to the values stored in the ``FC2XML`` file. This may be useful for optimizing cubic and higher-order terms without changing the harmonic terms. Please make sure that the number of harmonic terms in the new computational condition is the same as that in the ``FC2XML`` file.
+ :Description: When the ``FC2FIX``-tag is given, harmonic force constants are fixed to the values stored in the ``FC2FIX`` file. This may be useful for optimizing cubic and higher-order terms without changing the harmonic terms. Please make sure that the number of harmonic terms in the new computational condition is the same as that in the ``FC2FIX`` file.
+
+ .. note::
+
+     ``FC2XML`` is a deprecated alias of ``FC2FIX`` kept for backward compatibility. It will be removed in a future release, so please use ``FC2FIX`` instead.
 
  .. important::
 
-     The ``FCSYM_BASIS`` option must be the same as the one used when creating the reference harmonic force constant file (``FC2XML``). The code raises an error when they are inconsistent.
+     The ``FCSYM_BASIS`` option must be the same as the one used when creating the reference harmonic force constant file (``FC2FIX``). The code raises an error when they are inconsistent.
 
 ````
 
-.. _alm_fc3xml:
+.. _alm_fc3fix:
 
-* FC3XML-tag : XML file to which the cubic terms are fixed upon training
+* FC3FIX-tag : File to which the cubic terms are fixed upon training
 
  :Default: None
  :Type: String
- :Description: Same as the ``FC2XML``-tag, but ``FC3XML`` is to fix cubic force constants. 
+ :Description: Same as the ``FC2FIX``-tag, but ``FC3FIX`` is used to fix cubic force constants. (``FC3XML`` is a deprecated alias of ``FC3FIX``.)
 
  .. important::
- 
-     The ``FCSYM_BASIS`` option must be the same as the one used when creating the reference cubic force constant file (``FC3XML``). The code raises an error when they are inconsistent.
+
+     The ``FCSYM_BASIS`` option must be the same as the one used when creating the reference cubic force constant file (``FC3FIX``). The code raises an error when they are inconsistent.
 
 ````
 
@@ -659,7 +665,7 @@ This field is necessary when ``MODE = optimize``.
   -1   | The cross-validation is performed *manually*.
        | The Taylor expansion potential is trained by using the training datasets in ``DFSET``, and 
        | the validation score is calculated by using the data in ``DFSET_CV`` for various ``L1_ALPHA`` values
-       | defined the ``CV_MINALPHA``, ``CV_MAXALPHA``, and ``CV_NALPHA`` tags.
+       | defined by the ``CV_MINALPHA``, ``CV_MAXALPHA``, and ``CV_NALPHA`` tags.
        | After the calculation, the fitting and validation errors are stored in ``PREFIX``.cvset.
        | This option may be convenient for a large-scale problem since multiple optimization tasks with
        | different training-validation datasets can be done in parallel.
@@ -698,7 +704,7 @@ This field is necessary when ``MODE = optimize``.
 
  :Default: ``NSTART_CV = 1``, ``NEND_CV = NDATA_CV``
  :Type: Integer
- :Example: This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = -1``.
+ :Description: This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = -1``.
 
 ````
 

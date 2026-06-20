@@ -62,7 +62,7 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
     ...
     V_cell * C_zz,zz,zz
 
-  :math:`V_{cell}` is the shape of the unit cell and 
+  :math:`V_{cell}` is the volume of the unit cell and
   :math:`C_{\mu_1 \nu_1, \mu_2 \nu_2} = \frac{1}{V}\frac{\partial U}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2}}`,
   :math:`C_{\mu_1 \nu_1, \mu_2 \nu_2, \mu_3 \nu_3} = \frac{1}{V}\frac{\partial U}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2} \partial u_{\mu_3 \nu_3}}`
   are the second-order and third-order elastic constants.
@@ -160,7 +160,7 @@ We can plot the :math:`T`-dependence of the thermal strain, which is written in 
 
   $ gnuplot plot.plt
 
-to obtain the followin figure.
+to obtain the following figure.
 
 We can see that the thermal expansion is negative at low temperatures, and it turns positive at high temperatures.
 The pace of expansion of the :math:`a`-axis is faster than that of the :math:`c`-axis, which agrees with the result in `the paper <https://arxiv.org/abs/2302.04537>`_.

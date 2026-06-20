@@ -125,10 +125,10 @@ You can run the CV calculation with the following commands.
 
 .. code-block:: bash 
 
-  $ cd ${ALAMODE_ROOT}/example/BaTiO3/3_cv
+  $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/3_cv
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_cv.in > BTO_alm_cv.log
 
-In :red:`BTO_alm_cv.in`, ``FC2XML = ../cBTO222_harmonic.xml`` means that we fix the harmonic IFCs with the values in the given file.
+In :red:`BTO_alm_cv.in`, ``FC2FIX = ../cBTO222_harmonic.xml`` means that we fix the harmonic IFCs with the values in the given file.
 This is because we would like to capture the stability or the curvature of the potential energy surface at the reference structure accurately.
 
 .. note::
@@ -168,7 +168,7 @@ Finally, we calculate the IFCs of BaTiO\ :sub:`3` in **example/BaTiO3/anharm_IFC
 
 .. code-block:: bash 
 
-  $ cd ${ALAMODE_ROOT}/example/BaTiO3/4_optimize
+  $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/4_optimize
 
 To prepare the input file, we copy the input of CV and set ``L1_ALPHA`` with the optimal value 
 by adding the new line in ``&optimize``-field.

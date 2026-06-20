@@ -18,7 +18,7 @@ ANPHON: Output files
 
 * ``PREFIX``.tdos
 
- Two-phonon density of states for all irreducible :math:'k' points. 
+ Two-phonon density of states for all irreducible :math:`k` points.
  Created when ``MODE = phonons`` with **KPMODE** = 2 and ``TDOS = 1``.
 
 * ``PREFIX``.thermo
@@ -40,12 +40,12 @@ ANPHON: Output files
 
 * ``PREFIX``.pr
 
- Participation ratio of every phonon modes. 
+ Participation ratio of every phonon mode.
  Created when ``MODE = phonons`` and ``PRINTPR = 1``.
 
 * ``PREFIX``.apr
 
- Atomic participation ratio of every phonon modes. 
+ Atomic participation ratio of every phonon mode.
  Created when ``MODE = phonons`` and ``PRINTPR = 1``.
 
 * ``PREFIX``.phvel
@@ -64,7 +64,7 @@ ANPHON: Output files
  Eigenvalues are printed in Rydberg atomic units.
  Created when ``MODE = phonons`` with ``PRINTEVEC = 1``.
 
-* ``PREFIX``.gru
+* ``PREFIX``.gruneisen
 
  Gr\ |umulaut_u|\ neisen parameters along given :math:`k` paths.
  Created when ``MODE = phonons`` with **KPMODE** = 1 and ``GRUNEISEN = 1``.
@@ -123,9 +123,9 @@ ANPHON: Output files
  Created when ``KAPPA_COHERENT = 2`` in ``MODE = RTA``.
 
 
-* ``PREFIX``.gamma_isotope
+* ``PREFIX``.self_isotope
 
- Phonon selfenergy due to isotope scatterings calculated by the Tamura's formula.
+ Phonon selfenergy due to isotope scatterings calculated by Tamura's formula.
  Created when ``MODE = RTA`` and ``ISOTOPE = 2``.
 
 ````

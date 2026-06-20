@@ -19,7 +19,7 @@ Here, :math:`u_{\mu}(\ell\kappa)` is the atomic displacement of :math:`\kappa`\ 
 Symmetry relationship between IFCs
 ----------------------------------
 
-The are several relationships between IFCs which may be used to reduce the number of independence IFCs. 
+There are several relationships between IFCs which may be used to reduce the number of independent IFCs.
 
 * Permutation
 
@@ -178,7 +178,7 @@ where the denominator is the square sum of the DFT forces.
 Elastic-net regression
 ++++++++++++++++++++++
 
-In the elasitc-net optimization (``LMODEL = elastic-net``), IFCs are estimated by solving the following optimization problem:
+In the elastic-net optimization (``LMODEL = elastic-net``), IFCs are estimated by solving the following optimization problem:
 
 .. math::
    :label: enet

@@ -36,7 +36,7 @@ In the following, (anharmonic) phonon properties of bulk silicon (Si) are calcul
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Change directory to **example/Si** and open file :red:`si_alm.in`.
-This file is an input for the code **alm** which estimate interatomic force constants (**IFC**) by least square fitting.
+This file is an input for the code **alm**, which estimates interatomic force constants (**IFC**) by least-squares fitting.
 In the file, the crystal structure of a 2x2x2 conventional supercell of Si is specified in the **&cell** and the **&position** fields as the following:
 
 .. literalinclude:: ../../../example/Si/reference/si_alm1.in
@@ -198,7 +198,7 @@ Open the file :red:`si_phband.in` and edit it for your system.
 
 .. literalinclude:: ../../../example/Si/reference/si_phband.in
 
-Please specify the XML file you obtained in step 3 by the ``FCSXML``-tag as above. 
+Please specify the force-constant file you obtained in step 3 with the ``FCSFILE``-tag as above.
 In the **&cell**-field, you need to define the lattice vector of a **primitive cell**.
 In phonon dispersion calculations, the first entry in the **&kpoint**-field should be 1 (**KPMODE** = 1).
 
@@ -271,7 +271,7 @@ To improve the resolution of DOS, try again with a denser :math:`k` grid and a s
 .. note::
     Note that there are more efficient ways to calculate anharmonic IFCs, especially when 
     you calculate the quartic or higher-order terms.
-    Please :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` and :ref:`Tutorial 7.6 <label_tutorial_silicon_ifc>` for details.
+    Please see :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` and :ref:`Tutorial 7.6 <label_tutorial_silicon_ifc>` for details.
 
 Copy file :red:`si_alm.in` to :red:`si_alm2.in`. 
 Edit the **&general**, **&interaction**, and **&cutoff** fields of :red:`si_alm2.in` as the following::
@@ -318,10 +318,10 @@ In :red:`si_alm2.in`, change ``MODE = suggest`` to ``MODE = optimize`` and add t
 
     &optimize
       DFSET = DFSET_cubic
-      FC2XML = si222.xml # Fix harmonic IFCs
+      FC2FIX = si222.xml # Fix harmonic IFCs
     /
 
-By the ``FC2XML`` tag, harmonic IFCs are fixed to the values in :red:`si222.xml`.
+By the ``FC2FIX`` tag, harmonic IFCs are fixed to the values in :red:`si222.xml`.
 Then, execute **alm** again
 ::
 
@@ -348,12 +348,12 @@ which creates files :red:`si222_cubic.fcs` and :red:`si222_cubic.xml`. This time
 6. Calculate thermal conductivity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Copy file :red:`si_phdos.in` to :red:`si_RTA.in` and edit the ``MODE`` and ``FCSXML`` tags as follows::
+Copy file :red:`si_phdos.in` to :red:`si_RTA.in` and edit the ``MODE`` and ``FCSFILE`` tags as follows::
 
     &general
       PREFIX = si222
       MODE = RTA
-      FCSXML = si222_cubic.xml
+      FCSFILE = si222_cubic.xml
 
       NKD = 1; KD = Si
       MASS = 28.0855
@@ -470,11 +470,11 @@ To calculate the :ref:`spectrum of thermal conductivity <kappa>`, modify the :re
     &general
       PREFIX = si222
       MODE = RTA
-      FCSXML = si222_cubic.xml
+      FCSFILE = si222_cubic.xml
 
       NKD = 1; KD = Si
       MASS = 28.0855
-  
+
       EMIN = 0; EMAX = 550; DELTA_E = 1.0 # <-- frequency range
     /
 
@@ -490,11 +490,11 @@ To calculate the :ref:`spectrum of thermal conductivity <kappa>`, modify the :re
      10 10 10
     /
 
-    &analysis
+    &kappa
      KAPPA_SPEC = 1 # compute spectrum of kappa
     /
 
-The frequency range is specified with the ``EMIN``, ``EMAX``, and ``DELTA_E`` tags, and the ``KAPPA_SPEC = 1`` is set in the ``&analysis`` field. Then, execute anphon again
+The frequency range is specified with the ``EMIN``, ``EMAX``, and ``DELTA_E`` tags, and ``KAPPA_SPEC = 1`` is set in the ``&kappa`` field. Then, execute anphon again
 ::
 
     $ anphon si_RTA.in > si_RTA2.log 

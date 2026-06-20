@@ -10,7 +10,7 @@ Format of input files
 Each input file should consist of entry fields.
 Available entry fields are 
 
-**&general**, **&cell**, **&scph**, **&qha**, **&relax**, **&kpoint**, **&strain**, and **&displace**.
+**&general**, **&cell**, **&scph**, **&qha**, **&relax**, **&kpoint**, **&strain**, **&displace**, **&analysis**, and **&kappa**.
 
 The format of the input file is the same as that of *alm* which can be found :ref:`here <reference_input_alm>`.
 
@@ -25,11 +25,10 @@ List of supported input variables
 
    **&general**
    :ref:`BCONNECT <anphon_bconnect>`, :ref:`BORNINFO <anphon_borninfo>`, :ref:`BORNSYM <anphon_bornsym>`, :ref:`CLASSICAL <anphon_classical>`
-   :ref:`EMIN <anphon_emin>`, :ref:`EPSILON <anphon_epsilon>`, :ref:`FC2XML <anphon_fc2xml>`, :ref:`FCSXML <anphon_fcsxml>`
+   :ref:`EMIN <anphon_emin>`, :ref:`EPSILON <anphon_epsilon>`, :ref:`FC2FILE <anphon_fc2file>`, :ref:`FCSFILE <anphon_fcsfile>`
    :ref:`ISMEAR <anphon_ismear>`, :ref:`KD <anphon_kd>`, :ref:`MASS <anphon_mass>`, :ref:`MODE <anphon_mode>`
-   :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NKD <anphon_nkd>`, :ref:`NONANALYTIC <anphon_nonanalytic>`, :ref:`PREFIX <anphon_prefix>`
-   :ref:`PRINTSYM <anphon_printsym>`, :ref:`RESTART <anphon_restart>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`
-   :ref:`TRISYM <anphon_trisym>`
+   :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NONANALYTIC <anphon_nonanalytic>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`
+   :ref:`RESTART <anphon_restart>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`
    **&scph**
    :ref:`BUBBLE <anphon_bubble>`, :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`, :ref:`KMESH_SCPH <anphon_kmesh_scph>`
    :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`, :ref:`RELAX_STR <anphon_relax_str>`
@@ -38,16 +37,17 @@ List of supported input variables
    :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`, :ref:`QHA_SCHEME <anphon_qha_scheme>`
    :ref:`RELAX_STR <anphon_qha_relax_str>`
    **&relax**
-   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`
+   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STEEPEST_DECENT <anphon_alpha_steepest_decent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`
    :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
    :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`,  :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`RENORM_2TO1ST <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST <anphon_renorm_34to1st>`
    :ref:`RENORM_3TO2ND <anphon_renorm_3to2nd>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    **&analysis**
-   :ref:`ANIME <anphon_anime>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`GRUNEISEN <anphon_gruneisen>`
+   :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
+   :ref:`GRUNEISEN <anphon_gruneisen>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`
+   :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`
+   :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
+   **&kappa**
    :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_SPEC <anphon_kappa_spec>`
-   :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`
-   :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`
-   :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
 
 
 
@@ -88,59 +88,55 @@ Description of input variables
 
 ````
 
-.. _anphon_nkd:
-
-* **NKD**-tag : Number of atomic species
-
- :Default: None
- :Type: Integer
-
-````
-
 .. _anphon_kd:
 
-* **KD**-tag = Name[1], ... , Name[``NKD``]
+* **KD**-tag : List of the atomic species
 
  :Default: None
  :Type: Array of strings
- :Example: In the case of GaAs with ``NKD = 2``, it should be ``KD = Ga As``.
+ :Example: In the case of GaAs, it should be ``KD = Ga As``.
 
 ````
 
 .. _anphon_mass:
 
-* MASS-tag = mass[1], ... , mass[``NKD``]
+* MASS-tag : List of atomic masses, one value per atomic species (in the order of the ``KD``-tag)
 
  :Default: Standard atomic weight of elements given by the ``KD``-tag
  :Type: Array of double
- :Example: In the case of Bi\ :sub:`2`\ Te\ :sub:`3` with ``NKD = 2``, ``MASS`` should be ``MASS = 208.98 127.60``.
+ :Example: In the case of Bi\ :sub:`2`\ Te\ :sub:`3`, ``MASS`` should be ``MASS = 208.98 127.60``.
 
 ````
 
-.. _anphon_fcsxml:
+.. _anphon_fcsfile:
 
-* **FCSXML**-tag : XML file containing force constants generated by the program *alm*
+* **FCSFILE**-tag : File (XML or HDF5) containing force constants generated by the program *alm*
 
  :Default: None
  :Type: String
+ :Description: Either ``FCSFILE`` or ``FC2FILE`` must be given to start a phonon calculation.
+
+ .. note::
+
+     ``FCSFILE`` and ``FC2FILE`` replace the former ``FCSXML`` and ``FC2XML`` tags, which are no longer accepted.
 
 ````
 
-.. _anphon_fc2xml:
+.. _anphon_fc2file:
 
-* FC2XML-tag : XML file containing harmonic force constants for different size of supercell
+* FC2FILE-tag : File containing harmonic force constants for a different supercell size
 
  :Default: None
  :Type: String
- :Description: When ``FC2XML`` is given, the harmonic force constants in this file are used for calculating dynamical matrices. It is possible to use different size of supercell for harmonic and anharmonic terms, which are specified by ``FC2XML`` and ``FCSXML`` respectively.
+ :Description: When ``FC2FILE`` is given, the harmonic force constants in this file are used for calculating dynamical matrices. It is possible to use supercells of different sizes for harmonic and anharmonic terms, which are specified by ``FC2FILE`` and ``FCSFILE`` respectively. Analogously, ``FC3FILE`` and ``FC4FILE`` can be used to supply the cubic and quartic force constants from separate files; when they are not given, the corresponding terms are read from ``FCSFILE``.
 
 ````
 
 .. _anphon_tolerance:
 
 * TOLERANCE-tag : Tolerance for finding symmetry operations
-  
- :Default: 1.0e-6
+
+ :Default: 1.0e-3
  :Type: Double
 
 ````
@@ -182,8 +178,8 @@ Description of input variables
 .. _anphon_na_sigma:
 
 * NA_SIGMA-tag : Damping factor for the non-analytic term
- 
- :Default: 0.0
+
+ :Default: 0.1
  :Type: Double
  :Description: Used when ``NONANALYTIC = 1``. The definition of ``NA_SIGMA`` is described in the formalism section.
 
@@ -233,12 +229,13 @@ Description of input variables
 
 .. _anphon_ismear:
 
-* ISMEAR-tag = -1 | 0 | 1
+* ISMEAR-tag = -1 | 0 | 1 | 2
 
  === =======================================================
   -1  Tetrahedron method
   0   Lorentzian smearing with width of ``EPSILON``
   1   Gaussian smearing with width of ``EPSILON``
+  2   Adaptive Gaussian smearing
  === =======================================================
 
  :Default: -1
@@ -329,7 +326,7 @@ Description of input variables
 
   ``TRISYM = 1`` can reduce the computational cost, but phonon linewidth stored to the file
   ``PREFIX``.result needs to be averaged at points of degeneracy. 
-  For that purpose, a subsidiary program *analyze_phonons.py** should be used.
+  For that purpose, a subsidiary program ``analyze_phonons.py`` should be used.
 
 ````
 
@@ -381,7 +378,7 @@ Description of input variables
   1   Consider the off-diagonal elements of the loop diagram in the SCPH calculation
  === ================================================================================
 
- :Default: 0
+ :Default: 1
  :Type: Integer
  :Description: ``SELF_OFFDIAG = 1`` is more accurate, but expensive.
 
@@ -420,8 +417,8 @@ Description of input variables
 * LOWER_TEMP-tag = 0 | 1
 
  === ===============================================================================
-  0   The SCPH iteration start from ``TMIN`` to ``TMAX``. (Raise the temperature)
-  1   The SCPH iteration start from ``TMAX`` to ``TMIN``. (Lower the temperature)
+  0   The SCPH iteration starts from ``TMIN`` and proceeds to ``TMAX``. (Raise the temperature)
+  1   The SCPH iteration starts from ``TMAX`` and proceeds to ``TMIN``. (Lower the temperature)
  === ===============================================================================
 
  :Default: 1
@@ -494,7 +491,7 @@ Description of input variables
 * RELAX_STR-tag = 0 | 1 | 2 | 3
 
  === ==============================================================
-  0   Don't relax the crystal structure (not supported when ``mode = QHA``).
+  0   Don't relax the crystal structure (not supported when ``MODE = QHA``).
   1   Relax atomic positions.
   2   Relax both atomic positions and the shape of the unit cell.
   3   Lowest-order perturbation theory (not supported when ``MODE = SCPH``).
@@ -533,17 +530,17 @@ Description of input variables
 
 .. _anphon_qha_relax_str:
 
-* RELAX_STR-tag = 0 | 1 | 2 | 3
+* RELAX_STR-tag = 1 | 2 | 3
 
  === ==============================================================
-  0   Don't relax the crystal structure (not supported when ``mode = QHA``).
   1   Relax atomic positions.
   2   Relax both atomic positions and the shape of the unit cell.
-  3   Lowest-order perturbation theory (not supported when ``mode = SCPH``).
+  3   Lowest-order perturbation theory (not supported when ``MODE = SCPH``).
  === ==============================================================
 
- :Default: 0
+ :Default: 1
  :Type: Integer
+ :Description: ``RELAX_STR = 0`` is not supported when ``MODE = QHA``.
 
 ````
 
@@ -552,8 +549,8 @@ Description of input variables
 * LOWER_TEMP-tag = 0 | 1
 
  === ===============================================================================
-  0   The structural optimization start from ``TMIN`` to ``TMAX``. (Raise the temperature)
-  1   The structural optimization start from ``TMAX`` to ``TMIN``. (Lower the temperature)
+  0   The structural optimization starts from ``TMIN`` and proceeds to ``TMAX``. (Raise the temperature)
+  1   The structural optimization starts from ``TMAX`` and proceeds to ``TMIN``. (Lower the temperature)
  === ===============================================================================
 
  :Default: 1
@@ -581,15 +578,16 @@ Description of input variables
 
 
 "&relax"-field (Read only when ``RELAX_STR != 0``)
-++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. _anphon_relax_algo:
 
-* RELAX_ALGO-tag = 1 | 2
+* RELAX_ALGO-tag = 1 | 2 | 3
 
  === ==============================================================
-  1   Steepest decent (not recommended)
+  1   Steepest descent (not recommended)
   2   Newton-like method
+  3   BFGS + GDIIS
  === ==============================================================
 
  :Default: 2
@@ -601,14 +599,14 @@ Description of input variables
 
 ````
 
-.. _anphon_alpha_stdecent:
+.. _anphon_alpha_steepest_decent:
 
-* ALPHA_STDECENT-tag: Coefficient of steepest decent in structural optimization
+* ALPHA_STEEPEST_DECENT-tag: Coefficient of steepest descent in structural optimization
 
  :Default: 1.0e4
  :Type: Double
 
- :Description: :math:`\alpha` coefficient in structural optimization with steepest-decent algorithm.
+ :Description: :math:`\alpha` coefficient in structural optimization with the steepest-descent algorithm.
                The unit is [:math:`m_e a_B^2/(2\text{Ry})`]. 
                This option is used only when ``RELAX_ALGO = 1``.
 
@@ -701,7 +699,7 @@ Description of input variables
                This option is used when ``RELAX_STR = 1, 2``.
                In all options, the initial structure at the initial temperature is set from the input file.
                The initial structure of the input file is read from the ``&strain`` and ``&displace`` field.
-               When ``SET_INIT_STR = 3``, the initial displacement from the input file is used if the crystal structure converges to the high-symmetry phase in the previous temperature. The criteria to distinguish low-symmetry and high-symmetry phases is explained in :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`.
+               When ``SET_INIT_STR = 3``, the initial displacement from the input file is used if the crystal structure converges to the high-symmetry phase at the previous temperature. The criterion to distinguish low-symmetry and high-symmetry phases is explained in :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`.
 
 ````
 
@@ -727,7 +725,7 @@ Description of input variables
 
  :Description: The crystal structure is judged to be back to the high-symmetry phase if 
                :math:`u^{(0)}` [``COOLING_U0_INDEX``] < ``COOLING_U0_THR``. 
-               This option is useful in cooling calculations because small displacements to the high-symmetry structure is required to induce spontaneous symmetry breaking.
+               This option is useful in cooling calculations because small displacements from the high-symmetry structure are required to induce spontaneous symmetry breaking.
                This option is used only when ``SET_INIT_STR = 3``.
  
 ````
@@ -760,7 +758,7 @@ Description of input variables
 
   This option is used only when ``RELAX_STR = 2, 3``.
   Note that ``RENORM_2TO1ST = 1`` requires rotational invariance on IFCs, which is not checked in the program ANPHON.
-  ``RENORM_2TO1ST = 0`` can be used for high-symmetry materials in which strain-force coupling is zero, which a user need to confirm themselves.
+  ``RENORM_2TO1ST = 0`` can be used for high-symmetry materials in which strain-force coupling is zero, which the user needs to confirm.
 
 ````
 
@@ -782,7 +780,7 @@ Description of input variables
   :math:`\frac{\partial^3 \Phi_{\mu}(0\alpha)}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2} \partial u_{\mu_3 \nu_3}}`  
 
   This option is used only when ``RELAX_STR = 2, 3``.
-  Note that ``RENORM_34TO1ST = 1`` requires rotational invariance on IFCs, which a user need to confirm themselves.
+  Note that ``RENORM_34TO1ST = 1`` requires rotational invariance on IFCs, which the user needs to confirm.
 
 ````
 
@@ -815,7 +813,7 @@ Description of input variables
  :Default: None
  :Type: String
 
- :Description: When ``RENORM_2TO1ST = 2 `` or ``RENORM_3TO2ND = 3``,
+ :Description: When ``RENORM_2TO1ST = 2`` or ``RENORM_3TO2ND = 3``,
    the input files of the strain-IFC couplings must be given properly in this directory.
 
 
@@ -892,20 +890,20 @@ The first entry **KPMODE** specifies the types of calculation which is followed 
 ````
 
 "&strain"-field (Read only when ``RELAX_STR = 2``)
-+++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Please specify the initial displacement gradient tensor :math:`u_{\mu \nu}` for structural optimization as ::
 
- &cell
+ &strain
  u_xx u_xy u_xz
  u_yx u_yy u_yz
  u_zx u_zy u_zz
  /
 
-Note that a user need to give a symmetric matrix.
+Note that the user needs to give a symmetric matrix.
 
 "&displace"-field (Read only when ``RELAX_STR = 1, 2``)
-+++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bohr].
 
@@ -955,11 +953,11 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0
  :Type: Integer
- :Description:  When ``MODE = phonons`` and ``GRUNEISEN = 1``, Gr\ |umulaut_u|\ neisen parameters will be stored in ``PREFIX``.gru (*KPMODE* = 1) or ``PREFIX``.gru_all (*KPMODE* = 2).
+ :Description:  When ``MODE = phonons`` and ``GRUNEISEN = 1``, Gr\ |umulaut_u|\ neisen parameters will be stored in ``PREFIX``.gruneisen (*KPMODE* = 1) or ``PREFIX``.gru_all (*KPMODE* = 2).
 
 .. Note::
 
- To compute Gr\ |umulaut_u|\ neisen parameters, cubic force constants must be contained in the ``FCSXML`` file.
+ To compute Gr\ |umulaut_u|\ neisen parameters, cubic force constants must be contained in the ``FCSFILE`` file.
 
 
 ````
@@ -1015,7 +1013,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  === ===================================================================
   0   Do not print mean-square-displacement (MSD) of atoms
-  1   Save MSD of atoms to the file ``PREFIX``.mds
+  1   Save MSD of atoms to the file ``PREFIX``.msd
  === ===================================================================
  
  :Default: 0
@@ -1090,76 +1088,6 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Default: 0
  :Type: Integer
  :Description: This flag is available when ``MODE = phonons``.
-
-
-````
-
-.. _anphon_kappa_coherent:
-
-* KAPPA_COHERENT-tag = 0 | 1 | 2
-
- === ====================================================================================
-  0    Do not compute the coherent component of thermal conductivity
-  1    Compute the coherent component of thermal conductivity and save it in ``PREFIX``.kl_coherent.
-  2  | In addition to above (``KAPPA_COHERENT = 1``), all elements of the coherent term
-     | are saved in ``PREFIX``.kc_elem.
- === ====================================================================================
- 
- :Default: 0
- :Type: Integer
- :Description: This flag is available when ``MODE = RTA``. For the theoretical details, please see :ref:`this page <kappa_coherent>`.
-
- .. caution::
-
-     Still experimental. Please check the validity of results carefully.
-
-
-````
-
-.. _anphon_kappa_spec:
-
-* KAPPA_SPEC-tag = 0 | 1
-
- === ====================================================================================
-  0   Do not compute the thermal conductivity spectra
-  1   Compute the thermal conductivity spectra, which will be 
-      stored in  ``PREFIX``.kappa_spec .
- === ====================================================================================
- 
- :Default: 0
- :Type: Integer
- :Description: This flag is available when ``MODE = RTA``.
-
-
-````
-
-.. _anphon_isotope:
-
-* ISOTOPE-tag = 0 | 1
-
- === =========================================================================
-  0   Do not consider phonon-isotope scatterings
-  1   Consider phonon-isotope scatterings
-  2   | Consider phonon-isotope scatterings as in ``ISOTOPE = 1`` and 
-      | the calculated selfenergy is stored in ``PREFIX``.gamma_isotope
- === =========================================================================
- 
- :Default: 0
- :Type: Integer
- :Description: When ``MODE = RTA`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to isotopes will be considered perturbatively. ``ISOFACT`` should be properly given.
-
-````
-
-.. _anphon_isofact:
-
-* ISOFACT-tag = isofact[1], ... , isofact[``NKD``]
-
- :Default: Automatically calculated from the ``KD`` tag
- :Type: Array of doubles
- :Description: Isotope factor is a dimensionless value defined by :math:`\sum_{i} f_{i} (1 - m_{i}/\bar{m})^{2}`. 
-               Here, :math:`f_{i}` is the fraction of the :math:`i`\ th isotope of an element having mass :math:`m_{i}`, 
-               and :math:`\bar{m}=\sum_{i}f_{i}m_{i}` is the average mass, respectively. 
-               This quantity is equivalent to :math:`g_{2}` appearing in the original paper by S. Tamura [Phys. Rev. B, 27, 858.].
 
 
 ````
@@ -1267,6 +1195,79 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Type: String
  :Description: When ``ANIME_FORMAT = xsf``, ``PREFIX``.anime???.axsf files are created for XcrySDen.
                When ``ANIME_FORMAT = xyz``, ``PREFIX``.anime???.xyz files are created for VMD (and any other supporting software such as Jmol).
+
+
+````
+
+"&kappa"-field (Read only when ``MODE = RTA``)
+++++++++++++++++++++++++++++++++++++++++++++++
+
+.. _anphon_kappa_coherent:
+
+* KAPPA_COHERENT-tag = 0 | 1 | 2
+
+ === ====================================================================================
+  0    Do not compute the coherent component of thermal conductivity
+  1    Compute the coherent component of thermal conductivity and save it in ``PREFIX``.kl_coherent.
+  2  | In addition to above (``KAPPA_COHERENT = 1``), all elements of the coherent term
+     | are saved in ``PREFIX``.kc_elem.
+ === ====================================================================================
+ 
+ :Default: 0
+ :Type: Integer
+ :Description: This flag is available when ``MODE = RTA``. For the theoretical details, please see :ref:`this page <kappa_coherent>`.
+
+ .. caution::
+
+     Still experimental. Please check the validity of results carefully.
+
+
+````
+
+.. _anphon_kappa_spec:
+
+* KAPPA_SPEC-tag = 0 | 1
+
+ === ====================================================================================
+  0   Do not compute the thermal conductivity spectra
+  1   Compute the thermal conductivity spectra, which will be 
+      stored in  ``PREFIX``.kl_spec
+ === ====================================================================================
+ 
+ :Default: 0
+ :Type: Integer
+ :Description: This flag is available when ``MODE = RTA``.
+
+
+````
+
+.. _anphon_isotope:
+
+* ISOTOPE-tag = 0 | 1 | 2
+
+ === =========================================================================
+  0   Do not consider phonon-isotope scatterings
+  1   Consider phonon-isotope scatterings
+  2   | Consider phonon-isotope scatterings as in ``ISOTOPE = 1`` and 
+      | the calculated selfenergy is stored in ``PREFIX``.self_isotope
+ === =========================================================================
+ 
+ :Default: 0
+ :Type: Integer
+ :Description: When ``MODE = RTA`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to isotopes will be considered perturbatively. ``ISOFACT`` should be properly given.
+
+````
+
+.. _anphon_isofact:
+
+* ISOFACT-tag : Isotope factor for each atomic species (in the order of the ``KD``-tag)
+
+ :Default: Automatically calculated from the ``KD`` tag
+ :Type: Array of doubles
+ :Description: Isotope factor is a dimensionless value defined by :math:`\sum_{i} f_{i} (1 - m_{i}/\bar{m})^{2}`. 
+               Here, :math:`f_{i}` is the fraction of the :math:`i`\ th isotope of an element having mass :math:`m_{i}`, 
+               and :math:`\bar{m}=\sum_{i}f_{i}m_{i}` is the average mass, respectively. 
+               This quantity is equivalent to :math:`g_{2}` appearing in the original paper by S. Tamura [Phys. Rev. B, 27, 858.].
 
 
 ````
