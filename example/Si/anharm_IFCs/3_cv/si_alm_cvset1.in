@@ -18,7 +18,7 @@
   LMODEL = enet
   NDATA = 100
   DFSET = DFSET_randomQ
-  FC2XML = ../2_generate_config/si222_harmonic.xml
+  FC2FIX = ../2_generate_config/si222_harmonic.xml
 
   CV = -1  # manual CV
   L1_RATIO = 1.0 # LASSO

@@ -19,7 +19,7 @@
 
  NDATA = 40
  DFSET = DFSET_AIMD+random
- FC2XML = STO222.xml
+ FC2FIX = STO222.xml
  ICONST = 11
 
  CV = 4

@@ -1,8 +1,8 @@
 &general
  PREFIX = PbTe_NA0
  MODE = phonons
- NKD = 2; KD = Pb Te
- FCSXML = super444_0.01.xml
+ KD = Pb Te
+ FCSFILE = super444_0.01.xml
  NONANALYTIC = 0; BORNINFO = PbTe.born
 /
 

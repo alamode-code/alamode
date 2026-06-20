@@ -1,8 +1,8 @@
 &general
  PREFIX = STO222
  MODE = phonons
- NKD = 3; KD = Sr Ti O
- FCSXML = STO222.xml 
+ KD = Sr Ti O
+ FCSFILE = STO222.xml 
  NONANALYTIC = 3; BORNINFO = BORN
  EMIN = -100; EMAX = 850; DELTA_E = 1
  TMIN =0; TMAX = 1000; DT = 50

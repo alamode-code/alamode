@@ -1,9 +1,9 @@
 &general
   PREFIX = si222
   MODE   = phonons
-  FCSXML = si222.xml
+  FCSFILE = si222.xml
 
-  NKD = 1; KD = Si
+  KD = Si
 /
 
 &cell

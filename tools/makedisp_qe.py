@@ -167,10 +167,10 @@ def gen_anphon_input(
         str_spec = ""
         for num in atomic_numbers_uniq:
             str_spec += str(get_el_sp(num)) + " "
-        f.write(" NKD = %i; KD = %s\n" % (structure.ntypesp, str_spec))
+        f.write(" KD = %s\n" % str_spec)
         f.write(" TOLERANCE = {:f}\n".format(symprec))
         if alamode_ver == 1:
-            f.write(" FCSXML = %s.xml\n" % prefix)
+            f.write(" FCSFILE = %s.xml\n" % prefix)
         else:
             f.write(" FCSFILE = %s.xml\n" % prefix)
         f.write("/\n\n")

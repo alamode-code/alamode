@@ -1,8 +1,8 @@
 &general
  PREFIX = STO_scph2-2
  MODE = SCPH
- NKD = 3; KD = Sr Ti O
- FCSXML = STO_anharm.xml 
+ KD = Sr Ti O
+ FCSFILE = STO_anharm.xml 
  NONANALYTIC = 3; BORNINFO = BORN
  TMIN =0; TMAX = 1000; DT = 50
 /

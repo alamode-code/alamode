@@ -248,7 +248,7 @@ cat << EOF > si_alm2.in
 
 &optimize
  DFSET = displace/DFSET_cubic
- FC2XML = si222_harm.xml
+ FC2FIX = si222_harm.xml
 /
 
 &interaction
@@ -342,9 +342,9 @@ cat << EOF > phband.in
 &general
   PREFIX = si222
   MODE = phonons
-  FCSXML =si222_harm.xml
+  FCSFILE =si222_harm.xml
 
-  NKD = 1; KD = Si
+  KD = Si
   MASS = 28.0855
 /
 
@@ -371,9 +371,9 @@ cat << EOF > RTA.in
 &general
   PREFIX = si222_10
   MODE = RTA
-  FCSXML = si222_cubic.xml
+  FCSFILE = si222_cubic.xml
 
-  NKD = 1; KD = Si
+  KD = Si
   MASS = 28.0855
 /
 

@@ -1,9 +1,9 @@
 &general
   PREFIX = si222_RTA10
   MODE   = RTA
-  FCSXML = si222_cubic.xml
+  FCSFILE = si222_cubic.xml
 
-  NKD = 1; KD = Si
+  KD = Si
 /
 
 &cell

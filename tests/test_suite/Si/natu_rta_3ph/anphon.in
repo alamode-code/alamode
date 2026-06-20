@@ -1,9 +1,9 @@
 &general
   PREFIX = Si
   MODE   = RTA
-  FCSXML = opt_rc12_ndata12.xml 
+  FCSFILE = opt_rc12_ndata12.xml 
   RESTART = 0
-  NKD = 1; KD = Si
+  KD = Si
   TMIN = 100; TMAX = 1000; DT = 50
   ismear = 2
 /
