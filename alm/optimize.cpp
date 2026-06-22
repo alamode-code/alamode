@@ -95,6 +95,34 @@ inline void parallel_Atr(const Eigen::MatrixXd &A, const Eigen::VectorXd &r, con
         out(j) = A.col(j).dot(r);
     }
 }
+
+// OLS solve  min_x ||A x - b||_2  for the adaptive-LASSO penalty weights, returning the coefficients
+// and the effective column rank in `rank_out`.
+//
+// Fast path: normal equations  (A^T A) x = A^T b  solved by Cholesky. A^T A is a threaded BLAS-3
+// product (the same kernel coordinate descent uses to build its Gram), whereas Eigen's
+// rank-revealing ColPivHouseholderQR is single-threaded and dominated the adaptive-LASSO runtime.
+// If A^T A is not numerically positive-definite (A rank-deficient or severely ill-conditioned),
+// fall back to the robust QR. The weights are |x_OLS|, used only to scale the L1 penalty, so the
+// squared condition number of the normal-equations path is harmless whenever Cholesky succeeds.
+inline auto solve_ols_for_adalasso(const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
+                                   Eigen::Index &rank_out) -> Eigen::VectorXd
+{
+    const Eigen::Index ncols = A.cols();
+    const Eigen::MatrixXd gram = A.transpose() * A; // threaded dgemm with EIGEN_USE_BLAS
+    const Eigen::VectorXd atb = A.transpose() * b;
+
+    Eigen::LLT<Eigen::MatrixXd> llt(gram);
+    if (llt.info() == Eigen::Success) {
+        rank_out = ncols; // A^T A positive-definite  <=>  A has full column rank
+        return llt.solve(atb);
+    }
+
+    // Rank-deficient / numerically indefinite normal matrix: use the rank-revealing QR.
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(A);
+    rank_out = qr.rank();
+    return qr.solve(b);
+}
 } // namespace
 
 Optimize::Optimize()
@@ -733,13 +761,12 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         A_merged << A, A_validation;
         b_merged << b, b_validation;
 
-        // Use QR decomposition with pivoting to check if system is well-determined
-        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A_merged);
+        // Adaptive-LASSO weights from the OLS fit: fast normal-equations path with a
+        // rank-revealing QR fallback for rank-deficient systems.
+        Eigen::Index rank = 0;
+        const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A_merged, b_merged, rank);
 
-        // Check if the system is underdetermined or rank-deficient
-        const auto rank = qr_solver.rank();
-
-        if (rank < N_new) {
+        if (rank < static_cast<Eigen::Index>(N_new)) {
             std::string error_msg = "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
                                     "  Matrix rank = " +
                                     std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
@@ -753,7 +780,6 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
             ALM_NS::exit("optimize_main", error_msg.c_str());
         }
 
-        Eigen::VectorXd x_ols = qr_solver.solve(b_merged);
         Eigen::VectorXd weight_adalasso = x_ols.cwiseAbs();
 
         // Check if any weights are too small (could cause numerical issues)
@@ -931,13 +957,12 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             append_energy_block(A_full, b_full, amat_e, evec_e, N_new);
         }
 
-        // Use QR decomposition with pivoting to check if system is well-determined
-        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A_full);
+        // Adaptive-LASSO weights from the OLS fit: fast normal-equations path with a
+        // rank-revealing QR fallback for rank-deficient systems.
+        Eigen::Index rank = 0;
+        const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A_full, b_full, rank);
 
-        // Check if the system is underdetermined or rank-deficient
-        const auto rank = qr_solver.rank();
-
-        if (rank < N_new) {
+        if (rank < static_cast<Eigen::Index>(N_new)) {
             std::string error_msg = "Adaptive lasso failed in CV: The least squares problem is rank-deficient.\n"
                                     "  Matrix rank = " +
                                     std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
@@ -951,7 +976,6 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
             ALM_NS::exit("optimize_main", error_msg.c_str());
         }
 
-        Eigen::VectorXd x_ols = qr_solver.solve(b_full);
         weight_adalasso = x_ols.cwiseAbs();
 
         // Check if any weights are too small (could cause numerical issues)
@@ -1681,13 +1705,12 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     }
 
     if (optcontrol.linear_model == 3) {
-        // Use QR decomposition with pivoting to check if system is well-determined
-        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_solver(A);
+        // Adaptive-LASSO weights from the OLS fit: fast normal-equations path with a
+        // rank-revealing QR fallback for rank-deficient systems.
+        Eigen::Index rank = 0;
+        const Eigen::VectorXd x_ols = solve_ols_for_adalasso(A, b, rank);
 
-        // Check if the system is underdetermined or rank-deficient
-        const auto rank = qr_solver.rank();
-
-        if (rank < N_new) {
+        if (rank < static_cast<Eigen::Index>(N_new)) {
             std::string error_msg = "Adaptive lasso failed: The least squares problem is rank-deficient.\n"
                                     "  Matrix rank = " +
                                     std::to_string(rank) + ", Number of parameters = " + std::to_string(N_new) +
@@ -1704,7 +1727,6 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
             ALM_NS::exit("optimize_elasticnet", error_msg.c_str());
         }
 
-        Eigen::VectorXd x_ols = qr_solver.solve(b);
         weight_adalasso = x_ols.cwiseAbs();
 
         // Check if any weights are too small (could cause numerical issues)
