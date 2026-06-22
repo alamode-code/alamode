@@ -248,14 +248,10 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
         }
 
         if (optcontrol.linear_model == 3) {
-            if (optcontrol.standardize) {
-                if (verbosity > 0) {
-                    warn("optimize_main",
-                         "STANDARDIZE = 1 in adaptive LASSO is meaningless.\n"
-                         " Switch to STANDARDIZE = 0.");
-                }
-                optcontrol.standardize = 0;
-            }
+            // Adaptive LASSO standardizes the (reweighted) design matrix for conditioning, just like
+            // elastic net. A per-column L1 penalty (= factor_std, set in the solver dispatch) keeps the
+            // standardized solve equivalent to penalizing the un-standardized reweighted coefficients,
+            // so STANDARDIZE = 1 is no longer "meaningless" -- it is the default and is much faster.
 
             if (std::abs(optcontrol.displacement_normalization_factor - 1.0) > eps) {
                 if (verbosity > 0) {
@@ -1475,6 +1471,11 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
     }
     get_column_scale(A, col_scale);
 
+    // Per-column L1/L2 penalty weights: uniform for elastic net; factor_std for adaptive LASSO so the
+    // standardized solve targets the same (reweighted) objective (factor_std == 1 when STANDARDIZE = 0).
+    const Eigen::VectorXd penalty_scale =
+        (optcontrol.linear_model == 3) ? factor_std : Eigen::VectorXd::Ones(N_new);
+
     training_error.clear();
     validation_error.clear();
     nonzeros.clear();
@@ -1528,6 +1529,7 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
                                grad,
                                fnorm,
                                col_scale,
+                               penalty_scale,
                                verbosity);
         } else {
             fista(M,
@@ -1539,6 +1541,7 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
                   b,
                   fnorm,
                   lipschitz_l2,
+                  penalty_scale,
                   verbosity);
         }
 
@@ -1784,11 +1787,20 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
 
     get_standardizer(A, mean, dev, factor_std, scale_beta);
 
-    // Standardize if necessary only for the elastic net
-    if (optcontrol.standardize && optcontrol.linear_model == 2) {
+    // Standardize for elastic net, and for adaptive LASSO. For adaptive LASSO the per-column penalty
+    // below makes the standardized solve identical to the un-standardized reweighted objective, but
+    // far better conditioned (much faster coordinate descent in the near-OLS, small-alpha regime).
+    if (optcontrol.standardize && (optcontrol.linear_model == 2 || optcontrol.linear_model == 3)) {
         apply_standardizer(A, mean, dev);
     }
     get_column_scale(A, col_scale);
+
+    // Per-column L1/L2 penalty weights: uniform for elastic net; factor_std for adaptive LASSO so that
+    // penalizing the standardized coefficients equals penalizing the reweighted ones (factor_std == 1
+    // when STANDARDIZE = 0, recovering the old uniform penalty).
+    const Eigen::VectorXd penalty_scale =
+        (optcontrol.linear_model == 3) ? factor_std : Eigen::VectorXd::Ones(N_new);
+
     if (optcontrol.l1_solver == 0) {
         grad0.resize(N_new);
         grad.resize(N_new);
@@ -1820,6 +1832,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
                            grad,
                            fnorm,
                            col_scale,
+                           penalty_scale,
                            verbosity);
     } else {
         const auto lipschitz_l2 = estimate_lipschitz_l2(A);
@@ -1832,6 +1845,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
               b,
               fnorm,
               lipschitz_l2,
+              penalty_scale,
               verbosity);
     }
 
@@ -3748,7 +3762,7 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
                                   Eigen::VectorXd &x, const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
                                   const Eigen::VectorXd &grad0, bool *has_prod, Eigen::MatrixXd &Prod,
                                   Eigen::VectorXd &grad, const double fnorm, const Eigen::VectorXd &col_scale,
-                                  const int verbosity) const -> void
+                                  const Eigen::VectorXd &penalty_scale, const int verbosity) const -> void
 {
     int i, j;
     double diff{0.0};
@@ -3786,9 +3800,10 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
         }
         delta = beta;
         for (i = 0; i < N; ++i) {
-            const auto denom = col_scale(i) + lambda2;
+            const auto pen = penalty_scale(i);
+            const auto denom = col_scale(i) + lambda2 * pen * pen;
             if (denom > eps) {
-                beta(i) = shrink(Minv * grad(i) + col_scale(i) * beta(i), lambda1) / denom;
+                beta(i) = shrink(Minv * grad(i) + col_scale(i) * beta(i), lambda1 * pen) / denom;
             } else {
                 beta(i) = 0.0;
             }
@@ -3903,7 +3918,8 @@ auto Optimize::estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double
 
 auto Optimize::fista(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
                      const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm,
-                     const double lipschitz_l2, const int verbosity) const -> void
+                     const double lipschitz_l2, const Eigen::VectorXd &penalty_scale,
+                     const int verbosity) const -> void
 {
     // Degenerate problems: nothing to solve (also avoids 1/N and 1/M in the metrics below).
     if (N == 0) return;
@@ -3962,24 +3978,28 @@ auto Optimize::fista(const int M, const int N, const double alpha, const int war
             std::cout << "   FISTA : " << std::setw(5) << iloop + 1 << '\n';
         }
 
-        // grad f(y) = (1/M) A^T (A y - b) + lambda2 y, reusing the cached A*y.
+        // grad f(y) = (1/M) A^T (A y - b) + lambda2 (pw^2 . y), reusing the cached A*y. The per-column
+        // penalty_scale (pw) weights the L2 penalty by pw^2 (all-ones => the usual scalar lambda2).
         res = Ay - b;
         parallel_Atr(A, res, nthreads, grad);
-        grad = Minv * grad + lambda2 * y;
-        const auto f_y = 0.5 * Minv * res.squaredNorm() + 0.5 * lambda2 * y.squaredNorm();
+        grad = Minv * grad;
+        grad.array() += lambda2 * penalty_scale.array().square() * y.array();
+        const auto f_y = 0.5 * Minv * res.squaredNorm()
+                         + 0.5 * lambda2 * (penalty_scale.array().square() * y.array().square()).sum();
 
         // Backtracking: grow L until the proximal step from y satisfies sufficient decrease.
         int bt = 0;
         while (true) {
             const auto inv_L = 1.0 / L;
-            const auto threshold = lambda1 * inv_L;
+            const auto thr_base = lambda1 * inv_L; // per-column L1 threshold is thr_base * pw(i)
             z.noalias() = y - inv_L * grad;
             for (auto i = 0; i < N; ++i) {
-                x_new(i) = shrink(z(i), threshold);
+                x_new(i) = shrink(z(i), thr_base * penalty_scale(i));
             }
             parallel_Ax(A, x_new, nthreads, scratch, Ax_new); // matvec; also feeds the next A*y
             res_new = Ax_new - b;
-            const auto f_xnew = 0.5 * Minv * res_new.squaredNorm() + 0.5 * lambda2 * x_new.squaredNorm();
+            const auto f_xnew = 0.5 * Minv * res_new.squaredNorm()
+                                + 0.5 * lambda2 * (penalty_scale.array().square() * x_new.array().square()).sum();
             const auto dgrad = (x_new - y).dot(grad);
             const auto dsq = (x_new - y).squaredNorm();
             const auto Q = f_y + dgrad + 0.5 * L * dsq;

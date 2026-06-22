@@ -373,14 +373,19 @@ private:
 
     auto gamma(const int, const int *) const -> double;
 
+    // penalty_scale: per-column multiplier on the L1 (and, squared, the L2) penalty. All-ones for
+    // elastic net / regular lasso; equal to factor_std for the standardized adaptive-LASSO
+    // reformulation, so the penalty stays uniform on the un-standardized (reweighted) coefficients.
     auto coordinate_descent(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
                             const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const Eigen::VectorXd &grad0,
                             bool *has_prod, Eigen::MatrixXd &Prod, Eigen::VectorXd &grad, const double fnorm,
-                            const Eigen::VectorXd &col_scale, const int verbosity) const -> void;
+                            const Eigen::VectorXd &col_scale, const Eigen::VectorXd &penalty_scale,
+                            const int verbosity) const -> void;
 
     auto fista(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
                const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm,
-               const double lipschitz_l2, const int verbosity) const -> void;
+               const double lipschitz_l2, const Eigen::VectorXd &penalty_scale,
+               const int verbosity) const -> void;
 
     static auto estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double;
 
