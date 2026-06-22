@@ -114,11 +114,20 @@ inline auto solve_ols_for_adalasso(const Eigen::MatrixXd &A, const Eigen::Vector
 
     Eigen::LLT<Eigen::MatrixXd> llt(gram);
     if (llt.info() == Eigen::Success) {
-        rank_out = ncols; // A^T A positive-definite  <=>  A has full column rank
-        return llt.solve(atb);
+        // Guard against the cond(A)^2 amplification of the normal-equations path: if the Cholesky
+        // factor has a tiny pivot relative to the largest (near rank deficiency), the OLS weights from
+        // the squared system can be inaccurate. Fall back to the rank-revealing QR in that case. The
+        // diagonal of the Cholesky factor is a cheap proxy for conditioning.
+        const auto ldiag = llt.matrixLLT().diagonal().cwiseAbs();
+        const double dmin = ldiag.minCoeff();
+        const double dmax = ldiag.maxCoeff();
+        if (dmax > 0.0 && dmin / dmax > 1.0e-7) { // ~cond(A^T A) < 1e14, well within double precision
+            rank_out = ncols;                     // A^T A safely positive-definite => A full column rank
+            return llt.solve(atb);
+        }
     }
 
-    // Rank-deficient / numerically indefinite normal matrix: use the rank-revealing QR.
+    // Rank-deficient or ill-conditioned normal matrix: use the rank-revealing QR.
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(A);
     rank_out = qr.rank();
     return qr.solve(b);
@@ -173,12 +182,14 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
         exit("optimize_main",
              "EFIT_WEIGHT > 0 is currently supported only with LMODEL = 2 or 3 (elastic-net / adaptive LASSO).");
     }
-    // Elastic-net applies global column standardization (apply_standardizer), which re-centers the
-    // columns over ALL rows and breaks the energy-block (Frisch-Waugh) centering. Adaptive LASSO
-    // (LMODEL=3) never calls apply_standardizer, so it is unaffected. Refuse the unsafe combination.
-    if (optcontrol.efit_weight > 0.0 && optcontrol.linear_model == 2 && optcontrol.standardize) {
+    // Elastic-net and adaptive LASSO both apply global column standardization (apply_standardizer),
+    // which re-centers the columns over ALL rows and breaks the energy-block (Frisch-Waugh) centering.
+    // Refuse the unsafe combination for either model. (Adaptive LASSO standardizes since the
+    // standardized + per-column-penalty reformulation.)
+    if (optcontrol.efit_weight > 0.0 && optcontrol.standardize &&
+        (optcontrol.linear_model == 2 || optcontrol.linear_model == 3)) {
         exit("optimize_main",
-             "EFIT_WEIGHT > 0 with LMODEL = 2 (elastic-net) requires STANDARDIZE = 0; global "
+             "EFIT_WEIGHT > 0 with LMODEL = 2 or 3 requires STANDARDIZE = 0; global "
              "standardization is incompatible with the energy-block centering.");
     }
 
@@ -2039,8 +2050,15 @@ auto Optimize::get_estimated_max_alpha(const Eigen::MatrixXd &Amat, const Eigen:
     C = C.transpose() * bvec;
     auto max_alpha = 0.0;
 
+    // Adaptive LASSO solves the standardized system with a per-column penalty p_j = factor_std_j =
+    // 1/dev_j, so the KKT zero-solution threshold for column j is |Z_j^T b| / (p_j * M * l1_ratio),
+    // i.e. the standardized gradient must be divided by p_j (equivalently multiplied by dev_j).
+    // Omitting this made the alpha grid start one step too high (a CV-selected-alpha shift). For
+    // STANDARDIZE = 0, dev == 1 so this reduces to the previous behavior.
+    const bool adalasso = (optcontrol.linear_model == 3);
     for (auto i = 0; i < ncols; ++i) {
-        max_alpha = std::max<double>(max_alpha, std::abs(C(i)));
+        const auto grad_abs = adalasso ? std::abs(C(i)) * dev(i) : std::abs(C(i));
+        max_alpha = std::max<double>(max_alpha, grad_abs);
     }
     max_alpha /= static_cast<double>(nrows);
     max_alpha /= optcontrol.l1_ratio;
