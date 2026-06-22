@@ -133,6 +133,7 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
         std::cout << "  MAXITER = " << optctrl.maxnum_iteration << "\n";
         std::cout << "  PERIODIC_IMAGE_CONV = " << optctrl.periodic_image_conv << "\n\n";
         if (optctrl.linear_model == 2) {
+            const auto str_l1_solver = optctrl.l1_solver == 0 ? "cd" : "fista";
             std::cout << " Elastic-net related variables:\n";
             std::cout << "  CV = " << std::setw(5) << optctrl.cross_validation << '\n';
             std::cout << "  DFSET_CV = " << files->get_datfile_validation().filename << '\n';
@@ -140,6 +141,7 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
                       << "; NSTART_CV = " << files->get_datfile_validation().nstart
                       << "; NEND_CV = " << files->get_datfile_validation().nend << "\n\n";
             std::cout << "  L1_RATIO = " << optctrl.l1_ratio << '\n';
+            std::cout << "  L1_SOLVER = " << str_l1_solver << '\n';
             std::cout << "  L1_ALPHA = " << optctrl.l1_alpha << '\n';
             std::cout << "  CV_MINALPHA = " << optctrl.l1_alpha_min << "; CV_MAXALPHA = " << optctrl.l1_alpha_max
                       << ";  CV_NALPHA = " << optctrl.num_l1_alpha << '\n';

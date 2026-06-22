@@ -53,6 +53,48 @@ inline auto use_full_gram(const Eigen::MatrixXd &A) -> bool
 {
     return A.cols() <= gram_dense_factor * A.rows() && std::getenv("ALM_GRAM_LAZY") == nullptr;
 }
+
+// Thread count for the hand-parallelized matvecs below. Capped at the column count so the
+// per-thread scratch (rows x nthreads) can never exceed the design matrix itself (rows x cols) --
+// it is therefore always far smaller than A and cannot be an independent memory/OOM constraint.
+inline auto matvec_nthreads(const Eigen::Index ncols) -> int
+{
+    const Eigen::Index maxt = omp_get_max_threads();
+    Eigen::Index n = std::min<Eigen::Index>(maxt, std::max<Eigen::Index>(ncols, 1));
+    if (n < 1) n = 1;
+    return static_cast<int>(n);
+}
+
+// res = A * x, parallelized over the columns of the (column-major) A with per-thread partial sums,
+// because Eigen/Accelerate run dgemv single-threaded here. `scratch` is (A.rows() x nthreads) and is
+// reused across calls. Columns with x(j)==0 are skipped (exploits a sparse iterate). The team is
+// pinned with num_threads(nthreads) so omp_get_thread_num() < nthreads == scratch.cols() always --
+// no out-of-bounds even if the runtime would otherwise pick a different team size.
+inline void parallel_Ax(const Eigen::MatrixXd &A, const Eigen::VectorXd &x, const int nthreads,
+                        Eigen::MatrixXd &scratch, Eigen::VectorXd &res)
+{
+    scratch.setZero();
+#pragma omp parallel num_threads(nthreads)
+    {
+        auto local = scratch.col(omp_get_thread_num());
+#pragma omp for nowait
+        for (Eigen::Index j = 0; j < A.cols(); ++j) {
+            const double xj = x(j);
+            if (xj != 0.0) local.noalias() += A.col(j) * xj;
+        }
+    }
+    res.noalias() = scratch.rowwise().sum();
+}
+
+// out = A^T * r, parallelized over columns (each a cache-friendly column dot for column-major A).
+inline void parallel_Atr(const Eigen::MatrixXd &A, const Eigen::VectorXd &r, const int nthreads,
+                         Eigen::VectorXd &out)
+{
+#pragma omp parallel for num_threads(nthreads)
+    for (Eigen::Index j = 0; j < A.cols(); ++j) {
+        out(j) = A.col(j).dot(r);
+    }
+}
 } // namespace
 
 Optimize::Optimize()
@@ -531,6 +573,7 @@ auto Optimize::crossvalidation(const std::string &job_prefix, const int maxorder
         std::cout << "   CV_NALPHA = " << std::setw(5) << optcontrol.num_l1_alpha << '\n';
         std::cout << "   CONV_TOL = " << std::setw(15) << optcontrol.tolerance_iteration << '\n';
         std::cout << "   MAXITER = " << std::setw(5) << optcontrol.maxnum_iteration << '\n';
+        std::cout << "   L1_SOLVER = " << get_l1_solver_name() << '\n';
         std::cout << "   STOP_CRITERION = " << std::setw(5) << optcontrol.stop_criterion << '\n';
         std::cout << "   ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor << '\n';
         std::cout << '\n';
@@ -849,7 +892,7 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
     std::vector<std::vector<int>> nonzeros;
     std::vector<std::vector<double>> training_error_accum, validation_error_accum;
     std::vector<std::vector<double>> terr_force_accum, terr_energy_accum, verr_force_accum, verr_energy_accum;
-    double fnorm, fnorm_validation, estimated_max_alpha;
+    double fnorm, fnorm_validation, estimated_max_alpha{0.0};
     Eigen::VectorXd weight_adalasso;
 
     std::unique_ptr<SensingMatrix> matrix_train = std::make_unique<SensingMatrix>();
@@ -1214,7 +1257,7 @@ auto Optimize::write_cvresult_to_file(const std::string &file_out, const std::ve
     std::vector<std::string> str_linearmodel{"Elastic-net", "Adaptive LASSO"};
     std::ofstream ofs_cv;
     ofs_cv.open(file_out.c_str(), std::ios::out);
-    ofs_cv << "# Algorithm : Coordinate descent" << '\n';
+    ofs_cv << "# Algorithm : " << get_l1_solver_name() << '\n';
     ofs_cv << "# Linear model : " << str_linearmodel[optcontrol.linear_model - 2] << '\n';
     ofs_cv << "# L1_RATIO = " << optcontrol.l1_ratio << '\n';
     ofs_cv << "# ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor << '\n';
@@ -1264,7 +1307,7 @@ auto Optimize::write_cvscore_to_file(const std::string &file_out, const std::vec
     std::vector<std::string> str_linearmodel{"Elastic-net", "Adaptive LASSO"};
     std::ofstream ofs_cv;
     ofs_cv.open(file_out.c_str(), std::ios::out);
-    ofs_cv << "# Algorithm : Coordinate descent\n";
+    ofs_cv << "# Algorithm : " << get_l1_solver_name() << '\n';
     ofs_cv << "# Linear model : " << str_linearmodel[optcontrol.linear_model - 2] << '\n';
     ofs_cv << "# L1_RATIO = " << optcontrol.l1_ratio << '\n';
     ofs_cv << "# ENET_DNORM = " << std::setw(15) << optcontrol.displacement_normalization_factor << '\n';
@@ -1373,11 +1416,11 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
     std::vector<double> params_tmp;
     std::vector<int> nzero_lasso(maxorder);
 
-    bool *has_prod;
+    bool *has_prod = nullptr;
 
     Eigen::MatrixXd Prod;
     Eigen::VectorXd grad0, grad, x;
-    Eigen::VectorXd scale_beta, scale_beta_enet;
+    Eigen::VectorXd scale_beta, col_scale;
     Eigen::VectorXd factor_std;
     Eigen::VectorXd fdiff, fdiff_validation;
     Eigen::VectorXd mean, dev;
@@ -1386,21 +1429,12 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
     size_t M = A.rows();
     size_t M_validation = A_validation.rows();
 
-    Prod.setZero(N_new, N_new);
-    grad0.resize(N_new);
-    grad.resize(N_new);
     x.setZero(N_new);
     scale_beta.resize(N_new);
-    scale_beta_enet.resize(N_new);
+    col_scale.resize(N_new);
     factor_std.resize(N_new);
     fdiff.resize(M);
     fdiff_validation.resize(M_validation);
-
-    allocate(has_prod, N_new);
-
-    for (size_t i = 0; i < N_new; ++i) {
-        has_prod[i] = false;
-    }
 
     if (optcontrol.save_solution_path) {
         ofs_coef.open(file_coef.c_str(), std::ios::out);
@@ -1415,21 +1449,33 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
     } else {
         get_standardizer(A, mean, dev, factor_std, scale_beta);
     }
+    get_column_scale(A, col_scale);
 
     training_error.clear();
     validation_error.clear();
     nonzeros.clear();
 
-    // Start iteration
+    double lipschitz_l2 = 0.0;
+    if (optcontrol.l1_solver == 0) {
+        grad0.resize(N_new);
+        grad.resize(N_new);
+        grad0 = A.transpose() * b;
+        grad = grad0;
 
-    grad0 = A.transpose() * b;
-    grad = grad0;
+        Prod.setZero(N_new, N_new);
+        allocate(has_prod, N_new);
+        for (size_t i = 0; i < N_new; ++i) {
+            has_prod[i] = false;
+        }
 
-    // Build the whole Gram up front with one parallel GEMM when it is affordable (see use_full_gram),
-    // so coordinate_descent never fills columns lazily. Falls back to the lazy build when N >> M.
-    if (use_full_gram(A)) {
-        Prod.noalias() = A.transpose() * A;
-        std::fill(has_prod, has_prod + N_new, true);
+        // Build the whole Gram up front with one parallel GEMM when it is affordable (see use_full_gram),
+        // so coordinate_descent never fills columns lazily. Falls back to the lazy build when N >> M.
+        if (use_full_gram(A)) {
+            Prod.noalias() = A.transpose() * A;
+            std::fill(has_prod, has_prod + N_new, true);
+        }
+    } else {
+        lipschitz_l2 = estimate_lipschitz_l2(A);
     }
 
     if (verbosity == 1) std::cout << std::setw(3);
@@ -1444,25 +1490,33 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
             initialize_mode = 1;
         }
 
-#pragma omp parallel for
-        for (auto i = 0; i < N_new; ++i) {
-            scale_beta_enet(i) = 1.0 / (1.0 / scale_beta(i) + (1.0 - optcontrol.l1_ratio) * l1_alpha);
+        if (optcontrol.l1_solver == 0) {
+            coordinate_descent(M,
+                               N_new,
+                               l1_alpha,
+                               initialize_mode,
+                               x,
+                               A,
+                               b,
+                               grad0,
+                               has_prod,
+                               Prod,
+                               grad,
+                               fnorm,
+                               col_scale,
+                               verbosity);
+        } else {
+            fista(M,
+                  N_new,
+                  l1_alpha,
+                  initialize_mode,
+                  x,
+                  A,
+                  b,
+                  fnorm,
+                  lipschitz_l2,
+                  verbosity);
         }
-
-        coordinate_descent(M,
-                           N_new,
-                           l1_alpha,
-                           initialize_mode,
-                           x,
-                           A,
-                           b,
-                           grad0,
-                           has_prod,
-                           Prod,
-                           grad,
-                           fnorm,
-                           scale_beta_enet,
-                           verbosity);
 
         double correction_intercept = 0.0;
         for (size_t i = 0; i < N_new; ++i) {
@@ -1545,7 +1599,7 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
         params_tmp.clear();
         params_tmp.shrink_to_fit();
     }
-    deallocate(has_prod);
+    if (has_prod) deallocate(has_prod);
 }
 
 auto Optimize::compute_alphas(const double l1_alpha_max, const double l1_alpha_min, const int num_l1_alpha,
@@ -1570,11 +1624,11 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
 {
     // Start Elastic-net or adaptive lasso optimization
     int i;
-    bool *has_prod;
+    bool *has_prod = nullptr;
 
     Eigen::MatrixXd A, Prod;
     Eigen::VectorXd b, grad0, grad, x;
-    Eigen::VectorXd scale_beta, factor_std;
+    Eigen::VectorXd scale_beta, factor_std, col_scale;
     Eigen::VectorXd fdiff;
     Eigen::VectorXd mean, dev;
     Eigen::VectorXd weight_adalasso;
@@ -1678,19 +1732,11 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
         A = A * weight_adalasso.asDiagonal();
     }
 
-    Prod.setZero(N_new, N_new);
-    grad0.resize(N_new);
-    grad.resize(N_new);
     x.setZero(N_new);
     scale_beta.resize(N_new);
     factor_std.resize(N_new);
+    col_scale.resize(N_new);
     fdiff.resize(M_eff);
-
-    allocate(has_prod, N_new);
-
-    for (i = 0; i < N_new; ++i) {
-        has_prod[i] = false;
-    }
 
     if (verbosity > 0) {
         if (optcontrol.linear_model == 2) {
@@ -1710,6 +1756,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
         std::cout << "   L1_ALPHA = " << std::setw(15) << optcontrol.l1_alpha << '\n';
         std::cout << "   CONV_TOL = " << std::setw(15) << optcontrol.tolerance_iteration << '\n';
         std::cout << "   MAXITER = " << std::setw(5) << optcontrol.maxnum_iteration << '\n';
+        std::cout << "   L1_SOLVER = " << get_l1_solver_name() << '\n';
         std::cout << '\n';
     }
 
@@ -1719,35 +1766,52 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
     if (optcontrol.standardize && optcontrol.linear_model == 2) {
         apply_standardizer(A, mean, dev);
     }
-    grad0 = A.transpose() * b;
-    grad = grad0;
+    get_column_scale(A, col_scale);
+    if (optcontrol.l1_solver == 0) {
+        grad0.resize(N_new);
+        grad.resize(N_new);
+        grad0 = A.transpose() * b;
+        grad = grad0;
 
-#pragma omp parallel for
-    for (i = 0; i < N_new; ++i) {
-        scale_beta(i) = 1.0 / (1.0 / scale_beta(i) + (1.0 - optcontrol.l1_ratio) * optcontrol.l1_alpha);
+        Prod.setZero(N_new, N_new);
+        allocate(has_prod, N_new);
+        for (i = 0; i < N_new; ++i) {
+            has_prod[i] = false;
+        }
+
+        // Build the whole Gram up front with one parallel GEMM when affordable (see use_full_gram).
+        if (use_full_gram(A)) {
+            Prod.noalias() = A.transpose() * A;
+            std::fill(has_prod, has_prod + N_new, true);
+        }
+
+        coordinate_descent(M_eff,
+                           N_new,
+                           optcontrol.l1_alpha,
+                           0,
+                           x,
+                           A,
+                           b,
+                           grad0,
+                           has_prod,
+                           Prod,
+                           grad,
+                           fnorm,
+                           col_scale,
+                           verbosity);
+    } else {
+        const auto lipschitz_l2 = estimate_lipschitz_l2(A);
+        fista(M_eff,
+              N_new,
+              optcontrol.l1_alpha,
+              0,
+              x,
+              A,
+              b,
+              fnorm,
+              lipschitz_l2,
+              verbosity);
     }
-
-    // Build the whole Gram up front with one parallel GEMM when affordable (see use_full_gram).
-    if (use_full_gram(A)) {
-        Prod.noalias() = A.transpose() * A;
-        std::fill(has_prod, has_prod + N_new, true);
-    }
-
-    // Coordinate Descent Method
-    coordinate_descent(M_eff,
-                       N_new,
-                       optcontrol.l1_alpha,
-                       0,
-                       x,
-                       A,
-                       b,
-                       grad0,
-                       has_prod,
-                       Prod,
-                       grad,
-                       fnorm,
-                       scale_beta,
-                       verbosity);
 
     if (optcontrol.linear_model == 2) {
         for (i = 0; i < N_new; ++i) {
@@ -1780,7 +1844,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
         }
     }
 
-    deallocate(has_prod);
+    if (has_prod) deallocate(has_prod);
 
     if (optcontrol.debiase_after_l1opt) {
         if (optcontrol.linear_model == 2) {
@@ -1902,6 +1966,18 @@ auto Optimize::apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &
     }
 }
 
+auto Optimize::get_column_scale(const Eigen::MatrixXd &Amat, Eigen::VectorXd &col_scale) -> void
+{
+    const auto ncols = Amat.cols();
+    const auto nrows = Amat.rows();
+    if (col_scale.size() != ncols) col_scale.resize(ncols);
+
+    const auto inv_nrows = 1.0 / static_cast<double>(nrows);
+    for (auto j = 0; j < ncols; ++j) {
+        col_scale(j) = Amat.col(j).squaredNorm() * inv_nrows;
+    }
+}
+
 auto Optimize::get_estimated_max_alpha(const Eigen::MatrixXd &Amat, const Eigen::VectorXd &bvec) const -> double
 {
     const auto ncols = Amat.cols();
@@ -1931,6 +2007,7 @@ auto Optimize::get_estimated_max_alpha(const Eigen::MatrixXd &Amat, const Eigen:
         max_alpha = std::max<double>(max_alpha, std::abs(C(i)));
     }
     max_alpha /= static_cast<double>(nrows);
+    max_alpha /= optcontrol.l1_ratio;
 
     return max_alpha;
 }
@@ -3603,14 +3680,20 @@ auto Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in) -> v
 {
     // Check the validity of the options before copying it.
 
+    if (optcontrol_in.l1_solver != 0 && optcontrol_in.l1_solver != 1) {
+        exit("set_optimizer_control", "L1_SOLVER must be cd or fista.");
+    }
+
     if (optcontrol_in.cross_validation < -1) {
         exit("set_optimizer_control", "cross_validation must be -1, 0, or larger");
     }
-    if (optcontrol_in.linear_model == 2) {
+    if (optcontrol_in.linear_model == 2 || optcontrol_in.linear_model == 3) {
         if (optcontrol_in.l1_ratio <= eps || optcontrol_in.l1_ratio > 1.0) {
             exit("set_optimizer_control", "L1_RATIO must be 0 < L1_RATIO <= 1.");
         }
+    }
 
+    if (optcontrol_in.linear_model == 2) {
         if (optcontrol_in.cross_validation >= 1 || optcontrol_in.cross_validation == -1) {
             if (optcontrol_in.l1_alpha_max > 0) {
                 if (optcontrol_in.l1_alpha_min >= optcontrol_in.l1_alpha_max) {
@@ -3621,6 +3704,12 @@ auto Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in) -> v
     }
 
     optcontrol = optcontrol_in;
+}
+
+auto Optimize::get_l1_solver_name() const -> std::string
+{
+    if (optcontrol.l1_solver == 0) return "Coordinate descent";
+    return "FISTA";
 }
 
 auto Optimize::get_optimizer_control() const -> OptimizerControl
@@ -3636,7 +3725,7 @@ auto Optimize::get_cv_l1_alpha() const -> double
 auto Optimize::coordinate_descent(const int M, const int N, const double alpha, const int warm_start,
                                   Eigen::VectorXd &x, const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
                                   const Eigen::VectorXd &grad0, bool *has_prod, Eigen::MatrixXd &Prod,
-                                  Eigen::VectorXd &grad, const double fnorm, const Eigen::VectorXd &scale_beta,
+                                  Eigen::VectorXd &grad, const double fnorm, const Eigen::VectorXd &col_scale,
                                   const int verbosity) const -> void
 {
     int i, j;
@@ -3662,102 +3751,57 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
     }
 
     const auto Minv = 1.0 / static_cast<double>(M);
-    const auto alphlambda = alpha * optcontrol.l1_ratio;
+    const auto lambda1 = alpha * optcontrol.l1_ratio;
+    const auto lambda2 = alpha * (1.0 - optcontrol.l1_ratio);
 
     auto iloop = 0;
 
-    if (optcontrol.standardize) {
-        while (iloop < optcontrol.maxnum_iteration) {
-            do_print_log = !((iloop + 1) % optcontrol.output_frequency) && (verbosity > 1);
+    while (iloop < optcontrol.maxnum_iteration) {
+        do_print_log = !((iloop + 1) % optcontrol.output_frequency) && (verbosity > 1);
 
-            if (do_print_log) {
-                std::cout << "   Coordinate Descent : " << std::setw(5) << iloop + 1 << '\n';
+        if (do_print_log) {
+            std::cout << "   Coordinate Descent : " << std::setw(5) << iloop + 1 << '\n';
+        }
+        delta = beta;
+        for (i = 0; i < N; ++i) {
+            const auto denom = col_scale(i) + lambda2;
+            if (denom > eps) {
+                beta(i) = shrink(Minv * grad(i) + col_scale(i) * beta(i), lambda1) / denom;
+            } else {
+                beta(i) = 0.0;
             }
-            delta = beta;
-            for (i = 0; i < N; ++i) {
-                beta(i) = shrink(Minv * grad(i) + beta(i), alphlambda);
-                delta(i) -= beta(i);
-                if (std::abs(delta(i)) > 0.0) {
-                    if (!has_prod[i]) {
+            delta(i) -= beta(i);
+            if (std::abs(delta(i)) > 0.0) {
+                if (!has_prod[i]) {
 #pragma omp parallel for if (N >= cd_parallel_grain)
-                        for (j = 0; j < N; ++j) {
-                            Prod(j, i) = A.col(j).dot(A.col(i));
-                        }
-                        has_prod[i] = true;
+                    for (j = 0; j < N; ++j) {
+                        Prod(j, i) = A.col(j).dot(A.col(i));
                     }
-                    grad.noalias() += Prod.col(i) * delta(i);
+                    has_prod[i] = true;
                 }
-            }
-            ++iloop;
-            // Eigen SIMD reduction instead of an every-sweep OpenMP parallel-for: the work is a
-            // tiny O(N) memory-bound sum, so fork/join dominated it. Also deterministic, whereas
-            // the OpenMP reduction's sum order (and thus the converged iteration) depended on the
-            // thread count.
-            diff = std::sqrt(delta.squaredNorm() / static_cast<double>(N));
-
-            if (diff < optcontrol.tolerance_iteration) break;
-
-            if (do_print_log) {
-                std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
-                          << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
-                auto tmp = beta.lpNorm<1>();
-                std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
-                res = A * beta - b;
-                tmp = res.dot(res);
-                std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
-                          << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
-                std::cout << '\n';
+                grad.noalias() += Prod.col(i) * delta(i);
             }
         }
-    } else {
-        // Non-standardized version. Needs additional operations
+        ++iloop;
+        // Eigen SIMD reduction instead of an every-sweep OpenMP parallel-for: the work is a
+        // tiny O(N) memory-bound sum, so fork/join dominated it. Also deterministic, whereas
+        // the OpenMP reduction's sum order (and thus the converged iteration) depended on the
+        // thread count.
+        diff = std::sqrt(delta.squaredNorm() / static_cast<double>(N));
 
-        Eigen::VectorXd inv_scale_beta(N);
+        if (diff < optcontrol.tolerance_iteration) break;
 
-        for (i = 0; i < N; ++i)
-            inv_scale_beta(i) = 1.0 / scale_beta(i);
-
-        while (iloop < optcontrol.maxnum_iteration) {
-            do_print_log = !((iloop + 1) % optcontrol.output_frequency) && (verbosity > 1);
-
-            if (do_print_log) {
-                std::cout << "   Coordinate Descent : " << std::setw(5) << iloop + 1 << '\n';
-            }
-            delta = beta;
-            for (i = 0; i < N; ++i) {
-                beta(i) = shrink(Minv * grad(i) + beta(i) * inv_scale_beta(i), alphlambda) * scale_beta(i);
-                delta(i) -= beta(i);
-                if (std::abs(delta(i)) > 0.0) {
-                    if (!has_prod[i]) {
-#pragma omp parallel for if (N >= cd_parallel_grain)
-                        for (j = 0; j < N; ++j) {
-                            Prod(j, i) = A.col(j).dot(A.col(i));
-                        }
-                        has_prod[i] = true;
-                    }
-                    grad.noalias() += Prod.col(i) * delta(i);
-                }
-            }
-            ++iloop;
-            // Eigen SIMD reduction instead of an every-sweep OpenMP parallel-for: the work is a
-            // tiny O(N) memory-bound sum, so fork/join dominated it. Also deterministic, whereas
-            // the OpenMP reduction's sum order (and thus the converged iteration) depended on the
-            // thread count.
-            diff = std::sqrt(delta.squaredNorm() / static_cast<double>(N));
-
-            if (diff < optcontrol.tolerance_iteration) break;
-
-            if (do_print_log) {
-                std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
-                          << diff * std::sqrt(static_cast<double>(N) / beta.dot(beta)) << '\n';
-                auto tmp = beta.lpNorm<1>();
-                std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
-                res = A * beta - b;
-                tmp = res.dot(res);
-                std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
-                          << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
-                std::cout << '\n';
-            }
+        if (do_print_log) {
+            const auto param2norm = beta.dot(beta);
+            std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
+                      << (param2norm > eps ? diff * std::sqrt(static_cast<double>(N) / param2norm) : 0.0) << '\n';
+            auto tmp = beta.lpNorm<1>();
+            std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
+            res = A * beta - b;
+            tmp = res.dot(res);
+            std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
+                      << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+            std::cout << '\n';
         }
     }
 
@@ -3786,4 +3830,207 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
 
     for (i = 0; i < N; ++i)
         x[i] = beta(i);
+}
+
+auto Optimize::estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double
+{
+    constexpr auto max_iter = 100;
+    constexpr auto tol = 1.0e-6;
+
+    const auto nrows = A.rows();
+    const auto ncols = A.cols();
+    if (nrows == 0 || ncols == 0) return 0.0;
+
+    // The matvecs are parallelized by hand (Eigen/Accelerate run dgemv single-threaded), otherwise
+    // the power iteration would dominate the FISTA cost once the main loop's GEMVs are parallel.
+    const int nthreads = matvec_nthreads(ncols);
+    Eigen::MatrixXd scratch(nrows, nthreads);
+    Eigen::VectorXd v = Eigen::VectorXd::Ones(ncols);
+    v.normalize();
+    Eigen::VectorXd Av(nrows), w(ncols);
+
+    // Guaranteed-positive lower bound on lambda_max(A^T A): the largest column norm squared
+    // (= max diagonal of A^T A <= lambda_max). Used as a floor so the estimate is never zero -- e.g.
+    // when the all-ones start lies in the null space of A and power iteration would otherwise return
+    // 0. The starting L only needs to be reasonable; fista()'s backtracking guarantees correctness.
+    double col_floor = 0.0;
+    for (Eigen::Index j = 0; j < ncols; ++j) col_floor = std::max(col_floor, A.col(j).squaredNorm());
+
+    double lambda_old = 0.0;
+    double lambda = col_floor;
+    for (auto iter = 0; iter < max_iter; ++iter) {
+        parallel_Ax(A, v, nthreads, scratch, Av); // Av = A v
+        parallel_Atr(A, Av, nthreads, w);         // w  = A^T (A v)
+        const auto wnorm = w.norm();
+        if (wnorm < eps) break; // v lies in the null space; keep the column-norm floor
+
+        lambda = v.dot(w);
+        v = w / wnorm;
+
+        if (iter > 0) {
+            const auto denom = std::max(1.0, std::abs(lambda));
+            if (std::abs(lambda - lambda_old) / denom < tol) break;
+        }
+        lambda_old = lambda;
+    }
+
+    parallel_Ax(A, v, nthreads, scratch, Av);
+    lambda = std::max(Av.squaredNorm(), col_floor);
+    return 1.001 * lambda / static_cast<double>(nrows);
+}
+
+auto Optimize::fista(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
+                     const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm,
+                     const double lipschitz_l2, const int verbosity) const -> void
+{
+    // Degenerate problems: nothing to solve (also avoids 1/N and 1/M in the metrics below).
+    if (N == 0) return;
+    if (M == 0) {
+        if (!warm_start) x.setZero(N);
+        return;
+    }
+
+    double diff = 0.0;
+    double pgdiff = 0.0;
+    bool do_print_log;
+
+    const int nthreads = matvec_nthreads(N);
+    Eigen::MatrixXd scratch(M, nthreads); // per-thread partial sums for the A*(.) products
+
+    // Iterate buffers, preallocated so the loop allocates no Eigen temporary.
+    Eigen::VectorXd x_cur(N), x_new(N), y(N), grad(N), z(N);
+    Eigen::VectorXd res(M), res_new(M), Ay(M), Ax_cur(M), Ax_new(M);
+
+    if (warm_start) {
+        x_cur = x;
+    } else {
+        x_cur.setZero();
+    }
+    parallel_Ax(A, x_cur, nthreads, scratch, Ax_cur); // A*x_cur (== 0 for a cold start)
+    y = x_cur;
+    Ay = Ax_cur;
+
+    const auto Minv = 1.0 / static_cast<double>(M);
+    const auto lambda1 = alpha * optcontrol.l1_ratio;
+    const auto lambda2 = alpha * (1.0 - optcontrol.l1_ratio);
+
+    // FISTA with backtracking line search (Beck & Teboulle 2009). L starts from the power-iteration
+    // estimate and is grown by bt_eta until the proximal step from y satisfies the sufficient-decrease
+    // (descent) condition  f(x_new) <= Q_L(x_new, y). This makes convergence robust to an
+    // under-estimated Lipschitz constant -- power iteration only ever gives a lower bound -- without
+    // having to construct a guaranteed upper bound. Caching A*x keeps the cost at two matvecs per
+    // iteration: the A*x_new built for the descent test also yields the next A*y via
+    //   A*y = A*x_new + momentum*(A*x_new - A*x_cur),
+    // so no separate A*y matvec is needed.
+    auto L = std::max(lipschitz_l2 + lambda2, eps);
+    constexpr auto bt_eta = 2.0; // L growth factor when a step is rejected
+    constexpr auto bt_max = 60;  // hard cap on backtracks per iteration
+
+    auto t = 1.0;
+    auto iloop = 0;
+
+    if (verbosity > 1) {
+        std::cout << "-----------------------------------------------------------------\n";
+        std::cout << "  L1_ALPHA = " << std::setw(15) << alpha << '\n';
+    }
+
+    while (iloop < optcontrol.maxnum_iteration) {
+        do_print_log = !((iloop + 1) % optcontrol.output_frequency) && (verbosity > 1);
+        if (do_print_log) {
+            std::cout << "   FISTA : " << std::setw(5) << iloop + 1 << '\n';
+        }
+
+        // grad f(y) = (1/M) A^T (A y - b) + lambda2 y, reusing the cached A*y.
+        res = Ay - b;
+        parallel_Atr(A, res, nthreads, grad);
+        grad = Minv * grad + lambda2 * y;
+        const auto f_y = 0.5 * Minv * res.squaredNorm() + 0.5 * lambda2 * y.squaredNorm();
+
+        // Backtracking: grow L until the proximal step from y satisfies sufficient decrease.
+        int bt = 0;
+        while (true) {
+            const auto inv_L = 1.0 / L;
+            const auto threshold = lambda1 * inv_L;
+            z.noalias() = y - inv_L * grad;
+            for (auto i = 0; i < N; ++i) {
+                x_new(i) = shrink(z(i), threshold);
+            }
+            parallel_Ax(A, x_new, nthreads, scratch, Ax_new); // matvec; also feeds the next A*y
+            res_new = Ax_new - b;
+            const auto f_xnew = 0.5 * Minv * res_new.squaredNorm() + 0.5 * lambda2 * x_new.squaredNorm();
+            const auto dgrad = (x_new - y).dot(grad);
+            const auto dsq = (x_new - y).squaredNorm();
+            const auto Q = f_y + dgrad + 0.5 * L * dsq;
+            // small relative slack so floating-point ties near convergence cannot loop forever
+            if (f_xnew <= Q + 1.0e-12 * (std::abs(f_y) + 1.0) || ++bt > bt_max) break;
+            L *= bt_eta;
+        }
+
+        // Both metrics are on the coefficient scale (no L factor), comparable to CONV_TOL like the CD
+        // stopping test: diff is the RMS coefficient change, pgdiff the RMS proximal step.
+        diff = std::sqrt((x_new - x_cur).squaredNorm() / static_cast<double>(N));
+        pgdiff = std::sqrt((x_new - y).squaredNorm() / static_cast<double>(N));
+        ++iloop;
+
+        if (do_print_log) {
+            const auto param2norm = x_new.dot(x_new);
+            std::cout << "    1: ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
+                      << (param2norm > eps ? diff * std::sqrt(static_cast<double>(N) / param2norm) : 0.0) << '\n';
+            auto tmp = x_new.lpNorm<1>();
+            std::cout << "    2: ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
+            const auto rnorm2 = res_new.squaredNorm();
+            std::cout << "    3: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(rnorm2) << std::setw(15)
+                      << std::sqrt(rnorm2 / (fnorm * fnorm)) << '\n';
+            std::cout << "    L = " << std::setw(15) << L << "  (backtracks: " << bt << ")\n\n";
+        }
+
+        if (diff < optcontrol.tolerance_iteration && pgdiff < optcontrol.tolerance_iteration) {
+            x_cur = x_new;
+            break;
+        }
+
+        const auto t_new = 0.5 * (1.0 + std::sqrt(1.0 + 4.0 * t * t));
+        const auto momentum = (t - 1.0) / t_new;
+
+        // Gradient-based adaptive restart (O'Donoghue & Candes 2015). Evaluate before y/x_cur change.
+        if ((x_new - x_cur).dot(y - x_new) > 0.0) {
+            y = x_new;
+            Ay = Ax_new;
+            t = 1.0;
+        } else {
+            y = x_new + momentum * (x_new - x_cur);
+            Ay = Ax_new + momentum * (Ax_new - Ax_cur); // A*y via the A*x cache -- no extra matvec
+            t = t_new;
+        }
+        x_cur = x_new;
+        Ax_cur = Ax_new;
+    }
+
+    if (verbosity > 1) {
+        if (iloop >= optcontrol.maxnum_iteration) {
+            std::cout << "WARNING: Convergence NOT achieved within " << optcontrol.maxnum_iteration
+                      << " FISTA iterations.\n";
+        } else {
+            std::cout << "  Convergence achieved in " << iloop << " iterations.\n";
+        }
+        const auto param2norm = x_cur.dot(x_cur);
+        if (std::abs(param2norm) < eps) {
+            std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << 0.0 << std::setw(15) << 0.0 << '\n';
+        } else {
+            std::cout << "    1': ||u_{k}-u_{k-1}||_2     = " << std::setw(15) << diff << std::setw(15)
+                      << diff * std::sqrt(static_cast<double>(N) / param2norm) << '\n';
+        }
+        std::cout << "    1'': RMS proximal step      = " << std::setw(15) << pgdiff << '\n';
+        std::cout << "    1''': final L               = " << std::setw(15) << L << '\n';
+        double tmp = x_cur.lpNorm<1>();
+        std::cout << "    2': ||u_{k}||_1             = " << std::setw(15) << tmp << '\n';
+        parallel_Ax(A, x_cur, nthreads, scratch, res);
+        res -= b;
+        tmp = res.dot(res);
+        std::cout << "    3': ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
+                  << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+        std::cout << '\n';
+    }
+
+    x = x_cur;
 }

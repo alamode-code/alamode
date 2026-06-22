@@ -41,6 +41,7 @@ public:
     int standardize;
     double displacement_normalization_factor;
     int debiase_after_l1opt;
+    int l1_solver; // 0: coordinate descent, 1: FISTA
 
     // Energy-difference loss term: weight w in  ||A_F θ − b_F||² + w² Σ_c W_c (Ã_E[c]·θ − Ẽ_ref[c])².
     // 0 disables the term (default; behavior identical to the force-only fit).
@@ -81,6 +82,7 @@ public:
         standardize = 1;
         displacement_normalization_factor = 1.0;
         debiase_after_l1opt = 0;
+        l1_solver = 0;
         efit_weight = 0.0;
         efit_escale = 0.0;
         efit_cv = 0;
@@ -268,6 +270,8 @@ private:
     auto apply_standardizer(Eigen::MatrixXd &Amat, const Eigen::VectorXd &mean,
                             const Eigen::VectorXd &dev) const -> void;
 
+    static auto get_column_scale(const Eigen::MatrixXd &Amat, Eigen::VectorXd &col_scale) -> void;
+
     [[nodiscard]] auto get_estimated_max_alpha(const Eigen::MatrixXd &Amat,
                                                const Eigen::VectorXd &bvec) const -> double;
 
@@ -372,7 +376,15 @@ private:
     auto coordinate_descent(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
                             const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const Eigen::VectorXd &grad0,
                             bool *has_prod, Eigen::MatrixXd &Prod, Eigen::VectorXd &grad, const double fnorm,
-                            const Eigen::VectorXd &scale_beta, const int verbosity) const -> void;
+                            const Eigen::VectorXd &col_scale, const int verbosity) const -> void;
+
+    auto fista(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
+               const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm,
+               const double lipschitz_l2, const int verbosity) const -> void;
+
+    static auto estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double;
+
+    [[nodiscard]] auto get_l1_solver_name() const -> std::string;
 
     auto solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::VectorXd &b, Eigen::MatrixXd &A_validation,
                        Eigen::VectorXd &b_validation, const double fnorm, const double fnorm_validation,

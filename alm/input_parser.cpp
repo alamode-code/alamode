@@ -1146,6 +1146,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
                                               "NEND_CV",
                                               "DFSET_CV",
                                               "L1_RATIO",
+                                              "L1_SOLVER",
                                               "STANDARDIZE",
                                               "ENET_DNORM",
                                               "L1_ALPHA",
@@ -1276,6 +1277,19 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     }
     if (!optimize_var_dict["L1_RATIO"].empty()) {
         optcontrol.l1_ratio = boost::lexical_cast<double>(optimize_var_dict["L1_RATIO"]);
+    }
+    if (!optimize_var_dict["L1_SOLVER"].empty()) {
+        auto str_l1_solver = optimize_var_dict["L1_SOLVER"];
+        boost::to_lower(str_l1_solver);
+        if (str_l1_solver == "cd" || str_l1_solver == "coordinate-descent" ||
+            str_l1_solver == "coordinate_descent")
+        {
+            optcontrol.l1_solver = 0;
+        } else if (str_l1_solver == "fista") {
+            optcontrol.l1_solver = 1;
+        } else {
+            exit("parse_optimize_vars", "Unsupported L1_SOLVER. Available options are cd and fista.");
+        }
     }
     if (!optimize_var_dict["STOP_CRITERION"].empty()) {
         optcontrol.stop_criterion = boost::lexical_cast<int>(optimize_var_dict["STOP_CRITERION"]);

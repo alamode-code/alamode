@@ -58,9 +58,9 @@ List of supported input variables
    :ref:`CONV_TOL <alm_conv_tol>`, :ref:`CV <alm_cv>`, :ref:`CV_MINALPHA <alm_cv_minalpha>`, :ref:`DEBIAS_OLS <alm_debias_ols>`
    :ref:`DFSET <alm_dfset>`, :ref:`DFSET_CV <alm_dfset_cv>`, :ref:`ENET_DNORM <alm_enet_dnorm>`
    :ref:`FC2FIX <alm_fc2fix>`, :ref:`FC3FIX <alm_fc3fix>`, :ref:`ICONST <alm_iconst>`
-   :ref:`L1_ALPHA <alm_l1_alpha>`, :ref:`L1_RATIO <alm_l1_ratio>`, :ref:`LMODEL <alm_lmodel>`, :ref:`MAXITER <alm_maxiter>`
-   :ref:`NDATA <alm_ndata>`, :ref:`NDATA_CV <alm_ndata_cv>`, :ref:`NSTART NEND <alm_nstart>`, :ref:`NSTART_CV NEND_CV <alm_nstart_cv>`
-   :ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`, :ref:`ROTAXIS <alm_rotaxis>`, :ref:`SKIP <alm_skip>`
+   :ref:`L1_ALPHA <alm_l1_alpha>`, :ref:`L1_RATIO <alm_l1_ratio>`, :ref:`L1_SOLVER <alm_l1_solver>`, :ref:`LMODEL <alm_lmodel>`
+   :ref:`MAXITER <alm_maxiter>`, :ref:`NDATA <alm_ndata>`, :ref:`NDATA_CV <alm_ndata_cv>`, :ref:`NSTART NEND <alm_nstart>`
+   :ref:`NSTART_CV NEND_CV <alm_nstart_cv>`, :ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`, :ref:`ROTAXIS <alm_rotaxis>`, :ref:`SKIP <alm_skip>`
    :ref:`SOLUTION_PATH <alm_solution_path>`, :ref:`SPARSE <alm_sparse>`
    :ref:`SPARSESOLVER <alm_sparsesolver>`, :ref:`STANDARDIZE <alm_standardize>`, :ref:`STOP_CRITERION <alm_stop_criterion>`
 
@@ -618,7 +618,7 @@ This field is necessary when ``MODE = optimize``.
  :Default: 1.0e-8
  :Type: Double
  :Description: When ``LMODEL = ols`` and an iterative solver is selected via ``SPARSESOLVER``, ``CONV_TOL`` value is passed to the Eigen3 function via `setTolerance()`.
-               When ``LMODEL = enet | adaptive-lasso``, the coordinate descent iteration stops at :math:`i`\ th iteration if :math:`\sqrt{\frac{1}{N}|\boldsymbol{\Phi}_{i} - \boldsymbol{\Phi}_{i-1}|_{2}^{2}} <` ``CONV_TOL`` is satisfied, where :math:`N` is the length of the vector :math:`\boldsymbol{\Phi}`.
+               When ``LMODEL = enet | adaptive-lasso``, the L1 solver iteration stops at :math:`i`\ th iteration if :math:`\sqrt{\frac{1}{N}|\boldsymbol{\Phi}_{i} - \boldsymbol{\Phi}_{i-1}|_{2}^{2}} <` ``CONV_TOL`` is satisfied, where :math:`N` is the length of the vector :math:`\boldsymbol{\Phi}`.
 
 
  .. seealso::
@@ -633,6 +633,25 @@ This field is necessary when ``MODE = optimize``.
  :Default: 1.0 (LASSO)
  :Type: Double
  :Description: The ``L1_RATIO`` changes the regularization term as ``L1_ALPHA`` :math:`\times` [``L1_RATIO`` :math:`|\boldsymbol{\Phi}|_{1}` + :math:`\frac{1}{2}` (1-``L1_RATIO``) :math:`|\boldsymbol{\Phi}|_{2}^{2}`]. Therefore, ``L1_RATIO = 1`` corresponds to LASSO. ``L1_RATIO`` must be ``0 < L1_ratio <= 1``. Effective when ``LMODEL = enet``. See also :ref:`here <alm_theory_enet>`.
+
+````
+
+.. _alm_l1_solver:
+
+* L1_SOLVER-tag = cd | fista
+
+ ===== =============================================================================================
+  cd    Use the coordinate descent solver.
+  fista Use the fast iterative shrinkage-thresholding algorithm.
+ ===== =============================================================================================
+
+ :Default: cd
+ :Type: String
+ :Description: Selects the iterative solver used when ``LMODEL = enet | adaptive-lasso``.
+               The ``cd`` solver is the legacy coordinate descent method. The ``fista`` solver
+               avoids forming the dense :math:`N \times N` Gram matrix and can reduce memory usage
+               for large dense L1-regularized problems. Both solvers target the same elastic-net or
+               adaptive-LASSO objective.
 
 ````
 
