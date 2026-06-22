@@ -133,7 +133,7 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
         std::cout << "  MAXITER = " << optctrl.maxnum_iteration << "\n";
         std::cout << "  PERIODIC_IMAGE_CONV = " << optctrl.periodic_image_conv << "\n\n";
         if (optctrl.linear_model == 2) {
-            const auto str_l1_solver = optctrl.l1_solver == 0 ? "cd" : "fista";
+            const auto str_l1_solver = optctrl.l1_solver == 0 ? "cd" : (optctrl.l1_solver == 1 ? "fista" : "admm");
             std::cout << " Elastic-net related variables:\n";
             std::cout << "  CV = " << std::setw(5) << optctrl.cross_validation << '\n';
             std::cout << "  DFSET_CV = " << files->get_datfile_validation().filename << '\n';

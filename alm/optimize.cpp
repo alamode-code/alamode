@@ -1492,6 +1492,14 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
     nonzeros.clear();
 
     double lipschitz_l2 = 0.0;
+    // ADMM (l1_solver == 2) state. G = (1/M) A^T A + diag(lambda2 p^2 + tau) is alpha-independent for
+    // pure LASSO (lambda2 == 0) and is Cholesky-factored once; for elastic net it is refactored per alpha.
+    Eigen::MatrixXd admm_AtA;
+    Eigen::LLT<Eigen::MatrixXd> admm_llt;
+    Eigen::VectorXd admm_q;
+    double admm_tau = 0.0;
+    bool admm_lasso = false;
+    const auto Minv_path = 1.0 / static_cast<double>(M);
     if (optcontrol.l1_solver == 0) {
         grad0.resize(N_new);
         grad.resize(N_new);
@@ -1510,8 +1518,21 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
             Prod.noalias() = A.transpose() * A;
             std::fill(has_prod, has_prod + N_new, true);
         }
-    } else {
+    } else if (optcontrol.l1_solver == 1) {
         lipschitz_l2 = estimate_lipschitz_l2(A);
+    } else { // ADMM
+        admm_q.noalias() = A.transpose() * b;
+        admm_q *= Minv_path;
+        admm_AtA.noalias() = A.transpose() * A;
+        admm_AtA *= Minv_path;
+        admm_tau = admm_AtA.diagonal().mean(); // alpha-independent penalty: mean Gram diagonal
+        if (admm_tau < eps) admm_tau = 1.0;
+        admm_lasso = std::abs(optcontrol.l1_ratio - 1.0) < eps;
+        if (admm_lasso) {
+            Eigen::MatrixXd G = admm_AtA;
+            G.diagonal().array() += admm_tau;
+            admm_llt.compute(G);
+        }
     }
 
     if (verbosity == 1) std::cout << std::setw(3);
@@ -1542,7 +1563,7 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
                                col_scale,
                                penalty_scale,
                                verbosity);
-        } else {
+        } else if (optcontrol.l1_solver == 1) {
             fista(M,
                   N_new,
                   l1_alpha,
@@ -1554,6 +1575,17 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
                   lipschitz_l2,
                   penalty_scale,
                   verbosity);
+        } else { // ADMM
+            if (!admm_lasso) { // elastic net: G depends on alpha through lambda2, refactor
+                const auto lambda2 = l1_alpha * (1.0 - optcontrol.l1_ratio);
+                Eigen::MatrixXd G = admm_AtA;
+                for (size_t j = 0; j < N_new; ++j) {
+                    G(j, j) += lambda2 * penalty_scale(j) * penalty_scale(j) + admm_tau;
+                }
+                admm_llt.compute(G);
+            }
+            admm(M, N_new, l1_alpha, initialize_mode, x, A, b, admm_llt, admm_q, admm_tau, penalty_scale,
+                 fnorm, verbosity);
         }
 
         double correction_intercept = 0.0;
@@ -1845,7 +1877,7 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
                            col_scale,
                            penalty_scale,
                            verbosity);
-    } else {
+    } else if (optcontrol.l1_solver == 1) {
         const auto lipschitz_l2 = estimate_lipschitz_l2(A);
         fista(M_eff,
               N_new,
@@ -1858,6 +1890,20 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
               lipschitz_l2,
               penalty_scale,
               verbosity);
+    } else { // ADMM (single alpha: build and factor G once)
+        const auto Minv = 1.0 / static_cast<double>(M_eff);
+        Eigen::VectorXd q = A.transpose() * b;
+        q *= Minv;
+        Eigen::MatrixXd G = A.transpose() * A;
+        G *= Minv;
+        auto tau = G.diagonal().mean();
+        if (tau < eps) tau = 1.0;
+        const auto lambda2 = optcontrol.l1_alpha * (1.0 - optcontrol.l1_ratio);
+        for (i = 0; i < N_new; ++i) {
+            G(i, i) += lambda2 * penalty_scale(i) * penalty_scale(i) + tau;
+        }
+        Eigen::LLT<Eigen::MatrixXd> llt(G);
+        admm(M_eff, N_new, optcontrol.l1_alpha, 0, x, A, b, llt, q, tau, penalty_scale, fnorm, verbosity);
     }
 
     if (optcontrol.linear_model == 2) {
@@ -3734,8 +3780,8 @@ auto Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in) -> v
 {
     // Check the validity of the options before copying it.
 
-    if (optcontrol_in.l1_solver != 0 && optcontrol_in.l1_solver != 1) {
-        exit("set_optimizer_control", "L1_SOLVER must be cd or fista.");
+    if (optcontrol_in.l1_solver < 0 || optcontrol_in.l1_solver > 2) {
+        exit("set_optimizer_control", "L1_SOLVER must be cd, fista, or admm.");
     }
 
     if (optcontrol_in.cross_validation < -1) {
@@ -3763,7 +3809,8 @@ auto Optimize::set_optimizer_control(const OptimizerControl &optcontrol_in) -> v
 auto Optimize::get_l1_solver_name() const -> std::string
 {
     if (optcontrol.l1_solver == 0) return "Coordinate descent";
-    return "FISTA";
+    if (optcontrol.l1_solver == 1) return "FISTA";
+    return "ADMM";
 }
 
 auto Optimize::get_optimizer_control() const -> OptimizerControl
@@ -4093,4 +4140,114 @@ auto Optimize::fista(const int M, const int N, const double alpha, const int war
     }
 
     x = x_cur;
+}
+
+auto Optimize::admm(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
+                    const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const Eigen::LLT<Eigen::MatrixXd> &llt,
+                    const Eigen::VectorXd &q, const double tau, const Eigen::VectorXd &penalty_scale,
+                    const double fnorm, const int verbosity) const -> void
+{
+    // Degenerate problems: nothing to solve (also avoids 1/N below).
+    if (N == 0) return;
+    if (M == 0) {
+        if (!warm_start) x.setZero(N);
+        return;
+    }
+
+    const auto lambda1 = alpha * optcontrol.l1_ratio;
+    constexpr auto omega = 1.6;     // over-relaxation factor (Boyd: 1.5-1.8 accelerates ADMM)
+    const auto inv_tau = 1.0 / tau;
+    const auto tol = optcontrol.tolerance_iteration;
+    const auto sqrtN = std::sqrt(static_cast<double>(N));
+
+    // Scaled-ADMM state. The primal z is warm-started from x; the scaled dual u is reset to zero on
+    // every call (a per-alpha dual warm start gave only a marginal speedup and is not worth the
+    // extra bookkeeping, so each alpha starts the dual cold).
+    Eigen::VectorXd z(N), xa(N), xhat(N), z_old(N), rhs(N);
+    Eigen::VectorXd u = Eigen::VectorXd::Zero(N);
+    Eigen::VectorXd res(M); // only used for the verbosity>1 diagnostic A*z - b
+    if (warm_start) {
+        z = x;
+    } else {
+        z.setZero();
+    }
+
+    bool do_print_log;
+    auto iloop = 0;
+    double rnorm = 0.0, snorm = 0.0;
+
+    if (verbosity > 1) {
+        std::cout << "-----------------------------------------------------------------\n";
+        std::cout << "  L1_ALPHA = " << std::setw(15) << alpha << "   (ADMM, tau = " << tau << ")\n";
+    }
+
+    while (iloop < optcontrol.maxnum_iteration) {
+        do_print_log = !((iloop + 1) % optcontrol.output_frequency) && (verbosity > 1);
+        if (do_print_log) {
+            std::cout << "   ADMM : " << std::setw(5) << iloop + 1 << '\n';
+        }
+
+        z_old = z;
+
+        // x-update: solve  G xa = q + tau (z - u)  with the cached Cholesky factor of G.
+        rhs = q + tau * (z - u);
+        xa = llt.solve(rhs);
+
+        // over-relaxation
+        xhat.noalias() = omega * xa + (1.0 - omega) * z;
+
+        // z-update: per-column soft threshold  S_{lambda1 p_j / tau}(xhat + u).
+        for (auto i = 0; i < N; ++i) {
+            z(i) = shrink(xhat(i) + u(i), lambda1 * penalty_scale(i) * inv_tau);
+        }
+
+        // u-update (scaled dual).
+        u += xhat - z;
+
+        // Boyd absolute + relative primal/dual stopping. The dual residual is tau-scaled, so a bare
+        // RMS test against CONV_TOL would not be comparable; the eps below restore comparability.
+        rnorm = (xhat - z).norm();
+        snorm = tau * (z - z_old).norm();
+        const auto eps_pri = sqrtN * tol + tol * std::max(xhat.norm(), z.norm());
+        const auto eps_dual = sqrtN * tol + tol * tau * u.norm();
+        ++iloop;
+
+        if (do_print_log) {
+            const auto dz = std::sqrt((z - z_old).squaredNorm() / static_cast<double>(N));
+            std::cout << "    1: primal ||x-z||_2        = " << std::setw(15) << rnorm << "  (eps "
+                      << eps_pri << ")\n";
+            std::cout << "    2: dual  ||tau dz||_2      = " << std::setw(15) << snorm << "  (eps "
+                      << eps_dual << ")\n";
+            std::cout << "    3: RMS ||u_k - u_{k-1}||   = " << std::setw(15) << dz << '\n';
+            res.noalias() = A * z;
+            res -= b;
+            const auto rn2 = res.dot(res);
+            std::cout << "    4: ||Au_{k}-f||_2          = " << std::setw(15) << std::sqrt(rn2) << std::setw(15)
+                      << std::sqrt(rn2 / (fnorm * fnorm)) << '\n';
+            std::cout << '\n';
+        }
+
+        if (rnorm <= eps_pri && snorm <= eps_dual) break;
+    }
+
+    if (verbosity > 1) {
+        if (iloop >= optcontrol.maxnum_iteration) {
+            std::cout << "WARNING: Convergence NOT achieved within " << optcontrol.maxnum_iteration
+                      << " ADMM iterations.\n";
+        } else {
+            std::cout << "  Convergence achieved in " << iloop << " iterations.\n";
+        }
+        std::cout << "    primal ||x-z||_2 = " << std::setw(15) << rnorm << " ,  dual ||tau dz||_2 = "
+                  << std::setw(15) << snorm << '\n';
+        double tmp = z.lpNorm<1>();
+        std::cout << "    ||u_{k}||_1 = " << std::setw(15) << tmp << '\n';
+        res.noalias() = A * z;
+        res -= b;
+        tmp = res.dot(res);
+        std::cout << "    ||Au_{k}-f||_2 = " << std::setw(15) << std::sqrt(tmp) << std::setw(15)
+                  << std::sqrt(tmp / (fnorm * fnorm)) << '\n';
+        std::cout << '\n';
+    }
+
+    x = z;
 }

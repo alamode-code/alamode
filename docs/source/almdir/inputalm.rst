@@ -638,20 +638,25 @@ This field is necessary when ``MODE = optimize``.
 
 .. _alm_l1_solver:
 
-* L1_SOLVER-tag = cd | fista
+* L1_SOLVER-tag = cd | fista | admm
 
  ===== =============================================================================================
   cd    Use the coordinate descent solver.
   fista Use the fast iterative shrinkage-thresholding algorithm.
+  admm  Use the alternating direction method of multipliers (experimental).
  ===== =============================================================================================
 
  :Default: cd
  :Type: String
- :Description: Selects the iterative solver used when ``LMODEL = enet | adaptive-lasso``.
-               The ``cd`` solver is the legacy coordinate descent method. The ``fista`` solver
-               avoids forming the dense :math:`N \times N` Gram matrix and can reduce memory usage
-               for large dense L1-regularized problems. Both solvers target the same elastic-net or
-               adaptive-LASSO objective.
+ :Description: Selects the iterative solver used when ``LMODEL = enet | adaptive-lasso``. All three
+               solvers target the same elastic-net or adaptive-LASSO objective and are
+               interchangeable. The ``cd`` solver is the coordinate descent method; it warm-starts
+               along the cross-validation alpha path and is the fastest choice for that path, so it
+               is the recommended default. The ``fista`` solver avoids forming the dense
+               :math:`N \times N` Gram matrix and can reduce memory usage for large dense
+               L1-regularized problems. The ``admm`` solver is provided mainly for research and
+               cross-checking; on warm-started alpha paths it is generally slower than ``cd`` and
+               offers no advantage for the typical problem sizes here.
 
 ````
 

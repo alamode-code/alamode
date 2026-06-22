@@ -100,7 +100,7 @@ def runtest_fista_cd(almbin, project_root, rtol=5.0e-3):
     overall_ok = True
     for ratio_tag, ratio in (("r10", "1.0"), ("r05", "0.5")):
         coefs = {}
-        for solver in ("cd", "fista"):
+        for solver in ("cd", "fista", "admm"):
             prefix = "si_enet_%s_%s" % (ratio_tag, solver)
             infile = prefix + ".in"
             gen_enet_input(infile, prefix, "DFSET_merged", ratio, solver)
@@ -109,24 +109,26 @@ def runtest_fista_cd(almbin, project_root, rtol=5.0e-3):
                 return 1
             coefs[solver] = parse_fcs(prefix + ".fcs")
 
-        va, vb = aligned_vectors(coefs["cd"], coefs["fista"])
-        denom = np.linalg.norm(va)
-        rel = np.linalg.norm(va - vb) / denom if denom > 0 else np.linalg.norm(va - vb)
-        nnz_cd = int(np.count_nonzero(np.abs(va) > 1.0e-12))
-        nnz_fi = int(np.count_nonzero(np.abs(vb) > 1.0e-12))
+        # FISTA and ADMM solve the same objective as CD, so all three must reach the same minimizer.
+        for other in ("fista", "admm"):
+            va, vb = aligned_vectors(coefs["cd"], coefs[other])
+            denom = np.linalg.norm(va)
+            rel = np.linalg.norm(va - vb) / denom if denom > 0 else np.linalg.norm(va - vb)
+            nnz_cd = int(np.count_nonzero(np.abs(va) > 1.0e-12))
+            nnz_other = int(np.count_nonzero(np.abs(vb) > 1.0e-12))
 
-        ok = rel < rtol and 0 < nnz_cd < len(va)
-        overall_ok &= ok
-        print(
-            "L1_RATIO=%s  CD vs FISTA: rel.L2 diff=%.3e  nnz(cd)=%d nnz(fista)=%d / %d  --> %s"
-            % (ratio, rel, nnz_cd, nnz_fi, len(va), "pass" if ok else "FAILED")
-        )
-        if not ok:
-            imax = int(np.argmax(np.abs(va - vb)))
+            ok = rel < rtol and 0 < nnz_cd < len(va)
+            overall_ok &= ok
             print(
-                "  Max abs diff = %.6e (cd=%.8e fista=%.8e)"
-                % (abs(va[imax] - vb[imax]), va[imax], vb[imax])
+                "L1_RATIO=%s  CD vs %-5s: rel.L2 diff=%.3e  nnz(cd)=%d nnz(%s)=%d / %d  --> %s"
+                % (ratio, other.upper(), rel, nnz_cd, other, nnz_other, len(va), "pass" if ok else "FAILED")
             )
+            if not ok:
+                imax = int(np.argmax(np.abs(va - vb)))
+                print(
+                    "  Max abs diff = %.6e (cd=%.8e %s=%.8e)"
+                    % (abs(va[imax] - vb[imax]), va[imax], other, vb[imax])
+                )
 
     return 0 if overall_ok else 1
 

@@ -41,7 +41,7 @@ public:
     int standardize;
     double displacement_normalization_factor;
     int debiase_after_l1opt;
-    int l1_solver; // 0: coordinate descent, 1: FISTA
+    int l1_solver; // 0: coordinate descent, 1: FISTA, 2: ADMM
 
     // Energy-difference loss term: weight w in  ||A_F θ − b_F||² + w² Σ_c W_c (Ã_E[c]·θ − Ẽ_ref[c])².
     // 0 disables the term (default; behavior identical to the force-only fit).
@@ -386,6 +386,16 @@ private:
                const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm,
                const double lipschitz_l2, const Eigen::VectorXd &penalty_scale,
                const int verbosity) const -> void;
+
+    // ADMM (scaled form, Boyd et al. 2011) for the same elastic-net / adaptive-LASSO objective.
+    // `llt` is the Cholesky factor of G = (1/M) A^T A + diag(lambda2 p^2 + tau), `q = (1/M) A^T b`,
+    // both built by the caller (G is constant across the alpha path for pure LASSO and is factored
+    // once). `tau` is the (alpha-independent) penalty parameter. The primal iterate is warm-started
+    // from x; the scaled dual is reset to zero on each call. z is returned in x.
+    auto admm(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
+              const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const Eigen::LLT<Eigen::MatrixXd> &llt,
+              const Eigen::VectorXd &q, const double tau, const Eigen::VectorXd &penalty_scale,
+              const double fnorm, const int verbosity) const -> void;
 
     static auto estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double;
 

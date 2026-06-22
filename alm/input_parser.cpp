@@ -1287,8 +1287,10 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
             optcontrol.l1_solver = 0;
         } else if (str_l1_solver == "fista") {
             optcontrol.l1_solver = 1;
+        } else if (str_l1_solver == "admm") {
+            optcontrol.l1_solver = 2;
         } else {
-            exit("parse_optimize_vars", "Unsupported L1_SOLVER. Available options are cd and fista.");
+            exit("parse_optimize_vars", "Unsupported L1_SOLVER. Available options are cd, fista, and admm.");
         }
     }
     if (!optimize_var_dict["STOP_CRITERION"].empty()) {
