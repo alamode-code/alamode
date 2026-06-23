@@ -156,17 +156,34 @@ You can specify the binary to build, for example, as
       % export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib64:$LD_LIBRARY_PATH
 
 
+.. _install_native:
+
+Install using native environment (recommended for performance-critical runs)
+----------------------------------------------------------------------------
+
+Use a native installation when performance matters more than convenience:
+large supercells, large sparse sensing matrices, numerically constrained sparse
+OLS fits (``SPARSE = 1`` with ``ICONST = 1, 2, 3, 4``), or repeated production
+runs on HPC systems. The conda build is convenient and reproducible, but native
+compilers and optimized sparse backends such as MKL/PARDISO or SuiteSparse can
+be substantially faster and more memory-efficient for these large-scale sparse
+problems.
+
+The example below uses Intel oneAPI compilers and the MKL/PARDISO backend
+(``-DUSE_MKL_BACKEND=yes``), which is the recommended high-performance
+configuration when available.
+
+
 .. _install_backends:
 
 Optional linear-algebra backends
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default, ALAMODE links against the LAPACK/BLAS libraries detected by CMake
-(the conda OpenBLAS is detected automatically). This is sufficient for small and
-medium calculations. For large sparse least-squares problems, especially
-``LMODEL = ols``, ``SPARSE = 1`` with numerical constraints
-``ICONST = 1, 2, 3, 4``, a native build with optimized sparse direct solvers can be
-much faster and more memory-scalable.
+By default, ALAMODE links against the LAPACK/BLAS libraries detected by CMake.
+This is sufficient for small and medium calculations. For large sparse
+least-squares problems, especially ``LMODEL = ols``, ``SPARSE = 1`` with
+numerical constraints ``ICONST = 1, 2, 3, 4``, a native build with optimized
+sparse direct solvers can be much faster and more memory-scalable.
 
 The recommended priority is:
 
@@ -174,78 +191,75 @@ The recommended priority is:
 2. **SuiteSparse / SPQR + CHOLMOD** when SuiteSparse is available.
 3. **Apple Accelerate** on macOS when MKL is unavailable.
 
-Intel MKL / PARDISO
-+++++++++++++++++++
+.. raw:: html
 
-``-DUSE_MKL_BACKEND=yes`` enables Intel MKL and uses **PARDISO**
-(``Eigen::PardisoLDLT``) for the sparse KKT system used by the numerically
-constrained sparse OLS path (``LMODEL = ols``, ``SPARSE = 1``,
-``ICONST = 1, 2, 3, 4``). This is the preferred backend for large constrained
-sparse fits. ALAMODE currently supports only the LP64 MKL interface.
+   <details>
+   <summary><strong>Intel MKL / PARDISO</strong></summary>
+   <p><code>-DUSE_MKL_BACKEND=yes</code> enables Intel MKL and uses
+   <strong>PARDISO</strong> (<code>Eigen::PardisoLDLT</code>) for the sparse
+   KKT system used by the numerically constrained sparse OLS path
+   (<code>LMODEL = ols</code>, <code>SPARSE = 1</code>,
+   <code>ICONST = 1, 2, 3, 4</code>). This is the preferred backend for large
+   constrained sparse fits. ALAMODE currently supports only the LP64 MKL
+   interface.</p>
+   <p>Example with Intel oneAPI compilers:</p>
+   <pre><code>% source /path/to/oneapi/setvars.sh
+   % mkdir _build-mkl; cd _build-mkl
+   % cmake -DCMAKE_BUILD_TYPE=Release \
+           -DUSE_MKL_BACKEND=yes -DMKL_INTERFACE=lp64 \
+           -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx \
+           -DCMAKE_CXX_FLAGS="-O2 -xHOST" ..
+   % make -j</code></pre>
+   <p>If CMake cannot find MKL automatically, make sure the oneAPI environment
+   has been loaded, or add MKL's CMake package location to
+   <code>CMAKE_PREFIX_PATH</code>. The MKL backend also routes Eigen dense
+   products through MKL (<code>EIGEN_USE_MKL_ALL</code>).
+   <code>-DUSE_EIGEN_BLAS=yes</code> is ignored when the MKL backend is
+   enabled.</p>
+   </details>
 
-Example with Intel oneAPI compilers::
+   <details>
+   <summary><strong>SuiteSparse / SPQR and CHOLMOD</strong></summary>
+   <p><code>-DUSE_SUITESPARSE_BACKEND=yes</code> enables SuiteSparse support.
+   This is an add-on, not an exclusive BLAS backend: it can be combined with the
+   default BLAS, MKL, or Accelerate. It makes two additional
+   <code>SPARSESOLVER</code> values available for the unconstrained or
+   algebraically constrained sparse OLS path: <code>SuiteSparseQR</code> and
+   <code>CHOLMOD</code>. It also makes SuiteSparseQR the preferred QR fallback
+   in the numerically constrained sparse KKT path after any MKL or Accelerate
+   LDLT backend.</p>
+   <p>The implementation calls the SuiteSparseQR C interface directly for SPQR,
+   rather than Eigen's <code>SPQR</code> wrapper, and uses Eigen's CHOLMOD
+   wrapper for CHOLMOD. Point CMake to the SuiteSparse installation prefix, i.e.
+   the directory that contains <code>lib/cmake/SPQR</code> and
+   <code>lib/cmake/CHOLMOD</code>.</p>
+   <p>Example:</p>
+   <pre><code>% mkdir _build-suitesparse; cd _build-suitesparse
+   % cmake -DCMAKE_BUILD_TYPE=Release \
+           -DUSE_SUITESPARSE_BACKEND=yes \
+           -DSUITESPARSE_ROOT=/path/to/suitesparse/prefix ..
+   % make -j</code></pre>
+   <p>When SuiteSparse is installed by a package manager in a standard prefix,
+   the <code>-DSUITESPARSE_ROOT</code> option may not be necessary. For large
+   constrained sparse fits, SuiteSparseQR is usually more robust than Eigen's
+   built-in serial <code>SparseLU</code>/<code>SparseQR</code> fallback, but
+   MKL/PARDISO remains the first choice when available.</p>
+   </details>
 
-  % source /path/to/oneapi/setvars.sh
-  % mkdir _build-mkl; cd _build-mkl
-  % cmake -DCMAKE_BUILD_TYPE=Release \
-          -DUSE_MKL_BACKEND=yes -DMKL_INTERFACE=lp64 \
-          -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx \
-          -DCMAKE_CXX_FLAGS="-O2 -xHOST" ..
-  % make -j
-
-If CMake cannot find MKL automatically, make sure the oneAPI environment has
-been loaded, or add MKL's CMake package location to ``CMAKE_PREFIX_PATH``.
-The MKL backend also routes Eigen dense products through MKL
-(``EIGEN_USE_MKL_ALL``). ``-DUSE_EIGEN_BLAS=yes`` is ignored when the MKL backend
-is enabled.
-
-SuiteSparse / SPQR and CHOLMOD
-++++++++++++++++++++++++++++++
-
-``-DUSE_SUITESPARSE_BACKEND=yes`` enables SuiteSparse support. This is an
-add-on, not an exclusive BLAS backend: it can be combined with the default BLAS,
-MKL, or Accelerate. It makes two additional ``SPARSESOLVER`` values available
-for the unconstrained or algebraically constrained sparse OLS path:
-``SuiteSparseQR`` and ``CHOLMOD``. It also makes SuiteSparseQR the preferred QR
-fallback in the numerically constrained sparse KKT path after any MKL or
-Accelerate LDLT backend.
-
-The implementation calls the SuiteSparseQR C interface directly for SPQR,
-rather than Eigen's ``SPQR`` wrapper, and uses Eigen's CHOLMOD wrapper for
-CHOLMOD. Point CMake to the SuiteSparse installation prefix, i.e. the directory
-that contains ``lib/cmake/SPQR`` and ``lib/cmake/CHOLMOD``.
-
-Example::
-
-  % mkdir _build-suitesparse; cd _build-suitesparse
-  % cmake -DCMAKE_BUILD_TYPE=Release \
-          -DUSE_SUITESPARSE_BACKEND=yes \
-          -DSUITESPARSE_ROOT=/path/to/suitesparse/prefix ..
-  % make -j
-
-When SuiteSparse is installed by a package manager in a standard prefix, the
-``-DSUITESPARSE_ROOT`` option may not be necessary. For large constrained sparse
-fits, SuiteSparseQR is usually more robust than Eigen's built-in serial
-``SparseLU``/``SparseQR`` fallback, but MKL/PARDISO remains the first choice
-when available.
-
-Apple Accelerate
-++++++++++++++++
-
-``-DUSE_ACCEL_BACKEND=yes`` uses Apple's Accelerate framework on macOS. It
-enables ``Eigen::AccelerateLDLT`` for the same numerically constrained sparse
-KKT path where MKL/PARDISO is used, and routes Eigen dense products through
-Accelerate. This is the recommended native backend on Apple systems where MKL
-is not available.
-
-Example::
-
-  % mkdir _build-accel; cd _build-accel
-  % cmake -DCMAKE_BUILD_TYPE=Release -DUSE_ACCEL_BACKEND=yes ..
-  % make -j
-
-This backend requires an Eigen version that provides ``Eigen/AccelerateSupport``
-(Eigen 3.4.90 or later).
+   <details>
+   <summary><strong>Apple Accelerate</strong></summary>
+   <p><code>-DUSE_ACCEL_BACKEND=yes</code> uses Apple's Accelerate framework on
+   macOS. It enables <code>Eigen::AccelerateLDLT</code> for the same
+   numerically constrained sparse KKT path where MKL/PARDISO is used, and routes
+   Eigen dense products through Accelerate. This is the recommended native
+   backend on Apple systems where MKL is not available.</p>
+   <p>Example:</p>
+   <pre><code>% mkdir _build-accel; cd _build-accel
+   % cmake -DCMAKE_BUILD_TYPE=Release -DUSE_ACCEL_BACKEND=yes ..
+   % make -j</code></pre>
+   <p>This backend requires an Eigen version that provides
+   <code>Eigen/AccelerateSupport</code> (Eigen 3.4.90 or later).</p>
+   </details>
 
 Generic BLAS for Eigen dense products
 +++++++++++++++++++++++++++++++++++++
@@ -265,24 +279,6 @@ When none of ``-DUSE_MKL_BACKEND``, ``-DUSE_ACCEL_BACKEND``, nor
 system falls back to Eigen's built-in sparse solvers (``SparseLU``, then
 ``SparseQR``, then ``BiCGSTAB``). This portable fallback is useful for testing
 but is not recommended for very large sparse constrained fits.
-
-
-.. _install_native:
-
-Install using native environment (recommended for performance-critical runs)
-----------------------------------------------------------------------------
-
-Use a native installation when performance matters more than convenience:
-large supercells, large sparse sensing matrices, numerically constrained sparse
-OLS fits (``SPARSE = 1`` with ``ICONST = 1, 2, 3, 4``), or repeated production
-runs on HPC systems. The conda build is convenient and reproducible, but native
-compilers and optimized sparse backends such as MKL/PARDISO or SuiteSparse can
-be substantially faster and more memory-efficient for these large-scale sparse
-problems.
-
-The example below uses Intel oneAPI compilers and the MKL/PARDISO backend
-(``-DUSE_MKL_BACKEND=yes``), which is the recommended high-performance
-configuration when available.
 
 
 Step 1. Install all required libraries

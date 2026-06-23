@@ -145,7 +145,7 @@ html_static_path = ["_static"]
 # Multi-version switcher: a small theme-agnostic dropdown that reads the
 # versions.json published at the site root by the docs deploy workflow.
 html_js_files = ["version-switcher.js"]
-html_css_files = ["version-switcher.css"]
+html_css_files = ["version-switcher.css", "custom.css"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
