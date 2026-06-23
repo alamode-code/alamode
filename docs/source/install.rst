@@ -155,6 +155,8 @@ You can specify the binary to build, for example, as
       % export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib64:$LD_LIBRARY_PATH
 
 
+.. _install_backends:
+
 Optional linear-algebra backends
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -164,9 +166,22 @@ alternative backend for the dense/sparse linear algebra:
 
 * ``-DUSE_MKL_BACKEND=yes`` : Use the Intel MKL (PARDISO) backend. Only the LP64
   interface is supported, so it is combined with ``-DMKL_INTERFACE=lp64`` (the default).
-* ``-DUSE_ACCEL_BACKEND=yes`` : Use the Apple Accelerate framework (macOS only).
+  This enables Intel MKL **PARDISO** (``Eigen::PardisoLDLT``) for factorizing the sparse
+  KKT system that arises in the constrained sparse least-squares fit
+  (``LMODEL = ols`` with ``SPARSE = 1`` and numerically imposed constraints
+  ``ICONST = 1, 2, 3``). PARDISO is a multi-threaded sparse direct solver and is the
+  fastest and most memory-scalable choice for such large constrained sparse fits; it is
+  recommended whenever Intel MKL is available. It does not affect the dense solvers or
+  the Eigen ``SPARSESOLVER`` options.
+* ``-DUSE_ACCEL_BACKEND=yes`` : Use the Apple Accelerate framework (macOS only). This uses
+  ``Eigen::AccelerateLDLT`` for the same sparse KKT factorization as the PARDISO backend
+  above, and is the recommended choice on Apple silicon where MKL is unavailable.
 * ``-DUSE_EIGEN_BLAS=yes`` : Route Eigen's dense products through the detected BLAS
   (``EIGEN_USE_BLAS``). The vendor can be chosen with, e.g., ``-DBLA_VENDOR=OpenBLAS``.
+
+When neither ``-DUSE_MKL_BACKEND`` nor ``-DUSE_ACCEL_BACKEND`` is given, the constrained
+sparse KKT system is factorized with Eigen's built-in ``SimplicialLDLT`` (serial), which is
+portable but slower for large problems.
 
 
 Install using native environment (optional for experts)

@@ -63,6 +63,7 @@ List of supported input variables
    :ref:`NSTART_CV NEND_CV <alm_nstart_cv>`, :ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`, :ref:`ROTAXIS <alm_rotaxis>`, :ref:`SKIP <alm_skip>`
    :ref:`SOLUTION_PATH <alm_solution_path>`, :ref:`SPARSE <alm_sparse>`
    :ref:`SPARSESOLVER <alm_sparsesolver>`, :ref:`STANDARDIZE <alm_standardize>`, :ref:`STOP_CRITERION <alm_stop_criterion>`
+   :ref:`USE_CHOLESKY <alm_use_cholesky>`
 
 
 Description of input variables
@@ -585,6 +586,12 @@ This field is necessary when ``MODE = optimize``.
  :Type: Integer
  :Description: When you want to calculate force constants of a large system and generate training datasets by displacing only a few atoms from equilibrium positions, the resulting sensing matrix becomes large but sparse. For such matrices, a sparse solver is expected to be more efficient than SVD or QRD in terms of both memory usage and computational time. When ``SPARSE = 1`` is set, the code uses a sparse solver implemented in Eigen3 library. You can change the solver type via ``SPARSESOLVER``. Effective when ``LMODEL = ols``.
 
+              **When to use:** prefer ``SPARSE = 1`` for large systems whose sensing matrix is genuinely sparse (only a handful of atoms displaced per configuration). For small or dense problems the default direct solvers (``SPARSE = 0``) are usually faster, and the sparse factorization can even use more memory because of fill-in. When the sensing matrix is dense but large, consider :ref:`USE_CHOLESKY <alm_use_cholesky>` instead.
+
+ .. note::
+
+     With constraints imposed numerically (``ICONST = 1, 2, 3``), the sparse path assembles and factorizes the KKT system. The factorization backend is chosen at build time: Intel MKL **PARDISO** (``-DUSE_MKL_BACKEND=yes``) or Apple **Accelerate** (``-DUSE_ACCEL_BACKEND=yes``), falling back to Eigen's ``SimplicialLDLT`` otherwise. PARDISO is a parallel sparse direct solver and is the fastest option for large constrained sparse fits; see :ref:`Optional linear-algebra backends <install_backends>` on the installation page.
+
 ````
 
 .. _alm_sparsesolver:
@@ -593,11 +600,41 @@ This field is necessary when ``MODE = optimize``.
 
  :Default: SimplicialLDLT
  :Type: String
- :Description: Currently, only the sparse solvers of Eigen3 library can be used. Available options are `SimplicialLDLT`, `SparseQR`, `ConjugateGradient`, `LeastSquaresConjugateGradient`, and `BiCGSTAB`. When an iterative algorithm (conjugate gradient) is selected, a stopping criterion can be specified by the ``CONV_TOL`` and ``MAXITER`` tags. Effective when ``LMODEL = ols`` and ``SPARSE = 1``.
+ :Description: Selects the Eigen3 sparse solver used for the unconstrained / algebraically constrained sparse fit. Available options are `SimplicialLDLT` (sparse Cholesky, direct), `SparseQR` (direct, most robust for ill-conditioned or rank-deficient matrices), and the iterative Krylov solvers `ConjugateGradient`, `LeastSquaresConjugateGradient`, and `BiCGSTAB`. When an iterative solver is selected, the stopping criterion is controlled by the ``CONV_TOL`` and ``MAXITER`` tags. As a rule of thumb, use `SimplicialLDLT` (the default) for well-conditioned problems, `SparseQR` when the direct factorization fails or the matrix is poorly conditioned, and the iterative solvers when even the sparse factorization is too large to store. Effective when ``LMODEL = ols`` and ``SPARSE = 1``. Note that these Eigen solvers are independent of the PARDISO/Accelerate KKT backend described under ``SPARSE``.
 
 
  .. seealso::
     Eigen documentation page: `Solving Sparse Linear Systems <https://eigen.tuxfamily.org/dox/group__TopicSparseSystems.html>`__
+
+````
+
+.. _alm_use_cholesky:
+
+* USE_CHOLESKY-tag = 0 | 1
+
+ ===== ==============================================================
+   0    Use a direct solver (SVD or QRD) to estimate force constants
+   1    Solve the normal equations by Cholesky decomposition
+ ===== ==============================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``USE_CHOLESKY = 1``, the ordinary least-squares fit is obtained by forming the
+              normal equations :math:`A^{\mathsf{T}} A\,\boldsymbol{\Phi} = A^{\mathsf{T}} \boldsymbol{b}`
+              and factorizing :math:`A^{\mathsf{T}} A` with a Cholesky decomposition (a dense ``LLT``,
+              or a sparse ``SimplicialLDLT`` when ``SPARSE = 1``). This is typically about twice as fast
+              and uses noticeably less memory than the default SVD/QRD direct solvers, which makes it
+              attractive for large, **well-conditioned** overdetermined fits (many more rows than
+              columns). The trade-off is accuracy: forming :math:`A^{\mathsf{T}} A` squares the
+              condition number of :math:`A`, so the solution degrades when the sensing matrix is
+              ill-conditioned. Keep the default ``USE_CHOLESKY = 0`` (SVD/QRD) when robustness matters
+              or the fit is close to rank-deficient. Effective when ``LMODEL = ols``.
+
+ .. important::
+
+     ``USE_CHOLESKY = 1`` cannot be combined with the numerically imposed constraints
+     ``ICONST = 1, 2, 3``. When constraints are required, impose them algebraically with
+     ``ICONST = 11`` instead; otherwise the code stops with an error.
 
 ````
 
@@ -640,11 +677,11 @@ This field is necessary when ``MODE = optimize``.
 
 * L1_SOLVER-tag = cd | fista | admm
 
- ===== =============================================================================================
-  cd    Use the coordinate descent solver.
-  fista Use the fast iterative shrinkage-thresholding algorithm.
-  admm  Use the alternating direction method of multipliers (experimental).
- ===== =============================================================================================
+ ====== =============================================================================================
+  cd     Use the coordinate descent solver.
+  fista  Use the fast iterative shrinkage-thresholding algorithm.
+  admm   Use the alternating direction method of multipliers (experimental).
+ ====== =============================================================================================
 
  :Default: cd
  :Type: String
