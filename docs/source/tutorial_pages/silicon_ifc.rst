@@ -77,7 +77,7 @@ The information on the :math:`q`-points are written out in :red:`si_anphon.in` a
     MODE   = phonons
     FCSFILE = si222_harmonic.xml
 
-    NKD = 1; KD = Si
+    KD = Si
   /
 
   *****************************************************************
@@ -243,7 +243,6 @@ The fitting error is
 .. code-block::
 
   RESIDUAL (%): 0.524303
-
 
 
 

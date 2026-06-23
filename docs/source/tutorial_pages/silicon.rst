@@ -150,7 +150,7 @@ Change the ``MODE = suggest`` to ``MODE = optimize`` as follows::
     &general
       PREFIX = si222
       MODE = optimize   # <-- here
-      NAT = 64; NKD = 1
+      NAT = 64
       KD = Si
     /
 
@@ -279,7 +279,7 @@ Edit the **&general**, **&interaction**, and **&cutoff** fields of :red:`si_alm2
     &general
       PREFIX = si222_cubic
       MODE = suggest
-      NAT = 64; NKD = 1
+      NAT = 64
       KD = Si
     /
 
@@ -355,7 +355,7 @@ Copy file :red:`si_phdos.in` to :red:`si_RTA.in` and edit the ``MODE`` and ``FCS
       MODE = RTA
       FCSFILE = si222_cubic.xml
 
-      NKD = 1; KD = Si
+      KD = Si
       MASS = 28.0855
     /
 
@@ -472,7 +472,7 @@ To calculate the :ref:`spectrum of thermal conductivity <kappa>`, modify the :re
       MODE = RTA
       FCSFILE = si222_cubic.xml
 
-      NKD = 1; KD = Si
+      KD = Si
       MASS = 28.0855
 
       EMIN = 0; EMAX = 550; DELTA_E = 1.0 # <-- frequency range
@@ -516,4 +516,3 @@ After the calculation finishes, you can find the file :red:`si222.kl_spec` which
 
 In the above figure, the computational result with :math:`20\times 20\times 20\ q` points is also shown by the dashed line. 
 From the figure, we can observe that low-energy phonons below 200 cm\ :math:`^{-1}` account for more than 80% of the total thermal conductivity at 300 K.
-

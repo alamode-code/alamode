@@ -50,8 +50,9 @@ List of supported input variables
    **&general**
    :ref:`HESSIAN <alm_hessian>`, :ref:`FC3_SHENGBTE <alm_fc3_shengbte>`, :ref:`FCSYM_BASIS <alm_fcsym_basis>`, :ref:`FC_ZERO_THR <alm_fc_zero_thr>`
    :ref:`KD <alm_kd>`, :ref:`MAGMOM <alm_magmom>`, :ref:`MODE <alm_mode>`, :ref:`NAT <alm_nat>`
-   :ref:`NKD <alm_nkd>`, :ref:`NMAXSAVE <alm_nmaxsave>`, :ref:`NONCOLLINEAR <alm_noncollinear>`, :ref:`PERIODIC <alm_periodic>`
-   :ref:`PREFIX <alm_prefix>`, :ref:`PRINTSYM <alm_printsym>`, :ref:`TOLERANCE <alm_tolerance>`
+   :ref:`NMAXSAVE <alm_nmaxsave>`, :ref:`NONCOLLINEAR <alm_noncollinear>`, :ref:`PERIODIC <alm_periodic>`
+   :ref:`PREFIX <alm_prefix>`, :ref:`PRIMCELL <alm_primcell>`, :ref:`PRINTSYM <alm_printsym>`, :ref:`STRUCTURE_FILE <alm_structure_file>`
+   :ref:`SUPERCELL <alm_supercell>`, :ref:`TOLERANCE <alm_tolerance>`
    **&interaction**
    :ref:`NBODY <alm_nbody>`, :ref:`NORDER <alm_norder>`
    **&optimize**
@@ -107,22 +108,59 @@ Description of input variables
 
 ````
 
-.. _alm_nkd:
-
-* **NKD**-tag : Number of atomic species
-
- :Default: None
- :Type: Integer
-
-````
-
 .. _alm_kd:
 
-* **KD**-tag = Name[1], ... , Name[``NKD``]
+* **KD**-tag : List of atomic species
 
  :Default: None
  :Type: Array of strings
- :Example: In the case of GaAs with ``NKD = 2``, it should be ``KD = Ga As``.
+ :Example: In the case of GaAs, it should be ``KD = Ga As``.
+
+````
+
+.. _alm_structure_file:
+
+* **STRUCTURE_FILE**-tag : File containing the input structure
+
+ :Default: None
+ :Type: String
+ :Description: When this tag is given, *alm* reads the lattice vectors, atomic species, and atomic coordinates from the specified file in the VASP POSCAR format. In this case, the ``&cell`` and ``&position`` fields are ignored, and ``NAT`` and ``KD`` are inferred from the structure file.
+
+    The POSCAR file may use direct or Cartesian coordinates. A ``Selective dynamics`` line is accepted, but the selective-dynamics flags themselves are ignored.
+
+````
+
+.. _alm_supercell:
+
+* **SUPERCELL**-tag : Transformation matrix from the input cell to the supercell
+
+ :Default: 1
+ :Type: Integer matrix
+ :Description: This tag specifies the target supercell as
+               :math:`(\boldsymbol{a}_{s}, \boldsymbol{b}_{s}, \boldsymbol{c}_{s})^{T}
+               = M (\boldsymbol{a}_{\mathrm{in}}, \boldsymbol{b}_{\mathrm{in}}, \boldsymbol{c}_{\mathrm{in}})^{T}`.
+               If the input structure is already the supercell used for the force calculations, keep the default value.
+
+               The matrix can be written as one, three, or nine entries. One entry ``n`` means ``n n n``; three entries ``n1 n2 n3`` mean a diagonal matrix; nine entries give the full matrix in row-major order. The determinant must be a nonzero integer.
+
+ :Example: ``SUPERCELL = 2 2 2`` creates a 2x2x2 supercell from the input cell. ``SUPERCELL = 2 0 0 0 2 0 0 0 1`` creates a 2x2x1 supercell.
+
+````
+
+.. _alm_primcell:
+
+* **PRIMCELL**-tag : Transformation matrix from the input cell to the primitive cell
+
+ :Default: 1
+ :Type: Matrix or ``Auto``
+ :Description: This tag specifies the primitive cell as
+               :math:`(\boldsymbol{a}_{p}, \boldsymbol{b}_{p}, \boldsymbol{c}_{p})^{T}
+               = M (\boldsymbol{a}_{\mathrm{in}}, \boldsymbol{b}_{\mathrm{in}}, \boldsymbol{c}_{\mathrm{in}})^{T}`.
+               The matrix can be written as one, three, or nine entries, using the same convention as ``SUPERCELL``. Fractional entries such as ``1/2`` are accepted. The determinant of the inverse matrix must be a nonzero integer.
+
+               ``PRIMCELL = Auto`` uses spglib to detect the primitive cell from the input structure. This is useful when the input structure is a conventional cell or a supercell and the primitive-cell transformation is not obvious.
+
+ :Example: ``PRIMCELL = 1/2 0 0 0 1/2 0 0 0 1/2`` defines a primitive cell whose lattice vectors are one half of the corresponding input-cell lattice vectors.
 
 ````
 
@@ -330,7 +368,7 @@ Description of input variables
 
 In this entry field, one needs to specify cutoff radii of interaction for each order in units of bohr. 
 In the current implementation, cutoff radii should be defined for every possible pair of atomic elements. 
-For example, the cutoff entry for a harmonic calculation (``NORDER = 1``) of Si (``NKD = 1``) should be like
+For example, the cutoff entry for a harmonic calculation (``NORDER = 1``) of Si should be like
 ::
 
  &cutoff
@@ -360,7 +398,7 @@ which means that all possible harmonic terms between Si-Si atoms will be include
 
   Setting 'None' for anharmonic terms can greatly increase the number of parameters and thereby increase the computational cost.
 
-When there are more than two atomic elements, please specify the cutoff radii between every possible pair of atomic elements. In the case of MgO (``NKD = 2``), the cutoff entry should be like
+When there are more than two atomic elements, please specify the cutoff radii between every possible pair of atomic elements. In the case of MgO, the cutoff entry should be like
 ::
  
  &cutoff
@@ -415,7 +453,7 @@ Each line should be
 
   ikd xf[1] xf[2] xf[3]
 
-where `ikd` is an integer specifying the atomic element (`ikd` = 1, ..., ``NKD``) and `xf[i]` is the
+where `ikd` is an integer specifying the atomic element in the order of the ``KD`` tag and `xf[i]` is the
 fractional coordinate of an atom. There should be ``NAT`` such lines in the &position entry field.
 
 
