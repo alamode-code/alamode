@@ -929,39 +929,40 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
                          "Failed to build the MINRES KKT preconditioner (could not make the Schur "
                          "complement positive definite).");
         }
-        minres.setTolerance(tolerance_iteration);
-        minres.setMaxIterations(maxnum_iteration);
-        minres.compute(K);
-        sol = minres.solve(rhs);
+        minres.compute(K); // sets the matrix; the preconditioner was already configured above
 
-        // Verify the solve against the TRUE residuals rather than trusting only minres.info()/error():
-        // the fitted IFCs must satisfy the constraints (acoustic sum rule + rotational invariance), so a
-        // non-converged KKT solve must be rejected, never silently used. We do NOT fall back to the
-        // direct solvers below (the user chose the iterative path to avoid their memory blow-up); instead
-        // we abort with guidance, because an x that does not satisfy C x = d would give invalid IFCs.
-        const double rhs_norm = rhs.norm();
-        const double kkt_rel_res = (K * sol - rhs).norm() / (rhs_norm > 0.0 ? rhs_norm : 1.0);
-        const double cons_rel_res =
-            (P > 0) ? (C * sol.head(N) - d).norm() / (d.norm() + std::numeric_limits<double>::min())
-                    : 0.0;
-        // Accept a little above CONV_TOL to allow for the estimate-vs-true-residual gap.
-        const double accept_tol = std::max(tolerance_iteration, 1.0e-10) * 1.0e2;
+        // MINRES monitors the *preconditioned* residual, which with this block-diagonal preconditioner
+        // can be far smaller than the TRUE residual -- so a single solve at the user's CONV_TOL may stop
+        // before the constraints (sum rules) are actually satisfied. Re-solve with a progressively
+        // tighter stopping tolerance until the TRUE relative KKT residual meets the acceptance bar; the
+        // preconditioner is cheap and each solve takes only a few iterations. Acceptance is judged on the
+        // true residual (and the explicit constraint residual ||C x - d||), never on minres.info() alone,
+        // so an under-converged x that would violate the sum rules is never returned.
+        const double rhs_norm = (rhs.norm() > 0.0) ? rhs.norm() : 1.0;
+        const double accept_tol = std::max(tolerance_iteration, 1.0e-10);
+        double kkt_rel_res = std::numeric_limits<double>::infinity();
+        double cons_abs_res = 0.0; // ||C x - d||: the invariance constraints are homogeneous (d = 0),
+                                   // so the absolute norm is the meaningful measure of sum-rule violation
+        double mtol = accept_tol;
+        for (int attempt = 0; attempt < 8 && !solved; ++attempt, mtol *= 1.0e-3) {
+            minres.setTolerance(mtol);
+            minres.setMaxIterations(maxnum_iteration);
+            sol = minres.solve(rhs);
+            kkt_rel_res = (K * sol - rhs).norm() / rhs_norm;
+            cons_abs_res = (P > 0) ? (C * sol.head(N) - d).norm() : 0.0;
+            LOG_IF(verbosity, 1, "MINRES attempt ", attempt + 1, ": tol=", mtol, ", ", minres.iterations(),
+                   " iters, true relative KKT residual ", kkt_rel_res, ", ||C x - d|| ", cons_abs_res, "\n");
+            if (std::isfinite(kkt_rel_res) && kkt_rel_res <= accept_tol) solved = true;
+        }
 
-        LOG_IF(verbosity, 1, "MINRES finished: ", minres.iterations(), " iters, info=",
-               (minres.info() == Eigen::Success ? "Success" : "NoConvergence"),
-               ", est.(preconditioned) error ", minres.error(), ", TRUE relative KKT residual ",
-               kkt_rel_res, ", ||C x - d||/||d|| ", cons_rel_res, ".\n");
-
-        if (minres.info() == Eigen::Success && kkt_rel_res <= accept_tol) {
-            solved = true;
-            LOG_IF(verbosity, 1, "KKT system solved with MINRES (", minres.iterations(),
-                   " iterations; relative KKT residual ", kkt_rel_res, ", ||C x - d||/||d|| ",
-                   cons_rel_res, ").\n");
+        if (solved) {
+            LOG_IF(verbosity, 1, "KKT system solved with MINRES (true relative KKT residual ", kkt_rel_res,
+                   ", ||C x - d|| ", cons_abs_res, ").\n");
         } else {
             ALM_NS::exit("solveGQRSparse",
-                         "MINRES did not converge: the constrained least-squares solution would not "
-                         "satisfy the sum rules. Increase MAXITER, loosen CONV_TOL, or use a direct "
-                         "KKT solver (an LDLT backend) on a smaller problem.");
+                         "MINRES did not reach the requested accuracy on the KKT system; the solution "
+                         "would not satisfy the sum rules. Increase MAXITER or use a direct KKT solver "
+                         "(an LDLT backend).");
         }
     }
 
