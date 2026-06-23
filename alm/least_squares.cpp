@@ -245,8 +245,15 @@ auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm
            C_sparse_eigen.nonZeros(),
            ".\n");
 
-    Eigen::VectorXd dvec(nrows), dvec_red(nrows);
-    const auto info = get_independent_rows_lapack_sparse(C_sparse_eigen, dvec, verbosity, C_red_eigen, dvec_red, r);
+    Eigen::VectorXd dvec = Eigen::VectorXd::Zero(nrows);
+    Eigen::VectorXd dvec_red(nrows);
+    const auto info = get_independent_rows_lapack_sparse(C_sparse_eigen,
+                                                         dvec,
+                                                         verbosity,
+                                                         tolerance,
+                                                         C_red_eigen,
+                                                         dvec_red,
+                                                         r);
 
     // update the sparse matrix C_sparse with the reduced rows
     C_sparse.clear();
@@ -265,8 +272,8 @@ auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm
 }
 
 auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_sparse, const Eigen::VectorXd &dvec,
-                                        const int verbosity, Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red,
-                                        int &r) -> int
+                                        const int verbosity, const double tolerance,
+                                        Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red, int &r) -> int
 {
     const int P = C_sparse.rows();
     const int N = C_sparse.cols();
@@ -301,7 +308,7 @@ auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_spa
 
     // 3) Run QR with column pivoting on A_qr to determine numerical row rank
     std::vector<int> independent_rows;
-    auto info_qr = find_independent_rows_dense(P_i, N_i, A_qr.data(), -1.0, r, independent_rows, verbosity);
+    auto info_qr = find_independent_rows_dense(P_i, N_i, A_qr.data(), tolerance, r, independent_rows, verbosity);
     if (info_qr != 0) {
         LOG_ERR_IF(verbosity, 0, "find_independent_rows_dense failed, INFO=", info_qr, ".\n");
         return info_qr;

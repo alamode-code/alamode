@@ -321,6 +321,9 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
 {
     // Create constraint matrices arising from the crystal symmetry.
     // Necessary for hexagonal systems.
+    // The QR path intentionally preserves the current auto rank tolerance. `tolerance` is retained
+    // for API compatibility with callers and the non-integer symmetry helper.
+    (void)tolerance;
 
     int i;
     unsigned int isym;
@@ -485,7 +488,7 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
     } else if (algo_in == ReductionAlgo::qrd) {
         // verbosity 0: no verbosity in scope here, and the QR diagnostics are debug noise.
         int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 0, tolerance, rank);
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 0, rank_tolerance_auto, rank);
     }
 }
 
@@ -672,7 +675,7 @@ auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique
     } else if (algo_in == ReductionAlgo::qrd) {
         // verbosity 0: no verbosity in scope here, and the QR diagnostics are debug noise.
         int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 0, tolerance, rank);
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 0, rank_tolerance_auto, rank);
     }
 }
 

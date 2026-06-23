@@ -183,19 +183,25 @@ auto find_independent_rows_dense(int M, int N, double *A_data, double tol, int &
                                  const int verbosity = 0) -> int;
 
 
+// Sentinel for find_independent_rows_dense(): use the existing LAPACK-style auto tolerance
+// max(M, N) * |R(0,0)| * eps. This preserves the current QR rank policy.
+constexpr double rank_tolerance_auto = -1.0;
+
+
 /// Extract the independent rows of a (P×N) sparse matrix C_sparse,
 /// using LAPACK QR-with-pivoting on Cᵀ, just like your original code.
 ///
 /// @param C_sparse  Input (P×N), row-major sparse
 /// @param dvec      Input length-P
 /// @param verbosity >1 prints debug
+/// @param tolerance Rank tolerance. Use rank_tolerance_auto to preserve the auto policy.
 /// @param C_red     Output (r×N) row-major sparse of independent rows
 /// @param d_red     Output length-r of corresponding dvec entries
 /// @param r         Output numerical row-rank
 /// @returns 0 on success, non-zero LAPACK INFO on failure
 auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_sparse, const Eigen::VectorXd &dvec,
-                                        const int verbosity, Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red,
-                                        int &r) -> int;
+                                        const int verbosity, const double tolerance,
+                                        Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red, int &r) -> int;
 
 
 auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm &C_sparse, const int verbosity,

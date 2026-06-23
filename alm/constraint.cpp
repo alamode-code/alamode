@@ -425,7 +425,7 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
             rref_sparse(nparam, const_self[order], tolerance_constraint);
         } else if (algo == ReductionAlgo::qrd) {
             int rank;
-            get_independent_rows_lapack_sparse(nparam, const_self[order], verbosity, eps12, rank);
+            get_independent_rows_lapack_sparse(nparam, const_self[order], verbosity, rank_tolerance_auto, rank);
         } else if (algo == ReductionAlgo::coord_factorization) {
             // Stable, coordinate-preserving echelon form (Policy A). Produces the same
             // structure as rref_sparse so get_mapping_constraint below is reused as-is.
@@ -654,7 +654,13 @@ auto Constraint::build_constraint_matrix_sparse(const int maxorder, const std::v
     LOG_IF(verbosity, 1, "Constraint matrix is build in sparse format.\n");
 
     int rank;
-    get_independent_rows_lapack_sparse(const_mat_tmp, const_rhs_tmp2, verbosity, const_mat_sparse, const_rhs_vec, rank);
+    get_independent_rows_lapack_sparse(const_mat_tmp,
+                                       const_rhs_tmp2,
+                                       verbosity,
+                                       rank_tolerance_auto,
+                                       const_mat_sparse,
+                                       const_rhs_vec,
+                                       rank);
 
     LOG_IF(verbosity, 1, "Reduction of constraint matrix is completed.\n");
 }
@@ -1412,7 +1418,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
         // verbosity 0: this per-subset reduction has no verbosity in scope and its QR diagnostics are
         // debug noise; the main reduction reporting happens in update_constraint_matrix.
         int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 0, eps12, rank);
+        auto info = get_independent_rows_lapack_sparse(nparams, const_out, 0, rank_tolerance_auto, rank);
     }
 }
 
@@ -1867,12 +1873,12 @@ auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
         } else if (algo_in == ReductionAlgo::qrd) {
             int rank;
             auto info = get_independent_rows_lapack_sparse(nparams[order], const_rotation_self[order], verbosity,
-                                                           eps12, rank);
+                                                           rank_tolerance_auto, rank);
             if (order > 0) {
                 auto info2 = get_independent_rows_lapack_sparse(nparams[order - 1] + nparams[order],
                                                                 const_rotation_cross[order],
                                                                 verbosity,
-                                                                eps12,
+                                                                rank_tolerance_auto,
                                                                 rank);
             }
         } else if (algo_in == ReductionAlgo::coord_factorization) {
@@ -2626,7 +2632,7 @@ auto Constraint::generate_huang_constraint(const Cell &supercell, const std::uni
         rref_sparse(nparams, const_huang[0], eps8);
     } else if (algo_in == ReductionAlgo::qrd) {
         int rank;
-        auto info = get_independent_rows_lapack_sparse(nparams, const_huang[0], verbosity, eps12, rank);
+        auto info = get_independent_rows_lapack_sparse(nparams, const_huang[0], verbosity, rank_tolerance_auto, rank);
     }
 }
 
