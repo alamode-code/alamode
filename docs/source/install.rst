@@ -176,12 +176,33 @@ alternative backend for the dense/sparse linear algebra:
 * ``-DUSE_ACCEL_BACKEND=yes`` : Use the Apple Accelerate framework (macOS only). This uses
   ``Eigen::AccelerateLDLT`` for the same sparse KKT factorization as the PARDISO backend
   above, and is the recommended choice on Apple silicon where MKL is unavailable.
+* ``-DUSE_SUITESPARSE_BACKEND=yes`` : Enable the `SuiteSparse <https://people.engr.tamu.edu/davis/suitesparse.html>`_
+  sparse solvers. Unlike the MKL/Accelerate options above this is *not* an exclusive BLAS backend;
+  it only adds two extra sparse-solver choices and therefore composes with whichever BLAS backend is
+  selected. It makes **SuiteSparseQR** (a multithreaded, rank-revealing multifrontal sparse QR) and
+  **CHOLMOD** (supernodal sparse Cholesky) available as ``SPARSESOLVER`` options for the
+  unconstrained / algebraically constrained sparse fit, and, for the numerically constrained
+  (``ICONST = 1, 2, 3``) KKT path, makes the multithreaded SuiteSparseQR the **preferred** direct
+  solver (tried before Eigen's serial ``SparseLU``, after any ``LDLT`` backend). Point CMake at the
+  installation prefix (the directory that contains ``lib/cmake/SPQR``) with
+  ``-DSUITESPARSE_ROOT=<prefix>``. See the :ref:`SPARSESOLVER <alm_sparsesolver>` tag for when to
+  prefer each solver.
+
+  .. note::
+
+     QR fill-in on the symmetric-indefinite KKT matrix is heavy only when the constraint matrix has
+     dense, (near-)rank-deficient rows; with the rank-revealing reduction of the constraint matrix
+     (full row rank, well scaled) the KKT stays sparse and the multithreaded SuiteSparseQR is fast and
+     scalable. A symmetric-indefinite ``LDLT`` backend (``-DUSE_MKL_BACKEND`` / ``-DUSE_ACCEL_BACKEND``)
+     remains the most efficient option for very large constrained fits when available;
+     ``-DUSE_ACCEL_BACKEND`` additionally requires Eigen >= 3.4.90 (the version that introduced
+     ``Eigen/AccelerateSupport``).
 * ``-DUSE_EIGEN_BLAS=yes`` : Route Eigen's dense products through the detected BLAS
   (``EIGEN_USE_BLAS``). The vendor can be chosen with, e.g., ``-DBLA_VENDOR=OpenBLAS``.
 
-When neither ``-DUSE_MKL_BACKEND`` nor ``-DUSE_ACCEL_BACKEND`` is given, the constrained
-sparse KKT system is factorized with Eigen's built-in ``SimplicialLDLT`` (serial), which is
-portable but slower for large problems.
+When none of ``-DUSE_MKL_BACKEND``, ``-DUSE_ACCEL_BACKEND``, nor ``-DUSE_SUITESPARSE_BACKEND`` is
+given, the constrained sparse KKT system is factorized with Eigen's built-in ``SparseLU`` (serial),
+which is portable but slower for large problems.
 
 
 Install using native environment (optional for experts)

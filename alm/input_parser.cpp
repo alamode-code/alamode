@@ -1208,10 +1208,20 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         const auto str_lower = boost::algorithm::to_lower_copy(str_sparsesolver);
 
         if (str_lower != "simplicialldlt" && str_lower != "sparseqr" && str_lower != "conjugategradient" &&
-            str_lower != "leastsquaresconjugategradient" && str_lower != "bicgstab")
+            str_lower != "leastsquaresconjugategradient" && str_lower != "bicgstab" &&
+            str_lower != "suitesparseqr" && str_lower != "cholmod" && str_lower != "minres")
         {
             exit("parse_optimize_vars", "Unsupported SPARSESOLVER :", str_sparsesolver.c_str());
         }
+#ifndef USE_SUITESPARSE_BACKEND
+        // SuiteSparseQR / CHOLMOD are only available when ALM is built with the SuiteSparse backend.
+        // Reject them up front (rather than failing mid-fit) so the error is clear and early.
+        if (str_lower == "suitesparseqr" || str_lower == "cholmod") {
+            exit("parse_optimize_vars",
+                 "SPARSESOLVER = SuiteSparseQR / CHOLMOD requires building ALM with "
+                 "-DUSE_SUITESPARSE_BACKEND=yes.");
+        }
+#endif
         optcontrol.sparsesolver = str_sparsesolver;
     }
 

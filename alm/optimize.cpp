@@ -34,6 +34,10 @@
 #include <Eigen/SparseCholesky>
 #include <Eigen/SparseCore>
 #include <Eigen/SparseQR>
+#ifdef USE_SUITESPARSE_BACKEND
+// CHOLMOD supernodal Cholesky for the PSD normal matrix solved in the USE_CHOLESKY sparse path.
+#include <Eigen/CholmodSupport>
+#endif
 #include <omp.h>
 #include "logger.h"
 
@@ -375,8 +379,26 @@ auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_
                 std::cout << "  Now, start fitting ...\n";
             }
 
+            // amat_sparse already holds the normal matrix A^T A (symmetric positive (semi)definite);
+            // bvec is A^T b. Solve the normal equations with a sparse Cholesky factorization.
+            Eigen::VectorXd x;
+#ifdef USE_SUITESPARSE_BACKEND
+            // CHOLMOD supernodal Cholesky is the fast path when A^T A is positive definite. If it
+            // fails (e.g. rank-deficient A^T A), fall back to Eigen's LDLT which tolerates semidefinite.
+            Eigen::CholmodSupernodalLLT<SpMat, Eigen::Lower> chol(matrix_out->amat_sparse);
+            if (chol.info() == Eigen::Success) {
+                x = chol.solve(sp_bvec);
+            }
+            if (chol.info() != Eigen::Success) {
+                LOG_IF(verbosity, 1,
+                       "  CHOLMOD supernodal LLT failed on A^T A; falling back to Eigen SimplicialLDLT.\n");
+                const Eigen::SimplicialLDLT<SpMat> ldlt(matrix_out->amat_sparse);
+                x = ldlt.solve(sp_bvec);
+            }
+#else
             const Eigen::SimplicialLDLT<SpMat> ldlt(matrix_out->amat_sparse);
-            Eigen::VectorXd x = ldlt.solve(sp_bvec);
+            x = ldlt.solve(sp_bvec);
+#endif
 
             const auto nparams = x.size();
             std::vector<double> param_irred(nparams);
@@ -433,7 +455,10 @@ auto Optimize::least_squares(const int maxorder, const size_t N, const size_t N_
                                constraint->get_const_rhs_vec(),
                                x,
                                lambda,
-                               verbosity);
+                               verbosity,
+                               optcontrol.sparsesolver,
+                               optcontrol.tolerance_iteration,
+                               optcontrol.maxnum_iteration);
 
                 auto res = sp_bvec - matrix_out->amat_sparse * x;
                 const auto res2norm = res.squaredNorm();

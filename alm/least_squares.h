@@ -161,7 +161,9 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
  */
 auto solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd &b,
                     const Eigen::SparseMatrix<double> &C, const Eigen::VectorXd &d, Eigen::VectorXd &x,
-                    Eigen::VectorXd &lambda, const int verbosity = 0) -> void;
+                    Eigen::VectorXd &lambda, const int verbosity = 0,
+                    const std::string &solver_type = "", const double tolerance_iteration = 1.0e-8,
+                    const int maxnum_iteration = 10000) -> void;
 
 /**
  * Given a dense column-major matrix A (size M×N) stored in

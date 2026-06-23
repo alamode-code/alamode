@@ -1,7 +1,9 @@
 // least_squares.cpp
 
 #include "least_squares.h"
+#include <Eigen/Dense>  // dense LDLT for the Schur-complement block of the KKT preconditioner
 #include <Eigen/Sparse>
+#include <unsupported/Eigen/IterativeSolvers> // Eigen::MINRES for the iterative KKT solver
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <cmath> // for std::pow, std::sqrt
@@ -9,22 +11,103 @@
 #include <limits>
 #include <numeric>
 #include <vector>
+#include "error.h"
 #include "logger.h"
 #include "svd.h"
 #ifdef USE_MKL_BACKEND
 #include <Eigen/PardisoSupport>
-using KKT_Solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<double>>;
 #elif defined(USE_ACCEL_BACKEND)
-#include <Eigen/AccelerateSupport>
-#include <Eigen/SparseCholesky>
-using KKT_Solver = Eigen::AccelerateLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric>;
-#else
-#include <Eigen/SparseLU>
-using KKT_Solver = Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric>;
+// The Accelerate KKT solve lives in accelerate_solver.cpp; its <Eigen/AccelerateSupport> include
+// pulls <Accelerate/Accelerate.h>, whose Fortran BLAS/LAPACK prototypes would clash with the
+// hand-rolled ones in blas_wrapper.h / lapack_wrapper.h that this TU includes below. Keeping the
+// Accelerate header out of this TU is exactly why that solve is isolated.
+#include "accelerate_solver.h"
+#endif
+
+#ifdef USE_SUITESPARSE_BACKEND
+// SuiteSparse sparse solvers, orthogonal to the MKL/Accelerate KKT backend above and reachable as
+// SPARSESOLVER options:
+//   - CHOLMOD supernodal Cholesky on the PSD normal matrix A^T A, via Eigen's CholmodSupport wrapper.
+//   - SuiteSparseQR (rank-revealing multifrontal QR) on the rectangular A, via SuiteSparse's own C
+//     interface. We deliberately avoid Eigen 3.4's Eigen::SPQR wrapper: with SuiteSparse >= 6 it
+//     instantiates SuiteSparseQR<Scalar>(...) passing an Eigen::Index ('long') where the templated
+//     index type resolves to int64_t ('long long' on macOS arm64), and the two deduce to conflicting
+//     types -- a hard compile error. SuiteSparseQR_C_backslash_default() sidesteps it entirely.
+// Both headers live under <prefix>/include/suitesparse, on the include path via the linked targets.
+#include <Eigen/CholmodSupport>
+#include <SuiteSparseQR_C.h>
+#include <cstring>
 #endif
 
 // lapack_wrapper.h is included unconditionally; its BLAS prototypes self-guard for EIGEN_USE_BLAS.
 #include "lapack_wrapper.h"
+
+#ifdef USE_SUITESPARSE_BACKEND
+// Solve min_x || A x - b ||_2 (least squares for rectangular A; exact solve for square full-rank A)
+// with SuiteSparseQR's C interface. The backslash convenience routine is 64-bit-index only, so the
+// matrix is shipped as a CHOLMOD_LONG cholmod_sparse: Eigen stores 32-bit CSC indices, widened here.
+// Returns 0 on success, 1 on failure. See the include block above for why Eigen::SPQR is bypassed.
+static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd &b,
+                                     Eigen::VectorXd &x_out) -> int
+{
+    Eigen::SparseMatrix<double> Ac = A; // column-major copy we can compress and index into
+    Ac.makeCompressed();
+
+    const SuiteSparse_long m = Ac.rows();
+    const SuiteSparse_long n = Ac.cols();
+    const SuiteSparse_long nnz = Ac.nonZeros();
+
+    // Widen Eigen's 32-bit CSC index arrays to the 64-bit indices the long CHOLMOD interface expects.
+    std::vector<SuiteSparse_long> outer(n + 1), inner(nnz);
+    for (SuiteSparse_long j = 0; j <= n; ++j) outer[j] = Ac.outerIndexPtr()[j];
+    for (SuiteSparse_long k = 0; k < nnz; ++k) inner[k] = Ac.innerIndexPtr()[k];
+
+    cholmod_common cc;
+    cholmod_l_start(&cc);
+
+    cholmod_sparse Acs;
+    std::memset(&Acs, 0, sizeof(Acs));
+    Acs.nrow = m;
+    Acs.ncol = n;
+    Acs.nzmax = nnz;
+    Acs.p = outer.data();
+    Acs.i = inner.data();
+    Acs.x = const_cast<double *>(Ac.valuePtr());
+    Acs.stype = 0; // unsymmetric: the full rectangular matrix is stored
+    Acs.itype = CHOLMOD_LONG;
+    Acs.xtype = CHOLMOD_REAL;
+    Acs.dtype = CHOLMOD_DOUBLE;
+    Acs.sorted = 1;
+    Acs.packed = 1;
+
+    cholmod_dense Bcd;
+    std::memset(&Bcd, 0, sizeof(Bcd));
+    Bcd.nrow = m;
+    Bcd.ncol = 1;
+    Bcd.nzmax = m;
+    Bcd.d = m;
+    Bcd.x = const_cast<double *>(b.data());
+    Bcd.xtype = CHOLMOD_REAL;
+    Bcd.dtype = CHOLMOD_DOUBLE;
+
+    cholmod_dense *X = SuiteSparseQR_C_backslash_default(&Acs, &Bcd, &cc);
+
+    int status = 1;
+    if (X && cc.status == CHOLMOD_OK) {
+        x_out.resize(n);
+        const auto *xd = static_cast<const double *>(X->x);
+        for (SuiteSparse_long i = 0; i < n; ++i) x_out(i) = xd[i];
+        status = 0;
+    } else {
+        // Leave a correctly sized (zero) solution on failure so the caller's residual computation
+        // b - A x stays dimensionally valid; the nonzero return status flags the failure.
+        x_out = Eigen::VectorXd::Zero(n);
+    }
+    if (X) cholmod_l_free_dense(&X, &cc);
+    cholmod_l_finish(&cc);
+    return status;
+}
+#endif
 
 
 auto find_independent_rows_dense(int M, int N, double *A_data, double tol, int &rank, std::vector<int> &pivots,
@@ -619,14 +702,146 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
             std::cerr << "  Fitting by " + solver_type + " failed with the error code " << bicg.info() << ".\n";
             return 1;
         }
+    } else if (solver_type_lower == "suitesparseqr") {
+#ifdef USE_SUITESPARSE_BACKEND
+        // SuiteSparseQR factorizes the rectangular A directly (no normal equations), so it is the
+        // most robust choice for ill-conditioned / rank-deficient sensing matrices, and it is
+        // multithreaded -- typically much faster than Eigen's built-in SparseQR on large problems.
+        if (solve_least_squares_spqr(sp_mat, sp_bvec, x_out) != 0) {
+            std::cerr << "  Fitting by " + solver_type + " failed.\n";
+            return 1;
+        }
+#else
+        std::cerr << "  SPARSESOLVER = " + solver_type +
+                         " requires building ALM with -DUSE_SUITESPARSE_BACKEND=yes.\n";
+        return 1;
+#endif
+
+    } else if (solver_type_lower == "cholmod") {
+#ifdef USE_SUITESPARSE_BACKEND
+        // CHOLMOD supernodal Cholesky on the normal matrix A^T A (symmetric positive (semi)definite).
+        // Fast for well-conditioned problems; for a rank-deficient A^T A the factorization fails and
+        // info() reports it, in which case SuiteSparseQR is the recommended fallback. Check the
+        // factorization BEFORE solving -- solving on a failed factor is undefined.
+        SpMat AtA = sp_mat.transpose() * sp_mat;
+        Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
+        Eigen::CholmodSupernodalLLT<SpMat, Eigen::Lower> chol(AtA);
+        if (chol.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed (factorization) with the error code "
+                      << chol.info() << ".\n";
+            return 1;
+        }
+        x_out = chol.solve(AtB);
+        if (chol.info() != Eigen::Success) {
+            std::cerr << "  Fitting by " + solver_type + " failed (solve) with the error code "
+                      << chol.info() << ".\n";
+            return 1;
+        }
+#else
+        std::cerr << "  SPARSESOLVER = " + solver_type +
+                         " requires building ALM with -DUSE_SUITESPARSE_BACKEND=yes.\n";
+        return 1;
+#endif
+    } else {
+        // No matching solver branch -- e.g. SPARSESOLVER = MINRES, which is only implemented for the
+        // numerically constrained KKT path (solveGQRSparse), not this unconstrained / algebraically
+        // constrained path. Abort: merely returning would leave x_out unset and the caller would then
+        // form sp_mat * x_out with a zero-length vector.
+        ALM_NS::exit("least_squares_eigen_sparse_solver",
+                     "SPARSESOLVER is not supported for the unconstrained / algebraically constrained "
+                     "sparse fit: ",
+                     solver_type.c_str());
     }
     return 0;
 }
 
 
+// Block-diagonal SPD preconditioner for the symmetric-indefinite KKT system
+//     K = [ H   C^T ;  C   0 ],     H = A^T A  (N x N, rank-deficient by the gauge modes),
+// for use with MINRES. P = diag(G, S) with
+//     G = diag(H) + sigma          (a positive diagonal -- a Jacobi approximation of H)
+//     S = C G^{-1} C^T             (dense, SPD; the preconditioner's exact Schur complement for that G).
+// By Murphy-Golub-Wathen this clusters the spectrum of P^{-1}K, so preconditioned MINRES converges in
+// far fewer iterations than the (stalling) unpreconditioned run. A *diagonal* G is used deliberately:
+// G^{-1} is then trivial, so the setup needs only sparse products to form S -- no N x P solves, which
+// for P ~ 3000 dense rotational constraints would dominate the runtime. sigma keeps G strictly
+// positive; it affects only the preconditioner's quality (iteration count), never the final solution.
+class KKTBlockDiagPreconditioner
+{
+public:
+    KKTBlockDiagPreconditioner() : m_ready(false), m_N(0), m_P(0) {}
+
+    // Eigen's IterativeSolverBase calls analyzePattern/factorize/compute on the system matrix K, but
+    // this preconditioner is configured from H and C separately (via setup()); make them no-ops that
+    // preserve an existing setup. Call setup() BEFORE minres.compute(K).
+    template <typename M> KKTBlockDiagPreconditioner &analyzePattern(const M &) { return *this; }
+    template <typename M> KKTBlockDiagPreconditioner &factorize(const M &) { return *this; }
+    template <typename M> KKTBlockDiagPreconditioner &compute(const M &) { return *this; }
+
+    void setup(const Eigen::SparseMatrix<double> &H, const Eigen::SparseMatrix<double> &C,
+               double sigma, int verbosity)
+    {
+        using SpMat = Eigen::SparseMatrix<double>;
+        m_N = static_cast<int>(H.rows());
+        m_P = static_cast<int>(C.rows());
+
+        // G = diag(H) + sigma  (strictly positive); store its inverse for O(1) application.
+        m_Dinv.resize(m_N);
+        for (int i = 0; i < m_N; ++i) m_Dinv(i) = 1.0 / (H.coeff(i, i) + sigma);
+
+        // S = C G^{-1} C^T = (C * Dinv) * C^T  -- sparse products only, no solves.
+        const SpMat Cs = C * m_Dinv.asDiagonal();          // P x N (scaled columns)
+        Eigen::MatrixXd S = Eigen::MatrixXd(Cs * C.transpose()); // P x P dense
+
+        // S can be extremely ill-conditioned -- even when C is full row rank -- because diag(A^T A)
+        // has near-zero entries (weakly-sampled parameters) that make Dinv, and hence S, span a huge
+        // dynamic range. (This is NOT evidence that C is rank-deficient: C is full row rank after the
+        // merge + rank-reduction in Constraint::update_constraint_matrix.) MINRES requires a positive-
+        // definite preconditioner, so add a relative ridge to S and grow it until the dense factor is
+        // SPD. The ridge perturbs only the preconditioner -- never the system matrix K, so it does not
+        // bias the solution; it only affects how fast MINRES converges.
+        const double s_scale = S.diagonal().cwiseAbs().mean() + sigma;
+        double ridge = 1.0e-8 * s_scale;
+        m_ready = false;
+        for (int attempt = 0; attempt < 12 && !m_ready; ++attempt, ridge *= 10.0) {
+            Eigen::MatrixXd Sr = S;
+            Sr.diagonal().array() += ridge;
+            m_S_ldlt.compute(Sr);
+            // LDLT can factor an indefinite matrix and still report Success, so require isPositive():
+            // MINRES needs an SPD preconditioner.
+            m_ready = (m_S_ldlt.info() == Eigen::Success) && m_S_ldlt.isPositive();
+        }
+        m_sigma = sigma;
+
+        LOG_IF(verbosity, 1, "KKT preconditioner: G = diag(A^T A) + ", sigma,
+               ", dense Schur complement S is ", m_P, "x", m_P, " (ridge ", ridge / 10.0, ")",
+               m_ready ? " factorized (SPD).\n" : " -- FAILED to make S SPD.\n");
+    }
+
+    // z = P^{-1} b = [ G^{-1} b_1 ;  S^{-1} b_2 ] = [ Dinv .* b_1 ;  S^{-1} b_2 ]
+    template <typename Rhs> Eigen::VectorXd solve(const Rhs &b) const
+    {
+        Eigen::VectorXd z(m_N + m_P);
+        z.head(m_N) = b.head(m_N).cwiseProduct(m_Dinv);
+        z.tail(m_P) = m_S_ldlt.solve(b.tail(m_P));
+        return z;
+    }
+
+    Eigen::ComputationInfo info() const { return m_ready ? Eigen::Success : Eigen::NumericalIssue; }
+
+private:
+    bool m_ready;
+    int m_N, m_P;
+    double m_sigma = 0.0;
+    Eigen::VectorXd m_Dinv;             // (diag(H) + sigma)^{-1}
+    Eigen::LDLT<Eigen::MatrixXd> m_S_ldlt;
+};
+
+
 void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd &b,
                     const Eigen::SparseMatrix<double> &C, const Eigen::VectorXd &d, Eigen::VectorXd &x,
-                    Eigen::VectorXd &lambda, const int verbosity)
+                    Eigen::VectorXd &lambda, const int verbosity, const std::string &solver_type,
+                    const double tolerance_iteration, const int maxnum_iteration)
 {
 #ifdef USE_MKL_BACKEND
     constexpr auto ldlt_solver_name = "PardisoLDLT";
@@ -688,17 +903,75 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
     Eigen::VectorXd sol;
     bool solved = false;
 
+    // Iterative KKT solve (selected via SPARSESOLVER). The KKT matrix K is sparse (it never forms the
+    // dense factor that a direct method would), so this is the memory-feasible path when the constraint
+    // matrix C has dense rows -- e.g. the rotational-invariance constraints of ICONST = 2, 3 -- for
+    // which the direct factorizations below exhaust memory. K is symmetric *indefinite*, so MINRES is
+    // the appropriate Krylov method, accelerated by the block-diagonal SPD preconditioner
+    // diag(diag(A^T A) + sigma, C G^{-1} C^T) (KKTBlockDiagPreconditioner above). An unpreconditioned /
+    // identity-preconditioned MINRES stalls completely on this ill-conditioned saddle-point system.
+    const auto solver_lower = boost::algorithm::to_lower_copy(solver_type);
+    if (solver_lower == "minres") {
+        LOG_IF(verbosity, 1, "Use MINRES (iterative) to solve the KKT problem.\n");
+
+        // sigma keeps the preconditioner block G = diag(A^T A) + sigma strictly positive (not the final
+        // solution); scale it to the mean diagonal of A^T A so it is dimensionless w.r.t. the problem.
+        double mean_diag = 0.0;
+        for (int i = 0; i < N; ++i) mean_diag += ATA.coeff(i, i);
+        mean_diag = (N > 0) ? mean_diag / N : 1.0;
+        const double sigma = 1.0e-6 * (mean_diag > 0.0 ? mean_diag : 1.0);
+
+        Eigen::MINRES<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, KKTBlockDiagPreconditioner>
+            minres;
+        minres.preconditioner().setup(ATA, C, sigma, verbosity); // configure BEFORE compute(K)
+        if (minres.preconditioner().info() != Eigen::Success) {
+            ALM_NS::exit("solveGQRSparse",
+                         "Failed to build the MINRES KKT preconditioner (could not make the Schur "
+                         "complement positive definite).");
+        }
+        minres.setTolerance(tolerance_iteration);
+        minres.setMaxIterations(maxnum_iteration);
+        minres.compute(K);
+        sol = minres.solve(rhs);
+
+        // Verify the solve against the TRUE residuals rather than trusting only minres.info()/error():
+        // the fitted IFCs must satisfy the constraints (acoustic sum rule + rotational invariance), so a
+        // non-converged KKT solve must be rejected, never silently used. We do NOT fall back to the
+        // direct solvers below (the user chose the iterative path to avoid their memory blow-up); instead
+        // we abort with guidance, because an x that does not satisfy C x = d would give invalid IFCs.
+        const double rhs_norm = rhs.norm();
+        const double kkt_rel_res = (K * sol - rhs).norm() / (rhs_norm > 0.0 ? rhs_norm : 1.0);
+        const double cons_rel_res =
+            (P > 0) ? (C * sol.head(N) - d).norm() / (d.norm() + std::numeric_limits<double>::min())
+                    : 0.0;
+        // Accept a little above CONV_TOL to allow for the estimate-vs-true-residual gap.
+        const double accept_tol = std::max(tolerance_iteration, 1.0e-10) * 1.0e2;
+
+        LOG_IF(verbosity, 1, "MINRES finished: ", minres.iterations(), " iters, info=",
+               (minres.info() == Eigen::Success ? "Success" : "NoConvergence"),
+               ", est.(preconditioned) error ", minres.error(), ", TRUE relative KKT residual ",
+               kkt_rel_res, ", ||C x - d||/||d|| ", cons_rel_res, ".\n");
+
+        if (minres.info() == Eigen::Success && kkt_rel_res <= accept_tol) {
+            solved = true;
+            LOG_IF(verbosity, 1, "KKT system solved with MINRES (", minres.iterations(),
+                   " iterations; relative KKT residual ", kkt_rel_res, ", ||C x - d||/||d|| ",
+                   cons_rel_res, ").\n");
+        } else {
+            ALM_NS::exit("solveGQRSparse",
+                         "MINRES did not converge: the constrained least-squares solution would not "
+                         "satisfy the sum rules. Increase MAXITER, loosen CONV_TOL, or use a direct "
+                         "KKT solver (an LDLT backend) on a smaller problem.");
+        }
+    }
+
 #ifdef USE_ACCEL_BACKEND
-    // 1) AccelerateLDLT
+    if (!solved)
+    // 1) AccelerateLDLT (implemented in accelerate_solver.cpp; see the include note at the top of this
+    //    file for why the Accelerate headers are kept out of this TU).
     {
         LOG_IF(verbosity, 1, "Use AccelerateLDLT to solve the KKT problem.\n");
-        Eigen::AccelerateLDLT<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Symmetric> ldlt(K);
-        if (ldlt.info() == Eigen::Success) {
-            sol = ldlt.solve(rhs);
-            if (ldlt.info() == Eigen::Success) {
-                solved = true;
-            }
-        }
+        solved = solve_kkt_accelerate_ldlt(K, rhs, sol);
         if (solved) {
             LOG_IF(verbosity, 1, "KKT system solved with AccelerateLDLT.\n");
         } else {
@@ -706,6 +979,7 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
         }
     }
 #elif defined(USE_MKL_BACKEND)
+    if (!solved)
     // 1) PardisoLDLT
     {
         LOG_IF(verbosity, 1, "Use PardisoLDLT to solve the KKT problem.\n");
@@ -723,6 +997,26 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
             LOG_IF(verbosity, 1, "KKT system solved with PardisoLDLT.\n");
         } else {
             LOG_ERR_IF(verbosity, 0, "PardisoLDLT failed to solve the KKT system.\n");
+        }
+    }
+#endif
+
+#ifdef USE_SUITESPARSE_BACKEND
+    // Preferred direct solver when ALM is built with SuiteSparse: SuiteSparseQR is multithreaded and
+    // rank-revealing, so on a well-conditioned KKT it is far faster than Eigen's serial SparseLU /
+    // SparseQR. It is tried before SparseLU (after any symmetric-indefinite LDLT backend). (Earlier
+    // this was a post-SparseLU fallback to avoid QR fill-in blowing up memory when the constraint
+    // matrix was rank-deficient with dense rows; that pathology came from an unreduced constraint
+    // matrix and is prevented upstream by the rank-revealing reduction in Constraint.)
+    if (!solved) {
+        LOG_IF(verbosity, 1, "Use SuiteSparseQR to solve the KKT problem.\n");
+        if (solve_least_squares_spqr(K, rhs, sol) == 0) {
+            solved = true;
+        }
+        if (solved) {
+            LOG_IF(verbosity, 1, "KKT system solved with SuiteSparseQR.\n");
+        } else {
+            LOG_ERR_IF(verbosity, 0, "SuiteSparseQR failed to solve the KKT system.\n");
         }
     }
 #endif
@@ -754,7 +1048,10 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
     //     }
     // }
 
-    // 2) SparseQR
+    // Sparse QR fallback (Eigen's serial SparseQR) only when SuiteSparse is NOT built -- with
+    // SuiteSparse, the multithreaded SuiteSparseQR was already tried above (before SparseLU). QR is the
+    // most robust direct method on the symmetric-indefinite KKT but has the heaviest fill-in.
+#ifndef USE_SUITESPARSE_BACKEND
     if (!solved) {
         LOG_IF(verbosity, 1, "Use Eigen::SparseQR to solve the KKT problem.\n");
         Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr(K);
@@ -772,6 +1069,7 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
             LOG_IF(verbosity, 0, "SparseQR failed to solve the KKT system.\n");
         }
     }
+#endif
 
     // 3) BiCGSTAB
     if (!solved) {

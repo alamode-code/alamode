@@ -124,6 +124,11 @@ option(USE_ACCEL_BACKEND   "Enable Apple Accelerate LDLT" OFF)
 # below; choose the vendor with -DBLA_VENDOR=... (OpenBLAS, Apple, ...). Ignored under the MKL or
 # Accelerate-sparse backends. Relies on the guarded BLAS prototypes in include/blas_wrapper.h.
 option(USE_EIGEN_BLAS      "Use Eigen's BLAS backend (EIGEN_USE_BLAS) with the detected BLAS" OFF)
+# SuiteSparse (SPQR + CHOLMOD) is an *orthogonal* add-on, not a third exclusive BLAS backend:
+# it adds the SuiteSparseQR / CHOLMOD sparse-solver options (reached through Eigen's SPQRSupport /
+# CholmodSupport wrappers) and composes with whichever BLAS backend is selected below. Point CMake
+# at the installation with -DSUITESPARSE_ROOT=<prefix>, the prefix that contains lib/cmake/SPQR.
+option(USE_SUITESPARSE_BACKEND "Enable SuiteSparse (SPQR + CHOLMOD) sparse solvers" OFF)
 
 if (USE_MKL_BACKEND)
     # MKL integer interface. LP64 (32-bit MKL_INT) is the only interface ALAMODE supports today:
@@ -186,6 +191,23 @@ if (USE_EIGEN_BLAS AND (USE_MKL_BACKEND OR USE_ACCEL_BACKEND))
                     "(those backends already route BLAS through MKL / Accelerate).")
 endif()
 
+# SuiteSparse (SPQR + CHOLMOD). Unlike the MKL/Accelerate backends above this is not an exclusive
+# BLAS choice; it only adds the SuiteSparseQR and CHOLMOD sparse solvers (compiled in via the
+# USE_SUITESPARSE_BACKEND macro and reached through Eigen's SPQRSupport / CholmodSupport wrappers),
+# so it is appended to BACKEND_LIBS regardless of which BLAS backend was selected. The imported
+# SuiteSparse::SPQR / SuiteSparse::CHOLMOD targets carry their own include dirs (.../suitesparse)
+# and transitive deps (CHOLMOD, AMD, COLAMD, ...), resolved by the config packages found here.
+if (USE_SUITESPARSE_BACKEND)
+    if (SUITESPARSE_ROOT)
+        list(APPEND CMAKE_PREFIX_PATH "${SUITESPARSE_ROOT}")
+    endif()
+    find_package(SPQR REQUIRED)
+    find_package(CHOLMOD REQUIRED)
+    add_compile_definitions(USE_SUITESPARSE_BACKEND)
+    list(APPEND BACKEND_LIBS SuiteSparse::SPQR SuiteSparse::CHOLMOD)
+    message(STATUS "SuiteSparse backend enabled: SuiteSparseQR + CHOLMOD sparse solvers available")
+endif()
+
 
 # Source code
 set(SOURCES ${PROJECT_SOURCE_DIR}/alm.cpp
@@ -204,7 +226,8 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/alm.cpp
         ${PROJECT_SOURCE_DIR}/writer.cpp
         ${PROJECT_SOURCE_DIR}/smith.cpp
         ${PROJECT_SOURCE_DIR}/svd.cpp
-        ${PROJECT_SOURCE_DIR}/least_squares.cpp)
+        ${PROJECT_SOURCE_DIR}/least_squares.cpp
+        ${PROJECT_SOURCE_DIR}/accelerate_solver.cpp)
 
 set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
         ${PROJECT_SOURCE_DIR}/cluster.h
@@ -223,6 +246,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
         ${PROJECT_SOURCE_DIR}/smith.h
         ${PROJECT_SOURCE_DIR}/svd.h
         ${PROJECT_SOURCE_DIR}/least_squares.h
+        ${PROJECT_SOURCE_DIR}/accelerate_solver.h
         ../include/logger.h)
 
 # # Trick to use gcc to compile *.cpp: This doesn't work because of boost
