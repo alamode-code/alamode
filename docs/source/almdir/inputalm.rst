@@ -55,8 +55,8 @@ List of supported input variables
    **&interaction**
    :ref:`NBODY <alm_nbody>`, :ref:`NORDER <alm_norder>`
    **&optimize**
-   :ref:`CONV_TOL <alm_conv_tol>`, :ref:`CV <alm_cv>`, :ref:`CV_MINALPHA <alm_cv_minalpha>`, :ref:`DEBIAS_OLS <alm_debias_ols>`
-   :ref:`DFSET <alm_dfset>`, :ref:`DFSET_CV <alm_dfset_cv>`, :ref:`ENET_DNORM <alm_enet_dnorm>`
+   :ref:`CHUNKSIZE <alm_chunksize>`, :ref:`CONV_TOL <alm_conv_tol>`, :ref:`CV <alm_cv>`, :ref:`CV_MINALPHA <alm_cv_minalpha>`
+   :ref:`DEBIAS_OLS <alm_debias_ols>`, :ref:`DFSET <alm_dfset>`, :ref:`DFSET_CV <alm_dfset_cv>`, :ref:`ENET_DNORM <alm_enet_dnorm>`
    :ref:`FC2FIX <alm_fc2fix>`, :ref:`FC3FIX <alm_fc3fix>`, :ref:`ICONST <alm_iconst>`
    :ref:`L1_ALPHA <alm_l1_alpha>`, :ref:`L1_RATIO <alm_l1_ratio>`, :ref:`L1_SOLVER <alm_l1_solver>`, :ref:`LMODEL <alm_lmodel>`
    :ref:`MAXITER <alm_maxiter>`, :ref:`NDATA <alm_ndata>`, :ref:`NDATA_CV <alm_ndata_cv>`, :ref:`NSTART NEND <alm_nstart>`
@@ -635,6 +635,28 @@ This field is necessary when ``MODE = optimize``.
      ``USE_CHOLESKY = 1`` cannot be combined with the numerically imposed constraints
      ``ICONST = 1, 2, 3``. When constraints are required, impose them algebraically with
      ``ICONST = 11`` instead; otherwise the code stops with an error.
+
+````
+
+.. _alm_chunksize:
+
+* CHUNKSIZE-tag : Number of configurations processed per pass when building :math:`A^{\mathsf{T}} A`
+
+ :Default: 100
+ :Type: Integer
+ :Description: Relevant only when ``USE_CHOLESKY = 1``. Instead of forming the full dense sensing
+              matrix :math:`A` (size :math:`N_{\mathrm{rows}} \times N_{\mathrm{cols}}`) at once, the
+              normal-equations matrix :math:`A^{\mathsf{T}} A` is accumulated in chunks of
+              ``CHUNKSIZE`` training configurations: for each chunk only a small block of :math:`A` is
+              built and added into :math:`A^{\mathsf{T}} A`. This caps the peak memory at roughly the
+              larger of :math:`A^{\mathsf{T}} A` itself and one chunk's block (proportional to
+              ``CHUNKSIZE`` :math:`\times\, N_{\mathrm{cols}}`), rather than the full :math:`A`.
+              A smaller ``CHUNKSIZE`` lowers the peak memory but uses more passes with smaller, less
+              efficient matrix products; a larger ``CHUNKSIZE`` is faster but needs more memory.
+              Lowering it below the point where one chunk is already smaller than
+              :math:`A^{\mathsf{T}} A` gives no further savings, since :math:`A^{\mathsf{T}} A` sets
+              the memory floor. The default (100) is a reasonable balance; reduce it if the chunk
+              block does not fit in memory.
 
 ````
 

@@ -119,7 +119,7 @@ We assume that the harmonic force constants are already calculated.
 Please use the method explained in :ref:`Tutorial 7.1 <label_tutorial_01>` for the calculation of harmonic IFCs.
 
 In the cross validation, we determine the optimal amplitude of regularization (:math:`\alpha`) in the elastic-net or adaptive lasso.
-Please see :ref:`the documentation <alm_thoery_enet>` for the notation and the theoretical background.
+Please see :ref:`the documentation <alm_theory_enet>` for the notation and the theoretical background.
 
 You can run the CV calculation with the following commands.
 
