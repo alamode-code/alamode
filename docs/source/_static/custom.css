@@ -1,4 +1,9 @@
 /* Wider main documentation body for API tables, option lists, and build logs. */
 :root {
-  --content-width: 60em;
+  --content-width: 72em;
+}
+
+article[role="main"],
+.article-container {
+  max-width: var(--content-width);
 }
