@@ -584,13 +584,27 @@ This field is necessary when ``MODE = optimize``.
 
  :Default: 0
  :Type: Integer
- :Description: When you want to calculate force constants of a large system and generate training datasets by displacing only a few atoms from equilibrium positions, the resulting sensing matrix becomes large but sparse. For such matrices, a sparse solver is expected to be more efficient than SVD or QRD in terms of both memory usage and computational time. When ``SPARSE = 1`` is set, the code uses a sparse solver implemented in Eigen3 library. You can change the solver type via ``SPARSESOLVER``. Effective when ``LMODEL = ols``.
+ :Description: When you want to calculate force constants of a large system and generate training datasets by displacing only a few atoms from equilibrium positions, the resulting sensing matrix becomes large but sparse. For such matrices, a sparse solver is expected to be more efficient than SVD or QRD in terms of both memory usage and computational time. Effective when ``LMODEL = ols``.
 
               **When to use:** prefer ``SPARSE = 1`` for large systems whose sensing matrix is genuinely sparse (only a handful of atoms displaced per configuration). For small or dense problems the default direct solvers (``SPARSE = 0``) are usually faster, and the sparse factorization can even use more memory because of fill-in. When the sensing matrix is dense but large, consider :ref:`USE_CHOLESKY <alm_use_cholesky>` instead.
 
  .. note::
 
-     With constraints imposed numerically (``ICONST = 1, 2, 3``), the sparse path assembles and factorizes the symmetric-indefinite KKT system. The merged constraint matrix is first reduced to full row rank by a rank-revealing QR (essential: a rank-deficient constraint matrix makes the KKT singular and the fitted IFCs violate the acoustic-sum-rule / rotational invariance). The KKT solver is then chosen by build: Intel MKL **PARDISO** (``-DUSE_MKL_BACKEND=yes``) or Apple **Accelerate** (``-DUSE_ACCEL_BACKEND=yes``) use the appropriate symmetric-indefinite ``LDLT`` (the fastest, most memory-scalable option for large fits); **SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) uses the multithreaded **SuiteSparseQR**; otherwise Eigen's serial ``SparseLU`` (then ``SparseQR``) is used. See :ref:`Optional linear-algebra backends <install_backends>` on the installation page.
+     The sparse path has two different solver routes. With algebraic constraints
+     (``ICONST >= 10``; the default is ``ICONST = 11``), the reduced sparse
+     least-squares problem is solved by the ``SPARSESOLVER`` selected below.
+     With constraints imposed numerically (``ICONST = 1, 2, 3, 4``), the sparse
+     path instead assembles the symmetric-indefinite KKT system. The merged
+     constraint matrix is first reduced to full row rank by a rank-revealing QR
+     (essential: a rank-deficient constraint matrix makes the KKT singular and
+     the fitted IFCs violate the acoustic-sum-rule / rotational invariance). The
+     KKT solver is then chosen by build: Intel MKL **PARDISO**
+     (``-DUSE_MKL_BACKEND=yes``) or Apple **Accelerate**
+     (``-DUSE_ACCEL_BACKEND=yes``) use a symmetric-indefinite ``LDLT``;
+     **SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) adds the multithreaded
+     **SuiteSparseQR** fallback; otherwise Eigen's serial ``SparseLU`` and
+     ``SparseQR`` fallbacks are used. See :ref:`Optional linear-algebra backends
+     <install_backends>` on the installation page.
 
 ````
 
@@ -600,11 +614,13 @@ This field is necessary when ``MODE = optimize``.
 
  :Default: SimplicialLDLT
  :Type: String
- :Description: Selects the sparse solver used for the unconstrained / algebraically constrained sparse fit. Available options are `SimplicialLDLT` (sparse Cholesky, direct), `SparseQR` (direct, most robust for ill-conditioned or rank-deficient matrices), and the iterative Krylov solvers `ConjugateGradient`, `LeastSquaresConjugateGradient`, and `BiCGSTAB`. When an iterative solver is selected, the stopping criterion is controlled by the ``CONV_TOL`` and ``MAXITER`` tags. As a rule of thumb, use `SimplicialLDLT` (the default) for well-conditioned problems, `SparseQR` when the direct factorization fails or the matrix is poorly conditioned, and the iterative solvers when even the sparse factorization is too large to store. Effective when ``LMODEL = ols`` and ``SPARSE = 1``. Note that these Eigen solvers are independent of the PARDISO/Accelerate/SuiteSparse KKT backend described under ``SPARSE``.
+ :Description: Selects the sparse solver used for the unconstrained or algebraically constrained sparse OLS fit (``LMODEL = ols``, ``SPARSE = 1``, and ``ICONST >= 10``). Available options are `SimplicialLDLT` (sparse Cholesky on the normal matrix, direct), `SparseQR` (direct sparse QR), and the iterative Krylov solvers `ConjugateGradient`, `LeastSquaresConjugateGradient`, and `BiCGSTAB`. When an iterative solver is selected, the stopping criterion is controlled by the ``CONV_TOL`` and ``MAXITER`` tags. As a rule of thumb, use `SimplicialLDLT` (the default) for well-conditioned problems, `SparseQR` when the direct factorization fails or the matrix is poorly conditioned, and the iterative solvers when even the sparse factorization is too large to store.
 
               Two additional high-performance solvers are available when ALM is built with the SuiteSparse backend (``-DUSE_SUITESPARSE_BACKEND=yes``; see :ref:`Optional linear-algebra backends <install_backends>`): `SuiteSparseQR`, a multithreaded rank-revealing multifrontal sparse QR that factorizes the rectangular sensing matrix directly (a faster, parallel alternative to `SparseQR` for large or ill-conditioned problems), and `CHOLMOD`, a supernodal sparse Cholesky on the normal matrix :math:`A^{\mathsf T}A` (a faster alternative to `SimplicialLDLT` for well-conditioned problems). Selecting either of these without building the SuiteSparse backend stops with an error.
 
-              `MINRES` is a special case (experimental): it applies to the **numerically constrained** sparse fit (``ICONST = 1, 2, 3``), i.e. the KKT path rather than the solvers above. It solves the symmetric-indefinite KKT system iteratively, never forming the dense factor that the direct KKT solvers (PARDISO / Accelerate / SparseLU / QR) build -- so it is the **memory-feasible** choice when those exhaust memory because the constraint matrix has dense rows (the rotational-invariance constraints of ``ICONST = 2, 3``). It is preconditioned by a block-diagonal SPD preconditioner (Jacobi on :math:`A^{\mathsf T}A` plus the dense constraint Schur complement); ``CONV_TOL`` and ``MAXITER`` control the stopping criterion. After the solve it checks the *true* KKT residual and ``\|C x - d\|`` and **aborts** if they are not met, rather than returning a solution that would violate the sum rules. Effective for well-conditioned constrained problems; on badly-scaled or extremely ill-conditioned KKT systems the simple block-diagonal preconditioner may be insufficient and `MINRES` will report non-convergence -- in that case raise ``MAXITER`` / loosen ``CONV_TOL``, or use a direct LDLT backend on a reduced problem.
+              With numerically imposed constraints (``ICONST = 1, 2, 3, 4``), most values of ``SPARSESOLVER`` do **not** select the KKT direct solver. The code first tries the KKT backend compiled into the executable (MKL/PARDISO or Apple/Accelerate LDLT), then SuiteSparseQR if the SuiteSparse backend is enabled, then Eigen's built-in sparse fallbacks. `MINRES` is the special exception (experimental): selecting ``SPARSESOLVER = MINRES`` chooses an iterative solver for this KKT path. It never forms the dense factor used by direct solvers, so it can be the memory-feasible choice when direct KKT factorizations exhaust memory because the constraint matrix has dense rows (the rotational-invariance constraints of ``ICONST = 2, 3``). It is preconditioned by a block-diagonal SPD preconditioner (Jacobi on :math:`A^{\mathsf T}A` plus the dense constraint Schur complement); ``CONV_TOL`` and ``MAXITER`` control the stopping criterion. After the solve it checks the *true* KKT residual and ``\|C x - d\|`` and **aborts** if they are not met, rather than returning a solution that would violate the sum rules. On badly-scaled or extremely ill-conditioned KKT systems the simple block-diagonal preconditioner may be insufficient and `MINRES` will report non-convergence -- in that case raise ``MAXITER`` / loosen ``CONV_TOL``, or use a direct LDLT backend on a reduced problem.
+
+              ``SPARSESOLVER`` is ignored by ``USE_CHOLESKY = 1``. In that mode the code forms :math:`A^{\mathsf T}A` directly and uses a sparse Cholesky factorization (`CHOLMOD` when the SuiteSparse backend is available, otherwise `SimplicialLDLT`).
 
 
  .. seealso::

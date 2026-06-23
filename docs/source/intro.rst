@@ -71,7 +71,7 @@ Links
 
 * Download page  : https://sourceforge.net/projects/alamode
 * Documentation  : https://alamode.readthedocs.io (this page)
-* Git repository : https://github.com/ttadano/alamode
+* Git repository : https://github.com/alamode-team/alamode
 
 
 License
@@ -128,8 +128,8 @@ References
 Issues & Bug report
 -------------------
 
-* If you find a bug or issue related to ALAMODE, please report it at `GitHub issues <https://github.com/ttadano/alamode/issues/>`_. 
-* Other questions and suggestions can be posted on the `GitHub discussion page. <https://github.com/ttadano/alamode/discussions>`_
+* If you find a bug or issue related to ALAMODE, please report it at `GitHub issues <https://github.com/alamode-team/alamode/issues/>`_.
+* Other questions and suggestions can be posted on the `GitHub discussion page. <https://github.com/alamode-team/alamode/discussions>`_
 
 In either case, please search the previous questions and read FAQ page of this document before asking.
 
@@ -153,5 +153,3 @@ Author & Contact
 | Research Center for Magnetic and Spintronic Materials (CMSM),
 | National Institute for Material Science (NIMS), 
 | Japan
-
-
