@@ -2244,14 +2244,15 @@ auto Optimize::apply_basis_converter_amat(const int natmin3, const int ncols, do
     Eigen::Vector3d vec_tmp;
     const Eigen::Matrix3d cmat_t = cmat.transpose();
 
+    // amat_orig_tmp is parameter-major: amat_orig_tmp[icol][component].
     for (auto icol = 0; icol < ncols; ++icol) {
         for (auto iat = 0; iat < natmin; ++iat) {
             for (auto i = 0; i < 3; ++i) {
-                vec_tmp(i) = amat_orig_tmp[3 * iat + i][icol];
+                vec_tmp(i) = amat_orig_tmp[icol][3 * iat + i];
             }
             vec_tmp = cmat_t * vec_tmp;
             for (auto i = 0; i < 3; ++i) {
-                amat_orig_tmp[3 * iat + i][icol] = vec_tmp(i);
+                amat_orig_tmp[icol][3 * iat + i] = vec_tmp(i);
             }
         }
     }
@@ -2788,10 +2789,13 @@ auto Optimize::get_matrix_elements2(const int maxorder, const size_t ncycle, con
         double **amat_mod_tmp = nullptr;
         std::vector<T> nonzero_omp;
 
-        allocate(amat_orig_tmp, natmin3, ncols);
+        // Parameter-major (amat[param][component]): the data block is the same size as the old
+        // [component][param] layout, only the row-pointer array grows to O(ncols) entries per
+        // thread (a few MB at most) — negligible next to the ncols*natmin3 doubles it indexes.
+        allocate(amat_orig_tmp, ncols, natmin3);
 
         if (constraint->get_constraint_algebraic()) {
-            allocate(amat_mod_tmp, natmin3, ncols_compact);
+            allocate(amat_mod_tmp, ncols_compact, natmin3);
         }
 
 #ifdef _OPENMP
@@ -2826,18 +2830,18 @@ auto Optimize::get_matrix_elements2(const int maxorder, const size_t ncycle, con
                                     bvec_correction);
 
                 if (sparse) {
-                    for (i = 0; i < natmin3; ++i) {
-                        for (j = 0; j < ncols_compact; ++j) {
-                            if (std::abs(amat_mod_tmp[i][j]) > eps) {
-                                nonzero_omp.emplace_back(idata + i, j, amat_mod_tmp[i][j]);
+                    for (j = 0; j < ncols_compact; ++j) {
+                        for (i = 0; i < natmin3; ++i) {
+                            if (std::abs(amat_mod_tmp[j][i]) > eps) {
+                                nonzero_omp.emplace_back(idata + i, j, amat_mod_tmp[j][i]);
                             }
                         }
                     }
                 } else {
-                    for (i = 0; i < natmin3; ++i) {
-                        for (j = 0; j < ncols_compact; ++j) {
+                    for (j = 0; j < ncols_compact; ++j) {
+                        for (i = 0; i < natmin3; ++i) {
                             // Transpose here for later use of lapack without transpose
-                            matrix_out->amat_dense[natmin3 * ncycle * j + i + idata] = amat_mod_tmp[i][j];
+                            matrix_out->amat_dense[natmin3 * ncycle * j + i + idata] = amat_mod_tmp[j][i];
                         }
                     }
                 }
@@ -2845,18 +2849,18 @@ auto Optimize::get_matrix_elements2(const int maxorder, const size_t ncycle, con
             } else {
 
                 if (sparse) {
-                    for (i = 0; i < natmin3; ++i) {
-                        for (j = 0; j < ncols; ++j) {
-                            if (std::abs(amat_orig_tmp[i][j]) > eps) {
-                                nonzero_omp.emplace_back(idata + i, j, amat_orig_tmp[i][j]);
+                    for (j = 0; j < ncols; ++j) {
+                        for (i = 0; i < natmin3; ++i) {
+                            if (std::abs(amat_orig_tmp[j][i]) > eps) {
+                                nonzero_omp.emplace_back(idata + i, j, amat_orig_tmp[j][i]);
                             }
                         }
                     }
                 } else {
-                    for (i = 0; i < natmin3; ++i) {
-                        for (j = 0; j < ncols; ++j) {
+                    for (j = 0; j < ncols; ++j) {
+                        for (i = 0; i < natmin3; ++i) {
                             // Transpose here for later use of lapack without transpose
-                            matrix_out->amat_dense[natmin3 * ncycle * j + i + idata] = amat_orig_tmp[i][j];
+                            matrix_out->amat_dense[natmin3 * ncycle * j + i + idata] = amat_orig_tmp[j][i];
                         }
                     }
                 }
@@ -2956,8 +2960,8 @@ auto Optimize::get_matrix_elements_normal_equation2(
             std::vector<T> nonzero_omp;
 
             ind.resize(maxorder + 1, 0);
-            allocate(amat_orig_tmp, natmin3, ncols);
-            allocate(amat_mod_tmp, natmin3, ncols_compact);
+            allocate(amat_orig_tmp, ncols, natmin3);
+            allocate(amat_mod_tmp, ncols_compact, natmin3);
 
             // std::cout << "OK" << std::flush;
             // std::cout << "istart_cycle = " << istart_cycle << '\n';
@@ -3007,18 +3011,18 @@ auto Optimize::get_matrix_elements_normal_equation2(
                                         bvec_subset);
 
                     if (sparse) {
-                        for (ii = 0; ii < natmin3; ++ii) {
-                            for (jj = 0; jj < ncols_compact; ++jj) {
-                                if (std::abs(amat_mod_tmp[ii][jj]) > eps6) {
-                                    nonzero_omp.emplace_back(idata + ii, jj, amat_mod_tmp[ii][jj]);
+                        for (jj = 0; jj < ncols_compact; ++jj) {
+                            for (ii = 0; ii < natmin3; ++ii) {
+                                if (std::abs(amat_mod_tmp[jj][ii]) > eps6) {
+                                    nonzero_omp.emplace_back(idata + ii, jj, amat_mod_tmp[jj][ii]);
                                 }
                             }
                         }
                     } else {
-                        for (ii = 0; ii < natmin3; ++ii) {
-                            for (jj = 0; jj < ncols_compact; ++jj) {
+                        for (jj = 0; jj < ncols_compact; ++jj) {
+                            for (ii = 0; ii < natmin3; ++ii) {
                                 // Transpose here for later use of lapack without transpose
-                                amat_subset(idata + ii, jj) = amat_mod_tmp[ii][jj];
+                                amat_subset(idata + ii, jj) = amat_mod_tmp[jj][ii];
                             }
                         }
                     }
@@ -3026,18 +3030,18 @@ auto Optimize::get_matrix_elements_normal_equation2(
                 } else {
 
                     if (sparse) {
-                        for (ii = 0; ii < natmin3; ++ii) {
-                            for (jj = 0; jj < ncols; ++jj) {
-                                if (std::abs(amat_orig_tmp[ii][jj]) > eps) {
-                                    nonzero_omp.emplace_back(idata + ii, jj, amat_orig_tmp[ii][jj]);
+                        for (jj = 0; jj < ncols; ++jj) {
+                            for (ii = 0; ii < natmin3; ++ii) {
+                                if (std::abs(amat_orig_tmp[jj][ii]) > eps) {
+                                    nonzero_omp.emplace_back(idata + ii, jj, amat_orig_tmp[jj][ii]);
                                 }
                             }
                         }
                     } else {
-                        for (ii = 0; ii < natmin3; ++ii) {
-                            for (jj = 0; jj < ncols; ++jj) {
+                        for (jj = 0; jj < ncols; ++jj) {
+                            for (ii = 0; ii < natmin3; ++ii) {
                                 // Transpose here for later use of lapack without transpose
-                                amat_subset(idata + ii, jj) = amat_orig_tmp[ii][jj];
+                                amat_subset(idata + ii, jj) = amat_orig_tmp[jj][ii];
                             }
                         }
                     }
@@ -3119,10 +3123,14 @@ auto Optimize::fill_amat(const int maxorder, const size_t natmin, const size_t n
                          const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
                          double **&amat_orig) -> void
 {
+    // amat_orig is stored parameter-major: amat_orig[iparam][k], i.e. the natmin3 force
+    // components of a given free parameter are contiguous in memory. This layout lets the
+    // constraint projection (project_constraints) and the matrix scans operate on contiguous
+    // length-natmin3 vectors instead of striding column-wise across a row-major buffer.
     const auto natmin3 = natmin * 3;
 
-    for (auto i = 0; i < natmin3; ++i) {
-        for (auto j = 0; j < ncols; ++j) {
+    for (size_t i = 0; i < ncols; ++i) {
+        for (size_t j = 0; j < natmin3; ++j) {
             amat_orig[i][j] = 0.0;
         }
     }
@@ -3143,7 +3151,7 @@ auto Optimize::fill_amat(const int maxorder, const size_t natmin, const size_t n
                     amat_tmp *= u_sub[fcs->get_fc_table()[order][mm].elems[j]];
                 }
                 k = inprim_index(fcs->get_fc_table()[order][mm].elems[0], symmetry);
-                amat_orig[k][iparam] -= gamma_precomputed[order][mm] * amat_tmp;
+                amat_orig[iparam][k] -= gamma_precomputed[order][mm] * amat_tmp;
                 ++mm;
             }
             ++iparam;
@@ -3164,27 +3172,36 @@ auto Optimize::project_constraints(const int maxorder, const size_t natmin, cons
     const auto natmin3 = 3 * natmin;
     const auto idata = natmin3 * irow;
 
+    // amat_orig / amat_mod are parameter-major (amat[param][component]); the natmin3 force
+    // components of each parameter are contiguous, so the copies and AXPYs below stream over
+    // memory instead of striding column-wise across a row-major buffer (the dominant cost of
+    // this routine for large algebraic-constraint fits).
     for (int order = 0; order < maxorder; ++order) {
 
         for (const auto fix: constraint->get_const_fix(order)) {
 
+            const double *afix = amat_orig[ishift + fix.p_index_target];
             for (size_t j = 0; j < natmin3; ++j) {
-                bvec_mod[j + idata] -= fix.val_to_fix * amat_orig[j][ishift + fix.p_index_target];
+                bvec_mod[j + idata] -= fix.val_to_fix * afix[j];
             }
         }
 
+        // index_bimap(order).left ranges over [0, index_bimap(order).size()); added to the running
+        // iparam offset, inew covers [0, ncols_compact) exactly once across all orders. So this loop
+        // overwrites every row of amat_mod on every training row, and the per-thread amat_mod buffer
+        // (reused across rows) never carries stale data into the const_relate -= update below.
         for (const auto &it: constraint->get_index_bimap(order)) {
             inew = it.left + iparam;
             iold = it.right + ishift;
 
-            for (size_t j = 0; j < natmin3; ++j) {
-                amat_mod[j][inew] = amat_orig[j][iold];
-            }
+            // contiguous copy of the natmin3 force components for this free parameter
+            std::copy(amat_orig[iold], amat_orig[iold] + natmin3, amat_mod[inew]);
         }
 
         for (size_t i = 0; i < constraint->get_const_relate(order).size(); ++i) {
 
             iold = constraint->get_const_relate(order)[i].p_index_target + ishift;
+            const double *asrc = amat_orig[iold];
 
             for (size_t j = 0; j < constraint->get_const_relate(order)[i].alpha.size(); ++j) {
 
@@ -3199,8 +3216,11 @@ auto Optimize::project_constraints(const int maxorder, const size_t natmin, cons
                            constraint->get_const_relate(order)[i].p_index_orig[j]) +
                        iparam;
 
+                const double alpha = constraint->get_const_relate(order)[i].alpha[j];
+                double *adst = amat_mod[inew];
+                // contiguous AXPY over the natmin3 force components
                 for (size_t k = 0; k < natmin3; ++k) {
-                    amat_mod[k][inew] -= amat_orig[k][iold] * constraint->get_const_relate(order)[i].alpha[j];
+                    adst[k] -= asrc[k] * alpha;
                 }
             }
         }
@@ -3521,7 +3541,7 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     double max_abs_proj = 0.0, max_rel_proj = 0.0, max_scale_proj = 0.0;
 
     double **amat_orig;
-    allocate(amat_orig, natmin3, ncols);
+    allocate(amat_orig, ncols, natmin3);  // parameter-major: amat_orig[param][component]
     std::vector<double> energy_row(ncols);
 
     double max_abs = 0.0, max_rel = 0.0, max_scale = 0.0;
@@ -3549,7 +3569,7 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
                     const size_t k = 3 * i + cc;
                     const double uk = u_multi[irow][3 * sat + cc];
                     for (size_t p = 0; p < ncols; ++p) {
-                        fu_order[order_of_param[p]] += uk * amat_orig[k][p] * theta[p];
+                        fu_order[order_of_param[p]] += uk * amat_orig[p][k] * theta[p];
                     }
                 }
             }
