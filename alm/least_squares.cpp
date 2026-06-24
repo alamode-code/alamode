@@ -730,6 +730,28 @@ auto least_squares_with_constraints_svd(const size_t N, const size_t M, const si
     return 0;
 }
 
+// 64-bit-index sparse matrix for the normal matrix A^T A. The default SparseMatrix uses a 32-bit
+// StorageIndex, whose cumulative outer index overflows once nnz(A^T A) exceeds ~2.1e9 -- which happens
+// for large full-range / no-cutoff fits (e.g. ICONST >= 10 with `*-* None`). The overflow corrupts the
+// allocation size and aborts with std::bad_alloc even when memory is free. 64-bit indices avoid it.
+using SpMat64 = Eigen::SparseMatrix<double, Eigen::ColMajor, std::int64_t>;
+
+// Form A^T A with 64-bit indices. If A^T A is genuinely too large to allocate (it is N x N and can be
+// near-dense for no-cutoff problems), abort with guidance to use SuiteSparseQR, which factorizes the
+// rectangular A directly and never forms A^T A. (A^T A is computed here, not the dense factor.)
+[[nodiscard]] static auto build_normal_matrix_int64(const Eigen::SparseMatrix<double> &A) -> SpMat64
+{
+    try {
+        SpMat64 A64 = A; // widen the 32-bit sensing-matrix index to 64-bit (A itself fits 32-bit)
+        return A64.transpose() * A64;
+    } catch (const std::bad_alloc &) {
+        ALM_NS::exit("least_squares_eigen_sparse_solver",
+                     "Out of memory forming the normal matrix A^T A. For large full-range (no-cutoff) "
+                     "fits A^T A is N x N and too large to store; use SPARSESOLVER = SuiteSparseQR, which "
+                     "factorizes the sensing matrix directly without forming A^T A.");
+    }
+}
+
 auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat, const Eigen::VectorXd &sp_bvec,
                                        Eigen::VectorXd &x_out, const std::string &solver_type,
                                        const double tolerance_iteration, const int maxnum_iteration) -> int
@@ -738,9 +760,9 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
 
     using SpMat = Eigen::SparseMatrix<double>;
     if (solver_type_lower == "simplicialldlt") {
-        SpMat AtA = sp_mat.transpose() * sp_mat;
+        SpMat64 AtA = build_normal_matrix_int64(sp_mat);
         Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
-        Eigen::SimplicialLDLT<SpMat> ldlt(AtA);
+        Eigen::SimplicialLDLT<SpMat64> ldlt(AtA);
         x_out = ldlt.solve(AtB);
 
         if (ldlt.info() != Eigen::Success) {
@@ -759,10 +781,10 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         }
 
     } else if (solver_type_lower == "conjugategradient") {
-        SpMat AtA = sp_mat.transpose() * sp_mat;
+        SpMat64 AtA = build_normal_matrix_int64(sp_mat);
         Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
 
-        Eigen::ConjugateGradient<SpMat> cg(AtA);
+        Eigen::ConjugateGradient<SpMat64> cg(AtA);
         cg.setTolerance(tolerance_iteration);
         cg.setMaxIterations(maxnum_iteration);
         x_out.setZero();
@@ -794,10 +816,10 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
 #endif
 
     } else if (solver_type_lower == "bicgstab") {
-        SpMat AtA = sp_mat.transpose() * sp_mat;
+        SpMat64 AtA = build_normal_matrix_int64(sp_mat);
         Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
 
-        Eigen::BiCGSTAB<SpMat> bicg(AtA);
+        Eigen::BiCGSTAB<SpMat64> bicg(AtA);
         bicg.setTolerance(tolerance_iteration);
         bicg.setMaxIterations(maxnum_iteration);
         x_out.setZero();
@@ -827,10 +849,12 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         // CHOLMOD supernodal Cholesky on the normal matrix A^T A (symmetric positive (semi)definite).
         // Fast for well-conditioned problems; for a rank-deficient A^T A the factorization fails and
         // info() reports it, in which case SuiteSparseQR is the recommended fallback. Check the
-        // factorization BEFORE solving -- solving on a failed factor is undefined.
-        SpMat AtA = sp_mat.transpose() * sp_mat;
+        // factorization BEFORE solving -- solving on a failed factor is undefined. A^T A uses 64-bit
+        // indices (and CHOLMOD's long interface) so large no-cutoff fits do not overflow the 32-bit
+        // sparse index; for genuinely huge A^T A, build_normal_matrix_int64 aborts pointing to SuiteSparseQR.
+        SpMat64 AtA = build_normal_matrix_int64(sp_mat);
         Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
-        Eigen::CholmodSupernodalLLT<SpMat, Eigen::Lower> chol(AtA);
+        Eigen::CholmodSupernodalLLT<SpMat64, Eigen::Lower> chol(AtA);
         if (chol.info() != Eigen::Success) {
             std::cerr << "  Fitting by " + solver_type + " failed (factorization) with the error code "
                       << chol.info() << ".\n";
