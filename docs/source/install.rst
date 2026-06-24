@@ -185,11 +185,25 @@ least-squares problems, especially ``LMODEL = ols``, ``SPARSE = 1`` with
 numerical constraints ``ICONST = 1, 2, 3, 4``, a native build with optimized
 sparse direct solvers can be much faster and more memory-scalable.
 
-The recommended priority is:
+For the **KKT solver** (the symmetric-indefinite system of the numerically
+constrained sparse fit) the recommended priority is:
 
 1. **Intel MKL / PARDISO** on Linux or Intel oneAPI systems.
 2. **SuiteSparse / SPQR + CHOLMOD** when SuiteSparse is available.
 3. **Apple Accelerate** on macOS when MKL is unavailable.
+
+These three are mutually exclusive *as the KKT solver*. **SuiteSparse, however,
+is an orthogonal add-on, not just a KKT-solver choice:** ``-DUSE_SUITESPARSE_BACKEND=yes``
+can be combined with ``-DUSE_MKL_BACKEND=yes`` (or ``-DUSE_ACCEL_BACKEND=yes``).
+In that combined build the LDLT backend (PARDISO / Accelerate) still solves the
+KKT system, while the multithreaded **SuiteSparseQR** replaces the dense LAPACK
+``dgeqp3`` for the rank-revealing **constraint-matrix reduction** -- which can
+otherwise dominate the runtime on large numerically-constrained fits (e.g. a
+254k-parameter ``ICONST = 2`` reduction dropped from ~9 min to ~10 s). The
+recommended high-performance configuration on Intel systems is therefore
+``-DUSE_MKL_BACKEND=yes -DUSE_SUITESPARSE_BACKEND=yes`` together. (Build
+SuiteSparse against the same BLAS as the solver backend -- e.g. MKL -- to avoid
+linking two BLAS implementations.)
 
 .. raw:: html
 

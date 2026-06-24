@@ -107,6 +107,90 @@ static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const
     cholmod_l_finish(&cc);
     return status;
 }
+
+// Rank-revealing reduction of a HOMOGENEOUS constraint matrix C (rows define C x = 0) via SuiteSparseQR
+// -- a sparse, multithreaded replacement for the densifying LAPACK dgeqp3 path. We factorize the TALL
+// matrix C^T (N x P) with rank detection and column pivoting: the rank-revealing pivot deflates the
+// dependent columns of C^T (= dependent rows of C) to the end of the permutation E, so E[0..rank-1] are
+// the independent rows of C. C_red is then those ORIGINAL (sparse) rows of C -- NOT the R factor, which
+// is densely filled for these constraints. R (only rank x P here) and Q are discarded.
+// Only the homogeneous case is handled (every invariance subset, and the merged matrix when no
+// FC2FIX/FC3FIX value is imposed); inhomogeneous d != 0 and any SuiteSparseQR failure fall back to
+// dgeqp3. Returns 0 on success, 1 on failure.
+static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, const int verbosity,
+                                      const double tolerance, Eigen::SparseMatrix<double> &C_red, int &r) -> int
+{
+    const SuiteSparse_long P = C.rows();
+    const SuiteSparse_long Ncol = C.cols();
+
+    Eigen::SparseMatrix<double> Ct = C.transpose(); // N x P; its columns are the rows of C
+    Ct.makeCompressed();
+    const SuiteSparse_long nnz = Ct.nonZeros();
+
+    // Widen Eigen's 32-bit CSC indices to the 64-bit indices the long CHOLMOD interface expects
+    // (same pattern as solve_least_squares_spqr). C^T has P columns, so outer has P+1 entries.
+    std::vector<SuiteSparse_long> outer(P + 1), inner(nnz);
+    for (SuiteSparse_long j = 0; j <= P; ++j) outer[j] = Ct.outerIndexPtr()[j];
+    for (SuiteSparse_long k = 0; k < nnz; ++k) inner[k] = Ct.innerIndexPtr()[k];
+
+    cholmod_common cc;
+    cholmod_l_start(&cc);
+
+    cholmod_sparse A; // A = C^T (N x P)
+    std::memset(&A, 0, sizeof(A));
+    A.nrow = Ncol;
+    A.ncol = P;
+    A.nzmax = nnz;
+    A.p = outer.data();
+    A.i = inner.data();
+    A.x = const_cast<double *>(Ct.valuePtr());
+    A.stype = 0;
+    A.itype = CHOLMOD_LONG;
+    A.xtype = CHOLMOD_REAL;
+    A.dtype = CHOLMOD_DOUBLE;
+    A.sorted = 1;
+    A.packed = 1;
+
+    // Map the caller's auto sentinel (tol < 0, i.e. rank_tolerance_auto = -1) to SuiteSparseQR's default
+    // tolerance SPQR_DEFAULT_TOL (= -2). Passing -1 literally would be SPQR_NO_TOL (rank detection off).
+    // An explicit positive tolerance is passed through. NOTE: SuiteSparseQR thresholds column 2-norms
+    // whereas dgeqp3 thresholds R-diagonals, so the numerical rank may differ by a few rows on a
+    // borderline (badly-scaled) constraint set.
+    const double spqr_tol = (tolerance < 0.0) ? SPQR_DEFAULT_TOL : tolerance;
+
+    cholmod_sparse *R = nullptr;
+    SuiteSparse_long *E = nullptr; // size P column permutation of C^T = row permutation of C
+    const SuiteSparse_long rank = SuiteSparseQR_C(SPQR_ORDERING_DEFAULT, spqr_tol, /*econ=*/0, /*getCTX=*/0,
+                                                  &A, /*Bsparse=*/nullptr, /*Bdense=*/nullptr,
+                                                  /*Zsparse=*/nullptr, /*Zdense=*/nullptr, &R, &E,
+                                                  /*H=*/nullptr, /*HPinv=*/nullptr, /*HTau=*/nullptr, &cc);
+
+    int status = 1;
+    if (rank >= 0 && cc.status == CHOLMOD_OK) {
+        r = static_cast<int>(rank);
+        // E[0..rank-1] are the independent columns of C^T = independent rows of C (E == NULL => identity).
+        // Build C_red from those ORIGINAL sparse rows of C.
+        Eigen::SparseMatrix<double, Eigen::RowMajor> Crow = C;
+        std::vector<Eigen::Triplet<double>> tri;
+        tri.reserve(static_cast<size_t>(C.nonZeros()));
+        for (int k = 0; k < r; ++k) {
+            const SuiteSparse_long orig_row = E ? E[k] : k;
+            for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(Crow, orig_row); it; ++it) {
+                tri.emplace_back(k, static_cast<int>(it.col()), it.value());
+            }
+        }
+        C_red.resize(r, static_cast<int>(Ncol));
+        C_red.setFromTriplets(tri.begin(), tri.end());
+        C_red.makeCompressed();
+        status = 0;
+        LOG_IF(verbosity, 1, "SuiteSparseQR reduction: rank ", r, " of ", static_cast<int>(P),
+               " rows, C_red nnz=", C_red.nonZeros(), ".\n");
+    }
+    if (R) cholmod_l_free_sparse(&R, &cc);
+    if (E) cholmod_l_free(P, sizeof(SuiteSparse_long), E, &cc);
+    cholmod_l_finish(&cc);
+    return status;
+}
 #endif
 
 
@@ -288,6 +372,20 @@ auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_spa
     }
 
     LOG_IF(verbosity, 1, "P = ", P, ", N = ", N, ", nnz = ", C_sparse.nonZeros(), ".\n");
+
+#ifdef USE_SUITESPARSE_BACKEND
+    // SuiteSparseQR rank-revealing reduction for HOMOGENEOUS constraints (every invariance subset, and
+    // the merged matrix when no FC2FIX/FC3FIX value is imposed): sparse + multithreaded, avoiding the
+    // dense P x N densification and dgeqp3 below. Inhomogeneous d (d != 0, from FC2FIX/FC3FIX) and any
+    // SuiteSparseQR failure fall through to the dgeqp3 path.
+    if (dvec.isZero(0)) {
+        if (get_independent_rows_spqr(C_sparse, verbosity, tolerance, C_red, r) == 0) {
+            d_red = Eigen::VectorXd::Zero(r);
+            return 0;
+        }
+        LOG_ERR_IF(verbosity, 0, "SuiteSparseQR reduction failed; falling back to dgeqp3.\n");
+    }
+#endif
 
     // 1) Copy sparse→dense column-major buffer C_mat (size P×N)
     std::vector<double> C_mat(static_cast<size_t>(P_i) * static_cast<size_t>(N_i), 0.0);
