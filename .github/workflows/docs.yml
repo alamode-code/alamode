@@ -112,6 +112,7 @@ jobs:
             texlive-latex-extra \
             texlive-fonts-recommended \
             texlive-lang-japanese \
+            tex-gyre \
             fonts-freefont-otf
 
       - name: Build all versions
@@ -229,6 +230,7 @@ jobs:
             texlive-latex-extra \
             texlive-fonts-recommended \
             texlive-lang-japanese \
+            tex-gyre \
             fonts-freefont-otf
 
       - name: Build PDFs for all declared languages
