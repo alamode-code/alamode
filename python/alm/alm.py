@@ -50,7 +50,7 @@ def _sym(z):
 
 
 class ALM:
-    """Pythonic wrapper around the pybind11 ALMCore object (legacy-compatible API)."""
+    """Pythonic wrapper around the nanobind ALMCore object (legacy-compatible API)."""
 
     def __init__(self, lavec, xcoord, numbers, verbosity=0):
         self._core = None
@@ -85,7 +85,7 @@ class ALM:
         self._transfer_parameters()
 
     def alm_delete(self):
-        """Drop the underlying C++ ALM instance (pybind11 frees it)."""
+        """Drop the underlying C++ ALM instance (nanobind frees it)."""
         self._check()
         self._core = None
         self._defined = False

@@ -20,6 +20,7 @@ Users Guide
    install
    quickstart
    alm_root
+   alm_python
    anphon_root
    tutorial
    faq

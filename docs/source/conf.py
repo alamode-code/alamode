@@ -15,7 +15,18 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+
+# Make the pure-Python ``alm`` package importable for autodoc (the API reference
+# on the alm_python page) without having to compile/install the wrapper first.
+sys.path.insert(0, os.path.abspath("../../python"))
+
+# autodoc only needs the docstrings/signatures of the high-level alm.py, so mock
+# the compiled extension (and NumPy, which is only used inside method bodies).
+autodoc_mock_imports = ["alm._alm", "numpy"]
+autodoc_member_order = "bysource"
+autodoc_default_options = {"members": True, "undoc-members": False}
 
 # -- General configuration ------------------------------------------------
 
