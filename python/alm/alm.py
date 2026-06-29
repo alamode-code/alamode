@@ -152,6 +152,9 @@ class ALM:
         kind = np.array([z_list.index(int(z)) + 1 for z in self._numbers], dtype="intc")
         self._core.set_cell(self._lavec, self._xcoord, kind)
         self._core.set_element_names(list(self._kind_names.values()))
+        # Non-magnetic defaults (the CLI always sets these; required for correct symmetry).
+        self._core.set_magnetic_params(
+            np.zeros((nat, 3), dtype="double"), False, 0, 1, "")
 
     # ---- verbosity / output ---------------------------------------------
     @property
@@ -217,14 +220,29 @@ class ALM:
         self._core.set_fc_file(order, str(fc_file))
         self._core.set_fc_fix(order, True)
 
+    def set_supercell(self, transmat_to_super, transmat_to_prim=None, autoset_primcell=0):
+        """Define the base cell (given to the constructor) as the PRIMITIVE and map it to the
+        supercell. transmat_to_super: (3,3) integer matrix (a_s = M a_p). Mirrors the CLI
+        STRUCTURE_FILE(primitive)+SUPERCELL setup; call after entering the context, before define().
+        """
+        self._check()
+        ts = np.array(transmat_to_super, dtype="double", order="C").reshape(3, 3)
+        tp = (np.eye(3) if transmat_to_prim is None
+              else np.array(transmat_to_prim, dtype="double", order="C").reshape(3, 3))
+        self._core.set_periodicity(np.array([1, 1, 1], dtype="intc"))
+        self._core.set_transformation_matrices(ts, tp, int(autoset_primcell))
+
     def set_constraint(self, translation=True, rotation=False):
-        """ICONST: 11 = algebraic translational invariance (acoustic sum rule)."""
+        """ICONST=11: algebraic translational invariance (acoustic sum rule). Sets both the
+        constraint mode and the algebraic flag (= ICONST//10), as the CLI does; required for enet."""
         self._check()
         if rotation:
             raise NotImplementedError(
                 "rotation=True is not supported by this wrapper yet "
                 "(set ROTAXIS via the input-var interface if you need it).")
-        self._core.set_constraint_mode(11 if translation else 0)
+        iconst = 11 if translation else 0
+        self._core.set_constraint_mode(iconst)
+        self._core.set_algebraic_constraint(iconst // 10)
 
     # ---- fixing / freezing FCs ------------------------------------------
     def set_forceconstants_to_fix(self, intpair_fix, values_fix):
@@ -367,14 +385,18 @@ class ALM:
         return v, idx.reshape(-1, fc_order + 1)
 
     def set_fc(self, fc_in):
-        """Inject an irreducible FC vector (e.g. from an external regressor)."""
+        """Inject a free-parameter FC vector (e.g. from an external regressor fit to the
+        matrix returned by get_matrix_elements)."""
         self._check()
         fc_in = np.array(fc_in, dtype="double", order="C")
-        n = sum(self._core.get_number_of_irred_fc_elements(o + 1)
-                for o in range(self._maxorder))
+        n = self._core.get_number_of_free_parameters()
         if fc_in.size != n:
-            raise RuntimeError(f"expected {n} irreducible FCs, got {fc_in.size}.")
+            raise RuntimeError(f"expected {n} free FCs, got {fc_in.size}.")
         self._core.set_fc(fc_in)
+
+    def get_number_of_free_parameters(self):
+        self._check()
+        return self._core.get_number_of_free_parameters()
 
     def get_number_of_irred_fc_elements(self, fc_order):
         self._check()

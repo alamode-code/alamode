@@ -634,6 +634,27 @@ auto ALM::get_fc_zero_threshold() const -> double
     return fcs->get_fc_zero_threshold();
 }
 
+auto ALM::get_number_of_free_parameters() -> size_t
+{
+    // Ensure the (algebraic) constraints are set up, mirroring get_matrix_elements's prologue,
+    // then count the free parameters per order from the algebraic index map.
+    if (!initialized_constraint_class) {
+        constraint->setup(system, fcs, cluster, symmetry,
+                          get_optimizer_control().linear_model,
+                          get_optimizer_control().periodic_image_conv, verbosity, timer);
+        initialized_constraint_class = true;
+    }
+    if (!ready_all_constraints()) {
+        constraint->update_constraint_matrix(system, symmetry, cluster, fcs, verbosity,
+                                             get_optimizer_control().periodic_image_conv,
+                                             constraint->get_reduction_algorithm());
+    }
+    size_t n = 0;
+    const int maxorder = cluster->get_maxorder();
+    for (int i = 0; i < maxorder; ++i) n += constraint->get_index_bimap(i).size();
+    return n;
+}
+
 auto ALM::get_matrix_elements(double *amat, double *bvec) -> void
 {
     const auto maxorder = cluster->get_maxorder();

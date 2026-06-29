@@ -144,6 +144,10 @@ public:
 
     [[nodiscard]] auto get_nrows_sensing_matrix() const -> size_t;
 
+    // Number of free parameters after algebraic constraints (= ncols of the compact sensing
+    // matrix returned by get_matrix_elements). Sets up the constraints if not done yet.
+    auto get_number_of_free_parameters() -> size_t;
+
     [[nodiscard]] auto get_cv_l1_alpha() const -> double;
 
     [[nodiscard]] auto get_symmetry_tolerance() const -> double;

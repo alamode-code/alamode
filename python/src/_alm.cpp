@@ -39,14 +39,6 @@ static nb::ndarray<nb::numpy, T> make_owned(std::size_t n, T **out)
     return nb::ndarray<nb::numpy, T>(data, {n}, owner);
 }
 
-// Total number of irreducible FC parameters over all orders (= ncols of the sensing matrix).
-static std::size_t total_irred(ALM &self)
-{
-    const int maxorder = self.get_maxorder();
-    std::size_t n = 0;
-    for (int o = 1; o <= maxorder; ++o) n += self.get_number_of_irred_fc_elements(o);
-    return n;
-}
 
 NB_MODULE(_alm, m)
 {
@@ -110,6 +102,28 @@ NB_MODULE(_alm, m)
              },
              nb::arg("lavec").noconvert(), nb::arg("xcoord").noconvert(), nb::arg("kind").noconvert())
         .def("set_element_names", &ALM::set_element_names)
+        .def("set_transformation_matrices",
+             [](ALM &self, f64in tsuper, f64in tprim, int autoset_primcell) {
+                 for (auto *a : {&tsuper, &tprim})
+                     if (a->ndim() != 2 || a->shape(0) != 3 || a->shape(1) != 3)
+                         throw std::invalid_argument("set_transformation_matrices: matrices must be (3,3)");
+                 const auto *ts = reinterpret_cast<const double(*)[3]>(tsuper.data());
+                 const auto *tp = reinterpret_cast<const double(*)[3]>(tprim.data());
+                 self.set_transformation_matrices(ts, tp, autoset_primcell);
+             },
+             nb::arg("transmat_to_super").noconvert(), nb::arg("transmat_to_prim").noconvert(),
+             nb::arg("autoset_primcell") = 0)
+        .def("set_magnetic_params",
+             [](ALM &self, f64in magmom, bool lspin, int noncollinear, int trev_sym_mag,
+                const std::string &str_magmom) {
+                 if (magmom.ndim() != 2 || magmom.shape(1) != 3)
+                     throw std::invalid_argument("set_magnetic_params: magmom must be (nat, 3)");
+                 const std::size_t nat = magmom.shape(0);
+                 const auto *mm = reinterpret_cast<const double(*)[3]>(magmom.data());
+                 self.set_magnetic_params(nat, mm, lspin, noncollinear, trev_sym_mag, str_magmom);
+             },
+             nb::arg("magmom").noconvert(), nb::arg("lspin") = false, nb::arg("noncollinear") = 0,
+             nb::arg("trev_sym_mag") = 1, nb::arg("str_magmom") = "")
         .def("set_periodicity",
              [](ALM &self, i32in is_periodic) {
                  if (is_periodic.ndim() != 1 || is_periodic.shape(0) != 3)
@@ -163,6 +177,7 @@ NB_MODULE(_alm, m)
         .def("get_f_train", &ALM::get_f_train)
         .def("get_number_of_data", &ALM::get_number_of_data)
         .def("get_nrows_sensing_matrix", &ALM::get_nrows_sensing_matrix)
+        .def("get_number_of_free_parameters", &ALM::get_number_of_free_parameters)
 
         // -- model definition --------------------------------------------------
         .def("define",
@@ -226,7 +241,9 @@ NB_MODULE(_alm, m)
                      throw std::runtime_error("get_matrix_elements: training data not set "
                                               "(call set_u_train/set_f_train first)");
                  const std::size_t nrows = self.get_nrows_sensing_matrix();
-                 const std::size_t ncols = total_irred(self);
+                 // get_matrix_elements returns the algebraic-constraint-reduced (compact) matrix,
+                 // so size by the free-parameter count, not the symmetry-irreducible total.
+                 const std::size_t ncols = self.get_number_of_free_parameters();
                  double *ap = nullptr, *bp = nullptr;
                  auto amat = make_owned<double>(nrows * ncols, &ap);
                  auto bvec = make_owned<double>(nrows, &bp);
@@ -276,10 +293,10 @@ NB_MODULE(_alm, m)
              nb::arg("fc_order"), nb::arg("permutation") = 1)
         .def("set_fc",
              [](ALM &self, f64in fc_in) {
-                 const std::size_t n = total_irred(self);
+                 const std::size_t n = self.get_number_of_free_parameters();
                  if (static_cast<std::size_t>(fc_in.size()) != n)
                      throw std::invalid_argument("set_fc: expected " + std::to_string(n) +
-                                                 " irreducible FCs, got " + std::to_string(fc_in.size()));
+                                                 " free FCs, got " + std::to_string(fc_in.size()));
                  std::vector<double> buf(fc_in.data(), fc_in.data() + fc_in.size());
                  self.set_fc(buf.data());
              },
