@@ -1,0 +1,2158 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/anphondir/inputanphon.rst:5
+msgid "ANPHON: Input files"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:8
+msgid "Format of input files"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:10
+msgid "Each input file should consist of entry fields. Available entry fields are"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:13
+msgid ""
+"**&general**, **&cell**, **&scph**, **&qha**, **&relax**, **&kpoint**, "
+"**&strain**, **&displace**, **&analysis**, and **&kappa**."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:15
+msgid ""
+"The format of the input file is the same as that of *alm* which can be "
+"found :ref:`here <reference_input_alm>`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:21
+msgid "List of supported input variables"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid "**&general**"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`BCONNECT <anphon_bconnect>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`BORNINFO <anphon_borninfo>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`BORNSYM <anphon_bornsym>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`CLASSICAL <anphon_classical>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`EMIN <anphon_emin>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`EPSILON <anphon_epsilon>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`FC2FILE <anphon_fc2file>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`FCSFILE <anphon_fcsfile>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ISMEAR <anphon_ismear>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KD <anphon_kd>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MASS <anphon_mass>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MODE <anphon_mode>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`NA_SIGMA <anphon_na_sigma>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`NONANALYTIC <anphon_nonanalytic>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PREFIX <anphon_prefix>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PRINTSYM <anphon_printsym>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RESTART <anphon_restart>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`TMIN <anphon_tmin>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`TOLERANCE <anphon_tolerance>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`TRISYM <anphon_trisym>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid "**&scph**"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`BUBBLE <anphon_bubble>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`IALGO <anphon_ialgo>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KMESH_SCPH <anphon_kmesh_scph>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`LOWER_TEMP <anphon_lower_temp>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MAXITER <anphon_maxiter>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MIXALPHA <anphon_mixalpha>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RELAX_STR <anphon_relax_str>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RESTART_SCPH <anphon_restart_scph>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`SELF_OFFDIAG <anphon_self_offdiag>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`TOL_SCPH <anphon_tol_scph>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`WARMSTART <anphon_warmstart>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid "**&qha**"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KMESH_QHA <anphon_qha_kmesh_qha>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`LOWER_TEMP <anphon_qha_lower_temp>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`QHA_SCHEME <anphon_qha_scheme>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RELAX_STR <anphon_qha_relax_str>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid "**&relax**"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ALPHA_STEEPEST_DECENT <anphon_alpha_steepest_decent>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MAX_STR_ITER <anphon_max_str_iter>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MIXBETA_CELL <anphon_mixbeta_cell>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`MIXBETA_COORD <anphon_mixbeta_coord>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RELAX_ALGO <anphon_relax_algo>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RENORM_2TO1ST <anphon_renorm_2to1st>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RENORM_34TO1ST <anphon_renorm_34to1st>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`RENORM_3TO2ND <anphon_renorm_3to2nd>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`SET_INIT_STR <anphon_set_init_str>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`STAT_PRESSURE <anphon_stat_pressure>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid "**&analysis**"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ANIME <anphon_anime>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ANIME_FORMAT <anphon_anime_format>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ANIME_FRAMES <anphon_anime_frames>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`GRUNEISEN <anphon_gruneisen>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PDOS <anphon_pdos>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PRINTEVEC <anphon_printevec>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PRINTMSD <anphon_printmsd>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PRINTPR <anphon_printpr>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PRINTVEL <anphon_printvel>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`PRINTXSF <anphon_printxsf>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`SHIFT_UCORR <anphon_shift_ucorr>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`SPS <anphon_sps>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`TDOS <anphon_tdos>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`UCORR <anphon_ucorr>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ZMODE <anphon_zmode>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid "**&kappa**"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ISOFACT <anphon_isofact>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`ISOTOPE <anphon_isotope>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KAPPA_COHERENT <anphon_kappa_coherent>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1
+msgid ":ref:`KAPPA_SPEC <anphon_kappa_spec>`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:56
+msgid "Description of input variables"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:59
+msgid "\"&general\"-field"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:63
+msgid "**PREFIX**-tag : Job prefix to be used for names of output files"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Default"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:65
+#: ../../source/anphondir/inputanphon.rst:86
+#: ../../source/anphondir/inputanphon.rst:95
+#: ../../source/anphondir/inputanphon.rst:115
+#: ../../source/anphondir/inputanphon.rst:129
+#: ../../source/anphondir/inputanphon.rst:192
+#: ../../source/anphondir/inputanphon.rst:354
+#: ../../source/anphondir/inputanphon.rst:365
+#: ../../source/anphondir/inputanphon.rst:512
+#: ../../source/anphondir/inputanphon.rst:524
+#: ../../source/anphondir/inputanphon.rst:813
+#: ../../source/anphondir/inputanphon.rst:1160
+#: ../../source/anphondir/inputanphon.rst:1183
+msgid "None"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Type"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:66
+#: ../../source/anphondir/inputanphon.rst:87
+#: ../../source/anphondir/inputanphon.rst:116
+#: ../../source/anphondir/inputanphon.rst:130
+#: ../../source/anphondir/inputanphon.rst:193
+#: ../../source/anphondir/inputanphon.rst:814
+#: ../../source/anphondir/inputanphon.rst:1195
+msgid "String"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:72
+msgid "**MODE**-tag = phonons | RTA"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:75
+msgid "phonons"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Calculate phonon dispersion relation, phonon DOS,"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Gr\\ |umulaut_u|\\ neisen parameters etc."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:78
+msgid "RTA"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Calculate phonon lifetimes and lattice thermal conductivity"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "based on the Boltzmann transport equation (BTE)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "with the relaxation time approximation (RTA)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:82
+msgid "SCPH"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Calculate temperature dependent phonon dispersion curves"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "by the self-consistent phonon method."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:93
+msgid "**KD**-tag : List of the atomic species"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:96
+msgid "Array of strings"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Example"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:97
+msgid "In the case of GaAs, it should be ``KD = Ga As``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:103
+msgid ""
+"MASS-tag : List of atomic masses, one value per atomic species (in the "
+"order of the ``KD``-tag)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:105
+msgid "Standard atomic weight of elements given by the ``KD``-tag"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:106
+msgid "Array of double"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:107
+msgid ""
+"In the case of Bi\\ :sub:`2`\\ Te\\ :sub:`3`, ``MASS`` should be ``MASS ="
+" 208.98 127.60``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:113
+msgid ""
+"**FCSFILE**-tag : File (XML or HDF5) containing force constants generated"
+" by the program *alm*"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Description"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:117
+msgid ""
+"Either ``FCSFILE`` or ``FC2FILE`` must be given to start a phonon "
+"calculation."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:121
+msgid ""
+"``FCSFILE`` and ``FC2FILE`` replace the former ``FCSXML`` and ``FC2XML`` "
+"tags, which are no longer accepted."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:127
+msgid ""
+"FC2FILE-tag : File containing harmonic force constants for a different "
+"supercell size"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:131
+msgid ""
+"When ``FC2FILE`` is given, the harmonic force constants in this file are "
+"used for calculating dynamical matrices. It is possible to use supercells"
+" of different sizes for harmonic and anharmonic terms, which are "
+"specified by ``FC2FILE`` and ``FCSFILE`` respectively. Analogously, "
+"``FC3FILE`` and ``FC4FILE`` can be used to supply the cubic and quartic "
+"force constants from separate files; when they are not given, the "
+"corresponding terms are read from ``FCSFILE``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:137
+msgid "TOLERANCE-tag : Tolerance for finding symmetry operations"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:139
+msgid "1.0e-3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:140
+#: ../../source/anphondir/inputanphon.rst:183
+#: ../../source/anphondir/inputanphon.rst:217
+#: ../../source/anphondir/inputanphon.rst:226
+#: ../../source/anphondir/inputanphon.rst:252
+#: ../../source/anphondir/inputanphon.rst:392
+#: ../../source/anphondir/inputanphon.rst:402
+#: ../../source/anphondir/inputanphon.rst:607
+#: ../../source/anphondir/inputanphon.rst:631
+#: ../../source/anphondir/inputanphon.rst:645
+#: ../../source/anphondir/inputanphon.rst:657
+#: ../../source/anphondir/inputanphon.rst:668
+#: ../../source/anphondir/inputanphon.rst:679
+#: ../../source/anphondir/inputanphon.rst:724
+#: ../../source/anphondir/inputanphon.rst:738
+msgid "Double"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:146
+msgid "PRINTSYM-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:149
+#: ../../source/anphondir/inputanphon.rst:153
+#: ../../source/anphondir/inputanphon.rst:163
+#: ../../source/anphondir/inputanphon.rst:172
+#: ../../source/anphondir/inputanphon.rst:203
+#: ../../source/anphondir/inputanphon.rst:207
+#: ../../source/anphondir/inputanphon.rst:236
+#: ../../source/anphondir/inputanphon.rst:262
+#: ../../source/anphondir/inputanphon.rst:270
+#: ../../source/anphondir/inputanphon.rst:283
+#: ../../source/anphondir/inputanphon.rst:287
+#: ../../source/anphondir/inputanphon.rst:317
+#: ../../source/anphondir/inputanphon.rst:338
+#: ../../source/anphondir/inputanphon.rst:377
+#: ../../source/anphondir/inputanphon.rst:420
+#: ../../source/anphondir/inputanphon.rst:434
+#: ../../source/anphondir/inputanphon.rst:449
+#: ../../source/anphondir/inputanphon.rst:453
+#: ../../source/anphondir/inputanphon.rst:464
+#: ../../source/anphondir/inputanphon.rst:479
+#: ../../source/anphondir/inputanphon.rst:483
+#: ../../source/anphondir/inputanphon.rst:494
+#: ../../source/anphondir/inputanphon.rst:500
+#: ../../source/anphondir/inputanphon.rst:552
+#: ../../source/anphondir/inputanphon.rst:566
+#: ../../source/anphondir/inputanphon.rst:571
+#: ../../source/anphondir/inputanphon.rst:710
+#: ../../source/anphondir/inputanphon.rst:747
+#: ../../source/anphondir/inputanphon.rst:770
+#: ../../source/anphondir/inputanphon.rst:774
+#: ../../source/anphondir/inputanphon.rst:950
+#: ../../source/anphondir/inputanphon.rst:954
+#: ../../source/anphondir/inputanphon.rst:970
+#: ../../source/anphondir/inputanphon.rst:974
+#: ../../source/anphondir/inputanphon.rst:984
+#: ../../source/anphondir/inputanphon.rst:988
+#: ../../source/anphondir/inputanphon.rst:1000
+#: ../../source/anphondir/inputanphon.rst:1004
+#: ../../source/anphondir/inputanphon.rst:1015
+#: ../../source/anphondir/inputanphon.rst:1019
+#: ../../source/anphondir/inputanphon.rst:1030
+#: ../../source/anphondir/inputanphon.rst:1034
+#: ../../source/anphondir/inputanphon.rst:1045
+#: ../../source/anphondir/inputanphon.rst:1049
+#: ../../source/anphondir/inputanphon.rst:1064
+#: ../../source/anphondir/inputanphon.rst:1071
+#: ../../source/anphondir/inputanphon.rst:1083
+#: ../../source/anphondir/inputanphon.rst:1088
+#: ../../source/anphondir/inputanphon.rst:1100
+#: ../../source/anphondir/inputanphon.rst:1105
+#: ../../source/anphondir/inputanphon.rst:1127
+#: ../../source/anphondir/inputanphon.rst:1132
+#: ../../source/anphondir/inputanphon.rst:1210
+#: ../../source/anphondir/inputanphon.rst:1216
+#: ../../source/anphondir/inputanphon.rst:1232
+#: ../../source/anphondir/inputanphon.rst:1237
+#: ../../source/anphondir/inputanphon.rst:1249
+#: ../../source/anphondir/inputanphon.rst:1255
+msgid "0"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:149
+msgid "Symmetry operations won’t be saved in “SYMM_INFO_PRIM”"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:150
+#: ../../source/anphondir/inputanphon.rst:165
+#: ../../source/anphondir/inputanphon.rst:204
+#: ../../source/anphondir/inputanphon.rst:237
+#: ../../source/anphondir/inputanphon.rst:264
+#: ../../source/anphondir/inputanphon.rst:284
+#: ../../source/anphondir/inputanphon.rst:318
+#: ../../source/anphondir/inputanphon.rst:321
+#: ../../source/anphondir/inputanphon.rst:339
+#: ../../source/anphondir/inputanphon.rst:378
+#: ../../source/anphondir/inputanphon.rst:381
+#: ../../source/anphondir/inputanphon.rst:421
+#: ../../source/anphondir/inputanphon.rst:424
+#: ../../source/anphondir/inputanphon.rst:435
+#: ../../source/anphondir/inputanphon.rst:438
+#: ../../source/anphondir/inputanphon.rst:450
+#: ../../source/anphondir/inputanphon.rst:465
+#: ../../source/anphondir/inputanphon.rst:480
+#: ../../source/anphondir/inputanphon.rst:495
+#: ../../source/anphondir/inputanphon.rst:536
+#: ../../source/anphondir/inputanphon.rst:541
+#: ../../source/anphondir/inputanphon.rst:553
+#: ../../source/anphondir/inputanphon.rst:556
+#: ../../source/anphondir/inputanphon.rst:567
+#: ../../source/anphondir/inputanphon.rst:588
+#: ../../source/anphondir/inputanphon.rst:690
+#: ../../source/anphondir/inputanphon.rst:695
+#: ../../source/anphondir/inputanphon.rst:748
+#: ../../source/anphondir/inputanphon.rst:771
+#: ../../source/anphondir/inputanphon.rst:792
+#: ../../source/anphondir/inputanphon.rst:951
+#: ../../source/anphondir/inputanphon.rst:971
+#: ../../source/anphondir/inputanphon.rst:985
+#: ../../source/anphondir/inputanphon.rst:1001
+#: ../../source/anphondir/inputanphon.rst:1016
+#: ../../source/anphondir/inputanphon.rst:1031
+#: ../../source/anphondir/inputanphon.rst:1046
+#: ../../source/anphondir/inputanphon.rst:1065
+#: ../../source/anphondir/inputanphon.rst:1084
+#: ../../source/anphondir/inputanphon.rst:1101
+#: ../../source/anphondir/inputanphon.rst:1128
+#: ../../source/anphondir/inputanphon.rst:1211
+#: ../../source/anphondir/inputanphon.rst:1233
+#: ../../source/anphondir/inputanphon.rst:1250
+msgid "1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:150
+msgid "Symmetry operations will be saved in “SYMM_INFO_PRIM”"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "type"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:154
+#: ../../source/anphondir/inputanphon.rst:173
+#: ../../source/anphondir/inputanphon.rst:208
+#: ../../source/anphondir/inputanphon.rst:242
+#: ../../source/anphondir/inputanphon.rst:271
+#: ../../source/anphondir/inputanphon.rst:288
+#: ../../source/anphondir/inputanphon.rst:322
+#: ../../source/anphondir/inputanphon.rst:343
+#: ../../source/anphondir/inputanphon.rst:382
+#: ../../source/anphondir/inputanphon.rst:411
+#: ../../source/anphondir/inputanphon.rst:425
+#: ../../source/anphondir/inputanphon.rst:439
+#: ../../source/anphondir/inputanphon.rst:454
+#: ../../source/anphondir/inputanphon.rst:469
+#: ../../source/anphondir/inputanphon.rst:484
+#: ../../source/anphondir/inputanphon.rst:501
+#: ../../source/anphondir/inputanphon.rst:542
+#: ../../source/anphondir/inputanphon.rst:557
+#: ../../source/anphondir/inputanphon.rst:572
+#: ../../source/anphondir/inputanphon.rst:594
+#: ../../source/anphondir/inputanphon.rst:620
+#: ../../source/anphondir/inputanphon.rst:696
+#: ../../source/anphondir/inputanphon.rst:711
+#: ../../source/anphondir/inputanphon.rst:753
+#: ../../source/anphondir/inputanphon.rst:775
+#: ../../source/anphondir/inputanphon.rst:798
+#: ../../source/anphondir/inputanphon.rst:955
+#: ../../source/anphondir/inputanphon.rst:975
+#: ../../source/anphondir/inputanphon.rst:989
+#: ../../source/anphondir/inputanphon.rst:1005
+#: ../../source/anphondir/inputanphon.rst:1020
+#: ../../source/anphondir/inputanphon.rst:1035
+#: ../../source/anphondir/inputanphon.rst:1050
+#: ../../source/anphondir/inputanphon.rst:1072
+#: ../../source/anphondir/inputanphon.rst:1089
+#: ../../source/anphondir/inputanphon.rst:1106
+#: ../../source/anphondir/inputanphon.rst:1133
+#: ../../source/anphondir/inputanphon.rst:1175
+#: ../../source/anphondir/inputanphon.rst:1217
+#: ../../source/anphondir/inputanphon.rst:1238
+#: ../../source/anphondir/inputanphon.rst:1256
+msgid "Integer"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:160
+msgid "NONANALYTIC-tag = 0 | 1 | 2 | 3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Non-analytic correction is not considered."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid ""
+"Include the non-analytic correction by the damping method proposed by "
+"Parlinski."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:167
+#: ../../source/anphondir/inputanphon.rst:238
+#: ../../source/anphondir/inputanphon.rst:266
+#: ../../source/anphondir/inputanphon.rst:496
+#: ../../source/anphondir/inputanphon.rst:537
+#: ../../source/anphondir/inputanphon.rst:568
+#: ../../source/anphondir/inputanphon.rst:589
+#: ../../source/anphondir/inputanphon.rst:593
+#: ../../source/anphondir/inputanphon.rst:691
+#: ../../source/anphondir/inputanphon.rst:749
+#: ../../source/anphondir/inputanphon.rst:752
+#: ../../source/anphondir/inputanphon.rst:793
+#: ../../source/anphondir/inputanphon.rst:797
+#: ../../source/anphondir/inputanphon.rst:1067
+#: ../../source/anphondir/inputanphon.rst:1212
+#: ../../source/anphondir/inputanphon.rst:1251
+msgid "2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Include the non-analytic correction by the mixed-space approach"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:169
+#: ../../source/anphondir/inputanphon.rst:497
+#: ../../source/anphondir/inputanphon.rst:538
+#: ../../source/anphondir/inputanphon.rst:590
+#: ../../source/anphondir/inputanphon.rst:692
+#: ../../source/anphondir/inputanphon.rst:794
+msgid "3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Include the non-analytic correction by the Ewald method"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:174
+msgid ""
+"When ``NONANALYTIC > 0``, appropriate ``BORNINFO`` needs to be given. If "
+"``NONANALYTIC = 1``, one may need to adjust the ``NA_SIGMA`` value to "
+"obtain reasonably smooth dispersion curves."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:180
+msgid "NA_SIGMA-tag : Damping factor for the non-analytic term"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:182
+#: ../../source/anphondir/inputanphon.rst:401
+msgid "0.1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:184
+msgid ""
+"Used when ``NONANALYTIC = 1``. The definition of ``NA_SIGMA`` is "
+"described in the formalism section."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:190
+msgid ""
+"BORNINFO-tag : File containing the macroscopic dielectric tensor and Born"
+" effective charges for the non-analytic correction"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:194
+msgid ""
+"The details of the file format can be found :ref:`here "
+"<label_format_BORNINFO>`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:200
+msgid "BORNSYM-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:203
+msgid "Do not symmetrize Born effective charges"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:204
+msgid "Symmetrize Born effective charges by using point group symmetry"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:214
+msgid "TMIN, TMAX, DT-tags : Temperature range and its stride in units of Kelvin"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:216
+msgid "``TMIN = 0``, ``TMAX = 1000``, ``DT = 10``"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:223
+msgid ""
+"EMIN, EMAX, DELTA_E-tags : Energy range and its stride in units of kayser"
+" (cm\\ :sup:`-1`)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:225
+msgid ""
+"``EMIN`` and ``EMAX`` are set automatically from the eigenfrequencies as "
+"of ver. 1.5.0. The default value for ``DELTA_E`` is 10.0."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:232
+msgid "ISMEAR-tag = -1 | 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:235
+#: ../../source/anphondir/inputanphon.rst:241
+msgid "-1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:235
+msgid "Tetrahedron method"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:236
+msgid "Lorentzian smearing with width of ``EPSILON``"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:237
+msgid "Gaussian smearing with width of ``EPSILON``"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:238
+msgid "Adaptive Gaussian smearing"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:243
+msgid "``ISMEAR`` specifies the method for Brillouin zone integration"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:249
+msgid "EPSILON-tag : Smearing width in units of Kayser (cm\\ :sup:`-1`)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:251
+msgid "10.0"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:253
+msgid "This variable is neglected when ``ISMEAR = -1``"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:259
+msgid "BCONNECT-tag = 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Phonon band is saved without change (sorted in order of energy)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Phonon band is connected by using the similarity of eigenvectors."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Same as ``BCONNECT=1``. In addition, information about the connectivity is"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "saved as ``PREFIX.connection``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:272
+msgid "The algorithm for connecting a band structure is described here_."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:280
+msgid "CLASSICAL-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:283
+msgid "Use quantum statistics (default)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:284
+msgid "Use classical statistics"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:289
+msgid ""
+"When ``CLASSICAL = 1``, all thermodynamic functions including the "
+"occupation function, heat capacity, and mean square displacements are "
+"calculated using the classical formulae. This option may be useful when "
+"comparing the lattice dynamics and molecular dynamics results."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:292
+msgid "Comparison of quantum and classical values"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:295
+msgid "Function"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:296
+msgid "Quantum (``CLASSICAL = 0``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:297
+msgid "Classical (``CLASSICAL = 1``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:298
+msgid "Occupation number"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:299
+#, python-brace-format
+msgid ""
+":math:`\\displaystyle n_\\mathrm{B}=\\frac{1}{\\exp(\\beta\\hbar\\omega) "
+"- 1}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:300
+#, python-brace-format
+msgid ":math:`\\displaystyle n_\\mathrm{C}=\\frac{1}{\\beta\\hbar\\omega}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:301
+msgid "Mode specific heat"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:302
+msgid ""
+":math:`\\displaystyle c_{q} = "
+"k_{\\mathrm{B}}\\left[\\frac{\\beta\\hbar\\omega_q}{2}\\mathrm{csch}\\bigg({\\frac{\\beta\\hbar\\omega_q}{2}}\\bigg)\\right]^2`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:303
+msgid ":math:`\\displaystyle c_{q} = k_{\\mathrm{B}}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:304
+msgid "MSD of normal mode :math:`\\braket{Q^{*}_qQ_q}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:305
+msgid ":math:`\\displaystyle \\frac{\\hbar (1 + n_{\\mathrm{B}})}{2\\omega_q}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:306
+msgid ":math:`\\displaystyle \\frac{1}{\\beta\\omega_{q}^{2}}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:314
+msgid ""
+"TRISYM-tag : Flag to use symmetry operations to reduce the number of "
+"triples of :math:`k` points for self-energy calculations"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:317
+msgid "Symmetry will not be used"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:318
+msgid "Use symmetry to reduce triples of :math:`k` points"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:323
+msgid "This variable is used only when ``MODE = RTA``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:327
+msgid ""
+"``TRISYM = 1`` can reduce the computational cost, but phonon linewidth "
+"stored to the file ``PREFIX``.result needs to be averaged at points of "
+"degeneracy. For that purpose, a subsidiary program ``analyze_phonons.py``"
+" should be used."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:335
+msgid "RESTART-tag : Flag to restart the calculation when ``MODE = RTA``"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:338
+msgid "Calculate from scratch"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:339
+msgid "Restart from the existing file"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:342
+msgid "1 if there is a file named ``PREFIX``.result; 0 otherwise"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:348
+msgid "\"&scph\"-field (Read only when ``MODE = SCPH``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:352
+#: ../../source/anphondir/inputanphon.rst:510
+msgid "KMESH_INTERPOLATE-tag = k1, k2, k3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:355
+#: ../../source/anphondir/inputanphon.rst:366
+#: ../../source/anphondir/inputanphon.rst:513
+#: ../../source/anphondir/inputanphon.rst:525
+#: ../../source/anphondir/inputanphon.rst:1117
+#: ../../source/anphondir/inputanphon.rst:1184
+msgid "Array of integers"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:356
+msgid ""
+"In the iteration process of the SCPH equation, the interpolation is done "
+"using the :math:`k` mesh defined by ``KMESH_INTERPOLATE``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:363
+msgid "KMESH_SCPH-tag = k1, k2, k3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:367
+msgid ""
+"This :math:`k` mesh is used for the inner loop of the SCPH equation. Each"
+" value of ``KMESH_SCPH`` must be equal to or a multiple of the number of "
+"``KMESH_INTERPOLATE`` in the same direction."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:374
+msgid "SELF_OFFDIAG-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:377
+msgid ""
+"Neglect the off-diagonal elements of the loop diagram in the SCPH "
+"calculation"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:378
+msgid ""
+"Consider the off-diagonal elements of the loop diagram in the SCPH "
+"calculation"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:383
+msgid "``SELF_OFFDIAG = 1`` is more accurate, but expensive."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:389
+msgid "TOL_SCPH-tag: Stopping criterion of the SCPH iteration"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:391
+msgid "1.0e-10"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:393
+msgid ""
+"The SCPH iteration stops when both :math:`[\\frac{1}{N_{q}}\\sum_{q} "
+"(\\Omega_{q}^{(i)}-\\Omega_{q}^{(i-1)})^{2}]^{1/2}` < ``TOL_SCPH`` and "
+":math:`(\\Omega_{q}^{(i)})^{2} \\geq 0 \\; (\\forall q)` are satisfied. "
+"Here, :math:`\\Omega_{q}^{(i)}` is the anharmonic phonon frequency in the"
+" :math:`i`\\ th iteration and :math:`q` is the phonon modes at the "
+"irreducible momentum grid of ``KMESH_INTERPOLATE``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:399
+msgid "MIXALPHA-tag: Mixing parameter used in the SCPH iteration"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:408
+msgid "MAXITER-tag: Maximum number of the SCPH iteration"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:410
+msgid "1000"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:417
+#: ../../source/anphondir/inputanphon.rst:549
+msgid "LOWER_TEMP-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:420
+msgid ""
+"The SCPH iteration starts from ``TMIN`` and proceeds to ``TMAX``. (Raise "
+"the temperature)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:421
+msgid ""
+"The SCPH iteration starts from ``TMAX`` and proceeds to ``TMIN``. (Lower "
+"the temperature)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:431
+msgid "WARMSTART-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:434
+msgid "SCPH iteration is initialized by harmonic frequencies and eigenvectors"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:435
+msgid "SCPH iteration is initialized by the solution of the previous temperature"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:440
+msgid "``WARMSTART = 1`` usually improves the convergence."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:446
+msgid "IALGO-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:449
+msgid "MPI parallelization for the :math:`k` point"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:450
+msgid "MPI parallelization for the phonon branch"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:455
+msgid ""
+"Use ``IALGO = 1`` when the primitive cell contains many atoms and the "
+"number of :math:`k` points is small."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:461
+msgid "RESTART_SCPH-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:464
+msgid "Perform a SCPH calculation from scratch"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:465
+msgid "Skip a SCPH iteration by loading a precalculated result"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:468
+msgid ""
+"1 if the file ``PREFIX.scph_dymat`` exists in the working directory; 0 "
+"otherwise"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:476
+msgid "BUBBLE-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:479
+msgid "No bubble correction to the dynamical matrix"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:480
+msgid "Calculate bubble correction on top of the SCPH dynamical matrix"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:491
+msgid "RELAX_STR-tag = 0 | 1 | 2 | 3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:494
+msgid "Don't relax the crystal structure (not supported when ``MODE = QHA``)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:495
+#: ../../source/anphondir/inputanphon.rst:536
+msgid "Relax atomic positions."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:496
+#: ../../source/anphondir/inputanphon.rst:537
+msgid "Relax both atomic positions and the shape of the unit cell."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:497
+#: ../../source/anphondir/inputanphon.rst:538
+msgid "Lowest-order perturbation theory (not supported when ``MODE = SCPH``)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:506
+msgid "\"&qha\"-field (Read only when ``MODE = QHA``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:514
+msgid ""
+"In the structural optimization based on quasiharmonic approximation "
+"(QHA), the interpolation is done using the :math:`k` mesh defined by "
+"``KMESH_INTERPOLATE``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:522
+msgid "KMESH_QHA-tag = k1, k2, k3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:526
+msgid ""
+"This :math:`k` mesh is used for the QHA-based structural optimization. "
+"Each value of ``KMESH_QHA`` must be equal to or a multiple of the number "
+"of ``KMESH_INTERPOLATE`` in the same direction."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:533
+msgid "RELAX_STR-tag = 1 | 2 | 3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:543
+msgid "``RELAX_STR = 0`` is not supported when ``MODE = QHA``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:552
+msgid ""
+"The structural optimization starts from ``TMIN`` and proceeds to "
+"``TMAX``. (Raise the temperature)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:553
+msgid ""
+"The structural optimization starts from ``TMAX`` and proceeds to "
+"``TMIN``. (Lower the temperature)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:563
+msgid "QHA_SCHEME-tag = 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:566
+msgid "Full optimization within QHA."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:567
+msgid "zero-static internal stress approximation (ZSISA)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:568
+msgid "volumetric ZSISA (v-ZSISA)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:574
+msgid "This option is used only when ``mode = QHA`` and ``RELAX_STR = 2``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:581
+msgid "\"&relax\"-field (Read only when ``RELAX_STR != 0``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:585
+msgid "RELAX_ALGO-tag = 1 | 2 | 3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:588
+msgid "Steepest descent (not recommended)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:589
+msgid "Newton-like method"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:590
+msgid "BFGS + GDIIS"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:596
+msgid ""
+"Algorithm to update the crystal structure in structural optimization. "
+"This option is used only when ``RELAX_STR = 1, 2``. ``RELAX_ALGO = 1`` "
+"works properly only when the unit cell is fixed (``RELAX_STR = 1``)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:604
+msgid ""
+"ALPHA_STEEPEST_DECENT-tag: Coefficient of steepest descent in structural "
+"optimization"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:606
+msgid "1.0e4"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:609
+#, python-brace-format
+msgid ""
+":math:`\\alpha` coefficient in structural optimization with the steepest-"
+"descent algorithm. The unit is [:math:`m_e a_B^2/(2\\text{Ry})`]. This "
+"option is used only when ``RELAX_ALGO = 1``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:617
+msgid "MAX_STR_ITER-tag: Maximum number of structure updates."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:619
+msgid "100"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:622
+#: ../../source/anphondir/inputanphon.rst:659
+msgid "This option is used only when ``RELAX_STR = 1, 2``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:628
+msgid ""
+"ADD_HESS_DIAG-tag: Correction to the estimated Hessian of free energy in "
+"units of kayser (cm\\ :sup:`-1`)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:630
+msgid "100.0"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:633
+msgid ""
+"The squared ``ADD_HESS_DIAG`` is added to the diagonal components of "
+"estimated Hessians, which is used to update crystal structures in "
+"structural optimization. ``ADD_HESS_DIAG`` makes the calculation more "
+"robust in the presence of soft modes near the structural phase "
+"transition, but setting large values will make the convergence slower. "
+"This option is used only when ``RELAX_ALGO = 2``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:642
+msgid ""
+"COORD_CONV_TOL-tag: Threshold of convergence for atomic positions in "
+"structural optimization."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:644
+#: ../../source/anphondir/inputanphon.rst:667
+msgid "1.0e-5"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:647
+msgid ""
+"The value is interpreted in units of Bohr. This option is used only when "
+"``RELAX_STR = 1, 2``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:654
+msgid ""
+"MIXBETA_COORD-tag: Mixing coefficient for atomic positions in structure "
+"updates."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:656
+#: ../../source/anphondir/inputanphon.rst:678
+msgid "0.5"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:665
+#, python-brace-format
+msgid ""
+"CELL_CONV_TOL-tag: Threshold of convergence for displacement gradient "
+"tensor :math:`u_{\\mu \\nu}` in structural optimization."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:670
+#: ../../source/anphondir/inputanphon.rst:681
+msgid "This option is used only when ``RELAX_STR = 2``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:676
+#, python-brace-format
+msgid ""
+"MIXBETA_CELL-tag: Mixing coefficient for displacement gradient tensor "
+":math:`u_{\\mu \\nu}` in structure updates."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:687
+msgid "SET_INIT_STR-tag = 1 | 2 | 3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:690
+msgid "Set initial structure from the input file at each temperature."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:691
+msgid "Start from the crystal structure of the previous temperature."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:692
+msgid ""
+"Start from the crystal structure of the previous temperature in low-"
+"symmetry phase."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:698
+msgid ""
+"This option specifies how to set the initial structure of structural "
+"optimization at different temperatures. This option is used when "
+"``RELAX_STR = 1, 2``. In all options, the initial structure at the "
+"initial temperature is set from the input file. The initial structure of "
+"the input file is read from the ``&strain`` and ``&displace`` field. When"
+" ``SET_INIT_STR = 3``, the initial displacement from the input file is "
+"used if the crystal structure converges to the high-symmetry phase at the"
+" previous temperature. The criterion to distinguish low-symmetry and "
+"high-symmetry phases is explained in :ref:`COOLING_U0_THR "
+"<anphon_cooling_u0_thr>`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:708
+msgid ""
+"COOLING_U0_INDEX-tag = 0 | 1 | ... | 3N-1 (N : the number of atoms in the"
+" unit cell)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:713
+msgid ""
+"Specify as :math:`3\\times\\alpha + \\mu`. Here, :math:`\\alpha` denotes "
+"the atom index in the primitive cell and :math:`\\mu` is the xyz index, "
+"where both indices are zero-indexed. See the description of "
+":ref:`COOLING_U0_THR <anphon_cooling_u0_thr>` for details. This option is"
+" used only when ``SET_INIT_STR = 3``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:721
+msgid ""
+"COOLING_U0_THR-tag: Threshold to judge high-symmetry phase in structural "
+"optimization [Bohr]."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:723
+msgid "0.001"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:726
+#, python-brace-format
+msgid ""
+"The crystal structure is judged to be back to the high-symmetry phase if "
+":math:`u^{(0)}` [``COOLING_U0_INDEX``] < ``COOLING_U0_THR``. This option "
+"is useful in cooling calculations because small displacements from the "
+"high-symmetry structure are required to induce spontaneous symmetry "
+"breaking. This option is used only when ``SET_INIT_STR = 3``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:735
+msgid "STAT_PRESSURE-tag: Hydrostatic pressure in GPa."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:737
+msgid "0.0"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:744
+msgid "RENORM_2TO1ST-tag = 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:747
+#: ../../source/anphondir/inputanphon.rst:770
+msgid "Set zero."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:748
+msgid "Real-space IFC renormalization. (not recommended)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:749
+msgid "Finite difference method with respect to strain."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:755
+msgid ""
+"This option specifies the method to calculate first-order derivatives of "
+"first-order IFCs with respect to strain"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:757
+msgid ""
+":math:`\\frac{\\partial \\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 "
+"\\nu_1} }`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:759
+msgid ""
+"This option is used only when ``RELAX_STR = 2, 3``. Note that "
+"``RENORM_2TO1ST = 1`` requires rotational invariance on IFCs, which is "
+"not checked in the program ANPHON. ``RENORM_2TO1ST = 0`` can be used for "
+"high-symmetry materials in which strain-force coupling is zero, which the"
+" user needs to confirm."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:767
+msgid "RENORM_34TO1ST-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:771
+#: ../../source/anphondir/inputanphon.rst:792
+msgid "Real-space IFC renormalization."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:777
+msgid ""
+"This option specifies the method to calculate second and higher-order "
+"derivatives of first-order IFCs with respect to strain."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:779
+msgid ""
+":math:`\\frac{\\partial^2 \\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 "
+"\\nu_1} \\partial u_{\\mu_2 \\nu_2}}`, :math:`\\frac{\\partial^3 "
+"\\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 \\nu_1} \\partial u_{\\mu_2 "
+"\\nu_2} \\partial u_{\\mu_3 \\nu_3}}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:782
+msgid ""
+"This option is used only when ``RELAX_STR = 2, 3``. Note that "
+"``RENORM_34TO1ST = 1`` requires rotational invariance on IFCs, which the "
+"user needs to confirm."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:789
+msgid "RENORM_3TO2ND-tag = 1 | 2 | 3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:793
+msgid "Finite difference method (Read input from all six strain patterns)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:794
+msgid "Finite difference method (Read input from specified strain patterns)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:800
+msgid ""
+"This option specifies the method to calculate first-order derivatives of "
+"harmonic IFCs with respect to strain."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:802
+msgid ""
+":math:`\\frac{\\partial \\Phi_{\\mu_1 \\mu_2}(0\\alpha_1, R "
+"\\alpha_2)}{\\partial u_{\\mu \\nu}}`"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:804
+msgid ""
+"This option is used only when ``RELAX_STR = 2, 3``. To use "
+"``RENORM_3TO2ND = 3``, the entries of the rotation matrices of ALL the "
+"space-group operations must be either 0 or :math:`\\pm` 1 in Cartesian "
+"representation."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:811
+msgid "STRAIN_IFC_DIR-tag: Directory name of the inputs of strain-IFC couplings."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:816
+msgid ""
+"When ``RENORM_2TO1ST = 2`` or ``RENORM_3TO2ND = 3``, the input files of "
+"the strain-IFC couplings must be given properly in this directory."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:823
+msgid "\"&cell\"-field"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:825
+msgid "Please specify the cell parameters of the *primitive cell* as::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:834
+#, python-brace-format
+msgid ""
+"The cell parameters are then given by :math:`\\vec{a}_{1} = a \\times "
+"(a_{11}, a_{12}, a_{13})`, :math:`\\vec{a}_{2} = a \\times (a_{21}, "
+"a_{22}, a_{23})`, and :math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, "
+"a_{33})`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:839
+#, python-brace-format
+msgid ""
+"The lattice constant :math:`a` must be consistent with the value used for"
+" the program *alm*. For example, if one used :math:`a = 20.4 a_{0}` for a"
+" 2x2x2 supercell of Si, one should use :math:`a = 10.2 a_{0}` here for "
+"the primitive cell."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:846
+msgid "\"&kpoint\"-field"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:848
+msgid ""
+"This entry field is used to specify the list of :math:`k` points to be "
+"calculated. The first entry **KPMODE** specifies the types of calculation"
+" which is followed by detailed entries."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:851
+msgid "**KPMODE = 0** : Calculate phonon frequencies at given :math:`k` points"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:853
+msgid ""
+"For example, if one wants to calculate phonon frequencies at Gamma (0, 0,"
+" 0) and X (0, 1/2, 1/2) of an FCC crystal, the ``&kpoint`` entry should "
+"be written as ::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:863
+msgid "**KPMODE = 1** : Band dispersion calculation"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:865
+msgid ""
+"For example, if one wants to calculate phonon dispersion relations along "
+"G\\-K\\-X\\-G\\-L of a FCC crystal, the ``&kpoint`` entry should be "
+"written as follows::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:876
+msgid ""
+"The 1st and 5th columns specify the character of Brillouin zone edges, "
+"which are followed by fractional coordinates of each point. The last "
+"column indicates the number of sampling points."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:880
+msgid ""
+"**KPMODE = 2** : Uniform :math:`k` grid for phonon DOS and thermal "
+"conductivity"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:882
+msgid ""
+"In order to perform a calculation with 20x20x20 :math:`k` grid, the entry"
+" should be ::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:893
+msgid "\"&strain\"-field (Read only when ``RELAX_STR = 2``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:895
+#, python-brace-format
+msgid ""
+"Please specify the initial displacement gradient tensor :math:`u_{\\mu "
+"\\nu}` for structural optimization as ::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:903
+msgid "Note that the user needs to give a symmetric matrix."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:906
+msgid "\"&displace\"-field (Read only when ``RELAX_STR = 1, 2``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:908
+#, python-brace-format
+msgid ""
+"Please specify the initial atomic displacements :math:`u^{(0)}_{\\alpha "
+"\\mu}` [Bohr]."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:910
+msgid "**DISPMODE = 0** : Fractional coordinate representation"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:912
+msgid ""
+"The ``&displace`` entry should be written as follows. The first four "
+"lines after DISPMODE (= 0) specifies the unit cell, whose format is the "
+"same as the ``&cell`` field. Note that the unit cell in the ``&displace``"
+" field is used only for transforming the input to the real space "
+"representation. Thus, the unit cell here does not need to be commensurate"
+" with the primitive cell or some supercells."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:916
+msgid ""
+"u_ij is the j-th component of the displacement of i-th atom in the "
+"primitive cell in fractional coordinate representation. ::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:929
+msgid "**DISPMODE = 1** : Cartesian coordinate representation"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:931
+msgid ""
+"Each line after DISPMODE (= 1) specifies the initial atomic displacement "
+"in Cartesian representation. u_ij is the j component of the displacement "
+"of i-th atom in the primitive cell. ::"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:943
+msgid "\"&analysis\"-field"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:947
+msgid "GRUNEISEN-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:950
+msgid "Gr\\ |umulaut_u|\\ neisen parameters will not be calculated"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:951
+msgid "Gr\\ |umulaut_u|\\ neisen parameters will be stored"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:956
+msgid ""
+"When ``MODE = phonons`` and ``GRUNEISEN = 1``, Gr\\ |umulaut_u|\\ neisen "
+"parameters will be stored in ``PREFIX``.gruneisen (*KPMODE* = 1) or "
+"``PREFIX``.gru_all (*KPMODE* = 2)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:960
+msgid ""
+"To compute Gr\\ |umulaut_u|\\ neisen parameters, cubic force constants "
+"must be contained in the ``FCSFILE`` file."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:967
+msgid "PRINTEVEC-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:970
+msgid "Do not print phonon eigenvectors"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:971
+msgid "Print phonon eigenvectors in the ``PREFIX``.evec file"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:981
+msgid "PRINTXSF-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:984
+msgid "Do not save an AXSF file"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:985
+msgid "Create an AXSF file ``PREFIX``.axsf"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:990
+msgid ""
+"This is to visualize the direction of vibrational modes at gamma (0, 0, "
+"0) by XCrySDen. This option is valid only when ``MODE = phonons``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:997
+msgid "PRINTVEL-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1000
+msgid "Do not print group velocity"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1001
+msgid "Store phonon velocities to a file"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1006
+msgid ""
+"When ``MODE = phonons`` and ``PRINTVEL = 1``, group velocities of phonons"
+" will be stored in ``PREFIX``.phvel (*KPMODE* = 1) or "
+"``PREFIX``.phvel_all (*KPMODE* = 2)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1012
+msgid "PRINTMSD-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1015
+msgid "Do not print mean-square-displacement (MSD) of atoms"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1016
+msgid "Save MSD of atoms to the file ``PREFIX``.msd"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1021
+#: ../../source/anphondir/inputanphon.rst:1036
+#: ../../source/anphondir/inputanphon.rst:1051
+#: ../../source/anphondir/inputanphon.rst:1073
+msgid "This flag is available only when ``MODE = phonons`` and *KPMODE* = 2."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1027
+msgid "PDOS-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1030
+msgid "Only the total DOS will be printed in ``PREFIX``.dos"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1031
+msgid "Atom-projected phonon DOS will be stored in ``PREFIX``.dos"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1042
+msgid "TDOS-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1045
+msgid "Do not compute two-phonon DOS"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1046
+msgid "Two-phonon DOSs will be stored in ``PREFIX``.tdos"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1055
+msgid "Calculation of two-phonon DOS is computationally expensive."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1061
+msgid "SPS-tag = 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1064
+msgid "Do not compute scattering phase space"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Total and mode-decomposed scattering phase space involving"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "the three-phonon processes will be stored in ``PREFIX``.sps"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1067
+msgid ""
+"Three-phonon scattering phase space with the Bose factor will be stored "
+"in ``PREFIX``.sps_Bose"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1080
+msgid "PRINTPR-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1083
+msgid "Do not compute the (atomic) participation ratio"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Compute participation ratio and atomic participation ratio, which will be"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "stored in  ``PREFIX``.pr and ``PREFIX``.apr respectively."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1090
+msgid "This flag is available when ``MODE = phonons``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1097
+msgid "UCORR-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1100
+#: ../../source/anphondir/inputanphon.rst:1127
+msgid "Do nothing"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Compute the displacement-displacement correlation function."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "The result is stored in ``PREFIX``.ucorr"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1107
+msgid ""
+"The displacement-displacement correlation function involves two atoms. "
+"The first atom is located in the primitive cell at the center "
+"(shift1=[0,0,0]) and the second atom is located in the :math:`\\ell'`\\  "
+"th cell. The translation vector to the :math:`\\ell'`\\  th cell can be "
+"specified by the ``SHIFT_UCORR`` tag. This tag is effective only when "
+"``MODE = phonons`` and *KPMODE* = 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1114
+msgid "SHIFT_UCORR-tag = l1, l2, l3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1116
+msgid "[0, 0, 0]"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1118
+#, python-brace-format
+msgid ""
+"This tag specifies the translation vector used for computing the "
+"displacement-displacement (uu) correlation function. For example, if one "
+"wants to compute the uu correlation function between an atom 1 in the "
+"cell at the center and atom 2 in the neighboring cell at "
+":math:`\\boldsymbol{r}(\\ell')=(1,0,0)`, ``SHIFT_UCORR`` should be set as"
+" ``SHIFT_UCORR = 1 0 0``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1124
+msgid "ZMODE-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Compute the mode effective charges of the zone-center phonons."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "The result is stored in ``PREFIX``.zmode"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1134
+#, python-brace-format
+msgid ""
+"When ``MODE = phonons`` and ``ZMODE = 1``, the mode effective charges are"
+" computed for the phonon modes at the Gamma point and saved in "
+"``PREFIX``.zmode. The unit of the mode effective charge is :math:`e \\; "
+"\\text{amu}^{-1/2}`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1158
+msgid "ANIME-tag = k1, k2, k3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1161
+#: ../../source/anphondir/inputanphon.rst:1266
+msgid "Array of doubles"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1162
+msgid ""
+"This tag is to animate vibrational mode. k1, k2, and k3 specify the "
+"momentum of phonon modes to animate, which should be given in units of "
+"the reciprocal lattice vector. For example, ``ANIME = 0.0 0.0 0.5`` will "
+"animate phonon modes at (0, 0, 1/2). When ``ANIME`` is given, "
+"``ANIME_CELLSIZE`` is also necessary. You can choose the format of "
+"animation files, either AXSF or XYZ, by ``ANIME_FORMAT`` tag."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1172
+msgid "ANIME_FRAMES-tag: The number of frames saved in animation files"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1174
+msgid "20"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1181
+msgid "ANIME_CELLSIZE-tag = L1, L2, L3"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1185
+msgid ""
+"This tag specifies the cell size for animation. L1, L2, and L3 should be "
+"large enough to be commensurate with the reciprocal point given by the "
+"``ANIME`` tag."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1192
+msgid "ANIME_FORMAT = xsf | xyz"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1194
+msgid "xyz"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1196
+msgid ""
+"When ``ANIME_FORMAT = xsf``, ``PREFIX``.anime???.axsf files are created "
+"for XcrySDen. When ``ANIME_FORMAT = xyz``, ``PREFIX``.anime???.xyz files "
+"are created for VMD (and any other supporting software such as Jmol)."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1203
+msgid "\"&kappa\"-field (Read only when ``MODE = RTA``)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1207
+msgid "KAPPA_COHERENT-tag = 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1210
+msgid "Do not compute the coherent component of thermal conductivity"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1211
+msgid ""
+"Compute the coherent component of thermal conductivity and save it in "
+"``PREFIX``.kl_coherent."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid ""
+"In addition to above (``KAPPA_COHERENT = 1``), all elements of the "
+"coherent term"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "are saved in ``PREFIX``.kc_elem."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1218
+msgid ""
+"This flag is available when ``MODE = RTA``. For the theoretical details, "
+"please see :ref:`this page <kappa_coherent>`."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1222
+msgid "Still experimental. Please check the validity of results carefully."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1229
+msgid "KAPPA_SPEC-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1232
+msgid "Do not compute the thermal conductivity spectra"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1233
+msgid ""
+"Compute the thermal conductivity spectra, which will be stored in  "
+"``PREFIX``.kl_spec"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1239
+msgid "This flag is available when ``MODE = RTA``."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1246
+msgid "ISOTOPE-tag = 0 | 1 | 2"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1249
+msgid "Do not consider phonon-isotope scatterings"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1250
+msgid "Consider phonon-isotope scatterings"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "Consider phonon-isotope scatterings as in ``ISOTOPE = 1`` and"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst
+msgid "the calculated selfenergy is stored in ``PREFIX``.self_isotope"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1257
+msgid ""
+"When ``MODE = RTA`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to "
+"isotopes will be considered perturbatively. ``ISOFACT`` should be "
+"properly given."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1263
+msgid ""
+"ISOFACT-tag : Isotope factor for each atomic species (in the order of the"
+" ``KD``-tag)"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1265
+msgid "Automatically calculated from the ``KD`` tag"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1267
+#, python-brace-format
+msgid ""
+"Isotope factor is a dimensionless value defined by :math:`\\sum_{i} f_{i}"
+" (1 - m_{i}/\\bar{m})^{2}`. Here, :math:`f_{i}` is the fraction of the "
+":math:`i`\\ th isotope of an element having mass :math:`m_{i}`, and "
+":math:`\\bar{m}=\\sum_{i}f_{i}m_{i}` is the average mass, respectively. "
+"This quantity is equivalent to :math:`g_{2}` appearing in the original "
+"paper by S. Tamura [Phys. Rev. B, 27, 858.]."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1278
+msgid "Format of BORNINFO"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1280
+#, python-brace-format
+msgid ""
+"When one wants to consider the LO-TO splitting near the :math:`\\Gamma` "
+"point, it is necessary to set ``NONANALYTIC > 0`` and provide "
+"``BORNINFO`` file containing dielectric tensor "
+":math:`\\epsilon^{\\infty}` and Born effective charge :math:`Z^{*}`. In "
+"``BORNINFO`` file, the dielectric tensor should be written in first 3 "
+"lines which are followed by Born effective charge tensors for each atom "
+"as the following."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1285
+#, python-brace-format
+msgid ""
+"\\begin{eqnarray*}\n"
+" \\epsilon_{xx}^{\\infty} & \\epsilon_{xy}^{\\infty} & "
+"\\epsilon_{xz}^{\\infty} \\\\\n"
+" \\epsilon_{yx}^{\\infty} & \\epsilon_{yy}^{\\infty} & "
+"\\epsilon_{yz}^{\\infty} \\\\\n"
+" \\epsilon_{zx}^{\\infty} & \\epsilon_{zy}^{\\infty} & "
+"\\epsilon_{zz}^{\\infty} \\\\\n"
+" Z_{1,xx}^{*} & Z_{1,xy}^{*} & Z_{1,xz}^{*} \\\\\n"
+" Z_{1,yx}^{*} & Z_{1,yy}^{*} & Z_{1,zz}^{*} \\\\\n"
+" Z_{1,zx}^{*} & Z_{1,zy}^{*} & Z_{1,zz}^{*} \\\\\n"
+" & \\vdots & \\\\\n"
+" Z_{N_p,xx}^{*} & Z_{N_p,xy}^{*} & Z_{N_p,xz}^{*} \\\\\n"
+" Z_{N_p,yx}^{*} & Z_{N_p,yy}^{*} & Z_{N_p,zz}^{*} \\\\\n"
+" Z_{N_p,zx}^{*} & Z_{N_p,zy}^{*} & Z_{N_p,zz}^{*} \\\\\n"
+"\\end{eqnarray*}"
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1301
+msgid ""
+"Here, :math:`N_p` is the number of atoms contained in the *primitive "
+"cell*."
+msgstr ""
+
+#: ../../source/anphondir/inputanphon.rst:1305
+msgid "Please pay attention to the order of Born effective charges."
+msgstr ""
+

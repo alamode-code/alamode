@@ -1,0 +1,245 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:12
+msgid "Si : Anharmonic interatomic force constants (IFCs)"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:14
+msgid ""
+"This page explains another method to calculate anharmonic interatomic "
+"force constants (IFCs) using ALAMODE."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:16
+msgid "The example input files are provided in **example/Si/anharm_IFCs**."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:18
+msgid "Let us move to the example directory."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:27
+msgid "1. Calculate the harmonic IFCs"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:29
+msgid "First, we calculate the harmonic IFCs in the considering supercell."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:31
+msgid ""
+"The procedure is the same as explained in :ref:`Tutorial 7.1 "
+"<label_tutorial_01>`, so we briefly describe the outline here."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:33
+msgid "We first calculate the displacement patterns by **alm**."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:40
+msgid ""
+"Then, generate the VASP input files using the generated "
+"``si222_harmonic.pattern_HARMONIC`` and the input files in the "
+"**VASP_input** directory. After running the VASP calculation and "
+"obtaining :red:`DFSET_harmonic` (You can skip this part because "
+":red:`DFSET_harmonic` is provided in this tutorial), calculate the "
+"harmonic IFCs with"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:53
+msgid "2. Generate the displacement-force data"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:55
+msgid ""
+"In :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>`, we used the AIMD "
+"calculation to generate random configurations, from which we calculated "
+"the anharmonic IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:58
+msgid ""
+"However, the low-energy region of the potential energy surface (PES) can "
+"be sampled more efficiently for weakly anharmonic materials or materials "
+"without imaginary harmonic frequencies. Here, we use the harmonic IFCs "
+"and perform the independent random sampling from the harmonic PES at a "
+"given temperature."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:63
+msgid ""
+"In preparation, we calculate the phonon frequencies and the polarization "
+"vectors at commensurate :math:`q`-points."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:71
+msgid ""
+"The information on the :math:`q`-points are written out in "
+":red:`si_anphon.in` as follows."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:111
+msgid ""
+"Now, delete the unnecessary part of the output and run the **anphon** "
+"calculation."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:117
+msgid ""
+"The calculated phonon frequencies and the polarization vectors are stored"
+" in :red:`si222_harmonic.evec`."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:119
+msgid ""
+"With these preparations, we can generate supercells with random "
+"displacements by"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:128
+msgid ""
+"Here, we generated ``-nd 100`` configurations by randomly sampling from "
+"the distribution at ``--temp 300`` K in the harmonic PES."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:131
+msgid ""
+"Please run the DFT calculation for each generated supercell using the "
+"VASP input in **example/Si/anharm_IFCs/1_harmonic/VASP_input**. Then, use"
+" **extract.py** to obtain :red:`DFSET_randomQ` using the procedure "
+"explained in :ref:`Tutorial 7.1 <tutorial_Si_step2>`."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:138
+msgid ""
+"The imaginary frequencies are replaced by their absolute values in the "
+"random sampling. Thus, the procedure can be performed for the strongly "
+"anharmonic materials as well."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:141
+msgid ""
+"However, the user must be careful whether the generated set of random "
+"configurations is a good dataset for calculating IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:147
+msgid "3. Cross validation (CV)"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:149
+msgid ""
+"In this step, we explain how to run the different sets of CV calculations"
+" separately."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:151
+msgid ""
+"The calculation of different sets can be executed in parallel because "
+"they are independent of each other. So, if you have a cluster computer "
+"with multiple cores, you can run the calculations of each CV set in "
+"separate jobs. The preparation of the input files is slightly "
+"complicated, but it will be time-saving when the computational cost of "
+"the CV calculation is significant."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:157
+msgid ""
+"The input files are :red:`si_alm_cvset1.in` to :red:`si_alm_cvset4.in` in"
+" **example/Si/anharm_IFCs/3_cv**."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:159
+msgid ""
+"The essential parts of the input file :red:`si_alm_cvset1.in` are as "
+"follows."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:161
+msgid ""
+"We have ``NDATA = 100`` displacement-force data, and we will perform CV "
+"with 4 sets. Thus, we want to use the first 25 data (``NSTART_CV = 1``, "
+"``NEND_CV = 25``) in the validation process in the calculation of the "
+"first CV set (set1). Note that these 25 sets have to be excluded in the "
+"training process (``SKIP = 1-25``)"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:166
+msgid ""
+"The input files of the other CV sets are set accordingly. It is important"
+" that we use different ``PREFIX`` for each set because the result of "
+"another CV set will overwrite the output file otherwise."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:190
+#: ../../source/tutorial_pages/silicon_ifc.rst:233
+msgid "Run the calculation with"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:200
+msgid "After all the calculations are finished, collect the cvscore data with"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:208
+msgid ""
+"The number of :math:`\\alpha` for which the calculation is performed can "
+"differ depending on the CV sets because the calculation stops in the "
+"middle due to the ``STOP_CRITERION``-tag. If the calculations stop at "
+"different steps, the Python script stops with an error of \"Inconsistent "
+"number of entries\"."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:213
+msgid ""
+"In that case, please manually adjust the cvset files so that the number "
+"of entries is consistent."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:216
+msgid ""
+"The optimal amplitude of regularization (:math:`\\alpha`) can be read "
+"from the last line of :red:`si222.cvscore`."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:226
+msgid "4. Calculation of IFCs"
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:228
+msgid ""
+"Finally, we calculate the IFCs of silicon in "
+"**example/Si/anharm_IFCs/4_optimize**."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:230
+msgid ""
+"The input file is :red:`si_alm_opt.in`. Set ``CV = 0`` and set the "
+"optimal :math:`\\alpha` with ``L1_ALPHA = 2.25633e-07`` in "
+"``&optimize``-field."
+msgstr ""
+
+#: ../../source/tutorial_pages/silicon_ifc.rst:240
+msgid ""
+"The calculated IFCs are written out in :red:`si222.xml` and "
+":red:`si222.fcs`. The fitting error is"
+msgstr ""
+

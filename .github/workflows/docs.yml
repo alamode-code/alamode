@@ -30,6 +30,13 @@ concurrency:
 # Versions published in the switcher. The first entry is treated as the
 # default (the site root redirects to it). Keep PAGES_VERSIONS, the
 # versions.json manifest, and the landing redirect below in sync.
+#
+# Languages are NOT configured here: each branch declares its own set in
+# docs/languages.txt (first entry = default). A branch that ships that file is
+# published with a per-language layout (<version>/<lang>/...) plus a
+# per-version languages.json the language switcher reads; a branch without it
+# keeps the legacy single-language layout (<version>/...). This keeps older,
+# English-only branches working unchanged.
 env:
   PAGES_VERSIONS: 'master develop 2.0dev'
   PAGES_DEFAULT: 'master'
@@ -59,7 +66,19 @@ jobs:
           python -m venv "$RUNNER_TEMP/venv-pr"
           "$RUNNER_TEMP/venv-pr/bin/pip" install --upgrade pip
           "$RUNNER_TEMP/venv-pr/bin/pip" install -r docs/requirements.txt
-          "$RUNNER_TEMP/venv-pr/bin/sphinx-build" -b html docs/source "$RUNNER_TEMP/_site_pr"
+          # Build every language this branch declares (validates the gettext
+          # catalogs too), or just English when no languages.txt is present.
+          if [ -f docs/languages.txt ]; then
+            langs=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' docs/languages.txt)
+          else
+            langs=en
+          fi
+          for lang in $langs; do
+            echo "::group::Build PR ($lang)"
+            DOCS_LANGUAGE="$lang" "$RUNNER_TEMP/venv-pr/bin/sphinx-build" -b html \
+              docs/source "$RUNNER_TEMP/_site_pr/$lang"
+            echo "::endgroup::"
+          done
 
       # --- Push / manual run: build every version and assemble the site ---
       - name: Configure GitHub Pages
@@ -94,8 +113,30 @@ jobs:
             python -m venv "$venv"
             "$venv/bin/pip" install --upgrade pip
             "$venv/bin/pip" install -r "$worktree/docs/requirements.txt"
-            DOCS_VERSION="$v" "$venv/bin/sphinx-build" -b html \
-              "$worktree/docs/source" "_site/$v"
+            if [ -f "$worktree/docs/languages.txt" ]; then
+              # New layout: one subdirectory per language, a languages.json
+              # manifest, and a landing page redirecting to the default language.
+              langs=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$worktree/docs/languages.txt")
+              default_lang=$(printf '%s\n' $langs | head -n1)
+              for lang in $langs; do
+                DOCS_VERSION="$v" DOCS_LANGUAGE="$lang" "$venv/bin/sphinx-build" \
+                  -b html "$worktree/docs/source" "_site/$v/$lang"
+              done
+              json=$(printf '"%s",' $langs); json="[${json%,}]"
+              printf '%s\n' "$json" > "_site/$v/languages.json"
+              {
+                echo '<!DOCTYPE html>'
+                echo '<html lang="en"><head><meta charset="utf-8">'
+                echo "<meta http-equiv=\"refresh\" content=\"0; url=./$default_lang/\">"
+                echo "<link rel=\"canonical\" href=\"./$default_lang/\">"
+                echo '<title>ALAMODE documentation</title></head>'
+                echo "<body>Redirecting to the <a href=\"./$default_lang/\">documentation</a>&hellip;</body></html>"
+              } > "_site/$v/index.html"
+            else
+              # Legacy single-language layout (English only).
+              DOCS_VERSION="$v" "$venv/bin/sphinx-build" -b html \
+                "$worktree/docs/source" "_site/$v"
+            fi
             git worktree remove --force "$worktree"
             echo "::endgroup::"
           done
@@ -104,10 +145,11 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           set -euo pipefail
-          # versions.json: the manifest the switcher reads at runtime.
+          # versions.json: the manifest the version switcher reads at runtime.
           json=$(printf '"%s",' $PAGES_VERSIONS); json="[${json%,}]"
           printf '%s\n' "$json" > _site/versions.json
-          # Root landing page: redirect to the default version.
+          # Root landing page: redirect to the default version (whose own
+          # index then redirects to its default language, if it has several).
           {
             echo '<!DOCTYPE html>'
             echo '<html lang="en"><head><meta charset="utf-8">'
@@ -125,6 +167,55 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+  build-pdf-ja:
+    name: Build Japanese PDF
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # LuaLaTeX + LuaTeX-ja (ltjsbook class, Harano Aji fonts) for Japanese,
+      # plus GNU FreeFont for the Latin body text Sphinx defaults to.
+      - name: Install TeX Live (LuaLaTeX + Japanese)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            latexmk \
+            texlive-luatex \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-lang-japanese \
+            fonts-freefont-otf
+
+      - name: Build Japanese PDF
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/venv-pdf"
+          "$RUNNER_TEMP/venv-pdf/bin/pip" install --upgrade pip
+          "$RUNNER_TEMP/venv-pdf/bin/pip" install -r docs/requirements.txt
+          DOCS_LANGUAGE=ja "$RUNNER_TEMP/venv-pdf/bin/sphinx-build" -b latex \
+            docs/source "$RUNNER_TEMP/latex-ja"
+          # all-pdf drives latexmk, which the generated latexmkrc points at
+          # lualatex; halt on the first error so failures surface in the log.
+          make -C "$RUNNER_TEMP/latex-ja" all-pdf \
+            LATEXMKOPTS="-interaction=nonstopmode -halt-on-error"
+
+      - name: Upload Japanese PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: alamode-ja-pdf
+          path: ${{ runner.temp }}/latex-ja/ALAMODE.pdf
+          if-no-files-found: error
 
   deploy:
     name: Deploy to GitHub Pages

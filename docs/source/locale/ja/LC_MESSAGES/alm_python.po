@@ -1,0 +1,613 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/alm_python.rst:4
+msgid "ALM Python interface (external regressors)"
+msgstr ""
+
+#: ../../source/alm_python.rst:7
+msgid "Overview"
+msgstr ""
+
+#: ../../source/alm_python.rst:9
+msgid ""
+"ALAMODE 2.0dev ships a `nanobind <https://nanobind.readthedocs.io>`_ "
+"Python interface to the ALM force-constant library (package name "
+"``alm``).  Besides the built-in solvers (ordinary least squares, elastic-"
+"net, adaptive LASSO), the interface exposes ALM's **exact sensing "
+"matrix** :math:`(A, b)` so that *any* external regressor can be used to "
+"determine the anharmonic interatomic force constants (IFCs) and the "
+"result written back into an anphon-readable file."
+msgstr ""
+
+#: ../../source/alm_python.rst:16
+msgid "The intended workflow is::"
+msgstr ""
+
+#: ../../source/alm_python.rst:21
+msgid ""
+"This page documents the installation, the conventions you must respect, "
+"and a complete worked example using the scikit-learn regressors **ARD**, "
+"**BayesianRidge**, **RFECV**, and a small **Bayesian LASSO** (Gibbs) "
+"sampler."
+msgstr ""
+
+#: ../../source/alm_python.rst:27
+msgid ""
+"This interface targets the ``2.0dev`` branch.  It replaces the legacy "
+"C/cython wrapper and keeps the same high-level API (``define`` / "
+"``set_training_data`` / ``get_matrix_elements`` / ``get_fc`` / ``set_fc``"
+" / ``save_fc`` / ``optimizer_control``)."
+msgstr ""
+
+#: ../../source/alm_python.rst:34
+msgid ""
+"**Object lifetime.**  The C++ instance is created in ``ALM.__init__``, so"
+" ``a = ALM(lavec, xcoord, numbers)`` is ready to use immediately and is "
+"freed automatically when ``a`` goes out of scope (the underlying C++ "
+"class is fully RAII).  A ``with`` block — or an explicit ``alm_delete()``"
+" — is **optional**: use it only for a prompt, deterministic release, e.g."
+" inside a loop that builds many large sensing matrices."
+msgstr ""
+
+#: ../../source/alm_python.rst:45
+msgid "Installation"
+msgstr ""
+
+#: ../../source/alm_python.rst:47
+msgid ""
+"The Python interface compiles the ALM C++ sources together with the "
+"binding, so it needs the same dependencies as ALM itself (spglib, Boost, "
+"Eigen, HDF5, a BLAS/LAPACK backend, OpenMP) plus the build front-end "
+"(``nanobind``, ``scikit-build-core``) and, for the external regressors, "
+"``scikit-learn``."
+msgstr ""
+
+#: ../../source/alm_python.rst:53
+msgid "Step 1. Create an environment"
+msgstr ""
+
+#: ../../source/alm_python.rst:55
+msgid ""
+"The easiest route is conda-forge, reusing the project environment file "
+"and adding the wrapper-specific packages::"
+msgstr ""
+
+#: ../../source/alm_python.rst:65
+msgid "Step 2. Build and install the wrapper"
+msgstr ""
+
+#: ../../source/alm_python.rst:67
+msgid "From the top of the source tree::"
+msgstr ""
+
+#: ../../source/alm_python.rst:76
+msgid ""
+"If CMake selects the wrong BLAS, add ``-C "
+"cmake.define.BLA_VENDOR=OpenBLAS``."
+msgstr ""
+
+#: ../../source/alm_python.rst:79
+msgid "Step 3. Verify"
+msgstr ""
+
+#: ../../source/alm_python.rst:90
+msgid "A note on the BLAS backend and performance"
+msgstr ""
+
+#: ../../source/alm_python.rst:92
+msgid "On **Linux**, conda's NumPy links a threaded **OpenBLAS**."
+msgstr ""
+
+#: ../../source/alm_python.rst:93
+msgid ""
+"On **macOS**, the pip/conda NumPy may link **Apple Accelerate**, whose "
+"eigensolver runs single-threaded and ignores ``OMP_NUM_THREADS`` / "
+"``OPENBLAS_NUM_THREADS``."
+msgstr ""
+
+#: ../../source/alm_python.rst:97
+msgid ""
+"Several external regressors (notably ``ARDRegression``) spend most of "
+"their time in a symmetric eigendecomposition that **parallelizes poorly**"
+" regardless of the backend (measured speed-up at :math:`p\\approx8000` "
+"was only ~1.16x on 12 threads). The effective way to use many cores is "
+"therefore **process-level parallelism across independent fits** "
+"(different ``ndata`` / functionals / orders), not BLAS threads — see "
+":ref:`alm_python_performance`."
+msgstr ""
+
+#: ../../source/alm_python.rst:108
+msgid "Conventions you must respect"
+msgstr ""
+
+#: ../../source/alm_python.rst:110
+msgid ""
+"These follow the ALM command-line interface (CLI) and are easy to get "
+"wrong:"
+msgstr ""
+
+#: ../../source/alm_python.rst:114
+msgid "**Units.**"
+msgstr ""
+
+#: ../../source/alm_python.rst:116
+msgid ""
+"The lattice vectors passed to ``ALM(...)`` must be in **Bohr** (multiply "
+"Å by ``1.8897259886``)."
+msgstr ""
+
+#: ../../source/alm_python.rst:118
+msgid ""
+"The displacements ``u`` and forces ``f`` in a ``DFSET`` are read **as-is "
+"in atomic units** (Bohr and Ry/Bohr) — do **not** convert them."
+msgstr ""
+
+#: ../../source/alm_python.rst:120
+msgid ""
+"The force constants returned by ``get_fc`` / written by ``save_fc`` are "
+"converted to eV/Å\\ :sup:`n` by ALM."
+msgstr ""
+
+#: ../../source/alm_python.rst:123
+msgid ""
+"``ALM(lavec, xcoord, numbers)`` takes the **primitive** cell: ``lavec`` "
+"(3x3, Bohr), ``xcoord`` (fractional, ``(nat, 3)``), ``numbers`` (atomic "
+"numbers :math:`Z`).  Map it to the supercell with ``set_supercell``."
+msgstr ""
+
+#: ../../source/alm_python.rst:126
+msgid ""
+"``cutoff_radii`` has shape ``(maxorder, nkd, nkd)`` where ``nkd`` is the "
+"number of atomic species.  Values are **in bohr** (same convention as the"
+" CLI ``&cutoff`` field).  Use a **negative** value for \"no cutoff\".  "
+"Index 0 is the harmonic term, index 1 the cubic, etc."
+msgstr ""
+
+#: ../../source/alm_python.rst:130
+msgid ""
+"``set_constraint(translation=True)`` applies the algebraic translational "
+"invariance (acoustic sum rule, ``ICONST=11``).  ``get_matrix_elements`` "
+"then returns the **constraint-reduced** matrix whose number of columns "
+"equals ``get_number_of_free_parameters()``."
+msgstr ""
+
+#: ../../source/alm_python.rst:139
+msgid "Example inputs"
+msgstr ""
+
+#: ../../source/alm_python.rst:141
+msgid ""
+"We use the cubic **BaTiO3** example shipped with ALAMODE "
+"(``example/BaTiO3/anharm_IFCs/``).  It determines cubic and quartic IFCs "
+"of a :math:`2\\times2\\times2` (40-atom) supercell with the harmonic FCs "
+"fixed — exactly the setup of the CLI input ``4_optimize/BTO_alm_opt.in``:"
+msgstr ""
+
+#: ../../source/alm_python.rst:150
+msgid "Input"
+msgstr ""
+
+#: ../../source/alm_python.rst:151
+msgid "Role"
+msgstr ""
+
+#: ../../source/alm_python.rst:152
+msgid "``cBTO222_harmonic.xml``"
+msgstr ""
+
+#: ../../source/alm_python.rst:153
+msgid "harmonic (FC2) force constants, fixed during the fit (``FC2FIX``)"
+msgstr ""
+
+#: ../../source/alm_python.rst:154
+msgid "``3_cv/reference/DFSET_AIMD_random``"
+msgstr ""
+
+#: ../../source/alm_python.rst:155
+msgid ""
+"80 displacement-force snapshots of the 40-atom supercell (atomic units; "
+"produced by the example's MD -> DFSET workflow in steps 1-2, with a "
+"reference copy shipped under ``3_cv/reference/``)"
+msgstr ""
+
+#: ../../source/alm_python.rst:158
+msgid "5-atom cubic primitive cell"
+msgstr ""
+
+#: ../../source/alm_python.rst:159
+msgid "Ba/Ti/O, lattice constant :math:`a_0 = 7.5316` bohr (defined inline below)"
+msgstr ""
+
+#: ../../source/alm_python.rst:161
+msgid ""
+"Model (from the example input): ``NORDER = 3``, ``NBODY = 2 3 3``, cutoff"
+" radii **15.0 bohr (cubic)** and **9.0 bohr (quartic)**, harmonic term "
+"fixed."
+msgstr ""
+
+#: ../../source/alm_python.rst:166
+msgid ""
+"The CLI input supplies the **supercell** plus ``PRIMCELL`` (super→prim)."
+"  The Python wrapper instead takes the **primitive** cell and maps it to "
+"the supercell with ``set_supercell`` (``transmat_to_super = diag(2, 2, "
+"2)``). Both describe the same 40-atom system."
+msgstr ""
+
+#: ../../source/alm_python.rst:171
+msgid ""
+"A ``DFSET`` lists, for each of the ``nat_super`` atoms, one line ``ux uy "
+"uz  fx fy fz`` (Bohr, Ry/Bohr), concatenated over all snapshots.  It is "
+"read with this dependency-free helper (or use ``ase`` / your own reader):"
+msgstr ""
+
+#: ../../source/alm_python.rst:191
+msgid "Complete example: fitting with an external regressor"
+msgstr ""
+
+#: ../../source/alm_python.rst:193
+msgid ""
+"The function below defines the BaTiO3 primitive cell, extracts ALM's "
+"exact :math:`(A, b)`, **column-normalizes** it (so the regularization "
+"treats every column on an equal footing), fits the chosen regressor, "
+"writes the solution back, and saves an anphon-readable ``.h5``.  It also "
+"reports ALM's **relative error** — the residual normalized by the **total"
+" forces** (not by the anharmonic residual), which is what ALM's "
+"``.cvscore`` files report."
+msgstr ""
+
+#: ../../source/alm_python.rst:256
+msgid "Run it from ``example/BaTiO3/anharm_IFCs/`` with ARD:"
+msgstr ""
+
+#: ../../source/alm_python.rst:267
+msgid ""
+"The resulting ``cBTO222_ard.h5`` can be used directly by anphon "
+"(``FCSXML``) for the thermal-conductivity and Grüneisen calculations in "
+"``example/BaTiO3``."
+msgstr ""
+
+#: ../../source/alm_python.rst:272
+msgid ""
+"For a structure stored as a VASP POSCAR (Å), read the cell and convert to"
+" bohr (``lavec_bohr = lavec_angstrom * 1.8897259886``, e.g. via "
+"``ase.io.read``).  The displacements and forces in a ``DFSET`` are "
+"already in atomic units and must **not** be converted."
+msgstr ""
+
+#: ../../source/alm_python.rst:281
+msgid "The external regressors"
+msgstr ""
+
+#: ../../source/alm_python.rst:283
+msgid ""
+"Any estimator exposing a ``.coef_`` after ``.fit(X, y)`` works.  The four"
+" below cover the common compressive-sensing alternatives to elastic-net /"
+" adaptive LASSO."
+msgstr ""
+
+#: ../../source/alm_python.rst:288
+msgid "ARD (Automatic Relevance Determination)"
+msgstr ""
+
+#: ../../source/alm_python.rst:290
+msgid ""
+"Sparse Bayesian linear regression (the regression form of the relevance "
+"vector machine).  Each coefficient gets its own precision (inverse "
+"variance) that is optimized by evidence maximization; irrelevant "
+"coefficients are driven to zero. It is **self-tuning** (no cross-"
+"validation needed) and typically the **sparsest** solution."
+msgstr ""
+
+#: ../../source/alm_python.rst:302 ../../source/alm_python.rst:385
+msgid "BayesianRidge"
+msgstr ""
+
+#: ../../source/alm_python.rst:304
+msgid ""
+"Bayesian linear regression with a single shared Gaussian prior precision "
+"(ridge- like).  Self-tuning and fast, but the solution is **dense** (no "
+"exact zeros)."
+msgstr ""
+
+#: ../../source/alm_python.rst:313
+msgid "RFECV (recursive feature elimination with CV)"
+msgstr ""
+
+#: ../../source/alm_python.rst:315
+msgid ""
+"Wraps a base estimator and recursively prunes the least important "
+"features, choosing the number of features by cross-validation.  It is the"
+" most expensive option and can over-prune in the data-scarce regime, so "
+"it is best for small ``p``."
+msgstr ""
+
+#: ../../source/alm_python.rst:329
+msgid "Bayesian LASSO (Park & Casella 2008)"
+msgstr ""
+
+#: ../../source/alm_python.rst:331
+msgid ""
+"A Laplace prior implemented as a scale-mixture of normals, sampled with a"
+" Gibbs sampler.  scikit-learn has no Bayesian LASSO, so a compact "
+"implementation is given below.  The **posterior mean** is used as the "
+"point estimate (note that it shrinks but does not produce exact zeros, so"
+" it behaves like a \"soft LASSO\")."
+msgstr ""
+
+#: ../../source/alm_python.rst:371
+msgid "At a glance:"
+msgstr ""
+
+#: ../../source/alm_python.rst:377
+msgid "Regressor"
+msgstr ""
+
+#: ../../source/alm_python.rst:378
+msgid "Prior / mechanism"
+msgstr ""
+
+#: ../../source/alm_python.rst:379
+msgid "Sparse?"
+msgstr ""
+
+#: ../../source/alm_python.rst:380
+msgid "Notes"
+msgstr ""
+
+#: ../../source/alm_python.rst:381
+msgid "ARD"
+msgstr ""
+
+#: ../../source/alm_python.rst:382
+msgid "per-coefficient Gaussian precision (evidence max.)"
+msgstr ""
+
+#: ../../source/alm_python.rst:383
+msgid "yes (strong)"
+msgstr ""
+
+#: ../../source/alm_python.rst:384
+msgid "self-tuning; sparsest; eigendecomposition cost ~ :math:`O(p^3)`"
+msgstr ""
+
+#: ../../source/alm_python.rst:386
+msgid "single shared Gaussian precision"
+msgstr ""
+
+#: ../../source/alm_python.rst:387
+msgid "no (dense)"
+msgstr ""
+
+#: ../../source/alm_python.rst:388
+msgid "self-tuning; fast; good when :math:`n \\gg p`"
+msgstr ""
+
+#: ../../source/alm_python.rst:389
+msgid "Bayesian LASSO"
+msgstr ""
+
+#: ../../source/alm_python.rst:390
+msgid "Laplace (scale-mixture), Gibbs"
+msgstr ""
+
+#: ../../source/alm_python.rst:391
+msgid "no (soft)"
+msgstr ""
+
+#: ../../source/alm_python.rst:392
+msgid "posterior mean shrinks small terms; MCMC cost"
+msgstr ""
+
+#: ../../source/alm_python.rst:393
+msgid "RFECV"
+msgstr ""
+
+#: ../../source/alm_python.rst:394
+msgid "recursive elimination + CV"
+msgstr ""
+
+#: ../../source/alm_python.rst:395
+msgid "yes (hard)"
+msgstr ""
+
+#: ../../source/alm_python.rst:396
+msgid "expensive; best for small :math:`p`"
+msgstr ""
+
+#: ../../source/alm_python.rst:402
+msgid "Performance: scaling and parallelism"
+msgstr ""
+
+#: ../../source/alm_python.rst:404
+msgid ""
+"``get_matrix_elements`` returns the **constraint-reduced** matrix, so its"
+" column count is ``get_number_of_free_parameters()`` (much smaller than "
+"the raw irreducible count).  Reuse the same ``(A, b)`` for several "
+"regressors."
+msgstr ""
+
+#: ../../source/alm_python.rst:407
+msgid ""
+"ARD / RFECV scale roughly as :math:`O(p^3)` per iteration; for large "
+"cutoffs (:math:`p \\gtrsim 10^4`) a single fit can take tens of minutes."
+"  LASSO and BayesianRidge scale better to large :math:`p`."
+msgstr ""
+
+#: ../../source/alm_python.rst:410
+msgid ""
+"Threads do **not** help much (the bottleneck eigendecomposition is "
+"essentially serial).  To use many cores, run independent fits as "
+"**separate processes**:"
+msgstr ""
+
+#: ../../source/alm_python.rst:425
+msgid ""
+"Budget memory accordingly (a large fit at :math:`p\\approx1.7\\times10^4`"
+" needs ~20 GB); reduce ``max_workers`` if a worker is killed "
+"(``BrokenProcessPool``)."
+msgstr ""
+
+#: ../../source/alm_python.rst:428
+msgid ""
+"To speed up a single large fit, pre-screen the columns with a cheap LASSO"
+" and run the expensive regressor on the surviving support, or lower "
+"``ARDRegression(max_iter=...)``."
+msgstr ""
+
+#: ../../source/alm_python.rst:436
+msgid "API reference"
+msgstr ""
+
+#: ../../source/alm_python.rst:438
+msgid ""
+"The public interface is the high-level :class:`alm.ALM` class, a context "
+"manager wrapping the compiled core.  The members below are generated from"
+" the in-source docstrings."
+msgstr ""
+
+#: alm.alm.ALM:1 of
+msgid ""
+"Pythonic wrapper around the nanobind ALMCore object (legacy-compatible "
+"API)."
+msgstr ""
+
+#: alm.alm.ALM.alm_new:1 of
+msgid "Create the underlying C++ ALM instance."
+msgstr ""
+
+#: alm.alm.ALM.alm_new:3 of
+msgid ""
+"Called automatically by ``__init__``, so you normally never call this. It"
+" is idempotent (a no-op if the instance already exists) and may be used "
+"to recreate the instance after a manual :meth:`alm_delete`."
+msgstr ""
+
+#: alm.alm.ALM.alm_delete:1 of
+msgid "Free the underlying C++ ALM instance immediately."
+msgstr ""
+
+#: alm.alm.ALM.alm_delete:3 of
+msgid ""
+"Optional: the instance is also freed automatically when this object is "
+"garbage-collected.  Call this (or use a ``with`` block) only when you "
+"want a prompt, deterministic release, e.g. inside a tight loop that "
+"builds many large sensing matrices.  Idempotent."
+msgstr ""
+
+#: alm.alm.ALM.fix_force_constants_from_file:1 of
+msgid ""
+"Fix the `order`-th FCs (order=2 harmonic, 3 cubic, ...) to those in "
+"`fc_file` (ALM .xml/.h5). Mirrors the CLI FC2FIX/FC3FIX tags. Call before"
+" define()."
+msgstr ""
+
+#: alm.alm.ALM.set_supercell:1 of
+msgid ""
+"Define the base cell (given to the constructor) as the PRIMITIVE and map "
+"it to the supercell. transmat_to_super: (3,3) integer matrix (a_s = M "
+"a_p). Mirrors the CLI STRUCTURE_FILE(primitive)+SUPERCELL setup; call "
+"after entering the context, before define()."
+msgstr ""
+
+#: alm.alm.ALM.set_constraint:1 of
+msgid ""
+"ICONST=11: algebraic translational invariance (acoustic sum rule). Sets "
+"both the constraint mode and the algebraic flag (= ICONST//10), as the "
+"CLI does; required for enet."
+msgstr ""
+
+#: alm.alm.ALM.set_forceconstants_to_fix:1 of
+msgid "Fix a subset of FCs (e.g. FC2 from a reference fit)."
+msgstr ""
+
+#: alm.alm.ALM.freeze_fc:1 of
+msgid "Legacy alias: freeze FCs to given values. fc_indices shape (n, order+1)."
+msgstr ""
+
+#: alm.alm.ALM.suggest:1 of
+msgid "Compute the displacement patterns needed to determine the FCs."
+msgstr ""
+
+#: alm.alm.ALM.optimize:1 of
+msgid ""
+"Fit the FCs. solver: 'dense' (LAPACK SVD) or 'SimplicialLDLT' (Eigen "
+"sparse)."
+msgstr ""
+
+#: alm.alm.ALM.get_matrix_elements:1 of
+msgid ""
+"Return (A, b): A shape (nrows, n_irred_fc) Fortran-order, b shape "
+"(nrows,)."
+msgstr ""
+
+#: alm.alm.ALM.get_fc:1 of
+msgid ""
+"Return (values, elem_indices[n, fc_order+1]). mode: origin | irreducible "
+"| all."
+msgstr ""
+
+#: alm.alm.ALM.set_fc:1 of
+msgid ""
+"Inject a free-parameter FC vector (e.g. from an external regressor fit to"
+" the matrix returned by get_matrix_elements)."
+msgstr ""
+
+#: alm.alm.ALM.getmap_primitive_to_supercell:1 of
+msgid ""
+"Return map_p2s, shape (num_trans, num_atoms_primitive) (legacy "
+"orientation)."
+msgstr ""
+
+#: alm.alm.ALM.get_displacement_patterns:1 of
+msgid "Return a list (per pattern) of (atom_index, direction(3,), basis) tuples."
+msgstr ""
+
+#: alm.alm.ALM.save_fc:1 of
+msgid ""
+"Write FCs. format: 'alamode' (xml), 'alamode_h5' (.h5 for anphon), "
+"'shengbte', 'shengbte4', 'qefc', 'hessian'."
+msgstr ""
+
+#: ../../source/alm_python.rst:448
+msgid ""
+"The ``optimizer_control`` property is a ``dict`` mirroring ALM's "
+"``&optimize`` tags; the keys most relevant for comparison with the "
+"external regressors are ``linear_model`` (1 = ordinary least squares, 2 ="
+" elastic-net, 3 = adaptive LASSO), ``cross_validation``, ``l1_alpha``, "
+"and ``l1_ratio``."
+msgstr ""
+
+#: ../../source/alm_python.rst:455
+msgid "See also"
+msgstr ""
+
+#: ../../source/alm_python.rst:457
+msgid ":doc:`alm_root` — the ALM command-line program and its input tags."
+msgstr ""
+
+#: ../../source/alm_python.rst:458
+msgid ""
+"The ``optimizer_control`` property exposes ALM's native solvers "
+"(``linear_model`` = 1 OLS, 2 elastic-net, 3 adaptive LASSO) with cross-"
+"validation, for comparison with the external regressors."
+msgstr ""
+

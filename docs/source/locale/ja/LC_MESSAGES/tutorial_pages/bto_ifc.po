@@ -1,0 +1,281 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/bto_ifc.rst:12
+msgid "BaTiO\\ :sub:`3` : Anharmonic interatomic force constants (IFCs)"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:14
+msgid ""
+"This page explains how to calculate anharmonic interatomic force "
+"constants (IFCs) using ALAMODE, especially for strongly anharmonic "
+"materials. The target material is cubic BaTiO\\ :sub:`3`, which exhibits "
+"a strong lattice anharmonicity."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:17
+msgid "The example input files are provided in **example/BaTiO3/anharm_IFCs**."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:19
+msgid "Let's move to the example directory."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:29
+msgid "1. Generate the randomly displaced supercells"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:32
+msgid ""
+"There is a more efficient way to generate supercells with random "
+"displacements for weakly anharmonic materials or materials without "
+"imaginary harmonic frequencies. Please see :ref:`Tutorial 7.6 "
+"<label_tutorial_silicon_ifc>` for details."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:36
+msgid ""
+"We use the *ab initio* molecular dynamics (AIMD) calculations to generate"
+" the supercells with random displacements."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:38
+msgid ""
+"The example VASP inputs are provided in "
+"**example/BaTiO3/anharm_IFCs/1_vasp_md**. Prepare the :red:`POTCAR` file "
+"by yourself and run the AIMD calculation to obtain :red:`vasprun.xml` "
+"(You can skip this part because :red:`vasprun.xml` is provided in "
+"**1_vasp_md/reference**)."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:42
+msgid ""
+"Next, we generate the supercells with random atomic displacements from "
+"the AIMD trajectory. First, we move to the **1_configurations** directory"
+" and copy :red:`vasprun.xml`"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:51
+msgid ""
+":red:`POSCAR_ref_supercell` is the structure of the reference supercell "
+"for which we want to calculate the IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:57
+msgid ""
+"Here, the option ``-e 1001:5000:50`` means that we sample from the "
+"1001-th snapshot to the 5000-th snapshot with the sampling step of 50 "
+"time-steps. Thus, 80 configurations are generated in this case."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:60
+msgid ""
+"The option ``--random --mag 0.04`` adds random displacements of 0.04 "
+"|Angstrom| to each atom in the extracted snapshots to reduce correlations"
+" between successive snapshots."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:65
+msgid ""
+"We may use a less strict convergence criterion in the AIMD calculation "
+"because its purpose is just to generate the random structure, and the "
+"atomic forces obtained in AIMD are not directly used to calculate the "
+"IFCs. In fact, we use the following parameters, which are different from "
+"the subsequent calculation of the displacement-force data."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:69
+msgid "ENCUT = 400, EDIFF = 1.0E-6"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:71
+msgid "2x2x2 kmesh"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:73
+msgid ""
+"The temperature in the AIMD calculation is chosen so that the generated "
+"trajectory widely samples the low-energy landscape of the potential "
+"energy surface. We choose 300 K in this case, which is comparable to or "
+"lower than the structural transition temperatures of the target material."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:79
+msgid ""
+"The number of random configurations should be chosen so that the "
+"generated set of IFCs converges with respect to it. Ideally, we should "
+"check the convergence of the calculated physical quantities by changing "
+"the number of random configurations from which we extract the anharmonic "
+"IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:84
+msgid ""
+"It depends on the problems, but a rule of thumb tells us that 100~1000 "
+"configurations will do for the calculation of cubic and quartic IFCs. We "
+"can reduce the number of configurations if we calculate only the cubic "
+"IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:91
+msgid "2. Generate the displacement-force data"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:93
+msgid ""
+"We calculate the atomic forces for each random configuration generated in"
+" the previous step."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:95
+msgid ""
+"The other VASP input files (:red:`INCAR` and :red:`KPOINTS`) are provided"
+" in **example/BaTiO3/anharm_IFCs/2_vasp_dfset**. After running the VASP "
+"calculations, collect the resultant :red:`vasprun.xml` of each "
+"calculation in **example/BaTiO3/anharm_IFCs/2_vasp_dfset**."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:99
+msgid ""
+"If you want to skip the VASP calculations, please copy or move the 80 "
+":red:`vasprun.xml` files provided in **2_vasp_dfset/reference** to "
+"**2_vasp_dfset**."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:102
+msgid "Generate the displacement-force data with the command"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:110
+msgid ""
+"The generated :red:`DFSET_AIMD_random` stores the atomic displacements "
+"and the atomic forces in each configuration, from which we can calculate "
+"the anharmonic IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:116
+msgid "3. Cross validation (CV)"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:118
+msgid ""
+"We assume that the harmonic force constants are already calculated. "
+"Please use the method explained in :ref:`Tutorial 7.1 "
+"<label_tutorial_01>` for the calculation of harmonic IFCs."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:121
+msgid ""
+"In the cross validation, we determine the optimal amplitude of "
+"regularization (:math:`\\alpha`) in the elastic-net or adaptive lasso. "
+"Please see :ref:`the documentation <alm_theory_enet>` for the notation "
+"and the theoretical background."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:124
+msgid "You can run the CV calculation with the following commands."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:131
+msgid ""
+"In :red:`BTO_alm_cv.in`, ``FC2FIX = ../cBTO222_harmonic.xml`` means that "
+"we fix the harmonic IFCs with the values in the given file. This is "
+"because we would like to capture the stability or the curvature of the "
+"potential energy surface at the reference structure accurately."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:135
+msgid ""
+"With ``NBODY = 2 3 3``, we restrict the quartic IFCs to up-to-three-body "
+"terms. This treatment reduces the computational cost and makes the "
+"fitting more robust by reducing the number of degrees of freedom. "
+"Although the best choice of ``NBODY``-tag will depend on the materials "
+"and on the number of your displacement-force data, we recommend "
+"restricting the quartic IFCs to up-to-three-body terms and the higher "
+"order IFCs to up-to-two-body terms since the higher-order IFCs will be "
+"more localized in space."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:141
+msgid "Plotting the generated :red:`cBTO222.cvscore` with"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:147
+msgid ""
+"we get the following plot. Note that you need to set ``STOP_CRITERION = "
+"30`` in ``&optimize``-field to get exactly the same plot. Otherwise, the "
+"calculation is stopped before calculations with small :math:`\\alpha` are"
+" performed to save the computational cost."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:156
+msgid "The result of the CV calculation for BaTiO\\ :sub:`3`."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:158
+msgid ""
+"We can see that the CV score takes a minimum at the optimal "
+":math:`\\alpha`, which can be read from the last line of "
+":red:`cBTO222.cvscore`. ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:166
+msgid "4. Calculation of IFCs"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:168
+msgid ""
+"Finally, we calculate the IFCs of BaTiO\\ :sub:`3` in "
+"**example/BaTiO3/anharm_IFCs/4_optimize**."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:174
+msgid ""
+"To prepare the input file, we copy the input of CV and set ``L1_ALPHA`` "
+"with the optimal value by adding the new line in ``&optimize``-field. ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:180
+msgid "Also, change ``CV=4`` in ``&optimize``-field to ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:185
+msgid ""
+"You can also use a smaller value for ``CONV_TOL`` to get a more accurate "
+"result."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:187
+msgid "With the input file prepared, run the calculation with"
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:193
+msgid ""
+"The calculated IFCs are written out in :red:`cBTO222.fcs` and "
+":red:`cBTO222.xml`."
+msgstr ""
+
+#: ../../source/tutorial_pages/bto_ifc.rst:195
+msgid ""
+"Checking :red:`BTO_alm_opt.log`, we can see that the fitting is "
+"successful with a small residual error. ::"
+msgstr ""
+

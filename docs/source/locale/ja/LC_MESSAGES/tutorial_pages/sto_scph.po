@@ -1,0 +1,308 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/sto_scph.rst:10
+msgid "SrTiO\\ :sub:`3` : A self-consistent phonon example"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:12
+msgid ""
+"This page explains how to run a self-consistent phonon (SCP) calculation "
+"using ALAMODE. The target material is cubic SrTiO\\ :sub:`3`, which is a "
+"well-known perovskite solid exhibiting soft phonons."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:15
+msgid "The example input files are provided in **example/SrTiO3/reference**."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:17
+msgid "Let's move to the example directory"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:27
+msgid "1. Prepare force constants and BORNINFO"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:29
+msgid ""
+"In this tutorial, we assume that the harmonic and anharmonic force "
+"constants (up to 4th order) are already calculated and only focus on the "
+"SCP calculation part. The tutorial for calculating anharmonic force "
+"constants is given in another page."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:31
+msgid ""
+"To start an SCPH calculation, please copy the force constant files and "
+"BORNINFO as follows:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:42
+msgid "The anharmonic force constants were computed using the following settings:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:44
+msgid "VASP, PBEsol, ENCUT = 550 eV"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:46
+msgid "2x2x2 supercell of cubic SrTiO\\ :sub:`3` (40 atoms)"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:48
+msgid "Harmonic force constants were computed using ordinary least squares"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:50
+msgid ""
+"Anharmonic force constants were estimated using LASSO from 40 training "
+"structures"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:52
+msgid ""
+"For more details, please see the `original paper "
+"<https://arxiv.org/abs/1506.01781>`_."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:58
+msgid "2. Phonons within the harmonic approximation"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:60
+msgid ""
+"Before moving onto an SCP calculation, let's first confirm that the cubic"
+" STO is dynamically unstable within the harmonic approximation."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:62
+msgid ""
+"Please prepare an input file for band structure calculation "
+"(``phband.in``) as follows:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:66
+msgid "Please run **anphon** and plot the band structure as"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:77
+msgid ""
+"It is clear that phonons are dynamically unstable at the :math:`\\Gamma` "
+"and R points."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:82
+msgid "3. Phonons within the self-consistent phonon method"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:84
+msgid "Now, let's include the finite-temperature effect using the SCP method."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:86
+msgid "Please copy ``phband.in`` to ``scph.in`` and edit ``scph.in`` as follows:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:91
+#, python-brace-format
+msgid ""
+"Here, the ``&scph`` field is added to the input. The important parameters"
+" for the SCP calculation are :ref:`KMESH_INTERPOLATE "
+"<anphon_kmesh_interpolate>` and :ref:`KMESH_SCPH <anphon_kmesh_scph>`. "
+"The former defines the :math:`\\boldsymbol{q}`\\ -point mesh used to "
+"solve the SCP calculation and perform (inverse) Fourier transformation of"
+" dynamical matrices, while the latter defines the "
+":math:`\\boldsymbol{q}`\\ -point mesh used to compute the renormalization"
+" term associated with the loop self-energy diagram. Also, "
+":ref:`SELF_OFFDIAG <anphon_self_offdiag>` option controls whether the "
+"off-diagonal components of the loop self-energy are considered or not. In"
+" the above example, we neglect the off-diagonal components to make the "
+"calculation faster. We will see the effect of the off-diagonal components"
+" later."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:96
+msgid ""
+"All :math:`\\boldsymbol{q}` points generated by :ref:`KMESH_INTERPOLATE "
+"<anphon_kmesh_interpolate>` should be commensurate with the supercell "
+"size (of the harmonic force constant calculation) because :math:`\\Delta "
+"D(\\boldsymbol{q}) = D_{\\mathrm{SCPH}}(\\boldsymbol{q}) - "
+"D_{\\mathrm{HA}}(\\boldsymbol{q})` is used to interpolate dynamical "
+"matrix, for which :math:`D_{\\mathrm{HA}}(\\boldsymbol{q})` should be "
+"exact within the harmonic approximation (HA). In the above example, we "
+"employ a 2x2x2 supercell, so we should use ``KMESH_INTERPOLATE = 2 2 2`` "
+"(or ``KMESH_INTERPOLATE = 1 1 1``, which is less accurate)."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:100
+#, python-brace-format
+msgid ""
+"The :math:`\\boldsymbol{q}_1` points generated by :ref:`KMESH_SCPH "
+"<anphon_kmesh_scph>` can be denser than :ref:`KMESH_INTERPOLATE "
+"<anphon_kmesh_interpolate>`, but the latter coarser grid must be a subset"
+" of the former denser grid. For example, when we use ``KMESH_INTERPOLATE "
+"= 2 2 2``, we can set ``KMESH_SCPH = 2 2 2``, ``KMESH_SCPH = 4 4 4``, and"
+" so forth, but ``KMESH_SCPH = 3 3 3``, ``KMESH_SCPH = 5 5 5``, ... are "
+"not allowed."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:103
+msgid "Now, let's run **anphon** using MPI parallelization."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:110
+msgid ""
+"The calculation finishes in ~2 minutes. When it is done, please check if "
+"the SCPH iteration reached convergence."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:116
+msgid ""
+"We can see that the SCPH loop converged except for :math:`T = 0` K. In "
+"the working directory, the following files are created:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:119
+msgid ""
+"``STO_scph2-2.scph_dymat`` : Anharmonic corrections to the dynamical "
+"matrix, :math:`\\Delta D(\\boldsymbol{q}, T) = "
+"D_{\\mathrm{SCPH}}(\\boldsymbol{q}, T) - "
+"D_{\\mathrm{HA}}(\\boldsymbol{q})`, are stored. This file can be used to "
+"restart an SCP calculation with the same ``KMESH_*`` and ``SELF_OFFDIAG``"
+" parameters."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:120
+msgid ""
+"``STO_scph2-2.scph_dfc2`` : Anharmonic corrections to the second-order "
+"force constants, :math:`\\Delta \\Phi(\\boldsymbol{r}(\\ell), T) = "
+"M^{\\frac{1}{2}} \\Delta D(\\boldsymbol{r}(\\ell), T) M^{\\frac{1}{2}}`, "
+"are stored, where :math:`M` is the diagonal matrix whose elements are "
+"atomic masses, and :math:`\\Delta D(\\boldsymbol{r}(\\ell), T) = "
+"N_{q}^{-1} \\sum_{\\boldsymbol{q}} \\Delta D(\\boldsymbol{q}, T) "
+"e^{-i\\boldsymbol{q}\\cdot\\boldsymbol{r}(\\ell)}`. This file is used to "
+"create effective second-order force constants via ``dfc2`` (for the "
+"ALAMODE force-constant XML format) or ``scph_to_qefc.py`` (Quantum-"
+"ESPRESSO fc format)."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:121
+msgid ""
+"``STO_scph2-2.scph_bands`` : Self-consistent phonon band structures at "
+"various temperatures."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:123
+msgid "Let's plot the finite-temperature band structures."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:138
+msgid ""
+"The soft modes are stabilized by the SCP calculation and exhibit "
+"significant temperature dependences."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:142
+msgid ""
+"If you are interested, please check the dependencies of the results on "
+"``SELF_OFFDIAG`` and ``KMESH_SCPH`` values."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:147
+msgid "4. Thermodynamics from the self-consistent phonon method"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:149
+msgid ""
+"We next compute various thermodynamic functions, including the "
+"vibrational free energy, mean square displacement (MSD), using the SCP "
+"calculation. Please copy ``scph.in`` to ``scph2.in`` and edit "
+"``scph2.in`` as follows:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:155
+msgid ""
+"We use the same ``PREFIX`` as before so that the code can restart the "
+"calculation from ``STO_scph2-2.scph_dymat``. The code can skip the most "
+"expensive part of the SCP calculation, so we run **anphon** without MPI:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:162
+msgid ""
+"When the calculation finishes, the following files are created in the "
+"working directory:"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:164
+msgid ""
+"``STO_scph2-2.scph_dos`` : Phonon density of states at various "
+"temperatures"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:165
+msgid "``STO_scph2-2.scph_msd`` : Temperature-dependent MSDs for each atom"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:166
+msgid ""
+"``STO_scph2-2.scph_thermo`` : Heat capacity and vibrational free energies"
+" at various temperatures"
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:168
+msgid ""
+"These files can be plotted and processed easily. For example, let's plot "
+"the MSD of Sr, Ti, and O atoms using gnuplot."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:185
+msgid ""
+"We can see that the MSD of an oxygen is large in the plane perpendicular "
+"to the nearest Ti-O bond direction."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:187
+msgid ""
+"In the ``STO_scph2-2.scph_thermo`` file, vibrational free energies within"
+" the SCP theory are stored, which can be used to predict phase stability "
+"and thermal expansitivy of anharmonic materials. In the file, 3-5 columns"
+" give vibrational free energies."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:196
+msgid ""
+"The 3rd column is the QHA-like term and the 4th column is the correction "
+"term necessary for the vibrational free energy to satisfy the "
+"thermodynamic condition of "
+":math:`S_{\\mathrm{vib}}=-\\frac{dF_{\\mathrm{vib}}}{dT}` . The 5th "
+"column is the sum of the 3rd and 4th columns, which gives the correct "
+"vibrational free energy within the SCP scheme. So, the values in the 5th "
+"column should be used for phase stability and thermal expansivity "
+"calculations."
+msgstr ""
+
+#: ../../source/tutorial_pages/sto_scph.rst:200
+msgid ""
+"Since the SCP calculation did not converge at 0 K, the thermodynamic "
+"quantities at 0 K are incorrect and should not be used for any purposes."
+msgstr ""
+

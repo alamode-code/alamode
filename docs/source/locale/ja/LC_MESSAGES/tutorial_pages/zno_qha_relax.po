@@ -1,0 +1,318 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:12
+msgid "ZnO : A QHA-based structural optimization example"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:14
+msgid ""
+"This page explains how to calculate crystal structures at finite "
+"temperatures (:math:`T`) based on the quasiharmonic approximation (QHA)."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:16
+msgid "Let's move to the example directory"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:25
+msgid "1. Prepare force constants"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:27
+msgid ""
+"This tutorial assumes that the harmonic and anharmonic force constants "
+"are already calculated up to fourth order. Here, please unzip all the XML"
+" files in **example/ZnO/qha_relax** and "
+"**example/ZnO/qha_relax/strain_IFC** before running the calculation."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:32
+msgid ""
+"We use the harmonic IFCs calculated in the :math:`4\\times 4\\times 2` "
+"supercell and the anharmonic IFCs calculated in the :math:`3\\times "
+"3\\times 2` supercell due to the high computational cost of the DFT "
+"calculations for the anharmonic IFCs. This treatment is justified because"
+" the higher-order IFCs tend to be more localized in real space."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:42
+msgid "2. Prepare the additional input files."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:44
+msgid ""
+"We need to calculate the elastic constants, the strain-force coupling, "
+"and the strain-harmonic-IFC coupling to calculate the "
+":math:`T`-dependence of the shape of the unit cell. These input files "
+"must be placed in the directory named as the value of "
+"``STRAIN_IFC_DIR``-tag, specified in ``&relax``-field in the input file "
+"of :red:`anphon`."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:49
+msgid ""
+"The second-order elastic constants (SOEC) and the third-order elastic "
+"constants (TOEC) need to be calculated by yourself. The name of the input"
+" file must be :red:`elastic_constants.in`. The format of "
+":red:`elastic_constants.in` is as follows. ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:66
+msgid ""
+":math:`V_{cell}` is the volume of the unit cell and :math:`C_{\\mu_1 "
+"\\nu_1, \\mu_2 \\nu_2} = \\frac{1}{V}\\frac{\\partial U}{\\partial "
+"u_{\\mu_1 \\nu_1} \\partial u_{\\mu_2 \\nu_2}}`, :math:`C_{\\mu_1 \\nu_1,"
+" \\mu_2 \\nu_2, \\mu_3 \\nu_3} = \\frac{1}{V}\\frac{\\partial "
+"U}{\\partial u_{\\mu_1 \\nu_1} \\partial u_{\\mu_2 \\nu_2} \\partial "
+"u_{\\mu_3 \\nu_3}}` are the second-order and third-order elastic "
+"constants. The values in :red:`elastic_constants.in` should be in Rydberg"
+" unit."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:72
+msgid ""
+"The strain-force coupling can be calculated using the `strainIFCcoupling "
+"<https://github.com/r-masuki/strainIFCcoupling>`_ code."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:74
+msgid ""
+"Suppose the strain-force coupling is zero, i.e., the atomic force is zero"
+" when we apply finite strain with fixed fractional atomic coordinates. In"
+" that case you can set ``RENORM_2TO1ST=0`` and omit the corresponding "
+"input file. To use ``RENORM_2TO1ST=1``, we need to impose rotational "
+"invariance on the IFCs (See Appendix C of the `original paper "
+"<https://arxiv.org/abs/2302.04537>`_ for the proof), which is not "
+"recommended because it usually worsens the fitting error."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:79
+msgid ""
+"The name of the input file of the strain-force coupling must be "
+":red:`strain_force.in`."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:81
+#, python-brace-format
+msgid ""
+"In this tutorial, the following block of the input file means that if we "
+"apply the strain :math:`u_{xx}= 0.005`, the atomic force that acts on the"
+" first atom is :math:`(f_x, f_y, f_z) = (0.000000,  -0.034812,  "
+"-0.022224)` [Ry/Bohr], e.t.c. ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:92
+msgid ""
+"The meaning of the weight ``1.0`` is similar to that in the next "
+"paragraph."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:94
+msgid ""
+"Note that if we use the `strainIFCcoupling "
+"<https://github.com/r-masuki/strainIFCcoupling>`_ code, we can obtain a "
+"set of input files that follows this format."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:96
+msgid ""
+"The strain-harmonic-IFC coupling can be calculated using the "
+"`strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ "
+"code. The input files are :red:`strain_harmonic.in` and the related XML "
+"files."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:99
+msgid "For example, ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:104
+#, python-brace-format
+msgid ""
+"in :red:`strain_harmonic.in` means that "
+":red:`ZnO442_harmonic_xx_0005.xml` is the XML file of the harmonic IFCs "
+"with the strain :math:`u_{xx} = 0.005`. The weight is ``1.0`` in this "
+"case because we use the one-sided difference to calculate"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:107
+msgid ""
+":math:`\\frac{\\partial "
+"\\widetilde{\\Phi}_{\\mu\\mu'}(0\\alpha,R'\\alpha')}{\\partial u_{xx}} "
+"\\simeq \\frac{\\widetilde{\\Phi}(u_{xx} = 0.005) - "
+"\\widetilde{\\Phi}(u_{\\mu \\nu} = 0.0)}{0.005}`."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:109
+msgid "If you use the central difference method"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:111
+msgid ""
+":math:`\\frac{\\partial "
+"\\widetilde{\\Phi}_{\\mu\\mu'}(0\\alpha,R'\\alpha')}{\\partial u_{xx}} "
+"\\simeq \\frac{\\widetilde{\\Phi}(u_{xx} = 0.005) - "
+"\\widetilde{\\Phi}(u_{xx} = -0.005)}{0.005\\times2}`"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:113
+msgid ""
+":math:`= 0.5\\times \\frac{\\widetilde{\\Phi}(u_{xx} = 0.005) - "
+"\\widetilde{\\Phi}(u_{\\mu \\nu} = 0.0)}{0.005} + 0.5\\times "
+"\\frac{\\widetilde{\\Phi}(u_{xx} = -0.005) - \\widetilde{\\Phi}(u_{\\mu "
+"\\nu} = 0.0)}{-0.005}`,"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:115
+msgid "the corresponding :red:`strain_harmonic.in` would be like ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:121
+msgid ""
+"with respective weights of ``0.5`` "
+"(:red:`ZnO442_harmonic_xx_minus_0005.xml` is not provided in this "
+"tutorial)."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:123
+msgid "For the off-diagonal strain, ::"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:128
+#, python-brace-format
+msgid ""
+"means that :red:`ZnO442_harmonic_yz_00025.xml` is the set of harmonic "
+"IFCs with :math:`u_{yz} = u_{zy} = 0.005/2 = 0.0025`."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:130
+msgid ""
+"Note that if you use the `strainIFCcoupling "
+"<https://github.com/r-masuki/strainIFCcoupling>`_ code, you can obtain a "
+"set of input files that follows this format."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:136
+msgid "3. Prepare the input file."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:138
+msgid ""
+"The input file for the :red:`anphon` calculation is "
+":red:`ZnO_qha_thermo.in`."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:142
+#, python-brace-format
+msgid ""
+"We set ``KMESH_QHA = 4 4 2`` to save the computational cost. In addition,"
+" the convergence threshold of the structural optimization "
+"(``COORD_CONV_TOL = 1.0e-5`` and ``CELL_CONV_TOL = 1.0e-5``) may not be "
+"small enough if you want to calculate the thermal expansion coefficient "
+":math:`\\alpha(T) = \\frac{1}{V}\\frac{\\partial V}{\\partial T}` by "
+"finite-difference method with a small temperature difference."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:148
+msgid ""
+"These parameters should be chosen carefully to obtain accurate "
+"calculation results."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:150
+msgid "Run the calculation with"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:160
+msgid "4. Analyze the calculation results."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:162
+msgid ""
+"We can plot the :math:`T`-dependence of the thermal strain, which is "
+"written in :red:`ZnO_qha.umn_tensor`, with"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:168
+msgid "to obtain the following figure."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:170
+msgid ""
+"We can see that the thermal expansion is negative at low temperatures, "
+"and it turns positive at high temperatures. The pace of expansion of the "
+":math:`a`-axis is faster than that of the :math:`c`-axis, which agrees "
+"with the result in `the paper <https://arxiv.org/abs/2302.04537>`_."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:177
+#, python-brace-format
+msgid ""
+"The temperature-dependence of the thermal strain of ZnO. In this wurtzite"
+" case, :math:`u_{xx} = u_{yy} = a(T)/a(T=0)-1.0`, :math:`u_{zz} = "
+"c(T)/c(T=0)-1.0`, where :math:`a(T)` and :math:`c(T)` are the "
+":math:`T`-dependent lengths of the :math:`a` and :math:`c`-axis "
+"respectively."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:179
+msgid ""
+"The ZSISA (zero static internal stress approximation) and the v-ZSISA "
+"(volumetric ZSISA) are approximate optimization schemes often used in QHA"
+" calculations. The definition and the accuracy of these methods are "
+"discussed in `our original paper <https://arxiv.org/abs/2302.04537>`_."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:183
+msgid ""
+"ZSISA and v-ZSISA calculations can be performed by changing "
+"``QHA_SCHEME``-tag in ``&qha``-field. We can see that ZSISA accurately "
+"reproduces the :math:`T`-dependence of the unit cell shape. v-ZSISA "
+"underestimates the anisotropy of the thermal expansion, while it gives a "
+"good estimation of the :math:`T`-dependence of the volume of the unit "
+"cell, which is consistent with the general theorem shown in the paper."
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:188
+msgid ""
+"We can also calculate the :math:`T`-induced change of the electric "
+"polarization by"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:190
+msgid ""
+":math:`P_{\\mu}(T) - P_{\\mu}(T=0) =\\frac{1}{V_{cell}} \\sum_{\\alpha "
+"\\nu} Z^*_{\\alpha \\mu \\nu} u^{(0)}_{\\alpha \\nu}+\\sum_{\\mu_1 "
+"\\nu_1}d_{\\mu, \\mu_1 \\nu_1} u_{\\mu_1 \\nu_1},`"
+msgstr ""
+
+#: ../../source/tutorial_pages/zno_qha_relax.rst:192
+#, python-brace-format
+msgid ""
+"where :math:`Z^*_{\\alpha \\mu \\nu}` are the Born effective charges and "
+":math:`d_{\\mu, \\mu_1 \\nu_1}` are the piezoelectric tensors, which can "
+"be calcualted using DFPT in the reference structure. The "
+":math:`T`-dependent atomic displacements :math:`u^{(0)}_{\\alpha \\nu}` "
+"and the strain tensor :math:`u_{\\mu_1 \\nu_1}` are written in "
+":red:`ZnO_qha.atom_disp` and :red:`ZnO_qha.umn_tensor` respectively."
+msgstr ""
+

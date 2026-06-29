@@ -1,0 +1,1853 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/almdir/inputalm.rst:8
+msgid "ALM: Input files"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:13
+msgid "Format of input files"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:15
+msgid "Each input file should consist of entry fields. Available entry fields are"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:18
+msgid ""
+"**&general**, **&interaction**, **&cutoff**, **&cell**, **&position**, "
+"and **&optimize**."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:21
+msgid ""
+"Each entry field starts from the key label **&field** and ends at the "
+"terminate character \"/\". (This is equivalent to Fortran namelist.)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:23
+msgid "For example, &general entry field of program *alm* should be given like"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:33
+msgid ""
+"Multiple entries can be put in a single line. Also, characters put on the"
+" right of sharp (“#”) are neglected. Therefore, the above example is "
+"equivalent to the following::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:39
+msgid "Each variable must be given inside the appropriate entry field."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:45
+msgid "List of supported input variables"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid "**&general**"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`HESSIAN <alm_hessian>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`FC3_SHENGBTE <alm_fc3_shengbte>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`FCSYM_BASIS <alm_fcsym_basis>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`FC_ZERO_THR <alm_fc_zero_thr>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`KD <alm_kd>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`MAGMOM <alm_magmom>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`MODE <alm_mode>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NAT <alm_nat>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NMAXSAVE <alm_nmaxsave>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NONCOLLINEAR <alm_noncollinear>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`PERIODIC <alm_periodic>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`PREFIX <alm_prefix>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`PRIMCELL <alm_primcell>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`PRINTSYM <alm_printsym>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`STRUCTURE_FILE <alm_structure_file>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`SUPERCELL <alm_supercell>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`TOLERANCE <alm_tolerance>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid "**&interaction**"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NBODY <alm_nbody>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NORDER <alm_norder>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid "**&optimize**"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`CHUNKSIZE <alm_chunksize>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`CONV_TOL <alm_conv_tol>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`CV <alm_cv>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`CV_MINALPHA <alm_cv_minalpha>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`DEBIAS_OLS <alm_debias_ols>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`DFSET <alm_dfset>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`DFSET_CV <alm_dfset_cv>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`ENET_DNORM <alm_enet_dnorm>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`FC2FIX <alm_fc2fix>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`FC3FIX <alm_fc3fix>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`ICONST <alm_iconst>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`L1_ALPHA <alm_l1_alpha>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`L1_RATIO <alm_l1_ratio>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`L1_SOLVER <alm_l1_solver>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`LMODEL <alm_lmodel>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`MAXITER <alm_maxiter>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NDATA <alm_ndata>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NDATA_CV <alm_ndata_cv>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NSTART NEND <alm_nstart>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`NSTART_CV NEND_CV <alm_nstart_cv>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`ROTAXIS <alm_rotaxis>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`SKIP <alm_skip>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`SOLUTION_PATH <alm_solution_path>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`SPARSE <alm_sparse>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`SPARSESOLVER <alm_sparsesolver>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`STANDARDIZE <alm_standardize>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`STOP_CRITERION <alm_stop_criterion>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:1
+msgid ":ref:`USE_CHOLESKY <alm_use_cholesky>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:71
+msgid "Description of input variables"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:74
+msgid "\"&general\"-field"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:78
+msgid "**PREFIX**-tag : Job prefix to be used for names of output files"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Default"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:80 ../../source/almdir/inputalm.rst:97
+#: ../../source/almdir/inputalm.rst:106 ../../source/almdir/inputalm.rst:115
+#: ../../source/almdir/inputalm.rst:125 ../../source/almdir/inputalm.rst:336
+#: ../../source/almdir/inputalm.rst:491 ../../source/almdir/inputalm.rst:501
+#: ../../source/almdir/inputalm.rst:521 ../../source/almdir/inputalm.rst:575
+#: ../../source/almdir/inputalm.rst:585 ../../source/almdir/inputalm.rst:603
+#: ../../source/almdir/inputalm.rst:836
+msgid "None"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Type"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:81 ../../source/almdir/inputalm.rst:98
+#: ../../source/almdir/inputalm.rst:126 ../../source/almdir/inputalm.rst:201
+#: ../../source/almdir/inputalm.rst:478 ../../source/almdir/inputalm.rst:492
+#: ../../source/almdir/inputalm.rst:576 ../../source/almdir/inputalm.rst:586
+#: ../../source/almdir/inputalm.rst:604 ../../source/almdir/inputalm.rst:654
+#: ../../source/almdir/inputalm.rst:767 ../../source/almdir/inputalm.rst:827
+msgid "String"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:87
+msgid "**MODE**-tag = optimize | suggest"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:90
+msgid "optimize (:red:`>= 1.1.0`)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Estimate harmonic and anharmonic IFCs."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "This mode requires an appropriate &optimize field."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:93
+msgid "suggest"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Suggests the displacement patterns necessary"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "to estimate harmonic and anharmonic IFCs."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:104
+msgid "**NAT**-tag : Number of atoms in the supercell"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:107 ../../source/almdir/inputalm.rst:186
+#: ../../source/almdir/inputalm.rst:235 ../../source/almdir/inputalm.rst:267
+#: ../../source/almdir/inputalm.rst:282 ../../source/almdir/inputalm.rst:311
+#: ../../source/almdir/inputalm.rst:337 ../../source/almdir/inputalm.rst:502
+#: ../../source/almdir/inputalm.rst:512 ../../source/almdir/inputalm.rst:547
+#: ../../source/almdir/inputalm.rst:566 ../../source/almdir/inputalm.rst:624
+#: ../../source/almdir/inputalm.rst:679 ../../source/almdir/inputalm.rst:704
+#: ../../source/almdir/inputalm.rst:726 ../../source/almdir/inputalm.rst:816
+#: ../../source/almdir/inputalm.rst:837 ../../source/almdir/inputalm.rst:847
+#: ../../source/almdir/inputalm.rst:878 ../../source/almdir/inputalm.rst:906
+#: ../../source/almdir/inputalm.rst:924 ../../source/almdir/inputalm.rst:935
+msgid "Integer"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:113
+msgid "**KD**-tag : List of atomic species"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:116
+msgid "Array of strings"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Example"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:117
+msgid "In the case of GaAs, it should be ``KD = Ga As``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:123
+msgid "**STRUCTURE_FILE**-tag : File containing the input structure"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Description"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:127
+msgid ""
+"When this tag is given, *alm* reads the lattice vectors, atomic species, "
+"and atomic coordinates from the specified file in the VASP POSCAR format."
+" In this case, the ``&cell`` and ``&position`` fields are ignored, and "
+"``NAT`` and ``KD`` are inferred from the structure file."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:129
+msgid ""
+"The POSCAR file may use direct or Cartesian coordinates. A ``Selective "
+"dynamics`` line is accepted, but the selective-dynamics flags themselves "
+"are ignored."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:135
+msgid ""
+"**SUPERCELL**-tag : Transformation matrix from the input cell to the "
+"supercell"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:137 ../../source/almdir/inputalm.rst:154
+#: ../../source/almdir/inputalm.rst:182 ../../source/almdir/inputalm.rst:252
+#: ../../source/almdir/inputalm.rst:278 ../../source/almdir/inputalm.rst:307
+#: ../../source/almdir/inputalm.rst:533 ../../source/almdir/inputalm.rst:558
+#: ../../source/almdir/inputalm.rst:565 ../../source/almdir/inputalm.rst:620
+#: ../../source/almdir/inputalm.rst:675 ../../source/almdir/inputalm.rst:873
+#: ../../source/almdir/inputalm.rst:877 ../../source/almdir/inputalm.rst:902
+#: ../../source/almdir/inputalm.rst:917
+msgid "1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:138
+msgid "Integer matrix"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:139
+msgid ""
+"This tag specifies the target supercell as :math:`(\\boldsymbol{a}_{s}, "
+"\\boldsymbol{b}_{s}, \\boldsymbol{c}_{s})^{T} = M "
+"(\\boldsymbol{a}_{\\mathrm{in}}, \\boldsymbol{b}_{\\mathrm{in}}, "
+"\\boldsymbol{c}_{\\mathrm{in}})^{T}`. If the input structure is already "
+"the supercell used for the force calculations, keep the default value."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:144
+msgid ""
+"The matrix can be written as one, three, or nine entries. One entry ``n``"
+" means ``n n n``; three entries ``n1 n2 n3`` mean a diagonal matrix; nine"
+" entries give the full matrix in row-major order. The determinant must be"
+" a nonzero integer."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:146
+msgid ""
+"``SUPERCELL = 2 2 2`` creates a 2x2x2 supercell from the input cell. "
+"``SUPERCELL = 2 0 0 0 2 0 0 0 1`` creates a 2x2x1 supercell."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:152
+msgid ""
+"**PRIMCELL**-tag : Transformation matrix from the input cell to the "
+"primitive cell"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:155
+msgid "Matrix or ``Auto``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:156
+msgid ""
+"This tag specifies the primitive cell as :math:`(\\boldsymbol{a}_{p}, "
+"\\boldsymbol{b}_{p}, \\boldsymbol{c}_{p})^{T} = M "
+"(\\boldsymbol{a}_{\\mathrm{in}}, \\boldsymbol{b}_{\\mathrm{in}}, "
+"\\boldsymbol{c}_{\\mathrm{in}})^{T}`. The matrix can be written as one, "
+"three, or nine entries, using the same convention as ``SUPERCELL``. "
+"Fractional entries such as ``1/2`` are accepted. The determinant of the "
+"inverse matrix must be a nonzero integer."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:161
+msgid ""
+"``PRIMCELL = Auto`` uses spglib to detect the primitive cell from the "
+"input structure. This is useful when the input structure is a "
+"conventional cell or a supercell and the primitive-cell transformation is"
+" not obvious."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:163
+msgid ""
+"``PRIMCELL = 1/2 0 0 0 1/2 0 0 0 1/2`` defines a primitive cell whose "
+"lattice vectors are one half of the corresponding input-cell lattice "
+"vectors."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:169
+msgid "TOLERANCE-tag : Tolerance for finding symmetry operations"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:171
+msgid "1.0e-3"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:172 ../../source/almdir/inputalm.rst:320
+#: ../../source/almdir/inputalm.rst:736 ../../source/almdir/inputalm.rst:751
+#: ../../source/almdir/inputalm.rst:785 ../../source/almdir/inputalm.rst:889
+msgid "Double"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:178
+msgid "PRINTSYM-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:181 ../../source/almdir/inputalm.rst:185
+#: ../../source/almdir/inputalm.rst:234 ../../source/almdir/inputalm.rst:249
+#: ../../source/almdir/inputalm.rst:277 ../../source/almdir/inputalm.rst:281
+#: ../../source/almdir/inputalm.rst:306 ../../source/almdir/inputalm.rst:310
+#: ../../source/almdir/inputalm.rst:532 ../../source/almdir/inputalm.rst:557
+#: ../../source/almdir/inputalm.rst:619 ../../source/almdir/inputalm.rst:623
+#: ../../source/almdir/inputalm.rst:674 ../../source/almdir/inputalm.rst:678
+#: ../../source/almdir/inputalm.rst:795 ../../source/almdir/inputalm.rst:815
+#: ../../source/almdir/inputalm.rst:872 ../../source/almdir/inputalm.rst:901
+#: ../../source/almdir/inputalm.rst:905 ../../source/almdir/inputalm.rst:916
+#: ../../source/almdir/inputalm.rst:923
+msgid "0"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:181
+msgid "Symmetry operations won’t be saved in “SYMM_INFO”"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:182
+msgid "Symmetry operations will be saved in “SYMM_INFO”"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "type"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:192
+msgid "FCSYM_BASIS-tag = Cartesian | Lattice"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:195
+msgid "Cartesian, C"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:195
+msgid "Symmetry reduction of force constant is performed in the Cartesian basis"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:197
+msgid "Lattice, L"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:197
+#, python-brace-format
+msgid ""
+"Symmetry reduction of force constant is performed in the "
+":math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` basis"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:200
+msgid "Lattice"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:202
+msgid ""
+"The calculation results should not depend on the choice of "
+"``FCSYM_BASIS`` when ``LMODEL = ols``. For other regression methods "
+"(enet, adaptive LASSO), an optimal value of the ``L1_ALPHA`` changes when"
+" you change the ``FCSYM_BASIS`` option."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:204
+msgid ""
+"In some cases, ``FCSYM_BASIS = Lattice`` is more stable and efficient. In"
+" particular, we recommend setting ``FCSYM_BASIS = Lattice`` for hexagonal"
+" systems. If a calculation with ``FCSYM_BASIS = Lattice`` is slow, please"
+" switch to ``FCSYM_BASIS = Cartesian``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:206
+msgid ""
+"For more details about the symmetry reduction of force constants, please "
+"see :ref:`here <IFC_crystal_symmetry>`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:210
+#, python-brace-format
+msgid ""
+"When ``FCSYM_BASIS = Lattice``, the basis of force constants saved in "
+"``PREFIX``.fcs becomes the :math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, "
+"\\boldsymbol{a}_3` basis. Hence, to compare the values of force constants"
+" saved in ``PREFIX``.fcs, you will have to change their basis to the "
+"Cartesian basis manually. The basis of force constants saved in "
+"``PREFIX``.xml is Cartesian irrespective of the ``FCSYM_BASIS`` value."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:212
+msgid ""
+"Also, imposing the constraints for rotational invariance with "
+"``FCSYM_BASIS = Lattice`` is not supported. Therefore, if you want to "
+"apply the constraints for rotational invariance, please use ``FCSYM_BASIS"
+" = Cartesian``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:218
+msgid "MAGMOM-tag : List of magnetic moments"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:220
+msgid ""
+"0 ... 0 (``NAT`` entries when ``NONCOLLINEAR = 0``, 3x\\ ``NAT`` entries "
+"when ``NONCOLLINEAR = 1``.)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:221
+msgid "Array of double"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:222
+msgid ""
+"When a supercell containts 64 atoms and the local magnetic moments of the"
+" first 32 atoms are up and those of the last 32 atoms are down, please "
+"set the ``MAGMOM`` tag as ``MAGMOM = 32*1 32*-1``. The wildcard (``*``) "
+"is available when ``NONCOLLINEAR = 0``. For the noncollinear case "
+"(``NONCOLLINEAR = 1``), the wildcard is not supported. So, please give "
+"the magnetic moment explicitly as ``MAGMOM = 0 0 1 0 0 1 0 0 1 ... 0 0 -1"
+" 0 0 -1 ...`` (3\\ :math:`\\times`\\ ``NAT`` entries in *one line*)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:226
+msgid ""
+"``MAGMOM`` information is used only for generating space group "
+"operations. So, the values of the magnetic moment are somewhat arbitrary."
+" For the 4\\ :math:`\\times` 4\\ :math:`\\times` 4 supercell of "
+"ferromagnetic bcc Fe (64 atoms), for instance, ``MAGMOM = 64*1`` and "
+"``MAGMOM = 64*2`` give the same results. By contrast, ``MAGMOM = 32*1 "
+"32*2`` of course gives a different result because it breaks the symmetry "
+"of the original lattice."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:232
+msgid "NONCOLLINEAR-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:236
+msgid ""
+"When ``NONCOLLINEAR = 1``, the code accepts a noncollinear magnetic "
+"structure as an input to the ``MAGMOM`` tag and uses it for generating "
+"space group operations. The spin quantization axis is fixed to the "
+"(0,0,1) direction of the Cartesian axis."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:240
+msgid "Still experimental. Please use with care."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:246
+msgid "PERIODIC-tag = PERIODIC[1], PERIODIC[2], PERIODIC[3]"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Do not consider periodic boundary conditions when"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "searching for interacting atoms."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Consider periodic boundary conditions when"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:256
+msgid "1 1 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:257 ../../source/almdir/inputalm.rst:348
+msgid "Array of integers"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:258
+#, python-brace-format
+msgid ""
+"This tag is useful for generating interacting atoms in low dimensional "
+"systems. When ``PERIODIC[i]`` is zero, periodic boundary condition is "
+"turned off along the direction of the lattice vector "
+":math:`\\boldsymbol{a}_{i}`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:264
+msgid ""
+"NMAXSAVE-tag : The maximum order of anharmonic force constants printed "
+"out in ``PREFIX``.xml"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:266
+msgid "min(5, ``NORDER``)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:268
+msgid ""
+"If your model includes anharmonic terms up to the sixth-order (``NORDER ="
+" 5``), but you want to avoid printing out the fifth-order and sixth-order"
+" IFCs in ``PREFIX``.xml, please set ``NMAXSAVE = 3``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:274
+msgid "HESSIAN-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:277
+msgid "Do not save the Hessian matrix"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:278
+msgid "Save the entire Hessian matrix of the supercell as PREFIX.hessian."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:303
+msgid "FC3_SHENGBTE-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Do not save the third-order force constants for ShengBTE code"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"Save the third-order force constants for the ShengBTE code in "
+"PREFIX.FORCE_CONSTANT_3RD."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:317
+msgid ""
+"FC_ZERO_THR-tag : Threshold value used when trimming force constants when"
+" creating PREFIX.xml"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:319
+msgid "1.0e-12"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:321
+msgid ""
+"``FC_ZERO_THR`` defines the threshold of force constants to be saved in "
+"an XML file. If the absolute value of a force constant is smaller than "
+"``FC_ZERO_THR``, it will NOT be printed out."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:324
+msgid ""
+"If the harmonic force constants are calculated using a model potential "
+"(e.g., classical FF) where the interaction becomes zero beyond a certain "
+"cutoff radius, the default value of ``FC_ZERO_THR`` may raise a warning "
+"when creating a renormalized harmonic force constant file using "
+"``tools/dfc2``. This issue may be resolved by using a smaller "
+"``FC_ZERO_THR``, say ``FC_ZERO_THR = 1.0e-15``. The force constants that "
+"become exactly zero due to symmetry and acoustic sum rule constraints "
+"will not be printed even when setting ``FC_ZERO_THR = 0``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:329
+msgid "\"&interaction\"-field"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:334
+msgid ""
+"**NORDER**-tag : The order of force constants to be calculated. "
+"Anharmonic terms up to :math:`(m+1)`\\ th order will be considered with "
+"``NORDER`` = :math:`m`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:338
+msgid ""
+"``NORDER = 1`` to calculate harmonic terms only, ``NORDER = 2`` to "
+"include cubic terms as well, and so on."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:345
+msgid ""
+"NBODY-tag : Entry for excluding multiple-body interactions from "
+"anharmonic force constants"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:347
+msgid "``NBODY`` = [2, 3, 4, ..., ``NORDER`` + 1]"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:349
+msgid ""
+"This tag may be useful for excluding multi-body clusters which are "
+"supposedly less important. For example, a set of fourth-order IFCs "
+":math:`\\{\\Phi_{ijkl}\\}`, where :math:`i, j, k`, and :math:`l` label "
+"atoms in the supercell, can be categorized into four different subsets; "
+"**on-site**, **two-body**, **three-body**, and **four-body** terms. "
+"Neglecting the Cartesian coordinates of IFCs for simplicity, each subset "
+"contains the IFC elements shown as follows:"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:352
+msgid "on-site"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ":math:`\\{\\Phi_{iiii}\\}`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:353
+msgid "two-body"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ":math:`\\{\\Phi_{iijj}\\}`, :math:`\\{\\Phi_{iiij}\\}` (:math:`i\\neq j`)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:354
+msgid "three-body"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ":math:`\\{\\Phi_{iijk}\\}` (:math:`i\\neq j, i\\neq k, j \\neq k`)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:355
+msgid "four-body"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ":math:`\\{\\Phi_{ijkl}\\}` (all subscripts are different from each other)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:358
+msgid ""
+"Since the four-body clusters are expected to be less important than the "
+"three-body and less-body clusters, you may want to exclude the four-body "
+"terms from the Taylor expansion potential because the number of such "
+"terms is huge. This can be done by setting the ``NBODY`` tag as ``NBODY ="
+" 2 3 3`` together with ``NORDER = 3``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "More examples"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:360
+msgid ""
+"``NORDER = 2; NBODY = 2 2`` includes harmonic and cubic IFCs but excludes"
+" three-body clusters from the cubic terms."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:362
+msgid ""
+"``NORDER = 5; NBODY = 2 3 3 2 2`` includes anharmonic terms up to the "
+"sixth-order, where the four-body clusters are excluded from the fourth-"
+"order IFCs, and the multi (:math:`\\geq 3`)-body clusters are excluded "
+"from the fifth- and sixth-order IFCs."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:367
+msgid "\"&cutoff\"-field"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:369
+msgid ""
+"In this entry field, one needs to specify cutoff radii of interaction for"
+" each order in units of bohr. In the current implementation, cutoff radii"
+" should be defined for every possible pair of atomic elements. For "
+"example, the cutoff entry for a harmonic calculation (``NORDER = 1``) of "
+"Si should be like ::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:378
+#, python-brace-format
+msgid ""
+"This means that the cutoff radius of 10 :math:`a_{0}` is used for "
+"harmonic Si-Si terms. Please note that the first column should be two "
+"character strings, which are contained in the ``KD``-tag, connected by a "
+"hyphen (’-’)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:382
+msgid ""
+"When one wants to consider cubic terms (``NORDER = 2``), please specify "
+"the cutoff radius for cubic terms in the third column as the following::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:389
+msgid ""
+"Instead of giving specific cutoff radii, one can write \"None\" as "
+"follows::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:395
+msgid ""
+"which means that all possible harmonic terms between Si-Si atoms will be "
+"included."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:399
+msgid ""
+"Setting 'None' for anharmonic terms can greatly increase the number of "
+"parameters and thereby increase the computational cost."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:401
+msgid ""
+"When there are more than two atomic elements, please specify the cutoff "
+"radii between every possible pair of atomic elements. In the case of MgO,"
+" the cutoff entry should be like ::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:410
+msgid "which can equivalently be written by using the wild card (’*’) as ::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:420
+msgid ""
+"Cutoff radii specified by an earlier entry are overwritten by a new entry"
+" that comes later."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:422
+msgid ""
+"Once the cutoff radii are properly given, harmonic force constants "
+":math:`\\Phi_{i,j}^{\\mu,\\nu}` satisfying :math:`r_{ij} \\le "
+"r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}` will be searched."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:425
+msgid ""
+"In the case of cubic terms, force constants "
+":math:`\\Phi_{ijk}^{\\mu\\nu\\lambda}` satisfying :math:`r_{ij} \\le "
+"r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}`, :math:`r_{ik} \\le "
+"r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[k]}`, and :math:`r_{jk} \\le "
+"r_{c}^{\\mathrm{KD}[j]-\\mathrm{KD}[k]}` will be searched and determined "
+"by fitting."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:431
+msgid "\"&cell\"-field"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:433
+msgid ""
+"Please give the cell parameters in this entry in units of bohr as the "
+"following::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:442
+#, python-brace-format
+msgid ""
+"The cell parameters are then given by :math:`\\vec{a}_{1} = a \\times "
+"(a_{11}, a_{12}, a_{13})`, :math:`\\vec{a}_{2} = a \\times (a_{21}, "
+"a_{22}, a_{23})`, and :math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, "
+"a_{33})`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:448
+msgid "\"&position\"-field"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:450
+msgid ""
+"In this field, one needs to specify the atomic element and fractional "
+"coordinate of atoms in the supercell. Each line should be ::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:456
+msgid ""
+"where `ikd` is an integer specifying the atomic element in the order of "
+"the ``KD`` tag and `xf[i]` is the fractional coordinate of an atom. There"
+" should be ``NAT`` such lines in the &position entry field."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:463
+msgid "\"&optimize\"-field"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:465
+msgid "This field is necessary when ``MODE = optimize``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:469
+msgid ""
+"LMODEL-tag : Choice of the linear model used for estimating force "
+"constants"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:472
+msgid "\"least-squares\", \"LS\", \"OLS\",  1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:472
+msgid "Ordinary least square"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:473
+msgid "\"elastic-net\", \"enet\", 2"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:473
+msgid "Elastic net"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:474
+msgid "\"adaptive-lasso\", 3"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:474
+msgid "Adaptive LASSO"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:477
+msgid "least-squares"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:479
+msgid ""
+"When ``LMODEL = ols``, the force constants are estimated from the "
+"displacement-force datasets via the ordinary least-squares (OLS), which "
+"is usually sufficient to calculate harmonic and third-order force "
+"constants."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:481
+msgid ""
+"The elastic net (``LMODEL = enet``) or adaptive LASSO (``LMODEL = "
+"adaptive-lasso``) are useful for calculating fourth-order (and higher-"
+"order) force constants. When the elastic net or adaptive LASSO is "
+"selected, the users have to set the following related tags: ``CV``, "
+"``L1_RATIO``, ``L1_ALPHA``, ``CV_MAXALPHA``, ``CV_MINALPHA``, "
+"``CV_NALPHA``, ``STANDARDIZE``, ``ENET_DNORM``, ``MAXITER``, "
+"``CONV_TOL``, ``NWRITE``, ``SOLUTION_PATH``, ``DEBIAS_OLS``, "
+"``STOP_CRITERION``. Please note that ``STANDARDIZE`` will be effective "
+"only for the elastic net."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:487
+msgid ""
+"**DFSET**-tag: File name containing displacement-force datasets for "
+"training"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:493
+msgid "The format of ``DFSET`` can be found :ref:`here <label_format_DFSET>`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:499
+msgid "NDATA-tag : Number of displacement-force data sets"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:503
+msgid ""
+"If ``NDATA`` is not given, the code reads all lines of ``DFSET`` "
+"(excluding comment lines) and estimates ``NDATA`` by dividing the line "
+"number by ``NAT``. If the number of lines is not divisible by ``NAT``, an"
+" error is raised. ``DFSET`` should contain at least "
+"``NDATA``:math:`\\times` ``NAT`` lines."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:509
+msgid "NSTART, NEND-tags : Specifies the range of data to be used for training"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:511
+msgid "``NSTART = 1``, ``NEND = NDATA``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:513
+msgid ""
+"To use the data in the range of [20:30] out of 50 entries, the tags "
+"should be ``NSTART = 20`` and ``NEND = 30``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:519
+msgid "SKIP-tag : Specifies the range of data to be skipped for training"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:522
+msgid "Two integers connected by a hyphen"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:523
+msgid ""
+"``SKIP`` =\\ :math:`i`-:math:`j` skips the data in the range of "
+"[:math:`i`:\\ :math:`j`]. The :math:`i` and :math:`j` must satisfy "
+":math:`1\\leq i \\leq j \\leq` ``NDATA``.  This option may be useful when"
+" doing cross-validation manually (``CV=-1``)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:529
+msgid "ICONST-tag = 0 | 1 | 2 | 3 | 4 | 11"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:532
+msgid "No constraints"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Constraint for translational invariance is imposed between IFCs."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Available only when ``LMODEL = ols``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:535 ../../source/almdir/inputalm.rst:546
+msgid "11"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"Same as ``ICONST = 1`` but the constraint is imposed *algebraically* "
+"rather than numerically."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Select this option when ``LMODEL = enet``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:537
+msgid "2"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"In addition to ``ICONST = 1``, constraints for rotational invariance will"
+" be"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"imposed up to (``NORDER`` + 1)th order. Available only when ``LMODEL = "
+"ols``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:539
+msgid "3"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"In addition to ``ICONST = 2``, constraints for rotational invariance "
+"between (``NORDER`` + 1)th order"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "and (``NORDER`` + 2)th order, which are zero, will be considered."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:542
+msgid "4"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"In addition to ``ICONST = 2``, constraints for the Huang invariance will "
+"be imposed."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:548
+msgid "See :ref:`this page<constraint_IFC>` for the numerical formulae."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:554
+msgid "PERIODIC_IMAGE_CONV-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:557
+msgid ""
+"Impose the constraints on IFCs (acoustic sum rule) in the considering "
+"supercell."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Consider the periodic images when generating the constraints."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "The resultant IFCs simultaneously satisfy the permutation symmetry, ASR,"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "and the space group symmetry in the infinite space."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"For more details, please see Appendix D of the `original paper "
+"<https://arxiv.org/abs/2205.08789>`_."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"(Note that we use the term \"mirror image\" instead of \"periodic image\""
+" in the paper.)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:573
+msgid ""
+"ROTAXIS-tag : Rotation axis used to estimate constraints for rotational "
+"invariance. This entry is necessary when ``ICONST = 2, 3, 4``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:577
+msgid ""
+"When one wants to consider the rotational invariance around the "
+":math:`x`\\ -axis, one should give ``ROTAXIS = x``. If one needs "
+"additional constraints for the rotation around the :math:`y`\\ -axis, "
+"``ROTAXIS`` should be ``ROTAXIS = xy``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:583
+msgid "FC2FIX-tag : File to which the harmonic terms are fixed upon training"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:587
+msgid ""
+"When the ``FC2FIX``-tag is given, harmonic force constants are fixed to "
+"the values stored in the ``FC2FIX`` file. This may be useful for "
+"optimizing cubic and higher-order terms without changing the harmonic "
+"terms. Please make sure that the number of harmonic terms in the new "
+"computational condition is the same as that in the ``FC2FIX`` file."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:591
+msgid ""
+"``FC2XML`` is a deprecated alias of ``FC2FIX`` kept for backward "
+"compatibility. It will be removed in a future release, so please use "
+"``FC2FIX`` instead."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:595
+msgid ""
+"The ``FCSYM_BASIS`` option must be the same as the one used when creating"
+" the reference harmonic force constant file (``FC2FIX``). The code raises"
+" an error when they are inconsistent."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:601
+msgid "FC3FIX-tag : File to which the cubic terms are fixed upon training"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:605
+msgid ""
+"Same as the ``FC2FIX``-tag, but ``FC3FIX`` is used to fix cubic force "
+"constants. (``FC3XML`` is a deprecated alias of ``FC3FIX``.)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:609
+msgid ""
+"The ``FCSYM_BASIS`` option must be the same as the one used when creating"
+" the reference cubic force constant file (``FC3FIX``). The code raises an"
+" error when they are inconsistent."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:616
+msgid "SPARSE-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:619 ../../source/almdir/inputalm.rst:674
+msgid "Use a direct solver (SVD or QRD) to estimate force constants"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:620
+msgid "Use a sparse solver to estimate force constants"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:625
+msgid ""
+"When you want to calculate force constants of a large system and generate"
+" training datasets by displacing only a few atoms from equilibrium "
+"positions, the resulting sensing matrix becomes large but sparse. For "
+"such matrices, a sparse solver is expected to be more efficient than SVD "
+"or QRD in terms of both memory usage and computational time. Effective "
+"when ``LMODEL = ols``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:627
+msgid ""
+"**When to use:** prefer ``SPARSE = 1`` for large systems whose sensing "
+"matrix is genuinely sparse (only a handful of atoms displaced per "
+"configuration). For small or dense problems the default direct solvers "
+"(``SPARSE = 0``) are usually faster, and the sparse factorization can "
+"even use more memory because of fill-in. When the sensing matrix is dense"
+" but large, consider :ref:`USE_CHOLESKY <alm_use_cholesky>` instead."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:631
+msgid ""
+"The sparse path has two different solver routes. With algebraic "
+"constraints (``ICONST >= 10``; the default is ``ICONST = 11``), the "
+"reduced sparse least-squares problem is solved by the ``SPARSESOLVER`` "
+"selected below. With constraints imposed numerically (``ICONST = 1, 2, 3,"
+" 4``), the sparse path instead assembles the symmetric-indefinite KKT "
+"system. The merged constraint matrix is first reduced to full row rank by"
+" a rank-revealing QR (essential: a rank-deficient constraint matrix makes"
+" the KKT singular and the fitted IFCs violate the acoustic-sum-rule / "
+"rotational invariance). The KKT solver is then chosen by build: Intel MKL"
+" **PARDISO** (``-DUSE_MKL_BACKEND=yes``) or Apple **Accelerate** "
+"(``-DUSE_ACCEL_BACKEND=yes``) use a symmetric-indefinite ``LDLT``; "
+"**SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) adds the "
+"multithreaded **SuiteSparseQR** fallback; otherwise Eigen's serial "
+"``SparseLU`` and ``SparseQR`` fallbacks are used. See :ref:`Optional "
+"linear-algebra backends <install_backends>` on the installation page."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:651
+msgid "SPARSESOLVER-tag : Type of the sparse solver to use"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:653
+msgid "SimplicialLDLT"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:655
+msgid ""
+"Selects the sparse solver used for the unconstrained or algebraically "
+"constrained sparse OLS fit (``LMODEL = ols``, ``SPARSE = 1``, and "
+"``ICONST >= 10``). Available options are `SimplicialLDLT` (sparse "
+"Cholesky on the normal matrix, direct), `SparseQR` (direct sparse QR), "
+"and the iterative Krylov solvers `ConjugateGradient`, "
+"`LeastSquaresConjugateGradient`, and `BiCGSTAB`. When an iterative solver"
+" is selected, the stopping criterion is controlled by the ``CONV_TOL`` "
+"and ``MAXITER`` tags. As a rule of thumb, use `SimplicialLDLT` (the "
+"default) for well-conditioned problems, `SparseQR` when the direct "
+"factorization fails or the matrix is poorly conditioned, and the "
+"iterative solvers when even the sparse factorization is too large to "
+"store."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:657
+#, python-brace-format
+msgid ""
+"Two additional high-performance solvers are available when ALM is built "
+"with the SuiteSparse backend (``-DUSE_SUITESPARSE_BACKEND=yes``; see "
+":ref:`Optional linear-algebra backends <install_backends>`): "
+"`SuiteSparseQR`, a multithreaded rank-revealing multifrontal sparse QR "
+"that factorizes the rectangular sensing matrix directly (a faster, "
+"parallel alternative to `SparseQR` for large or ill-conditioned "
+"problems), and `CHOLMOD`, a supernodal sparse Cholesky on the normal "
+"matrix :math:`A^{\\mathsf T}A` (a faster alternative to `SimplicialLDLT` "
+"for well-conditioned problems). Selecting either of these without "
+"building the SuiteSparse backend stops with an error."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:659
+#, python-brace-format
+msgid ""
+"With numerically imposed constraints (``ICONST = 1, 2, 3, 4``), most "
+"values of ``SPARSESOLVER`` do **not** select the KKT direct solver. The "
+"code first tries the KKT backend compiled into the executable "
+"(MKL/PARDISO or Apple/Accelerate LDLT), then SuiteSparseQR if the "
+"SuiteSparse backend is enabled, then Eigen's built-in sparse fallbacks. "
+"`MINRES` is the special exception (experimental): selecting "
+"``SPARSESOLVER = MINRES`` chooses an iterative solver for this KKT path. "
+"It never forms the dense factor used by direct solvers, so it can be the "
+"memory-feasible choice when direct KKT factorizations exhaust memory "
+"because the constraint matrix has dense rows (the rotational-invariance "
+"constraints of ``ICONST = 2, 3``). It is preconditioned by a block-"
+"diagonal SPD preconditioner (Jacobi on :math:`A^{\\mathsf T}A` plus the "
+"dense constraint Schur complement); ``CONV_TOL`` and ``MAXITER`` control "
+"the stopping criterion. After the solve it checks the *true* KKT residual"
+" and ``\\|C x - d\\|`` and **aborts** if they are not met, rather than "
+"returning a solution that would violate the sum rules. On badly-scaled or"
+" extremely ill-conditioned KKT systems the simple block-diagonal "
+"preconditioner may be insufficient and `MINRES` will report non-"
+"convergence -- in that case raise ``MAXITER`` / loosen ``CONV_TOL``, or "
+"use a direct LDLT backend on a reduced problem."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:661
+#, python-brace-format
+msgid ""
+"``SPARSESOLVER`` is ignored by ``USE_CHOLESKY = 1``. In that mode the "
+"code forms :math:`A^{\\mathsf T}A` directly and uses a sparse Cholesky "
+"factorization (`CHOLMOD` when the SuiteSparse backend is available, "
+"otherwise `SimplicialLDLT`)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:665
+msgid ""
+"Eigen documentation page: `Solving Sparse Linear Systems "
+"<https://eigen.tuxfamily.org/dox/group__TopicSparseSystems.html>`__"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:671
+msgid "USE_CHOLESKY-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:675
+msgid "Solve the normal equations by Cholesky decomposition"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:680
+msgid ""
+"When ``USE_CHOLESKY = 1``, the ordinary least-squares fit is obtained by "
+"forming the normal equations :math:`A^{\\mathsf{T}} "
+"A\\,\\boldsymbol{\\Phi} = A^{\\mathsf{T}} \\boldsymbol{b}` and "
+"factorizing :math:`A^{\\mathsf{T}} A` with a Cholesky decomposition (a "
+"dense ``LLT``, or a sparse ``SimplicialLDLT`` when ``SPARSE = 1``). This "
+"is typically about twice as fast and uses noticeably less memory than the"
+" default SVD/QRD direct solvers, which makes it attractive for large, "
+"**well-conditioned** overdetermined fits (many more rows than columns). "
+"The trade-off is accuracy: forming :math:`A^{\\mathsf{T}} A` squares the "
+"condition number of :math:`A`, so the solution degrades when the sensing "
+"matrix is ill-conditioned. Keep the default ``USE_CHOLESKY = 0`` "
+"(SVD/QRD) when robustness matters or the fit is close to rank-deficient. "
+"Effective when ``LMODEL = ols``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:693
+msgid ""
+"``USE_CHOLESKY = 1`` cannot be combined with the numerically imposed "
+"constraints ``ICONST = 1, 2, 3``. When constraints are required, impose "
+"them algebraically with ``ICONST = 11`` instead; otherwise the code stops"
+" with an error."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:701
+msgid ""
+"CHUNKSIZE-tag : Number of configurations processed per pass when building"
+" :math:`A^{\\mathsf{T}} A`"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:703
+msgid "100"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:705
+msgid ""
+"Relevant only when ``USE_CHOLESKY = 1``. Instead of forming the full "
+"dense sensing matrix :math:`A` (size :math:`N_{\\mathrm{rows}} \\times "
+"N_{\\mathrm{cols}}`) at once, the normal-equations matrix "
+":math:`A^{\\mathsf{T}} A` is accumulated in chunks of ``CHUNKSIZE`` "
+"training configurations: for each chunk only a small block of :math:`A` "
+"is built and added into :math:`A^{\\mathsf{T}} A`. This caps the peak "
+"memory at roughly the larger of :math:`A^{\\mathsf{T}} A` itself and one "
+"chunk's block (proportional to ``CHUNKSIZE`` :math:`\\times\\, "
+"N_{\\mathrm{cols}}`), rather than the full :math:`A`. A smaller "
+"``CHUNKSIZE`` lowers the peak memory but uses more passes with smaller, "
+"less efficient matrix products; a larger ``CHUNKSIZE`` is faster but "
+"needs more memory. Lowering it below the point where one chunk is already"
+" smaller than :math:`A^{\\mathsf{T}} A` gives no further savings, since "
+":math:`A^{\\mathsf{T}} A` sets the memory floor. The default (100) is a "
+"reasonable balance; reduce it if the chunk block does not fit in memory."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:723
+msgid "MAXITER-tag : Number of maximum iterations in iterative algorithms"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:725
+msgid "10,000"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:727
+msgid ""
+"Effective when an iterative solver is selected via ``SPARSESOLVER`` (when"
+" ``LMODEL = ols``) or when ``LMODEL = enet | adaptive-lasso``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:733
+msgid "CONV_TOL-tag : Convergence criterion of iterative algorithms"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:735
+msgid "1.0e-8"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:737
+msgid ""
+"When ``LMODEL = ols`` and an iterative solver is selected via "
+"``SPARSESOLVER``, ``CONV_TOL`` value is passed to the Eigen3 function via"
+" `setTolerance()`. When ``LMODEL = enet | adaptive-lasso``, the L1 solver"
+" iteration stops at :math:`i`\\ th iteration if "
+":math:`\\sqrt{\\frac{1}{N}|\\boldsymbol{\\Phi}_{i} - "
+"\\boldsymbol{\\Phi}_{i-1}|_{2}^{2}} <` ``CONV_TOL`` is satisfied, where "
+":math:`N` is the length of the vector :math:`\\boldsymbol{\\Phi}`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:742
+msgid ""
+"Eigen documentation page: `IterativeSolverBase "
+"<https://eigen.tuxfamily.org/dox/classEigen_1_1IterativeSolverBase.html>`__"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:748
+msgid "L1_RATIO-tag : The ratio of the L1 regularization term"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:750
+msgid "1.0 (LASSO)"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:752
+#, python-brace-format
+msgid ""
+"The ``L1_RATIO`` changes the regularization term as ``L1_ALPHA`` "
+":math:`\\times` [``L1_RATIO`` :math:`|\\boldsymbol{\\Phi}|_{1}` + "
+":math:`\\frac{1}{2}` (1-``L1_RATIO``) "
+":math:`|\\boldsymbol{\\Phi}|_{2}^{2}`]. Therefore, ``L1_RATIO = 1`` "
+"corresponds to LASSO. ``L1_RATIO`` must be ``0 < L1_ratio <= 1``. "
+"Effective when ``LMODEL = enet``. See also :ref:`here <alm_theory_enet>`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:758
+msgid "L1_SOLVER-tag = cd | fista | admm"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:761 ../../source/almdir/inputalm.rst:766
+msgid "cd"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:761
+msgid "Use the coordinate descent solver."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:762
+msgid "fista"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:762
+msgid "Use the fast iterative shrinkage-thresholding algorithm."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:763
+msgid "admm"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:763
+msgid "Use the alternating direction method of multipliers (experimental)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:768
+msgid ""
+"Selects the iterative solver used when ``LMODEL = enet | adaptive-"
+"lasso``. All three solvers target the same elastic-net or adaptive-LASSO "
+"objective and are interchangeable. The ``cd`` solver is the coordinate "
+"descent method; it warm-starts along the cross-validation alpha path and "
+"is the fastest choice for that path, so it is the recommended default. "
+"The ``fista`` solver avoids forming the dense :math:`N \\times N` Gram "
+"matrix and can reduce memory usage for large dense L1-regularized "
+"problems. The ``admm`` solver is provided mainly for research and cross-"
+"checking; on warm-started alpha paths it is generally slower than ``cd`` "
+"and offers no advantage for the typical problem sizes here."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:782
+msgid "L1_ALPHA-tag : The coefficient of the L1 regularization term"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:784
+msgid "0.0"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:786
+msgid ""
+"This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = 0``. "
+"See also :ref:`here <alm_theory_enet>`."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:792
+msgid "CV-tag : Cross-validation mode for elastic net"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "Cross-validation mode is off."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "The elastic net optimization is solved with the given ``L1_ALPHA`` value."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "The force constants are written to ``PREFIX``.fcs and ``PREFIX``.xml."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:799
+msgid ">= 2"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "``CV``-fold cross-validation is performed *automatically*."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"``NDATA`` training datasets are divided into ``CV`` subsets, and ``CV`` "
+"different combinations of"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"training-validation datasets are created internally. For each "
+"combination, the elastic net"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"optimization is solved with the various ``L1_ALPHA`` values defined by "
+"the ``CV_MINALPHA``,"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"``CV_MAXALPHA``, and ``CV_NALPHA`` tags. The result of each cross-"
+"validation is stored in"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"``PREFIX``.cvset[1, ..., ``CV``], and their average and deviation are "
+"stored in ``PREFIX``.cvscore."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:806
+msgid "-1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "The cross-validation is performed *manually*."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"The Taylor expansion potential is trained by using the training datasets "
+"in ``DFSET``, and"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"the validation score is calculated by using the data in ``DFSET_CV`` for "
+"various ``L1_ALPHA`` values"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "defined by the ``CV_MINALPHA``, ``CV_MAXALPHA``, and ``CV_NALPHA`` tags."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"After the calculation, the fitting and validation errors are stored in "
+"``PREFIX``.cvset."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"This option may be convenient for a large-scale problem since multiple "
+"optimization tasks with"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "different training-validation datasets can be done in parallel."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:817
+msgid "This tag is used when ``LMODEL = enet | adaptive-lasso``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:824
+msgid ""
+"DFSET_CV-tag : File name containing displacement-force datasets used for "
+"manual cross-validation"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:826
+msgid "``DFSET_CV = DFSET``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:828 ../../source/almdir/inputalm.rst:838
+#: ../../source/almdir/inputalm.rst:848
+msgid "This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = -1``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:834
+msgid "NDATA_CV-tag : Number of displacement-force validation datasets"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:844
+msgid ""
+"NSTART_CV, NEND_CV-tags : Specifies the range of data to be used for "
+"validation"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:846
+msgid "``NSTART_CV = 1``, ``NEND_CV = NDATA_CV``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:855
+msgid ""
+"CV_MINALPHA, CV_MAXALPHA, CV_NALPHA-tags : Options to specify the "
+"``L1_ALPHA`` values used in cross-validation"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:857
+msgid "``CV_MAXALPHA`` is set automatically"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:859
+msgid "``CV_MINALPHA = CV_MAXALPHA * 1.0e-6``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:861
+msgid "``CV_NALPHA = 50``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:862
+msgid "Double, Double, Integer"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:863
+msgid ""
+"``CV_NALPHA`` values of ``L1_ALPHA`` are generated from ``CV_MINALPHA`` "
+"to ``CV_MAXALPHA`` in logarithmic scale. When ``CV_MAXALPHA`` is not "
+"specified by user, the code automatically sets ``CV_MAXALPHA`` so that "
+"the maximum ``L1_ALPHA`` makes all coefficients zero. The default value "
+"of ``CV_MINALPHA`` is ``CV_MAXALPHA * 1.0e-6``, which is reasonable in "
+"many cases. If the minimum value of the validation score is found at "
+"``CV_MINALPHA``, you may need to use a smaller value of ``CV_MINALPHA``. "
+"This tag is used when ``LMODEL = enet | adaptive-lasso`` and the cross-"
+"validation mode is on (``CV > 0`` or ``CV = -1``)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:869
+msgid "STANDARDIZE-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:872
+msgid "Do not standardize the sensing matrix"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"Each column of the sensing matrix is standardized in such a way that its "
+"mean value"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid "becomes 0 and standard deviation becomes 1."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:879
+msgid ""
+"This option influences the optimal ``L1_ALPHA`` value. So, if you change "
+"the ``STANDARDIZE`` option, you have to rerun the cross-validation. "
+"Effective only when ``LMODEL = enet``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:886
+msgid "ENET_DNORM-tag : Normalization factor of atomic displacements"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:888
+msgid "1.0"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:890
+#, python-brace-format
+msgid ""
+"The normalization factor of atomic displacement :math:`u_{0}` in units of"
+" bohr. When :math:`u_{0} (\\neq 1)` is given, the displacement data are "
+"scaled as :math:`u_{i} \\rightarrow u_{i}/u_{0}` before constructing the "
+"sensing matrix. This option influences the optimal ``L1_ALPHA`` value. "
+"So, if you change the ``ENET_DNORM`` value, you will have to rerun the "
+"cross-validation. Effective only when ``LMODEL = enet`` and ``STANDARDIZE"
+" = 0``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:898
+msgid "SOLUTION_PATH-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:901
+msgid "Do not save the solution path."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:902
+msgid ""
+"Save the solution path of each cross-validation combination in "
+"``PREFIX``.solution_path."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:907
+msgid ""
+"Effective when ``LMODEL = enet | adaptive-lasso`` and the cross-"
+"validation mode is on."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:913
+msgid "DEBIAS_OLS-tag = 0 | 1"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:916
+msgid ""
+"Save the solution of the L1-regularized problem to ``PREFIX``.fcs and "
+"``PREFIX``.xml."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"After the solution of the elastic net or adaptive LASSO optimization "
+"problem is obtained,"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"only non-zero coefficients are collected, and the ordinary least-squares "
+"fitting is"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"solved again with the non-zero coefficients before saving the results to "
+"``PREFIX``.fcs and"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst
+msgid ""
+"``PREFIX``.xml. This might be useful to reduce the bias of the "
+"L1-regularized solution."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:925
+msgid "Effective when ``LMODEL = enet | adaptive-lasso`` and ``CV = 0``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:932
+msgid ""
+"STOP_CRITERION-tag : The scan over ``L1_ALPHA`` stops when the cross-"
+"validation score keeps increasing in ``STOP_CRITERION`` consecutive steps"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:934
+msgid "5"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:936
+msgid ""
+"Effective when ``LMODEL = enet | adaptive-lasso`` and the cross-"
+"validation mode is turned on (``CV > 0`` or ``CV = -1``)."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:943
+msgid "How to make a DFSET file"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:948
+msgid "Format of ``DFSET``"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:950
+msgid ""
+"The displacement-force data sets obtained by first-principles (or "
+"classical force-field) calculations have to be saved to a file, say "
+"*DFSET*. Then, the force constants are estimated by setting ``DFSET =`` "
+"*DFSET* and with ``MODE = optimize``."
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:953
+msgid ""
+"The *DFSET* file must contain the atomic displacements and corresponding "
+"forces in Cartesian coordinate for at least ``NDATA`` structures "
+"(displacement patterns) in the following format (one line per atom, "
+"blocks separated by an optional comment line beginning with ``#``)::"
+msgstr ""
+
+#: ../../source/almdir/inputalm.rst:966
+msgid ""
+"Here, ``NAT`` is the number of atoms in the supercell. The unit of "
+"displacements and forces must be **bohr** and **Ryd/bohr**, respectively."
+msgstr ""
+

@@ -1,0 +1,267 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:10
+msgid "PbTe (non-analytic correction)"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:12
+msgid ""
+"This part demonstrates how to include the non-analytic correction in "
+"phonon and thermal conductivity calculations of polar semiconductors."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:14
+msgid "All input files can be found at the **example/PbTe** subdirectory."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:16
+msgid "Let's move to the example directory"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:26
+msgid "1. Build a supercell and generate displacements"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:28
+msgid ""
+"In this tutorial, we build a 4x4x4 supercell of the primitive cell of "
+"PbTe containing 2 atoms. The crystal structure of the primitive cell in "
+"the VASP POSCAR format is"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:33
+msgid ""
+"Now, let's construct a 4x4x4 supercell. This can be done by creating a "
+"simple script by yourself or using a method implemented in popular "
+"libraries, such as ``ase`` or ``pymatgen``. This time, we will use the "
+"python script ``makedisp_vasp.py`` in the working directory. To use this "
+"script, ``pymatgen`` needs to be installed (if you have not):"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:42
+msgid "Then, edit the header part of the script."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:47
+#, python-brace-format
+msgid ""
+"Here, the scaling matrix (:math:`M_{p\\rightarrow s}`) is the matrix that"
+" transforms the primitive lattice vectors :math:`(\\boldsymbol{a}_p, "
+"\\boldsymbol{b}_p, \\boldsymbol{c}_p)` into the supercell lattice vectors"
+" as :math:`(\\boldsymbol{a}_s, \\boldsymbol{b}_s, \\boldsymbol{c}_s) = "
+"(\\boldsymbol{a}_p, \\boldsymbol{b}_p, \\boldsymbol{c}_p) "
+"M_{p\\rightarrow s}`."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:49
+msgid ""
+"``POSCARname`` is the file name of the primitive POSCAR file, ``prefix`` "
+"is used for ``PREFIX`` of **ALM**, ``prefix_poscar`` is used for the file"
+" names of the displaced SPOSCARS."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:51
+msgid "By issuing the command"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:57
+#, python-brace-format
+msgid ""
+"the script generates a supercell (``SPOSCAR``), generates an input for "
+"**alm** (``ALM0.in``), run **alm**, and passes the output files to "
+"``displace.py``. The above command finishes quickly, and you can find two"
+" displaced structures (``harm_0.01_{1,2}.POSCAR``) generated in the "
+"working directory."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:63
+msgid "2. Run DFT calculations and get forces"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:65
+msgid ""
+"Next, please perform DFT calculation and compute forces for the two "
+"displaced configurations. This can be done easily, for example, as"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:80
+msgid ""
+"When all calculations are done, please collect the displacement-force "
+"datasets as"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:86
+msgid ""
+"In this tutorial, we have placed the VASP outputs in ``vasp_outputs/`` "
+"directory, so you can skip the VASP calculations by using the "
+"``vasprun_?.xml`` files in that directory as"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:96
+msgid "3. Fit second-order force constants"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:98
+msgid "Please just run"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:104
+msgid ""
+"The script generates an input for **alm** (``ALM1.in``) and calls "
+"**alm**. Please check if the fitting error in the log file (``ALM1.log``)"
+" is reasonably small. The second-order force constants are saved in "
+"``super444_0.01.xml``."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:109
+msgid "4. Compute dielectric tensor and Born effective charges"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:111
+#, python-brace-format
+msgid ""
+"To include the non-analytic correction, one needs to give the electronic "
+"permittivity tensor (:math:`\\epsilon_{\\infty}`) and the Born effective "
+"charges. This can be done conveniently using density functional "
+"perturbation theory (DFPT), which is available in major DFT codes (e.g., "
+"VASP, Quantum-ESPRESSO, abinit)."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:114
+msgid ""
+"In VASP, for example, you just need to add `LEPSILON = .True. "
+"<https://www.vasp.at/wiki/index.php/LEPSILON>`_ in INCAR. For orbital "
+"dependent functionals, this option is not supported, and `LCALCEPS = "
+".True. <https://www.vasp.at/wiki/index.php/LCALCEPS>`_ should be used "
+"instead."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:118
+msgid ""
+"Please run a DFPT calculation using the primitive cell you used to "
+"generate the supercell. If these two structures are inconsistent, the "
+"order of the atoms and Born effective charges may change, which likely "
+"results in strange phonon band dispersion."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:120
+msgid ""
+"Once the DFPT calculation finishes, please parse the electronic "
+"permittivity tensor and Born effective charges from the output file and "
+"save them in a single file following the specific format described in "
+":ref:`label_format_BORNINFO`."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:122
+msgid "If you used VASP, the ``BORNINFO`` file can be created by issuing"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:128
+msgid ""
+"Here, ``SPOSCAR`` is the VASP POSCAR file of the structure used in the "
+"DFPT calculation. Currently, this parsing feature is supported only for "
+"VASP and Quantum-ESPRESSO."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:131
+msgid ""
+"We provide the pre-generated file ``PbTe.born`` in the ``reference/`` "
+"directory, so you can copy it to the working directory to move forward."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:136
+msgid "5. Phonon calculations"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:138
+msgid "All inputs are ready, so we can start phonon calculations."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:140
+msgid ""
+"We first compute phonon dispersion without non-analytic (NA) correction. "
+"The input file for **anphon** (``phband.in``) looks like"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:145
+msgid "Please run **anphon** and plot the bands file"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:156
+#, python-brace-format
+msgid ""
+"We can see that the TO and LO phonons are degenerate at "
+":math:`\\boldsymbol{q}=0` and the optical phonon frequencies go down "
+"rapidly as approaching to :math:`\\boldsymbol{q}\\longrightarrow 0`."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:158
+msgid ""
+"Next, let us consider the NA correction. Please change the ``PREFIX`` and"
+" ``NONANALYTIC`` tags as"
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:166
+msgid ""
+"This option activates the Parlinski's approach with the damping factor of"
+" :math:`\\sigma = 0.15`. After running **anphon** again, we can compare "
+"phonon dispersion curves with and without the NA correction."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:178
+msgid "The LO-TO splitting occurs as expected."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:180
+msgid ""
+"Please repeat the above calculations with the other ``NONANALYTIC`` "
+"options (``NONANALYTIC=2`` (mixed-space) and ``NONANALYTIC=3`` (Ewald "
+"method)). Finally, we plot all results together to see the difference."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:192
+#, python-brace-format
+msgid ""
+"We can see that ``NONANALYTIC = 2`` and ``NONANALYTIC = 3`` give smoother"
+" dispersion than ``NONANALYTIC = 1``. For these two method, the NA "
+"correction becomes exactly zero at the commensurate "
+":math:`\\boldsymbol{q}` points (other than "
+":math:`\\boldsymbol{q}\\longrightarrow 0`). In the present calculation, "
+"we used a 4x4x4 supercell of the primitive cell. Hence, the NA correction"
+" should be zero at the Brillouin zone boundaries (X and L points) as well"
+" as the midpoint of the each high-symmetry line (e.g., "
+":math:`\\boldsymbol{q}=(1/4, 1/4, 0)`). We can confirm this from the "
+"above figure, where the blue, red, and magenta curves perfectly intersect"
+" with each other at these commensurate points, whereas the green curve "
+"does not."
+msgstr ""
+
+#: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:195
+msgid ""
+"In general, we recommend using ``NONANALYTIC = 3`` as it correctly "
+"separates the short- and long-range terms and calculates the NA "
+"correction in the reciprocal space accurately using the Ewald summation "
+"method. It can also avoid abrupt jumps or discontinuities in dispersion "
+"curves at Brillouin zone boundaries, which can happen with ``NONANALYTIC "
+"= 2`` when the BZ boundary is not commensurate with the supercell size."
+msgstr ""
+

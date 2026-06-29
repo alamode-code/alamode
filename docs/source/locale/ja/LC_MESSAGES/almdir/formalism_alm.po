@@ -1,0 +1,518 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/almdir/formalism_alm.rst:2
+msgid "ALM: Theoretical background"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:5
+msgid "Interatomic force constants (IFCs)"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:7
+msgid ""
+"The starting point of the computational methodology is to approximate the"
+" potential energy of interacting atoms by a Taylor expansion with respect"
+" to atomic displacements by"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:10
+msgid ""
+"&U - U_{0} = \\sum_{n=1}^{N} U_{n} = U_{1} + U_{2} + U_{3} + \\cdots, "
+"\\\\\n"
+"&U_{n} = \\frac{1}{n!} \\sum_{\\substack{\\ell_{1}\\kappa_{1}, \\dots, "
+"\\ell_{n}\\kappa_{n} \\\\ \\mu_{1},\\dots, \\mu_{n}}} "
+"\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n})"
+" \\; u_{\\mu_{1}}(\\ell_{1}\\kappa_{1})\\cdots "
+"u_{\\mu_{n}}(\\ell_{n}\\kappa_{n})."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:16
+msgid ""
+"Here, :math:`u_{\\mu}(\\ell\\kappa)` is the atomic displacement of "
+":math:`\\kappa`\\ th atom in the :math:`\\ell`\\ th unit cell along "
+":math:`\\mu`\\ th direction, and "
+":math:`\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n})`"
+" is the :math:`n`\\ th-order interatomic force constant (IFC)."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:20
+msgid "Symmetry relationship between IFCs"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:22
+msgid ""
+"There are several relationships between IFCs which may be used to reduce "
+"the number of independent IFCs."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:24
+msgid "Permutation"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:26
+msgid ""
+"IFC should be invariant under the exchange of the triplet "
+":math:`(\\ell,\\kappa,\\mu)`, e.g.,"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:28
+msgid "\\Phi_{\\mu_{1}\\mu_{2}\\mu_{3}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3})=\\Phi_{\\mu_{1}\\mu_{3}\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{3}\\kappa_{3};\\ell_{2}\\kappa_{2})=\\dots."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:32
+msgid "Periodicity"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:34
+msgid ""
+"Since IFCs should depend on interatomic distances, they are invariant "
+"under a translation in units of the lattice vector, namely"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:36
+msgid "\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\dots;\\ell_{n}\\kappa_{n})=\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(0\\kappa_{1};\\ell_{2}-\\ell_{1}\\kappa_{2};\\dots;\\ell_{n}-\\ell_{1}\\kappa_{n})."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:42
+msgid "Crystal symmetry"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:44
+#, python-brace-format
+msgid ""
+"A crystal symmetry operation maps an atom :math:`\\vec{r}(\\ell\\kappa)` "
+"to another equivalent atom :math:`\\vec{r}(LK)` by rotation and "
+"translation. Since the potential energy is invariant under any crystal "
+"symmetry operations, IFCs should transform under a symmetry operation as "
+"follows:"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:47
+msgid ""
+"\\sum_{\\nu_{1},\\dots,\\nu_{n}}\\Phi_{\\nu_{1}\\dots\\nu_{n}}(L_{1}K_{1};\\dots;L_{n}K_{n})"
+" O_{\\nu_{1}\\mu_{1}}\\cdots O_{\\nu_{n}\\mu_{n}} = "
+"\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}),"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:52
+#, python-brace-format
+msgid ""
+"where :math:`O` is the rotational matrix of the symmetry operation. Let "
+":math:`N_{s}` be the number of symmetry operations, there are "
+":math:`N_{s}` relationships between IFCs which may be used to find "
+"independent IFCs."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:57
+msgid ""
+"When ``FCSYM_BASIS = Cartesian``, symmetricaly irreducible set of IFCs is"
+" searched in the Cartesian coordinate where the matrix element "
+":math:`O_{\\mu\\nu}` is 0 or :math:`\\pm1` for all space group operations"
+" except for those of the **hexagonal** (trigonal) systems. Also, except "
+"for the hexagonal (trigonal) systems, the product "
+":math:`O_{\\nu_{1}\\mu_{1}}\\cdots O_{\\nu_{n}\\mu_{n}}` in the left hand"
+" side of equation :eq:`ifcsym1` becomes non-zero only for a specific pair"
+" of :math:`\\{\\nu\\}` (and becomes 0 for all other :math:`\\{\\nu\\}`\\ "
+"s). Therefore, let :math:`\\{\\nu^{\\prime}\\}` be such a pair of "
+":math:`\\{\\nu\\}`, the equation :eq:`ifcsym1` can be reduced to"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:59
+msgid ""
+"\\Phi_{\\nu_{1}^{\\prime}\\dots\\nu_{n}^{\\prime}}(L_{1}K_{1};\\dots;L_{n}K_{n})"
+" = s "
+"\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}),"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:64
+msgid ""
+"where :math:`s=\\pm1`. The code employs equation :eq:`ifcsym2` instead of"
+" equation :eq:`ifcsym1` to reduce the number of IFCs. If IFCs of the "
+"left-hand side and the right-hand side of equation :eq:`ifcsym2` are "
+"equivalent and the coupling coefficient is :math:`s=-1`, the IFC is "
+"removed since it becomes zero. For **hexagonal** (trigonal) systems, "
+"there can be symmetry operations where multiple terms in the left-hand "
+"side of equation :eq:`ifcsym1` become non-zero. For such cases, equation "
+":eq:`ifcsym1` is not used to reduce the number of IFCs. Alternatively, "
+"the corresponding symmetry relationships are imposed as constraints "
+"between IFCs in solving fitting problems."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:66
+#, python-brace-format
+msgid ""
+"When ``FCSYM_BASIS = Lattice`` (default), the symmetry reduction of IFCs "
+"is performed in the lattice coordinate. In this case, all elements of the"
+" rotational matrix become either 0 or :math:`\\pm1` in the "
+":math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` basis "
+"even for the **hexagonal** systems. Therefore, the numerical stability of"
+" the reduction process, particularly of the construction of rref (reduced"
+" row echelon form), is improved even when the number of numerical digits "
+"for irrational numbers given in an input file is less than sufficient "
+"(double precision)."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:72
+msgid "Constraints between IFCs"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:74
+msgid ""
+"Since the potential energy is invariant under rigid translation and "
+"rotation, it may be necessary for IFCs to satisfy corresponding "
+"constraints."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:76
+msgid "The constraints for translational invariance are given by"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:78
+msgid ""
+"\\sum_{\\ell_{1}\\kappa_{1}}\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\dots;\\ell_{n}\\kappa_{n})"
+" = 0,"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:83
+#, python-brace-format
+msgid ""
+"which should be satisfied for arbitrary pairs of "
+":math:`\\ell_{2}\\kappa_{2},\\dots,\\ell_{n}\\kappa_{n}` and "
+":math:`\\mu_{1},\\dots,\\mu_{n}`. The code **alm** imposes equation "
+":eq:`consttran` by default (``ICONST = 1``)."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:85
+msgid "The constraints for rotational invariance are"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:87
+msgid ""
+"&\\sum_{\\ell^{\\prime}\\kappa^{\\prime}} "
+"(\\Phi_{\\mu_{1}\\dots\\mu_{n}\\nu}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n};\\ell^{\\prime}\\kappa^{\\prime})"
+" r_{\\mu}(\\ell^{\\prime}\\kappa^{\\prime})\n"
+"- "
+"\\Phi_{\\mu_{1}\\dots\\mu_{n}\\mu}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n};\\ell^{\\prime}\\kappa^{\\prime})"
+" r_{\\nu}(\\ell^{\\prime}\\kappa^{\\prime})) \\\\\n"
+"& \\hspace{10mm} + \\sum_{\\lambda = "
+"1}^{n}\\sum_{\\mu_{\\lambda}^{\\prime}} "
+"\\Phi_{\\mu_{1}\\dots\\mu_{\\lambda}^{\\prime}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{\\lambda}\\kappa_{\\lambda};\\dots;\\ell_{n}\\kappa_{n})"
+" (\\delta_{\\mu,\\mu_{\\lambda}}\\delta_{\\nu,\\mu_{\\lambda}^{\\prime}} "
+"- \\delta_{\\nu,\\mu_{\\lambda}}\\delta_{\\mu,\\mu_{\\lambda}^{\\prime}})"
+" = 0,"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:93
+#, python-brace-format
+msgid ""
+"which must be satisfied for arbitrary pairs of "
+":math:`(\\ell_{1}\\kappa_{1},\\dots,\\ell_{n}\\kappa_{n};\\mu_{1},\\dots,\\mu_{n};\\mu,\\nu)`."
+" This is complicated since :math:`(n+1)`\\ th-order IFCs (first line) are"
+" related to :math:`n`\\ th-order IFCs (second line)."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:96
+msgid ""
+"For example, the constraints for rotational invariance related to "
+"harmonic terms can be found as"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:98
+msgid ""
+"&\\sum_{\\ell_{2}\\kappa_{2}} "
+"(\\Phi_{\\mu_{1}\\nu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})r_{\\mu}(\\ell_{2}\\kappa_{2})-\\Phi_{\\mu_{1}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})r_{\\nu}(\\ell_{2}\\kappa_{2}))"
+" \\notag \\\\\n"
+"& \\hspace{10mm} + "
+"\\Phi_{\\nu}(\\ell_{1}\\kappa_{1})\\delta_{\\mu,\\mu_{1}} - "
+"\\Phi_{\\mu}(\\ell_{1}\\kappa_{1})\\delta_{\\nu,\\mu_{1}} = 0,"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:104
+msgid "and"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:106
+msgid ""
+"& \\sum_{\\ell_{3}\\kappa_{3}} "
+"(\\Phi_{\\mu_{1}\\mu_{2}\\nu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3})"
+" r_{\\mu}(\\ell_{3}\\kappa_{3}) \\notag\n"
+"- "
+"\\Phi_{\\mu_{1}\\mu_{2}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3})"
+" r_{\\nu}(\\ell_{3}\\kappa_{3})) \\\\\n"
+"& \\hspace{10mm}\n"
+"+ "
+"\\Phi_{\\nu\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\mu,\\mu_{1}}"
+"\n"
+"- "
+"\\Phi_{\\mu\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\nu,\\mu_{1}}"
+" \\notag \\\\\n"
+"& \\hspace{10mm} + "
+"\\Phi_{\\mu_{1}\\nu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\mu,\\mu_{2}}"
+"\n"
+"- "
+"\\Phi_{\\mu_{1}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\nu,\\mu_{2}}"
+" = 0."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:117
+msgid ""
+"When ``NORDER = 1``, equation :eq:`constrot1` will be considered if "
+"``ICONST = 2``, whereas equation :eq:`constrot2` will be neglected. To "
+"further consider equation :eq:`constrot2`, please use ``ICONST = 3``, "
+"though it may enforce a number of harmonic IFCs to be zero since cubic "
+"terms don't exist in harmonic calculations (``NORDER = 1``)."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:123
+msgid "Estimate IFCs by linear regression"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:126
+msgid "Basic notations"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:128
+msgid ""
+"From the symmetrically independent set of IFCs and the constraints "
+"between them for satisfying the translational and/or rotational "
+"invariance, we can construct an irreducible set of IFCs "
+":math:`\\{\\Phi_{i}\\}`. Let us denote a column vector comprising the "
+":math:`N` irreducible set of IFCs as :math:`\\boldsymbol{\\Phi}`. Then, "
+"the Taylor expansion potential (TEP) defined by equation :eq:`U_Taylor` "
+"is written as"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:130
+msgid ""
+"U_{\\mathrm{TEP}} = \\boldsymbol{b}^{T}\\boldsymbol{\\Phi}.\n"
+"\n"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:133
+msgid ""
+"Here, :math:`\\boldsymbol{b} \\in \\mathbb{R}^{1\\times N}` is a function"
+" of atomic displacements :math:`\\{u_{i}\\}` defined as "
+":math:`\\boldsymbol{b} = \\partial U / \\partial \\boldsymbol{\\Phi}`. "
+"The atomic forces based on the TEP is then given as"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:135
+msgid ""
+"\\boldsymbol{F}_{\\mathrm{TEP}} = - \\frac{\\partial "
+"U_{\\mathrm{TEP}}}{\\partial \\boldsymbol{u}} = - \\frac{\\partial "
+"\\boldsymbol{b}^{T}}{\\partial \\boldsymbol{u}} \\boldsymbol{\\Phi} = A "
+"\\boldsymbol{\\Phi},"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:140
+msgid ""
+"where :math:`A \\in \\mathbb{R}^{3N_{s} \\times N}` with :math:`N_{s}` "
+"being the number of atoms in the supercell, and "
+":math:`\\boldsymbol{u}^{T} = (u_{1}^{x}, u_{1}^{y}, u_{1}^{z}, \\dots, "
+"u_{N_{s}}^{x}, u_{N_{s}}^{y}, u_{N_{s}}^{z})` is the vector comprising "
+":math:`3N_{s}` atomic displacements in the supercell. Note that the "
+"matrix :math:`A` and force vector :math:`\\boldsymbol{F}_{\\mathrm{TEP}}`"
+" depend on the atomic configuration of the supercell. To make this point "
+"clearer, let us denote them as :math:`A(\\boldsymbol{u})` and "
+":math:`\\boldsymbol{F}_{\\mathrm{TEP}}(\\boldsymbol{u})`."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:145
+#, python-brace-format
+msgid ""
+"To estimate the IFC vector :math:`\\boldsymbol{\\Phi}` by linear "
+"regression, it is usually necessary to consider several different "
+"displacement patterns. Let us suppose we have :math:`N_d` displacement "
+"patterns and atomic forces for each pattern obtained by DFT. Then, "
+"equation :eq:`force_tep` defined for each displacement pattern can be "
+"combined to a single equation as"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:149
+msgid ""
+"\\boldsymbol{\\mathscr{F}}_{\\mathrm{TEP}} =  \\mathbb{A} "
+"\\boldsymbol{\\Phi},\n"
+"\n"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:152
+msgid ""
+"where :math:`\\boldsymbol{\\mathscr{F}}^{T} = "
+"[\\boldsymbol{F}^{T}(\\boldsymbol{u}_{1}), \\dots, "
+"\\boldsymbol{F}^{T}(\\boldsymbol{u}_{N_d})]` and :math:`\\mathbb{A}^{T} ="
+" [A^{T}(\\boldsymbol{u}_{1}),\\dots,A^{T}(\\boldsymbol{u}_{N_d})]`."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:157
+msgid "Ordinary least-squares"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:159
+msgid ""
+"In the ordinary least-squares (``LMODEL = least-squares``), IFCs are "
+"estimated by solving the following problem:"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:161
+msgid ""
+"\\boldsymbol{\\Phi}_{\\mathrm{OLS}} = \\mathop{\\rm "
+"argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}} "
+"\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - "
+"\\boldsymbol{\\mathscr{F}}_{\\mathrm{TEP}} \\|^{2}_{2} = \\mathop{\\rm "
+"argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   "
+"\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} "
+"\\boldsymbol{\\Phi} \\|^{2}_{2}."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:166
+msgid ""
+"Therefore, the IFCs are determined so that the residual sum of squares "
+"(RSS) is minimized. To determine all elements of  "
+":math:`\\boldsymbol{\\Phi}_{\\mathrm{OLS}}` uniquely, "
+":math:`\\mathbb{A}^{T}\\mathbb{A}` must be full rank. When the fitting is"
+" successful, **alm** reports the relative fitting error :math:`\\sigma` "
+"defined by"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:169
+msgid ""
+"\\sigma = \\sqrt{\\frac{\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - "
+"\\mathbb{A} \\boldsymbol{\\Phi} "
+"\\|^{2}_{2}}{\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}}\\|_{2}^{2}}},"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:174
+msgid "where the denominator is the square sum of the DFT forces."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:179
+msgid "Elastic-net regression"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:181
+msgid ""
+"In the elastic-net optimization (``LMODEL = elastic-net``), IFCs are "
+"estimated by solving the following optimization problem:"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:183
+msgid ""
+"\\boldsymbol{\\Phi}_{\\mathrm{enet}} = \\mathop{\\rm "
+"argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   "
+"\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} "
+"\\boldsymbol{\\Phi} \\|^{2}_{2} + \\alpha \\beta \\| \\boldsymbol{\\Phi}"
+"  \\|_{1} + \\frac{1}{2} \\alpha (1-\\beta) \\| \\boldsymbol{\\Phi}  "
+"\\|_{2}^{2},"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:188
+#, python-brace-format
+msgid ""
+"where :math:`\\alpha` is a hyperparameter that controls the trade-off "
+"between the sparsity and accuracy of the model, and :math:`\\beta \\; (0 "
+"< \\beta \\leq 1)` is a hyperparameter that controls the ratio of the "
+":math:`L_{1}` and :math:`L_{2}` regularization terms. :math:`\\alpha` and"
+" :math:`\\beta` must be given by input tags ``L1_ALPHA`` and "
+"``L1_RATIO``, respectively."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:190
+msgid ""
+"An optimal value of :math:`\\alpha` can be estimated, for example, by "
+"cross-validation (CV). A :math:`n`\\ -fold CV can be performed by setting"
+" the ``CV``-tag properly."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:193
+msgid "Adaptive LASSO [1]_"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:195
+msgid ""
+"In adaptive LASSO (``LMODEL = adaptive-lasso``), IFCs are estimated by "
+"solving the following optimization problem:"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:197
+msgid ""
+"\\boldsymbol{\\Phi}_{\\mathrm{adalasso}} = \\mathop{\\rm "
+"argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   "
+"\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} "
+"\\boldsymbol{\\Phi} \\|^{2}_{2} + \\alpha \\sum_i w_i |\\Phi_i| ,"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:202
+msgid ""
+"where :math:`\\alpha` is a hyperparameter given by ``L1_ALPHA``, and "
+":math:`w_i` is the parameter-dependent weight. In ALM, we simply use "
+":math:`w_i = 1/|\\Phi_{\\mathrm{OLS},i}|` with "
+":math:`\\Phi_{\\mathrm{OLS},i}` being the coefficient estimator produced "
+"by an OLS fitting. Hence, in this option, the size of the training "
+"dataset must be large enough to make the matrix :math:`\\mathbb{A}` "
+"*overdetermined*. The code keeps running even when :math:`\\mathbb{A}` is"
+" *underdetermined*. So, please be careful."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:206
+#, python-brace-format
+msgid ""
+"The minimum size of the training dataset necessary for making "
+":math:`\\mathbb{A}` overdetermined can be roughly estimated as follows:"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:208
+msgid ""
+"We assume that there are :math:`N` independent IFCs (after imposing "
+"constraints, if there is any). In this case, the number of columns of "
+"matrix :math:`\\mathbb{A}` becomes :math:`N`, and :math:`\\mathbb{A}` "
+"becomes overdetermined when the number of independent rows of "
+":math:`\\mathbb{A}` is :math:`N` or larger. If the training structures "
+"are generated randomly and all atoms are displaced from their original "
+"positions in each configuration, we can generate :math:`3\\times "
+"N_{\\mathrm{atom}}` (:math:`N_{\\mathrm{atom}}` is the number of atoms in"
+" the supercell) linearly independent rows of :math:`\\mathbb{A}` from one"
+" displaced configuration , i.e., one static DFT calculation. Hence, we "
+"expect that :math:`\\mathbb{A}` becomes overdetermined when"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:210
+msgid "N_d \\geq \\frac{N}{3N_{\\mathrm{atom}}}"
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:214
+msgid ""
+"where :math:`N_d` is the number of displacement patterns in the training "
+"dataset."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:216
+msgid ""
+"In cross validation, the entire training dataset is divided into smaller "
+"subsets. For each subset, the above condition should be satisfied."
+msgstr ""
+
+#: ../../source/almdir/formalism_alm.rst:221
+msgid ""
+"H\\. Zou, *The Adaptive Lasso and Its Oracle Properties*, J\\. Am\\. "
+"Stat\\. Assoc\\. **101**, 1418 (2006)."
+msgstr ""
+

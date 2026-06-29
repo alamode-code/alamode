@@ -1,0 +1,353 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/intro.rst:14
+msgid "About"
+msgstr ""
+
+#: ../../source/intro.rst:17
+msgid "What is ALAMODE?"
+msgstr ""
+
+#: ../../source/intro.rst:19
+msgid ""
+"**ALAMODE** is an open source software designed for analyzing lattice "
+"anharmonicity and lattice thermal conductivity of solids. By using an "
+"external DFT package such as VASP and Quantum ESPRESSO, you can extract "
+"harmonic and anharmonic force constants straightforwardly with ALAMODE. "
+"Using the calculated anharmonic force constants, you can also estimate "
+"lattice thermal conductivity, phonon linewidth, and other anharmonic "
+"phonon properties from first principles."
+msgstr ""
+
+#: ../../source/intro.rst:22 ../../source/intro.rst:97
+msgid "Features"
+msgstr ""
+
+#: ../../source/intro.rst:25
+msgid "General"
+msgstr ""
+
+#: ../../source/intro.rst:27
+msgid ""
+"Extraction of harmonic and anharmonic force constants based on the "
+"supercell approach"
+msgstr ""
+
+#: ../../source/intro.rst:28
+msgid "Applicable to any crystal structures and low-dimensional systems"
+msgstr ""
+
+#: ../../source/intro.rst:29
+msgid "Accurate treatment of translational and rotational invariance"
+msgstr ""
+
+#: ../../source/intro.rst:30
+msgid "Interface to VASP, Quantum-ESPRESSO, OpenMX, xTAPP, and LAMMPS codes"
+msgstr ""
+
+#: ../../source/intro.rst:31
+msgid "Mainly written in C++, parallelized with MPI+OpenMP"
+msgstr ""
+
+#: ../../source/intro.rst:34
+msgid "Harmonic properties"
+msgstr ""
+
+#: ../../source/intro.rst:35
+msgid "Phonon dispersion"
+msgstr ""
+
+#: ../../source/intro.rst:36
+msgid "Phonon DOS, atom-projected phonon DOS"
+msgstr ""
+
+#: ../../source/intro.rst:37
+msgid "Two-phonon DOS"
+msgstr ""
+
+#: ../../source/intro.rst:38
+msgid "Vibrational thermodynamic functions (heat capacity, entropy, free energy)"
+msgstr ""
+
+#: ../../source/intro.rst:39
+msgid "Mean-square displacement"
+msgstr ""
+
+#: ../../source/intro.rst:40
+msgid "Animation and visualization of phonon modes (requires VMD or XCrysDen)"
+msgstr ""
+
+#: ../../source/intro.rst:41
+msgid "3-phonon scattering phase space"
+msgstr ""
+
+#: ../../source/intro.rst:42
+msgid "Phonon-isotope scattering rate"
+msgstr ""
+
+#: ../../source/intro.rst:43
+msgid "Participation ratio for analyzing the localization of phonon modes"
+msgstr ""
+
+#: ../../source/intro.rst:46
+msgid "Anharmonic properties"
+msgstr ""
+
+#: ../../source/intro.rst:50
+msgid "Gr\\ |umulaut_u|\\ neisen parameter via cubic force constants"
+msgstr ""
+
+#: ../../source/intro.rst:51
+msgid "Lattice thermal conductivity by BTE-RTA"
+msgstr ""
+
+#: ../../source/intro.rst:52
+msgid "Cumulative thermal conductivity"
+msgstr ""
+
+#: ../../source/intro.rst:53
+msgid "Phonon linewidth due to 3-phonon interactions"
+msgstr ""
+
+#: ../../source/intro.rst:54
+msgid "Phonon frequency shift due to 3- and 4-phonon interactions"
+msgstr ""
+
+#: ../../source/intro.rst:55
+msgid "Temperature-dependent effective potential method"
+msgstr ""
+
+#: ../../source/intro.rst:56
+msgid "Self-consistent phonon (SCPH) calculation"
+msgstr ""
+
+#: ../../source/intro.rst:57
+msgid "Anharmonic vibrational free-energy"
+msgstr ""
+
+#: ../../source/intro.rst:58
+msgid "Structural optimization at finite temperatures based on SCPH or QHA."
+msgstr ""
+
+#: ../../source/intro.rst:61
+msgid ""
+"The structural optimization of the current version CANNOT be used with "
+"thermal conductivity calculations or bubble corrections. The standard "
+"SCPH dispersion and thermodynamic properties are correctly calculated for"
+" relaxed configurations."
+msgstr ""
+
+#: ../../source/intro.rst:65
+msgid ""
+"Tutorials for structural optimization at finite temperatures are now "
+"included in this documentation; see :doc:`tutorial_pages/bto_scph_relax` "
+"(SCPH-based) and :doc:`tutorial_pages/zno_qha_relax` (QHA-based)."
+msgstr ""
+
+#: ../../source/intro.rst:70
+msgid "Links"
+msgstr ""
+
+#: ../../source/intro.rst:72
+msgid "Download page  : https://sourceforge.net/projects/alamode"
+msgstr ""
+
+#: ../../source/intro.rst:73
+msgid "Documentation  : https://alamode.readthedocs.io (this page)"
+msgstr ""
+
+#: ../../source/intro.rst:74
+msgid "Git repository : https://github.com/alamode-team/alamode"
+msgstr ""
+
+#: ../../source/intro.rst:78
+msgid "License"
+msgstr ""
+
+#: ../../source/intro.rst:82
+msgid "Copyright |copy| 2014-2026 Terumasa Tadano"
+msgstr ""
+
+#: ../../source/intro.rst:84
+msgid ""
+"This software is distributed under the MIT license. See the LICENSE.txt "
+"file for license rights and limitations."
+msgstr ""
+
+#: ../../source/intro.rst:89
+msgid "How to Cite ALAMODE"
+msgstr ""
+
+#: ../../source/intro.rst:91
+msgid "Please cite the following article when you use ALAMODE:"
+msgstr ""
+
+#: ../../source/intro.rst:93
+msgid "ALAMODE papers"
+msgstr ""
+
+#: ../../source/intro.rst:96
+msgid "Reference number"
+msgstr ""
+
+#: ../../source/intro.rst:98
+msgid "[1]_"
+msgstr ""
+
+#: ../../source/intro.rst:99
+msgid "General citation paper for all features of ALAMODE"
+msgstr ""
+
+#: ../../source/intro.rst:100
+msgid "[2]_"
+msgstr ""
+
+#: ../../source/intro.rst:101
+msgid "Self-consistent phonon (SCP) method (``MODE = SCPH``)"
+msgstr ""
+
+#: ../../source/intro.rst:102
+msgid "[3]_"
+msgstr ""
+
+#: ../../source/intro.rst:103
+msgid "Anharmonic free energies within SCP or improved SCP (ISC)"
+msgstr ""
+
+#: ../../source/intro.rst:104
+msgid "[4]_"
+msgstr ""
+
+#: ../../source/intro.rst:105
+msgid ""
+"SCP-based structural optimization or ``PERIODIC_IMAGE_CONV = 1`` "
+"(default) in the **alm** code"
+msgstr ""
+
+#: ../../source/intro.rst:106
+msgid "[5]_"
+msgstr ""
+
+#: ../../source/intro.rst:107
+msgid "QHA-based structural optimization"
+msgstr ""
+
+#: ../../source/intro.rst:110
+msgid "References"
+msgstr ""
+
+#: ../../source/intro.rst:112
+msgid ""
+"T\\. Tadano, Y. Gohda, and S. Tsuneyuki, J. Phys.: Condens. Matter "
+"**26**\\ , 225402 (2014) [`Link "
+"<http://iopscience.iop.org/0953-8984/26/22/225402/>`__]."
+msgstr ""
+
+#: ../../source/intro.rst:115
+msgid ""
+"T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**\\ , 054301 (2015). "
+"[`Link "
+"<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.92.054301>`__]"
+msgstr ""
+
+#: ../../source/intro.rst:118
+msgid ""
+"Y\\. Oba, T. Tadano, R. Akashi, and S. Tsuneyuki, Phys. Rev. Materials "
+"**3**\\, 033601 (2019). [`Link "
+"<https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.3.033601>`__]"
+msgstr ""
+
+#: ../../source/intro.rst:121
+msgid ""
+"R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**\\, "
+"224104 (2022). [`Link "
+"<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.106.224104>`__]"
+msgstr ""
+
+#: ../../source/intro.rst:124
+msgid ""
+"R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**\\, "
+"134119 (2023). [`Link "
+"<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.134119>`__]"
+msgstr ""
+
+#: ../../source/intro.rst:129
+msgid "Issues & Bug report"
+msgstr ""
+
+#: ../../source/intro.rst:131
+msgid ""
+"If you find a bug or issue related to ALAMODE, please report it at "
+"`GitHub issues <https://github.com/alamode-team/alamode/issues/>`_."
+msgstr ""
+
+#: ../../source/intro.rst:132
+msgid ""
+"Other questions and suggestions can be posted on the `GitHub discussion "
+"page. <https://github.com/alamode-team/alamode/discussions>`_"
+msgstr ""
+
+#: ../../source/intro.rst:134
+msgid ""
+"In either case, please search the previous questions and read FAQ page of"
+" this document before asking."
+msgstr ""
+
+#: ../../source/intro.rst:137
+msgid "Acknowledgment"
+msgstr ""
+
+#: ../../source/intro.rst:139
+msgid "This project is/was partially supported by the following projects:"
+msgstr ""
+
+#: ../../source/intro.rst:141
+msgid "Grant-in-Aid for Scientific Research (C) (21K03424)"
+msgstr ""
+
+#: ../../source/intro.rst:142
+msgid "Grant-in-Aid for Young Scientists (B) (16K17724)"
+msgstr ""
+
+#: ../../source/intro.rst:143
+msgid ""
+"Grant-in-Aid for Scientific Research on Innovative Areas 'Materials "
+"Design through Computics: Complex Correlation and Non-Equilibrium "
+"Dynamics'. (http://computics-material.jp)"
+msgstr ""
+
+#: ../../source/intro.rst:147
+msgid "Author & Contact"
+msgstr ""
+
+#: ../../source/intro.rst:153
+msgid "Research Center for Magnetic and Spintronic Materials (CMSM),"
+msgstr ""
+
+#: ../../source/intro.rst:154
+msgid "National Institute for Material Science (NIMS),"
+msgstr ""
+
+#: ../../source/intro.rst:155
+msgid "Japan"
+msgstr ""
+

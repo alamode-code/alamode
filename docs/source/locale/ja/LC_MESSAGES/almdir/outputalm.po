@@ -1,0 +1,153 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/almdir/outputalm.rst:2
+msgid "ALM: Output files"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:4
+msgid "``PREFIX``.pattern_HARMONIC, ``PREFIX``.pattern_ANHARM?"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:6
+msgid ""
+"These files contain displacement patterns in Cartesian coordinate. The "
+"length of displacement is normalized to unity for each atom. Created when"
+" ``MODE = suggest``. Patterns for anharmonic force constants are printed "
+"only when ``NORDER > 1``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:11
+msgid "``PREFIX``.fcs"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:13
+msgid ""
+"Harmonic and anharmonic force constants in Rydberg atomic units. In the "
+"first section, only symmetry-reduced force constants are printed. All "
+"symmetry-related force constants are shown in the following section with "
+"the symmetry prefactor (:math:`\\pm 1`). Created when ``MODE = "
+"optimize``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:19
+msgid "``PREFIX``.xml"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:21
+msgid ""
+"An XML file containing the necessary information for performing phonon "
+"calculations. The file can be read by *anphon* using the ``FCSFILE``-tag."
+" Created by default when ``MODE = optimize`` (controlled by "
+"``FCS_ALAMODE``). When ``LMODEL = enet | adaptive-lasso``, the file is "
+"created only when the cross-validation mode is off (``CV = 0``)."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:27
+msgid "``PREFIX``.h5"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:29
+msgid ""
+"An HDF5 file containing the same information as ``PREFIX``.xml in the "
+"HDF5 format. It can also be read by *anphon* using the ``FCSFILE``-tag. "
+"Created by default when ``MODE = optimize``. When ``LMODEL = enet | "
+"adaptive-lasso``, the file is created only when the cross-validation mode"
+" is off (``CV = 0``)."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:34
+msgid "``PREFIX``.FORCE_CONSTANT_3RD"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:36
+msgid ""
+"Third-order force constants in the FORCE_CONSTANT_3RD format of the "
+"ShengBTE code. Created when ``MODE = optimize`` and ``FC3_SHENGBTE = 1``."
+" When ``LMODEL = enet | adaptive-lasso``, the file is created only when "
+"the cross-validation mode is off (``CV = 0``)."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:40
+msgid "``PREFIX``.FORCE_CONSTANT_4TH"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:42
+msgid ""
+"Fourth-order force constants in the FORCE_CONSTANT_4TH format of the "
+"ShengBTE (FourPhonon) code. Created when ``MODE = optimize``, "
+"``FC4_SHENGBTE = 1``, and ``NORDER > 2``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:45
+msgid "``PREFIX``.fc"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:47
+msgid ""
+"Second-order force constants in the Quantum ESPRESSO ``.fc`` format. "
+"Created when ``MODE = optimize`` and ``FC2_QEFC = 1``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:50
+msgid "``PREFIX``.hessian"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:52
+msgid ""
+"The entire Hessian matrix of the supercell. Created when ``MODE = "
+"optimize`` and ``HESSIAN = 1``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:55
+msgid "``PREFIX``.cvset"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:57
+msgid ""
+"This file contains training and validation errors of cross-validation "
+"performed with the *manually* given ``DFSET`` (training dataset) and "
+"``DFSET_CV`` (validation dataset). Created when the manual cross-"
+"validation mode is selected by setting ``CV = -1``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:59
+msgid "``PREFIX``.cvset[1, ..., ``CV``]"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:61
+msgid ""
+"These files contain training and validation errors of cross-validation "
+"performed for ``CV`` subsets. Created when the automatic cross-validation"
+" mode is selected by setting ``CV > 1``."
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:63
+msgid "``PREFIX``.cvscore"
+msgstr ""
+
+#: ../../source/almdir/outputalm.rst:65
+msgid ""
+"The mean value and standard deviation of the training and validation "
+"errors are reported. Created when the automatic cross-validation (``CV > "
+"1``) is finished."
+msgstr ""
+
