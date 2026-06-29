@@ -21,13 +21,13 @@ msgstr ""
 
 #: ../../source/faq.rst:15
 msgid "Frequently Asked Questions (FAQ)"
-msgstr ""
+msgstr "よくある質問 (FAQ)"
 
 #: ../../source/faq.rst:17
 msgid ""
 ":question:`The fitting error is very large (> 90%). Is it problematic? If"
 " so, how can I reduce the error?`"
-msgstr ""
+msgstr ":question:`フィッティング誤差が非常に大きい (> 90%) のですが、問題でしょうか？もしそうなら、どうすれば誤差を減らせますか？`"
 
 #: ../../source/faq.rst:19
 msgid ""
@@ -41,43 +41,43 @@ msgid ""
 "error associated with the residual forces, please use the ``--offset`` "
 "option of :red:`extract.py` when generating the displacement-force "
 "datasets. For example, in the case of VASP calculator, please issue ::"
-msgstr ""
+msgstr "大きなフィッティング誤差は力定数 (force constants) の精度に影響を与える可能性があります。フィッティング誤差が大きくなる最も可能性の高い原因は、元のスーパーセル (supercell) 構造（原子の変位 (displacement) を加える前）における非ゼロの残留力です。比較的厳しい収束基準で基本セル (primitive cell) の構造最適化を行った場合でも、その基本セルから生成されたスーパーセル構造における原子の力 (force) はゼロからずれることがあります。残留力に伴う誤差を減らすには、変位力データセットを生成する際に :red:`extract.py` の ``--offset`` オプションを使用してください。例えば、VASP 計算機の場合は次のように実行してください ::"
 
 #: ../../source/faq.rst:24
 msgid ""
 "Here, ``vasprun0.xml`` is the file obtained by running a VASP calculation"
 " for the original supercell (``SPOSCAR``)."
-msgstr ""
+msgstr "ここで ``vasprun0.xml`` は、元のスーパーセル (``SPOSCAR``) に対して VASP 計算を実行して得られたファイルです。"
 
 #: ../../source/faq.rst:26
 msgid ""
 "If the fitting error is still large after subtracting the offset "
 "components, please consider the following points:"
-msgstr ""
+msgstr "オフセット成分を差し引いてもフィッティング誤差が依然として大きい場合は、次の点を検討してください。"
 
 #: ../../source/faq.rst:28
 msgid ""
 "Please use ~15 decimal points for the fractional coordinates. For "
 "example, 1/3 should be 0.33333333333333 instead of 0.33333."
-msgstr ""
+msgstr "分数座標には小数点以下約15桁を使用してください。例えば 1/3 は 0.33333 ではなく 0.33333333333333 とすべきです。"
 
 #: ../../source/faq.rst:30
 msgid "Please check if the DFT calculation converges properly."
-msgstr ""
+msgstr "DFT 計算が適切に収束しているか確認してください。"
 
 #: ../../source/faq.rst:32
 msgid "Use a smaller displacement magnitude."
-msgstr ""
+msgstr "より小さい変位の大きさを使用してください。"
 
 #: ../../source/faq.rst:35
 msgid ":question:`How small the fitting error should be?`"
-msgstr ""
+msgstr ":question:`フィッティング誤差はどの程度小さくすべきですか？`"
 
 #: ../../source/faq.rst:37
 msgid ""
 "It depends on the Taylor expansion potential and displacement magnitude "
 "you choose."
-msgstr ""
+msgstr "選択するテイラー展開ポテンシャル (Taylor expansion potential) と変位の大きさに依存します。"
 
 #: ../../source/faq.rst:39
 #, python-format
@@ -86,14 +86,14 @@ msgid ""
 ":red:`displace.py` and the all harmonic interactions are considered "
 "(cutoff = None), the fitting error is usually less than 5% (~1--2% in "
 "most cases)."
-msgstr ""
+msgstr ":red:`displace.py` で ``--mag=0.01`` を使用し、すべての調和 (harmonic) 相互作用を考慮する（cutoff = None）標準的な調和計算では、フィッティング誤差は通常 5% 未満（多くの場合 ~1--2%）です。"
 
 #: ../../source/faq.rst:41
 msgid ""
 "In the calculation of third-order force constants with ``--mag=0.04``, "
 "the fitting error should be small as well. Indeed, in many cases, we "
 "obtain much smaller fitting errors (< 1%) than the harmonic case."
-msgstr ""
+msgstr "``--mag=0.04`` を用いた3次の力定数の計算でも、フィッティング誤差は同様に小さくなるはずです。実際、多くの場合、調和計算よりもはるかに小さいフィッティング誤差 (< 1%) が得られます。"
 
 #: ../../source/faq.rst:43
 msgid ""
@@ -101,11 +101,11 @@ msgid ""
 "the harmonic potential to the displacement-force datasets sampled by ab "
 "initio molecular dynamics at finite temperature. Therefore, the fitting "
 "error tends to be much larger (> 10%)."
-msgstr ""
+msgstr "温度依存有効ポテンシャル法 (temperature-dependent effective potential method) では、有限温度での第一原理分子動力学によってサンプリングされた変位力データセットに調和ポテンシャルをフィッティングしようとします。そのため、フィッティング誤差ははるかに大きくなる傾向があります (> 10%)。"
 
 #: ../../source/faq.rst:46
 msgid ":question:`What value should I use for the cutoff radius?`"
-msgstr ""
+msgstr ":question:`カットオフ半径 (cutoff radius) にはどのような値を使用すべきですか？`"
 
 #: ../../source/faq.rst:48
 msgid ""
@@ -116,7 +116,7 @@ msgid ""
 "matrix becomes exact at the commensurate q points only when the \"None\" "
 "option is selected. (Giving a very large cutoff radius has the same "
 "effect as giving \"None\".)"
-msgstr ""
+msgstr "調和項については、スーパーセル内のすべての調和相互作用を考慮する \"None\" の使用をお勧めします。この選択は変位パターンの数が変わらないため、計算コストをそれほど増加させません。また、調和ダイナミカル行列 (dynamical matrix) が整合的な q 点で厳密になるのは \"None\" オプションを選択した場合のみです。（非常に大きいカットオフ半径を与えることは \"None\" を与えることと同じ効果を持ちます。）"
 
 #: ../../source/faq.rst:50
 msgid ""
@@ -125,24 +125,23 @@ msgid ""
 "thermal conductivity and free energy, with respect to the cutoff values. "
 "In most cases, the cutoff radius of 10 Bohr is a good guess, but you may "
 "need to use a larger value for polar materials. So be careful."
-msgstr ""
+msgstr "非調和 (anharmonic) 項については、カットオフ半径を徐々に増加させ、熱伝導率 (thermal conductivity) や自由エネルギーといった物理量のカットオフ値に対する収束を確認する必要があります。多くの場合、10 Bohr のカットオフ半径が良い目安ですが、極性物質ではより大きい値を使用する必要があるかもしれません。注意してください。"
 
 #: ../../source/faq.rst:52
 msgid ""
 ":question:`Why are the phonon dispersion curves discontinuous at the "
 "Brillouin zone boundaries?`"
-msgstr ""
+msgstr ":question:`フォノン分散曲線 (phonon dispersion curves) がブリルアンゾーン (Brillouin zone) 境界で不連続になるのはなぜですか？`"
 
 #: ../../source/faq.rst:54
 msgid ""
 "Probably, you are wrongly using the supercell lattice vectors for the "
 "``&cell`` field of the **anphon** code. If so, :red:`please use the "
 "primitive lattice vectors` for **anphon**."
-msgstr ""
+msgstr "おそらく、**anphon** コードの ``&cell`` フィールドにスーパーセルの格子ベクトルを誤って使用しています。もしそうであれば、**anphon** には :red:`基本セルの格子ベクトルを使用してください`。"
 
 #: ../../source/faq.rst:58
 msgid ""
 "For the ``&cell`` field of **alm**, you need to give the supercell "
 "lattice vectors."
-msgstr ""
-
+msgstr "**alm** の ``&cell`` フィールドには、スーパーセルの格子ベクトルを与える必要があります。"

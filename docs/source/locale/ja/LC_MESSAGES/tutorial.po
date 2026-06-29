@@ -21,5 +21,5 @@ msgstr ""
 
 #: ../../source/tutorial.rst:2
 msgid "Tutorial"
-msgstr ""
+msgstr "チュートリアル"
 

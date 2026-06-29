@@ -21,5 +21,5 @@ msgstr ""
 
 #: ../../source/alm_root.rst:2
 msgid "ALM: Force constant calculator"
-msgstr ""
+msgstr "ALM: 力定数 (force constant) 計算プログラム"
 

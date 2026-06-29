@@ -21,26 +21,26 @@ msgstr ""
 
 #: ../../source/tutorial_pages/sto_scph.rst:10
 msgid "SrTiO\\ :sub:`3` : A self-consistent phonon example"
-msgstr ""
+msgstr "SrTiO\\ :sub:`3` : 自己無撞着フォノン (self-consistent phonon) の例"
 
 #: ../../source/tutorial_pages/sto_scph.rst:12
 msgid ""
 "This page explains how to run a self-consistent phonon (SCP) calculation "
 "using ALAMODE. The target material is cubic SrTiO\\ :sub:`3`, which is a "
 "well-known perovskite solid exhibiting soft phonons."
-msgstr ""
+msgstr "このページでは、ALAMODE を用いて自己無撞着フォノン (self-consistent phonon, SCP) 計算を実行する方法を説明します。対象とする物質は立方晶 SrTiO\\ :sub:`3` であり、ソフトフォノンを示すことで知られるペロブスカイト固体です。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:15
 msgid "The example input files are provided in **example/SrTiO3/reference**."
-msgstr ""
+msgstr "サンプルの入力ファイルは **example/SrTiO3/reference** に用意されています。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:17
 msgid "Let's move to the example directory"
-msgstr ""
+msgstr "サンプルのディレクトリに移動しましょう。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:27
 msgid "1. Prepare force constants and BORNINFO"
-msgstr ""
+msgstr "1. 力定数 (force constants) と BORNINFO の準備"
 
 #: ../../source/tutorial_pages/sto_scph.rst:29
 msgid ""
@@ -48,79 +48,79 @@ msgid ""
 "constants (up to 4th order) are already calculated and only focus on the "
 "SCP calculation part. The tutorial for calculating anharmonic force "
 "constants is given in another page."
-msgstr ""
+msgstr "このチュートリアルでは、調和 (harmonic) および非調和 (anharmonic) な力定数（4 次まで）がすでに計算済みであると仮定し、SCP 計算の部分のみに焦点を当てます。非調和力定数 (anharmonic force constants) の計算に関するチュートリアルは別のページで説明します。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:31
 msgid ""
 "To start an SCPH calculation, please copy the force constant files and "
 "BORNINFO as follows:"
-msgstr ""
+msgstr "SCPH 計算を始めるには、次のように力定数ファイルと BORNINFO をコピーしてください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:42
 msgid "The anharmonic force constants were computed using the following settings:"
-msgstr ""
+msgstr "非調和力定数は次の設定で計算されました。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:44
 msgid "VASP, PBEsol, ENCUT = 550 eV"
-msgstr ""
+msgstr "VASP, PBEsol, ENCUT = 550 eV"
 
 #: ../../source/tutorial_pages/sto_scph.rst:46
 msgid "2x2x2 supercell of cubic SrTiO\\ :sub:`3` (40 atoms)"
-msgstr ""
+msgstr "立方晶 SrTiO\\ :sub:`3` の 2x2x2 スーパーセル (supercell)（40 原子）"
 
 #: ../../source/tutorial_pages/sto_scph.rst:48
 msgid "Harmonic force constants were computed using ordinary least squares"
-msgstr ""
+msgstr "調和力定数は通常の最小二乗法 (ordinary least squares) で計算されました。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:50
 msgid ""
 "Anharmonic force constants were estimated using LASSO from 40 training "
 "structures"
-msgstr ""
+msgstr "非調和力定数は 40 個のトレーニング構造から LASSO を用いて推定されました。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:52
 msgid ""
 "For more details, please see the `original paper "
 "<https://arxiv.org/abs/1506.01781>`_."
-msgstr ""
+msgstr "詳細については、`元論文 <https://arxiv.org/abs/1506.01781>`_ をご覧ください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:58
 msgid "2. Phonons within the harmonic approximation"
-msgstr ""
+msgstr "2. 調和近似 (harmonic approximation) におけるフォノン"
 
 #: ../../source/tutorial_pages/sto_scph.rst:60
 msgid ""
 "Before moving onto an SCP calculation, let's first confirm that the cubic"
 " STO is dynamically unstable within the harmonic approximation."
-msgstr ""
+msgstr "SCP 計算に進む前に、まず立方晶 STO が調和近似の範囲内では動的に不安定であることを確認しましょう。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:62
 msgid ""
 "Please prepare an input file for band structure calculation "
 "(``phband.in``) as follows:"
-msgstr ""
+msgstr "次のように、バンド構造計算のための入力ファイル (``phband.in``) を用意してください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:66
 msgid "Please run **anphon** and plot the band structure as"
-msgstr ""
+msgstr "**anphon** を実行し、次のようにバンド構造をプロットしてください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:77
 msgid ""
 "It is clear that phonons are dynamically unstable at the :math:`\\Gamma` "
 "and R points."
-msgstr ""
+msgstr ":math:`\\Gamma` 点および R 点でフォノンが動的に不安定であることは明らかです。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:82
 msgid "3. Phonons within the self-consistent phonon method"
-msgstr ""
+msgstr "3. 自己無撞着フォノン法 (self-consistent phonon method) におけるフォノン"
 
 #: ../../source/tutorial_pages/sto_scph.rst:84
 msgid "Now, let's include the finite-temperature effect using the SCP method."
-msgstr ""
+msgstr "それでは、SCP 法を用いて有限温度効果を取り入れてみましょう。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:86
 msgid "Please copy ``phband.in`` to ``scph.in`` and edit ``scph.in`` as follows:"
-msgstr ""
+msgstr "``phband.in`` を ``scph.in`` にコピーし、次のように ``scph.in`` を編集してください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:91
 #, python-brace-format
@@ -138,7 +138,7 @@ msgid ""
 " the above example, we neglect the off-diagonal components to make the "
 "calculation faster. We will see the effect of the off-diagonal components"
 " later."
-msgstr ""
+msgstr "ここでは、入力に ``&scph`` フィールドが追加されています。SCP 計算において重要なパラメータは :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>` と :ref:`KMESH_SCPH <anphon_kmesh_scph>` です。前者は、SCP 計算を解いたり動力学行列の（逆）フーリエ変換を実行したりするために使用される :math:`\\boldsymbol{q}`\\ 点メッシュを定義し、後者はループ自己エネルギー図に関連する繰り込み項を計算するために使用される :math:`\\boldsymbol{q}`\\ 点メッシュを定義します。また、:ref:`SELF_OFFDIAG <anphon_self_offdiag>` オプションは、ループ自己エネルギーの非対角成分を考慮するかどうかを制御します。上記の例では、計算を高速化するために非対角成分を無視しています。非対角成分の効果については後ほど見ていきます。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:96
 msgid ""
@@ -151,7 +151,7 @@ msgid ""
 "exact within the harmonic approximation (HA). In the above example, we "
 "employ a 2x2x2 supercell, so we should use ``KMESH_INTERPOLATE = 2 2 2`` "
 "(or ``KMESH_INTERPOLATE = 1 1 1``, which is less accurate)."
-msgstr ""
+msgstr ":ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>` によって生成されるすべての :math:`\\boldsymbol{q}` 点は、（調和力定数計算の）スーパーセルサイズと整合 (commensurate) している必要があります。なぜなら、動力学行列の補間には :math:`\\Delta D(\\boldsymbol{q}) = D_{\\mathrm{SCPH}}(\\boldsymbol{q}) - D_{\\mathrm{HA}}(\\boldsymbol{q})` が使用され、そのうち :math:`D_{\\mathrm{HA}}(\\boldsymbol{q})` は調和近似 (harmonic approximation, HA) の範囲内で厳密でなければならないからです。上記の例では 2x2x2 スーパーセルを用いているため、``KMESH_INTERPOLATE = 2 2 2``（または、精度は劣りますが ``KMESH_INTERPOLATE = 1 1 1``）を使用すべきです。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:100
 #, python-brace-format
@@ -163,23 +163,23 @@ msgid ""
 "= 2 2 2``, we can set ``KMESH_SCPH = 2 2 2``, ``KMESH_SCPH = 4 4 4``, and"
 " so forth, but ``KMESH_SCPH = 3 3 3``, ``KMESH_SCPH = 5 5 5``, ... are "
 "not allowed."
-msgstr ""
+msgstr ":ref:`KMESH_SCPH <anphon_kmesh_scph>` によって生成される :math:`\\boldsymbol{q}_1` 点は :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>` よりも密にできますが、後者の粗いグリッドは前者の密なグリッドの部分集合でなければなりません。例えば、``KMESH_INTERPOLATE = 2 2 2`` を使用する場合、``KMESH_SCPH = 2 2 2``、``KMESH_SCPH = 4 4 4`` などを設定できますが、``KMESH_SCPH = 3 3 3``、``KMESH_SCPH = 5 5 5``、… は許可されません。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:103
 msgid "Now, let's run **anphon** using MPI parallelization."
-msgstr ""
+msgstr "それでは、MPI 並列化を用いて **anphon** を実行しましょう。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:110
 msgid ""
 "The calculation finishes in ~2 minutes. When it is done, please check if "
 "the SCPH iteration reached convergence."
-msgstr ""
+msgstr "計算は約 2 分で終了します。終了したら、SCPH の反復計算が収束に達したかどうかを確認してください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:116
 msgid ""
 "We can see that the SCPH loop converged except for :math:`T = 0` K. In "
 "the working directory, the following files are created:"
-msgstr ""
+msgstr ":math:`T = 0` K を除いて SCPH ループが収束していることがわかります。作業ディレクトリには、次のファイルが作成されます。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:119
 msgid ""
@@ -189,7 +189,7 @@ msgid ""
 "D_{\\mathrm{HA}}(\\boldsymbol{q})`, are stored. This file can be used to "
 "restart an SCP calculation with the same ``KMESH_*`` and ``SELF_OFFDIAG``"
 " parameters."
-msgstr ""
+msgstr "``STO_scph2-2.scph_dymat`` : 動力学行列への非調和補正 :math:`\\Delta D(\\boldsymbol{q}, T) = D_{\\mathrm{SCPH}}(\\boldsymbol{q}, T) - D_{\\mathrm{HA}}(\\boldsymbol{q})` が格納されます。このファイルは、同じ ``KMESH_*`` および ``SELF_OFFDIAG`` パラメータで SCP 計算を再開するために使用できます。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:120
 msgid ""
@@ -203,33 +203,33 @@ msgid ""
 "create effective second-order force constants via ``dfc2`` (for the "
 "ALAMODE force-constant XML format) or ``scph_to_qefc.py`` (Quantum-"
 "ESPRESSO fc format)."
-msgstr ""
+msgstr "``STO_scph2-2.scph_dfc2`` : 2 次の力定数への非調和補正 :math:`\\Delta \\Phi(\\boldsymbol{r}(\\ell), T) = M^{\\frac{1}{2}} \\Delta D(\\boldsymbol{r}(\\ell), T) M^{\\frac{1}{2}}` が格納されます。ここで :math:`M` は原子質量を要素とする対角行列であり、\\ :math:`\\Delta D(\\boldsymbol{r}(\\ell), T) = N_{q}^{-1} \\sum_{\\boldsymbol{q}} \\Delta D(\\boldsymbol{q}, T) e^{-i\\boldsymbol{q}\\cdot\\boldsymbol{r}(\\ell)}` です。このファイルは、``dfc2``\\ （ALAMODE の力定数 XML 形式用）または ``scph_to_qefc.py``\\ （Quantum-ESPRESSO の fc 形式用）を介して有効な 2 次の力定数を作成するために使用されます。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:121
 msgid ""
 "``STO_scph2-2.scph_bands`` : Self-consistent phonon band structures at "
 "various temperatures."
-msgstr ""
+msgstr "``STO_scph2-2.scph_bands`` : さまざまな温度における自己無撞着フォノンのバンド構造。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:123
 msgid "Let's plot the finite-temperature band structures."
-msgstr ""
+msgstr "有限温度のバンド構造をプロットしてみましょう。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:138
 msgid ""
 "The soft modes are stabilized by the SCP calculation and exhibit "
 "significant temperature dependences."
-msgstr ""
+msgstr "ソフトモードは SCP 計算によって安定化され、顕著な温度依存性を示します。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:142
 msgid ""
 "If you are interested, please check the dependencies of the results on "
 "``SELF_OFFDIAG`` and ``KMESH_SCPH`` values."
-msgstr ""
+msgstr "興味があれば、``SELF_OFFDIAG`` および ``KMESH_SCPH`` の値に対する結果の依存性を確認してみてください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:147
 msgid "4. Thermodynamics from the self-consistent phonon method"
-msgstr ""
+msgstr "4. 自己無撞着フォノン法による熱力学"
 
 #: ../../source/tutorial_pages/sto_scph.rst:149
 msgid ""
@@ -237,48 +237,48 @@ msgid ""
 "vibrational free energy, mean square displacement (MSD), using the SCP "
 "calculation. Please copy ``scph.in`` to ``scph2.in`` and edit "
 "``scph2.in`` as follows:"
-msgstr ""
+msgstr "次に、SCP 計算を用いて、振動自由エネルギー (vibrational free energy) や平均二乗変位 (mean square displacement, MSD) を含むさまざまな熱力学関数を計算します。``scph.in`` を ``scph2.in`` にコピーし、次のように ``scph2.in`` を編集してください。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:155
 msgid ""
 "We use the same ``PREFIX`` as before so that the code can restart the "
 "calculation from ``STO_scph2-2.scph_dymat``. The code can skip the most "
 "expensive part of the SCP calculation, so we run **anphon** without MPI:"
-msgstr ""
+msgstr "コードが ``STO_scph2-2.scph_dymat`` から計算を再開できるように、以前と同じ ``PREFIX`` を使用します。コードは SCP 計算の最も計算負荷の高い部分をスキップできるため、MPI を使わずに **anphon** を実行します。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:162
 msgid ""
 "When the calculation finishes, the following files are created in the "
 "working directory:"
-msgstr ""
+msgstr "計算が終了すると、作業ディレクトリに次のファイルが作成されます。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:164
 msgid ""
 "``STO_scph2-2.scph_dos`` : Phonon density of states at various "
 "temperatures"
-msgstr ""
+msgstr "``STO_scph2-2.scph_dos`` : さまざまな温度におけるフォノン状態密度 (phonon density of states)"
 
 #: ../../source/tutorial_pages/sto_scph.rst:165
 msgid "``STO_scph2-2.scph_msd`` : Temperature-dependent MSDs for each atom"
-msgstr ""
+msgstr "``STO_scph2-2.scph_msd`` : 各原子の温度依存 MSD"
 
 #: ../../source/tutorial_pages/sto_scph.rst:166
 msgid ""
 "``STO_scph2-2.scph_thermo`` : Heat capacity and vibrational free energies"
 " at various temperatures"
-msgstr ""
+msgstr "``STO_scph2-2.scph_thermo`` : さまざまな温度における熱容量と振動自由エネルギー"
 
 #: ../../source/tutorial_pages/sto_scph.rst:168
 msgid ""
 "These files can be plotted and processed easily. For example, let's plot "
 "the MSD of Sr, Ti, and O atoms using gnuplot."
-msgstr ""
+msgstr "これらのファイルは簡単にプロットおよび処理できます。例えば、gnuplot を使って Sr、Ti、O 原子の MSD をプロットしてみましょう。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:185
 msgid ""
 "We can see that the MSD of an oxygen is large in the plane perpendicular "
 "to the nearest Ti-O bond direction."
-msgstr ""
+msgstr "酸素の MSD が、最近接の Ti-O 結合方向に垂直な面内で大きくなっていることがわかります。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:187
 msgid ""
@@ -286,7 +286,7 @@ msgid ""
 " the SCP theory are stored, which can be used to predict phase stability "
 "and thermal expansitivy of anharmonic materials. In the file, 3-5 columns"
 " give vibrational free energies."
-msgstr ""
+msgstr "``STO_scph2-2.scph_thermo`` ファイルには、SCP 理論における振動自由エネルギーが格納されており、非調和物質の相安定性 (phase stability) や熱膨張率 (thermal expansivity) の予測に使用できます。このファイルでは、3～5 列目が振動自由エネルギーを与えます。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:196
 msgid ""
@@ -298,11 +298,10 @@ msgid ""
 "vibrational free energy within the SCP scheme. So, the values in the 5th "
 "column should be used for phase stability and thermal expansivity "
 "calculations."
-msgstr ""
+msgstr "3 列目は QHA に類似した項であり、4 列目は振動自由エネルギーが熱力学的条件 :math:`S_{\\mathrm{vib}}=-\\frac{dF_{\\mathrm{vib}}}{dT}` を満たすために必要な補正項です。5 列目は 3 列目と 4 列目の和であり、SCP の枠組みにおける正しい振動自由エネルギーを与えます。したがって、相安定性および熱膨張率の計算には 5 列目の値を使用すべきです。"
 
 #: ../../source/tutorial_pages/sto_scph.rst:200
 msgid ""
 "Since the SCP calculation did not converge at 0 K, the thermodynamic "
 "quantities at 0 K are incorrect and should not be used for any purposes."
-msgstr ""
-
+msgstr "SCP 計算は 0 K で収束しなかったため、0 K における熱力学量は正しくなく、いかなる目的にも使用すべきではありません。"

@@ -21,22 +21,22 @@ msgstr ""
 
 #: ../../source/anphondir/formalism_anphon.rst:2
 msgid "ANPHON: Theoretical background"
-msgstr ""
+msgstr "ANPHON: 理論的背景"
 
 #: ../../source/anphondir/formalism_anphon.rst:8
 msgid "Dynamical matrix"
-msgstr ""
+msgstr "動力学行列 (dynamical matrix)"
 
 #: ../../source/anphondir/formalism_anphon.rst:10
 msgid "The dynamical matrix is given by"
-msgstr ""
+msgstr "動力学行列は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:12
 msgid ""
 "D_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) = "
 "\\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa^{\\prime}}}}\n"
 "\\sum_{\\ell^{\\prime}}\\Phi_{\\mu\\nu}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})\\exp{\\left[i\\boldsymbol{q}\\cdot(\\boldsymbol{r}(\\ell^{\\prime})-\\boldsymbol{r}(\\ell))\\right]},"
-msgstr ""
+msgstr "D_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) = \\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa^{\\prime}}}}\n\\sum_{\\ell^{\\prime}}\\Phi_{\\mu\\nu}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})\\exp{\\left[i\\boldsymbol{q}\\cdot(\\boldsymbol{r}(\\ell^{\\prime})-\\boldsymbol{r}(\\ell))\\right]},"
 
 #: ../../source/anphondir/formalism_anphon.rst:18
 msgid ""
@@ -50,14 +50,14 @@ msgid ""
 "of atomic polarization :math:`e_{\\mu}(\\kappa;\\boldsymbol{q}j)`. Let "
 ":math:`D(\\boldsymbol{q})` denote a matrix form of equation :eq:`dymat`, "
 "the eigenvalues may be written as"
-msgstr ""
+msgstr "ここで :math:`M_{\\kappa}` は原子 :math:`\\kappa` の原子質量です。動力学行列を対角化することで、各 :math:`\\boldsymbol{q}` 点について :math:`m` (:math:`=3N_{\\kappa}`) 個の固有値 :math:`\\omega_{\\boldsymbol{q}j}^{2}`  (:math:`j = 1, 2, \\dots, m`) と対応する固有ベクトル :math:`\\boldsymbol{e}_{\\boldsymbol{q}j}` が得られます。ここで :math:`\\boldsymbol{e}_{\\boldsymbol{q}j}` は原子分極 :math:`e_{\\mu}(\\kappa;\\boldsymbol{q}j)` からなる列ベクトルです。:math:`D(\\boldsymbol{q})` を式 :eq:`dymat` の行列形式とすると、固有値は次のように書けます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:23
 msgid ""
 "\\omega_{\\boldsymbol{q}j}^{2} = "
 "(\\boldsymbol{e}_{\\boldsymbol{q}j}^{*})^{\\mathrm{T}} "
 "D(\\boldsymbol{q})\\boldsymbol{e}_{\\boldsymbol{q}j}."
-msgstr ""
+msgstr "\\omega_{\\boldsymbol{q}j}^{2} = (\\boldsymbol{e}_{\\boldsymbol{q}j}^{*})^{\\mathrm{T}} D(\\boldsymbol{q})\\boldsymbol{e}_{\\boldsymbol{q}j}."
 
 #: ../../source/anphondir/formalism_anphon.rst:28
 msgid ""
@@ -68,18 +68,18 @@ msgid ""
 "and :math:`W(\\boldsymbol{q}) = "
 "(\\boldsymbol{e}_{\\boldsymbol{q}1},\\dots,\\boldsymbol{e}_{\\boldsymbol{q}m})`,"
 " respectively. Then, equation :eq:`omega2` can be denoted as"
-msgstr ""
+msgstr "次に、:math:`\\Lambda(\\boldsymbol{q}) = \\mathrm{diag} (\\omega_{\\boldsymbol{q}1}^{2},\\dots,\\omega_{\\boldsymbol{q}m}^{2})` および :math:`W(\\boldsymbol{q}) = (\\boldsymbol{e}_{\\boldsymbol{q}1},\\dots,\\boldsymbol{e}_{\\boldsymbol{q}m})` でそれぞれ定義される :math:`m\\times m` 行列 :math:`\\Lambda` と :math:`W` を導入します。すると、式 :eq:`omega2` は次のように表せます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:33
 #, python-brace-format
 msgid ""
 "\\Lambda(\\boldsymbol{q}) = "
 "W^{\\dagger}(\\boldsymbol{q})D(\\boldsymbol{q})W(\\boldsymbol{q})."
-msgstr ""
+msgstr "\\Lambda(\\boldsymbol{q}) = W^{\\dagger}(\\boldsymbol{q})D(\\boldsymbol{q})W(\\boldsymbol{q})."
 
 #: ../../source/anphondir/formalism_anphon.rst:39
 msgid "Non-analytic correction"
-msgstr ""
+msgstr "非解析補正 (non-analytic correction)"
 
 #: ../../source/anphondir/formalism_anphon.rst:41
 msgid ""
@@ -89,14 +89,14 @@ msgid ""
 "implemented: the Parlinski's method [1]_ (``NONANALYTIC = 1``), the "
 "mixed-space approach [2]_  (``NONANALYTIC = 2``), and the Ewald summation"
 " method (``NONANALYTIC = 3``)."
-msgstr ""
+msgstr "ゾーン中心付近の LO\\-TO 分裂を捉える必要がある場合、動力学行列に対する長距離補正を考慮する必要があります。**anphon** コードでは、3 つの異なる手法が実装されています。Parlinski の方法 [1]_ (``NONANALYTIC = 1``)、混合空間アプローチ (mixed-space approach) [2]_  (``NONANALYTIC = 2``)、および Ewald 和 (Ewald summation) 法 (``NONANALYTIC = 3``) です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:44
 msgid ""
 "The first two methods are rather simple and add the non-analytic part of "
 "the dynamical matrix with different weighting factors. The non-analytic "
 "part of the dynamical matrix is defined as"
-msgstr ""
+msgstr "最初の 2 つの方法は比較的単純で、動力学行列の非解析部分を異なる重み係数で加えるものです。動力学行列の非解析部分は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:47
 msgid ""
@@ -104,7 +104,7 @@ msgid ""
 "\\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa^{\\prime}}}}\n"
 "\\frac{4\\pi e^{2}}{V} "
 "\\frac{(Z_{\\kappa}^{*}\\boldsymbol{q})_{\\mu}(Z_{\\kappa^{\\prime}}^{*}\\boldsymbol{q})_{\\nu}}{\\boldsymbol{q}\\cdot\\epsilon^{\\infty}\\boldsymbol{q}},"
-msgstr ""
+msgstr "D_{\\mu\\nu}^{\\mathrm{NA}}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) = \\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa^{\\prime}}}}\n\\frac{4\\pi e^{2}}{V} \\frac{(Z_{\\kappa}^{*}\\boldsymbol{q})_{\\mu}(Z_{\\kappa^{\\prime}}^{*}\\boldsymbol{q})_{\\nu}}{\\boldsymbol{q}\\cdot\\epsilon^{\\infty}\\boldsymbol{q}},"
 
 #: ../../source/anphondir/formalism_anphon.rst:52
 #, python-brace-format
@@ -113,21 +113,21 @@ msgid ""
 ":math:`Z_{\\kappa}^{*}` is the Born effective charge tensor of atom "
 ":math:`\\kappa`, and :math:`\\epsilon^{\\infty}` is the electronic "
 "dielectric permittivity tensor, respectively."
-msgstr ""
+msgstr "ここで :math:`V` は基本セル (primitive cell) の体積、:math:`Z_{\\kappa}^{*}` は原子 :math:`\\kappa` の Born 有効電荷テンソル (Born effective charge tensor)、:math:`\\epsilon^{\\infty}` は電子誘電率テンソル (electronic dielectric permittivity tensor) です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:56
 msgid "Parlinski's approach (``NONANALYTIC = 1``)"
-msgstr ""
+msgstr "Parlinski のアプローチ (``NONANALYTIC = 1``)"
 
 #: ../../source/anphondir/formalism_anphon.rst:58
 msgid "In the Parlinski's approach [1]_ , the total dynamical matrix is given by"
-msgstr ""
+msgstr "Parlinski のアプローチ [1]_ では、全動力学行列は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:60
 msgid ""
 "D(\\boldsymbol{q}) + "
 "D^{\\textrm{NA}}(\\boldsymbol{q})\\exp{(-q^{2}/\\sigma^{2})},"
-msgstr ""
+msgstr "D(\\boldsymbol{q}) + D^{\\textrm{NA}}(\\boldsymbol{q})\\exp{(-q^{2}/\\sigma^{2})},"
 
 #: ../../source/anphondir/formalism_anphon.rst:64
 #, python-brace-format
@@ -139,21 +139,21 @@ msgid ""
 "while too small :math:`\\sigma` can yield a large oscillation of the LO "
 "phonon frequencies as going away from :math:`\\boldsymbol{q}=0`. So, an "
 "appropriate :math:`\\sigma` value needs to be chosen in an *ad hoc* way."
-msgstr ""
+msgstr "ここで :math:`\\sigma` は減衰係数 (``NA_SIGMA``) です。:math:`\\sigma` は、ブリルアンゾーン (Brillouin zone, BZ) 境界で非解析的寄与が無視できる程度になるよう慎重に選ぶ必要があります。:math:`\\sigma` が大きすぎると BZ 境界でフォノン分散が不連続になることがあり、小さすぎると :math:`\\boldsymbol{q}=0` から離れるにつれて LO フォノン振動数が大きく振動することがあります。したがって、適切な :math:`\\sigma` の値を *アドホック* に選ぶ必要があります。"
 
 #: ../../source/anphondir/formalism_anphon.rst:70
 msgid "Mixed-space approach (``NONANALYTIC = 2``)"
-msgstr ""
+msgstr "混合空間アプローチ (``NONANALYTIC = 2``)"
 
 #: ../../source/anphondir/formalism_anphon.rst:72
 msgid "In the mixed-space approach [2]_ , the total dynamical matrix is given by"
-msgstr ""
+msgstr "混合空間アプローチ [2]_ では、全動力学行列は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:74
 msgid ""
 "D(\\boldsymbol{q}) + "
 "D^{\\textrm{NA}}(\\boldsymbol{q})\\frac{1}{N}\\sum_{\\ell^{\\prime}}\\exp{\\left[i\\boldsymbol{q}\\cdot(\\boldsymbol{r}(\\ell^{\\prime})-\\boldsymbol{r}(\\ell))\\right]}."
-msgstr ""
+msgstr "D(\\boldsymbol{q}) + D^{\\textrm{NA}}(\\boldsymbol{q})\\frac{1}{N}\\sum_{\\ell^{\\prime}}\\exp{\\left[i\\boldsymbol{q}\\cdot(\\boldsymbol{r}(\\ell^{\\prime})-\\boldsymbol{r}(\\ell))\\right]}."
 
 #: ../../source/anphondir/formalism_anphon.rst:78
 #, python-brace-format
@@ -165,11 +165,11 @@ msgid ""
 "dispersion curves. However, it can still yield a discontinuity in the "
 "phonon dispersion at BZ boundaries when the boundary point is "
 "incommensurate with the supercell size."
-msgstr ""
+msgstr "第 2 項は、:math:`\\Gamma` 点 (:math:`\\boldsymbol{q} = 0`) を除いて、スーパーセル (supercell) と整合する :math:`\\boldsymbol{q}` 点で消えます。このアプローチには調整可能なパラメータはありません。多くの場合、混合空間アプローチは妥当な分散曲線を与えます。しかし、境界点がスーパーセルのサイズと整合しない場合には、BZ 境界でフォノン分散に不連続が生じることがあります。"
 
 #: ../../source/anphondir/formalism_anphon.rst:84
 msgid "Ewald method (``NONANALYTIC = 3``)"
-msgstr ""
+msgstr "Ewald 法 (``NONANALYTIC = 3``)"
 
 #: ../../source/anphondir/formalism_anphon.rst:86
 msgid ""
@@ -177,14 +177,14 @@ msgid ""
 "recommended in general. In this method, we first decompose the harmonic "
 "force constants computed in a supercell into the long\\-range dipole-"
 "dipole (DD) components and the short\\-range ones as follows"
-msgstr ""
+msgstr "Ewald 和の手法 [10]_ はより正確であり、そのため一般に推奨されます。この方法では、まずスーパーセルで計算された調和力定数 (harmonic force constants) を、長距離の双極子-双極子 (dipole-dipole, DD) 成分と短距離成分に次のように分解します。"
 
 #: ../../source/anphondir/formalism_anphon.rst:89
 msgid ""
 "\\Phi_{\\mu\\nu}^{\\mathrm{SR}}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})="
 " \\Phi_{\\mu\\nu}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime}) - "
 "\\Phi_{\\mu\\nu}^{\\mathrm{DD}}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})."
-msgstr ""
+msgstr "\\Phi_{\\mu\\nu}^{\\mathrm{SR}}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})= \\Phi_{\\mu\\nu}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime}) - \\Phi_{\\mu\\nu}^{\\mathrm{DD}}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})."
 
 #: ../../source/anphondir/formalism_anphon.rst:94
 msgid ""
@@ -192,14 +192,14 @@ msgid ""
 "equation :eq:`dymat` to obtain the short\\-range dynamical matrix "
 ":math:`D_{\\mu\\nu}^{\\mathrm{SR}}(\\kappa\\kappa^{\\prime};\\boldsymbol{q})`."
 " Then, the total dynamical matrix is constructed as"
-msgstr ""
+msgstr "短距離成分が得られた後、それらを式 :eq:`dymat` に用いて短距離動力学行列 :math:`D_{\\mu\\nu}^{\\mathrm{SR}}(\\kappa\\kappa^{\\prime};\\boldsymbol{q})` を求めます。次に、全動力学行列を次のように構成します。"
 
 #: ../../source/anphondir/formalism_anphon.rst:96
 msgid ""
 "D_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) = "
 "D^{\\mathrm{SR}}_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) +  "
 "D^{\\mathrm{DD}}_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q})."
-msgstr ""
+msgstr "D_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) = D^{\\mathrm{SR}}_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) +  D^{\\mathrm{DD}}_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q})."
 
 #: ../../source/anphondir/formalism_anphon.rst:100
 msgid ""
@@ -209,62 +209,62 @@ msgid ""
 ":math:`D^{\\mathrm{DD}}_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q})`,"
 " can be calculated from :math:`\\epsilon^{\\infty}` and "
 ":math:`Z_{\\kappa}^{*}` using the Ewald summation technique."
-msgstr ""
+msgstr "長距離項 :math:`\\Phi_{\\mu\\nu}^{\\mathrm{DD}}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})` および :math:`D^{\\mathrm{DD}}_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q})` は、Ewald 和の手法を用いて :math:`\\epsilon^{\\infty}` と :math:`Z_{\\kappa}^{*}` から計算できます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:102
 msgid ""
 "To include the non-analytic correction with ``NONANALYTIC > 0``, one also"
 " need to give ``BORNINFO``."
-msgstr ""
+msgstr "``NONANALYTIC > 0`` で非解析補正を含めるには、``BORNINFO`` も指定する必要があります。"
 
 #: ../../source/anphondir/formalism_anphon.rst:106
 msgid "Group velocity"
-msgstr ""
+msgstr "群速度 (group velocity)"
 
 #: ../../source/anphondir/formalism_anphon.rst:108
 #, python-brace-format
 msgid "The group velocity of phonon mode :math:`\\boldsymbol{q}j` is given by"
-msgstr ""
+msgstr "フォノンモード :math:`\\boldsymbol{q}j` の群速度は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:110
 msgid ""
 "\\boldsymbol{v}_{\\boldsymbol{q}j} = \\frac{\\partial "
 "\\omega_{\\boldsymbol{q}j}}{\\partial \\boldsymbol{q}}."
-msgstr ""
+msgstr "\\boldsymbol{v}_{\\boldsymbol{q}j} = \\frac{\\partial \\omega_{\\boldsymbol{q}j}}{\\partial \\boldsymbol{q}}."
 
 #: ../../source/anphondir/formalism_anphon.rst:114
 #, python-brace-format
 msgid ""
 "To evaluate the group velocity numerically, we employ a central "
 "difference where :math:`\\boldsymbol{v}` may approximately be given by"
-msgstr ""
+msgstr "群速度を数値的に評価するために、中心差分を用います。このとき :math:`\\boldsymbol{v}` は近似的に次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:117
 msgid ""
 "\\boldsymbol{v}_{\\boldsymbol{q}j} \\approx "
 "\\frac{\\omega_{\\boldsymbol{q}+\\Delta\\boldsymbol{q}j} - "
 "\\omega_{\\boldsymbol{q}-\\Delta\\boldsymbol{q}j}}{2\\Delta\\boldsymbol{q}}."
-msgstr ""
+msgstr "\\boldsymbol{v}_{\\boldsymbol{q}j} \\approx \\frac{\\omega_{\\boldsymbol{q}+\\Delta\\boldsymbol{q}j} - \\omega_{\\boldsymbol{q}-\\Delta\\boldsymbol{q}j}}{2\\Delta\\boldsymbol{q}}."
 
 #: ../../source/anphondir/formalism_anphon.rst:121
 msgid ""
 "If one needs to save the group velocities, please turn on the "
 "``PRINTVEL``-tag."
-msgstr ""
+msgstr "群速度を保存する必要がある場合は、``PRINTVEL`` タグを有効にしてください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:125
 msgid "Mode effective charge"
-msgstr ""
+msgstr "モード有効電荷 (mode effective charge)"
 
 #: ../../source/anphondir/formalism_anphon.rst:127
 msgid "The mode effective charge is defined as"
-msgstr ""
+msgstr "モード有効電荷は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:129
 msgid ""
 "Z^{*}_{j,\\alpha} = "
 "\\sum_{\\kappa\\beta}Z^{*}_{\\kappa,\\alpha\\beta}\\frac{e_{\\beta}(\\kappa;\\boldsymbol{0}j)}{\\sqrt{M_{\\kappa}}}"
-msgstr ""
+msgstr "Z^{*}_{j,\\alpha} = \\sum_{\\kappa\\beta}Z^{*}_{\\kappa,\\alpha\\beta}\\frac{e_{\\beta}(\\kappa;\\boldsymbol{0}j)}{\\sqrt{M_{\\kappa}}}"
 
 #: ../../source/anphondir/formalism_anphon.rst:133
 #, python-brace-format
@@ -272,11 +272,11 @@ msgid ""
 "where :math:`Z^{*}_{\\kappa,\\alpha\\beta}` is the atomic Born effective "
 "charge. To compute the mode effective charges of the zone-center modes, "
 "please set ``ZMODE = 1`` in the &analysis field and supply ``BORNINFO``."
-msgstr ""
+msgstr "ここで :math:`Z^{*}_{\\kappa,\\alpha\\beta}` は原子の Born 有効電荷です。ゾーン中心モードのモード有効電荷を計算するには、&analysis フィールドで ``ZMODE = 1`` を設定し、``BORNINFO`` を与えてください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:137
 msgid "Thermodynamics functions"
-msgstr ""
+msgstr "熱力学関数 (thermodynamics functions)"
 
 #: ../../source/anphondir/formalism_anphon.rst:139
 msgid ""
@@ -284,7 +284,7 @@ msgid ""
 "internal energy :math:`U`, the vibrational entropy :math:`S`, and the "
 "Helmholtz free energy :math:`F` of individual harmonic oscillator are "
 "given as follows:"
-msgstr ""
+msgstr "個々の調和振動子の定積比熱 :math:`C_{\\mathrm{v}}`、内部エネルギー :math:`U`、振動エントロピー :math:`S`、およびヘルムホルツ自由エネルギー :math:`F` は次のように与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:143
 msgid ""
@@ -306,20 +306,20 @@ msgid ""
 "\\frac{\\hbar\\omega_{\\boldsymbol{q}j}}{2} + kT\\log{\\left( 1 - "
 "e^{-\\hbar\\omega_{\\boldsymbol{q}j}/kT}\\right)} \\right].\n"
 "\\end{align*}"
-msgstr ""
+msgstr "\\begin{align*}\n U &= \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j} \\hbar\\omega_{\\boldsymbol{q}j} \\left[\\frac{1}{e^{\\hbar\\omega_{\\boldsymbol{q}j}/kT} - 1} + \\frac{1}{2}\\right], \\\\\n C_{\\mathrm{v}} &= \\frac{k}{N_{q}}\\sum_{\\boldsymbol{q},j} \\left(\\frac{\\hbar\\omega_{\\boldsymbol{q}j}}{2kT}\\right)^{2} \\mathrm{cosech}^{2}\\left(\\frac{\\hbar\\omega_{\\boldsymbol{q}j}}{2kT}\\right),\\\\\n S &= \\frac{k}{N_{q}}\\sum_{\\boldsymbol{q},j} \\left[\\frac{\\hbar\\omega_{\\boldsymbol{q}j}}{kT} \\frac{1}{e^{\\hbar\\omega_{\\boldsymbol{q}j}/kT} - 1}\n    - \\log{\\left( 1 - e^{-\\hbar\\omega_{\\boldsymbol{q}j}/kT}\\right)}\\right], \\\\\n F &= \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j}\\left[ \\frac{\\hbar\\omega_{\\boldsymbol{q}j}}{2} + kT\\log{\\left( 1 - e^{-\\hbar\\omega_{\\boldsymbol{q}j}/kT}\\right)} \\right].\n\\end{align*}"
 
 #: ../../source/anphondir/formalism_anphon.rst:154
 msgid ""
 "Here, :math:`k` is the Boltzmann constant. These quantities are saved in "
 "the ``PREFIX``.thermo file."
-msgstr ""
+msgstr "ここで :math:`k` はボルツマン定数です。これらの量は ``PREFIX``.thermo ファイルに保存されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:156
 msgid ""
 "When the self-consistent phonon mode (``MODE = SCPH``) is selected, the "
 "anharmonic free-energy defined by the following equation will be "
 "calculated and saved in the ``PREFIX``.scph_thermo file:"
-msgstr ""
+msgstr "自己無撞着フォノン (self-consistent phonon, SCPH) モード (``MODE = SCPH``) が選択された場合、次式で定義される非調和自由エネルギーが計算され、``PREFIX``.scph_thermo ファイルに保存されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:159
 msgid ""
@@ -334,21 +334,21 @@ msgid ""
 " \\times \\frac{\\hbar [1 + 2n_{\\boldsymbol{q}j} "
 "]}{2\\Omega_{\\boldsymbol{q}j}}.\n"
 "\\end{align*}"
-msgstr ""
+msgstr "\\begin{align*}\n F^{\\mathrm{SCP}} &= \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j}\\left[ \\frac{\\hbar\\Omega_{\\boldsymbol{q}j}}{2} + kT\\log{\\left( 1 - e^{-\\hbar\\Omega_{\\boldsymbol{q}j}/kT}\\right)} \\right] \\\\\n & - \\frac{1}{4N_{q}}\\sum_{\\boldsymbol{q},j}\\left[ \\Omega_{\\boldsymbol{q}j}^{2} - (C_{\\boldsymbol{q}}^{\\dagger}\\Lambda_{\\boldsymbol{q}}^{(\\mathrm{HA})}C_{\\boldsymbol{q}})_{jj} \\right]\n \\times \\frac{\\hbar [1 + 2n_{\\boldsymbol{q}j} ]}{2\\Omega_{\\boldsymbol{q}j}}.\n\\end{align*}"
 
 #: ../../source/anphondir/formalism_anphon.rst:168
 msgid ""
 "Details of the derivation of the above expression can be found in Ref. "
 "[7]_."
-msgstr ""
+msgstr "上記の式の導出の詳細は、文献 [7]_ に記載されています。"
 
 #: ../../source/anphondir/formalism_anphon.rst:172
 msgid "Mean square displacement"
-msgstr ""
+msgstr "平均二乗変位 (mean square displacement)"
 
 #: ../../source/anphondir/formalism_anphon.rst:175
 msgid "The displacement-displacement correlation function is given by"
-msgstr ""
+msgstr "変位-変位相関関数は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:177
 msgid ""
@@ -360,7 +360,7 @@ msgid ""
 "\\mathrm{Re}\\bigg[e_{\\mu}(\\kappa;\\boldsymbol{q}j)e_{\\nu}^{*}(\\kappa';\\boldsymbol{q}j)"
 " e^{-i\\boldsymbol{q}\\cdot\\boldsymbol{r}(\\ell')}  \\bigg],\n"
 "\\end{align}"
-msgstr ""
+msgstr "\\begin{align}\n \\left< u_{\\mu}(0\\kappa)u_{\\nu}(\\ell'\\kappa') \\right> & = \\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa'}}N_{q}}\\sum_{\\boldsymbol{q}j}\n \\frac{\\hbar (2n_{\\boldsymbol{q}j}+1)}{2\\omega_{\\boldsymbol{q}j}}\n \\mathrm{Re}\\bigg[e_{\\mu}(\\kappa;\\boldsymbol{q}j)e_{\\nu}^{*}(\\kappa';\\boldsymbol{q}j) e^{-i\\boldsymbol{q}\\cdot\\boldsymbol{r}(\\ell')}  \\bigg],\n\\end{align}"
 
 #: ../../source/anphondir/formalism_anphon.rst:186
 msgid ""
@@ -373,7 +373,7 @@ msgid ""
 "``SHIFT_UCORR`` tag. When ``PRINTMSD`` is turned on, the code print the "
 "mean square displacements, which are the diagonal components of the "
 "correlation function:"
-msgstr ""
+msgstr "ここで :math:`n_{\\boldsymbol{q}j} = 1/(e^{\\hbar\\omega_{\\boldsymbol{q}j}/kT}-1)` はボース・アインシュタイン分布関数です。``UCORR = 1`` のとき、コードは上記の相関関数を ``PREFIX``.ucorr に出力します。ベクトル :math:`\\boldsymbol{r}(\\ell')` は :math:`\\ell'` \\ 番目の単位胞 (unit cell) への格子並進ベクトルであり、``SHIFT_UCORR`` タグで指定できます。``PRINTMSD`` が有効な場合、コードは平均二乗変位を出力します。これは相関関数の対角成分です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:189
 msgid ""
@@ -381,43 +381,43 @@ msgid ""
 "\\frac{\\hbar}{M_{\\kappa}N_{q}}\\sum_{\\boldsymbol{q},j}\\frac{1}{\\omega_{\\boldsymbol{q}j}}"
 " |e_{\\mu}(\\kappa;\\boldsymbol{q}j)|^{2}\n"
 "\\left(n_{\\boldsymbol{q}j}+\\frac{1}{2}\\right)."
-msgstr ""
+msgstr "\\left< u_{\\mu}^{2}(0\\kappa)\\right> = \\frac{\\hbar}{M_{\\kappa}N_{q}}\\sum_{\\boldsymbol{q},j}\\frac{1}{\\omega_{\\boldsymbol{q}j}} |e_{\\mu}(\\kappa;\\boldsymbol{q}j)|^{2}\n\\left(n_{\\boldsymbol{q}j}+\\frac{1}{2}\\right)."
 
 #: ../../source/anphondir/formalism_anphon.rst:196
 msgid "Phonon DOS"
-msgstr ""
+msgstr "フォノン状態密度 (phonon DOS)"
 
 #: ../../source/anphondir/formalism_anphon.rst:198
 msgid ""
 "When *KPMODE* = 2, the program *anphon* saves the (one) phonon density of"
 " states (DOS) to the file ``PREFIX``.dos. The one-phonon DOS is given by"
-msgstr ""
+msgstr "*KPMODE* = 2 のとき、プログラム *anphon* は (1) フォノン状態密度 (density of states, DOS) をファイル ``PREFIX``.dos に保存します。1 フォノン DOS は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:201
 msgid ""
 "\\mathrm{DOS}(\\omega) = "
 "\\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j}\\delta(\\omega - "
 "\\omega_{\\boldsymbol{q}j})."
-msgstr ""
+msgstr "\\mathrm{DOS}(\\omega) = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j}\\delta(\\omega - \\omega_{\\boldsymbol{q}j})."
 
 #: ../../source/anphondir/formalism_anphon.rst:205
 msgid ""
 "If ``PDOS = 1`` is given, the program also prints the atom-projected "
 "phonon DOS which is given by"
-msgstr ""
+msgstr "``PDOS = 1`` が指定された場合、プログラムは原子射影フォノン DOS も出力します。これは次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:207
 msgid ""
 "\\mathrm{PDOS}(\\kappa;\\omega) = "
 "\\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j}|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{2}\\delta(\\omega"
 " - \\omega_{\\boldsymbol{q}j})."
-msgstr ""
+msgstr "\\mathrm{PDOS}(\\kappa;\\omega) = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q},j}|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{2}\\delta(\\omega - \\omega_{\\boldsymbol{q}j})."
 
 #: ../../source/anphondir/formalism_anphon.rst:211
 msgid ""
 "In addition, ``TDOS``-tag is available to compute the two-phonon DOS "
 "defined by"
-msgstr ""
+msgstr "さらに、``TDOS`` タグを用いて、次式で定義される 2 フォノン DOS を計算できます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:213
 msgid ""
@@ -425,7 +425,7 @@ msgid ""
 "\\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}, j_{1}, "
 "j_{2}}\n"
 "\\delta(\\omega\\pm\\omega_{\\boldsymbol{q}_{1}j_{1}}-\\omega_{\\boldsymbol{q}_{2}j_{2}})\\delta_{\\boldsymbol{q}\\pm\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}+\\boldsymbol{G}},"
-msgstr ""
+msgstr "\\mathrm{DOS2}(\\omega;\\boldsymbol{q};\\pm) = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}, j_{1}, j_{2}}\n\\delta(\\omega\\pm\\omega_{\\boldsymbol{q}_{1}j_{1}}-\\omega_{\\boldsymbol{q}_{2}j_{2}})\\delta_{\\boldsymbol{q}\\pm\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}+\\boldsymbol{G}},"
 
 #: ../../source/anphondir/formalism_anphon.rst:218
 #, python-brace-format
@@ -435,11 +435,11 @@ msgid ""
 "respectively. Please note that the computation of the two-phonon DOS can "
 "be expensive especially when :math:`N_{q}` or :math:`N_{\\kappa}` is "
 "large."
-msgstr ""
+msgstr "ここで :math:`\\boldsymbol{G}` は逆格子ベクトルです。符号 :math:`\\pm` はそれぞれ吸収過程と放出過程に対応します。2 フォノン DOS の計算は、特に :math:`N_{q}` や :math:`N_{\\kappa}` が大きい場合に高コストになり得ることに注意してください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:223
 msgid "(Atomic) participation ratio"
-msgstr ""
+msgstr "(原子) 関与率 (participation ratio)"
 
 #: ../../source/anphondir/formalism_anphon.rst:225
 #, python-brace-format
@@ -447,11 +447,11 @@ msgid ""
 "Participation ratio (PR) and atomic participation ratio (APR) defined in "
 "the following may be useful to analyze the localized nature of the phonon"
 " mode :math:`\\boldsymbol{q}j`."
-msgstr ""
+msgstr "以下で定義される関与率 (participation ratio, PR) と原子関与率 (atomic participation ratio, APR) は、フォノンモード :math:`\\boldsymbol{q}j` の局在性を解析するのに有用です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:227
 msgid "Participation ratio (PR)"
-msgstr ""
+msgstr "関与率 (PR)"
 
 #: ../../source/anphondir/formalism_anphon.rst:229
 msgid ""
@@ -460,11 +460,11 @@ msgid ""
 " \\Bigg/\n"
 "N_{\\kappa} \\sum_{\\kappa}^{N_{\\kappa}} "
 "\\frac{|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{4}}{M_{\\kappa}^{2}}"
-msgstr ""
+msgstr "PR_{\\boldsymbol{q}j} = \\left(\\sum_{\\kappa}^{N_{\\kappa}} \\frac{|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{2}}{M_{\\kappa}}\\right)^{2} \\Bigg/\nN_{\\kappa} \\sum_{\\kappa}^{N_{\\kappa}} \\frac{|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{4}}{M_{\\kappa}^{2}}"
 
 #: ../../source/anphondir/formalism_anphon.rst:234
 msgid "Atomic participation ratio (APR)"
-msgstr ""
+msgstr "原子関与率 (APR)"
 
 #: ../../source/anphondir/formalism_anphon.rst:236
 msgid ""
@@ -473,7 +473,7 @@ msgid ""
 "\\Bigg/ \\left(  N_{\\kappa} \\sum_{\\kappa}^{N_{\\kappa}} "
 "\\frac{|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{4}}{M_{\\kappa}^{2}} "
 "\\right)^{1/2}"
-msgstr ""
+msgstr "APR_{\\boldsymbol{q}j,\\kappa} = \\frac{|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{2}}{M_{\\kappa}} \\Bigg/ \\left(  N_{\\kappa} \\sum_{\\kappa}^{N_{\\kappa}} \\frac{|\\boldsymbol{e}(\\kappa;\\boldsymbol{q}j)|^{4}}{M_{\\kappa}^{2}} \\right)^{1/2}"
 
 #: ../../source/anphondir/formalism_anphon.rst:240
 msgid ""
@@ -483,11 +483,11 @@ msgid ""
 " \\sum_{\\kappa} (APR_{\\boldsymbol{q}j,\\kappa})^{2}`. To print the PR "
 "and APR, please set ``MODE = phonons`` and ``PRINTPR = 1`` in the "
 "``&analysis`` entry field."
-msgstr ""
+msgstr "拡がった固有モードでは PR 値は 1 のオーダーですが、局在した固有モードでは PR は :math:`1/N_{\\kappa}` のオーダーになります [3]_。APR は :math:`PR_{\\boldsymbol{q}j} = \\sum_{\\kappa} (APR_{\\boldsymbol{q}j,\\kappa})^{2}` を満たす PR の原子分解です。PR と APR を出力するには、``&analysis`` エントリフィールドで ``MODE = phonons`` および ``PRINTPR = 1`` を設定してください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:243
 msgid "Scattering phase space"
-msgstr ""
+msgstr "散乱位相空間 (scattering phase space)"
 
 #: ../../source/anphondir/formalism_anphon.rst:245
 #, python-brace-format
@@ -495,32 +495,32 @@ msgid ""
 "When *KPMODE* = 2 and ``SPS = 1``, the three-phonon scattering phase "
 "space :math:`P_{3}` is calculated and saved to the file ``PREFIX``.sps. "
 ":math:`P_{3}` is defined as"
-msgstr ""
+msgstr "*KPMODE* = 2 かつ ``SPS = 1`` のとき、3 フォノン散乱位相空間 :math:`P_{3}` が計算され、ファイル ``PREFIX``.sps に保存されます。:math:`P_{3}` は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:247
 msgid ""
 "P_{3}(\\boldsymbol{q}j) = \\frac{1}{3m^{3}} "
 "(2P_{3}^{(+)}(\\boldsymbol{q}j) + P_{3}^{(-)}(\\boldsymbol{q}j)),"
-msgstr ""
+msgstr "P_{3}(\\boldsymbol{q}j) = \\frac{1}{3m^{3}} (2P_{3}^{(+)}(\\boldsymbol{q}j) + P_{3}^{(-)}(\\boldsymbol{q}j)),"
 
 #: ../../source/anphondir/formalism_anphon.rst:251
 msgid "where :math:`m` is the number of phonon branches and"
-msgstr ""
+msgstr "ここで :math:`m` はフォノンの分枝の数で、"
 
 #: ../../source/anphondir/formalism_anphon.rst:253
 msgid ""
 "P_{3}^{(\\pm)}(\\boldsymbol{q}j) = "
 "\\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}, j_{1}, "
 "j_{2}}\\delta(\\omega_{\\boldsymbol{q}j}\\pm\\omega_{\\boldsymbol{q}_{1}j_{1}}-\\omega_{\\boldsymbol{q}_{2}j_{2}})\\delta_{\\boldsymbol{q}\\pm\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}+\\boldsymbol{G}}."
-msgstr ""
+msgstr "P_{3}^{(\\pm)}(\\boldsymbol{q}j) = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}, j_{1}, j_{2}}\\delta(\\omega_{\\boldsymbol{q}j}\\pm\\omega_{\\boldsymbol{q}_{1}j_{1}}-\\omega_{\\boldsymbol{q}_{2}j_{2}})\\delta_{\\boldsymbol{q}\\pm\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}+\\boldsymbol{G}}."
 
 #: ../../source/anphondir/formalism_anphon.rst:257
 msgid "*anphon* also print the total scattering phase space"
-msgstr ""
+msgstr "*anphon* は全散乱位相空間も出力します。"
 
 #: ../../source/anphondir/formalism_anphon.rst:259
 msgid "P_{3} = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}j} P_{3}(\\boldsymbol{q}j)."
-msgstr ""
+msgstr "P_{3} = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}j} P_{3}(\\boldsymbol{q}j)."
 
 #: ../../source/anphondir/formalism_anphon.rst:263
 #, python-brace-format
@@ -528,7 +528,7 @@ msgid ""
 "When ``SPS = 2``, the three-phonon scattering phase space with the "
 "occupation factor :math:`W_{3}^{(\\pm)}` will be calculated and saved to "
 "the file ``PREFIX``.sps_Bose. :math:`W_{3}^{(\\pm)}` is defined as"
-msgstr ""
+msgstr "``SPS = 2`` のとき、占有因子 :math:`W_{3}^{(\\pm)}` を含む 3 フォノン散乱位相空間が計算され、ファイル ``PREFIX``.sps_Bose に保存されます。:math:`W_{3}^{(\\pm)}` は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:265
 msgid ""
@@ -542,7 +542,7 @@ msgid ""
 "  \\end{array}\n"
 "\\right\\}\n"
 "\\delta(\\omega_{\\boldsymbol{q}j}\\pm\\omega_{\\boldsymbol{q}_{1}j_{1}}-\\omega_{\\boldsymbol{q}_{2}j_{2}})\\delta_{\\boldsymbol{q}\\pm\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}+\\boldsymbol{G}}."
-msgstr ""
+msgstr "W_{3}^{(\\pm)}(\\boldsymbol{q}j) = \\frac{1}{N_{q}}{\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}, j_{1}, j_{2}}}\n\\left\\{\n  \\begin{array}{c}\n  n_{2} - n_{1} \\\\\n  n_{1} + n_{2} + 1\n  \\end{array}\n\\right\\}\n\\delta(\\omega_{\\boldsymbol{q}j}\\pm\\omega_{\\boldsymbol{q}_{1}j_{1}}-\\omega_{\\boldsymbol{q}_{2}j_{2}})\\delta_{\\boldsymbol{q}\\pm\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}+\\boldsymbol{G}}."
 
 #: ../../source/anphondir/formalism_anphon.rst:276
 msgid ""
@@ -554,32 +554,32 @@ msgid ""
 " ``PREFIX``.sps_Bose contains :math:`W_{3}^{(\\pm)}` for all phonon modes"
 " at various temperatures specified with ``TMIN``, ``TMAX``, and ``DT`` "
 "tags."
-msgstr ""
+msgstr "ここで :math:`n_{1}=n(\\omega_{\\boldsymbol{q}_{1}j_{1}})` および :math:`n_{2}=n(\\omega_{\\boldsymbol{q}_{2}j_{2}})` であり、:math:`n(\\omega) = \\frac{1}{e^{\\hbar\\omega/k_B T}-1}` はボース・アインシュタイン分布関数です。:math:`n(\\omega)` は温度依存性をもつため、:math:`W_{3}^{(\\pm)}` も温度依存性をもちます。ファイル ``PREFIX``.sps_Bose には、``TMIN``、``TMAX``、``DT`` タグで指定された種々の温度におけるすべてのフォノンモードの :math:`W_{3}^{(\\pm)}` が含まれます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:279
 msgid "Gr\\ |umulaut_u|\\ neisen parameter"
-msgstr ""
+msgstr "Gr\\ |umulaut_u|\\ neisen パラメータ"
 
 #: ../../source/anphondir/formalism_anphon.rst:281
 msgid ""
 "The mode Gr\\ |umulaut_u|\\ neisen parameter, defined as "
 ":math:`\\gamma_{\\boldsymbol{q}j} = - \\frac{\\partial "
 "\\log{\\omega_{\\boldsymbol{q}j}}}{\\partial \\log{V}}`, is calculated by"
-msgstr ""
+msgstr "モード Gr\\ |umulaut_u|\\ neisen パラメータは :math:`\\gamma_{\\boldsymbol{q}j} = - \\frac{\\partial \\log{\\omega_{\\boldsymbol{q}j}}}{\\partial \\log{V}}` で定義され、次式で計算されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:284
 msgid ""
 "\\gamma_{\\boldsymbol{q}j}= "
 "-\\frac{(\\boldsymbol{e}_{\\boldsymbol{q}j}^{*})^{\\mathrm{T}} \\delta "
 "D(\\boldsymbol{q})\\boldsymbol{e}_{\\boldsymbol{q}j}}{6\\omega_{\\boldsymbol{q}j}^{2}},"
-msgstr ""
+msgstr "\\gamma_{\\boldsymbol{q}j}= -\\frac{(\\boldsymbol{e}_{\\boldsymbol{q}j}^{*})^{\\mathrm{T}} \\delta D(\\boldsymbol{q})\\boldsymbol{e}_{\\boldsymbol{q}j}}{6\\omega_{\\boldsymbol{q}j}^{2}},"
 
 #: ../../source/anphondir/formalism_anphon.rst:288
 #, python-brace-format
 msgid ""
 "where :math:`\\delta D(\\boldsymbol{q})` is a change in the dynamical "
 "matrix due to a volume change :math:`\\delta V`, which is given by"
-msgstr ""
+msgstr "ここで :math:`\\delta D(\\boldsymbol{q})` は体積変化 :math:`\\delta V` による動力学行列の変化であり、次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:291
 msgid ""
@@ -594,23 +594,23 @@ msgid ""
 "\\sum_{\\ell^{\\prime\\prime},\\kappa^{\\prime\\prime},\\lambda}\\Phi_{\\mu\\nu\\lambda}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime};\\ell^{\\prime\\prime}\\kappa^{\\prime\\prime})r_{\\lambda}(\\ell^{\\prime\\prime}\\kappa^{\\prime\\prime})."
 "\n"
 "\\end{align}"
-msgstr ""
+msgstr "\\begin{align}\n \\delta D_{\\mu\\nu}(\\kappa\\kappa^{\\prime};\\boldsymbol{q}) &= \\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa^{\\prime}}}}\n \\sum_{\\ell^{\\prime}}\\delta\\Phi_{\\mu\\nu}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})\\exp{\\left[i\\boldsymbol{q}\\cdot(\\boldsymbol{r}(\\ell^{\\prime})-\\boldsymbol{r}(\\ell))\\right]},\\\\\n \\delta\\Phi_{\\mu\\nu}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime})\n &= \\sum_{\\ell^{\\prime\\prime},\\kappa^{\\prime\\prime},\\lambda}\\Phi_{\\mu\\nu\\lambda}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime};\\ell^{\\prime\\prime}\\kappa^{\\prime\\prime})r_{\\lambda}(\\ell^{\\prime\\prime}\\kappa^{\\prime\\prime}).\n\\end{align}"
 
 #: ../../source/anphondir/formalism_anphon.rst:301
 msgid ""
 "Please set ``GRUNEISEN = 1`` and give an appropriate ``FCSFILE`` file "
 "containing cubic IFCs to print Gr\\ |umulaut_u|\\ neisen parameters."
-msgstr ""
+msgstr "Gr\\ |umulaut_u|\\ neisen パラメータを出力するには、``GRUNEISEN = 1`` を設定し、3 次の原子間力定数 (IFCs) を含む適切な ``FCSFILE`` ファイルを与えてください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:305
 msgid "Anharmonic self-energy"
-msgstr ""
+msgstr "非調和自己エネルギー (anharmonic self-energy)"
 
 #: ../../source/anphondir/formalism_anphon.rst:307
 msgid ""
 "The anharmonic self-energy due to cubic anharmonicity to the lowest order"
 " is given by"
-msgstr ""
+msgstr "3 次の非調和性による非調和自己エネルギーは、最低次で次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:309
 msgid ""
@@ -624,14 +624,14 @@ msgid ""
 "\\omega_{2}}\n"
 "+ \\frac{n_{1}-n_{2}}{i\\omega_{m} - \\omega_{1} + \\omega_{2}} - "
 "\\frac{n_{1}-n_{2}}{i\\omega_{m} + \\omega_{1} - \\omega_{2}} \\right],"
-msgstr ""
+msgstr "\\Sigma_{\\boldsymbol{q}j}(i\\omega_m) &= \\frac{1}{2\\hbar^{2}}\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}}\\sum_{j_{1},j_{2}}\n|V^{(3)}_{-\\boldsymbol{q}j,\\boldsymbol{q}_{1}j_{1},\\boldsymbol{q}_{2}j_{2}}|^{2} \\notag \\\\\n& \\times \\left[ \\frac{n_{1}+n_{2} + 1}{i\\omega_{m} + \\omega_{1} + \\omega_{2}} - \\frac{n_{1}+n_{2} + 1}{i\\omega_{m} - \\omega_{1} - \\omega_{2}}\n+ \\frac{n_{1}-n_{2}}{i\\omega_{m} - \\omega_{1} + \\omega_{2}} - \\frac{n_{1}-n_{2}}{i\\omega_{m} + \\omega_{1} - \\omega_{2}} \\right],"
 
 #: ../../source/anphondir/formalism_anphon.rst:317
 msgid ""
 "where :math:`i\\omega_{m}` is the Matsubara frequency. In equation "
 ":eq:`self3`, we simply denoted :math:`\\omega_{\\boldsymbol{q}_{i}j_{i}}`"
 " as :math:`\\omega_{i}`. The matrix element :math:`V^{(3)}` is given by"
-msgstr ""
+msgstr "ここで :math:`i\\omega_{m}` は松原振動数 (Matsubara frequency) です。式 :eq:`self3` では、:math:`\\omega_{\\boldsymbol{q}_{i}j_{i}}` を単に :math:`\\omega_{i}` と表記しました。行列要素 :math:`V^{(3)}` は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:319
 msgid ""
@@ -651,7 +651,7 @@ msgid ""
 "\n"
 "e_{\\mu}(\\kappa;\\boldsymbol{q}j)e_{\\nu}(\\kappa^{\\prime};\\boldsymbol{q}^{\\prime}j^{\\prime})e_{\\lambda}(\\kappa^{\\prime\\prime};\\boldsymbol{q}^{\\prime\\prime}j^{\\prime\\prime})"
 " \\; ,"
-msgstr ""
+msgstr "V^{(3)}_{\\boldsymbol{q}j,\\boldsymbol{q}^{\\prime}j^{\\prime},\\boldsymbol{q}^{\\prime\\prime}j^{\\prime\\prime}}\n& = \\left( \\frac{\\hbar}{2N_{q}}\\right)^{\\frac{3}{2}}\n\\frac{1}{\\sqrt{\\omega_{\\boldsymbol{q}j}\\omega_{\\boldsymbol{q}^{\\prime}j^{\\prime}}\\omega_{\\boldsymbol{q}^{\\prime\\prime}j^{\\prime\\prime}}}}\n\\sum_{\\ell,\\ell^{\\prime},\\ell^{\\prime\\prime}}\n\\exp{\\left[\\mathrm{i}(\\boldsymbol{q}\\cdot\\boldsymbol{r}(\\ell)+\\boldsymbol{q}^{\\prime}\\cdot\\boldsymbol{r}(\\ell^{\\prime})+\\boldsymbol{q}^{\\prime\\prime}\\cdot\\boldsymbol{r}(\\ell^{\\prime\\prime}))\\right]} \\notag \\\\\n& \\times \\sum_{\\kappa,\\kappa^{\\prime},\\kappa^{\\prime\\prime}} \\frac{1}{\\sqrt{M_{\\kappa}M_{\\kappa^{\\prime}}M_{\\kappa^{\\prime\\prime}}}}\n\\sum_{\\mu,\\nu,\\lambda}\n\\Phi_{\\mu\\nu\\lambda}(\\ell\\kappa;\\ell^{\\prime}\\kappa^{\\prime};\\ell^{\\prime\\prime}\\kappa^{\\prime\\prime})\ne_{\\mu}(\\kappa;\\boldsymbol{q}j)e_{\\nu}(\\kappa^{\\prime};\\boldsymbol{q}^{\\prime}j^{\\prime})e_{\\lambda}(\\kappa^{\\prime\\prime};\\boldsymbol{q}^{\\prime\\prime}j^{\\prime\\prime}) \\; ,"
 
 #: ../../source/anphondir/formalism_anphon.rst:332
 msgid ""
@@ -663,7 +663,7 @@ msgid ""
 "imaginary part of the phonon self-energy, can be obtained by the analytic"
 " continuation to the real axis (:math:`i\\omega_{m}\\to \\omega + "
 "i0^{+}`) as"
-msgstr ""
+msgstr "これは、:math:`\\boldsymbol{q}+\\boldsymbol{q}^{\\prime}+\\boldsymbol{q}^{\\prime\\prime}` が :math:`\\boldsymbol{G}=n_{1}\\boldsymbol{b}_{1}+n_{2}\\boldsymbol{b}_{2}+n_{3}\\boldsymbol{b}_{3}` の整数倍でない限りゼロになります。フォノン線幅 :math:`\\Gamma_{\\boldsymbol{q}j}` は、フォノン自己エネルギーの虚部であり、実軸への解析接続 (:math:`i\\omega_{m}\\to \\omega + i0^{+}`) によって次のように得られます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:335
 msgid ""
@@ -679,7 +679,7 @@ msgid ""
 " & \\left. \\hspace{12mm} - (n_{1}-n_{2})\\delta{(\\omega - \\omega_{1} +"
 " \\omega_{2})} + (n_{1}-n_{2})\\delta{(\\omega + \\omega_{1} - "
 "\\omega_{2})} \\right]."
-msgstr ""
+msgstr " \\Gamma^{\\mathrm{anh}}_{\\boldsymbol{q}j}(\\omega) &= \\frac{\\pi}{2\\hbar^{2}}\\sum_{\\boldsymbol{q}_{1},\\boldsymbol{q}_{2}}\\sum_{j_{1},j_{2}}\n |V^{(3)}_{-\\boldsymbol{q}j,\\boldsymbol{q}_{1}j_{1},\\boldsymbol{q}_{2}j_{2}}|^{2} \\notag \\\\\n & \\times \\left[ -(n_{1}+n_{2} + 1)\\delta{(\\omega + \\omega_{1} + \\omega_{2})} + (n_{1}+n_{2} + 1) \\delta{(\\omega - \\omega_{1} - \\omega_{2})} \\right. \\notag \\\\\n & \\left. \\hspace{12mm} - (n_{1}-n_{2})\\delta{(\\omega - \\omega_{1} + \\omega_{2})} + (n_{1}-n_{2})\\delta{(\\omega + \\omega_{1} - \\omega_{2})} \\right]."
 
 #: ../../source/anphondir/formalism_anphon.rst:343
 #, python-brace-format
@@ -690,18 +690,18 @@ msgid ""
 ":math:`(\\boldsymbol{q}j,\\boldsymbol{q}^{\\prime}j^{\\prime},\\boldsymbol{q}^{\\prime\\prime}j^{\\prime\\prime})`"
 " of :math:`V^{(3)}` to calculate. To disable the reduction, please set "
 "``TRISYM = 0``."
-msgstr ""
+msgstr "式 :eq:`selfmod` の計算は、熱伝導率 (thermal conductivity) 計算の中で最もコストのかかる部分です。そのため、計算する :math:`V^{(3)}` の三つ組 :math:`(\\boldsymbol{q}j,\\boldsymbol{q}^{\\prime}j^{\\prime},\\boldsymbol{q}^{\\prime\\prime}j^{\\prime\\prime})` の数を減らすために結晶対称性を利用します。この削減を無効にするには、``TRISYM = 0`` を設定してください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:349
 msgid "Isotope scattering"
-msgstr ""
+msgstr "同位体散乱 (isotope scattering)"
 
 #: ../../source/anphondir/formalism_anphon.rst:351
 msgid ""
 "The effect of isotope scatterings can be considered by the mass "
 "perturbation approach proposed by S. Tamura [4]_ by the ``ISOTOPE``-tag. "
 "The corresponding phonon linewidth is given by"
-msgstr ""
+msgstr "同位体散乱の効果は、S. Tamura によって提案された質量摂動アプローチ [4]_ を用いて、``ISOTOPE`` タグによって考慮できます。対応するフォノン線幅は次式で与えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:354
 msgid ""
@@ -710,18 +710,18 @@ msgid ""
 "\\omega_{\\boldsymbol{q}j}^{2}\\sum_{\\boldsymbol{q}_{1},j_{1}}\\delta(\\omega-\\omega_{\\boldsymbol{q}_{1}j_{1}})"
 "\n"
 "\\sum_{\\kappa}g_{2}(\\kappa)|\\boldsymbol{e}^{*}(\\kappa;\\boldsymbol{q}_{1}\\boldsymbol{j}_{1})\\cdot\\boldsymbol{e}(\\kappa;\\boldsymbol{q}\\boldsymbol{j})|^{2},"
-msgstr ""
+msgstr "\\Gamma_{\\boldsymbol{q}j}^{\\mathrm{iso}}(\\omega)= \\frac{\\pi}{4N_{q}} \\omega_{\\boldsymbol{q}j}^{2}\\sum_{\\boldsymbol{q}_{1},j_{1}}\\delta(\\omega-\\omega_{\\boldsymbol{q}_{1}j_{1}})\n\\sum_{\\kappa}g_{2}(\\kappa)|\\boldsymbol{e}^{*}(\\kappa;\\boldsymbol{q}_{1}\\boldsymbol{j}_{1})\\cdot\\boldsymbol{e}(\\kappa;\\boldsymbol{q}\\boldsymbol{j})|^{2},"
 
 #: ../../source/anphondir/formalism_anphon.rst:359
 #, python-brace-format
 msgid "where :math:`g_{2}` is a dimensionless factor given by"
-msgstr ""
+msgstr "ここで :math:`g_{2}` は次式で与えられる無次元の因子です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:361
 msgid ""
 "g_{2}(\\kappa)=\\sum_{i}f_{i}(\\kappa)\\left(1 - "
 "\\frac{m_{i}(\\kappa)}{M_{\\kappa}}\\right)^{2}."
-msgstr ""
+msgstr "g_{2}(\\kappa)=\\sum_{i}f_{i}(\\kappa)\\left(1 - \\frac{m_{i}(\\kappa)}{M_{\\kappa}}\\right)^{2}."
 
 #: ../../source/anphondir/formalism_anphon.rst:365
 #, python-brace-format
@@ -732,24 +732,24 @@ msgid ""
 "respectively. The :math:`g_{2}` values should be provided by the "
 "``ISOFACT``-tag. The average mass :math:`M_{\\kappa}` is substituted by "
 "the value specified in the ``MASS``-tag."
-msgstr ""
+msgstr "ここで :math:`f_{i}` は質量 :math:`m_i` をもつ元素の :math:`i`\\ 番目の同位体の存在比であり、:math:`M_{\\kappa}=\\sum_{i}f_{i}m_{i}(\\kappa)` は平均質量です。:math:`g_{2}` の値は ``ISOFACT`` タグで与える必要があります。平均質量 :math:`M_{\\kappa}` は ``MASS`` タグで指定された値で置き換えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:373
 msgid "Lattice thermal conductivity (Peierls term)"
-msgstr ""
+msgstr "格子熱伝導率 (lattice thermal conductivity) (Peierls 項)"
 
 #: ../../source/anphondir/formalism_anphon.rst:375
 msgid ""
 "The lattice thermal conductivity tensor "
 ":math:`\\kappa_{\\mathrm{ph}}^{\\mu\\nu}(T)` is estimated within the "
 "relaxation-time approximation as"
-msgstr ""
+msgstr "格子熱伝導率テンソル :math:`\\kappa_{\\mathrm{ph}}^{\\mu\\nu}(T)` は、緩和時間近似 (relaxation-time approximation) の枠組みで次のように見積もられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:377
 msgid ""
 "\\kappa_{\\mathrm{ph}}^{\\mu\\nu}(T) = \\frac{1}{V N_{q}} "
 "\\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}(T)v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\nu}\\tau_{\\boldsymbol{q}j}(T),"
-msgstr ""
+msgstr "\\kappa_{\\mathrm{ph}}^{\\mu\\nu}(T) = \\frac{1}{V N_{q}} \\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}(T)v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\nu}\\tau_{\\boldsymbol{q}j}(T),"
 
 #: ../../source/anphondir/formalism_anphon.rst:381
 msgid ""
@@ -757,18 +757,18 @@ msgid ""
 "\\hbar\\omega_{\\boldsymbol{q}j}\\partial n_{\\boldsymbol{q}j}/\\partial "
 "T`, and :math:`\\tau_{\\boldsymbol{q}j}(T)` is the phonon lifetime. The "
 "phonon lifetime is estimated using the Matthiessen's rule as"
-msgstr ""
+msgstr "ここで :math:`V` は単位胞の体積、:math:`c_{\\boldsymbol{q}j} = \\hbar\\omega_{\\boldsymbol{q}j}\\partial n_{\\boldsymbol{q}j}/\\partial T`、そして :math:`\\tau_{\\boldsymbol{q}j}(T)` はフォノン寿命です。フォノン寿命はマティーセンの規則 (Matthiessen's rule) を用いて次のように見積もられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:384
 msgid ""
 "\\tau_{\\boldsymbol{q}j}^{-1}(T) = 2 "
 "(\\Gamma_{\\boldsymbol{q}j}^{\\mathrm{anh}}(T) + "
 "\\Gamma_{\\boldsymbol{q}j}^{\\mathrm{iso}})."
-msgstr ""
+msgstr "\\tau_{\\boldsymbol{q}j}^{-1}(T) = 2 (\\Gamma_{\\boldsymbol{q}j}^{\\mathrm{anh}}(T) + \\Gamma_{\\boldsymbol{q}j}^{\\mathrm{iso}})."
 
 #: ../../source/anphondir/formalism_anphon.rst:388
 msgid "The lattice thermal conductivity is saved in the file ``PREFIX``.kl."
-msgstr ""
+msgstr "格子熱伝導率はファイル ``PREFIX``.kl に保存されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:390
 msgid ""
@@ -776,7 +776,7 @@ msgid ""
 ":math:`\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega)` can also be calculated"
 " by setting ``KAPPA_SPEC = 1`` in the ``&analysis`` field. "
 ":math:`\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega)` is defined as"
-msgstr ""
+msgstr "格子熱伝導率のスペクトル :math:`\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega)` も、``&analysis`` フィールドで ``KAPPA_SPEC = 1`` を設定することで計算できます。:math:`\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega)` は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:392
 msgid ""
@@ -784,7 +784,7 @@ msgid ""
 "N_{q}}\\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\mu}\\tau_{\\boldsymbol{q}j}"
 " \\delta(\\omega-\\omega_{\\boldsymbol{q}j}).\n"
 "\n"
-msgstr ""
+msgstr "\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega) = \\frac{1}{\\Omega N_{q}}\\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\mu}\\tau_{\\boldsymbol{q}j} \\delta(\\omega-\\omega_{\\boldsymbol{q}j}).\n\n"
 
 #: ../../source/anphondir/formalism_anphon.rst:395
 msgid ""
@@ -792,24 +792,24 @@ msgid ""
 "bulk thermal conductivity, namely "
 ":math:`\\kappa_{\\mathrm{ph}}^{\\mu\\mu} = \\int_{0}^{\\infty} "
 "\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega) \\; \\mathrm{d}\\omega`."
-msgstr ""
+msgstr "この量を :math:`\\omega` について積分すると、バルクの熱伝導率、すなわち :math:`\\kappa_{\\mathrm{ph}}^{\\mu\\mu} = \\int_{0}^{\\infty} \\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega) \\; \\mathrm{d}\\omega` が得られます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:400
 msgid "Cumulative thermal conductivity"
-msgstr ""
+msgstr "累積熱伝導率 (cumulative thermal conductivity)"
 
 #: ../../source/anphondir/formalism_anphon.rst:402
 msgid ""
 "The accumulative lattice thermal conductivity "
 ":math:`\\kappa_{\\mathrm{ph,acc}}^{\\mu\\nu}(L)` is defined as"
-msgstr ""
+msgstr "累積格子熱伝導率 :math:`\\kappa_{\\mathrm{ph,acc}}^{\\mu\\nu}(L)` は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:404
 msgid ""
 "\\kappa_{\\mathrm{ph,acc}}^{\\mu\\mu}(L) = \\frac{1}{V N_{q}} "
 "\\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\mu}\\tau_{\\boldsymbol{q}j}\\Theta"
 " (L-|\\boldsymbol{v}_{\\boldsymbol{q}j}|\\tau_{\\boldsymbol{q}j}),"
-msgstr ""
+msgstr "\\kappa_{\\mathrm{ph,acc}}^{\\mu\\mu}(L) = \\frac{1}{V N_{q}} \\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\mu}\\tau_{\\boldsymbol{q}j}\\Theta (L-|\\boldsymbol{v}_{\\boldsymbol{q}j}|\\tau_{\\boldsymbol{q}j}),"
 
 #: ../../source/anphondir/formalism_anphon.rst:408
 msgid ""
@@ -817,14 +817,14 @@ msgid ""
 "calculated by using the script ``analyze_phonons.py`` with ``--calc "
 "cumulative`` flag. One can also use another definition for the "
 "accumulative thermal conductivity:"
-msgstr ""
+msgstr "ここで :math:`\\Theta(x)` はステップ関数です。この量は、スクリプト ``analyze_phonons.py`` を ``--calc cumulative`` フラグ付きで用いて計算できます。累積熱伝導率には別の定義を用いることもできます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:411
 msgid ""
 "\\kappa_{\\mathrm{ph,acc}}^{\\mu\\nu}(L) = \\frac{1}{V N_{q}} "
 "\\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\nu}\\tau_{\\boldsymbol{q}j}\\Theta"
 " (L-|v_{\\boldsymbol{q}j}^{\\mu}|\\tau_{\\boldsymbol{q}j})."
-msgstr ""
+msgstr "\\kappa_{\\mathrm{ph,acc}}^{\\mu\\nu}(L) = \\frac{1}{V N_{q}} \\sum_{\\boldsymbol{q},j}c_{\\boldsymbol{q}j}v_{\\boldsymbol{q}j}^{\\mu}v_{\\boldsymbol{q}j}^{\\nu}\\tau_{\\boldsymbol{q}j}\\Theta (L-|v_{\\boldsymbol{q}j}^{\\mu}|\\tau_{\\boldsymbol{q}j})."
 
 #: ../../source/anphondir/formalism_anphon.rst:415
 msgid ""
@@ -833,18 +833,18 @@ msgid ""
 ":math:`\\mu`\\ -direction is smaller than :math:`L`. To calculate this, "
 "please use the ``--calc cumulative2`` flag and specify the direction "
 ":math:`\\mu` by the ``--direction`` option."
-msgstr ""
+msgstr "この場合、全熱伝導率への寄与は、:math:`\\mu`\\ 方向に沿った平均自由行程が :math:`L` より小さいフォノンモードのみに限定されます。これを計算するには、``--calc cumulative2`` フラグを用い、``--direction`` オプションで方向 :math:`\\mu` を指定してください。"
 
 #: ../../source/anphondir/formalism_anphon.rst:421
 msgid "Coherent component of lattice thermal conductivity"
-msgstr ""
+msgstr "格子熱伝導率のコヒーレント成分 (coherent component)"
 
 #: ../../source/anphondir/formalism_anphon.rst:423
 msgid ""
 "The coherent components of lattice thermal conductivity (see Ref. [8]_), "
 "which are associated with the band off-diagonal components of the "
 "harmonic heat-flux operator, is calculated as"
-msgstr ""
+msgstr "格子熱伝導率のコヒーレント成分 (文献 [8]_ 参照) は、調和熱流束演算子のバンド非対角成分に関連するもので、次のように計算されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:425
 msgid ""
@@ -855,7 +855,7 @@ msgid ""
 " \\omega_{\\boldsymbol{q}j'}}  "
 "v_{\\boldsymbol{q}jj'}^{\\mu}v_{\\boldsymbol{q}j'j}^{\\nu} "
 "\\frac{\\Gamma_{\\boldsymbol{q}j}+\\Gamma_{\\boldsymbol{q}j'}}{(\\omega_{\\boldsymbol{q}j}-\\omega_{\\boldsymbol{q}j'})^{2}+(\\Gamma_{\\boldsymbol{q}j}+\\Gamma_{\\boldsymbol{q}j'})^2},"
-msgstr ""
+msgstr "\\kappa_{\\mathrm{c}}^{\\mu\\nu}(T) = \\frac{1}{V N_{q}} \\sum_{\\substack{\\boldsymbol{q},jj'\\\\ j\\neq j'}}\\frac{c_{\\boldsymbol{q}j}\\omega_{\\boldsymbol{q}j'} + c_{\\boldsymbol{q}j'}\\omega_{\\boldsymbol{q}j}}{\\omega_{\\boldsymbol{q}j}+ \\omega_{\\boldsymbol{q}j'}}  v_{\\boldsymbol{q}jj'}^{\\mu}v_{\\boldsymbol{q}j'j}^{\\nu} \\frac{\\Gamma_{\\boldsymbol{q}j}+\\Gamma_{\\boldsymbol{q}j'}}{(\\omega_{\\boldsymbol{q}j}-\\omega_{\\boldsymbol{q}j'})^{2}+(\\Gamma_{\\boldsymbol{q}j}+\\Gamma_{\\boldsymbol{q}j'})^2},"
 
 #: ../../source/anphondir/formalism_anphon.rst:429
 msgid ""
@@ -863,7 +863,7 @@ msgid ""
 "\\hbar\\omega_{\\boldsymbol{q}j}\\partial n_{\\boldsymbol{q}j}/\\partial "
 "T` and :math:`\\Gamma_{\\boldsymbol{q}j}` is the total phonon linewidth "
 "(half width) of phonon mode :math:`\\boldsymbol{q}j`."
-msgstr ""
+msgstr "ここで :math:`c_{\\boldsymbol{q}j} = \\hbar\\omega_{\\boldsymbol{q}j}\\partial n_{\\boldsymbol{q}j}/\\partial T` であり、:math:`\\Gamma_{\\boldsymbol{q}j}` はフォノンモード :math:`\\boldsymbol{q}j` の全フォノン線幅 (半値幅) です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:431
 msgid ""
@@ -872,11 +872,11 @@ msgid ""
 "2`` the coherent component is calculated and saved in "
 "``PREFIX``.kl_coherent. When ``KAPPA_COHERENT = 2``, all components of "
 "the coherent term before summation are saved in ``PREFIX``.kc_elem."
-msgstr ""
+msgstr ":math:`\\boldsymbol{v}_{\\boldsymbol{q}jj'}` は群速度のバンド非対角への一般化です [9]_。``KAPPA_COHERENT = 1 | 2`` のとき、コヒーレント成分が計算され ``PREFIX``.kl_coherent に保存されます。``KAPPA_COHERENT = 2`` のとき、和をとる前のコヒーレント項のすべての成分が ``PREFIX``.kc_elem に保存されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:435
 msgid "Delta function"
-msgstr ""
+msgstr "デルタ関数 (delta function)"
 
 #: ../../source/anphondir/formalism_anphon.rst:437
 msgid ""
@@ -884,31 +884,31 @@ msgid ""
 "energies, it is necessary to evaluate the Brillouin-zone integration "
 "containing Dirac's delta function. For that purpose, we provide 3 options"
 " through the ``ISMEAR``-tag."
-msgstr ""
+msgstr "フォノン DOS とフォノン自己エネルギーの虚部を計算するには、ディラックのデルタ関数を含むブリルアンゾーン積分を評価する必要があります。そのために、``ISMEAR`` タグを通じて 3 つのオプションを提供しています。"
 
 #: ../../source/anphondir/formalism_anphon.rst:441
 msgid ""
 "When ``ISMEAR = 0``, the delta function is replaced by the Lorentzian "
 "function as"
-msgstr ""
+msgstr "``ISMEAR = 0`` のとき、デルタ関数は次のようにローレンツ関数で置き換えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:443
 msgid ""
 "\\delta(\\omega) \\approx "
 "\\frac{1}{\\pi}\\frac{\\epsilon^{2}}{\\omega^{2}+\\epsilon^{2}}."
-msgstr ""
+msgstr "\\delta(\\omega) \\approx \\frac{1}{\\pi}\\frac{\\epsilon^{2}}{\\omega^{2}+\\epsilon^{2}}."
 
 #: ../../source/anphondir/formalism_anphon.rst:447
 msgid ""
 "When ``ISMEAR = 1``, the delta function is replaced by the Gaussian "
 "function as"
-msgstr ""
+msgstr "``ISMEAR = 1`` のとき、デルタ関数は次のようにガウス関数で置き換えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:449
 msgid ""
 "\\delta(\\omega) \\approx "
 "\\frac{1}{\\sqrt{\\pi}\\epsilon}\\exp{(-\\omega^{2}/\\epsilon^{2})},"
-msgstr ""
+msgstr "\\delta(\\omega) \\approx \\frac{1}{\\sqrt{\\pi}\\epsilon}\\exp{(-\\omega^{2}/\\epsilon^{2})},"
 
 #: ../../source/anphondir/formalism_anphon.rst:453
 #, python-brace-format
@@ -922,7 +922,7 @@ msgid ""
 "oscillations. Choosing an appropriate value for :math:`\\epsilon` is not "
 "a trivial task since it may depend on the phonon structure and the "
 "density of :math:`\\boldsymbol{q}` points."
-msgstr ""
+msgstr "これはローレンツ関数より速く減衰します。どちらの場合も、:math:`\\epsilon` は ``EPSILON`` タグで与える必要があり、非科学的な結果を避けるために慎重に選ぶ必要があります。:math:`\\epsilon` は、フォノン DOS や 3 フォノン過程に関連するエネルギー保存面などの詳細なフォノン構造を捉えるのに十分小さくあるべきですが、非科学的な振動を避けるのに十分大きくあるべきです。:math:`\\epsilon` の適切な値を選ぶことは、フォノン構造や :math:`\\boldsymbol{q}` 点の密度に依存し得るため、自明な作業ではありません。"
 
 #: ../../source/anphondir/formalism_anphon.rst:460
 msgid ""
@@ -931,24 +931,24 @@ msgid ""
 " zone integration containing :math:`\\delta(\\omega)`. When the "
 "tetrahedron method is used, the ``EPSILON``-tag is neglected. We "
 "recommend using the tetrahedron method whenever possible."
-msgstr ""
+msgstr "このような問題を避けるために、プログラム *anphon* は、:math:`\\delta(\\omega)` を含むブリルアンゾーン積分の数値評価に、デフォルト (``ISMEAR = -1``) で四面体法 (tetrahedron method) [5]_ を用います。四面体法を用いる場合、``EPSILON`` タグは無視されます。可能な限り四面体法を使用することを推奨します。"
 
 #: ../../source/anphondir/formalism_anphon.rst:468
 msgid "Self-consistent phonon (SCPH) calculation"
-msgstr ""
+msgstr "自己無撞着フォノン (SCPH) 計算"
 
 #: ../../source/anphondir/formalism_anphon.rst:470
 msgid ""
 "The self-consistent phonon mode (``MODE = SCPH``) computes temperature-"
 "dependent phonon frequencies by solving the following equation self-"
 "consistently [6]_:"
-msgstr ""
+msgstr "自己無撞着フォノンモード (``MODE = SCPH``) は、次の方程式を自己無撞着に解くことで、温度依存のフォノン振動数を計算します [6]_。"
 
 #: ../../source/anphondir/formalism_anphon.rst:472
 msgid ""
 "V_{\\boldsymbol{q}ij}^{[n]} = "
 "\\omega_{\\boldsymbol{q}i}^{2}\\delta_{ij}+\\frac{1}{2}\\sum_{\\boldsymbol{q}_{1},k,\\ell}F_{\\boldsymbol{q}\\boldsymbol{q}_{1},ijk\\ell}\\mathcal{K}_{\\boldsymbol{q}_{1},k\\ell}^{[n-1]}."
-msgstr ""
+msgstr "V_{\\boldsymbol{q}ij}^{[n]} = \\omega_{\\boldsymbol{q}i}^{2}\\delta_{ij}+\\frac{1}{2}\\sum_{\\boldsymbol{q}_{1},k,\\ell}F_{\\boldsymbol{q}\\boldsymbol{q}_{1},ijk\\ell}\\mathcal{K}_{\\boldsymbol{q}_{1},k\\ell}^{[n-1]}."
 
 #: ../../source/anphondir/formalism_anphon.rst:477
 msgid ""
@@ -959,13 +959,13 @@ msgid ""
 "computed using the harmonic eigenvectors. The updated phonon frequency in"
 " the :math:`n`\\ th iteration is obtained by diagonalizing the matrix "
 ":math:`V_{\\boldsymbol{q}ij}^{[n]}` as"
-msgstr ""
+msgstr "ここで :math:`\\omega_{\\boldsymbol{q}j}` は調和フォノン振動数であり、:math:`F_{\\boldsymbol{q}\\boldsymbol{q}_{1},ijk\\ell} = \\Phi(-\\boldsymbol{q}i;\\boldsymbol{q}j;\\boldsymbol{q}_{1}k;-\\boldsymbol{q}_{1}\\ell)` は調和固有ベクトルを用いて計算された 4 次の力定数の逆空間表現です。:math:`n`\\ 回目の反復における更新されたフォノン振動数は、行列 :math:`V_{\\boldsymbol{q}ij}^{[n]}` を次のように対角化して得られます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:479
 msgid ""
 "\\Lambda^{[n]}_{\\boldsymbol{q}} = "
 "C^{[n]\\dagger}_{\\boldsymbol{q}}V^{[n]}_{\\boldsymbol{q}}C^{[n]}_{\\boldsymbol{q}},"
-msgstr ""
+msgstr "\\Lambda^{[n]}_{\\boldsymbol{q}} = C^{[n]\\dagger}_{\\boldsymbol{q}}V^{[n]}_{\\boldsymbol{q}}C^{[n]}_{\\boldsymbol{q}},"
 
 #: ../../source/anphondir/formalism_anphon.rst:483
 msgid ""
@@ -976,7 +976,7 @@ msgid ""
 ":math:`W^{[n]}_{\\boldsymbol{q}} = "
 "W_{\\boldsymbol{q}}C^{[n]}_{\\boldsymbol{q}}`. The matrix "
 ":math:`\\mathcal{K}` in Eq. :eq:`scph_v_iter` is defined as"
-msgstr ""
+msgstr "ここで :math:`\\omega_{\\boldsymbol{q}j}^{[n]} = (\\Lambda^{[n]}_{\\boldsymbol{q}jj})^{\\frac{1}{2}}` であり、:math:`C^{[n]}_{\\boldsymbol{q}}` は :math:`W^{[n]}_{\\boldsymbol{q}} = W_{\\boldsymbol{q}}C^{[n]}_{\\boldsymbol{q}}` のように調和フォノン固有ベクトルを非調和なものに変換するユニタリ行列です。式 :eq:`scph_v_iter` の行列 :math:`\\mathcal{K}` は次のように定義されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:485
 msgid ""
@@ -992,27 +992,27 @@ msgid ""
 "Q_{\\boldsymbol{q},ij}^{[n]}\n"
 "&= "
 "\\frac{\\hbar\\big[1+2n(\\omega_{\\boldsymbol{q}i}^{[n]})\\big]}{2\\omega_{\\boldsymbol{q}i}^{[n]}}\\delta_{ij}."
-msgstr ""
+msgstr "\\mathcal{K}_{\\boldsymbol{q},ij}^{[n]} &= \\alpha K_{\\boldsymbol{q},ij}^{[n]} + (1-\\alpha) K_{\\boldsymbol{q},ij}^{[n-1]},  \\\\\nK_{\\boldsymbol{q},ij}^{[n]}\n&= \\sum_{k} C_{\\boldsymbol{q},ik}^{[n]} C_{\\boldsymbol{q},jk}^{[n]*} \\frac{\\hbar\\big[1+2n(\\omega_{\\boldsymbol{q}k}^{[n]})\\big]}{2\\omega_{\\boldsymbol{q}k}^{[n]}}\n= (C^{[n]}_{\\boldsymbol{q}} Q^{[n]}_{\\boldsymbol{q}} C^{[n]\\dagger}_{\\boldsymbol{q}})_{ij},\\\\\nQ_{\\boldsymbol{q},ij}^{[n]}\n&= \\frac{\\hbar\\big[1+2n(\\omega_{\\boldsymbol{q}i}^{[n]})\\big]}{2\\omega_{\\boldsymbol{q}i}^{[n]}}\\delta_{ij}."
 
 #: ../../source/anphondir/formalism_anphon.rst:494
 msgid ""
 ":math:`\\alpha` is the mixing parameter, which can be changed via the "
 "``MIXALPHA`` tag, and :math:`n(\\omega)` is the Bose-Einstein "
 "distribution function."
-msgstr ""
+msgstr ":math:`\\alpha` は混合パラメータで、``MIXALPHA`` タグで変更でき、:math:`n(\\omega)` はボース・アインシュタイン分布関数です。"
 
 #: ../../source/anphondir/formalism_anphon.rst:496
 msgid ""
 "When ``CLASSICAL = 1`` is given in input, the expectation value of the "
 "mean square displacement is computed using classical statistics, where "
 "the :math:`Q_{\\boldsymbol{q}}` matrix is replaced by"
-msgstr ""
+msgstr "入力で ``CLASSICAL = 1`` が指定された場合、平均二乗変位の期待値は古典統計を用いて計算され、:math:`Q_{\\boldsymbol{q}}` 行列は次のように置き換えられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:498
 msgid ""
 "Q_{\\boldsymbol{q},ij}^{[n]} = "
 "\\frac{k_{B}T}{(\\omega_{\\boldsymbol{q}i}^{[n]})^{2}} \\delta_{ij}."
-msgstr ""
+msgstr "Q_{\\boldsymbol{q},ij}^{[n]} = \\frac{k_{B}T}{(\\omega_{\\boldsymbol{q}i}^{[n]})^{2}} \\delta_{ij}."
 
 #: ../../source/anphondir/formalism_anphon.rst:502
 #, python-brace-format
@@ -1024,7 +1024,7 @@ msgid ""
 "After the SCPH iteration converges, the code computes the anharmonic "
 "correction to the harmonic force constant :math:`\\Delta "
 "D(\\boldsymbol{r}(\\ell))` as follows:"
-msgstr ""
+msgstr "SCPH 方程式は、``KMESH_INTERPOLATE`` タグで定義された既約 :math:`\\boldsymbol{q}` グリッド上で解かれます。式 :eq:`scph_v_iter` の :math:`\\boldsymbol{q}_{1}` グリッドは、``KMESH_SCPH`` タグで与えられ、:math:`\\boldsymbol{q}` グリッドより細かくできます。SCPH 反復が収束した後、コードは調和力定数に対する非調和補正 :math:`\\Delta D(\\boldsymbol{r}(\\ell))` を次のように計算します。"
 
 #: ../../source/anphondir/formalism_anphon.rst:506
 msgid ""
@@ -1035,14 +1035,14 @@ msgid ""
 "D_{\\mathrm{Harmonic}}(\\boldsymbol{q}), \\\\\n"
 "&D_{\\mathrm{SCPH}}(\\boldsymbol{q}) = "
 "W_{\\boldsymbol{q}}C_{\\boldsymbol{q}}^{[n]}\\Lambda_{\\boldsymbol{q}}^{[n]}C_{\\boldsymbol{q}}^{[n]\\dagger}W_{\\boldsymbol{q}}^{\\dagger}."
-msgstr ""
+msgstr "&\\Delta D(\\boldsymbol{r}(\\ell)) = \\frac{1}{N_{q}}\\sum_{\\boldsymbol{q}} \\Delta D(\\boldsymbol{q}) e^{-i\\boldsymbol{q}\\cdot\\boldsymbol{r}(\\ell)}, \\\\\n&\\Delta D(\\boldsymbol{q}) = D_{\\mathrm{SCPH}}(\\boldsymbol{q}) - D_{\\mathrm{Harmonic}}(\\boldsymbol{q}), \\\\\n&D_{\\mathrm{SCPH}}(\\boldsymbol{q}) = W_{\\boldsymbol{q}}C_{\\boldsymbol{q}}^{[n]}\\Lambda_{\\boldsymbol{q}}^{[n]}C_{\\boldsymbol{q}}^{[n]\\dagger}W_{\\boldsymbol{q}}^{\\dagger}."
 
 #: ../../source/anphondir/formalism_anphon.rst:512
 #, python-brace-format
 msgid ""
 ":math:`\\Delta D(\\boldsymbol{r}(\\ell))` is saved in "
 "``PREFIX.scph_dfc2``."
-msgstr ""
+msgstr ":math:`\\Delta D(\\boldsymbol{r}(\\ell))` は ``PREFIX.scph_dfc2`` に保存されます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:514
 msgid ""
@@ -1055,51 +1055,51 @@ msgid ""
 "``SELF_OFFDIAG = 1``, the off-diagonal elements are also calculated, and "
 "the computational complexity is "
 ":math:`\\mathcal{O}(N_{q}^{\\mathrm{irred.}}N_{q_{1}}m^{4})`."
-msgstr ""
+msgstr "計算上最もコストのかかる部分は、:math:`F_{\\boldsymbol{q}\\boldsymbol{q}_{1},ijk\\ell}` の行列要素の計算です。``SELF_OFFDIAG = 0`` (デフォルト) のとき、コードは :math:`F_{\\boldsymbol{q}\\boldsymbol{q}_{1},iikk}` の要素のみを計算します。したがって、計算量は :math:`\\mathcal{O}(N_{q}^{\\mathrm{irred.}}N_{q_{1}}m^{2})` です。``SELF_OFFDIAG = 1`` のとき、非対角要素も計算され、計算量は :math:`\\mathcal{O}(N_{q}^{\\mathrm{irred.}}N_{q_{1}}m^{4})` になります。"
 
 #: ../../source/anphondir/formalism_anphon.rst:523
 msgid ""
 "K\\. Parlinski, Z. Q. Li, and Y. Kawazoe, Phys. Rev. Lett. **81**, 3298 "
 "(1998)."
-msgstr ""
+msgstr "K\\. Parlinski, Z. Q. Li, and Y. Kawazoe, Phys. Rev. Lett. **81**, 3298 (1998)."
 
 #: ../../source/anphondir/formalism_anphon.rst:525
 msgid "Y\\. Wang *et al.*, J. Phys.: Condens. Matter **22**, 202201 (2010)."
-msgstr ""
+msgstr "Y\\. Wang *et al.*, J. Phys.: Condens. Matter **22**, 202201 (2010)."
 
 #: ../../source/anphondir/formalism_anphon.rst:527
 msgid "J\\. Hafner and M. Krajci, J. Phys.: Condens. Matter **5**, 2489 (1993)."
-msgstr ""
+msgstr "J\\. Hafner and M. Krajci, J. Phys.: Condens. Matter **5**, 2489 (1993)."
 
 #: ../../source/anphondir/formalism_anphon.rst:529
 msgid "S\\. -I. Tamura, Phys. Rev. B **27**, 858 (1983)."
-msgstr ""
+msgstr "S\\. -I. Tamura, Phys. Rev. B **27**, 858 (1983)."
 
 #: ../../source/anphondir/formalism_anphon.rst:531
 msgid ""
 "P\\. E. Bl\\ |umulaut_o|\\ chl, O. Jepsen, and O. K. Andersen, Phys. Rev."
 " B **49**, 16223 (1994)."
-msgstr ""
+msgstr "P\\. E. Bl\\ |umulaut_o|\\ chl, O. Jepsen, and O. K. Andersen, Phys. Rev. B **49**, 16223 (1994)."
 
 #: ../../source/anphondir/formalism_anphon.rst:533
 msgid "T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**, 054301 (2015)."
-msgstr ""
+msgstr "T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**, 054301 (2015)."
 
 #: ../../source/anphondir/formalism_anphon.rst:535
 msgid ""
 "Y\\. Oba, T. Tadano, R. Akashi, and S. Tsuneyuki, Phys. Rev. Materials "
 "**3**, 033601 (2019)."
-msgstr ""
+msgstr "Y\\. Oba, T. Tadano, R. Akashi, and S. Tsuneyuki, Phys. Rev. Materials **3**, 033601 (2019)."
 
 #: ../../source/anphondir/formalism_anphon.rst:537
 msgid "M\\. Simoncelli, N. Marzari, and F. Mauri, Nat. Phys. **15**, 809 (2019)."
-msgstr ""
+msgstr "M\\. Simoncelli, N. Marzari, and F. Mauri, Nat. Phys. **15**, 809 (2019)."
 
 #: ../../source/anphondir/formalism_anphon.rst:539
 msgid "P\\. B. Allen and J. L. Feldman, Phys. Rev. B **48**, 12581 (1993)."
-msgstr ""
+msgstr "P\\. B. Allen and J. L. Feldman, Phys. Rev. B **48**, 12581 (1993)."
 
 #: ../../source/anphondir/formalism_anphon.rst:541
 msgid "X\\. Gonze and C. Lee, Phys. Rev. B **55**, 10355 (1997)."
-msgstr ""
+msgstr "X\\. Gonze and C. Lee, Phys. Rev. B **55**, 10355 (1997)."
 

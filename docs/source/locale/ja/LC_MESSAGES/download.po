@@ -21,22 +21,21 @@ msgstr ""
 
 #: ../../source/download.rst:2
 msgid "Download"
-msgstr ""
+msgstr "ダウンロード"
 
 #: ../../source/download.rst:4
 msgid ""
 "You can download the latest and previous released versions of ALAMODE at "
 "https://sourceforge.net/projects/alamode ."
-msgstr ""
+msgstr "ALAMODE の最新版および過去のリリース版は https://sourceforge.net/projects/alamode からダウンロードできます。"
 
 #: ../../source/download.rst:7
 msgid "You can also download the package from the git repository as::"
-msgstr ""
+msgstr "また、以下のように git リポジトリからパッケージをダウンロードすることもできます::"
 
 #: ../../source/download.rst:13
 msgid ""
 "Use the branch that corresponds to the documentation you are reading. For"
 " the development documentation and the current GitHub workflow, this is "
 "``2.0dev``."
-msgstr ""
-
+msgstr "ご覧になっているドキュメントに対応するブランチを使用してください。開発版ドキュメントおよび現在の GitHub ワークフローの場合は ``2.0dev`` です。"

@@ -21,32 +21,32 @@ msgstr ""
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:10
 msgid "PbTe (non-analytic correction)"
-msgstr ""
+msgstr "PbTe (非解析補正 (non-analytic correction))"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:12
 msgid ""
 "This part demonstrates how to include the non-analytic correction in "
 "phonon and thermal conductivity calculations of polar semiconductors."
-msgstr ""
+msgstr "この章では、極性半導体のフォノンおよび熱伝導率 (thermal conductivity) 計算において非解析補正を取り入れる方法を解説します。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:14
 msgid "All input files can be found at the **example/PbTe** subdirectory."
-msgstr ""
+msgstr "すべての入力ファイルは **example/PbTe** サブディレクトリにあります。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:16
 msgid "Let's move to the example directory"
-msgstr ""
+msgstr "それでは example ディレクトリに移動しましょう。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:26
 msgid "1. Build a supercell and generate displacements"
-msgstr ""
+msgstr "1. スーパーセル (supercell) を構築し、変位 (displacement) を生成する"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:28
 msgid ""
 "In this tutorial, we build a 4x4x4 supercell of the primitive cell of "
 "PbTe containing 2 atoms. The crystal structure of the primitive cell in "
 "the VASP POSCAR format is"
-msgstr ""
+msgstr "このチュートリアル (tutorial) では、2 原子を含む PbTe の基本セル (primitive cell) の 4x4x4 スーパーセルを構築します。VASP POSCAR 形式における基本セルの結晶構造は次のとおりです。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:33
 msgid ""
@@ -55,11 +55,11 @@ msgid ""
 "libraries, such as ``ase`` or ``pymatgen``. This time, we will use the "
 "python script ``makedisp_vasp.py`` in the working directory. To use this "
 "script, ``pymatgen`` needs to be installed (if you have not):"
-msgstr ""
+msgstr "それでは 4x4x4 スーパーセルを構築しましょう。これは自分で簡単なスクリプトを作成するか、``ase`` や ``pymatgen`` といった一般的なライブラリに実装された方法を使うことで行えます。今回は作業ディレクトリにある python スクリプト ``makedisp_vasp.py`` を使用します。このスクリプトを使うには、(まだの場合は) ``pymatgen`` をインストールする必要があります。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:42
 msgid "Then, edit the header part of the script."
-msgstr ""
+msgstr "次に、スクリプトのヘッダー部分を編集します。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:47
 #, python-brace-format
@@ -70,18 +70,18 @@ msgid ""
 " as :math:`(\\boldsymbol{a}_s, \\boldsymbol{b}_s, \\boldsymbol{c}_s) = "
 "(\\boldsymbol{a}_p, \\boldsymbol{b}_p, \\boldsymbol{c}_p) "
 "M_{p\\rightarrow s}`."
-msgstr ""
+msgstr "ここで、スケーリング行列 (:math:`M_{p\\rightarrow s}`) は、基本格子ベクトル :math:`(\\boldsymbol{a}_p, \\boldsymbol{b}_p, \\boldsymbol{c}_p)` を :math:`(\\boldsymbol{a}_s, \\boldsymbol{b}_s, \\boldsymbol{c}_s) = (\\boldsymbol{a}_p, \\boldsymbol{b}_p, \\boldsymbol{c}_p) M_{p\\rightarrow s}` のようにスーパーセルの格子ベクトルへ変換する行列です。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:49
 msgid ""
 "``POSCARname`` is the file name of the primitive POSCAR file, ``prefix`` "
 "is used for ``PREFIX`` of **ALM**, ``prefix_poscar`` is used for the file"
 " names of the displaced SPOSCARS."
-msgstr ""
+msgstr "``POSCARname`` は基本セルの POSCAR ファイルのファイル名、``prefix`` は **ALM** の ``PREFIX`` に使われ、``prefix_poscar`` は変位させた SPOSCAR のファイル名に使われます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:51
 msgid "By issuing the command"
-msgstr ""
+msgstr "次のコマンドを実行すると、"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:57
 #, python-brace-format
@@ -91,38 +91,38 @@ msgid ""
 "``displace.py``. The above command finishes quickly, and you can find two"
 " displaced structures (``harm_0.01_{1,2}.POSCAR``) generated in the "
 "working directory."
-msgstr ""
+msgstr "スクリプトはスーパーセル (``SPOSCAR``) を生成し、**alm** 用の入力 (``ALM0.in``) を生成して **alm** を実行し、出力ファイルを ``displace.py`` に渡します。上記のコマンドはすぐに終了し、作業ディレクトリに 2 つの変位構造 (``harm_0.01_{1,2}.POSCAR``) が生成されているのが確認できます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:63
 msgid "2. Run DFT calculations and get forces"
-msgstr ""
+msgstr "2. DFT 計算を実行し、力 (force) を得る"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:65
 msgid ""
 "Next, please perform DFT calculation and compute forces for the two "
 "displaced configurations. This can be done easily, for example, as"
-msgstr ""
+msgstr "次に、2 つの変位配置について DFT 計算を行い、力を計算してください。これは例えば次のように簡単に行えます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:80
 msgid ""
 "When all calculations are done, please collect the displacement-force "
 "datasets as"
-msgstr ""
+msgstr "すべての計算が終わったら、次のように変位-力データセットを収集してください。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:86
 msgid ""
 "In this tutorial, we have placed the VASP outputs in ``vasp_outputs/`` "
 "directory, so you can skip the VASP calculations by using the "
 "``vasprun_?.xml`` files in that directory as"
-msgstr ""
+msgstr "このチュートリアルでは VASP の出力を ``vasp_outputs/`` ディレクトリに置いてあるので、そのディレクトリにある ``vasprun_?.xml`` ファイルを次のように使うことで VASP 計算を省略できます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:96
 msgid "3. Fit second-order force constants"
-msgstr ""
+msgstr "3. 2 次の力定数 (force constant) をフィッティングする"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:98
 msgid "Please just run"
-msgstr ""
+msgstr "次を実行するだけです。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:104
 msgid ""
@@ -130,11 +130,11 @@ msgid ""
 "**alm**. Please check if the fitting error in the log file (``ALM1.log``)"
 " is reasonably small. The second-order force constants are saved in "
 "``super444_0.01.xml``."
-msgstr ""
+msgstr "スクリプトは **alm** 用の入力 (``ALM1.in``) を生成し、**alm** を呼び出します。ログファイル (``ALM1.log``) 内のフィッティング誤差が十分に小さいかどうかを確認してください。2 次の力定数は ``super444_0.01.xml`` に保存されます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:109
 msgid "4. Compute dielectric tensor and Born effective charges"
-msgstr ""
+msgstr "4. 誘電テンソル (dielectric tensor) とボルン有効電荷 (Born effective charges) を計算する"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:111
 #, python-brace-format
@@ -144,7 +144,7 @@ msgid ""
 "charges. This can be done conveniently using density functional "
 "perturbation theory (DFPT), which is available in major DFT codes (e.g., "
 "VASP, Quantum-ESPRESSO, abinit)."
-msgstr ""
+msgstr "非解析補正を取り入れるには、電子的誘電率テンソル (electronic permittivity tensor) (:math:`\\epsilon_{\\infty}`) とボルン有効電荷を与える必要があります。これは密度汎関数摂動論 (density functional perturbation theory, DFPT) を使えば簡単に行え、主要な DFT コード (例: VASP, Quantum-ESPRESSO, abinit) で利用できます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:114
 msgid ""
@@ -153,7 +153,7 @@ msgid ""
 "dependent functionals, this option is not supported, and `LCALCEPS = "
 ".True. <https://www.vasp.at/wiki/index.php/LCALCEPS>`_ should be used "
 "instead."
-msgstr ""
+msgstr "例えば VASP では、INCAR に `LEPSILON = .True. <https://www.vasp.at/wiki/index.php/LEPSILON>`_ を追加するだけです。軌道依存の汎関数ではこのオプションはサポートされておらず、代わりに `LCALCEPS = .True. <https://www.vasp.at/wiki/index.php/LCALCEPS>`_ を使う必要があります。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:118
 msgid ""
@@ -161,7 +161,7 @@ msgid ""
 "generate the supercell. If these two structures are inconsistent, the "
 "order of the atoms and Born effective charges may change, which likely "
 "results in strange phonon band dispersion."
-msgstr ""
+msgstr "スーパーセルの生成に使用した基本セルを用いて DFPT 計算を実行してください。これら 2 つの構造が一致していないと、原子やボルン有効電荷の順序が変わってしまい、おそらく不自然なフォノンバンド分散を招くことになります。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:120
 msgid ""
@@ -169,42 +169,42 @@ msgid ""
 "permittivity tensor and Born effective charges from the output file and "
 "save them in a single file following the specific format described in "
 ":ref:`label_format_BORNINFO`."
-msgstr ""
+msgstr "DFPT 計算が終わったら、出力ファイルから電子的誘電率テンソルとボルン有効電荷を読み取り、:ref:`label_format_BORNINFO` に記載された特定の形式に従って 1 つのファイルに保存してください。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:122
 msgid "If you used VASP, the ``BORNINFO`` file can be created by issuing"
-msgstr ""
+msgstr "VASP を使った場合は、次を実行することで ``BORNINFO`` ファイルを作成できます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:128
 msgid ""
 "Here, ``SPOSCAR`` is the VASP POSCAR file of the structure used in the "
 "DFPT calculation. Currently, this parsing feature is supported only for "
 "VASP and Quantum-ESPRESSO."
-msgstr ""
+msgstr "ここで ``SPOSCAR`` は、DFPT 計算で使用した構造の VASP POSCAR ファイルです。現在、この読み取り機能は VASP と Quantum-ESPRESSO のみでサポートされています。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:131
 msgid ""
 "We provide the pre-generated file ``PbTe.born`` in the ``reference/`` "
 "directory, so you can copy it to the working directory to move forward."
-msgstr ""
+msgstr "``reference/`` ディレクトリに生成済みのファイル ``PbTe.born`` を用意してあるので、それを作業ディレクトリにコピーすれば先に進めます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:136
 msgid "5. Phonon calculations"
-msgstr ""
+msgstr "5. フォノン計算"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:138
 msgid "All inputs are ready, so we can start phonon calculations."
-msgstr ""
+msgstr "すべての入力が揃ったので、フォノン計算を開始できます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:140
 msgid ""
 "We first compute phonon dispersion without non-analytic (NA) correction. "
 "The input file for **anphon** (``phband.in``) looks like"
-msgstr ""
+msgstr "まず、非解析 (NA) 補正なしでフォノン分散を計算します。**anphon** 用の入力ファイル (``phband.in``) は次のようになります。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:145
 msgid "Please run **anphon** and plot the bands file"
-msgstr ""
+msgstr "**anphon** を実行し、bands ファイルをプロットしてください。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:156
 #, python-brace-format
@@ -212,31 +212,31 @@ msgid ""
 "We can see that the TO and LO phonons are degenerate at "
 ":math:`\\boldsymbol{q}=0` and the optical phonon frequencies go down "
 "rapidly as approaching to :math:`\\boldsymbol{q}\\longrightarrow 0`."
-msgstr ""
+msgstr "TO フォノンと LO フォノンが :math:`\\boldsymbol{q}=0` で縮退しており、:math:`\\boldsymbol{q}\\longrightarrow 0` に近づくにつれて光学フォノンの振動数が急速に低下する様子が分かります。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:158
 msgid ""
 "Next, let us consider the NA correction. Please change the ``PREFIX`` and"
 " ``NONANALYTIC`` tags as"
-msgstr ""
+msgstr "次に、NA 補正を考慮しましょう。``PREFIX`` と ``NONANALYTIC`` タグを次のように変更してください。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:166
 msgid ""
 "This option activates the Parlinski's approach with the damping factor of"
 " :math:`\\sigma = 0.15`. After running **anphon** again, we can compare "
 "phonon dispersion curves with and without the NA correction."
-msgstr ""
+msgstr "このオプションは、減衰係数 :math:`\\sigma = 0.15` を用いた Parlinski の手法を有効にします。再び **anphon** を実行すると、NA 補正の有無によるフォノン分散曲線を比較できます。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:178
 msgid "The LO-TO splitting occurs as expected."
-msgstr ""
+msgstr "期待どおり LO-TO 分裂が生じています。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:180
 msgid ""
 "Please repeat the above calculations with the other ``NONANALYTIC`` "
 "options (``NONANALYTIC=2`` (mixed-space) and ``NONANALYTIC=3`` (Ewald "
 "method)). Finally, we plot all results together to see the difference."
-msgstr ""
+msgstr "他の ``NONANALYTIC`` オプション (``NONANALYTIC=2`` (混合空間法) および ``NONANALYTIC=3`` (Ewald 法)) でも上記の計算を繰り返してください。最後に、すべての結果をまとめてプロットし、その違いを確認します。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:192
 #, python-brace-format
@@ -253,7 +253,7 @@ msgid ""
 "above figure, where the blue, red, and magenta curves perfectly intersect"
 " with each other at these commensurate points, whereas the green curve "
 "does not."
-msgstr ""
+msgstr "``NONANALYTIC = 2`` と ``NONANALYTIC = 3`` は ``NONANALYTIC = 1`` よりも滑らかな分散を与えることが分かります。これら 2 つの手法では、(:math:`\\boldsymbol{q}\\longrightarrow 0` を除く) 整合的な :math:`\\boldsymbol{q}` 点で NA 補正が厳密にゼロになります。今回の計算では、基本セルの 4x4x4 スーパーセルを使用しました。したがって、NA 補正はブリルアンゾーン (Brillouin zone) 境界 (X 点と L 点) および各高対称線の中点 (例: :math:`\\boldsymbol{q}=(1/4, 1/4, 0)`) でゼロになるはずです。これは上図から確認でき、青・赤・マゼンタの曲線はこれらの整合点で互いに完全に交差していますが、緑の曲線はそうなっていません。"
 
 #: ../../source/tutorial_pages/pbte_nonanalytic_correction.rst:195
 msgid ""
@@ -263,5 +263,4 @@ msgid ""
 "method. It can also avoid abrupt jumps or discontinuities in dispersion "
 "curves at Brillouin zone boundaries, which can happen with ``NONANALYTIC "
 "= 2`` when the BZ boundary is not commensurate with the supercell size."
-msgstr ""
-
+msgstr "一般に、``NONANALYTIC = 3`` の使用を推奨します。これは短距離項と長距離項を正しく分離し、Ewald 総和法を用いて逆空間で NA 補正を正確に計算するためです。また、BZ 境界がスーパーセルのサイズと整合しない場合に ``NONANALYTIC = 2`` で起こり得る、ブリルアンゾーン境界での分散曲線の急激な飛びや不連続を回避できます。"

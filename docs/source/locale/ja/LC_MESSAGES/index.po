@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../source/index.rst:7
 msgid "ALAMODE"
-msgstr ""
+msgstr "ALAMODE"
 
 #: ../../source/index.rst:11
 msgid "Users Guide"
@@ -29,17 +29,16 @@ msgstr "ユーザーガイド"
 
 #: ../../source/index.rst:30
 msgid "Indices and tables"
-msgstr ""
+msgstr "索引と表"
 
 #: ../../source/index.rst:32
 msgid ":ref:`genindex`"
-msgstr ""
+msgstr ":ref:`genindex`"
 
 #: ../../source/index.rst:33
 msgid ":ref:`modindex`"
-msgstr ""
+msgstr ":ref:`modindex`"
 
 #: ../../source/index.rst:34
 msgid ":ref:`search`"
-msgstr ""
-
+msgstr ":ref:`search`"

@@ -21,18 +21,18 @@ msgstr ""
 
 #: ../../source/almdir/formalism_alm.rst:2
 msgid "ALM: Theoretical background"
-msgstr ""
+msgstr "ALM: 理論的背景"
 
 #: ../../source/almdir/formalism_alm.rst:5
 msgid "Interatomic force constants (IFCs)"
-msgstr ""
+msgstr "原子間力定数 (interatomic force constants, IFCs)"
 
 #: ../../source/almdir/formalism_alm.rst:7
 msgid ""
 "The starting point of the computational methodology is to approximate the"
 " potential energy of interacting atoms by a Taylor expansion with respect"
 " to atomic displacements by"
-msgstr ""
+msgstr "この計算手法の出発点は、相互作用する原子のポテンシャルエネルギーを、原子の変位 (displacement) に関するテイラー展開 (Taylor expansion) によって近似することである。"
 
 #: ../../source/almdir/formalism_alm.rst:10
 msgid ""
@@ -43,7 +43,7 @@ msgid ""
 "\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n})"
 " \\; u_{\\mu_{1}}(\\ell_{1}\\kappa_{1})\\cdots "
 "u_{\\mu_{n}}(\\ell_{n}\\kappa_{n})."
-msgstr ""
+msgstr "&U - U_{0} = \\sum_{n=1}^{N} U_{n} = U_{1} + U_{2} + U_{3} + \\cdots, \\\\\n&U_{n} = \\frac{1}{n!} \\sum_{\\substack{\\ell_{1}\\kappa_{1}, \\dots, \\ell_{n}\\kappa_{n} \\\\ \\mu_{1},\\dots, \\mu_{n}}} \\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}) \\; u_{\\mu_{1}}(\\ell_{1}\\kappa_{1})\\cdots u_{\\mu_{n}}(\\ell_{n}\\kappa_{n})."
 
 #: ../../source/almdir/formalism_alm.rst:16
 msgid ""
@@ -52,49 +52,49 @@ msgid ""
 ":math:`\\mu`\\ th direction, and "
 ":math:`\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n})`"
 " is the :math:`n`\\ th-order interatomic force constant (IFC)."
-msgstr ""
+msgstr "ここで、:math:`u_{\\mu}(\\ell\\kappa)` は :math:`\\ell`\\ 番目の単位胞 (unit cell) 内の :math:`\\kappa`\\ 番目の原子の :math:`\\mu`\\ 方向に沿った原子変位であり、:math:`\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n})` は :math:`n`\\ 次の原子間力定数 (IFC) である。"
 
 #: ../../source/almdir/formalism_alm.rst:20
 msgid "Symmetry relationship between IFCs"
-msgstr ""
+msgstr "原子間力定数間の対称性関係 (symmetry relationship)"
 
 #: ../../source/almdir/formalism_alm.rst:22
 msgid ""
 "There are several relationships between IFCs which may be used to reduce "
 "the number of independent IFCs."
-msgstr ""
+msgstr "原子間力定数の間にはいくつかの関係が存在し、これらは独立な原子間力定数の数を減らすために利用できる。"
 
 #: ../../source/almdir/formalism_alm.rst:24
 msgid "Permutation"
-msgstr ""
+msgstr "置換 (permutation)"
 
 #: ../../source/almdir/formalism_alm.rst:26
 msgid ""
 "IFC should be invariant under the exchange of the triplet "
 ":math:`(\\ell,\\kappa,\\mu)`, e.g.,"
-msgstr ""
+msgstr "原子間力定数は、三つ組 :math:`(\\ell,\\kappa,\\mu)` の入れ替えに対して不変でなければならない。例えば、"
 
 #: ../../source/almdir/formalism_alm.rst:28
 msgid "\\Phi_{\\mu_{1}\\mu_{2}\\mu_{3}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3})=\\Phi_{\\mu_{1}\\mu_{3}\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{3}\\kappa_{3};\\ell_{2}\\kappa_{2})=\\dots."
-msgstr ""
+msgstr "\\Phi_{\\mu_{1}\\mu_{2}\\mu_{3}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3})=\\Phi_{\\mu_{1}\\mu_{3}\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{3}\\kappa_{3};\\ell_{2}\\kappa_{2})=\\dots."
 
 #: ../../source/almdir/formalism_alm.rst:32
 msgid "Periodicity"
-msgstr ""
+msgstr "周期性 (periodicity)"
 
 #: ../../source/almdir/formalism_alm.rst:34
 msgid ""
 "Since IFCs should depend on interatomic distances, they are invariant "
 "under a translation in units of the lattice vector, namely"
-msgstr ""
+msgstr "原子間力定数は原子間距離に依存するはずなので、格子ベクトル (lattice vector) 単位の並進に対して不変である。すなわち、"
 
 #: ../../source/almdir/formalism_alm.rst:36
 msgid "\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\dots;\\ell_{n}\\kappa_{n})=\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(0\\kappa_{1};\\ell_{2}-\\ell_{1}\\kappa_{2};\\dots;\\ell_{n}-\\ell_{1}\\kappa_{n})."
-msgstr ""
+msgstr "\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\dots;\\ell_{n}\\kappa_{n})=\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(0\\kappa_{1};\\ell_{2}-\\ell_{1}\\kappa_{2};\\dots;\\ell_{n}-\\ell_{1}\\kappa_{n})."
 
 #: ../../source/almdir/formalism_alm.rst:42
 msgid "Crystal symmetry"
-msgstr ""
+msgstr "結晶対称性 (crystal symmetry)"
 
 #: ../../source/almdir/formalism_alm.rst:44
 #, python-brace-format
@@ -104,14 +104,14 @@ msgid ""
 "translation. Since the potential energy is invariant under any crystal "
 "symmetry operations, IFCs should transform under a symmetry operation as "
 "follows:"
-msgstr ""
+msgstr "結晶対称操作 (crystal symmetry operation) は、ある原子 :math:`\\vec{r}(\\ell\\kappa)` を回転と並進によって別の等価な原子 :math:`\\vec{r}(LK)` に写す。ポテンシャルエネルギーは任意の結晶対称操作に対して不変であるため、原子間力定数は対称操作のもとで次のように変換されなければならない。"
 
 #: ../../source/almdir/formalism_alm.rst:47
 msgid ""
 "\\sum_{\\nu_{1},\\dots,\\nu_{n}}\\Phi_{\\nu_{1}\\dots\\nu_{n}}(L_{1}K_{1};\\dots;L_{n}K_{n})"
 " O_{\\nu_{1}\\mu_{1}}\\cdots O_{\\nu_{n}\\mu_{n}} = "
 "\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}),"
-msgstr ""
+msgstr "\\sum_{\\nu_{1},\\dots,\\nu_{n}}\\Phi_{\\nu_{1}\\dots\\nu_{n}}(L_{1}K_{1};\\dots;L_{n}K_{n}) O_{\\nu_{1}\\mu_{1}}\\cdots O_{\\nu_{n}\\mu_{n}} = \\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}),"
 
 #: ../../source/almdir/formalism_alm.rst:52
 #, python-brace-format
@@ -120,7 +120,7 @@ msgid ""
 ":math:`N_{s}` be the number of symmetry operations, there are "
 ":math:`N_{s}` relationships between IFCs which may be used to find "
 "independent IFCs."
-msgstr ""
+msgstr "ここで :math:`O` は対称操作の回転行列である。対称操作の数を :math:`N_{s}` とすると、原子間力定数の間には :math:`N_{s}` 個の関係が存在し、これらは独立な原子間力定数を見つけるために利用できる。"
 
 #: ../../source/almdir/formalism_alm.rst:57
 msgid ""
@@ -134,14 +134,14 @@ msgid ""
 " of :math:`\\{\\nu\\}` (and becomes 0 for all other :math:`\\{\\nu\\}`\\ "
 "s). Therefore, let :math:`\\{\\nu^{\\prime}\\}` be such a pair of "
 ":math:`\\{\\nu\\}`, the equation :eq:`ifcsym1` can be reduced to"
-msgstr ""
+msgstr "``FCSYM_BASIS = Cartesian`` の場合、対称的に既約な原子間力定数の集合は、デカルト座標 (Cartesian coordinate) において探索される。ここでは、**六方晶** (三方晶) 系を除くすべての空間群操作 (space group operation) に対して、行列要素 :math:`O_{\\mu\\nu}` は 0 または :math:`\\pm1` となる。また、六方晶 (三方晶) 系を除けば、式 :eq:`ifcsym1` の左辺における積 :math:`O_{\\nu_{1}\\mu_{1}}\\cdots O_{\\nu_{n}\\mu_{n}}` は、特定の :math:`\\{\\nu\\}` の組に対してのみ非ゼロとなる (それ以外のすべての :math:`\\{\\nu\\}`\\ s に対しては 0 となる)。したがって、そのような :math:`\\{\\nu\\}` の組を :math:`\\{\\nu^{\\prime}\\}` とすると、式 :eq:`ifcsym1` は次のように簡約できる。"
 
 #: ../../source/almdir/formalism_alm.rst:59
 msgid ""
 "\\Phi_{\\nu_{1}^{\\prime}\\dots\\nu_{n}^{\\prime}}(L_{1}K_{1};\\dots;L_{n}K_{n})"
 " = s "
 "\\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}),"
-msgstr ""
+msgstr "\\Phi_{\\nu_{1}^{\\prime}\\dots\\nu_{n}^{\\prime}}(L_{1}K_{1};\\dots;L_{n}K_{n}) = s \\Phi_{\\mu_{1}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n}),"
 
 #: ../../source/almdir/formalism_alm.rst:64
 msgid ""
@@ -155,7 +155,7 @@ msgid ""
 ":eq:`ifcsym1` is not used to reduce the number of IFCs. Alternatively, "
 "the corresponding symmetry relationships are imposed as constraints "
 "between IFCs in solving fitting problems."
-msgstr ""
+msgstr "ここで :math:`s=\\pm1` である。本コードは、原子間力定数の数を減らすために、式 :eq:`ifcsym1` の代わりに式 :eq:`ifcsym2` を用いる。式 :eq:`ifcsym2` の左辺と右辺の原子間力定数が等価であり、結合係数が :math:`s=-1` の場合、その原子間力定数はゼロになるため除去される。**六方晶** (三方晶) 系では、式 :eq:`ifcsym1` の左辺の複数の項が非ゼロになるような対称操作が存在しうる。そのような場合、式 :eq:`ifcsym1` は原子間力定数の数を減らすためには使用されない。その代わり、対応する対称性関係は、フィッティング問題を解く際に原子間力定数間の制約条件として課される。"
 
 #: ../../source/almdir/formalism_alm.rst:66
 #, python-brace-format
@@ -169,28 +169,28 @@ msgid ""
 " row echelon form), is improved even when the number of numerical digits "
 "for irrational numbers given in an input file is less than sufficient "
 "(double precision)."
-msgstr ""
+msgstr "``FCSYM_BASIS = Lattice`` (デフォルト) の場合、原子間力定数の対称性による簡約は格子座標 (lattice coordinate) で行われる。この場合、**六方晶** 系であっても、:math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` 基底において回転行列のすべての要素が 0 または :math:`\\pm1` のいずれかになる。そのため、入力ファイルに与えられる無理数の数値桁数が十分でない (倍精度) 場合でも、簡約プロセス、特に rref (簡約行階段形, reduced row echelon form) の構築の数値的安定性が向上する。"
 
 #: ../../source/almdir/formalism_alm.rst:72
 msgid "Constraints between IFCs"
-msgstr ""
+msgstr "原子間力定数間の制約条件 (constraints)"
 
 #: ../../source/almdir/formalism_alm.rst:74
 msgid ""
 "Since the potential energy is invariant under rigid translation and "
 "rotation, it may be necessary for IFCs to satisfy corresponding "
 "constraints."
-msgstr ""
+msgstr "ポテンシャルエネルギーは剛体並進および剛体回転 (rigid translation and rotation) のもとで不変であるため、原子間力定数は対応する制約条件を満たす必要がある場合がある。"
 
 #: ../../source/almdir/formalism_alm.rst:76
 msgid "The constraints for translational invariance are given by"
-msgstr ""
+msgstr "並進不変性 (translational invariance) に対する制約条件は次式で与えられる。"
 
 #: ../../source/almdir/formalism_alm.rst:78
 msgid ""
 "\\sum_{\\ell_{1}\\kappa_{1}}\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\dots;\\ell_{n}\\kappa_{n})"
 " = 0,"
-msgstr ""
+msgstr "\\sum_{\\ell_{1}\\kappa_{1}}\\Phi_{\\mu_{1}\\mu_{2}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\dots;\\ell_{n}\\kappa_{n}) = 0,"
 
 #: ../../source/almdir/formalism_alm.rst:83
 #, python-brace-format
@@ -199,11 +199,11 @@ msgid ""
 ":math:`\\ell_{2}\\kappa_{2},\\dots,\\ell_{n}\\kappa_{n}` and "
 ":math:`\\mu_{1},\\dots,\\mu_{n}`. The code **alm** imposes equation "
 ":eq:`consttran` by default (``ICONST = 1``)."
-msgstr ""
+msgstr "これは、:math:`\\ell_{2}\\kappa_{2},\\dots,\\ell_{n}\\kappa_{n}` と :math:`\\mu_{1},\\dots,\\mu_{n}` の任意の組に対して満たされなければならない。コード **alm** はデフォルト (``ICONST = 1``) で式 :eq:`consttran` を課す。"
 
 #: ../../source/almdir/formalism_alm.rst:85
 msgid "The constraints for rotational invariance are"
-msgstr ""
+msgstr "回転不変性 (rotational invariance) に対する制約条件は次のとおりである。"
 
 #: ../../source/almdir/formalism_alm.rst:87
 msgid ""
@@ -219,7 +219,7 @@ msgid ""
 " (\\delta_{\\mu,\\mu_{\\lambda}}\\delta_{\\nu,\\mu_{\\lambda}^{\\prime}} "
 "- \\delta_{\\nu,\\mu_{\\lambda}}\\delta_{\\mu,\\mu_{\\lambda}^{\\prime}})"
 " = 0,"
-msgstr ""
+msgstr "&\\sum_{\\ell^{\\prime}\\kappa^{\\prime}} (\\Phi_{\\mu_{1}\\dots\\mu_{n}\\nu}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n};\\ell^{\\prime}\\kappa^{\\prime}) r_{\\mu}(\\ell^{\\prime}\\kappa^{\\prime})\n- \\Phi_{\\mu_{1}\\dots\\mu_{n}\\mu}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{n}\\kappa_{n};\\ell^{\\prime}\\kappa^{\\prime}) r_{\\nu}(\\ell^{\\prime}\\kappa^{\\prime})) \\\\\n& \\hspace{10mm} + \\sum_{\\lambda = 1}^{n}\\sum_{\\mu_{\\lambda}^{\\prime}} \\Phi_{\\mu_{1}\\dots\\mu_{\\lambda}^{\\prime}\\dots\\mu_{n}}(\\ell_{1}\\kappa_{1};\\dots;\\ell_{\\lambda}\\kappa_{\\lambda};\\dots;\\ell_{n}\\kappa_{n}) (\\delta_{\\mu,\\mu_{\\lambda}}\\delta_{\\nu,\\mu_{\\lambda}^{\\prime}} - \\delta_{\\nu,\\mu_{\\lambda}}\\delta_{\\mu,\\mu_{\\lambda}^{\\prime}}) = 0,"
 
 #: ../../source/almdir/formalism_alm.rst:93
 #, python-brace-format
@@ -228,13 +228,13 @@ msgid ""
 ":math:`(\\ell_{1}\\kappa_{1},\\dots,\\ell_{n}\\kappa_{n};\\mu_{1},\\dots,\\mu_{n};\\mu,\\nu)`."
 " This is complicated since :math:`(n+1)`\\ th-order IFCs (first line) are"
 " related to :math:`n`\\ th-order IFCs (second line)."
-msgstr ""
+msgstr "これは、:math:`(\\ell_{1}\\kappa_{1},\\dots,\\ell_{n}\\kappa_{n};\\mu_{1},\\dots,\\mu_{n};\\mu,\\nu)` の任意の組に対して満たされなければならない。:math:`(n+1)`\\ 次の原子間力定数 (1行目) が :math:`n`\\ 次の原子間力定数 (2行目) と関係しているため、これは複雑である。"
 
 #: ../../source/almdir/formalism_alm.rst:96
 msgid ""
 "For example, the constraints for rotational invariance related to "
 "harmonic terms can be found as"
-msgstr ""
+msgstr "例えば、調和項 (harmonic term) に関係する回転不変性の制約条件は次のように求められる。"
 
 #: ../../source/almdir/formalism_alm.rst:98
 msgid ""
@@ -244,11 +244,11 @@ msgid ""
 "& \\hspace{10mm} + "
 "\\Phi_{\\nu}(\\ell_{1}\\kappa_{1})\\delta_{\\mu,\\mu_{1}} - "
 "\\Phi_{\\mu}(\\ell_{1}\\kappa_{1})\\delta_{\\nu,\\mu_{1}} = 0,"
-msgstr ""
+msgstr "&\\sum_{\\ell_{2}\\kappa_{2}} (\\Phi_{\\mu_{1}\\nu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})r_{\\mu}(\\ell_{2}\\kappa_{2})-\\Phi_{\\mu_{1}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})r_{\\nu}(\\ell_{2}\\kappa_{2})) \\notag \\\\\n& \\hspace{10mm} + \\Phi_{\\nu}(\\ell_{1}\\kappa_{1})\\delta_{\\mu,\\mu_{1}} - \\Phi_{\\mu}(\\ell_{1}\\kappa_{1})\\delta_{\\nu,\\mu_{1}} = 0,"
 
 #: ../../source/almdir/formalism_alm.rst:104
 msgid "and"
-msgstr ""
+msgstr "および"
 
 #: ../../source/almdir/formalism_alm.rst:106
 msgid ""
@@ -271,7 +271,7 @@ msgid ""
 "- "
 "\\Phi_{\\mu_{1}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\nu,\\mu_{2}}"
 " = 0."
-msgstr ""
+msgstr "& \\sum_{\\ell_{3}\\kappa_{3}} (\\Phi_{\\mu_{1}\\mu_{2}\\nu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3}) r_{\\mu}(\\ell_{3}\\kappa_{3}) \\notag\n- \\Phi_{\\mu_{1}\\mu_{2}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2};\\ell_{3}\\kappa_{3}) r_{\\nu}(\\ell_{3}\\kappa_{3})) \\\\\n& \\hspace{10mm}\n+ \\Phi_{\\nu\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\mu,\\mu_{1}}\n- \\Phi_{\\mu\\mu_{2}}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\nu,\\mu_{1}} \\notag \\\\\n& \\hspace{10mm} + \\Phi_{\\mu_{1}\\nu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\mu,\\mu_{2}}\n- \\Phi_{\\mu_{1}\\mu}(\\ell_{1}\\kappa_{1};\\ell_{2}\\kappa_{2})\\delta_{\\nu,\\mu_{2}} = 0."
 
 #: ../../source/almdir/formalism_alm.rst:117
 msgid ""
@@ -280,15 +280,15 @@ msgid ""
 "further consider equation :eq:`constrot2`, please use ``ICONST = 3``, "
 "though it may enforce a number of harmonic IFCs to be zero since cubic "
 "terms don't exist in harmonic calculations (``NORDER = 1``)."
-msgstr ""
+msgstr "``NORDER = 1`` の場合、``ICONST = 2`` であれば式 :eq:`constrot1` が考慮されるが、式 :eq:`constrot2` は無視される。式 :eq:`constrot2` もさらに考慮するには ``ICONST = 3`` を使用する。ただし、調和計算 (``NORDER = 1``) では3次の項が存在しないため、これにより多くの調和原子間力定数がゼロに強制される場合がある。"
 
 #: ../../source/almdir/formalism_alm.rst:123
 msgid "Estimate IFCs by linear regression"
-msgstr ""
+msgstr "線形回帰による原子間力定数の推定 (linear regression)"
 
 #: ../../source/almdir/formalism_alm.rst:126
 msgid "Basic notations"
-msgstr ""
+msgstr "基本的な記法"
 
 #: ../../source/almdir/formalism_alm.rst:128
 msgid ""
@@ -299,13 +299,13 @@ msgid ""
 ":math:`N` irreducible set of IFCs as :math:`\\boldsymbol{\\Phi}`. Then, "
 "the Taylor expansion potential (TEP) defined by equation :eq:`U_Taylor` "
 "is written as"
-msgstr ""
+msgstr "対称的に独立な原子間力定数の集合と、並進および/または回転不変性を満たすためのそれらの間の制約条件から、既約な原子間力定数の集合 :math:`\\{\\Phi_{i}\\}` を構築できる。:math:`N` 個の既約な原子間力定数の集合からなる列ベクトルを :math:`\\boldsymbol{\\Phi}` と表す。すると、式 :eq:`U_Taylor` で定義されるテイラー展開ポテンシャル (Taylor expansion potential, TEP) は次のように書ける。"
 
 #: ../../source/almdir/formalism_alm.rst:130
 msgid ""
 "U_{\\mathrm{TEP}} = \\boldsymbol{b}^{T}\\boldsymbol{\\Phi}.\n"
 "\n"
-msgstr ""
+msgstr "U_{\\mathrm{TEP}} = \\boldsymbol{b}^{T}\\boldsymbol{\\Phi}.\n\n"
 
 #: ../../source/almdir/formalism_alm.rst:133
 msgid ""
@@ -313,7 +313,7 @@ msgid ""
 " of atomic displacements :math:`\\{u_{i}\\}` defined as "
 ":math:`\\boldsymbol{b} = \\partial U / \\partial \\boldsymbol{\\Phi}`. "
 "The atomic forces based on the TEP is then given as"
-msgstr ""
+msgstr "ここで、:math:`\\boldsymbol{b} \\in \\mathbb{R}^{1\\times N}` は原子変位 :math:`\\{u_{i}\\}` の関数であり、:math:`\\boldsymbol{b} = \\partial U / \\partial \\boldsymbol{\\Phi}` と定義される。TEP に基づく原子に働く力は次式で与えられる。"
 
 #: ../../source/almdir/formalism_alm.rst:135
 msgid ""
@@ -321,7 +321,7 @@ msgid ""
 "U_{\\mathrm{TEP}}}{\\partial \\boldsymbol{u}} = - \\frac{\\partial "
 "\\boldsymbol{b}^{T}}{\\partial \\boldsymbol{u}} \\boldsymbol{\\Phi} = A "
 "\\boldsymbol{\\Phi},"
-msgstr ""
+msgstr "\\boldsymbol{F}_{\\mathrm{TEP}} = - \\frac{\\partial U_{\\mathrm{TEP}}}{\\partial \\boldsymbol{u}} = - \\frac{\\partial \\boldsymbol{b}^{T}}{\\partial \\boldsymbol{u}} \\boldsymbol{\\Phi} = A \\boldsymbol{\\Phi},"
 
 #: ../../source/almdir/formalism_alm.rst:140
 msgid ""
@@ -334,7 +334,7 @@ msgid ""
 " depend on the atomic configuration of the supercell. To make this point "
 "clearer, let us denote them as :math:`A(\\boldsymbol{u})` and "
 ":math:`\\boldsymbol{F}_{\\mathrm{TEP}}(\\boldsymbol{u})`."
-msgstr ""
+msgstr "ここで :math:`A \\in \\mathbb{R}^{3N_{s} \\times N}` であり、:math:`N_{s}` はスーパーセル (supercell) 内の原子数である。また、:math:`\\boldsymbol{u}^{T} = (u_{1}^{x}, u_{1}^{y}, u_{1}^{z}, \\dots, u_{N_{s}}^{x}, u_{N_{s}}^{y}, u_{N_{s}}^{z})` はスーパーセル内の :math:`3N_{s}` 個の原子変位からなるベクトルである。行列 :math:`A` と力ベクトル :math:`\\boldsymbol{F}_{\\mathrm{TEP}}` はスーパーセルの原子配置に依存することに注意されたい。この点をより明確にするため、これらを :math:`A(\\boldsymbol{u})` および :math:`\\boldsymbol{F}_{\\mathrm{TEP}}(\\boldsymbol{u})` と表すことにする。"
 
 #: ../../source/almdir/formalism_alm.rst:145
 #, python-brace-format
@@ -345,14 +345,14 @@ msgid ""
 "patterns and atomic forces for each pattern obtained by DFT. Then, "
 "equation :eq:`force_tep` defined for each displacement pattern can be "
 "combined to a single equation as"
-msgstr ""
+msgstr "原子間力定数ベクトル :math:`\\boldsymbol{\\Phi}` を線形回帰で推定するには、通常、複数の異なる変位パターンを考慮する必要がある。:math:`N_d` 個の変位パターンと、各パターンについて DFT で得られた原子に働く力があると仮定する。すると、各変位パターンについて定義された式 :eq:`force_tep` は、次のように単一の方程式にまとめることができる。"
 
 #: ../../source/almdir/formalism_alm.rst:149
 msgid ""
 "\\boldsymbol{\\mathscr{F}}_{\\mathrm{TEP}} =  \\mathbb{A} "
 "\\boldsymbol{\\Phi},\n"
 "\n"
-msgstr ""
+msgstr "\\boldsymbol{\\mathscr{F}}_{\\mathrm{TEP}} =  \\mathbb{A} \\boldsymbol{\\Phi},\n\n"
 
 #: ../../source/almdir/formalism_alm.rst:152
 msgid ""
@@ -360,17 +360,17 @@ msgid ""
 "[\\boldsymbol{F}^{T}(\\boldsymbol{u}_{1}), \\dots, "
 "\\boldsymbol{F}^{T}(\\boldsymbol{u}_{N_d})]` and :math:`\\mathbb{A}^{T} ="
 " [A^{T}(\\boldsymbol{u}_{1}),\\dots,A^{T}(\\boldsymbol{u}_{N_d})]`."
-msgstr ""
+msgstr "ここで :math:`\\boldsymbol{\\mathscr{F}}^{T} = [\\boldsymbol{F}^{T}(\\boldsymbol{u}_{1}), \\dots, \\boldsymbol{F}^{T}(\\boldsymbol{u}_{N_d})]` および :math:`\\mathbb{A}^{T} = [A^{T}(\\boldsymbol{u}_{1}),\\dots,A^{T}(\\boldsymbol{u}_{N_d})]` である。"
 
 #: ../../source/almdir/formalism_alm.rst:157
 msgid "Ordinary least-squares"
-msgstr ""
+msgstr "通常最小二乗法 (ordinary least-squares)"
 
 #: ../../source/almdir/formalism_alm.rst:159
 msgid ""
 "In the ordinary least-squares (``LMODEL = least-squares``), IFCs are "
 "estimated by solving the following problem:"
-msgstr ""
+msgstr "通常最小二乗法 (``LMODEL = least-squares``) では、原子間力定数は次の問題を解くことで推定される。"
 
 #: ../../source/almdir/formalism_alm.rst:161
 msgid ""
@@ -381,7 +381,7 @@ msgid ""
 "argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   "
 "\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} "
 "\\boldsymbol{\\Phi} \\|^{2}_{2}."
-msgstr ""
+msgstr "\\boldsymbol{\\Phi}_{\\mathrm{OLS}} = \\mathop{\\rm argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}} \\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\boldsymbol{\\mathscr{F}}_{\\mathrm{TEP}} \\|^{2}_{2} = \\mathop{\\rm argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   \\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} \\boldsymbol{\\Phi} \\|^{2}_{2}."
 
 #: ../../source/almdir/formalism_alm.rst:166
 msgid ""
@@ -391,28 +391,28 @@ msgid ""
 ":math:`\\mathbb{A}^{T}\\mathbb{A}` must be full rank. When the fitting is"
 " successful, **alm** reports the relative fitting error :math:`\\sigma` "
 "defined by"
-msgstr ""
+msgstr "したがって、原子間力定数は残差平方和 (residual sum of squares, RSS) が最小になるように決定される。:math:`\\boldsymbol{\\Phi}_{\\mathrm{OLS}}` のすべての要素を一意に決定するには、:math:`\\mathbb{A}^{T}\\mathbb{A}` がフルランク (full rank) でなければならない。フィッティングが成功すると、**alm** は次式で定義される相対フィッティング誤差 :math:`\\sigma` を出力する。"
 
 #: ../../source/almdir/formalism_alm.rst:169
 msgid ""
 "\\sigma = \\sqrt{\\frac{\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - "
 "\\mathbb{A} \\boldsymbol{\\Phi} "
 "\\|^{2}_{2}}{\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}}\\|_{2}^{2}}},"
-msgstr ""
+msgstr "\\sigma = \\sqrt{\\frac{\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} \\boldsymbol{\\Phi} \\|^{2}_{2}}{\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}}\\|_{2}^{2}}},"
 
 #: ../../source/almdir/formalism_alm.rst:174
 msgid "where the denominator is the square sum of the DFT forces."
-msgstr ""
+msgstr "ここで分母は DFT による力の二乗和である。"
 
 #: ../../source/almdir/formalism_alm.rst:179
 msgid "Elastic-net regression"
-msgstr ""
+msgstr "Elastic-net 回帰 (elastic-net regression)"
 
 #: ../../source/almdir/formalism_alm.rst:181
 msgid ""
 "In the elastic-net optimization (``LMODEL = elastic-net``), IFCs are "
 "estimated by solving the following optimization problem:"
-msgstr ""
+msgstr "Elastic-net 最適化 (``LMODEL = elastic-net``) では、原子間力定数は次の最適化問題を解くことで推定される。"
 
 #: ../../source/almdir/formalism_alm.rst:183
 msgid ""
@@ -422,7 +422,7 @@ msgid ""
 "\\boldsymbol{\\Phi} \\|^{2}_{2} + \\alpha \\beta \\| \\boldsymbol{\\Phi}"
 "  \\|_{1} + \\frac{1}{2} \\alpha (1-\\beta) \\| \\boldsymbol{\\Phi}  "
 "\\|_{2}^{2},"
-msgstr ""
+msgstr "\\boldsymbol{\\Phi}_{\\mathrm{enet}} = \\mathop{\\rm argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   \\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} \\boldsymbol{\\Phi} \\|^{2}_{2} + \\alpha \\beta \\| \\boldsymbol{\\Phi}  \\|_{1} + \\frac{1}{2} \\alpha (1-\\beta) \\| \\boldsymbol{\\Phi}  \\|_{2}^{2},"
 
 #: ../../source/almdir/formalism_alm.rst:188
 #, python-brace-format
@@ -433,24 +433,24 @@ msgid ""
 ":math:`L_{1}` and :math:`L_{2}` regularization terms. :math:`\\alpha` and"
 " :math:`\\beta` must be given by input tags ``L1_ALPHA`` and "
 "``L1_RATIO``, respectively."
-msgstr ""
+msgstr "ここで :math:`\\alpha` は、モデルのスパース性 (sparsity) と精度の間のトレードオフを制御するハイパーパラメータであり、:math:`\\beta \\; (0 < \\beta \\leq 1)` は :math:`L_{1}` 正則化項と :math:`L_{2}` 正則化項の比率を制御するハイパーパラメータである。:math:`\\alpha` と :math:`\\beta` は、それぞれ入力タグ ``L1_ALPHA`` と ``L1_RATIO`` で与えなければならない。"
 
 #: ../../source/almdir/formalism_alm.rst:190
 msgid ""
 "An optimal value of :math:`\\alpha` can be estimated, for example, by "
 "cross-validation (CV). A :math:`n`\\ -fold CV can be performed by setting"
 " the ``CV``-tag properly."
-msgstr ""
+msgstr "最適な :math:`\\alpha` の値は、例えば交差検証 (cross-validation, CV) によって推定できる。:math:`n`\\ -fold CV は、``CV`` タグを適切に設定することで実行できる。"
 
 #: ../../source/almdir/formalism_alm.rst:193
 msgid "Adaptive LASSO [1]_"
-msgstr ""
+msgstr "適応的 LASSO (adaptive LASSO) [1]_"
 
 #: ../../source/almdir/formalism_alm.rst:195
 msgid ""
 "In adaptive LASSO (``LMODEL = adaptive-lasso``), IFCs are estimated by "
 "solving the following optimization problem:"
-msgstr ""
+msgstr "適応的 LASSO (``LMODEL = adaptive-lasso``) では、原子間力定数は次の最適化問題を解くことで推定される。"
 
 #: ../../source/almdir/formalism_alm.rst:197
 msgid ""
@@ -458,7 +458,7 @@ msgid ""
 "argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   "
 "\\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} "
 "\\boldsymbol{\\Phi} \\|^{2}_{2} + \\alpha \\sum_i w_i |\\Phi_i| ,"
-msgstr ""
+msgstr "\\boldsymbol{\\Phi}_{\\mathrm{adalasso}} = \\mathop{\\rm argmin}\\limits_{\\boldsymbol{\\Phi}} \\frac{1}{2N_{d}}   \\|\\boldsymbol{\\mathscr{F}}_{\\mathrm{DFT}} - \\mathbb{A} \\boldsymbol{\\Phi} \\|^{2}_{2} + \\alpha \\sum_i w_i |\\Phi_i| ,"
 
 #: ../../source/almdir/formalism_alm.rst:202
 msgid ""
@@ -470,14 +470,14 @@ msgid ""
 "dataset must be large enough to make the matrix :math:`\\mathbb{A}` "
 "*overdetermined*. The code keeps running even when :math:`\\mathbb{A}` is"
 " *underdetermined*. So, please be careful."
-msgstr ""
+msgstr "ここで :math:`\\alpha` は ``L1_ALPHA`` で与えられるハイパーパラメータであり、:math:`w_i` はパラメータに依存する重みである。ALM では、単純に :math:`w_i = 1/|\\Phi_{\\mathrm{OLS},i}|` を用いる。ここで :math:`\\Phi_{\\mathrm{OLS},i}` は OLS フィッティングによって得られる係数の推定量である。したがって、このオプションでは、行列 :math:`\\mathbb{A}` が *優決定* (overdetermined) になるように、訓練データセットのサイズを十分に大きくしなければならない。:math:`\\mathbb{A}` が *劣決定* (underdetermined) であってもコードは実行を続けるため、注意されたい。"
 
 #: ../../source/almdir/formalism_alm.rst:206
 #, python-brace-format
 msgid ""
 "The minimum size of the training dataset necessary for making "
 ":math:`\\mathbb{A}` overdetermined can be roughly estimated as follows:"
-msgstr ""
+msgstr ":math:`\\mathbb{A}` を優決定にするために必要な訓練データセットの最小サイズは、おおよそ次のように見積もることができる。"
 
 #: ../../source/almdir/formalism_alm.rst:208
 msgid ""
@@ -492,27 +492,26 @@ msgid ""
 " the supercell) linearly independent rows of :math:`\\mathbb{A}` from one"
 " displaced configuration , i.e., one static DFT calculation. Hence, we "
 "expect that :math:`\\mathbb{A}` becomes overdetermined when"
-msgstr ""
+msgstr ":math:`N` 個の独立な原子間力定数が存在すると仮定する (制約条件がある場合はそれを課した後)。この場合、行列 :math:`\\mathbb{A}` の列数は :math:`N` となり、:math:`\\mathbb{A}` の独立な行の数が :math:`N` 以上のとき :math:`\\mathbb{A}` は優決定となる。訓練構造がランダムに生成され、各配置においてすべての原子が元の位置から変位している場合、1つの変位配置、すなわち1回の静的 DFT 計算から、:math:`3\\times N_{\\mathrm{atom}}` 個 (:math:`N_{\\mathrm{atom}}` はスーパーセル内の原子数) の線形独立な :math:`\\mathbb{A}` の行を生成できる。したがって、:math:`\\mathbb{A}` が優決定になるのは次の場合であると期待される。"
 
 #: ../../source/almdir/formalism_alm.rst:210
 msgid "N_d \\geq \\frac{N}{3N_{\\mathrm{atom}}}"
-msgstr ""
+msgstr "N_d \\geq \\frac{N}{3N_{\\mathrm{atom}}}"
 
 #: ../../source/almdir/formalism_alm.rst:214
 msgid ""
 "where :math:`N_d` is the number of displacement patterns in the training "
 "dataset."
-msgstr ""
+msgstr "ここで :math:`N_d` は訓練データセット内の変位パターンの数である。"
 
 #: ../../source/almdir/formalism_alm.rst:216
 msgid ""
 "In cross validation, the entire training dataset is divided into smaller "
 "subsets. For each subset, the above condition should be satisfied."
-msgstr ""
+msgstr "交差検証では、訓練データセット全体がより小さな部分集合に分割される。各部分集合について、上記の条件が満たされている必要がある。"
 
 #: ../../source/almdir/formalism_alm.rst:221
 msgid ""
 "H\\. Zou, *The Adaptive Lasso and Its Oracle Properties*, J\\. Am\\. "
 "Stat\\. Assoc\\. **101**, 1418 (2006)."
-msgstr ""
-
+msgstr "H\\. Zou, *The Adaptive Lasso and Its Oracle Properties*, J\\. Am\\. Stat\\. Assoc\\. **101**, 1418 (2006)."

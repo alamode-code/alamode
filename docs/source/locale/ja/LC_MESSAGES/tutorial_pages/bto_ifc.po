@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../source/tutorial_pages/bto_ifc.rst:12
 msgid "BaTiO\\ :sub:`3` : Anharmonic interatomic force constants (IFCs)"
-msgstr ""
+msgstr "BaTiO\\ :sub:`3` : 非調和原子間力定数 (anharmonic interatomic force constants, IFCs)"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:14
 msgid ""
@@ -29,19 +29,19 @@ msgid ""
 "constants (IFCs) using ALAMODE, especially for strongly anharmonic "
 "materials. The target material is cubic BaTiO\\ :sub:`3`, which exhibits "
 "a strong lattice anharmonicity."
-msgstr ""
+msgstr "このページでは、ALAMODE を用いて、特に強い非調和 (anharmonic) 性を持つ物質に対して非調和原子間力定数 (IFCs) を計算する方法を説明します。対象とする物質は、強い格子非調和性を示す立方晶 BaTiO\\ :sub:`3` です。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:17
 msgid "The example input files are provided in **example/BaTiO3/anharm_IFCs**."
-msgstr ""
+msgstr "サンプルの入力ファイルは **example/BaTiO3/anharm_IFCs** に用意されています。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:19
 msgid "Let's move to the example directory."
-msgstr ""
+msgstr "サンプルのディレクトリに移動しましょう。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:29
 msgid "1. Generate the randomly displaced supercells"
-msgstr ""
+msgstr "1. ランダムに変位させたスーパーセル (supercell) の生成"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:32
 msgid ""
@@ -49,13 +49,13 @@ msgid ""
 "displacements for weakly anharmonic materials or materials without "
 "imaginary harmonic frequencies. Please see :ref:`Tutorial 7.6 "
 "<label_tutorial_silicon_ifc>` for details."
-msgstr ""
+msgstr "弱い非調和性を持つ物質や、虚の調和 (harmonic) 振動数を持たない物質に対しては、ランダムな変位 (displacement) を持つスーパーセルをより効率的に生成する方法があります。詳細は :ref:`Tutorial 7.6 <label_tutorial_silicon_ifc>` をご覧ください。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:36
 msgid ""
 "We use the *ab initio* molecular dynamics (AIMD) calculations to generate"
 " the supercells with random displacements."
-msgstr ""
+msgstr "ランダムな変位を持つスーパーセルを生成するために、*第一原理* 分子動力学 (ab initio molecular dynamics, AIMD) 計算を用います。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:38
 msgid ""
@@ -64,34 +64,34 @@ msgid ""
 "by yourself and run the AIMD calculation to obtain :red:`vasprun.xml` "
 "(You can skip this part because :red:`vasprun.xml` is provided in "
 "**1_vasp_md/reference**)."
-msgstr ""
+msgstr "サンプルの VASP 入力は **example/BaTiO3/anharm_IFCs/1_vasp_md** に用意されています。:red:`POTCAR` ファイルをご自身で準備し、AIMD 計算を実行して :red:`vasprun.xml` を取得してください (:red:`vasprun.xml` は **1_vasp_md/reference** に用意されているため、この部分は省略できます)。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:42
 msgid ""
 "Next, we generate the supercells with random atomic displacements from "
 "the AIMD trajectory. First, we move to the **1_configurations** directory"
 " and copy :red:`vasprun.xml`"
-msgstr ""
+msgstr "次に、AIMD の軌跡からランダムな原子変位を持つスーパーセルを生成します。まず、**1_configurations** ディレクトリに移動し、:red:`vasprun.xml` をコピーします。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:51
 msgid ""
 ":red:`POSCAR_ref_supercell` is the structure of the reference supercell "
 "for which we want to calculate the IFCs."
-msgstr ""
+msgstr ":red:`POSCAR_ref_supercell` は、IFCs を計算したい参照スーパーセルの構造です。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:57
 msgid ""
 "Here, the option ``-e 1001:5000:50`` means that we sample from the "
 "1001-th snapshot to the 5000-th snapshot with the sampling step of 50 "
 "time-steps. Thus, 80 configurations are generated in this case."
-msgstr ""
+msgstr "ここで、オプション ``-e 1001:5000:50`` は、1001 番目のスナップショットから 5000 番目のスナップショットまでを、50 タイムステップのサンプリング間隔でサンプリングすることを意味します。したがって、この場合は 80 個の配置が生成されます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:60
 msgid ""
 "The option ``--random --mag 0.04`` adds random displacements of 0.04 "
 "|Angstrom| to each atom in the extracted snapshots to reduce correlations"
 " between successive snapshots."
-msgstr ""
+msgstr "オプション ``--random --mag 0.04`` は、連続するスナップショット間の相関を減らすために、抽出された各スナップショット内の各原子に 0.04 |Angstrom| のランダムな変位を加えます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:65
 msgid ""
@@ -100,15 +100,15 @@ msgid ""
 "atomic forces obtained in AIMD are not directly used to calculate the "
 "IFCs. In fact, we use the following parameters, which are different from "
 "the subsequent calculation of the displacement-force data."
-msgstr ""
+msgstr "AIMD 計算の目的はランダムな構造を生成することだけであり、AIMD で得られる原子に働く力 (force) は IFCs の計算に直接は使われないため、AIMD 計算ではそれほど厳しくない収束基準を用いてもかまいません。実際、ここでは以下のパラメータを用いており、これは後続の変位-力 (displacement-force) データの計算とは異なります。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:69
 msgid "ENCUT = 400, EDIFF = 1.0E-6"
-msgstr ""
+msgstr "ENCUT = 400, EDIFF = 1.0E-6"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:71
 msgid "2x2x2 kmesh"
-msgstr ""
+msgstr "2x2x2 の k メッシュ"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:73
 msgid ""
@@ -116,7 +116,7 @@ msgid ""
 "trajectory widely samples the low-energy landscape of the potential "
 "energy surface. We choose 300 K in this case, which is comparable to or "
 "lower than the structural transition temperatures of the target material."
-msgstr ""
+msgstr "AIMD 計算における温度は、生成される軌跡がポテンシャルエネルギー曲面の低エネルギー領域を広くサンプリングするように選びます。この場合は 300 K を選んでおり、これは対象物質の構造相転移温度と同程度かそれ以下です。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:79
 msgid ""
@@ -125,7 +125,7 @@ msgid ""
 "check the convergence of the calculated physical quantities by changing "
 "the number of random configurations from which we extract the anharmonic "
 "IFCs."
-msgstr ""
+msgstr "ランダムな配置の数は、生成される IFCs の組がその数に対して収束するように選ぶべきです。理想的には、非調和力定数 (anharmonic force constants) を抽出するランダムな配置の数を変えて、計算される物理量の収束を確認すべきです。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:84
 msgid ""
@@ -133,17 +133,17 @@ msgid ""
 "configurations will do for the calculation of cubic and quartic IFCs. We "
 "can reduce the number of configurations if we calculate only the cubic "
 "IFCs."
-msgstr ""
+msgstr "問題によりますが、経験則としては、3 次および 4 次の IFCs の計算には 100〜1000 個の配置で十分です。3 次の IFCs のみを計算する場合は、配置の数を減らすことができます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:91
 msgid "2. Generate the displacement-force data"
-msgstr ""
+msgstr "2. 変位-力データの生成"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:93
 msgid ""
 "We calculate the atomic forces for each random configuration generated in"
 " the previous step."
-msgstr ""
+msgstr "前のステップで生成した各ランダム配置について、原子に働く力を計算します。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:95
 msgid ""
@@ -151,36 +151,36 @@ msgid ""
 " in **example/BaTiO3/anharm_IFCs/2_vasp_dfset**. After running the VASP "
 "calculations, collect the resultant :red:`vasprun.xml` of each "
 "calculation in **example/BaTiO3/anharm_IFCs/2_vasp_dfset**."
-msgstr ""
+msgstr "その他の VASP 入力ファイル (:red:`INCAR` および :red:`KPOINTS`) は **example/BaTiO3/anharm_IFCs/2_vasp_dfset** に用意されています。VASP 計算を実行した後、各計算で得られた :red:`vasprun.xml` を **example/BaTiO3/anharm_IFCs/2_vasp_dfset** に集めてください。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:99
 msgid ""
 "If you want to skip the VASP calculations, please copy or move the 80 "
 ":red:`vasprun.xml` files provided in **2_vasp_dfset/reference** to "
 "**2_vasp_dfset**."
-msgstr ""
+msgstr "VASP 計算を省略したい場合は、**2_vasp_dfset/reference** に用意されている 80 個の :red:`vasprun.xml` ファイルを **2_vasp_dfset** にコピーまたは移動してください。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:102
 msgid "Generate the displacement-force data with the command"
-msgstr ""
+msgstr "次のコマンドで変位-力データを生成します。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:110
 msgid ""
 "The generated :red:`DFSET_AIMD_random` stores the atomic displacements "
 "and the atomic forces in each configuration, from which we can calculate "
 "the anharmonic IFCs."
-msgstr ""
+msgstr "生成された :red:`DFSET_AIMD_random` には、各配置における原子変位と原子に働く力が格納されており、これらから非調和 IFCs を計算できます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:116
 msgid "3. Cross validation (CV)"
-msgstr ""
+msgstr "3. 交差検証 (cross validation, CV)"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:118
 msgid ""
 "We assume that the harmonic force constants are already calculated. "
 "Please use the method explained in :ref:`Tutorial 7.1 "
 "<label_tutorial_01>` for the calculation of harmonic IFCs."
-msgstr ""
+msgstr "ここでは、調和力定数 (harmonic force constants) がすでに計算されているものと仮定します。調和 IFCs の計算には、:ref:`Tutorial 7.1 <label_tutorial_01>` で説明されている方法を用いてください。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:121
 msgid ""
@@ -188,11 +188,11 @@ msgid ""
 "regularization (:math:`\\alpha`) in the elastic-net or adaptive lasso. "
 "Please see :ref:`the documentation <alm_theory_enet>` for the notation "
 "and the theoretical background."
-msgstr ""
+msgstr "交差検証では、elastic-net または adaptive lasso における正則化の最適な強さ (:math:`\\alpha`) を決定します。記法と理論的背景については :ref:`ドキュメント <alm_theory_enet>` をご覧ください。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:124
 msgid "You can run the CV calculation with the following commands."
-msgstr ""
+msgstr "CV 計算は、以下のコマンドで実行できます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:131
 msgid ""
@@ -200,7 +200,7 @@ msgid ""
 "we fix the harmonic IFCs with the values in the given file. This is "
 "because we would like to capture the stability or the curvature of the "
 "potential energy surface at the reference structure accurately."
-msgstr ""
+msgstr ":red:`BTO_alm_cv.in` における ``FC2FIX = ../cBTO222_harmonic.xml`` は、与えられたファイル内の値で調和 IFCs を固定することを意味します。これは、参照構造におけるポテンシャルエネルギー曲面の安定性、すなわち曲率を正確に捉えたいためです。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:135
 msgid ""
@@ -212,11 +212,11 @@ msgid ""
 "restricting the quartic IFCs to up-to-three-body terms and the higher "
 "order IFCs to up-to-two-body terms since the higher-order IFCs will be "
 "more localized in space."
-msgstr ""
+msgstr "``NBODY = 2 3 3`` により、4 次の IFCs を 3 体までの項に制限します。この扱いにより計算コストが減り、自由度の数を減らすことでフィッティングがより頑健になります。``NBODY`` タグの最適な選び方は物質や変位-力データの数に依存しますが、高次の IFCs ほど空間的に局在するため、4 次の IFCs を 3 体まで、より高次の IFCs を 2 体までに制限することを推奨します。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:141
 msgid "Plotting the generated :red:`cBTO222.cvscore` with"
-msgstr ""
+msgstr "生成された :red:`cBTO222.cvscore` を次のようにプロットすると、"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:147
 msgid ""
@@ -224,58 +224,57 @@ msgid ""
 "30`` in ``&optimize``-field to get exactly the same plot. Otherwise, the "
 "calculation is stopped before calculations with small :math:`\\alpha` are"
 " performed to save the computational cost."
-msgstr ""
+msgstr "以下のプロットが得られます。まったく同じプロットを得るには、``&optimize`` フィールドで ``STOP_CRITERION = 30`` を設定する必要があることに注意してください。そうしないと、計算コストを節約するために、小さい :math:`\\alpha` での計算が実行される前に計算が停止します。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:156
 msgid "The result of the CV calculation for BaTiO\\ :sub:`3`."
-msgstr ""
+msgstr "BaTiO\\ :sub:`3` に対する CV 計算の結果。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:158
 msgid ""
 "We can see that the CV score takes a minimum at the optimal "
 ":math:`\\alpha`, which can be read from the last line of "
 ":red:`cBTO222.cvscore`. ::"
-msgstr ""
+msgstr "CV スコアが最適な :math:`\\alpha` で最小値をとることがわかります。この値は :red:`cBTO222.cvscore` の最終行から読み取ることができます。 ::"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:166
 msgid "4. Calculation of IFCs"
-msgstr ""
+msgstr "4. IFCs の計算"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:168
 msgid ""
 "Finally, we calculate the IFCs of BaTiO\\ :sub:`3` in "
 "**example/BaTiO3/anharm_IFCs/4_optimize**."
-msgstr ""
+msgstr "最後に、**example/BaTiO3/anharm_IFCs/4_optimize** で BaTiO\\ :sub:`3` の IFCs を計算します。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:174
 msgid ""
 "To prepare the input file, we copy the input of CV and set ``L1_ALPHA`` "
 "with the optimal value by adding the new line in ``&optimize``-field. ::"
-msgstr ""
+msgstr "入力ファイルを準備するために、CV の入力をコピーし、``&optimize`` フィールドに新しい行を追加して ``L1_ALPHA`` に最適値を設定します。 ::"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:180
 msgid "Also, change ``CV=4`` in ``&optimize``-field to ::"
-msgstr ""
+msgstr "また、``&optimize`` フィールドの ``CV=4`` を次のように変更します。 ::"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:185
 msgid ""
 "You can also use a smaller value for ``CONV_TOL`` to get a more accurate "
 "result."
-msgstr ""
+msgstr "より正確な結果を得るために、``CONV_TOL`` に小さい値を用いることもできます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:187
 msgid "With the input file prepared, run the calculation with"
-msgstr ""
+msgstr "入力ファイルを準備したら、次のコマンドで計算を実行します。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:193
 msgid ""
 "The calculated IFCs are written out in :red:`cBTO222.fcs` and "
 ":red:`cBTO222.xml`."
-msgstr ""
+msgstr "計算された IFCs は :red:`cBTO222.fcs` と :red:`cBTO222.xml` に書き出されます。"
 
 #: ../../source/tutorial_pages/bto_ifc.rst:195
 msgid ""
 "Checking :red:`BTO_alm_opt.log`, we can see that the fitting is "
 "successful with a small residual error. ::"
-msgstr ""
-
+msgstr ":red:`BTO_alm_opt.log` を確認すると、小さな残差誤差でフィッティングが成功していることがわかります。 ::"

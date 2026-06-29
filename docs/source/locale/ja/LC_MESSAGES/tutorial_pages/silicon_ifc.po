@@ -21,39 +21,39 @@ msgstr ""
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:12
 msgid "Si : Anharmonic interatomic force constants (IFCs)"
-msgstr ""
+msgstr "Si : 非調和な原子間力定数 (anharmonic interatomic force constants, IFCs)"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:14
 msgid ""
 "This page explains another method to calculate anharmonic interatomic "
 "force constants (IFCs) using ALAMODE."
-msgstr ""
+msgstr "このページでは、ALAMODE を用いて非調和力定数 (anharmonic force constants, IFCs) を計算する別の方法を説明します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:16
 msgid "The example input files are provided in **example/Si/anharm_IFCs**."
-msgstr ""
+msgstr "サンプルの入力ファイルは **example/Si/anharm_IFCs** に用意されています。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:18
 msgid "Let us move to the example directory."
-msgstr ""
+msgstr "サンプルディレクトリに移動しましょう。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:27
 msgid "1. Calculate the harmonic IFCs"
-msgstr ""
+msgstr "1. 調和力定数を計算する"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:29
 msgid "First, we calculate the harmonic IFCs in the considering supercell."
-msgstr ""
+msgstr "まず、対象とするスーパーセル (supercell) における調和な原子間力定数 (harmonic IFCs) を計算します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:31
 msgid ""
 "The procedure is the same as explained in :ref:`Tutorial 7.1 "
 "<label_tutorial_01>`, so we briefly describe the outline here."
-msgstr ""
+msgstr "手順は :ref:`Tutorial 7.1 <label_tutorial_01>` で説明したものと同じなので、ここでは概略を簡単に述べます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:33
 msgid "We first calculate the displacement patterns by **alm**."
-msgstr ""
+msgstr "まず **alm** で変位 (displacement) パターンを計算します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:40
 msgid ""
@@ -63,18 +63,18 @@ msgid ""
 "obtaining :red:`DFSET_harmonic` (You can skip this part because "
 ":red:`DFSET_harmonic` is provided in this tutorial), calculate the "
 "harmonic IFCs with"
-msgstr ""
+msgstr "次に、生成された ``si222_harmonic.pattern_HARMONIC`` と **VASP_input** ディレクトリ内の入力ファイルを使って VASP の入力ファイルを生成します。VASP 計算を実行して :red:`DFSET_harmonic` を取得した後（このチュートリアルでは :red:`DFSET_harmonic` が提供されているため、この部分はスキップできます）、次のコマンドで調和力定数を計算します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:53
 msgid "2. Generate the displacement-force data"
-msgstr ""
+msgstr "2. 変位力データを生成する"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:55
 msgid ""
 "In :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>`, we used the AIMD "
 "calculation to generate random configurations, from which we calculated "
 "the anharmonic IFCs."
-msgstr ""
+msgstr ":ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` では、AIMD 計算を用いてランダムな配置を生成し、そこから非調和力定数を計算しました。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:58
 msgid ""
@@ -83,43 +83,43 @@ msgid ""
 "without imaginary harmonic frequencies. Here, we use the harmonic IFCs "
 "and perform the independent random sampling from the harmonic PES at a "
 "given temperature."
-msgstr ""
+msgstr "しかし、非調和性が弱い物質や調和な虚振動数を持たない物質では、ポテンシャルエネルギー曲面 (potential energy surface, PES) の低エネルギー領域をより効率的にサンプリングできます。ここでは、調和力定数を用いて、与えられた温度における調和 PES からの独立なランダムサンプリングを行います。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:63
 msgid ""
 "In preparation, we calculate the phonon frequencies and the polarization "
 "vectors at commensurate :math:`q`-points."
-msgstr ""
+msgstr "準備として、整合な (commensurate) :math:`q` 点におけるフォノン (phonon) 振動数と偏極ベクトル (polarization vectors) を計算します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:71
 msgid ""
 "The information on the :math:`q`-points are written out in "
 ":red:`si_anphon.in` as follows."
-msgstr ""
+msgstr ":math:`q` 点に関する情報は、以下のように :red:`si_anphon.in` に書き出されます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:111
 msgid ""
 "Now, delete the unnecessary part of the output and run the **anphon** "
 "calculation."
-msgstr ""
+msgstr "次に、出力の不要な部分を削除して **anphon** 計算を実行します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:117
 msgid ""
 "The calculated phonon frequencies and the polarization vectors are stored"
 " in :red:`si222_harmonic.evec`."
-msgstr ""
+msgstr "計算されたフォノン振動数と偏極ベクトルは :red:`si222_harmonic.evec` に保存されます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:119
 msgid ""
 "With these preparations, we can generate supercells with random "
 "displacements by"
-msgstr ""
+msgstr "これらの準備が整うと、次のコマンドでランダムな変位を加えたスーパーセルを生成できます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:128
 msgid ""
 "Here, we generated ``-nd 100`` configurations by randomly sampling from "
 "the distribution at ``--temp 300`` K in the harmonic PES."
-msgstr ""
+msgstr "ここでは、調和 PES における ``--temp 300`` K の分布からランダムサンプリングを行い、``-nd 100`` 個の配置を生成しました。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:131
 msgid ""
@@ -127,30 +127,30 @@ msgid ""
 "VASP input in **example/Si/anharm_IFCs/1_harmonic/VASP_input**. Then, use"
 " **extract.py** to obtain :red:`DFSET_randomQ` using the procedure "
 "explained in :ref:`Tutorial 7.1 <tutorial_Si_step2>`."
-msgstr ""
+msgstr "**example/Si/anharm_IFCs/1_harmonic/VASP_input** にある VASP の入力を使い、生成された各スーパーセルについて DFT 計算を実行してください。その後、:ref:`Tutorial 7.1 <tutorial_Si_step2>` で説明した手順に従い、**extract.py** を用いて :red:`DFSET_randomQ` を取得します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:138
 msgid ""
 "The imaginary frequencies are replaced by their absolute values in the "
 "random sampling. Thus, the procedure can be performed for the strongly "
 "anharmonic materials as well."
-msgstr ""
+msgstr "ランダムサンプリングでは、虚振動数はその絶対値で置き換えられます。したがって、この手順は非調和性の強い物質に対しても実行できます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:141
 msgid ""
 "However, the user must be careful whether the generated set of random "
 "configurations is a good dataset for calculating IFCs."
-msgstr ""
+msgstr "ただし、生成されたランダム配置の集合が力定数の計算に適したデータセットかどうかは、ユーザーが注意深く確認する必要があります。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:147
 msgid "3. Cross validation (CV)"
-msgstr ""
+msgstr "3. 交差検証 (cross validation, CV)"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:149
 msgid ""
 "In this step, we explain how to run the different sets of CV calculations"
 " separately."
-msgstr ""
+msgstr "このステップでは、異なる CV 計算のセットを個別に実行する方法を説明します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:151
 msgid ""
@@ -160,19 +160,19 @@ msgid ""
 "separate jobs. The preparation of the input files is slightly "
 "complicated, but it will be time-saving when the computational cost of "
 "the CV calculation is significant."
-msgstr ""
+msgstr "異なるセットの計算は互いに独立しているため、並列に実行できます。したがって、複数コアを持つクラスター計算機があれば、各 CV セットの計算を別々のジョブで実行できます。入力ファイルの準備はやや複雑になりますが、CV 計算の計算コストが大きい場合には時間の節約になります。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:157
 msgid ""
 "The input files are :red:`si_alm_cvset1.in` to :red:`si_alm_cvset4.in` in"
 " **example/Si/anharm_IFCs/3_cv**."
-msgstr ""
+msgstr "入力ファイルは **example/Si/anharm_IFCs/3_cv** にある :red:`si_alm_cvset1.in` から :red:`si_alm_cvset4.in` です。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:159
 msgid ""
 "The essential parts of the input file :red:`si_alm_cvset1.in` are as "
 "follows."
-msgstr ""
+msgstr "入力ファイル :red:`si_alm_cvset1.in` の主要部分は以下のとおりです。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:161
 msgid ""
@@ -181,23 +181,23 @@ msgid ""
 "``NEND_CV = 25``) in the validation process in the calculation of the "
 "first CV set (set1). Note that these 25 sets have to be excluded in the "
 "training process (``SKIP = 1-25``)"
-msgstr ""
+msgstr "ここでは ``NDATA = 100`` 個の変位力データがあり、4 セットで CV を行います。したがって、最初の CV セット (set1) の計算では、最初の 25 個のデータ（``NSTART_CV = 1``、``NEND_CV = 25``）を検証プロセスで使用します。これらの 25 セットは訓練プロセスでは除外する必要がある点に注意してください（``SKIP = 1-25``）。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:166
 msgid ""
 "The input files of the other CV sets are set accordingly. It is important"
 " that we use different ``PREFIX`` for each set because the result of "
 "another CV set will overwrite the output file otherwise."
-msgstr ""
+msgstr "他の CV セットの入力ファイルも、同様に設定します。各セットで異なる ``PREFIX`` を使用することが重要です。そうしないと、別の CV セットの結果が出力ファイルを上書きしてしまうためです。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:190
 #: ../../source/tutorial_pages/silicon_ifc.rst:233
 msgid "Run the calculation with"
-msgstr ""
+msgstr "次のコマンドで計算を実行します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:200
 msgid "After all the calculations are finished, collect the cvscore data with"
-msgstr ""
+msgstr "すべての計算が終了したら、次のコマンドで cvscore データを収集します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:208
 msgid ""
@@ -206,40 +206,39 @@ msgid ""
 "middle due to the ``STOP_CRITERION``-tag. If the calculations stop at "
 "different steps, the Python script stops with an error of \"Inconsistent "
 "number of entries\"."
-msgstr ""
+msgstr "``STOP_CRITERION`` タグによって計算が途中で停止するため、計算が実行される :math:`\\alpha` の数は CV セットによって異なる場合があります。計算が異なるステップで停止した場合、Python スクリプトは \"Inconsistent number of entries\" というエラーで停止します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:213
 msgid ""
 "In that case, please manually adjust the cvset files so that the number "
 "of entries is consistent."
-msgstr ""
+msgstr "その場合は、エントリ数が一致するように cvset ファイルを手動で調整してください。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:216
 msgid ""
 "The optimal amplitude of regularization (:math:`\\alpha`) can be read "
 "from the last line of :red:`si222.cvscore`."
-msgstr ""
+msgstr "最適な正則化の振幅 (:math:`\\alpha`) は、:red:`si222.cvscore` の最終行から読み取ることができます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:226
 msgid "4. Calculation of IFCs"
-msgstr ""
+msgstr "4. 力定数の計算"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:228
 msgid ""
 "Finally, we calculate the IFCs of silicon in "
 "**example/Si/anharm_IFCs/4_optimize**."
-msgstr ""
+msgstr "最後に、**example/Si/anharm_IFCs/4_optimize** でシリコンの力定数を計算します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:230
 msgid ""
 "The input file is :red:`si_alm_opt.in`. Set ``CV = 0`` and set the "
 "optimal :math:`\\alpha` with ``L1_ALPHA = 2.25633e-07`` in "
 "``&optimize``-field."
-msgstr ""
+msgstr "入力ファイルは :red:`si_alm_opt.in` です。``CV = 0`` を設定し、``&optimize`` フィールドで ``L1_ALPHA = 2.25633e-07`` として最適な :math:`\\alpha` を設定します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:240
 msgid ""
 "The calculated IFCs are written out in :red:`si222.xml` and "
 ":red:`si222.fcs`. The fitting error is"
-msgstr ""
-
+msgstr "計算された力定数は :red:`si222.xml` と :red:`si222.fcs` に書き出されます。フィッティング誤差は次のとおりです。"
