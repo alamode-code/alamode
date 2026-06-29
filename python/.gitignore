@@ -1,0 +1,10 @@
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+_skbuild/
+wheelhouse/
+.venv/
