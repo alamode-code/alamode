@@ -9,7 +9,7 @@
 .. |Angstrom|   unicode:: U+00C5
 
 BaTiO\ :sub:`3` : An SCPH-based structural optimization example
----------------------------------------------------
+--------------------------------------------------------------------
 
 This page explains how to calculate crystal structures at finite temperatures based on the SCPH theory.
 We calculate the cubic-tetragonal structural phase transition of BaTiO\ :sub:`3`.
@@ -63,6 +63,7 @@ This is necessary to induce spontaneous symmetry breaking from the cubic phase.
 The input file of the anphon calculation is :red:`BTO_scph_thermo.in`.
 The lines
 ::
+
   SET_INIT_STR = 3
   COOLING_U0_INDEX = 5
   COOLING_U0_THR = 0.005

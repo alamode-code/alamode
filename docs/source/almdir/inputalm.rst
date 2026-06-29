@@ -951,23 +951,17 @@ The displacement-force data sets obtained by first-principles (or classical forc
 have to be saved to a file, say *DFSET*. Then, the force constants are estimated by setting ``DFSET =`` *DFSET* and with ``MODE = optimize``.
 
 The *DFSET* file must contain the atomic displacements and corresponding forces in Cartesian coordinate for at least ``NDATA`` structures (displacement patterns)
-in the following format: 
+in the following format (one line per atom, blocks separated by an optional
+comment line beginning with ``#``)::
 
-.. math::
-  :nowrap:
-
-    # Structure number 1 (this is just a comment line)
-    \begin{eqnarray*}
-     u_{x}(1) & u_{y}(1) & u_{z}(1) & f_{x}(1) & f_{y}(1) & f_{z}(1) \\
-     u_{x}(2) & u_{y}(2) & u_{z}(2) & f_{x}(2) & f_{y}(2) & f_{z}(2) \\
-              & \vdots   &          &          & \vdots   &          \\
-     u_{x}(\mathrm{NAT}) & u_{y}(\mathrm{NAT}) & u_{z}(\mathrm{NAT}) & f_{x}(\mathrm{NAT}) & f_{y}(\mathrm{NAT}) & f_{z}(\mathrm{NAT})
-    \end{eqnarray*}
-    # Structure number 2
-    \begin{eqnarray*}
-     u_{x}(1) & u_{y}(1) & u_{z}(1) & f_{x}(1) & f_{y}(1) & f_{z}(1) \\
-              & \vdots   &          &          & \vdots   &          
-    \end{eqnarray*}
+   # Structure number 1 (this is just a comment line)
+   u_x(1)     u_y(1)     u_z(1)     f_x(1)     f_y(1)     f_z(1)
+   u_x(2)     u_y(2)     u_z(2)     f_x(2)     f_y(2)     f_z(2)
+    ...        ...        ...        ...        ...        ...
+   u_x(NAT)   u_y(NAT)   u_z(NAT)   f_x(NAT)   f_y(NAT)   f_z(NAT)
+   # Structure number 2
+   u_x(1)     u_y(1)     u_z(1)     f_x(1)     f_y(1)     f_z(1)
+    ...        ...        ...        ...        ...        ...
 
 Here, ``NAT`` is the number of atoms in the supercell. 
 The unit of displacements and forces must be **bohr** and **Ryd/bohr**, respectively.

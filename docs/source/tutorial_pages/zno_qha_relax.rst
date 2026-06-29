@@ -50,6 +50,7 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
   The name of the input file must be :red:`elastic_constants.in`.
   The format of :red:`elastic_constants.in` is as follows.
   ::
+
     SOEC
     V_cell * C_xx,xx
     V_cell * C_xx,xy
@@ -81,6 +82,7 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
   if we apply the strain :math:`u_{xx}= 0.005`, the atomic force that acts on the first atom is 
   :math:`(f_x, f_y, f_z) = (0.000000,  -0.034812,  -0.022224)` [Ry/Bohr], e.t.c.
   ::
+
     xx 0.005 1.0
     0.000000  -0.034812  -0.022224
     0.000000  0.034812  -0.022224
@@ -96,6 +98,7 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
   
   For example,
   ::
+
     xx 0.005 1.0 ZnO442_harmonic_xx_0005.xml
 
   in :red:`strain_harmonic.in` means that :red:`ZnO442_harmonic_xx_0005.xml` is the XML file of the harmonic IFCs with the strain :math:`u_{xx} = 0.005`. 
@@ -111,13 +114,15 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
 
   the corresponding :red:`strain_harmonic.in` would be like
   ::
+
     xx 0.005 0.5 ZnO442_harmonic_xx_0005.xml
     xx 0.005 0.5 ZnO442_harmonic_xx_minus_0005.xml
 
   with respective weights of ``0.5`` (:red:`ZnO442_harmonic_xx_minus_0005.xml` is not provided in this tutorial).
 
   For the off-diagonal strain,
-  :: 
+  ::
+
     yz 0.005 1.0 ZnO442_harmonic_yz_00025.xml
   
   means that :red:`ZnO442_harmonic_yz_00025.xml` is the set of harmonic IFCs with :math:`u_{yz} = u_{zy} = 0.005/2 = 0.0025`.

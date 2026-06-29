@@ -221,6 +221,8 @@ latex_elements = {
     "preamble": """
 
 \\usepackage{bm}
+\\usepackage{mathrsfs}
+\\usepackage{braket}
 """,
 }
 

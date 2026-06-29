@@ -9,7 +9,7 @@
 .. |Angstrom|   unicode:: U+00C5 
 
 BaTiO\ :sub:`3` : Anharmonic interatomic force constants (IFCs)
----------------------------------------------------
+--------------------------------------------------------------------
 
 This page explains how to calculate anharmonic interatomic force constants (IFCs) using ALAMODE, especially for strongly anharmonic materials.
 The target material is cubic BaTiO\ :sub:`3`, which exhibits a strong lattice anharmonicity.
@@ -26,7 +26,7 @@ Let's move to the example directory.
 .. _tutorial_BTO_IFC_step1:
 
 1. Generate the randomly displaced supercells
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
   There is a more efficient way to generate supercells with random displacements 
@@ -157,6 +157,7 @@ Otherwise, the calculation is stopped before calculations with small :math:`\alp
 
 We can see that the CV score takes a minimum at the optimal :math:`\alpha`, which can be read from the last line of :red:`cBTO222.cvscore`.
 ::
+
   # Minimum CVSCORE at alpha = 2.51189e-06
 
 .. _tutorial_BTO_IFC_step4:
@@ -173,10 +174,12 @@ Finally, we calculate the IFCs of BaTiO\ :sub:`3` in **example/BaTiO3/anharm_IFC
 To prepare the input file, we copy the input of CV and set ``L1_ALPHA`` with the optimal value 
 by adding the new line in ``&optimize``-field.
 ::
-  L1_ALPHA = 2.51189e-06 
+
+  L1_ALPHA = 2.51189e-06
 
 Also, change ``CV=4`` in ``&optimize``-field to
 ::
+
   CV = 0 # switch off CV
 
 You can also use a smaller value for ``CONV_TOL`` to get a more accurate result.
@@ -191,6 +194,7 @@ The calculated IFCs are written out in :red:`cBTO222.fcs` and :red:`cBTO222.xml`
 
 Checking :red:`BTO_alm_opt.log`, we can see that the fitting is successful with a small residual error.
 ::
+
   RESIDUAL (%): 3.91121
 
 
