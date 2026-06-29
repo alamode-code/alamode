@@ -175,12 +175,14 @@ NB_MODULE(_alm, m)
         .def("set_forceconstant_basis", &ALM::set_forceconstant_basis)
         .def("get_forceconstant_basis", &ALM::get_forceconstant_basis)
         .def("init_fc_table", &ALM::init_fc_table)
+        .def("ready_all_constraints", &ALM::ready_all_constraints)
         .def("get_maxorder", &ALM::get_maxorder)
 
         // -- constraints / fixing ---------------------------------------------
         .def("set_constraint_mode", &ALM::set_constraint_mode)
         .def("set_algebraic_constraint", &ALM::set_algebraic_constraint)
         .def("set_rotation_axis", &ALM::set_rotation_axis)
+        .def("set_fc_file", &ALM::set_fc_file)  // e.g. FC2FIX: set_fc_file(2, "supercell.h5")
         .def("set_fc_fix", &ALM::set_fc_fix)
         .def("set_forceconstants_to_fix",
              [](ALM &self, const std::vector<std::vector<int>> &intpair_fix,

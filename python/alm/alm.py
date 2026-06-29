@@ -210,6 +210,13 @@ class ALM:
         self._maxorder = maxorder
         self._defined = True
 
+    def fix_force_constants_from_file(self, order, fc_file):
+        """Fix the `order`-th FCs (order=2 harmonic, 3 cubic, ...) to those in `fc_file`
+        (ALM .xml/.h5). Mirrors the CLI FC2FIX/FC3FIX tags. Call before define()."""
+        self._check()
+        self._core.set_fc_file(order, str(fc_file))
+        self._core.set_fc_fix(order, True)
+
     def set_constraint(self, translation=True, rotation=False):
         """ICONST: 11 = algebraic translational invariance (acoustic sum rule)."""
         self._check()
