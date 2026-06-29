@@ -1,0 +1,8 @@
+# Languages published for this branch's documentation, one code per line.
+# The first entry is the default (the per-version landing page redirects to it).
+# The docs CI workflow reads this file to decide which languages to build and
+# lists them in the per-version languages.json the language switcher reads.
+# 'en' is the source language; others are gettext translations under
+# docs/source/locale/<code>/. Keep in sync with LANGUAGES in docs/Makefile.
+en
+ja

@@ -1,0 +1,268 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:12
+msgid "BaTiO\\ :sub:`3` : An SCPH-based structural optimization example"
+msgstr "BaTiO\\ :sub:`3` : SCPHに基づく構造最適化の例"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:14
+msgid ""
+"This page explains how to calculate crystal structures at finite "
+"temperatures based on the SCPH theory. We calculate the cubic-tetragonal "
+"structural phase transition of BaTiO\\ :sub:`3`. We fix the shape of the "
+"unit cell and calculate the temperature(:math:`T`)-dependence of the "
+"atomic positions."
+msgstr "このページでは、SCPH理論に基づいて有限温度における結晶構造を計算する方法を説明します。ここでは、BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移を計算します。単位胞 (unit cell) の形状を固定し、原子位置の温度 (:math:`T`) 依存性を計算します。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:18
+msgid "The example input files are provided in **example/BaTiO3/scph_relax**."
+msgstr "例題の入力ファイル (input file) は **example/BaTiO3/scph_relax** に用意されています。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:20
+msgid "Let's move to the example directory"
+msgstr "例題のディレクトリに移動しましょう"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:30
+msgid "1. Prepare force constants"
+msgstr "1. 力定数 (force constants) を準備する"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:32
+msgid ""
+"This tutorial assumes that the harmonic and anharmonic force constants "
+"are already calculated up to the fourth order. Please copy the file of "
+"IFCs calculated in :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` to the "
+"current directory."
+msgstr "このチュートリアル (tutorial) では、調和 (harmonic) および非調和 (anharmonic) 力定数が4次まですでに計算されていることを前提とします。:ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` で計算した原子間力定数 (IFCs) のファイルをカレントディレクトリにコピーしてください。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:42
+msgid ""
+"We need to calculate the force constants in the phase with the highest "
+"symmetry (cubic phase in the case of BaTiO\\ :sub:`3`) to calculate the "
+"structural phase transitions. This is because the calculated set of IFCs "
+"satisfies the symmetry at this reference structure."
+msgstr "構造相転移を計算するには、最も高い対称性を持つ相（BaTiO\\ :sub:`3` の場合は立方晶相）で力定数を計算する必要があります。これは、計算された原子間力定数の組がこの参照構造における対称性を満たすためです。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:46
+msgid ""
+"Suppose we calculate the IFCs at orthorhombic structure, for example. In "
+"that case, the generated IFCs do not satisfy the symmetry between the "
+"states with opposite polarizations, and the structure will not converge "
+"to the high-symmetry cubic phase at high temperatures."
+msgstr "例えば、斜方晶構造で原子間力定数を計算するとします。その場合、生成された原子間力定数は反対の分極を持つ状態間の対称性を満たさず、構造は高温で高対称な立方晶相に収束しません。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:53
+msgid "2. Prepare the input file"
+msgstr "2. 入力ファイルを準備する"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:55
+msgid ""
+"In addition to the input file of the SCPH calculation at the fixed "
+"reference structure (See :ref:`Tutorial 7.4 <label_tutorial_sto_scph>` "
+"for example), we need to set ``RELAX_STR``-tag in ``&scph``-field, "
+"``&relax``-field, and ``&displace``-field properly."
+msgstr "固定された参照構造でのSCPH計算の入力ファイル（例として :ref:`Tutorial 7.4 <label_tutorial_sto_scph>` を参照）に加えて、``&scph`` フィールドの ``RELAX_STR`` タグ、``&relax`` フィールド、``&displace`` フィールドを適切に設定する必要があります。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:59
+msgid ""
+"We specify the initial atomic displacements in ``&displace``-field, which"
+" are added to the high-symmetry reference structure. This is necessary to"
+" induce spontaneous symmetry breaking from the cubic phase."
+msgstr "``&displace`` フィールドで初期の原子変位 (displacement) を指定します。これは高対称な参照構造に加えられます。これは立方晶相からの自発的対称性の破れを誘起するために必要です。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:63
+msgid ""
+"The input file of the anphon calculation is :red:`BTO_scph_thermo.in`. "
+"The lines ::"
+msgstr "anphon計算の入力ファイルは :red:`BTO_scph_thermo.in` です。次の行 ::"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:71
+msgid ""
+"are for the cooling calculation. With ``SET_INIT_STR = 3``, the initial "
+"structure of the SCPH-based structural optimization is set from "
+"``&displace``-field if the structure at the previous temperature "
+"converges to the high-symmetry phase. The structure is considered to be "
+"in the high-symmetry phase if the ``COOLING_U0_INDEX`` th component of "
+"the atomic displacement is smaller than ``COOLING_U0_THR`` [Bohr]. "
+"Because we count the components from zero, ``COOLING_U0_INDEX = 5`` means"
+" that we focus on the :math:`z`-component of the second atom (Ti). Please"
+" see :ref:`the documentation <anphon_cooling_u0_index>` for more detailed"
+" explanations."
+msgstr "は冷却計算用です。``SET_INIT_STR = 3`` の場合、前の温度での構造が高対称相に収束していれば、SCPHに基づく構造最適化の初期構造が ``&displace`` フィールドから設定されます。原子変位の ``COOLING_U0_INDEX`` 番目の成分が ``COOLING_U0_THR`` [Bohr] より小さい場合、構造は高対称相にあると見なされます。成分はゼロから数えるため、``COOLING_U0_INDEX = 5`` は2番目の原子 (Ti) の :math:`z` 成分に着目することを意味します。より詳しい説明については :ref:`the documentation <anphon_cooling_u0_index>` を参照してください。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:81
+msgid ""
+"To perform the heating calculation, set ``LOWER_TEMP = 0`` in "
+"``&scph``-field and ``SET_INIT_STR = 2``. Then, write the low-temperature"
+" structure to the ``&displace``-field."
+msgstr "加熱計算を行うには、``&scph`` フィールドで ``LOWER_TEMP = 0`` および ``SET_INIT_STR = 2`` を設定します。そして、低温の構造を ``&displace`` フィールドに記述します。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:85
+msgid ""
+"We use a coarse SCPH :math:`q`-mesh of ``KMESH_SCPH = 4 4 4`` to save "
+"computational cost. Convergence with respect to ``KMESH_SCPH`` and the "
+"threshold ``COORD_CONV_TOL`` needs to be carefully checked to obtain "
+"accurate calculation results."
+msgstr "計算コストを節約するため、``KMESH_SCPH = 4 4 4`` という粗いSCPH :math:`q` メッシュを使用します。正確な計算結果を得るには、``KMESH_SCPH`` および閾値 ``COORD_CONV_TOL`` に関する収束を注意深く確認する必要があります。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:91
+msgid ""
+"The convergence of the structure gets significantly slower right at the "
+"vicinity of the phase transition because the gradient of the free energy "
+"almost vanishes. In such cases, getting a smooth :math:`T`-dependence for"
+" materials with more complicated structures is sometimes difficult. This "
+"problem can be partially avoided by choosing a larger :math:`T`-step and "
+"estimating the transition temperature from the crossing point of the free"
+" energies with different phases."
+msgstr "相転移のすぐ近傍では、自由エネルギーの勾配がほとんど消失するため、構造の収束が著しく遅くなります。このような場合、より複雑な構造を持つ材料について滑らかな :math:`T` 依存性を得ることが難しいことがあります。この問題は、より大きな :math:`T` ステップを選び、異なる相の自由エネルギーの交点から転移温度を見積もることで部分的に回避できます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:99
+msgid "Now, run the calculation with"
+msgstr "それでは、次のコマンドで計算を実行します"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:108
+msgid ""
+"The calculation can takes more than 10 minutes if you don't use "
+"parallelizations. If you want to try the calculation in a shorter time, "
+"please use a larger value for ``COORD_CONV_TOL = 1.0e-5`` or ``DT = 25``,"
+" or make ``TMAX = 400`` smaller. The structure will not be completely "
+"convergent for large ``COORD_CONV_TOL``, but you will be able to get the "
+"overview of the calculation."
+msgstr "並列化を使用しない場合、計算には10分以上かかることがあります。より短い時間で計算を試したい場合は、``COORD_CONV_TOL = 1.0e-5`` や ``DT = 25`` に大きな値を使用するか、``TMAX = 400`` を小さくしてください。``COORD_CONV_TOL`` が大きいと構造は完全には収束しませんが、計算の概要を把握することができます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:115
+msgid ""
+"The calculation time may be shorter in the future as we will implement a "
+"more sophisticated algorithm for the structure update."
+msgstr "構造更新のためのより洗練されたアルゴリズムを実装する予定であるため、計算時間は将来的に短くなる可能性があります。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:119
+msgid "3. Analyze the calculation results"
+msgstr "3. 計算結果を解析する"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:121
+msgid "Plotting the result with"
+msgstr "次のコマンドで結果をプロットすると"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:127
+msgid "you will get the following plot."
+msgstr "次のプロットが得られます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:129
+msgid ""
+"The atomic displacements are zero at high temperatures, where the "
+"structure converges to the high-symmetry cubic phase. At low "
+"temperatures, the atoms are displaced along the :math:`z`-direction, and "
+"the structure is in the tetragonal phase. The estimated transition "
+"temperature (:math:`T_c`) is around 150~175 K."
+msgstr "高温では原子変位がゼロであり、構造は高対称な立方晶相に収束します。低温では、原子は :math:`z` 方向に変位し、構造は正方晶相になります。見積もられた転移温度 (:math:`T_c`) はおよそ150~175 Kです。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:139
+msgid ""
+"The :math:`T`-dependence of the atomic displacements in cubic-tetragonal "
+"structural phase transition of BaTiO\\ :sub:`3`."
+msgstr "BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移における原子変位の :math:`T` 依存性。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:142
+msgid "The plot of the free energy can be obtained with"
+msgstr "自由エネルギーのプロットは次のコマンドで得られます"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:148
+#, python-brace-format
+msgid ""
+"We can see that static energy :math:`U_0` monotonically increases while "
+"the vibrational free energy :math:`F_{vib}` decreases monotonically with "
+"temperature. Such changes in :math:`U_0` and :math:`F_{vib}` are "
+"especially drastic near the phase transition. The change of the total "
+"free energy is not as significant because the free energies of the two "
+"phases are equal at :math:`T_c`. Thus, we can see the competition between"
+" the enthalpy and the entropic terms in the :math:`T`-dependence of the "
+"crystal structure."
+msgstr "静的エネルギー :math:`U_0` が単調に増加する一方で、振動自由エネルギー :math:`F_{vib}` は温度とともに単調に減少することがわかります。このような :math:`U_0` と :math:`F_{vib}` の変化は、特に相転移付近で顕著です。2つの相の自由エネルギーは :math:`T_c` で等しいため、全自由エネルギーの変化はそれほど大きくありません。このように、結晶構造の :math:`T` 依存性において、エンタルピー項とエントロピー項の競合を見ることができます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:161
+msgid ""
+"The :math:`T`-dependence of the free energy in cubic-tetragonal "
+"structural phase transition of BaTiO\\ :sub:`3`."
+msgstr "BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移における自由エネルギーの :math:`T` 依存性。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:166
+msgid ""
+"We can estimate :math:`T_c` more accurately from the crossing point of "
+"the free energies of different phases."
+msgstr "異なる相の自由エネルギーの交点から、:math:`T_c` をより正確に見積もることができます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:168
+#, python-brace-format
+msgid ""
+"If we perform the cooling calculation without initial displacement, we "
+"will get the free energy of the cubic phase with lower temperatures. If "
+"we perform the heating calculation, we may get the free energy of the "
+"tetragonal phase with higher temperatures. Then, we can find the crossing"
+" point if the :math:`T`-step (``DT``) is small enough. If ``DT`` is too "
+"large to see the crossing point and the hysteresis, we can extrapolate "
+"the free energy difference :math:`F_{cubic}-F_{tetra}` from the low "
+"temperature to estimate :math:`T_c`."
+msgstr "初期変位なしで冷却計算を行うと、低温側で立方晶相の自由エネルギーが得られます。加熱計算を行うと、高温側で正方晶相の自由エネルギーが得られる場合があります。そして、:math:`T` ステップ (``DT``) が十分に小さければ交点を見つけることができます。``DT`` が大きすぎて交点やヒステリシスが見えない場合は、自由エネルギー差 :math:`F_{cubic}-F_{tetra}` を低温側から外挿して :math:`T_c` を見積もることができます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:177
+msgid ""
+"BaTiO\\ :sub:`3` shows a three-step structural phase transition between "
+"four different phases. For the other two phase transitions that occur at "
+"lower temperatures (tetragonal-orthorhombic and orthorhombic-rhombohedral"
+" transition), the symmetry of the low-:math:`T` phases are not subgroups "
+"of the symmetry of the high-:math:`T` phases."
+msgstr "BaTiO\\ :sub:`3` は4つの異なる相の間で3段階の構造相転移を示します。より低温で起こる他の2つの相転移（正方晶-斜方晶および斜方晶-菱面体晶転移）については、低 :math:`T` 相の対称性は高 :math:`T` 相の対称性の部分群ではありません。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:181
+msgid ""
+"In such cases, we recommend calculating cubic-orthorhombic and cubic-"
+"rhombohedral phase transitions separately and comparing the free energies"
+" because"
+msgstr "このような場合、立方晶-斜方晶および立方晶-菱面体晶の相転移を個別に計算し、自由エネルギーを比較することを推奨します。その理由は次のとおりです"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:184
+msgid ""
+"The calculated hysteresis does not necessarily reflect the physics if the"
+" transition is strongly first-order."
+msgstr "転移が強い一次転移である場合、計算されたヒステリシスは必ずしも物理を反映しません。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:186
+msgid ""
+"The symmetry makes the calculation more stable and efficient. If we "
+"directly calculate the tetra-ortho transition, the symmetry used in the "
+"calculation is the common subgroup of the symmetry groups of these two "
+"phases, while we can take advantage of the full symmetry of the "
+"orthorhombic phase if we calculate the cubic-ortho transition instead."
+msgstr "対称性は計算をより安定かつ効率的にします。正方晶-斜方晶転移を直接計算すると、計算で使用される対称性はこれら2つの相の対称群の共通部分群になりますが、代わりに立方晶-斜方晶転移を計算すると斜方晶相の完全な対称性を活用できます。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:192
+msgid ""
+"We will need to prepare additional inputs, the elastic constants, and the"
+" strain-harmonic-IFC coupling if we relax the unit cell as well. The "
+"strain-force coupling is not necessary for BaTiO\\ :sub:`3` because they "
+"are zero from symmetry."
+msgstr "単位胞も緩和する場合は、追加の入力、弾性定数、およびひずみ-調和IFC結合 (strain-harmonic-IFC coupling) を準備する必要があります。ひずみ-力結合はBaTiO\\ :sub:`3` では対称性からゼロになるため必要ありません。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:195
+msgid ""
+"Please see the :ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` for the"
+" details of the preparation of these inputs."
+msgstr "これらの入力の準備の詳細については、:ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` を参照してください。"

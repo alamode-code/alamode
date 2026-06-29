@@ -1,0 +1,536 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/install.rst:2
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../source/install.rst:5
+msgid "Requirement"
+msgstr "必要要件"
+
+#: ../../source/install.rst:8
+msgid "Mandatory requirements"
+msgstr "必須要件"
+
+#: ../../source/install.rst:10
+msgid "C++ compiler (supporting the C++17 standard)"
+msgstr "C++コンパイラ (C++17規格をサポートするもの)"
+
+#: ../../source/install.rst:11
+msgid "LAPACK and BLAS libraries"
+msgstr "LAPACKおよびBLASライブラリ"
+
+#: ../../source/install.rst:12
+msgid "MPI library (OpenMPI, MPICH2, IntelMPI, etc.)"
+msgstr "MPIライブラリ (OpenMPI、MPICH2、IntelMPIなど)"
+
+#: ../../source/install.rst:13
+msgid "`Boost C++ library <http://www.boost.org>`_ (version >= 1.66)"
+msgstr "`Boost C++ライブラリ <http://www.boost.org>`_ (バージョン >= 1.66)"
+
+#: ../../source/install.rst:14
+msgid "`Eigen3 library <http://eigen.tuxfamily.org/>`_"
+msgstr "`Eigen3ライブラリ <http://eigen.tuxfamily.org/>`_"
+
+#: ../../source/install.rst:15
+msgid "`spglib <https://atztogo.github.io/spglib/>`_"
+msgstr "`spglib <https://atztogo.github.io/spglib/>`_"
+
+#: ../../source/install.rst:16
+msgid "`HDF5 library <https://www.hdfgroup.org/solutions/hdf5/>`_"
+msgstr "`HDF5ライブラリ <https://www.hdfgroup.org/solutions/hdf5/>`_"
+
+#: ../../source/install.rst:17
+msgid "`CMake <https://cmake.org>`_ (version >= 3.17 and < 4.0)"
+msgstr "`CMake <https://cmake.org>`_ (バージョン >= 3.17 かつ < 4.0)"
+
+#: ../../source/install.rst:19
+msgid "No worries! All of these libraries can be installed easily by using conda."
+msgstr "ご心配なく! これらのライブラリはすべてcondaを使って簡単にインストールできます。"
+
+#: ../../source/install.rst:21
+msgid ""
+"In addition to the above requirements, users have to get and install a "
+"first-principles package (such as VASP_, QUANTUM-ESPRESSO_, OpenMX_, or "
+"xTAPP_) or another force field package (such as LAMMPS_) by themselves in"
+" order to compute harmonic and anharmonic force constants."
+msgstr "上記の要件に加えて、調和力定数 (harmonic force constants) および非調和力定数 (anharmonic force constants) を計算するためには、第一原理計算パッケージ (VASP_、QUANTUM-ESPRESSO_、OpenMX_、xTAPP_ など) または別の力場パッケージ (LAMMPS_ など) を、ユーザー自身で入手してインストールする必要があります。"
+
+#: ../../source/install.rst:33
+msgid "Optional requirements"
+msgstr "オプションの要件"
+
+#: ../../source/install.rst:35
+msgid "Python (>= 3.x), Numpy, and Matplotlib"
+msgstr "Python (>= 3.x)、Numpy、Matplotlib"
+
+#: ../../source/install.rst:36
+msgid "XcrySDen_ or VMD_"
+msgstr "XcrySDen_ または VMD_"
+
+#: ../../source/install.rst:38
+msgid ""
+"We provide some small scripts written in Python for visualizing phonon "
+"dispersion relations, phonon DOSs, etc. To use these scripts, one needs "
+"to install the above Python packages. Additionally, XcrySDen is necessary"
+" to visualize the normal mode directions and animate the normal mode. VMD"
+" may be more useful to make an animation, but it may be replaced by any "
+"other visualization software which supports the XYZ format."
+msgstr "フォノン (phonon) 分散関係やフォノン状態密度 (DOS) などを可視化するための、Pythonで書かれた小さなスクリプトをいくつか提供しています。これらのスクリプトを使うには、上記のPythonパッケージをインストールする必要があります。さらに、規格振動 (normal mode) の方向を可視化したり規格振動をアニメーション表示したりするにはXcrySDenが必要です。アニメーションの作成にはVMDの方が便利かもしれませんが、XYZフォーマットをサポートする他の可視化ソフトウェアで置き換えることもできます。"
+
+#: ../../source/install.rst:48
+msgid "Install using conda (recommended for non-experts)"
+msgstr "condaを使ったインストール (専門家でない方に推奨)"
+
+#: ../../source/install.rst:50
+msgid ""
+"This option is recommended for users who want a reproducible build with "
+"minimal manual setup. It follows the same conda environment used by the "
+"GitHub Actions tests. If you need the best performance for large "
+"production runs, especially large sparse least-squares fits, see the "
+":ref:`native installation <install_native>` section and the :ref:`linear-"
+"algebra backend notes <install_backends>`."
+msgstr "このオプションは、最小限の手動セットアップで再現可能なビルドを求めるユーザーに推奨されます。GitHub Actionsのテストで使われているものと同じconda環境に従います。大規模な本番実行、特に大規模な疎な最小二乗フィッティングで最高の性能が必要な場合は、:ref:`ネイティブインストール <install_native>` のセクションと :ref:`線形代数バックエンドに関する注記 <install_backends>` を参照してください。"
+
+#: ../../source/install.rst:58
+msgid "Step 1. Preparing build tools by conda"
+msgstr "ステップ1. condaによるビルドツールの準備"
+
+#: ../../source/install.rst:60
+msgid "At first, prepare a conda environment named ``alamode``. ::"
+msgstr "まず、``alamode`` という名前のconda環境を用意します。 ::"
+
+#: ../../source/install.rst:66
+msgid ""
+"If ``git`` is not available on your system, install it before downloading"
+" the source, for example with ``conda install -c conda-forge git`` after "
+"activating the environment. After the source tree is downloaded in Step "
+"2, update this environment from ``etc/alamode-environment.yml``. That "
+"environment file installs the compiler tools, OpenMPI, Boost, Eigen, "
+"CMake, spglib, HDF5, FFTW, NumPy, SciPy, and h5py from conda-forge, "
+"matching the GitHub Actions workflow."
+msgstr "システムに ``git`` がない場合は、ソースをダウンロードする前にインストールしてください。例えば、環境をアクティベートした後に ``conda install -c conda-forge git`` でインストールできます。ステップ2でソースツリーをダウンロードした後、``etc/alamode-environment.yml`` からこの環境を更新してください。この環境ファイルは、GitHub Actionsのワークフローに合わせて、コンパイラツール、OpenMPI、Boost、Eigen、CMake、spglib、HDF5、FFTW、NumPy、SciPy、h5pyをconda-forgeからインストールします。"
+
+#: ../../source/install.rst:75 ../../source/install.rst:385
+msgid "Step 2. Download source"
+msgstr "ステップ2. ソースのダウンロード"
+
+#: ../../source/install.rst:77
+msgid "Download source files from GitHub repository::"
+msgstr "GitHubリポジトリからソースファイルをダウンロードします::"
+
+#: ../../source/install.rst:85
+msgid ""
+"Use the branch that corresponds to the documentation you are reading. For"
+" the development documentation and the current GitHub workflow, this is "
+"``2.0dev``. The directory structure supposed in this document is shown as"
+" below::"
+msgstr "お読みになっているドキュメントに対応するブランチを使用してください。開発版ドキュメントおよび現在のGitHubワークフローでは、これは ``2.0dev`` です。この文書で想定するディレクトリ構造を以下に示します::"
+
+#: ../../source/install.rst:108
+msgid "The meaning of each subdirectory is as follows:"
+msgstr "各サブディレクトリの意味は以下のとおりです:"
+
+#: ../../source/install.rst:110
+msgid "alm/      : Source files of alm (force constant calculator)"
+msgstr "alm/      : alm (力定数計算プログラム) のソースファイル"
+
+#: ../../source/install.rst:111
+msgid "anphon/   : Source files of anphon (anharmonic phonon calculator)"
+msgstr "anphon/   : anphon (非調和フォノン計算プログラム) のソースファイル"
+
+#: ../../source/install.rst:112
+msgid "docs/     : Source files for making documents"
+msgstr "docs/     : ドキュメント作成用のソースファイル"
+
+#: ../../source/install.rst:113
+msgid "example/  : Example files"
+msgstr "example/  : サンプルファイル"
+
+#: ../../source/install.rst:114
+msgid "external/ : Third-party include files"
+msgstr "external/ : サードパーティのインクルードファイル"
+
+#: ../../source/install.rst:115
+msgid "include/  : Commonly-used include files"
+msgstr "include/  : 共通して使われるインクルードファイル"
+
+#: ../../source/install.rst:116
+msgid "tools/    : Small auxiliary programs and scripts"
+msgstr "tools/    : 小さな補助プログラムとスクリプト"
+
+#: ../../source/install.rst:120
+msgid "Step 3. Build by CMake"
+msgstr "ステップ3. CMakeによるビルド"
+
+#: ../../source/install.rst:122
+msgid ""
+"If you want to build all binaries (**alm**, **anphon**, and the others), "
+"please use ``CMakeLists.txt`` in the ``$HOME/alamode`` directory. ::"
+msgstr "すべてのバイナリ (**alm**、**anphon**、その他) をビルドしたい場合は、``$HOME/alamode`` ディレクトリにある ``CMakeLists.txt`` を使用してください。 ::"
+
+#: ../../source/install.rst:130
+#, python-brace-format
+msgid ""
+"Please make sure that cmake detected the C++ compiler correctly. If the "
+"automatic detection fails, you can specify the compilers by using the "
+"``-DCMAKE_C_COMPILER`` and ``-DCMAKE_CXX_COMPILER`` options. If ``${CC}``"
+" and ``${CXX}`` variables are not set properly, you may need to ``conda "
+"deactivate`` once and ``conda activate alamode`` again."
+msgstr "cmakeがC++コンパイラを正しく検出したことを確認してください。自動検出に失敗した場合は、``-DCMAKE_C_COMPILER`` および ``-DCMAKE_CXX_COMPILER`` オプションを使ってコンパイラを指定できます。``${CC}`` および ``${CXX}`` 変数が正しく設定されていない場合は、一度 ``conda deactivate`` してから再度 ``conda activate alamode`` する必要があるかもしれません。"
+
+#: ../../source/install.rst:134
+msgid "After the cmake configuration finishes, build the binaries by ::"
+msgstr "cmakeの構成が完了したら、次のコマンドでバイナリをビルドします ::"
+
+#: ../../source/install.rst:139
+msgid ""
+"It will create all binaries in alm/, anphon/, and tools/ subdirectories "
+"under the current directory (_build). You can specify the binary to "
+"build, for example, as ::"
+msgstr "これにより、カレントディレクトリ (_build) 以下の alm/、anphon/、tools/ の各サブディレクトリにすべてのバイナリが作成されます。例えば、次のようにビルドするバイナリを指定できます ::"
+
+#: ../../source/install.rst:147
+msgid ""
+"If the build of **alm** fails due to an error related to spglib, e.g., "
+"``cannot find -lsymspg``, please add the ``-DSPGLIB_ROOT`` option as ::"
+msgstr "spglibに関連するエラー (例えば ``cannot find -lsymspg``) のために **alm** のビルドが失敗する場合は、次のように ``-DSPGLIB_ROOT`` オプションを追加してください ::"
+
+#: ../../source/install.rst:153
+msgid ""
+"Also, when using the binaries, it may be necessary to set "
+"``$LD_LIBRARY_PATH`` as ::"
+msgstr "また、バイナリを使用する際には、次のように ``$LD_LIBRARY_PATH`` を設定する必要があるかもしれません ::"
+
+#: ../../source/install.rst:162
+msgid ""
+"Install using native environment (recommended for performance-critical "
+"runs)"
+msgstr "ネイティブ環境を使ったインストール (性能が重要な実行に推奨)"
+
+#: ../../source/install.rst:164
+msgid ""
+"Use a native installation when performance matters more than convenience:"
+" large supercells, large sparse sensing matrices, numerically constrained"
+" sparse OLS fits (``SPARSE = 1`` with ``ICONST = 1, 2, 3, 4``), or "
+"repeated production runs on HPC systems. The conda build is convenient "
+"and reproducible, but native compilers and optimized sparse backends such"
+" as MKL/PARDISO or SuiteSparse can be substantially faster and more "
+"memory-efficient for these large-scale sparse problems."
+msgstr "利便性よりも性能が重要な場合は、ネイティブインストールを使用してください。例えば、大規模なスーパーセル (supercell)、大規模な疎なセンシング行列、数値的に拘束された疎なOLSフィッティング (``SPARSE = 1`` かつ ``ICONST = 1, 2, 3, 4``)、あるいはHPCシステムでの本番実行の繰り返しなどです。condaビルドは便利で再現性がありますが、これらの大規模な疎な問題に対しては、ネイティブコンパイラやMKL/PARDISO・SuiteSparseのような最適化された疎ソルバーのバックエンドの方が、大幅に高速でメモリ効率も良い場合があります。"
+
+#: ../../source/install.rst:172
+msgid ""
+"The example below uses Intel oneAPI compilers and the MKL/PARDISO backend"
+" (``-DUSE_MKL_BACKEND=yes``), which is the recommended high-performance "
+"configuration when available."
+msgstr "以下の例では、Intel oneAPIコンパイラとMKL/PARDISOバックエンド (``-DUSE_MKL_BACKEND=yes``) を使用します。これは利用可能な場合に推奨される高性能構成です。"
+
+#: ../../source/install.rst:180
+msgid "Optional linear-algebra backends"
+msgstr "オプションの線形代数バックエンド"
+
+#: ../../source/install.rst:182
+msgid ""
+"By default, ALAMODE links against the LAPACK/BLAS libraries detected by "
+"CMake. This is sufficient for small and medium calculations. For large "
+"sparse least-squares problems, especially ``LMODEL = ols``, ``SPARSE = "
+"1`` with numerical constraints ``ICONST = 1, 2, 3, 4``, a native build "
+"with optimized sparse direct solvers can be much faster and more memory-"
+"scalable."
+msgstr "デフォルトでは、ALAMODEはCMakeが検出したLAPACK/BLASライブラリにリンクします。これは小規模および中規模の計算には十分です。大規模な疎な最小二乗問題、特に ``LMODEL = ols``、数値拘束 ``ICONST = 1, 2, 3, 4`` を伴う ``SPARSE = 1`` の場合は、最適化された疎な直接ソルバーを備えたネイティブビルドの方がはるかに高速で、メモリスケーラビリティも優れています。"
+
+#: ../../source/install.rst:188
+msgid ""
+"For the **KKT solver** (the symmetric-indefinite system of the "
+"numerically constrained sparse fit) the recommended priority is:"
+msgstr "**KKTソルバー** (数値的に拘束された疎なフィッティングの対称不定値系) については、推奨される優先順位は次のとおりです:"
+
+#: ../../source/install.rst:191
+msgid "**Intel MKL / PARDISO** on Linux or Intel oneAPI systems."
+msgstr "LinuxまたはIntel oneAPIシステムでは **Intel MKL / PARDISO**。"
+
+#: ../../source/install.rst:192
+msgid "**SuiteSparse / SPQR + CHOLMOD** when SuiteSparse is available."
+msgstr "SuiteSparseが利用可能な場合は **SuiteSparse / SPQR + CHOLMOD**。"
+
+#: ../../source/install.rst:193
+msgid "**Apple Accelerate** on macOS when MKL is unavailable."
+msgstr "MKLが利用できないmacOSでは **Apple Accelerate**。"
+
+#: ../../source/install.rst:195
+msgid ""
+"These three are mutually exclusive *as the KKT solver*. **SuiteSparse, "
+"however, is an orthogonal add-on, not just a KKT-solver choice:** "
+"``-DUSE_SUITESPARSE_BACKEND=yes`` can be combined with "
+"``-DUSE_MKL_BACKEND=yes`` (or ``-DUSE_ACCEL_BACKEND=yes``). In that "
+"combined build the LDLT backend (PARDISO / Accelerate) still solves the "
+"KKT system, while the multithreaded **SuiteSparseQR** replaces the dense "
+"LAPACK ``dgeqp3`` for the rank-revealing **constraint-matrix reduction** "
+"-- which can otherwise dominate the runtime on large numerically-"
+"constrained fits (e.g. a 254k-parameter ``ICONST = 2`` reduction dropped "
+"from ~9 min to ~10 s). The recommended high-performance configuration on "
+"Intel systems is therefore ``-DUSE_MKL_BACKEND=yes "
+"-DUSE_SUITESPARSE_BACKEND=yes`` together. (Build SuiteSparse against the "
+"same BLAS as the solver backend -- e.g. MKL -- to avoid linking two BLAS "
+"implementations.)"
+msgstr "これら3つは *KKTソルバーとしては* 相互排他的です。**ただし、SuiteSparseは単なるKKTソルバーの選択肢ではなく、直交する追加機能です:** ``-DUSE_SUITESPARSE_BACKEND=yes`` は ``-DUSE_MKL_BACKEND=yes`` (または ``-DUSE_ACCEL_BACKEND=yes``) と組み合わせることができます。この組み合わせビルドでは、LDLTバックエンド (PARDISO / Accelerate) が引き続きKKT系を解く一方で、マルチスレッドの **SuiteSparseQR** が、ランクを明らかにする **拘束行列の縮約** において密なLAPACKの ``dgeqp3`` を置き換えます。この処理は、そうでなければ大規模な数値拘束フィッティングで実行時間の大半を占めることがあります (例えば、25万4千パラメータの ``ICONST = 2`` の縮約が約9分から約10秒に短縮されました)。したがって、Intelシステムで推奨される高性能構成は ``-DUSE_MKL_BACKEND=yes -DUSE_SUITESPARSE_BACKEND=yes`` を併用することです。(2つのBLAS実装をリンクするのを避けるため、SuiteSparseはソルバーバックエンドと同じBLAS、例えばMKLに対してビルドしてください。)"
+
+#: ../../source/install.rst:213
+msgid ""
+"``-DUSE_MKL_BACKEND=yes`` enables Intel MKL and uses **PARDISO** "
+"(``Eigen::PardisoLDLT``) for the sparse KKT system used by the "
+"numerically constrained sparse OLS path (``LMODEL = ols``, ``SPARSE = "
+"1``, ``ICONST = 1, 2, 3, 4``). This is the preferred backend for large "
+"constrained sparse fits. ALAMODE currently supports only the LP64 MKL "
+"interface."
+msgstr "``-DUSE_MKL_BACKEND=yes`` はIntel MKLを有効にし、数値的に拘束された疎なOLSパス (``LMODEL = ols``、``SPARSE = 1``、``ICONST = 1, 2, 3, 4``) で使用される疎なKKT系に対して **PARDISO** (``Eigen::PardisoLDLT``) を使用します。これは大規模な拘束付き疎なフィッティングで推奨されるバックエンドです。ALAMODEは現在、LP64 MKLインターフェースのみをサポートしています。"
+
+#: ../../source/install.rst:219
+msgid "Example with Intel oneAPI compilers:"
+msgstr "Intel oneAPIコンパイラを使った例:"
+
+#: ../../source/install.rst:231
+msgid ""
+"If CMake cannot find MKL automatically, make sure the oneAPI environment "
+"has been loaded, or add MKL's CMake package location to "
+"``CMAKE_PREFIX_PATH``. The MKL backend also routes Eigen dense products "
+"through MKL (``EIGEN_USE_MKL_ALL``). ``-DUSE_EIGEN_BLAS=yes`` is ignored "
+"when the MKL backend is enabled."
+msgstr "CMakeがMKLを自動的に見つけられない場合は、oneAPI環境が読み込まれていることを確認するか、MKLのCMakeパッケージの場所を ``CMAKE_PREFIX_PATH`` に追加してください。MKLバックエンドは、Eigenの密な積もMKL経由で処理します (``EIGEN_USE_MKL_ALL``)。MKLバックエンドが有効な場合、``-DUSE_EIGEN_BLAS=yes`` は無視されます。"
+
+#: ../../source/install.rst:244
+msgid ""
+"``-DUSE_SUITESPARSE_BACKEND=yes`` enables SuiteSparse support. This is an"
+" add-on, not an exclusive BLAS backend: it can be combined with the "
+"default BLAS, MKL, or Accelerate. It makes two additional "
+"``SPARSESOLVER`` values available for the unconstrained or algebraically "
+"constrained sparse OLS path: ``SuiteSparseQR`` and ``CHOLMOD``. It also "
+"makes SuiteSparseQR the preferred QR fallback in the numerically "
+"constrained sparse KKT path after any MKL or Accelerate LDLT backend."
+msgstr "``-DUSE_SUITESPARSE_BACKEND=yes`` はSuiteSparseのサポートを有効にします。これは追加機能であり、排他的なBLASバックエンドではありません。デフォルトのBLAS、MKL、Accelerateと組み合わせることができます。これにより、拘束なしまたは代数的に拘束された疎なOLSパスに対して、2つの追加の ``SPARSESOLVER`` の値 ``SuiteSparseQR`` および ``CHOLMOD`` が利用可能になります。また、数値的に拘束された疎なKKTパスにおいて、MKLまたはAccelerateのLDLTバックエンドの後に、SuiteSparseQRを優先的なQRフォールバックとします。"
+
+#: ../../source/install.rst:252
+msgid ""
+"The implementation calls the SuiteSparseQR C interface directly for SPQR,"
+" rather than Eigen's ``SPQR`` wrapper, and uses Eigen's CHOLMOD wrapper "
+"for CHOLMOD. Point CMake to the SuiteSparse installation prefix, i.e. the"
+" directory that contains ``lib/cmake/SPQR`` and ``lib/cmake/CHOLMOD``."
+msgstr "この実装は、SPQRについてはEigenの ``SPQR`` ラッパーではなくSuiteSparseQRのCインターフェースを直接呼び出し、CHOLMODについてはEigenのCHOLMODラッパーを使用します。CMakeにはSuiteSparseのインストールプレフィックス、すなわち ``lib/cmake/SPQR`` と ``lib/cmake/CHOLMOD`` を含むディレクトリを指定してください。"
+
+#: ../../source/install.rst:257 ../../source/install.rst:286
+msgid "Example:"
+msgstr "例:"
+
+#: ../../source/install.rst:267
+msgid ""
+"When SuiteSparse is installed by a package manager in a standard prefix, "
+"the ``-DSUITESPARSE_ROOT`` option may not be necessary. For large "
+"constrained sparse fits, SuiteSparseQR is usually more robust than "
+"Eigen's built-in serial ``SparseLU``/``SparseQR`` fallback, but "
+"MKL/PARDISO remains the first choice when available."
+msgstr "SuiteSparseがパッケージマネージャによって標準的なプレフィックスにインストールされている場合、``-DSUITESPARSE_ROOT`` オプションは必要ないことがあります。大規模な拘束付き疎なフィッティングでは、SuiteSparseQRは通常、Eigen内蔵のシリアルな ``SparseLU``/``SparseQR`` フォールバックよりも頑健ですが、利用可能な場合はMKL/PARDISOが依然として第一の選択肢です。"
+
+#: ../../source/install.rst:280
+msgid ""
+"``-DUSE_ACCEL_BACKEND=yes`` uses Apple's Accelerate framework on macOS. "
+"It enables ``Eigen::AccelerateLDLT`` for the same numerically constrained"
+" sparse KKT path where MKL/PARDISO is used, and routes Eigen dense "
+"products through Accelerate. This is the recommended native backend on "
+"Apple systems where MKL is not available."
+msgstr "``-DUSE_ACCEL_BACKEND=yes`` はmacOS上でAppleのAccelerateフレームワークを使用します。これは、MKL/PARDISOが使われるのと同じ数値拘束付き疎なKKTパスに対して ``Eigen::AccelerateLDLT`` を有効にし、Eigenの密な積をAccelerate経由で処理します。これは、MKLが利用できないAppleシステムで推奨されるネイティブバックエンドです。"
+
+#: ../../source/install.rst:294
+msgid ""
+"This backend requires an Eigen version that provides "
+"``Eigen/AccelerateSupport`` (Eigen 3.4.90 or later)."
+msgstr "このバックエンドには、``Eigen/AccelerateSupport`` を提供するバージョンのEigen (Eigen 3.4.90以降) が必要です。"
+
+#: ../../source/install.rst:302
+msgid "Generic BLAS for Eigen dense products"
+msgstr "Eigenの密な積向けの汎用BLAS"
+
+#: ../../source/install.rst:304
+msgid ""
+"``-DUSE_EIGEN_BLAS=yes`` routes Eigen's dense matrix products through the"
+" BLAS detected by CMake (``EIGEN_USE_BLAS``). For example, with "
+"OpenBLAS::"
+msgstr "``-DUSE_EIGEN_BLAS=yes`` は、Eigenの密な行列積をCMakeが検出したBLAS経由で処理します (``EIGEN_USE_BLAS``)。例えば、OpenBLASを使う場合::"
+
+#: ../../source/install.rst:310
+msgid ""
+"This option is ignored when ``-DUSE_MKL_BACKEND=yes`` or "
+"``-DUSE_ACCEL_BACKEND=yes`` is enabled, because those backends already "
+"provide the dense BLAS route."
+msgstr "``-DUSE_MKL_BACKEND=yes`` または ``-DUSE_ACCEL_BACKEND=yes`` が有効な場合、これらのバックエンドがすでに密なBLASの経路を提供しているため、このオプションは無視されます。"
+
+#: ../../source/install.rst:314
+msgid ""
+"When none of ``-DUSE_MKL_BACKEND``, ``-DUSE_ACCEL_BACKEND``, nor "
+"``-DUSE_SUITESPARSE_BACKEND`` is given, the numerically constrained "
+"sparse KKT system falls back to Eigen's built-in sparse solvers "
+"(``SparseLU``, then ``SparseQR``, then ``BiCGSTAB``). This portable "
+"fallback is useful for testing but is not recommended for very large "
+"sparse constrained fits."
+msgstr "``-DUSE_MKL_BACKEND``、``-DUSE_ACCEL_BACKEND``、``-DUSE_SUITESPARSE_BACKEND`` のいずれも指定されていない場合、数値的に拘束された疎なKKT系はEigen内蔵の疎なソルバー (``SparseLU``、次に ``SparseQR``、次に ``BiCGSTAB``) にフォールバックします。この移植性の高いフォールバックはテストには便利ですが、非常に大規模な疎な拘束付きフィッティングには推奨されません。"
+
+#: ../../source/install.rst:322
+msgid "Step 1. Install all required libraries"
+msgstr "ステップ1. 必要なライブラリをすべてインストールする"
+
+#: ../../source/install.rst:325
+msgid "Boost C++ and Eigen3 libraries (header files only)"
+msgstr "Boost C++ライブラリおよびEigen3ライブラリ (ヘッダファイルのみ)"
+
+#: ../../source/install.rst:327
+msgid ""
+"(If boost and Eigen3 are already installed in your system, please skip "
+"this.)"
+msgstr "(boostとEigen3がすでにシステムにインストールされている場合は、この手順をスキップしてください。)"
+
+#: ../../source/install.rst:329
+msgid ""
+"Some header files of Boost C++ and Eigen3 libraries are necessary to "
+"build ALAMODE binaries. Here, we install header files of these libraries "
+"in ``$(HOME)/include``. You can skip this part if these libraries are "
+"already installed on your system."
+msgstr "ALAMODEのバイナリをビルドするには、Boost C++ライブラリとEigen3ライブラリの一部のヘッダファイルが必要です。ここでは、これらのライブラリのヘッダファイルを ``$(HOME)/include`` にインストールします。これらのライブラリがすでにシステムにインストールされている場合は、この部分をスキップできます。"
+
+#: ../../source/install.rst:333
+msgid ""
+"To install the Boost C++ library, please download a source file from the "
+"`webpage <http://www.boost.org>`_ and unpack the file. Then, copy the "
+"'boost' subdirectory to ``$(HOME)/include``. This can be done as "
+"follows::"
+msgstr "Boost C++ライブラリをインストールするには、`webページ <http://www.boost.org>`_ からソースファイルをダウンロードしてファイルを展開してください。次に、'boost' サブディレクトリを ``$(HOME)/include`` にコピーします。これは以下のように行えます::"
+
+#: ../../source/install.rst:345
+msgid ""
+"In this example, we place the boost files in ``$(HOME)/etc`` and create a"
+" symbolic link to the ``$(HOME)/boost_x_yy_z/boost`` in "
+"``$(HOME)/include``. Instead of installing from source, you can install "
+"the Boost library with `Homebrew <http://brew.sh>`_ on macOS and the "
+"``apt-get`` or ``yum`` command on unix."
+msgstr "この例では、boostのファイルを ``$(HOME)/etc`` に配置し、``$(HOME)/boost_x_yy_z/boost`` へのシンボリックリンクを ``$(HOME)/include`` に作成します。ソースからインストールする代わりに、macOSでは `Homebrew <http://brew.sh>`_ で、unixでは ``apt-get`` または ``yum`` コマンドでBoostライブラリをインストールすることもできます。"
+
+#: ../../source/install.rst:348
+msgid "In the same way, please install the Eigen3 include files as follows::"
+msgstr "同じ方法で、以下のようにEigen3のインクルードファイルをインストールしてください::"
+
+#: ../../source/install.rst:359
+msgid "If you have followed the instruction, you will see the following results::"
+msgstr "手順に従っていれば、以下の結果が表示されます::"
+
+#: ../../source/install.rst:370
+msgid "spglib"
+msgstr "spglib"
+
+#: ../../source/install.rst:372
+msgid ""
+"Please install spglib by following the instruction on the `spglib webpage"
+" <https://atztogo.github.io/spglib/install.html>`_. Here, we assume "
+"spglib is installed in ``$SPGLIB_ROOT``."
+msgstr "`spglibのwebページ <https://atztogo.github.io/spglib/install.html>`_ の手順に従ってspglibをインストールしてください。ここでは、spglibが ``$SPGLIB_ROOT`` にインストールされていると仮定します。"
+
+#: ../../source/install.rst:376
+msgid "HDF5"
+msgstr "HDF5"
+
+#: ../../source/install.rst:378
+msgid ""
+"ALAMODE requires the HDF5 library. Please install it by following the "
+"instruction on the `HDF5 webpage "
+"<https://www.hdfgroup.org/solutions/hdf5/>`_, or via your system package "
+"manager. If HDF5 is installed in a non-standard location, pass its path "
+"to CMake via the ``-DHDF5_ROOT`` option."
+msgstr "ALAMODEはHDF5ライブラリを必要とします。`HDF5のwebページ <https://www.hdfgroup.org/solutions/hdf5/>`_ の手順に従って、またはシステムのパッケージマネージャ経由でインストールしてください。HDF5が標準でない場所にインストールされている場合は、``-DHDF5_ROOT`` オプションでそのパスをCMakeに渡してください。"
+
+#: ../../source/install.rst:387
+msgid "From the GitHub repository::"
+msgstr "GitHubリポジトリから::"
+
+#: ../../source/install.rst:393
+msgid ""
+"Use the branch that corresponds to the documentation you are reading. For"
+" the development documentation and the current GitHub workflow, this is "
+"``2.0dev``."
+msgstr "お読みになっているドキュメントに対応するブランチを使用してください。開発版ドキュメントおよび現在のGitHubワークフローでは、これは ``2.0dev`` です。"
+
+#: ../../source/install.rst:396
+msgid "The directory structure supposed in this section is shown as below::"
+msgstr "このセクションで想定するディレクトリ構造を以下に示します::"
+
+#: ../../source/install.rst:425
+msgid "Step 3-1. Build by CMake"
+msgstr "ステップ3-1. CMakeによるビルド"
+
+#: ../../source/install.rst:427
+msgid ""
+"CMake is the recommended (and supported) way to build ALAMODE. To use "
+"this approach, you need to install cmake version 3.17 or later (and below"
+" 4.0)."
+msgstr "CMakeはALAMODEをビルドするための推奨される (かつサポートされている) 方法です。この方法を使うには、cmakeバージョン3.17以降 (かつ4.0未満) をインストールする必要があります。"
+
+#: ../../source/install.rst:430
+msgid "To build Makefiles with CMake, please issue the following commands::"
+msgstr "CMakeでMakefileを生成するには、以下のコマンドを実行してください::"
+
+#: ../../source/install.rst:461
+msgid ""
+"If cmake cannot find Boost, Eigen3, or HDF5 automatically, you need to "
+"tell where these libraries are installed by using the "
+"``-DBOOST_INCLUDE``, ``-DEIGEN3_INCLUDE``, and ``-DHDF5_ROOT`` options. "
+"For example, if the directory structure of Step 2 is used, the cmake "
+"option will be::"
+msgstr "cmakeがBoost、Eigen3、HDF5を自動的に見つけられない場合は、``-DBOOST_INCLUDE``、``-DEIGEN3_INCLUDE``、``-DHDF5_ROOT`` オプションを使って、これらのライブラリがインストールされている場所を指定する必要があります。例えば、ステップ2のディレクトリ構造を使う場合、cmakeオプションは次のようになります::"
+
+#: ../../source/install.rst:469
+msgid "After the configuration finishes successfully, please issue ::"
+msgstr "構成が正常に完了したら、次のコマンドを実行してください ::"
+
+#: ../../source/install.rst:474
+msgid ""
+"to build all binaries in alm/, anphon/, and tools/ subdirectories under "
+"the current directory (_build). You can specify the binary to build, for "
+"example, as ::"
+msgstr "これにより、カレントディレクトリ (_build) 以下の alm/、anphon/、tools/ の各サブディレクトリにすべてのバイナリがビルドされます。例えば、次のようにビルドするバイナリを指定できます ::"
+
+#: ../../source/install.rst:483
+msgid ""
+"When using the binaries, it may be necessary to set ``$LD_LIBRARY_PATH`` "
+"as ::"
+msgstr "バイナリを使用する際には、次のように ``$LD_LIBRARY_PATH`` を設定する必要があるかもしれません ::"
+
+#: ../../source/install.rst:492
+msgid "Step 3-2. Build by Makefile (deprecated)"
+msgstr "ステップ3-2. Makefileによるビルド (非推奨)"
+
+#: ../../source/install.rst:496
+#, python-brace-format
+msgid ""
+"The legacy ``Makefile.{linux,osx,...}`` files under ``alm/``, "
+"``anphon/``, and ``tools/`` are no longer maintained and are not kept in "
+"sync with the current build system. For example, they still target the "
+"C++11 standard and do not link the now-mandatory HDF5 library, so they "
+"will not produce working binaries without manual editing. Please build "
+"ALAMODE with CMake as described above."
+msgstr "``alm/``、``anphon/``、``tools/`` 以下にあるレガシーな ``Makefile.{linux,osx,...}`` ファイルはもはやメンテナンスされておらず、現在のビルドシステムと同期されていません。例えば、これらは依然としてC++11規格を対象としており、現在必須となっているHDF5ライブラリをリンクしないため、手動で編集しなければ動作するバイナリを生成できません。上記のとおりCMakeでALAMODEをビルドしてください。"

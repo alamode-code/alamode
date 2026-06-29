@@ -1,0 +1,44 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/index.rst:7
+msgid "ALAMODE"
+msgstr "ALAMODE"
+
+#: ../../source/index.rst:11
+msgid "Users Guide"
+msgstr "ユーザーガイド"
+
+#: ../../source/index.rst:30
+msgid "Indices and tables"
+msgstr "索引と表"
+
+#: ../../source/index.rst:32
+msgid ":ref:`genindex`"
+msgstr ":ref:`genindex`"
+
+#: ../../source/index.rst:33
+msgid ":ref:`modindex`"
+msgstr ":ref:`modindex`"
+
+#: ../../source/index.rst:34
+msgid ":ref:`search`"
+msgstr ":ref:`search`"

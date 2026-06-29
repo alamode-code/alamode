@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/download.rst:2
+msgid "Download"
+msgstr "ダウンロード"
+
+#: ../../source/download.rst:4
+msgid ""
+"You can download the latest and previous released versions of ALAMODE at "
+"https://sourceforge.net/projects/alamode ."
+msgstr "ALAMODE の最新版および過去のリリース版は https://sourceforge.net/projects/alamode からダウンロードできます。"
+
+#: ../../source/download.rst:7
+msgid "You can also download the package from the git repository as::"
+msgstr "また、以下のように git リポジトリからパッケージをダウンロードすることもできます::"
+
+#: ../../source/download.rst:13
+msgid ""
+"Use the branch that corresponds to the documentation you are reading. For"
+" the development documentation and the current GitHub workflow, this is "
+"``2.0dev``."
+msgstr "ご覧になっているドキュメントに対応するブランチを使用してください。開発版ドキュメントおよび現在の GitHub ワークフローの場合は ``2.0dev`` です。"

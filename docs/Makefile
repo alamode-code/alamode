@@ -7,6 +7,11 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
 
+# Translation languages besides the English source. Keep this in sync with
+# docs/languages.txt, which the docs CI workflow reads per branch to decide
+# which languages to publish.
+LANGUAGES     = ja
+
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
 $(error The '$(SPHINXBUILD)' command was not found. Make sure you have Sphinx installed, then set the SPHINXBUILD environment variable to point to the full path of the '$(SPHINXBUILD)' executable. Alternatively you can add the directory with the executable to your PATH. If you don't have Sphinx installed, grab it from http://sphinx-doc.org/)
@@ -16,14 +21,18 @@ endif
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
+# Each language needs its own doctree cache, because the build environment is
+# language-specific (sharing one cache forces a full rebuild on every switch).
+JASPHINXOPTS    = -d $(BUILDDIR)/doctrees-ja $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+.PHONY: help clean html html-ja dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf latexpdf-ja text man changes linkcheck doctest gettext update-po
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html       to make standalone HTML files"
+	@echo "  html       to make standalone HTML files (English)"
+	@echo "  html-ja    to make standalone HTML files (Japanese)"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -33,13 +42,15 @@ help:
 	@echo "  devhelp    to make HTML files and a Devhelp project"
 	@echo "  epub       to make an epub"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
-	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
+	@echo "  latexpdf   to make LaTeX files and run them through pdflatex (English)"
+	@echo "  latexpdf-ja to make the Japanese PDF and run it through lualatex"
 	@echo "  latexpdfja to make LaTeX files and run them through platex/dvipdfmx"
 	@echo "  text       to make text files"
 	@echo "  man        to make manual pages"
 	@echo "  texinfo    to make Texinfo files"
 	@echo "  info       to make Texinfo files and run them through makeinfo"
-	@echo "  gettext    to make PO message catalogs"
+	@echo "  gettext    to make PO message catalogs (translation templates)"
+	@echo "  update-po  to create/refresh source/locale/<lang> catalogs for $(LANGUAGES)"
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  xml        to make Docutils-native XML files"
 	@echo "  pseudoxml  to make pseudoxml-XML files for display purposes"
@@ -53,6 +64,11 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+html-ja:
+	DOCS_LANGUAGE=ja $(SPHINXBUILD) -b html $(JASPHINXOPTS) $(BUILDDIR)/html/ja
+	@echo
+	@echo "Build finished. The Japanese HTML pages are in $(BUILDDIR)/html/ja."
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
@@ -116,6 +132,12 @@ latexpdf:
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
+latexpdf-ja:
+	DOCS_LANGUAGE=ja $(SPHINXBUILD) -b latex $(JASPHINXOPTS) $(BUILDDIR)/latex/ja
+	@echo "Running LaTeX files through lualatex..."
+	$(MAKE) -C $(BUILDDIR)/latex/ja all-pdf
+	@echo "lualatex finished; the PDF file is in $(BUILDDIR)/latex/ja."
+
 latexpdfja:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through platex and dvipdfmx..."
@@ -149,6 +171,12 @@ gettext:
 	$(SPHINXBUILD) -b gettext $(I18NSPHINXOPTS) $(BUILDDIR)/locale
 	@echo
 	@echo "Build finished. The message catalogs are in $(BUILDDIR)/locale."
+
+update-po: gettext
+	sphinx-intl update -p $(BUILDDIR)/locale $(foreach lang,$(LANGUAGES),-l $(lang))
+	@echo
+	@echo "Updated translation catalogs under source/locale for: $(LANGUAGES)."
+	@echo "Edit the .po files (fill in msgstr), then rebuild with e.g. 'make html-ja'."
 
 changes:
 	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $(BUILDDIR)/changes

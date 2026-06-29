@@ -1,0 +1,411 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/anphondir/outputanphon.rst:2
+msgid "ANPHON: Output files"
+msgstr "ANPHON: 出力ファイル"
+
+#: ../../source/anphondir/outputanphon.rst:9
+msgid "``PREFIX``.bands"
+msgstr "``PREFIX``.bands"
+
+#: ../../source/anphondir/outputanphon.rst:11
+msgid ""
+"Phonon dispersion along given :math:`k` paths in units of cm :sup:`-1`. "
+"Created when ``MODE = phonons`` with **KPMODE** = 1."
+msgstr "指定した :math:`k` パスに沿ったフォノン (phonon) 分散。単位は cm :sup:`-1`。``MODE = phonons`` かつ **KPMODE** = 1 のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:14
+msgid "``PREFIX``.dos"
+msgstr "``PREFIX``.dos"
+
+#: ../../source/anphondir/outputanphon.rst:16
+msgid ""
+"Phonon density of states (DOS). Atom projected phonon DOSs are also "
+"printed when ``PDOS = 1``. Created when ``MODE = phonons`` with "
+"**KPMODE** = 2."
+msgstr "フォノン状態密度 (phonon density of states, DOS)。``PDOS = 1`` のときには原子射影されたフォノンDOSも出力されます。``MODE = phonons`` かつ **KPMODE** = 2 のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:19
+msgid "``PREFIX``.tdos"
+msgstr "``PREFIX``.tdos"
+
+#: ../../source/anphondir/outputanphon.rst:21
+msgid ""
+"Two-phonon density of states for all irreducible :math:`k` points. "
+"Created when ``MODE = phonons`` with **KPMODE** = 2 and ``TDOS = 1``."
+msgstr "すべての既約 :math:`k` 点に対する2フォノン状態密度 (two-phonon density of states)。``MODE = phonons`` かつ **KPMODE** = 2 および ``TDOS = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:24
+msgid "``PREFIX``.thermo"
+msgstr "``PREFIX``.thermo"
+
+#: ../../source/anphondir/outputanphon.rst:26
+msgid ""
+"Constant volume heat capacity, vibrational entropy, internal energy, and "
+"vibrational free energy. Created when ``MODE = phonons`` with **KPMODE** "
+"= 2. When ``FE_BUBBLE = 1`` is set in the **&analysis** field, an "
+"additional bubble correction term to the vibrational free energy is also "
+"calculated."
+msgstr "定積熱容量、振動エントロピー、内部エネルギー、および振動自由エネルギー。``MODE = phonons`` かつ **KPMODE** = 2 のときに作成されます。**&analysis** フィールドで ``FE_BUBBLE = 1`` を設定すると、振動自由エネルギーに対する追加のバブル補正項も計算されます。"
+
+#: ../../source/anphondir/outputanphon.rst:31
+msgid "``PREFIX``.msd"
+msgstr "``PREFIX``.msd"
+
+#: ../../source/anphondir/outputanphon.rst:33
+msgid ""
+"Mean-square-displacements of atoms. Created when ``MODE = phonons`` with "
+"**KPMODE** = 2 and ``PRINTMSD = 1``."
+msgstr "原子の平均二乗変位 (mean-square-displacements)。``MODE = phonons`` かつ **KPMODE** = 2 および ``PRINTMSD = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:36
+msgid "``PREFIX``.sps"
+msgstr "``PREFIX``.sps"
+
+#: ../../source/anphondir/outputanphon.rst:38
+msgid ""
+"Total and mode-decomposed scattering phase space. Created when ``MODE = "
+"phonons`` with **KPMODE** = 2 and ``SPS = 1``."
+msgstr "全体およびモード分解された散乱位相空間 (scattering phase space)。``MODE = phonons`` かつ **KPMODE** = 2 および ``SPS = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:41
+msgid "``PREFIX``.pr"
+msgstr "``PREFIX``.pr"
+
+#: ../../source/anphondir/outputanphon.rst:43
+msgid ""
+"Participation ratio of every phonon mode. Created when ``MODE = phonons``"
+" and ``PRINTPR = 1``."
+msgstr "各フォノンモードの参加率 (participation ratio)。``MODE = phonons`` かつ ``PRINTPR = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:46
+msgid "``PREFIX``.apr"
+msgstr "``PREFIX``.apr"
+
+#: ../../source/anphondir/outputanphon.rst:48
+msgid ""
+"Atomic participation ratio of every phonon mode. Created when ``MODE = "
+"phonons`` and ``PRINTPR = 1``."
+msgstr "各フォノンモードの原子参加率 (atomic participation ratio)。``MODE = phonons`` かつ ``PRINTPR = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:51
+msgid "``PREFIX``.phvel"
+msgstr "``PREFIX``.phvel"
+
+#: ../../source/anphondir/outputanphon.rst:53
+msgid ""
+"Phonon group velocity along given :math:`k` paths. Created when ``MODE = "
+"phonons`` with **KPMODE** = 1 and ``PRINTVEL = 1``."
+msgstr "指定した :math:`k` パスに沿ったフォノン群速度 (group velocity)。``MODE = phonons`` かつ **KPMODE** = 1 および ``PRINTVEL = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:56
+msgid "``PREFIX``.phvel_all"
+msgstr "``PREFIX``.phvel_all"
+
+#: ../../source/anphondir/outputanphon.rst:58
+#, python-brace-format
+msgid ""
+"Magnitude of group velocity :math:`|\\boldsymbol{v}|` of all phonon modes"
+" at the uniform :math:`k` grid. Created when ``MODE = phonons`` with "
+"**KPMODE** = 2 and ``PRINTVEL = 1``."
+msgstr "一様 :math:`k` グリッド上のすべてのフォノンモードの群速度の大きさ :math:`|\\boldsymbol{v}|`。``MODE = phonons`` かつ **KPMODE** = 2 および ``PRINTVEL = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:61
+msgid "``PREFIX``.evec, ``PREFIX``.band.evec, ``PREFIX``.mesh.evec"
+msgstr "``PREFIX``.evec, ``PREFIX``.band.evec, ``PREFIX``.mesh.evec"
+
+#: ../../source/anphondir/outputanphon.rst:63
+msgid ""
+"Eigenvalues and eigenvectors of dynamical matrices. Eigenvalues are "
+"printed in Rydberg atomic units. Created when ``MODE = phonons`` with "
+"``PRINTEVEC = 1``."
+msgstr "動力学行列 (dynamical matrices) の固有値と固有ベクトル。固有値はリュードベリ原子単位 (Rydberg atomic units) で出力されます。``MODE = phonons`` かつ ``PRINTEVEC = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:67
+msgid "``PREFIX``.gruneisen"
+msgstr "``PREFIX``.gruneisen"
+
+#: ../../source/anphondir/outputanphon.rst:69
+msgid ""
+"Gr\\ |umulaut_u|\\ neisen parameters along given :math:`k` paths. Created"
+" when ``MODE = phonons`` with **KPMODE** = 1 and ``GRUNEISEN = 1``."
+msgstr "指定した :math:`k` パスに沿ったGr\\ |umulaut_u|\\ neisenパラメータ (Grüneisen parameters)。``MODE = phonons`` かつ **KPMODE** = 1 および ``GRUNEISEN = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:73
+msgid "``PREFIX``.gru_all"
+msgstr "``PREFIX``.gru_all"
+
+#: ../../source/anphondir/outputanphon.rst:75
+msgid ""
+"Gr\\ |umulaut_u|\\ neisen parameters of all phonon modes at the uniform "
+":math:`k` grid. Created when ``MODE = phonons`` with **KPMODE** = 2 and "
+"``GRUNEISEN = 1``."
+msgstr "一様 :math:`k` グリッド上のすべてのフォノンモードのGr\\ |umulaut_u|\\ neisenパラメータ。``MODE = phonons`` かつ **KPMODE** = 2 および ``GRUNEISEN = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:79
+msgid "``PREFIX``.zmode"
+msgstr "``PREFIX``.zmode"
+
+#: ../../source/anphondir/outputanphon.rst:81
+msgid ""
+"Mode effective charges of zone-center phonon modes. Created when ``MODE ="
+" phonons`` with ``ZMODE = 1``."
+msgstr "ゾーン中心フォノンモードのモード有効電荷 (mode effective charges)。``MODE = phonons`` かつ ``ZMODE = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:84
+msgid "``PREFIX``.axsf"
+msgstr "``PREFIX``.axsf"
+
+#: ../../source/anphondir/outputanphon.rst:86
+msgid ""
+"Zone-center phonon modes with directions indicated by arrows. This file "
+"can be visualized by XcrySDen. Created when ``MODE = phonons`` with "
+"``PRINTXSF = 1``."
+msgstr "矢印で方向を示したゾーン中心フォノンモード。このファイルはXcrySDenで可視化できます。``MODE = phonons`` かつ ``PRINTXSF = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:90
+msgid "``PREFIX``.anime???.axsf and ``PREFIX``.anime???.xyz"
+msgstr "``PREFIX``.anime???.axsf および ``PREFIX``.anime???.xyz"
+
+#: ../../source/anphondir/outputanphon.rst:92
+msgid ""
+"Files for animating phonon modes. ??? is the mode number. Created when "
+"``MODE = phonons`` with a proper ``ANIME``-tag. If ``ANIME_FORMAT = "
+"xsf``, axsf files will be created which can be displayed by XcrySDen. If "
+"``ANIME_FORMAT = xyz``, xyz files will be created which can be visualized"
+" by VMD, Jmol, etc."
+msgstr "フォノンモードをアニメーション表示するためのファイル。??? はモード番号です。``MODE = phonons`` かつ適切な ``ANIME`` タグを指定したときに作成されます。``ANIME_FORMAT = xsf`` の場合、XcrySDenで表示できるaxsfファイルが作成されます。``ANIME_FORMAT = xyz`` の場合、VMDやJmolなどで可視化できるxyzファイルが作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:99
+msgid "``PREFIX``.result"
+msgstr "``PREFIX``.result"
+
+#: ../../source/anphondir/outputanphon.rst:101
+msgid ""
+"In this file, phonon frequency, group velocity, and anharmonic phonon "
+"linewidths are printed. This file is updated during thermal conductivity "
+"calculations (``MODE = RTA``). In addition, this file is read when the "
+"restart mode is turned on (``RESTART = 1``)."
+msgstr "このファイルには、フォノン振動数、群速度、および非調和 (anharmonic) フォノン線幅が出力されます。このファイルは熱伝導率 (thermal conductivity) 計算 (``MODE = RTA``) の途中で更新されます。さらに、リスタートモードが有効 (``RESTART = 1``) のときには、このファイルが読み込まれます。"
+
+#: ../../source/anphondir/outputanphon.rst:105
+msgid "``PREFIX``.kl"
+msgstr "``PREFIX``.kl"
+
+#: ../../source/anphondir/outputanphon.rst:107
+msgid ""
+"Lattice thermal conductivity tensor (Peierls term). Created when ``MODE ="
+" RTA``."
+msgstr "格子熱伝導率テンソル (lattice thermal conductivity tensor)（Peierls項）。``MODE = RTA`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:109
+msgid "``PREFIX``.kl_spec"
+msgstr "``PREFIX``.kl_spec"
+
+#: ../../source/anphondir/outputanphon.rst:111
+msgid ""
+"Spectra of lattice thermal conductivity. Only diagonal components are "
+"saved. Created when ``MODE = RTA`` and ``KAPPA_SPEC = 1``."
+msgstr "格子熱伝導率のスペクトル。対角成分のみが保存されます。``MODE = RTA`` かつ ``KAPPA_SPEC = 1`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:115
+msgid "``PREFIX``.kl_coherent"
+msgstr "``PREFIX``.kl_coherent"
+
+#: ../../source/anphondir/outputanphon.rst:117
+msgid ""
+"Coherent component of lattice thermal conductivity. Created when "
+"``KAPPA_COHERENT > 0`` in ``MODE = RTA``."
+msgstr "格子熱伝導率のコヒーレント成分 (coherent component)。``MODE = RTA`` において ``KAPPA_COHERENT > 0`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:120
+msgid "``PREFIX``.kc_elem"
+msgstr "``PREFIX``.kc_elem"
+
+#: ../../source/anphondir/outputanphon.rst:122
+msgid ""
+"Momentum- and mode-decomposed contributions to the coherent components of"
+" lattice thermal conductivity. Created when ``KAPPA_COHERENT = 2`` in "
+"``MODE = RTA``."
+msgstr "格子熱伝導率のコヒーレント成分に対する、運動量分解およびモード分解された寄与。``MODE = RTA`` において ``KAPPA_COHERENT = 2`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:126
+msgid "``PREFIX``.self_isotope"
+msgstr "``PREFIX``.self_isotope"
+
+#: ../../source/anphondir/outputanphon.rst:128
+msgid ""
+"Phonon selfenergy due to isotope scatterings calculated by Tamura's "
+"formula. Created when ``MODE = RTA`` and ``ISOTOPE = 2``."
+msgstr "Tamuraの公式で計算された、同位体散乱 (isotope scatterings) によるフォノン自己エネルギー (selfenergy)。``MODE = RTA`` かつ ``ISOTOPE = 2`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:133
+msgid "``PREFIX``.scph_dymat"
+msgstr "``PREFIX``.scph_dymat"
+
+#: ../../source/anphondir/outputanphon.rst:135
+msgid ""
+"Anharmonic dynamical matrix calculated on the :math:`k` grid defined by "
+"the ``KMESH_INTERPOLATE`` tag. This file is used to restart the SCPH "
+"calculation."
+msgstr "``KMESH_INTERPOLATE`` タグで定義された :math:`k` グリッド上で計算された非調和動力学行列。このファイルはSCPH (self-consistent phonon) 計算のリスタートに使用されます。"
+
+#: ../../source/anphondir/outputanphon.rst:138
+msgid "``PREFIX``.scph_bands"
+msgstr "``PREFIX``.scph_bands"
+
+#: ../../source/anphondir/outputanphon.rst:140
+msgid "Anharmonic phonon dispersion curves."
+msgstr "非調和フォノン分散曲線。"
+
+#: ../../source/anphondir/outputanphon.rst:142
+msgid "``PREFIX``.scph_dos"
+msgstr "``PREFIX``.scph_dos"
+
+#: ../../source/anphondir/outputanphon.rst:144
+msgid ""
+"Anharmonic phonon DOS. Created when ``MODE = SCPH`` and ``DOS = 1`` with "
+"**KPMODE** = 2."
+msgstr "非調和フォノンDOS。``MODE = SCPH`` かつ ``DOS = 1`` および **KPMODE** = 2 のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:147
+msgid "``PREFIX``.scph_thermo"
+msgstr "``PREFIX``.scph_thermo"
+
+#: ../../source/anphondir/outputanphon.rst:149
+msgid ""
+"Constant volume heat capacity, vibrational entropy, and vibrational free "
+"energy calculated based on the self-consistent phonon calculation. "
+"Created when ``MODE = SCPH`` with **KPMODE** = 2."
+msgstr "自己無撞着フォノン (self-consistent phonon) 計算に基づいて計算された、定積熱容量、振動エントロピー、および振動自由エネルギー。``MODE = SCPH`` かつ **KPMODE** = 2 のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:155
+msgid "``PREFIX``.scph_msd"
+msgstr "``PREFIX``.scph_msd"
+
+#: ../../source/anphondir/outputanphon.rst:157
+msgid ""
+"Mean square displacement calculated within the SCPH theory. Created when "
+"``MODE = SCPH`` and ``PRINTMSD = 1`` with **KPMODE** = 2."
+msgstr "SCPH理論の枠組みで計算された平均二乗変位。``MODE = SCPH`` かつ ``PRINTMSD = 1`` および **KPMODE** = 2 のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:159
+msgid "``PREFIX``.scph_dfc2"
+msgstr "``PREFIX``.scph_dfc2"
+
+#: ../../source/anphondir/outputanphon.rst:161
+msgid ""
+"This file contains :math:`\\Delta D(\\boldsymbol{q}) = "
+"D_{\\mathrm{SCPH}}(\\boldsymbol{q}) - "
+"D_{\\mathrm{Harmonic}}(\\boldsymbol{q})`. For the definition, see the "
+":ref:`formalism of the SCPH calculation <formalism_SCPH>`."
+msgstr "このファイルには :math:`\\Delta D(\\boldsymbol{q}) = D_{\\mathrm{SCPH}}(\\boldsymbol{q}) - D_{\\mathrm{Harmonic}}(\\boldsymbol{q})` が含まれます。定義については :ref:`formalism of the SCPH calculation <formalism_SCPH>` を参照してください。"
+
+#: ../../source/anphondir/outputanphon.rst:166
+msgid "``PREFIX``.atom_disp"
+msgstr "``PREFIX``.atom_disp"
+
+#: ../../source/anphondir/outputanphon.rst:168
+#, python-brace-format
+msgid ""
+"Temperature-dependence of the atomic displacements "
+":math:`u^{(0)}_{\\alpha \\mu}` in Cartesian representation. Created when "
+"``MODE = SCPH`` and ``RELAX_STR != 0``."
+msgstr "デカルト表示における原子変位 (atomic displacements) :math:`u^{(0)}_{\\alpha \\mu}` の温度依存性。``MODE = SCPH`` かつ ``RELAX_STR != 0`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:170
+msgid "``PREFIX``.normal_disp"
+msgstr "``PREFIX``.normal_disp"
+
+#: ../../source/anphondir/outputanphon.rst:172
+#, python-brace-format
+msgid ""
+"Temperature-dependence of the atomic displacement "
+":math:`q^{(0)}_{\\lambda}` in normal coordinate representation. Created "
+"when ``MODE = SCPH`` and ``RELAX_STR != 0``."
+msgstr "基準座標表示における原子変位 :math:`q^{(0)}_{\\lambda}` の温度依存性。``MODE = SCPH`` かつ ``RELAX_STR != 0`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:174
+msgid "``PREFIX``.umn_tensor"
+msgstr "``PREFIX``.umn_tensor"
+
+#: ../../source/anphondir/outputanphon.rst:176
+#, python-brace-format
+msgid ""
+"Temperature-dependence of the displacement gradient tensor :math:`u_{\\mu"
+" \\nu}`. Created when ``MODE = SCPH`` and ``RELAX_STR = 2, -1, -2``."
+msgstr "変位勾配テンソル (displacement gradient tensor) :math:`u_{\\mu \\nu}` の温度依存性。``MODE = SCPH`` かつ ``RELAX_STR = 2, -1, -2`` のときに作成されます。"
+
+#: ../../source/anphondir/outputanphon.rst:178
+msgid "``PREFIX``.V0"
+msgstr "``PREFIX``.V0"
+
+#: ../../source/anphondir/outputanphon.rst:180
+msgid ""
+"Temperature-dependent zero-th order IFC :math:`U_0`. Created when ``MODE "
+"= SCPH`` and ``RELAX_STR != 0``. This file is used to restart the "
+"SCPH/QHA + structural optimization."
+msgstr "温度依存の0次原子間力定数 (IFC) :math:`U_0`。``MODE = SCPH`` かつ ``RELAX_STR != 0`` のときに作成されます。このファイルはSCPH/QHA + 構造最適化のリスタートに使用されます。"
+
+#: ../../source/anphondir/outputanphon.rst:183
+msgid "``PREFIX``.renorm_harm_dymat"
+msgstr "``PREFIX``.renorm_harm_dymat"
+
+#: ../../source/anphondir/outputanphon.rst:185
+msgid ""
+"Renormalization of harmonic dynamical matrix by the structure change. "
+"Created when ``MODE = SCPH`` and ``RELAX_STR != 0``. This file is used to"
+" restart the SCPH/QHA + structural optimization."
+msgstr "構造変化による調和 (harmonic) 動力学行列の繰り込み。``MODE = SCPH`` かつ ``RELAX_STR != 0`` のときに作成されます。このファイルはSCPH/QHA + 構造最適化のリスタートに使用されます。"
+
+#: ../../source/anphondir/outputanphon.rst:188
+msgid "step_q0.txt"
+msgstr "step_q0.txt"
+
+#: ../../source/anphondir/outputanphon.rst:190
+#, python-brace-format
+msgid ""
+"Record of atomic displacement :math:`q^{(0)}_{\\lambda}` at all steps of "
+"structural optimization."
+msgstr "構造最適化の全ステップにおける原子変位 :math:`q^{(0)}_{\\lambda}` の記録。"
+
+#: ../../source/anphondir/outputanphon.rst:192
+msgid "step_u0.txt"
+msgstr "step_u0.txt"
+
+#: ../../source/anphondir/outputanphon.rst:194
+#, python-brace-format
+msgid ""
+"Record of atomic displacements :math:`u^{(0)}_{\\alpha \\mu}` at all "
+"steps of structural optimization."
+msgstr "構造最適化の全ステップにおける原子変位 :math:`u^{(0)}_{\\alpha \\mu}` の記録。"
+
+#: ../../source/anphondir/outputanphon.rst:196
+msgid "step_u_tensor.txt"
+msgstr "step_u_tensor.txt"
+
+#: ../../source/anphondir/outputanphon.rst:198
+#, python-brace-format
+msgid ""
+"Record of displacement gradient tensor :math:`u_{\\mu \\nu}` at all steps"
+" of structural optimization."
+msgstr "構造最適化の全ステップにおける変位勾配テンソル :math:`u_{\\mu \\nu}` の記録。"
