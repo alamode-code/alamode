@@ -97,6 +97,23 @@ jobs:
             git fetch --no-tags origin "+refs/heads/$v:refs/remotes/origin/$v"
           done
 
+      # TeX Live for the per-language PDFs built into the site below. Covers
+      # pdflatex (English) and LuaLaTeX + LuaTeX-ja (Japanese), plus GNU
+      # FreeFont for the Latin body text and Harano Aji for Japanese.
+      - name: Install TeX Live (PDF build)
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            latexmk \
+            texlive-luatex \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-lang-japanese \
+            fonts-freefont-otf
+
       - name: Build all versions
         if: github.event_name != 'pull_request'
         run: |
@@ -121,6 +138,19 @@ jobs:
               for lang in $langs; do
                 DOCS_VERSION="$v" DOCS_LANGUAGE="$lang" "$venv/bin/sphinx-build" \
                   -b html "$worktree/docs/source" "_site/$v/$lang"
+                # Build the PDF next to that language's HTML so the in-page
+                # download link can reach it at <version>/<lang>/ALAMODE.pdf.
+                # Non-fatal: a PDF failure must never block the HTML deploy --
+                # the link self-hides when the PDF is absent.
+                pdfdir="$RUNNER_TEMP/pdf-$v-$lang"
+                if DOCS_VERSION="$v" DOCS_LANGUAGE="$lang" "$venv/bin/sphinx-build" \
+                     -b latex "$worktree/docs/source" "$pdfdir" \
+                   && make -C "$pdfdir" all-pdf \
+                        LATEXMKOPTS="-interaction=nonstopmode -halt-on-error"; then
+                  cp "$pdfdir/ALAMODE.pdf" "_site/$v/$lang/ALAMODE.pdf"
+                else
+                  echo "::warning::PDF build failed for $v/$lang; publishing HTML without it."
+                fi
               done
               json=$(printf '"%s",' $langs); json="[${json%,}]"
               printf '%s\n' "$json" > "_site/$v/languages.json"
@@ -168,8 +198,12 @@ jobs:
         with:
           path: _site
 
-  build-pdf-ja:
-    name: Build Japanese PDF
+  validate-pdf:
+    name: Validate PDFs (pull request)
+    # PR-only: on push the build job builds and publishes the per-language PDFs
+    # into the site. Here we just confirm that every declared language's PDF
+    # compiles before merge. Fatal -- a broken PDF fails the check.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -182,9 +216,9 @@ jobs:
         with:
           python-version: '3.10'
 
-      # LuaLaTeX + LuaTeX-ja (ltjsbook class, Harano Aji fonts) for Japanese,
-      # plus GNU FreeFont for the Latin body text Sphinx defaults to.
-      - name: Install TeX Live (LuaLaTeX + Japanese)
+      # pdflatex (English) and LuaLaTeX + LuaTeX-ja (ltjsbook class, Harano Aji
+      # fonts) for Japanese, plus GNU FreeFont for the Latin body text.
+      - name: Install TeX Live (PDF build)
         run: |
           set -euo pipefail
           sudo apt-get update
@@ -197,24 +231,35 @@ jobs:
             texlive-lang-japanese \
             fonts-freefont-otf
 
-      - name: Build Japanese PDF
+      - name: Build PDFs for all declared languages
         run: |
           set -euo pipefail
           python -m venv "$RUNNER_TEMP/venv-pdf"
           "$RUNNER_TEMP/venv-pdf/bin/pip" install --upgrade pip
           "$RUNNER_TEMP/venv-pdf/bin/pip" install -r docs/requirements.txt
-          DOCS_LANGUAGE=ja "$RUNNER_TEMP/venv-pdf/bin/sphinx-build" -b latex \
-            docs/source "$RUNNER_TEMP/latex-ja"
-          # all-pdf drives latexmk, which the generated latexmkrc points at
-          # lualatex; halt on the first error so failures surface in the log.
-          make -C "$RUNNER_TEMP/latex-ja" all-pdf \
-            LATEXMKOPTS="-interaction=nonstopmode -halt-on-error"
+          if [ -f docs/languages.txt ]; then
+            langs=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' docs/languages.txt)
+          else
+            langs=en
+          fi
+          for lang in $langs; do
+            echo "::group::PDF ($lang)"
+            pdfdir="$RUNNER_TEMP/latex-$lang"
+            DOCS_LANGUAGE="$lang" "$RUNNER_TEMP/venv-pdf/bin/sphinx-build" -b latex \
+              docs/source "$pdfdir"
+            # all-pdf drives latexmk; the generated latexmkrc selects the right
+            # engine (pdflatex for en, lualatex for ja). Halt on first error.
+            make -C "$pdfdir" all-pdf \
+              LATEXMKOPTS="-interaction=nonstopmode -halt-on-error"
+            cp "$pdfdir/ALAMODE.pdf" "$RUNNER_TEMP/ALAMODE-$lang.pdf"
+            echo "::endgroup::"
+          done
 
-      - name: Upload Japanese PDF
+      - name: Upload validated PDFs
         uses: actions/upload-artifact@v4
         with:
-          name: alamode-ja-pdf
-          path: ${{ runner.temp }}/latex-ja/ALAMODE.pdf
+          name: alamode-pdfs
+          path: ${{ runner.temp }}/ALAMODE-*.pdf
           if-no-files-found: error
 
   deploy:

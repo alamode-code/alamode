@@ -1,0 +1,40 @@
+/* Floating per-language PDF download link injected by pdf-download.js.
+   Sits directly above the language switcher in the bottom-left corner and
+   matches the switcher styling. Uses Furo's CSS variables so it adapts to
+   light/dark mode automatically, with sensible fallbacks under other themes. */
+.pdf-download {
+  position: fixed;
+  bottom: 6.2rem; /* stacked above the language (3.6rem) and version (1rem) switchers */
+  left: 1rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 0.4rem;
+  background: var(--color-background-secondary, #f4f4f5);
+  border: 1px solid var(--color-background-border, #d0d0d0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.pdf-download__link {
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--color-brand-content, var(--color-foreground-primary, #1a1a1a));
+}
+
+.pdf-download__link:hover {
+  text-decoration: underline;
+}
+
+/* Keep the link out of the way on narrow screens, staying stacked above the
+   language switcher (which moves to bottom: 3rem at this breakpoint). */
+@media (max-width: 46em) {
+  .pdf-download {
+    bottom: 5.5rem;
+    left: 0.5rem;
+    font-size: 0.75rem;
+  }
+}

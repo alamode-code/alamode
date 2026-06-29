@@ -162,13 +162,19 @@ html_logo = "../img/alamode.png"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-# Multi-version and multi-language switchers: small theme-agnostic dropdowns
-# that read the versions.json (site root) and per-version languages.json
-# manifests published by the docs deploy workflow.
-html_js_files = ["version-switcher.js", "language-switcher.js"]
+# Multi-version and multi-language switchers plus a per-language PDF download
+# link: small theme-agnostic helpers that read the versions.json (site root)
+# and per-version languages.json manifests published by the docs deploy
+# workflow, and link to the ALAMODE.pdf published next to each language's HTML.
+html_js_files = [
+    "version-switcher.js",
+    "language-switcher.js",
+    "pdf-download.js",
+]
 html_css_files = [
     "version-switcher.css",
     "language-switcher.css",
+    "pdf-download.css",
     "custom.css",
 ]
 
