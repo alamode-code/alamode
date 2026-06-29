@@ -3,19 +3,22 @@
 Drop-in compatible replacement for the legacy ``alm`` package (which used a C/cython wrapper):
 the same public API is provided on top of the compiled ``alm._alm.ALMCore`` object.
 
-    with ALM(lavec, xcoord, numbers, verbosity=0) as alm:
-        alm.define(maxorder=2, cutoff_radii=rc)
-        alm.set_training_data(u, f)             # u, f shape (nsnap, nat, 3)
-        A, b = alm.get_matrix_elements()        # ALM's exact sensing matrix (for external solvers)
-        alm.set_fc(coefs)                        # inject an external solution ...
-        v, idx = alm.get_fc(2, mode="origin")    # ... read it back, fully symmetry-expanded
-        alm.save_fc("out.h5", format="alamode_h5")   # write what anphon reads (.h5)
+    a = ALM(lavec, xcoord, numbers, verbosity=0)   # ready to use immediately
+    a.define(maxorder=2, cutoff_radii=rc)
+    a.set_training_data(u, f)               # u, f shape (nsnap, nat, 3)
+    A, b = a.get_matrix_elements()          # ALM's exact sensing matrix (for external solvers)
+    a.set_fc(coefs)                          # inject an external solution ...
+    v, idx = a.get_fc(2, mode="origin")      # ... read it back, fully symmetry-expanded
+    a.save_fc("out.h5", format="alamode_h5") # write what anphon reads (.h5)
+    # 'a' (and its C++ instance) is freed automatically when it goes out of scope.
 
-Suggest mode:
-    with ALM(lavec, xcoord, numbers) as alm:
-        alm.define(2, cutoff_radii=rc)
-        alm.suggest()
-        patterns = alm.get_displacement_patterns(1)
+The C++ instance is created in __init__, so a plain ``a = ALM(...)`` is enough.
+A ``with`` block is optional and only gives a prompt, deterministic release:
+
+    with ALM(lavec, xcoord, numbers) as a:   # freed at block exit
+        a.define(2, cutoff_radii=rc)
+        a.suggest()
+        patterns = a.get_displacement_patterns(1)
 """
 
 import warnings
@@ -65,28 +68,52 @@ class ALM:
         self._numbers = np.array(numbers, dtype="intc")
         self._u = None
         self._f = None
+        # Create the underlying C++ instance right away so the object is usable
+        # directly:  a = ALM(lavec, xcoord, numbers).  It is freed automatically
+        # when ``a`` is garbage-collected, so 'with'/alm_delete() are optional
+        # (they only make the release prompt/deterministic).
+        self.alm_new()
 
     # ---- lifecycle / context manager ------------------------------------
     def __enter__(self):
-        self.alm_new()
+        # The instance already exists from __init__; recreate it only if the
+        # user explicitly called alm_delete() before (re-)entering a 'with'.
+        if self._core is None:
+            self.alm_new()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.alm_delete()
 
     def alm_new(self):
-        """Create the underlying C++ ALM instance (also called by ``with``)."""
+        """Create the underlying C++ ALM instance.
+
+        Called automatically by ``__init__``, so you normally never call this.
+        It is idempotent (a no-op if the instance already exists) and may be used
+        to recreate the instance after a manual :meth:`alm_delete`.
+        """
         if self._core is not None:
-            raise RuntimeError("This ALM object is already initialized.")
+            return
         self._core = _alm.ALMCore()
         self._core.set_verbosity(self._verbosity)
         if self._output_filename_prefix is not None:
             self._core.set_output_filename_prefix(self._output_filename_prefix)
+        # A freshly created native core has no cell yet, so always (re-)send it.
+        # This matters when alm_new() recreates the instance after alm_delete():
+        # _need_transfer was cleared by the first transfer and must be re-armed.
+        self._need_transfer = True
         self._transfer_parameters()
 
     def alm_delete(self):
-        """Drop the underlying C++ ALM instance (nanobind frees it)."""
-        self._check()
+        """Free the underlying C++ ALM instance immediately.
+
+        Optional: the instance is also freed automatically when this object is
+        garbage-collected.  Call this (or use a ``with`` block) only when you
+        want a prompt, deterministic release, e.g. inside a tight loop that
+        builds many large sensing matrices.  Idempotent.
+        """
+        if self._core is None:
+            return
         self._core = None
         self._defined = False
 

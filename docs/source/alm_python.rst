@@ -29,6 +29,15 @@ complete worked example using the scikit-learn regressors **ARD**,
    (``define`` / ``set_training_data`` / ``get_matrix_elements`` /
    ``get_fc`` / ``set_fc`` / ``save_fc`` / ``optimizer_control``).
 
+.. note::
+
+   **Object lifetime.**  The C++ instance is created in ``ALM.__init__``, so
+   ``a = ALM(lavec, xcoord, numbers)`` is ready to use immediately and is freed
+   automatically when ``a`` goes out of scope (the underlying C++ class is fully
+   RAII).  A ``with`` block — or an explicit ``alm_delete()`` — is **optional**:
+   use it only for a prompt, deterministic release, e.g. inside a loop that
+   builds many large sensing matrices.
+
 
 .. _alm_python_install:
 
@@ -142,8 +151,10 @@ exactly the setup of the CLI input ``4_optimize/BTO_alm_opt.in``:
      - Role
    * - ``cBTO222_harmonic.xml``
      - harmonic (FC2) force constants, fixed during the fit (``FC2FIX``)
-   * - ``2_vasp_dfset/DFSET_AIMD_random``
-     - 80 displacement-force snapshots of the 40-atom supercell (atomic units)
+   * - ``3_cv/reference/DFSET_AIMD_random``
+     - 80 displacement-force snapshots of the 40-atom supercell (atomic units;
+       produced by the example's MD -> DFSET workflow in steps 1-2, with a
+       reference copy shipped under ``3_cv/reference/``)
    * - 5-atom cubic primitive cell
      - Ba/Ti/O, lattice constant :math:`a_0 = 7.5316` bohr (defined inline below)
 
@@ -202,6 +213,14 @@ anharmonic residual), which is what ALM's ``.cvscore`` files report.
    NUMBERS = [56, 22, 8, 8, 8]                       # atomic numbers: Ba, Ti, O, O, O
    TRANSMAT = np.diag([2, 2, 2]).astype(float)       # 2x2x2 supercell (40 atoms)
 
+   def regressor_coef(est, p):
+       """Length-p coefficient vector of a fitted regressor (handles RFECV, which
+       exposes the fit only on its selected support)."""
+       if hasattr(est, "support_"):                   # RFECV / RFE -> expand to full length
+           coef = np.zeros(p); coef[est.support_] = est.estimator_.coef_
+           return coef
+       return est.coef_                               # ARD, BayesianRidge, LASSO, ...
+
    def fit_bto(fc2_xml, dfset, regressor, save_to, ndata=80):
        nat_super = len(NUMBERS) * int(round(np.linalg.det(TRANSMAT)))   # 40
        u, f = read_dfset(dfset, nat_super)
@@ -211,27 +230,28 @@ anharmonic residual), which is what ALM's ``.cvscore`` files report.
        cut[1] = 15.0                                  # cubic   cutoff (bohr)
        cut[2] = 9.0                                   # quartic cutoff (bohr)
 
-       with alm.ALM(LAVEC, XCOORD, NUMBERS, verbosity=0) as a:
-           a.set_supercell(TRANSMAT)                  # primitive -> 2x2x2 supercell
-           a.fix_force_constants_from_file(2, fc2_xml)  # FC2FIX (.xml or .h5)
-           a.define(maxorder=3, cutoff_radii=cut, nbody=[2, 3, 3])
-           a.set_constraint(translation=True)         # acoustic sum rule (ICONST=11)
-           a.set_training_data(u[:ndata], f[:ndata])
+       a = alm.ALM(LAVEC, XCOORD, NUMBERS, verbosity=0)   # ready to use immediately
+       a.set_supercell(TRANSMAT)                      # primitive -> 2x2x2 supercell
+       a.fix_force_constants_from_file(2, fc2_xml)    # FC2FIX (.xml or .h5)
+       a.define(maxorder=3, cutoff_radii=cut, nbody=[2, 3, 3])
+       a.set_constraint(translation=True)             # acoustic sum rule (ICONST=11)
+       a.set_training_data(u[:ndata], f[:ndata])
 
-           A, b = a.get_matrix_elements()             # ALM's exact sensing matrix
-           p = a.get_number_of_free_parameters()      # == A.shape[1]
-           col = np.linalg.norm(A, axis=0); col[col == 0] = 1.0
-           coef_s = regressor.fit(A / col, b).coef_    # fit the normalized matrix
-           coef = coef_s / col                         # back to physical units
-           a.set_fc(coef)                              # inject the solution
+       A, b = a.get_matrix_elements()                 # ALM's exact sensing matrix
+       p = a.get_number_of_free_parameters()          # == A.shape[1]
+       col = np.linalg.norm(A, axis=0); col[col == 0] = 1.0
+       est = regressor.fit(A / col, b)                 # fit the normalized matrix
+       coef_s = regressor_coef(est, p)                 # length-p (handles RFECV)
+       coef = coef_s / col                             # back to physical units
+       a.set_fc(coef)                                  # inject the solution
 
-           # ALM-convention relative error (residual / total forces):
-           relerr = np.linalg.norm((A / col) @ coef_s - b) / np.linalg.norm(f[:ndata].ravel())
-           nnz = int(np.sum(np.abs(coef) > 1e-10))
-           print(f"p={p}  nonzero={nnz}  relerr={relerr:.4f}")
+       # ALM-convention relative error (residual / total forces):
+       relerr = np.linalg.norm((A / col) @ coef_s - b) / np.linalg.norm(f[:ndata].ravel())
+       nnz = int(np.sum(np.abs(coef) > 1e-10))
+       print(f"p={p}  nonzero={nnz}  relerr={relerr:.4f}")
 
-           a.save_fc(save_to, format="alamode_h5")     # anphon-readable .h5
-       return relerr
+       a.save_fc(save_to, format="alamode_h5")         # anphon-readable .h5
+       return relerr                                   # 'a' is freed when it goes out of scope
 
 Run it from ``example/BaTiO3/anharm_IFCs/`` with ARD:
 
@@ -390,17 +410,17 @@ Performance: scaling and parallelism
 * Threads do **not** help much (the bottleneck eigendecomposition is essentially
   serial).  To use many cores, run independent fits as **separate processes**:
 
-.. code-block:: python
+  .. code-block:: python
 
-   from concurrent.futures import ProcessPoolExecutor
+     from concurrent.futures import ProcessPoolExecutor
 
-   def run_one(case):
-       # build, fit, save one (functional, order, ndata) case; returns a summary dict
-       ...
+     def run_one(case):
+         # build, fit, save one (functional, order, ndata) case; returns a summary dict
+         ...
 
-   cases = [...]  # list of independent fits
-   with ProcessPoolExecutor(max_workers=6) as ex:
-       results = list(ex.map(run_one, cases))
+     cases = [...]  # list of independent fits
+     with ProcessPoolExecutor(max_workers=6) as ex:
+         results = list(ex.map(run_one, cases))
 
   Budget memory accordingly (a large fit at :math:`p\approx1.7\times10^4` needs
   ~20 GB); reduce ``max_workers`` if a worker is killed (``BrokenProcessPool``).
