@@ -256,6 +256,11 @@ if language == "ja":
     # otherwise aborts the build against the Latin body font set by fontspec.
     latex_elements["polyglossia"] = ""
     latex_elements["babel"] = ""
+    # For non-pdflatex engines Sphinx defaults the index builder to xindy, an
+    # extra system dependency. The index here is Latin (tag/function names), so
+    # use makeindex instead -- it ships with TeX Live (and is what the English
+    # pdflatex build already uses), keeping the CI TeX install self-contained.
+    latex_use_xindy = False
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
