@@ -283,3 +283,8 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # The first deployment after a Pages re-provision (e.g. after the
+          # 2026 organization rename) can take well over the 10-minute
+          # default, and a timeout cancels the in-flight deployment.
+          timeout: 1800000  # 30 minutes, in milliseconds
