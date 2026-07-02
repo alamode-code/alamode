@@ -6,132 +6,14 @@ from xml.etree.ElementTree import Element, ElementTree, SubElement
 
 import numpy as np
 import spglib
-from ase.units import Bohr
 
-atom_names = (
-    "X",
-    "H",
-    "He",
-    "Li",
-    "Be",
-    "B",
-    "C",
-    "N",
-    "O",
-    "F",
-    "Ne",
-    "Na",
-    "Mg",
-    "Al",
-    "Si",
-    "P",
-    "S",
-    "Cl",
-    "Ar",
-    "K",
-    "Ca",
-    "Sc",
-    "Ti",
-    "V",
-    "Cr",
-    "Mn",
-    "Fe",
-    "Co",
-    "Ni",
-    "Cu",
-    "Zn",
-    "Ga",
-    "Ge",
-    "As",
-    "Se",
-    "Br",
-    "Kr",
-    "Rb",
-    "Sr",
-    "Y",
-    "Zr",
-    "Nb",
-    "Mo",
-    "Tc",
-    "Ru",
-    "Rh",
-    "Pd",
-    "Ag",
-    "Cd",
-    "In",
-    "Sn",
-    "Sb",
-    "Te",
-    "I",
-    "Xe",
-    "Cs",
-    "Ba",
-    "La",
-    "Ce",
-    "Pr",
-    "Nd",
-    "Pm",
-    "Sm",
-    "Eu",
-    "Gd",
-    "Tb",
-    "Dy",
-    "Ho",
-    "Er",
-    "Tm",
-    "Yb",
-    "Lu",
-    "Hf",
-    "Ta",
-    "W",
-    "Re",
-    "Os",
-    "Ir",
-    "Pt",
-    "Au",
-    "Hg",
-    "Tl",
-    "Pb",
-    "Bi",
-    "Po",
-    "At",
-    "Rn",
-    "Fr",
-    "Ra",
-    "Ac",
-    "Th",
-    "Pa",
-    "U",
-    "Np",
-    "Pu",
-    "Am",
-    "Cm",
-    "Bk",
-    "Cf",
-    "Es",
-    "Fm",
-    "Md",
-    "No",
-    "Lr",
-    "Rf",
-    "Db",
-    "Sg",
-    "Bh",
-    "Hs",
-    "Mt",
-    "Ds",
-    "Rg",
-    "Cn",
-    "Uut",
-    "Uuq",
-    "Uup",
-    "Uuh",
-    "Uus",
-    "Uuo",
-)
+from ._elements import ELEMENT_SYMBOLS as atom_names
+
+# Bohr radius in Angstrom (CODATA 2018).
+_BOHR = 0.529177210903
 
 
-class Fcsxml(object):
+class Fcsxml:
     """Writer of harmonic and anharmonic interatomic force constants for alamode."""
 
     def __init__(self, lavec, xcoord, numbers, symprec=1.0e-3, unit='angstrom'):
@@ -152,12 +34,16 @@ class Fcsxml(object):
         symprec: float
             The tolerance used for space group detection.
             Will be passed to spglib.
+        unit: str
+            Length unit of lavec: 'angstrom' (default) or 'bohr'.
 
         """
         if unit == 'angstrom':
-            self._lavec = np.array(lavec).transpose() / Bohr
-        else:
+            self._lavec = np.array(lavec).transpose() / _BOHR
+        elif unit == 'bohr':
             self._lavec = np.array(lavec).transpose()
+        else:
+            raise ValueError(f"unit must be 'angstrom' or 'bohr', got {unit!r}.")
 
         self._xf = np.array(xcoord)
         self._atomic_kinds = np.array(numbers)
@@ -201,19 +87,20 @@ class Fcsxml(object):
         center primitive cell is determined from the output of spglib method,
         which can be obtained by the `get_atoms_in_primitive` method.
 
-        The order of force constant is judged using the dimension of
-        the input `fc_indices`.
+        The order of force constant is inferred from ``fc_indices.shape[1]``:
+        2 columns = harmonic (FC2), 3 = cubic (FC3), 4 = quartic (FC4).
+        (This differs from ``ALM.get_fc``, where ``fc_order=1`` is harmonic.)
 
         """
+        fc_values = np.asarray(fc_values)
+        fc_indices = np.asarray(fc_indices)
         if fc_indices.ndim != 2:
-            msg = "elem_indices array has to be two dimensions."
-            raise RuntimeError(msg)
+            raise ValueError("fc_indices must be a 2-D array.")
 
         if len(fc_indices) != len(fc_values):
-            msg = "length of fc_values and elem_indices must be the same."
-            raise RuntimeError(msg)
+            raise ValueError("fc_values and fc_indices must have the same length.")
 
-        fc_order = len(fc_indices[0])
+        fc_order = fc_indices.shape[1]
         (
             fc_values_trim,
             fc_indices_trim,
@@ -229,8 +116,7 @@ class Fcsxml(object):
             self._fc4_info = [fc_values_trim, fc_indices_trim]
 
         else:
-            msg = "The anharmonic terms beyond 4th-order cannot be saved."
-            raise RuntimeError(msg)
+            raise ValueError("The anharmonic terms beyond 4th-order cannot be saved.")
 
     def write(self, filename="alamodefc.xml"):
         """Write the input force constants as a given filename.
@@ -511,10 +397,15 @@ class Fcsxml(object):
         dataset = spglib.get_symmetry_dataset(cell, symprec=self._symprec)
 
         identity_matrix = np.identity(3)
-        rotations = dataset["rotations"]
-        translations = dataset["translations"]
-        mapping_to_primitive = dataset["mapping_to_primitive"]
-        nsym = len(dataset["rotations"])
+        try:  # spglib >= 2.5 returns a dataclass; dict-style access is deprecated
+            rotations = dataset.rotations
+            translations = dataset.translations
+            mapping_to_primitive = dataset.mapping_to_primitive
+        except AttributeError:
+            rotations = dataset["rotations"]
+            translations = dataset["translations"]
+            mapping_to_primitive = dataset["mapping_to_primitive"]
+        nsym = len(rotations)
 
         # Sort the list of symmetry operations in the lexicographical order
         # and create symnum_translation
@@ -575,7 +466,7 @@ class Fcsxml(object):
                 indices_to_search.append(3 * atom + i)
         indices_to_search = np.array(indices_to_search)
 
-        loc_to_use = np.where(np.in1d(elems_in[:, 0], indices_to_search))
+        loc_to_use = np.where(np.isin(elems_in[:, 0], indices_to_search))
         fcvals_trim = fcvals_in[loc_to_use]
         elems_trim = elems_in[loc_to_use]
         index_sort = np.lexsort(np.rot90(elems_trim))

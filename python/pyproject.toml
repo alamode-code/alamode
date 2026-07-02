@@ -6,8 +6,18 @@ build-backend = "scikit_build_core.build"
 name = "alm"
 version = "2.0.dev0"
 description = "Python interface (nanobind) to the ALAMODE 2.0dev ALM library"
+license = {text = "MIT"}
+authors = [{name = "Terumasa Tadano", email = "terumasa.tadano@gmail.com"}]
 requires-python = ">=3.9"
 dependencies = ["numpy"]
+
+[project.optional-dependencies]
+# Needed only for alm.Fcsxml (the FCSXML writer).
+fcsxml = ["spglib"]
+
+[project.urls]
+Homepage = "https://alamode.readthedocs.io"
+Repository = "https://github.com/ttadano/alamode"
 
 [tool.scikit-build]
 cmake.version = ">=3.17"
@@ -18,7 +28,7 @@ cmake.build-type = "Release"
 
 # Dependency locations are passed at install time, e.g.:
 #   pip install . \
-#     -C cmake.define.SPGLIB_ROOT=/Users/tadano/spglib \
+#     -C cmake.define.SPGLIB_ROOT=<path/to/spglib> \
 #     -C cmake.define.EIGEN3_INCLUDE=/opt/homebrew/include/eigen3 \
 #     -C cmake.define.BOOST_INCLUDE=/opt/homebrew/include \
 #     -C cmake.define.USE_ACCEL_BACKEND=ON

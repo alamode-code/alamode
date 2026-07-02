@@ -11,6 +11,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH 1)
 
+# Inside a conda/pixi environment, search that prefix first (same hook as the
+# top-level CMakeLists.txt) so spglib/Boost/Eigen/HDF5 are found without
+# passing -C cmake.define.*_ROOT options to pip.
+if(DEFINED ENV{CONDA_PREFIX})
+    list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+    if(NOT CMAKE_BUILD_RPATH)
+        set(CMAKE_BUILD_RPATH "$ENV{CONDA_PREFIX}/lib")
+    endif()
+    if(NOT CMAKE_INSTALL_RPATH)
+        set(CMAKE_INSTALL_RPATH "$ENV{CONDA_PREFIX}/lib")
+    endif()
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+
 set(ALM_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../alm)
 set(ALM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 set(ALM_EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../external)

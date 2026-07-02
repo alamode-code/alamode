@@ -1,0 +1,30 @@
+"""Periodic table shared by the alm package (single source of truth).
+
+Anphon needs the real element symbols in the saved force-constant files,
+so the full table up to Z = 118 (IUPAC 2016 names) is kept here.
+"""
+
+# Atomic number -> symbol (Z = 1..118; index 0 is a placeholder).
+ELEMENT_SYMBOLS = (
+    "X",
+    "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+    "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
+    "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+    "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr",
+    "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+    "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
+    "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
+    "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+    "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th",
+    "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm",
+    "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
+    "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
+)
+
+
+def element_symbol(atomic_number):
+    """Return the element symbol for ``atomic_number`` (``"E<Z>"`` if out of range)."""
+    z = int(atomic_number)
+    if 1 <= z < len(ELEMENT_SYMBOLS):
+        return ELEMENT_SYMBOLS[z]
+    return f"E{z}"
