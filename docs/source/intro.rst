@@ -71,7 +71,7 @@ Links
 
 * Download page  : https://sourceforge.net/projects/alamode
 * Documentation  : https://alamode.readthedocs.io (this page)
-* Git repository : https://github.com/alamode-team/alamode
+* Git repository : https://github.com/alamode-code/alamode
 
 
 License
@@ -128,8 +128,8 @@ References
 Issues & Bug report
 -------------------
 
-* If you find a bug or issue related to ALAMODE, please report it at `GitHub issues <https://github.com/alamode-team/alamode/issues/>`_.
-* Other questions and suggestions can be posted on the `GitHub discussion page. <https://github.com/alamode-team/alamode/discussions>`_
+* If you find a bug or issue related to ALAMODE, please report it at `GitHub issues <https://github.com/alamode-code/alamode/issues/>`_.
+* Other questions and suggestions can be posted on the `GitHub discussion page. <https://github.com/alamode-code/alamode/discussions>`_
 
 In either case, please search the previous questions and read FAQ page of this document before asking.
 

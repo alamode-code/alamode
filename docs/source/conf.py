@@ -124,19 +124,38 @@ pygments_style = "sphinx"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "furo"
+#html_theme = "furo"
+#html_theme = 'conestack'
+html_theme = 'breeze'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "source_repository": "https://github.com/alamode-team/alamode/",
-    "source_branch": "develop",
-    "source_directory": "docs/source/",
+    # ALAMODE has many top-level sections, so keep the whole toctree in the
+    # left sidebar. With header_tabs enabled (the breeze default) the
+    # top-level entries become header tabs and the sidebar only shows the
+    # pages of the current section.
+    "header_tabs": False,
+}
+
+# Repository info in the html_context convention used by breeze's
+# "Edit this page" link (furo instead reads the source_* theme options).
+html_context = {
+    "github_user": "alamode-code",
+    "github_repo": "alamode",
+    "github_version": "develop",
+    "doc_path": "docs/source",
 }
 
 # The canonical base URL of the published site (used for sitemap / <link>).
-html_baseurl = "https://alamode-team.github.io/alamode/"
+html_baseurl = "https://alamode-code.github.io/alamode/"
+
+# breeze bundles sphinxext-opengraph, whose generated social-card images use a
+# Latin-only font; Japanese titles would render as missing glyphs. Disable the
+# card images (the rest of the OpenGraph metadata is kept) for the ja build.
+if language == "ja":
+    ogp_social_cards = {"enable": False}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []

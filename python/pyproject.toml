@@ -17,7 +17,7 @@ fcsxml = ["spglib"]
 
 [project.urls]
 Homepage = "https://alamode.readthedocs.io"
-Repository = "https://github.com/ttadano/alamode"
+Repository = "https://github.com/alamode-code/alamode"
 
 [tool.scikit-build]
 cmake.version = ">=3.17"

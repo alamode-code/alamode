@@ -224,3 +224,8 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,python
+
+### pixi (see docs: "Install using pixi")
+.pixi/
+pixi.toml
+pixi.lock

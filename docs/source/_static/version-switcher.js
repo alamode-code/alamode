@@ -2,7 +2,7 @@
 //
 // This script is theme- and domain-agnostic. It derives the published layout
 // purely from its own URL, so it works under any base path (e.g.
-// https://alamode-team.github.io/alamode/<version>/<lang>/...) and behind a
+// https://alamode-code.github.io/alamode/<version>/<lang>/...) and behind a
 // custom domain without any hard-coded URLs.
 //
 // The deploy workflow publishes one directory per version, each containing one

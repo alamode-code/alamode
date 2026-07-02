@@ -49,6 +49,12 @@ it needs the same dependencies as ALM itself (spglib, Boost, Eigen, HDF5, a
 BLAS/LAPACK backend, OpenMP) plus the build front-end (``nanobind``,
 ``scikit-build-core``) and, for the external regressors, ``scikit-learn``.
 
+.. tip::
+
+   The :ref:`pixi route <install_pixi>` sets up an equivalent project-local
+   environment from the same environment file and builds the wrapper with a
+   single command, ``pixi run 'cd python && pip install .'``.
+
 Step 1. Create an environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -67,11 +73,19 @@ Step 2. Build and install the wrapper
 From the top of the source tree::
 
    % cd python
+   % pip install .
+
+Inside an activated conda environment (or a pixi environment, see
+:ref:`install_pixi`), the wrapper's CMake setup automatically searches the
+environment prefix (``$CONDA_PREFIX``) for spglib, Boost, Eigen, and HDF5, so
+no further options are needed.  When the dependencies live in custom locations
+instead, pass them explicitly::
+
    % pip install . \
-       -C cmake.define.SPGLIB_ROOT=$CONDA_PREFIX \
-       -C cmake.define.EIGEN3_INCLUDE=$CONDA_PREFIX/include/eigen3 \
-       -C cmake.define.BOOST_INCLUDE=$CONDA_PREFIX/include \
-       -C cmake.define.HDF5_ROOT=$CONDA_PREFIX
+       -C cmake.define.SPGLIB_ROOT=/path/to/spglib \
+       -C cmake.define.EIGEN3_INCLUDE=/path/to/eigen3/include \
+       -C cmake.define.BOOST_INCLUDE=/path/to/boost/include \
+       -C cmake.define.HDF5_ROOT=/path/to/hdf5
 
 If CMake selects the wrong BLAS, add ``-C cmake.define.BLA_VENDOR=OpenBLAS``.
 

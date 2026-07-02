@@ -6,7 +6,7 @@ https://sourceforge.net/projects/alamode .
 
 You can also download the package from the git repository as::
 
-    $ git clone https://github.com/alamode-team/alamode.git
+    $ git clone https://github.com/alamode-code/alamode.git
     $ cd alamode
     $ git checkout 2.0dev
 

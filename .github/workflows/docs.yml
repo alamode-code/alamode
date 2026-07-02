@@ -56,7 +56,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          # Sphinx 9 (required by the breeze theme on this branch) needs
+          # Python >= 3.12; the older branches' pinned Sphinx also runs fine
+          # on 3.12 thanks to the per-version venvs below.
+          python-version: '3.12'
 
       # --- Pull request: validate that the changed docs build, do not deploy ---
       - name: Build (pull request validation)
@@ -215,7 +218,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          # Sphinx 9 (required by the breeze theme on this branch) needs
+          # Python >= 3.12; the older branches' pinned Sphinx also runs fine
+          # on 3.12 thanks to the per-version venvs below.
+          python-version: '3.12'
 
       # pdflatex (English) and LuaLaTeX + LuaTeX-ja (ltjsbook class, Harano Aji
       # fonts) for Japanese, plus GNU FreeFont for the Latin body text.

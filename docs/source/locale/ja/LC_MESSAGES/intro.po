@@ -176,8 +176,8 @@ msgid "Documentation  : https://alamode.readthedocs.io (this page)"
 msgstr "ドキュメント  : https://alamode.readthedocs.io （このページ）"
 
 #: ../../source/intro.rst:74
-msgid "Git repository : https://github.com/alamode-team/alamode"
-msgstr "Gitリポジトリ : https://github.com/alamode-team/alamode"
+msgid "Git repository : https://github.com/alamode-code/alamode"
+msgstr "Gitリポジトリ : https://github.com/alamode-code/alamode"
 
 #: ../../source/intro.rst:78
 msgid "License"
@@ -297,14 +297,14 @@ msgstr "問題とバグ報告"
 #: ../../source/intro.rst:131
 msgid ""
 "If you find a bug or issue related to ALAMODE, please report it at "
-"`GitHub issues <https://github.com/alamode-team/alamode/issues/>`_."
-msgstr "ALAMODEに関連するバグや問題を見つけた場合は、`GitHub issues <https://github.com/alamode-team/alamode/issues/>`_ で報告してください。"
+"`GitHub issues <https://github.com/alamode-code/alamode/issues/>`_."
+msgstr "ALAMODEに関連するバグや問題を見つけた場合は、`GitHub issues <https://github.com/alamode-code/alamode/issues/>`_ で報告してください。"
 
 #: ../../source/intro.rst:132
 msgid ""
 "Other questions and suggestions can be posted on the `GitHub discussion "
-"page. <https://github.com/alamode-team/alamode/discussions>`_"
-msgstr "その他の質問や提案は、`GitHub discussion page. <https://github.com/alamode-team/alamode/discussions>`_ に投稿できます。"
+"page. <https://github.com/alamode-code/alamode/discussions>`_"
+msgstr "その他の質問や提案は、`GitHub discussion page. <https://github.com/alamode-code/alamode/discussions>`_ に投稿できます。"
 
 #: ../../source/intro.rst:134
 msgid ""

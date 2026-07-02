@@ -16,7 +16,7 @@ Mandatory requirements
 * `HDF5 library <https://www.hdfgroup.org/solutions/hdf5/>`_
 * `CMake <https://cmake.org>`_ (version >= 3.17 and < 4.0)
 
-No worries! All of these libraries can be installed easily by using conda.
+No worries! All of these libraries can be installed easily by using conda or pixi.
 
 In addition to the above requirements, users have to get and install a first-principles package 
 (such as VASP_, QUANTUM-ESPRESSO_, OpenMX_, or xTAPP_) or another force field package (such as
@@ -76,7 +76,7 @@ Step 2. Download source
 
 Download source files from GitHub repository::
 
-  % git clone https://github.com/alamode-team/alamode.git
+  % git clone https://github.com/alamode-code/alamode.git
   % cd alamode
   % git checkout 2.0dev
   % conda env update -n alamode -f etc/alamode-environment.yml
@@ -154,6 +154,124 @@ You can specify the binary to build, for example, as
     ::
 
       % export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib64:$LD_LIBRARY_PATH
+
+
+.. _install_pixi:
+
+Install using pixi (project-local, reproducible)
+------------------------------------------------
+
+`pixi <https://pixi.sh>`_ is a fast package manager for the same conda-forge
+ecosystem used in the conda instructions above. The main difference from conda
+is that pixi manages a **project-local** environment: all packages are
+installed under ``.pixi/`` inside the source tree, together with a lockfile
+(``pixi.lock``) that records the exact version of every dependency. Nothing is
+installed globally, no ``conda activate`` is needed, different checkouts or
+branches can have independent toolchains, and removing the environment is as
+simple as deleting the ``.pixi`` directory.
+
+
+Step 1. Install pixi
+~~~~~~~~~~~~~~~~~~~~
+
+Follow the `official instructions <https://pixi.sh/latest/installation/>`_,
+for example::
+
+  % curl -fsSL https://pixi.sh/install.sh | sh
+
+or, with Homebrew on macOS, ``brew install pixi``. Restart the terminal after
+the installation so that the ``pixi`` command is found.
+
+
+Step 2. Download source and create the environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+  % git clone https://github.com/alamode-code/alamode.git
+  % cd alamode
+  % git checkout 2.0dev
+  % pixi init --import etc/alamode-environment.yml
+  % pixi add "python=3.12" pip make
+
+``pixi init --import`` seeds the project manifest (``pixi.toml``) from the
+same conda environment file used by the conda instructions and the GitHub
+Actions workflow, so the toolchain (compilers, OpenMPI, Boost, Eigen, CMake,
+spglib, HDF5, FFTW, NumPy, SciPy, and h5py) is identical. The ``pixi add``
+line pins Python and adds ``pip`` and ``make``, which are used by the build
+and by the :ref:`Python wrapper <alm_python_install>`. Both commands solve the
+dependencies, install them into ``.pixi/envs/default``, and write
+``pixi.lock``.
+
+The manifest is created for the platform the command is run on; it is a local
+file (ignored by git), so users on other platforms simply generate their own.
+
+
+Step 3. Build by CMake
+~~~~~~~~~~~~~~~~~~~~~~
+
+Run the usual CMake commands inside the pixi environment, either from an
+activated shell::
+
+  % pixi shell
+  % cmake -S . -B _build -DCMAKE_BUILD_TYPE=Release
+  % cmake --build _build -j
+  % exit
+
+or by prefixing each command with ``pixi run``::
+
+  % pixi run 'cmake -S . -B _build -DCMAKE_BUILD_TYPE=Release'
+  % pixi run 'cmake --build _build -j'
+
+ALAMODE's CMake setup automatically searches the active environment prefix
+(pixi sets ``$CONDA_PREFIX``, exactly like conda), so no ``-DSPGLIB_ROOT`` or
+similar options are necessary. The binaries are created in ``_build/alm/``,
+``_build/anphon/``, and ``_build/tools/`` with an rpath pointing at the
+environment's library directory, so setting ``$LD_LIBRARY_PATH`` is not
+required when they are launched via ``pixi shell`` or ``pixi run``.
+
+
+Step 4. Build and install the Python wrapper (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :ref:`ALM Python interface <alm_python>` builds in the same environment
+with a single command::
+
+  % pixi run 'cd python && pip install .'
+
+The wrapper's CMake setup likewise picks up spglib, Boost, Eigen, and HDF5
+from the environment prefix automatically. Verify the installation with::
+
+  % pixi run python -c 'import alm; print(alm.__version__)'
+
+
+Optional: register pixi tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Frequently used commands can be stored in the manifest as tasks::
+
+  % pixi task add configure 'cmake -S . -B _build -DCMAKE_BUILD_TYPE=Release'
+  % pixi task add build 'cmake --build _build -j'
+  % pixi task add install-python 'cd python && pip install .'
+
+after which the whole build becomes::
+
+  % pixi run configure
+  % pixi run build
+  % pixi run install-python
+
+.. note::
+
+    ``pixi.toml``, ``pixi.lock``, and the ``.pixi/`` environment directory are
+    local to your checkout and ignored by git. If you want to share a
+    bit-reproducible environment with collaborators, commit ``pixi.toml`` and
+    ``pixi.lock`` to your own fork.
+
+.. note::
+
+    On macOS, the conda-forge compilers use the system SDK, so the Xcode
+    Command Line Tools must be installed (``xcode-select --install``). This
+    applies to the conda route as well.
 
 
 .. _install_native:
@@ -386,7 +504,7 @@ Step 2. Download source
 
 From the GitHub repository::
 
-  % git clone https://github.com/alamode-team/alamode.git
+  % git clone https://github.com/alamode-code/alamode.git
   % cd alamode
   % git checkout 2.0dev
 
