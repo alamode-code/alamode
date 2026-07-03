@@ -42,6 +42,27 @@ struct SparsePhi4Skeleton
     std::vector<std::complex<double>> val; // size nnz, refilled per k-pair
 };
 
+// One V4 index transform as a complex GEMM (zgemm via blas_wrapper.h, cf.
+// dynamical.cpp). All buffers are row-major contiguous: the input viewed as
+// (ns x ns^3) is contracted over its OUTERMOST mode index with E[out][in], and
+// the result is written as (ns^3 x ns) with the new index innermost, i.e. the
+// flat layout rotates [a b c d] -> [b c d out]. In column-major BLAS terms this
+// is C(ns x ns^3) = E_buf^T * In_buf^T.
+inline void transform_v4_index_gemm(const std::complex<double> *evec_row_major, const std::complex<double> *buf_in,
+                                    std::complex<double> *buf_out, const size_t ns,
+                                    const std::complex<double> alpha_in)
+{
+    int m = static_cast<int>(ns);
+    int n = static_cast<int>(ns * ns * ns);
+    int k = static_cast<int>(ns);
+    auto alpha = alpha_in;
+    auto beta = std::complex<double>(0.0, 0.0);
+    zgemm_cpx("T", "T", &m, &n, &k, &alpha,
+              const_cast<std::complex<double> *>(evec_row_major), &m,
+              const_cast<std::complex<double> *>(buf_in), &n,
+              &beta, buf_out, &m);
+}
+
 auto build_phi4_skeleton(const int *const *evec_index, const long int ngroup,
                          const size_t ns) -> SparsePhi4Skeleton
 {
@@ -564,8 +585,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     const size_t ns2 = ns * ns;
     const size_t ns4 = ns * ns * ns * ns;
     size_t is, js, ks, ls;
-    size_t is2_1, js2_1, is2_2, js2_2;
-    size_t js2, ks2, ls2;
+    size_t is2_1, is2_2;
     long int ii;
 
     const auto nk_scph = kmesh_dense_in->nk;
@@ -650,68 +670,38 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                 }
             }
 
-            // scatter phi4 and transform the first index in one sparse pass
-            // (-> v4_tmp1[(i,a2)][(a3,a4)]); threads own distinct columns, so the
-            // shared (a2, col) targets never race across threads
+            // scatter phi4 and transform the first index in one sparse pass into the
+            // ROTATED layout v4_tmp1[(a2,a3,a4)][i]; threads own distinct columns, so
+            // the shared (a2, col) target runs never race across threads
 #pragma omp parallel for
             for (long int col = 0; col < static_cast<long int>(ns2); ++col) {
                 for (size_t p = phi4_skeleton.col_ptr[col]; p < phi4_skeleton.col_ptr[col + 1]; ++p) {
                     const size_t a1 = phi4_skeleton.row[p] / ns;
                     const size_t a2 = phi4_skeleton.row[p] % ns;
                     const auto val = phi4_skeleton.val[p];
+                    auto *dst = &v4_tmp1[0][0] + (a2 * ns2 + col) * ns;
                     for (size_t i = 0; i < ns; ++i) {
-                        v4_tmp1[i * ns + a2][col] += val * evec_conj[knum][i][a1];
+                        dst[i] += val * evec_conj[knum][i][a1];
                     }
                 }
             }
 
-            // transform the second index (v4_tmp1 -> v4_tmp2); every element is
-            // overwritten, so no re-zeroing of the target buffer is needed.
-#pragma omp parallel for private(is2_1, js2_1, is, js, js2, is2_2)
-            for (ii = 0; ii < ns4; ++ii) {
-                is2_1 = ii / ns2;
-                js2_1 = ii % ns2;
-                is = is2_1 / ns; // first index
-                js = is2_1 % ns; // second index
+            // The remaining transforms are matrix products: each one contracts the
+            // outermost mode index of the (ns x ns^3) view of the current buffer and
+            // appends the new index innermost, so the layout rotates as
+            // [a2 a3 a4 i] -> [a3 a4 i j] -> [a4 i j k] -> [i j k m], and after the
+            // fourth transform the flat layout coincides with v4_out[ik_prod].
+            constexpr auto complex_one = std::complex<double>(1.0, 0.0);
 
-                auto accumulator = complex_zero;
-                for (js2 = 0; js2 < ns; ++js2) {
-                    is2_2 = is * ns + js2;
-                    accumulator += v4_tmp1[is2_2][js2_1] * evec_in[knum][js][js2];
-                }
-                v4_tmp2[is2_1][js2_1] = accumulator;
-            }
+            // transform the second index (v4_tmp1 -> v4_tmp2)
+            transform_v4_index_gemm(&evec_in[knum][0][0], &v4_tmp1[0][0], &v4_tmp2[0][0], ns, complex_one);
+
             // transform the third index (v4_tmp2 -> v4_tmp1)
-#pragma omp parallel for private(is2_1, js2_1, ks, ls, ks2, js2_2)
-            for (ii = 0; ii < ns4; ++ii) {
-                is2_1 = ii / ns2;
-                js2_1 = ii % ns2;
-                ks = js2_1 / ns; // third index
-                ls = js2_1 % ns; // fourth index
-
-                auto accumulator = complex_zero;
-                for (ks2 = 0; ks2 < ns; ++ks2) {
-                    js2_2 = ks2 * ns + ls;
-                    accumulator += v4_tmp2[is2_1][js2_2] * evec_in[jk][ks][ks2];
-                }
-                v4_tmp1[is2_1][js2_1] = accumulator;
-            }
+            transform_v4_index_gemm(&evec_in[jk][0][0], &v4_tmp2[0][0], &v4_tmp1[0][0], ns, complex_one);
 
             // transform the fourth index and store to the final matrix (v4_tmp1 -> v4_out)
-#pragma omp parallel for private(is2_1, js2_1, ks, ls, ls2, js2_2)
-            for (ii = 0; ii < ns4; ++ii) {
-                is2_1 = ii / ns2;
-                js2_1 = ii % ns2;
-                ks = js2_1 / ns; // third index
-                ls = js2_1 % ns; // fourth index
-
-                auto accumulator = complex_zero;
-                for (ls2 = 0; ls2 < ns; ++ls2) {
-                    js2_2 = ks * ns + ls2;
-                    accumulator += v4_tmp1[is2_1][js2_2] * evec_conj[jk][ls][ls2];
-                }
-                v4_out[ik_prod][is2_1][js2_1] = factor * accumulator;
-            }
+            transform_v4_index_gemm(&evec_conj[jk][0][0], &v4_tmp1[0][0], &v4_out[ik_prod][0][0], ns,
+                                    std::complex<double>(factor, 0.0));
 
         } else {
 
