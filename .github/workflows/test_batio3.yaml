@@ -59,3 +59,15 @@ jobs:
       - name: Compare BaTiO3 results
         working-directory: ./test
         run: python test_batio3.py --jobs compare
+
+      - name: Prepare BaTiO3 IALGO=1 test files
+        working-directory: ./test
+        run: python test_batio3_ialgo.py --jobs copy
+
+      - name: Run BaTiO3 SCPH calculation (IALGO=1, band-parallel V4)
+        working-directory: ./test
+        run: python test_batio3_ialgo.py --jobs run
+
+      - name: Compare BaTiO3 results (IALGO=1)
+        working-directory: ./test
+        run: python test_batio3_ialgo.py --jobs compare
