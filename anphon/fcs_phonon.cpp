@@ -441,6 +441,7 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     Eigen::MatrixXi atom_indices, atom_indices_super, coord_indices;
     Eigen::MatrixXd shift_vectors;
     Eigen::ArrayXd fcs_values;
+    std::string unit_shift, unit_fc;
 
     get_force_constants_from_h5(file,
                                 order,
@@ -448,7 +449,17 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
                                 atom_indices_super,
                                 coord_indices,
                                 shift_vectors,
-                                fcs_values);
+                                fcs_values,
+                                &unit_shift,
+                                &unit_fc);
+
+    // The helper already converted the data; report only when the stored unit
+    // differs from the internal one to keep the common case quiet.
+    const std::string unit_fc_internal = "Ry/bohr^" + std::to_string(order + 2);
+    if (!unit_fc.empty() && unit_fc != unit_fc_internal) {
+        std::cout << "\n  " << fname_fcs << " [Order " << order + 2 << "]: stored unit " << unit_fc
+                  << " -> converted to " << unit_fc_internal << '\n';
+    }
 
     const auto nentries = fcs_values.size();
 

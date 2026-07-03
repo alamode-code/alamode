@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "constants.h"
 #include "constraint.h"
 #include "error.h"
 #include "fcs.h"
@@ -3696,11 +3697,10 @@ auto Optimize::build_energy_block(const std::unique_ptr<Symmetry> &symmetry, con
     }
 
     // Per-configuration weights W_c = exp(-(E_c - emin)/escale) (escale in eV); escale<=0 => uniform.
-    const double RyToeV = 13.605693122994;
     std::vector<double> wts(n_ene, 1.0);
     if (optcontrol.efit_escale > 0.0) {
         for (size_t c = 0; c < n_ene; ++c)
-            wts[c] = std::exp(-(e_in[c] - emin) * RyToeV / optcontrol.efit_escale);
+            wts[c] = std::exp(-(e_in[c] - emin) * Ryd_in_eV / optcontrol.efit_escale);
     }
     double wsum = 0.0;
     for (size_t c = 0; c < n_ene; ++c) wsum += wts[c];

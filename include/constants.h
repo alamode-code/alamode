@@ -27,6 +27,7 @@ constexpr double Ryd = 4.35974394e-18 / 2.0;
 constexpr double time_ry = h_planck * inv_tpi / Ryd;
 constexpr double Hz_to_kayser = 1.0e-2 * inv_tpi / c_light;
 constexpr double Bohr_in_Angstrom = 0.52917721092;
+constexpr double Ryd_in_eV = 13.605693122994;
 constexpr double k_Boltzmann = 1.3806488e-23; // J/K
 constexpr auto im = std::complex<double>(0.0, 1.0);
 constexpr double eps = DBL_EPSILON;

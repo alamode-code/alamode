@@ -95,7 +95,8 @@ auto InputSetter::set_general_vars(ALM *alm, const std::string &prefix, const st
                                    const int print_fc4_shengbte, const int print_fc2_qefc, const double tolerance,
                                    const double tolerance_constraint, const std::string &basis_force_constant,
                                    const int nmaxsave, const double fc_zero_threshold, const int compression_level,
-                                   const std::string &format_pattern) -> void
+                                   const std::string &format_pattern, const std::string &length_unit,
+                                   const std::string &force_unit, const std::string &fcs_unit_output) -> void
 {
     size_t i;
 
@@ -103,6 +104,10 @@ auto InputSetter::set_general_vars(ALM *alm, const std::string &prefix, const st
     alm->set_verbosity(verbosity);
     alm->set_print_symmetry(printsymmetry);
     alm->set_symmetry_tolerance(tolerance);
+    // Must precede the cell/DFSET/cutoff setters, which convert their input
+    // from these units to the internal canonical units (bohr, Ry/bohr).
+    alm->set_input_units(length_unit, force_unit);
+    alm->set_fcs_unit_output(fcs_unit_output);
 
     for (i = 0; i < 3; i++) {
         is_periodic[i] = is_periodic_in[i];

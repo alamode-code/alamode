@@ -74,3 +74,7 @@ jobs:
       - name: Run test ALGO_REDUCTION consistency
         working-directory: ./test
         run: python test_algo_reduction.py
+
+      - name: Run test units (LENGTH_UNIT / FORCE_UNIT / FCS_UNIT_OUTPUT)
+        working-directory: ./test
+        run: python test_units.py

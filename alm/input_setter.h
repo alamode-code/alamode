@@ -53,7 +53,8 @@ public:
                           int print_fc3_shengbte, int print_fc4_shengbte, int print_fc2_qefc, double tolerance,
                           double tolerance_constraint, const std::string &basis_force_constant, const int nmaxsave,
                           const double fc_zero_threshold, const int compression_level,
-                          const std::string &format_pattern) -> void;
+                          const std::string &format_pattern, const std::string &length_unit,
+                          const std::string &force_unit, const std::string &fcs_unit_output) -> void;
 
     auto set_optimize_vars(ALM *alm, const std::vector<std::vector<double>> &u_train_in,
                            const std::vector<std::vector<double>> &f_train_in,

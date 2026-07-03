@@ -641,20 +641,32 @@ void System::get_structure_and_mapping_table_h5(const std::string &filename, Cel
 
         const std::string celltype_s = "SuperCell";
         const std::string celltype_p = "PrimitiveCell";
+        std::string unit_lavec_s, unit_lavec_p;
 
         get_structures_from_h5(file,
                                celltype_s,
                                scell_out.lattice_vector,
                                scell_out.x_fractional,
                                scell_out.kind,
-                               elements);
+                               elements,
+                               &unit_lavec_s);
 
         get_structures_from_h5(file,
                                celltype_p,
                                pcell_out.lattice_vector,
                                pcell_out.x_fractional,
                                pcell_out.kind,
-                               elements);
+                               elements,
+                               &unit_lavec_p);
+
+        // The helper already converted the lattice; report only when the
+        // stored unit differs from the internal one (bohr).
+        if ((!unit_lavec_s.empty() && unit_lavec_s != "bohr") ||
+            (!unit_lavec_p.empty() && unit_lavec_p != "bohr")) {
+            std::cout << "  " << filename << ": lattice_vector stored in "
+                      << (unit_lavec_s.empty() ? unit_lavec_p : unit_lavec_s)
+                      << " -> converted to bohr\n\n";
+        }
 
         get_magnetism_from_h5(file,
                               celltype_s,

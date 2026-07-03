@@ -50,6 +50,9 @@ private:
     std::vector<int> atomic_types_input, atomic_types_poscar;
     std::vector<std::string> kdname_vec, kdname_vec_poscar;
     std::map<std::string, std::string> dict_input_vars;
+    // Effective LENGTH_UNIT of the input (default "bohr"); needed in
+    // parse_input to decide how to rescale the POSCAR lattice.
+    std::string length_unit_input{"bohr"};
 
     auto parse_input(ALM *alm) -> void;
 

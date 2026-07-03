@@ -127,20 +127,27 @@ These follow the ALM command-line interface (CLI) and are easy to get wrong:
 
    **Units.**
 
-   * The lattice vectors passed to ``ALM(...)`` must be in **Bohr**
-     (multiply Å by ``1.8897259886``).
-   * The displacements ``u`` and forces ``f`` in a ``DFSET`` are read **as-is in
-     atomic units** (Bohr and Ry/Bohr) — do **not** convert them.
-   * The force constants returned by ``get_fc`` / written by ``save_fc`` are
-     converted to eV/Å\ :sup:`n` by ALM.
+   * By default (as in the ALM CLI), the lattice vectors passed to ``ALM(...)``
+     must be in **Bohr**, and the displacements ``u`` and forces ``f`` in
+     **atomic units** (Bohr and Ry/Bohr).  To pass data in other units, declare
+     them at construction: ``ALM(lavec, xcoord, numbers, length_unit='angstrom',
+     force_unit='eV/angstrom')`` — the arrays are then converted internally.
+     ``length_unit`` applies to the lattice vectors, displacements, and cutoff
+     radii; ``force_unit`` to the forces.
+   * The force constants returned by ``get_fc`` / ``set_fc`` / ``fix_fc`` are
+     **always** in Ry/Bohr\ :sup:`n`, regardless of the units above.
+     ``save_fc(..., format='alamode_h5', fc_unit='eV/angstrom')`` writes an
+     eV/Å-converted ``.h5`` (with matching ``unit`` metadata that *anphon*
+     reads back); the ``.xml`` output is always Ry/Bohr\ :sup:`n`.  The
+     ``shengbte``/``qefc`` exporters use the fixed units of those formats.
 
 * ``ALM(lavec, xcoord, numbers)`` takes the **primitive** cell: ``lavec`` (3x3,
-  Bohr), ``xcoord`` (fractional, ``(nat, 3)``), ``numbers`` (atomic numbers
-  :math:`Z`).  Map it to the supercell with ``set_supercell``.
+  in ``length_unit``), ``xcoord`` (fractional, ``(nat, 3)``), ``numbers``
+  (atomic numbers :math:`Z`).  Map it to the supercell with ``set_supercell``.
 * ``cutoff_radii`` has shape ``(maxorder, nkd, nkd)`` where ``nkd`` is the number
-  of atomic species.  Values are **in bohr** (same convention as the CLI
-  ``&cutoff`` field).  Use a **negative** value for "no cutoff".  Index 0 is the
-  harmonic term, index 1 the cubic, etc.
+  of atomic species.  Values are in ``length_unit`` (bohr by default, same
+  convention as the CLI ``&cutoff`` field).  Use a **negative** value for "no
+  cutoff".  Index 0 is the harmonic term, index 1 the cubic, etc.
 * ``set_constraint(translation=True)`` applies the algebraic translational
   invariance (acoustic sum rule, ``ICONST=11``).  ``get_matrix_elements`` then
   returns the **constraint-reduced** matrix whose number of columns equals

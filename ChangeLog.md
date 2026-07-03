@@ -1,3 +1,10 @@
+# Unreleased (2.0dev)
+
+## New
+- ``LENGTH_UNIT`` and ``FORCE_UNIT`` tags (**alm**) for providing the ``&cell`` lattice vectors, DFSET displacements/forces, and ``&cutoff`` radii in units other than the default bohr / Ry/bohr (e.g. angstrom / eV/angstrom). The data are converted to Rydberg atomic units internally. Also available in the Python API as ``ALM(..., length_unit=, force_unit=)``.
+- ``FCS_UNIT_OUTPUT`` tag (**alm**) for writing the HDF5 force constant file in eV/angstrom units; the ``unit`` attributes stored in the file are updated accordingly. Also available as ``save_fc(..., fc_unit=)`` in the Python API. The XML and ``.fcs`` outputs always stay in Rydberg atomic units.
+- **anphon** now honors the ``unit`` attributes of HDF5 force constant files and converts the data to its internal units automatically; files without the attributes are assumed to be in Rydberg atomic units as before.
+
 # Ver. 1.5.0 (2023-03-31)
 
 ## New

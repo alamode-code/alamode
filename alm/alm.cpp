@@ -10,7 +10,9 @@
 
 #include "alm.h"
 #include <iostream>
+#include <stdexcept>
 #include <string>
+#include <vector>
 #include "cluster.h"
 #include "constraint.h"
 #include "fcs.h"
@@ -20,6 +22,23 @@
 #include "symmetry.h"
 #include "system.h"
 #include "timer.h"
+#include "units.h"
+
+namespace
+{
+// Scale every entry of a 2D training-data array; returns the input untouched
+// when the factor is exactly 1 (the default-unit fast path).
+auto scaled_copy(const std::vector<std::vector<double>> &data,
+                 const double factor) -> std::vector<std::vector<double>>
+{
+    if (factor == 1.0) return data;
+    auto scaled = data;
+    for (auto &row: scaled) {
+        for (auto &val: row) val *= factor;
+    }
+    return scaled;
+}
+} // namespace
 
 using namespace ALM_NS;
 
@@ -101,9 +120,52 @@ auto ALM::set_periodicity(const int is_periodic[3]) const -> void // PERIODIC
     system->set_periodicity(is_periodic);
 }
 
+auto ALM::set_input_units(const std::string &length_unit, const std::string &force_unit) -> void
+{
+    const auto lu = units::parse_length_unit(length_unit);   // throws std::invalid_argument
+    const auto fu = units::parse_force_unit(force_unit);
+    const auto factor_l = units::length_to_bohr(lu);
+    const auto factor_f = units::force_to_ry_bohr(fu);
+    if (unit_sensitive_setter_called_ &&
+        (factor_l != factor_length_to_bohr_ || factor_f != factor_force_to_ry_bohr_)) {
+        throw std::logic_error("set_input_units must be called before the cell, "
+                               "displacement-force data, or cutoff radii are set.");
+    }
+    factor_length_to_bohr_ = factor_l;
+    factor_force_to_ry_bohr_ = factor_f;
+    length_unit_name_ = units::canonical_name(lu);
+    force_unit_name_ = units::canonical_name(fu);
+}
+
+auto ALM::get_input_units() const -> std::pair<std::string, std::string>
+{
+    return {length_unit_name_, force_unit_name_};
+}
+
+auto ALM::set_fcs_unit_output(const std::string &unit_system) const -> void // FCS_UNIT_OUTPUT
+{
+    writer->set_fcs_unit_output(unit_system);
+}
+
+auto ALM::get_fcs_unit_output() const -> std::string
+{
+    return writer->get_fcs_unit_output();
+}
+
 auto ALM::set_cell(const size_t nat, const double lavec[3][3], const double xcoord[][3], const int kind[]) const -> void
 {
-    system->set_basecell(lavec, nat, kind, xcoord);
+    unit_sensitive_setter_called_ = true;
+    if (factor_length_to_bohr_ != 1.0) {
+        double lavec_bohr[3][3];
+        for (auto i = 0; i < 3; ++i) {
+            for (auto j = 0; j < 3; ++j) {
+                lavec_bohr[i][j] = lavec[i][j] * factor_length_to_bohr_;
+            }
+        }
+        system->set_basecell(lavec_bohr, nat, kind, xcoord);
+    } else {
+        system->set_basecell(lavec, nat, kind, xcoord);
+    }
 }
 
 auto ALM::set_element_names(const std::vector<std::string> &kdname_in) const -> void
@@ -130,12 +192,14 @@ auto ALM::set_magnetic_params(const size_t nat,
 
 auto ALM::set_u_train(const std::vector<std::vector<double>> &u) const -> void
 {
-    optimize->set_u_train(u);
+    unit_sensitive_setter_called_ = true;
+    optimize->set_u_train(scaled_copy(u, factor_length_to_bohr_));
 }
 
 auto ALM::set_f_train(const std::vector<std::vector<double>> &f) const -> void
 {
-    optimize->set_f_train(f);
+    unit_sensitive_setter_called_ = true;
+    optimize->set_f_train(scaled_copy(f, factor_force_to_ry_bohr_));
 }
 
 auto ALM::set_e_train(const std::vector<double> &e) const -> void
@@ -151,7 +215,9 @@ auto ALM::set_e_validation(const std::vector<double> &e) const -> void
 auto ALM::set_validation_data(const std::vector<std::vector<double>> &u,
                               const std::vector<std::vector<double>> &f) const -> void
 {
-    optimize->set_validation_data(u, f);
+    unit_sensitive_setter_called_ = true;
+    optimize->set_validation_data(scaled_copy(u, factor_length_to_bohr_),
+                                  scaled_copy(f, factor_force_to_ry_bohr_));
 }
 
 auto ALM::set_optimizer_control(const OptimizerControl &optcontrol_in) const -> void
@@ -251,7 +317,16 @@ auto ALM::define(const int maxorder, const size_t nkd, const int *nbody_include,
                  const double *cutoff_radii) const -> void
 {
     // nkd = 0 means cutoff_radii undefined (hopefully nullptr).
-    cluster->define(maxorder, nkd, nbody_include, cutoff_radii);
+    unit_sensitive_setter_called_ = true;
+    if (cutoff_radii && factor_length_to_bohr_ != 1.0) {
+        std::vector<double> cutoff_bohr(cutoff_radii, cutoff_radii + maxorder * nkd * nkd);
+        for (auto &r: cutoff_bohr) {
+            if (r > 0.0) r *= factor_length_to_bohr_; // negative = "no cutoff" sentinel
+        }
+        cluster->define(maxorder, nkd, nbody_include, cutoff_bohr.data());
+    } else {
+        cluster->define(maxorder, nkd, nbody_include, cutoff_radii);
+    }
 }
 
 auto ALM::get_optimizer_control() const -> OptimizerControl

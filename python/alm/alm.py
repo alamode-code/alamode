@@ -14,11 +14,16 @@ C/cython wrapper): the same public API is provided on top of the compiled
     a.save_fc("out.h5", format="alamode_h5") # write what anphon reads (.h5)
     # 'a' (and its C++ instance) is freed automatically when it goes out of scope.
 
-Units -- Rydberg atomic units throughout, as in the ALM CLI:
+Units -- Rydberg atomic units internally, as in the ALM CLI.  By default the
+input is expected in the same units; pass ``length_unit`` / ``force_unit`` to
+the constructor to provide the input in other units (converted on entry):
 
-    lattice vectors, displacements, cutoff radii   Bohr
-    forces                                         Ry/Bohr
-    force constants of order ``fc_order``          Ry/Bohr^(fc_order+1)
+    lattice vectors, displacements, cutoff radii   ``length_unit``  ('bohr' default, or 'angstrom')
+    forces                                         ``force_unit``   ('Ry/bohr' default, 'eV/angstrom' or 'Ha/bohr')
+    force constants of order ``fc_order``          Ry/Bohr^(fc_order+1), always
+        (``get_fc``/``set_fc``/``fix_fc`` are NOT affected by the units above;
+        only ``save_fc(..., format='alamode_h5', fc_unit='eV/angstrom')`` writes
+        converted values, with matching ``unit`` metadata in the .h5 file)
 
 Force-constant order convention, used consistently by every method here:
 
@@ -51,13 +56,21 @@ class ALM:
     Parameters
     ----------
     lavec : array_like, shape (3, 3)
-        Lattice vectors of the (super)cell in Bohr; row i is the i-th vector.
+        Lattice vectors of the (super)cell in ``length_unit``; row i is the
+        i-th vector.
     xcoord : array_like, shape (nat, 3)
         Fractional coordinates of the atoms.
     numbers : array_like, shape (nat,)
         Atomic numbers.
     verbosity : int
         0 (silent, default) or 1 (print progress to stdout).
+    length_unit : str
+        Unit of the lattice vectors, displacements and cutoff radii passed to
+        this object: 'bohr' (default) or 'angstrom'.  Converted to Bohr
+        internally.
+    force_unit : str
+        Unit of the forces passed to this object: 'Ry/bohr' (default),
+        'eV/angstrom' or 'Ha/bohr'.  Converted to Ry/Bohr internally.
 
     Notes
     -----
@@ -73,10 +86,24 @@ class ALM:
     # Output formats accepted by ALMCore.save_fc (see alm/writer.cpp).
     _SAVE_FORMATS = ("alamode", "alamode_h5", "shengbte", "shengbte4",
                      "qefc", "hessian")
+    # Units accepted for the input data and the alamode_h5 output (see include/units.h).
+    _LENGTH_UNITS = ("bohr", "angstrom")
+    _FORCE_UNITS = ("Ry/bohr", "eV/angstrom", "Ha/bohr")
+    _FC_OUTPUT_UNITS = ("Ry/bohr", "eV/angstrom")
     # Legacy optimizer_control key -> 2.0dev field (kept for backward compatibility).
     _OC_ALIASES = {"mirror_image_conv": "periodic_image_conv"}
 
-    def __init__(self, lavec, xcoord, numbers, verbosity: int = 0):
+    @staticmethod
+    def _canonical_unit(value, valid, name):
+        value_lower = str(value).lower()
+        for unit in valid:
+            if value_lower == unit.lower():
+                return unit
+        raise ValueError(
+            f"{name} must be one of {valid} (case-insensitive), got {value!r}.")
+
+    def __init__(self, lavec, xcoord, numbers, verbosity: int = 0,
+                 length_unit: str = "bohr", force_unit: str = "Ry/bohr"):
         self._core = None
         self._maxorder = 1
         self._defined = False
@@ -87,6 +114,10 @@ class ALM:
         self._kind_names = OrderedDict()
         self._output_filename_prefix = None
         self._verbosity = verbosity
+        self._length_unit = self._canonical_unit(
+            length_unit, self._LENGTH_UNITS, "length_unit")
+        self._force_unit = self._canonical_unit(
+            force_unit, self._FORCE_UNITS, "force_unit")
         self._lavec = np.array(lavec, dtype="double", order="C")
         self._xcoord = np.array(xcoord, dtype="double", order="C")
         self._numbers = np.array(numbers, dtype="intc")
@@ -131,6 +162,9 @@ class ALM:
             return
         self._core = _alm.ALMCore()
         self._core.set_verbosity(self._verbosity)
+        # Must precede the transfers below: set_cell/set_u_train/set_f_train/
+        # define convert their input from these units to Bohr / Ry/Bohr.
+        self._core.set_input_units(self._length_unit, self._force_unit)
         if self._output_filename_prefix is not None:
             self._core.set_output_filename_prefix(self._output_filename_prefix)
         # A freshly created native core has no cell/data yet, so always
@@ -181,9 +215,9 @@ class ALM:
     # ---- structure properties -------------------------------------------
     @property
     def lavec(self) -> np.ndarray:
-        """Lattice vectors of the (super)cell in Bohr, shape (3, 3); row i is
-        the i-th vector.  Assigning a new value re-sends the cell to the C++
-        core on the next :meth:`define` call."""
+        """Lattice vectors of the (super)cell in :attr:`length_unit`, shape
+        (3, 3); row i is the i-th vector.  Assigning a new value re-sends the
+        cell to the C++ core on the next :meth:`define` call."""
         return np.array(self._lavec, dtype="double", order="C")
 
     @lavec.setter
@@ -241,6 +275,19 @@ class ALM:
         self._core.set_magnetic_params(
             np.zeros((nat, 3), dtype="double"), False, 0, 1, "")
 
+    # ---- units ------------------------------------------------------------
+    @property
+    def length_unit(self) -> str:
+        """Unit of the lattice vectors, displacements and cutoff radii passed
+        to this object ('bohr' or 'angstrom'; read-only, set at construction)."""
+        return self._length_unit
+
+    @property
+    def force_unit(self) -> str:
+        """Unit of the forces passed to this object ('Ry/bohr', 'eV/angstrom'
+        or 'Ha/bohr'; read-only, set at construction)."""
+        return self._force_unit
+
     # ---- verbosity / output ---------------------------------------------
     @property
     def verbosity(self) -> int:
@@ -290,9 +337,9 @@ class ALM:
         maxorder : int
             Highest fc_order to include: 1 = harmonic only, 2 = up to cubic, ...
         cutoff_radii : array_like, shape (maxorder, nkd, nkd), optional
-            Interaction cutoff radius in Bohr per order and kind pair.
-            A negative value means no cutoff (all pairs included); the default
-            ``None`` applies no cutoff at any order.
+            Interaction cutoff radius in :attr:`length_unit` per order and
+            kind pair.  A negative value means no cutoff (all pairs included);
+            the default ``None`` applies no cutoff at any order.
         nbody : sequence of int, length maxorder, optional
             Maximum number of distinct atoms in a cluster per order.
             Default: 2, 3, 4, ... (i.e. no restriction).
@@ -467,7 +514,7 @@ class ALM:
 
     @property
     def displacements(self) -> np.ndarray:
-        """Training displacements in Bohr, shape (nsnap, nat, 3)."""
+        """Training displacements in :attr:`length_unit`, shape (nsnap, nat, 3)."""
         if self._u is None:
             raise RuntimeError("displacements have not been set.")
         return np.array(self._u, dtype="double", order="C")
@@ -479,7 +526,7 @@ class ALM:
 
     @property
     def forces(self) -> np.ndarray:
-        """Training forces in Ry/Bohr, shape (nsnap, nat, 3)."""
+        """Training forces in :attr:`force_unit`, shape (nsnap, nat, 3)."""
         if self._f is None:
             raise RuntimeError("forces have not been set.")
         return np.array(self._f, dtype="double", order="C")
@@ -495,9 +542,9 @@ class ALM:
         Parameters
         ----------
         u : array_like, shape (nsnap, nat, 3)
-            Atomic displacements in Bohr.
+            Atomic displacements in :attr:`length_unit`.
         f : array_like, shape (nsnap, nat, 3)
-            Forces in Ry/Bohr.
+            Forces in :attr:`force_unit`.
         """
         self._check()
         u = self._as_data_array(u, "u (displacements)")
@@ -741,7 +788,7 @@ class ALM:
 
     # ---- save ------------------------------------------------------------
     def save_fc(self, filename: str, format: str = "alamode",
-                maxorder_to_save: int = None):
+                maxorder_to_save: int = None, fc_unit: str = "Ry/bohr"):
         """Write the force constants to a file.
 
         Parameters
@@ -753,6 +800,11 @@ class ALM:
             'shengbte', 'shengbte4', 'qefc', or 'hessian'.
         maxorder_to_save : int, optional
             Highest fc_order to write (default: all defined orders).
+        fc_unit : str
+            Unit system of the written file: 'Ry/bohr' (default) or
+            'eV/angstrom'.  Only supported for format='alamode_h5', whose
+            files carry the unit as metadata that anphon reads back; the
+            other formats have fixed units (the .xml is always Ry/bohr^n).
         """
         self._check()
         self._check_defined()
@@ -760,10 +812,17 @@ class ALM:
         if fmt not in self._SAVE_FORMATS:
             raise ValueError(
                 f"format must be one of {self._SAVE_FORMATS}, got {format!r}.")
+        fc_unit = self._canonical_unit(fc_unit, self._FC_OUTPUT_UNITS, "fc_unit")
+        if fc_unit != "Ry/bohr" and fmt != "alamode_h5":
+            raise ValueError(
+                "fc_unit is only supported for format='alamode_h5'; the other "
+                "formats have fixed units (the XML is always Ry/bohr^n).")
         if maxorder_to_save is None:
             maxorder_to_save = self._maxorder
         elif not (1 <= maxorder_to_save <= self._maxorder):
             raise ValueError(
                 f"maxorder_to_save must be in [1, maxorder={self._maxorder}], "
                 f"got {maxorder_to_save}.")
-        self._core.save_fc(str(filename), fmt, maxorder_to_save)
+        # fc_unit is passed on every call (defaults included) so the writer
+        # state can never leak from a previous save.
+        self._core.save_fc(str(filename), fmt, maxorder_to_save, fc_unit)

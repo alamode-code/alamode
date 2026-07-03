@@ -120,6 +120,10 @@ Description of input variables
 
      ``FCSFILE`` and ``FC2FILE`` replace the former ``FCSXML`` and ``FC2XML`` tags, which are no longer accepted.
 
+ .. note::
+
+     For HDF5 files, the ``unit`` attributes stored in the file (e.g. by *alm* with ``FCS_UNIT_OUTPUT = eV/angstrom``) are honored: the lattice vectors, shift vectors, and force constant values are converted to the internal Rydberg atomic units automatically. Files without unit attributes are assumed to be in bohr and Ry/bohr\ :sup:`n`. XML files are always in Rydberg atomic units.
+
 ````
 
 .. _anphon_fc2file:

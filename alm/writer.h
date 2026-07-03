@@ -23,6 +23,7 @@
 #include "patterndisp.h"
 #include "symmetry.h"
 #include "system.h"
+#include "units.h"
 
 #define H5_USE_EIGEN 1
 
@@ -155,6 +156,12 @@ public:
 
     [[nodiscard]] auto get_format_patternfile() const -> std::string;
 
+    // Unit system of the "alamode_h5" output (FCS_UNIT_OUTPUT). The XML and
+    // .fcs outputs always stay in Rydberg atomic units.
+    auto set_fcs_unit_output(const std::string &unit_system) -> void;
+
+    [[nodiscard]] auto get_fcs_unit_output() const -> std::string;
+
 private:
     auto write_force_constants(const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Fcs> &fcs,
                                const std::unique_ptr<Symmetry> &symmetry, const double *fcs_vals, const int verbosity,
@@ -172,13 +179,15 @@ private:
 
     static auto write_structures_h5(H5Easy::File &file, const Cell &cell, const Spin &spin, const std::string &celltype,
                                     const std::vector<std::string> &kdnames, const size_t ntran,
-                                    const std::vector<std::vector<int>> &mapping_info) -> void;
+                                    const std::vector<std::vector<int>> &mapping_info,
+                                    const units::FcUnitSystem unit_system) -> void;
 
     static auto write_forceconstant_at_given_order_h5(H5Easy::File &file, const int order,
                                                       const std::vector<ForceConstantTable> &fc_cart,
                                                       const std::vector<Eigen::MatrixXd> &x_image,
                                                       const std::vector<Maps> &map_s2tp,
                                                       const std::unique_ptr<Cluster> &cluster,
+                                                      const units::FcUnitSystem unit_system,
                                                       const int compression_level = 9) -> void;
 
     auto write_hessian(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
@@ -209,6 +218,7 @@ private:
     std::string file_fcs, file_hes;
     std::string filename_fcs;
     std::string format_pattern;
+    units::FcUnitSystem fcs_unit_output{units::FcUnitSystem::ry_bohr};
 
     std::map<std::string, std::string> input_variables;
 };

@@ -86,6 +86,14 @@ NB_MODULE(_alm, m)
         .def("set_symmetry_tolerance", &ALM::set_symmetry_tolerance)
         .def("get_symmetry_tolerance", &ALM::get_symmetry_tolerance)
 
+        // -- units ---------------------------------------------------------------
+        // Must be called before set_cell / set_u_train / set_f_train / define;
+        // those setters convert their input into the internal units (bohr, Ry/bohr).
+        .def("set_input_units", &ALM::set_input_units, nb::arg("length_unit"), nb::arg("force_unit"))
+        .def("get_input_units", &ALM::get_input_units)
+        .def("set_fcs_unit_output", &ALM::set_fcs_unit_output)
+        .def("get_fcs_unit_output", &ALM::get_fcs_unit_output)
+
         // -- cell --------------------------------------------------------------
         .def("set_cell",
              [](ALM &self, f64in lavec, f64in xcoord, i32in kind) {
@@ -333,10 +341,14 @@ NB_MODULE(_alm, m)
         .def("set_fcs_save_flag", &ALM::set_fcs_save_flag)
         .def("save_fc",
              [](ALM &self, const std::string &filename, const std::string &fc_format,
-                int maxorder_to_save) {
+                int maxorder_to_save, const std::string &fc_unit) {
                  if (maxorder_to_save < 0) maxorder_to_save = self.get_maxorder();
+                 // Applied on every call (including the default) so a previous
+                 // save with a non-default unit cannot leak into this one.
+                 self.set_fcs_unit_output(fc_unit);
                  nb::gil_scoped_release rel;
                  self.save_fc(filename, fc_format, maxorder_to_save);
              },
-             nb::arg("filename"), nb::arg("fc_format") = "alamode", nb::arg("maxorder_to_save") = -1);
+             nb::arg("filename"), nb::arg("fc_format") = "alamode", nb::arg("maxorder_to_save") = -1,
+             nb::arg("fc_unit") = "Ry/bohr");
 }

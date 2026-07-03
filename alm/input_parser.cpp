@@ -20,14 +20,17 @@
 #include <memory>
 #include <numeric>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <sys/stat.h>
 #include "alm.h"
+#include "constants.h"
 #include "error.h"
 #include "files.h"
 #include "input_setter.h"
 #include "memory.h"
 #include "optimize.h"
+#include "units.h"
 
 using namespace ALM_NS;
 
@@ -181,7 +184,6 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
     // Exactly one parseable E_pot per ORIGINAL snapshot is required (validated before filtering).
     const auto nat = nat_in * static_cast<int>(transmat_to_super.determinant());
     const auto ntoken_per_snapshot = static_cast<size_t>(6 * nat);
-    const double Ryd_in_eV = 13.605693122994;  // 1 Ry in eV
 
     std::ifstream ifs_data;
     ifs_data.open(datfile_in.filename.c_str(), std::ios::in);
@@ -290,7 +292,12 @@ auto InputParser::parse_input(ALM *alm) -> void
     } else {
         // If STRUCTURE_FILE is given, use the structure parameters defined in this file.
         // In this case, the &cell and &position entries are ignored.
-        lavec_poscar /= Bohr_in_Angstrom;
+        // A POSCAR is always in Angstrom (VASP convention), independent of LENGTH_UNIT.
+        // ALM::set_cell converts its input from LENGTH_UNIT to bohr, so re-express the
+        // POSCAR lattice in LENGTH_UNIT here to end up with a single net conversion.
+        if (length_unit_input == "bohr") {
+            lavec_poscar /= Bohr_in_Angstrom;
+        }
         input_setter->set_cell_parameter(lavec_poscar);
         input_setter->set_atomic_positions(xf_poscar);
         input_setter->set_element_types(atomic_types_poscar, kdname_vec_poscar);
@@ -354,11 +361,12 @@ auto InputParser::parse_general_vars(ALM *alm) -> void
     std::string format_pattern;
 
     const std::vector<std::string> input_list{
-        "PREFIX",       "MODE",           "NAT",         "NKD",           "KD",          "PERIODIC",
-        "PRINTSYM",     "TOLERANCE",      "DBASIS",      "TRIMEVEN",      "VERBOSITY",   "MAGMOM",
-        "NONCOLLINEAR", "TREVSYM",        "HESSIAN",     "TOL_CONST",     "FCSYM_BASIS", "NMAXSAVE",
-        "FC3_SHENGBTE", "FC4_SHENGBTE",   "FC2_QEFC",    "FCS_ALAMODE",   "FC_ZERO_THR", "SUPERCELL",
-        "PRIMCELL",     "STRUCTURE_FILE", "COMPRESSION", "FORMAT_PATTERN"};
+        "PREFIX",       "MODE",           "NAT",         "NKD",            "KD",          "PERIODIC",
+        "PRINTSYM",     "TOLERANCE",      "DBASIS",      "TRIMEVEN",       "VERBOSITY",   "MAGMOM",
+        "NONCOLLINEAR", "TREVSYM",        "HESSIAN",     "TOL_CONST",      "FCSYM_BASIS", "NMAXSAVE",
+        "FC3_SHENGBTE", "FC4_SHENGBTE",   "FC2_QEFC",    "FCS_ALAMODE",    "FC_ZERO_THR", "SUPERCELL",
+        "PRIMCELL",     "STRUCTURE_FILE", "COMPRESSION", "FORMAT_PATTERN", "LENGTH_UNIT", "FORCE_UNIT",
+        "FCS_UNIT_OUTPUT"};
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::map<std::string, std::string> general_var_dict;
 
@@ -540,6 +548,30 @@ auto InputParser::parse_general_vars(ALM *alm) -> void
         format_pattern = "yaml";
     }
 
+    // Units of the input data (&cell lattice, DFSET displacements and forces,
+    // &cutoff radii) and of the alamode_h5 output. Validated here; the actual
+    // conversion to the internal Rydberg atomic units happens in the ALM core
+    // setters. NOTE: STRUCTURE_FILE (POSCAR) is always in Angstrom and E_pot
+    // energies keep their own per-snapshot (eV/Ry/Ha) header mechanism.
+    std::string length_unit{"bohr"}, force_unit{"Ry/bohr"}, fcs_unit_output{"Ry/bohr"};
+    if (!general_var_dict["LENGTH_UNIT"].empty()) {
+        length_unit = general_var_dict["LENGTH_UNIT"];
+    }
+    if (!general_var_dict["FORCE_UNIT"].empty()) {
+        force_unit = general_var_dict["FORCE_UNIT"];
+    }
+    if (!general_var_dict["FCS_UNIT_OUTPUT"].empty()) {
+        fcs_unit_output = general_var_dict["FCS_UNIT_OUTPUT"];
+    }
+    try {
+        length_unit = units::canonical_name(units::parse_length_unit(length_unit));
+        force_unit = units::canonical_name(units::parse_force_unit(force_unit));
+        fcs_unit_output = units::canonical_name(units::parse_fc_unit_system(fcs_unit_output));
+    } catch (const std::invalid_argument &e) {
+        exit("parse_general_vars", e.what());
+    }
+    length_unit_input = length_unit;
+
     if (mode == "suggest") {
         if (general_var_dict["DBASIS"].empty()) {
             str_disp_basis = "Cart";
@@ -575,7 +607,10 @@ auto InputParser::parse_general_vars(ALM *alm) -> void
                                    nmaxsave,
                                    fc_zero_threshold,
                                    compression_level,
-                                   format_pattern);
+                                   format_pattern,
+                                   length_unit,
+                                   force_unit,
+                                   fcs_unit_output);
 
     kdname_v.clear();
     periodic_v.clear();

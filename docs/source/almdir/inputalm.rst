@@ -48,8 +48,9 @@ List of supported input variables
    :widths: 20, 20, 20, 20
 
    **&general**
-   :ref:`HESSIAN <alm_hessian>`, :ref:`FC3_SHENGBTE <alm_fc3_shengbte>`, :ref:`FCSYM_BASIS <alm_fcsym_basis>`, :ref:`FC_ZERO_THR <alm_fc_zero_thr>`
-   :ref:`KD <alm_kd>`, :ref:`MAGMOM <alm_magmom>`, :ref:`MODE <alm_mode>`, :ref:`NAT <alm_nat>`
+   :ref:`FCS_UNIT_OUTPUT <alm_fcs_unit_output>`, :ref:`FORCE_UNIT <alm_force_unit>`, :ref:`HESSIAN <alm_hessian>`, :ref:`FC3_SHENGBTE <alm_fc3_shengbte>`
+   :ref:`FCSYM_BASIS <alm_fcsym_basis>`, :ref:`FC_ZERO_THR <alm_fc_zero_thr>`, :ref:`KD <alm_kd>`, :ref:`LENGTH_UNIT <alm_length_unit>`
+   :ref:`MAGMOM <alm_magmom>`, :ref:`MODE <alm_mode>`, :ref:`NAT <alm_nat>`
    :ref:`NMAXSAVE <alm_nmaxsave>`, :ref:`NONCOLLINEAR <alm_noncollinear>`, :ref:`PERIODIC <alm_periodic>`
    :ref:`PREFIX <alm_prefix>`, :ref:`PRIMCELL <alm_primcell>`, :ref:`PRINTSYM <alm_printsym>`, :ref:`STRUCTURE_FILE <alm_structure_file>`
    :ref:`SUPERCELL <alm_supercell>`, :ref:`TOLERANCE <alm_tolerance>`
@@ -127,6 +128,9 @@ Description of input variables
  :Description: When this tag is given, *alm* reads the lattice vectors, atomic species, and atomic coordinates from the specified file in the VASP POSCAR format. In this case, the ``&cell`` and ``&position`` fields are ignored, and ``NAT`` and ``KD`` are inferred from the structure file.
 
     The POSCAR file may use direct or Cartesian coordinates. A ``Selective dynamics`` line is accepted, but the selective-dynamics flags themselves are ignored.
+
+ .. note::
+    A POSCAR is always interpreted in Angstrom (the VASP convention), independent of the :ref:`LENGTH_UNIT <alm_length_unit>` tag.
 
 ````
 
@@ -325,6 +329,36 @@ Description of input variables
 
 ````
 
+.. _alm_length_unit:
+
+* LENGTH_UNIT-tag = bohr | angstrom
+
+ :Default: bohr
+ :Type: String
+ :Description: Unit of the length-type input data: the ``&cell`` lattice vectors, the displacements in the ``DFSET`` file, and the ``&cutoff`` radii. The data are converted to Bohr internally, so the internal model and all outputs are unaffected. A ``STRUCTURE_FILE`` (POSCAR) is always interpreted in Angstrom, independent of this tag.
+
+````
+
+.. _alm_force_unit:
+
+* FORCE_UNIT-tag = Ry/bohr | eV/angstrom | Ha/bohr
+
+ :Default: Ry/bohr
+ :Type: String
+ :Description: Unit of the forces in the ``DFSET`` file, converted to Ry/bohr internally. This tag does not affect the ``E_pot`` energies optionally given in the ``DFSET`` comment headers, whose unit is declared per snapshot as ``E_pot (eV|Ry|Ha)``.
+
+````
+
+.. _alm_fcs_unit_output:
+
+* FCS_UNIT_OUTPUT-tag = Ry/bohr | eV/angstrom
+
+ :Default: Ry/bohr
+ :Type: String
+ :Description: Unit system of the force constants written to the HDF5 file (``PREFIX``.h5). With ``eV/angstrom``, the force constant values (eV/angstrom\ :sup:`n`\ ), the lattice vectors, and the shift vectors (angstrom) are converted consistently, and the ``unit`` attributes stored in the file are updated accordingly; *anphon* reads these attributes and converts the data back internally. The XML (``PREFIX``.xml) and ``PREFIX``.fcs outputs always stay in Rydberg atomic units.
+
+````
+
 "&interaction"-field
 ++++++++++++++++++++
 
@@ -366,7 +400,7 @@ Description of input variables
 "&cutoff"-field
 +++++++++++++++
 
-In this entry field, one needs to specify cutoff radii of interaction for each order in units of bohr. 
+In this entry field, one needs to specify cutoff radii of interaction for each order in units of bohr (or of :ref:`LENGTH_UNIT <alm_length_unit>` if given).
 In the current implementation, cutoff radii should be defined for every possible pair of atomic elements. 
 For example, the cutoff entry for a harmonic calculation (``NORDER = 1``) of Si should be like
 ::
@@ -430,7 +464,7 @@ In the case of cubic terms, force constants :math:`\Phi_{ijk}^{\mu\nu\lambda}` s
 "&cell"-field
 +++++++++++++
 
-Please give the cell parameters in this entry in units of bohr as the following::
+Please give the cell parameters in this entry in units of bohr (or of :ref:`LENGTH_UNIT <alm_length_unit>` if given) as the following::
 
  &cell
   a
@@ -963,5 +997,8 @@ comment line beginning with ``#``)::
    u_x(1)     u_y(1)     u_z(1)     f_x(1)     f_y(1)     f_z(1)
     ...        ...        ...        ...        ...        ...
 
-Here, ``NAT`` is the number of atoms in the supercell. 
-The unit of displacements and forces must be **bohr** and **Ryd/bohr**, respectively.
+Here, ``NAT`` is the number of atoms in the supercell.
+The unit of displacements and forces must be **bohr** and **Ryd/bohr**, respectively,
+unless other units are declared with the :ref:`LENGTH_UNIT <alm_length_unit>` and
+:ref:`FORCE_UNIT <alm_force_unit>` tags (e.g., ``LENGTH_UNIT = angstrom; FORCE_UNIT = eV/angstrom``
+for data taken directly from VASP output).

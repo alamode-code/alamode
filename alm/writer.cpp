@@ -94,6 +94,13 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
     std::cout << "  FC2_QEFC = " << save_format_flags.at("qefc") << '\n';
     std::cout << "  HESSIAN = " << save_format_flags.at("hessian") << '\n';
     std::cout << "  FC_ZERO_THR = " << fcs->get_fc_zero_threshold() << '\n';
+    const auto var_or_default = [this](const std::string &key, const char *defval) {
+        const auto val = get_input_var(key);
+        return val.empty() ? std::string(defval) : val;
+    };
+    std::cout << "  LENGTH_UNIT = " << var_or_default("LENGTH_UNIT", "bohr")
+              << "; FORCE_UNIT = " << var_or_default("FORCE_UNIT", "Ry/bohr") << '\n';
+    std::cout << "  FCS_UNIT_OUTPUT = " << units::canonical_name(fcs_unit_output) << '\n';
     std::cout << '\n';
 
     std::cout << " Interaction:\n";
@@ -869,7 +876,8 @@ auto Writer::save_fcs_alamode(const std::unique_ptr<System> &system, const std::
                         "SuperCell",
                         system->get_kdname(),
                         symmetry->get_symnum_tran("super").size(),
-                        symmetry->get_map_trueprim_to_super());
+                        symmetry->get_map_trueprim_to_super(),
+                        fcs_unit_output);
     // PrimitiveCell
     write_structures_h5(file,
                         system->get_primcell(),
@@ -877,7 +885,8 @@ auto Writer::save_fcs_alamode(const std::unique_ptr<System> &system, const std::
                         "PrimitiveCell",
                         system->get_kdname(),
                         symmetry->get_symnum_tran("prim").size(),
-                        symmetry->get_map_trueprim_to_prim());
+                        symmetry->get_map_trueprim_to_prim(),
+                        fcs_unit_output);
 
     // Force Constants
     for (auto order = 0; order < cluster->get_maxorder(); ++order) {
@@ -893,6 +902,7 @@ auto Writer::save_fcs_alamode(const std::unique_ptr<System> &system, const std::
                                               system->get_x_image(),
                                               symmetry->get_map_super_to_trueprim(),
                                               cluster,
+                                              fcs_unit_output,
                                               compression_level);
     }
 
@@ -916,22 +926,30 @@ auto Writer::save_fcs_alamode(const std::unique_ptr<System> &system, const std::
 
     if (verbosity > 0) {
         std::cout << " Input data for the phonon code ANPHON      : " << fname_fcs << '\n';
+        if (fcs_unit_output == units::FcUnitSystem::ev_angstrom) {
+            std::cout << "                                               "
+                      << "(written in eV/angstrom units; .xml and .fcs stay in Ry/bohr)" << '\n';
+        }
     }
 }
 
 auto Writer::write_structures_h5(H5Easy::File &file, const Cell &cell, const Spin &spin, const std::string &celltype,
                                  const std::vector<std::string> &kdnames, const size_t ntran,
-                                 const std::vector<std::vector<int>> &mapping_info) -> void
+                                 const std::vector<std::vector<int>> &mapping_info,
+                                 const units::FcUnitSystem unit_system) -> void
 {
     // Write structure information to the hdf5 file object.
     using namespace H5Easy;
-    const std::string unitname("bohr");
+    const auto in_ev_ang = unit_system == units::FcUnitSystem::ev_angstrom;
+    const std::string unitname(in_ev_ang ? "angstrom" : "bohr");
+    const auto factor_length = in_ev_ang ? Bohr_in_Angstrom : 1.0;
 
     std::vector<std::string> kind_names;
     for (auto i = 0; i < cell.number_of_elems; ++i) {
         kind_names.push_back(kdnames[i]);
     }
-    dump(file, "/" + celltype + "/lattice_vector", cell.lattice_vector.transpose());
+    dump(file, "/" + celltype + "/lattice_vector",
+         Eigen::Matrix3d(cell.lattice_vector.transpose() * factor_length));
     dumpAttribute(file, "/" + celltype + "/lattice_vector", "unit", unitname);
     dump(file, "/" + celltype + "/number_of_atoms", cell.number_of_atoms);
     dump(file, "/" + celltype + "/number_of_elements", cell.number_of_elems);
@@ -957,6 +975,7 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
                                                    const std::vector<Eigen::MatrixXd> &x_image,
                                                    const std::vector<Maps> &map_s2tp,
                                                    const std::unique_ptr<Cluster> &cluster,
+                                                   const units::FcUnitSystem unit_system,
                                                    const int compression_level) -> void
 {
     using namespace H5Easy;
@@ -1033,6 +1052,12 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
         fcs_arrays[counter] = it.fcs_value;
         ++counter;
     }
+    const auto in_ev_ang = unit_system == units::FcUnitSystem::ev_angstrom;
+    if (in_ev_ang) {
+        shift_vectors *= Bohr_in_Angstrom;
+        fcs_arrays *= units::fc_ry_bohr_to_ev_ang(order + 2);
+    }
+
     const std::string str_ordername = "Order" + std::to_string(order + 2);
     dump(file, "/ForceConstants/" + str_ordername + "/atom_indices", atom_indices, Compression(compression_level));
     dump(file,
@@ -1041,7 +1066,7 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
          Compression(compression_level));
     dump(file, "/ForceConstants/" + str_ordername + "/coord_indices", coord_indices, Compression(compression_level));
     dump(file, "/ForceConstants/" + str_ordername + "/shift_vectors", shift_vectors, Compression(compression_level));
-    std::string unitname = "bohr";
+    std::string unitname = in_ev_ang ? "angstrom" : "bohr";
     const std::string basisname = "Cartesian";
     dumpAttribute(file, "/ForceConstants/" + str_ordername + "/shift_vectors", "unit", unitname);
     dumpAttribute(file, "/ForceConstants/" + str_ordername + "/shift_vectors", "basis", basisname);
@@ -1049,7 +1074,7 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
          "/ForceConstants/" + str_ordername + "/force_constant_values",
          fcs_arrays,
          Compression(compression_level));
-    unitname = "Ry/bohr^" + std::to_string(order + 2);
+    unitname = (in_ev_ang ? "eV/angstrom^" : "Ry/bohr^") + std::to_string(order + 2);
     dumpAttribute(file, "/ForceConstants/" + str_ordername + "/force_constant_values", "unit", unitname);
 }
 
@@ -1640,4 +1665,14 @@ auto Writer::set_format_patternfile(const std::string &format_name) -> void
 auto Writer::get_format_patternfile() const -> std::string
 {
     return format_pattern;
+}
+
+auto Writer::set_fcs_unit_output(const std::string &unit_system) -> void
+{
+    fcs_unit_output = units::parse_fc_unit_system(unit_system); // throws std::invalid_argument
+}
+
+auto Writer::get_fcs_unit_output() const -> std::string
+{
+    return units::canonical_name(fcs_unit_output);
 }

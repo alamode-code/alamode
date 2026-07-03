@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include "cluster.h"
 #include "constraint.h"
 #include "fcs.h"
@@ -71,6 +72,20 @@ public:
     auto set_displacement_basis(std::string str_disp_basis) const -> void;
 
     auto set_periodicity(const int is_periodic[3]) const -> void;
+
+    // Declare the units of the data passed to the unit-sensitive setters
+    // (set_cell, set_u_train, set_f_train, set_validation_data, define).
+    // Must be called before any of them; the setters convert the input to the
+    // internal canonical units (bohr, Ry/bohr). LENGTH_UNIT / FORCE_UNIT.
+    auto set_input_units(const std::string &length_unit, const std::string &force_unit) -> void;
+
+    // Canonical names of the declared input units: {length, force}.
+    [[nodiscard]] auto get_input_units() const -> std::pair<std::string, std::string>;
+
+    // Unit system of the "alamode_h5" force constant output. FCS_UNIT_OUTPUT.
+    auto set_fcs_unit_output(const std::string &unit_system) const -> void;
+
+    [[nodiscard]] auto get_fcs_unit_output() const -> std::string;
 
     auto set_cell(const size_t nat, const double lavec[3][3], const double xcoord[][3], const int kind[]) const -> void;
 
@@ -233,6 +248,16 @@ private:
     bool initialized_constraint_class;
     std::ofstream *ofs_alm;
     std::streambuf *coutbuf;
+
+    // Multiply-by factors converting the declared input units into the
+    // internal canonical units (bohr, Ry/bohr). Set by set_input_units.
+    double factor_length_to_bohr_{1.0};
+    double factor_force_to_ry_bohr_{1.0};
+    std::string length_unit_name_{"bohr"};
+    std::string force_unit_name_{"Ry/bohr"};
+    // Guards against changing the units after unit-sensitive data was set.
+    // mutable because the unit-sensitive setters are const member functions.
+    mutable bool unit_sensitive_setter_called_{false};
 
     auto init_instances() -> void;
 };
