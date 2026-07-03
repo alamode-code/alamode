@@ -16,11 +16,11 @@ Mandatory requirements
 * `HDF5 library <https://www.hdfgroup.org/solutions/hdf5/>`_
 * `CMake <https://cmake.org>`_ (version >= 3.17 and < 4.0)
 
-No worries! All of these libraries can be installed easily by using conda or pixi.
+All of these libraries can be installed easily with conda or pixi.
 
-In addition to the above requirements, users have to get and install a first-principles package 
-(such as VASP_, QUANTUM-ESPRESSO_, OpenMX_, or xTAPP_) or another force field package (such as
-LAMMPS_) by themselves in order to compute harmonic and anharmonic force constants.
+In addition to the above requirements, users need to install a first-principles package
+(such as VASP_, QUANTUM-ESPRESSO_, OpenMX_, or xTAPP_) or a force-field package (such as
+LAMMPS_) by themselves to compute harmonic and anharmonic force constants.
 
 .. _VASP: http://www.vasp.at
 .. _OpenMX: http://www.openmx-square.org
@@ -35,10 +35,10 @@ Optional requirements
 * Python (>= 3.x), Numpy, and Matplotlib
 * XcrySDen_ or VMD_
 
-We provide some small scripts written in Python for visualizing phonon dispersion relations, phonon DOSs, etc.
-To use these scripts, one needs to install the above Python packages.
-Additionally, XcrySDen is necessary to visualize the normal mode directions and animate the normal mode.
-VMD may be more useful to make an animation, but it may be replaced by any other visualization software which supports the XYZ format.
+Small Python scripts for visualizing phonon dispersion relations, phonon DOS, etc. are provided;
+they require the Python packages listed above.
+Additionally, XcrySDen is necessary to visualize the normal-mode directions and animate the normal modes.
+VMD may be more convenient for making animations, but any other visualization software that supports the XYZ format can be used instead.
 
 .. _XcrySDen: http://www.xcrysden.org
 .. _VMD: http://www.ks.uiuc.edu/Research/vmd/
@@ -54,10 +54,10 @@ large sparse least-squares fits, see the :ref:`native installation <install_nati
 section and the :ref:`linear-algebra backend notes <install_backends>`.
 
 
-Step 1. Preparing build tools by conda
+Step 1. Prepare build tools with conda
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-At first, prepare a conda environment named ``alamode``.
+First, prepare a conda environment named ``alamode``.
 ::
 
    % conda create --name alamode -c conda-forge python=3.10
@@ -74,7 +74,7 @@ SciPy, and h5py from conda-forge, matching the GitHub Actions workflow.
 Step 2. Download source 
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Download source files from GitHub repository::
+Download the source files from the GitHub repository::
 
   % git clone https://github.com/alamode-code/alamode.git
   % cd alamode
@@ -84,7 +84,7 @@ Download source files from GitHub repository::
 
 Use the branch that corresponds to the documentation you are reading. For the
 development documentation and the current GitHub workflow, this is ``2.0dev``.
-The directory structure supposed in this document is shown as below::
+The directory structure assumed in this document is shown below::
 
    $HOME
     ├── alamode
@@ -461,7 +461,7 @@ This can be done as follows::
   % ln -s ../etc/boost_x_yy_z/boost .
 
 In this example, we place the boost files in ``$(HOME)/etc`` and create a symbolic link to the ``$(HOME)/boost_x_yy_z/boost`` in ``$(HOME)/include``.
-Instead of installing from source, you can install the Boost library with `Homebrew <http://brew.sh>`_ on macOS and the ``apt-get`` or ``yum`` command on unix.
+Instead of installing from source, you can install the Boost library with `Homebrew <http://brew.sh>`_ on macOS, or with ``apt-get`` or ``yum`` on Linux.
 
 In the same way, please install the Eigen3 include files as follows::
 
@@ -474,7 +474,7 @@ In the same way, please install the Eigen3 include files as follows::
   % ln -s ../etc/eigen-eigen-*/Eigen .  
 
 
-If you have followed the instruction, you will see the following results::
+If you have followed the instructions, you will see the following results::
 
   % pwd
   * /home/tadano/include
@@ -511,7 +511,7 @@ From the GitHub repository::
 Use the branch that corresponds to the documentation you are reading. For the
 development documentation and the current GitHub workflow, this is ``2.0dev``.
 
-The directory structure supposed in this section is shown as below::
+The directory structure assumed in this section is shown below::
 
    $HOME
     ├── alamode
@@ -545,7 +545,7 @@ Step 3-1. Build by CMake
 CMake is the recommended (and supported) way to build ALAMODE. To use this approach,
 you need to install cmake version 3.17 or later (and below 4.0).
 
-To build Makefiles with CMake, please issue the following commands::
+To generate Makefiles with CMake, issue the following commands::
 
   % cd alamode
   % mkdir _build; cd _build

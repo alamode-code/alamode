@@ -1,10 +1,10 @@
 Download
 ========
 
-You can download the latest and previous released versions of ALAMODE at
-https://sourceforge.net/projects/alamode .
+The latest and previous release packages of ALAMODE are available at
+https://sourceforge.net/projects/alamode.
 
-You can also download the package from the git repository as::
+You can also obtain the source code from the Git repository::
 
     $ git clone https://github.com/alamode-code/alamode.git
     $ cd alamode

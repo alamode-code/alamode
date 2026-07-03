@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-03 00:21+0900\n"
+"POT-Creation-Date: 2026-07-03 01:27+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -64,21 +64,18 @@ msgid "`CMake <https://cmake.org>`_ (version >= 3.17 and < 4.0)"
 msgstr "`CMake <https://cmake.org>`_ (バージョン >= 3.17 かつ < 4.0)"
 
 #: ../../source/install.rst:19
-msgid ""
-"No worries! All of these libraries can be installed easily by using conda or "
-"pixi."
-msgstr "ご心配なく! これらのライブラリはすべてcondaまたはpixiを使って簡単にインストールできます。"
+msgid "All of these libraries can be installed easily with conda or pixi."
+msgstr "これらのライブラリはすべてcondaまたはpixiを使って簡単にインストールできます。"
 
 #: ../../source/install.rst:21
 msgid ""
-"In addition to the above requirements, users have to get and install a first-"
+"In addition to the above requirements, users need to install a first-"
 "principles package (such as VASP_, QUANTUM-ESPRESSO_, OpenMX_, or xTAPP_) or "
-"another force field package (such as LAMMPS_) by themselves in order to "
-"compute harmonic and anharmonic force constants."
+"a force-field package (such as LAMMPS_) by themselves to compute harmonic and"
+" anharmonic force constants."
 msgstr ""
-"上記の要件に加えて、調和力定数 (harmonic force constants) および非調和力定数 (anharmonic force "
-"constants) を計算するためには、第一原理計算パッケージ (VASP_、QUANTUM-ESPRESSO_、OpenMX_、xTAPP_ など) "
-"または別の力場パッケージ (LAMMPS_ など) を、ユーザー自身で入手してインストールする必要があります。"
+"上記の要件に加えて、調和・非調和力定数を計算するには、第一原理計算パッケージ (VASP_, QUANTUM-ESPRESSO_, OpenMX_, "
+"xTAPP_ など) または力場計算パッケージ (LAMMPS_ など) を各自でインストールする必要があります。"
 
 #: ../../source/install.rst:33
 msgid "Optional requirements"
@@ -94,17 +91,14 @@ msgstr "XcrySDen_ または VMD_"
 
 #: ../../source/install.rst:38
 msgid ""
-"We provide some small scripts written in Python for visualizing phonon "
-"dispersion relations, phonon DOSs, etc. To use these scripts, one needs to "
-"install the above Python packages. Additionally, XcrySDen is necessary to "
-"visualize the normal mode directions and animate the normal mode. VMD may be "
-"more useful to make an animation, but it may be replaced by any other "
-"visualization software which supports the XYZ format."
+"Small Python scripts for visualizing phonon dispersion relations, phonon DOS,"
+" etc. are provided; they require the Python packages listed above. "
+"Additionally, XcrySDen is necessary to visualize the normal-mode directions "
+"and animate the normal modes. VMD may be more convenient for making "
+"animations, but any other visualization software that supports the XYZ format"
+" can be used instead."
 msgstr ""
-"フォノン (phonon) 分散関係やフォノン状態密度 (DOS) "
-"などを可視化するための、Pythonで書かれた小さなスクリプトをいくつか提供しています。これらのスクリプトを使うには、上記のPythonパッケージをインストールする必要があります。さらに、規格振動"
-" (normal mode) "
-"の方向を可視化したり規格振動をアニメーション表示したりするにはXcrySDenが必要です。アニメーションの作成にはVMDの方が便利かもしれませんが、XYZフォーマットをサポートする他の可視化ソフトウェアで置き換えることもできます。"
+"フォノン分散関係やフォノンDOSなどを可視化する小さなPythonスクリプトを提供しています。これらのスクリプトには上記のPythonパッケージが必要です。加えて、基準振動の方向の可視化やアニメーション表示にはXcrySDenが必要です。アニメーション作成にはVMDの方が便利かもしれませんが、XYZ形式に対応した他の可視化ソフトウェアでも代用できます。"
 
 #: ../../source/install.rst:48
 msgid "Install using conda (recommended for non-experts)"
@@ -125,12 +119,12 @@ msgstr ""
 "を参照してください。"
 
 #: ../../source/install.rst:58
-msgid "Step 1. Preparing build tools by conda"
-msgstr "ステップ1. condaによるビルドツールの準備"
+msgid "Step 1. Prepare build tools with conda"
+msgstr "ステップ1. condaでビルドツールを準備する"
 
 #: ../../source/install.rst:60
-msgid "At first, prepare a conda environment named ``alamode``. ::"
-msgstr "まず、``alamode`` という名前のconda環境を用意します。 ::"
+msgid "First, prepare a conda environment named ``alamode``. ::"
+msgstr "まず、``alamode`` という名前のconda環境を準備します。 ::"
 
 #: ../../source/install.rst:66
 msgid ""
@@ -154,18 +148,17 @@ msgid "Step 2. Download source"
 msgstr "ステップ2. ソースのダウンロード"
 
 #: ../../source/install.rst:77
-msgid "Download source files from GitHub repository::"
+msgid "Download the source files from the GitHub repository::"
 msgstr "GitHubリポジトリからソースファイルをダウンロードします::"
 
 #: ../../source/install.rst:85
 msgid ""
 "Use the branch that corresponds to the documentation you are reading. For the"
 " development documentation and the current GitHub workflow, this is "
-"``2.0dev``. The directory structure supposed in this document is shown as "
-"below::"
+"``2.0dev``. The directory structure assumed in this document is shown below::"
 msgstr ""
 "お読みになっているドキュメントに対応するブランチを使用してください。開発版ドキュメントおよび現在のGitHubワークフローでは、これは "
-"``2.0dev`` です。この文書で想定するディレクトリ構造を以下に示します::"
+"``2.0dev`` です。本ドキュメントで想定するディレクトリ構造は以下のとおりです::"
 
 #: ../../source/install.rst:108
 msgid "The meaning of each subdirectory is as follows:"
@@ -654,13 +647,13 @@ msgid ""
 "In this example, we place the boost files in ``$(HOME)/etc`` and create a "
 "symbolic link to the ``$(HOME)/boost_x_yy_z/boost`` in ``$(HOME)/include``. "
 "Instead of installing from source, you can install the Boost library with "
-"`Homebrew <http://brew.sh>`_ on macOS and the ``apt-get`` or ``yum`` command "
-"on unix."
+"`Homebrew <http://brew.sh>`_ on macOS, or with ``apt-get`` or ``yum`` on "
+"Linux."
 msgstr ""
 "この例では、boostのファイルを ``$(HOME)/etc`` に配置し、``$(HOME)/boost_x_yy_z/boost`` "
-"へのシンボリックリンクを ``$(HOME)/include`` に作成します。ソースからインストールする代わりに、macOSでは `Homebrew "
-"<http://brew.sh>`_ で、unixでは ``apt-get`` または ``yum`` "
-"コマンドでBoostライブラリをインストールすることもできます。"
+"へのシンボリックリンクを ``$(HOME)/include`` に作成しています。ソースからインストールする代わりに、macOSでは `Homebrew"
+" <http://brew.sh>`_、Linuxでは ``apt-get`` や ``yum`` "
+"を使ってBoostライブラリをインストールすることもできます。"
 
 #: ../../source/install.rst:466
 msgid "In the same way, please install the Eigen3 include files as follows::"
@@ -668,8 +661,8 @@ msgstr "同じ方法で、以下のようにEigen3のインクルードファイ
 
 #: ../../source/install.rst:477
 msgid ""
-"If you have followed the instruction, you will see the following results::"
-msgstr "手順に従っていれば、以下の結果が表示されます::"
+"If you have followed the instructions, you will see the following results::"
+msgstr "手順どおりに進めていれば、次のような結果になっているはずです::"
 
 #: ../../source/install.rst:488
 msgid "spglib"
@@ -715,8 +708,8 @@ msgstr ""
 "``2.0dev`` です。"
 
 #: ../../source/install.rst:514
-msgid "The directory structure supposed in this section is shown as below::"
-msgstr "このセクションで想定するディレクトリ構造を以下に示します::"
+msgid "The directory structure assumed in this section is shown below::"
+msgstr "本節で想定するディレクトリ構造は以下のとおりです::"
 
 #: ../../source/install.rst:543
 msgid "Step 3-1. Build by CMake"
@@ -731,8 +724,8 @@ msgstr ""
 "(かつ4.0未満) をインストールする必要があります。"
 
 #: ../../source/install.rst:548
-msgid "To build Makefiles with CMake, please issue the following commands::"
-msgstr "CMakeでMakefileを生成するには、以下のコマンドを実行してください::"
+msgid "To generate Makefiles with CMake, issue the following commands::"
+msgstr "CMakeでMakefileを生成するには、次のコマンドを実行します::"
 
 #: ../../source/install.rst:579
 msgid ""

@@ -181,6 +181,9 @@ class ALM:
     # ---- structure properties -------------------------------------------
     @property
     def lavec(self) -> np.ndarray:
+        """Lattice vectors of the (super)cell in Bohr, shape (3, 3); row i is
+        the i-th vector.  Assigning a new value re-sends the cell to the C++
+        core on the next :meth:`define` call."""
         return np.array(self._lavec, dtype="double", order="C")
 
     @lavec.setter
@@ -190,6 +193,9 @@ class ALM:
 
     @property
     def xcoord(self) -> np.ndarray:
+        """Fractional coordinates of the atoms, shape (nat, 3).  Assigning a
+        new value re-sends the cell to the C++ core on the next :meth:`define`
+        call."""
         return np.array(self._xcoord, dtype="double", order="C")
 
     @xcoord.setter
@@ -199,6 +205,8 @@ class ALM:
 
     @property
     def numbers(self) -> np.ndarray:
+        """Atomic numbers of the atoms, shape (nat,).  Assigning a new value
+        re-sends the cell to the C++ core on the next :meth:`define` call."""
         return np.array(self._numbers, dtype="intc")
 
     @numbers.setter
@@ -236,6 +244,7 @@ class ALM:
     # ---- verbosity / output ---------------------------------------------
     @property
     def verbosity(self) -> int:
+        """Verbosity level: 0 (silent) or 1 (print progress to stdout)."""
         return self._verbosity
 
     @verbosity.setter
@@ -245,10 +254,13 @@ class ALM:
             self._core.set_verbosity(self._verbosity)
 
     def set_verbosity(self, verbosity: int):
+        """Set the verbosity level (same as assigning to :attr:`verbosity`)."""
         self.verbosity = verbosity
 
     @property
     def output_filename_prefix(self):
+        """Prefix of the files written by the C++ core (e.g. the ``.cvscore``
+        file of cross-validation); mirrors the CLI ``PREFIX`` tag."""
         return self._output_filename_prefix
 
     @output_filename_prefix.setter
@@ -265,6 +277,7 @@ class ALM:
         return self._core.get_cv_l1_alpha()
 
     def get_cv_l1_alpha(self) -> float:
+        """Legacy alias for :attr:`cv_l1_alpha`."""
         return self.cv_l1_alpha
 
     # ---- model definition ------------------------------------------------
@@ -497,6 +510,7 @@ class ALM:
         self._transfer_training_data()
 
     def set_displacement_and_force(self, u, f):
+        """Deprecated alias for :meth:`set_training_data`."""
         warnings.warn("set_displacement_and_force is deprecated; use set_training_data.",
                       DeprecationWarning)
         self.set_training_data(u, f)
@@ -516,6 +530,11 @@ class ALM:
     # ---- optimizer control ----------------------------------------------
     @property
     def optimizer_control(self) -> dict:
+        """ALM's optimizer settings as a dict, mirroring the CLI ``&optimize``
+        tags (e.g. ``linear_model``, ``cross_validation``, ``l1_alpha``,
+        ``l1_ratio``).  Assign a dict with only the keys to change; unknown
+        keys raise ``KeyError``.  The legacy key ``mirror_image_conv`` is
+        accepted as an alias of ``periodic_image_conv``."""
         self._check()
         oc = self._core.get_optimizer_control()
         d = {k: getattr(oc, k) for k in dir(oc)
@@ -531,6 +550,8 @@ class ALM:
         self.set_optimizer_control(params)
 
     def set_optimizer_control(self, params: dict):
+        """Update a subset of the optimizer settings (see
+        :attr:`optimizer_control`)."""
         self._check()
         oc = self._core.get_optimizer_control()
         valid = sorted(k for k in dir(oc)
@@ -671,11 +692,16 @@ class ALM:
         self._core.set_fc(fc_in)
 
     def get_number_of_free_parameters(self) -> int:
+        """Number of free FC parameters after symmetry and constraint
+        reduction; equals the column count of the matrix returned by
+        :meth:`get_matrix_elements`."""
         self._check()
         self._check_defined()
         return self._core.get_number_of_free_parameters()
 
     def get_number_of_irred_fc_elements(self, fc_order: int) -> int:
+        """Number of symmetry-irreducible FC elements of the given
+        ``fc_order`` (1 = harmonic)."""
         self._check()
         self._check_defined()
         self._check_fc_order(fc_order)

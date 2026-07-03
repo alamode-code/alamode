@@ -8,15 +8,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"POT-Creation-Date: 2026-07-03 01:27+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: ../../source/intro.rst:14
@@ -29,14 +29,16 @@ msgstr "ALAMODEとは"
 
 #: ../../source/intro.rst:19
 msgid ""
-"**ALAMODE** is an open source software designed for analyzing lattice "
-"anharmonicity and lattice thermal conductivity of solids. By using an "
-"external DFT package such as VASP and Quantum ESPRESSO, you can extract "
-"harmonic and anharmonic force constants straightforwardly with ALAMODE. "
-"Using the calculated anharmonic force constants, you can also estimate "
-"lattice thermal conductivity, phonon linewidth, and other anharmonic "
-"phonon properties from first principles."
-msgstr "**ALAMODE** は、固体の格子非調和性 (lattice anharmonicity) と格子熱伝導率 (lattice thermal conductivity) を解析するために設計されたオープンソースソフトウェアです。VASPやQuantum ESPRESSOなどの外部の密度汎関数理論 (DFT) パッケージを利用することで、ALAMODEを用いて調和力定数 (harmonic force constants) と非調和力定数 (anharmonic force constants) を簡単に抽出できます。計算した非調和力定数を用いれば、格子熱伝導率、フォノン線幅 (phonon linewidth)、その他の非調和フォノン物性を第一原理から見積もることもできます。"
+"**ALAMODE** is an open-source software package for analyzing lattice "
+"anharmonicity and lattice thermal conductivity of solids. Combined with an "
+"external DFT package such as VASP or Quantum ESPRESSO, ALAMODE extracts "
+"harmonic and anharmonic force constants in a straightforward way. The "
+"calculated anharmonic force constants can then be used to evaluate lattice "
+"thermal conductivity, phonon linewidths, and other anharmonic phonon "
+"properties from first principles."
+msgstr ""
+"**ALAMODE** は、固体の格子非調和性と格子熱伝導率を解析するためのオープンソースソフトウェアです。VASPやQuantum "
+"ESPRESSOなどの外部DFTパッケージと組み合わせることで、調和・非調和力定数を簡便に抽出できます。得られた非調和力定数を用いて、格子熱伝導率、フォノン線幅、その他の非調和フォノン物性を第一原理から評価できます。"
 
 #: ../../source/intro.rst:22 ../../source/intro.rst:97
 msgid "Features"
@@ -48,12 +50,12 @@ msgstr "一般"
 
 #: ../../source/intro.rst:27
 msgid ""
-"Extraction of harmonic and anharmonic force constants based on the "
-"supercell approach"
+"Extraction of harmonic and anharmonic force constants based on the supercell "
+"approach"
 msgstr "スーパーセル法 (supercell approach) に基づく調和力定数および非調和力定数の抽出"
 
 #: ../../source/intro.rst:28
-msgid "Applicable to any crystal structures and low-dimensional systems"
+msgid "Applicable to arbitrary crystal structures and low-dimensional systems"
 msgstr "任意の結晶構造および低次元系に適用可能"
 
 #: ../../source/intro.rst:29
@@ -61,8 +63,9 @@ msgid "Accurate treatment of translational and rotational invariance"
 msgstr "並進不変性および回転不変性の正確な取り扱い"
 
 #: ../../source/intro.rst:30
-msgid "Interface to VASP, Quantum-ESPRESSO, OpenMX, xTAPP, and LAMMPS codes"
-msgstr "VASP、Quantum-ESPRESSO、OpenMX、xTAPP、LAMMPSの各コードへのインターフェース"
+msgid ""
+"Interfaces to the VASP, Quantum ESPRESSO, OpenMX, xTAPP, and LAMMPS codes"
+msgstr "VASP, Quantum ESPRESSO, OpenMX, xTAPP, LAMMPS各コードとのインターフェース"
 
 #: ../../source/intro.rst:31
 msgid "Mainly written in C++, parallelized with MPI+OpenMP"
@@ -85,7 +88,8 @@ msgid "Two-phonon DOS"
 msgstr "2フォノン状態密度 (two-phonon DOS)"
 
 #: ../../source/intro.rst:38
-msgid "Vibrational thermodynamic functions (heat capacity, entropy, free energy)"
+msgid ""
+"Vibrational thermodynamic functions (heat capacity, entropy, free energy)"
 msgstr "振動熱力学関数 (vibrational thermodynamic functions)（熱容量、エントロピー、自由エネルギー）"
 
 #: ../../source/intro.rst:39
@@ -141,27 +145,32 @@ msgid "Self-consistent phonon (SCPH) calculation"
 msgstr "自己無撞着フォノン (self-consistent phonon, SCPH) 計算"
 
 #: ../../source/intro.rst:57
-msgid "Anharmonic vibrational free-energy"
-msgstr "非調和振動自由エネルギー (anharmonic vibrational free-energy)"
+msgid "Anharmonic vibrational free energy"
+msgstr "非調和振動自由エネルギー"
 
 #: ../../source/intro.rst:58
-msgid "Structural optimization at finite temperatures based on SCPH or QHA."
-msgstr "SCPHまたはQHAに基づく有限温度での構造最適化。"
+msgid "Structural optimization at finite temperatures based on SCPH or QHA"
+msgstr "SCPHまたはQHAに基づく有限温度での構造最適化"
 
 #: ../../source/intro.rst:61
 msgid ""
-"The structural optimization of the current version CANNOT be used with "
-"thermal conductivity calculations or bubble corrections. The standard "
-"SCPH dispersion and thermodynamic properties are correctly calculated for"
-" relaxed configurations."
-msgstr "現在のバージョンの構造最適化は、熱伝導率計算やバブル補正 (bubble corrections) と併用できません。標準的なSCPH分散および熱力学物性は、緩和された配置に対して正しく計算されます。"
+"In the current version, structural optimization **cannot** be combined with "
+"thermal conductivity calculations or bubble corrections. The standard SCPH "
+"dispersion and thermodynamic properties are calculated correctly for relaxed "
+"configurations."
+msgstr ""
+"現在のバージョンでは、構造最適化を熱伝導率計算やバブル補正と組み合わせることは "
+"**できません**。緩和後の構造に対する標準的なSCPH分散と熱力学量は正しく計算されます。"
 
 #: ../../source/intro.rst:65
 msgid ""
-"Tutorials for structural optimization at finite temperatures are now "
-"included in this documentation; see :doc:`tutorial_pages/bto_scph_relax` "
-"(SCPH-based) and :doc:`tutorial_pages/zno_qha_relax` (QHA-based)."
-msgstr "有限温度での構造最適化に関するチュートリアルが本ドキュメントに追加されました。\\ :doc:`tutorial_pages/bto_scph_relax`\\ （SCPHに基づく）および :doc:`tutorial_pages/zno_qha_relax`\\ （QHAに基づく）を参照してください。"
+"Tutorials for structural optimization at finite temperatures are now included"
+" in this documentation; see :doc:`tutorial_pages/bto_scph_relax` (SCPH-based)"
+" and :doc:`tutorial_pages/zno_qha_relax` (QHA-based)."
+msgstr ""
+"有限温度での構造最適化に関するチュートリアルが本ドキュメントに追加されました。\\ "
+":doc:`tutorial_pages/bto_scph_relax`\\ （SCPHに基づく）および "
+":doc:`tutorial_pages/zno_qha_relax`\\ （QHAに基づく）を参照してください。"
 
 #: ../../source/intro.rst:70
 msgid "Links"
@@ -189,17 +198,20 @@ msgstr "Copyright |copy| 2014-2026 Terumasa Tadano"
 
 #: ../../source/intro.rst:84
 msgid ""
-"This software is distributed under the MIT license. See the LICENSE.txt "
-"file for license rights and limitations."
-msgstr "本ソフトウェアはMITライセンスのもとで配布されています。ライセンスの権利および制限については LICENSE.txt ファイルを参照してください。"
+"This software is distributed under the MIT license. See the LICENSE.txt file "
+"for license rights and limitations."
+msgstr ""
+"本ソフトウェアはMITライセンスのもとで配布されています。ライセンスの権利および制限については LICENSE.txt ファイルを参照してください。"
 
 #: ../../source/intro.rst:89
 msgid "How to Cite ALAMODE"
 msgstr "ALAMODEの引用方法"
 
 #: ../../source/intro.rst:91
-msgid "Please cite the following article when you use ALAMODE:"
-msgstr "ALAMODEを使用する際は、以下の論文を引用してください。"
+msgid ""
+"Please cite the appropriate articles from the list below when you publish "
+"results obtained with ALAMODE:"
+msgstr "ALAMODEで得られた結果を公表する際は、以下のリストから該当する論文を引用してください:"
 
 #: ../../source/intro.rst:93
 msgid "ALAMODE papers"
@@ -239,8 +251,8 @@ msgstr "[4]_"
 
 #: ../../source/intro.rst:105
 msgid ""
-"SCP-based structural optimization or ``PERIODIC_IMAGE_CONV = 1`` "
-"(default) in the **alm** code"
+"SCP-based structural optimization or ``PERIODIC_IMAGE_CONV = 1`` (default) in"
+" the **alm** code"
 msgstr "SCPに基づく構造最適化、または **alm** コードにおける ``PERIODIC_IMAGE_CONV = 1``\\ （デフォルト）"
 
 #: ../../source/intro.rst:106
@@ -257,68 +269,85 @@ msgstr "参考文献"
 
 #: ../../source/intro.rst:112
 msgid ""
-"T\\. Tadano, Y. Gohda, and S. Tsuneyuki, J. Phys.: Condens. Matter "
-"**26**\\ , 225402 (2014) [`Link "
+"T\\. Tadano, Y. Gohda, and S. Tsuneyuki, J. Phys.: Condens. Matter **26**\\ ,"
+" 225402 (2014) [`Link "
 "<http://iopscience.iop.org/0953-8984/26/22/225402/>`__]."
-msgstr "T\\. Tadano, Y. Gohda, and S. Tsuneyuki, J. Phys.: Condens. Matter **26**\\ , 225402 (2014) [`Link <http://iopscience.iop.org/0953-8984/26/22/225402/>`__]."
+msgstr ""
+"T\\. Tadano, Y. Gohda, and S. Tsuneyuki, J. Phys.: Condens. Matter **26**\\ ,"
+" 225402 (2014) [`Link "
+"<http://iopscience.iop.org/0953-8984/26/22/225402/>`__]."
 
 #: ../../source/intro.rst:115
 msgid ""
-"T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**\\ , 054301 (2015). "
-"[`Link "
+"T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**\\ , 054301 (2015). [`Link "
 "<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.92.054301>`__]"
-msgstr "T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**\\ , 054301 (2015). [`Link <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.92.054301>`__]"
+msgstr ""
+"T\\. Tadano and S. Tsuneyuki, Phys. Rev. B **92**\\ , 054301 (2015). [`Link "
+"<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.92.054301>`__]"
 
 #: ../../source/intro.rst:118
 msgid ""
 "Y\\. Oba, T. Tadano, R. Akashi, and S. Tsuneyuki, Phys. Rev. Materials "
 "**3**\\, 033601 (2019). [`Link "
 "<https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.3.033601>`__]"
-msgstr "Y\\. Oba, T. Tadano, R. Akashi, and S. Tsuneyuki, Phys. Rev. Materials **3**\\, 033601 (2019). [`Link <https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.3.033601>`__]"
+msgstr ""
+"Y\\. Oba, T. Tadano, R. Akashi, and S. Tsuneyuki, Phys. Rev. Materials "
+"**3**\\, 033601 (2019). [`Link "
+"<https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.3.033601>`__]"
 
 #: ../../source/intro.rst:121
 msgid ""
 "R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**\\, "
 "224104 (2022). [`Link "
 "<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.106.224104>`__]"
-msgstr "R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**\\, 224104 (2022). [`Link <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.106.224104>`__]"
+msgstr ""
+"R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**\\, "
+"224104 (2022). [`Link "
+"<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.106.224104>`__]"
 
 #: ../../source/intro.rst:124
 msgid ""
 "R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**\\, "
 "134119 (2023). [`Link "
 "<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.134119>`__]"
-msgstr "R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**\\, 134119 (2023). [`Link <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.134119>`__]"
+msgstr ""
+"R\\. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**\\, "
+"134119 (2023). [`Link "
+"<https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.134119>`__]"
 
 #: ../../source/intro.rst:129
-msgid "Issues & Bug report"
-msgstr "問題とバグ報告"
+msgid "Issues & Bug Reports"
+msgstr "Issueとバグ報告"
 
 #: ../../source/intro.rst:131
 msgid ""
-"If you find a bug or issue related to ALAMODE, please report it at "
-"`GitHub issues <https://github.com/alamode-code/alamode/issues/>`_."
-msgstr "ALAMODEに関連するバグや問題を見つけた場合は、`GitHub issues <https://github.com/alamode-code/alamode/issues/>`_ で報告してください。"
+"If you find a bug or an issue related to ALAMODE, please report it at `GitHub"
+" issues <https://github.com/alamode-code/alamode/issues/>`_."
+msgstr ""
+"ALAMODEに関するバグや問題を見つけた場合は、`GitHub issues <https://github.com/alamode-"
+"code/alamode/issues/>`_ に報告してください。"
 
 #: ../../source/intro.rst:132
 msgid ""
-"Other questions and suggestions can be posted on the `GitHub discussion "
-"page. <https://github.com/alamode-code/alamode/discussions>`_"
-msgstr "その他の質問や提案は、`GitHub discussion page. <https://github.com/alamode-code/alamode/discussions>`_ に投稿できます。"
+"Other questions and suggestions can be posted on the `GitHub discussions page"
+" <https://github.com/alamode-code/alamode/discussions>`_."
+msgstr ""
+"その他の質問や提案は `GitHub discussionsページ <https://github.com/alamode-"
+"code/alamode/discussions>`_ に投稿できます。"
 
 #: ../../source/intro.rst:134
 msgid ""
-"In either case, please search the previous questions and read FAQ page of"
-" this document before asking."
-msgstr "いずれの場合も、質問する前に過去の質問を検索し、本ドキュメントのFAQページを読んでください。"
+"In either case, please search the existing posts and read the :ref:`FAQ "
+"<label_faq>` page of this document before asking."
+msgstr "いずれの場合も、質問の前に既存の投稿を検索し、本ドキュメントの :ref:`FAQ <label_faq>` ページをお読みください。"
 
 #: ../../source/intro.rst:137
 msgid "Acknowledgment"
 msgstr "謝辞"
 
 #: ../../source/intro.rst:139
-msgid "This project is/was partially supported by the following projects:"
-msgstr "本プロジェクトは、以下のプロジェクトによって部分的に支援されています（または支援されていました）。"
+msgid "This project has been partially supported by the following grants:"
+msgstr "本プロジェクトは以下の研究助成の支援を受けています:"
 
 #: ../../source/intro.rst:141
 msgid "Grant-in-Aid for Scientific Research (C) (21K03424)"
@@ -330,10 +359,12 @@ msgstr "科学研究費補助金 若手研究(B) (16K17724)"
 
 #: ../../source/intro.rst:143
 msgid ""
-"Grant-in-Aid for Scientific Research on Innovative Areas 'Materials "
-"Design through Computics: Complex Correlation and Non-Equilibrium "
-"Dynamics'. (http://computics-material.jp)"
-msgstr "科学研究費補助金 新学術領域研究「コンピューティクスによる物質デザイン：複合相関と非平衡ダイナミクス」(http://computics-material.jp)"
+"Grant-in-Aid for Scientific Research on Innovative Areas 'Materials Design "
+"through Computics: Complex Correlation and Non-Equilibrium Dynamics'. "
+"(http://computics-material.jp)"
+msgstr ""
+"科学研究費補助金 新学術領域研究「コンピューティクスによる物質デザイン：複合相関と非平衡ダイナミクス」(http://computics-"
+"material.jp)"
 
 #: ../../source/intro.rst:147
 msgid "Author & Contact"
@@ -341,11 +372,13 @@ msgstr "著者と連絡先"
 
 #: ../../source/intro.rst:153
 msgid "Research Center for Magnetic and Spintronic Materials (CMSM),"
-msgstr "磁性・スピントロニクス材料研究センター (Research Center for Magnetic and Spintronic Materials, CMSM)、"
+msgstr ""
+"磁性・スピントロニクス材料研究センター (Research Center for Magnetic and Spintronic Materials, "
+"CMSM)、"
 
 #: ../../source/intro.rst:154
-msgid "National Institute for Material Science (NIMS),"
-msgstr "物質・材料研究機構 (National Institute for Material Science, NIMS)、"
+msgid "National Institute for Materials Science (NIMS),"
+msgstr "物質・材料研究機構 (NIMS),"
 
 #: ../../source/intro.rst:155
 msgid "Japan"

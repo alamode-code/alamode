@@ -16,7 +16,7 @@ About
 What is ALAMODE?
 -----------------
 
-**ALAMODE** is an open source software designed for analyzing lattice anharmonicity and lattice thermal conductivity of solids. By using an external DFT package such as VASP and Quantum ESPRESSO, you can extract harmonic and anharmonic force constants straightforwardly with ALAMODE. Using the calculated anharmonic force constants, you can also estimate lattice thermal conductivity, phonon linewidth, and other anharmonic phonon properties from first principles.
+**ALAMODE** is an open-source software package for analyzing lattice anharmonicity and lattice thermal conductivity of solids. Combined with an external DFT package such as VASP or Quantum ESPRESSO, ALAMODE extracts harmonic and anharmonic force constants in a straightforward way. The calculated anharmonic force constants can then be used to evaluate lattice thermal conductivity, phonon linewidths, and other anharmonic phonon properties from first principles.
 
 Features
 --------
@@ -25,9 +25,9 @@ General
 ^^^^^^^
 
 * Extraction of harmonic and anharmonic force constants based on the supercell approach
-* Applicable to any crystal structures and low-dimensional systems
+* Applicable to arbitrary crystal structures and low-dimensional systems
 * Accurate treatment of translational and rotational invariance
-* Interface to VASP, Quantum-ESPRESSO, OpenMX, xTAPP, and LAMMPS codes
+* Interfaces to the VASP, Quantum ESPRESSO, OpenMX, xTAPP, and LAMMPS codes
 * Mainly written in C++, parallelized with MPI+OpenMP
 
 Harmonic properties
@@ -54,12 +54,12 @@ Anharmonic properties
 * Phonon frequency shift due to 3- and 4-phonon interactions
 * Temperature-dependent effective potential method
 * Self-consistent phonon (SCPH) calculation
-* Anharmonic vibrational free-energy
-* Structural optimization at finite temperatures based on SCPH or QHA.
+* Anharmonic vibrational free energy
+* Structural optimization at finite temperatures based on SCPH or QHA
 
 .. Note::
-   The structural optimization of the current version CANNOT be used with thermal conductivity calculations or bubble corrections.
-   The standard SCPH dispersion and thermodynamic properties are correctly calculated for relaxed configurations.
+   In the current version, structural optimization **cannot** be combined with thermal conductivity calculations or bubble corrections.
+   The standard SCPH dispersion and thermodynamic properties are calculated correctly for relaxed configurations.
 
 .. Note::
    Tutorials for structural optimization at finite temperatures are now included in this
@@ -88,7 +88,7 @@ See the LICENSE.txt file for license rights and limitations.
 How to Cite ALAMODE
 -------------------
 
-Please cite the following article when you use ALAMODE:
+Please cite the appropriate articles from the list below when you publish results obtained with ALAMODE:
 
 .. list-table:: ALAMODE papers
     :header-rows: 1
@@ -125,18 +125,18 @@ References
   [`Link <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.134119>`__]
 
 
-Issues & Bug report
--------------------
+Issues & Bug Reports
+--------------------
 
-* If you find a bug or issue related to ALAMODE, please report it at `GitHub issues <https://github.com/alamode-code/alamode/issues/>`_.
-* Other questions and suggestions can be posted on the `GitHub discussion page. <https://github.com/alamode-code/alamode/discussions>`_
+* If you find a bug or an issue related to ALAMODE, please report it at `GitHub issues <https://github.com/alamode-code/alamode/issues/>`_.
+* Other questions and suggestions can be posted on the `GitHub discussions page <https://github.com/alamode-code/alamode/discussions>`_.
 
-In either case, please search the previous questions and read FAQ page of this document before asking.
+In either case, please search the existing posts and read the :ref:`FAQ <label_faq>` page of this document before asking.
 
 Acknowledgment
 --------------
 
-This project is/was partially supported by the following projects:
+This project has been partially supported by the following grants:
 
 * Grant-in-Aid for Scientific Research (C) (21K03424)
 * Grant-in-Aid for Young Scientists (B) (16K17724) 
@@ -151,5 +151,5 @@ Author & Contact
     <script>gen_mail_to_link('Terumasa TADANO', 'terumasa.tadano','gmail.com')</script>
 
 | Research Center for Magnetic and Spintronic Materials (CMSM),
-| National Institute for Material Science (NIMS), 
+| National Institute for Materials Science (NIMS),
 | Japan

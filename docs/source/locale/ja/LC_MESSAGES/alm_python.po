@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-03 00:21+0900\n"
+"POT-Creation-Date: 2026-07-03 01:11+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -688,13 +688,57 @@ msgstr ""
 msgid "Legacy alias for :meth:`close`."
 msgstr ":meth:`close` の旧名エイリアスです。"
 
+#: alm.ALM.lavec:1 of
+msgid ""
+"Lattice vectors of the (super)cell in Bohr, shape (3, 3); row i is the i-th "
+"vector.  Assigning a new value re-sends the cell to the C++ core on the next "
+":meth:`define` call."
+msgstr ""
+"(スーパー)セルの格子ベクトル (Bohr単位、shape (3, 3))。第i行が第iベクトルです。新しい値を代入すると、次の "
+":meth:`define` 呼び出し時にセルがC++コアへ再送されます。"
+
+#: alm.ALM.xcoord:1 of
+msgid ""
+"Fractional coordinates of the atoms, shape (nat, 3).  Assigning a new value "
+"re-sends the cell to the C++ core on the next :meth:`define` call."
+msgstr ""
+"原子の分数座標 (shape (nat, 3)) です。新しい値を代入すると、次の :meth:`define` "
+"呼び出し時にセルがC++コアへ再送されます。"
+
+#: alm.ALM.numbers:1 of
+msgid ""
+"Atomic numbers of the atoms, shape (nat,).  Assigning a new value re-sends "
+"the cell to the C++ core on the next :meth:`define` call."
+msgstr ""
+"原子番号 (shape (nat,)) です。新しい値を代入すると、次の :meth:`define` 呼び出し時にセルがC++コアへ再送されます。"
+
 #: alm.ALM.kind_names:1 of
 msgid "Atomic number -> element symbol for the kinds in the cell (a copy)."
 msgstr "セル中の元素種について原子番号から元素記号への対応 (コピー) を返します。"
 
+#: alm.ALM.verbosity:1 of
+msgid "Verbosity level: 0 (silent) or 1 (print progress to stdout)."
+msgstr "出力レベル: 0 (出力なし) または 1 (進捗を標準出力に表示) です。"
+
+#: alm.alm.ALM.set_verbosity:1 of
+msgid "Set the verbosity level (same as assigning to :attr:`verbosity`)."
+msgstr "出力レベルを設定します (:attr:`verbosity` への代入と同じです)。"
+
+#: alm.ALM.output_filename_prefix:1 of
+msgid ""
+"Prefix of the files written by the C++ core (e.g. the ``.cvscore`` file of "
+"cross-validation); mirrors the CLI ``PREFIX`` tag."
+msgstr ""
+"C++コアが書き出すファイル (例: クロスバリデーションの ``.cvscore`` ファイル) の接頭辞です。CLIの ``PREFIX`` "
+"タグに対応します。"
+
 #: alm.ALM.cv_l1_alpha:1 of
 msgid "Optimal L1 alpha found by the last cross-validation run."
 msgstr "直近のクロスバリデーションで得られた最適なL1アルファ値です。"
+
+#: alm.alm.ALM.get_cv_l1_alpha:1 of
+msgid "Legacy alias for :attr:`cv_l1_alpha`."
+msgstr ":attr:`cv_l1_alpha` の旧名エイリアスです。"
 
 #: alm.alm.ALM.define:1 of
 msgid "Define the force-constant model (orders, cutoffs, interaction bodies)."
@@ -863,11 +907,33 @@ msgstr "f"
 msgid "Forces in Ry/Bohr."
 msgstr "力 (Ry/Bohr単位) です。"
 
+#: alm.alm.ALM.set_displacement_and_force:1 of
+msgid "Deprecated alias for :meth:`set_training_data`."
+msgstr ":meth:`set_training_data` の非推奨エイリアスです。"
+
 #: alm.alm.ALM.set_validation_data:1 of
 msgid ""
 "Set the validation set used by cross-validation (same shapes/units as "
 ":meth:`set_training_data`)."
 msgstr "クロスバリデーションで使う検証データを設定します (shapeと単位は :meth:`set_training_data` と同じ)。"
+
+#: alm.ALM.optimizer_control:1 of
+msgid ""
+"ALM's optimizer settings as a dict, mirroring the CLI ``&optimize`` tags "
+"(e.g. ``linear_model``, ``cross_validation``, ``l1_alpha``, ``l1_ratio``).  "
+"Assign a dict with only the keys to change; unknown keys raise ``KeyError``."
+"  The legacy key ``mirror_image_conv`` is accepted as an alias of "
+"``periodic_image_conv``."
+msgstr ""
+"ALMのオプティマイザ設定を、CLIの ``&optimize`` タグに対応する辞書として返します (例: ``linear_model``, "
+"``cross_validation``, ``l1_alpha``, "
+"``l1_ratio``)。変更したいキーだけを含む辞書を代入してください。未知のキーは ``KeyError`` になります。旧キー "
+"``mirror_image_conv`` は ``periodic_image_conv`` のエイリアスとして受け付けます。"
+
+#: alm.alm.ALM.set_optimizer_control:1 of
+msgid ""
+"Update a subset of the optimizer settings (see :attr:`optimizer_control`)."
+msgstr "オプティマイザ設定の一部を更新します (:attr:`optimizer_control` を参照)。"
 
 #: alm.alm.ALM.suggest:1 of
 msgid ""
@@ -1010,6 +1076,19 @@ msgid ""
 msgstr ""
 "自由パラメータの力定数ベクトルを注入します (例: :meth:`get_matrix_elements` "
 "が返す行列に外部回帰モデルをフィットした結果)。"
+
+#: alm.alm.ALM.get_number_of_free_parameters:1 of
+msgid ""
+"Number of free FC parameters after symmetry and constraint reduction; equals "
+"the column count of the matrix returned by :meth:`get_matrix_elements`."
+msgstr ""
+"対称性と拘束条件による削減後の自由な力定数パラメータの数です。:meth:`get_matrix_elements` が返す行列の列数に等しくなります。"
+
+#: alm.alm.ALM.get_number_of_irred_fc_elements:1 of
+msgid ""
+"Number of symmetry-irreducible FC elements of the given ``fc_order`` (1 = "
+"harmonic)."
+msgstr "指定した ``fc_order`` (1 = 調和) の対称既約な力定数要素の数です。"
 
 #: alm.alm.ALM.getmap_primitive_to_supercell:1 of
 msgid ""
