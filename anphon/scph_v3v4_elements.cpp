@@ -112,7 +112,6 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
     std::complex<double> *v3_array_at_kpair;
-    std::complex<double> ***v3_mpi;
 
     std::complex<double> **v3_tmp0, **v3_tmp1, **v3_tmp2, **v3_tmp3;
 
@@ -126,12 +125,17 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 
     allocate(v3_array_at_kpair, ngroup_v3);
     allocate(ind, ngroup_v3, 3);
-    allocate(v3_mpi, nk_scph, ns, ns2);
 
     allocate(v3_tmp0, ns, ns2);
     allocate(v3_tmp1, ns, ns2);
     allocate(v3_tmp2, ns, ns2);
     allocate(v3_tmp3, ns, ns2);
+
+    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
+    // to be contiguous across the k-point dimension, so the MPI reduction cannot happen
+    // in v3_out itself. Each rank writes its disjoint (strided) ik slices into this
+    // zero-initialized contiguous buffer, which is then summed in place over MPI.
+    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 
     for (unsigned int ik = mympi->my_rank; ik < nk_scph; ik += mympi->nprocs) {
 
@@ -148,14 +152,6 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
             v3_array_at_kpair[ii] = phi3_reciprocal_inout[ii] * anharmonic_core->get_invmass_factor(3)[ii];
             for (j = 0; j < 3; ++j)
                 ind[ii][j] = anharmonic_core->get_evec_index(3)[ii][j];
-        }
-
-#pragma omp parallel for private(is)
-        for (ii = 0; ii < ns; ++ii) {
-            for (is = 0; is < ns2; ++is) {
-                v3_mpi[ik][ii][is] = complex_zero;
-                v3_out[ik][ii][is] = complex_zero;
-            }
         }
 
         if (self_offdiag) {
@@ -222,13 +218,14 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
                 }
             }
 
-            // copy to the final matrix
+            // copy to the reduction buffer
 #pragma omp parallel for private(is, js2_1)
             for (ii = 0; ii < ns3; ++ii) {
                 is = ii / ns2;
                 js2_1 = ii % ns2;
 
-                v3_mpi[ik][is][js2_1] = factor * v3_tmp3[is][js2_1];
+                v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + js2_1] =
+                    factor * v3_tmp3[is][js2_1];
             }
 
         } else {
@@ -250,7 +247,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
                                std::conj(evec_in[ik][ks][ind[i][2]]);
                     }
 
-                    v3_mpi[ik][is][ns * js + ks] = factor * ret;
+                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + ns * js + ks] = factor * ret;
                 }
             } else {
 
@@ -267,7 +264,8 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
                                std::conj(evec_in[ik][js][ind[i][2]]);
                     }
 
-                    v3_mpi[ik][is][(ns + 1) * js] = factor * ret;
+                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] =
+                        factor * ret;
                 }
             }
         }
@@ -275,18 +273,15 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 
     deallocate(v3_array_at_kpair);
     deallocate(ind);
-    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
-    // to be contiguous across the k-point dimension. Reduce to a contiguous buffer first.
-    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 #ifdef MPI_CXX_DOUBLE_COMPLEX
-    MPI_Allreduce(&v3_mpi[0][0][0],
+    MPI_Allreduce(MPI_IN_PLACE,
                   v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_CXX_DOUBLE_COMPLEX,
                   MPI_SUM,
                   MPI_COMM_WORLD);
 #else
-    MPI_Allreduce(&v3_mpi[0][0][0],
+    MPI_Allreduce(MPI_IN_PLACE,
                   v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_COMPLEX16,
@@ -304,7 +299,6 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
         }
     }
 
-    deallocate(v3_mpi);
     deallocate(v3_tmp0);
     deallocate(v3_tmp1);
     deallocate(v3_tmp2);
@@ -345,7 +339,6 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     static auto complex_zero = std::complex<double>(0.0, 0.0);
     std::complex<double> *v3_array_at_kpair;
-    std::complex<double> ***v3_mpi;
     std::complex<double> *phi3_reciprocal_tmp;
 
     std::complex<double> **v3_tmp0, **v3_tmp1, **v3_tmp2, **v3_tmp3;
@@ -370,12 +363,17 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
     allocate(phi3_reciprocal_tmp, ngroup_v3_in);
     allocate(v3_array_at_kpair, ngroup_v3_in);
     allocate(ind, ngroup_v3_in, 3);
-    allocate(v3_mpi, nk_scph, ns, ns2);
 
     allocate(v3_tmp0, ns, ns2);
     allocate(v3_tmp1, ns, ns2);
     allocate(v3_tmp2, ns, ns2);
     allocate(v3_tmp3, ns, ns2);
+
+    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
+    // to be contiguous across the k-point dimension, so the MPI reduction cannot happen
+    // in v3_out itself. Each rank writes its disjoint (strided) ik slices into this
+    // zero-initialized contiguous buffer, which is then summed in place over MPI.
+    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 
     for (unsigned int ik = mympi->my_rank; ik < nk_scph; ik += mympi->nprocs) {
 
@@ -394,14 +392,6 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
             v3_array_at_kpair[ii] = phi3_reciprocal_tmp[ii] * invmass_v3_in[ii];
             for (j = 0; j < 3; ++j)
                 ind[ii][j] = evec_index_v3_in[ii][j];
-        }
-
-#pragma omp parallel for private(is)
-        for (ii = 0; ii < ns; ++ii) {
-            for (is = 0; is < ns2; ++is) {
-                v3_mpi[ik][ii][is] = complex_zero;
-                v3_out[ik][ii][is] = complex_zero;
-            }
         }
 
         if (self_offdiag) {
@@ -468,13 +458,14 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
                 }
             }
 
-            // copy to the final matrix
+            // copy to the reduction buffer
 #pragma omp parallel for private(is, js2_1)
             for (ii = 0; ii < ns3; ++ii) {
                 is = ii / ns2;
                 js2_1 = ii % ns2;
 
-                v3_mpi[ik][is][js2_1] = factor * v3_tmp3[is][js2_1];
+                v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + js2_1] =
+                    factor * v3_tmp3[is][js2_1];
             }
 
         } else {
@@ -496,7 +487,7 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
                                std::conj(evec_in[ik][ks][ind[i][2]]);
                     }
 
-                    v3_mpi[ik][is][ns * js + ks] = factor * ret;
+                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + ns * js + ks] = factor * ret;
                 }
             } else {
 
@@ -513,7 +504,8 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
                                std::conj(evec_in[ik][js][ind[i][2]]);
                     }
 
-                    v3_mpi[ik][is][(ns + 1) * js] = factor * ret;
+                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] =
+                        factor * ret;
                 }
             }
         }
@@ -521,18 +513,15 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
 
     deallocate(v3_array_at_kpair);
     deallocate(ind);
-    // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
-    // to be contiguous across the k-point dimension. Reduce to a contiguous buffer first.
-    std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 #ifdef MPI_CXX_DOUBLE_COMPLEX
-    MPI_Allreduce(&v3_mpi[0][0][0],
+    MPI_Allreduce(MPI_IN_PLACE,
                   v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_CXX_DOUBLE_COMPLEX,
                   MPI_SUM,
                   MPI_COMM_WORLD);
 #else
-    MPI_Allreduce(&v3_mpi[0][0][0],
+    MPI_Allreduce(MPI_IN_PLACE,
                   v3_allreduce_buffer.data(),
                   static_cast<int>(nk_scph) * ns3,
                   MPI_COMPLEX16,
@@ -550,7 +539,6 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
         }
     }
 
-    deallocate(v3_mpi);
     deallocate(v3_tmp0);
     deallocate(v3_tmp1);
     deallocate(v3_tmp2);
