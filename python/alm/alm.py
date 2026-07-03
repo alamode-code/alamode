@@ -244,7 +244,7 @@ class ALM:
     # ---- verbosity / output ---------------------------------------------
     @property
     def verbosity(self) -> int:
-        """Verbosity level: 0 (silent) or 1 (print progress to stdout)."""
+        """Verbosity level (0 = silent, 1 = print progress to stdout)."""
         return self._verbosity
 
     @verbosity.setter

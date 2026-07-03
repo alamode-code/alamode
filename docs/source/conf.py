@@ -38,6 +38,7 @@ autodoc_default_options = {"members": True, "undoc-members": False}
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",  # NumPy-style docstring sections -> field lists (no bogus numbered headings)
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-03 01:11+0900\n"
+"POT-Creation-Date: 2026-07-03 12:11+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -458,8 +458,8 @@ msgstr "事前分布 / 仕組み"
 msgid "Sparse?"
 msgstr "スパース?"
 
-#: ../../source/alm_python.rst:394 alm.alm.ALM:15 alm.alm.ALM.get_fc:22
-#: alm.alm.ALM.optimize:16 of
+#: ../../source/alm_python.rst:394 alm.alm.ALM:13 alm.alm.ALM.get_fc:16
+#: alm.alm.ALM.optimize:12 of
 msgid "Notes"
 msgstr "備考"
 
@@ -593,62 +593,27 @@ msgid ""
 "Pythonic wrapper around the nanobind ALMCore object (legacy-compatible API)."
 msgstr "nanobind の ALMCore オブジェクトを包む Python 的なラッパー (従来互換の API) です。"
 
-#: alm.alm.ALM:4 alm.alm.ALM.define:4 alm.alm.ALM.fix_fc:5 alm.alm.ALM.get_fc:4
-#: alm.alm.ALM.optimize:4 alm.alm.ALM.save_fc:4 alm.alm.ALM.set_training_data:4
-#: of
+#: ../../source/alm_python.rst alm.alm.ALM.get_fc alm.alm.ALM.optimize of
 msgid "Parameters"
 msgstr "パラメータ"
 
-#: alm.alm.ALM:5 of
-msgid "lavec"
-msgstr "lavec"
-
-#: alm.alm.ALM:-1 of
-msgid "array_like, shape (3, 3)"
-msgstr "array_like, shape (3, 3)"
-
-#: alm.alm.ALM:6 of
+#: alm.alm.ALM:3 of
 msgid "Lattice vectors of the (super)cell in Bohr; row i is the i-th vector."
 msgstr "(スーパー)セルの格子ベクトル。単位はBohrで、第i行が第iベクトルです。"
 
-#: alm.alm.ALM:7 of
-msgid "xcoord"
-msgstr "xcoord"
-
-#: alm.alm.ALM:-1 of
-msgid "array_like, shape (nat, 3)"
-msgstr "array_like, shape (nat, 3)"
-
-#: alm.alm.ALM:8 of
+#: alm.alm.ALM:5 of
 msgid "Fractional coordinates of the atoms."
 msgstr "原子の分数座標です。"
 
-#: alm.alm.ALM:9 of
-msgid "numbers"
-msgstr "numbers"
-
-#: alm.alm.ALM:-1 of
-msgid "array_like, shape (nat,)"
-msgstr "array_like, shape (nat,)"
-
-#: alm.alm.ALM:10 of
+#: alm.alm.ALM:7 of
 msgid "Atomic numbers."
 msgstr "原子番号です。"
 
-#: alm.alm.ALM:11 of
-msgid "verbosity"
-msgstr "verbosity"
-
-#: alm.alm.ALM:-1 alm.alm.ALM.define:-1 alm.alm.ALM.get_fc:-1
-#: alm.alm.ALM.optimize:12 of
-msgid "int"
-msgstr "int"
-
-#: alm.alm.ALM:12 of
+#: alm.alm.ALM:9 of
 msgid "0 (silent, default) or 1 (print progress to stdout)."
 msgstr "0 (出力なし、デフォルト) または 1 (進捗を標準出力に表示) です。"
 
-#: alm.alm.ALM:16 of
+#: alm.alm.ALM:14 of
 msgid ""
 "Assigning to :attr:`lavec`, :attr:`xcoord` or :attr:`numbers` re-sends the "
 "cell to the C++ core on the next :meth:`define` call; call :meth:`define` "
@@ -717,8 +682,8 @@ msgid "Atomic number -> element symbol for the kinds in the cell (a copy)."
 msgstr "セル中の元素種について原子番号から元素記号への対応 (コピー) を返します。"
 
 #: alm.ALM.verbosity:1 of
-msgid "Verbosity level: 0 (silent) or 1 (print progress to stdout)."
-msgstr "出力レベル: 0 (出力なし) または 1 (進捗を標準出力に表示) です。"
+msgid "Verbosity level (0 = silent, 1 = print progress to stdout)."
+msgstr "出力レベル (0 = 出力なし、1 = 進捗を標準出力に表示) です。"
 
 #: alm.alm.ALM.set_verbosity:1 of
 msgid "Set the verbosity level (same as assigning to :attr:`verbosity`)."
@@ -744,23 +709,11 @@ msgstr ":attr:`cv_l1_alpha` の旧名エイリアスです。"
 msgid "Define the force-constant model (orders, cutoffs, interaction bodies)."
 msgstr "力定数モデル (次数、カットオフ、多体条件) を定義します。"
 
-#: alm.alm.ALM.define:5 of
-msgid "maxorder"
-msgstr "maxorder"
-
-#: alm.alm.ALM.define:6 of
+#: alm.alm.ALM.define:3 of
 msgid "Highest fc_order to include: 1 = harmonic only, 2 = up to cubic, ..."
 msgstr "含める最高のfc_order。1 = 調和項のみ、2 = 3次まで、... です。"
 
-#: alm.alm.ALM.define:7 of
-msgid "cutoff_radii"
-msgstr "cutoff_radii"
-
-#: alm.alm.ALM.define:-1 of
-msgid "array_like, shape (maxorder, nkd, nkd), optional"
-msgstr "array_like, shape (maxorder, nkd, nkd), optional"
-
-#: alm.alm.ALM.define:8 of
+#: alm.alm.ALM.define:5 of
 msgid ""
 "Interaction cutoff radius in Bohr per order and kind pair. A negative value "
 "means no cutoff (all pairs included); the default ``None`` applies no cutoff "
@@ -769,30 +722,13 @@ msgstr ""
 "次数と元素種ペアごとの相互作用カットオフ半径 (Bohr単位) です。負の値はカットオフなし (すべてのペアを含める) を意味し、デフォルトの "
 "``None`` はすべての次数でカットオフを適用しません。"
 
-#: alm.alm.ALM.define:11 of
-msgid "nbody"
-msgstr "nbody"
-
-#: alm.alm.ALM.define:-1 of
-msgid "sequence of int, length maxorder, optional"
-msgstr "sequence of int, length maxorder, optional"
-
-#: alm.alm.ALM.define:12 of
+#: alm.alm.ALM.define:9 of
 msgid ""
 "Maximum number of distinct atoms in a cluster per order. Default: 2, 3, 4, "
 "... (i.e. no restriction)."
 msgstr "次数ごとのクラスター内の相異なる原子の最大数です。デフォルトは 2, 3, 4, ... (すなわち制限なし) です。"
 
-#: alm.alm.ALM.define:14 of
-msgid "symmetrization_basis"
-msgstr "symmetrization_basis"
-
-#: alm.alm.ALM.define:-1 of
-#, python-brace-format
-msgid "{'Lattice', 'Cartesian'}"
-msgstr "{'Lattice', 'Cartesian'}"
-
-#: alm.alm.ALM.define:15 of
+#: alm.alm.ALM.define:12 of
 msgid "Basis used to symmetrize the force constants."
 msgstr "力定数の対称化に使う基底です。"
 
@@ -843,27 +779,11 @@ msgid ""
 " fit)."
 msgstr "フィット中に力定数の一部を指定した値に固定します (例: 参照フィットで得たFC2)。"
 
-#: alm.alm.ALM.fix_fc:6 of
-msgid "fc_values"
-msgstr "fc_values"
-
-#: alm.alm.ALM.fix_fc:-1 of
-msgid "array_like, shape (n,)"
-msgstr "array_like, shape (n,)"
-
-#: alm.alm.ALM.fix_fc:7 of
+#: alm.alm.ALM.fix_fc:4 of
 msgid "Force-constant values in Ry/Bohr^(fc_order+1)."
 msgstr "力定数の値 (単位は Ry/Bohr^(fc_order+1)) です。"
 
-#: alm.alm.ALM.fix_fc:8 of
-msgid "fc_indices"
-msgstr "fc_indices"
-
-#: alm.alm.ALM.fix_fc:-1 of
-msgid "array_like, shape (n, fc_order+1)"
-msgstr "array_like, shape (n, fc_order+1)"
-
-#: alm.alm.ALM.fix_fc:9 of
+#: alm.alm.ALM.fix_fc:6 of
 msgid "Flattened indices 3*atom + xyz of each FC element."
 msgstr "各力定数要素の平坦化インデックス 3*atom + xyz です。"
 
@@ -887,23 +807,11 @@ msgstr "訓練用の力 (Ry/Bohr単位、shape (nsnap, nat, 3)) です。"
 msgid "Set the displacement-force training data."
 msgstr "変位-力の訓練データを設定します。"
 
-#: alm.alm.ALM.set_training_data:5 of
-msgid "u"
-msgstr "u"
-
-#: alm.alm.ALM.set_training_data:-1 of
-msgid "array_like, shape (nsnap, nat, 3)"
-msgstr "array_like, shape (nsnap, nat, 3)"
-
-#: alm.alm.ALM.set_training_data:6 of
+#: alm.alm.ALM.set_training_data:3 of
 msgid "Atomic displacements in Bohr."
 msgstr "原子変位 (Bohr単位) です。"
 
-#: alm.alm.ALM.set_training_data:7 of
-msgid "f"
-msgstr "f"
-
-#: alm.alm.ALM.set_training_data:8 of
+#: alm.alm.ALM.set_training_data:5 of
 msgid "Forces in Ry/Bohr."
 msgstr "力 (Ry/Bohr単位) です。"
 
@@ -945,15 +853,7 @@ msgstr "力定数の決定に必要な変位パターンを計算します (:met
 msgid "Fit the force constants to the training data."
 msgstr "訓練データに力定数をフィットします。"
 
-#: alm.alm.ALM.optimize:5 of
-msgid "solver"
-msgstr "solver"
-
-#: alm.alm.ALM.optimize:-1 alm.alm.ALM.save_fc:-1 of
-msgid "str"
-msgstr "str"
-
-#: alm.alm.ALM.optimize:6 of
+#: alm.alm.ALM.optimize:3 of
 msgid ""
 "'dense' (LAPACK) or one of the sparse solvers (case-insensitive): "
 "SimplicialLDLT, SparseQR, ConjugateGradient, LeastSquaresConjugateGradient, "
@@ -963,15 +863,19 @@ msgstr ""
 "ConjugateGradient, LeastSquaresConjugateGradient, BiCGSTAB, SuiteSparseQR, "
 "CHOLMOD。"
 
-#: alm.alm.ALM.get_fc:15 alm.alm.ALM.optimize:11 of
+#: alm.alm.ALM.get_fc alm.alm.ALM.optimize of
 msgid "Returns"
 msgstr "戻り値"
 
-#: alm.alm.ALM.optimize:13 of
+#: alm.alm.ALM.optimize:8 of
 msgid "Solver info code (0 on success)."
 msgstr "ソルバーのinfoコード (成功時は 0) です。"
 
-#: alm.alm.ALM.optimize:17 of
+#: alm.alm.ALM.optimize of
+msgid "Return type"
+msgstr "戻り値の型"
+
+#: alm.alm.ALM.optimize:13 of
 msgid ""
 "With ``optimizer_control['cross_validation']`` set, this runs cross-"
 "validation instead of a single fit; the optimal alpha is then available as "
@@ -998,24 +902,11 @@ msgstr ""
 msgid "Return force constants as ``(values, elem_indices)``."
 msgstr "力定数を ``(values, elem_indices)`` として返します。"
 
-#: alm.alm.ALM.get_fc:5 of
-msgid "fc_order"
-msgstr "fc_order"
-
-#: alm.alm.ALM.get_fc:6 of
+#: alm.alm.ALM.get_fc:3 of
 msgid "1 = harmonic (FC2), 2 = cubic (FC3), ..."
 msgstr "1 = 調和 (FC2)、2 = 3次 (FC3)、... です。"
 
-#: alm.alm.ALM.get_fc:7 of
-msgid "mode"
-msgstr "mode"
-
-#: alm.alm.ALM.get_fc:-1 of
-#, python-brace-format
-msgid "{'origin', 'irreducible', 'all'}"
-msgstr "{'origin', 'irreducible', 'all'}"
-
-#: alm.alm.ALM.get_fc:8 of
+#: alm.alm.ALM.get_fc:5 of
 msgid ""
 "'origin': FCs whose first atom sits in the primitive cell at the origin; "
 "'irreducible': the symmetry-irreducible set; 'all': FCs expanded over every "
@@ -1024,43 +915,35 @@ msgstr ""
 "'origin': 最初の原子が原点の基本セルにある力定数、'irreducible': 対称既約なセット、'all': "
 "すべての純並進に展開した力定数です。"
 
-#: alm.alm.ALM.get_fc:11 of
-msgid "permutation"
-msgstr "permutation"
-
-#: alm.alm.ALM.get_fc:-1 of
-msgid "bool"
-msgstr "bool"
-
-#: alm.alm.ALM.get_fc:12 of
+#: alm.alm.ALM.get_fc:9 of
 msgid "Include index-permuted copies of each element."
 msgstr "各要素のインデックス置換コピーを含めるかどうかです。"
 
-#: alm.alm.ALM.get_fc:16 of
-msgid "values"
-msgstr "values"
+#: alm.alm.ALM.get_fc:12 of
+msgid ""
+"* **values** (*ndarray, shape (n,)*) -- Force constants in "
+"Ry/Bohr^(fc_order+1). * **elem_indices** (*ndarray, shape (n, fc_order+1)*) "
+"-- Flattened indices 3*atom + xyz of each element."
+msgstr ""
+"* **values** (*ndarray, shape (n,)*) -- 力定数 (単位は Ry/Bohr^(fc_order+1)) です。\n"
+"* **elem_indices** (*ndarray, shape (n, fc_order+1)*) -- 各要素の平坦化インデックス 3*atom + xyz です。"
 
-#: alm.alm.ALM.get_fc:-1 of
-msgid "ndarray, shape (n,)"
-msgstr "ndarray, shape (n,)"
+#: alm.alm.ALM.get_fc:12 of
+msgid ""
+"**values** (*ndarray, shape (n,)*) -- Force constants in "
+"Ry/Bohr^(fc_order+1)."
+msgstr ""
+"**values** (*ndarray, shape (n,)*) -- 力定数 (単位は Ry/Bohr^(fc_order+1)) です。"
+
+#: alm.alm.ALM.get_fc:13 of
+msgid ""
+"**elem_indices** (*ndarray, shape (n, fc_order+1)*) -- Flattened indices "
+"3*atom + xyz of each element."
+msgstr ""
+"**elem_indices** (*ndarray, shape (n, fc_order+1)*) -- 各要素の平坦化インデックス 3*atom +"
+" xyz です。"
 
 #: alm.alm.ALM.get_fc:17 of
-msgid "Force constants in Ry/Bohr^(fc_order+1)."
-msgstr "力定数 (単位は Ry/Bohr^(fc_order+1)) です。"
-
-#: alm.alm.ALM.get_fc:18 of
-msgid "elem_indices"
-msgstr "elem_indices"
-
-#: alm.alm.ALM.get_fc:-1 of
-msgid "ndarray, shape (n, fc_order+1)"
-msgstr "ndarray, shape (n, fc_order+1)"
-
-#: alm.alm.ALM.get_fc:19 of
-msgid "Flattened indices 3*atom + xyz of each element."
-msgstr "各要素の平坦化インデックス 3*atom + xyz です。"
-
-#: alm.alm.ALM.get_fc:23 of
 msgid ""
 "The element ordering is not guaranteed to be stable across calls (it differs "
 "e.g. between optimize() and set_fc()); always pair ``values`` with "
@@ -1107,19 +990,11 @@ msgstr ""
 msgid "Write the force constants to a file."
 msgstr "力定数をファイルに書き出します。"
 
-#: alm.alm.ALM.save_fc:5 of
-msgid "filename"
-msgstr "filename"
-
-#: alm.alm.ALM.save_fc:6 of
+#: alm.alm.ALM.save_fc:3 of
 msgid "Output path."
 msgstr "出力先のパスです。"
 
-#: alm.alm.ALM.save_fc:7 of
-msgid "format"
-msgstr "format"
-
-#: alm.alm.ALM.save_fc:8 of
+#: alm.alm.ALM.save_fc:5 of
 msgid ""
 "'alamode' (.xml), 'alamode_h5' (.h5, what anphon reads), 'shengbte', "
 "'shengbte4', 'qefc', or 'hessian'."
@@ -1127,15 +1002,7 @@ msgstr ""
 "'alamode' (.xml)、'alamode_h5' (anphonが読み込む "
 ".h5)、'shengbte'、'shengbte4'、'qefc'、'hessian' のいずれかです。"
 
-#: alm.alm.ALM.save_fc:10 of
-msgid "maxorder_to_save"
-msgstr "maxorder_to_save"
-
-#: alm.alm.ALM.save_fc:-1 of
-msgid "int, optional"
-msgstr "int, optional"
-
-#: alm.alm.ALM.save_fc:11 of
+#: alm.alm.ALM.save_fc:8 of
 msgid "Highest fc_order to write (default: all defined orders)."
 msgstr "書き出す最高のfc_order (デフォルト: 定義したすべての次数) です。"
 
@@ -1192,3 +1059,120 @@ msgstr ""
 #~ "all."
 #~ msgstr ""
 #~ "(values, elem_indices[n, fc_order+1]) を返します。mode: origin | irreducible | all。"
+
+#~ msgid "lavec"
+#~ msgstr "lavec"
+
+#~ msgid "array_like, shape (3, 3)"
+#~ msgstr "array_like, shape (3, 3)"
+
+#~ msgid "xcoord"
+#~ msgstr "xcoord"
+
+#~ msgid "array_like, shape (nat, 3)"
+#~ msgstr "array_like, shape (nat, 3)"
+
+#~ msgid "numbers"
+#~ msgstr "numbers"
+
+#~ msgid "array_like, shape (nat,)"
+#~ msgstr "array_like, shape (nat,)"
+
+#~ msgid "int"
+#~ msgstr "int"
+
+#~ msgid "Verbosity level: 0 (silent) or 1 (print progress to stdout)."
+#~ msgstr "出力レベル: 0 (出力なし) または 1 (進捗を標準出力に表示) です。"
+
+#~ msgid "maxorder"
+#~ msgstr "maxorder"
+
+#~ msgid "cutoff_radii"
+#~ msgstr "cutoff_radii"
+
+#~ msgid "array_like, shape (maxorder, nkd, nkd), optional"
+#~ msgstr "array_like, shape (maxorder, nkd, nkd), optional"
+
+#~ msgid "nbody"
+#~ msgstr "nbody"
+
+#~ msgid "sequence of int, length maxorder, optional"
+#~ msgstr "sequence of int, length maxorder, optional"
+
+#~ msgid "symmetrization_basis"
+#~ msgstr "symmetrization_basis"
+
+#~ msgid "{'Lattice', 'Cartesian'}"
+#~ msgstr "{'Lattice', 'Cartesian'}"
+
+#~ msgid "fc_values"
+#~ msgstr "fc_values"
+
+#~ msgid "array_like, shape (n,)"
+#~ msgstr "array_like, shape (n,)"
+
+#~ msgid "fc_indices"
+#~ msgstr "fc_indices"
+
+#~ msgid "array_like, shape (n, fc_order+1)"
+#~ msgstr "array_like, shape (n, fc_order+1)"
+
+#~ msgid "u"
+#~ msgstr "u"
+
+#~ msgid "array_like, shape (nsnap, nat, 3)"
+#~ msgstr "array_like, shape (nsnap, nat, 3)"
+
+#~ msgid "f"
+#~ msgstr "f"
+
+#~ msgid "solver"
+#~ msgstr "solver"
+
+#~ msgid "str"
+#~ msgstr "str"
+
+#~ msgid "fc_order"
+#~ msgstr "fc_order"
+
+#~ msgid "mode"
+#~ msgstr "mode"
+
+#~ msgid "{'origin', 'irreducible', 'all'}"
+#~ msgstr "{'origin', 'irreducible', 'all'}"
+
+#~ msgid "permutation"
+#~ msgstr "permutation"
+
+#~ msgid "bool"
+#~ msgstr "bool"
+
+#~ msgid "values"
+#~ msgstr "values"
+
+#~ msgid "ndarray, shape (n,)"
+#~ msgstr "ndarray, shape (n,)"
+
+#~ msgid "elem_indices"
+#~ msgstr "elem_indices"
+
+#~ msgid "ndarray, shape (n, fc_order+1)"
+#~ msgstr "ndarray, shape (n, fc_order+1)"
+
+#~ msgid "filename"
+#~ msgstr "filename"
+
+#~ msgid "format"
+#~ msgstr "format"
+
+#~ msgid "maxorder_to_save"
+#~ msgstr "maxorder_to_save"
+
+#~ msgid "int, optional"
+#~ msgstr "int, optional"
+
+#~ msgid "type"
+#~ msgstr ""
+
+#~ msgid "Verbosity level"
+#~ msgstr "verbosity"
