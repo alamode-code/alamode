@@ -284,7 +284,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          # The first deployment after a Pages re-provision (e.g. after the
-          # 2026 organization rename) can take well over the 10-minute
-          # default, and a timeout cancels the in-flight deployment.
-          timeout: 1800000  # 30 minutes, in milliseconds
+          # Keep the deployment polling window at the action's allowed
+          # maximum (values above 600000 ms are clamped with a warning).
+          # Transient "Deployment failed, try again later" errors are not
+          # timeout-related; just re-run the failed deploy job for those.
+          timeout: 600000  # 10 minutes (the maximum), in milliseconds
