@@ -574,20 +574,16 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     const size_t nk_reduced_interpolate = kmesh_coarse_in->nk_irred;
     const size_t ns = dynamical->neval;
     const size_t ns2 = ns * ns;
-    const size_t ns3 = ns * ns * ns;
     const size_t ns4 = ns * ns * ns * ns;
     size_t is, js, ks, ls;
     size_t is2_1, js2_1, is2_2, js2_2;
-    size_t is2, js2, ks2, ls2;
-    unsigned int **ind;
-    unsigned int j;
+    size_t js2, ks2, ls2;
     long int ii;
 
     const auto nk_scph = kmesh_dense_in->nk;
     const auto ngroup_v4 = anharmonic_core->get_ngroup_fcs(4);
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-    std::complex<double> *v4_array_at_kpair;
     std::complex<double> ***evec_conj;
 
     std::complex<double> **v4_tmp1, **v4_tmp2;
@@ -606,12 +602,15 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
         }
     }
 
-    allocate(v4_array_at_kpair, ngroup_v4);
-    allocate(ind, ngroup_v4, 4);
     allocate(evec_conj, kmesh_dense_in->nk, ns, ns);
 
     allocate(v4_tmp1, ns2, ns2);
     allocate(v4_tmp2, ns2, ns2);
+
+    // Sparse representation of the phi4 scatter pattern; the indices are fixed for
+    // the entire calculation, only the values are refilled per (k1,k2) pair.
+    auto phi4_skeleton = build_phi4_skeleton(anharmonic_core->get_evec_index(4), ngroup_v4, ns);
+    const double *invmass_v4 = anharmonic_core->get_invmass_factor(4);
 
     const long int nks2 = kmesh_dense_in->nk * ns2;
 
@@ -642,21 +641,11 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                                               phase_storage_in,
                                               phi4_reciprocal_inout);
 
-#pragma omp parallel for private(j)
+        // Refill the phi4 values of the sparse skeleton. Every slot is refilled
+        // (each slot belongs to at least one group), and increasing group order
+        // keeps the last group's value on duplicates.
         for (ii = 0; ii < ngroup_v4; ++ii) {
-            v4_array_at_kpair[ii] = phi4_reciprocal_inout[ii] * anharmonic_core->get_invmass_factor(4)[ii];
-            for (j = 0; j < 4; ++j)
-                ind[ii][j] = anharmonic_core->get_evec_index(4)[ii][j];
-        }
-
-        // initialize the ping-pong buffers; the scatter below fills only the nonzero
-        // entries of v4_tmp1 and the first transform accumulates into v4_tmp2.
-#pragma omp parallel for private(js)
-        for (is = 0; is < ns2; ++is) {
-            for (js = 0; js < ns2; ++js) {
-                v4_tmp1[is][js] = complex_zero;
-                v4_tmp2[is][js] = complex_zero;
-            }
+            phi4_skeleton.val[phi4_skeleton.slot_of_group[ii]] = phi4_reciprocal_inout[ii] * invmass_v4[ii];
         }
 
         if (self_offdiag || relaxation->relax_str) {
@@ -664,29 +653,31 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
             // All matrix elements will be calculated when considering the off-diagonal
             // elements of the phonon self-energy (loop diagram).
 
-            // copy v4 in (alpha,mu) representation to the temporary matrix
-#pragma omp parallel for private(is, js)
-            for (ii = 0; ii < ngroup_v4; ++ii) {
-
-                is = ind[ii][0] * ns + ind[ii][1];
-                js = ind[ii][2] * ns + ind[ii][3];
-                v4_tmp1[is][js] = v4_array_at_kpair[ii];
-            }
-
-            // transform the first index (v4_tmp1 -> v4_tmp2)
-#pragma omp parallel for private(is2_1, js2_1, is, js, is2, is2_2)
-            for (ii = 0; ii < ns4; ++ii) {
-                is2_1 = ii / ns2;
-                js2_1 = ii % ns2;
-                is = is2_1 / ns; // first index
-                js = is2_1 % ns; // second index
-
-                for (is2 = 0; is2 < ns; ++is2) {
-                    is2_2 = is2 * ns + js;
-                    v4_tmp2[is2_1][js2_1] += v4_tmp1[is2_2][js2_1] * evec_conj[knum][is][is2];
+            // initialize the target of the first transform; the remaining transforms
+            // overwrite every element of their target buffer.
+#pragma omp parallel for private(js)
+            for (is = 0; is < ns2; ++is) {
+                for (js = 0; js < ns2; ++js) {
+                    v4_tmp1[is][js] = complex_zero;
                 }
             }
-            // transform the second index (v4_tmp2 -> v4_tmp1); every element is
+
+            // scatter phi4 and transform the first index in one sparse pass
+            // (-> v4_tmp1[(i,a2)][(a3,a4)]); threads own distinct columns, so the
+            // shared (a2, col) targets never race across threads
+#pragma omp parallel for
+            for (long int col = 0; col < static_cast<long int>(ns2); ++col) {
+                for (size_t p = phi4_skeleton.col_ptr[col]; p < phi4_skeleton.col_ptr[col + 1]; ++p) {
+                    const size_t a1 = phi4_skeleton.row[p] / ns;
+                    const size_t a2 = phi4_skeleton.row[p] % ns;
+                    const auto val = phi4_skeleton.val[p];
+                    for (size_t i = 0; i < ns; ++i) {
+                        v4_tmp1[i * ns + a2][col] += val * evec_conj[knum][i][a1];
+                    }
+                }
+            }
+
+            // transform the second index (v4_tmp1 -> v4_tmp2); every element is
             // overwritten, so no re-zeroing of the target buffer is needed.
 #pragma omp parallel for private(is2_1, js2_1, is, js, js2, is2_2)
             for (ii = 0; ii < ns4; ++ii) {
@@ -698,11 +689,11 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                 auto accumulator = complex_zero;
                 for (js2 = 0; js2 < ns; ++js2) {
                     is2_2 = is * ns + js2;
-                    accumulator += v4_tmp2[is2_2][js2_1] * evec_in[knum][js][js2];
+                    accumulator += v4_tmp1[is2_2][js2_1] * evec_in[knum][js][js2];
                 }
-                v4_tmp1[is2_1][js2_1] = accumulator;
+                v4_tmp2[is2_1][js2_1] = accumulator;
             }
-            // transform the third index (v4_tmp1 -> v4_tmp2)
+            // transform the third index (v4_tmp2 -> v4_tmp1)
 #pragma omp parallel for private(is2_1, js2_1, ks, ls, ks2, js2_2)
             for (ii = 0; ii < ns4; ++ii) {
                 is2_1 = ii / ns2;
@@ -713,12 +704,12 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                 auto accumulator = complex_zero;
                 for (ks2 = 0; ks2 < ns; ++ks2) {
                     js2_2 = ks2 * ns + ls;
-                    accumulator += v4_tmp1[is2_1][js2_2] * evec_in[jk][ks][ks2];
+                    accumulator += v4_tmp2[is2_1][js2_2] * evec_in[jk][ks][ks2];
                 }
-                v4_tmp2[is2_1][js2_1] = accumulator;
+                v4_tmp1[is2_1][js2_1] = accumulator;
             }
 
-            // transform the fourth index and store to the final matrix (v4_tmp2 -> v4_out)
+            // transform the fourth index and store to the final matrix (v4_tmp1 -> v4_out)
 #pragma omp parallel for private(is2_1, js2_1, ks, ls, ls2, js2_2)
             for (ii = 0; ii < ns4; ++ii) {
                 is2_1 = ii / ns2;
@@ -729,36 +720,36 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                 auto accumulator = complex_zero;
                 for (ls2 = 0; ls2 < ns; ++ls2) {
                     js2_2 = ks * ns + ls2;
-                    accumulator += v4_tmp2[is2_1][js2_2] * evec_conj[jk][ls][ls2];
+                    accumulator += v4_tmp1[is2_1][js2_2] * evec_conj[jk][ls][ls2];
                 }
                 v4_out[ik_prod][is2_1][js2_1] = factor * accumulator;
             }
 
         } else {
 
-            // copy v4 in (alpha,mu) representation to the temporary matrix
-#pragma omp parallel for private(is, js)
-            for (ii = 0; ii < ngroup_v4; ++ii) {
-
-                is = ind[ii][0] * ns + ind[ii][1];
-                js = ind[ii][2] * ns + ind[ii][3];
-                v4_tmp1[is][js] = v4_array_at_kpair[ii];
-            }
-
-            // transform the first and the second index (v4_tmp1 -> v4_tmp2)
-#pragma omp parallel for private(is, js, ks, is2_1, is2_2)
-            for (ii = 0; ii < ns3; ++ii) {
-                is = ii / ns2;
-                is2_1 = ii % ns2;
-                for (is2_2 = 0; is2_2 < ns2; ++is2_2) {
-                    // is2_2 = js*ns+ks
-                    js = is2_2 / ns;
-                    ks = is2_2 % ns;
-
-                    v4_tmp2[(ns + 1) * is][is2_1] +=
-                        v4_tmp1[is2_2][is2_1] * evec_conj[knum][is][js] * evec_in[knum][is][ks];
+            // initialize the target of the first transform (only its first ns rows
+            // are used in the diagonal-only branch)
+#pragma omp parallel for private(js)
+            for (is = 0; is < ns; ++is) {
+                for (js = 0; js < ns2; ++js) {
+                    v4_tmp1[is][js] = complex_zero;
                 }
             }
+
+            // scatter phi4 and transform the first and the second index in one
+            // sparse pass (-> v4_tmp1[i][(a3,a4)], diagonal in the first two indices)
+#pragma omp parallel for
+            for (long int col = 0; col < static_cast<long int>(ns2); ++col) {
+                for (size_t p = phi4_skeleton.col_ptr[col]; p < phi4_skeleton.col_ptr[col + 1]; ++p) {
+                    const size_t a1 = phi4_skeleton.row[p] / ns;
+                    const size_t a2 = phi4_skeleton.row[p] % ns;
+                    const auto val = phi4_skeleton.val[p];
+                    for (size_t i = 0; i < ns; ++i) {
+                        v4_tmp1[i][col] += val * evec_conj[knum][i][a1] * evec_in[knum][i][a2];
+                    }
+                }
+            }
+
             // transform the third and the fourth index and store to the final matrix
 #pragma omp parallel for private(is, js, ks, ls, is2_2)
             for (is2_1 = 0; is2_1 < ns2; ++is2_1) {
@@ -770,7 +761,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                     ks = is2_2 / ns;
                     ls = is2_2 % ns;
 
-                    accumulator += v4_tmp2[(ns + 1) * is][is2_2] * evec_in[jk][js][ks] * evec_conj[jk][js][ls];
+                    accumulator += v4_tmp1[is][is2_2] * evec_in[jk][js][ks] * evec_conj[jk][js][ls];
                 }
                 v4_out[ik_prod][(ns + 1) * is][(ns + 1) * js] = factor * accumulator;
             }
@@ -779,8 +770,6 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
 
 
     deallocate(evec_conj);
-    deallocate(v4_array_at_kpair);
-    deallocate(ind);
 
     deallocate(v4_tmp1);
     deallocate(v4_tmp2);
@@ -1065,8 +1054,12 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
             }
         }
 
+        // Report progress roughly 20 times over the whole loop.
         if (mympi->my_rank == 0) {
-            std::cout << " SET " << ii + 1 << " done. \n";
+            const long int nreport = std::max(nset_each / 20, static_cast<long int>(1));
+            if ((ii + 1) % nreport == 0 || ii + 1 == nset_each) {
+                std::cout << " SET " << ii + 1 << " / " << nset_each << " done. \n";
+            }
         }
 
     } // loop over nk2_prod*ns
