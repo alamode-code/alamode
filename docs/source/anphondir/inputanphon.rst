@@ -24,11 +24,13 @@ List of supported input variables
    :widths: 25, 25, 25, 25
 
    **&general**
-   :ref:`BCONNECT <anphon_bconnect>`, :ref:`BORNINFO <anphon_borninfo>`, :ref:`BORNSYM <anphon_bornsym>`, :ref:`CLASSICAL <anphon_classical>`
-   :ref:`EMIN <anphon_emin>`, :ref:`EPSILON <anphon_epsilon>`, :ref:`FC2FILE <anphon_fc2file>`, :ref:`FCSFILE <anphon_fcsfile>`
+   :ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>`, :ref:`BCONNECT <anphon_bconnect>`, :ref:`BORNINFO <anphon_borninfo>`, :ref:`BORNSYM <anphon_bornsym>`
+   :ref:`CLASSICAL <anphon_classical>`, :ref:`DFC2FILE <anphon_dfc2file>`, :ref:`EMIN <anphon_emin>`, :ref:`EPSILON <anphon_epsilon>`
+   :ref:`FC2FILE <anphon_fc2file>`, :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`, :ref:`FCSFILE <anphon_fcsfile>`, :ref:`FILE_FORMAT <anphon_file_format>`
    :ref:`ISMEAR <anphon_ismear>`, :ref:`KD <anphon_kd>`, :ref:`MASS <anphon_mass>`, :ref:`MODE <anphon_mode>`
    :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NONANALYTIC <anphon_nonanalytic>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`
-   :ref:`RESTART <anphon_restart>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`
+   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`
+   :ref:`TRISYM <anphon_trisym>`
    **&scph**
    :ref:`BUBBLE <anphon_bubble>`, :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`, :ref:`KMESH_SCPH <anphon_kmesh_scph>`
    :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`, :ref:`RELAX_STR <anphon_relax_str>`
@@ -349,6 +351,24 @@ Description of input variables
                ``PREFIX``.kappa.h5. A legacy text ``PREFIX``.result file (from an
                older run or ``FILE_FORMAT = text``) is imported into the HDF5 file
                once, read-only, and left untouched.
+
+````
+
+.. _anphon_restart_4ph:
+
+* RESTART_4PH-tag : Flag to restart the four-phonon part of the calculation when ``MODE = RTA`` and ``QUARTIC = 1``
+
+ === =======================================================
+  0   Calculate the four-phonon scattering rates from scratch
+  1   Restart from the existing file
+ === =======================================================
+
+ :Default: 1 if there is a file named ``PREFIX``.kappa.h5 or ``PREFIX``.4ph.result; 0 otherwise
+ :Type: Integer
+ :Description: Controls the four-phonon channel independently of :ref:`RESTART <anphon_restart>`
+               (the two channels are stored side by side in ``PREFIX``.kappa.h5 but restart
+               separately). ``RESTART_4PH = 0`` discards only the previously computed
+               four-phonon scattering rates; the three-phonon data are kept.
 
 ````
 
