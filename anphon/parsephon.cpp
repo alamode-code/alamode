@@ -554,7 +554,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
              "SOLVER = IBTE is a pilot implementation under development;\n"
              " please check the validity of the results carefully.");
     }
-    iterativebte->do_iterative = solver == "IBTE";
+    conductivity->solver_ibte = solver == "IBTE";
     iterativebte->max_cycle = max_cycle;
     iterativebte->min_cycle = min_cycle;
     iterativebte->mixing_factor = iterative_mixing;

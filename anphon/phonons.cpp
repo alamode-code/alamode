@@ -247,25 +247,10 @@ void PHON::execute_kappa() const
     mode_analysis->setup_mode_analysis();
     selfenergy->setup_selfenergy();
 
-    MPI_Bcast(&iterativebte->do_iterative, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&conductivity->fph_rta, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
     if (mode_analysis->ks_analyze_mode) {
-
         mode_analysis->run_mode_analysis();
-
-    } else if (iterativebte->do_iterative) {
-
-        iterativebte->setup_iterative();
-        iterativebte->do_iterativebte();
-
     } else {
-
-        conductivity->setup_kappa();
-        conductivity->calc_anharmonic_imagself();
-        conductivity->compute_kappa();
-        writes->writeKappa();
-        writes->writeSelfenergyIsotope();
+        conductivity->run_kappa();
     }
 }
 

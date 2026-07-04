@@ -31,6 +31,8 @@ public:
 
     ~Conductivity();
 
+    void run_kappa();
+
     void setup_kappa();
 
     void init_temperature_grid();
@@ -54,6 +56,7 @@ public:
     int write_interpolation;
 
     int fph_rta;
+    bool solver_ibte;
     double len_boundary;
 
     void set_kmesh_coarse(const unsigned int nk_in[3]);

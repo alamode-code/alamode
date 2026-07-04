@@ -28,6 +28,7 @@
 #include "integration.h"
 #include "interpolation.h"
 #include "isotope.h"
+#include "iterativebte.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -72,6 +73,7 @@ void Conductivity::set_default_variables()
     nshift_restart4 = 0;
     kmesh_4ph = nullptr;
     fph_rta = 0;
+    solver_ibte = false;
     dymat_4ph = nullptr;
     phase_storage_4ph = nullptr;
     restart_flag_3ph = false;
@@ -120,6 +122,25 @@ void Conductivity::deallocate_variables()
     delete kmesh_4ph;
     delete dymat_4ph;
     delete phase_storage_4ph;
+}
+
+void Conductivity::run_kappa()
+{
+    // MODE = kappa entry point: dispatch on the SOLVER tag (&kappa field).
+    // Both flags are set during parsing on rank 0 only.
+    MPI_Bcast(&solver_ibte, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&fph_rta, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (solver_ibte) {
+        iterativebte->setup_iterative();
+        iterativebte->do_iterativebte();
+    } else {
+        setup_kappa();
+        calc_anharmonic_imagself();
+        compute_kappa();
+        writes->writeKappa();
+        writes->writeSelfenergyIsotope();
+    }
 }
 
 void Conductivity::init_temperature_grid()

@@ -46,7 +46,6 @@ Iterativebte::~Iterativebte()
 void Iterativebte::set_default_variables()
 {
     // public
-    do_iterative = true;
     Temperature = nullptr;
     ntemp = 0;
     min_cycle = 5;

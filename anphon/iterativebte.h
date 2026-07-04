@@ -56,7 +56,6 @@ public:
 
     void do_iterativebte(); // wrapper
 
-    bool do_iterative;
     double *Temperature; // non-owning alias of conductivity->temperature
     unsigned int ntemp;
 
