@@ -73,6 +73,9 @@ void Qha::exec_qha_optimization()
 
     zerofill_harmonic_dymat_renormalize(delta_harmonic_dymat_renormalize, NT);
 
+    MPI_Bcast(&restart_qha, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+
     if (restart_qha) {
 
         if (mympi->my_rank == 0) {
@@ -80,22 +83,63 @@ void Qha::exec_qha_optimization()
             std::cout << " Dynamical matrix is read from file ...";
         }
 
-        load_scph_dymat_from_file(delta_dymat_qha,
-                                  input->job_title + ".renorm_harm_dymat",
-                                  kmesh_dense,
-                                  kmesh_coarse,
-                                  dynamical->nonanalytic,
-                                  true);
-        load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
-                                  input->job_title + ".renorm_harm_dymat",
-                                  kmesh_dense,
-                                  kmesh_coarse,
-                                  dynamical->nonanalytic,
-                                  true);
+        const auto with_relax = relax_mode != RelaxationStrMode::None;
 
-        // structural optimization
-        if (relax_mode != RelaxationStrMode::None) {
-            relaxation->load_V0_from_file();
+        // Preferred restart source: the unified state file. It stores the
+        // QHA dynamical-matrix correction and the renormalized-harmonic one
+        // separately (the legacy text restart approximated both by the
+        // contents of .renorm_harm_dymat).
+        auto loaded_h5 = false;
+        if (use_h5_io) {
+            loaded_h5 = load_scph_state_h5(input->job_title + ".qha.h5",
+                                           "QHA",
+                                           NT,
+                                           dynamical->nonanalytic,
+                                           true,
+                                           relaxation->relax_str,
+                                           delta_dymat_qha,
+                                           delta_harmonic_dymat_renormalize,
+                                           with_relax ? &relaxation->V0 : nullptr);
+        }
+
+        if (loaded_h5) {
+            // Regenerate the human-readable V0-vs-T output, which may be
+            // absent when restarting from the unified file alone.
+            if (with_relax && mympi->my_rank == 0) relaxation->store_V0_to_file();
+        } else {
+            load_scph_dymat_from_file(delta_dymat_qha,
+                                      input->job_title + ".renorm_harm_dymat",
+                                      kmesh_dense,
+                                      kmesh_coarse,
+                                      dynamical->nonanalytic,
+                                      true);
+            load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
+                                      input->job_title + ".renorm_harm_dymat",
+                                      kmesh_dense,
+                                      kmesh_coarse,
+                                      dynamical->nonanalytic,
+                                      true);
+
+            // structural optimization
+            if (with_relax) {
+                relaxation->load_V0_from_file();
+            }
+
+            // One-way migration of the legacy state into the unified file.
+            if (use_h5_io && mympi->my_rank == 0) {
+                write_scph_state_h5(input->job_title + ".qha.h5",
+                                    "QHA",
+                                    NT,
+                                    dynamical->nonanalytic,
+                                    true,
+                                    relaxation->relax_str,
+                                    "qha",
+                                    delta_dymat_qha,
+                                    delta_harmonic_dymat_renormalize,
+                                    with_relax ? &relaxation->V0 : nullptr,
+                                    kmesh_coarse,
+                                    mindist_list);
+            }
         }
     } else {
 
@@ -110,9 +154,26 @@ void Qha::exec_qha_optimization()
         }
 
         if (mympi->my_rank == 0) {
-            // write dymat to file
-            // write renormalized harmonic dynamical matrix when the crystal structure is optimized
-            if (relax_mode != RelaxationStrMode::None) {
+            const auto with_relax = relax_mode != RelaxationStrMode::None;
+            if (use_h5_io) {
+                write_scph_state_h5(input->job_title + ".qha.h5",
+                                    "QHA",
+                                    NT,
+                                    dynamical->nonanalytic,
+                                    true,
+                                    relaxation->relax_str,
+                                    "qha",
+                                    delta_dymat_qha,
+                                    delta_harmonic_dymat_renormalize,
+                                    with_relax ? &relaxation->V0 : nullptr,
+                                    kmesh_coarse,
+                                    mindist_list);
+                // .V0 doubles as a human-readable physical output (V0 vs T),
+                // so the text file is kept; restart reads only the h5.
+                if (with_relax) relaxation->store_V0_to_file();
+            } else if (with_relax) {
+                // write dymat to file
+                // write renormalized harmonic dynamical matrix when the crystal structure is optimized
                 store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
                                                  input->job_title + ".renorm_harm_dymat",
                                                  kmesh_dense,
@@ -121,6 +182,7 @@ void Qha::exec_qha_optimization()
                                                  true);
                 relaxation->store_V0_to_file();
             }
+            // Text .qha_dfc2 is kept in both modes during the transition.
             write_anharmonic_correction_fc2(delta_dymat_qha, NT, kmesh_coarse, mindist_list, true);
         }
     }

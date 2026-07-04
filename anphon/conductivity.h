@@ -12,10 +12,12 @@
 
 #include <complex>
 #include <fstream>
+#include <memory>
 #include <set>
 #include <vector>
 #include "anharmonic_core.h"
 #include "dynamical.h"
+#include "kappa_result_io.h"
 #include "kpoint.h"
 #include "pointers.h"
 
@@ -59,7 +61,8 @@ public:
     KpointMeshUniform *get_kmesh_coarse() const;
 
     void set_conductivity_params(const std::string &file_result3_in, const std::string &file_result4_in,
-                                 const bool restart_3ph_in, const bool restart_4ph_in);
+                                 const std::string &file_kappa_h5_in, const bool restart_3ph_in,
+                                 const bool restart_4ph_in, const bool use_h5_io_in);
 
     bool get_restart_conductivity(const int order) const;
 
@@ -93,14 +96,30 @@ private:
     bool restart_flag_3ph;
     bool restart_flag_4ph;
 
+    // HDF5 result file (FILE_FORMAT = h5, the default). The legacy text
+    // machinery below is kept for FILE_FORMAT = text and for the one-way
+    // import of old .result files.
+    std::unique_ptr<KappaResultIOH5> result_io_h5;
+    std::string file_kappa_h5;
+    bool use_h5_io;
+
     std::string interpolator{};
 
     void setup_result_io(const int mode);
 
     void prepare_restart(const int mode);
 
+    KappaFileMetaH5 build_kappa_file_meta() const;
+
+    KappaChannelMetaH5 build_kappa_channel_meta(const int mode) const;
+
+    void import_legacy_result_text(const int mode);
+
+    void load_computed_modes_h5(const std::string &tag, double **damping, std::vector<int> &vks_done_out) const;
+
     void load_restart_gamma_blocks(std::fstream &fs_result, const std::string &file_result, const unsigned int nk_irred,
-                                   double **damping, std::vector<int> &vks_done_out, const char *label);
+                                   double **damping, std::vector<int> &vks_done_out, const char *label,
+                                   const bool allow_truncate);
 
     void check_consistency_restart(std::fstream &fs_result, const std::string &file_result_in,
                                    const unsigned int nk_in[3], const unsigned int nk_irred_in, const Cell &primcell,

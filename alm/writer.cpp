@@ -31,6 +31,8 @@
 #include "system.h"
 #include "timer.h"
 #include "version.h"
+#include "fcs_hdf5_schema.h"
+#include "hdf5_parser.h"
 
 #ifdef _BOOST_LIBRARY_LINKABLE
 #include <boost/asio/ip/host_name.hpp>
@@ -906,6 +908,9 @@ auto Writer::save_fcs_alamode(const std::unique_ptr<System> &system, const std::
                                               compression_level);
     }
 
+    // Schema identification (readers accept legacy files without it)
+    stamp_h5_schema(file, h5_schema_force_constants, h5_version_force_constants);
+
     // ALAMODE version
     dump(file, "/version", ALAMODE_VERSION);
 
@@ -938,35 +943,27 @@ auto Writer::write_structures_h5(H5Easy::File &file, const Cell &cell, const Spi
                                  const std::vector<std::vector<int>> &mapping_info,
                                  const units::FcUnitSystem unit_system) -> void
 {
-    // Write structure information to the hdf5 file object.
-    using namespace H5Easy;
-    const auto in_ev_ang = unit_system == units::FcUnitSystem::ev_angstrom;
-    const std::string unitname(in_ev_ang ? "angstrom" : "bohr");
-    const auto factor_length = in_ev_ang ? Bohr_in_Angstrom : 1.0;
-
+    // Adapt alm's structure classes to the shared schema writer.
     std::vector<std::string> kind_names;
     for (auto i = 0; i < cell.number_of_elems; ++i) {
         kind_names.push_back(kdnames[i]);
     }
-    dump(file, "/" + celltype + "/lattice_vector",
-         Eigen::Matrix3d(cell.lattice_vector.transpose() * factor_length));
-    dumpAttribute(file, "/" + celltype + "/lattice_vector", "unit", unitname);
-    dump(file, "/" + celltype + "/number_of_atoms", cell.number_of_atoms);
-    dump(file, "/" + celltype + "/number_of_elements", cell.number_of_elems);
-    dump(file, "/" + celltype + "/fractional_coordinate", cell.x_fractional);
     std::vector<int> kind_copy(cell.kind);
     for (auto &it: kind_copy)
         it -= 1;
-    dump(file, "/" + celltype + "/atomic_kinds", kind_copy);
-    dump(file, "/" + celltype + "/elements", kind_names);
-    dump(file, "/" + celltype + "/spin_polarized", spin.lspin ? 1 : 0);
-    if (spin.lspin) {
-        dump(file, "/" + celltype + "/magnetic_moments", spin.magmom);
-        dumpAttribute(file, "/" + celltype + "/magnetic_moments", "noncollinear", spin.noncollinear);
-        dumpAttribute(file, "/" + celltype + "/magnetic_moments", "time_reversal_symmetry", spin.time_reversal_symm);
-    }
-    dump(file, "/" + celltype + "/number_of_primitive_translations", ntran);
-    dump(file, "/" + celltype + "/mapping_table", mapping_info);
+
+    write_cell_group_h5(file, celltype,
+                        cell.lattice_vector,
+                        cell.x_fractional,
+                        kind_copy,
+                        kind_names,
+                        spin.lspin ? 1 : 0,
+                        spin.magmom,
+                        spin.noncollinear,
+                        spin.time_reversal_symm,
+                        ntran,
+                        mapping_info,
+                        unit_system);
 }
 
 
@@ -1052,30 +1049,10 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
         fcs_arrays[counter] = it.fcs_value;
         ++counter;
     }
-    const auto in_ev_ang = unit_system == units::FcUnitSystem::ev_angstrom;
-    if (in_ev_ang) {
-        shift_vectors *= Bohr_in_Angstrom;
-        fcs_arrays *= units::fc_ry_bohr_to_ev_ang(order + 2);
-    }
-
-    const std::string str_ordername = "Order" + std::to_string(order + 2);
-    dump(file, "/ForceConstants/" + str_ordername + "/atom_indices", atom_indices, Compression(compression_level));
-    dump(file,
-         "/ForceConstants/" + str_ordername + "/atom_indices_supercell",
-         atom_indices_super,
-         Compression(compression_level));
-    dump(file, "/ForceConstants/" + str_ordername + "/coord_indices", coord_indices, Compression(compression_level));
-    dump(file, "/ForceConstants/" + str_ordername + "/shift_vectors", shift_vectors, Compression(compression_level));
-    std::string unitname = in_ev_ang ? "angstrom" : "bohr";
-    const std::string basisname = "Cartesian";
-    dumpAttribute(file, "/ForceConstants/" + str_ordername + "/shift_vectors", "unit", unitname);
-    dumpAttribute(file, "/ForceConstants/" + str_ordername + "/shift_vectors", "basis", basisname);
-    dump(file,
-         "/ForceConstants/" + str_ordername + "/force_constant_values",
-         fcs_arrays,
-         Compression(compression_level));
-    unitname = (in_ev_ang ? "eV/angstrom^" : "Ry/bohr^") + std::to_string(order + 2);
-    dumpAttribute(file, "/ForceConstants/" + str_ordername + "/force_constant_values", "unit", unitname);
+    write_fc_order_group_h5(file, order,
+                            atom_indices, atom_indices_super, coord_indices,
+                            std::move(shift_vectors), std::move(fcs_arrays),
+                            unit_system, compression_level);
 }
 
 

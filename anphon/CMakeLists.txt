@@ -167,6 +167,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/interpolation.cpp
             ${PROJECT_SOURCE_DIR}/isotope.cpp
             ${PROJECT_SOURCE_DIR}/iterativebte.cpp
+            ${PROJECT_SOURCE_DIR}/kappa_result_io.cpp
             ${PROJECT_SOURCE_DIR}/kpoint.cpp
             ${PROJECT_SOURCE_DIR}/main.cpp
             ${PROJECT_SOURCE_DIR}/mode_analysis.cpp
@@ -183,6 +184,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/scph_derivatives.cpp
             ${PROJECT_SOURCE_DIR}/scph_io.cpp
             ${PROJECT_SOURCE_DIR}/scph_qha_common.cpp
+            ${PROJECT_SOURCE_DIR}/scph_result_io.cpp
             ${PROJECT_SOURCE_DIR}/scph_v3v4_elements.cpp
             ${PROJECT_SOURCE_DIR}/selfenergy.cpp
             ${PROJECT_SOURCE_DIR}/symmetry_core.cpp

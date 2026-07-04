@@ -34,6 +34,10 @@ public:
 
     std::string job_title;
 
+    // FILE_FORMAT tag: true (default) routes restart/state files through
+    // the unified HDF5 formats; false forces the legacy text files.
+    bool use_hdf5_io = true;
+
 private:
     std::ifstream ifs_input;
     bool from_stdin;

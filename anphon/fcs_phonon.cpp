@@ -429,7 +429,7 @@ void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs, const int order,
 }
 
 void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order,
-                                   std::vector<FcsArrayWithCell> &fcs_out)
+                                   std::vector<FcsArrayWithCell> &fcs_out) const
 {
     // Parse the force constants from the HDF5 file.
     // The relative vectors in the Cartesian basis are loaded and set to relvec_velocity.
@@ -443,6 +443,21 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     Eigen::ArrayXd fcs_values;
     std::string unit_shift, unit_fc;
 
+    // FC2_TEMPERATURE: pick one temperature row of the renormalized FC2
+    // stored in an SCPH/QHA state file instead of the base values.
+    int temperature_index = -1;
+    if (order == 0 && fc2_temperature >= 0.0) {
+        if (!file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values")) {
+            exit("parse_fcs_from_h5",
+                 "FC2_TEMPERATURE was given, but the FC2 file carries no "
+                 "temperature-dependent force constants.");
+        }
+        temperature_index = h5_resolve_temperature_index(file, fc2_temperature, eps6,
+                                                         "/settings/temperatures");
+        std::cout << "\n  FC2_TEMPERATURE = " << fc2_temperature
+                  << " K : loading the renormalized FC2 at this temperature from " << fname_fcs << "\n  ";
+    }
+
     get_force_constants_from_h5(file,
                                 order,
                                 atom_indices,
@@ -451,7 +466,8 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
                                 shift_vectors,
                                 fcs_values,
                                 &unit_shift,
-                                &unit_fc);
+                                &unit_fc,
+                                temperature_index);
 
     // The helper already converted the data; report only when the stored unit
     // differs from the internal one to keep the common case quiet.

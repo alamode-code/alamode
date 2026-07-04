@@ -37,6 +37,8 @@ public:
     // optimization scheme used in QHA
     QhaScheme qha_scheme = QhaScheme::Standard;
 
+    using ScphQhaCommon::use_h5_io;
+
     bool restart_qha;
     bool warmstart_qha;
     bool lower_temp;

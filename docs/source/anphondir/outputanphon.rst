@@ -96,11 +96,23 @@ ANPHON: Output files
 
 ````
 
+* ``PREFIX``.kappa.h5
+
+ Unified, crash-safe HDF5 result file of ``MODE = RTA`` (schema
+ ``alamode:kappa_result``). It stores the run metadata, phonon frequencies,
+ group velocities, the three-phonon (and, when ``QUARTIC = 1``, four-phonon)
+ linewidths with per-mode completion flags, and the final thermal-conductivity
+ tensors. It is updated incrementally during the run and read back when the
+ restart mode is on (``RESTART = 1`` / ``RESTART_4PH = 1``). Written with the
+ default ``FILE_FORMAT = h5``; readable with h5py.
+
 * ``PREFIX``.result
 
- In this file, phonon frequency, group velocity, and anharmonic phonon linewidths are printed.
- This file is updated during thermal conductivity calculations (``MODE = RTA``).
- In addition, this file is read when the restart mode is turned on (``RESTART = 1``).
+ Legacy text counterpart of ``PREFIX``.kappa.h5, written when
+ ``FILE_FORMAT = text``. In this file, phonon frequency, group velocity, and
+ anharmonic phonon linewidths are printed. An existing file from an older run
+ is imported into ``PREFIX``.kappa.h5 once (read-only) when restarting in the
+ default h5 mode.
 
 * ``PREFIX``.kl
 
@@ -130,10 +142,25 @@ ANPHON: Output files
 
 ````
 
+* ``PREFIX``.scph.h5 (``PREFIX``.qha.h5 for ``MODE = QHA``)
+
+ Unified state file of an SCPH/QHA run (schema ``alamode:scph_state``),
+ written atomically at the end of the run with the default
+ ``FILE_FORMAT = h5``. It bundles everything the legacy
+ ``PREFIX``.scph_dymat / ``PREFIX``.renorm_harm_dymat / ``PREFIX``.V0 trio
+ stored (and is the preferred restart source), plus the temperature-dependent
+ effective harmonic force constants in the standard
+ ``/ForceConstants/Order2`` layout: a later anphon run can consume them
+ directly via ``FCSFILE = PREFIX.scph.h5`` together with the
+ :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>` tag, replacing the
+ ``dfc2.py`` workflow. Readable with h5py.
+
 * ``PREFIX``.scph_dymat
 
  Anharmonic dynamical matrix calculated on the :math:`k` grid defined by the ``KMESH_INTERPOLATE`` tag.
- This file is used to restart the SCPH calculation.
+ Legacy restart file, written when ``FILE_FORMAT = text``; an existing file
+ from an older run is imported into ``PREFIX``.scph.h5 once when restarting
+ in the default h5 mode.
 
 * ``PREFIX``.scph_bands
 

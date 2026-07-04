@@ -343,8 +343,47 @@ Description of input variables
   1   Restart from the existing file
  === =======================================================
 
- :Default: 1 if there is a file named ``PREFIX``.result; 0 otherwise
+ :Default: 1 if there is a file named ``PREFIX``.kappa.h5 or ``PREFIX``.result; 0 otherwise
  :Type: Integer
+ :Description: With the default ``FILE_FORMAT = h5``, the restart state lives in
+               ``PREFIX``.kappa.h5. A legacy text ``PREFIX``.result file (from an
+               older run or ``FILE_FORMAT = text``) is imported into the HDF5 file
+               once, read-only, and left untouched.
+
+````
+
+.. _anphon_file_format:
+
+* FILE_FORMAT-tag : Format of the restart/state files
+
+ ====== =========================================================================
+  h5     Unified crash-safe HDF5 files (``PREFIX``.kappa.h5 for ``MODE = RTA``;
+         ``PREFIX``.scph.h5 / ``PREFIX``.qha.h5 for ``MODE = SCPH`` / ``QHA``)
+  text   Legacy text files (``PREFIX``.result, ``PREFIX``.scph_dymat, etc.)
+ ====== =========================================================================
+
+ :Default: h5
+ :Type: String
+ :Description: The text format is kept for one transition release. Human-readable
+               outputs (``PREFIX``.kl, ``PREFIX``.scph_thermo, ``PREFIX``.scph_dfc2,
+               ``PREFIX``.V0, ...) are written in both modes.
+
+````
+
+.. _anphon_fc2_temperature:
+
+* FC2_TEMPERATURE-tag : Temperature (K) at which the renormalized FC2 is loaded
+
+ :Default: None
+ :Type: Double
+ :Description: When ``FCSFILE`` or ``FC2FILE`` points at a ``PREFIX``.scph.h5 /
+               ``PREFIX``.qha.h5 file produced by an SCPH/QHA run, the effective
+               (temperature-renormalized) harmonic force constants at this
+               temperature are loaded directly — no ``dfc2.py`` round-trip is
+               needed. The temperature must be one of the values on the file's
+               temperature grid. The stored FC2 is the short-range part; the
+               non-analytic long-range term is added at runtime from ``BORNINFO``
+               as usual.
 
 ````
 

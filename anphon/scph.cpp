@@ -104,6 +104,7 @@ void Scph::exec_scph()
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
     MPI_Bcast(&restart_scph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&selfenergy_offdiagonal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ialgo, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&imix_scph, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -129,9 +130,28 @@ void Scph::exec_scph()
             std::cout << " Dynamical matrix is read from file ...";
         }
 
-        // Read anharmonic correction to the dynamical matrix from the existing file
-        // SCPH calculation, no structural optimization
-        if (relax_mode == RelaxationStrMode::None) {
+        const auto with_relax = relax_mode != RelaxationStrMode::None;
+
+        // Preferred restart source: the unified state file.
+        auto loaded_h5 = false;
+        if (use_h5_io) {
+            loaded_h5 = load_scph_state_h5(input->job_title + ".scph.h5",
+                                           "SCPH",
+                                           NT,
+                                           dynamical->nonanalytic,
+                                           selfenergy_offdiagonal,
+                                           relaxation->relax_str,
+                                           delta_dymat_scph,
+                                           with_relax ? delta_harmonic_dymat_renormalize : nullptr,
+                                           with_relax ? &relaxation->V0 : nullptr);
+        }
+
+        if (loaded_h5) {
+            // Regenerate the human-readable V0-vs-T output, which may be
+            // absent when restarting from the unified file alone.
+            if (with_relax && mympi->my_rank == 0) relaxation->store_V0_to_file();
+        } else {
+            // Read anharmonic correction to the dynamical matrix from the legacy text files.
             // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
             load_scph_dymat_from_file(delta_dymat_scph,
                                       input->job_title + ".scph_dymat",
@@ -139,31 +159,35 @@ void Scph::exec_scph()
                                       kmesh_coarse,
                                       dynamical->nonanalytic,
                                       selfenergy_offdiagonal);
-        }
-        // SCPH + structural optimization
-        else
-        {
-            // Resume SCPH correction part.
-            load_scph_dymat_from_file(delta_dymat_scph,
-                                      input->job_title + ".scph_dymat",
-                                      kmesh_dense,
-                                      kmesh_coarse,
-                                      dynamical->nonanalytic,
-                                      selfenergy_offdiagonal);
 
-            // Resume harmonic-dynamical-matrix renormalization used in structural relaxation.
-            load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
-                                      input->job_title + ".renorm_harm_dymat",
-                                      kmesh_dense,
-                                      kmesh_coarse,
-                                      dynamical->nonanalytic,
-                                      selfenergy_offdiagonal);
-        }
+            if (with_relax) {
+                // Resume harmonic-dynamical-matrix renormalization used in structural relaxation.
+                load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
+                                          input->job_title + ".renorm_harm_dymat",
+                                          kmesh_dense,
+                                          kmesh_coarse,
+                                          dynamical->nonanalytic,
+                                          selfenergy_offdiagonal);
+                // Load previously optimized static potential offset V0.
+                relaxation->load_V0_from_file();
+            }
 
-        // structural optimization
-        if (relax_mode != RelaxationStrMode::None) {
-            // Load previously optimized static potential offset V0.
-            relaxation->load_V0_from_file();
+            // One-way migration of the legacy state into the unified file;
+            // the text files themselves are left untouched.
+            if (use_h5_io && mympi->my_rank == 0) {
+                write_scph_state_h5(input->job_title + ".scph.h5",
+                                    "SCPH",
+                                    NT,
+                                    dynamical->nonanalytic,
+                                    selfenergy_offdiagonal,
+                                    relaxation->relax_str,
+                                    "scph",
+                                    delta_dymat_scph,
+                                    with_relax ? delta_harmonic_dymat_renormalize : nullptr,
+                                    with_relax ? &relaxation->V0 : nullptr,
+                                    kmesh_coarse,
+                                    mindist_list);
+            }
         }
 
     } else {
@@ -179,27 +203,50 @@ void Scph::exec_scph()
         }
 
         if (mympi->my_rank == 0) {
-            // write dymat to file
-            // write scph dynamical matrix when scph calculation is performed
-            // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
-            store_renormalized_dymat_to_file(delta_dymat_scph,
-                                             input->job_title + ".scph_dymat",
-                                             kmesh_dense,
-                                             kmesh_coarse,
-                                             dynamical->nonanalytic,
-                                             selfenergy_offdiagonal);
-            // write renormalized harmonic dynamical matrix when the crystal structure is optimized
-            if (relax_mode != RelaxationStrMode::None) {
-                // Persist renormalized harmonic dynamical matrix and relaxation offset.
-                store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
-                                                 input->job_title + ".renorm_harm_dymat",
+            const auto with_relax = relax_mode != RelaxationStrMode::None;
+            if (use_h5_io) {
+                // Persist the complete SCPH state (restart data + renormalized
+                // FC2 per temperature) in one atomically-published file.
+                write_scph_state_h5(input->job_title + ".scph.h5",
+                                    "SCPH",
+                                    NT,
+                                    dynamical->nonanalytic,
+                                    selfenergy_offdiagonal,
+                                    relaxation->relax_str,
+                                    "scph",
+                                    delta_dymat_scph,
+                                    with_relax ? delta_harmonic_dymat_renormalize : nullptr,
+                                    with_relax ? &relaxation->V0 : nullptr,
+                                    kmesh_coarse,
+                                    mindist_list);
+                // .V0 doubles as a human-readable physical output (V0 vs T),
+                // so the text file is kept; restart reads only the h5.
+                if (with_relax) relaxation->store_V0_to_file();
+            } else {
+                // write dymat to file
+                // write scph dynamical matrix when scph calculation is performed
+                // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
+                store_renormalized_dymat_to_file(delta_dymat_scph,
+                                                 input->job_title + ".scph_dymat",
                                                  kmesh_dense,
                                                  kmesh_coarse,
                                                  dynamical->nonanalytic,
                                                  selfenergy_offdiagonal);
-                relaxation->store_V0_to_file();
+                // write renormalized harmonic dynamical matrix when the crystal structure is optimized
+                if (with_relax) {
+                    // Persist renormalized harmonic dynamical matrix and relaxation offset.
+                    store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
+                                                     input->job_title + ".renorm_harm_dymat",
+                                                     kmesh_dense,
+                                                     kmesh_coarse,
+                                                     dynamical->nonanalytic,
+                                                     selfenergy_offdiagonal);
+                    relaxation->store_V0_to_file();
+                }
             }
-            // Convert dynamical-matrix correction back to real-space FC2 and write it out.
+            // Convert dynamical-matrix correction back to real-space FC2 and
+            // write the text .scph_dfc2 (kept in both modes during the
+            // transition; consumed by dfc2.py / dfc2 / scph_to_qefc.py).
             write_anharmonic_correction_fc2(delta_dymat_scph, NT, kmesh_coarse, mindist_list, false, 0);
         }
     }

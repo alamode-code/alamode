@@ -28,6 +28,7 @@
 #include "mpi.h"
 #include "mpi_common.h"
 #include "pointers.h"
+#include "scph_result_io.h"
 #include "symmetry_core.h"
 #include "system.h"
 
@@ -41,6 +42,11 @@ public:
     explicit ScphQhaCommon(class PHON *phon);
 
     ~ScphQhaCommon() override;
+
+    // FILE_FORMAT = h5 (default) routes the restart state through the
+    // unified PREFIX.scph.h5 / PREFIX.qha.h5 file; text keeps the legacy
+    // .scph_dymat / .renorm_harm_dymat / .V0 trio. Set by the input parser.
+    bool use_h5_io = true;
 
 protected:
     // Shared state between Scph and Qha.
@@ -94,6 +100,33 @@ protected:
     void write_anharmonic_correction_fc2(std::complex<double> ****delta_dymat, unsigned int NT,
                                          const KpointMeshUniform *kmesh_coarse_in, MinimumDistList ***mindist_list_in,
                                          bool is_qha = false, int type = 0);
+
+    ScphSettingsH5 build_scph_settings_h5(const std::string &mode_name, unsigned int NT,
+                                          unsigned int nonanalytic_in, bool selfenergy_offdiagonal_in,
+                                          int relax_str_in) const;
+
+    ScphCellsH5 build_scph_cells_h5() const;
+
+    ScphFc2RowsH5 build_fc2_rows_h5(const std::complex<double> *const *const *const *delta_dymat,
+                                    unsigned int NT, const KpointMeshUniform *kmesh_coarse_in,
+                                    MinimumDistList ***mindist_list_in, const std::string &variant) const;
+
+    // Rank-0 only: assemble the full state and publish it atomically.
+    void write_scph_state_h5(const std::string &filename, const std::string &mode_name, unsigned int NT,
+                             unsigned int nonanalytic_in, bool selfenergy_offdiagonal_in, int relax_str_in,
+                             const std::string &variant,
+                             const std::complex<double> *const *const *const *delta_main,
+                             const std::complex<double> *const *const *const *delta_harm_renorm,
+                             const std::vector<double> *v0, const KpointMeshUniform *kmesh_coarse_in,
+                             MinimumDistList ***mindist_list_in) const;
+
+    // Collective: rank 0 reads PREFIX.<mode>.h5 and the data are broadcast.
+    // Returns false (on every rank) when no usable h5 file exists so the
+    // caller can fall back to the legacy text loaders.
+    bool load_scph_state_h5(const std::string &filename, const std::string &mode_name, unsigned int NT,
+                            unsigned int nonanalytic_in, bool selfenergy_offdiagonal_in, int relax_str_in,
+                            std::complex<double> ****delta_main, std::complex<double> ****delta_harm_renorm,
+                            std::vector<double> *v0);
 
     void postprocess(std::complex<double> ****delta_dymat, std::complex<double> ****delta_harmonic_dymat_renormalize,
                      std::complex<double> ****delta_dymat_scph_plus_bubble, const KpointMeshUniform *kmesh_coarse_in,

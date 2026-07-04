@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
 #include "anharmonic_core.h"
@@ -79,6 +80,8 @@ void Conductivity::set_default_variables()
     restart_flag_4ph = false;
     file_result3 = "";
     file_result4 = "";
+    file_kappa_h5 = "";
+    use_h5_io = true;
     interpolator = "log-linear";
     len_boundary = 0.0;
     write_interpolation = 0;
@@ -129,6 +132,7 @@ void Conductivity::setup_kappa()
     MPI_Bcast(&calc_coherent, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&calc_coherent_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&restart_flag_3ph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     // quartic_mode is boardcasted in fcs_phonon->setup
     if (anharmonic_core->quartic_mode > 0) {
@@ -351,7 +355,9 @@ void Conductivity::prepare_restart(const int mode)
         nshift_restart = 0;
         vks_done.clear();
         if (mympi->my_rank == 0) {
-            if (!restart_flag_3ph) {
+            if (use_h5_io) {
+                load_computed_modes_h5("3ph", damping3, vks_done);
+            } else if (!restart_flag_3ph) {
 
                 fs_result3 << "##Phonon Frequency\n";
                 fs_result3 << "#K-point (irreducible), Branch, Omega (cm^-1)\n";
@@ -371,14 +377,17 @@ void Conductivity::prepare_restart(const int mode)
                                           dos->kmesh_dos->nk_irred,
                                           damping3,
                                           vks_done,
-                                          "3-phonon");
+                                          "3-phonon",
+                                          true);
             }
 
-            fs_result3.clear();
-            fs_result3.close();
-            fs_result3.open(file_result3.c_str(), std::ios::app | std::ios::out);
-            if (!fs_result3) {
-                exit("prepare_restart", "Could not open 3-phonon result file for append.");
+            if (!use_h5_io) {
+                fs_result3.clear();
+                fs_result3.close();
+                fs_result3.open(file_result3.c_str(), std::ios::app | std::ios::out);
+                if (!fs_result3) {
+                    exit("prepare_restart", "Could not open 3-phonon result file for append.");
+                }
             }
         }
 
@@ -420,7 +429,9 @@ void Conductivity::prepare_restart(const int mode)
         nshift_restart4 = 0;
         vks_done4.clear();
         if (mympi->my_rank == 0) {
-            if (!restart_flag_4ph) {
+            if (use_h5_io) {
+                load_computed_modes_h5("4ph", damping4, vks_done4);
+            } else if (!restart_flag_4ph) {
                 fs_result4 << "##Phonon Frequency\n";
                 fs_result4 << "#K-point (irreducible), Branch, Omega (cm^-1)\n";
                 for (i = 0; i < kmesh_4ph->nk_irred; ++i) {
@@ -439,13 +450,16 @@ void Conductivity::prepare_restart(const int mode)
                                           kmesh_4ph->nk_irred,
                                           damping4,
                                           vks_done4,
-                                          "4-phonon");
+                                          "4-phonon",
+                                          true);
             }
-            fs_result4.clear();
-            fs_result4.close();
-            fs_result4.open(file_result4.c_str(), std::ios::app | std::ios::out);
-            if (!fs_result4) {
-                exit("prepare_restart", "Could not open 4-phonon result file for append.");
+            if (!use_h5_io) {
+                fs_result4.clear();
+                fs_result4.close();
+                fs_result4.open(file_result4.c_str(), std::ios::app | std::ios::out);
+                if (!fs_result4) {
+                    exit("prepare_restart", "Could not open 4-phonon result file for append.");
+                }
             }
         }
 
@@ -489,7 +503,8 @@ void Conductivity::prepare_restart(const int mode)
 
 void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std::string &file_result,
                                              const unsigned int nk_irred, double **damping,
-                                             std::vector<int> &vks_done_out, const char *label)
+                                             std::vector<int> &vks_done_out, const char *label,
+                                             const bool allow_truncate)
 {
     std::string line_tmp;
     unsigned int nk_tmp, ns_tmp;
@@ -556,6 +571,11 @@ void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std:
             std::string("Ignoring an incomplete ") + label + " #GAMMA_EACH block at the end of " + file_result + ".";
         warn("prepare_restart", message.c_str());
 
+        // When the caller only imports the data (h5 migration), the legacy
+        // file must stay byte-identical; the incomplete tail is simply
+        // skipped in memory.
+        if (!allow_truncate) return;
+
         fs_result.clear();
         fs_result.close();
 
@@ -576,6 +596,29 @@ void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std:
 
 void Conductivity::setup_result_io(const int mode)
 {
+    if (use_h5_io) {
+        // Everything the run will touch in PREFIX.kappa.h5 is created here,
+        // before any self-energy computation; a restart flag of 0 discards
+        // the previous data of this channel only. Old text .result files
+        // are imported once (read-only) when the h5 has no data yet.
+        if (mympi->my_rank == 0) {
+            if (mode == 1) {
+                if (!result_io_h5) {
+                    result_io_h5 = std::make_unique<KappaResultIOH5>(file_kappa_h5);
+                }
+                result_io_h5->open_or_create(build_kappa_file_meta(),
+                                             build_kappa_channel_meta(mode),
+                                             !restart_flag_3ph);
+            } else if (mode == -1) {
+                result_io_h5->ensure_channel(build_kappa_channel_meta(mode), !restart_flag_4ph);
+            } else {
+                exit("setup_result_io", "this could not happen");
+            }
+            import_legacy_result_text(mode);
+        }
+        return;
+    }
+
     // check consistency or write header for result, for either 3ph or 4ph calculation
     if (mympi->my_rank == 0) {
 
@@ -652,6 +695,149 @@ void Conductivity::setup_result_io(const int mode)
         } else {
             exit("set_up_result_io", "this could not happen");
         }
+    }
+}
+
+
+KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
+{
+    KappaFileMetaH5 meta;
+    meta.temperatures.assign(temperature, temperature + ntemp);
+    meta.classical = thermodynamics->classical ? 1 : 0;
+    meta.ismear = integration->ismear;
+    meta.smearing_width = integration->epsilon * Hz_to_kayser / time_ry; // Ry -> cm^-1
+    meta.fcs_file = fcs_phonon->file_fcs;
+
+    const auto &primcell = system->get_primcell();
+    meta.lattice_vector = primcell.lattice_vector;
+    meta.x_fractional = primcell.x_fractional;
+    meta.atomic_kinds = primcell.kind;
+    meta.elements = system->symbol_kd;
+    meta.volume = primcell.volume;
+
+    meta.with_kappa_3ph_only = fph_rta > 0;
+    meta.with_kappa_coherent = calc_coherent > 0;
+    meta.with_kappa_coherent_block = calc_coherent_block > 0;
+    meta.with_kappa_spec = calc_kappa_spec > 0;
+    if (meta.with_kappa_spec) {
+        meta.energy_axis = dos->energy_dos;
+    }
+    return meta;
+}
+
+
+KappaChannelMetaH5 Conductivity::build_kappa_channel_meta(const int mode) const
+{
+    const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos : kmesh_4ph;
+    const auto eval_in = (mode == 1) ? dos->dymat_dos->get_eigenvalues() : dymat_4ph->get_eigenvalues();
+    const auto vel_in = (mode == 1) ? vel : vel_4ph;
+
+    KappaChannelMetaH5 meta;
+    meta.tag = (mode == 1) ? "3ph" : "4ph";
+    for (auto i = 0; i < 3; ++i) meta.nk_i[i] = kmesh_in->nk_i[i];
+    meta.nk_irred = kmesh_in->nk_irred;
+    meta.ns = ns;
+    meta.weights = kmesh_in->weight_k;
+
+    meta.xk_irred.resize(meta.nk_irred, 3);
+    meta.frequencies.resize(meta.nk_irred, ns);
+    meta.equiv_knum.resize(meta.nk_irred);
+
+    size_t nequiv_total = 0;
+    for (auto i = 0; i < meta.nk_irred; ++i) {
+        const auto knum_rep = kmesh_in->kpoint_irred_all[i][0].knum;
+        for (auto j = 0; j < 3; ++j) {
+            meta.xk_irred(i, j) = kmesh_in->kpoint_irred_all[i][0].kval[j];
+        }
+        for (auto is = 0; is < ns; ++is) {
+            meta.frequencies(i, is) = writes->in_kayser(eval_in[knum_rep][is]);
+        }
+        for (const auto &kp: kmesh_in->kpoint_irred_all[i]) {
+            meta.equiv_knum[i].push_back(static_cast<int>(kp.knum));
+            ++nequiv_total;
+        }
+    }
+
+    meta.velocities.reserve(nequiv_total * ns * 3);
+    for (auto i = 0; i < meta.nk_irred; ++i) {
+        for (const auto &kp: kmesh_in->kpoint_irred_all[i]) {
+            for (auto is = 0; is < ns; ++is) {
+                for (auto j = 0; j < 3; ++j) {
+                    meta.velocities.push_back(vel_in[kp.knum][is][j]);
+                }
+            }
+        }
+    }
+    return meta;
+}
+
+
+void Conductivity::load_computed_modes_h5(const std::string &tag, double **damping,
+                                          std::vector<int> &vks_done_out) const
+{
+    const auto rows_done = result_io_h5->load_computed_gamma(tag, damping);
+
+    // The job distribution and the positional row indexing of
+    // write_result_gamma assume the finished modes form a prefix of the
+    // flat (ik, is) ordering. Rows flagged after a gap (possible only after
+    // a crash between the data and flag commits of an interior batch, or
+    // external editing) are recomputed and overwritten in place.
+    size_t nprefix = 0;
+    while (nprefix < rows_done.size() && rows_done[nprefix] == static_cast<int>(nprefix)) {
+        ++nprefix;
+    }
+    vks_done_out.assign(rows_done.begin(), rows_done.begin() + nprefix);
+
+    if (nprefix < rows_done.size()) {
+        std::cout << "\n " << rows_done.size() - nprefix << " " << tag
+                  << " modes recorded after an incomplete batch in " << file_kappa_h5
+                  << " will be recomputed.\n";
+    }
+    if (!vks_done_out.empty()) {
+        std::cout << "\n " << vks_done_out.size() << " previously computed " << tag
+                  << " modes were loaded from " << file_kappa_h5 << ".\n";
+    }
+}
+
+
+void Conductivity::import_legacy_result_text(const int mode)
+{
+    // One-way migration of an old text .result file into PREFIX.kappa.h5.
+    // The legacy file is opened read-only and left byte-identical; it wins
+    // only when the h5 file holds no data for this channel yet.
+    const auto restart_wanted = (mode == 1) ? restart_flag_3ph : restart_flag_4ph;
+    if (!restart_wanted) return;
+
+    const auto &file_legacy = (mode == 1) ? file_result3 : file_result4;
+    struct stat st
+    {};
+    if (stat(file_legacy.c_str(), &st) != 0) return;
+
+    const std::string tag = (mode == 1) ? "3ph" : "4ph";
+    const auto damping = (mode == 1) ? damping3 : damping4;
+
+    if (!result_io_h5->load_computed_gamma(tag, damping).empty()) return;
+
+    const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos : kmesh_4ph;
+
+    std::cout << "\n Found a legacy text restart file " << file_legacy << ".\n"
+              << " Its contents will be imported into " << file_kappa_h5
+              << "; the text file itself is left untouched.\n";
+
+    std::fstream fs_legacy;
+    check_consistency_restart(fs_legacy, file_legacy, kmesh_in->nk_i, kmesh_in->nk_irred,
+                              system->get_primcell(), thermodynamics->classical, integration->ismear,
+                              integration->epsilon, system->Tmin, system->Tmax, system->dT,
+                              fcs_phonon->file_fcs);
+
+    std::vector<int> rows_done;
+    load_restart_gamma_blocks(fs_legacy, file_legacy, kmesh_in->nk_irred, damping, rows_done,
+                              (mode == 1) ? "3-phonon" : "4-phonon", false);
+    fs_legacy.close();
+
+    if (!rows_done.empty()) {
+        result_io_h5->store_gamma_rows(tag, rows_done, damping);
+        std::cout << " Imported " << rows_done.size() << " modes.\n";
     }
 }
 
@@ -917,6 +1103,18 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
     const unsigned int np = mympi->nprocs;
     unsigned int k;
 
+    if (use_h5_io) {
+        // The gathered batch occupies consecutive rows; frequencies and
+        // velocities were stored once at channel creation.
+        const unsigned int nrows_total =
+            ((mode == 1) ? dos->kmesh_dos->nk_irred : kmesh_4ph->nk_irred) * ns;
+        const unsigned int first_row = ik * np + nshift;
+        if (first_row >= nrows_total) return;
+        const auto nrow = std::min(np, nrows_total - first_row);
+        result_io_h5->store_gamma_batch((mode == 1) ? "3ph" : "4ph", first_row, nrow, damp_in);
+        return;
+    }
+
     if (mode == 1) {
         // damping 3
         std::ostringstream result_block;
@@ -1103,6 +1301,14 @@ void Conductivity::compute_kappa()
                                          dos->dymat_dos->get_eigenvalues(),
                                          gamma_total,
                                          kappa_coherent_block);
+        }
+
+        if (use_h5_io) {
+            result_io_h5->store_kappa(kappa,
+                                      fph_rta > 0 ? kappa_3only : nullptr,
+                                      calc_coherent ? kappa_coherent : nullptr,
+                                      calc_coherent_block ? kappa_coherent_block : nullptr,
+                                      calc_kappa_spec ? kappa_spec : nullptr);
         }
 
         deallocate(gamma_total);
@@ -1680,12 +1886,15 @@ KpointMeshUniform *Conductivity::get_kmesh_coarse() const
 }
 
 void Conductivity::set_conductivity_params(const std::string &file_result3_in, const std::string &file_result4_in,
-                                           const bool restart_3ph_in, const bool restart_4ph_in)
+                                           const std::string &file_kappa_h5_in, const bool restart_3ph_in,
+                                           const bool restart_4ph_in, const bool use_h5_io_in)
 {
     file_result3 = file_result3_in;
     file_result4 = file_result4_in;
+    file_kappa_h5 = file_kappa_h5_in;
     restart_flag_3ph = restart_3ph_in;
     restart_flag_4ph = restart_4ph_in;
+    use_h5_io = use_h5_io_in;
 }
 
 bool Conductivity::get_restart_conductivity(const int order) const
@@ -1712,7 +1921,10 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result, const std:
 {
     const auto Ry_to_kayser = Hz_to_kayser / time_ry;
 
-    fs_result.open(file_result_in.c_str(), std::ios::in | std::ios::out);
+    // Read-only: this function only validates the header. The text path
+    // reopens the stream for appending afterwards; the h5 import path must
+    // never modify the legacy file.
+    fs_result.open(file_result_in.c_str(), std::ios::in);
     if (!fs_result) {
         exit("check_consistency_restart", "Could not open file_result_in");
     }

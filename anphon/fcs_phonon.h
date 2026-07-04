@@ -197,6 +197,11 @@ public:
 
     bool update_fc2;
 
+    // FC2_TEMPERATURE tag: when >= 0 and the FC2 HDF5 file carries
+    // temperature-dependent force constants (an SCPH/QHA state file), the
+    // row matching this temperature is loaded instead of the base values.
+    double fc2_temperature = -1.0;
+
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
     void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout) const;
@@ -213,8 +218,8 @@ private:
 
     void load_fcs_xml(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    static void parse_fcs_from_h5(const std::string &fname_fcs, const int order,
-                                  std::vector<FcsArrayWithCell> &fcs_out);
+    void parse_fcs_from_h5(const std::string &fname_fcs, const int order,
+                           std::vector<FcsArrayWithCell> &fcs_out) const;
 
     void load_fcs_from_file(const int maxorder_in) const;
 

@@ -151,7 +151,9 @@ void Input::parse_general_vars()
                                               "FC3FILE",
                                               "FC4FILE",
                                               "FCSFILE",
-                                              "RESTART_4PH"};
+                                              "RESTART_4PH",
+                                              "FILE_FORMAT",
+                                              "FC2_TEMPERATURE"};
 
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::vector<std::string> kdname_input, masskd_v;
@@ -179,6 +181,19 @@ void Input::parse_general_vars()
     auto mode = general_var_dict["MODE"];
     auto file_result = prefix + ".result";
     auto file_result4 = prefix + ".4ph.result";
+    auto file_kappa_h5 = prefix + ".kappa.h5";
+
+    // FILE_FORMAT decides the restart-file format (h5 is the default;
+    // "text" forces the legacy .result files for one transition release).
+    // It must be resolved before the restart auto-detection below.
+    std::string file_format = "h5";
+    assign_val(file_format, "FILE_FORMAT", general_var_dict);
+    std::transform(file_format.begin(), file_format.end(), file_format.begin(), tolower);
+    if (file_format != "h5" && file_format != "text") {
+        exit("parse_general_vars", "FILE_FORMAT must be either h5 or text.");
+    }
+    const auto use_h5_io = file_format == "h5";
+    this->use_hdf5_io = use_h5_io;
 
     std::transform(mode.begin(), mode.end(), mode.begin(), toupper);
 
@@ -225,10 +240,17 @@ void Input::parse_general_vars()
 
     auto prec_ewald = 1.0e-12;
 
-    // if file_result3 exists in the current directory,
-    // restart mode will be automatically turned on.
+    // if a restart file exists in the current directory,
+    // restart mode will be automatically turned on. With the default h5
+    // format, an existing PREFIX.kappa.h5 or a legacy text file enables the
+    // restart attempt for each channel independently; the actually finished
+    // modes are read from the per-channel completion flags at setup.
     auto restart = stat(file_result.c_str(), &st) == 0;
     auto restart_4ph = stat(file_result4.c_str(), &st) == 0;
+    if (use_h5_io && stat(file_kappa_h5.c_str(), &st) == 0) {
+        restart = true;
+        restart_4ph = true;
+    }
 
     auto nbands = -1;
     std::string borninfo;
@@ -279,6 +301,12 @@ void Input::parse_general_vars()
     assign_val(ismear, "ISMEAR", general_var_dict);
     assign_val(epsilon, "EPSILON", general_var_dict);
     assign_val(na_sigma, "NA_SIGMA", general_var_dict);
+
+    // FC2_TEMPERATURE selects one temperature row of the temperature-
+    // dependent FC2 stored in a PREFIX.scph.h5 / PREFIX.qha.h5 file given
+    // as FCSFILE or FC2FILE (negative = disabled).
+    double fc2_temperature = -1.0;
+    assign_val(fc2_temperature, "FC2_TEMPERATURE", general_var_dict);
     assign_val(classical, "CLASSICAL", general_var_dict);
     assign_val(band_connection, "BCONNECT", general_var_dict);
     assign_val(use_triplet_symmetry, "TRISYM", general_var_dict);
@@ -316,7 +344,7 @@ void Input::parse_general_vars()
     job_title = prefix;
     phon->mode = mode;
 
-    conductivity->set_conductivity_params(file_result, file_result4, restart, restart_4ph);
+    conductivity->set_conductivity_params(file_result, file_result4, file_kappa_h5, restart, restart_4ph, use_h5_io);
 
     symmetry->nsym = nsym;
     symmetry->tolerance = tolerance;
@@ -346,6 +374,7 @@ void Input::parse_general_vars()
     integration->epsilon = epsilon;
     fcs_phonon->file_fcs = fcsfile;
     fcs_phonon->file_fc2 = fc2file;
+    fcs_phonon->fc2_temperature = fc2_temperature;
     fcs_phonon->update_fc2 = !fc2file.empty();
     thermodynamics->classical = classical;
     integration->ismear = ismear;
@@ -584,6 +613,13 @@ void Input::parse_scph_vars()
         restart_scph = restart_scph && (stat(file_harm_dymat.c_str(), &st) == 0) && (stat(file_v0.c_str(), &st) == 0);
     }
 
+    // The unified state file replaces the legacy text trio; either enables
+    // the restart attempt (completeness is validated at load time).
+    if (use_hdf5_io) {
+        auto file_scph_h5 = this->job_title + ".scph.h5";
+        if (stat(file_scph_h5.c_str(), &st) == 0) restart_scph = true;
+    }
+
     assign_val(restart_scph, "RESTART_SCPH", scph_var_dict);
 
     auto str_tmp = scph_var_dict["KMESH_SCPH"];
@@ -640,6 +676,7 @@ void Input::parse_scph_vars()
     scph->imix_scph = imix_scph;
     scph->maxiter = maxiter;
     scph->restart_scph = restart_scph;
+    scph->use_h5_io = use_hdf5_io;
     scph->selfenergy_offdiagonal = selfenergy_offdiagonal;
     scph->ialgo = ialgo_scph;
     scph->tolerance_scph = tolerance_scph;
@@ -767,9 +804,15 @@ void Input::parse_qha_vars()
     auto file_v0 = this->job_title + ".V0";
     auto restart_qha = (stat(file_renorm_harm_dymat.c_str(), &st) == 0) && (stat(file_v0.c_str(), &st) == 0);
 
+    if (use_hdf5_io) {
+        auto file_qha_h5 = this->job_title + ".qha.h5";
+        if (stat(file_qha_h5.c_str(), &st) == 0) restart_qha = true;
+    }
+
     assign_val(restart_qha, "RESTART_QHA", qha_var_dict);
 
     qha->restart_qha = restart_qha;
+    qha->use_h5_io = use_hdf5_io;
 
     kmesh_v.clear();
     kmesh_interpolate_v.clear();

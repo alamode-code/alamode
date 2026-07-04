@@ -50,6 +50,8 @@ public:
     unsigned int kmesh_interpolate[3];
     unsigned int bubble;
 
+    using ScphQhaCommon::use_h5_io;
+
     bool restart_scph;
     bool warmstart_scph;
     bool lower_temp;
