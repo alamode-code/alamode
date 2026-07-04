@@ -83,7 +83,7 @@ void Input::parce_input(int narg, char **arg)
     if (!locate_tag("&kpoint")) exit("parse_input", "&kpoint entry not found in the input file");
     parse_kpoints();
 
-    if (phon->mode == "RTA") {
+    if (phon->mode == "KAPPA") {
         const auto use_defaults_for_kappa = !locate_tag("&kappa");
         parse_kappa_vars(use_defaults_for_kappa);
     }
@@ -197,6 +197,15 @@ void Input::parse_general_vars()
     this->use_hdf5_io = use_h5_io;
 
     std::transform(mode.begin(), mode.end(), mode.begin(), toupper);
+
+    // MODE = kappa is the current name of the thermal-conductivity mode;
+    // the solver (RTA, IBTE, ...) is chosen by the SOLVER tag in &kappa.
+    if (mode == "RTA") {
+        warn("parse_general_vars",
+             "MODE = RTA is deprecated; please use MODE = kappa and, if needed,\n"
+             " choose the solver with the SOLVER tag in the &kappa field.");
+        mode = "KAPPA";
+    }
 
     const auto fcsfile = general_var_dict["FCSFILE"];
     const auto fc2file = general_var_dict["FC2FILE"];
@@ -413,6 +422,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
                                               "KAPPA_SPEC",
                                               "WRITE_INTERPOL",
                                               "ADAPTIVE_FACTOR",
+                                              "SOLVER",
                                               "ITERATIVE",
                                               "MAX_CYCLE",
                                               "MIN_CYCLE",
@@ -448,6 +458,8 @@ void Input::parse_kappa_vars(const bool use_default_values)
     double adaptive_factor = 1.0;
 
     auto iterative = false;
+    auto iterative_given = false;
+    std::string solver{};
     int max_cycle = 20;
     int min_cycle = 5;
     auto iter_threshold = 0.02;
@@ -469,7 +481,9 @@ void Input::parse_kappa_vars(const bool use_default_values)
         assign_val(calculate_kappa_spec, "KAPPA_SPEC", kappa_var_dict);
         str_tmp = kappa_var_dict["KMESH_COARSE"];
         assign_val(adaptive_factor, "ADAPTIVE_FACTOR", kappa_var_dict);
+        iterative_given = !kappa_var_dict["ITERATIVE"].empty();
         assign_val(iterative, "ITERATIVE", kappa_var_dict);
+        assign_val(solver, "SOLVER", kappa_var_dict);
         assign_val(max_cycle, "MAX_CYCLE", kappa_var_dict);
         assign_val(min_cycle, "MIN_CYCLE", kappa_var_dict);
         assign_val(iterative_mixing, "IBTE_MIXING", kappa_var_dict);
@@ -515,7 +529,32 @@ void Input::parse_kappa_vars(const bool use_default_values)
     conductivity->calc_coherent = calc_coherent;
     conductivity->write_interpolation = write_interpol;
 
-    iterativebte->do_iterative = iterative;
+    // SOLVER selects the BTE solver level; ITERATIVE = 1 is the deprecated
+    // spelling of SOLVER = IBTE.
+    std::transform(solver.begin(), solver.end(), solver.begin(), toupper);
+    if (solver.empty()) {
+        if (iterative_given) {
+            warn("parse_kappa_vars",
+                 "The ITERATIVE tag is deprecated; please use SOLVER = RTA or SOLVER = IBTE.");
+        }
+        solver = iterative ? "IBTE" : "RTA";
+    } else if (iterative_given) {
+        warn("parse_kappa_vars", "Both SOLVER and the deprecated ITERATIVE tag are given; SOLVER wins.");
+    }
+    if (solver == "SERTA") solver = "RTA";
+    if (solver == "DBTE" || solver == "VBTE") {
+        exit("parse_kappa_vars",
+             "SOLVER = DBTE and VBTE are reserved but not implemented yet; use RTA or IBTE.");
+    }
+    if (solver != "RTA" && solver != "IBTE") {
+        exit("parse_kappa_vars", "SOLVER must be one of RTA, IBTE, DBTE, or VBTE.");
+    }
+    if (solver == "IBTE") {
+        warn("parse_kappa_vars",
+             "SOLVER = IBTE is a pilot implementation under development;\n"
+             " please check the validity of the results carefully.");
+    }
+    iterativebte->do_iterative = solver == "IBTE";
     iterativebte->max_cycle = max_cycle;
     iterativebte->min_cycle = min_cycle;
     iterativebte->mixing_factor = iterative_mixing;

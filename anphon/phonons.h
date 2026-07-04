@@ -90,7 +90,7 @@ public:
 
     void execute_phonons() const;
 
-    void execute_RTA() const;
+    void execute_kappa() const;
 
     void execute_self_consistent_phonon() const;
 

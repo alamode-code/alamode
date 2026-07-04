@@ -119,7 +119,7 @@ void Writes::writeInputVars()
     std::cout << "  BCONNECT = " << dynamical->band_connection << '\n';
     std::cout << '\n';
 
-    if (phon->mode == "RTA") {
+    if (phon->mode == "KAPPA") {
         std::cout << "  RESTART = " << conductivity->get_restart_conductivity(3) << '\n';
         std::cout << "  TRISYM = " << anharmonic_core->use_triplet_symmetry << "\n\n";
     } else if (phon->mode == "SCPH") {
@@ -216,7 +216,7 @@ void Writes::writeInputVars()
     std::cout << '\n';
     std::cout << '\n';
 
-    if (phon->mode == "RTA") {
+    if (phon->mode == "KAPPA") {
         std::cout << " Kappa:" << std::endl;
         std::cout << "  ISOTOPE = " << isotope->include_isotope << '\n';
         if (isotope->include_isotope) {
@@ -275,7 +275,7 @@ void Writes::writeInputVars()
         }
         std::cout << '\n';
 
-    } else if (phon->mode == "RTA") {
+    } else if (phon->mode == "KAPPA") {
 
         //    std::cout << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec << std::endl;
 

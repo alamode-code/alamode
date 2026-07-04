@@ -29,11 +29,11 @@ def file_sha256(fname):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def gen_rta_input(fname, extra_general="", extra_kappa=""):
+def gen_rta_input(fname, extra_general="", extra_kappa="", mode="kappa"):
     with open(fname, "w") as f:
         f.write(
-            "&general\n PREFIX = %s; MODE = RTA; FCSFILE = si222_cubic.xml; KD = Si\n"
-            % PREFIX
+            "&general\n PREFIX = %s; MODE = %s; FCSFILE = si222_cubic.xml; KD = Si\n"
+            % (PREFIX, mode)
         )
         if extra_general:
             f.write(" %s\n" % extra_general)
@@ -203,12 +203,15 @@ def check_forced_recompute(anphonbin):
         return 1
 
     # The deprecated &general location must still work, with a warning.
-    gen_rta_input("RTA0g.in", extra_general="RESTART = 0")
+    gen_rta_input("RTA0g.in", extra_general="RESTART = 0", mode="RTA")
     if run_anphon(anphonbin, "RTA0g.in", "restart_off_general.log") != 0:
         print("deprecated &general RESTART=0 run failed")
         return 1
-    if not log_contains("restart_off_general.log", "deprecated"):
+    if not log_contains("restart_off_general.log", "RESTART and RESTART_4PH in the &general field are deprecated"):
         print("deprecated &general RESTART did not warn")
+        return 1
+    if not log_contains("restart_off_general.log", "MODE = RTA is deprecated"):
+        print("deprecated MODE = RTA did not warn")
         return 1
     if not log_contains(
         "restart_off_general.log", "Total Number of phonon modes to be calculated : %d" % nmodes

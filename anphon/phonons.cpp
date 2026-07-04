@@ -79,9 +79,9 @@ PHON::PHON(int narg, char **arg, MPI_Comm comm)
 
         execute_phonons();
 
-    } else if (mode == "RTA") {
+    } else if (mode == "KAPPA") {
 
-        execute_RTA();
+        execute_kappa();
 
     } else if (mode == "SCPH" || mode == "QHA") {
 
@@ -224,7 +224,7 @@ void PHON::execute_phonons() const
     }
 }
 
-void PHON::execute_RTA() const
+void PHON::execute_kappa() const
 {
     if (mympi->my_rank == 0) {
         std::cout << "                        MODE = RTA                           \n";

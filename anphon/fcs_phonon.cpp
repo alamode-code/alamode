@@ -93,7 +93,7 @@ void Fcs_phonon::setup(const std::string &mode)
             }
         }
 
-    } else if (mode == "RTA") {
+    } else if (mode == "KAPPA") {
         require_cubic = true;
 
         if (anharmonic_core->quartic_mode > 0) {

@@ -59,7 +59,7 @@ List of supported input variables
    :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
    :ref:`ITERATIVE <anphon_iterative>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_SPEC <anphon_kappa_spec>`
    :ref:`KMESH_COARSE <anphon_kmesh_coarse>`, :ref:`LEN_BOUNDARY <anphon_len_boundary>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`MIN_CYCLE <anphon_min_cycle>`
-   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
+   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`SOLVER <anphon_solver>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
 
 
 
@@ -81,15 +81,16 @@ Description of input variables
 
 .. _anphon_mode:
 
-* **MODE**-tag = phonons | RTA
+* **MODE**-tag = phonons | kappa
 
  ========= ==============================================================
   phonons  | Calculate phonon dispersion relation, phonon DOS, 
            | Gr\ |umulaut_u|\ neisen parameters etc.
 
-    RTA    | Calculate phonon lifetimes and lattice thermal conductivity 
-           | based on the Boltzmann transport equation (BTE) 
-           | with the relaxation time approximation (RTA).
+  kappa    | Calculate phonon lifetimes and lattice thermal conductivity
+           | based on the Boltzmann transport equation (BTE). The solver
+           | level (RTA, IBTE, ...) is chosen by the :ref:`SOLVER <anphon_solver>`
+           | tag of the &kappa field. ``MODE = kappa`` is a deprecated alias.
 
    SCPH    | Calculate temperature dependent phonon dispersion curves
            | by the self-consistent phonon method.
@@ -372,7 +373,7 @@ Description of input variables
  
  :Default: 1
  :Type: Integer
- :Description: This variable is used only when ``MODE = RTA``.
+ :Description: This variable is used only when ``MODE = kappa``.
 
  .. Note::
 
@@ -387,7 +388,7 @@ Description of input variables
 * FILE_FORMAT-tag : Format of the restart/state files
 
  ====== =========================================================================
-  h5     Unified crash-safe HDF5 files (``PREFIX``.kappa.h5 for ``MODE = RTA``;
+  h5     Unified crash-safe HDF5 files (``PREFIX``.kappa.h5 for ``MODE = kappa``;
          ``PREFIX``.scph.h5 / ``PREFIX``.qha.h5 for ``MODE = SCPH`` / ``QHA``)
   text   Legacy text files (``PREFIX``.result, ``PREFIX``.scph_dymat, etc.)
  ====== =========================================================================
@@ -416,7 +417,7 @@ Description of input variables
                :ref:`DFC2FILE <anphon_dfc2file>` instead. The temperature must
                be one of the values on the file's temperature grid. The stored FC2 is the short-range part; the
                non-analytic long-range term is added at runtime from ``BORNINFO``
-               as usual. In ``MODE = RTA``, this tag also switches
+               as usual. In ``MODE = kappa``, this tag also switches
                ``PREFIX``.kappa.h5 to its temperature-resolved layout so that
                runs at different basis temperatures accumulate into one file
                (set ``TMIN = TMAX = FC2_TEMPERATURE`` per run). Temperatures whose
@@ -1443,7 +1444,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0
  :Type: Integer
- :Description: When ``QUARTIC = 1``, the quartic force constants are read from ``FCSFILE`` (or ``FC4FILE``). In the mode analysis with ``REALPART = 1``, the frequency shift due to the loop diagram of the quartic anharmonicity is then computed in addition to the third-order terms; The former role of ``QUARTIC`` as the switch of four-phonon scattering in ``MODE = RTA`` is deprecated in favor of :ref:`INCLUDE_4PH <anphon_include_4ph>`; ``QUARTIC > 0`` without ``INCLUDE_4PH`` still enables it, with a warning.
+ :Description: When ``QUARTIC = 1``, the quartic force constants are read from ``FCSFILE`` (or ``FC4FILE``). In the mode analysis with ``REALPART = 1``, the frequency shift due to the loop diagram of the quartic anharmonicity is then computed in addition to the third-order terms; The former role of ``QUARTIC`` as the switch of four-phonon scattering in ``MODE = kappa`` is deprecated in favor of :ref:`INCLUDE_4PH <anphon_include_4ph>`; ``QUARTIC > 0`` without ``INCLUDE_4PH`` still enables it, with a warning.
 
 ````
 
@@ -1453,7 +1454,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: None
  :Type: String
- :Description: When ``MODE = RTA`` and ``KS_INPUT`` is given, the mode analysis of the phonon modes listed in the specified file is performed *instead of* the thermal conductivity calculation. The first line of the file gives the number of entries, and each of the following lines contains the fractional coordinates of a :math:`k` point and a branch index (1-based) as ``k1 k2 k3 s``. Each :math:`k` point must be a point of the grid given in the ``&kpoint`` field (*KPMODE* = 2). The quantities to be computed are selected by :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_W <anphon_self_w>`, :ref:`PRINTV3 <anphon_printv3>`, and :ref:`PRINTV4 <anphon_printv4>`.
+ :Description: When ``MODE = kappa`` and ``KS_INPUT`` is given, the mode analysis of the phonon modes listed in the specified file is performed *instead of* the thermal conductivity calculation. The first line of the file gives the number of entries, and each of the following lines contains the fractional coordinates of a :math:`k` point and a branch index (1-based) as ``k1 k2 k3 s``. Each :math:`k` point must be a point of the grid given in the ``&kpoint`` field (*KPMODE* = 2). The quantities to be computed are selected by :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_W <anphon_self_w>`, :ref:`PRINTV3 <anphon_printv3>`, and :ref:`PRINTV4 <anphon_printv4>`.
 
 ````
 
@@ -1604,8 +1605,35 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 ````
 
-"&kappa"-field (Read only when ``MODE = RTA``)
-++++++++++++++++++++++++++++++++++++++++++++++
+"&kappa"-field (Read only when ``MODE = kappa``)
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. _anphon_solver:
+
+* SOLVER-tag : Solver level of the Boltzmann transport equation
+
+ ====== ========================================================================
+  RTA    Relaxation-time approximation (single-mode approximation)
+  IBTE   Iterative solution of the linearized BTE (result in ``PREFIX``.kl_iter)
+  DBTE   Direct solution (reserved; not implemented yet)
+  VBTE   Variational solution (reserved; not implemented yet)
+ ====== ========================================================================
+
+ :Default: RTA
+ :Type: String
+ :Description: Case insensitive. ``SOLVER = IBTE`` replaces the deprecated
+               ``ITERATIVE = 1`` tag; the iteration is controlled by
+               :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`,
+               :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and
+               :ref:`IBTE_MIXING <anphon_ibte_mixing>`.
+
+ .. caution::
+
+     ``SOLVER = IBTE`` is a pilot implementation under development. Please check
+     the validity of the results carefully. ``DBTE`` and ``VBTE`` are reserved
+     names and not implemented yet.
+
+````
 
 .. _anphon_include_4ph:
 
@@ -1722,7 +1750,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 .. _anphon_restart:
 
-* RESTART-tag : Flag to restart the calculation when ``MODE = RTA``
+* RESTART-tag : Flag to restart the calculation when ``MODE = kappa``
 
  === =======================================================
   0   Calculate from scratch
@@ -1772,7 +1800,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  
  :Default: 0
  :Type: Integer
- :Description: This flag is available when ``MODE = RTA``. For the theoretical details, please see :ref:`this page <kappa_coherent>`.
+ :Description: This flag is available when ``MODE = kappa``. For the theoretical details, please see :ref:`this page <kappa_coherent>`.
 
  .. caution::
 
@@ -1793,7 +1821,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  
  :Default: 0
  :Type: Integer
- :Description: This flag is available when ``MODE = RTA``.
+ :Description: This flag is available when ``MODE = kappa``.
 
 
 ````
@@ -1811,7 +1839,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 1
  :Type: Integer
- :Description: When ``MODE = RTA`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to isotopes will be considered perturbatively.
+ :Description: When ``MODE = kappa`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to isotopes will be considered perturbatively.
                The computation is negligibly cheap, so it is enabled by default with ``ISOFACT``
                taken from the internal natural-abundance database; set ``ISOTOPE = 0`` for
                isotopically pure crystals, or give ``ISOFACT`` explicitly for enriched samples
@@ -1856,7 +1884,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0
  :Type: Integer
- :Description: When ``ITERATIVE = 1``, the linearized phonon Boltzmann transport equation is solved self-consistently by iteration instead of the RTA, and the resulting lattice thermal conductivity is written to ``PREFIX``.kl_iter. The iteration is controlled by :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and :ref:`IBTE_MIXING <anphon_ibte_mixing>`.
+ :Description: Deprecated alias of :ref:`SOLVER <anphon_solver>` = IBTE (a warning is printed; ``SOLVER`` wins when both are given). When enabled, the linearized phonon Boltzmann transport equation is solved self-consistently by iteration instead of the RTA, and the resulting lattice thermal conductivity is written to ``PREFIX``.kl_iter. The iteration is controlled by :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and :ref:`IBTE_MIXING <anphon_ibte_mixing>`.
 
 ````
 

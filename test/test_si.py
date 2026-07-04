@@ -249,13 +249,13 @@ def gen_anphoninput_si(prefix, mode, fname):
             f.write(
                 "&kpoint\n  1\n  G 0.0 0.0 0.0 X 0.5 0.5 0.0 51\n  X 0.5 0.5 1.0 G 0.0 0.0 0.0 51\n  G 0.0 0.0 0.0 L 0.5 0.5 0.5 51\n/\n"
             )
-        elif mode == "RTA":
+        elif mode == "kappa":
             f.write("&kpoint\n  2\n  10 10 10\n/\n")
 
 
 def run_anphon_si(anphonbin, project_root):
     gen_anphoninput_si(prefix="si222", mode="phonons", fname="phband.in")
-    gen_anphoninput_si(prefix="si222", mode="RTA", fname="RTA.in")
+    gen_anphoninput_si(prefix="si222", mode="kappa", fname="RTA.in")
     try:
         with open("phband.log", "w") as f:
             ret = subprocess.run([anphonbin, "phband.in"], stdout=f)

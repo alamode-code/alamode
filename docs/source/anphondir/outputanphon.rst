@@ -98,7 +98,7 @@ ANPHON: Output files
 
 * ``PREFIX``.kappa.h5
 
- Unified, crash-safe HDF5 result file of ``MODE = RTA`` (schema
+ Unified, crash-safe HDF5 result file of ``MODE = kappa`` (schema
  ``alamode:kappa_result``). It stores the run metadata, phonon frequencies,
  group velocities, the three-phonon (and, when ``QUARTIC = 1``, four-phonon)
  linewidths with per-mode completion flags, the isotope-scattering linewidths
@@ -141,29 +141,29 @@ ANPHON: Output files
 
 * ``PREFIX``.kl
 
- Lattice thermal conductivity tensor (Peierls term). Created when ``MODE = RTA``.
+ Lattice thermal conductivity tensor (Peierls term). Created when ``MODE = kappa``.
 
 * ``PREFIX``.kl_spec
 
  Spectra of lattice thermal conductivity. Only diagonal components are saved.
- Created when ``MODE = RTA`` and ``KAPPA_SPEC = 1``.
+ Created when ``MODE = kappa`` and ``KAPPA_SPEC = 1``.
 
 
 * ``PREFIX``.kl_coherent
 
- Coherent component of lattice thermal conductivity. Created when ``KAPPA_COHERENT > 0`` in ``MODE = RTA``.
+ Coherent component of lattice thermal conductivity. Created when ``KAPPA_COHERENT > 0`` in ``MODE = kappa``.
 
 
 * ``PREFIX``.kc_elem
 
  Momentum- and mode-decomposed contributions to the coherent components of lattice thermal conductivity. 
- Created when ``KAPPA_COHERENT = 2`` in ``MODE = RTA``.
+ Created when ``KAPPA_COHERENT = 2`` in ``MODE = kappa``.
 
 
 * ``PREFIX``.self_isotope
 
  Phonon selfenergy due to isotope scatterings calculated by Tamura's formula.
- Created when ``MODE = RTA`` and ``ISOTOPE = 2``.
+ Created when ``MODE = kappa`` and ``ISOTOPE = 2``.
 
 ````
 

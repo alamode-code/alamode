@@ -167,7 +167,7 @@ def check_kappa_on_scph(anphonbin):
     # accumulating into a single temperature-resolved kappa.h5 (v2 layout).
     def gen_rta(temp, fname):
         with open(fname, "w") as f:
-            f.write("&general\n PREFIX = kbto; MODE = RTA; FCSFILE = cBTO222.h5;\n")
+            f.write("&general\n PREFIX = kbto; MODE = kappa; FCSFILE = cBTO222.h5;\n")
             f.write(" FC2FILE = %s.scph.h5; FC2_TEMPERATURE = %d; TMIN = %d; TMAX = %d\n/\n"
                     % (PREFIX, temp, temp, temp))
             f.write("&kpoint\n 2\n 2 2 2\n/\n")
