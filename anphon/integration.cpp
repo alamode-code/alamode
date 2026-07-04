@@ -88,10 +88,10 @@ void Integration::setup_integration()
                 ismear_4ph = 2;
             } else if (ismear_4ph == 0) {
                 std::cout << "   ISMEAR_4PH = 0: Lorentzian broadening with epsilon = " << std::fixed
-                          << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                          << std::setprecision(2) << epsilon_4ph << " (cm^-1)\n";
             } else if (ismear_4ph == 1) {
                 std::cout << "   ISMEAR_4PH = 1: Gaussian broadening with epsilon = " << std::fixed
-                          << std::setprecision(2) << epsilon << " (cm^-1)\n";
+                          << std::setprecision(2) << epsilon_4ph << " (cm^-1)\n";
             } else if (ismear_4ph == 2) {
                 std::cout << "   ISMEAR_4PH = 2: Adaptive Gaussian broadening\n";
             } else {

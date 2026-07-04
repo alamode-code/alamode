@@ -48,8 +48,9 @@ List of supported input variables
    :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`
    :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
    **&kappa**
-   :ref:`INCLUDE_4PH <anphon_include_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`
-   :ref:`KAPPA_SPEC <anphon_kappa_spec>`, :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`
+   :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`
+   :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_SPEC <anphon_kappa_spec>`
+   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`
 
 
 
@@ -247,6 +248,22 @@ Description of input variables
  :Default: -1
  :Type: Integer
  :Description: ``ISMEAR`` specifies the method for Brillouin zone integration
+               (DOS and three-phonon scattering rates). With ``ISMEAR = 2``, the
+               Gaussian width is chosen automatically for each pair of phonon
+               modes from the group-velocity difference and the :math:`k`-mesh
+               spacing,
+
+               .. math::
+                  \sigma_{jj'}(\boldsymbol{q}) = \alpha \sqrt{\frac{1}{12} \sum_{u=1}^{3}
+                  \left[ \left( \boldsymbol{v}_{j} - \boldsymbol{v}_{j'} \right) \cdot
+                  \frac{\boldsymbol{G}_{u}}{N_{u}} \right]^{2} },
+
+               following the adaptive-broadening scheme of Yates *et al.*
+               [Phys. Rev. B **75**, 195121 (2007)], where
+               :math:`\boldsymbol{G}_{u}/N_{u}` are the mesh steps along the three
+               reciprocal lattice vectors and the prefactor :math:`\alpha` is set by
+               :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`. ``EPSILON`` is not
+               used in this case, and no manual width convergence test is needed.
 
 ````
 
@@ -1321,6 +1338,60 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                ``INTERPOLATOR``. For backward compatibility, ``QUARTIC > 0`` (an
                ``&analysis`` tag) still implies ``INCLUDE_4PH = 1`` when the tag is
                absent, with a deprecation warning.
+
+````
+
+.. _anphon_ismear_4ph:
+
+* ISMEAR_4PH-tag = -1 | 0 | 1 | 2
+
+ === ==========================================================================
+  -1  Not implemented for four-phonon scattering; automatically switched to 2
+  0   Lorentzian smearing with width of ``EPSILON_4PH``
+  1   Gaussian smearing with width of ``EPSILON_4PH``
+  2   Adaptive Gaussian smearing
+ === ==========================================================================
+
+ :Default: 1
+ :Type: Integer
+ :Description: Brillouin-zone integration method for the four-phonon scattering
+               rates (``INCLUDE_4PH = 1``), independent of the three-phonon
+               setting :ref:`ISMEAR <anphon_ismear>`. ``ISMEAR_4PH = 2`` uses the
+               same adaptive-broadening scheme as ``ISMEAR = 2``, generalized to
+               the three-mode energy denominators of the four-phonon processes
+               and evaluated on the (possibly coarser) mesh given by
+               ``KMESH_COARSE``; the width is scaled by
+               :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>` and
+               ``EPSILON_4PH`` is not used. Adaptive smearing is recommended for
+               the coarse four-phonon meshes, where a single fixed width is hard
+               to converge.
+
+````
+
+.. _anphon_epsilon_4ph:
+
+* EPSILON_4PH-tag : Smearing width for four-phonon scattering rates in units of Kayser (cm\ :sup:`-1`)
+
+ :Default: 10.0
+ :Type: Double
+ :Description: Used when ``ISMEAR_4PH = 0`` or ``1``; neglected when
+               ``ISMEAR_4PH = 2``. Because the four-phonon phase space is much
+               larger and the mesh usually coarser than for three-phonon
+               processes, the optimal width generally differs from ``EPSILON``.
+
+````
+
+.. _anphon_adaptive_factor:
+
+* ADAPTIVE_FACTOR-tag : Scaling prefactor :math:`\alpha` of the adaptive smearing width
+
+ :Default: 1.0
+ :Type: Double
+ :Description: Multiplies the automatically determined Gaussian widths of the
+               adaptive smearing method, for both ``ISMEAR = 2`` (three-phonon)
+               and ``ISMEAR_4PH = 2`` (four-phonon). The default is usually
+               adequate; smaller values sharpen the energy conservation (and may
+               require denser meshes), larger values smooth it.
 
 ````
 
