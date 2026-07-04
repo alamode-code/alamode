@@ -725,6 +725,11 @@ KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
     meta.elements = system->symbol_kd;
     meta.volume = primcell.volume;
 
+    meta.isotope = isotope->include_isotope;
+    if (meta.isotope > 0) {
+        meta.isotope_factors = isotope->isotope_factor;
+    }
+
     meta.with_kappa_3ph_only = fph_rta > 0;
     meta.with_kappa_coherent = calc_coherent > 0;
     meta.with_kappa_coherent_block = calc_coherent_block > 0;
@@ -1329,7 +1334,8 @@ void Conductivity::compute_kappa()
                                       fph_rta > 0 ? kappa_3only : nullptr,
                                       calc_coherent ? kappa_coherent : nullptr,
                                       calc_coherent_block ? kappa_coherent_block : nullptr,
-                                      calc_kappa_spec ? kappa_spec : nullptr);
+                                      calc_kappa_spec ? kappa_spec : nullptr,
+                                      isotope->include_isotope ? isotope->gamma_isotope : nullptr);
         }
 
         deallocate(gamma_total);

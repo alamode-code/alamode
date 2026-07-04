@@ -86,6 +86,16 @@ def check_fresh_run(anphonbin):
         if "kappa_total" in f["kappa"]:
             print("kappa_total should be absent without KAPPA_COHERENT")
             return 1
+        # Isotope scattering is on by default; its data must be stored.
+        if f["metadata/isotope"][()] < 1:
+            print("metadata/isotope should default to 1")
+            return 1
+        gi = f["scattering/isotope/gamma"][...]
+        if gi.shape != (nmodes // f["scattering/3ph"].attrs["nbranches"],
+                        f["scattering/3ph"].attrs["nbranches"]) or not np.isfinite(gi).all() \
+                or gi.max() <= 0.0:
+            print("isotope gamma dataset is missing or empty")
+            return 1
         kappa_h5 = f["kappa/kappa_peierls"][...]
 
     kl = np.loadtxt(PREFIX + ".kl")

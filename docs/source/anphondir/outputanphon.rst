@@ -101,7 +101,9 @@ ANPHON: Output files
  Unified, crash-safe HDF5 result file of ``MODE = RTA`` (schema
  ``alamode:kappa_result``). It stores the run metadata, phonon frequencies,
  group velocities, the three-phonon (and, when ``QUARTIC = 1``, four-phonon)
- linewidths with per-mode completion flags, and the final thermal-conductivity
+ linewidths with per-mode completion flags, the isotope-scattering linewidths
+ and factors (``/scattering/isotope/gamma``, ``/metadata/isotope_factors``,
+ when ``ISOTOPE > 0``), and the final thermal-conductivity
  tensors: ``/kappa/kappa_peierls`` (the intraband Peierls term, i.e. the
  contents of ``PREFIX``.kl) and, when ``KAPPA_COHERENT > 0``,
  ``/kappa/kappa_coherent`` together with ``/kappa/kappa_total`` =

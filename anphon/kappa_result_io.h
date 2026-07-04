@@ -35,6 +35,12 @@ struct KappaFileMetaH5
     std::vector<std::string> elements;
     double volume = 0.0;
 
+    // Isotope scattering (Tamura formula): flag and the g2 factors per
+    // element actually used; the per-mode isotope linewidths are stored in
+    // /scattering/isotope on the 3ph mesh.
+    int isotope = 0;
+    std::vector<double> isotope_factors;
+
     // Which final-kappa datasets this run will produce (fixes the /kappa
     // layout at setup so no dataset is created after the file is published).
     bool with_kappa_3ph_only = false;
@@ -117,11 +123,15 @@ public:
     // kappa_peierls is the intraband (RTA) tensor; when the coherent tensor
     // is present, kappa_total = kappa_peierls + kappa_coherent is derived
     // and stored as well.
+    // gamma_isotope is the per-mode isotope linewidth [nk_irred][ns] on the
+    // 3ph mesh (internal units), stored when the file was set up with
+    // isotope scattering enabled.
     void store_kappa(const double *const *const *kappa_peierls,
                      const double *const *const *kappa_3ph_only,
                      const double *const *const *kappa_coherent,
                      const double *const *const *kappa_coherent_block,
-                     const double *const *const *kappa_spec);
+                     const double *const *const *kappa_spec,
+                     const double *const *gamma_isotope);
 
     [[nodiscard]] const std::string &get_filename() const;
 

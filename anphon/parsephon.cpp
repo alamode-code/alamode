@@ -420,7 +420,11 @@ void Input::parse_kappa_vars(const bool use_default_values)
     auto epsilon_4ph = 10.0;
     std::string interpolator = "log-linear";
     double len_boundary = 0.0;
-    auto include_isotope = 0;
+    // Isotope scattering is cheap to evaluate and physically present in
+    // natural samples, so it is on by default; set ISOTOPE = 0 for
+    // isotopically pure crystals or elements absent from the internal
+    // natural-abundance database.
+    auto include_isotope = 1;
     auto calc_coherent = 0;
     auto calc_coherent_block = 0;
     auto calculate_kappa_spec = 0;

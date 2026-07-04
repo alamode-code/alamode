@@ -1294,13 +1294,19 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  === =========================================================================
   0   Do not consider phonon-isotope scatterings
   1   Consider phonon-isotope scatterings
-  2   | Consider phonon-isotope scatterings as in ``ISOTOPE = 1`` and 
+  2   | Consider phonon-isotope scatterings as in ``ISOTOPE = 1`` and
       | the calculated selfenergy is stored in ``PREFIX``.self_isotope
  === =========================================================================
- 
- :Default: 0
+
+ :Default: 1
  :Type: Integer
- :Description: When ``MODE = RTA`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to isotopes will be considered perturbatively. ``ISOFACT`` should be properly given.
+ :Description: When ``MODE = RTA`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to isotopes will be considered perturbatively.
+               The computation is negligibly cheap, so it is enabled by default with ``ISOFACT``
+               taken from the internal natural-abundance database; set ``ISOTOPE = 0`` for
+               isotopically pure crystals, or give ``ISOFACT`` explicitly for enriched samples
+               (required for elements without a database entry). The per-mode isotope
+               linewidths and the factors used are stored in ``PREFIX``.kappa.h5
+               (``/scattering/isotope/gamma``, ``/metadata/isotope_factors``).
 
 ````
 

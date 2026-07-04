@@ -81,6 +81,12 @@ struct KappaResultIOH5::Impl
         dump(fh, "/metadata/smearing_width", fmeta.smearing_width);
         dumpAttribute(fh, "/metadata/smearing_width", "unit", std::string("cm^-1"));
         dump(fh, "/metadata/fcs_file", fmeta.fcs_file);
+        dump(fh, "/metadata/isotope", fmeta.isotope);
+        if (fmeta.isotope > 0 && !fmeta.isotope_factors.empty()) {
+            dump(fh, "/metadata/isotope_factors", fmeta.isotope_factors);
+            dumpAttribute(fh, "/metadata/isotope_factors", "description",
+                          std::string("Tamura g2 mass-variance factor per element"));
+        }
         if (tdep) {
             // The basis temperature (FC2_TEMPERATURE) each row was computed with.
             dump(fh, "/metadata/fc2_temperatures", file_fc2temps);
@@ -138,6 +144,18 @@ struct KappaResultIOH5::Impl
         const auto ismear_file = load<int>(efile, "/metadata/ismear");
         if (ismear_file != fmeta.ismear) {
             warn("kappa_result_io", "Smearing method is not consistent");
+        }
+        if (fh.exist("/metadata/isotope_factors") && fmeta.isotope > 0) {
+            const auto factors = load<std::vector<double>>(efile, "/metadata/isotope_factors");
+            auto factors_ok = factors.size() == fmeta.isotope_factors.size();
+            if (factors_ok) {
+                for (size_t i = 0; i < factors.size(); ++i) {
+                    if (std::abs(factors[i] - fmeta.isotope_factors[i]) >= eps8) factors_ok = false;
+                }
+            }
+            if (!factors_ok) {
+                warn("kappa_result_io", "ISOFACT is not consistent");
+            }
         }
         if (ismear_file != -1 &&
             std::abs(load<double>(efile, "/metadata/smearing_width") - fmeta.smearing_width) >= eps4) {
@@ -214,6 +232,17 @@ struct KappaResultIOH5::Impl
             auto dset_gamma = h5_create_dataset_prealloc<double>(fh, path + "/gamma", {nrows, nt});
             dset_gamma.createAttribute("unit", std::string("cm^-1"));
             h5_create_dataset_prealloc<unsigned char>(fh, path + "/gamma_computed", {nrows});
+        }
+
+        // The isotope linewidths live on the 3ph mesh; the group is created
+        // alongside the 3ph channel and filled at the end of the run.
+        if (cmeta.tag == "3ph" && fmeta.isotope > 0 && !fh.exist("/scattering/isotope")) {
+            auto dset_iso =
+                tdep ? h5_create_dataset_prealloc<double>(fh, "/scattering/isotope/gamma",
+                                                          {nt, cmeta.nk_irred, cmeta.ns})
+                     : h5_create_dataset_prealloc<double>(fh, "/scattering/isotope/gamma",
+                                                          {cmeta.nk_irred, cmeta.ns});
+            dset_iso.createAttribute("unit", std::string("cm^-1"));
         }
     }
 
@@ -307,6 +336,13 @@ struct KappaResultIOH5::Impl
         return true;
     }
 
+    // The isotope group must exist exactly when isotope scattering is on;
+    // toggling ISOTOPE across restarts triggers one rebuild.
+    auto isotope_group_matches(const HighFive::File &fh) const -> bool
+    {
+        return fh.exist("/scattering/isotope") == (fmeta.isotope > 0);
+    }
+
     auto stamp(HighFive::File &fh) const -> void
     {
         stamp_h5_schema(fh, h5_schema_kappa_result, tdep ? kappa_version_tdep : h5_version_kappa_result);
@@ -351,6 +387,7 @@ struct KappaResultIOH5::Impl
                     create_channel(newfile, cmeta);
                 }
             }
+            ensure_isotope_dataset(newfile);
             create_kappa_group(newfile);
             stamp(newfile);
             h5_flush_and_fsync(newfile);
@@ -358,6 +395,23 @@ struct KappaResultIOH5::Impl
 
         h5_publish_file(part, filename);
         file = std::make_unique<HighFive::File>(filename, HighFive::File::ReadWrite);
+    }
+
+    // Create /scattering/isotope/gamma when isotope scattering is on but the
+    // group was neither carried over nor created alongside a fresh 3ph
+    // channel (dims come from the 3ph group present in the new file).
+    auto ensure_isotope_dataset(HighFive::File &fh) const -> void
+    {
+        if (fmeta.isotope == 0 || fh.exist("/scattering/isotope") || !fh.exist("/scattering/3ph")) return;
+        unsigned int nk_irred = 0, ns = 0;
+        const auto g = fh.getGroup("/scattering/3ph");
+        g.getAttribute("nk_irred").read(nk_irred);
+        g.getAttribute("nbranches").read(ns);
+        auto dset_iso = tdep ? h5_create_dataset_prealloc<double>(fh, "/scattering/isotope/gamma",
+                                                                  {nt_file(), nk_irred, ns})
+                             : h5_create_dataset_prealloc<double>(fh, "/scattering/isotope/gamma",
+                                                                  {nk_irred, ns});
+        dset_iso.createAttribute("unit", std::string("cm^-1"));
     }
 
     // ---- tdep rebuild: recreate every channel on the merged temperature
@@ -399,6 +453,7 @@ struct KappaResultIOH5::Impl
                 if (oldfile.exist("/scattering")) {
                     for (const auto &tag: oldfile.getGroup("/scattering").listObjectNames()) {
                         if (std::find(tags_drop.begin(), tags_drop.end(), tag) != tags_drop.end()) continue;
+                        if (tag == "isotope") continue; // handled below, after the channels exist
 
                         // Reconstruct the channel skeleton from the old file.
                         KappaChannelMetaH5 cmeta;
@@ -498,6 +553,28 @@ struct KappaResultIOH5::Impl
                     create_channel(newfile, cmeta);
                 }
             }
+            ensure_isotope_dataset(newfile);
+
+            // Remap the isotope-linewidth slices into their new columns.
+            if (fmeta.isotope > 0 && std::filesystem::exists(filename) &&
+                std::find(tags_drop.begin(), tags_drop.end(), std::string("isotope")) == tags_drop.end() &&
+                newfile.exist("/scattering/isotope/gamma")) {
+                const HighFive::File oldfile(filename, HighFive::File::ReadOnly);
+                if (oldfile.exist("/scattering/isotope/gamma")) {
+                    const auto dset_old = oldfile.getDataSet("/scattering/isotope/gamma");
+                    const auto d = dset_old.getDimensions();
+                    const auto dnew = newfile.getDataSet("/scattering/isotope/gamma").getDimensions();
+                    if (d.size() == 3 && dnew.size() == 3 && d[1] == dnew[1] && d[2] == dnew[2]) {
+                        auto dset_new = newfile.getDataSet("/scattering/isotope/gamma");
+                        std::vector<double> slab(d[1] * d[2]);
+                        for (size_t j = 0; j < nt_old && j < d[0]; ++j) {
+                            dset_old.select({j, 0, 0}, {1, d[1], d[2]}).read(slab.data());
+                            dset_new.select({col_map[j], 0, 0}, {1, d[1], d[2]}).write_raw(slab.data());
+                        }
+                    }
+                }
+            }
+
             stamp(newfile);
             h5_flush_and_fsync(newfile);
         }
@@ -628,8 +705,16 @@ void KappaResultIOH5::open_or_create(const KappaFileMetaH5 &fmeta, const KappaCh
             need_rebuild = true;
         }
         if (!impl->kappa_group_matches(oldfile)) need_rebuild = true;
+        if (!impl->isotope_group_matches(oldfile)) need_rebuild = true;
     } else {
         need_rebuild = true;
+    }
+
+    // The isotope linewidths live on the 3ph mesh: discard them together
+    // with a dropped 3ph channel, and when isotope scattering is off.
+    if (fmeta.isotope == 0 ||
+        std::find(drops.begin(), drops.end(), std::string("3ph")) != drops.end()) {
+        drops.emplace_back("isotope");
     }
 
     impl->compute_run_cols();
@@ -806,9 +891,31 @@ void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls,
                                   const double *const *const *kappa_3ph_only,
                                   const double *const *const *kappa_coherent,
                                   const double *const *const *kappa_coherent_block,
-                                  const double *const *const *kappa_spec)
+                                  const double *const *const *kappa_spec,
+                                  const double *const *gamma_isotope)
 {
     impl->write_tensor_txx("/kappa/kappa_peierls", kappa_peierls);
+
+    if (impl->fmeta.isotope > 0 && gamma_isotope) {
+        auto dset = impl->file->getDataSet("/scattering/isotope/gamma");
+        const auto dims = dset.getDimensions();
+        const auto factor = Hz_to_kayser / time_ry; // internal -> cm^-1
+        const auto d1 = impl->tdep ? dims[1] : dims[0];
+        const auto d2 = impl->tdep ? dims[2] : dims[1];
+        std::vector<double> buf(d1 * d2);
+        for (size_t i = 0; i < d1; ++i) {
+            for (size_t k = 0; k < d2; ++k) {
+                buf[i * d2 + k] = gamma_isotope[i][k] * factor;
+            }
+        }
+        if (impl->tdep) {
+            for (const auto col: impl->run_cols) {
+                dset.select({col, 0, 0}, {1, d1, d2}).write_raw(buf.data());
+            }
+        } else {
+            dset.write_raw(buf.data());
+        }
+    }
     if (impl->fmeta.with_kappa_3ph_only) impl->write_tensor_txx("/kappa/kappa_3ph_only", kappa_3ph_only);
     if (impl->fmeta.with_kappa_coherent) {
         impl->write_tensor_txx("/kappa/kappa_coherent", kappa_coherent);
