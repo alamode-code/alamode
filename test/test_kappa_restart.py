@@ -82,11 +82,15 @@ def check_fresh_run(anphonbin):
         if f["kappa/valid"][0] != 1:
             print("kappa/valid is not set")
             return 1
-        kappa_h5 = f["kappa/kappa_total"][...]
+        # kappa_total exists only when the coherent term is computed.
+        if "kappa_total" in f["kappa"]:
+            print("kappa_total should be absent without KAPPA_COHERENT")
+            return 1
+        kappa_h5 = f["kappa/kappa_peierls"][...]
 
     kl = np.loadtxt(PREFIX + ".kl")
     if not np.allclose(kappa_h5[:, [0, 1, 2], [0, 1, 2]], kl[:, [1, 5, 9]], atol=1e-3):
-        print("/kappa/kappa_total disagrees with the text .kl file")
+        print("/kappa/kappa_peierls disagrees with the text .kl file")
         return 1
     np.save("kl_fresh.npy", kl)
     return 0

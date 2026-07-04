@@ -114,7 +114,10 @@ public:
 
     // Fill the pre-created /kappa datasets (shapes fixed by KappaFileMetaH5)
     // and mark them valid. Null pointers skip the corresponding dataset.
-    void store_kappa(const double *const *const *kappa_total,
+    // kappa_peierls is the intraband (RTA) tensor; when the coherent tensor
+    // is present, kappa_total = kappa_peierls + kappa_coherent is derived
+    // and stored as well.
+    void store_kappa(const double *const *const *kappa_peierls,
                      const double *const *const *kappa_3ph_only,
                      const double *const *const *kappa_coherent,
                      const double *const *const *kappa_coherent_block,

@@ -249,7 +249,7 @@ struct KappaResultIOH5::Impl
     {
         using namespace H5Easy;
         const auto nt = nt_file();
-        h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_total", {nt, 3, 3})
+        h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_peierls", {nt, 3, 3})
             .createAttribute("unit", std::string("W/mK"));
         if (fmeta.with_kappa_3ph_only) {
             h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_3ph_only", {nt, 3, 3})
@@ -257,6 +257,11 @@ struct KappaResultIOH5::Impl
         }
         if (fmeta.with_kappa_coherent) {
             h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_coherent", {nt, 3, 3})
+                .createAttribute("unit", std::string("W/mK"));
+            // Wigner total = Peierls (intraband) + coherent (interband).
+            // Written only when the coherent term is actually computed, so
+            // "total" never silently means "Peierls only".
+            h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_total", {nt, 3, 3})
                 .createAttribute("unit", std::string("W/mK"));
         }
         if (fmeta.with_kappa_coherent_block) {
@@ -282,7 +287,8 @@ struct KappaResultIOH5::Impl
         const auto need = [&](const std::string &name, const bool required) {
             return fh.exist("/kappa/" + name) == required;
         };
-        if (!need("kappa_total", true)) return false;
+        if (!need("kappa_peierls", true)) return false;
+        if (!need("kappa_total", fmeta.with_kappa_coherent)) return false;
         if (!need("kappa_3ph_only", fmeta.with_kappa_3ph_only)) return false;
         if (!need("kappa_coherent", fmeta.with_kappa_coherent)) return false;
         if (!need("kappa_coherent_block", fmeta.with_kappa_coherent_block)) return false;
@@ -293,7 +299,7 @@ struct KappaResultIOH5::Impl
             if (dims.size() != 3 || dims[0] != fmeta.energy_axis.size() || dims[1] != nt) return false;
         }
         {
-            const auto dims = fh.getDataSet("/kappa/kappa_total").getDimensions();
+            const auto dims = fh.getDataSet("/kappa/kappa_peierls").getDimensions();
             if (dims.size() != 3 || dims[0] != nt) return false;
         }
         const auto dims_valid = fh.getDataSet("/kappa/valid").getDimensions();
@@ -456,7 +462,8 @@ struct KappaResultIOH5::Impl
                 // Remap the final-kappa rows and their validity flags.
                 create_kappa_group(newfile);
                 for (const std::string name:
-                     {"kappa_total", "kappa_3ph_only", "kappa_coherent", "kappa_coherent_block"}) {
+                     {"kappa_peierls", "kappa_total", "kappa_3ph_only", "kappa_coherent",
+                      "kappa_coherent_block"}) {
                     if (!oldfile.exist("/kappa/" + name) || !newfile.exist("/kappa/" + name)) continue;
                     std::vector<double> row(9);
                     for (size_t j = 0; j < nt_old; ++j) {
@@ -525,6 +532,18 @@ struct KappaResultIOH5::Impl
             }
         } else {
             file->getDataSet(path).write_raw(&tensor[0][0][0]);
+        }
+    }
+
+    auto write_tensor_flat(const std::string &path, const std::vector<double> &flat) -> void
+    {
+        auto dset = file->getDataSet(path);
+        if (tdep) {
+            for (size_t j = 0; j < run_cols.size(); ++j) {
+                dset.select({run_cols[j], 0, 0}, {1, 3, 3}).write_raw(flat.data() + j * 9);
+            }
+        } else {
+            dset.write_raw(flat.data());
         }
     }
 };
@@ -783,15 +802,28 @@ void KappaResultIOH5::store_gamma_rows(const std::string &tag, const std::vector
     h5_flush_and_fsync(*impl->file);
 }
 
-void KappaResultIOH5::store_kappa(const double *const *const *kappa_total,
+void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls,
                                   const double *const *const *kappa_3ph_only,
                                   const double *const *const *kappa_coherent,
                                   const double *const *const *kappa_coherent_block,
                                   const double *const *const *kappa_spec)
 {
-    impl->write_tensor_txx("/kappa/kappa_total", kappa_total);
+    impl->write_tensor_txx("/kappa/kappa_peierls", kappa_peierls);
     if (impl->fmeta.with_kappa_3ph_only) impl->write_tensor_txx("/kappa/kappa_3ph_only", kappa_3ph_only);
-    if (impl->fmeta.with_kappa_coherent) impl->write_tensor_txx("/kappa/kappa_coherent", kappa_coherent);
+    if (impl->fmeta.with_kappa_coherent) {
+        impl->write_tensor_txx("/kappa/kappa_coherent", kappa_coherent);
+        if (kappa_peierls && kappa_coherent) {
+            std::vector<double> total(impl->ntemp * 9);
+            for (size_t j = 0; j < impl->ntemp; ++j) {
+                for (auto a = 0; a < 3; ++a) {
+                    for (auto b = 0; b < 3; ++b) {
+                        total[j * 9 + 3 * a + b] = kappa_peierls[j][a][b] + kappa_coherent[j][a][b];
+                    }
+                }
+            }
+            impl->write_tensor_flat("/kappa/kappa_total", total);
+        }
+    }
     if (impl->fmeta.with_kappa_coherent_block) {
         impl->write_tensor_txx("/kappa/kappa_coherent_block", kappa_coherent_block);
     }

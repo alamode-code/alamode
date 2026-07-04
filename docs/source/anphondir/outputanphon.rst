@@ -102,7 +102,12 @@ ANPHON: Output files
  ``alamode:kappa_result``). It stores the run metadata, phonon frequencies,
  group velocities, the three-phonon (and, when ``QUARTIC = 1``, four-phonon)
  linewidths with per-mode completion flags, and the final thermal-conductivity
- tensors. It is updated incrementally during the run and read back when the
+ tensors: ``/kappa/kappa_peierls`` (the intraband Peierls term, i.e. the
+ contents of ``PREFIX``.kl) and, when ``KAPPA_COHERENT > 0``,
+ ``/kappa/kappa_coherent`` together with ``/kappa/kappa_total`` =
+ ``kappa_peierls`` + ``kappa_coherent`` (the Wigner total; it is written only
+ when the coherent term is actually computed, so "total" never silently means
+ "Peierls only"). It is updated incrementally during the run and read back when the
  restart mode is on (``RESTART = 1`` / ``RESTART_4PH = 1``). Written with the
  default ``FILE_FORMAT = h5``; readable with h5py.
 
