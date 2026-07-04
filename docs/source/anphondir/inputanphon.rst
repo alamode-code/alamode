@@ -25,32 +25,44 @@ List of supported input variables
 
    **&general**
    :ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>`, :ref:`BCONNECT <anphon_bconnect>`, :ref:`BORNINFO <anphon_borninfo>`, :ref:`BORNSYM <anphon_bornsym>`
-   :ref:`CLASSICAL <anphon_classical>`, :ref:`DFC2FILE <anphon_dfc2file>`, :ref:`EMIN <anphon_emin>`, :ref:`EPSILON <anphon_epsilon>`
-   :ref:`FC2FILE <anphon_fc2file>`, :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`, :ref:`FCSFILE <anphon_fcsfile>`, :ref:`FILE_FORMAT <anphon_file_format>`
-   :ref:`ISMEAR <anphon_ismear>`, :ref:`KD <anphon_kd>`, :ref:`MASS <anphon_mass>`, :ref:`MODE <anphon_mode>`
-   :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NONANALYTIC <anphon_nonanalytic>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`
-   :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`
+   :ref:`CLASSICAL <anphon_classical>`, :ref:`DELTA_E <anphon_emin>`, :ref:`DFC2FILE <anphon_dfc2file>`, :ref:`DT <anphon_tmin>`
+   :ref:`EMAX <anphon_emin>`, :ref:`EMIN <anphon_emin>`, :ref:`EPSILON <anphon_epsilon>`, :ref:`FC2FILE <anphon_fc2file>`
+   :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`, :ref:`FC3FILE <anphon_fc2file>`, :ref:`FC4FILE <anphon_fc2file>`, :ref:`FCSFILE <anphon_fcsfile>`
+   :ref:`FILE_FORMAT <anphon_file_format>`, :ref:`ISMEAR <anphon_ismear>`, :ref:`KD <anphon_kd>`, :ref:`MASS <anphon_mass>`
+   :ref:`MODE <anphon_mode>`, :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NBANDS <anphon_nbands>`, :ref:`NONANALYTIC <anphon_nonanalytic>`
+   :ref:`NSYM <anphon_nsym>`, :ref:`PREC_EWALD <anphon_prec_ewald>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`
+   :ref:`TMAX <anphon_tmin>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`
+   :ref:`VERBOSITY <anphon_verbosity>`
    **&scph**
-   :ref:`BUBBLE <anphon_bubble>`, :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`, :ref:`KMESH_SCPH <anphon_kmesh_scph>`
-   :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`, :ref:`RELAX_STR <anphon_relax_str>`
-   :ref:`RESTART_SCPH <anphon_restart_scph>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`, :ref:`TOL_SCPH <anphon_tol_scph>`, :ref:`WARMSTART <anphon_warmstart>`
+   :ref:`BUBBLE <anphon_bubble>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`
+   :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`
+   :ref:`RELAX_STR <anphon_relax_str>`, :ref:`RESTART_SCPH <anphon_restart_scph>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`, :ref:`TOL_SCPH <anphon_tol_scph>`
+   :ref:`WARMSTART <anphon_warmstart>`
    **&qha**
-   :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`, :ref:`QHA_SCHEME <anphon_qha_scheme>`
-   :ref:`RELAX_STR <anphon_qha_relax_str>`
+   :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`
+   :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
-   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STEEPEST_DECENT <anphon_alpha_steepest_decent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`
-   :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
+   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
+   :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_CONTROL <anphon_gdiis_control>`
+   :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
    :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`,  :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`RENORM_2TO1ST <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST <anphon_renorm_34to1st>`
    :ref:`RENORM_3TO2ND <anphon_renorm_3to2nd>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    **&analysis**
    :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
-   :ref:`GRUNEISEN <anphon_gruneisen>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`
-   :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`
-   :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
+   :ref:`DELTA_A <anphon_delta_a>`, :ref:`DIELEC <anphon_dielec>`, :ref:`DOS <anphon_dos>`, :ref:`FC2_EWALD <anphon_fc2_ewald>`
+   :ref:`FSTATE_K <anphon_fstate_k>`, :ref:`FSTATE_W <anphon_fstate_w>`, :ref:`GRUNEISEN <anphon_gruneisen>`, :ref:`KS_INPUT <anphon_ks_input>`
+   :ref:`LONGITUDINAL_DOS <anphon_longitudinal_dos>`, :ref:`NEWFCS <anphon_newfcs>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVAL <anphon_printeval>`
+   :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTV3 <anphon_printv3>`
+   :ref:`PRINTV4 <anphon_printv4>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`PROJECTION_AXES <anphon_projection_axes>`
+   :ref:`QUARTIC <anphon_quartic>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`SELF_W <anphon_self_w>`
+   :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`
+   :ref:`ZMODE <anphon_zmode>`
    **&kappa**
-   :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`
-   :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_SPEC <anphon_kappa_spec>`
-   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`
+   :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
+   :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
+   :ref:`ITERATIVE <anphon_iterative>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_COHERENT_BLOCK <anphon_kappa_coherent_block>`
+   :ref:`KAPPA_SPEC <anphon_kappa_spec>`, :ref:`KMESH_COARSE <anphon_kmesh_coarse>`, :ref:`LEN_BOUNDARY <anphon_len_boundary>`, :ref:`MAX_CYCLE <anphon_max_cycle>`
+   :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
 
 
 
@@ -139,6 +151,16 @@ Description of input variables
 
 ````
 
+.. _anphon_nsym:
+
+* NSYM-tag : Number of symmetry operations
+
+ :Default: 0
+ :Type: Integer
+ :Description: In the current version of *anphon*, the symmetry operations of the primitive cell are always detected automatically (using spglib) with the tolerance given by the :ref:`TOLERANCE <anphon_tolerance>` tag, and the value of this tag is replaced by the number of detected operations. The tag is accepted for backward compatibility and does not alter the symmetry search.
+
+````
+
 .. _anphon_tolerance:
 
 * TOLERANCE-tag : Tolerance for finding symmetry operations
@@ -213,6 +235,16 @@ Description of input variables
 
  :Default: 0
  :Type: Integer
+
+````
+
+.. _anphon_prec_ewald:
+
+* PREC_EWALD-tag : Accuracy of the Ewald summation used for ``NONANALYTIC = 3``
+
+ :Default: 1.0e-12
+ :Type: Double
+ :Description: Read only when ``NONANALYTIC = 3``. The convergence parameter and the real- and reciprocal-space cutoffs of the Ewald summation of the dipole-dipole interaction are chosen automatically so that the neglected terms are of the order of ``PREC_EWALD``. The value must satisfy 0 < ``PREC_EWALD`` < 1.
 
 ````
 
@@ -295,6 +327,16 @@ Description of input variables
  :Description: The algorithm for connecting a band structure is described here_.
 
  .. _here : https://www.slideshare.net/TakeshiNishimatsu/two-efficient-algorithms-for-drawing-accurate-and-beautiful-phonon-dispersion
+
+````
+
+.. _anphon_nbands:
+
+* NBANDS-tag : Number of phonon branches to be written in output files
+
+ :Default: :math:`3N`, where :math:`N` is the number of atoms in the primitive cell
+ :Type: Integer
+ :Description: When ``NBANDS`` is given, only the lowest ``NBANDS`` phonon branches are written in the frequency output files, such as ``PREFIX``.bands and the eigenvalue files created with :ref:`PRINTEVAL <anphon_printeval>`.
 
 ````
 
@@ -462,6 +504,16 @@ Description of input variables
 
 ````
 
+.. _anphon_verbosity:
+
+* VERBOSITY-tag : Level of the standard output
+
+ :Default: 1
+ :Type: Integer
+ :Description: ``VERBOSITY = 0`` suppresses the echo of the input variables and the per-iteration log of the SCPH solver. ``VERBOSITY >= 2`` keeps the per-iteration SCPH log even inside the structural optimization loop (``RELAX_STR != 0``), where it is compacted by default.
+
+````
+
 "&scph"-field (Read only when ``MODE = SCPH``)
 ++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -518,6 +570,21 @@ Description of input variables
 
  :Default: 0.1
  :Type: Double
+
+````
+
+.. _anphon_imix:
+
+* IMIX-tag = 0 | 1
+
+ === ===============================================================================
+  0   Simple linear mixing with the mixing parameter ``MIXALPHA``
+  1   DIIS (Pulay) mixing
+ === ===============================================================================
+
+ :Default: 1
+ :Type: Integer
+ :Description: Mixing algorithm used in the SCPH iteration. With ``IMIX = 1``, a few simple-mixing steps are performed first and the subsequent iterations are accelerated by the DIIS method; :ref:`MIXALPHA <anphon_mixalpha>` is used as the underlying mixing parameter and must be in (0, 1] in this case. ``IMIX = 0`` restores the plain simple mixing.
 
 ````
 
@@ -693,6 +760,21 @@ Description of input variables
 
 ````
 
+.. _anphon_restart_qha:
+
+* RESTART_QHA-tag = 0 | 1
+
+ === ==============================================================
+  0   Perform a QHA calculation from scratch
+  1   Skip the QHA optimization by loading a precalculated result
+ === ==============================================================
+
+ :Default: 1 if the file ``PREFIX.qha.h5``, or the pair of the legacy files ``PREFIX.renorm_harm_dymat`` and ``PREFIX.V0``, exists in the working directory; 0 otherwise
+ :Type: Integer
+ :Description: With the default ``FILE_FORMAT = h5``, the restart data are read preferentially from the unified state file ``PREFIX``.qha.h5. When only the legacy text files are found, they are loaded instead and migrated into ``PREFIX``.qha.h5 once. Temperatures whose structural optimization did not converge are refused unless :ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>` is set.
+
+````
+
 
 
 "&relax"-field (Read only when ``RELAX_STR != 0``)
@@ -717,16 +799,45 @@ Description of input variables
 
 ````
 
+.. _anphon_alpha_stdecent:
 .. _anphon_alpha_steepest_decent:
 
-* ALPHA_STEEPEST_DECENT-tag: Coefficient of steepest descent in structural optimization
+* ALPHA_STDECENT-tag: Coefficient of steepest descent in structural optimization
 
  :Default: 1.0e4
  :Type: Double
 
  :Description: :math:`\alpha` coefficient in structural optimization with the steepest-descent algorithm.
-               The unit is [:math:`m_e a_B^2/(2\text{Ry})`]. 
+               The unit is [:math:`m_e a_B^2/(2\text{Ry})`].
                This option is used only when ``RELAX_ALGO = 1``.
+               (This tag was formerly documented as ``ALPHA_STEEPEST_DECENT``; the tag name accepted by the parser is ``ALPHA_STDECENT``.)
+
+````
+
+.. _anphon_gdiis_plain:
+
+* GDIIS_PLAIN-tag = 0 | 1
+
+ === ==============================================================
+  0   Use the controlled GDIIS (with step-acceptance tests)
+  1   Use the plain GDIIS (without step-acceptance tests)
+ === ==============================================================
+
+ :Default: 0
+ :Type: Integer
+
+ :Description: This option is used only when ``RELAX_ALGO = 3``. By default, each GDIIS step is subjected to the step-acceptance criteria of the controlled GDIIS method by Farkas and Schlegel (step-length cap, coefficient/extrapolation cap, and near-singularity rejection with error-vector rescaling), which makes the optimization more robust. Set ``GDIIS_PLAIN = 1`` to switch back to the regular GDIIS update.
+
+````
+
+.. _anphon_gdiis_control:
+
+* GDIIS_CONTROL-tag = 0 | 1
+
+ :Default: 1
+ :Type: Integer
+
+ :Description: Deprecated. This tag was formerly used to enable the controlled GDIIS, which is now the default; a warning is printed when the tag is given. Use :ref:`GDIIS_PLAIN <anphon_gdiis_plain>` = 1 to disable the controlled GDIIS instead. When both tags are given, ``GDIIS_PLAIN`` takes precedence.
 
 ````
 
@@ -767,6 +878,17 @@ Description of input variables
 
 ````
 
+.. _anphon_gradient_conv_tol:
+
+* GRADIENT_CONV_TOL-tag: Threshold of convergence for the residual force in structural optimization.
+
+ :Default: 0.0 (disabled)
+ :Type: Double
+
+ :Description: When ``GRADIENT_CONV_TOL > 0``, the structural optimization at each temperature is declared converged only if the norm of the residual force acting on the internal coordinates is smaller than this value, in addition to the step-size criterion :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`. This guards against false convergence at a non-stationary point, where the step can be small although the gradient is not, which may happen with the GDIIS optimizer (``RELAX_ALGO = 3``).
+
+````
+
 .. _anphon_mixbeta_coord:
 
 * MIXBETA_COORD-tag: Mixing coefficient for atomic positions in structure updates.
@@ -786,6 +908,17 @@ Description of input variables
  :Type: Double
 
  :Description: This option is used only when ``RELAX_STR = 2``.
+
+````
+
+.. _anphon_cell_gradient_conv_tol:
+
+* CELL_GRADIENT_CONV_TOL-tag: Threshold of convergence for the residual cell gradient (stress) in structural optimization.
+
+ :Default: 0.0 (disabled)
+ :Type: Double
+
+ :Description: When ``CELL_GRADIENT_CONV_TOL > 0`` and the cell shape is relaxed (``RELAX_STR = 2``), convergence additionally requires the norm of the gradient of the free energy with respect to the strain tensor (including the term due to :ref:`STAT_PRESSURE <anphon_stat_pressure>`) to be smaller than this value. Its units differ from those of :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, hence the separate threshold.
 
 ````
 
@@ -1080,6 +1213,47 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 ````
 
+.. _anphon_newfcs:
+
+* NEWFCS-tag = 0 | 1
+
+ === ====================================================================================
+  0   Do nothing
+  1   | Force constants of expanded and compressed systems are estimated and saved
+      | as ``PREFIX``\ _+.xml and ``PREFIX``\ _-.xml
+ === ====================================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``NEWFCS = 1``, harmonic force constants of systems whose lattice constants are scaled by :math:`\pm` ``DELTA_A`` are estimated from the harmonic and cubic force constants and saved in ``PREFIX``\ _+.xml and ``PREFIX``\ _-.xml. When ``QUARTIC = 1``, cubic force constants of the scaled systems are also estimated by using the quartic force constants and saved in the same files. This option is available when ``MODE = phonons``.
+
+````
+
+.. _anphon_delta_a:
+
+* DELTA_A-tag : Fractional change of the lattice constant used when ``NEWFCS = 1``
+
+ :Default: 0.001
+ :Type: Double
+ :Description: The lattice vectors of the expanded and compressed systems generated with :ref:`NEWFCS <anphon_newfcs>` = 1 are scaled by :math:`(1 \pm \Delta a)` with :math:`\Delta a` = ``DELTA_A``.
+
+````
+
+.. _anphon_printeval:
+
+* PRINTEVAL-tag = 0 | 1
+
+ === ===================================================================
+  0   Do not print phonon frequencies to separate files
+  1   Print phonon frequencies (eigenvalues) to files
+ === ===================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``PRINTEVAL = 1``, the phonon frequencies are saved in ``PREFIX``.eval (*KPMODE* = 0), ``PREFIX``.band.eval (*KPMODE* = 1), and ``PREFIX``.mesh.eval (*KPMODE* = 2). When the code is built with HDF5 support, the corresponding \*.eval.hdf5 files are created as well.
+
+````
+
 .. _anphon_printevec:
 
 * PRINTEVEC-tag = 0 | 1
@@ -1091,6 +1265,16 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0
  :Type: Integer
+
+````
+
+.. _anphon_projection_axes:
+
+* PROJECTION_AXES-tag = e1x e1y e1z [, e2x e2y e2z]
+
+ :Default: None
+ :Type: Array of doubles (one or two vectors separated by a comma)
+ :Description: When given, the eigenvectors of degenerate phonon modes are transformed within each degenerate subspace so that they align with the specified direction(s), which are given in Cartesian coordinates. Up to two axes can be given, separated by a comma; additional entries are ignored with a warning. This option affects the outputs that depend on eigenvectors, such as :ref:`PRINTEVEC <anphon_printevec>` and :ref:`ANIME <anphon_anime>`.
 
 ````
 
@@ -1140,6 +1324,21 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 ````
 
+.. _anphon_dos:
+
+* DOS-tag = 0 | 1
+
+ === ===================================================================
+  0   Do not compute the phonon DOS
+  1   The total phonon DOS is computed and stored in ``PREFIX``.dos
+ === ===================================================================
+
+ :Default: 1
+ :Type: Integer
+ :Description: This flag is available only when ``MODE = phonons`` and *KPMODE* = 2. Set ``DOS = 0`` to skip the DOS calculation. See also :ref:`PDOS <anphon_pdos>`.
+
+````
+
 .. _anphon_pdos:
 
 * PDOS-tag = 0 | 1
@@ -1152,6 +1351,21 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Default: 0
  :Type: Integer
  :Description: This flag is available only when ``MODE = phonons`` and *KPMODE* = 2.
+
+````
+
+.. _anphon_longitudinal_dos:
+
+* LONGITUDINAL_DOS-tag = 0 | 1
+
+ === ===================================================================
+  0   Do not compute the longitudinal-projected DOS
+  1   Longitudinal-projected phonon DOS is stored in ``PREFIX``.longitudinal_dos
+ === ===================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``LONGITUDINAL_DOS = 1``, a phonon DOS weighted by the squared projection of each eigenvector onto the unit wave vector :math:`\hat{\boldsymbol{q}}` (summed over atoms) is computed, which measures the longitudinal character of the phonon modes. This flag is available only when ``MODE = phonons`` and *KPMODE* = 2.
 
 ````
 
@@ -1254,6 +1468,153 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 ````
 
+.. _anphon_dielec:
+
+* DIELEC-tag = 0 | 1
+
+ === =========================================================================
+  0   Do nothing
+  1   Compute the frequency-dependent dielectric function
+ === =========================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``DIELEC = 1``, the phonon contribution to the frequency-dependent dielectric function :math:`\epsilon(\omega)` is computed from the Born effective charges and the zone-center phonon modes and saved in ``PREFIX``.dielec (``MODE = phonons``). ``BORNINFO`` must be given. When ``MODE = SCPH`` (``QHA``), the dielectric function is computed with the temperature-renormalized phonon frequencies and saved in ``PREFIX``.scph_dielec (``PREFIX``.qha_dielec).
+
+````
+
+.. _anphon_quartic:
+
+* QUARTIC-tag = 0 | 1 | 2
+
+ === ====================================================================================
+  0   Quartic force constants are not used.
+  1   | Read the quartic force constants and enable the quartic terms.
+      | ``QUARTIC = 1`` is required when ``MODE = SCPH`` or ``MODE = QHA``.
+  2   | In the mode analysis (:ref:`KS_INPUT <anphon_ks_input>`), additionally compute
+      | the contribution of a specific four-phonon diagram to the linewidth (expensive).
+ === ====================================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``QUARTIC = 1``, the quartic force constants are read from ``FCSFILE`` (or ``FC4FILE``). In the mode analysis with ``REALPART = 1``, the frequency shift due to the loop diagram of the quartic anharmonicity is then computed in addition to the third-order terms; with :ref:`NEWFCS <anphon_newfcs>` = 1, cubic force constants of the scaled cells are also generated. The former role of ``QUARTIC`` as the switch of four-phonon scattering in ``MODE = RTA`` is deprecated in favor of :ref:`INCLUDE_4PH <anphon_include_4ph>`; ``QUARTIC > 0`` without ``INCLUDE_4PH`` still enables it, with a warning.
+
+````
+
+.. _anphon_ks_input:
+
+* KS_INPUT-tag : File containing a list of phonon modes to be analyzed
+
+ :Default: None
+ :Type: String
+ :Description: When ``MODE = RTA`` and ``KS_INPUT`` is given, the mode analysis of the phonon modes listed in the specified file is performed *instead of* the thermal conductivity calculation. The first line of the file gives the number of entries, and each of the following lines contains the fractional coordinates of a :math:`k` point and a branch index (1-based) as ``k1 k2 k3 s``. Unless ``FSTATE_K = 1``, each :math:`k` point must be a point of the grid given in the ``&kpoint`` field (*KPMODE* = 2). The quantities to be computed are selected by :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_W <anphon_self_w>`, :ref:`FSTATE_W <anphon_fstate_w>`, :ref:`FSTATE_K <anphon_fstate_k>`, :ref:`PRINTV3 <anphon_printv3>`, and :ref:`PRINTV4 <anphon_printv4>`.
+
+````
+
+.. _anphon_self_energy:
+
+* SELF_ENERGY-tag = 0 | 1
+
+ === =========================================================================
+  0   Do nothing
+  1   | Compute the temperature dependence of the phonon linewidth for
+      | the modes given in ``KS_INPUT``
+ === =========================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: For each mode listed in :ref:`KS_INPUT <anphon_ks_input>`, the linewidth (FWHM = :math:`2\Gamma`) due to three-phonon interactions is computed as a function of temperature and saved in ``PREFIX``.Gamma.[number]. With ``QUARTIC = 2``, contributions of specific four-phonon diagrams are appended. When ``REALPART = 1``, the frequency shift is also computed and saved in ``PREFIX``.Shift.[number].
+
+````
+
+.. _anphon_realpart:
+
+* REALPART-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``REALPART = 1`` is used with :ref:`KS_INPUT <anphon_ks_input>` and ``SELF_ENERGY = 1``, the real part of the phonon self-energy --- the frequency shift due to the tadpole and bubble diagrams of the cubic anharmonicity and, if ``QUARTIC = 1``, the loop diagram of the quartic anharmonicity --- is computed and saved in ``PREFIX``.Shift.[number]. This option works only with ``ISMEAR = 0``.
+
+````
+
+.. _anphon_self_w:
+
+* SELF_W-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``SELF_W = 1`` is used with :ref:`KS_INPUT <anphon_ks_input>`, the frequency dependence of the three-phonon (bubble) self-energy is computed at each temperature for the modes listed in ``KS_INPUT`` and saved in ``PREFIX``.Self.[number], from which spectral functions can be obtained. This option works only with the tetrahedron method (``ISMEAR = -1``).
+
+````
+
+.. _anphon_fstate_w:
+
+* FSTATE_W-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``FSTATE_W = 1`` is used with :ref:`KS_INPUT <anphon_ks_input>`, the frequency-resolved final-state amplitude of the three-phonon processes --- the decomposition of the linewidth into the energies of the final states, separated into absorption and emission channels --- is computed for the modes listed in ``KS_INPUT`` and saved in ``PREFIX``.fw.[number].
+
+````
+
+.. _anphon_fstate_k:
+
+* FSTATE_K-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``FSTATE_K = 1``, the momentum-resolved final-state amplitude of the three-phonon processes is computed for the (:math:`k` point, branch) entries of :ref:`KS_INPUT <anphon_ks_input>` on the :math:`k` plane defined in the ``&kpoint`` field with *KPMODE* = 3, and the results are saved in ``PREFIX``.fk.[number]. In this mode, the :math:`k` points in ``KS_INPUT`` do not need to be commensurate with a regular grid. ``FSTATE_K = 1`` requires *KPMODE* = 3 and ``ISMEAR = 0`` or ``1`` (the tetrahedron method is not supported), and should not be combined with ``FSTATE_W``, ``SELF_W``, ``REALPART``, or ``PRINTV3``.
+
+````
+
+.. _anphon_printv3:
+
+* PRINTV3-tag = 0 | 1 | 2
+
+ === ===================================================================
+  0   Do nothing
+  1   Print :math:`|V_{3}|^{2}` matrix elements in ``PREFIX``.V3.[number]
+  2   Print :math:`\Phi_{3}` matrix elements in ``PREFIX``.Phi3.[number]
+ === ===================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: For each mode listed in :ref:`KS_INPUT <anphon_ks_input>`, the three-phonon matrix elements involving the mode are printed. ``PRINTV3 = 1`` prints the squared elements :math:`|V_{3}(-qj; q'j', q''j'')|^{2}` in units of cm\ :sup:`-2`, while ``PRINTV3 = 2`` prints the complex elements :math:`\Phi_{3}(qj; q'j', q''j'')` in units of Ry/(u\ :sup:`1/2` Bohr)\ :sup:`3`.
+
+````
+
+.. _anphon_printv4:
+
+* PRINTV4-tag = 0 | 1 | 2
+
+ === ===================================================================
+  0   Do nothing
+  1   Print :math:`|V_{4}|^{2}` matrix elements in ``PREFIX``.V4.[number]
+  2   Print :math:`\Phi_{4}` matrix elements in ``PREFIX``.Phi4.[number]
+ === ===================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: Same as :ref:`PRINTV3 <anphon_printv3>`, but for the four-phonon matrix elements :math:`|V_{4}(-qj; q_1 j_1, q_2 j_2, q_3 j_3)|^{2}` (in cm\ :sup:`-2`) and :math:`\Phi_{4}` (in Ry/(u\ :sup:`1/2` Bohr)\ :sup:`4`). The quartic force constants are required (``QUARTIC = 1``).
+
+````
+
+.. _anphon_fc2_ewald:
+
+* FC2_EWALD-tag = 0 | 1
+
+ === ====================================================================================
+  0   Do nothing
+  1   | Print the dipole-dipole and short-range components of the harmonic
+      | force constants in ``PREFIX``.fc2_ewald
+ === ====================================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: Available only when ``NONANALYTIC = 3``. For each pair of atoms, the original harmonic force constant, its dipole-dipole (Ewald) part, and the short-range remainder are printed, which is useful for checking the long-range separation of the harmonic force constants.
+
+````
+
 .. .. _anphon_fe_bubble:
 
 .. * FE_BUBBLE-tag = 0 | 1
@@ -1341,6 +1702,16 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 ````
 
+.. _anphon_kmesh_coarse:
+
+* KMESH_COARSE-tag = k1, k2, k3
+
+ :Default: The same :math:`k` mesh as given in the ``&kpoint`` field
+ :Type: Array of integers
+ :Description: :math:`k` mesh used for evaluating the four-phonon scattering rates when ``INCLUDE_4PH = 1``. Because four-phonon calculations are far more expensive than three-phonon ones, a mesh coarser than that of the ``&kpoint`` field can be given here; the computed rates are then interpolated onto the dense mesh by the method selected with :ref:`INTERPOLATOR <anphon_interpolator>`.
+
+````
+
 .. _anphon_ismear_4ph:
 
 * ISMEAR_4PH-tag = -1 | 0 | 1 | 2
@@ -1378,6 +1749,34 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                ``ISMEAR_4PH = 2``. Because the four-phonon phase space is much
                larger and the mesh usually coarser than for three-phonon
                processes, the optimal width generally differs from ``EPSILON``.
+
+````
+
+.. _anphon_interpolator:
+
+* INTERPOLATOR-tag = linear | log-linear | modified-log-linear
+
+ ==================== =================================================================
+  linear               Trilinear interpolation of the scattering rates
+  log-linear           Trilinear interpolation of the logarithm of the scattering rates
+  modified-log-linear  | Same as log-linear, but for the acoustic branches the
+                       | interpolation cells containing the :math:`\Gamma` point
+                       | are avoided
+ ==================== =================================================================
+
+ :Default: log-linear
+ :Type: String
+ :Description: Method for interpolating the four-phonon scattering rates computed on :ref:`KMESH_COARSE <anphon_kmesh_coarse>` onto the dense :math:`k` mesh of the ``&kpoint`` field. The value is case-insensitive.
+
+````
+
+.. _anphon_write_interpol:
+
+* WRITE_INTERPOL-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``WRITE_INTERPOL = 1`` and the four-phonon scattering rates are interpolated (``INCLUDE_4PH = 1``), the interpolated linewidths on the dense :math:`k` mesh are written to ``PREFIX``.interpolated_gamma, which is useful for checking the interpolation quality.
 
 ````
 
@@ -1456,6 +1855,27 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 ````
 
+.. _anphon_kappa_coherent_block:
+
+* KAPPA_COHERENT_BLOCK-tag = 0 | 1
+
+ === ====================================================================================
+  0   Do not compute the block-averaged coherent component
+  1   | Compute the coherent component of thermal conductivity with degenerate branches
+      | grouped into blocks and save it in ``PREFIX``.kl_coherent_block
+ === ====================================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: Variant of :ref:`KAPPA_COHERENT <anphon_kappa_coherent>` in which degenerate phonon branches at each :math:`k` point are grouped into blocks: frequencies and linewidths are averaged within each block and only contributions between *different* blocks are summed, so that the contributions between degenerate branches are excluded from the coherent term. The two tags can be given independently.
+
+ .. caution::
+
+     Still experimental. Please check the validity of results carefully.
+
+
+````
+
 .. _anphon_kappa_spec:
 
 * KAPPA_SPEC-tag = 0 | 1
@@ -1507,6 +1927,71 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                and :math:`\bar{m}=\sum_{i}f_{i}m_{i}` is the average mass, respectively. 
                This quantity is equivalent to :math:`g_{2}` appearing in the original paper by S. Tamura [Phys. Rev. B, 27, 858.].
 
+
+````
+
+.. _anphon_len_boundary:
+
+* LEN_BOUNDARY-tag : Characteristic length for boundary scattering in units of meter
+
+ :Default: 0.0 (no boundary scattering)
+ :Type: Double
+ :Description: When ``LEN_BOUNDARY > 0``, a boundary scattering rate :math:`|\boldsymbol{v}_{qj}|/L` with :math:`L` = ``LEN_BOUNDARY`` is added to the phonon linewidths used for the thermal conductivity, where :math:`\boldsymbol{v}_{qj}` is the group velocity of each phonon mode.
+
+````
+
+.. _anphon_iterative:
+
+* ITERATIVE-tag = 0 | 1
+
+ === ====================================================================================
+  0   Solve the BTE within the relaxation-time approximation (RTA)
+  1   Solve the linearized BTE iteratively (beyond the RTA)
+ === ====================================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``ITERATIVE = 1``, the linearized phonon Boltzmann transport equation is solved self-consistently by iteration instead of the RTA, and the resulting lattice thermal conductivity is written to ``PREFIX``.kl_iter. The iteration is controlled by :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and :ref:`IBTE_MIXING <anphon_ibte_mixing>`.
+
+````
+
+.. _anphon_min_cycle:
+
+* MIN_CYCLE-tag : Minimum number of iterations of the iterative BTE solver
+
+ :Default: 5
+ :Type: Integer
+ :Description: Used when ``ITERATIVE = 1``. The convergence test starts only after ``MIN_CYCLE`` iterations have been performed.
+
+````
+
+.. _anphon_max_cycle:
+
+* MAX_CYCLE-tag : Maximum number of iterations of the iterative BTE solver
+
+ :Default: 20
+ :Type: Integer
+ :Description: Used when ``ITERATIVE = 1``. If the iteration does not converge within ``MAX_CYCLE`` cycles, the last value of the thermal conductivity is kept and the calculation proceeds to the next temperature.
+
+````
+
+.. _anphon_iter_threshold:
+
+* ITER_THRESHOLD-tag : Convergence criterion of the iterative BTE solver
+
+ :Default: 0.02
+ :Type: Double
+ :Description: Used when ``ITERATIVE = 1``. The iteration at each temperature stops when the relative change of every diagonal component of the thermal conductivity tensor between two successive iterations becomes smaller than ``ITER_THRESHOLD``.
+
+````
+
+.. _anphon_ibte_mixing:
+
+* IBTE_MIXING-tag : Mixing factor of the iterative BTE solver
+
+ :Default: 0.9
+ :Type: Double
+ :Description: Used when ``ITERATIVE = 1``. In each iteration, the updated nonequilibrium distribution is mixed with the previous one as :math:`f_{\mathrm{new}} \leftarrow \alpha f_{\mathrm{new}} + (1-\alpha) f_{\mathrm{old}}` with :math:`\alpha` = ``IBTE_MIXING``. Values smaller than 1 damp oscillations of slowly converging iterations.
 
 ````
 

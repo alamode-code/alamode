@@ -970,7 +970,7 @@ void Input::parse_relax_vars()
     }
 
     if (relax_algo == 1) {
-        assign_val(alpha_steepest_decent, "ALPHA_STEEPEST_DECENT", stropt_var_dict);
+        assign_val(alpha_steepest_decent, "ALPHA_STDECENT", stropt_var_dict);
     } else if (relax_algo == 2) {
         assign_val(mixbeta_coord, "MIXBETA_COORD", stropt_var_dict);
     }
