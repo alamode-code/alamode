@@ -73,6 +73,11 @@ void Qha::exec_qha_optimization()
 
     zerofill_harmonic_dymat_renormalize(delta_harmonic_dymat_renormalize, NT);
 
+    // Per-temperature convergence records, updated by the relaxation loop
+    // below and stored in the state file (QHA has no SCP inner loop).
+    converged_scph_temp.assign(NT, 1);
+    converged_str_temp.assign(NT, 1);
+
     MPI_Bcast(&restart_qha, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
@@ -497,6 +502,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             // per-step records for the optimization-history table printed below
             std::vector<StructOptStepRecord> step_history;
 
+            converged_str_temp[iT] = 0; // set to 1 only when the loop converges
+
             for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
 
                 std::cout << "\n ----------------------------------------------------------------\n";
@@ -784,6 +791,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                     }
                     std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n\n";
                     std::cout << " break structural loop.\n\n";
+                    converged_str_temp[iT] = 1;
                     break;
                 }
 

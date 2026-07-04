@@ -153,7 +153,8 @@ void Input::parse_general_vars()
                                               "FCSFILE",
                                               "RESTART_4PH",
                                               "FILE_FORMAT",
-                                              "FC2_TEMPERATURE"};
+                                              "FC2_TEMPERATURE",
+                                              "ALLOW_UNCONVERGED"};
 
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::vector<std::string> kdname_input, masskd_v;
@@ -307,6 +308,10 @@ void Input::parse_general_vars()
     // as FCSFILE or FC2FILE (negative = disabled).
     double fc2_temperature = -1.0;
     assign_val(fc2_temperature, "FC2_TEMPERATURE", general_var_dict);
+
+    auto allow_unconverged_in = false;
+    assign_val(allow_unconverged_in, "ALLOW_UNCONVERGED", general_var_dict);
+    this->allow_unconverged = allow_unconverged_in;
     assign_val(classical, "CLASSICAL", general_var_dict);
     assign_val(band_connection, "BCONNECT", general_var_dict);
     assign_val(use_triplet_symmetry, "TRISYM", general_var_dict);

@@ -38,6 +38,12 @@ public:
     // the unified HDF5 formats; false forces the legacy text files.
     bool use_hdf5_io = true;
 
+    // ALLOW_UNCONVERGED tag: accept renormalized IFC/structure data from an
+    // SCPH/QHA state file even when its iterations did not converge
+    // (FC2_TEMPERATURE reads and RESTART_SCPH/RESTART_QHA refuse them by
+    // default).
+    bool allow_unconverged = false;
+
 private:
     std::ifstream ifs_input;
     bool from_stdin;

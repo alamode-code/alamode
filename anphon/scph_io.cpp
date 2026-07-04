@@ -343,8 +343,29 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     const auto cells = build_scph_cells_h5();
     const auto fc2 = build_fc2_rows_h5(delta_main, NT, kmesh_coarse_in, mindist_list_in, variant);
 
+    // Empty convergence vectors mean "unknown" (legacy import) and are not
+    // written; otherwise warn right away when something did not converge.
+    const auto *conv_scph = converged_scph_temp.size() == NT ? &converged_scph_temp : nullptr;
+    const auto *conv_str =
+        (relax_str_in != 0 && converged_str_temp.size() == NT) ? &converged_str_temp : nullptr;
+
+    const auto count_bad = [NT](const std::vector<unsigned char> *v) {
+        if (!v) return 0U;
+        unsigned int n = 0;
+        for (unsigned int i = 0; i < NT; ++i) {
+            if (!(*v)[i]) ++n;
+        }
+        return n;
+    };
+    const auto nbad = count_bad(conv_scph) + count_bad(conv_str);
+    if (nbad > 0) {
+        warn("write_scph_state_h5",
+             "Some temperatures did not converge; they are flagged in /convergence of the state file\n"
+             " and will be refused by later calculations unless ALLOW_UNCONVERGED = 1 is set.");
+    }
+
     const ScphResultIOH5 io(filename);
-    io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2);
+    io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str);
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << filename;
     std::cout << " : Unified " << mode_name
@@ -372,6 +393,9 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
         const auto settings =
             build_scph_settings_h5(mode_name, NT, nonanalytic_in, selfenergy_offdiagonal_in, relax_str_in);
         io.validate_settings(settings);
+        // The restarted data feed the postprocess (DOS, bands, thermo, ...):
+        // refuse unconverged temperatures unless the user opted in.
+        io.check_convergence(settings.temperatures, input->allow_unconverged);
         io.load_dymat("delta", settings.temperatures, ns, kmesh_coarse->nk, delta_main);
         if (delta_harm_renorm) {
             io.load_dymat("delta_harm_renorm", settings.temperatures, ns, kmesh_coarse->nk,

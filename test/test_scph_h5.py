@@ -201,6 +201,46 @@ def check_kappa_on_scph(anphonbin):
     return 0
 
 
+def check_convergence_guard(anphonbin):
+    # An intentionally unconverged run (MAXITER = 1, MAX_STR_ITER = 1, tiny
+    # tolerance) must be flagged in /convergence and refused downstream
+    # unless ALLOW_UNCONVERGED = 1 is given.
+    with open("BTO_scph_thermo.in") as f:
+        src = f.read()
+    src = (src.replace("PREFIX = cBTO222_scph", "PREFIX = ucbto")
+              .replace("TMIN = 280", "TMIN = 300")
+              .replace("MAXITER = 500", "MAXITER = 1")
+              .replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 2 2 2")
+              .replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 1")
+              .replace("COORD_CONV_TOL = 1.0e-5", "COORD_CONV_TOL = 1.0e-12"))
+    with open("uc.in", "w") as f:
+        f.write(src)
+    if run_anphon(anphonbin, "uc.in", "uc.log") != 0:
+        print("unconverged SCPH run failed to execute")
+        return 1
+    with h5py.File("ucbto.scph.h5", "r") as f:
+        if f["convergence/scph"][...].all() or f["convergence/structure"][...].all():
+            print("unconverged run was not flagged in /convergence")
+            return 1
+
+    kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 11\n/\n"
+    with open("ucband.in", "w") as f:
+        f.write("&general\n PREFIX = ucband; MODE = phonons; FCSFILE = ucbto.scph.h5;")
+        f.write(" FC2_TEMPERATURE = 300\n/\n")
+        f.write(kpath)
+    if run_anphon(anphonbin, "ucband.in", "ucband.log") == 0:
+        print("unconverged FC2 was accepted without ALLOW_UNCONVERGED")
+        return 1
+    with open("ucband_ok.in", "w") as f:
+        f.write("&general\n PREFIX = ucband; MODE = phonons; FCSFILE = ucbto.scph.h5;")
+        f.write(" FC2_TEMPERATURE = 300; ALLOW_UNCONVERGED = 1\n/\n")
+        f.write(kpath)
+    if run_anphon(anphonbin, "ucband_ok.in", "ucband_ok.log") != 0:
+        print("ALLOW_UNCONVERGED = 1 did not allow the run")
+        return 1
+    return 0
+
+
 def runtest_scph_h5(anphonbin, project_root):
     scph_example_dir = os.path.join(project_root, "example", "BaTiO3", "scph_relax")
     reference_dir = os.path.join(scph_example_dir, "reference_for_test")
@@ -225,6 +265,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_kappa_on_scph(anphonbin):
         return 1
     print("Kappa on SCPH (temperature-resolved kappa.h5) --> pass")
+
+    if check_convergence_guard(anphonbin):
+        return 1
+    print("Convergence flags + ALLOW_UNCONVERGED guard --> pass")
 
     return 0
 

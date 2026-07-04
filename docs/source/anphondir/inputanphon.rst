@@ -386,7 +386,29 @@ Description of input variables
                as usual. In ``MODE = RTA``, this tag also switches
                ``PREFIX``.kappa.h5 to its temperature-resolved layout so that
                runs at different basis temperatures accumulate into one file
-               (set ``TMIN = TMAX = FC2_TEMPERATURE`` per run).
+               (set ``TMIN = TMAX = FC2_TEMPERATURE`` per run). Temperatures whose
+               SCPH iteration or structural optimization did not converge are
+               refused unless :ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>`
+               is set.
+
+````
+
+.. _anphon_allow_unconverged:
+
+* ALLOW_UNCONVERGED-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: SCPH/QHA state files record, per temperature, whether the SCPH
+               iteration and the structural optimization converged
+               (``/convergence`` in ``PREFIX``.scph.h5 / ``PREFIX``.qha.h5).
+               By default, later calculations that consume the renormalized
+               IFCs or structure — ``FC2_TEMPERATURE`` reads for kappa/DOS/band
+               runs, and ``RESTART_SCPH`` / ``RESTART_QHA`` (whose postprocess
+               produces DOS, bands, and thermodynamic functions) — refuse
+               unconverged temperatures with an error. Set
+               ``ALLOW_UNCONVERGED = 1`` to use such data anyway (a warning is
+               printed).
 
 ````
 

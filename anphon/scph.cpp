@@ -114,6 +114,11 @@ void Scph::exec_scph()
 
     zerofill_harmonic_dymat_renormalize(delta_harmonic_dymat_renormalize, NT);
 
+    // Per-temperature convergence records, updated by the main loops below
+    // and stored in the state file.
+    converged_scph_temp.assign(NT, 1);
+    converged_str_temp.assign(NT, 1);
+
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
 
     if (relax_mode != RelaxationStrMode::None && thermodynamics->calc_FE_bubble) {
@@ -983,6 +988,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                              writes->getVerbosity());
             }
 
+            converged_scph_temp[iT] = converged_prev ? 1 : 0;
 
             dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                                 omega2_anharm[iT],
@@ -1541,6 +1547,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 // SCP convergence of this structure step. converged_prev is reused as the
                 // warm-start flag of the next SCP solve, so keep a snapshot here.
                 const bool scp_converged_step = converged_prev;
+                converged_scph_temp[iT] = scp_converged_step ? 1 : 0;
 
                 dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                                     omega2_anharm[iT],
@@ -1869,6 +1876,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                     kmap_coarse_to_dense);
             }
 
+            converged_str_temp[iT] = converged_this_temp ? 1 : 0;
             converged_prev = warmstart_scph && converged_this_temp;
 
         } // close temperature loop

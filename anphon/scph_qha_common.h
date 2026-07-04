@@ -69,6 +69,14 @@ protected:
     unsigned int ialgo = 0;
     bool selfenergy_offdiagonal = true;
 
+    // Per-temperature convergence of the SCPH fixed-point iteration and of
+    // the structural optimization (rank 0 only; the main loops fill them).
+    // Stored in the state file and enforced when the renormalized data are
+    // consumed later. Empty vectors mean "unknown" (legacy import) and are
+    // not written.
+    std::vector<unsigned char> converged_scph_temp;
+    std::vector<unsigned char> converged_str_temp;
+
     void initialize_variables();
 
     void deallocate_variables();

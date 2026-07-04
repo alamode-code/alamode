@@ -26,6 +26,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
+#include "parsephon.h"
 #include "phonons.h"
 #include "system.h"
 #include "thermodynamics.h"
@@ -454,6 +455,30 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
         }
         temperature_index = h5_resolve_temperature_index(file, fc2_temperature, eps6,
                                                          "/settings/temperatures");
+
+        // Refuse renormalized FC2 from unconverged SCPH/structural
+        // iterations unless the user opted in (absent /convergence data,
+        // e.g. a legacy import, cannot be checked and is accepted).
+        const auto iteration_converged = [&file, temperature_index](const std::string &name) {
+            if (!file.exist("/convergence/" + name)) return true;
+            std::vector<unsigned char> flags;
+            file.getDataSet("/convergence/" + name).read(flags);
+            return static_cast<size_t>(temperature_index) >= flags.size() ||
+                   flags[temperature_index] != 0;
+        };
+        if (!iteration_converged("scph") || !iteration_converged("structure")) {
+            if (input->allow_unconverged) {
+                warn("parse_fcs_from_h5",
+                     "The iterations at FC2_TEMPERATURE did not converge;\n"
+                     " using the renormalized FC2 anyway because ALLOW_UNCONVERGED = 1.");
+            } else {
+                exit("parse_fcs_from_h5",
+                     "The SCPH iteration or structural optimization at FC2_TEMPERATURE did not converge\n"
+                     " in the run that produced this state file. Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
+                     " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
+            }
+        }
+
         std::cout << "\n  FC2_TEMPERATURE = " << fc2_temperature
                   << " K : loading the renormalized FC2 at this temperature from " << fname_fcs << "\n  ";
     }

@@ -135,7 +135,9 @@ void ScphResultIOH5::load_v0(const std::vector<double> &temps_requested, std::ve
 void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCellsH5 &cells,
                                  const std::complex<double> *const *const *const *delta_main,
                                  const std::complex<double> *const *const *const *delta_harm_renorm,
-                                 const std::vector<double> *v0, const ScphFc2RowsH5 *fc2) const
+                                 const std::vector<double> *v0, const ScphFc2RowsH5 *fc2,
+                                 const std::vector<unsigned char> *converged_scph,
+                                 const std::vector<unsigned char> *converged_structure) const
 {
     using namespace H5Easy;
 
@@ -222,6 +224,15 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
             dumpAttribute(fh, "/V0", "unit", std::string("Ry"));
         }
 
+        // Per-temperature convergence flags (1 = converged). Consumers
+        // refuse unconverged temperatures unless ALLOW_UNCONVERGED is set.
+        if (converged_scph) {
+            dump(fh, "/convergence/scph", *converged_scph);
+        }
+        if (converged_structure) {
+            dump(fh, "/convergence/structure", *converged_structure);
+        }
+
         if (fc2) {
             // Base harmonic FC2 (readable by any current anphon as a plain
             // force-constant file) ...
@@ -247,6 +258,51 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
     }
 
     h5_publish_file(part, impl->filename);
+}
+
+void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requested,
+                                       const bool allow_unconverged) const
+{
+    const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
+    // Absent datasets mean the file predates the flags (legacy import);
+    // nothing can be checked then.
+    if (!fh.exist("/convergence")) return;
+
+    const auto rows = impl->temperature_rows(fh, temps_requested);
+
+    const auto collect_bad = [&](const std::string &name, std::vector<double> &bad) {
+        if (!fh.exist("/convergence/" + name)) return;
+        std::vector<unsigned char> flags;
+        fh.getDataSet("/convergence/" + name).read(flags);
+        for (size_t i = 0; i < rows.size(); ++i) {
+            if (rows[i] < flags.size() && !flags[rows[i]]) bad.push_back(temps_requested[i]);
+        }
+    };
+
+    std::vector<double> bad_scph, bad_str;
+    collect_bad("scph", bad_scph);
+    collect_bad("structure", bad_str);
+    if (bad_scph.empty() && bad_str.empty()) return;
+
+    std::cout << "\n The state file " << impl->filename
+              << " contains data whose iterations did NOT converge:\n";
+    const auto list_temps = [](const char *label, const std::vector<double> &bad) {
+        if (bad.empty()) return;
+        std::cout << "  " << label << " :";
+        for (const auto t: bad) std::cout << ' ' << t << " K";
+        std::cout << '\n';
+    };
+    list_temps("SCPH iteration       ", bad_scph);
+    list_temps("structural relaxation", bad_str);
+
+    if (allow_unconverged) {
+        warn("scph_result_io", "Using unconverged renormalized data because ALLOW_UNCONVERGED = 1.");
+    } else {
+        exit("scph_result_io",
+             "Refusing to use unconverged renormalized IFCs/structure.\n"
+             " Rerun with tighter/longer iterations (MAXITER, MAX_STR_ITER, ...) to converge them,\n"
+             " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
+    }
 }
 
 const std::string &ScphResultIOH5::get_filename() const

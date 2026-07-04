@@ -173,8 +173,12 @@ ANPHON: Output files
  written atomically at the end of the run with the default
  ``FILE_FORMAT = h5``. It bundles everything the legacy
  ``PREFIX``.scph_dymat / ``PREFIX``.renorm_harm_dymat / ``PREFIX``.V0 trio
- stored (and is the preferred restart source), plus the temperature-dependent
- effective harmonic force constants in the standard
+ stored (and is the preferred restart source), plus per-temperature
+ convergence flags of the SCPH iteration and the structural optimization
+ (``/convergence/scph``, ``/convergence/structure``; unconverged
+ temperatures are refused by later calculations unless
+ :ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>` is set), and the
+ temperature-dependent effective harmonic force constants in the standard
  ``/ForceConstants/Order2`` layout: a later anphon run can consume them
  directly via ``FCSFILE = PREFIX.scph.h5`` together with the
  :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>` tag, replacing the

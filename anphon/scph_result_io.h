@@ -90,12 +90,21 @@ public:
 
     void load_v0(const std::vector<double> &temps_requested, std::vector<double> &v0_out) const;
 
-    // Write the complete state atomically. delta_harm_renorm, v0, and fc2
-    // may be null when the run does not produce them.
+    // Write the complete state atomically. delta_harm_renorm, v0, fc2, and
+    // the convergence vectors may be null when the run does not produce
+    // them (absent /convergence datasets mean "unknown", e.g. a legacy
+    // import, and are accepted on read).
     void write_state(const ScphSettingsH5 &settings, const ScphCellsH5 &cells,
                      const std::complex<double> *const *const *const *delta_main,
                      const std::complex<double> *const *const *const *delta_harm_renorm,
-                     const std::vector<double> *v0, const ScphFc2RowsH5 *fc2) const;
+                     const std::vector<double> *v0, const ScphFc2RowsH5 *fc2,
+                     const std::vector<unsigned char> *converged_scph,
+                     const std::vector<unsigned char> *converged_structure) const;
+
+    // Refuse (or, with allow_unconverged, only warn about) temperatures
+    // whose SCPH iteration or structural optimization did not converge.
+    void check_convergence(const std::vector<double> &temps_requested,
+                           bool allow_unconverged) const;
 
     [[nodiscard]] const std::string &get_filename() const;
 
