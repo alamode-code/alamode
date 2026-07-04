@@ -294,6 +294,13 @@ void Input::parse_general_vars()
     assign_val(printsymmetry, "PRINTSYM", general_var_dict);
 
     assign_val(nonanalytic, "NONANALYTIC", general_var_dict);
+    // RESTART and RESTART_4PH now belong to the &kappa field; they are
+    // still honored here for backward compatibility (the &kappa values win).
+    if (!general_var_dict["RESTART"].empty() || !general_var_dict["RESTART_4PH"].empty()) {
+        warn("parse_general_vars",
+             "RESTART and RESTART_4PH in the &general field are deprecated;\n"
+             " please move them to the &kappa field.");
+    }
     assign_val(restart, "RESTART", general_var_dict);
     assign_val(restart_4ph, "RESTART_4PH", general_var_dict);
 
@@ -399,6 +406,9 @@ void Input::parse_kappa_vars(const bool use_default_values)
     const std::vector<std::string> input_list{"KMESH_COARSE",
                                               "EPSILON_4PH",
                                               "ISMEAR_4PH",
+                                              "INCLUDE_4PH",
+                                              "RESTART",
+                                              "RESTART_4PH",
                                               "INTERPOLATOR",
                                               "LEN_BOUNDARY",
                                               "ISOTOPE",
@@ -449,8 +459,12 @@ void Input::parse_kappa_vars(const bool use_default_values)
     auto iter_threshold = 0.02;
     auto iterative_mixing = 0.9;
 
+    // -1 = tag not given; resolved below (legacy QUARTIC fallback).
+    int include_4ph = -1;
+
     // Assign given values
     if (!use_default_values) {
+        assign_val(include_4ph, "INCLUDE_4PH", kappa_var_dict);
         assign_val(ismear_4ph, "ISMEAR_4PH", kappa_var_dict);
         assign_val(epsilon_4ph, "EPSILON_4PH", kappa_var_dict);
         assign_val(interpolator, "INTERPOLATOR", kappa_var_dict);
@@ -467,6 +481,37 @@ void Input::parse_kappa_vars(const bool use_default_values)
         assign_val(min_cycle, "MIN_CYCLE", kappa_var_dict);
         assign_val(iterative_mixing, "IBTE_MIXING", kappa_var_dict);
         assign_val(iter_threshold, "ITER_THRESHOLD", kappa_var_dict);
+    }
+
+    // INCLUDE_4PH is the explicit switch for the four-phonon channel.
+    // Legacy inputs enabled it implicitly via QUARTIC > 0 (an &analysis
+    // tag), which is still honored with a deprecation warning.
+    if (include_4ph < 0) {
+        include_4ph = anharmonic_core->quartic_mode > 0 ? 1 : 0;
+        if (include_4ph == 1) {
+            warn("parse_kappa_vars",
+                 "Enabling four-phonon scattering because QUARTIC > 0 is deprecated;\n"
+                 " please set INCLUDE_4PH = 1 in the &kappa field instead.");
+        }
+    } else if (include_4ph > 0 && anharmonic_core->quartic_mode == 0) {
+        // The quartic (FC4) machinery is required for the 4ph self-energies.
+        anharmonic_core->quartic_mode = 1;
+    }
+    conductivity->fph_rta = include_4ph;
+
+    // RESTART / RESTART_4PH given here override the (deprecated) &general
+    // values and the file-existence auto-detection.
+    if (!use_default_values) {
+        if (!kappa_var_dict["RESTART"].empty()) {
+            auto restart_in = false;
+            assign_val(restart_in, "RESTART", kappa_var_dict);
+            conductivity->set_restart_flag(3, restart_in);
+        }
+        if (!kappa_var_dict["RESTART_4PH"].empty()) {
+            auto restart_in = false;
+            assign_val(restart_in, "RESTART_4PH", kappa_var_dict);
+            conductivity->set_restart_flag(4, restart_in);
+        }
     }
 
     integration->epsilon_4ph = epsilon_4ph;

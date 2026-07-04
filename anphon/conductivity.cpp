@@ -134,12 +134,8 @@ void Conductivity::setup_kappa()
     MPI_Bcast(&restart_flag_3ph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    // quartic_mode is boardcasted in fcs_phonon->setup
-    if (anharmonic_core->quartic_mode > 0) {
-        fph_rta = 1;
-    } else {
-        fph_rta = 0;
-    }
+    // fph_rta is decided by the INCLUDE_4PH tag at parse time (with a
+    // deprecated QUARTIC > 0 fallback) and broadcast in phonons.cpp.
 
     nk_3ph = dos->kmesh_dos->nk;
     ns = dynamical->neval;
@@ -1931,6 +1927,12 @@ bool Conductivity::get_restart_conductivity(const int order) const
     if (order == 4) return restart_flag_4ph;
 
     return false;
+}
+
+void Conductivity::set_restart_flag(const int order, const bool flag_in)
+{
+    if (order == 3) restart_flag_3ph = flag_in;
+    if (order == 4) restart_flag_4ph = flag_in;
 }
 
 std::string Conductivity::get_filename_results(const int order) const

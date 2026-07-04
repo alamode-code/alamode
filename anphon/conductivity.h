@@ -66,6 +66,8 @@ public:
 
     bool get_restart_conductivity(const int order) const;
 
+    void set_restart_flag(const int order, const bool flag_in);
+
     std::string get_filename_results(const int order) const;
 
     void set_interpolator(const std::string interpolator_in)

@@ -29,7 +29,7 @@ def file_sha256(fname):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def gen_rta_input(fname, extra_general=""):
+def gen_rta_input(fname, extra_general="", extra_kappa=""):
     with open(fname, "w") as f:
         f.write(
             "&general\n PREFIX = %s; MODE = RTA; FCSFILE = si222_cubic.xml; KD = Si\n"
@@ -40,6 +40,8 @@ def gen_rta_input(fname, extra_general=""):
         f.write("/\n")
         f.write("&cell\n  10.203\n  0.0 0.5 0.5\n  0.5 0.0 0.5\n  0.5 0.5 0.0\n/\n")
         f.write("&kpoint\n  2\n  %s\n/\n" % KMESH)
+        if extra_kappa:
+            f.write("&kappa\n %s\n/\n" % extra_kappa)
 
 
 def run_anphon(anphonbin, input_file, logfile):
@@ -187,7 +189,7 @@ def check_forced_recompute(anphonbin):
     kl_before = np.loadtxt(PREFIX + ".kl")
     with h5py.File(PREFIX + ".kappa.h5", "r") as f:
         nmodes = f["scattering/3ph/gamma_computed"].shape[0]
-    gen_rta_input("RTA0.in", extra_general="RESTART = 0")
+    gen_rta_input("RTA0.in", extra_kappa="RESTART = 0")
     if run_anphon(anphonbin, "RTA0.in", "restart_off.log") != 0:
         print("RESTART=0 run failed")
         return 1
@@ -198,6 +200,20 @@ def check_forced_recompute(anphonbin):
         return 1
     if not np.allclose(kl_before, np.loadtxt(PREFIX + ".kl"), rtol=1e-8):
         print(".kl differs after forced recompute")
+        return 1
+
+    # The deprecated &general location must still work, with a warning.
+    gen_rta_input("RTA0g.in", extra_general="RESTART = 0")
+    if run_anphon(anphonbin, "RTA0g.in", "restart_off_general.log") != 0:
+        print("deprecated &general RESTART=0 run failed")
+        return 1
+    if not log_contains("restart_off_general.log", "deprecated"):
+        print("deprecated &general RESTART did not warn")
+        return 1
+    if not log_contains(
+        "restart_off_general.log", "Total Number of phonon modes to be calculated : %d" % nmodes
+    ):
+        print("deprecated &general RESTART=0 was not honored")
         return 1
     return 0
 
