@@ -1,4 +1,5 @@
 #include "iterativebte.h"
+#include <Eigen/Dense>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -708,7 +709,6 @@ void Iterativebte::iterative_solver()
     allocate(Q, nklocal, ns);
 
     allocate(dFold, nk_3ph, ns, 3);
-    allocate(dFnew, nk_3ph, ns, 3);
 
     double **fb;
     double **dndt;
@@ -805,10 +805,63 @@ void Iterativebte::iterative_solver()
         ikp_absorb.push_back(counterk);
     }
 
-    int nsym = symmetry->SymmList.size();
+    const int nsym = symmetry->SymmList.size();
+
+    // ------------------------------------------------------------------
+    // Symmetry expansion table for the irreducible-wedge iteration.
+    // Every full-grid point p equals (time reversal x) R applied to its
+    // irreducible representative, and the deviation function transforms
+    // as a Cartesian vector [f_{Rk} = R f_k, f_{-k} = -f_k], so
+    //   dF(p) = expand_mat[p] . dF(rep(p)),
+    // with the time-reversal sign folded into the matrix. The update is
+    // therefore evaluated on the wedge only and the full-grid dF is
+    // reconstructed after each cycle. knum_sym applies (S^{-1})^T to the
+    // fractional k, and k_cart = M k_frac with M columns the reciprocal
+    // lattice vectors, hence R_cart = M (S^{-1})^T M^{-1}.
+    // ------------------------------------------------------------------
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    std::vector<Eigen::Matrix3d> expand_mat(nk_3ph);
+    {
+        Eigen::Matrix3d mat_k2cart;
+        const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
+        for (auto i = 0; i < 3; ++i) {
+            for (auto j = 0; j < 3; ++j) {
+                mat_k2cart(j, i) = rlavec(i, j); // columns = reciprocal vectors
+            }
+        }
+        const Eigen::Matrix3d mat_cart2k = mat_k2cart.inverse();
+
+        for (unsigned int tmpk = 0; tmpk < nk_irred; ++tmpk) {
+            const auto kref = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+            for (const auto &kp: dos->kmesh_dos->kpoint_irred_all[tmpk]) {
+                const auto p = kp.knum;
+                auto found = false;
+                for (auto isym = 0; isym < nsym && !found; ++isym) {
+                    const auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
+                    const auto direct = (p == krot);
+                    const auto time_reversed =
+                        symmetry->time_reversal_sym && p == dos->kmesh_dos->kindex_minus_xk[krot];
+                    if (!direct && !time_reversed) continue;
+                    const Eigen::Matrix3d srot_inv_t =
+                        symmetry->SymmList[isym].rotation.cast<double>().inverse().transpose();
+                    const Eigen::Matrix3d rot_cart = mat_k2cart * srot_inv_t * mat_cart2k;
+                    expand_mat[p] = direct ? rot_cart : Eigen::Matrix3d(-rot_cart);
+                    found = true;
+                }
+                if (!found) {
+                    exit("iterative_solver", "cannot find the symmetry operation generating an equivalent k");
+                }
+            }
+        }
+    }
+
+    // Wedge buffers of the deviation function (local rows + allreduced sum)
+    double *dF_ir_loc = nullptr;
+    double *dF_ir_glob = nullptr;
+    allocate(dF_ir_loc, nk_irred * ns * 3);
+    allocate(dF_ir_glob, nk_irred * ns * 3);
+
     // start iteration
-    double **Wks;
-    allocate(Wks, ns, 3);
 
     double norm;
     double local_difference;
@@ -843,13 +896,6 @@ void Iterativebte::iterative_solver()
             }
         }
 
-        int s1, s2, s3;
-        int k1, k2, k3, k3_minus;
-
-        int generating_sym;
-        bool time_reverse = false; // keep track if we further apply time reversal symmetry
-        int isym;
-
         for (auto itr = 0; itr < max_cycle; ++itr) {
 
             local_difference = 0.0;
@@ -858,188 +904,122 @@ void Iterativebte::iterative_solver()
                 std::cout << "   -> iter " << std::setw(3) << itr << ": ";
             }
 
-            // zero dFnew because we will do MPI_allreduce
-            for (ik = 0; ik < nk_3ph; ++ik) {
-                for (is = 0; is < ns; ++is) {
-                    for (ix = 0; ix < 3; ++ix) {
-                        dFnew[ik][is][ix] = 0.0;
-                    }
-                }
-            }
+            // zero the local wedge rows for the MPI_Allreduce
+            for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_loc[ii] = 0.0;
 
-            for (ik = 0; ik < nklocal; ++ik) {
+            // The scattering partners in L are stored for the representative
+            // points; equivalent points carry no new information because
+            // dF(Rk) = R dF(k), so only the wedge is updated here.
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic) reduction(+ : local_difference)
+#endif
+            for (int ikl = 0; ikl < nklocal; ++ikl) {
 
-                auto tmpk = nk_l[ik];
-                auto num_equivalent = dos->kmesh_dos->kpoint_irred_all[tmpk].size();
-                auto kref = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+                const auto tmpk = nk_l[ikl];
+                const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+                const auto num_equivalent =
+                    static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size());
 
-                for (auto ieq = 0; ieq < num_equivalent; ++ieq) {
+                double **Wks_loc;
+                allocate(Wks_loc, ns, 3);
 
-                    k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][ieq].knum; // k1 will go through all points
+                for (int s1 = 0; s1 < ns; ++s1) {
 
-                    generating_sym = -1;
-                    for (isym = 0; isym < nsym; ++isym) {
-                        auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
-                        auto minuskrot = dos->kmesh_dos->kindex_minus_xk[krot];
-                        if (k1 == krot) {
-                            generating_sym = isym;
-                            time_reverse = false;
-                        } else if (symmetry->time_reversal_sym && k1 == minuskrot) {
-                            generating_sym = isym;
-                            time_reverse = true;
-                        }
-                    }
-                    if (generating_sym == -1) {
-                        std::cout << std::endl;
-                        std::cout << num_equivalent << std::endl;
-                        std::cout << "   k1: ";
-                        for (int j = 0; j < 3; ++j) {
-                            std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[k1][j];
-                        }
-                        auto minusk = dos->kmesh_dos->kindex_minus_xk[k1];
-                        std::cout << " - k1: " << minusk << " ";
-                        for (int j = 0; j < 3; ++j) {
-                            std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[minusk][j];
-                        }
-                        std::cout << std::endl;
-                        std::cout << "ir k1: ";
-                        auto irk1 = dos->kmesh_dos->kmap_to_irreducible[k1];
-                        for (int j = 0; j < 3; ++j) {
-                            std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[irk1][j];
-                        }
-                        std::cout << std::endl;
-                        for (auto iieq = 0; iieq < num_equivalent; ++iieq) {
-                            auto symk = dos->kmesh_dos->kpoint_irred_all[irk1][iieq].knum;
-                            std::cout << "sym k: ";
-                            for (int j = 0; j < 3; ++j) {
-                                std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[symk][j];
-                            }
-                            std::cout << std::endl;
-                        }
-                        for (isym = 0; isym < nsym; ++isym) {
-                            auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
-                            std::cout << "rot k: ";
-                            for (int j = 0; j < 3; ++j) {
-                                std::cout << std::setw(15) << std::scientific << dos->kmesh_dos->xk[krot][j];
-                            }
-                            std::cout << std::endl;
-                        }
-                        exit("iterative solution", "cannot find all equivalent k");
+                    for (int ix = 0; ix < 3; ++ix) {
+                        Wks_loc[s1][ix] = 0.0;
                     }
 
-                    // calculate W here
-                    for (s1 = 0; s1 < ns; ++s1) {
+                    // emitt k1 -> k2 + k3
+                    for (size_t j = 0; j < localnk_triplets_emitt[ikl].size(); ++j) {
 
-                        for (ix = 0; ix < 3; ++ix) {
-                            Wks[s1][ix] = 0.0;
-                        }
+                        const auto &pair = localnk_triplets_emitt[ikl][j];
+                        const int kp_index = ikp_emitt[ikl][j];
 
-                        // emitt k1 -> k2 + k3
-                        for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+                        for (size_t ig = 0; ig < pair.group.size(); ig++) {
 
-                            auto pair = localnk_triplets_emitt[ik][j];
-                            int kp_index = ikp_emitt[ik][j];
+                            const int k2 = pair.group[ig].ks[0];
+                            const int k3 = pair.group[ig].ks[1];
 
-                            for (auto ig = 0; ig < pair.group.size(); ig++) {
+                            for (int ib = 0; ib < ns2; ++ib) {
+                                const int s2 = ib / ns;
+                                const int s3 = ib % ns;
 
-                                k2 = dos->kmesh_dos->knum_sym(pair.group[ig].ks[0],
-                                                              symmetry->SymmList[generating_sym].rotation);
-                                k3 = dos->kmesh_dos->knum_sym(pair.group[ig].ks[1],
-                                                              symmetry->SymmList[generating_sym].rotation);
-                                if (time_reverse) {
-                                    k2 = dos->kmesh_dos->kindex_minus_xk[k2];
-                                    k3 = dos->kmesh_dos->kindex_minus_xk[k3];
-                                }
-
-                                for (int ib = 0; ib < ns2; ++ib) {
-                                    s2 = ib / ns;
-                                    s3 = ib % ns;
-
-                                    n1 = fb[k1][s1];
-                                    n2 = fb[k2][s2];
-                                    n3 = fb[k3][s3];
-                                    for (ix = 0; ix < 3; ++ix) {
-                                        Wks[s1][ix] -= 0.5 * (dFold[k2][s2][ix] + dFold[k3][s3][ix]) * n1 * (n2 + 1.0) *
-                                                       (n3 + 1.0) * L_emitt[kp_index][s1][ib];
-                                    }
+                                const double nn1 = fb[k1][s1];
+                                const double nn2 = fb[k2][s2];
+                                const double nn3 = fb[k3][s3];
+                                for (int ix = 0; ix < 3; ++ix) {
+                                    Wks_loc[s1][ix] -= 0.5 * (dFold[k2][s2][ix] + dFold[k3][s3][ix]) * nn1 *
+                                                       (nn2 + 1.0) * (nn3 + 1.0) * L_emitt[kp_index][s1][ib];
                                 }
                             }
                         }
+                    }
 
-                        // absorb k1 + k2 -> -k3
-                        for (auto j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+                    // absorb k1 + k2 -> -k3
+                    for (size_t j = 0; j < localnk_triplets_absorb[ikl].size(); ++j) {
 
-                            auto pair = localnk_triplets_absorb[ik][j];
-                            int kp_index = ikp_absorb[ik][j];
+                        const auto &pair = localnk_triplets_absorb[ikl][j];
+                        const int kp_index = ikp_absorb[ikl][j];
 
-                            for (auto ig = 0; ig < pair.group.size(); ig++) {
+                        for (size_t ig = 0; ig < pair.group.size(); ig++) {
 
-                                k2 = dos->kmesh_dos->knum_sym(pair.group[ig].ks[0],
-                                                              symmetry->SymmList[generating_sym].rotation);
-                                k3 = dos->kmesh_dos->knum_sym(pair.group[ig].ks[1],
-                                                              symmetry->SymmList[generating_sym].rotation);
-                                if (time_reverse) {
-                                    k2 = dos->kmesh_dos->kindex_minus_xk[k2];
-                                    k3 = dos->kmesh_dos->kindex_minus_xk[k3];
-                                }
+                            const int k2 = pair.group[ig].ks[0];
+                            const int k3 = pair.group[ig].ks[1];
+                            const int k3_minus = dos->kmesh_dos->kindex_minus_xk[k3];
 
-                                k3_minus = dos->kmesh_dos->kindex_minus_xk[k3];
+                            for (int ib = 0; ib < ns2; ++ib) {
+                                const int s2 = ib / ns;
+                                const int s3 = ib % ns;
 
-                                for (int ib = 0; ib < ns2; ++ib) {
-                                    s2 = ib / ns;
-                                    s3 = ib % ns;
-
-                                    n1 = fb[k1][s1];
-                                    n2 = fb[k2][s2];
-                                    n3 = fb[k3][s3];
-                                    for (ix = 0; ix < 3; ++ix) {
-                                        Wks[s1][ix] += (dFold[k2][s2][ix] - dFold[k3_minus][s3][ix]) * n1 * n2 *
-                                                       (n3 + 1.0) * L_absorb[kp_index][s1][ib];
-                                    }
+                                const double nn1 = fb[k1][s1];
+                                const double nn2 = fb[k2][s2];
+                                const double nn3 = fb[k3][s3];
+                                for (int ix = 0; ix < 3; ++ix) {
+                                    Wks_loc[s1][ix] += (dFold[k2][s2][ix] - dFold[k3_minus][s3][ix]) * nn1 * nn2 *
+                                                       (nn3 + 1.0) * L_absorb[kp_index][s1][ib];
                                 }
                             }
                         }
+                    }
 
-                    } // s1
+                } // s1
 
-                    average_vector_degenerate_at_k(k1, Wks);
+                average_vector_degenerate_at_k(k1, Wks_loc);
 
-                    for (s1 = 0; s1 < ns; ++s1) {
+                for (int s1 = 0; s1 < ns; ++s1) {
 
-                        double Q_final = Q[ik][s1];
-                        if (isotope->include_isotope) {
-                            Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * isotope_damping_loc[ik][s1];
-                        }
+                    double Q_final = Q[ikl][s1];
+                    if (isotope->include_isotope) {
+                        Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * isotope_damping_loc[ikl][s1];
+                    }
 
-                        if (conductivity->len_boundary > eps) {
-                            Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * boundary_damping_loc[ik][s1];
-                        }
+                    if (conductivity->len_boundary > eps) {
+                        Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * boundary_damping_loc[ikl][s1];
+                    }
 
-                        if (conductivity->fph_rta > 0) {
-                            Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * damping4[itemp][ik][s1];
-                        }
+                    if (conductivity->fph_rta > 0) {
+                        Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * damping4[itemp][ikl][s1];
+                    }
 
+                    for (int ix = 0; ix < 3; ix++) {
+                        double fnew;
                         if (Q_final < 1.0e-50 || dos->dymat_dos->get_eigenvalues()[k1][s1] < eps8) {
-                            for (ix = 0; ix < 3; ix++)
-                                dFnew[k1][s1][ix] = 0.0;
+                            fnew = 0.0;
                         } else {
-                            for (ix = 0; ix < 3; ix++) {
-                                dFnew[k1][s1][ix] = (-vel[k1][s1][ix] * dndt[ik][s1] / beta - Wks[s1][ix]) / Q_final;
-                            }
+                            fnew = (-vel[k1][s1][ix] * dndt[ikl][s1] / beta - Wks_loc[s1][ix]) / Q_final;
                         }
                         if (itr > 0) {
-                            for (ix = 0; ix < 3; ix++) {
-                                // a mixing factor of 0.75
-                                // unstability in convergence happens sometime at low temperature.
-                                dFnew[k1][s1][ix] =
-                                    dFnew[k1][s1][ix] * mixing_factor + dFold[k1][s1][ix] * (1.0 - mixing_factor);
-                                local_difference += pow2(dFnew[k1][s1][ix] - dFold[k1][s1][ix]);
-                            }
+                            fnew = fnew * mixing_factor + dFold[k1][s1][ix] * (1.0 - mixing_factor);
+                            // weight by the star multiplicity so the residual
+                            // norm matches the previous full-mesh definition
+                            local_difference += num_equivalent * pow2(fnew - dFold[k1][s1][ix]);
                         }
+                        dF_ir_loc[(tmpk * ns + s1) * 3 + ix] = fnew;
                     }
+                }
 
-                } // ieq
-            } // ik
+                deallocate(Wks_loc);
+            } // ikl
 
             // check convergence, if converged, stop, if not, update dF and print kappa
             norm = 0.0;
@@ -1057,7 +1037,25 @@ void Iterativebte::iterative_solver()
                     }
                 }
             } else {
-                MPI_Allreduce(&dFnew[0][0][0], &dFold[0][0][0], nk_3ph * ns * 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+                MPI_Allreduce(&dF_ir_loc[0], &dF_ir_glob[0], nk_irred * ns * 3, MPI_DOUBLE, MPI_SUM,
+                              MPI_COMM_WORLD);
+
+                // Reconstruct the full-grid deviation function from the wedge.
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+                for (int p = 0; p < nk_3ph; ++p) {
+                    const auto irr = dos->kmesh_dos->kmap_to_irreducible[p];
+                    const auto &m = expand_mat[p];
+                    for (int s = 0; s < ns; ++s) {
+                        const double fx = dF_ir_glob[(irr * ns + s) * 3 + 0];
+                        const double fy = dF_ir_glob[(irr * ns + s) * 3 + 1];
+                        const double fz = dF_ir_glob[(irr * ns + s) * 3 + 2];
+                        dFold[p][s][0] = m(0, 0) * fx + m(0, 1) * fy + m(0, 2) * fz;
+                        dFold[p][s][1] = m(1, 0) * fx + m(1, 1) * fy + m(1, 2) * fz;
+                        dFold[p][s][2] = m(2, 0) * fx + m(2, 1) * fy + m(2, 2) * fz;
+                    }
+                }
 
                 calc_kappa(itemp, dFold, kappa_new);
                 //print kappa
@@ -1118,7 +1116,8 @@ void Iterativebte::iterative_solver()
     deallocate(kappa_new);
     deallocate(kappa_old);
     deallocate(fb);
-    deallocate(Wks);
+    deallocate(dF_ir_loc);
+    deallocate(dF_ir_glob);
     if (isotope->include_isotope) {
         deallocate(isotope_damping_loc);
         //deallocate(isotope_damping);
