@@ -38,6 +38,9 @@ public:
     void get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                             double ***phvel3_out) const;
 
+    void gather_group_velocities_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
+                                      double ***&vel_out, const double unit_factor, const bool bcast_full) const;
+
     void calc_phonon_velmat_mesh(std::complex<double> ****velmat_out) const;
 
     void get_phonon_group_velocity_bandstructure(const KpointBandStructure *kpoint_bs_in,

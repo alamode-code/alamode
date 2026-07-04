@@ -33,6 +33,8 @@ public:
 
     void setup_kappa();
 
+    void init_temperature_grid();
+
     void calc_anharmonic_imagself();
 
     void compute_kappa();

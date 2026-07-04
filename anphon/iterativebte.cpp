@@ -68,9 +68,7 @@ void Iterativebte::set_default_variables()
 
 void Iterativebte::deallocate_variables()
 {
-    if (Temperature) {
-        deallocate(Temperature);
-    }
+    // Temperature is a non-owning alias of conductivity->temperature.
     if (kappa) {
         deallocate(kappa);
     }
@@ -108,22 +106,15 @@ void Iterativebte::setup_iterative()
     // The 4ph channel follows conductivity->fph_rta, decided by the
     // INCLUDE_4PH tag at parse time (same as SOLVER = RTA).
 
-    // Temperature in K
-    ntemp = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
-    allocate(Temperature, ntemp);
+    // Temperature grid in K, owned by Conductivity (non-owning alias here).
+    conductivity->init_temperature_grid();
+    ntemp = conductivity->ntemp;
+    Temperature = conductivity->temperature;
 
-    for (auto i = 0; i < ntemp; ++i) {
-        Temperature[i] = system->Tmin + static_cast<double>(i) * system->dT;
-    }
-
-    // calculate vel
-
-    allocate(vel, nk_3ph, ns, 3); // velocity of the full grid
-    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*dos->kmesh_dos,
-                                                        system->get_primcell().lattice_vector,
-                                                        vel); //this will gather to rank0 process
-
-    MPI_Bcast(&vel[0][0][0], nk_3ph * ns * 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    // Full-grid velocities in atomic units on every rank (calc_kappa and
+    // the boundary rate convert units at the point of use).
+    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos, system->get_primcell().lattice_vector, vel, 1.0,
+                                                  true);
 
     allocate(kappa, ntemp, 3, 3);
 
@@ -779,7 +770,7 @@ void Iterativebte::iterative_solver()
         for (ik = 0; ik < nklocal; ik++) {
             auto tmpk = nk_l[ik];
             const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum; // k index in full grid
-            average_scalar_degenerate_at_k(k1, Q[ik]);
+            average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 1, Q[ik]);
         }
 
         for (ik = 0; ik < nk_3ph; ++ik) {
@@ -878,7 +869,8 @@ void Iterativebte::iterative_solver()
 
                 } // s1
 
-                average_vector_degenerate_at_k(k1, Wks_loc);
+                // Wks_loc is a contiguous [ns][3] block from allocate().
+                average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 3, Wks_loc[0]);
 
                 for (int s1 = 0; s1 < ns; ++s1) {
 
@@ -1043,81 +1035,6 @@ void Iterativebte::calc_boson(int itemp, double **&b_out, double **&dndt_out)
             dndt_out[ik][is] = pow2(1.0 / (2.0 * sinh(0.5 * x))) * x / etemp;
         }
     }
-}
-
-
-void Iterativebte::average_scalar_degenerate_at_k(int k1, double *&val)
-{
-    double *tmp_q;
-    double *tmp_omega;
-    allocate(tmp_q, ns);
-    allocate(tmp_omega, ns);
-
-    const auto tol_omega = 1.0e-7; // Approximately equal to 0.01 cm^{-1}
-    int s1, s2;
-
-    for (s1 = 0; s1 < ns; ++s1)
-        tmp_omega[s1] = dos->dymat_dos->get_eigenvalues()[k1][s1];
-
-    for (s1 = 0; s1 < ns; ++s1) {
-        double sum_scalar = 0.0;
-        int n_deg = 0;
-        for (s2 = 0; s2 < ns; ++s2) {
-            if (std::abs(tmp_omega[s2] - tmp_omega[s1]) < tol_omega) {
-                sum_scalar += val[s2];
-                n_deg += 1;
-            }
-        }
-        tmp_q[s1] = sum_scalar / static_cast<double>(n_deg);
-    }
-
-
-    for (s1 = 0; s1 < ns; ++s1)
-        val[s1] = tmp_q[s1];
-
-    deallocate(tmp_q);
-    deallocate(tmp_omega);
-}
-
-void Iterativebte::average_vector_degenerate_at_k(int k1, double **&val)
-{
-    double *tmp_omega;
-    allocate(tmp_omega, ns);
-    double **tmp_W;
-    allocate(tmp_W, ns, 3);
-
-    const auto tol_omega = 1.0e-7; // Approximately equal to 0.01 cm^{-1}
-    int s1, s2;
-
-    for (s1 = 0; s1 < ns; ++s1)
-        tmp_omega[s1] = dos->dymat_dos->get_eigenvalues()[k1][s1];
-
-    for (s1 = 0; s1 < ns; ++s1) {
-        double sum_vector[3];
-        for (auto i = 0; i < 3; ++i)
-            sum_vector[i] = 0.0;
-        int n_deg = 0;
-        for (s2 = 0; s2 < ns; ++s2) {
-            if (std::abs(tmp_omega[s2] - tmp_omega[s1]) < tol_omega) {
-                for (auto i = 0; i < 3; ++i) {
-                    sum_vector[i] += val[s2][i];
-                }
-                n_deg += 1;
-            }
-        }
-        for (auto i = 0; i < 3; ++i) {
-            tmp_W[s1][i] = sum_vector[i] / static_cast<double>(n_deg);
-        }
-    }
-
-    for (s1 = 0; s1 < ns; ++s1) {
-        for (auto i = 0; i < 3; ++i) {
-            val[s1][i] = tmp_W[s1][i];
-        }
-    }
-
-    deallocate(tmp_W);
-    deallocate(tmp_omega);
 }
 
 

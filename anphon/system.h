@@ -127,6 +127,19 @@ public:
 
     double Tmin, Tmax, dT;
 
+    // The temperature grid implied by TMIN/TMAX/DT. Every consumer of the
+    // grid must derive it from here so the point count and rounding agree
+    // across the code base.
+    std::vector<double> get_temperature_grid() const
+    {
+        const auto nt = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+        std::vector<double> grid(nt);
+        for (unsigned int i = 0; i < nt; ++i) {
+            grid[i] = Tmin + static_cast<double>(i) * dT;
+        }
+        return grid;
+    }
+
     int get_atomic_number_by_name(const std::string &);
 
     const std::vector<double> &get_invsqrt_mass() const;

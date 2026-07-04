@@ -305,6 +305,43 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     //    }
 }
 
+void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
+                                                  double ***&vel_out, const double unit_factor,
+                                                  const bool bcast_full) const
+{
+    // Allocate-and-fill wrapper around get_phonon_group_velocity_mesh_mpi
+    // shared by the RTA and IBTE setup paths. The gathered velocities live
+    // on rank 0 only unless bcast_full is set; other ranks get a dummy
+    // allocation. unit_factor is applied before the broadcast, so every
+    // caller states its unit convention in one place (1.0 keeps atomic
+    // units; Bohr_in_Angstrom * 1.0e-10 / time_ry converts to m/s). The
+    // caller owns and deallocates vel_out.
+    const auto nk = kmesh_in.nk;
+    const auto neval = dynamical->neval;
+
+    if (mympi->my_rank == 0 || bcast_full) {
+        allocate(vel_out, nk, neval, 3);
+    } else {
+        allocate(vel_out, 1, 1, 1);
+    }
+
+    get_phonon_group_velocity_mesh_mpi(kmesh_in, lavec_p, vel_out);
+
+    if (mympi->my_rank == 0 && unit_factor != 1.0) {
+        for (unsigned int i = 0; i < nk; ++i) {
+            for (unsigned int j = 0; j < neval; ++j) {
+                for (auto k = 0; k < 3; ++k) {
+                    vel_out[i][j][k] *= unit_factor;
+                }
+            }
+        }
+    }
+
+    if (bcast_full) {
+        MPI_Bcast(&vel_out[0][0][0], static_cast<int>(nk * neval * 3), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    }
+}
+
 void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out) const
 {
     const auto nk = dos->kmesh_dos->nk;

@@ -122,6 +122,21 @@ void Conductivity::deallocate_variables()
     delete phase_storage_4ph;
 }
 
+void Conductivity::init_temperature_grid()
+{
+    // Idempotent; shared by setup_kappa, setup_kappa_4ph (which runs without
+    // setup_kappa under SOLVER = IBTE) and Iterativebte, so a single grid
+    // instance exists regardless of the solver.
+    if (temperature) return;
+
+    const auto tgrid = system->get_temperature_grid();
+    ntemp = static_cast<unsigned int>(tgrid.size());
+    allocate(temperature, ntemp);
+    for (unsigned int i = 0; i < ntemp; ++i) {
+        temperature[i] = tgrid[i];
+    }
+}
+
 void Conductivity::setup_kappa()
 {
     MPI_Bcast(&calc_coherent, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -134,12 +149,7 @@ void Conductivity::setup_kappa()
     nk_3ph = dos->kmesh_dos->nk;
     ns = dynamical->neval;
 
-    ntemp = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
-    allocate(temperature, ntemp);
-
-    for (auto i = 0; i < ntemp; ++i) {
-        temperature[i] = system->Tmin + static_cast<double>(i) * system->dT;
-    }
+    init_temperature_grid();
 
     const auto nks_total = dos->kmesh_dos->nk_irred * ns;
     const auto nks_each_thread = nks_total / mympi->nprocs;
@@ -158,32 +168,16 @@ void Conductivity::setup_kappa()
         }
     }
 
-    const auto factor = Bohr_in_Angstrom * 1.0e-10 / time_ry;
-
-    if (mympi->my_rank == 0) {
-        allocate(vel, nk_3ph, ns, 3);
-        if (calc_coherent) {
-            allocate(velmat, nk_3ph, ns, ns, 3);
-        }
-    } else {
-        allocate(vel, 1, 1, 1);
-        if (calc_coherent) {
-            allocate(velmat, 1, 1, 1, 3);
-        }
-    }
-
-    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*dos->kmesh_dos, system->get_primcell().lattice_vector, vel);
-
-    if (mympi->my_rank == 0) {
-        for (auto i = 0; i < nk_3ph; ++i) {
-            for (auto j = 0; j < ns; ++j) {
-                for (auto k = 0; k < 3; ++k)
-                    vel[i][j][k] *= factor;
-            }
-        }
-    }
+    // Velocities in m/s on rank 0 (the only rank that assembles kappa).
+    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos, system->get_primcell().lattice_vector, vel,
+                                                  Bohr_in_Angstrom * 1.0e-10 / time_ry, false);
 
     if (calc_coherent) {
+        if (mympi->my_rank == 0) {
+            allocate(velmat, nk_3ph, ns, ns, 3);
+        } else {
+            allocate(velmat, 1, 1, 1, 3);
+        }
         phonon_velocity->calc_phonon_velmat_mesh(velmat);
         check_velocity_matrix_consistency(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues());
         if (calc_coherent == 2) {
@@ -209,14 +203,7 @@ void Conductivity::setup_kappa()
 
 void Conductivity::setup_kappa_4ph()
 {
-    if (!temperature) {
-        ntemp = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
-        allocate(temperature, ntemp);
-
-        for (auto i = 0; i < ntemp; ++i) {
-            temperature[i] = system->Tmin + static_cast<double>(i) * system->dT;
-        }
-    }
+    init_temperature_grid();
 
     ns = dynamical->neval;
     nk_3ph = dos->kmesh_dos->nk;
@@ -296,22 +283,9 @@ void Conductivity::setup_kappa_4ph()
     phase_storage_4ph = new PhaseFactorStorage(kmesh_4ph->nk_i);
     phase_storage_4ph->create(true);
 
-    if (mympi->my_rank == 0) {
-        allocate(vel_4ph, kmesh_4ph->nk, ns, 3);
-    } else {
-        allocate(vel_4ph, 1, 1, 1);
-    }
-    phonon_velocity->get_phonon_group_velocity_mesh_mpi(*kmesh_4ph, system->get_primcell().lattice_vector, vel_4ph);
-    const auto factor = Bohr_in_Angstrom * 1.0e-10 / time_ry;
-
-    if (mympi->my_rank == 0) {
-        for (auto i = 0; i < kmesh_4ph->nk; ++i) {
-            for (auto j = 0; j < ns; ++j) {
-                for (auto k = 0; k < 3; ++k)
-                    vel_4ph[i][j][k] *= factor;
-            }
-        }
-    }
+    // Velocities in m/s on rank 0, matching the 3ph channel.
+    phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph, system->get_primcell().lattice_vector, vel_4ph,
+                                                  Bohr_in_Angstrom * 1.0e-10 / time_ry, false);
 
     vks_job4.clear();
     for (auto i = 0; i < kmesh_4ph->nk_irred; ++i) {
@@ -1357,70 +1331,14 @@ void Conductivity::compute_kappa()
 void Conductivity::average_self_energy_at_degenerate_point(const int m, const KpointMeshUniform *kmesh_in,
                                                            const double *const *eval_in, double **damping) const
 {
-    int j, k, l;
+    // damping rows are contiguous [nk_irred * ns][m], so each irreducible k
+    // exposes an [ns][m] block for the shared averaging kernel.
     const auto nkr = kmesh_in->nk_irred;
-
-    double *eval_tmp;
-    const auto tol_omega = 1.0e-7; // Approximately equal to 0.01 cm^{-1}
-
-    std::vector<int> degeneracy_at_k;
-
-    allocate(eval_tmp, ns);
-
-    double *damping_sum;
-
-    allocate(damping_sum, m);
 
     for (auto i = 0; i < nkr; ++i) {
         const auto ik = kmesh_in->kpoint_irred_all[i][0].knum;
-
-        for (j = 0; j < ns; ++j)
-            eval_tmp[j] = eval_in[ik][j];
-
-        degeneracy_at_k.clear();
-
-        auto omega_prev = eval_tmp[0];
-        auto ideg = 1;
-
-        for (j = 1; j < ns; ++j) {
-            const auto omega_now = eval_tmp[j];
-
-            if (std::abs(omega_now - omega_prev) < tol_omega) {
-                ++ideg;
-            } else {
-                degeneracy_at_k.push_back(ideg);
-                ideg = 1;
-                omega_prev = omega_now;
-            }
-        }
-        degeneracy_at_k.push_back(ideg);
-
-        int is = 0;
-        for (j = 0; j < degeneracy_at_k.size(); ++j) {
-            ideg = degeneracy_at_k[j];
-
-            if (ideg > 1) {
-
-                for (l = 0; l < m; ++l)
-                    damping_sum[l] = 0.0;
-
-                for (k = is; k < is + ideg; ++k) {
-                    for (l = 0; l < m; ++l) {
-                        damping_sum[l] += damping[ns * i + k][l];
-                    }
-                }
-
-                for (k = is; k < is + ideg; ++k) {
-                    for (l = 0; l < m; ++l) {
-                        damping[ns * i + k][l] = damping_sum[l] / static_cast<double>(ideg);
-                    }
-                }
-            }
-
-            is += ideg;
-        }
+        average_over_degenerate_modes(ns, eval_in[ik], m, damping[ns * i]);
     }
-    deallocate(damping_sum);
 }
 
 void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, const double *const *eval_in,

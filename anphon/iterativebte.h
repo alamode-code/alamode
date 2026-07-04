@@ -57,7 +57,7 @@ public:
     void do_iterativebte(); // wrapper
 
     bool do_iterative;
-    double *Temperature;
+    double *Temperature; // non-owning alias of conductivity->temperature
     unsigned int ntemp;
 
     int max_cycle;
@@ -118,10 +118,6 @@ private:
     void setup_L_tetra();
 
     void calc_Q_from_L(double **&, double **&); // calculate Q
-
-    void average_vector_degenerate_at_k(int, double **&);
-
-    void average_scalar_degenerate_at_k(int, double *&);
 
     void calc_boson(int, double **&, double **&);
 
