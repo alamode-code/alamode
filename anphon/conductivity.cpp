@@ -333,6 +333,25 @@ void Conductivity::setup_kappa_4ph()
     prepare_restart(-1);
 }
 
+void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_dense_in,
+                                                 double **damping4_dense_out)
+{
+    // Compute the 4ph SERTA linewidths on the (possibly coarser) 4ph mesh
+    // and interpolate them onto kmesh_dense_in. Serves SOLVER = IBTE, where
+    // the 4ph channel enters the diagonal of the collision operator only.
+    // damping4_dense_out must be allocated contiguously on every rank with
+    // shape [kmesh_dense_in->nk_irred * ns][ntemp]; rows are ik_irred * ns + is.
+    setup_kappa_4ph();
+    calc_anharmonic_imagself4();
+
+    if (mympi->my_rank == 0) {
+        interpolate_data(kmesh_4ph, kmesh_dense_in, damping4, damping4_dense_out);
+    }
+
+    MPI_Bcast(&damping4_dense_out[0][0], static_cast<int>(kmesh_dense_in->nk_irred * ns * ntemp), MPI_DOUBLE, 0,
+              MPI_COMM_WORLD);
+}
+
 
 void Conductivity::prepare_restart(const int mode)
 {

@@ -26,8 +26,6 @@ namespace PHON_NS
 class Conductivity: protected Pointers
 {
 
-    friend class Iterativebte;
-
 public:
     Conductivity(class PHON *);
 
@@ -38,6 +36,8 @@ public:
     void calc_anharmonic_imagself();
 
     void compute_kappa();
+
+    void compute_damping4_interpolated(const KpointMeshUniform *kmesh_dense_in, double **damping4_dense_out);
 
     int calc_kappa_spec;
     unsigned int ntemp;

@@ -105,7 +105,8 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(&mixing_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&convergence_criteria, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    if (anharmonic_core->quartic_mode > 0) conductivity->fph_rta = 1;
+    // The 4ph channel follows conductivity->fph_rta, decided by the
+    // INCLUDE_4PH tag at parse time (same as SOLVER = RTA).
 
     // Temperature in K
     ntemp = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
@@ -596,46 +597,24 @@ void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
 
 void Iterativebte::calc_damping4()
 {
-    // call conductivity to do the 4ph part
-    conductivity->fph_rta = 1;
+    // 4ph linewidths from the SERTA machinery in Conductivity, interpolated
+    // onto the dense 3ph mesh and scattered to the local k points here.
+    double **damping4_dense = nullptr;
+    allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-    conductivity->setup_kappa_4ph();
-    conductivity->calc_anharmonic_imagself4();
-
-    double ***damping4_ir = nullptr;
-    allocate(damping4_ir, ntemp, dos->kmesh_dos->nk_irred, ns);
-
-    if (mympi->my_rank == 0) {
-
-        double **damping4_dense = nullptr;
-        allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
-
-        conductivity->interpolate_data(conductivity->kmesh_4ph, dos->kmesh_dos, conductivity->damping4, damping4_dense);
-
-        for (auto itemp = 0; itemp < ntemp; ++itemp) {
-            for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ++ik) {
-                for (auto is = 0; is < ns; ++is) {
-                    damping4_ir[itemp][ik][is] = damping4_dense[ik * ns + is][itemp];
-                }
-            }
-        }
-
-        deallocate(damping4_dense);
-    }
-
-    MPI_Bcast(&damping4_ir[0][0][0], ntemp * dos->kmesh_dos->nk_irred * ns, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    conductivity->compute_damping4_interpolated(dos->kmesh_dos, damping4_dense);
 
     allocate(damping4, ntemp, nklocal, ns);
     for (auto ik = 0; ik < nklocal; ++ik) {
         auto tmpk = nk_l[ik];
         for (auto itemp = 0; itemp < ntemp; ++itemp) {
             for (auto is = 0; is < ns; ++is) {
-                damping4[itemp][ik][is] = damping4_ir[itemp][tmpk][is];
+                damping4[itemp][ik][is] = damping4_dense[tmpk * ns + is][itemp];
             }
         }
     }
 
-    deallocate(damping4_ir);
+    deallocate(damping4_dense);
 }
 
 void Iterativebte::iterative_solver()
