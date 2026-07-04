@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <vector>
 #include "anharmonic_core.h"
 #include "conductivity.h"
@@ -11,7 +10,6 @@
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
-#include "interpolation.h"
 #include "isotope.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -49,7 +47,6 @@ void Iterativebte::set_default_variables()
 {
     // public
     do_iterative = true;
-    direct_solution = false;
     Temperature = nullptr;
     ntemp = 0;
     min_cycle = 5;
@@ -58,7 +55,7 @@ void Iterativebte::set_default_variables()
     convergence_criteria = 0.02;
     kappa = nullptr;
     use_triplet_symmetry = true;
-    sym_permutation = true;
+    sym_permutation = false;
 
     // private
     vel = nullptr;
@@ -109,9 +106,6 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(&convergence_criteria, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (anharmonic_core->quartic_mode > 0) conductivity->fph_rta = 1;
-
-    sym_permutation = false;
-    use_triplet_symmetry = true;
 
     // Temperature in K
     ntemp = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
@@ -190,6 +184,33 @@ void Iterativebte::get_triplets()
 
     kplength_emitt = counter; // remember number of unique pairs
     kplength_absorb = counter2;
+
+    // Flattened triplet index shared by setup_L_*, calc_Q_from_L and the
+    // iteration loop: row of triplet j of local k point ik in L is
+    // offset_*[ik] + j.
+    pairs_emitt.clear();
+    pairs_absorb.clear();
+    offset_emitt.assign(nklocal, 0);
+    offset_absorb.assign(nklocal, 0);
+
+    for (int ik = 0; ik < nklocal; ++ik) {
+        offset_emitt[ik] = static_cast<int>(pairs_emitt.size());
+        for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+            pairs_emitt.push_back({ik, static_cast<int>(j)});
+        }
+    }
+    for (int ik = 0; ik < nklocal; ++ik) {
+        offset_absorb[ik] = static_cast<int>(pairs_absorb.size());
+        for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+            pairs_absorb.push_back({ik, static_cast<int>(j)});
+        }
+    }
+    if (pairs_emitt.size() != static_cast<size_t>(kplength_emitt)) {
+        exit("get_triplets", "Emitt: pair length not equal!");
+    }
+    if (pairs_absorb.size() != static_cast<size_t>(kplength_absorb)) {
+        exit("get_triplets", "absorb: pair length not equal!");
+    }
 }
 
 void Iterativebte::do_iterativebte()
@@ -230,26 +251,9 @@ void Iterativebte::setup_L_smear()
     const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
     const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
 
-    // Flatten the (local k, triplet) index pairs: the row in L equals the
-    // flattened position, and the loop parallelizes over triplets with the
+    // The loops run over the flattened triplet index (pairs_emitt/absorb,
+    // built in get_triplets) and parallelize over triplets with the
     // thread-safe serial V3 (per-thread reciprocal-FC3 workspace).
-    std::vector<std::array<int, 2>> pairs_emitt, pairs_absorb;
-    for (int ik = 0; ik < nklocal; ++ik) {
-        for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
-            pairs_emitt.push_back({ik, static_cast<int>(j)});
-        }
-    }
-    for (int ik = 0; ik < nklocal; ++ik) {
-        for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
-            pairs_absorb.push_back({ik, static_cast<int>(j)});
-        }
-    }
-    if (pairs_emitt.size() != kplength_emitt) {
-        exit("setup_L", "Emitt: pair length not equal!");
-    }
-    if (pairs_absorb.size() != kplength_absorb) {
-        exit("setup_L", "absorb: pair length not equal!");
-    }
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -366,26 +370,6 @@ void Iterativebte::setup_L_tetra()
     allocate(kmap_identity, nk_3ph);
     for (auto i = 0; i < nk_3ph; ++i)
         kmap_identity[i] = i;
-
-    // Flattened (local k, triplet) index pairs; the row in L equals the
-    // flattened position.
-    std::vector<std::array<int, 2>> pairs_emitt, pairs_absorb;
-    for (int ik = 0; ik < nklocal; ++ik) {
-        for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
-            pairs_emitt.push_back({ik, static_cast<int>(j)});
-        }
-    }
-    for (int ik = 0; ik < nklocal; ++ik) {
-        for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
-            pairs_absorb.push_back({ik, static_cast<int>(j)});
-        }
-    }
-    // Offset of each local k in the flattened order
-    std::vector<int> offset_emitt(nklocal, 0), offset_absorb(nklocal, 0);
-    for (int ik = 1; ik < nklocal; ++ik) {
-        offset_emitt[ik] = offset_emitt[ik - 1] + static_cast<int>(localnk_triplets_emitt[ik - 1].size());
-        offset_absorb[ik] = offset_absorb[ik - 1] + static_cast<int>(localnk_triplets_absorb[ik - 1].size());
-    }
 
     const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
     const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
@@ -532,7 +516,6 @@ void Iterativebte::setup_L_tetra()
 void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
 {
     int s1, s2, s3;
-    double ph1;
     double n1, n2, n3;
 
     double **Qemit;
@@ -547,10 +530,7 @@ void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
         }
     }
 
-    unsigned int counter;
-
     // emit
-    counter = 0;
     for (auto ik = 0; ik < nklocal; ++ik) {
 
         auto tmpk = nk_l[ik];
@@ -571,18 +551,14 @@ void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
                     s3 = ib % ns;
                     n2 = n[k2][s2];
                     n3 = n[k3][s3];
-                    Qemit[ik][s1] += 0.5 * (n1 * (n2 + 1.0) * (n3 + 1.0)) * L_emitt[counter][s1][ib] * multi;
+                    Qemit[ik][s1] += 0.5 * (n1 * (n2 + 1.0) * (n3 + 1.0)) * L_emitt[offset_emitt[ik] + j][s1][ib] *
+                                     multi;
                 }
             }
-            counter += 1;
         }
-    }
-    if (counter != kplength_emitt) {
-        exit("setup_L", "Emitt: pair length not equal!");
     }
 
     // absorb k1 + k2 -> -k3
-    counter = 0;
     for (auto ik = 0; ik < nklocal; ++ik) {
 
         auto tmpk = nk_l[ik];
@@ -603,15 +579,10 @@ void Iterativebte::calc_Q_from_L(double **&n, double **&q1)
                     s3 = ib % ns;
                     n2 = n[k2][s2];
                     n3 = n[k3][s3];
-                    Qabsorb[ik][s1] += (n1 * n2 * (n3 + 1.0)) * L_absorb[counter][s1][ib] * multi;
+                    Qabsorb[ik][s1] += (n1 * n2 * (n3 + 1.0)) * L_absorb[offset_absorb[ik] + j][s1][ib] * multi;
                 }
             }
-            counter += 1;
         }
-    }
-
-    if (counter != kplength_absorb) {
-        exit("setup_L", "absorb: pair length not equal!");
     }
 
     for (auto ik = 0; ik < nklocal; ++ik) {
@@ -665,49 +636,6 @@ void Iterativebte::calc_damping4()
     }
 
     deallocate(damping4_ir);
-}
-
-void Iterativebte::calc_anharmonic_imagself4()
-{
-    // TODO: merge this duplicate function to conductivity class
-    unsigned int i;
-    unsigned int *nks_thread;
-
-    // Distribute (k,s) to individual MPI threads
-    allocate(damping4, ntemp, nklocal, ns);
-
-    double *damping4_loc;
-    allocate(damping4_loc, ntemp);
-
-    if (mympi->my_rank == 0) {
-        std::cout << '\n';
-        std::cout << " Computing 4-phonon scattering amplitude ... " << '\n';
-        std::cout << " WARNING: This is very expensive!! Please be patient." << '\n';
-    }
-
-    for (auto ik = 0; ik < nklocal; ++ik) {
-        auto tmpk = nk_l[ik];
-        auto k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
-        for (auto s1 = 0; s1 < ns; ++s1) {
-            auto omega = dos->dymat_dos->get_eigenvalues()[k1][s1];
-
-            anharmonic_core->calc_damping4_smearing(ntemp,
-                                                    Temperature,
-                                                    omega,
-                                                    tmpk,
-                                                    s1,
-                                                    dos->kmesh_dos,
-                                                    dos->dymat_dos->get_eigenvalues(),
-                                                    dos->dymat_dos->get_eigenvectors(),
-                                                    damping4_loc);
-
-            for (auto itemp = 0; itemp < ntemp; ++itemp) {
-                damping4[itemp][ik][s1] = damping4_loc[itemp];
-            }
-        }
-    }
-
-    deallocate(damping4_loc);
 }
 
 void Iterativebte::iterative_solver()
@@ -792,34 +720,6 @@ void Iterativebte::iterative_solver()
 
     // we solve iteratively for each temperature
     int ik, is, ix, iy;
-    double n1, n2, n3;
-
-    // generate index for, emitt
-    std::vector<std::vector<int>> ikp_emitt;
-    ikp_emitt.clear();
-    int cnt = 0;
-    for (ik = 0; ik < nklocal; ++ik) {
-        std::vector<int> counterk;
-        counterk.clear();
-        for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
-            counterk.push_back(cnt);
-            cnt += 1;
-        }
-        ikp_emitt.push_back(counterk);
-    }
-    // absorb
-    std::vector<std::vector<int>> ikp_absorb;
-    ikp_absorb.clear();
-    cnt = 0;
-    for (ik = 0; ik < nklocal; ++ik) {
-        std::vector<int> counterk;
-        counterk.clear();
-        for (auto j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
-            counterk.push_back(cnt);
-            cnt += 1;
-        }
-        ikp_absorb.push_back(counterk);
-    }
 
     const int nsym = symmetry->SymmList.size();
 
@@ -948,7 +848,7 @@ void Iterativebte::iterative_solver()
                     for (size_t j = 0; j < localnk_triplets_emitt[ikl].size(); ++j) {
 
                         const auto &pair = localnk_triplets_emitt[ikl][j];
-                        const int kp_index = ikp_emitt[ikl][j];
+                        const int kp_index = offset_emitt[ikl] + static_cast<int>(j);
 
                         for (size_t ig = 0; ig < pair.group.size(); ig++) {
 
@@ -974,7 +874,7 @@ void Iterativebte::iterative_solver()
                     for (size_t j = 0; j < localnk_triplets_absorb[ikl].size(); ++j) {
 
                         const auto &pair = localnk_triplets_absorb[ikl][j];
-                        const int kp_index = ikp_absorb[ikl][j];
+                        const int kp_index = offset_absorb[ikl] + static_cast<int>(j);
 
                         for (size_t ig = 0; ig < pair.group.size(); ig++) {
 
@@ -1351,7 +1251,6 @@ void Iterativebte::write_result()
 {
     // write Q and W for all phonon, only phonon in irreducible BZ is written
     int i;
-    int nk_ir = dos->kmesh_dos->nk_irred;
     double Ry_to_kayser = Hz_to_kayser / time_ry;
 
     if (mympi->my_rank == 0) {

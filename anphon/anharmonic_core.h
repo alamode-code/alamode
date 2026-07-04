@@ -126,16 +126,6 @@ public:
                                   const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                   double *ret);
 
-    void calc_damping4_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
-                                const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
-                                const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                double *ret);
-
-    void calc_damping4_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
-                                const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
-                                const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                const PhaseFactorStorage *phase_storage_in, double *ret);
-
     void calc_damping4_smearing_batch(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                       const unsigned int ik_in, const unsigned int is_in,
                                       const KpointMeshUniform *kmesh_in, const double *const *eval_in,

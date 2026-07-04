@@ -35,6 +35,7 @@ Improvement:
 
 #pragma once
 
+#include <array>
 #include <complex>
 #include <fstream>
 #include <set>
@@ -56,7 +57,6 @@ public:
     void do_iterativebte(); // wrapper
 
     bool do_iterative;
-    bool direct_solution;
     double *Temperature;
     unsigned int ntemp;
 
@@ -67,8 +67,6 @@ public:
     double convergence_criteria; // dF(i+1) - dF(i) < cc
 
     double ***kappa;
-    bool use_triplet_symmetry;
-    bool sym_permutation;
 
     std::fstream fs_result;
 
@@ -76,6 +74,9 @@ private:
     void set_default_variables();
 
     void deallocate_variables();
+
+    bool use_triplet_symmetry;
+    bool sym_permutation;
 
     int kplength_emitt;
     int kplength_absorb;
@@ -91,22 +92,22 @@ private:
     double ***dFnew;
 
     double ***damping4; // four phonon selfenergy
-    void calc_anharmonic_imagself4();
 
     void calc_damping4();
 
     std::vector<std::vector<KsListGroup>> localnk_triplets_emitt;
     std::vector<std::vector<KsListGroup>> localnk_triplets_absorb;
 
-    std::vector<int> nk_l, nk_job;
+    std::vector<int> nk_l;
 
-    //std::vector<std::vector<int>> ikp_emitt;
-    //std::vector<std::vector<int>> ikp_absorb;
+    // Flattened (local irreducible k, triplet) index built once in
+    // get_triplets(): the row of a triplet in L_emitt/L_absorb is
+    // offset_*[ik] + j, and pairs_* lists all rows as (ik, j) for loops
+    // that parallelize over the flat index directly.
+    std::vector<std::array<int, 2>> pairs_emitt, pairs_absorb;
+    std::vector<int> offset_emitt, offset_absorb;
 
     void iterative_solver(); // calculate kappa iteratively
-    void direct_solver();    // calculate kappa iteratively
-
-    //void setup_kpindex();
 
     void calc_kappa(int, double ***&, double **&); // calculate kappa with off equilibrium part
 
@@ -117,8 +118,6 @@ private:
     void setup_L_tetra();
 
     void calc_Q_from_L(double **&, double **&); // calculate Q
-
-    void calc_Q_directly(double **&, double **&);
 
     void average_vector_degenerate_at_k(int, double **&);
 
