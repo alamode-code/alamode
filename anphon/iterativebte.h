@@ -35,12 +35,10 @@ Improvement:
 
 #pragma once
 
-#include <array>
-#include <complex>
 #include <fstream>
-#include <set>
+#include <memory>
 #include <vector>
-#include "kpoint.h"
+#include "collision_operator.h"
 #include "pointers.h"
 
 namespace PHON_NS
@@ -74,49 +72,29 @@ private:
 
     void deallocate_variables();
 
-    bool use_triplet_symmetry;
-    bool sym_permutation;
-
-    int kplength_emitt;
-    int kplength_absorb;
     int nk_3ph, nklocal, ns, ns2;
 
-    // calculated at equilibrium
-    double ***L_absorb; // L q0 + q1 -> q2
-    double ***L_emitt;  // L q0 -> q1 + q2
+    // The distributed 3ph collision operator (L matrices, wedge
+    // distribution, symmetry expansion); this class is the Jacobi solver
+    // on top of it.
+    std::unique_ptr<CollisionOperator> collision_op;
+
     double ***vel;
 
     // linear response to deltaT
     double ***dFold;
-    double ***dFnew;
 
     double ***damping4; // four phonon selfenergy
 
     void calc_damping4();
 
-    std::vector<std::vector<KsListGroup>> localnk_triplets_emitt;
-    std::vector<std::vector<KsListGroup>> localnk_triplets_absorb;
-
+    // Local copy of the operator's wedge distribution (irreducible k
+    // indices handled by this rank).
     std::vector<int> nk_l;
-
-    // Flattened (local irreducible k, triplet) index built once in
-    // get_triplets(): the row of a triplet in L_emitt/L_absorb is
-    // offset_*[ik] + j, and pairs_* lists all rows as (ik, j) for loops
-    // that parallelize over the flat index directly.
-    std::vector<std::array<int, 2>> pairs_emitt, pairs_absorb;
-    std::vector<int> offset_emitt, offset_absorb;
 
     void iterative_solver(); // calculate kappa iteratively
 
     void calc_kappa(int, double ***&, double **&); // calculate kappa with off equilibrium part
-
-    void get_triplets(); // set up all triplets
-
-    void setup_L_smear();
-
-    void setup_L_tetra();
-
-    void calc_Q_from_L(double **&, double **&); // calculate Q
 
     void calc_boson(int, double **&, double **&);
 
