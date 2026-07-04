@@ -414,6 +414,32 @@ Description of input variables
                flags of the state file are enforced as for a direct
                ``FC2_TEMPERATURE`` read.
 
+               ``DFC2FILE`` never replaces the harmonic FC2 — it is purely additive.
+               The base FC2 follows the usual precedence (``FC2FILE`` if given,
+               otherwise ``FCSFILE``), and ``FC2_TEMPERATURE`` refers to ``DFC2FILE``
+               when it is present. The resulting combinations are:
+
+               .. list-table::
+                  :header-rows: 1
+                  :widths: 55 45
+
+                  * - Input combination
+                    - Resulting FC2
+                  * - ``FCSFILE`` only
+                    - base from ``FCSFILE``
+                  * - ``FCSFILE`` + ``FC2FILE``
+                    - base from ``FC2FILE`` (FC3/FC4 from ``FCSFILE``)
+                  * - either of the above + ``DFC2FILE`` + ``FC2_TEMPERATURE``
+                    - same base **+** :math:`\Delta\Phi(T)` from ``DFC2FILE``
+                  * - ``FC2FILE`` = ``PREFIX``.scph.h5 + ``FC2_TEMPERATURE``, no ``DFC2FILE``
+                    - total (base + :math:`\Delta\Phi(T)`) read directly from the state file
+
+               Note that the crystal structure is still taken from
+               ``FCSFILE``/``FC2FILE``; ``DFC2FILE`` contributes force-constant
+               corrections only. Giving a state file as the harmonic FC2 source
+               *together with* ``DFC2FILE`` uses only its coarse-mesh-folded base
+               FC2 and prints a warning, since that is rarely intended.
+
 ````
 
 .. _anphon_allow_unconverged:

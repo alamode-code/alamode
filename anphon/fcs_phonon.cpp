@@ -455,6 +455,14 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     // stored in an SCPH/QHA state file instead of the base values. When
     // DFC2FILE is given, FC2_TEMPERATURE refers to that correction file
     // instead and the main FC2 file is read as-is.
+    if (order == 0 && !file_dfc2.empty() &&
+        file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values")) {
+        warn("parse_fcs_from_h5",
+             "The harmonic FC2 source is itself an SCPH/QHA state file while DFC2FILE is also given:\n"
+             " only the (coarse-mesh folded) base FC2 of this file is used here, and the anharmonic\n"
+             " correction is taken from DFC2FILE. This is probably not what you want — give the\n"
+             " original harmonic FC2 file instead, or drop DFC2FILE to read the total FC2 directly.");
+    }
     int temperature_index = -1;
     if (order == 0 && fc2_temperature >= 0.0 && file_dfc2.empty()) {
         if (!file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values")) {
