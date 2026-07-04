@@ -610,7 +610,17 @@ void Conductivity::setup_result_io(const int mode)
                                              build_kappa_channel_meta(mode),
                                              !restart_flag_3ph);
             } else if (mode == -1) {
-                result_io_h5->ensure_channel(build_kappa_channel_meta(mode), !restart_flag_4ph);
+                if (!result_io_h5) {
+                    // SOLVER = IBTE reaches the 4ph channel directly through
+                    // setup_kappa_4ph() without the 3ph setup path having
+                    // created the file first.
+                    result_io_h5 = std::make_unique<KappaResultIOH5>(file_kappa_h5);
+                    result_io_h5->open_or_create(build_kappa_file_meta(),
+                                                 build_kappa_channel_meta(mode),
+                                                 !restart_flag_4ph);
+                } else {
+                    result_io_h5->ensure_channel(build_kappa_channel_meta(mode), !restart_flag_4ph);
+                }
             } else {
                 exit("setup_result_io", "this could not happen");
             }
