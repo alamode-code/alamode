@@ -106,6 +106,17 @@ ANPHON: Output files
  restart mode is on (``RESTART = 1`` / ``RESTART_4PH = 1``). Written with the
  default ``FILE_FORMAT = h5``; readable with h5py.
 
+ When the run uses a temperature-dependent basis
+ (:ref:`FC2_TEMPERATURE <anphon_fc2_temperature>` with an SCPH/QHA state
+ file), the file switches to a temperature-resolved layout
+ (``format_version = 2``): frequencies, group velocities, linewidths, and
+ kappa are stored separately for each temperature, and runs at different
+ basis temperatures accumulate into the same file — its temperature grid
+ grows as new temperatures are computed, so a full kappa-vs-T sweep on top
+ of SCPH/QHA ends up in a single portable file. Set
+ ``TMIN = TMAX = FC2_TEMPERATURE`` in each run so that every kappa value is
+ computed with the self-consistent basis of its own temperature.
+
 * ``PREFIX``.result
 
  Legacy text counterpart of ``PREFIX``.kappa.h5, written when

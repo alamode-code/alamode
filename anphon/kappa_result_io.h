@@ -42,6 +42,16 @@ struct KappaFileMetaH5
     bool with_kappa_coherent_block = false;
     bool with_kappa_spec = false;
     std::vector<double> energy_axis;    // cm^-1; used when with_kappa_spec
+
+    // Temperature-resolved mode (format_version 2), used when the run's
+    // harmonic basis is itself temperature dependent (FC2_TEMPERATURE with
+    // an SCPH/QHA state file): frequencies, velocities, gammas, and kappa
+    // are stored per temperature, completion flags become per (mode, T),
+    // and runs at different temperatures accumulate into one file whose
+    // temperature grid grows by union.
+    bool temperature_resolved = false;
+    double fc2_temperature = -1.0;      // basis temperature of this run
+    std::string fc2_source;             // file the renormalized FC2 came from
 };
 
 // Static description of one scattering channel ("3ph" or "4ph"): its k mesh

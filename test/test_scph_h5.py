@@ -145,6 +145,62 @@ def check_fc2_temperature(anphonbin, project_root):
     return 0
 
 
+def check_kappa_on_scph(anphonbin):
+    # Kappa on top of SCPH: one RTA run per basis temperature, all
+    # accumulating into a single temperature-resolved kappa.h5 (v2 layout).
+    def gen_rta(temp, fname):
+        with open(fname, "w") as f:
+            f.write("&general\n PREFIX = kbto; MODE = RTA; FCSFILE = cBTO222.h5;\n")
+            f.write(" FC2FILE = %s.scph.h5; FC2_TEMPERATURE = %d; TMIN = %d; TMAX = %d\n/\n"
+                    % (PREFIX, temp, temp, temp))
+            f.write("&kpoint\n 2\n 2 2 2\n/\n")
+
+    for temp in (280, 300):
+        gen_rta(temp, "rta_%d.in" % temp)
+        if run_anphon(anphonbin, "rta_%d.in" % temp, "rta_%d.log" % temp) != 0:
+            print("kappa run at %d K failed" % temp)
+            return 1
+
+    with h5py.File("kbto.kappa.h5", "r") as f:
+        if f.attrs["format_version"] != 2 or f.attrs["temperature_resolved"] != 1:
+            print("temperature-resolved layout attributes are wrong")
+            return 1
+        if not np.allclose(f["metadata/temperatures"][...], [280.0, 300.0]):
+            print("merged temperature grid is wrong")
+            return 1
+        if not np.allclose(f["metadata/fc2_temperatures"][...], [280.0, 300.0]):
+            print("fc2_temperatures record is wrong")
+            return 1
+        g = f["scattering/3ph"]
+        freq = g["frequencies"][...]
+        if freq.ndim != 3 or freq.shape[0] != 2 or g["velocities"].shape[0] != 2:
+            print("per-temperature basis datasets have wrong shapes")
+            return 1
+        if np.allclose(freq[0], freq[1]):
+            print("SCPH bases at 280 K and 300 K should differ")
+            return 1
+        if not g["gamma_computed"][...].all():
+            print("per-(mode, T) flags are not all set")
+            return 1
+        if not (f["kappa/valid"][...] == 1).all():
+            print("per-temperature kappa validity flags are not set")
+            return 1
+
+    # Rerunning one temperature must be a per-column no-op restart.
+    if run_anphon(anphonbin, "rta_280.in", "rta_280_restart.log") != 0:
+        print("kappa restart run failed")
+        return 1
+    with open("rta_280_restart.log") as f:
+        if "Total Number of phonon modes to be calculated : 0" not in f.read():
+            print("per-column restart recomputed modes")
+            return 1
+    with h5py.File("kbto.kappa.h5", "r") as f:
+        if not (f["kappa/valid"][...] == 1).all():
+            print("restart clobbered another temperature's validity")
+            return 1
+    return 0
+
+
 def runtest_scph_h5(anphonbin, project_root):
     scph_example_dir = os.path.join(project_root, "example", "BaTiO3", "scph_relax")
     reference_dir = os.path.join(scph_example_dir, "reference_for_test")
@@ -165,6 +221,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_fc2_temperature(anphonbin, project_root):
         return 1
     print("FC2_TEMPERATURE vs dfc2.py --> pass")
+
+    if check_kappa_on_scph(anphonbin):
+        return 1
+    print("Kappa on SCPH (temperature-resolved kappa.h5) --> pass")
 
     return 0
 

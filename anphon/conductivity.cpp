@@ -603,6 +603,16 @@ void Conductivity::setup_result_io(const int mode)
         // are imported once (read-only) when the h5 has no data yet.
         if (mympi->my_rank == 0) {
             if (mode == 1) {
+                if (fcs_phonon->fc2_temperature >= 0.0) {
+                    std::cout << "\n FC2_TEMPERATURE is active: " << file_kappa_h5
+                              << " uses the temperature-resolved layout;\n"
+                              << " runs at different basis temperatures accumulate into this file.\n";
+                    if (ntemp != 1 || std::abs(temperature[0] - fcs_phonon->fc2_temperature) >= eps6) {
+                        warn("setup_result_io",
+                             "TMIN = TMAX = FC2_TEMPERATURE is recommended so that each kappa value\n"
+                             " is computed with the self-consistent basis of its own temperature.");
+                    }
+                }
                 if (!result_io_h5) {
                     result_io_h5 = std::make_unique<KappaResultIOH5>(file_kappa_h5);
                 }
@@ -722,6 +732,14 @@ KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
     if (meta.with_kappa_spec) {
         meta.energy_axis = dos->energy_dos;
     }
+
+    // A run whose harmonic basis comes from an SCPH/QHA state file at a
+    // given temperature (FC2_TEMPERATURE) uses the temperature-resolved
+    // file layout: runs at different basis temperatures accumulate into
+    // the same PREFIX.kappa.h5.
+    meta.temperature_resolved = fcs_phonon->fc2_temperature >= 0.0;
+    meta.fc2_temperature = fcs_phonon->fc2_temperature;
+    meta.fc2_source = fcs_phonon->file_fc2.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc2;
     return meta;
 }
 
@@ -807,6 +825,9 @@ void Conductivity::import_legacy_result_text(const int mode)
     // only when the h5 file holds no data for this channel yet.
     const auto restart_wanted = (mode == 1) ? restart_flag_3ph : restart_flag_4ph;
     if (!restart_wanted) return;
+
+    // Legacy text files know nothing about a temperature-dependent basis.
+    if (fcs_phonon->fc2_temperature >= 0.0) return;
 
     const auto &file_legacy = (mode == 1) ? file_result3 : file_result4;
     struct stat st

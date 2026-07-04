@@ -383,7 +383,10 @@ Description of input variables
                needed. The temperature must be one of the values on the file's
                temperature grid. The stored FC2 is the short-range part; the
                non-analytic long-range term is added at runtime from ``BORNINFO``
-               as usual.
+               as usual. In ``MODE = RTA``, this tag also switches
+               ``PREFIX``.kappa.h5 to its temperature-resolved layout so that
+               runs at different basis temperatures accumulate into one file
+               (set ``TMIN = TMAX = FC2_TEMPERATURE`` per run).
 
 ````
 
