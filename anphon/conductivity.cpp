@@ -62,13 +62,11 @@ void Conductivity::set_default_variables()
     kappa_3only = nullptr;
     kappa_spec = nullptr;
     kappa_coherent = nullptr;
-    kappa_coherent_block = nullptr;
     temperature = nullptr;
     vel = nullptr;
     vel_4ph = nullptr;
     velmat = nullptr;
     calc_coherent = 0;
-    calc_coherent_block = 0;
     file_coherent_elems = "";
     nshift_restart = 0;
     nshift_restart4 = 0;
@@ -107,9 +105,6 @@ void Conductivity::deallocate_variables()
     if (kappa_coherent) {
         deallocate(kappa_coherent);
     }
-    if (kappa_coherent_block) {
-        deallocate(kappa_coherent_block);
-    }
     if (temperature) {
         deallocate(temperature);
     }
@@ -130,7 +125,6 @@ void Conductivity::deallocate_variables()
 void Conductivity::setup_kappa()
 {
     MPI_Bcast(&calc_coherent, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&calc_coherent_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&restart_flag_3ph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
@@ -168,12 +162,12 @@ void Conductivity::setup_kappa()
 
     if (mympi->my_rank == 0) {
         allocate(vel, nk_3ph, ns, 3);
-        if (calc_coherent || calc_coherent_block) {
+        if (calc_coherent) {
             allocate(velmat, nk_3ph, ns, ns, 3);
         }
     } else {
         allocate(vel, 1, 1, 1);
-        if (calc_coherent || calc_coherent_block) {
+        if (calc_coherent) {
             allocate(velmat, 1, 1, 1, 3);
         }
     }
@@ -189,7 +183,7 @@ void Conductivity::setup_kappa()
         }
     }
 
-    if (calc_coherent || calc_coherent_block) {
+    if (calc_coherent) {
         phonon_velocity->calc_phonon_velmat_mesh(velmat);
         check_velocity_matrix_consistency(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues());
         if (calc_coherent == 2) {
@@ -729,7 +723,6 @@ KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
 
     meta.with_kappa_3ph_only = fph_rta > 0;
     meta.with_kappa_coherent = calc_coherent > 0;
-    meta.with_kappa_coherent_block = calc_coherent_block > 0;
     meta.with_kappa_spec = calc_kappa_spec > 0;
     if (meta.with_kappa_spec) {
         meta.energy_axis = dos->energy_dos;
@@ -1318,19 +1311,11 @@ void Conductivity::compute_kappa()
             compute_kappa_coherent(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), gamma_total, kappa_coherent);
         }
 
-        if (calc_coherent_block) {
-            allocate(kappa_coherent_block, ntemp, 3, 3);
-            compute_kappa_coherent_block(dos->kmesh_dos,
-                                         dos->dymat_dos->get_eigenvalues(),
-                                         gamma_total,
-                                         kappa_coherent_block);
-        }
 
         if (use_h5_io) {
             result_io_h5->store_kappa(kappa,
                                       fph_rta > 0 ? kappa_3only : nullptr,
                                       calc_coherent ? kappa_coherent : nullptr,
-                                      calc_coherent_block ? kappa_coherent_block : nullptr,
                                       calc_kappa_spec ? kappa_spec : nullptr,
                                       isotope->include_isotope ? isotope->gamma_isotope : nullptr);
         }
@@ -1597,123 +1582,6 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
     if (calc_coherent == 2) {
         ofs.close();
         deallocate(kappa_save);
-    }
-}
-
-void Conductivity::compute_kappa_coherent_block(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                                const double *const *gamma_total, double ***kappa_coherent_out) const
-{
-    const auto factor_toSI = 1.0e+18 / (std::pow(Bohr_in_Angstrom, 3) * system->get_primcell().volume);
-    const auto common_factor = factor_toSI * 1.0e+12 * time_ry / static_cast<double>(kmesh_in->nk);
-    const auto czero = std::complex<double>(0.0, 0.0);
-    const auto nk_irred = kmesh_in->nk_irred;
-    const auto tol_omega = 1.0e-7;
-
-    for (auto itemp = 0; itemp < ntemp; ++itemp) {
-        for (auto mu = 0; mu < 3; ++mu) {
-            for (auto nu = 0; nu < 3; ++nu) {
-                kappa_coherent_out[itemp][mu][nu] = 0.0;
-            }
-        }
-    }
-
-    for (auto ik = 0; ik < nk_irred; ++ik) {
-        const auto knum = kmesh_in->kpoint_irred_all[ik][0].knum;
-
-        std::vector<std::pair<int, int>> blocks;
-        auto begin = 0;
-        auto omega_prev = eval_in[knum][0];
-        for (auto is = 1; is < ns; ++is) {
-            const auto omega_now = eval_in[knum][is];
-            if (std::abs(omega_now - omega_prev) >= tol_omega) {
-                blocks.emplace_back(begin, is);
-                begin = is;
-                omega_prev = omega_now;
-            }
-        }
-        blocks.emplace_back(begin, static_cast<int>(ns));
-
-        for (auto itemp = 0; itemp < ntemp; ++itemp) {
-            if (temperature[itemp] <= eps) continue;
-
-            for (auto iblock = 0; iblock < blocks.size(); ++iblock) {
-                const auto first_i = blocks[iblock].first;
-                const auto last_i = blocks[iblock].second;
-                const auto n_i = last_i - first_i;
-
-                auto omega_i = 0.0;
-                auto gamma_i = 0.0;
-                for (auto is = first_i; is < last_i; ++is) {
-                    omega_i += eval_in[knum][is];
-                    gamma_i += gamma_total[ik * ns + is][itemp];
-                }
-                omega_i /= static_cast<double>(n_i);
-                gamma_i /= static_cast<double>(n_i);
-
-                if (omega_i < eps8 || !std::isfinite(omega_i) || !std::isfinite(gamma_i)) continue;
-
-                for (auto jblock = 0; jblock < blocks.size(); ++jblock) {
-                    const auto first_j = blocks[jblock].first;
-                    const auto last_j = blocks[jblock].second;
-                    const auto n_j = last_j - first_j;
-
-                    if (iblock == jblock) continue;
-
-                    auto omega_j = 0.0;
-                    auto gamma_j = 0.0;
-                    for (auto js = first_j; js < last_j; ++js) {
-                        omega_j += eval_in[knum][js];
-                        gamma_j += gamma_total[ik * ns + js][itemp];
-                    }
-                    omega_j /= static_cast<double>(n_j);
-                    gamma_j /= static_cast<double>(n_j);
-
-                    const auto gamma_sum = gamma_i + gamma_j;
-                    const auto domega = omega_i - omega_j;
-                    if (std::abs(domega) < tol_omega) continue;
-
-                    const auto denominator = domega * domega + gamma_sum * gamma_sum;
-                    if (omega_j < eps8 || denominator <= 0.0 || !std::isfinite(omega_j) || !std::isfinite(gamma_j) ||
-                        !std::isfinite(denominator))
-                    {
-                        continue;
-                    }
-
-                    const auto population_factor = (thermodynamics->Cv(omega_i, temperature[itemp]) * omega_j +
-                                                    thermodynamics->Cv(omega_j, temperature[itemp]) * omega_i) /
-                                                   (omega_i + omega_j);
-                    if (!std::isfinite(population_factor)) continue;
-
-                    const auto prefactor = population_factor * gamma_sum / denominator;
-                    if (!std::isfinite(prefactor)) continue;
-
-                    for (auto mu = 0; mu < 3; ++mu) {
-                        for (auto nu = 0; nu < 3; ++nu) {
-                            auto trace_vv = czero;
-                            const auto nk_equiv = kmesh_in->kpoint_irred_all[ik].size();
-                            for (auto ieq = 0; ieq < nk_equiv; ++ieq) {
-                                const auto ktmp = kmesh_in->kpoint_irred_all[ik][ieq].knum;
-                                for (auto is = first_i; is < last_i; ++is) {
-                                    for (auto js = first_j; js < last_j; ++js) {
-                                        trace_vv += velmat[ktmp][is][js][mu] * velmat[ktmp][js][is][nu];
-                                    }
-                                }
-                            }
-                            if (!std::isfinite(trace_vv.real()) || !std::isfinite(trace_vv.imag())) continue;
-                            kappa_coherent_out[itemp][mu][nu] += (prefactor * trace_vv).real();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (auto itemp = 0; itemp < ntemp; ++itemp) {
-        for (auto mu = 0; mu < 3; ++mu) {
-            for (auto nu = 0; nu < 3; ++nu) {
-                kappa_coherent_out[itemp][mu][nu] *= common_factor;
-            }
-        }
     }
 }
 

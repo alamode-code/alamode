@@ -122,7 +122,6 @@ void Input::parse_general_vars()
     std::string str_tmp;
     const std::vector<std::string> input_list{"PREFIX",
                                               "MODE",
-                                              "NSYM",
                                               "TOLERANCE",
                                               "PRINTSYM",
                                               "TMIN",
@@ -230,7 +229,6 @@ void Input::parse_general_vars()
     auto delta_e = 10.0;
 
     unsigned int nonanalytic = 0;
-    auto nsym = 0;
     auto tolerance = 1.0e-3;
     auto printsymmetry = false;
     //auto sym_time_reversal = false;
@@ -288,7 +286,6 @@ void Input::parse_general_vars()
 
     assign_val(delta_e, "DELTA_E", general_var_dict);
 
-    assign_val(nsym, "NSYM", general_var_dict);
     //assign_val(sym_time_reversal, "TREVSYM", general_var_dict);
     assign_val(tolerance, "TOLERANCE", general_var_dict);
     assign_val(printsymmetry, "PRINTSYM", general_var_dict);
@@ -359,7 +356,6 @@ void Input::parse_general_vars()
 
     conductivity->set_conductivity_params(file_result, file_result4, file_kappa_h5, restart, restart_4ph, use_h5_io);
 
-    symmetry->nsym = nsym;
     symmetry->tolerance = tolerance;
     symmetry->printsymmetry = printsymmetry;
     //symmetry->time_reversal_sym = sym_time_reversal;
@@ -414,7 +410,6 @@ void Input::parse_kappa_vars(const bool use_default_values)
                                               "ISOTOPE",
                                               "ISOFACT",
                                               "KAPPA_COHERENT",
-                                              "KAPPA_COHERENT_BLOCK",
                                               "KAPPA_SPEC",
                                               "WRITE_INTERPOL",
                                               "ADAPTIVE_FACTOR",
@@ -447,7 +442,6 @@ void Input::parse_kappa_vars(const bool use_default_values)
     // natural-abundance database.
     auto include_isotope = 1;
     auto calc_coherent = 0;
-    auto calc_coherent_block = 0;
     auto calculate_kappa_spec = 0;
     auto write_interpol = 0;
 
@@ -471,7 +465,6 @@ void Input::parse_kappa_vars(const bool use_default_values)
         assign_val(write_interpol, "WRITE_INTERPOL", kappa_var_dict);
         assign_val(len_boundary, "LEN_BOUNDARY", kappa_var_dict);
         assign_val(calc_coherent, "KAPPA_COHERENT", kappa_var_dict);
-        assign_val(calc_coherent_block, "KAPPA_COHERENT_BLOCK", kappa_var_dict);
         assign_val(include_isotope, "ISOTOPE", kappa_var_dict);
         assign_val(calculate_kappa_spec, "KAPPA_SPEC", kappa_var_dict);
         str_tmp = kappa_var_dict["KMESH_COARSE"];
@@ -520,7 +513,6 @@ void Input::parse_kappa_vars(const bool use_default_values)
     conductivity->len_boundary = len_boundary; // m
     conductivity->calc_kappa_spec = calculate_kappa_spec;
     conductivity->calc_coherent = calc_coherent;
-    conductivity->calc_coherent_block = calc_coherent_block;
     conductivity->write_interpolation = write_interpol;
 
     iterativebte->do_iterative = iterative;

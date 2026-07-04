@@ -47,10 +47,8 @@ public:
     double ***kappa_3only;
     double ***kappa_spec;
     double ***kappa_coherent;
-    double ***kappa_coherent_block;
     double *temperature;
     int calc_coherent;
-    int calc_coherent_block;
     int write_interpolation;
 
     int fph_rta;
@@ -157,8 +155,6 @@ private:
     void compute_kappa_coherent(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                 const double *const *gamma_total, double ***kappa_coherent_out) const;
 
-    void compute_kappa_coherent_block(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                      const double *const *gamma_total, double ***kappa_coherent_out) const;
 
     void check_velocity_matrix_consistency(const KpointMeshUniform *kmesh_in, const double *const *eval_in) const;
 

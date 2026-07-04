@@ -231,7 +231,6 @@ void Writes::writeInputVars()
 
         std::cout << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec << std::endl;
         std::cout << "  KAPPA_COHERENT = " << conductivity->calc_coherent << std::endl;
-        std::cout << "  KAPPA_COHERENT_BLOCK = " << conductivity->calc_coherent_block << '\n';
         std::cout << "  LEN_BOUNDARY = " << conductivity->len_boundary << std::endl;
         std::cout << "  ISMEAR_4PH = " << integration->ismear_4ph << std::endl;
         std::cout << "  EPSILON_4PH = " << integration->epsilon_4ph << std::endl;
@@ -2215,7 +2214,6 @@ void Writes::writeKappa() const
 
         auto file_kappa2 = input->job_title + ".kl_spec";
         auto file_kappa_coherent = input->job_title + ".kl_coherent";
-        auto file_kappa_coherent_block = input->job_title + ".kl_coherent_block";
 
         std::ofstream ofs_kl;
 
@@ -2324,30 +2322,6 @@ void Writes::writeKappa() const
             ofs_kl.close();
         }
 
-        if (conductivity->calc_coherent_block) {
-            ofs_kl.open(file_kappa_coherent_block.c_str(), std::ios::out);
-            if (!ofs_kl) exit("writeKappa", "Could not open file_kappa_coherent_block");
-
-            ofs_kl << "# Temperature [K], distinct-frequency block off-diagonal coherent/Wigner contribution "
-                      "(xx, yy, zz) [W/mK]\n";
-            ofs_kl << "# Same-frequency block pairs are excluded; this file is diagnostic and is not a replacement "
-                      "for the legacy coherent correction.\n";
-
-            if (isotope->include_isotope) {
-                ofs_kl << "# Isotope effects are included.\n";
-            }
-
-            for (i = 0; i < conductivity->ntemp; ++i) {
-                ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2)
-                       << conductivity->temperature[i];
-                for (j = 0; j < 3; ++j) {
-                    ofs_kl << std::setw(15) << std::fixed << std::setprecision(4)
-                           << conductivity->kappa_coherent_block[i][j][j];
-                }
-                ofs_kl << '\n';
-            }
-            ofs_kl.close();
-        }
 
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n\n";
@@ -2357,10 +2331,6 @@ void Writes::writeKappa() const
         }
         if (conductivity->calc_coherent) {
             std::cout << " Coherent part is stored in the file " << file_kappa_coherent << '\n';
-        }
-        if (conductivity->calc_coherent_block) {
-            std::cout << " Distinct-frequency block coherent/Wigner diagnostic is stored in the file "
-                      << file_kappa_coherent_block << '\n';
         }
     }
 }

@@ -49,7 +49,6 @@ struct KappaFileMetaH5
     // layout at setup so no dataset is created after the file is published).
     bool with_kappa_3ph_only = false;
     bool with_kappa_coherent = false;
-    bool with_kappa_coherent_block = false;
     bool with_kappa_spec = false;
     std::vector<double> energy_axis;    // cm^-1; used when with_kappa_spec
 
@@ -133,7 +132,6 @@ public:
     void store_kappa(const double *const *const *kappa_peierls,
                      const double *const *const *kappa_3ph_only,
                      const double *const *const *kappa_coherent,
-                     const double *const *const *kappa_coherent_block,
                      const double *const *const *kappa_spec,
                      const double *const *gamma_isotope);
 

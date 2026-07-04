@@ -308,9 +308,6 @@ struct KappaResultIOH5::Impl
             // "total" never silently means "Peierls only".
             label(h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_total", {nt, 3, 3}));
         }
-        if (fmeta.with_kappa_coherent_block) {
-            label(h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_coherent_block", {nt, 3, 3}));
-        }
         if (fmeta.with_kappa_spec) {
             dump(fh, "/kappa/energy_axis", fmeta.energy_axis);
             dumpAttribute(fh, "/kappa/energy_axis", "unit", std::string("cm^-1"));
@@ -342,7 +339,6 @@ struct KappaResultIOH5::Impl
         if (!need("kappa_total", fmeta.with_kappa_coherent)) return false;
         if (!need("kappa_3ph_only", fmeta.with_kappa_3ph_only)) return false;
         if (!need("kappa_coherent", fmeta.with_kappa_coherent)) return false;
-        if (!need("kappa_coherent_block", fmeta.with_kappa_coherent_block)) return false;
         if (!need("kappa_spec", fmeta.with_kappa_spec)) return false;
         const auto nt = nt_file();
         if (fmeta.with_kappa_spec) {
@@ -555,8 +551,7 @@ struct KappaResultIOH5::Impl
                 // Remap the final-kappa rows and their validity flags.
                 create_kappa_group(newfile);
                 for (const std::string name:
-                     {"kappa_peierls", "kappa_total", "kappa_3ph_only", "kappa_coherent",
-                      "kappa_coherent_block"}) {
+                     {"kappa_peierls", "kappa_total", "kappa_3ph_only", "kappa_coherent"}) {
                     if (!oldfile.exist("/kappa/" + name) || !newfile.exist("/kappa/" + name)) continue;
                     std::vector<double> row(9);
                     for (size_t j = 0; j < nt_old; ++j) {
@@ -928,7 +923,6 @@ void KappaResultIOH5::store_gamma_rows(const std::string &tag, const std::vector
 void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls,
                                   const double *const *const *kappa_3ph_only,
                                   const double *const *const *kappa_coherent,
-                                  const double *const *const *kappa_coherent_block,
                                   const double *const *const *kappa_spec,
                                   const double *const *gamma_isotope)
 {
@@ -968,9 +962,6 @@ void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls,
             }
             impl->write_tensor_flat("/kappa/kappa_total", total);
         }
-    }
-    if (impl->fmeta.with_kappa_coherent_block) {
-        impl->write_tensor_txx("/kappa/kappa_coherent_block", kappa_coherent_block);
     }
     if (impl->fmeta.with_kappa_spec && kappa_spec) {
         const auto ne = impl->fmeta.energy_axis.size();
