@@ -154,7 +154,8 @@ void Input::parse_general_vars()
                                               "RESTART_4PH",
                                               "FILE_FORMAT",
                                               "FC2_TEMPERATURE",
-                                              "ALLOW_UNCONVERGED"};
+                                              "ALLOW_UNCONVERGED",
+                                              "DFC2FILE"};
 
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::vector<std::string> kdname_input, masskd_v;
@@ -380,6 +381,11 @@ void Input::parse_general_vars()
     fcs_phonon->file_fcs = fcsfile;
     fcs_phonon->file_fc2 = fc2file;
     fcs_phonon->fc2_temperature = fc2_temperature;
+    const auto dfc2file = general_var_dict["DFC2FILE"];
+    if (!dfc2file.empty() && fc2_temperature < 0.0) {
+        exit("parse_general_vars", "DFC2FILE requires FC2_TEMPERATURE to select the temperature.");
+    }
+    fcs_phonon->file_dfc2 = dfc2file;
     fcs_phonon->update_fc2 = !fc2file.empty();
     thermodynamics->classical = classical;
     integration->ismear = ismear;

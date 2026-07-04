@@ -294,6 +294,13 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in) const
 
             parse_fcs_from_h5(filename, i, force_constant_with_cell[i]);
         }
+
+        // Legacy dfc2.py workflow, native: add the (short-ranged) anharmonic
+        // FC2 correction of an SCPH/QHA state file onto the harmonic FC2 of
+        // a possibly larger supercell.
+        if (i == 0 && !file_dfc2.empty()) {
+            append_delta_fc2_from_scph(file_dfc2, force_constant_with_cell[i]);
+        }
     }
 
     std::cout << "done.\n\n";
@@ -445,9 +452,11 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     std::string unit_shift, unit_fc;
 
     // FC2_TEMPERATURE: pick one temperature row of the renormalized FC2
-    // stored in an SCPH/QHA state file instead of the base values.
+    // stored in an SCPH/QHA state file instead of the base values. When
+    // DFC2FILE is given, FC2_TEMPERATURE refers to that correction file
+    // instead and the main FC2 file is read as-is.
     int temperature_index = -1;
-    if (order == 0 && fc2_temperature >= 0.0) {
+    if (order == 0 && fc2_temperature >= 0.0 && file_dfc2.empty()) {
         if (!file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values")) {
             exit("parse_fcs_from_h5",
                  "FC2_TEMPERATURE was given, but the FC2 file carries no "
@@ -563,6 +572,129 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
             vec_index.end(),
             [](const IndexAndRelvecs &a, const IndexAndRelvecs &b) { return a.index_super < b.index_super; }));
     }
+}
+
+
+void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2,
+                                            std::vector<FcsArrayWithCell> &fcs_out) const
+{
+    using namespace H5Easy;
+    const File file(fname_dfc2, File::ReadOnly);
+
+    check_h5_schema(file, h5_schema_scph_state, h5_version_scph_state);
+
+    if (fc2_temperature < 0.0) {
+        exit("append_delta_fc2_from_scph", "FC2_TEMPERATURE must be given together with DFC2FILE.");
+    }
+    const auto itemp = h5_resolve_temperature_index(file, fc2_temperature, eps6, "/settings/temperatures");
+
+    // Same convergence guard as the direct FC2_TEMPERATURE read.
+    const auto iteration_converged = [&file, itemp](const std::string &name) {
+        if (!file.exist("/convergence/" + name)) return true;
+        std::vector<unsigned char> flags;
+        file.getDataSet("/convergence/" + name).read(flags);
+        return static_cast<size_t>(itemp) >= flags.size() || flags[itemp] != 0;
+    };
+    if (!iteration_converged("scph") || !iteration_converged("structure")) {
+        if (input->allow_unconverged) {
+            warn("append_delta_fc2_from_scph",
+                 "The iterations at FC2_TEMPERATURE did not converge;\n"
+                 " using the FC2 correction anyway because ALLOW_UNCONVERGED = 1.");
+        } else {
+            exit("append_delta_fc2_from_scph",
+                 "The SCPH iteration or structural optimization at FC2_TEMPERATURE did not converge\n"
+                 " in the run that produced DFC2FILE. Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
+                 " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
+        }
+    }
+
+    // The correction rows are indexed in the primitive cell of the SCPH run;
+    // it must be the same primitive cell as the present calculation.
+    {
+        Eigen::Matrix3d lavec_dfc2;
+        Eigen::MatrixXd xf_dfc2;
+        std::vector<int> kinds_dfc2;
+        std::vector<std::string> elems_dfc2;
+        get_structures_from_h5(file, "PrimitiveCell", lavec_dfc2, xf_dfc2, kinds_dfc2, elems_dfc2);
+        const auto &primcell = system->get_primcell();
+        if (static_cast<size_t>(xf_dfc2.rows()) != primcell.number_of_atoms) {
+            exit("append_delta_fc2_from_scph",
+                 "The primitive cell of DFC2FILE differs from the present one.");
+        }
+        if ((lavec_dfc2 - primcell.lattice_vector).cwiseAbs().maxCoeff() > eps4) {
+            warn("append_delta_fc2_from_scph",
+                 "The primitive lattice vectors of DFC2FILE differ from the present ones.");
+        }
+    }
+
+    // Delta = total(T) - base, both converted to internal units by the reader.
+    Eigen::MatrixXi atom_indices, atom_indices_super, coord_indices;
+    Eigen::MatrixXd shift_vectors;
+    Eigen::ArrayXd fcs_base, fcs_total;
+    get_force_constants_from_h5(file, 0, atom_indices, atom_indices_super, coord_indices, shift_vectors,
+                                fcs_base);
+    get_force_constants_from_h5(file, 0, atom_indices, atom_indices_super, coord_indices, shift_vectors,
+                                fcs_total, nullptr, nullptr, itemp);
+    const Eigen::ArrayXd delta = fcs_total - fcs_base;
+
+    // Re-express each row in the supercell of the harmonic FC2 file: the
+    // Cartesian relative vector is physical and carries over unchanged; the
+    // second atom is located in the present supercell by position matching
+    // (both cells tile the same primitive cell, so a match must exist when
+    // the two supercells are commensurate).
+    const auto &scell = system->get_supercell(0);
+    const auto &map_p2s = system->get_map_p2s(0);
+    const Eigen::Matrix3d lavec_super_inv = scell.lattice_vector.inverse();
+
+    std::vector<AtomCellSuper> ivec_pair(2);
+    std::vector<unsigned int> atoms_s_pair(2);
+    std::vector<Eigen::Vector3d> relvecs_pair(1);
+
+    size_t nadded = 0;
+    for (Eigen::Index irow = 0; irow < delta.size(); ++irow) {
+        if (std::abs(delta[irow]) < eps) continue;
+
+        const auto iat = atom_indices(irow, 0);
+        const auto jat = atom_indices(irow, 1);
+        const auto atom1_s = map_p2s[iat][0];
+
+        Eigen::Vector3d relvec;
+        for (auto k = 0; k < 3; ++k) relvec[k] = shift_vectors(irow, k);
+
+        const Eigen::Vector3d target = scell.x_cartesian.row(atom1_s).transpose() + relvec;
+        const Eigen::Vector3d xf_target = lavec_super_inv * target;
+
+        int atom2_s = -1;
+        for (const auto &cand: map_p2s[jat]) {
+            Eigen::Vector3d xdiff = xf_target - scell.x_fractional.row(cand).transpose();
+            xdiff = xdiff.unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+            if ((scell.lattice_vector * xdiff).norm() < 1.0e-3) {
+                atom2_s = static_cast<int>(cand);
+                break;
+            }
+        }
+        if (atom2_s == -1) {
+            exit("append_delta_fc2_from_scph",
+                 "A correction row of DFC2FILE has no matching atom in the present supercell.\n"
+                 " The supercells of DFC2FILE and the harmonic FC2 file are probably incommensurate.");
+        }
+
+        ivec_pair[0].index = 3 * iat + coord_indices(irow, 0);
+        ivec_pair[0].cell_s = 0;
+        ivec_pair[0].tran = 0;
+        ivec_pair[1].index = 3 * jat + coord_indices(irow, 1);
+        ivec_pair[1].cell_s = 0;
+        ivec_pair[1].tran = 0;
+        atoms_s_pair[0] = atom1_s;
+        atoms_s_pair[1] = static_cast<unsigned int>(atom2_s);
+        relvecs_pair[0] = relvec;
+
+        fcs_out.emplace_back(delta[irow], ivec_pair, atoms_s_pair, relvecs_pair);
+        ++nadded;
+    }
+
+    std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at "
+              << fc2_temperature << " K from " << fname_dfc2 << "\n  ";
 }
 
 

@@ -380,8 +380,11 @@ Description of input variables
                ``PREFIX``.qha.h5 file produced by an SCPH/QHA run, the effective
                (temperature-renormalized) harmonic force constants at this
                temperature are loaded directly — no ``dfc2.py`` round-trip is
-               needed. The temperature must be one of the values on the file's
-               temperature grid. The stored FC2 is the short-range part; the
+               needed. Note that this self-contained route folds the harmonic
+               FC2 onto the ``KMESH_INTERPOLATE`` cell; to combine the
+               correction with a harmonic FC2 of a larger supercell, use
+               :ref:`DFC2FILE <anphon_dfc2file>` instead. The temperature must
+               be one of the values on the file's temperature grid. The stored FC2 is the short-range part; the
                non-analytic long-range term is added at runtime from ``BORNINFO``
                as usual. In ``MODE = RTA``, this tag also switches
                ``PREFIX``.kappa.h5 to its temperature-resolved layout so that
@@ -390,6 +393,26 @@ Description of input variables
                SCPH iteration or structural optimization did not converge are
                refused unless :ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>`
                is set.
+
+````
+
+.. _anphon_dfc2file:
+
+* DFC2FILE-tag : SCPH/QHA state file supplying the anharmonic FC2 correction
+
+ :Default: None
+ :Type: String
+ :Description: Adds the anharmonic FC2 correction :math:`\Delta\Phi_{ij}` stored in a
+               ``PREFIX``.scph.h5 / ``PREFIX``.qha.h5 file (at
+               :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`, which must be given)
+               onto the harmonic FC2 provided by ``FCSFILE`` or ``FC2FILE``. This is
+               the native form of the legacy ``dfc2.py`` workflow: the harmonic FC2
+               may come from a **larger supercell** than the SCPH cell, which is
+               justified because the anharmonic correction is usually shorter ranged
+               than the harmonic force constants. The two supercells must be
+               commensurate tilings of the same primitive cell. The convergence
+               flags of the state file are enforced as for a direct
+               ``FC2_TEMPERATURE`` read.
 
 ````
 

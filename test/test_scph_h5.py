@@ -142,6 +142,23 @@ def check_fc2_temperature(anphonbin, project_root):
         diff = np.abs(a[:, 1:] - b[:, 1:]).max()
         print("max difference (cm^-1):", diff)
         return 1
+
+    # DFC2FILE: harmonic FC2 from one file + anharmonic correction from the
+    # state file (the native form of the legacy dfc2.py workflow, supporting
+    # a larger harmonic supercell). With equal cells it must reproduce the
+    # dfc2.py route exactly.
+    with open("band_dfc2file.in", "w") as f:
+        f.write("&general\n PREFIX = bto_dfc2file; MODE = phonons; FCSFILE = cBTO222.h5;")
+        f.write(" DFC2FILE = %s.scph.h5; FC2_TEMPERATURE = 300\n/\n" % PREFIX)
+        f.write(kpath)
+    if run_anphon(anphonbin, "band_dfc2file.in", "band_dfc2file.log") != 0:
+        print("DFC2FILE band run failed")
+        return 1
+    c = np.loadtxt("bto_dfc2file.bands")
+    if c.shape != a.shape or not np.allclose(a[:, 1:], c[:, 1:], atol=2e-4):
+        print("DFC2FILE bands disagree with the dfc2.py route")
+        print("max difference (cm^-1):", np.abs(a[:, 1:] - c[:, 1:]).max())
+        return 1
     return 0
 
 

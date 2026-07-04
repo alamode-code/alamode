@@ -202,6 +202,13 @@ public:
     // row matching this temperature is loaded instead of the base values.
     double fc2_temperature = -1.0;
 
+    // DFC2FILE tag: SCPH/QHA state file whose anharmonic FC2 correction
+    // (total minus base, at FC2_TEMPERATURE) is added onto the harmonic FC2
+    // given by FCSFILE/FC2FILE. This supports the legacy dfc2.py workflow
+    // of combining a large-supercell harmonic FC2 with a smaller-cell
+    // (shorter-ranged) anharmonic correction.
+    std::string file_dfc2;
+
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
     void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout) const;
@@ -220,6 +227,9 @@ private:
 
     void parse_fcs_from_h5(const std::string &fname_fcs, const int order,
                            std::vector<FcsArrayWithCell> &fcs_out) const;
+
+    void append_delta_fc2_from_scph(const std::string &fname_dfc2,
+                                    std::vector<FcsArrayWithCell> &fcs_out) const;
 
     void load_fcs_from_file(const int maxorder_in) const;
 
