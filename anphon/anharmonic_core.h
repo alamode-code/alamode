@@ -167,6 +167,21 @@ public:
                             const std::complex<double> *const *const *evec_in,
                             const PhaseFactorStorage *phase_storage_in);
 
+    // Thread-safe serial variants: the per-triplet reciprocal-FC3 cache
+    // lives in caller-provided storage (phi3_work of size ngroup_v3 and
+    // kindex_work[2] initialized to -1) and no OpenMP region is entered.
+    // Parallelism belongs to the caller's triplet loop; entering a parallel
+    // region per V3 call is far too fine-grained (measured to give negative
+    // scaling in the SERTA and IBTE setups).
+    std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
+                            const std::complex<double> *const *const *evec_in,
+                            std::complex<double> *phi3_work, int *kindex_work);
+
+    std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
+                            const std::complex<double> *const *const *evec_in,
+                            const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi3_work,
+                            int *kindex_work);
+
     std::complex<double> V4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in,
                             const PhaseFactorStorage *phase_storage_in);
@@ -196,7 +211,8 @@ public:
     void calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
                               std::vector<double, std::allocator<double>> *fcs_group_v3_in,
                               const std::vector<RelativeVector> *relvec_v3_in,
-                              const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret);
+                              const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                              const bool use_openmp = true);
 
     void calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
                               const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret);

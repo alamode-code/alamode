@@ -225,125 +225,133 @@ void Iterativebte::setup_L_smear()
     allocate(L_absorb, kplength_absorb, ns, ns2);
     allocate(L_emitt, kplength_emitt, ns, ns2);
 
-    unsigned int arr[3];
-    int k1, k2, k3, k1_minus;
-    int s1, s2, s3;
-    int ib;
-    double omega1, omega2, omega3;
-
-    double v3_tmp;
-
-    unsigned int counter;
-    double delta = 0;
-
-    auto epsilon = integration->epsilon;
+    const auto epsilon = integration->epsilon;
 
     const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
     const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
 
-    std::array<double, 2> epsilon2;
+    // Flatten the (local k, triplet) index pairs: the row in L equals the
+    // flattened position, and the loop parallelizes over triplets with the
+    // thread-safe serial V3 (per-thread reciprocal-FC3 workspace).
+    std::vector<std::array<int, 2>> pairs_emitt, pairs_absorb;
+    for (int ik = 0; ik < nklocal; ++ik) {
+        for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+            pairs_emitt.push_back({ik, static_cast<int>(j)});
+        }
+    }
+    for (int ik = 0; ik < nklocal; ++ik) {
+        for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+            pairs_absorb.push_back({ik, static_cast<int>(j)});
+        }
+    }
+    if (pairs_emitt.size() != kplength_emitt) {
+        exit("setup_L", "Emitt: pair length not equal!");
+    }
+    if (pairs_absorb.size() != kplength_absorb) {
+        exit("setup_L", "absorb: pair length not equal!");
+    }
 
-    // emitt
-    counter = 0;
-    for (auto ik = 0; ik < nklocal; ++ik) {
-
-        auto tmpk = nk_l[ik];
-        k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum; // k index in full grid
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        std::vector<std::complex<double>> phi3_work(anharmonic_core->get_ngroup_fcs(3));
+        int kindex_work[2] = {-1, -1};
+        unsigned int arr_loc[3];
+        std::array<double, 2> epsilon2;
 
         // emitt k1 -> k2 + k3
         // V(-q1, q2, q3) delta(w1 - w2 - w3)
-        for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
+        for (int idx = 0; idx < static_cast<int>(pairs_emitt.size()); ++idx) {
 
-            auto pair = localnk_triplets_emitt[ik][j];
+            const auto ik = pairs_emitt[idx][0];
+            const auto j = pairs_emitt[idx][1];
+            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const auto &pair = localnk_triplets_emitt[ik][j];
+            const int kk2 = pair.group[0].ks[0];
+            const int kk3 = pair.group[0].ks[1];
 
-            k2 = pair.group[0].ks[0];
-            k3 = pair.group[0].ks[1];
+            for (int is1 = 0; is1 < ns; ++is1) {
+                arr_loc[0] = dos->kmesh_dos->kindex_minus_xk[kk1] * ns + is1;
+                const auto w1 = omega_tmp[kk1][is1];
 
-            for (s1 = 0; s1 < ns; ++s1) {
-                arr[0] = dos->kmesh_dos->kindex_minus_xk[k1] * ns + s1;
-                omega1 = omega_tmp[k1][s1];
+                for (int ib = 0; ib < ns2; ++ib) {
+                    const int is2 = ib / ns;
+                    const int is3 = ib % ns;
 
-                for (ib = 0; ib < ns2; ++ib) {
-                    s2 = ib / ns;
-                    s3 = ib % ns;
+                    arr_loc[1] = kk2 * ns + is2;
+                    arr_loc[2] = kk3 * ns + is3;
+                    const auto w2 = omega_tmp[kk2][is2];
+                    const auto w3 = omega_tmp[kk3][is3];
 
-                    arr[1] = k2 * ns + s2;
-                    arr[2] = k3 * ns + s3;
-                    omega2 = omega_tmp[k2][s2];
-                    omega3 = omega_tmp[k3][s3];
-
+                    double delta_loc = 0.0;
                     if (integration->ismear == 0) {
-                        delta = delta_lorentz(omega1 - omega2 - omega3, epsilon);
+                        delta_loc = delta_lorentz(w1 - w2 - w3, epsilon);
                     } else if (integration->ismear == 1) {
-                        delta = delta_gauss(omega1 - omega2 - omega3, epsilon);
+                        delta_loc = delta_gauss(w1 - w2 - w3, epsilon);
                     } else if (integration->ismear == 2) {
-                        integration->adaptive_sigma->get_sigma(k2, s2, k3, s3, epsilon2);
-                        delta = delta_gauss(omega1 - omega2 - omega3, epsilon2[0]);
+                        integration->adaptive_sigma->get_sigma(kk2, is2, kk3, is3, epsilon2);
+                        delta_loc = delta_gauss(w1 - w2 - w3, epsilon2[0]);
                     }
 
-                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
+                    const auto v3_tmp2 = std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                                                                       evec_tmp, phi3_work.data(), kindex_work));
 
-                    L_emitt[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta / static_cast<double>(nk_3ph);
+                    L_emitt[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
                 }
             }
-            counter += 1;
         }
-    }
-    if (counter != kplength_emitt) {
-        exit("setup_L", "Emitt: pair length not equal!");
-    }
-
-    counter = 0;
-    for (auto ik = 0; ik < nklocal; ++ik) {
-
-        auto tmpk = nk_l[ik];
-        k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum; // k index in full grid
 
         // absorption k1 + k2 -> -k3
         // V(q1, q2, q3) since k3 = - (k1 + k2)
-        for (auto j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int idx = 0; idx < static_cast<int>(pairs_absorb.size()); ++idx) {
 
-            auto pair = localnk_triplets_absorb[ik][j];
+            const auto ik = pairs_absorb[idx][0];
+            const auto j = pairs_absorb[idx][1];
+            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const auto &pair = localnk_triplets_absorb[ik][j];
+            const int kk2 = pair.group[0].ks[0];
+            const int kk3 = pair.group[0].ks[1];
 
-            k2 = pair.group[0].ks[0];
-            k3 = pair.group[0].ks[1];
+            for (int is1 = 0; is1 < ns; ++is1) {
+                arr_loc[0] = kk1 * ns + is1;
+                const auto w1 = omega_tmp[kk1][is1];
 
-            for (s1 = 0; s1 < ns; ++s1) {
-                arr[0] = k1 * ns + s1;
-                omega1 = omega_tmp[k1][s1];
+                for (int ib = 0; ib < ns2; ++ib) {
+                    const int is2 = ib / ns;
+                    const int is3 = ib % ns;
 
-                for (ib = 0; ib < ns2; ++ib) {
-                    s2 = ib / ns;
-                    s3 = ib % ns;
+                    arr_loc[1] = kk2 * ns + is2;
+                    arr_loc[2] = kk3 * ns + is3;
+                    const auto w2 = omega_tmp[kk2][is2];
+                    const auto w3 = omega_tmp[kk3][is3];
 
-                    arr[1] = k2 * ns + s2;
-                    arr[2] = k3 * ns + s3;
-                    omega2 = omega_tmp[k2][s2];
-                    omega3 = omega_tmp[k3][s3];
-
+                    double delta_loc = 0.0;
                     if (integration->ismear == 0) {
-                        delta = delta_lorentz(omega1 + omega2 - omega3, epsilon);
+                        delta_loc = delta_lorentz(w1 + w2 - w3, epsilon);
                     } else if (integration->ismear == 1) {
-                        delta = delta_gauss(omega1 + omega2 - omega3, epsilon);
+                        delta_loc = delta_gauss(w1 + w2 - w3, epsilon);
                     } else if (integration->ismear == 2) {
-                        integration->adaptive_sigma->get_sigma(k2, s2, k3, s3, epsilon2);
+                        integration->adaptive_sigma->get_sigma(kk2, is2, kk3, is3, epsilon2);
                         // epsilon2[1] is built from (v2 + v3), the gradient of the
                         // argument of delta(w1 + w2 - w3) over the mesh cell —
                         // the same channel convention as the SERTA path.
-                        delta = delta_gauss(omega1 + omega2 - omega3, epsilon2[1]);
+                        delta_loc = delta_gauss(w1 + w2 - w3, epsilon2[1]);
                     }
 
-                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
+                    const auto v3_tmp2 = std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                                                                       evec_tmp, phi3_work.data(), kindex_work));
 
-                    L_absorb[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta / static_cast<double>(nk_3ph);
+                    L_absorb[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
                 }
             }
-            counter += 1;
         }
-    }
-
-    if (counter != kplength_absorb) {
-        exit("setup_L", "absorb: pair length not equal!");
     }
 }
 
@@ -354,163 +362,170 @@ void Iterativebte::setup_L_tetra()
     allocate(L_absorb, kplength_absorb, ns, ns2);
     allocate(L_emitt, kplength_emitt, ns, ns2);
 
-    unsigned int arr[3];
-    int k1, k2, k3, k1_minus;
-    int s1, s2, s3;
-    int ib;
-    double omega1, omega2, omega3;
-
-    double v3_tmp;
-    double xk_tmp[3];
-
-    unsigned int counter;
-    double delta = 0;
-
-    auto epsilon = integration->epsilon;
-
     unsigned int *kmap_identity;
     allocate(kmap_identity, nk_3ph);
     for (auto i = 0; i < nk_3ph; ++i)
         kmap_identity[i] = i;
 
-    double *energy_tmp;
-    double *weight_tetra;
-    allocate(energy_tmp, nk_3ph);
-    allocate(weight_tetra, nk_3ph);
-
-    // emitt
-    std::vector<std::vector<int>> ikp_emitt;
-    ikp_emitt.clear();
-    int cnt = 0;
-    for (auto ik = 0; ik < nklocal; ++ik) {
-        std::vector<int> counterk;
-        counterk.clear();
-        for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
-            counterk.push_back(cnt);
-            cnt += 1;
+    // Flattened (local k, triplet) index pairs; the row in L equals the
+    // flattened position.
+    std::vector<std::array<int, 2>> pairs_emitt, pairs_absorb;
+    for (int ik = 0; ik < nklocal; ++ik) {
+        for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+            pairs_emitt.push_back({ik, static_cast<int>(j)});
         }
-        ikp_emitt.push_back(counterk);
     }
-    // absorb
-    std::vector<std::vector<int>> ikp_absorb;
-    ikp_absorb.clear();
-    cnt = 0;
-    for (auto ik = 0; ik < nklocal; ++ik) {
-        std::vector<int> counterk;
-        counterk.clear();
-        for (auto j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
-            counterk.push_back(cnt);
-            cnt += 1;
+    for (int ik = 0; ik < nklocal; ++ik) {
+        for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+            pairs_absorb.push_back({ik, static_cast<int>(j)});
         }
-        ikp_absorb.push_back(counterk);
+    }
+    // Offset of each local k in the flattened order
+    std::vector<int> offset_emitt(nklocal, 0), offset_absorb(nklocal, 0);
+    for (int ik = 1; ik < nklocal; ++ik) {
+        offset_emitt[ik] = offset_emitt[ik - 1] + static_cast<int>(localnk_triplets_emitt[ik - 1].size());
+        offset_absorb[ik] = offset_absorb[ik - 1] + static_cast<int>(localnk_triplets_absorb[ik - 1].size());
     }
 
     const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
     const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
 
-    for (auto ik = 0; ik < nklocal; ++ik) {
+    // Pass 1: tetrahedron weights into L (per-thread energy/weight buffers).
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        double *energy_tmp;
+        double *weight_tetra;
+        allocate(energy_tmp, nk_3ph);
+        allocate(weight_tetra, nk_3ph);
+        double xk_tmp[3];
 
-        auto tmpk = nk_l[ik];
-        k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum; // k index in full grid
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int iks = 0; iks < nklocal * ns * ns2; ++iks) {
 
-        // emission: calc delta function w1 - w2 - w3, with k3 = k1 - k2
-        for (s1 = 0; s1 < ns; ++s1) {
+            const int ik = iks / (ns * ns2);
+            const int is1 = (iks / ns2) % ns;
+            const int ib = iks % ns2;
+            const int is2 = ib / ns;
+            const int is3 = ib % ns;
 
-            omega1 = omega_tmp[k1][s1];
+            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const auto w1 = omega_tmp[kk1][is1];
 
-            for (ib = 0; ib < ns2; ++ib) {
-                s2 = ib / ns;
-                s3 = ib % ns;
-
-                for (k2 = 0; k2 < nk_3ph; k2++) {
-                    // k3 = k1 - k2
-                    for (auto i = 0; i < 3; ++i) {
-                        xk_tmp[i] = dos->kmesh_dos->xk[k1][i] - dos->kmesh_dos->xk[k2][i];
-                    }
-
-                    k3 = dos->kmesh_dos->get_knum(xk_tmp);
-
-                    omega2 = omega_tmp[k2][s2];
-                    omega3 = omega_tmp[k3][s3];
-
-                    energy_tmp[k2] = omega2 + omega3;
+            // emission: delta(w1 - w2 - w3) with k3 = k1 - k2
+            for (int k2 = 0; k2 < nk_3ph; k2++) {
+                for (auto i = 0; i < 3; ++i) {
+                    xk_tmp[i] = dos->kmesh_dos->xk[kk1][i] - dos->kmesh_dos->xk[k2][i];
                 }
-                integration->calc_weight_tetrahedron(nk_3ph,
-                                                     kmap_identity,
-                                                     energy_tmp,
-                                                     omega1,
-                                                     dos->tetra_nodes_dos->get_ntetra(),
-                                                     dos->tetra_nodes_dos->get_tetras(),
-                                                     weight_tetra);
+                const auto k3 = dos->kmesh_dos->get_knum(xk_tmp);
+                energy_tmp[k2] = omega_tmp[k2][is2] + omega_tmp[k3][is3];
+            }
+            integration->calc_weight_tetrahedron(nk_3ph,
+                                                 kmap_identity,
+                                                 energy_tmp,
+                                                 w1,
+                                                 dos->tetra_nodes_dos->get_ntetra(),
+                                                 dos->tetra_nodes_dos->get_tetras(),
+                                                 weight_tetra);
 
-                // emitt k1 -> k2 + k3
-                // V(-q1, q2, q3) delta(w1 - w2 - w3)
-                for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+            for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
+                const auto &pair = localnk_triplets_emitt[ik][j];
+                L_emitt[offset_emitt[ik] + j][is1][ib] = (pi / 4.0) * weight_tetra[pair.group[0].ks[0]];
+            }
 
-                    auto pair = localnk_triplets_emitt[ik][j];
-                    auto counter = ikp_emitt[ik][j];
-
-                    k2 = pair.group[0].ks[0];
-                    k3 = pair.group[0].ks[1];
-
-                    arr[0] = dos->kmesh_dos->kindex_minus_xk[k1] * ns + s1;
-                    arr[1] = k2 * ns + s2;
-                    arr[2] = k3 * ns + s3;
-                    delta = weight_tetra[k2];
-                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
-
-                    L_emitt[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta;
+            // absorption: delta(w1 + w2 - w3) with k3 = -(k1 + k2)
+            for (int k2 = 0; k2 < nk_3ph; k2++) {
+                for (auto i = 0; i < 3; ++i) {
+                    xk_tmp[i] = dos->kmesh_dos->xk[kk1][i] + dos->kmesh_dos->xk[k2][i];
                 }
+                const auto k3 = dos->kmesh_dos->get_knum(xk_tmp);
+                energy_tmp[k2] = -omega_tmp[k2][is2] + omega_tmp[k3][is3];
+            }
+            integration->calc_weight_tetrahedron(nk_3ph,
+                                                 kmap_identity,
+                                                 energy_tmp,
+                                                 w1,
+                                                 dos->tetra_nodes_dos->get_ntetra(),
+                                                 dos->tetra_nodes_dos->get_tetras(),
+                                                 weight_tetra);
 
-                // absorb
-                for (k2 = 0; k2 < nk_3ph; k2++) {
+            for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+                const auto &pair = localnk_triplets_absorb[ik][j];
+                L_absorb[offset_absorb[ik] + j][is1][ib] = (pi / 4.0) * weight_tetra[pair.group[0].ks[0]];
+            }
+        }
 
-                    for (auto i = 0; i < 3; ++i) {
-                        xk_tmp[i] = dos->kmesh_dos->xk[k1][i] + dos->kmesh_dos->xk[k2][i];
-                    }
-                    k3 = dos->kmesh_dos->get_knum(xk_tmp);
+        deallocate(energy_tmp);
+        deallocate(weight_tetra);
+    }
 
-                    omega2 = omega_tmp[k2][s2];
-                    omega3 = omega_tmp[k3][s3];
+    // Pass 2: multiply |V3|^2, parallel over triplets so the per-triplet
+    // reciprocal-FC3 cache in the per-thread workspace is reused across the
+    // ns^3 band combinations (the previous single-pass loop recomputed it
+    // ns^2 times per triplet). V3 is skipped where the weight vanished.
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        std::vector<std::complex<double>> phi3_work(anharmonic_core->get_ngroup_fcs(3));
+        int kindex_work[2] = {-1, -1};
+        unsigned int arr_loc[3];
 
-                    energy_tmp[k2] = -omega2 + omega3;
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
+        for (int idx = 0; idx < static_cast<int>(pairs_emitt.size()); ++idx) {
+
+            const auto ik = pairs_emitt[idx][0];
+            const auto j = pairs_emitt[idx][1];
+            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const auto &pair = localnk_triplets_emitt[ik][j];
+            const int kk2 = pair.group[0].ks[0];
+            const int kk3 = pair.group[0].ks[1];
+
+            // emitt k1 -> k2 + k3 : V(-q1, q2, q3)
+            for (int is1 = 0; is1 < ns; ++is1) {
+                arr_loc[0] = dos->kmesh_dos->kindex_minus_xk[kk1] * ns + is1;
+                for (int ib = 0; ib < ns2; ++ib) {
+                    if (L_emitt[idx][is1][ib] == 0.0) continue;
+                    arr_loc[1] = kk2 * ns + ib / ns;
+                    arr_loc[2] = kk3 * ns + ib % ns;
+                    L_emitt[idx][is1][ib] *= std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                                                                           evec_tmp, phi3_work.data(), kindex_work));
                 }
-                integration->calc_weight_tetrahedron(nk_3ph,
-                                                     kmap_identity,
-                                                     energy_tmp,
-                                                     omega1,
-                                                     dos->tetra_nodes_dos->get_ntetra(),
-                                                     dos->tetra_nodes_dos->get_tetras(),
-                                                     weight_tetra);
+            }
+        }
 
-                // absorption k1 + k2 -> -k3
-                // V(q1, q2, q3) since k3 = - (k1 + k2)
-                for (auto j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int idx = 0; idx < static_cast<int>(pairs_absorb.size()); ++idx) {
 
-                    auto pair = localnk_triplets_absorb[ik][j];
-                    auto counter = ikp_absorb[ik][j];
+            const auto ik = pairs_absorb[idx][0];
+            const auto j = pairs_absorb[idx][1];
+            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const auto &pair = localnk_triplets_absorb[ik][j];
+            const int kk2 = pair.group[0].ks[0];
+            const int kk3 = pair.group[0].ks[1];
 
-                    k2 = pair.group[0].ks[0];
-                    k3 = pair.group[0].ks[1];
-
-                    arr[0] = k1 * ns + s1;
-                    arr[1] = k2 * ns + s2;
-                    arr[2] = k3 * ns + s3;
-                    delta = weight_tetra[k2];
-                    v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
-
-                    L_absorb[counter][s1][ib] = (pi / 4.0) * v3_tmp * delta;
+            // absorption k1 + k2 -> -k3 : V(q1, q2, q3)
+            for (int is1 = 0; is1 < ns; ++is1) {
+                arr_loc[0] = kk1 * ns + is1;
+                for (int ib = 0; ib < ns2; ++ib) {
+                    if (L_absorb[idx][is1][ib] == 0.0) continue;
+                    arr_loc[1] = kk2 * ns + ib / ns;
+                    arr_loc[2] = kk3 * ns + ib % ns;
+                    L_absorb[idx][is1][ib] *= std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                                                                            evec_tmp, phi3_work.data(), kindex_work));
                 }
-            } // ib
-        } // s1
-    } // ik
+            }
+        }
+    }
 
-    //if (mympi->my_rank == 0) {
-    //    std::cout << "  DONE !" << '\n';
-    //}
     deallocate(kmap_identity);
-    deallocate(energy_tmp);
-    deallocate(weight_tetra);
 }
 
 

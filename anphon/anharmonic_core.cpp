@@ -288,6 +288,64 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
     return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2]);
 }
 
+std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
+                                        const double *const *eval_in,
+                                        const std::complex<double> *const *const *evec_in,
+                                        std::complex<double> *phi3_work, int *kindex_work)
+{
+    return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos, phi3_work, kindex_work);
+}
+
+std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
+                                        const double *const *eval_in,
+                                        const std::complex<double> *const *const *evec_in,
+                                        const PhaseFactorStorage *phase_storage_in,
+                                        std::complex<double> *phi3_work, int *kindex_work)
+{
+    // Thread-safe serial variant of V3 (see the header note): the caller
+    // owns the per-triplet reciprocal-FC3 cache and no OpenMP region is
+    // entered here, so independent threads may evaluate different triplets
+    // concurrently. The members read below are immutable after setup.
+    int i;
+    unsigned int kn[3], sn[3];
+    const int ns = dynamical->neval;
+
+    double omega[3];
+
+    for (i = 0; i < 3; ++i) {
+        kn[i] = ks[i] / ns;
+        sn[i] = ks[i] % ns;
+        omega[i] = eval_in[kn[i]][sn[i]];
+    }
+
+    // Return zero if any of the involving phonon has imaginary frequency
+    if (omega[0] < eps8 || omega[1] < eps8 || omega[2] < eps8) return std::complex<double>(0.0, 0.0);
+
+    if (static_cast<int>(kn[1]) != kindex_work[0] || static_cast<int>(kn[2]) != kindex_work[1]) {
+        calc_phi3_reciprocal(xk_in[kn[1]],
+                             xk_in[kn[2]],
+                             ngroup_v3,
+                             fcs_group_v3,
+                             relvec_v3,
+                             phase_storage_in,
+                             phi3_work,
+                             false);
+        kindex_work[0] = static_cast<int>(kn[1]);
+        kindex_work[1] = static_cast<int>(kn[2]);
+    }
+
+    auto ret_re = 0.0;
+    auto ret_im = 0.0;
+    for (i = 0; i < ngroup_v3; ++i) {
+        const auto ret = evec_in[kn[0]][sn[0]][evec_index_v3[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v3[i][1]] *
+                         evec_in[kn[2]][sn[2]][evec_index_v3[i][2]] * invmass_v3[i] * phi3_work[i];
+        ret_re += ret.real();
+        ret_im += ret.imag();
+    }
+
+    return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2]);
+}
+
 std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double *const *xk_in,
                                           const double *const *eval_in,
                                           const std::complex<double> *const *const *evec_in,
@@ -336,7 +394,8 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double
 void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
                                           std::vector<double, std::allocator<double>> *fcs_group_v3_in,
                                           const std::vector<RelativeVector> *relvec_v3_in,
-                                          const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret)
+                                          const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                                          const bool use_openmp)
 {
     int i, j;
     double phase;
@@ -347,7 +406,7 @@ void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, 
 
     if (tune_type_now == 1) {
 
-#pragma omp parallel for private(ret_in, nsize_group, j, phase)
+#pragma omp parallel for private(ret_in, nsize_group, j, phase) if (use_openmp)
         for (i = 0; i < ngroup_v3_in; ++i) {
 
             // std::cout << "i = " << i << '\n' << std::flush;
@@ -371,7 +430,7 @@ void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, 
 
         double phase3[3];
 
-#pragma omp parallel for private(ret_in, nsize_group, j, phase3)
+#pragma omp parallel for private(ret_in, nsize_group, j, phase3) if (use_openmp)
         for (i = 0; i < ngroup_v3_in; ++i) {
 
             ret_in = std::complex<double>(0.0, 0.0);
@@ -387,7 +446,7 @@ void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, 
         }
     } else {
         // Original version
-#pragma omp parallel for private(ret_in, nsize_group, phase, j)
+#pragma omp parallel for private(ret_in, nsize_group, phase, j) if (use_openmp)
         for (i = 0; i < ngroup_v3_in; ++i) {
 
             ret_in = std::complex<double>(0.0, 0.0);
@@ -695,22 +754,35 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
     // debug
     //std::cout << "phonon (" << ik_in << ", " << snum << ") : " << sum_smear / static_cast<double>(2*ns*ns*npair_uniq) << std::endl;
 
-    for (ik = 0; ik < npair_uniq; ++ik) {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        // Parallel over triplets with the thread-safe serial V3; the
+        // per-triplet reciprocal-FC3 cache lives in per-thread storage.
+        std::vector<std::complex<double>> phi3_work(ngroup_v3);
+        int kindex_work[2] = {-1, -1};
+        unsigned int arr_loc[3];
 
-        k1 = triplet[ik].group[0].ks[0];
-        k2 = triplet[ik].group[0].ks[1];
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int iik = 0; iik < static_cast<int>(npair_uniq); ++iik) {
 
-        multi = static_cast<double>(triplet[ik].group.size());
+            const unsigned int kk1 = triplet[iik].group[0].ks[0];
+            const unsigned int kk2 = triplet[iik].group[0].ks[1];
 
-        for (int ib = 0; ib < ns2; ++ib) {
-            is = ib / ns;
-            js = ib % ns;
+            const auto multi_loc = static_cast<double>(triplet[iik].group.size());
 
-            arr[0] = ns * knum_minus + is_in;
-            arr[1] = ns * k1 + is;
-            arr[2] = ns * k2 + js;
+            for (int ib = 0; ib < ns2; ++ib) {
+                arr_loc[0] = ns * knum_minus + is_in;
+                arr_loc[1] = ns * kk1 + ib / ns;
+                arr_loc[2] = ns * kk2 + ib % ns;
 
-            v3_arr[ik][ib] = std::norm(V3(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_dos)) * multi;
+                v3_arr[iik][ib] = std::norm(V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos,
+                                               phi3_work.data(), kindex_work)) *
+                                  multi_loc;
+            }
         }
     }
 
@@ -928,27 +1000,41 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
         }
     }
 
-    for (ik = 0; ik < npair_uniq; ++ik) {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        // Parallel over triplets with the thread-safe serial V3; the
+        // per-triplet reciprocal-FC3 cache lives in per-thread storage.
+        std::vector<std::complex<double>> phi3_work(ngroup_v3);
+        int kindex_work[2] = {-1, -1};
+        unsigned int arr_loc[3];
 
-        k1 = triplet[ik].group[0].ks[0];
-        k2 = triplet[ik].group[0].ks[1];
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int iik = 0; iik < static_cast<int>(npair_uniq); ++iik) {
 
-        multi = static_cast<double>(triplet[ik].group.size());
+            const unsigned int kk1 = triplet[iik].group[0].ks[0];
+            const unsigned int kk2 = triplet[iik].group[0].ks[1];
 
-        for (ib = 0; ib < ns2; ++ib) {
-            is = ib / ns;
-            js = ib % ns;
+            const auto multi_loc = static_cast<double>(triplet[iik].group.size());
 
-            if (delta_arr[ik][ib][0] > 0.0 || std::abs(delta_arr[ik][ib][1]) > 0.0) {
+            for (int ib2 = 0; ib2 < ns2; ++ib2) {
 
-                arr[0] = ns * knum_minus + is_in;
-                arr[1] = ns * k1 + is;
-                arr[2] = ns * k2 + js;
+                if (delta_arr[iik][ib2][0] > 0.0 || std::abs(delta_arr[iik][ib2][1]) > 0.0) {
 
-                v3_arr[ik][ib] = std::norm(V3(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_dos)) * multi;
+                    arr_loc[0] = ns * knum_minus + is_in;
+                    arr_loc[1] = ns * kk1 + ib2 / ns;
+                    arr_loc[2] = ns * kk2 + ib2 % ns;
 
-            } else {
-                v3_arr[ik][ib] = 0.0;
+                    v3_arr[iik][ib2] = std::norm(V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos,
+                                                    phi3_work.data(), kindex_work)) *
+                                       multi_loc;
+
+                } else {
+                v3_arr[iik][ib2] = 0.0;
+                }
             }
         }
     }
