@@ -3,6 +3,7 @@
   MODE = suggest
   NAT = 64; NKD = 1
   KD = Si
+  PRIMCELL = A
 /
 
 &interaction

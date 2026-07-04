@@ -3,7 +3,7 @@
   MODE = opt
   NAT = 64; NKD = 1
   KD = Si
-  STRUCTURE = POSCAR
+  PRIMCELL = A
 /
 
 &optimize
