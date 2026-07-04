@@ -186,6 +186,13 @@ public:
                             const std::complex<double> *const *const *evec_in,
                             const PhaseFactorStorage *phase_storage_in);
 
+    // Thread-safe serial variant of V4 (same design as the V3 overload
+    // above): phi4_work has size ngroup_v4 and kindex_work[3] starts at -1.
+    std::complex<double> V4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
+                            const std::complex<double> *const *const *evec_in,
+                            const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi4_work,
+                            int *kindex_work);
+
     std::complex<double> Phi3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
                               const std::complex<double> *const *const *evec_in,
                               const PhaseFactorStorage *phase_storage_in);
@@ -215,7 +222,8 @@ public:
                               const bool use_openmp = true);
 
     void calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
-                              const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret);
+                              const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                              const bool use_openmp = true);
 
     int get_ngroup_fcs(const unsigned int order) const;
 

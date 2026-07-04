@@ -506,6 +506,51 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
     return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
 }
 
+std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *const *xk_in,
+                                        const double *const *eval_in,
+                                        const std::complex<double> *const *const *evec_in,
+                                        const PhaseFactorStorage *phase_storage_in,
+                                        std::complex<double> *phi4_work, int *kindex_work)
+{
+    // Thread-safe serial variant of V4 (see the V3 counterpart): the caller
+    // owns the per-quartet reciprocal-FC4 cache and no OpenMP region is
+    // entered here.
+    int i;
+    const int ns = dynamical->neval;
+    unsigned int kn[4], sn[4];
+    double omega[4];
+
+    for (i = 0; i < 4; ++i) {
+        kn[i] = ks[i] / ns;
+        sn[i] = ks[i] % ns;
+        omega[i] = eval_in[kn[i]][sn[i]];
+    }
+    // Return zero if any of the involving phonon has imaginary frequency
+    if (omega[0] < eps8 || omega[1] < eps8 || omega[2] < eps8 || omega[3] < eps8) {
+        return std::complex<double>(0.0, 0.0);
+    }
+
+    if (static_cast<int>(kn[1]) != kindex_work[0] || static_cast<int>(kn[2]) != kindex_work[1] ||
+        static_cast<int>(kn[3]) != kindex_work[2]) {
+        calc_phi4_reciprocal(xk_in[kn[1]], xk_in[kn[2]], xk_in[kn[3]], phase_storage_in, phi4_work, false);
+        kindex_work[0] = static_cast<int>(kn[1]);
+        kindex_work[1] = static_cast<int>(kn[2]);
+        kindex_work[2] = static_cast<int>(kn[3]);
+    }
+
+    auto ret_re = 0.0;
+    auto ret_im = 0.0;
+    for (i = 0; i < ngroup_v4; ++i) {
+        const auto ret = evec_in[kn[0]][sn[0]][evec_index_v4[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v4[i][1]] *
+                         evec_in[kn[2]][sn[2]][evec_index_v4[i][2]] * evec_in[kn[3]][sn[3]][evec_index_v4[i][3]] *
+                         invmass_v4[i] * phi4_work[i];
+        ret_re += ret.real();
+        ret_im += ret.imag();
+    }
+
+    return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
+}
+
 std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double *const *xk_in,
                                           const double *const *eval_in,
                                           const std::complex<double> *const *const *evec_in,
@@ -549,7 +594,8 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double
 }
 
 void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
-                                          const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret)
+                                          const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                                          const bool use_openmp)
 {
     int i, j;
     double phase;
@@ -561,7 +607,7 @@ void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, 
 
     if (tune_type_now == 1) {
 
-#pragma omp parallel for private(ret_in, nsize_group, j, phase)
+#pragma omp parallel for private(ret_in, nsize_group, j, phase) if (use_openmp)
         for (i = 0; i < ngroup_v4; ++i) {
 
             ret_in = complex_zero;
@@ -585,7 +631,7 @@ void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, 
 
         double phase3[3];
 
-#pragma omp parallel for private(ret_in, nsize_group, j, phase3)
+#pragma omp parallel for private(ret_in, nsize_group, j, phase3) if (use_openmp)
         for (i = 0; i < ngroup_v4; ++i) {
 
             ret_in = complex_zero;
@@ -602,7 +648,7 @@ void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, 
         }
     } else {
         // Original version
-#pragma omp parallel for private(ret_in, nsize_group, phase)
+#pragma omp parallel for private(ret_in, nsize_group, phase) if (use_openmp)
         for (i = 0; i < ngroup_v4; ++i) {
 
             ret_in = complex_zero;
@@ -860,7 +906,6 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
     double T_tmp;
     double n1, n2;
     double f1, f2;
-    double multi;
 
     double xk_tmp[3];
     std::array<double, 2> omega_inner;
@@ -1134,7 +1179,6 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     double n1;
     std::array<double, 3> omega_inner;
 
-    double multi;
 
     for (i = 0; i < ntemp; ++i)
         ret[i] = 0.0;
@@ -1284,32 +1328,44 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
             }
         }
 
-        for (ik0 = 0; ik0 < nk_batch; ++ik0) {
-            ik = start_k + ik0;
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        {
+            // Parallel over quartets with the thread-safe serial V4; the
+            // per-quartet reciprocal-FC4 cache lives in per-thread storage.
+            std::vector<std::complex<double>> phi4_work(ngroup_v4);
+            int kindex_work[3] = {-1, -1, -1};
+            unsigned int arr_loc[4];
 
-            k1 = quartet[ik].group[0].ks[0];
-            k2 = quartet[ik].group[0].ks[1];
-            k3 = quartet[ik].group[0].ks[2];
+#ifdef _OPENMP
+#pragma omp for
+#endif
+            for (int iik0 = 0; iik0 < static_cast<int>(nk_batch); ++iik0) {
+                const auto iik = start_k + iik0;
 
-            multi = static_cast<double>(quartet[ik].group.size());
+                const unsigned int kk1 = quartet[iik].group[0].ks[0];
+                const unsigned int kk2 = quartet[iik].group[0].ks[1];
+                const unsigned int kk3 = quartet[iik].group[0].ks[2];
 
-            for (size_t ib = 0; ib < ns3; ++ib) {
-                is = ib / ns2;
-                js = (ib - ns2 * is) / ns;
-                ks = ib % ns;
+                const auto multi_loc = static_cast<double>(quartet[iik].group.size());
 
-                if (delta_arr[ik0][ib][0] > 0.0 || std::abs(delta_arr[ik0][ib][1]) > 0.0 ||
-                    std::abs(delta_arr[ik0][ib][2]) > 0.0 || std::abs(delta_arr[ik0][ib][3]) > 0.0)
-                {
+                for (size_t ib = 0; ib < ns3; ++ib) {
 
-                    arr[0] = ns * knum_minus + is_in;
-                    arr[1] = ns * k1 + is;
-                    arr[2] = ns * k2 + js;
-                    arr[3] = ns * k3 + ks;
+                    if (delta_arr[iik0][ib][0] > 0.0 || std::abs(delta_arr[iik0][ib][1]) > 0.0 ||
+                        std::abs(delta_arr[iik0][ib][2]) > 0.0 || std::abs(delta_arr[iik0][ib][3]) > 0.0)
+                    {
+                        arr_loc[0] = ns * knum_minus + is_in;
+                        arr_loc[1] = ns * kk1 + ib / ns2;
+                        arr_loc[2] = ns * kk2 + (ib / ns) % ns;
+                        arr_loc[3] = ns * kk3 + ib % ns;
 
-                    v4_arr[ik0][ib] = std::norm(V4(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_in)) * multi;
-                } else {
-                    v4_arr[ik0][ib] = 0.0;
+                        v4_arr[iik0][ib] = std::norm(V4(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_in,
+                                                        phi4_work.data(), kindex_work)) *
+                                           multi_loc;
+                    } else {
+                        v4_arr[iik0][ib] = 0.0;
+                    }
                 }
             }
         }
@@ -1402,7 +1458,6 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     double n1;
     double omega_inner[3];
 
-    double multi;
 
     for (i = 0; i < ntemp; ++i)
         ret[i] = 0.0;
@@ -1541,32 +1596,43 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
         }
     }
 
-    for (ik = 0; ik < npair_uniq; ++ik) {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        // Parallel over quartets with the thread-safe serial V4; the
+        // per-quartet reciprocal-FC4 cache lives in per-thread storage.
+        std::vector<std::complex<double>> phi4_work(ngroup_v4);
+        int kindex_work[3] = {-1, -1, -1};
+        unsigned int arr_loc[4];
 
-        k1 = quartet[ik].group[0].ks[0];
-        k2 = quartet[ik].group[0].ks[1];
-        k3 = quartet[ik].group[0].ks[2];
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int iik = 0; iik < static_cast<int>(npair_uniq); ++iik) {
 
-        multi = static_cast<double>(quartet[ik].group.size());
+            const unsigned int kk1 = quartet[iik].group[0].ks[0];
+            const unsigned int kk2 = quartet[iik].group[0].ks[1];
+            const unsigned int kk3 = quartet[iik].group[0].ks[2];
 
-        for (size_t ib = 0; ib < ns3; ++ib) {
-            is = ib / ns2;
-            js = (ib - ns2 * is) / ns;
-            ks = ib % ns;
+            const auto multi_loc = static_cast<double>(quartet[iik].group.size());
 
-            if (delta_arr[ik][ib][0] > 0.0 || std::abs(delta_arr[ik][ib][1]) > 0.0 ||
-                std::abs(delta_arr[ik][ib][2]) > 0.0 || std::abs(delta_arr[ik][ib][3]) > 0.0)
-            {
+            for (size_t ib = 0; ib < ns3; ++ib) {
 
-                arr[0] = ns * knum_minus + is_in;
-                arr[1] = ns * k1 + is;
-                arr[2] = ns * k2 + js;
-                arr[3] = ns * k3 + ks;
+                if (delta_arr[iik][ib][0] > 0.0 || std::abs(delta_arr[iik][ib][1]) > 0.0 ||
+                    std::abs(delta_arr[iik][ib][2]) > 0.0 || std::abs(delta_arr[iik][ib][3]) > 0.0)
+                {
+                    arr_loc[0] = ns * knum_minus + is_in;
+                    arr_loc[1] = ns * kk1 + ib / ns2;
+                    arr_loc[2] = ns * kk2 + (ib / ns) % ns;
+                    arr_loc[3] = ns * kk3 + ib % ns;
 
-                v4_arr[ik][ib] = std::norm(V4(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_in)) * multi;
-                //std::cout << v4_arr[ik][ib] << std::endl;
-            } else {
-                v4_arr[ik][ib] = 0.0;
+                    v4_arr[iik][ib] = std::norm(V4(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_in,
+                                                   phi4_work.data(), kindex_work)) *
+                                      multi_loc;
+                } else {
+                    v4_arr[iik][ib] = 0.0;
+                }
             }
         }
     }
