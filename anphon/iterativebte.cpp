@@ -325,9 +325,10 @@ void Iterativebte::setup_L_smear()
                         delta = delta_gauss(omega1 + omega2 - omega3, epsilon);
                     } else if (integration->ismear == 2) {
                         integration->adaptive_sigma->get_sigma(k2, s2, k3, s3, epsilon2);
-                        delta = delta_gauss(omega1 + omega2 - omega3, epsilon2[0]);
-                        // we use epsilon2[0] for both absorption and emission, as in shengBTE
-                        // this is different from the adaptive in SERTA case
+                        // epsilon2[1] is built from (v2 + v3), the gradient of the
+                        // argument of delta(w1 + w2 - w3) over the mesh cell —
+                        // the same channel convention as the SERTA path.
+                        delta = delta_gauss(omega1 + omega2 - omega3, epsilon2[1]);
                     }
 
                     v3_tmp = std::norm(anharmonic_core->V3(arr, dos->kmesh_dos->xk, omega_tmp, evec_tmp));
@@ -745,18 +746,21 @@ void Iterativebte::iterative_solver()
 
         allocate(boundary_damping_loc, nklocal, ns);
 
-        double vel_norm;
         for (auto ik = 0; ik < nklocal; ++ik) {
             auto tmpk = nk_l[ik];
             const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum; // k index in full grid
-            vel_norm = 0.0;
             for (auto is = 0; is < ns; is++) {
+                auto vel_norm = 0.0;
                 for (auto j = 0; j < 3; ++j) {
                     vel_norm += vel[k1][is][j] * vel[k1][is][j];
                 }
-
+                // vel here is in atomic units (unlike the SERTA path, which
+                // converts to m/s first): |v_au| * Bohr[m] / L[m] equals the
+                // SERTA expression |v_SI| / L * time_ry, i.e. the boundary
+                // rate in the same internal units as gamma.
                 vel_norm = std::sqrt(vel_norm);
-                boundary_damping_loc[ik][is] += (vel_norm / conductivity->len_boundary) * time_ry; // same unit as gamma
+                boundary_damping_loc[ik][is] =
+                    vel_norm * Bohr_in_Angstrom * 1.0e-10 / conductivity->len_boundary;
             }
         }
     }
