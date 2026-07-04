@@ -109,7 +109,14 @@ ANPHON: Output files
  ``/kappa/kappa_coherent`` together with ``/kappa/kappa_total`` =
  ``kappa_peierls`` + ``kappa_coherent`` (the Wigner total; it is written only
  when the coherent term is actually computed, so "total" never silently means
- "Peierls only"). It is updated incrementally during the run and read back when the
+ "Peierls only"). Every kappa dataset carries a ``scattering_processes``
+ attribute naming the linewidth contributions it includes (e.g.
+ ``3ph+4ph+isotope+boundary``), and the ``/kappa`` group mirrors the same
+ information as machine-readable flags (``includes_isotope_scattering``,
+ ``includes_boundary_scattering``, ``includes_4ph_scattering``,
+ ``boundary_length``); the labels always describe the run that produced the
+ tensors — changing such a setting between restarts rebuilds the group while
+ keeping the computed linewidths. It is updated incrementally during the run and read back when the
  restart mode is on (``RESTART = 1`` / ``RESTART_4PH = 1``). Written with the
  default ``FILE_FORMAT = h5``; readable with h5py.
 

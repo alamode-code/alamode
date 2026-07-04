@@ -41,6 +41,10 @@ struct KappaFileMetaH5
     int isotope = 0;
     std::vector<double> isotope_factors;
 
+    // Boundary scattering (LEN_BOUNDARY), included in the total linewidth
+    // used for the kappa tensors when boundary_length > 0.
+    double boundary_length = 0.0;       // m
+
     // Which final-kappa datasets this run will produce (fixes the /kappa
     // layout at setup so no dataset is created after the file is published).
     bool with_kappa_3ph_only = false;

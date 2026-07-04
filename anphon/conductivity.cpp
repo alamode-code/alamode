@@ -729,6 +729,7 @@ KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
     if (meta.isotope > 0) {
         meta.isotope_factors = isotope->isotope_factor;
     }
+    meta.boundary_length = len_boundary > eps ? len_boundary : 0.0;
 
     meta.with_kappa_3ph_only = fph_rta > 0;
     meta.with_kappa_coherent = calc_coherent > 0;

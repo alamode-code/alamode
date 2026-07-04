@@ -274,39 +274,61 @@ struct KappaResultIOH5::Impl
                kmesh[2] == cmeta.nk_i[2] && nk_irred == cmeta.nk_irred && ns_file == cmeta.ns;
     }
 
+    // Human-readable list of the scattering processes entering the total
+    // linewidth behind the kappa tensors, e.g. "3ph+4ph+isotope+boundary".
+    auto scattering_process_string(const bool with_4ph) const -> std::string
+    {
+        std::string procs = "3ph";
+        if (with_4ph) procs += "+4ph";
+        if (fmeta.isotope > 0) procs += "+isotope";
+        if (fmeta.boundary_length > 0.0) procs += "+boundary";
+        return procs;
+    }
+
     auto create_kappa_group(HighFive::File &fh) const -> void
     {
         using namespace H5Easy;
         const auto nt = nt_file();
-        h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_peierls", {nt, 3, 3})
-            .createAttribute("unit", std::string("W/mK"));
+        const auto procs_full = scattering_process_string(fmeta.with_kappa_3ph_only);
+        const auto label = [&procs_full](HighFive::DataSet dset) {
+            dset.createAttribute("unit", std::string("W/mK"));
+            dset.createAttribute("scattering_processes", procs_full);
+        };
+
+        label(h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_peierls", {nt, 3, 3}));
         if (fmeta.with_kappa_3ph_only) {
-            h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_3ph_only", {nt, 3, 3})
-                .createAttribute("unit", std::string("W/mK"));
+            auto dset = h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_3ph_only", {nt, 3, 3});
+            dset.createAttribute("unit", std::string("W/mK"));
+            dset.createAttribute("scattering_processes", scattering_process_string(false));
         }
         if (fmeta.with_kappa_coherent) {
-            h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_coherent", {nt, 3, 3})
-                .createAttribute("unit", std::string("W/mK"));
+            label(h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_coherent", {nt, 3, 3}));
             // Wigner total = Peierls (intraband) + coherent (interband).
             // Written only when the coherent term is actually computed, so
             // "total" never silently means "Peierls only".
-            h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_total", {nt, 3, 3})
-                .createAttribute("unit", std::string("W/mK"));
+            label(h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_total", {nt, 3, 3}));
         }
         if (fmeta.with_kappa_coherent_block) {
-            h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_coherent_block", {nt, 3, 3})
-                .createAttribute("unit", std::string("W/mK"));
+            label(h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_coherent_block", {nt, 3, 3}));
         }
         if (fmeta.with_kappa_spec) {
             dump(fh, "/kappa/energy_axis", fmeta.energy_axis);
             dumpAttribute(fh, "/kappa/energy_axis", "unit", std::string("cm^-1"));
-            h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_spec",
-                                               {fmeta.energy_axis.size(), nt, 3})
-                .createAttribute("unit", std::string("W/mK/cm^-1"));
+            auto dset = h5_create_dataset_prealloc<double>(fh, "/kappa/kappa_spec",
+                                                           {fmeta.energy_axis.size(), nt, 3});
+            dset.createAttribute("unit", std::string("W/mK/cm^-1"));
+            dset.createAttribute("scattering_processes", procs_full);
         }
         // Validity marker as a raw-data dataset (not an attribute) so setting
         // it never touches file metadata. Per temperature in tdep mode.
         h5_create_dataset_prealloc<unsigned char>(fh, "/kappa/valid", {tdep ? nt : 1});
+
+        // Machine-readable summary of the same information on the group.
+        auto gk = fh.getGroup("/kappa");
+        gk.createAttribute("includes_isotope_scattering", fmeta.isotope > 0 ? 1 : 0);
+        gk.createAttribute("includes_boundary_scattering", fmeta.boundary_length > 0.0 ? 1 : 0);
+        gk.createAttribute("includes_4ph_scattering", fmeta.with_kappa_3ph_only ? 1 : 0);
+        gk.createAttribute("boundary_length", fmeta.boundary_length); // m; 0 = off
     }
 
     // The /kappa layout is fixed at setup; a restart run with different
@@ -333,6 +355,22 @@ struct KappaResultIOH5::Impl
         }
         const auto dims_valid = fh.getDataSet("/kappa/valid").getDimensions();
         if (dims_valid[0] != (tdep ? nt : 1)) return false;
+
+        // The scattering-process labels must describe THIS run, since the
+        // kappa tensors are recomputed and overwritten; a changed process
+        // set (e.g. ISOTOPE toggled) forces a rebuild of the group.
+        const auto gk = fh.getGroup("/kappa");
+        if (!gk.hasAttribute("includes_isotope_scattering")) return false;
+        int iso = 0, boundary = 0, fourph = 0;
+        double blen = 0.0;
+        gk.getAttribute("includes_isotope_scattering").read(iso);
+        gk.getAttribute("includes_boundary_scattering").read(boundary);
+        gk.getAttribute("includes_4ph_scattering").read(fourph);
+        gk.getAttribute("boundary_length").read(blen);
+        if (iso != (fmeta.isotope > 0 ? 1 : 0)) return false;
+        if (boundary != (fmeta.boundary_length > 0.0 ? 1 : 0)) return false;
+        if (fourph != (fmeta.with_kappa_3ph_only ? 1 : 0)) return false;
+        if (std::abs(blen - fmeta.boundary_length) >= eps10) return false;
         return true;
     }
 

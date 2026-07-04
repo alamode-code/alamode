@@ -96,6 +96,14 @@ def check_fresh_run(anphonbin):
                 or gi.max() <= 0.0:
             print("isotope gamma dataset is missing or empty")
             return 1
+        # The kappa tensors must state which scattering processes they include.
+        if f["kappa"].attrs["includes_isotope_scattering"] != 1:
+            print("includes_isotope_scattering flag is wrong")
+            return 1
+        if f["kappa/kappa_peierls"].attrs["scattering_processes"] != "3ph+isotope":
+            print("scattering_processes label is wrong:",
+                  f["kappa/kappa_peierls"].attrs["scattering_processes"])
+            return 1
         kappa_h5 = f["kappa/kappa_peierls"][...]
 
     kl = np.loadtxt(PREFIX + ".kl")
