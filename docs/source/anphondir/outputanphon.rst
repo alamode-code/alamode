@@ -120,6 +120,17 @@ ANPHON: Output files
  restart mode is on (``RESTART = 1`` / ``RESTART_4PH = 1``). Written with the
  default ``FILE_FORMAT = h5``; readable with h5py.
 
+ With ``SOLVER = IBTE``, the file additionally carries an
+ ``/iterativebte`` group holding the per-temperature results of the
+ iterative solver: the diagonal (out-scattering) part ``Q``, the deviation
+ function ``dF`` at the irreducible k points, the kappa tensor, and
+ solver-convergence/completion flags. Each temperature is committed durably
+ as soon as it finishes, so an interrupted temperature sweep restarts from
+ the missing temperatures only (``RESTART = 0`` discards the stored
+ results); when every temperature is already present, the expensive
+ transition probabilities are not rebuilt at all. RTA and IBTE results
+ coexist in the same file.
+
  When the run uses a temperature-dependent basis
  (:ref:`FC2_TEMPERATURE <anphon_fc2_temperature>` with an SCPH/QHA state
  file), the file switches to a temperature-resolved layout
@@ -142,6 +153,12 @@ ANPHON: Output files
 * ``PREFIX``.kl
 
  Lattice thermal conductivity tensor (Peierls term). Created when ``MODE = kappa``.
+
+* ``PREFIX``.kl_iter
+
+ Lattice thermal conductivity tensor obtained with ``SOLVER = IBTE``
+ (full 3x3 tensor per temperature). Created when ``MODE = kappa`` and
+ ``SOLVER = IBTE``.
 
 * ``PREFIX``.kl_spec
 

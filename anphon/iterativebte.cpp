@@ -111,6 +111,35 @@ void Iterativebte::setup_iterative()
     nk_l = collision_op->get_local_irred_ks();
     nklocal = collision_op->get_nklocal();
 
+    // Per-temperature state in PREFIX.kappa.h5 (/iterativebte): open or
+    // create the group and restore previously computed temperatures, which
+    // the solver then skips (each temperature is independent, so skipping
+    // reproduces an uninterrupted run exactly). RESTART = 0 discards them.
+    t_computed.assign(ntemp, 0);
+    if (conductivity->get_use_h5_io()) {
+        const auto reset = !conductivity->get_restart_conductivity(3);
+        ibte_io = conductivity->setup_ibte_io(dos->kmesh_dos->nk_i, dos->kmesh_dos->nk_irred, ns, reset);
+        if (ibte_io) {
+            const auto flags = ibte_io->load_ibte_computed();
+            unsigned int n_done = 0;
+            for (size_t i = 0; i < flags.size() && i < t_computed.size(); ++i) {
+                t_computed[i] = flags[i];
+                if (flags[i]) ++n_done;
+            }
+            for (unsigned int i = 0; i < ntemp; ++i) {
+                if (!t_computed[i]) continue;
+                unsigned char conv = 0;
+                ibte_io->load_ibte_kappa(i, &kappa[i][0][0], conv);
+            }
+            if (n_done > 0) {
+                std::cout << '\n' << " RESTART: " << n_done << " of " << ntemp
+                          << " temperature points were restored from the kappa.h5 file\n"
+                          << "          and will be skipped.\n";
+            }
+        }
+    }
+    MPI_Bcast(t_computed.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+
     if (mympi->my_rank == 0) {
         std::cout << '\n';
         std::cout << " Iterative solution" << '\n';
@@ -129,6 +158,21 @@ void Iterativebte::setup_iterative()
 
 void Iterativebte::do_iterativebte()
 {
+    auto all_done = ntemp > 0;
+    for (unsigned int i = 0; i < ntemp; ++i) {
+        if (!t_computed[i]) all_done = false;
+    }
+    if (all_done) {
+        // Every temperature was restored from the kappa.h5 file; the
+        // expensive L matrices are not needed at all.
+        if (mympi->my_rank == 0) {
+            std::cout << '\n' << " All temperature points were restored from the kappa.h5 file;\n"
+                      << " skipping the calculation of the transition probabilities.\n";
+        }
+        write_kappa_iterative();
+        return;
+    }
+
     if (mympi->my_rank == 0) {
         std::cout << '\n';
         std::cout << " Calculate once for the transition probability L(absorb) and L(emitt)" << '\n';
@@ -269,6 +313,17 @@ void Iterativebte::iterative_solver()
 
     for (auto itemp = 0; itemp < ntemp; ++itemp) {
 
+        if (t_computed[itemp]) {
+            if (mympi->my_rank == 0) {
+                std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed
+                          << std::setprecision(2) << Temperature[itemp]
+                          << " K    restored from the kappa.h5 file; skipped.\n";
+            }
+            continue;
+        }
+
+        auto converged_this_temp = false;
+
         double beta = 1.0 / (thermodynamics->T_to_Ryd * Temperature[itemp]);
 
         calc_boson(itemp, fb, dndt);
@@ -400,6 +455,7 @@ void Iterativebte::iterative_solver()
             }
 
             if (converged1 || converged2) {
+                converged_this_temp = true;
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
                         kappa[itemp][ix][iy] = kappa_old[ix][iy];
@@ -434,7 +490,7 @@ void Iterativebte::iterative_solver()
             }
 
         } // iter
-        write_Q_dF(itemp, Q, dFold);
+        write_Q_dF(itemp, Q, dFold, converged_this_temp);
 
     } // itemp
 
@@ -450,7 +506,7 @@ void Iterativebte::iterative_solver()
         deallocate(isotope_damping_loc);
         //deallocate(isotope_damping);
     }
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && !conductivity->get_use_h5_io()) {
         fs_result.close();
     }
 }
@@ -549,44 +605,17 @@ bool Iterativebte::check_convergence(const std::vector<double> &history)
 
 void Iterativebte::write_kappa_iterative()
 {
-    // TODO: combine this function into write_phonons.cpp
-    if (mympi->my_rank == 0) {
-
-        auto file_kappa = input->job_title + ".kl_iter";
-
-        std::ofstream ofs_kl;
-
-        ofs_kl.open(file_kappa.c_str(), std::ios::out);
-        if (!ofs_kl) exit("write_kappa_iterative", "Could not open file_kappa");
-
-        ofs_kl << "# Temperature [K], Thermal Conductivity (xx, xy, xz, yx, yy, yz, zx, zy, zz) [W/mK]" << '\n';
-        ofs_kl << "# Iterative result." << '\n';
-
-        if (isotope->include_isotope) ofs_kl << "# Isotope effects are included." << '\n';
-        if (conductivity->fph_rta > 0) ofs_kl << "# 4ph is included non-iteratively." << '\n';
-        if (conductivity->len_boundary > eps) {
-            ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2)
-                   << conductivity->len_boundary * 1e9 << " [nm]" << '\n';
-        }
-
-        for (auto itemp = 0; itemp < ntemp; ++itemp) {
-            ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2) << Temperature[itemp];
-            for (auto ix = 0; ix < 3; ++ix) {
-                for (auto iy = 0; iy < 3; ++iy) {
-                    ofs_kl << std::setw(15) << std::scientific << std::setprecision(4) << kappa[itemp][ix][iy];
-                }
-            }
-            ofs_kl << '\n';
-        }
-        ofs_kl.close();
-        std::cout << '\n';
-        std::cout << " -----------------------------------------------------------------" << '\n' << '\n';
-        std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
-    }
+    writes->writeKappaIterative(ntemp, Temperature, kappa);
 }
 
 void Iterativebte::write_result()
 {
+    // Legacy text Q/dF file (FILE_FORMAT = text only): the h5 path stores
+    // the same data per temperature in the /iterativebte group of
+    // PREFIX.kappa.h5 instead of reusing the legacy .result filename with
+    // an incompatible format.
+    if (conductivity->get_use_h5_io()) return;
+
     // write Q and W for all phonon, only phonon in irreducible BZ is written
     int i;
     double Ry_to_kayser = Hz_to_kayser / time_ry;
@@ -661,7 +690,7 @@ void Iterativebte::write_result()
     }
 }
 
-void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df)
+void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df, const bool converged)
 {
     auto etemp = Temperature[itemp];
 
@@ -687,19 +716,36 @@ void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df)
 
     // now we have Q
     if (mympi->my_rank == 0) {
-        fs_result << std::setw(10) << etemp << '\n';
-
-        for (auto ik = 0; ik < nk_ir; ++ik) {
-            for (auto is = 0; is < ns; ++is) {
-                auto k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
-                fs_result << std::setw(6) << ik + 1 << std::setw(6) << is + 1 << '\n';
-                fs_result << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is] << std::setw(15)
-                          << std::scientific << std::setprecision(5) << df[k1][is][0] << std::setw(15)
-                          << std::scientific << std::setprecision(5) << df[k1][is][1] << std::setw(15)
-                          << std::scientific << std::setprecision(5) << df[k1][is][2] << '\n';
+        if (ibte_io) {
+            // Durable per-temperature commit into /iterativebte: Q_all is a
+            // contiguous [nk_ir][ns] block; dF is flattened at the wedge
+            // representatives.
+            std::vector<double> df_flat(static_cast<size_t>(nk_ir) * ns * 3);
+            for (auto ik = 0; ik < nk_ir; ++ik) {
+                const auto k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+                for (auto is = 0; is < ns; ++is) {
+                    for (auto j = 0; j < 3; ++j) {
+                        df_flat[(static_cast<size_t>(ik) * ns + is) * 3 + j] = df[k1][is][j];
+                    }
+                }
             }
+            ibte_io->store_ibte_temperature(itemp, &Q_all[0][0], df_flat.data(), &kappa[itemp][0][0],
+                                            converged ? 1 : 0);
+        } else if (!conductivity->get_use_h5_io()) {
+            fs_result << std::setw(10) << etemp << '\n';
+
+            for (auto ik = 0; ik < nk_ir; ++ik) {
+                for (auto is = 0; is < ns; ++is) {
+                    auto k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+                    fs_result << std::setw(6) << ik + 1 << std::setw(6) << is + 1 << '\n';
+                    fs_result << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is]
+                              << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][0]
+                              << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][1]
+                              << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][2] << '\n';
+                }
+            }
+            fs_result << '\n';
         }
-        fs_result << '\n';
     }
     deallocate(Q_all);
 }

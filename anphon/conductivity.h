@@ -43,6 +43,18 @@ public:
 
     void compute_damping4_interpolated(const KpointMeshUniform *kmesh_dense_in, double **damping4_dense_out);
 
+    // SOLVER = IBTE: open PREFIX.kappa.h5 with the /iterativebte group and
+    // return the IO object for per-temperature commits (rank 0; nullptr on
+    // other ranks, under FILE_FORMAT = text, or in the unsupported
+    // temperature-resolved layout).
+    KappaResultIOH5 *setup_ibte_io(const unsigned int nk_i[3], unsigned int nk_irred_in, unsigned int ns_in,
+                                   bool reset);
+
+    bool get_use_h5_io() const
+    {
+        return use_h5_io;
+    }
+
     int calc_kappa_spec;
     unsigned int ntemp;
     double **damping3;

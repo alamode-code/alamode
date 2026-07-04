@@ -1625,7 +1625,11 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                ``ITERATIVE = 1`` tag; the iteration is controlled by
                :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`,
                :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and
-               :ref:`IBTE_MIXING <anphon_ibte_mixing>`.
+               :ref:`IBTE_MIXING <anphon_ibte_mixing>`. With the default
+               ``FILE_FORMAT = h5``, the per-temperature results are stored in
+               the ``/iterativebte`` group of ``PREFIX``.kappa.h5 and an
+               interrupted temperature sweep restarts from the missing
+               temperatures (``RESTART = 0`` forces a recomputation).
 
  .. caution::
 

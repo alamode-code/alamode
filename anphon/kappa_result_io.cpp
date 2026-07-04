@@ -42,6 +42,11 @@ struct KappaResultIOH5::Impl
     KappaFileMetaH5 fmeta;
     size_t ntemp = 0;                 // temperatures of THIS run
 
+    // /iterativebte group description (set only under SOLVER = IBTE); when
+    // present, every rebuild recreates or carries the group.
+    IbteMetaH5 imeta;
+    bool has_imeta = false;
+
     // Temperature-resolved (accumulation) state
     bool tdep = false;
     std::vector<double> file_temps;   // full grid of the file (== run temps in v1 mode)
@@ -377,6 +382,42 @@ struct KappaResultIOH5::Impl
         return fh.exist("/scattering/isotope") == (fmeta.isotope > 0);
     }
 
+    auto create_ibte_group(HighFive::File &fh) const -> void
+    {
+        const auto nt = nt_file();
+        auto group = fh.createGroup("/iterativebte");
+        const std::vector<unsigned int> kmesh{imeta.nk_i[0], imeta.nk_i[1], imeta.nk_i[2]};
+        group.createAttribute("kmesh", kmesh);
+        group.createAttribute("nk_irred", imeta.nk_irred);
+        group.createAttribute("nbranches", imeta.ns);
+
+        h5_create_dataset_prealloc<double>(fh, "/iterativebte/Q", {nt, imeta.nk_irred, imeta.ns})
+            .createAttribute("description",
+                             std::string("diagonal (out-scattering) part of the collision operator, internal units"));
+        h5_create_dataset_prealloc<double>(fh, "/iterativebte/dF", {nt, imeta.nk_irred, imeta.ns, 3})
+            .createAttribute("unit", std::string("bohr/K"));
+        h5_create_dataset_prealloc<double>(fh, "/iterativebte/kappa", {nt, 3, 3})
+            .createAttribute("unit", std::string("W/mK"));
+        h5_create_dataset_prealloc<unsigned char>(fh, "/iterativebte/converged", {nt});
+        h5_create_dataset_prealloc<unsigned char>(fh, "/iterativebte/computed", {nt});
+    }
+
+    auto ibte_group_matches(const HighFive::File &fh) const -> bool
+    {
+        const auto group = fh.getGroup("/iterativebte");
+        std::vector<unsigned int> kmesh;
+        unsigned int nk_irred = 0, ns_file = 0;
+        group.getAttribute("kmesh").read(kmesh);
+        group.getAttribute("nk_irred").read(nk_irred);
+        group.getAttribute("nbranches").read(ns_file);
+        if (!(kmesh.size() == 3 && kmesh[0] == imeta.nk_i[0] && kmesh[1] == imeta.nk_i[1] &&
+              kmesh[2] == imeta.nk_i[2] && nk_irred == imeta.nk_irred && ns_file == imeta.ns)) {
+            return false;
+        }
+        const auto dims = fh.getDataSet("/iterativebte/computed").getDimensions();
+        return dims.size() == 1 && dims[0] == nt_file();
+    }
+
     auto stamp(HighFive::File &fh) const -> void
     {
         stamp_h5_schema(fh, h5_schema_kappa_result, tdep ? kappa_version_tdep : h5_version_kappa_result);
@@ -386,7 +427,8 @@ struct KappaResultIOH5::Impl
 
     // ---- v1 rebuild: carry channels verbatim (H5Ocopy) ----
     auto rebuild(const std::vector<KappaChannelMetaH5> &to_create,
-                 const std::vector<std::string> &tags_drop) -> void
+                 const std::vector<std::string> &tags_drop,
+                 const bool drop_ibte = false) -> void
     {
         file.reset();
 
@@ -413,6 +455,14 @@ struct KappaResultIOH5::Impl
                         }
                     }
                 }
+                // The /iterativebte results survive structural changes (e.g.
+                // the 4ph channel appearing) exactly like the gamma channels.
+                if (!drop_ibte && oldfile.exist("/iterativebte")) {
+                    if (H5Ocopy(oldfile.getId(), "/iterativebte", newfile.getId(), "/iterativebte",
+                                H5P_DEFAULT, H5P_DEFAULT) < 0) {
+                        exit("kappa_result_io", "Failed to carry over the /iterativebte group");
+                    }
+                }
             }
 
             write_metadata(newfile);
@@ -423,6 +473,9 @@ struct KappaResultIOH5::Impl
             }
             ensure_isotope_dataset(newfile);
             create_kappa_group(newfile);
+            if (has_imeta && !newfile.exist("/iterativebte")) {
+                create_ibte_group(newfile);
+            }
             stamp(newfile);
             h5_flush_and_fsync(newfile);
         }
@@ -797,6 +850,90 @@ void KappaResultIOH5::ensure_channel(const KappaChannelMetaH5 &channel, const bo
         }
     }
     impl->write_basis_slices(channel);
+}
+
+bool KappaResultIOH5::open_or_create_for_ibte(const KappaFileMetaH5 &fmeta, const IbteMetaH5 &imeta,
+                                              const bool reset)
+{
+    impl->fmeta = fmeta;
+    impl->ntemp = fmeta.temperatures.size();
+    impl->tdep = fmeta.temperature_resolved;
+    impl->file_temps = fmeta.temperatures;
+    impl->file_fc2temps.assign(impl->file_temps.size(), fmeta.fc2_temperature);
+
+    if (impl->tdep) {
+        // No temperature-resolved layout of /iterativebte yet.
+        return false;
+    }
+
+    impl->imeta = imeta;
+    impl->has_imeta = true;
+
+    auto need_rebuild = false;
+    auto drop_ibte = false;
+
+    if (std::filesystem::exists(impl->filename)) {
+        const HighFive::File oldfile(impl->filename, HighFive::File::ReadOnly);
+        check_h5_schema(oldfile, h5_schema_kappa_result, kappa_version_tdep);
+        impl->validate_layout_mode(oldfile);
+        impl->validate_metadata(oldfile);
+
+        if (oldfile.exist("/iterativebte")) {
+            if (!impl->ibte_group_matches(oldfile) || reset) {
+                drop_ibte = true;
+                need_rebuild = true;
+            }
+        } else {
+            need_rebuild = true;
+        }
+    } else {
+        need_rebuild = true;
+    }
+
+    impl->compute_run_cols();
+
+    if (need_rebuild) {
+        impl->rebuild({}, {}, drop_ibte);
+    } else {
+        impl->file = std::make_unique<HighFive::File>(impl->filename, HighFive::File::ReadWrite);
+    }
+    return true;
+}
+
+std::vector<unsigned char> KappaResultIOH5::load_ibte_computed() const
+{
+    std::vector<unsigned char> flags(impl->ntemp, 0);
+    if (!impl->file || !impl->file->exist("/iterativebte")) return flags;
+    impl->file->getDataSet("/iterativebte/computed").read(flags);
+    return flags;
+}
+
+void KappaResultIOH5::load_ibte_kappa(const size_t itemp, double *kappa9, unsigned char &converged) const
+{
+    impl->file->getDataSet("/iterativebte/kappa").select({itemp, 0, 0}, {1, 3, 3}).read(kappa9);
+    impl->file->getDataSet("/iterativebte/converged").select({itemp}, {1}).read(&converged);
+}
+
+void KappaResultIOH5::store_ibte_temperature(const size_t itemp, const double *Q, const double *dF,
+                                             const double *kappa9, const unsigned char converged)
+{
+    if (!impl->file || !impl->has_imeta) {
+        exit("kappa_result_io", "store_ibte_temperature called before open_or_create_for_ibte");
+    }
+    const size_t nkirr = impl->imeta.nk_irred;
+    const size_t ns = impl->imeta.ns;
+
+    // Data (Q, dF, kappa, converged) first, the computed flag second, each
+    // made durable, so a persisted flag proves the temperature hit the disk.
+    impl->file->getDataSet("/iterativebte/Q").select({itemp, 0, 0}, {1, nkirr, ns}).write_raw(Q);
+    impl->file->getDataSet("/iterativebte/dF").select({itemp, 0, 0, 0}, {1, nkirr, ns, 3}).write_raw(dF);
+    impl->file->getDataSet("/iterativebte/kappa").select({itemp, 0, 0}, {1, 3, 3}).write_raw(kappa9);
+    impl->file->getDataSet("/iterativebte/converged").select({itemp}, {1}).write_raw(&converged);
+    h5_flush_and_fsync(*impl->file);
+
+    const unsigned char one = 1;
+    impl->file->getDataSet("/iterativebte/computed").select({itemp}, {1}).write_raw(&one);
+    h5_flush_and_fsync(*impl->file);
 }
 
 std::vector<int> KappaResultIOH5::load_computed_gamma(const std::string &tag, double **damping) const

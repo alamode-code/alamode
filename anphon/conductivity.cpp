@@ -127,9 +127,10 @@ void Conductivity::deallocate_variables()
 void Conductivity::run_kappa()
 {
     // MODE = kappa entry point: dispatch on the SOLVER tag (&kappa field).
-    // Both flags are set during parsing on rank 0 only.
+    // These flags are set during parsing on rank 0 only.
     MPI_Bcast(&solver_ibte, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&fph_rta, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     if (solver_ibte) {
         iterativebte->setup_iterative();
@@ -326,6 +327,28 @@ void Conductivity::setup_kappa_4ph()
     // prepare IO for four phonon
     setup_result_io(-1);
     prepare_restart(-1);
+}
+
+KappaResultIOH5 *Conductivity::setup_ibte_io(const unsigned int nk_i[3], const unsigned int nk_irred_in,
+                                             const unsigned int ns_in, const bool reset)
+{
+    if (!use_h5_io || mympi->my_rank != 0) return nullptr;
+
+    IbteMetaH5 imeta;
+    for (auto i = 0; i < 3; ++i) imeta.nk_i[i] = nk_i[i];
+    imeta.nk_irred = nk_irred_in;
+    imeta.ns = ns_in;
+
+    if (!result_io_h5) {
+        result_io_h5 = std::make_unique<KappaResultIOH5>(file_kappa_h5);
+    }
+    if (!result_io_h5->open_or_create_for_ibte(build_kappa_file_meta(), imeta, reset)) {
+        warn("setup_ibte_io",
+             "The /iterativebte group of the kappa.h5 file does not support the temperature-resolved\n"
+             " (FC2_TEMPERATURE) layout yet; IBTE results are not persisted and restart is disabled.");
+        return nullptr;
+    }
+    return result_io_h5.get();
 }
 
 void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_dense_in,

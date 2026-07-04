@@ -43,6 +43,8 @@ Improvement:
 
 namespace PHON_NS
 {
+class KappaResultIOH5;
+
 class Iterativebte: protected Pointers
 {
 public:
@@ -79,6 +81,13 @@ private:
     // on top of it.
     std::unique_ptr<CollisionOperator> collision_op;
 
+    // Persistent per-temperature state in the /iterativebte group of
+    // PREFIX.kappa.h5 (borrowed from Conductivity; rank 0 and h5 mode
+    // only). t_computed marks temperatures restored from a previous run,
+    // which the solver skips.
+    KappaResultIOH5 *ibte_io = nullptr;
+    std::vector<unsigned char> t_computed;
+
     double ***vel;
 
     // linear response to deltaT
@@ -104,7 +113,7 @@ private:
     //void write_result_gamma(unsigned int,unsigned int,double ***,double **) const;
     void write_result();
 
-    void write_Q_dF(int, double **&, double ***&);
+    void write_Q_dF(int, double **&, double ***&, bool converged);
 
     void write_kappa_iterative();
 };

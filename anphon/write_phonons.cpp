@@ -2195,6 +2195,43 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
     }
 }
 
+void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temperature_in,
+                                 const double *const *const *kappa_in) const
+{
+    if (mympi->my_rank != 0) return;
+
+    const auto file_kappa = input->job_title + ".kl_iter";
+
+    std::ofstream ofs_kl;
+
+    ofs_kl.open(file_kappa.c_str(), std::ios::out);
+    if (!ofs_kl) exit("writeKappaIterative", "Could not open file_kappa");
+
+    ofs_kl << "# Temperature [K], Thermal Conductivity (xx, xy, xz, yx, yy, yz, zx, zy, zz) [W/mK]" << '\n';
+    ofs_kl << "# Iterative result." << '\n';
+
+    if (isotope->include_isotope) ofs_kl << "# Isotope effects are included." << '\n';
+    if (conductivity->fph_rta > 0) ofs_kl << "# 4ph is included non-iteratively." << '\n';
+    if (conductivity->len_boundary > eps) {
+        ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2)
+               << conductivity->len_boundary * 1e9 << " [nm]" << '\n';
+    }
+
+    for (unsigned int itemp = 0; itemp < ntemp_in; ++itemp) {
+        ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2) << temperature_in[itemp];
+        for (auto ix = 0; ix < 3; ++ix) {
+            for (auto iy = 0; iy < 3; ++iy) {
+                ofs_kl << std::setw(15) << std::scientific << std::setprecision(4) << kappa_in[itemp][ix][iy];
+            }
+        }
+        ofs_kl << '\n';
+    }
+    ofs_kl.close();
+    std::cout << '\n';
+    std::cout << " -----------------------------------------------------------------" << '\n' << '\n';
+    std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
+}
+
 void Writes::writeKappa() const
 {
     // Write lattice thermal conductivity

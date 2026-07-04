@@ -63,6 +63,17 @@ struct KappaFileMetaH5
     std::string fc2_source;             // file the renormalized FC2 came from
 };
 
+// Static description of the /iterativebte group: the mesh the iterative
+// solver ran on. Per-temperature results (Q, dF, kappa, convergence) are
+// committed one temperature at a time with the same two-phase durability
+// contract as the gamma batches.
+struct IbteMetaH5
+{
+    unsigned int nk_i[3] = {0, 0, 0};
+    unsigned int nk_irred = 0;
+    unsigned int ns = 0;
+};
+
 // Static description of one scattering channel ("3ph" or "4ph"): its k mesh
 // and the per-mode quantities that do not change during the run.
 struct KappaChannelMetaH5
@@ -106,6 +117,29 @@ public:
     // Validate an additional channel against an open file, creating it (via
     // rebuild-and-swap) when absent; reset_channel discards previous data.
     void ensure_channel(const KappaChannelMetaH5 &channel, bool reset_channel);
+
+    // Open or create the file with the /iterativebte group (SOLVER = IBTE;
+    // no gamma channel required). An existing matching group is kept as the
+    // restart source unless reset is set. Returns false - and leaves the
+    // object unusable for the ibte_* calls - in the temperature-resolved
+    // (FC2_TEMPERATURE) layout, which the group does not support yet. A
+    // later ensure_channel (the 4ph path) carries the group across its
+    // rebuild.
+    bool open_or_create_for_ibte(const KappaFileMetaH5 &fmeta, const IbteMetaH5 &imeta, bool reset);
+
+    // Completion flags of /iterativebte ([NT]; 1 = that temperature's
+    // results are durable on disk).
+    std::vector<unsigned char> load_ibte_computed() const;
+
+    // Read back the kappa tensor (row-major 3x3) and convergence flag of a
+    // computed temperature.
+    void load_ibte_kappa(size_t itemp, double *kappa9, unsigned char &converged) const;
+
+    // Durably commit one temperature: Q [nk_irred*ns], dF [nk_irred*ns*3]
+    // (wedge representatives), kappa (3x3) and the solver-converged flag
+    // first, then the computed flag, so a persisted flag never overstates.
+    void store_ibte_temperature(size_t itemp, const double *Q, const double *dF, const double *kappa9,
+                                unsigned char converged);
 
     // Copy every already-computed gamma row of the channel into
     // damping[row][itemp] (internal units) and return the row indices found.

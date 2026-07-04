@@ -3,7 +3,8 @@
 
 Covers: fresh-run schema, no-op restart, recovery from partially computed
 files (completion flags), RESTART = 0 reset, the FILE_FORMAT = text legacy
-path, one-way import of legacy text .result files, and (optionally, set
+path, one-way import of legacy text .result files, the /iterativebte group
+written by SOLVER = IBTE (per-temperature restart), and (optionally, set
 ALAMODE_TEST_KILL=1) physical crash recovery via SIGKILL.
 """
 
@@ -292,6 +293,97 @@ def check_kill_recovery(anphonbin, fresh_runtime):
     return 0
 
 
+IBTE_PREFIX = "si222_ibte"
+
+
+def gen_ibte_input(fname, extra_kappa=""):
+    with open(fname, "w") as f:
+        f.write(
+            "&general\n PREFIX = %s; MODE = kappa; FCSFILE = si222_cubic.xml; KD = Si\n"
+            % IBTE_PREFIX
+        )
+        f.write(" TMIN = 200; TMAX = 300; DT = 100\n/\n")
+        f.write("&cell\n  10.203\n  0.0 0.5 0.5\n  0.5 0.0 0.5\n  0.5 0.5 0.0\n/\n")
+        f.write("&kpoint\n  2\n  4 4 4\n/\n")
+        f.write("&kappa\n SOLVER = IBTE\n %s\n/\n" % extra_kappa)
+
+
+def kl_iter_matches(reference):
+    now = np.loadtxt(IBTE_PREFIX + ".kl_iter")
+    return np.allclose(now, reference, rtol=1e-8, atol=1e-12)
+
+
+def check_ibte_h5(anphonbin):
+    """SOLVER = IBTE: /iterativebte group, per-temperature restart, reset."""
+    for fname in (IBTE_PREFIX + ".kappa.h5", IBTE_PREFIX + ".kl_iter", IBTE_PREFIX + ".result"):
+        if os.path.exists(fname):
+            os.remove(fname)
+    gen_ibte_input("ibte.in")
+    if run_anphon(anphonbin, "ibte.in", "ibte_fresh.log"):
+        print("IBTE fresh run failed")
+        return 1
+    if os.path.exists(IBTE_PREFIX + ".result"):
+        print("IBTE run wrote the legacy .result file in h5 mode")
+        return 1
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
+        if "iterativebte" not in f:
+            print("/iterativebte group missing")
+            return 1
+        for name in ("Q", "dF", "kappa", "converged", "computed"):
+            if name not in f["iterativebte"]:
+                print("/iterativebte/%s missing" % name)
+                return 1
+        if not np.all(f["iterativebte/computed"][...] == 1):
+            print("computed flags not fully set after the fresh IBTE run")
+            return 1
+    kl_fresh = np.loadtxt(IBTE_PREFIX + ".kl_iter")
+
+    # No-op restart: every temperature restored, L not rebuilt.
+    if run_anphon(anphonbin, "ibte.in", "ibte_noop.log"):
+        print("IBTE no-op restart failed")
+        return 1
+    if not log_contains("ibte_noop.log", "skipping the calculation of the transition probabilities"):
+        print("IBTE no-op restart rebuilt the transition probabilities")
+        return 1
+    if not kl_iter_matches(kl_fresh):
+        print(".kl_iter differs after the IBTE no-op restart")
+        return 1
+
+    # Partial restart: discard one temperature and scribble its kappa row;
+    # only that temperature is recomputed and the result is unchanged.
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r+") as f:
+        flags = f["iterativebte/computed"][...]
+        flags[0] = 0
+        f["iterativebte/computed"][...] = flags
+        f["iterativebte/kappa"][0, :, :] = -1.0
+    if run_anphon(anphonbin, "ibte.in", "ibte_partial.log"):
+        print("IBTE partial restart failed")
+        return 1
+    if not log_contains("ibte_partial.log", "restored from the kappa.h5 file"):
+        print("IBTE partial restart did not restore the intact temperature")
+        return 1
+    if not kl_iter_matches(kl_fresh):
+        print(".kl_iter differs after the IBTE partial restart")
+        return 1
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
+        if not np.all(f["iterativebte/computed"][...] == 1):
+            print("computed flags not restored after the partial restart")
+            return 1
+
+    # RESTART = 0 discards the stored temperatures.
+    gen_ibte_input("ibte_r0.in", extra_kappa="RESTART = 0")
+    if run_anphon(anphonbin, "ibte_r0.in", "ibte_r0.log"):
+        print("IBTE RESTART=0 run failed")
+        return 1
+    if log_contains("ibte_r0.log", "restored from the kappa.h5 file"):
+        print("IBTE RESTART=0 did not discard the previous results")
+        return 1
+    if not kl_iter_matches(kl_fresh):
+        print(".kl_iter differs after IBTE RESTART=0")
+        return 1
+    return 0
+
+
 def runtest_kappa_restart(almbin, anphonbin, project_root):
     if run_alm_si(almbin, project_root) != 0:
         print("alm setup failed")
@@ -318,6 +410,10 @@ def runtest_kappa_restart(almbin, anphonbin, project_root):
     if check_legacy_text_roundtrip(anphonbin):
         return 1
     print("Text mode + legacy import --> pass")
+
+    if check_ibte_h5(anphonbin):
+        return 1
+    print("IBTE /iterativebte restart --> pass")
 
     if os.environ.get("ALAMODE_TEST_KILL", "1") != "0":
         if check_kill_recovery(anphonbin, fresh_runtime):
