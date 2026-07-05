@@ -7,6 +7,7 @@
 #include "anharmonic_core.h"
 #include "conductivity.h"
 #include "constants.h"
+#include "dense_symmetric_eigen.h"
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
@@ -53,8 +54,10 @@ void Iterativebte::set_default_variables()
     mixing_factor = 0.9;
     convergence_criteria = 0.02;
     use_variational = false;
+    use_direct = false;
     isotope_inscattering = true;
     cg_symmetry_checked = false;
+    dbte_assembly_checked = false;
     kappa = nullptr;
 
     // private
@@ -91,6 +94,7 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(&mixing_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&convergence_criteria, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_variational, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&use_direct, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&isotope_inscattering, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     // The 4ph channel follows conductivity->fph_rta, decided by the
@@ -164,7 +168,11 @@ void Iterativebte::setup_iterative()
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
-        if (use_variational) {
+        if (use_direct) {
+            std::cout << " Direct solution (dense eigendecomposition of the collision kernel)" << '\n';
+            std::cout << " ===================================================================" << '\n';
+            std::cout << " Diagnostic solver: full spectrum, PSD check, near-null analysis." << '\n';
+        } else if (use_variational) {
             std::cout << " Variational solution (preconditioned conjugate gradients)" << '\n';
             std::cout << " ==========================================================" << '\n';
             std::cout << " MAX_CYCLE = " << max_cycle << '\n';
@@ -432,6 +440,18 @@ void Iterativebte::iterative_solver()
             }
         }
 
+        if (use_direct) {
+            // Dense eigendecomposition of the collision kernel.
+            int iters = 0;
+            double fres = 0.0;
+            converged_this_temp = solve_direct_at_temperature(itemp, beta, fb, Qfin, iters, fres);
+            iterations_used[itemp] = iters;
+            final_residual[itemp] = fres;
+            t_converged[itemp] = converged_this_temp ? 1 : 0;
+            write_Q_dF(itemp, Q, dFold, converged_this_temp);
+            continue;
+        }
+
         if (use_variational) {
             // Conjugate-gradient solution of the same linear system.
             int iters = 0;
@@ -654,6 +674,454 @@ void Iterativebte::iterative_solver()
     }
 }
 
+void Iterativebte::build_wedge_system(const int itemp, const double beta, double **Qfin_loc,
+                                      std::vector<double> &qdiag, std::vector<double> &wrow,
+                                      std::vector<unsigned char> &mask, std::vector<double> &b) const
+{
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const size_t nrows = static_cast<size_t>(nk_irred) * ns;
+    const auto etemp = Temperature[itemp];
+    const auto eval = dos->dymat_dos->get_eigenvalues();
+    const auto t_to_ryd = thermodynamics->T_to_Ryd;
+
+    // Full-wedge diagonal, replicated on every rank.
+    std::vector<double> qdiag_loc(nrows, 0.0);
+    qdiag.assign(nrows, 0.0);
+    for (int ikl = 0; ikl < nklocal; ++ikl) {
+        for (int s = 0; s < ns; ++s) {
+            qdiag_loc[static_cast<size_t>(nk_l[ikl]) * ns + s] = Qfin_loc[ikl][s];
+        }
+    }
+    MPI_Allreduce(qdiag_loc.data(), qdiag.data(), static_cast<int>(nrows), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    // Star multiplicities (the metric), mask of the excluded modes, and the
+    // right-hand side.
+    wrow.assign(nrows, 0.0);
+    mask.assign(nrows, 0);
+    b.assign(nrows * 3, 0.0);
+
+    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+        const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+        const auto mult = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[ik].size());
+        for (int s = 0; s < ns; ++s) {
+            const auto row = static_cast<size_t>(ik) * ns + s;
+            const auto omega = eval[k1][s];
+            if (qdiag[row] < 1.0e-50 || omega < eps8) {
+                mask[row] = 1;
+                continue;
+            }
+            wrow[row] = mult;
+            const auto xred = omega / (t_to_ryd * etemp);
+            const auto dndt_val = pow2(1.0 / (2.0 * sinh(0.5 * xred))) * xred / etemp;
+            for (auto j = 0; j < 3; ++j) {
+                b[row * 3 + j] = -vel[k1][s][j] * dndt_val / beta;
+            }
+        }
+    }
+
+    project_wedge_vector(b, mask);
+}
+
+void Iterativebte::project_wedge_vector(std::vector<double> &v, const std::vector<unsigned char> &mask) const
+{
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const size_t nrows = static_cast<size_t>(nk_irred) * ns;
+    const auto eval = dos->dymat_dos->get_eigenvalues();
+
+    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+        const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+        average_over_degenerate_modes(ns, eval[k1], 3, &v[static_cast<size_t>(ik) * ns * 3]);
+    }
+    for (size_t row = 0; row < nrows; ++row) {
+        if (!mask[row]) continue;
+        for (auto j = 0; j < 3; ++j) v[row * 3 + j] = 0.0;
+    }
+}
+
+bool Iterativebte::solve_direct_at_temperature(const int itemp, const double beta, double **fb, double **Qfin_loc,
+                                               int &iterations_out, double &residual_out)
+{
+    // SOLVER = DBTE: assemble the multiplicity-symmetrized dense operator
+    // from the stored L entries (one-application cost), take its full
+    // eigendecomposition, and report the spectrum diagnostics that the
+    // matrix-free solvers cannot access: discretization asymmetry,
+    // positive-semidefiniteness, near-null modes with their overlap onto
+    // the momentum-drift directions, and the sensitivity of kappa to a
+    // low-eigenvalue cutoff. Intended for small meshes.
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const size_t nrows = static_cast<size_t>(nk_irred) * ns;
+    const size_t nrows3 = nrows * 3;
+    const auto eval = dos->dymat_dos->get_eigenvalues();
+
+    std::vector<double> qdiag(nrows), wrow(nrows);
+    std::vector<unsigned char> mask(nrows);
+    std::vector<double> b(nrows3);
+    build_wedge_system(itemp, beta, Qfin_loc, qdiag, wrow, mask, b);
+
+    // Active (unmasked) scalar rows and the compressed dimension.
+    std::vector<int> act_rows;
+    for (size_t row = 0; row < nrows; ++row) {
+        if (!mask[row]) act_rows.push_back(static_cast<int>(row));
+    }
+    const int nact3 = 3 * static_cast<int>(act_rows.size());
+
+    constexpr int dbte_max_dim = 25000;
+    if (nact3 > dbte_max_dim) {
+        exit("solve_direct_at_temperature",
+             "The dense collision kernel exceeds the current DBTE size limit\n"
+             " (3 * nk_irred * nbranches too large for the rank-0 LAPACK backend).\n"
+             " Use a coarser k mesh, or SOLVER = IBTE/VBTE; memory-distributed\n"
+             " (ELPA/ScaLAPACK) and GPU (MAGMA/cuSOLVER) backends are planned.");
+    }
+
+    // Row-distributed assembly, gathered on rank 0.
+    const size_t nrows_loc = static_cast<size_t>(nklocal) * ns * 3;
+    std::vector<double> slab(nrows_loc * nrows3, 0.0);
+    collision_op->assemble_dense_rows(fb, Qfin_loc, slab.data());
+
+    // One-time cross-validation of the assembled rows against the
+    // independently coded matrix-free application (calc_W_at + diagonal):
+    // both must produce identical results for any wedge vector.
+    if (!dbte_assembly_checked) {
+        dbte_assembly_checked = true;
+        std::vector<double> xtest(nrows3, 0.0);
+        for (size_t row = 0; row < nrows; ++row) {
+            if (mask[row]) continue;
+            for (auto j = 0; j < 3; ++j) xtest[row * 3 + j] = b[row * 3 + j] / qdiag[row];
+        }
+        project_wedge_vector(xtest, mask);
+        collision_op->reconstruct_full_from_wedge(xtest.data(), dFold);
+
+        double maxdiff_loc = 0.0, scale_loc = 0.0;
+        for (int ikl = 0; ikl < nklocal; ++ikl) {
+            const auto tmpk = nk_l[ikl];
+            const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+            const auto sqrt_mrow = std::sqrt(static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size()));
+
+            double **Wks_loc;
+            allocate(Wks_loc, ns, 3);
+            collision_op->calc_W_at(ikl, fb, dFold, Wks_loc);
+
+            for (int s1 = 0; s1 < ns; ++s1) {
+                const auto grow = static_cast<size_t>(tmpk) * ns + s1;
+                for (auto x = 0; x < 3; ++x) {
+                    // Assembled row applied to the metric-scaled vector...
+                    double y_mat = 0.0;
+                    const double *rowp = slab.data() + ((static_cast<size_t>(ikl) * ns + s1) * 3 + x) * nrows3;
+                    for (size_t c = 0; c < nrows; ++c) {
+                        const auto sq = std::sqrt(wrow[c] > 0.0 ? wrow[c] : 1.0);
+                        for (auto y = 0; y < 3; ++y) {
+                            y_mat += rowp[c * 3 + y] * sq * xtest[c * 3 + y];
+                        }
+                    }
+                    // ...equals the metric-scaled matrix-free application.
+                    const auto y_free =
+                        sqrt_mrow * (qdiag[grow] * xtest[grow * 3 + x] + (mask[grow] ? 0.0 : Wks_loc[s1][x]));
+                    maxdiff_loc = std::max(maxdiff_loc, std::abs(y_mat - y_free));
+                    scale_loc = std::max(scale_loc, std::abs(y_free));
+                }
+            }
+            deallocate(Wks_loc);
+        }
+        double maxdiff = 0.0, scale = 0.0;
+        MPI_Allreduce(&maxdiff_loc, &maxdiff, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        MPI_Allreduce(&scale_loc, &scale, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        if (mympi->my_rank == 0) {
+            std::cout << "      (assembly cross-check vs the matrix-free operator: max rel diff = "
+                      << std::scientific << std::setprecision(1) << (scale > 0.0 ? maxdiff / scale : 0.0)
+                      << ")\n";
+        }
+    }
+
+    std::vector<double> S; // full matrix, row-major, rank 0 only
+    if (mympi->my_rank == 0) {
+        S.assign(nrows3 * nrows3, 0.0);
+        std::vector<double> buf;
+        for (auto r = 0; r < mympi->nprocs; ++r) {
+            // Wedge rows of rank r follow the round-robin distribution.
+            std::vector<int> irows;
+            for (unsigned int i = 0; i < nk_irred; ++i) {
+                if (static_cast<int>(i) % mympi->nprocs == r) irows.push_back(static_cast<int>(i));
+            }
+            const double *src = nullptr;
+            if (r == 0) {
+                src = slab.data();
+            } else {
+                buf.resize(irows.size() * ns * 3 * nrows3);
+                MPI_Recv(buf.data(), static_cast<int>(buf.size()), MPI_DOUBLE, r, r, MPI_COMM_WORLD,
+                         MPI_STATUS_IGNORE);
+                src = buf.data();
+            }
+            for (size_t il = 0; il < irows.size(); ++il) {
+                const size_t gbase = static_cast<size_t>(irows[il]) * ns * 3;
+                for (int rs = 0; rs < ns * 3; ++rs) {
+                    std::copy(src + (il * ns * 3 + rs) * nrows3, src + (il * ns * 3 + rs + 1) * nrows3,
+                              S.begin() + (gbase + rs) * nrows3);
+                }
+            }
+        }
+    } else {
+        MPI_Send(slab.data(), static_cast<int>(slab.size()), MPI_DOUBLE, 0, mympi->my_rank, MPI_COMM_WORLD);
+    }
+    slab.clear();
+    slab.shrink_to_fit();
+
+    double kappa9[9] = {};
+    double residual = 0.0;
+    std::vector<double> dF_wedge(nrows3, 0.0);
+
+    if (mympi->my_rank == 0) {
+
+        // Degeneracy-reduced basis: one orthonormal (symmetric) combination
+        // per degenerate block, u_I = d^{-1/2} sum_{s in I} e_s. This
+        // performs the degeneracy averaging of the iterative solvers
+        // exactly, without the 3(d-1) artificial null modes a projector
+        // P S P would inject into the spectrum. Masked rows never share a
+        // block with active ones (degenerate partners have equal omega).
+        const auto tol_omega = 1.0e-7;
+        std::vector<std::pair<int, int>> blocks; // [first,last) active scalar rows within one ik
+        for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+            const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+            int begin = 0;
+            for (int s = 1; s <= ns; ++s) {
+                if (s < ns && std::abs(eval[k1][s] - eval[k1][begin]) < tol_omega) continue;
+                if (!mask[static_cast<size_t>(ik) * ns + begin]) {
+                    blocks.push_back({static_cast<int>(ik * ns) + begin, static_cast<int>(ik * ns) + s});
+                }
+                if (s < ns) begin = s;
+            }
+        }
+        const int nred3 = 3 * static_cast<int>(blocks.size());
+
+        std::vector<double> A(static_cast<size_t>(nred3) * nred3, 0.0);
+        std::vector<double> inv_sqrt_d(blocks.size());
+        for (size_t I = 0; I < blocks.size(); ++I) {
+            inv_sqrt_d[I] = 1.0 / std::sqrt(static_cast<double>(blocks[I].second - blocks[I].first));
+        }
+        for (size_t I = 0; I < blocks.size(); ++I) {
+            for (size_t J = 0; J < blocks.size(); ++J) {
+                const auto fac = inv_sqrt_d[I] * inv_sqrt_d[J];
+                for (auto x = 0; x < 3; ++x) {
+                    for (auto y = 0; y < 3; ++y) {
+                        double sum = 0.0;
+                        for (auto i = blocks[I].first; i < blocks[I].second; ++i) {
+                            for (auto j = blocks[J].first; j < blocks[J].second; ++j) {
+                                sum += S[(static_cast<size_t>(i) * 3 + x) * nrows3 + static_cast<size_t>(j) * 3 + y];
+                            }
+                        }
+                        A[(static_cast<size_t>(J) * 3 + y) * nred3 + static_cast<size_t>(I) * 3 + x] = fac * sum;
+                    }
+                }
+            }
+        }
+        S.clear();
+        S.shrink_to_fit();
+
+        double asym2 = 0.0, norm2 = 0.0;
+        for (int i = 0; i < nred3; ++i) {
+            for (int j = 0; j < i; ++j) {
+                const auto aij = A[static_cast<size_t>(j) * nred3 + i];
+                const auto aji = A[static_cast<size_t>(i) * nred3 + j];
+                asym2 += pow2(aij - aji);
+                norm2 += pow2(aij) + pow2(aji);
+            }
+            norm2 += pow2(A[static_cast<size_t>(i) * nred3 + i]);
+        }
+        const auto asym = norm2 > 0.0 ? std::sqrt(2.0 * asym2 / norm2) : 0.0;
+        for (int i = 0; i < nred3; ++i) {
+            for (int j = 0; j < i; ++j) {
+                const auto sym = 0.5 * (A[static_cast<size_t>(j) * nred3 + i] + A[static_cast<size_t>(i) * nred3 + j]);
+                A[static_cast<size_t>(j) * nred3 + i] = sym;
+                A[static_cast<size_t>(i) * nred3 + j] = sym;
+            }
+        }
+
+        std::cout << "      dense collision kernel: dimension " << nred3 << " (" << nrows3 - nact3
+                  << " excluded rows, " << nact3 - nred3 << " folded into degenerate blocks), memory "
+                  << std::fixed << std::setprecision(1)
+                  << static_cast<double>(nred3) * nred3 * 8.0 / 1048576.0 << " MB\n";
+        std::cout << "      asymmetry |S - S^T|_F / |S|_F = " << std::scientific << std::setprecision(1) << asym
+                  << " (symmetrized for the eigendecomposition)\n";
+
+        // Right-hand side in the symmetrized metric, block-reduced (b is
+        // block constant, so the reduced component is sqrt(d) b).
+        std::vector<double> btil(nred3);
+        for (size_t I = 0; I < blocks.size(); ++I) {
+            const auto srow = blocks[I].first; // representative scalar row
+            const auto fac = std::sqrt(wrow[srow]) / inv_sqrt_d[I];
+            for (auto x = 0; x < 3; ++x) {
+                btil[I * 3 + x] = fac * b[static_cast<size_t>(srow) * 3 + x];
+            }
+        }
+
+        std::vector<double> evals;
+        solve_dense_symmetric(nred3, A, evals);
+
+        const auto lam_max = evals.empty() ? 0.0 : evals.back();
+        const auto lam_tol = lam_max * 1.0e-12;
+        int n_negative = 0, n_nearnull = 0;
+        for (const auto lam: evals) {
+            if (lam < -lam_tol) ++n_negative;
+            if (std::abs(lam) < 1.0e-8 * lam_max) ++n_nearnull;
+        }
+        std::cout << "      eigenvalues: min = " << std::scientific << std::setprecision(2) << evals.front()
+                  << ", max = " << lam_max << "; negative (< -1e-12 max): " << n_negative
+                  << "; near-null (|lambda| < 1e-8 max): " << n_nearnull << '\n';
+        if (n_negative > 0) {
+            std::cout << "      WARNING: the physical collision kernel is positive semidefinite;\n"
+                      << "               negative eigenvalues indicate a too-coarse mesh or an\n"
+                      << "               inadequate smearing width.\n";
+        }
+
+        // Overlap of the softest modes with the momentum-drift space
+        // (candidate fields dF(k) = k_cart, branch independent, up to
+        // occupation weighting), orthonormalized in the compressed metric.
+        {
+            Eigen::Matrix3d mat_k2cart;
+            const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
+            for (auto i = 0; i < 3; ++i) {
+                for (auto j = 0; j < 3; ++j) mat_k2cart(j, i) = rlavec(i, j);
+            }
+
+            std::vector<std::vector<double>> drift(3, std::vector<double>(nred3, 0.0));
+            for (size_t I = 0; I < blocks.size(); ++I) {
+                const auto ik = static_cast<unsigned int>(blocks[I].first / ns);
+                const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+                Eigen::Vector3d kf;
+                for (auto j = 0; j < 3; ++j) kf(j) = dos->kmesh_dos->xk[k1][j];
+                const Eigen::Vector3d kc = mat_k2cart * kf;
+                // The three drift generators are the Cartesian components of
+                // the (branch-independent) vector field dF(k) = k_cart.
+                const auto fac = std::sqrt(wrow[blocks[I].first]) / inv_sqrt_d[I];
+                for (auto x = 0; x < 3; ++x) {
+                    drift[x][I * 3 + x] = fac * kc(x);
+                }
+            }
+            std::vector<int> kept;
+            for (auto a = 0; a < 3; ++a) {
+                for (const auto kb: kept) {
+                    double pr = 0.0;
+                    for (int i = 0; i < nred3; ++i) pr += drift[a][i] * drift[kb][i];
+                    for (int i = 0; i < nred3; ++i) drift[a][i] -= pr * drift[kb][i];
+                }
+                double nrm = 0.0;
+                for (int i = 0; i < nred3; ++i) nrm += pow2(drift[a][i]);
+                if (nrm > 1.0e-24) {
+                    nrm = 1.0 / std::sqrt(nrm);
+                    for (int i = 0; i < nred3; ++i) drift[a][i] *= nrm;
+                    kept.push_back(a);
+                }
+            }
+            for (auto m = 0; m < std::min(3, nred3); ++m) {
+                double ov2 = 0.0;
+                for (const auto kb: kept) {
+                    double pr = 0.0;
+                    for (int i = 0; i < nred3; ++i) pr += A[static_cast<size_t>(m) * nred3 + i] * drift[kb][i];
+                    ov2 += pow2(pr);
+                }
+                std::cout << "      softest mode " << m << ": lambda = " << std::scientific << std::setprecision(2)
+                          << evals[m] << ", overlap with the momentum-drift space = " << std::fixed
+                          << std::setprecision(3) << std::sqrt(ov2) << '\n';
+            }
+        }
+
+        // kappa via the spectral pseudo-inverse; the cutoff table exposes
+        // near-singular directions.
+        std::vector<double> coef(nred3, 0.0);
+        const auto lam_null = std::max(0.0, lam_max * 1.0e-12);
+        int n_null = 0;
+        for (int i = 0; i < nred3; ++i) {
+            if (evals[i] <= lam_null) {
+                ++n_null;
+                continue;
+            }
+            double pr = 0.0;
+            for (int j = 0; j < nred3; ++j) pr += A[static_cast<size_t>(i) * nred3 + j] * btil[j];
+            coef[i] = pr / evals[i];
+        }
+        if (n_null > 0) {
+            std::cout << "      " << n_null << " numerically null mode(s) (lambda <= 1e-12 max) excluded\n";
+        }
+
+        const auto kappa_of_drop = [&](const int mdrop, double *k9, std::vector<double> *dF_keep) {
+            std::vector<double> xt(nred3, 0.0);
+            int skipped = 0;
+            for (int i = 0; i < nred3; ++i) {
+                if (coef[i] == 0.0) continue;
+                if (skipped < mdrop) {
+                    ++skipped;
+                    continue;
+                }
+                const auto c = coef[i];
+                for (int j = 0; j < nred3; ++j) xt[j] += c * A[static_cast<size_t>(i) * nred3 + j];
+            }
+            // Expand: block-constant over degenerate partners, then undo the
+            // multiplicity metric.
+            std::vector<double> dF(nrows3, 0.0);
+            for (size_t I = 0; I < blocks.size(); ++I) {
+                const auto fac = inv_sqrt_d[I] / std::sqrt(wrow[blocks[I].first]);
+                for (auto srow = blocks[I].first; srow < blocks[I].second; ++srow) {
+                    for (auto x = 0; x < 3; ++x) {
+                        dF[static_cast<size_t>(srow) * 3 + x] = fac * xt[I * 3 + x];
+                    }
+                }
+            }
+            collision_op->reconstruct_full_from_wedge(dF.data(), dFold);
+            double **ktmp;
+            allocate(ktmp, 3, 3);
+            calc_kappa(itemp, dFold, ktmp);
+            for (auto a = 0; a < 3; ++a) {
+                for (auto c2 = 0; c2 < 3; ++c2) k9[3 * a + c2] = ktmp[a][c2];
+            }
+            deallocate(ktmp);
+            if (dF_keep) *dF_keep = dF;
+        };
+
+        std::cout << "      kappa_xx/yy/zz vs dropping the m softest (non-null) modes:\n";
+        double k9tmp[9];
+        for (const auto mdrop: {0, 1, 2, 4, 8, 16}) {
+            if (mdrop >= nred3 - n_null) break;
+            if (mdrop == 0) {
+                kappa_of_drop(0, kappa9, &dF_wedge);
+                std::copy(kappa9, kappa9 + 9, k9tmp);
+            } else {
+                kappa_of_drop(mdrop, k9tmp, nullptr);
+            }
+            std::cout << "        m = " << std::setw(3) << mdrop << ":" << std::scientific << std::setprecision(4)
+                      << std::setw(13) << k9tmp[0] << std::setw(13) << k9tmp[4] << std::setw(13) << k9tmp[8]
+                      << "  [W/mK]\n";
+        }
+
+        // Fraction of the right-hand side living in the excluded null space
+        // (the direct analogue of an unresolvable residual).
+        {
+            double r2 = 0.0, b2 = 0.0;
+            for (int i = 0; i < nred3; ++i) {
+                double pr = 0.0;
+                for (int j = 0; j < nred3; ++j) pr += A[static_cast<size_t>(i) * nred3 + j] * btil[j];
+                b2 += pow2(pr);
+                if (evals[i] <= lam_null) r2 += pow2(pr);
+            }
+            residual = b2 > 0.0 ? std::sqrt(r2 / b2) : 0.0;
+            std::cout << "      |b| fraction in the excluded null space = " << std::scientific
+                      << std::setprecision(2) << residual << '\n' << std::flush;
+        }
+    }
+
+    MPI_Bcast(kappa9, 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&residual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(dF_wedge.data(), static_cast<int>(nrows3), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    for (auto a = 0; a < 3; ++a) {
+        for (auto c2 = 0; c2 < 3; ++c2) kappa[itemp][a][c2] = kappa9[3 * a + c2];
+    }
+    collision_op->reconstruct_full_from_wedge(dF_wedge.data(), dFold);
+
+    iterations_out = 1;
+    residual_out = residual;
+    return true;
+}
+
 bool Iterativebte::solve_variational_cg(const int itemp, const double beta, double **fb, double **Qfin_loc,
                                         const double *x0_wedge, int &iterations_out, double &residual_out)
 {
@@ -676,51 +1144,13 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     const auto eval = dos->dymat_dos->get_eigenvalues();
     const auto t_to_ryd = thermodynamics->T_to_Ryd;
 
-    // Full-wedge diagonal, replicated on every rank.
-    std::vector<double> qdiag_loc(nrows, 0.0), qdiag(nrows, 0.0);
-    for (int ikl = 0; ikl < nklocal; ++ikl) {
-        for (int s = 0; s < ns; ++s) {
-            qdiag_loc[static_cast<size_t>(nk_l[ikl]) * ns + s] = Qfin_loc[ikl][s];
-        }
-    }
-    MPI_Allreduce(qdiag_loc.data(), qdiag.data(), static_cast<int>(nrows), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-    // Row weights, mask of the excluded modes, and the right-hand side.
-    std::vector<double> wrow(nrows, 0.0);
-    std::vector<unsigned char> mask(nrows, 0);
-    std::vector<double> b(nrows3, 0.0);
-
-    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
-        const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
-        const auto mult = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[ik].size());
-        for (int s = 0; s < ns; ++s) {
-            const auto row = static_cast<size_t>(ik) * ns + s;
-            const auto omega = eval[k1][s];
-            if (qdiag[row] < 1.0e-50 || omega < eps8) {
-                mask[row] = 1;
-                continue;
-            }
-            wrow[row] = mult;
-            const auto xred = omega / (t_to_ryd * etemp);
-            const auto dndt_val = pow2(1.0 / (2.0 * sinh(0.5 * xred))) * xred / etemp;
-            for (auto j = 0; j < 3; ++j) {
-                b[row * 3 + j] = -vel[k1][s][j] * dndt_val / beta;
-            }
-        }
-    }
+    std::vector<double> qdiag(nrows), wrow(nrows);
+    std::vector<unsigned char> mask(nrows);
+    std::vector<double> b(nrows3);
+    build_wedge_system(itemp, beta, Qfin_loc, qdiag, wrow, mask, b);
 
     // Degeneracy projection + masking of a wedge vector (idempotent).
-    auto project = [&](std::vector<double> &v) {
-        for (unsigned int ik = 0; ik < nk_irred; ++ik) {
-            const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
-            average_over_degenerate_modes(ns, eval[k1], 3, &v[static_cast<size_t>(ik) * ns * 3]);
-        }
-        for (size_t row = 0; row < nrows; ++row) {
-            if (!mask[row]) continue;
-            for (auto j = 0; j < 3; ++j) v[row * 3 + j] = 0.0;
-        }
-    };
-    project(b);
+    auto project = [&](std::vector<double> &v) { project_wedge_vector(v, mask); };
 
     // Weighted dot product; every rank holds the full replicated vectors,
     // so this involves no communication.

@@ -1618,7 +1618,8 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
   IBTE   Iterative solution of the linearized BTE (result in ``PREFIX``.kl_iter)
   VBTE   Variational solution by preconditioned conjugate gradients
          (result in ``PREFIX``.kl_iter)
-  DBTE   Direct solution (reserved; not implemented yet)
+  DBTE   Direct solution: dense eigendecomposition of the collision kernel
+         (diagnostic; small meshes; result in ``PREFIX``.kl_iter)
  ====== ========================================================================
 
  :Default: RTA
@@ -1643,14 +1644,29 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  For ``VBTE``, ``ITER_THRESHOLD`` acts on the relative residual of the linear
  system; since kappa is the value of the variational functional, its error is
  quadratic in the residual. ``MIN_CYCLE`` and ``IBTE_MIXING`` are not used by
- ``VBTE``. Both solvers share the ``/iterativebte`` restart state in
+ ``VBTE``. All non-RTA solvers share the ``/iterativebte`` restart state in
  ``PREFIX``.kappa.h5.
+
+ ``SOLVER = DBTE`` is a diagnostic solver: it assembles the collision kernel
+ on the irreducible wedge as an explicit dense matrix (in the degeneracy-
+ reduced, multiplicity-symmetrized basis), symmetrizes it, and computes its
+ full eigendecomposition with LAPACK. It reports what the matrix-free solvers
+ cannot access: the asymmetry of the discretized kernel, violations of
+ positive semidefiniteness (a direct probe of a too-coarse mesh or an
+ inadequate smearing width), the near-null part of the spectrum with its
+ overlap onto the momentum-drift directions, and the sensitivity of kappa to
+ dropping the softest modes. Because the kernel is symmetrized explicitly,
+ the kappa value can differ from ``IBTE``/``VBTE`` at the percent level when
+ the discretization asymmetry is large or the kernel is ill conditioned -
+ that difference is itself diagnostic information. Memory scales as
+ ``(3 * nk_irred * nbranches)^2``; oversized problems abort with a clear
+ message (memory-distributed ELPA/ScaLAPACK and GPU MAGMA/cuSOLVER backends
+ are planned behind the same interface).
 
  .. caution::
 
-     ``SOLVER = IBTE`` and ``SOLVER = VBTE`` are pilot implementations under
+     ``SOLVER = IBTE``, ``VBTE``, and ``DBTE`` are pilot implementations under
      development. Please check the validity of the results carefully.
-     ``DBTE`` is a reserved name and not implemented yet.
 
 ````
 

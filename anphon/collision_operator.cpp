@@ -851,6 +851,103 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *fb, const 
     }
 }
 
+void CollisionOperator::assemble_dense_rows(const double *const *fb, const double *const *Qfin_loc,
+                                            double *slab) const
+{
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const size_t ncol = static_cast<size_t>(nk_irred) * ns * 3;
+
+    std::vector<double> sqrt_mult(nk_irred);
+    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+        sqrt_mult[ik] = std::sqrt(static_cast<double>(dos->kmesh_dos->kpoint_irred_all[ik].size()));
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
+    for (int ikl = 0; ikl < nklocal; ++ikl) {
+
+        const auto tmpk = nk_l[ikl];
+        const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+        const auto sqrt_mrow = sqrt_mult[tmpk];
+
+        for (int s1 = 0; s1 < ns; ++s1) {
+
+            const size_t base_row = (static_cast<size_t>(ikl) * ns + s1) * 3;
+
+            // Fold a coupling coefficient to the full-grid mode (kt, st)
+            // onto the wedge: dF(kt) = expand_mat[kt] . dF_ir(rep(kt)).
+            const auto scatter = [&](const double coeff, const int kt, const int st) {
+                const auto ikc = dos->kmesh_dos->kmap_to_irreducible[kt];
+                const auto &B = expand_mat[kt];
+                const auto factor = coeff * sqrt_mrow / sqrt_mult[ikc];
+                const size_t colbase = (static_cast<size_t>(ikc) * ns + st) * 3;
+                for (auto x = 0; x < 3; ++x) {
+                    for (auto y = 0; y < 3; ++y) {
+                        slab[(base_row + x) * ncol + colbase + y] += factor * B(x, y);
+                    }
+                }
+            };
+
+            // Diagonal (row and column blocks coincide, so the metric
+            // factors cancel).
+            for (auto x = 0; x < 3; ++x) {
+                slab[(base_row + x) * ncol + (static_cast<size_t>(tmpk) * ns + s1) * 3 + x] += Qfin_loc[ikl][s1];
+            }
+
+            // emitt k1 -> k2 + k3
+            for (size_t j = 0; j < localnk_triplets_emitt[ikl].size(); ++j) {
+                const auto &pair = localnk_triplets_emitt[ikl][j];
+                const int kp_index = offset_emitt[ikl] + static_cast<int>(j);
+                for (size_t ig = 0; ig < pair.group.size(); ig++) {
+                    const int k2 = pair.group[ig].ks[0];
+                    const int k3 = pair.group[ig].ks[1];
+                    for (int ib = 0; ib < ns2; ++ib) {
+                        const int s2 = ib / ns;
+                        const int s3 = ib % ns;
+                        const double nn1 = fb[k1][s1];
+                        const double nn2 = fb[k2][s2];
+                        const double nn3 = fb[k3][s3];
+                        const auto coeff = -0.5 * nn1 * (nn2 + 1.0) * (nn3 + 1.0) * L_emitt[kp_index][s1][ib];
+                        if (coeff == 0.0) continue;
+                        scatter(coeff, k2, s2);
+                        scatter(coeff, k3, s3);
+                    }
+                }
+            }
+
+            // absorb k1 + k2 -> -k3
+            for (size_t j = 0; j < localnk_triplets_absorb[ikl].size(); ++j) {
+                const auto &pair = localnk_triplets_absorb[ikl][j];
+                const int kp_index = offset_absorb[ikl] + static_cast<int>(j);
+                for (size_t ig = 0; ig < pair.group.size(); ig++) {
+                    const int k2 = pair.group[ig].ks[0];
+                    const int k3 = pair.group[ig].ks[1];
+                    const int k3_minus = dos->kmesh_dos->kindex_minus_xk[k3];
+                    for (int ib = 0; ib < ns2; ++ib) {
+                        const int s2 = ib / ns;
+                        const int s3 = ib % ns;
+                        const double nn1 = fb[k1][s1];
+                        const double nn2 = fb[k2][s2];
+                        const double nn3 = fb[k3][s3];
+                        const auto coeff = nn1 * nn2 * (nn3 + 1.0) * L_absorb[kp_index][s1][ib];
+                        if (coeff == 0.0) continue;
+                        scatter(coeff, k2, s2);
+                        scatter(-coeff, k3_minus, s3);
+                    }
+                }
+            }
+
+            if (with_isotope) {
+                const auto occ = 2.0 * fb[k1][s1] * (fb[k1][s1] + 1.0);
+                for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s1]) {
+                    scatter(-occ * entry.val, entry.knum, entry.snum);
+                }
+            }
+        }
+    }
+}
+
 void CollisionOperator::reconstruct_full_from_wedge(const double *dF_ir, double ***dF_full) const
 {
 #ifdef _OPENMP

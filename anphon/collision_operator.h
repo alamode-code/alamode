@@ -77,6 +77,15 @@ public:
     // and self-adjoint only on it).
     void project_onto_littlegroup(double *dF_ir) const;
 
+    // Assemble this rank's wedge rows of the dense operator in the
+    // multiplicity-symmetrized metric, S = M^{1/2} (Q_diag + W) M^{-1/2}
+    // with M = diag(star multiplicity): slab is row-major
+    // [nklocal*ns*3][nk_irred*ns*3], zero-initialized by the caller.
+    // Assembly runs over the stored L entries (3ph and, when enabled,
+    // isotope), i.e. it costs one operator application. Used by SOLVER =
+    // DBTE.
+    void assemble_dense_rows(const double *const *fb, const double *const *Qfin_loc, double *slab) const;
+
     int get_nklocal() const
     {
         return nklocal;

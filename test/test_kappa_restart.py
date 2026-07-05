@@ -488,6 +488,36 @@ def check_vbte(anphonbin):
     return 0
 
 
+def check_dbte(anphonbin):
+    """SOLVER = DBTE: dense diagnostic solver on a small mesh."""
+    prefix = "si222_dbte"
+    for fname in (prefix + ".kappa.h5", prefix + ".kl_iter"):
+        if os.path.exists(fname):
+            os.remove(fname)
+    with open("ibte.in") as f:
+        content = f.read().replace(IBTE_PREFIX, prefix).replace("SOLVER = IBTE", "SOLVER = DBTE")
+    with open("dbte.in", "w") as f:
+        f.write(content)
+    if run_anphon(anphonbin, "dbte.in", "dbte_fresh.log"):
+        print("DBTE run failed")
+        return 1
+    for text in ("assembly cross-check", "eigenvalues:", "dense collision kernel"):
+        if not log_contains("dbte_fresh.log", text):
+            print("DBTE diagnostics missing: %s" % text)
+            return 1
+    with h5py.File(prefix + ".kappa.h5", "r") as f:
+        if not np.all(f["iterativebte/computed"][...] == 1):
+            print("DBTE computed flags not fully set")
+            return 1
+    # Same physics as IBTE up to the explicit symmetrization of the kernel.
+    kd = np.loadtxt(prefix + ".kl_iter")
+    ki = np.loadtxt(IBTE_PREFIX + ".kl_iter")
+    if not np.allclose(kd[:, [1, 5, 9]], ki[:, [1, 5, 9]], rtol=1e-1):
+        print("DBTE kappa deviates too far from the IBTE solution")
+        return 1
+    return 0
+
+
 def runtest_kappa_restart(almbin, anphonbin, project_root):
     if run_alm_si(almbin, project_root) != 0:
         print("alm setup failed")
@@ -526,6 +556,10 @@ def runtest_kappa_restart(almbin, anphonbin, project_root):
     if check_isotope_inscattering(anphonbin):
         return 1
     print("Isotope in-scattering --> pass")
+
+    if check_dbte(anphonbin):
+        return 1
+    print("DBTE diagnostic solver --> pass")
 
     if os.environ.get("ALAMODE_TEST_KILL", "1") != "0":
         if check_kill_recovery(anphonbin, fresh_runtime):

@@ -545,11 +545,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
         warn("parse_kappa_vars", "Both SOLVER and the deprecated ITERATIVE tag are given; SOLVER wins.");
     }
     if (solver == "SERTA") solver = "RTA";
-    if (solver == "DBTE") {
-        exit("parse_kappa_vars",
-             "SOLVER = DBTE is reserved but not implemented yet; use RTA, IBTE, or VBTE.");
-    }
-    if (solver != "RTA" && solver != "IBTE" && solver != "VBTE") {
+    if (solver != "RTA" && solver != "IBTE" && solver != "VBTE" && solver != "DBTE") {
         exit("parse_kappa_vars", "SOLVER must be one of RTA, IBTE, DBTE, or VBTE.");
     }
     if (solver == "IBTE" || solver == "VBTE") {
@@ -557,8 +553,14 @@ void Input::parse_kappa_vars(const bool use_default_values)
              ("SOLVER = " + solver + " is a pilot implementation under development;\n"
              " please check the validity of the results carefully.").c_str());
     }
-    conductivity->solver_ibte = solver == "IBTE" || solver == "VBTE";
+    if (solver == "DBTE") {
+        warn("parse_kappa_vars",
+             "SOLVER = DBTE is a diagnostic direct solver (dense eigendecomposition\n"
+             " of the collision kernel); it is intended for small k meshes.");
+    }
+    conductivity->solver_ibte = solver == "IBTE" || solver == "VBTE" || solver == "DBTE";
     iterativebte->use_variational = solver == "VBTE";
+    iterativebte->use_direct = solver == "DBTE";
     iterativebte->isotope_inscattering = isotope_inscattering != 0;
     iterativebte->max_cycle = max_cycle;
     iterativebte->min_cycle = min_cycle;

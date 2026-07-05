@@ -63,6 +63,7 @@ public:
     int min_cycle;
     double mixing_factor;
     bool use_variational;      // SOLVER = VBTE: conjugate gradients instead of Jacobi
+    bool use_direct;           // SOLVER = DBTE: dense eigendecomposition (diagnostic)
     bool isotope_inscattering; // include the elastic isotope in-scattering term
 
     double convergence_criteria; // dF(i+1) - dF(i) < cc
@@ -106,13 +107,30 @@ private:
 
     void iterative_solver(); // calculate kappa iteratively
 
+    // Shared assembly of the wedge linear system A dF = b: replicated
+    // total diagonal, excluded-mode mask, star multiplicities (the metric)
+    // and the degeneracy-projected right-hand side.
+    void build_wedge_system(int itemp, double beta, double **Qfin_loc, std::vector<double> &qdiag,
+                            std::vector<double> &wrow, std::vector<unsigned char> &mask,
+                            std::vector<double> &b) const;
+
+    // Degeneracy averaging + masked-row zeroing of a wedge vector.
+    void project_wedge_vector(std::vector<double> &v, const std::vector<unsigned char> &mask) const;
+
     // SOLVER = VBTE: preconditioned conjugate gradients on the same linear
-    // system, self-adjoint in the occupation*multiplicity-weighted inner
-    // product. x0_wedge (may be nullptr) provides a warm-start iterate.
+    // system, self-adjoint in the multiplicity-weighted inner product.
+    // x0_wedge (may be nullptr) provides a warm-start iterate.
     bool solve_variational_cg(int itemp, double beta, double **fb, double **Qfin_loc, const double *x0_wedge,
                               int &iterations_out, double &residual_out);
 
+    // SOLVER = DBTE: assemble the symmetrized dense operator, full
+    // eigendecomposition, spectrum diagnostics and kappa via a spectral
+    // pseudo-inverse.
+    bool solve_direct_at_temperature(int itemp, double beta, double **fb, double **Qfin_loc, int &iterations_out,
+                                     double &residual_out);
+
     bool cg_symmetry_checked;
+    bool dbte_assembly_checked;
 
     void calc_kappa(int, double ***&, double **&); // calculate kappa with off equilibrium part
 
