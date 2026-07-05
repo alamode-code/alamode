@@ -52,6 +52,8 @@ void Iterativebte::set_default_variables()
     max_cycle = 20;
     mixing_factor = 0.9;
     convergence_criteria = 0.02;
+    use_variational = false;
+    cg_symmetry_checked = false;
     kappa = nullptr;
 
     // private
@@ -87,6 +89,7 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(&min_cycle, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&mixing_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&convergence_criteria, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&use_variational, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     // The 4ph channel follows conductivity->fph_rta, decided by the
     // INCLUDE_4PH tag at parse time (same as SOLVER = RTA).
@@ -152,11 +155,19 @@ void Iterativebte::setup_iterative()
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
-        std::cout << " Iterative solution" << '\n';
-        std::cout << " ==================" << '\n';
-        std::cout << " MIN_CYCLE = " << min_cycle << ", MAX_CYCLE = " << max_cycle << '\n';
-        std::cout << " ITER_THRESHOLD = " << std::setw(10) << std::right << std::setprecision(4) << convergence_criteria
-                  << '\n';
+        if (use_variational) {
+            std::cout << " Variational solution (preconditioned conjugate gradients)" << '\n';
+            std::cout << " ==========================================================" << '\n';
+            std::cout << " MAX_CYCLE = " << max_cycle << '\n';
+            std::cout << " ITER_THRESHOLD (relative residual; the kappa error is quadratic in it) = "
+                      << std::setw(10) << std::right << std::setprecision(4) << convergence_criteria << '\n';
+        } else {
+            std::cout << " Iterative solution" << '\n';
+            std::cout << " ==================" << '\n';
+            std::cout << " MIN_CYCLE = " << min_cycle << ", MAX_CYCLE = " << max_cycle << '\n';
+            std::cout << " ITER_THRESHOLD = " << std::setw(10) << std::right << std::setprecision(4)
+                      << convergence_criteria << '\n';
+        }
         std::cout << '\n';
         std::cout << " Distribute q point ... ";
         std::cout << " Number of q point pre process: " << std::setw(5) << nklocal << '\n';
@@ -229,12 +240,14 @@ void Iterativebte::iterative_solver()
 {
     // f_new = f_new * mixing_factor + f_old * (1 - mixing_factor)
     double **Q;
+    double **Qfin;
     double **kappa_new;
     double **kappa_old;
 
     allocate(kappa_new, 3, 3);
     allocate(kappa_old, 3, 3);
     allocate(Q, nklocal, ns);
+    allocate(Qfin, nklocal, ns);
 
     allocate(dFold, nk_3ph, ns, 3);
 
@@ -367,6 +380,26 @@ void Iterativebte::iterative_solver()
             average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 1, Q[ik]);
         }
 
+        // Total diagonal: the 3ph out-scattering part plus the RTA-level
+        // add-on channels (isotope, boundary, 4ph), shared by both solvers.
+        for (ik = 0; ik < nklocal; ik++) {
+            auto tmpk = nk_l[ik];
+            const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+            for (int s1 = 0; s1 < ns; ++s1) {
+                auto qf = Q[ik][s1];
+                if (isotope->include_isotope) {
+                    qf += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * isotope_damping_loc[ik][s1];
+                }
+                if (conductivity->len_boundary > eps) {
+                    qf += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * boundary_damping_loc[ik][s1];
+                }
+                if (conductivity->fph_rta > 0) {
+                    qf += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * damping4[itemp][ik][s1];
+                }
+                Qfin[ik][s1] = qf;
+            }
+        }
+
         if (warm_start) {
             if (ibte_io) {
                 ibte_io->load_ibte_dF(itemp, dF_ir_glob);
@@ -381,6 +414,19 @@ void Iterativebte::iterative_solver()
                     }
                 }
             }
+        }
+
+        if (use_variational) {
+            // Conjugate-gradient solution of the same linear system.
+            int iters = 0;
+            double fres = 0.0;
+            converged_this_temp = solve_variational_cg(itemp, beta, fb, Qfin,
+                                                       warm_start ? dF_ir_glob : nullptr, iters, fres);
+            iterations_used[itemp] = iters;
+            final_residual[itemp] = fres;
+            t_converged[itemp] = converged_this_temp ? 1 : 0;
+            write_Q_dF(itemp, Q, dFold, converged_this_temp);
+            continue;
         }
 
         // Relative-residual history of this temperature and the best
@@ -425,18 +471,7 @@ void Iterativebte::iterative_solver()
 
                 for (int s1 = 0; s1 < ns; ++s1) {
 
-                    double Q_final = Q[ikl][s1];
-                    if (isotope->include_isotope) {
-                        Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * isotope_damping_loc[ikl][s1];
-                    }
-
-                    if (conductivity->len_boundary > eps) {
-                        Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * boundary_damping_loc[ikl][s1];
-                    }
-
-                    if (conductivity->fph_rta > 0) {
-                        Q_final += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * damping4[itemp][ikl][s1];
-                    }
+                    const double Q_final = Qfin[ikl][s1];
 
                     for (int ix = 0; ix < 3; ix++) {
                         double fnew;
@@ -585,6 +620,7 @@ void Iterativebte::iterative_solver()
     }
 
     deallocate(Q);
+    deallocate(Qfin);
     deallocate(dndt);
 
     deallocate(kappa_new);
@@ -600,6 +636,323 @@ void Iterativebte::iterative_solver()
     if (mympi->my_rank == 0 && !conductivity->get_use_h5_io()) {
         fs_result.close();
     }
+}
+
+bool Iterativebte::solve_variational_cg(const int itemp, const double beta, double **fb, double **Qfin_loc,
+                                        const double *x0_wedge, int &iterations_out, double &residual_out)
+{
+    // Solve (Q_diag + W) dF = b with preconditioned conjugate gradients.
+    // In the dF variables the off-diagonal couplings are the equilibrium
+    // rates n1 n2 (n3+1) |V3|^2 delta(...), which detailed balance makes
+    // symmetric under exchange of the coupled modes on the energy shell, so
+    // the operator is self-adjoint under the plain star-multiplicity-
+    // weighted inner product <u,v> = sum_{wedge k,s} mult_k u.v used by all
+    // dot products below; the preconditioner is the diagonal. (Smearing
+    // spreads slightly off shell, which the self-adjointness check below
+    // quantifies.)
+    // Because kappa is the value of the variational functional, its error is
+    // quadratic in the residual, so ITER_THRESHOLD acts on the relative
+    // residual here.
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const size_t nrows = static_cast<size_t>(nk_irred) * ns;
+    const size_t nrows3 = nrows * 3;
+    const auto etemp = Temperature[itemp];
+    const auto eval = dos->dymat_dos->get_eigenvalues();
+    const auto t_to_ryd = thermodynamics->T_to_Ryd;
+
+    // Full-wedge diagonal, replicated on every rank.
+    std::vector<double> qdiag_loc(nrows, 0.0), qdiag(nrows, 0.0);
+    for (int ikl = 0; ikl < nklocal; ++ikl) {
+        for (int s = 0; s < ns; ++s) {
+            qdiag_loc[static_cast<size_t>(nk_l[ikl]) * ns + s] = Qfin_loc[ikl][s];
+        }
+    }
+    MPI_Allreduce(qdiag_loc.data(), qdiag.data(), static_cast<int>(nrows), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    // Row weights, mask of the excluded modes, and the right-hand side.
+    std::vector<double> wrow(nrows, 0.0);
+    std::vector<unsigned char> mask(nrows, 0);
+    std::vector<double> b(nrows3, 0.0);
+
+    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+        const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+        const auto mult = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[ik].size());
+        for (int s = 0; s < ns; ++s) {
+            const auto row = static_cast<size_t>(ik) * ns + s;
+            const auto omega = eval[k1][s];
+            if (qdiag[row] < 1.0e-50 || omega < eps8) {
+                mask[row] = 1;
+                continue;
+            }
+            wrow[row] = mult;
+            const auto xred = omega / (t_to_ryd * etemp);
+            const auto dndt_val = pow2(1.0 / (2.0 * sinh(0.5 * xred))) * xred / etemp;
+            for (auto j = 0; j < 3; ++j) {
+                b[row * 3 + j] = -vel[k1][s][j] * dndt_val / beta;
+            }
+        }
+    }
+
+    // Degeneracy projection + masking of a wedge vector (idempotent).
+    auto project = [&](std::vector<double> &v) {
+        for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+            const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
+            average_over_degenerate_modes(ns, eval[k1], 3, &v[static_cast<size_t>(ik) * ns * 3]);
+        }
+        for (size_t row = 0; row < nrows; ++row) {
+            if (!mask[row]) continue;
+            for (auto j = 0; j < 3; ++j) v[row * 3 + j] = 0.0;
+        }
+    };
+    project(b);
+
+    // Weighted dot product; every rank holds the full replicated vectors,
+    // so this involves no communication.
+    auto wdot = [&](const std::vector<double> &u, const std::vector<double> &v) {
+        double sum = 0.0;
+        for (size_t row = 0; row < nrows; ++row) {
+            if (mask[row]) continue;
+            sum += wrow[row] *
+                   (u[row * 3] * v[row * 3] + u[row * 3 + 1] * v[row * 3 + 1] + u[row * 3 + 2] * v[row * 3 + 2]);
+        }
+        return sum;
+    };
+
+    // y = (Q_diag + W) x on the wedge; dFold serves as the full-grid scratch.
+    std::vector<double> yloc(nrows3);
+    auto apply_operator = [&](const std::vector<double> &x, std::vector<double> &y) {
+        collision_op->reconstruct_full_from_wedge(x.data(), dFold);
+        std::fill(yloc.begin(), yloc.end(), 0.0);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
+        for (int ikl = 0; ikl < nklocal; ++ikl) {
+            const auto tmpk = nk_l[ikl];
+            const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+
+            double **Wks_loc;
+            allocate(Wks_loc, ns, 3);
+            collision_op->calc_W_at(ikl, fb, dFold, Wks_loc);
+            average_over_degenerate_modes(ns, eval[k1], 3, Wks_loc[0]);
+
+            for (int s = 0; s < ns; ++s) {
+                const auto row = static_cast<size_t>(tmpk) * ns + s;
+                if (mask[row]) continue;
+                for (auto j = 0; j < 3; ++j) {
+                    yloc[row * 3 + j] = qdiag[row] * x[row * 3 + j] + Wks_loc[s][j];
+                }
+            }
+            deallocate(Wks_loc);
+        }
+        MPI_Allreduce(yloc.data(), y.data(), static_cast<int>(nrows3), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    };
+
+    auto precondition = [&](const std::vector<double> &rin, std::vector<double> &zout) {
+        for (size_t row = 0; row < nrows; ++row) {
+            if (mask[row]) {
+                for (auto j = 0; j < 3; ++j) zout[row * 3 + j] = 0.0;
+            } else {
+                for (auto j = 0; j < 3; ++j) zout[row * 3 + j] = rin[row * 3 + j] / qdiag[row];
+            }
+        }
+    };
+
+    // One-time numerical self-adjointness check of the discretized operator
+    // on the subspace CG actually explores: the first two (preconditioned)
+    // Krylov vectors of the physical right-hand side. Fixed-width smearing
+    // is symmetric analytically up to off-shell occupation factors;
+    // tetrahedron and adaptive weights are direction dependent and break
+    // the symmetry more strongly away from the energy shell.
+    if (!cg_symmetry_checked) {
+        cg_symmetry_checked = true;
+        std::vector<double> u(nrows3), v(nrows3), Au(nrows3), Av(nrows3);
+        u = b;
+        collision_op->project_onto_littlegroup(u.data());
+        project(u);
+        precondition(u, v); // v <- M^-1 u (temporarily)
+        u = v;              // u = M^-1 b
+        apply_operator(u, Au);
+        precondition(Au, v); // v = M^-1 A M^-1 b, the second Krylov vector
+        apply_operator(v, Av);
+        const auto s1 = wdot(u, Av);
+        const auto s2 = wdot(Au, v);
+        const auto scale = std::max(std::abs(s1), std::abs(s2));
+        const auto asym = scale > 0.0 ? std::abs(s1 - s2) / scale : 0.0;
+        if (mympi->my_rank == 0) {
+            std::cout << "      (operator self-adjointness on the Krylov subspace: |<u,Av>-<Au,v>|/|<u,Av>| = "
+                      << std::scientific << std::setprecision(1) << asym << ")\n";
+            if (asym > 1.0e-3) {
+                std::cout << "      Note: the discretized collision operator is not exactly symmetric\n"
+                          << "      (tetrahedron/adaptive smearing weights); judge the run by the final\n"
+                          << "      relative residual, which is recomputed explicitly at the end.\n";
+            }
+        }
+    }
+
+    // PCG with the diagonal preconditioner.
+    std::vector<double> x(nrows3, 0.0), r(nrows3), z(nrows3), p(nrows3), Ap(nrows3);
+
+    const auto bnorm = std::sqrt(wdot(b, b));
+    iterations_out = 0;
+    residual_out = 0.0;
+
+    if (bnorm <= 0.0) {
+        // No driving force (all modes masked): dF = 0 is the exact solution.
+        for (auto i = 0; i < 3; ++i)
+            for (auto j = 0; j < 3; ++j) kappa[itemp][i][j] = 0.0;
+        std::fill(x.begin(), x.end(), 0.0);
+        collision_op->reconstruct_full_from_wedge(x.data(), dFold);
+        return true;
+    }
+
+    if (x0_wedge) {
+        for (size_t i = 0; i < nrows3; ++i) x[i] = x0_wedge[i];
+        project(x);
+        apply_operator(x, Ap);
+        for (size_t i = 0; i < nrows3; ++i) r[i] = b[i] - Ap[i];
+    } else {
+        r = b;
+    }
+
+    precondition(r, z);
+    p = z;
+    auto rz = wdot(r, z);
+
+    auto converged = false;
+    auto rel = std::sqrt(wdot(r, r)) / bnorm;
+    auto res_best = rel;
+    std::vector<double> x_best = x;
+    int itr_best = 0;
+    int n_growth = 0;
+
+    for (auto itr = 0; itr < max_cycle; ++itr) {
+
+        if (mympi->my_rank == 0) {
+            std::cout << "   -> iter " << std::setw(3) << itr << ": " << std::flush;
+        }
+
+        apply_operator(p, Ap);
+        const auto pAp = wdot(p, Ap);
+        if (pAp <= 0.0) {
+            if (mympi->my_rank == 0) {
+                std::cout << '\n' << "   -> WARNING: <p, Ap> <= 0 encountered; the discretized operator is not\n"
+                          << "               positive definite on this vector. Stopping with the best iterate.\n"
+                          << std::flush;
+            }
+            break;
+        }
+        const auto alpha = rz / pAp;
+        for (size_t i = 0; i < nrows3; ++i) x[i] += alpha * p[i];
+        for (size_t i = 0; i < nrows3; ++i) r[i] -= alpha * Ap[i];
+
+        const auto rel_new = std::sqrt(wdot(r, r)) / bnorm;
+        if (rel_new > rel) {
+            ++n_growth;
+        } else {
+            n_growth = 0;
+        }
+        rel = rel_new;
+
+        // Progress display: kappa of the current iterate.
+        collision_op->reconstruct_full_from_wedge(x.data(), dFold);
+        double **kappa_now;
+        allocate(kappa_now, 3, 3);
+        calc_kappa(itemp, dFold, kappa_now);
+        if (mympi->my_rank == 0) {
+            for (auto i = 0; i < 3; ++i) {
+                for (auto j = 0; j < 3; ++j) {
+                    std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_now[i][j];
+                }
+            }
+            std::cout << std::setw(14) << std::scientific << std::setprecision(2) << rel << '\n' << std::flush;
+        }
+
+        if (rel < res_best) {
+            res_best = rel;
+            itr_best = itr + 1;
+            x_best = x;
+        }
+
+        iterations_out = itr + 1;
+
+        if (rel < convergence_criteria) {
+            converged = true;
+            for (auto i = 0; i < 3; ++i) {
+                for (auto j = 0; j < 3; ++j) {
+                    kappa[itemp][i][j] = kappa_now[i][j];
+                }
+            }
+            deallocate(kappa_now);
+            if (mympi->my_rank == 0) {
+                std::cout << "   -> Converged is achieved                 "
+                          << "                                            "
+                          << "                                    " << std::setw(14) << std::scientific
+                          << std::setprecision(2) << rel << '\n' << std::flush;
+            }
+            break;
+        }
+        deallocate(kappa_now);
+
+        if (n_growth >= 3) {
+            if (mympi->my_rank == 0) {
+                std::cout << "   -> WARNING: the residual keeps growing (non-symmetric discretization?).\n"
+                          << "               Stopping with the best iterate.\n" << std::flush;
+            }
+            break;
+        }
+
+        precondition(r, z);
+        const auto rz_new = wdot(r, z);
+        const auto beta_cg = rz_new / rz;
+        rz = rz_new;
+        for (size_t i = 0; i < nrows3; ++i) p[i] = z[i] + beta_cg * p[i];
+    }
+
+    if (!converged) {
+        // Keep the lowest-residual iterate and report honestly.
+        x = x_best;
+        collision_op->reconstruct_full_from_wedge(x.data(), dFold);
+        double **kappa_now;
+        allocate(kappa_now, 3, 3);
+        calc_kappa(itemp, dFold, kappa_now);
+        for (auto i = 0; i < 3; ++i) {
+            for (auto j = 0; j < 3; ++j) {
+                kappa[itemp][i][j] = kappa_now[i][j];
+            }
+        }
+        deallocate(kappa_now);
+        if (mympi->my_rank == 0) {
+            std::cout << "   -> WARNING: NOT converged within MAX_CYCLE = " << max_cycle
+                      << " CG iterations. Keeping the lowest-residual iterate (iter " << itr_best
+                      << ", |r|/|b| = " << std::scientific << std::setprecision(2) << res_best << ").\n"
+                      << std::flush;
+        }
+    }
+
+    // Explicit final residual of the kept iterate: guards against drift of
+    // the recursive CG residual when the discretized operator is not
+    // exactly symmetric (tetrahedron/adaptive weights).
+    apply_operator(x, Ap);
+    for (size_t i = 0; i < nrows3; ++i) r[i] = b[i] - Ap[i];
+    const auto rel_true = std::sqrt(wdot(r, r)) / bnorm;
+    residual_out = rel_true;
+    if (converged && rel_true > convergence_criteria) {
+        converged = false;
+        if (mympi->my_rank == 0) {
+            std::cout << "   -> WARNING: the recursive CG residual converged but the explicitly\n"
+                      << "               recomputed one is " << std::scientific << std::setprecision(2) << rel_true
+                      << "; marking this temperature as NOT converged.\n" << std::flush;
+        }
+    }
+    if (mympi->my_rank == 0) {
+        std::cout << "      final |r|/|b| (explicit) = " << std::scientific << std::setprecision(2) << rel_true
+                  << '\n' << std::flush;
+    }
+
+    // dFold holds the reconstruction of the kept iterate, so write_Q_dF
+    // stores data consistent with kappa[itemp].
+    collision_op->reconstruct_full_from_wedge(x.data(), dFold);
+    return converged;
 }
 
 void Iterativebte::calc_boson(int itemp, double **&b_out, double **&dndt_out)

@@ -157,6 +157,8 @@ void CollisionOperator::build_expansion_table()
     }
     const Eigen::Matrix3d mat_cart2k = mat_k2cart.inverse();
 
+    littlegroup_proj.resize(nk_irred);
+
     for (unsigned int tmpk = 0; tmpk < nk_irred; ++tmpk) {
         const auto kref = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
         for (const auto &kp: dos->kmesh_dos->kpoint_irred_all[tmpk]) {
@@ -177,6 +179,46 @@ void CollisionOperator::build_expansion_table()
             if (!found) {
                 exit("build_expansion_table", "cannot find the symmetry operation generating an equivalent k");
             }
+        }
+
+        // Little group of the representative: all operations (including
+        // time-reversal-composed ones) that map it onto itself; averaging
+        // their Cartesian representations projects onto invariant vectors.
+        Eigen::Matrix3d proj = Eigen::Matrix3d::Zero();
+        auto nops = 0;
+        for (auto isym = 0; isym < nsym; ++isym) {
+            const auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
+            const auto direct = (kref == static_cast<int>(krot));
+            const auto time_reversed =
+                symmetry->time_reversal_sym && kref == static_cast<int>(dos->kmesh_dos->kindex_minus_xk[krot]);
+            if (!direct && !time_reversed) continue;
+            const Eigen::Matrix3d srot_inv_t =
+                symmetry->SymmList[isym].rotation.cast<double>().inverse().transpose();
+            const Eigen::Matrix3d rot_cart = mat_k2cart * srot_inv_t * mat_cart2k;
+            if (direct) {
+                proj += rot_cart;
+                ++nops;
+            }
+            if (time_reversed) {
+                proj -= rot_cart;
+                ++nops;
+            }
+        }
+        littlegroup_proj[tmpk] = proj / static_cast<double>(nops);
+    }
+}
+
+void CollisionOperator::project_onto_littlegroup(double *dF_ir) const
+{
+    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+        const auto &m = littlegroup_proj[ik];
+        for (int s = 0; s < ns; ++s) {
+            double *v = dF_ir + (static_cast<size_t>(ik) * ns + s) * 3;
+            const double vx = v[0], vy = v[1], vz = v[2];
+            v[0] = m(0, 0) * vx + m(0, 1) * vy + m(0, 2) * vz;
+            v[1] = m(1, 0) * vx + m(1, 1) * vy + m(1, 2) * vz;
+            v[2] = m(2, 0) * vx + m(2, 1) * vy + m(2, 2) * vz;
         }
     }
 }

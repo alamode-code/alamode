@@ -4,7 +4,8 @@
 Covers: fresh-run schema, no-op restart, recovery from partially computed
 files (completion flags), RESTART = 0 reset, the FILE_FORMAT = text legacy
 path, one-way import of legacy text .result files, the /iterativebte group
-written by SOLVER = IBTE (per-temperature restart), and (optionally, set
+written by SOLVER = IBTE (per-temperature restart), the SOLVER = VBTE
+conjugate-gradient solver against the IBTE solution, and (optionally, set
 ALAMODE_TEST_KILL=1) physical crash recovery via SIGKILL.
 """
 
@@ -416,6 +417,45 @@ def check_ibte_h5(anphonbin):
     return 0
 
 
+VBTE_PREFIX = "si222_vbte"
+
+
+def check_vbte(anphonbin):
+    """SOLVER = VBTE: CG solves the same system as IBTE; restart shared."""
+    for fname in (VBTE_PREFIX + ".kappa.h5", VBTE_PREFIX + ".kl_iter"):
+        if os.path.exists(fname):
+            os.remove(fname)
+    with open("ibte.in") as f:
+        content = f.read().replace(IBTE_PREFIX, VBTE_PREFIX).replace("SOLVER = IBTE", "SOLVER = VBTE")
+    with open("vbte.in", "w") as f:
+        f.write(content)
+    if run_anphon(anphonbin, "vbte.in", "vbte_fresh.log"):
+        print("VBTE fresh run failed")
+        return 1
+    with h5py.File(VBTE_PREFIX + ".kappa.h5", "r") as f:
+        if not np.all(f["iterativebte/computed"][...] == 1):
+            print("VBTE computed flags not fully set")
+            return 1
+        if not np.all(f["iterativebte/converged"][...] == 1):
+            print("VBTE did not converge")
+            return 1
+    # Same linear system as IBTE: the two solutions agree within the
+    # solver tolerances (ITER_THRESHOLD on each side).
+    kv = np.loadtxt(VBTE_PREFIX + ".kl_iter")
+    ki = np.loadtxt(IBTE_PREFIX + ".kl_iter")
+    if not np.allclose(kv[:, [1, 5, 9]], ki[:, [1, 5, 9]], rtol=5e-2):
+        print("VBTE kappa deviates from the IBTE solution")
+        return 1
+    # No-op restart skips everything.
+    if run_anphon(anphonbin, "vbte.in", "vbte_noop.log"):
+        print("VBTE no-op restart failed")
+        return 1
+    if not log_contains("vbte_noop.log", "skipping the calculation of the transition probabilities"):
+        print("VBTE no-op restart rebuilt L")
+        return 1
+    return 0
+
+
 def runtest_kappa_restart(almbin, anphonbin, project_root):
     if run_alm_si(almbin, project_root) != 0:
         print("alm setup failed")
@@ -446,6 +486,10 @@ def runtest_kappa_restart(almbin, anphonbin, project_root):
     if check_ibte_h5(anphonbin):
         return 1
     print("IBTE /iterativebte restart --> pass")
+
+    if check_vbte(anphonbin):
+        return 1
+    print("VBTE (CG) solver --> pass")
 
     if os.environ.get("ALAMODE_TEST_KILL", "1") != "0":
         if check_kill_recovery(anphonbin, fresh_runtime):

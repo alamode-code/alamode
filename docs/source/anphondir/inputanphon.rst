@@ -1615,8 +1615,9 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  ====== ========================================================================
   RTA    Relaxation-time approximation (single-mode approximation)
   IBTE   Iterative solution of the linearized BTE (result in ``PREFIX``.kl_iter)
+  VBTE   Variational solution by preconditioned conjugate gradients
+         (result in ``PREFIX``.kl_iter)
   DBTE   Direct solution (reserved; not implemented yet)
-  VBTE   Variational solution (reserved; not implemented yet)
  ====== ========================================================================
 
  :Default: RTA
@@ -1636,11 +1637,19 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                restart continues their iteration from the stored deviation
                function instead of skipping them.
 
+ ``SOLVER = VBTE`` solves the same linearized BTE as ``IBTE`` by
+ preconditioned conjugate gradients on the symmetrized collision operator.
+ For ``VBTE``, ``ITER_THRESHOLD`` acts on the relative residual of the linear
+ system; since kappa is the value of the variational functional, its error is
+ quadratic in the residual. ``MIN_CYCLE`` and ``IBTE_MIXING`` are not used by
+ ``VBTE``. Both solvers share the ``/iterativebte`` restart state in
+ ``PREFIX``.kappa.h5.
+
  .. caution::
 
-     ``SOLVER = IBTE`` is a pilot implementation under development. Please check
-     the validity of the results carefully. ``DBTE`` and ``VBTE`` are reserved
-     names and not implemented yet.
+     ``SOLVER = IBTE`` and ``SOLVER = VBTE`` are pilot implementations under
+     development. Please check the validity of the results carefully.
+     ``DBTE`` is a reserved name and not implemented yet.
 
 ````
 

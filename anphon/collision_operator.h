@@ -54,6 +54,11 @@ public:
     // [(irreducible k * ns + s) * 3 + xyz].
     void reconstruct_full_from_wedge(const double *dF_ir, double ***dF_full) const;
 
+    // Project a wedge vector field onto the little-group-invariant subspace
+    // (physical fields live there; the collision operator is well defined
+    // and self-adjoint only on it).
+    void project_onto_littlegroup(double *dF_ir) const;
+
     int get_nklocal() const
     {
         return nklocal;
@@ -95,6 +100,10 @@ private:
     // Cartesian rotation (with the time-reversal sign folded in) mapping
     // the wedge representative onto each full-grid point.
     std::vector<Eigen::Matrix3d> expand_mat;
+
+    // Average over the little group of each wedge representative (with the
+    // time-reversal sign): projector onto invariant Cartesian vectors.
+    std::vector<Eigen::Matrix3d> littlegroup_proj;
 
     void get_triplets();
 

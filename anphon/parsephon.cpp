@@ -542,19 +542,20 @@ void Input::parse_kappa_vars(const bool use_default_values)
         warn("parse_kappa_vars", "Both SOLVER and the deprecated ITERATIVE tag are given; SOLVER wins.");
     }
     if (solver == "SERTA") solver = "RTA";
-    if (solver == "DBTE" || solver == "VBTE") {
+    if (solver == "DBTE") {
         exit("parse_kappa_vars",
-             "SOLVER = DBTE and VBTE are reserved but not implemented yet; use RTA or IBTE.");
+             "SOLVER = DBTE is reserved but not implemented yet; use RTA, IBTE, or VBTE.");
     }
-    if (solver != "RTA" && solver != "IBTE") {
+    if (solver != "RTA" && solver != "IBTE" && solver != "VBTE") {
         exit("parse_kappa_vars", "SOLVER must be one of RTA, IBTE, DBTE, or VBTE.");
     }
-    if (solver == "IBTE") {
+    if (solver == "IBTE" || solver == "VBTE") {
         warn("parse_kappa_vars",
-             "SOLVER = IBTE is a pilot implementation under development;\n"
-             " please check the validity of the results carefully.");
+             ("SOLVER = " + solver + " is a pilot implementation under development;\n"
+             " please check the validity of the results carefully.").c_str());
     }
-    conductivity->solver_ibte = solver == "IBTE";
+    conductivity->solver_ibte = solver == "IBTE" || solver == "VBTE";
+    iterativebte->use_variational = solver == "VBTE";
     iterativebte->max_cycle = max_cycle;
     iterativebte->min_cycle = min_cycle;
     iterativebte->mixing_factor = iterative_mixing;

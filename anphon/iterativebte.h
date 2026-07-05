@@ -62,6 +62,7 @@ public:
     int max_cycle;
     int min_cycle;
     double mixing_factor;
+    bool use_variational; // SOLVER = VBTE: conjugate gradients instead of Jacobi
 
     double convergence_criteria; // dF(i+1) - dF(i) < cc
 
@@ -103,6 +104,14 @@ private:
     std::vector<int> nk_l;
 
     void iterative_solver(); // calculate kappa iteratively
+
+    // SOLVER = VBTE: preconditioned conjugate gradients on the same linear
+    // system, self-adjoint in the occupation*multiplicity-weighted inner
+    // product. x0_wedge (may be nullptr) provides a warm-start iterate.
+    bool solve_variational_cg(int itemp, double beta, double **fb, double **Qfin_loc, const double *x0_wedge,
+                              int &iterations_out, double &residual_out);
+
+    bool cg_symmetry_checked;
 
     void calc_kappa(int, double ***&, double **&); // calculate kappa with off equilibrium part
 
