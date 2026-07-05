@@ -135,6 +135,10 @@ public:
     // computed temperature.
     void load_ibte_kappa(size_t itemp, double *kappa9, unsigned char &converged) const;
 
+    // Read back the stored deviation function of a computed temperature
+    // (wedge representatives, [nk_irred*ns*3]) for warm-started iterations.
+    void load_ibte_dF(size_t itemp, double *dF_flat) const;
+
     // Durably commit one temperature: Q [nk_irred*ns], dF [nk_irred*ns*3]
     // (wedge representatives), kappa (3x3) and the solver-converged flag
     // first, then the computed flag, so a persisted flag never overstates.

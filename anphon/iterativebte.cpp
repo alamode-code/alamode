@@ -116,12 +116,13 @@ void Iterativebte::setup_iterative()
     // the solver then skips (each temperature is independent, so skipping
     // reproduces an uninterrupted run exactly). RESTART = 0 discards them.
     t_computed.assign(ntemp, 0);
+    t_converged.assign(ntemp, 0);
     if (conductivity->get_use_h5_io()) {
         const auto reset = !conductivity->get_restart_conductivity(3);
         ibte_io = conductivity->setup_ibte_io(dos->kmesh_dos->nk_i, dos->kmesh_dos->nk_irred, ns, reset);
         if (ibte_io) {
             const auto flags = ibte_io->load_ibte_computed();
-            unsigned int n_done = 0;
+            unsigned int n_done = 0, n_unconv = 0;
             for (size_t i = 0; i < flags.size() && i < t_computed.size(); ++i) {
                 t_computed[i] = flags[i];
                 if (flags[i]) ++n_done;
@@ -130,15 +131,24 @@ void Iterativebte::setup_iterative()
                 if (!t_computed[i]) continue;
                 unsigned char conv = 0;
                 ibte_io->load_ibte_kappa(i, &kappa[i][0][0], conv);
+                t_converged[i] = conv;
+                if (!conv) ++n_unconv;
             }
             if (n_done > 0) {
                 std::cout << '\n' << " RESTART: " << n_done << " of " << ntemp
-                          << " temperature points were restored from the kappa.h5 file\n"
-                          << "          and will be skipped.\n";
+                          << " temperature points were restored from the kappa.h5 file.\n";
+                if (n_unconv > 0) {
+                    std::cout << "          " << n_unconv
+                              << " of them are NOT converged; their iteration will be continued\n"
+                              << "          from the stored deviation function.\n";
+                } else {
+                    std::cout << "          All of them are converged and will be skipped.\n";
+                }
             }
         }
     }
     MPI_Bcast(t_computed.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(t_converged.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -160,7 +170,7 @@ void Iterativebte::do_iterativebte()
 {
     auto all_done = ntemp > 0;
     for (unsigned int i = 0; i < ntemp; ++i) {
-        if (!t_computed[i]) all_done = false;
+        if (!t_computed[i] || !t_converged[i]) all_done = false;
     }
     if (all_done) {
         // Every temperature was restored from the kappa.h5 file; the
@@ -218,9 +228,6 @@ void Iterativebte::calc_damping4()
 void Iterativebte::iterative_solver()
 {
     // f_new = f_new * mixing_factor + f_old * (1 - mixing_factor)
-    std::vector<double> convergence_history; // store | f_n - f_{n-1} | L2 norm
-    convergence_history.clear();
-
     double **Q;
     double **kappa_new;
     double **kappa_old;
@@ -300,20 +307,27 @@ void Iterativebte::iterative_solver()
 
     const auto nk_irred = dos->kmesh_dos->nk_irred;
 
-    // Wedge buffers of the deviation function (local rows + allreduced sum)
+    // Wedge buffers of the deviation function (local rows + allreduced sum),
+    // plus a snapshot of the lowest-residual iterate for runs that end
+    // without convergence.
     double *dF_ir_loc = nullptr;
     double *dF_ir_glob = nullptr;
+    double *dF_ir_best = nullptr;
     allocate(dF_ir_loc, nk_irred * ns * 3);
     allocate(dF_ir_glob, nk_irred * ns * 3);
+    allocate(dF_ir_best, nk_irred * ns * 3);
 
     // start iteration
 
-    double norm;
-    double local_difference;
+    double local_reduce[2], global_reduce[2];
+
+    // Per-temperature record for the final summary.
+    std::vector<int> iterations_used(ntemp, -1);
+    std::vector<double> final_residual(ntemp, 0.0);
 
     for (auto itemp = 0; itemp < ntemp; ++itemp) {
 
-        if (t_computed[itemp]) {
+        if (t_computed[itemp] && t_converged[itemp]) {
             if (mympi->my_rank == 0) {
                 std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed
                           << std::setprecision(2) << Temperature[itemp]
@@ -321,6 +335,12 @@ void Iterativebte::iterative_solver()
             }
             continue;
         }
+
+        // Warm start: a computed-but-unconverged temperature continues its
+        // iteration from the stored deviation function instead of restarting
+        // from zero.
+        const auto warm_start = t_computed[itemp] && !t_converged[itemp] &&
+                                conductivity->get_use_h5_io();
 
         auto converged_this_temp = false;
 
@@ -331,8 +351,12 @@ void Iterativebte::iterative_solver()
         if (mympi->my_rank == 0) {
             std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                       << Temperature[itemp] << " K" << "    -----------------------------\n";
+            if (warm_start) {
+                std::cout << "      (unconverged result found; continuing from the stored deviation function)\n";
+            }
             std::cout << "      Kappa [W/mK]        xx          xy          xz"
-                      << "          yx          yy          yz" << "          zx          zy          zz    |df' - df|\n";
+                      << "          yx          yy          yz"
+                      << "          zx          zy          zz  |df'-df|/|df|\n";
         }
 
         collision_op->calc_Q_from_L(fb, Q);
@@ -343,17 +367,33 @@ void Iterativebte::iterative_solver()
             average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 1, Q[ik]);
         }
 
-        for (ik = 0; ik < nk_3ph; ++ik) {
-            for (is = 0; is < ns; ++is) {
-                for (ix = 0; ix < 3; ++ix) {
-                    dFold[ik][is][ix] = 0.0;
+        if (warm_start) {
+            if (ibte_io) {
+                ibte_io->load_ibte_dF(itemp, dF_ir_glob);
+            }
+            MPI_Bcast(dF_ir_glob, static_cast<int>(nk_irred * ns * 3), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
+        } else {
+            for (ik = 0; ik < nk_3ph; ++ik) {
+                for (is = 0; is < ns; ++is) {
+                    for (ix = 0; ix < 3; ++ix) {
+                        dFold[ik][is][ix] = 0.0;
+                    }
                 }
             }
         }
 
+        // Relative-residual history of this temperature and the best
+        // (lowest-residual) iterate seen so far.
+        std::vector<double> res_history;
+        double kappa_best[9];
+        double res_best = -1.0;
+        int itr_best = -1;
+
         for (auto itr = 0; itr < max_cycle; ++itr) {
 
-            local_difference = 0.0;
+            double local_difference = 0.0;
+            double local_norm2 = 0.0;
 
             if (mympi->my_rank == 0) {
                 std::cout << "   -> iter " << std::setw(3) << itr << ": " << std::flush;
@@ -366,7 +406,7 @@ void Iterativebte::iterative_solver()
             // equivalent points carry no new information because
             // dF(Rk) = R dF(k).
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) reduction(+ : local_difference)
+#pragma omp parallel for schedule(dynamic) reduction(+ : local_difference, local_norm2)
 #endif
             for (int ikl = 0; ikl < nklocal; ++ikl) {
 
@@ -411,6 +451,7 @@ void Iterativebte::iterative_solver()
                             // norm matches the previous full-mesh definition
                             local_difference += num_equivalent * pow2(fnew - dFold[k1][s1][ix]);
                         }
+                        local_norm2 += num_equivalent * pow2(fnew);
                         dF_ir_loc[(tmpk * ns + s1) * 3 + ix] = fnew;
                     }
                 }
@@ -418,43 +459,53 @@ void Iterativebte::iterative_solver()
                 deallocate(Wks_loc);
             } // ikl
 
-            // check convergence, if converged, stop, if not, update dF and print kappa
-            norm = 0.0;
-            MPI_Allreduce(&local_difference, &norm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-            convergence_history.push_back(norm);
+            local_reduce[0] = local_difference;
+            local_reduce[1] = local_norm2;
+            MPI_Allreduce(local_reduce, global_reduce, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-            auto converged1 = false;
-            auto converged2 = false;
-            if (itr >= min_cycle) converged1 = check_convergence(convergence_history);
+            // Relative change of the deviation function; the iterate is
+            // always evaluated (the old code skipped the update when the
+            // residual grew and silently reported that as convergence).
+            const auto rel = (itr > 0 && global_reduce[1] > 0.0)
+                                 ? std::sqrt(global_reduce[0] / global_reduce[1])
+                                 : 0.0;
+            if (itr > 0) res_history.push_back(rel);
 
-            if (converged1) {
+            MPI_Allreduce(&dF_ir_loc[0], &dF_ir_glob[0], nk_irred * ns * 3, MPI_DOUBLE, MPI_SUM,
+                          MPI_COMM_WORLD);
+
+            // Reconstruct the full-grid deviation function from the wedge.
+            collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
+
+            calc_kappa(itemp, dFold, kappa_new);
+            //print kappa
+            if (mympi->my_rank == 0) {
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
-                        kappa_new[ix][iy] = kappa_old[ix][iy];
+                        std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_new[ix][iy];
                     }
                 }
-            } else {
-                MPI_Allreduce(&dF_ir_loc[0], &dF_ir_glob[0], nk_irred * ns * 3, MPI_DOUBLE, MPI_SUM,
-                              MPI_COMM_WORLD);
-
-                // Reconstruct the full-grid deviation function from the wedge.
-                collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
-
-                calc_kappa(itemp, dFold, kappa_new);
-                //print kappa
-                if (mympi->my_rank == 0) {
-                    for (ix = 0; ix < 3; ++ix) {
-                        for (iy = 0; iy < 3; ++iy) {
-                            std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_new[ix][iy];
-                        }
-                    }
-                    norm = std::pow(norm, 0.5);
-                    std::cout << std::setw(14) << std::scientific << std::setprecision(2) << norm << '\n' << std::flush;
-                }
-                if (itr >= min_cycle) converged2 = check_convergence(kappa_old, kappa_new);
+                std::cout << std::setw(14) << std::scientific << std::setprecision(2) << rel << '\n' << std::flush;
             }
 
-            if (converged1 || converged2) {
+            // Keep the lowest-residual iterate in case the run ends without
+            // convergence (for a monotonically improving iteration this is
+            // simply the last one).
+            if (itr > 0 && (res_best < 0.0 || rel < res_best)) {
+                res_best = rel;
+                itr_best = itr;
+                for (ix = 0; ix < 3; ++ix) {
+                    for (iy = 0; iy < 3; ++iy) {
+                        kappa_best[3 * ix + iy] = kappa_new[ix][iy];
+                    }
+                }
+                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_best[ii] = dF_ir_glob[ii];
+            }
+
+            auto converged = false;
+            if (itr >= min_cycle) converged = check_convergence(kappa_old, kappa_new);
+
+            if (converged) {
                 converged_this_temp = true;
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
@@ -465,34 +516,73 @@ void Iterativebte::iterative_solver()
                     std::cout << "   -> Converged is achieved                 "
                               << "                                            "
                               << "                                    " << std::setw(14) << std::scientific
-                              << std::setprecision(2) << norm << '\n' << std::flush;
+                              << std::setprecision(2) << rel << '\n' << std::flush;
                 }
+                iterations_used[itemp] = itr;
+                final_residual[itemp] = rel;
                 break;
+            }
 
-            } else {
-                for (ix = 0; ix < 3; ++ix) {
-                    for (iy = 0; iy < 3; ++iy) {
-                        kappa_old[ix][iy] = kappa_new[ix][iy];
-                    }
+            for (ix = 0; ix < 3; ++ix) {
+                for (iy = 0; iy < 3; ++iy) {
+                    kappa_old[ix][iy] = kappa_new[ix][iy];
                 }
             }
 
-            if (itr == (max_cycle - 1)) {
-                // update kappa even if not converged
+            // Divergence: the relative residual grew in two consecutive
+            // iterations. Stop, keep the best iterate, and mark the
+            // temperature as NOT converged instead of pretending otherwise.
+            const auto nres = res_history.size();
+            const auto diverged = itr >= min_cycle && nres >= 3 &&
+                                  res_history[nres - 1] > res_history[nres - 2] &&
+                                  res_history[nres - 2] > res_history[nres - 3];
+
+            if (diverged || itr == (max_cycle - 1)) {
+                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_glob[ii] = dF_ir_best[ii];
+                collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
-                        kappa[itemp][ix][iy] = kappa_new[ix][iy];
+                        kappa[itemp][ix][iy] = kappa_best[3 * ix + iy];
                     }
                 }
                 if (mympi->my_rank == 0) {
-                    std::cout << "   -> iter     Warning !! max cycle reached but kappa not converged \n" << std::flush;
+                    if (diverged) {
+                        std::cout << "   -> WARNING: the iteration is diverging. Keeping the lowest-residual\n"
+                                  << "               iterate (iter " << itr_best << ", |df'-df|/|df| = "
+                                  << std::scientific << std::setprecision(2) << res_best << ") and marking this\n"
+                                  << "               temperature as NOT converged."
+                                  << " Consider reducing IBTE_MIXING.\n" << std::flush;
+                    } else {
+                        std::cout << "   -> WARNING: max cycle reached but NOT converged. Keeping the\n"
+                                  << "               lowest-residual iterate (iter " << itr_best
+                                  << ", |df'-df|/|df| = " << std::scientific << std::setprecision(2) << res_best
+                                  << ").\n" << std::flush;
+                    }
                 }
+                iterations_used[itemp] = itr;
+                final_residual[itemp] = res_best;
+                break;
             }
 
         } // iter
+        t_converged[itemp] = converged_this_temp ? 1 : 0;
         write_Q_dF(itemp, Q, dFold, converged_this_temp);
 
     } // itemp
+
+    // Per-temperature summary (computed this run only).
+    if (mympi->my_rank == 0) {
+        std::cout << '\n' << " Iterative BTE summary\n";
+        std::cout << "     T [K]   iterations   |df'-df|/|df|   converged\n";
+        for (auto itemp = 0; itemp < ntemp; ++itemp) {
+            if (iterations_used[itemp] < 0) continue; // restored and skipped
+            std::cout << std::setw(10) << std::right << std::fixed << std::setprecision(2) << Temperature[itemp]
+                      << std::setw(11) << iterations_used[itemp] << "   " << std::setw(13) << std::scientific
+                      << std::setprecision(2) << final_residual[itemp] << "   " << std::setw(9)
+                      << (t_converged[itemp] ? "yes" : "NO") << '\n';
+        }
+        std::cout << std::flush;
+    }
 
     deallocate(Q);
     deallocate(dndt);
@@ -502,6 +592,7 @@ void Iterativebte::iterative_solver()
     deallocate(fb);
     deallocate(dF_ir_loc);
     deallocate(dF_ir_glob);
+    deallocate(dF_ir_best);
     if (isotope->include_isotope) {
         deallocate(isotope_damping_loc);
         //deallocate(isotope_damping);
@@ -591,21 +682,11 @@ bool Iterativebte::check_convergence(double **&k_old, double **&k_new)
     return max_diff < convergence_criteria;
 }
 
-bool Iterativebte::check_convergence(const std::vector<double> &history)
-{
-    auto size = history.size();
-    double last = history[size - 1];
-    double lastlast = history[size - 2];
-    if (last > lastlast) {
-        return true;
-    } else
-        return false;
-}
 
 
 void Iterativebte::write_kappa_iterative()
 {
-    writes->writeKappaIterative(ntemp, Temperature, kappa);
+    writes->writeKappaIterative(ntemp, Temperature, kappa, t_converged);
 }
 
 void Iterativebte::write_result()

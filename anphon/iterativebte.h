@@ -87,6 +87,7 @@ private:
     // which the solver skips.
     KappaResultIOH5 *ibte_io = nullptr;
     std::vector<unsigned char> t_computed;
+    std::vector<unsigned char> t_converged;
 
     double ***vel;
 
@@ -108,7 +109,6 @@ private:
     void calc_boson(int, double **&, double **&);
 
     bool check_convergence(double **&, double **&); // check if convergence cirteria is meet
-    bool check_convergence(const std::vector<double> &);
 
     //void write_result_gamma(unsigned int,unsigned int,double ***,double **) const;
     void write_result();

@@ -914,6 +914,13 @@ void KappaResultIOH5::load_ibte_kappa(const size_t itemp, double *kappa9, unsign
     impl->file->getDataSet("/iterativebte/converged").select({itemp}, {1}).read(&converged);
 }
 
+void KappaResultIOH5::load_ibte_dF(const size_t itemp, double *dF_flat) const
+{
+    const size_t nkirr = impl->imeta.nk_irred;
+    const size_t ns = impl->imeta.ns;
+    impl->file->getDataSet("/iterativebte/dF").select({itemp, 0, 0, 0}, {1, nkirr, ns, 3}).read(dF_flat);
+}
+
 void KappaResultIOH5::store_ibte_temperature(const size_t itemp, const double *Q, const double *dF,
                                              const double *kappa9, const unsigned char converged)
 {

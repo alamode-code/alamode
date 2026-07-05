@@ -2196,7 +2196,8 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
 }
 
 void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temperature_in,
-                                 const double *const *const *kappa_in) const
+                                 const double *const *const *kappa_in,
+                                 const std::vector<unsigned char> &converged_in) const
 {
     if (mympi->my_rank != 0) return;
 
@@ -2209,6 +2210,19 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
 
     ofs_kl << "# Temperature [K], Thermal Conductivity (xx, xy, xz, yx, yy, yz, zx, zy, zz) [W/mK]" << '\n';
     ofs_kl << "# Iterative result." << '\n';
+
+    std::vector<double> t_unconverged;
+    for (unsigned int i = 0; i < ntemp_in && i < converged_in.size(); ++i) {
+        if (!converged_in[i]) t_unconverged.push_back(temperature_in[i]);
+    }
+    if (!t_unconverged.empty()) {
+        ofs_kl << "# WARNING: the iteration did NOT converge at the following temperatures:" << '\n';
+        ofs_kl << "#";
+        for (const auto t: t_unconverged) {
+            ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2) << t;
+        }
+        ofs_kl << " [K]" << '\n';
+    }
 
     if (isotope->include_isotope) ofs_kl << "# Isotope effects are included." << '\n';
     if (conductivity->fph_rta > 0) ofs_kl << "# 4ph is included non-iteratively." << '\n';

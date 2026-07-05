@@ -381,6 +381,38 @@ def check_ibte_h5(anphonbin):
     if not kl_iter_matches(kl_fresh):
         print(".kl_iter differs after IBTE RESTART=0")
         return 1
+
+    # A truncated run (MAX_CYCLE below MIN_CYCLE, so convergence is never
+    # reached) must be flagged unconverged; the next run warm-starts those
+    # temperatures from the stored deviation function and converges.
+    gen_ibte_input("ibte_short.in", extra_kappa="RESTART = 0; MAX_CYCLE = 3")
+    if run_anphon(anphonbin, "ibte_short.in", "ibte_short.log"):
+        print("IBTE truncated run failed")
+        return 1
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
+        if np.any(f["iterativebte/converged"][...] != 0):
+            print("truncated run was not flagged unconverged")
+            return 1
+    with open(IBTE_PREFIX + ".kl_iter") as f:
+        if "WARNING" not in f.read():
+            print(".kl_iter is missing the unconverged warning")
+            return 1
+    if run_anphon(anphonbin, "ibte.in", "ibte_continue.log"):
+        print("IBTE warm restart failed")
+        return 1
+    if not log_contains("ibte_continue.log", "continuing from the stored deviation function"):
+        print("warm restart did not continue from the stored dF")
+        return 1
+    with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
+        if not np.all(f["iterativebte/converged"][...] == 1):
+            print("warm restart did not converge")
+            return 1
+    now = np.loadtxt(IBTE_PREFIX + ".kl_iter")
+    if not np.allclose(now[:, [1, 5, 9]], kl_fresh[:, [1, 5, 9]], rtol=1e-2):
+        # both runs stop within ITER_THRESHOLD of the fixed point, along
+        # different iteration paths
+        print("kappa after warm restart deviates from the fresh result")
+        return 1
     return 0
 
 

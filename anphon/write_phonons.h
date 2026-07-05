@@ -38,9 +38,11 @@ public:
     void writeKappa() const;
 
     // .kl_iter written by the SOLVER = IBTE path (kappa owned by
-    // Iterativebte); header lines record the non-iterative extra channels.
+    // Iterativebte); header lines record the non-iterative extra channels
+    // and any temperatures whose iteration did not converge.
     void writeKappaIterative(unsigned int ntemp_in, const double *temperature_in,
-                             const double *const *const *kappa_in) const;
+                             const double *const *const *kappa_in,
+                             const std::vector<unsigned char> &converged_in) const;
 
     void writeSelfenergyIsotope() const;
 

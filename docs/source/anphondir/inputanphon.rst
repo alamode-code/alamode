@@ -1630,6 +1630,11 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                the ``/iterativebte`` group of ``PREFIX``.kappa.h5 and an
                interrupted temperature sweep restarts from the missing
                temperatures (``RESTART = 0`` forces a recomputation).
+               Temperatures whose iteration hits ``MAX_CYCLE`` or diverges are
+               reported and flagged as unconverged (also in a comment line of
+               ``PREFIX``.kl_iter, with the lowest-residual iterate kept); a
+               restart continues their iteration from the stored deviation
+               function instead of skipping them.
 
  .. caution::
 
