@@ -39,6 +39,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #ifdef _HDF5
 
 #include "H5Cpp.h"
+#include "hdf5_parser.h"
 
 #endif
 
@@ -494,17 +495,30 @@ void Writes::writePhononInfo()
         writeNormalModeDirection();
     }
 
+    // FILE_FORMAT rule: h5 (default) writes the schema-stamped HDF5
+    // variants, text writes the plain-text files. Builds without HDF5
+    // always fall back to text.
     if (dynamical->print_eigenvectors) {
-        writeEigenvectors();
 #ifdef _HDF5
-        writeEigenvectorsHdf5();
+        if (use_h5_io) {
+            writeEigenvectorsHdf5();
+        } else {
+            writeEigenvectors();
+        }
+#else
+        writeEigenvectors();
 #endif
     }
 
     if (print_eval) {
-        writeEigenvalues();
 #ifdef _HDF5
-        writeEigenvaluesHdf5();
+        if (use_h5_io) {
+            writeEigenvaluesHdf5();
+        } else {
+            writeEigenvalues();
+        }
+#else
+        writeEigenvalues();
 #endif
     }
 
@@ -1407,6 +1421,13 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     }
 
     group_kpoint.close();
+    file.close();
+
+    // Versioned schema stamp (same convention as the kappa/scph state files).
+    {
+        HighFive::File fh(fname_eval, HighFive::File::ReadWrite);
+        stamp_h5_schema(fh, h5_schema_eigenvalues, h5_version_eigen);
+    }
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_eval;
     std::cout << " : Eigenvalues of all k points (HDF5)\n";
@@ -1787,6 +1808,13 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     }
 
     group_kpoint.close();
+    file.close();
+
+    // Versioned schema stamp (same convention as the kappa/scph state files).
+    {
+        HighFive::File fh(fname_evec, HighFive::File::ReadWrite);
+        stamp_h5_schema(fh, h5_schema_eigenvectors, h5_version_eigen);
+    }
 }
 
 #endif

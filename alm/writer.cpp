@@ -42,7 +42,9 @@ using namespace ALM_NS;
 
 Writer::Writer() : output_maxorder(5), compression_level(1)
 {
-    save_format_flags["alamode"] = 1;
+    // The HDF5 file (PREFIX.h5) is the default output; the legacy .xml and
+    // .fcs outputs are opt-in via FCS_ALAMODE = 1.
+    save_format_flags["alamode"] = 0;
     save_format_flags["alamode_h5"] = 1;
     save_format_flags["shengbte"] = 0;
     save_format_flags["shengbte4"] = 0;
@@ -249,8 +251,12 @@ auto Writer::writeall(const std::unique_ptr<System> &system, const std::unique_p
         std::cout << " The following files are created:" << '\n' << '\n';
     }
 
-    const auto fname_save = files->get_prefix() + ".fcs";
-    write_force_constants(cluster, fcs, symmetry, optimize->get_params(), verbosity, fname_save);
+    // The plain-text .fcs listing is a legacy output, written together
+    // with the .xml when FCS_ALAMODE = 1.
+    if (save_format_flags.at("alamode")) {
+        const auto fname_save = files->get_prefix() + ".fcs";
+        write_force_constants(cluster, fcs, symmetry, optimize->get_params(), verbosity, fname_save);
+    }
     for (const auto &save_format_flag: save_format_flags) {
         if (save_format_flag.second) {
             save_fcs_with_specific_format(save_format_flag.first,

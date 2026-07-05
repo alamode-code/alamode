@@ -398,7 +398,11 @@ Description of input variables
  :Type: String
  :Description: The text format is kept for one transition release. Human-readable
                outputs (``PREFIX``.kl, ``PREFIX``.scph_thermo, ``PREFIX``.scph_dfc2,
-               ``PREFIX``.V0, ...) are written in both modes.
+               ``PREFIX``.V0, ...) are written in both modes. The
+               eigenvalue/eigenvector outputs of :ref:`PRINTEVAL <anphon_printeval>`
+               and :ref:`PRINTEVEC <anphon_printevec>` also follow this tag: ``h5``
+               writes the schema-stamped \*.eval.hdf5 / \*.evec.hdf5 files, ``text``
+               the plain-text variants.
 
 ````
 
@@ -1213,7 +1217,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0
  :Type: Integer
- :Description: When ``PRINTEVAL = 1``, the phonon frequencies are saved in ``PREFIX``.eval (*KPMODE* = 0), ``PREFIX``.band.eval (*KPMODE* = 1), and ``PREFIX``.mesh.eval (*KPMODE* = 2). When the code is built with HDF5 support, the corresponding \*.eval.hdf5 files are created as well.
+ :Description: When ``PRINTEVAL = 1``, the phonon frequencies are saved in ``PREFIX``.eval (*KPMODE* = 0), ``PREFIX``.band.eval (*KPMODE* = 1), and ``PREFIX``.mesh.eval (*KPMODE* = 2). The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes the corresponding \*.eval.hdf5 files (schema ``alamode:eigenvalues``) instead of the text files; ``FILE_FORMAT = text`` (or a build without HDF5 support) writes the plain-text files.
 
 ````
 
@@ -1228,6 +1232,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0
  :Type: Integer
+ :Description: The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes ``PREFIX``\ [.band|.mesh].evec.hdf5 (schema ``alamode:eigenvectors``); ``FILE_FORMAT = text`` (or a build without HDF5 support) writes the plain-text ``PREFIX``\ [.band|.mesh].evec files.
 
 ````
 

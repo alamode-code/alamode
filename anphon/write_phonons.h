@@ -171,5 +171,9 @@ private:
     std::string anime_format;
 
 public:
+    // FILE_FORMAT: with h5 (default) the eigenvalue/eigenvector outputs are
+    // written as schema-stamped HDF5 files; with text as plain-text files.
+    bool use_h5_io = true;
+
 };
 } // namespace PHON_NS

@@ -194,6 +194,7 @@ void Input::parse_general_vars()
         exit("parse_general_vars", "FILE_FORMAT must be either h5 or text.");
     }
     const auto use_h5_io = file_format == "h5";
+    writes->use_h5_io = use_h5_io;
     this->use_hdf5_io = use_h5_io;
 
     std::transform(mode.begin(), mode.end(), mode.begin(), toupper);

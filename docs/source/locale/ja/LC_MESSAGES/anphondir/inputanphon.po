@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-05 21:58+0900\n"
+"POT-Creation-Date: 2026-07-05 22:35+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -576,17 +576,17 @@ msgstr "デフォルト"
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:129
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:147
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:210
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:409
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:435
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:513
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:524
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:686
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:698
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1053
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1238
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1456
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1567
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1590
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:413
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:439
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:517
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:528
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:690
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:702
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1057
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1243
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1461
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1572
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1595
 msgid "None"
 msgstr "なし"
 
@@ -600,12 +600,12 @@ msgstr "型"
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:148
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:211
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:398
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:436
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1054
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1457
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1602
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1626
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1761
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:440
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1058
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1462
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1607
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1631
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1766
 msgid "String"
 msgstr "文字列"
 
@@ -766,24 +766,24 @@ msgstr "1.0e-3"
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:245
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:254
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:296
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:410
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:551
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:561
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:797
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:849
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:863
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:875
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:886
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:897
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:908
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:919
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:964
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:978
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1740
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1781
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1935
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1980
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1990
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:414
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:555
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:565
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:801
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:853
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:867
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:879
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:890
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:901
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:912
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:923
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:968
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:982
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1745
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1786
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1940
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1985
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1995
 msgid "Double"
 msgstr "倍精度浮動小数点数"
 
@@ -803,81 +803,81 @@ msgstr "PRINTSYM タグ = 0 | 1"
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:337
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:341
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:371
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:481
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:536
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:570
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:594
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:608
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:623
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:485
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:540
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:574
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:598
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:612
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:627
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:638
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:653
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:631
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:642
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:657
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:668
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:674
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:726
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:740
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:745
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:757
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:811
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:661
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:672
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:678
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:730
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:744
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:749
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:761
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:815
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:950
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:987
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1010
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:819
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:954
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:991
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1014
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1190
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1018
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1194
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1210
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1198
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1214
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1225
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1218
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1229
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1249
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1253
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1265
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1269
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1280
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1284
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1295
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1310
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1314
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1325
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1329
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1344
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1351
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1363
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1233
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1254
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1258
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1270
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1274
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1285
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1289
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1300
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1315
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1319
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1330
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1334
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1349
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1356
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1368
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1380
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1373
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1385
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1407
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1390
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1412
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1424
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1428
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1439
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1446
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1467
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1417
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1429
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1433
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1444
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1451
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1472
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1482
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1492
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1503
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1477
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1487
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1497
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1508
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1519
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1513
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1524
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1535
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1529
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1540
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1682
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1686
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1714
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1770
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1795
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1815
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1834
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1840
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1856
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1545
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1687
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1691
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1719
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1775
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1800
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1820
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1839
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1845
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1861
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1873
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1910
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1945
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1949
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1866
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1878
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1915
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1950
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1954
 msgid "0"
 msgstr "0"
 
@@ -893,65 +893,65 @@ msgstr "対称操作は “SYMM_INFO_PRIM” に保存されません"
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:338
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:372
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:375
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:500
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:537
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:540
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:571
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:574
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:595
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:598
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:609
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:612
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:624
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:639
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:654
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:669
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:710
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:715
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:727
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:730
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:741
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:758
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:777
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:812
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:826
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:930
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:935
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:988
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1011
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1032
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1191
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1211
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1226
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1250
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1266
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1281
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1296
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1299
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1311
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1326
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1345
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1364
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1381
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1408
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1425
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1440
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1468
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1504
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1520
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1536
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1683
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1715
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1719
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1796
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1816
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1835
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1857
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1874
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:504
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:541
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:544
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:575
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:578
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:599
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:602
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:613
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:616
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:628
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:643
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:658
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:673
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:714
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:719
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:731
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:734
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:745
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:762
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:781
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:816
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:830
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:934
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:939
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:992
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1015
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1036
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1195
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1215
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1230
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1255
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1271
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1286
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1301
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1304
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1316
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1331
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1350
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1369
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1386
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1413
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1430
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1445
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1473
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1509
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1525
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1541
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1688
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1720
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1724
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1801
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1821
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1840
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1862
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1879
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1912
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1916
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1946
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1884
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1917
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1921
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1951
 msgid "1"
 msgstr "1"
 
@@ -971,64 +971,64 @@ msgstr "型"
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:327
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:342
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:376
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:482
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:501
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:541
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:575
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:585
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:599
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:613
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:628
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:643
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:658
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:675
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:716
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:731
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:746
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:762
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:783
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:816
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:827
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:838
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:936
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:951
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:993
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1015
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1038
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1195
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1215
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1230
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1254
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1270
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1285
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1300
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1315
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1330
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1352
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1369
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1386
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1413
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1429
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1447
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1473
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1483
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1493
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1509
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1525
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1541
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1582
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1687
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1720
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1771
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1800
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1820
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1841
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1862
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1880
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1917
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1950
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1960
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1970
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:486
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:505
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:545
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:579
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:589
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:603
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:617
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:632
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:647
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:662
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:679
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:720
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:735
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:750
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:766
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:787
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:820
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:831
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:842
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:940
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:955
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:997
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1019
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1042
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1199
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1219
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1234
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1259
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1275
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1290
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1305
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1320
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1335
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1357
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1374
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1391
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1418
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1434
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1452
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1478
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1488
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1498
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1514
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1530
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1546
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1587
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1692
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1725
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1776
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1805
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1825
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1846
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1867
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1885
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1922
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1955
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1965
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1975
 msgid "Integer"
 msgstr "整数"
 
@@ -1049,23 +1049,23 @@ msgstr "Parlinski によって提案された減衰法 (damping method) によ�
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:185
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:266
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:310
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:670
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:711
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:742
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:778
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:674
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:715
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:746
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:782
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:931
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:989
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:992
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1033
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:786
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:935
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:993
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:996
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1037
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1347
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1442
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1505
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1521
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1716
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1836
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1875
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1041
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1352
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1447
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1510
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1526
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1721
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1841
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1880
 msgid "2"
 msgstr "2"
 
@@ -1074,11 +1074,11 @@ msgid "Include the non-analytic correction by the mixed-space approach"
 msgstr "混合空間アプローチ (mixed-space approach) による非解析補正を含めます"
 
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:187
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:671
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:712
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:779
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:932
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1034
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:675
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:716
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:783
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:936
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1038
 msgid "3"
 msgstr "3"
 
@@ -1100,7 +1100,7 @@ msgid "NA_SIGMA-tag : Damping factor for the non-analytic term"
 msgstr "NA_SIGMA タグ : 非解析項に対する減衰係数"
 
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:200
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:560
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:564
 msgid "0.1"
 msgstr "0.1"
 
@@ -1186,7 +1186,7 @@ msgstr "ISMEAR タグ = -1 | 0 | 1 | 2"
 
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:263
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:269
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1713
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1718
 msgid "-1"
 msgstr "-1"
 
@@ -1203,7 +1203,7 @@ msgid "Gaussian smearing with width of ``EPSILON``"
 msgstr "幅 ``EPSILON`` のガウス型スメアリング"
 
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:266
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1716
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1721
 msgid "Adaptive Gaussian smearing"
 msgstr "適応型ガウススメアリング (adaptive Gaussian smearing)"
 
@@ -1250,7 +1250,7 @@ msgid "EPSILON-tag : Smearing width in units of Kayser (cm\\ :sup:`-1`)"
 msgstr "EPSILON タグ : スメアリング幅 (単位: カイザー (cm\\ :sup:`-1`))"
 
 #: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:295
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1739
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1744
 msgid "10.0"
 msgstr "10.0"
 
@@ -1439,19 +1439,24 @@ msgstr "従来のテキストファイル (``PREFIX``.result、``PREFIX``.scph_d
 msgid ""
 "The text format is kept for one transition release. Human-readable outputs "
 "(``PREFIX``.kl, ``PREFIX``.scph_thermo, ``PREFIX``.scph_dfc2, ``PREFIX``.V0,"
-" ...) are written in both modes."
+" ...) are written in both modes. The eigenvalue/eigenvector outputs of "
+":ref:`PRINTEVAL <anphon_printeval>` and :ref:`PRINTEVEC <anphon_printevec>` "
+"also follow this tag: ``h5`` writes the schema-stamped \\*.eval.hdf5 / "
+"\\*.evec.hdf5 files, ``text`` the plain-text variants."
 msgstr ""
 "テキスト形式は移行期間として 1 リリースの間維持されます。人間が読める出力 "
 "(``PREFIX``.kl、``PREFIX``.scph_thermo、``PREFIX``.scph_dfc2、``PREFIX``.V0 など)"
-" はどちらのモードでも書き出されます。"
+" はどちらのモードでも書き出されます。:ref:`PRINTEVAL <anphon_printeval>` および :ref:`PRINTEVEC "
+"<anphon_printevec>` の固有値/固有ベクトル出力もこのタグに従います: ``h5`` はスキーマが付与された "
+"\\*.eval.hdf5 / \\*.evec.hdf5 ファイルを、``text`` はプレーンテキスト版を書き出します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:407
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:411
 msgid ""
 "FC2_TEMPERATURE-tag : Temperature (K) at which the renormalized FC2 is "
 "loaded"
 msgstr "FC2_TEMPERATURE タグ : くりこまれた FC2 を読み込む温度 (K)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:411
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:415
 msgid ""
 "When ``FCSFILE`` or ``FC2FILE`` points at a ``PREFIX``.scph.h5 / "
 "``PREFIX``.qha.h5 file produced by an SCPH/QHA run, the effective "
@@ -1480,12 +1485,12 @@ msgstr ""
 "反復または構造最適化が収束しなかった温度は、:ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>` "
 "を設定しない限り拒否されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:433
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:437
 msgid ""
 "DFC2FILE-tag : SCPH/QHA state file supplying the anharmonic FC2 correction"
 msgstr "DFC2FILE タグ : 非調和 FC2 補正を与える SCPH/QHA 状態ファイル"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:437
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:441
 #, python-brace-format
 msgid ""
 "Adds the anharmonic FC2 correction :math:`\\Delta\\Phi_{ij}` stored in a "
@@ -1507,7 +1512,7 @@ msgstr ""
 "つのスーパーセルは同じ基本セルの整合的なタイル張りでなければなりません。状態ファイルの収束フラグは、``FC2_TEMPERATURE`` "
 "を直接読み込む場合と同様に検査されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:449
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:453
 msgid ""
 "``DFC2FILE`` never replaces the harmonic FC2 — it is purely additive. The "
 "base FC2 follows the usual precedence (``FC2FILE`` if given, otherwise "
@@ -1518,49 +1523,49 @@ msgstr ""
 "(``FC2FILE`` があればそれ、なければ ``FCSFILE``) に従い、``DFC2FILE`` が指定されている場合 "
 "``FC2_TEMPERATURE`` は ``DFC2FILE`` に対して適用されます。組み合わせの結果は次のとおりです:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:458
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:462
 msgid "Input combination"
 msgstr "入力の組み合わせ"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:459
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:463
 msgid "Resulting FC2"
 msgstr "得られる FC2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:460
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:464
 msgid "``FCSFILE`` only"
 msgstr "``FCSFILE`` のみ"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:461
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:465
 msgid "base from ``FCSFILE``"
 msgstr "ベースは ``FCSFILE`` から"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:462
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:466
 msgid "``FCSFILE`` + ``FC2FILE``"
 msgstr "``FCSFILE`` + ``FC2FILE``"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:463
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:467
 msgid "base from ``FC2FILE`` (FC3/FC4 from ``FCSFILE``)"
 msgstr "ベースは ``FC2FILE`` から (FC3/FC4 は ``FCSFILE`` から)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:464
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:468
 msgid "either of the above + ``DFC2FILE`` + ``FC2_TEMPERATURE``"
 msgstr "上記いずれか + ``DFC2FILE`` + ``FC2_TEMPERATURE``"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:465
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:469
 msgid "same base **+** :math:`\\Delta\\Phi(T)` from ``DFC2FILE``"
 msgstr "同じベース **+** ``DFC2FILE`` からの :math:`\\Delta\\Phi(T)`"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:466
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:470
 msgid ""
 "``FC2FILE`` = ``PREFIX``.scph.h5 + ``FC2_TEMPERATURE``, no ``DFC2FILE``"
 msgstr ""
 "``FC2FILE`` = ``PREFIX``.scph.h5 + ``FC2_TEMPERATURE`` (``DFC2FILE`` なし)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:467
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:471
 msgid "total (base + :math:`\\Delta\\Phi(T)`) read directly from the state file"
 msgstr "合計 (ベース + :math:`\\Delta\\Phi(T)`) を状態ファイルから直接読み込み"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:469
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:473
 msgid ""
 "Note that the crystal structure is still taken from ``FCSFILE``/``FC2FILE``;"
 " ``DFC2FILE`` contributes force-constant corrections only. Giving a state "
@@ -1572,11 +1577,11 @@ msgstr ""
 "は力定数の補正のみを与えます。状態ファイルを調和 FC2 のソースとして指定し、*同時に* ``DFC2FILE`` "
 "も指定した場合は、粗いメッシュに折りたたまれたベース FC2 のみが使用され、警告が表示されます (通常は意図した動作ではないためです)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:479
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:483
 msgid "ALLOW_UNCONVERGED-tag = 0 | 1"
 msgstr "ALLOW_UNCONVERGED タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:483
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:487
 msgid ""
 "SCPH/QHA state files record, per temperature, whether the SCPH iteration and"
 " the structural optimization converged (``/convergence`` in "
@@ -1594,11 +1599,11 @@ msgstr ""
 "は、既定では収束していない温度をエラーとして拒否します。``ALLOW_UNCONVERGED = 1`` "
 "を設定すると、警告を表示した上でそのようなデータも使用します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:498
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:502
 msgid "VERBOSITY-tag : Level of the standard output"
 msgstr "VERBOSITY タグ : 標準出力のレベル"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:502
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:506
 msgid ""
 "``VERBOSITY = 0`` suppresses the echo of the input variables and the per-"
 "iteration log of the SCPH solver. ``VERBOSITY >= 2`` keeps the per-iteration"
@@ -1608,37 +1613,37 @@ msgstr ""
 "``VERBOSITY = 0`` は入力変数のエコーと SCPH ソルバーの反復ごとのログを抑制します。``VERBOSITY >= 2`` "
 "は、既定では簡略化される構造最適化ループ (``RELAX_STR != 0``) の内部でも SCPH の反復ごとのログを保持します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:507
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:511
 msgid "\"&scph\"-field (Read only when ``MODE = SCPH``)"
 msgstr "\"&scph\" フィールド (``MODE = SCPH`` のときにのみ読み込まれます)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:511
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:684
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:515
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:688
 msgid "KMESH_INTERPOLATE-tag = k1, k2, k3"
 msgstr "KMESH_INTERPOLATE タグ = k1, k2, k3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:514
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:525
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:687
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:699
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1397
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1591
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1703
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:518
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:529
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:691
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:703
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1402
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1596
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1708
 msgid "Array of integers"
 msgstr "整数の配列"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:515
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:519
 msgid ""
 "In the iteration process of the SCPH equation, the interpolation is done "
 "using the :math:`k` mesh defined by ``KMESH_INTERPOLATE``."
 msgstr ""
 "SCPH 方程式の反復過程において、``KMESH_INTERPOLATE`` で定義される :math:`k` メッシュを用いて補間が行われます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:522
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:526
 msgid "KMESH_SCPH-tag = k1, k2, k3"
 msgstr "KMESH_SCPH タグ = k1, k2, k3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:526
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:530
 msgid ""
 "This :math:`k` mesh is used for the inner loop of the SCPH equation. Each "
 "value of ``KMESH_SCPH`` must be equal to or a multiple of the number of "
@@ -1647,35 +1652,35 @@ msgstr ""
 "この :math:`k` メッシュは SCPH 方程式の内側ループに使用されます。``KMESH_SCPH`` の各値は、同じ方向の "
 "``KMESH_INTERPOLATE`` の数と等しいか、その倍数でなければなりません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:533
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:537
 msgid "SELF_OFFDIAG-tag = 0 | 1"
 msgstr "SELF_OFFDIAG タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:536
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:540
 msgid ""
 "Neglect the off-diagonal elements of the loop diagram in the SCPH "
 "calculation"
 msgstr "SCPH 計算においてループダイアグラムの非対角要素を無視します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:537
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:541
 msgid ""
 "Consider the off-diagonal elements of the loop diagram in the SCPH "
 "calculation"
 msgstr "SCPH 計算においてループダイアグラムの非対角要素を考慮します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:542
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:546
 msgid "``SELF_OFFDIAG = 1`` is more accurate, but expensive."
 msgstr "``SELF_OFFDIAG = 1`` はより正確ですが、計算コストが高くなります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:548
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:552
 msgid "TOL_SCPH-tag: Stopping criterion of the SCPH iteration"
 msgstr "TOL_SCPH タグ: SCPH 反復の停止基準"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:550
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:554
 msgid "1.0e-10"
 msgstr "1.0e-10"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:552
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:556
 msgid ""
 "The SCPH iteration stops when both :math:`[\\frac{1}{N_{q}}\\sum_{q} "
 "(\\Omega_{q}^{(i)}-\\Omega_{q}^{(i-1)})^{2}]^{1/2}` < ``TOL_SCPH`` and "
@@ -1691,23 +1696,23 @@ msgstr ""
 "回目の反復における非調和フォノン振動数であり、:math:`q` は ``KMESH_INTERPOLATE`` "
 "の既約運動量グリッド上のフォノンモードです。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:558
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:562
 msgid "MIXALPHA-tag: Mixing parameter used in the SCPH iteration"
 msgstr "MIXALPHA タグ: SCPH 反復で使用される混合パラメータ"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:567
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:571
 msgid "IMIX-tag = 0 | 1"
 msgstr "IMIX タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:570
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:574
 msgid "Simple linear mixing with the mixing parameter ``MIXALPHA``"
 msgstr "混合パラメータ ``MIXALPHA`` を用いた単純線形混合"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:571
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:575
 msgid "DIIS (Pulay) mixing"
 msgstr "DIIS (Pulay) 混合"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:576
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:580
 msgid ""
 "Mixing algorithm used in the SCPH iteration. With ``IMIX = 1``, a few "
 "simple-mixing steps are performed first and the subsequent iterations are "
@@ -1719,124 +1724,124 @@ msgstr ""
 "法により反復を加速します。この場合 :ref:`MIXALPHA <anphon_mixalpha>` は基礎となる混合パラメータとして使用され、(0,"
 " 1] の範囲でなければなりません。``IMIX = 0`` では単純混合のみを使用します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:582
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:586
 msgid "MAXITER-tag: Maximum number of the SCPH iteration"
 msgstr "MAXITER タグ: SCPH 反復の最大回数"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:584
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:588
 msgid "1000"
 msgstr "1000"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:591
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:723
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:595
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:727
 msgid "LOWER_TEMP-tag = 0 | 1"
 msgstr "LOWER_TEMP タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:594
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:598
 msgid ""
 "The SCPH iteration starts from ``TMIN`` and proceeds to ``TMAX``. (Raise the"
 " temperature)"
 msgstr "SCPH 反復は ``TMIN`` から開始して ``TMAX`` へと進みます。(温度を上げる)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:595
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:599
 msgid ""
 "The SCPH iteration starts from ``TMAX`` and proceeds to ``TMIN``. (Lower the"
 " temperature)"
 msgstr "SCPH 反復は ``TMAX`` から開始して ``TMIN`` へと進みます。(温度を下げる)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:605
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:609
 msgid "WARMSTART-tag = 0 | 1"
 msgstr "WARMSTART タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:608
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:612
 msgid "SCPH iteration is initialized by harmonic frequencies and eigenvectors"
 msgstr "SCPH 反復は調和振動数と固有ベクトルによって初期化されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:609
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:613
 msgid ""
 "SCPH iteration is initialized by the solution of the previous temperature"
 msgstr "SCPH 反復は前の温度の解によって初期化されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:614
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:618
 msgid "``WARMSTART = 1`` usually improves the convergence."
 msgstr "``WARMSTART = 1`` は通常、収束を改善します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:620
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:624
 msgid "IALGO-tag = 0 | 1"
 msgstr "IALGO タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:623
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:627
 msgid "MPI parallelization for the :math:`k` point"
 msgstr ":math:`k` 点に対する MPI 並列化"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:624
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:628
 msgid "MPI parallelization for the phonon branch"
 msgstr "フォノンブランチに対する MPI 並列化"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:629
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:633
 msgid ""
 "Use ``IALGO = 1`` when the primitive cell contains many atoms and the number"
 " of :math:`k` points is small."
 msgstr "基本セルに多数の原子が含まれ、:math:`k` 点の数が少ない場合は ``IALGO = 1`` を使用してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:635
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:639
 msgid "RESTART_SCPH-tag = 0 | 1"
 msgstr "RESTART_SCPH タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:638
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:642
 msgid "Perform a SCPH calculation from scratch"
 msgstr "SCPH 計算を最初から実行します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:639
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:643
 msgid "Skip a SCPH iteration by loading a precalculated result"
 msgstr "事前に計算された結果を読み込んで SCPH 反復をスキップします"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:642
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:646
 msgid ""
 "1 if the file ``PREFIX.scph_dymat`` exists in the working directory; 0 "
 "otherwise"
 msgstr "作業ディレクトリに ``PREFIX.scph_dymat`` ファイルが存在する場合は 1、そうでない場合は 0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:650
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:654
 msgid "BUBBLE-tag = 0 | 1"
 msgstr "BUBBLE タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:653
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:657
 msgid "No bubble correction to the dynamical matrix"
 msgstr "動力学行列へのバブル補正を行いません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:654
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:658
 msgid "Calculate bubble correction on top of the SCPH dynamical matrix"
 msgstr "SCPH 動力学行列に加えてバブル補正を計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:665
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:669
 msgid "RELAX_STR-tag = 0 | 1 | 2 | 3"
 msgstr "RELAX_STR タグ = 0 | 1 | 2 | 3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:668
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:672
 msgid "Don't relax the crystal structure (not supported when ``MODE = QHA``)."
 msgstr "結晶構造を緩和しません (``MODE = QHA`` のときはサポートされません)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:669
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:710
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:673
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:714
 msgid "Relax atomic positions."
 msgstr "原子位置を緩和します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:670
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:711
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:674
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:715
 msgid "Relax both atomic positions and the shape of the unit cell."
 msgstr "原子位置と単位胞の形状の両方を緩和します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:671
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:712
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:675
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:716
 msgid "Lowest-order perturbation theory (not supported when ``MODE = SCPH``)."
 msgstr "最低次の摂動論 (``MODE = SCPH`` のときはサポートされません)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:680
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:684
 msgid "\"&qha\"-field (Read only when ``MODE = QHA``)"
 msgstr "\"&qha\" フィールド (``MODE = QHA`` のときにのみ読み込まれます)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:688
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:692
 msgid ""
 "In the structural optimization based on quasiharmonic approximation (QHA), "
 "the interpolation is done using the :math:`k` mesh defined by "
@@ -1845,11 +1850,11 @@ msgstr ""
 "準調和近似 (quasiharmonic approximation, QHA) に基づく構造最適化において、``KMESH_INTERPOLATE``"
 " で定義される :math:`k` メッシュを用いて補間が行われます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:696
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:700
 msgid "KMESH_QHA-tag = k1, k2, k3"
 msgstr "KMESH_QHA タグ = k1, k2, k3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:700
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:704
 msgid ""
 "This :math:`k` mesh is used for the QHA-based structural optimization. Each "
 "value of ``KMESH_QHA`` must be equal to or a multiple of the number of "
@@ -1858,59 +1863,59 @@ msgstr ""
 "この :math:`k` メッシュは QHA に基づく構造最適化に使用されます。``KMESH_QHA`` の各値は、同じ方向の "
 "``KMESH_INTERPOLATE`` の数と等しいか、その倍数でなければなりません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:707
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:711
 msgid "RELAX_STR-tag = 1 | 2 | 3"
 msgstr "RELAX_STR タグ = 1 | 2 | 3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:717
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:721
 msgid "``RELAX_STR = 0`` is not supported when ``MODE = QHA``."
 msgstr "``MODE = QHA`` のとき、``RELAX_STR = 0`` はサポートされません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:726
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:730
 msgid ""
 "The structural optimization starts from ``TMIN`` and proceeds to ``TMAX``. "
 "(Raise the temperature)"
 msgstr "構造最適化は ``TMIN`` から開始して ``TMAX`` へと進みます。(温度を上げる)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:727
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:731
 msgid ""
 "The structural optimization starts from ``TMAX`` and proceeds to ``TMIN``. "
 "(Lower the temperature)"
 msgstr "構造最適化は ``TMAX`` から開始して ``TMIN`` へと進みます。(温度を下げる)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:737
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:741
 msgid "QHA_SCHEME-tag = 0 | 1 | 2"
 msgstr "QHA_SCHEME タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:740
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:744
 msgid "Full optimization within QHA."
 msgstr "QHA 内での完全最適化。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:741
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:745
 msgid "zero-static internal stress approximation (ZSISA)."
 msgstr "ゼロ静的内部応力近似 (zero-static internal stress approximation, ZSISA)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:742
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:746
 msgid "volumetric ZSISA (v-ZSISA)."
 msgstr "体積 ZSISA (volumetric ZSISA, v-ZSISA)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:748
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:752
 msgid "This option is used only when ``mode = QHA`` and ``RELAX_STR = 2``."
 msgstr "このオプションは ``mode = QHA`` かつ ``RELAX_STR = 2`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:754
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:758
 msgid "RESTART_QHA-tag = 0 | 1"
 msgstr "RESTART_QHA タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:757
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:761
 msgid "Perform a QHA calculation from scratch"
 msgstr "QHA 計算を最初から実行します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:758
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:762
 msgid "Skip the QHA optimization by loading a precalculated result"
 msgstr "事前に計算された結果を読み込んで QHA 最適化をスキップします"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:761
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:765
 msgid ""
 "1 if the file ``PREFIX.qha.h5``, or the pair of the legacy files "
 "``PREFIX.renorm_harm_dymat`` and ``PREFIX.V0``, exists in the working "
@@ -1919,7 +1924,7 @@ msgstr ""
 "作業ディレクトリに ``PREFIX.qha.h5`` ファイル、または従来の ``PREFIX.renorm_harm_dymat`` と "
 "``PREFIX.V0`` のファイル対が存在する場合は 1、そうでない場合は 0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:763
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:767
 msgid ""
 "With the default ``FILE_FORMAT = h5``, the restart data are read "
 "preferentially from the unified state file ``PREFIX``.qha.h5. When only the "
@@ -1933,27 +1938,27 @@ msgstr ""
 "へ移行されます。構造最適化が収束しなかった温度は、:ref:`ALLOW_UNCONVERGED <anphon_allow_unconverged>`"
 " を設定しない限り拒否されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:770
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:774
 msgid "\"&relax\"-field (Read only when ``RELAX_STR != 0``)"
 msgstr "\"&relax\" フィールド (``RELAX_STR != 0`` のときにのみ読み込まれます)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:774
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:778
 msgid "RELAX_ALGO-tag = 1 | 2 | 3"
 msgstr "RELAX_ALGO タグ = 1 | 2 | 3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:777
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:781
 msgid "Steepest descent (not recommended)"
 msgstr "最急降下法 (推奨されません)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:778
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:782
 msgid "Newton-like method"
 msgstr "ニュートン型の方法"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:779
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:783
 msgid "BFGS + GDIIS"
 msgstr "BFGS + GDIIS"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:785
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:789
 msgid ""
 "Algorithm to update the crystal structure in structural optimization. This "
 "option is used only when ``RELAX_STR = 1, 2``. ``RELAX_ALGO = 1`` works "
@@ -1963,17 +1968,17 @@ msgstr ""
 "のときにのみ使用されます。``RELAX_ALGO = 1`` は単位胞が固定されている (``RELAX_STR = 1``) "
 "ときにのみ正しく動作します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:794
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:798
 msgid ""
 "ALPHA_STDECENT-tag: Coefficient of steepest descent in structural "
 "optimization"
 msgstr "ALPHA_STDECENT タグ: 構造最適化における最急降下法の係数"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:796
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:800
 msgid "1.0e4"
 msgstr "1.0e4"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:799
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:803
 #, python-brace-format
 msgid ""
 ":math:`\\alpha` coefficient in structural optimization with the steepest-"
@@ -1987,19 +1992,19 @@ msgstr ""
 "``ALPHA_STEEPEST_DECENT`` として文書化されていましたが、パーサーが受け付けるタグ名は ``ALPHA_STDECENT`` "
 "です。)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:808
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:812
 msgid "GDIIS_PLAIN-tag = 0 | 1"
 msgstr "GDIIS_PLAIN タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:811
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:815
 msgid "Use the controlled GDIIS (with step-acceptance tests)"
 msgstr "制御付き GDIIS (ステップ受理判定あり) を使用します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:812
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:816
 msgid "Use the plain GDIIS (without step-acceptance tests)"
 msgstr "通常の GDIIS (ステップ受理判定なし) を使用します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:818
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:822
 msgid ""
 "This option is used only when ``RELAX_ALGO = 3``. By default, each GDIIS "
 "step is subjected to the step-acceptance criteria of the controlled GDIIS "
@@ -2013,11 +2018,11 @@ msgstr ""
 "(ステップ長の上限、係数/外挿の上限、誤差ベクトルの再スケーリングを伴う特異点近傍の棄却) "
 "が適用され、最適化がより頑健になります。``GDIIS_PLAIN = 1`` を設定すると通常の GDIIS 更新に戻ります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:824
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:828
 msgid "GDIIS_CONTROL-tag = 0 | 1"
 msgstr "GDIIS_CONTROL タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:829
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:833
 msgid ""
 "Deprecated. This tag was formerly used to enable the controlled GDIIS, which"
 " is now the default; a warning is printed when the tag is given. Use "
@@ -2029,30 +2034,30 @@ msgstr ""
 ":ref:`GDIIS_PLAIN <anphon_gdiis_plain>` = 1 を使用してください。両方が指定された場合は "
 "``GDIIS_PLAIN`` が優先されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:835
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:839
 msgid "MAX_STR_ITER-tag: Maximum number of structure updates."
 msgstr "MAX_STR_ITER タグ: 構造更新の最大回数。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:837
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:841
 msgid "100"
 msgstr "100"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:840
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:888
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:844
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:892
 msgid "This option is used only when ``RELAX_STR = 1, 2``."
 msgstr "このオプションは ``RELAX_STR = 1, 2`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:846
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:850
 msgid ""
 "ADD_HESS_DIAG-tag: Correction to the estimated Hessian of free energy in "
 "units of kayser (cm\\ :sup:`-1`)"
 msgstr "ADD_HESS_DIAG タグ: 推定された自由エネルギーのヘッシアンに対する補正 (単位: カイザー (cm\\ :sup:`-1`))"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:848
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:852
 msgid "100.0"
 msgstr "100.0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:851
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:855
 msgid ""
 "The squared ``ADD_HESS_DIAG`` is added to the diagonal components of "
 "estimated Hessians, which is used to update crystal structures in structural"
@@ -2066,35 +2071,35 @@ msgstr ""
 "は構造相転移近傍のソフトモードが存在する場合に計算をより安定にしますが、大きな値を設定すると収束が遅くなります。このオプションは "
 "``RELAX_ALGO = 2`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:860
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:864
 msgid ""
 "COORD_CONV_TOL-tag: Threshold of convergence for atomic positions in "
 "structural optimization."
 msgstr "COORD_CONV_TOL タグ: 構造最適化における原子位置の収束しきい値。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:862
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:896
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:866
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:900
 msgid "1.0e-5"
 msgstr "1.0e-5"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:865
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:869
 msgid ""
 "The value is interpreted in units of Bohr. This option is used only when "
 "``RELAX_STR = 1, 2``."
 msgstr "この値は Bohr 単位で解釈されます。このオプションは ``RELAX_STR = 1, 2`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:872
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:876
 msgid ""
 "GRADIENT_CONV_TOL-tag: Threshold of convergence for the residual force in "
 "structural optimization."
 msgstr "GRADIENT_CONV_TOL タグ: 構造最適化における残留力の収束しきい値。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:874
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:907
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:878
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:911
 msgid "0.0 (disabled)"
 msgstr "0.0 (無効)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:877
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:881
 msgid ""
 "When ``GRADIENT_CONV_TOL > 0``, the structural optimization at each "
 "temperature is declared converged only if the norm of the residual force "
@@ -2109,36 +2114,36 @@ msgstr ""
 "に加えて、内部座標に働く残留力のノルムがこの値より小さいときにのみ収束と判定されます。これは、勾配が小さくないのにステップが小さくなることがある "
 "GDIIS 最適化 (``RELAX_ALGO = 3``) における、停留点でない点での誤収束を防ぎます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:883
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:887
 msgid ""
 "MIXBETA_COORD-tag: Mixing coefficient for atomic positions in structure "
 "updates."
 msgstr "MIXBETA_COORD タグ: 構造更新における原子位置の混合係数。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:885
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:918
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:889
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:922
 msgid "0.5"
 msgstr "0.5"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:894
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:898
 #, python-brace-format
 msgid ""
 "CELL_CONV_TOL-tag: Threshold of convergence for displacement gradient tensor"
 " :math:`u_{\\mu \\nu}` in structural optimization."
 msgstr "CELL_CONV_TOL タグ: 構造最適化における変位勾配テンソル :math:`u_{\\mu \\nu}` の収束しきい値。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:899
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:921
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:903
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:925
 msgid "This option is used only when ``RELAX_STR = 2``."
 msgstr "このオプションは ``RELAX_STR = 2`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:905
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:909
 msgid ""
 "CELL_GRADIENT_CONV_TOL-tag: Threshold of convergence for the residual cell "
 "gradient (stress) in structural optimization."
 msgstr "CELL_GRADIENT_CONV_TOL タグ: 構造最適化における残留セル勾配 (応力) の収束しきい値。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:910
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:914
 msgid ""
 "When ``CELL_GRADIENT_CONV_TOL > 0`` and the cell shape is relaxed "
 "(``RELAX_STR = 2``), convergence additionally requires the norm of the "
@@ -2152,32 +2157,32 @@ msgstr ""
 "による項を含む) のノルムがこの値より小さいことも収束条件に追加されます。:ref:`GRADIENT_CONV_TOL "
 "<anphon_gradient_conv_tol>` とは単位が異なるため、別のしきい値になっています。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:916
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:920
 #, python-brace-format
 msgid ""
 "MIXBETA_CELL-tag: Mixing coefficient for displacement gradient tensor "
 ":math:`u_{\\mu \\nu}` in structure updates."
 msgstr "MIXBETA_CELL タグ: 構造更新における変位勾配テンソル :math:`u_{\\mu \\nu}` の混合係数。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:927
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:931
 msgid "SET_INIT_STR-tag = 1 | 2 | 3"
 msgstr "SET_INIT_STR タグ = 1 | 2 | 3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:930
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:934
 msgid "Set initial structure from the input file at each temperature."
 msgstr "各温度で入力ファイルから初期構造を設定します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:931
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:935
 msgid "Start from the crystal structure of the previous temperature."
 msgstr "前の温度の結晶構造から開始します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:932
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:936
 msgid ""
 "Start from the crystal structure of the previous temperature in low-symmetry"
 " phase."
 msgstr "低対称相における前の温度の結晶構造から開始します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:938
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:942
 msgid ""
 "This option specifies how to set the initial structure of structural "
 "optimization at different temperatures. This option is used when ``RELAX_STR"
@@ -2195,13 +2200,13 @@ msgstr ""
 "の場合、前の温度で結晶構造が高対称相に収束したときには、入力ファイルからの初期変位が使用されます。低対称相と高対称相を区別する基準は "
 ":ref:`COOLING_U0_THR <anphon_cooling_u0_thr>` で説明されています。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:948
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:952
 msgid ""
 "COOLING_U0_INDEX-tag = 0 | 1 | ... | 3N-1 (N : the number of atoms in the "
 "unit cell)"
 msgstr "COOLING_U0_INDEX タグ = 0 | 1 | ... | 3N-1 (N : 単位胞内の原子数)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:953
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:957
 msgid ""
 "Specify as :math:`3\\times\\alpha + \\mu`. Here, :math:`\\alpha` denotes the"
 " atom index in the primitive cell and :math:`\\mu` is the xyz index, where "
@@ -2214,17 +2219,17 @@ msgstr ""
 ":ref:`COOLING_U0_THR <anphon_cooling_u0_thr>` の説明を参照してください。このオプションは "
 "``SET_INIT_STR = 3`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:961
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:965
 msgid ""
 "COOLING_U0_THR-tag: Threshold to judge high-symmetry phase in structural "
 "optimization [Bohr]."
 msgstr "COOLING_U0_THR タグ: 構造最適化において高対称相を判定するためのしきい値 [Bohr]。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:963
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:967
 msgid "0.001"
 msgstr "0.001"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:966
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:970
 #, python-brace-format
 msgid ""
 "The crystal structure is judged to be back to the high-symmetry phase if "
@@ -2237,42 +2242,42 @@ msgstr ""
 "の場合、結晶構造は高対称相に戻ったと判定されます。このオプションは、自発的対称性の破れを誘起するために高対称構造からの小さな変位が必要となるため、冷却計算において有用です。このオプションは"
 " ``SET_INIT_STR = 3`` のときにのみ使用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:975
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:979
 msgid "STAT_PRESSURE-tag: Hydrostatic pressure in GPa."
 msgstr "STAT_PRESSURE タグ: 静水圧 (単位: GPa)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:977
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:981
 msgid "0.0"
 msgstr "0.0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:984
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:988
 msgid "RENORM_2TO1ST-tag = 0 | 1 | 2"
 msgstr "RENORM_2TO1ST タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:987
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1010
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:991
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1014
 msgid "Set zero."
 msgstr "ゼロに設定します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:988
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:992
 msgid "Real-space IFC renormalization. (not recommended)"
 msgstr "実空間での原子間力定数の繰り込み。(推奨されません)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:989
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:993
 msgid "Finite difference method with respect to strain."
 msgstr "ひずみに関する有限差分法。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:995
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:999
 msgid ""
 "This option specifies the method to calculate first-order derivatives of "
 "first-order IFCs with respect to strain"
 msgstr "このオプションは、ひずみに関する 1 次の原子間力定数の 1 階微分を計算する方法を指定します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:997
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1001
 msgid ":math:`\\frac{\\partial \\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 \\nu_1} }`."
 msgstr ":math:`\\frac{\\partial \\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 \\nu_1} }`。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:999
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1003
 msgid ""
 "This option is used only when ``RELAX_STR = 2, 3``. Note that "
 "``RENORM_2TO1ST = 1`` requires rotational invariance on IFCs, which is not "
@@ -2284,22 +2289,22 @@ msgstr ""
 "は原子間力定数に回転不変性を要求しますが、これはプログラム ANPHON ではチェックされないことに注意してください。``RENORM_2TO1ST ="
 " 0`` は、ひずみ-力の結合がゼロである高対称物質に対して使用できますが、これはユーザーが確認する必要があります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1007
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1011
 msgid "RENORM_34TO1ST-tag = 0 | 1"
 msgstr "RENORM_34TO1ST タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1011
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1032
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1015
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1036
 msgid "Real-space IFC renormalization."
 msgstr "実空間での原子間力定数の繰り込み。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1017
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1021
 msgid ""
 "This option specifies the method to calculate second and higher-order "
 "derivatives of first-order IFCs with respect to strain."
 msgstr "このオプションは、ひずみに関する 1 次の原子間力定数の 2 階以上の微分を計算する方法を指定します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1019
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1023
 msgid ""
 ":math:`\\frac{\\partial^2 \\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 "
 "\\nu_1} \\partial u_{\\mu_2 \\nu_2}}`, :math:`\\frac{\\partial^3 "
@@ -2311,7 +2316,7 @@ msgstr ""
 "\\Phi_{\\mu}(0\\alpha)}{\\partial u_{\\mu_1 \\nu_1} \\partial u_{\\mu_2 "
 "\\nu_2} \\partial u_{\\mu_3 \\nu_3}}`"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1022
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1026
 msgid ""
 "This option is used only when ``RELAX_STR = 2, 3``. Note that "
 "``RENORM_34TO1ST = 1`` requires rotational invariance on IFCs, which the "
@@ -2320,25 +2325,25 @@ msgstr ""
 "このオプションは ``RELAX_STR = 2, 3`` のときにのみ使用されます。``RENORM_34TO1ST = 1`` "
 "は原子間力定数に回転不変性を要求しますが、これはユーザーが確認する必要があることに注意してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1029
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1033
 msgid "RENORM_3TO2ND-tag = 1 | 2 | 3"
 msgstr "RENORM_3TO2ND タグ = 1 | 2 | 3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1033
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1037
 msgid "Finite difference method (Read input from all six strain patterns)."
 msgstr "有限差分法 (6 つすべてのひずみパターンから入力を読み込みます)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1034
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1038
 msgid "Finite difference method (Read input from specified strain patterns)."
 msgstr "有限差分法 (指定されたひずみパターンから入力を読み込みます)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1040
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1044
 msgid ""
 "This option specifies the method to calculate first-order derivatives of "
 "harmonic IFCs with respect to strain."
 msgstr "このオプションは、ひずみに関する調和の原子間力定数の 1 階微分を計算する方法を指定します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1042
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1046
 msgid ""
 ":math:`\\frac{\\partial \\Phi_{\\mu_1 \\mu_2}(0\\alpha_1, R "
 "\\alpha_2)}{\\partial u_{\\mu \\nu}}`"
@@ -2346,7 +2351,7 @@ msgstr ""
 ":math:`\\frac{\\partial \\Phi_{\\mu_1 \\mu_2}(0\\alpha_1, R "
 "\\alpha_2)}{\\partial u_{\\mu \\nu}}`"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1044
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1048
 msgid ""
 "This option is used only when ``RELAX_STR = 2, 3``. To use ``RENORM_3TO2ND ="
 " 3``, the entries of the rotation matrices of ALL the space-group operations"
@@ -2355,12 +2360,12 @@ msgstr ""
 "このオプションは ``RELAX_STR = 2, 3`` のときにのみ使用されます。``RENORM_3TO2ND = 3`` "
 "を使用するには、すべての空間群操作の回転行列の要素がデカルト表現において 0 または :math:`\\pm` 1 のいずれかでなければなりません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1051
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1055
 msgid ""
 "STRAIN_IFC_DIR-tag: Directory name of the inputs of strain-IFC couplings."
 msgstr "STRAIN_IFC_DIR タグ: ひずみ-原子間力定数結合の入力のディレクトリ名。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1056
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1060
 msgid ""
 "When ``RENORM_2TO1ST = 2`` or ``RENORM_3TO2ND = 3``, the input files of the "
 "strain-IFC couplings must be given properly in this directory."
@@ -2368,15 +2373,15 @@ msgstr ""
 "``RENORM_2TO1ST = 2`` または ``RENORM_3TO2ND = 3`` の場合、ひずみ-"
 "原子間力定数結合の入力ファイルをこのディレクトリに適切に配置する必要があります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1063
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1067
 msgid "\"&cell\"-field"
 msgstr "\"&cell\" フィールド"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1065
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1069
 msgid "Please specify the cell parameters of the *primitive cell* as::"
 msgstr "*基本セル* のセルパラメータを以下のように指定してください::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1074
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1078
 #, python-brace-format
 msgid ""
 "The cell parameters are then given by :math:`\\vec{a}_{1} = a \\times "
@@ -2387,7 +2392,7 @@ msgstr ""
 "a_{13})`、:math:`\\vec{a}_{2} = a \\times (a_{21}, a_{22}, "
 "a_{23})`、:math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, a_{33})` で与えられます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1079
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1083
 #, python-brace-format
 msgid ""
 "The lattice constant :math:`a` must be consistent with the value used for "
@@ -2399,11 +2404,11 @@ msgstr ""
 " :math:`a = 20.4 a_{0}` を使用した場合、ここでは基本セルに対して :math:`a = 10.2 a_{0}` "
 "を使用する必要があります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1086
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1090
 msgid "\"&kpoint\"-field"
 msgstr "\"&kpoint\" フィールド"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1088
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1092
 msgid ""
 "This entry field is used to specify the list of :math:`k` points to be "
 "calculated. The first entry **KPMODE** specifies the types of calculation "
@@ -2412,12 +2417,12 @@ msgstr ""
 "このエントリーフィールドは、計算する :math:`k` 点のリストを指定するために使用されます。最初のエントリー **KPMODE** "
 "は計算の種類を指定し、その後に詳細なエントリーが続きます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1091
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1095
 msgid ""
 "**KPMODE = 0** : Calculate phonon frequencies at given :math:`k` points"
 msgstr "**KPMODE = 0** : 与えられた :math:`k` 点でフォノン振動数を計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1093
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1097
 msgid ""
 "For example, if one wants to calculate phonon frequencies at Gamma (0, 0, 0)"
 " and X (0, 1/2, 1/2) of an FCC crystal, the ``&kpoint`` entry should be "
@@ -2426,11 +2431,11 @@ msgstr ""
 "たとえば、FCC 結晶のガンマ点 (0, 0, 0) と X 点 (0, 1/2, 1/2) でフォノン振動数を計算したい場合、``&kpoint`` "
 "エントリーは次のように記述します::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1103
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1107
 msgid "**KPMODE = 1** : Band dispersion calculation"
 msgstr "**KPMODE = 1** : バンド分散計算"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1105
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1109
 msgid ""
 "For example, if one wants to calculate phonon dispersion relations along "
 "G\\-K\\-X\\-G\\-L of a FCC crystal, the ``&kpoint`` entry should be written "
@@ -2439,56 +2444,56 @@ msgstr ""
 "たとえば、FCC 結晶の G\\-K\\-X\\-G\\-L に沿ってフォノン分散関係を計算したい場合、``&kpoint`` "
 "エントリーは次のように記述します::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1116
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1120
 msgid ""
 "The 1st and 5th columns specify the character of Brillouin zone edges, which"
 " are followed by fractional coordinates of each point. The last column "
 "indicates the number of sampling points."
 msgstr "第 1 列と第 5 列はブリルアンゾーンの端点の記号を指定し、その後に各点の分数座標が続きます。最後の列はサンプリング点の数を示します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1120
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1124
 msgid ""
 "**KPMODE = 2** : Uniform :math:`k` grid for phonon DOS and thermal "
 "conductivity"
 msgstr "**KPMODE = 2** : フォノン状態密度 (DOS) と熱伝導率のための一様な :math:`k` グリッド"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1122
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1126
 msgid ""
 "In order to perform a calculation with 20x20x20 :math:`k` grid, the entry "
 "should be ::"
 msgstr "20x20x20 の :math:`k` グリッドで計算を実行するには、エントリーは次のようにします::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1133
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1137
 msgid "\"&strain\"-field (Read only when ``RELAX_STR = 2``)"
 msgstr "\"&strain\" フィールド (``RELAX_STR = 2`` のときにのみ読み込まれます)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1135
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1139
 #, python-brace-format
 msgid ""
 "Please specify the initial displacement gradient tensor :math:`u_{\\mu "
 "\\nu}` for structural optimization as ::"
 msgstr "構造最適化のための初期変位勾配テンソル :math:`u_{\\mu \\nu}` を以下のように指定してください::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1143
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1147
 msgid "Note that the user needs to give a symmetric matrix."
 msgstr "ユーザーは対称行列を与える必要があることに注意してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1146
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1150
 msgid "\"&displace\"-field (Read only when ``RELAX_STR = 1, 2``)"
 msgstr "\"&displace\" フィールド (``RELAX_STR = 1, 2`` のときにのみ読み込まれます)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1148
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1152
 #, python-brace-format
 msgid ""
 "Please specify the initial atomic displacements :math:`u^{(0)}_{\\alpha "
 "\\mu}` [Bohr]."
 msgstr "初期原子変位 :math:`u^{(0)}_{\\alpha \\mu}` [Bohr] を指定してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1150
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1154
 msgid "**DISPMODE = 0** : Fractional coordinate representation"
 msgstr "**DISPMODE = 0** : 分数座標表現"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1152
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1156
 msgid ""
 "The ``&displace`` entry should be written as follows. The first four lines "
 "after DISPMODE (= 0) specifies the unit cell, whose format is the same as "
@@ -2502,17 +2507,17 @@ msgstr ""
 "フィールドの単位胞は、入力を実空間表現に変換するためにのみ使用されることに注意してください。したがって、ここでの単位胞は基本セルや何らかのスーパーセルと整合"
 " (commensurate) している必要はありません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1156
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1160
 msgid ""
 "u_ij is the j-th component of the displacement of i-th atom in the primitive"
 " cell in fractional coordinate representation. ::"
 msgstr "u_ij は、分数座標表現における基本セル内の i 番目の原子の変位の j 番目の成分です。::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1169
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1173
 msgid "**DISPMODE = 1** : Cartesian coordinate representation"
 msgstr "**DISPMODE = 1** : デカルト座標表現"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1171
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1175
 msgid ""
 "Each line after DISPMODE (= 1) specifies the initial atomic displacement in "
 "Cartesian representation. u_ij is the j component of the displacement of "
@@ -2521,23 +2526,23 @@ msgstr ""
 "DISPMODE (= 1) の後の各行は、デカルト表現における初期原子変位を指定します。u_ij は基本セル内の i 番目の原子の変位の j "
 "成分です。::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1183
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1187
 msgid "\"&analysis\"-field"
 msgstr "\"&analysis\" フィールド"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1187
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1191
 msgid "GRUNEISEN-tag = 0 | 1"
 msgstr "GRUNEISEN タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1190
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1194
 msgid "Gr\\ |umulaut_u|\\ neisen parameters will not be calculated"
 msgstr "Gr\\ |umulaut_u|\\ neisen パラメータは計算されません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1191
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1195
 msgid "Gr\\ |umulaut_u|\\ neisen parameters will be stored"
 msgstr "Gr\\ |umulaut_u|\\ neisen パラメータが保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1196
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1200
 msgid ""
 "When ``MODE = phonons`` and ``GRUNEISEN = 1``, Gr\\ |umulaut_u|\\ neisen "
 "parameters will be stored in ``PREFIX``.gruneisen (*KPMODE* = 1) or "
@@ -2547,7 +2552,7 @@ msgstr ""
 " ``PREFIX``.gruneisen (*KPMODE* = 1) または ``PREFIX``.gru_all (*KPMODE* = 2) "
 "に保存されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1200
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1204
 msgid ""
 "To compute Gr\\ |umulaut_u|\\ neisen parameters, cubic force constants must "
 "be contained in the ``FCSFILE`` file."
@@ -2555,50 +2560,67 @@ msgstr ""
 "Gr\\ |umulaut_u|\\ neisen パラメータを計算するには、3 次の力定数が ``FCSFILE`` "
 "ファイルに含まれていなければなりません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1207
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1211
 msgid "PRINTEVAL-tag = 0 | 1"
 msgstr "PRINTEVAL タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1210
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1214
 msgid "Do not print phonon frequencies to separate files"
 msgstr "フォノン振動数を個別のファイルに出力しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1211
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1215
 msgid "Print phonon frequencies (eigenvalues) to files"
 msgstr "フォノン振動数 (固有値) をファイルに出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1216
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1220
 msgid ""
 "When ``PRINTEVAL = 1``, the phonon frequencies are saved in ``PREFIX``.eval "
 "(*KPMODE* = 0), ``PREFIX``.band.eval (*KPMODE* = 1), and "
-"``PREFIX``.mesh.eval (*KPMODE* = 2). When the code is built with HDF5 "
-"support, the corresponding \\*.eval.hdf5 files are created as well."
+"``PREFIX``.mesh.eval (*KPMODE* = 2). The file format follows "
+":ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes the "
+"corresponding \\*.eval.hdf5 files (schema ``alamode:eigenvalues``) instead "
+"of the text files; ``FILE_FORMAT = text`` (or a build without HDF5 support) "
+"writes the plain-text files."
 msgstr ""
 "``PRINTEVAL = 1`` のとき、フォノン振動数は ``PREFIX``.eval (*KPMODE* = "
 "0)、``PREFIX``.band.eval (*KPMODE* = 1)、``PREFIX``.mesh.eval (*KPMODE* = 2) "
-"に保存されます。HDF5 サポート付きでビルドされている場合は、対応する \\*.eval.hdf5 ファイルも作成されます。"
+"に保存されます。ファイル形式は :ref:`FILE_FORMAT <anphon_file_format>` に従います: 既定の ``h5`` "
+"ではテキストファイルの代わりに対応する \\*.eval.hdf5 ファイル (スキーマ ``alamode:eigenvalues``) "
+"が書き出され、``FILE_FORMAT = text`` (または HDF5 サポートなしのビルド) ではプレーンテキストファイルが書き出されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1222
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1226
 msgid "PRINTEVEC-tag = 0 | 1"
 msgstr "PRINTEVEC タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1225
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1229
 msgid "Do not print phonon eigenvectors"
 msgstr "フォノン固有ベクトルを出力しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1226
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1230
 msgid "Print phonon eigenvectors in the ``PREFIX``.evec file"
 msgstr "フォノン固有ベクトルを ``PREFIX``.evec ファイルに出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1236
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1235
+msgid ""
+"The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default"
+" ``h5`` writes ``PREFIX``\\ [.band|.mesh].evec.hdf5 (schema "
+"``alamode:eigenvectors``); ``FILE_FORMAT = text`` (or a build without HDF5 "
+"support) writes the plain-text ``PREFIX``\\ [.band|.mesh].evec files."
+msgstr ""
+"ファイル形式は :ref:`FILE_FORMAT <anphon_file_format>` に従います: 既定の ``h5`` は "
+"``PREFIX``\\ [.band|.mesh].evec.hdf5 (スキーマ ``alamode:eigenvectors``) "
+"を書き出し、``FILE_FORMAT = text`` (または HDF5 サポートなしのビルド) はプレーンテキストの ``PREFIX``\\ "
+"[.band|.mesh].evec ファイルを書き出します。"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1241
 msgid "PROJECTION_AXES-tag = e1x e1y e1z [, e2x e2y e2z]"
 msgstr "PROJECTION_AXES タグ = e1x e1y e1z [, e2x e2y e2z]"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1239
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1244
 msgid "Array of doubles (one or two vectors separated by a comma)"
 msgstr "倍精度浮動小数点数の配列 (カンマで区切られた 1 つまたは 2 つのベクトル)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1240
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1245
 msgid ""
 "When given, the eigenvectors of degenerate phonon modes are transformed "
 "within each degenerate subspace so that they align with the specified "
@@ -2611,19 +2633,19 @@ msgstr ""
 " つの軸を指定でき、それ以上の指定は警告とともに無視されます。このオプションは :ref:`PRINTEVEC <anphon_printevec>` "
 "や :ref:`ANIME <anphon_anime>` など、固有ベクトルに依存する出力に影響します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1246
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1251
 msgid "PRINTXSF-tag = 0 | 1"
 msgstr "PRINTXSF タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1249
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1254
 msgid "Do not save an AXSF file"
 msgstr "AXSF ファイルを保存しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1250
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1255
 msgid "Create an AXSF file ``PREFIX``.axsf"
 msgstr "AXSF ファイル ``PREFIX``.axsf を作成します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1255
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1260
 msgid ""
 "This is to visualize the direction of vibrational modes at gamma (0, 0, 0) "
 "by XCrySDen. This option is valid only when ``MODE = phonons``."
@@ -2631,19 +2653,19 @@ msgstr ""
 "これは、ガンマ点 (0, 0, 0) における振動モードの方向を XCrySDen で可視化するためのものです。このオプションは ``MODE = "
 "phonons`` のときにのみ有効です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1262
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1267
 msgid "PRINTVEL-tag = 0 | 1"
 msgstr "PRINTVEL タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1265
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1270
 msgid "Do not print group velocity"
 msgstr "群速度を出力しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1266
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1271
 msgid "Store phonon velocities to a file"
 msgstr "フォノン速度をファイルに保存します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1271
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1276
 msgid ""
 "When ``MODE = phonons`` and ``PRINTVEL = 1``, group velocities of phonons "
 "will be stored in ``PREFIX``.phvel (*KPMODE* = 1) or ``PREFIX``.phvel_all "
@@ -2652,38 +2674,38 @@ msgstr ""
 "``MODE = phonons`` かつ ``PRINTVEL = 1`` の場合、フォノンの群速度は ``PREFIX``.phvel "
 "(*KPMODE* = 1) または ``PREFIX``.phvel_all (*KPMODE* = 2) に保存されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1277
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1282
 msgid "PRINTMSD-tag = 0 | 1"
 msgstr "PRINTMSD タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1280
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1285
 msgid "Do not print mean-square-displacement (MSD) of atoms"
 msgstr "原子の平均二乗変位 (MSD) を出力しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1281
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1286
 msgid "Save MSD of atoms to the file ``PREFIX``.msd"
 msgstr "原子の平均二乗変位 (MSD) を ``PREFIX``.msd ファイルに保存します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1286
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1316
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1331
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1353
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1291
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1321
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1336
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1358
 msgid "This flag is available only when ``MODE = phonons`` and *KPMODE* = 2."
 msgstr "このフラグは ``MODE = phonons`` かつ *KPMODE* = 2 のときにのみ利用可能です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1292
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1297
 msgid "DOS-tag = 0 | 1"
 msgstr "DOS タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1295
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1300
 msgid "Do not compute the phonon DOS"
 msgstr "フォノン状態密度 (DOS) を計算しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1296
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1301
 msgid "The total phonon DOS is computed and stored in ``PREFIX``.dos"
 msgstr "全フォノン状態密度が計算され、``PREFIX``.dos に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1301
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1306
 msgid ""
 "This flag is available only when ``MODE = phonons`` and *KPMODE* = 2. Set "
 "``DOS = 0`` to skip the DOS calculation. See also :ref:`PDOS <anphon_pdos>`."
@@ -2691,39 +2713,39 @@ msgstr ""
 "このフラグは ``MODE = phonons`` かつ *KPMODE* = 2 のときにのみ利用可能です。DOS 計算をスキップするには ``DOS"
 " = 0`` を設定してください。:ref:`PDOS <anphon_pdos>` も参照してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1307
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1312
 msgid "PDOS-tag = 0 | 1"
 msgstr "PDOS タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1310
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1315
 msgid "Only the total DOS will be printed in ``PREFIX``.dos"
 msgstr "全状態密度 (DOS) のみが ``PREFIX``.dos に出力されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1311
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1316
 msgid "Atom-projected phonon DOS will be stored in ``PREFIX``.dos"
 msgstr "原子射影フォノン状態密度 (DOS) が ``PREFIX``.dos に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1322
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1327
 msgid "TDOS-tag = 0 | 1"
 msgstr "TDOS タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1325
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1330
 msgid "Do not compute two-phonon DOS"
 msgstr "2 フォノン状態密度 (DOS) を計算しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1326
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1331
 msgid "Two-phonon DOSs will be stored in ``PREFIX``.tdos"
 msgstr "2 フォノン状態密度 (DOS) が ``PREFIX``.tdos に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1335
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1340
 msgid "Calculation of two-phonon DOS is computationally expensive."
 msgstr "2 フォノン状態密度 (DOS) の計算は計算コストが高くなります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1341
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1346
 msgid "SPS-tag = 0 | 1 | 2"
 msgstr "SPS タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1344
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1349
 msgid "Do not compute scattering phase space"
 msgstr "散乱位相空間を計算しません"
 
@@ -2735,17 +2757,17 @@ msgstr "3 フォノン過程に関する全体およびモード分解された�
 msgid "the three-phonon processes will be stored in ``PREFIX``.sps"
 msgstr "``PREFIX``.sps に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1347
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1352
 msgid ""
 "Three-phonon scattering phase space with the Bose factor will be stored in "
 "``PREFIX``.sps_Bose"
 msgstr "ボース因子を含む 3 フォノン散乱位相空間が ``PREFIX``.sps_Bose に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1360
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1365
 msgid "PRINTPR-tag = 0 | 1"
 msgstr "PRINTPR タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1363
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1368
 msgid "Do not compute the (atomic) participation ratio"
 msgstr "(原子) 参加率 (participation ratio) を計算しません"
 
@@ -2758,21 +2780,21 @@ msgstr "参加率と原子参加率を計算し、それぞれ"
 msgid "stored in  ``PREFIX``.pr and ``PREFIX``.apr respectively."
 msgstr "``PREFIX``.pr と ``PREFIX``.apr に保存します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1370
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1375
 msgid "This flag is available when ``MODE = phonons``."
 msgstr "このフラグは ``MODE = phonons`` のときに利用可能です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1377
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1382
 msgid "UCORR-tag = 0 | 1"
 msgstr "UCORR タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1380
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1407
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1424
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1467
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1503
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1519
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1535
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1385
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1412
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1429
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1472
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1508
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1524
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1540
 msgid "Do nothing"
 msgstr "何もしません"
 
@@ -2784,7 +2806,7 @@ msgstr "変位-変位相関関数を計算します。"
 msgid "The result is stored in ``PREFIX``.ucorr"
 msgstr "結果は ``PREFIX``.ucorr に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1387
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1392
 msgid ""
 "The displacement-displacement correlation function involves two atoms. The "
 "first atom is located in the primitive cell at the center (shift1=[0,0,0]) "
@@ -2797,15 +2819,15 @@ msgstr ""
 ":math:`\\ell'`\\ 番目のセルに位置します。:math:`\\ell'`\\ 番目のセルへの並進ベクトルは ``SHIFT_UCORR``"
 " タグで指定できます。このタグは ``MODE = phonons`` かつ *KPMODE* = 2 のときにのみ有効です"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1394
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1399
 msgid "SHIFT_UCORR-tag = l1, l2, l3"
 msgstr "SHIFT_UCORR タグ = l1, l2, l3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1396
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1401
 msgid "[0, 0, 0]"
 msgstr "[0, 0, 0]"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1398
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1403
 #, python-brace-format
 msgid ""
 "This tag specifies the translation vector used for computing the "
@@ -2819,7 +2841,7 @@ msgstr ""
 "と、:math:`\\boldsymbol{r}(\\ell')=(1,0,0)` にある隣接セルの原子 2 との間の uu "
 "相関関数を計算したい場合、``SHIFT_UCORR`` は ``SHIFT_UCORR = 1 0 0`` と設定します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1404
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1409
 msgid "ZMODE-tag = 0 | 1"
 msgstr "ZMODE タグ = 0 | 1"
 
@@ -2831,7 +2853,7 @@ msgstr "ゾーン中心フォノンのモード有効電荷を計算します。
 msgid "The result is stored in ``PREFIX``.zmode"
 msgstr "結果は ``PREFIX``.zmode に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1414
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1419
 #, python-brace-format
 msgid ""
 "When ``MODE = phonons`` and ``ZMODE = 1``, the mode effective charges are "
@@ -2843,15 +2865,15 @@ msgstr ""
 "の場合、ガンマ点のフォノンモードに対してモード有効電荷が計算され、``PREFIX``.zmode に保存されます。モード有効電荷の単位は "
 ":math:`e \\; \\text{amu}^{-1/2}` です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1421
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1426
 msgid "DIELEC-tag = 0 | 1"
 msgstr "DIELEC タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1425
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1430
 msgid "Compute the frequency-dependent dielectric function"
 msgstr "振動数依存誘電関数を計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1430
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1435
 msgid ""
 "When ``DIELEC = 1``, the phonon contribution to the frequency-dependent "
 "dielectric function :math:`\\epsilon(\\omega)` is computed from the Born "
@@ -2867,11 +2889,11 @@ msgstr ""
 "の場合、誘電関数は温度くりこみされたフォノン振動数を用いて計算され、``PREFIX``.scph_dielec "
 "(``PREFIX``.qha_dielec) に保存されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1436
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1441
 msgid "QUARTIC-tag = 0 | 1 | 2"
 msgstr "QUARTIC タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1439
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1444
 msgid "Quartic force constants are not used."
 msgstr "4次の力定数を使用しません。"
 
@@ -2895,7 +2917,7 @@ msgid ""
 "(expensive)."
 msgstr "4 フォノンダイアグラムの線幅への寄与を追加で計算します (高コスト)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1448
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1453
 msgid ""
 "When ``QUARTIC = 1``, the quartic force constants are read from ``FCSFILE`` "
 "(or ``FC4FILE``). In the mode analysis with ``REALPART = 1``, the frequency "
@@ -2911,11 +2933,11 @@ msgstr ""
 "``QUARTIC`` の役割は非推奨となり、:ref:`INCLUDE_4PH <anphon_include_4ph>` "
 "に置き換えられました。``INCLUDE_4PH`` なしで ``QUARTIC > 0`` とした場合も警告付きで有効になります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1454
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1459
 msgid "KS_INPUT-tag : File containing a list of phonon modes to be analyzed"
 msgstr "KS_INPUT タグ : 解析対象のフォノンモードのリストを含むファイル"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1458
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1463
 msgid ""
 "When ``MODE = kappa`` and ``KS_INPUT`` is given, the mode analysis of the "
 "phonon modes listed in the specified file is performed *instead of* the "
@@ -2936,7 +2958,7 @@ msgstr ""
 "<anphon_self_w>`、:ref:`PRINTV3 <anphon_printv3>`、:ref:`PRINTV4 "
 "<anphon_printv4>` で選択します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1464
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1469
 msgid "SELF_ENERGY-tag = 0 | 1"
 msgstr "SELF_ENERGY タグ = 0 | 1"
 
@@ -2948,7 +2970,7 @@ msgstr "``KS_INPUT`` で指定されたモードについて、フォノン線�
 msgid "the modes given in ``KS_INPUT``"
 msgstr "温度依存性を計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1474
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1479
 msgid ""
 "For each mode listed in :ref:`KS_INPUT <anphon_ks_input>`, the linewidth "
 "(FWHM = :math:`2\\Gamma`) due to three-phonon interactions is computed as a "
@@ -2962,11 +2984,11 @@ msgstr ""
 "2`` では特定の 4 フォノンダイアグラムの寄与が追記されます。``REALPART = 1`` "
 "の場合は振動数シフトも計算され、``PREFIX``.Shift.[番号] に保存されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1480
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1485
 msgid "REALPART-tag = 0 | 1"
 msgstr "REALPART タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1484
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1489
 msgid ""
 "When ``REALPART = 1`` is used with :ref:`KS_INPUT <anphon_ks_input>` and "
 "``SELF_ENERGY = 1``, the real part of the phonon self-energy --- the "
@@ -2980,11 +3002,11 @@ msgstr ""
 " = 1`` の場合は 4次非調和性のループダイアグラムによる振動数シフト — が計算され、``PREFIX``.Shift.[番号] "
 "に保存されます。このオプションは ``ISMEAR = 0`` でのみ動作します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1490
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1495
 msgid "SELF_W-tag = 0 | 1"
 msgstr "SELF_W タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1494
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1499
 msgid ""
 "When ``SELF_W = 1`` is used with :ref:`KS_INPUT <anphon_ks_input>`, the "
 "frequency dependence of the three-phonon (bubble) self-energy is computed at"
@@ -2996,21 +3018,21 @@ msgstr ""
 "に列挙されたモードについて 3 フォノン (バブル) 自己エネルギーの振動数依存性が各温度で計算され、``PREFIX``.Self.[番号] "
 "に保存されます。これからスペクトル関数を得ることができます。このオプションは四面体法 (``ISMEAR = -1``) でのみ動作します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1500
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1505
 msgid "PRINTV3-tag = 0 | 1 | 2"
 msgstr "PRINTV3 タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1504
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1509
 #, python-brace-format
 msgid "Print :math:`|V_{3}|^{2}` matrix elements in ``PREFIX``.V3.[number]"
 msgstr ":math:`|V_{3}|^{2}` 行列要素を ``PREFIX``.V3.[番号] に出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1505
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1510
 #, python-brace-format
 msgid "Print :math:`\\Phi_{3}` matrix elements in ``PREFIX``.Phi3.[number]"
 msgstr ":math:`\\Phi_{3}` 行列要素を ``PREFIX``.Phi3.[番号] に出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1510
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1515
 #, python-brace-format
 msgid ""
 "For each mode listed in :ref:`KS_INPUT <anphon_ks_input>`, the three-phonon "
@@ -3026,21 +3048,21 @@ msgstr ""
 ":math:`\\Phi_{3}(qj; q'j', q''j'')` を Ry/(u\\ :sup:`1/2` Bohr)\\ :sup:`3` "
 "単位で出力します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1516
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1521
 msgid "PRINTV4-tag = 0 | 1 | 2"
 msgstr "PRINTV4 タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1520
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1525
 #, python-brace-format
 msgid "Print :math:`|V_{4}|^{2}` matrix elements in ``PREFIX``.V4.[number]"
 msgstr ":math:`|V_{4}|^{2}` 行列要素を ``PREFIX``.V4.[番号] に出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1521
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1526
 #, python-brace-format
 msgid "Print :math:`\\Phi_{4}` matrix elements in ``PREFIX``.Phi4.[number]"
 msgstr ":math:`\\Phi_{4}` 行列要素を ``PREFIX``.Phi4.[番号] に出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1526
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1531
 #, python-brace-format
 msgid ""
 "Same as :ref:`PRINTV3 <anphon_printv3>`, but for the four-phonon matrix "
@@ -3053,7 +3075,7 @@ msgstr ""
 "(Ry/(u\\ :sup:`1/2` Bohr)\\ :sup:`4` 単位) を出力します。4次の力定数が必要です (``QUARTIC = "
 "1``)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1532
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1537
 msgid "FC2_EWALD-tag = 0 | 1"
 msgstr "FC2_EWALD タグ = 0 | 1"
 
@@ -3065,7 +3087,7 @@ msgstr "調和力定数の双極子-双極子成分と短距離成分を"
 msgid "force constants in ``PREFIX``.fc2_ewald"
 msgstr "``PREFIX``.fc2_ewald に出力します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1542
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1547
 msgid ""
 "Available only when ``NONANALYTIC = 3``. For each pair of atoms, the "
 "original harmonic force constant, its dipole-dipole (Ewald) part, and the "
@@ -3075,16 +3097,16 @@ msgstr ""
 "``NONANALYTIC = 3`` のときにのみ利用可能です。原子対ごとに、元の調和力定数、その双極子-双極子 (エワルド) "
 "部分、および短距離の残余が出力されます。調和力定数の長距離分離を確認するのに便利です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1565
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1570
 msgid "ANIME-tag = k1, k2, k3"
 msgstr "ANIME タグ = k1, k2, k3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1568
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1896
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1573
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1901
 msgid "Array of doubles"
 msgstr "倍精度浮動小数点数の配列"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1569
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1574
 msgid ""
 "This tag is to animate vibrational mode. k1, k2, and k3 specify the momentum"
 " of phonon modes to animate, which should be given in units of the "
@@ -3099,20 +3121,20 @@ msgstr ""
 "が指定されている場合、``ANIME_CELLSIZE`` も必要です。アニメーションファイルの書式は ``ANIME_FORMAT`` タグによって "
 "AXSF または XYZ のいずれかを選択できます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1579
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1584
 msgid "ANIME_FRAMES-tag: The number of frames saved in animation files"
 msgstr "ANIME_FRAMES タグ: アニメーションファイルに保存されるフレーム数"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1581
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1969
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1586
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1974
 msgid "20"
 msgstr "20"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1588
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1593
 msgid "ANIME_CELLSIZE-tag = L1, L2, L3"
 msgstr "ANIME_CELLSIZE タグ = L1, L2, L3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1592
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1597
 msgid ""
 "This tag specifies the cell size for animation. L1, L2, and L3 should be "
 "large enough to be commensurate with the reciprocal point given by the "
@@ -3121,15 +3143,15 @@ msgstr ""
 "このタグはアニメーション用のセルサイズを指定します。L1、L2、L3 は、``ANIME`` タグで与えられた逆格子点と整合 "
 "(commensurate) するのに十分なほど大きくする必要があります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1599
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1604
 msgid "ANIME_FORMAT = xsf | xyz"
 msgstr "ANIME_FORMAT = xsf | xyz"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1601
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1606
 msgid "xyz"
 msgstr "xyz"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1603
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1608
 msgid ""
 "When ``ANIME_FORMAT = xsf``, ``PREFIX``.anime???.axsf files are created for "
 "XcrySDen. When ``ANIME_FORMAT = xyz``, ``PREFIX``.anime???.xyz files are "
@@ -3139,53 +3161,53 @@ msgstr ""
 "ファイルが作成されます。``ANIME_FORMAT = xyz`` の場合、VMD (および Jmol などのその他の対応ソフトウェア) 用の "
 "``PREFIX``.anime???.xyz ファイルが作成されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1610
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1615
 msgid "\"&kappa\"-field (Read only when ``MODE = kappa``)"
 msgstr "\"&kappa\" フィールド (``MODE = kappa`` のときにのみ読み込まれます)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1614
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1619
 msgid "SOLVER-tag : Solver level of the Boltzmann transport equation"
 msgstr "SOLVER タグ : ボルツマン輸送方程式のソルバーレベル"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1617
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1625
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1622
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1630
 msgid "RTA"
 msgstr "RTA"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1617
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1622
 msgid "Relaxation-time approximation (single-mode approximation)"
 msgstr "緩和時間近似 (単一モード近似)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1618
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1623
 msgid "IBTE"
 msgstr "IBTE"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1618
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1623
 msgid ""
 "Iterative solution of the linearized BTE (result in ``PREFIX``.kl_iter)"
 msgstr "線形化 BTE の反復解法 (結果は ``PREFIX``.kl_iter に出力)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1619
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1624
 msgid "VBTE"
 msgstr "VBTE"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1619
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1624
 msgid ""
 "Variational solution by preconditioned conjugate gradients (result in "
 "``PREFIX``.kl_iter)"
 msgstr "前処理付き共役勾配法による変分解法 (結果は ``PREFIX``.kl_iter に出力)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1621
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1626
 msgid "DBTE"
 msgstr "DBTE"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1621
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1626
 msgid ""
 "Direct solution: dense eigendecomposition of the collision kernel "
 "(diagnostic; small meshes; result in ``PREFIX``.kl_iter)"
 msgstr "直接解法: 衝突カーネルの密行列固有値分解 (診断用。小さなメッシュ向け。結果は ``PREFIX``.kl_iter に出力)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1627
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1632
 msgid ""
 "Case insensitive. ``SOLVER = IBTE`` replaces the deprecated ``ITERATIVE = "
 "1`` tag; the iteration is controlled by :ref:`MIN_CYCLE <anphon_min_cycle>`,"
@@ -3209,7 +3231,7 @@ msgstr ""
 "``MAX_CYCLE`` に達した温度や発散した温度は報告されて未収束のフラグが付けられ (``PREFIX``.kl_iter "
 "のコメント行にも記載され、残差が最小の反復値が保持されます)、リスタート時にはスキップされる代わりに、保存された偏差関数から反復が継続されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1642
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1647
 msgid ""
 "``SOLVER = VBTE`` solves the same linearized BTE as ``IBTE`` by "
 "preconditioned conjugate gradients on the symmetrized collision operator. "
@@ -3225,7 +3247,7 @@ msgstr ""
 "と ``IBTE_MIXING`` は ``VBTE`` では使用されません。RTA 以外のすべてのソルバーは ``PREFIX``.kappa.h5 "
 "の ``/iterativebte`` リスタート状態を共有します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1650
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1655
 #, python-brace-format
 msgid ""
 "``SOLVER = DBTE`` is a diagnostic solver: it assembles the collision kernel "
@@ -3258,26 +3280,26 @@ msgstr ""
 " 2 乗でスケールします。大きすぎる問題は明確なメッセージとともに中止されます (メモリ分散型の ELPA/ScaLAPACK および GPU 向けの "
 "MAGMA/cuSOLVER バックエンドが同じインターフェースの背後に計画されています)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1672
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1677
 msgid ""
 "``SOLVER = IBTE``, ``VBTE``, and ``DBTE`` are pilot implementations under "
 "development. Please check the validity of the results carefully."
 msgstr ""
 "``SOLVER = IBTE``、``VBTE``、``DBTE`` は開発途上の試験的な実装です。結果の妥当性を注意深く確認してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1679
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1684
 msgid "INCLUDE_4PH-tag = 0 | 1"
 msgstr "INCLUDE_4PH タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1682
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1687
 msgid "Compute three-phonon scattering rates only"
 msgstr "3 フォノン散乱レートのみを計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1683
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1688
 msgid "Additionally compute four-phonon scattering rates"
 msgstr "4 フォノン散乱レートも追加で計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1688
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1693
 msgid ""
 "The explicit switch for the four-phonon channel. It requires quartic force "
 "constants (``FCSFILE`` containing Order4, or ``FC4FILE``) and activates the "
@@ -3292,15 +3314,15 @@ msgstr ""
 "です。後方互換性のため、このタグがない場合は ``QUARTIC > 0`` (``&analysis`` のタグ) が依然として "
 "``INCLUDE_4PH = 1`` を意味しますが、非推奨の警告が表示されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1700
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1705
 msgid "KMESH_COARSE-tag = k1, k2, k3"
 msgstr "KMESH_COARSE タグ = k1, k2, k3"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1702
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1707
 msgid "The same :math:`k` mesh as given in the ``&kpoint`` field"
 msgstr "``&kpoint`` フィールドで指定したものと同じ :math:`k` メッシュ"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1704
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1709
 msgid ""
 ":math:`k` mesh used for evaluating the four-phonon scattering rates when "
 "``INCLUDE_4PH = 1``. Because four-phonon calculations are far more expensive"
@@ -3312,24 +3334,24 @@ msgstr ""
 "フォノン計算よりはるかに高コストであるため、``&kpoint`` フィールドより粗いメッシュを指定できます。計算されたレートは "
 ":ref:`INTERPOLATOR <anphon_interpolator>` で選択した方法により密なメッシュへ補間されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1710
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1715
 msgid "ISMEAR_4PH-tag = -1 | 0 | 1 | 2"
 msgstr "ISMEAR_4PH タグ = -1 | 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1713
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1718
 msgid ""
 "Not implemented for four-phonon scattering; automatically switched to 2"
 msgstr "4 フォノン散乱には実装されていません。自動的に 2 に切り替えられます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1714
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1719
 msgid "Lorentzian smearing with width of ``EPSILON_4PH``"
 msgstr "幅 ``EPSILON_4PH`` のローレンツ型スメアリング"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1715
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1720
 msgid "Gaussian smearing with width of ``EPSILON_4PH``"
 msgstr "幅 ``EPSILON_4PH`` のガウス型スメアリング"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1721
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1726
 msgid ""
 "Brillouin-zone integration method for the four-phonon scattering rates "
 "(``INCLUDE_4PH = 1``), independent of the three-phonon setting :ref:`ISMEAR "
@@ -3348,13 +3370,13 @@ msgstr ""
 "でスケールされ、``EPSILON_4PH`` は使用されません。単一の固定幅では収束させにくい粗い 4 "
 "フォノンメッシュには、適応的スメアリングが推奨されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1737
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1742
 msgid ""
 "EPSILON_4PH-tag : Smearing width for four-phonon scattering rates in units "
 "of Kayser (cm\\ :sup:`-1`)"
 msgstr "EPSILON_4PH タグ : 4 フォノン散乱レートのスメアリング幅 (単位: カイザー (cm\\ :sup:`-1`))"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1741
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1746
 msgid ""
 "Used when ``ISMEAR_4PH = 0`` or ``1``; neglected when ``ISMEAR_4PH = 2``. "
 "Because the four-phonon phase space is much larger and the mesh usually "
@@ -3364,28 +3386,28 @@ msgstr ""
 "``ISMEAR_4PH = 0`` または ``1`` のときに使用され、``ISMEAR_4PH = 2`` では無視されます。4 "
 "フォノンの位相空間は 3 フォノンよりはるかに大きく、メッシュも通常粗いため、最適な幅は一般に ``EPSILON`` とは異なります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1750
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1755
 msgid "INTERPOLATOR-tag = linear | log-linear | modified-log-linear"
 msgstr "INTERPOLATOR タグ = linear | log-linear | modified-log-linear"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1753
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1758
 msgid "linear"
 msgstr "linear"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1753
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1758
 msgid "Trilinear interpolation of the scattering rates"
 msgstr "散乱レートの三重線形補間"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1754
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1760
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1759
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1765
 msgid "log-linear"
 msgstr "log-linear"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1754
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1759
 msgid "Trilinear interpolation of the logarithm of the scattering rates"
 msgstr "散乱レートの対数の三重線形補間"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1755
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1760
 msgid "modified-log-linear"
 msgstr "modified-log-linear"
 
@@ -3401,7 +3423,7 @@ msgstr ":math:`\\Gamma` 点を含む補間セルが"
 msgid "are avoided"
 msgstr "回避されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1762
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1767
 msgid ""
 "Method for interpolating the four-phonon scattering rates computed on "
 ":ref:`KMESH_COARSE <anphon_kmesh_coarse>` onto the dense :math:`k` mesh of "
@@ -3410,11 +3432,11 @@ msgstr ""
 ":ref:`KMESH_COARSE <anphon_kmesh_coarse>` 上で計算された 4 フォノン散乱レートを ``&kpoint`` "
 "フィールドの密な :math:`k` メッシュへ補間する方法。値の大文字・小文字は区別されません。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1768
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1773
 msgid "WRITE_INTERPOL-tag = 0 | 1"
 msgstr "WRITE_INTERPOL タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1772
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1777
 msgid ""
 "When ``WRITE_INTERPOL = 1`` and the four-phonon scattering rates are "
 "interpolated (``INCLUDE_4PH = 1``), the interpolated linewidths on the dense"
@@ -3425,17 +3447,17 @@ msgstr ""
 ":math:`k` メッシュ上に補間された線幅が ``PREFIX``.interpolated_gamma "
 "に書き出されます。補間の品質を確認するのに便利です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1778
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1783
 msgid ""
 "ADAPTIVE_FACTOR-tag : Scaling prefactor :math:`\\alpha` of the adaptive "
 "smearing width"
 msgstr "ADAPTIVE_FACTOR タグ : 適応的スメアリング幅のスケーリング係数 :math:`\\alpha`"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1780
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1785
 msgid "1.0"
 msgstr "1.0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1782
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1787
 msgid ""
 "Multiplies the automatically determined Gaussian widths of the adaptive "
 "smearing method, for both ``ISMEAR = 2`` (three-phonon) and ``ISMEAR_4PH = "
@@ -3447,27 +3469,27 @@ msgstr ""
 "2`` (4 フォノン) の両方に適用されます。通常は既定値で十分です。小さい値はエネルギー保存を鋭くし "
 "(より密なメッシュが必要になる場合があります)、大きい値は滑らかにします。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1792
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1797
 msgid "RESTART-tag : Flag to restart the calculation when ``MODE = kappa``"
 msgstr "RESTART タグ : ``MODE = kappa`` のときに計算をリスタートするためのフラグ"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1795
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1800
 msgid "Calculate from scratch"
 msgstr "最初から計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1796
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1816
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1801
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1821
 msgid "Restart from the existing file"
 msgstr "既存のファイルからリスタートします"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1799
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1804
 msgid ""
 "1 if there is a file named ``PREFIX``.kappa.h5 or ``PREFIX``.result; 0 "
 "otherwise"
 msgstr ""
 "``PREFIX``.kappa.h5 または ``PREFIX``.result という名前のファイルがある場合は 1、そうでない場合は 0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1801
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1806
 msgid ""
 "With the default ``FILE_FORMAT = h5``, the restart state lives in "
 "``PREFIX``.kappa.h5. A legacy text ``PREFIX``.result file (from an older run"
@@ -3481,24 +3503,24 @@ msgstr ""
 "HDF5 ファイルへ取り込まれ、元のファイルは変更されません。このタグは後方互換性のため ``&general`` フィールドでも受け付けられます "
 "(非推奨)。両方に指定された場合は ``&kappa`` の値が優先されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1812
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1817
 msgid ""
 "RESTART_4PH-tag : Flag to restart the four-phonon part of the calculation "
 "when ``INCLUDE_4PH = 1``"
 msgstr "RESTART_4PH タグ : ``INCLUDE_4PH = 1`` のときに 4 フォノン部分の計算をリスタートするためのフラグ"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1815
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1820
 msgid "Calculate the four-phonon scattering rates from scratch"
 msgstr "4 フォノン散乱レートを最初から計算します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1819
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1824
 msgid ""
 "1 if there is a file named ``PREFIX``.kappa.h5 or ``PREFIX``.4ph.result; 0 "
 "otherwise"
 msgstr ""
 "``PREFIX``.kappa.h5 または ``PREFIX``.4ph.result という名前のファイルがある場合は 1、そうでない場合は 0"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1821
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1826
 msgid ""
 "Controls the four-phonon channel independently of :ref:`RESTART "
 "<anphon_restart>` (the two channels are stored side by side in "
@@ -3511,15 +3533,15 @@ msgstr ""
 "``PREFIX``.kappa.h5 に並んで保存されますが、別々にリスタートされます)。``RESTART_4PH = 0`` は、以前に計算された"
 " 4 フォノン散乱レートのみを破棄し、3 フォノンのデータは保持されます。後方互換性のため ``&general`` でも受け付けられます (非推奨)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1831
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1836
 msgid "KAPPA_COHERENT-tag = 0 | 1 | 2"
 msgstr "KAPPA_COHERENT タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1834
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1839
 msgid "Do not compute the coherent component of thermal conductivity"
 msgstr "熱伝導率のコヒーレント成分を計算しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1835
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1840
 msgid ""
 "Compute the coherent component of thermal conductivity and save it in "
 "``PREFIX``.kl_coherent."
@@ -3535,7 +3557,7 @@ msgstr "上記 (``KAPPA_COHERENT = 1``) に加えて、コヒーレント項の�
 msgid "are saved in ``PREFIX``.kc_elem."
 msgstr "``PREFIX``.kc_elem に保存されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1842
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1847
 msgid ""
 "This flag is available when ``MODE = kappa``. For the theoretical details, "
 "please see :ref:`this page <kappa_coherent>`."
@@ -3543,37 +3565,37 @@ msgstr ""
 "このフラグは ``MODE = kappa`` のときに利用可能です。理論的な詳細については、:ref:`このページ <kappa_coherent>`"
 " を参照してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1846
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1851
 msgid "Still experimental. Please check the validity of results carefully."
 msgstr "まだ実験的な機能です。結果の妥当性を慎重に確認してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1853
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1858
 msgid "KAPPA_SPEC-tag = 0 | 1"
 msgstr "KAPPA_SPEC タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1856
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1861
 msgid "Do not compute the thermal conductivity spectra"
 msgstr "熱伝導率スペクトルを計算しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1857
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1862
 msgid ""
 "Compute the thermal conductivity spectra, which will be stored in  "
 "``PREFIX``.kl_spec"
 msgstr "熱伝導率スペクトルを計算し、``PREFIX``.kl_spec に保存します"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1863
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1868
 msgid "This flag is available when ``MODE = kappa``."
 msgstr "このフラグは ``MODE = kappa`` のときに利用可能です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1870
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1875
 msgid "ISOTOPE-tag = 0 | 1 | 2"
 msgstr "ISOTOPE タグ = 0 | 1 | 2"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1873
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1878
 msgid "Do not consider phonon-isotope scatterings"
 msgstr "フォノン-同位体散乱を考慮しません"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1874
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1879
 msgid "Consider phonon-isotope scatterings"
 msgstr "フォノン-同位体散乱を考慮します"
 
@@ -3585,7 +3607,7 @@ msgstr "``ISOTOPE = 1`` と同様にフォノン-同位体散乱を考慮し、"
 msgid "the calculated selfenergy is stored in ``PREFIX``.self_isotope"
 msgstr "計算された自己エネルギーが ``PREFIX``.self_isotope に保存されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1881
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1886
 msgid ""
 "When ``MODE = kappa`` and ``ISOTOPE = 1 or 2``, phonon scatterings due to "
 "isotopes will be considered perturbatively. The computation is negligibly "
@@ -3602,17 +3624,17 @@ msgstr ""
 "を明示的に指定してください (データベースにない元素では必須です)。モードごとの同位体線幅と使用された係数は ``PREFIX``.kappa.h5 "
 "に保存されます (``/scattering/isotope/gamma``、``/metadata/isotope_factors``)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1893
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1898
 msgid ""
 "ISOFACT-tag : Isotope factor for each atomic species (in the order of the "
 "``KD``-tag)"
 msgstr "ISOFACT タグ : 各原子種に対する同位体因子 (``KD`` タグの順序で)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1895
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1900
 msgid "Automatically calculated from the ``KD`` tag"
 msgstr "``KD`` タグから自動的に計算されます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1897
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1902
 #, python-brace-format
 msgid ""
 "Isotope factor is a dimensionless value defined by :math:`\\sum_{i} f_{i} (1"
@@ -3627,24 +3649,24 @@ msgstr ""
 "番目の同位体の存在比率であり、:math:`\\bar{m}=\\sum_{i}f_{i}m_{i}` は平均質量です。この量は、S. Tamura "
 "による原論文 [Phys. Rev. B, 27, 858.] に現れる :math:`g_{2}` に等しいものです。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1907
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1912
 msgid "ISOTOPE_INSCATTERING-tag = 0 | 1"
 msgstr "ISOTOPE_INSCATTERING タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1910
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1915
 msgid ""
 "Isotope scattering enters the iterative solvers as an RTA-level (diagonal) "
 "rate only"
 msgstr "同位体散乱は反復ソルバーに RTA レベルの (対角) レートとしてのみ入ります"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1912
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1917
 msgid ""
 "The elastic isotope-disorder channel (Tamura kernel) becomes part of the "
 "collision operator, including its in-scattering term"
 msgstr ""
 "弾性的な同位体無秩序チャネル (Tamura カーネル) が、流入散乱 (in-scattering) 項を含めて衝突演算子の一部になります"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1918
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1923
 msgid ""
 "Used by ``SOLVER = IBTE`` and ``VBTE`` when ``ISOTOPE >= 1`` (``SOLVER = "
 "RTA`` is unaffected). With the in-scattering term the isotope diagonal is "
@@ -3661,17 +3683,17 @@ msgstr ""
 " (流入散乱は熱流を回復させます)、質量分散が大きいほど、また低温ほど大きくなります。天然ケイ素では 0.2 % "
 "未満です。境界散乱は厳密に対角のままであり (流入散乱項を持ちません)、4 フォノンチャネルは RTA レベルで扱われます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1932
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1937
 msgid ""
 "LEN_BOUNDARY-tag : Characteristic length for boundary scattering in units of"
 " meter"
 msgstr "LEN_BOUNDARY タグ : 境界散乱の特徴長さ (単位: メートル)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1934
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1939
 msgid "0.0 (no boundary scattering)"
 msgstr "0.0 (境界散乱なし)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1936
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1941
 #, python-brace-format
 msgid ""
 "When ``LEN_BOUNDARY > 0``, a boundary scattering rate "
@@ -3683,19 +3705,19 @@ msgstr ""
 " = ``LEN_BOUNDARY``) が熱伝導率に使用されるフォノン線幅に追加されます。ここで "
 ":math:`\\boldsymbol{v}_{qj}` は各フォノンモードの群速度です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1942
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1947
 msgid "ITERATIVE-tag = 0 | 1"
 msgstr "ITERATIVE タグ = 0 | 1"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1945
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1950
 msgid "Solve the BTE within the relaxation-time approximation (RTA)"
 msgstr "緩和時間近似 (RTA) の範囲で BTE を解きます"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1946
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1951
 msgid "Solve the linearized BTE iteratively (beyond the RTA)"
 msgstr "線形化 BTE を反復的に解きます (RTA を超えた計算)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1951
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1956
 msgid ""
 "Deprecated alias of :ref:`SOLVER <anphon_solver>` = IBTE (a warning is "
 "printed; ``SOLVER`` wins when both are given). When enabled, the linearized "
@@ -3713,28 +3735,28 @@ msgstr ""
 "<anphon_max_cycle>`、:ref:`ITER_THRESHOLD "
 "<anphon_iter_threshold>`、:ref:`IBTE_MIXING <anphon_ibte_mixing>` で制御します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1957
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1962
 msgid ""
 "MIN_CYCLE-tag : Minimum number of iterations of the iterative BTE solver"
 msgstr "MIN_CYCLE タグ : 反復 BTE ソルバーの最小反復回数"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1959
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1964
 msgid "5"
 msgstr "5"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1961
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1966
 msgid ""
 "Used when ``ITERATIVE = 1``. The convergence test starts only after "
 "``MIN_CYCLE`` iterations have been performed."
 msgstr ""
 "``ITERATIVE = 1`` のときに使用されます。収束判定は ``MIN_CYCLE`` 回の反復が実行された後にのみ開始されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1967
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1972
 msgid ""
 "MAX_CYCLE-tag : Maximum number of iterations of the iterative BTE solver"
 msgstr "MAX_CYCLE タグ : 反復 BTE ソルバーの最大反復回数"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1971
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1976
 msgid ""
 "Used when ``ITERATIVE = 1``. If the iteration does not converge within "
 "``MAX_CYCLE`` cycles, the last value of the thermal conductivity is kept and"
@@ -3743,15 +3765,15 @@ msgstr ""
 "``ITERATIVE = 1`` のときに使用されます。``MAX_CYCLE`` "
 "回以内に反復が収束しない場合、熱伝導率の最後の値が保持され、計算は次の温度へ進みます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1977
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1982
 msgid "ITER_THRESHOLD-tag : Convergence criterion of the iterative BTE solver"
 msgstr "ITER_THRESHOLD タグ : 反復 BTE ソルバーの収束基準"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1979
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1984
 msgid "0.02"
 msgstr "0.02"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1981
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1986
 msgid ""
 "Used when ``ITERATIVE = 1``. The iteration at each temperature stops when "
 "the relative change of every diagonal component of the thermal conductivity "
@@ -3761,15 +3783,15 @@ msgstr ""
 "``ITERATIVE = 1`` のときに使用されます。各温度での反復は、連続する 2 回の反復間で熱伝導率テンソルのすべての対角成分の相対変化が "
 "``ITER_THRESHOLD`` より小さくなったときに停止します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1987
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1992
 msgid "IBTE_MIXING-tag : Mixing factor of the iterative BTE solver"
 msgstr "IBTE_MIXING タグ : 反復 BTE ソルバーの混合係数"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1989
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1994
 msgid "0.9"
 msgstr "0.9"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1991
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1996
 msgid ""
 "Used when ``ITERATIVE = 1``. In each iteration, the updated nonequilibrium "
 "distribution is mixed with the previous one as :math:`f_{\\mathrm{new}} "
@@ -3782,11 +3804,11 @@ msgstr ""
 "(:math:`\\alpha` = ``IBTE_MIXING``) のように前回の分布と混合されます。1 "
 "より小さい値は、収束の遅い反復の振動を抑えます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:1998
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2003
 msgid "Format of BORNINFO"
 msgstr "BORNINFO の書式"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2000
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2005
 #, python-brace-format
 msgid ""
 "When one wants to consider the LO-TO splitting near the :math:`\\Gamma` "
@@ -3801,7 +3823,7 @@ msgstr ""
 "ファイルを用意する必要があります。``BORNINFO`` ファイルでは、最初の 3 行に誘電テンソルを記述し、その後に各原子の Born "
 "有効電荷テンソルを以下のように記述します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2005
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2010
 #, python-brace-format
 msgid ""
 "\\begin{eqnarray*}\n"
@@ -3830,12 +3852,12 @@ msgstr ""
 " Z_{N_p,zx}^{*} & Z_{N_p,zy}^{*} & Z_{N_p,zz}^{*} \\\\\n"
 "\\end{eqnarray*}"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2021
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2026
 msgid ""
 "Here, :math:`N_p` is the number of atoms contained in the *primitive cell*."
 msgstr "ここで、:math:`N_p` は *基本セル* に含まれる原子数です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2025
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/anphondir/inputanphon.rst:2030
 msgid "Please pay attention to the order of Born effective charges."
 msgstr "Born 有効電荷の順序に注意してください。"
 

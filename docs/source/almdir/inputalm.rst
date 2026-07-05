@@ -48,9 +48,9 @@ List of supported input variables
    :widths: 20, 20, 20, 20
 
    **&general**
-   :ref:`FCS_UNIT_OUTPUT <alm_fcs_unit_output>`, :ref:`FORCE_UNIT <alm_force_unit>`, :ref:`HESSIAN <alm_hessian>`, :ref:`FC3_SHENGBTE <alm_fc3_shengbte>`
-   :ref:`FCSYM_BASIS <alm_fcsym_basis>`, :ref:`FC_ZERO_THR <alm_fc_zero_thr>`, :ref:`KD <alm_kd>`, :ref:`LENGTH_UNIT <alm_length_unit>`
-   :ref:`MAGMOM <alm_magmom>`, :ref:`MODE <alm_mode>`, :ref:`NAT <alm_nat>`
+   :ref:`FCS_ALAMODE <alm_fcs_alamode>`, :ref:`FCS_UNIT_OUTPUT <alm_fcs_unit_output>`, :ref:`FORCE_UNIT <alm_force_unit>`, :ref:`HESSIAN <alm_hessian>`
+   :ref:`FC3_SHENGBTE <alm_fc3_shengbte>`, :ref:`FCSYM_BASIS <alm_fcsym_basis>`, :ref:`FC_ZERO_THR <alm_fc_zero_thr>`, :ref:`KD <alm_kd>`
+   :ref:`LENGTH_UNIT <alm_length_unit>`, :ref:`MAGMOM <alm_magmom>`, :ref:`MODE <alm_mode>`, :ref:`NAT <alm_nat>`
    :ref:`NMAXSAVE <alm_nmaxsave>`, :ref:`NONCOLLINEAR <alm_noncollinear>`, :ref:`PERIODIC <alm_periodic>`
    :ref:`PREFIX <alm_prefix>`, :ref:`PRIMCELL <alm_primcell>`, :ref:`PRINTSYM <alm_printsym>`, :ref:`STRUCTURE_FILE <alm_structure_file>`
    :ref:`SUPERCELL <alm_supercell>`, :ref:`TOLERANCE <alm_tolerance>`
@@ -270,6 +270,26 @@ Description of input variables
  :Default: min(5, ``NORDER``) 
  :Type: Integer
  :Example: If your model includes anharmonic terms up to the sixth-order (``NORDER = 5``), but you want to avoid printing out the fifth-order and sixth-order IFCs in ``PREFIX``.xml, please set ``NMAXSAVE = 3``.
+
+````
+
+.. _alm_fcs_alamode:
+
+* FCS_ALAMODE-tag = 0 | 1
+
+ ===== =====================================================================
+   0    Write the force constants to ``PREFIX``.h5 only
+   1    Additionally write the legacy ``PREFIX``.xml file and the
+        plain-text ``PREFIX``.fcs listing
+ ===== =====================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: The HDF5 file ``PREFIX``.h5 is the standard force-constant
+               output and is always written. Set ``FCS_ALAMODE = 1`` to also
+               produce the legacy XML file and the human-readable
+               ``PREFIX``.fcs listing, e.g. for external tools that have not
+               migrated to the HDF5 format yet. *anphon* reads both formats.
 
 ````
 

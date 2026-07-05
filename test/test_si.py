@@ -60,7 +60,8 @@ def print_max_errors(file, data_ref, data_now, rel_min_scale=1.0e-15):
 
 
 def gen_alminput_si(
-    fname, norder=1, prefix="si222", dfset="DFSET", algo_reduction=None, opt_extra=None
+    fname, norder=1, prefix="si222", dfset="DFSET", algo_reduction=None, opt_extra=None,
+    legacy_outputs=True,
 ):
     pos = [
         [0.000, 0.000, 0.000],
@@ -130,9 +131,12 @@ def gen_alminput_si(
     ]
 
     with open(fname, "w") as f:
+        # The suite compares the legacy .fcs listings and feeds the .xml to
+        # anphon, so it opts back into the legacy outputs by default.
         f.write(
-            "&general\n PREFIX = %s; MODE = opt; NAT = 64; NKD = 1; KD = Si\n/\n"
-            % prefix
+            ("&general\n PREFIX = %s; MODE = opt; NAT = 64; NKD = 1; KD = Si\n" % prefix)
+            + (" FCS_ALAMODE = 1\n" if legacy_outputs else "")
+            + "/\n"
         )
         opt_block = "DFSET = %s\n" % dfset
         if algo_reduction is not None:
@@ -158,6 +162,9 @@ def run_alm_si(almbin, project_root):
         subprocess.run(["cat", "DFSET_harmonic", "DFSET_cubic"], stdout=f)
     gen_alminput_si("ALM1.in", 1, dfset="DFSET_harmonic", prefix="si222")
     gen_alminput_si("ALM2.in", 2, dfset="DFSET_merged", prefix="si222_cubic")
+    # Default-output check: without FCS_ALAMODE, only PREFIX.h5 is written.
+    gen_alminput_si("ALM0.in", 1, dfset="DFSET_harmonic", prefix="si222_default",
+                    legacy_outputs=False)
     try:
         with open("ALM1.log", "w") as f:
             ret = subprocess.run([almbin, "ALM1.in"], stdout=f)
@@ -171,6 +178,24 @@ def run_alm_si(almbin, project_root):
         if ret.returncode != 0:
             return 1
     except Exception:
+        return 1
+
+    # Default outputs: only the HDF5 file, no legacy .xml/.fcs.
+    for fname in ("si222_default.h5", "si222_default.xml", "si222_default.fcs"):
+        if os.path.exists(fname):
+            os.remove(fname)
+    try:
+        with open("ALM0.log", "w") as f:
+            ret = subprocess.run([almbin, "ALM0.in"], stdout=f)
+        if ret.returncode != 0:
+            return 1
+    except Exception:
+        return 1
+    if not os.path.exists("si222_default.h5"):
+        print("default ALM run did not write the .h5 file")
+        return 1
+    if os.path.exists("si222_default.xml") or os.path.exists("si222_default.fcs"):
+        print("default ALM run wrote legacy outputs (.xml/.fcs)")
         return 1
 
     return 0

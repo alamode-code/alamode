@@ -518,7 +518,8 @@ auto InputParser::parse_general_vars(ALM *alm) -> void
         assign_val(print_hessian, "HESSIAN", general_var_dict);
     }
     if (general_var_dict["FCS_ALAMODE"].empty()) {
-        print_fcs_alamode = 1;
+        // Legacy .xml/.fcs outputs are opt-in; PREFIX.h5 is always written.
+        print_fcs_alamode = 0;
     } else {
         assign_val(print_fcs_alamode, "FCS_ALAMODE", general_var_dict);
     }

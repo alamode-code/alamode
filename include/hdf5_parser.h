@@ -48,6 +48,9 @@
 inline const std::string h5_schema_force_constants = "alamode:force_constants";
 inline const std::string h5_schema_kappa_result = "alamode:kappa_result";
 inline const std::string h5_schema_scph_state = "alamode:scph_state";
+inline const std::string h5_schema_eigenvalues = "alamode:eigenvalues";
+inline const std::string h5_schema_eigenvectors = "alamode:eigenvectors";
+inline constexpr int h5_version_eigen = 1;
 constexpr int h5_version_force_constants = 1;
 constexpr int h5_version_kappa_result = 1;
 constexpr int h5_version_scph_state = 1;
