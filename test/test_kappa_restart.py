@@ -501,7 +501,7 @@ def check_dbte(anphonbin):
     if run_anphon(anphonbin, "dbte.in", "dbte_fresh.log"):
         print("DBTE run failed")
         return 1
-    for text in ("assembly cross-check", "eigenvalues:", "dense collision kernel"):
+    for text in ("assembly cross-check", "eigenvalues (Omega normalization", "dense collision kernel"):
         if not log_contains("dbte_fresh.log", text):
             print("DBTE diagnostics missing: %s" % text)
             return 1

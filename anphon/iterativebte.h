@@ -119,15 +119,17 @@ private:
 
     // SOLVER = VBTE: preconditioned conjugate gradients on the same linear
     // system, self-adjoint in the multiplicity-weighted inner product.
-    // x0_wedge (may be nullptr) provides a warm-start iterate.
-    bool solve_variational_cg(int itemp, double beta, double **fb, double **Qfin_loc, const double *x0_wedge,
+    // sqrt_occ is the g = sqrt(n(n+1)) table of this temperature; x0_wedge
+    // (may be nullptr) provides a warm-start iterate.
+    bool solve_variational_cg(int itemp, double beta, double **sqrt_occ, double **Qfin_loc, const double *x0_wedge,
                               int &iterations_out, double &residual_out);
 
-    // SOLVER = DBTE: assemble the symmetrized dense operator, full
+    // SOLVER = DBTE: assemble the dense operator, transform to the Omega
+    // normalization (eigenvalues = scattering rates), full
     // eigendecomposition, spectrum diagnostics and kappa via a spectral
     // pseudo-inverse.
-    bool solve_direct_at_temperature(int itemp, double beta, double **fb, double **Qfin_loc, int &iterations_out,
-                                     double &residual_out);
+    bool solve_direct_at_temperature(int itemp, double beta, double **sqrt_occ, double **Qfin_loc,
+                                     int &iterations_out, double &residual_out);
 
     bool cg_symmetry_checked;
     bool dbte_assembly_checked;

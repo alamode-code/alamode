@@ -250,7 +250,6 @@ void CollisionOperator::build_L_isotope()
     const auto &kind = system->get_primcell().kind;
 
     L_iso.assign(static_cast<size_t>(nklocal) * ns, {});
-    L_iso_rowsum.assign(static_cast<size_t>(nklocal) * ns, 0.0);
 
     // Degeneracy-averaged frequencies (tetrahedron path only), built once.
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
@@ -303,7 +302,6 @@ void CollisionOperator::build_L_isotope()
             if (omega1 < eps8) continue;
 
             auto &row = L_iso[irow];
-            double rowsum = 0.0;
 
             const auto prod_overlap = [&](const int k2, const int s2) {
                 auto prod = 0.0;
@@ -343,7 +341,6 @@ void CollisionOperator::build_L_isotope()
                         const auto val = prefactor * omega2 * delta_loc * prod_overlap(k2, s2);
                         if (val == 0.0) continue;
                         row.push_back({k2, s2, val});
-                        rowsum += val;
                     }
                 }
             } else {
@@ -385,11 +382,9 @@ void CollisionOperator::build_L_isotope()
                             prefactor * weight_tetra[s2][k2] * eval_tetra[s2][k2] * prod_overlap(k2, s2);
                         if (val == 0.0) continue;
                         row.push_back({k2, s2, val});
-                        rowsum += val;
                     }
                 }
             }
-            L_iso_rowsum[irow] = rowsum;
         }
 
         if (integration->ismear == -1) {
@@ -402,13 +397,16 @@ void CollisionOperator::build_L_isotope()
     if (eval_tetra) deallocate(eval_tetra);
 }
 
-void CollisionOperator::add_isotope_diagonal(const double *const *fb, double **q_inout) const
+void CollisionOperator::add_isotope_diagonal(const double *const *sqrt_occ, double **q_inout) const
 {
     for (int ikl = 0; ikl < nklocal; ++ikl) {
         const int k1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ikl]][0].knum;
         for (int s = 0; s < ns; ++s) {
-            q_inout[ikl][s] += fb[k1][s] * (fb[k1][s] + 1.0) * 2.0 *
-                               L_iso_rowsum[static_cast<size_t>(ikl) * ns + s];
+            auto sum = 0.0;
+            for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s]) {
+                sum += sqrt_occ[entry.knum][entry.snum] * entry.val;
+            }
+            q_inout[ikl][s] += 2.0 * sqrt_occ[k1][s] * sum;
         }
     }
 }
@@ -686,10 +684,10 @@ void CollisionOperator::setup_L_tetra()
     deallocate(kmap_identity);
 }
 
-void CollisionOperator::calc_Q_from_L(const double *const *n, double **q1) const
+void CollisionOperator::calc_Q_from_L(const double *const *sqrt_occ, double **q1) const
 {
     int s1, s2, s3;
-    double n1, n2, n3;
+    double g1, g2, g3;
 
     double **Qemit;
     double **Qabsorb;
@@ -717,15 +715,14 @@ void CollisionOperator::calc_Q_from_L(const double *const *n, double **q1) const
             auto k3 = pair.group[0].ks[1];
 
             for (s1 = 0; s1 < ns; ++s1) {
-                n1 = n[k1][s1];
+                g1 = sqrt_occ[k1][s1];
 
                 for (int ib = 0; ib < ns2; ++ib) {
                     s2 = ib / ns;
                     s3 = ib % ns;
-                    n2 = n[k2][s2];
-                    n3 = n[k3][s3];
-                    Qemit[ik][s1] += 0.5 * (n1 * (n2 + 1.0) * (n3 + 1.0)) * L_emitt[offset_emitt[ik] + j][s1][ib] *
-                                     multi;
+                    g2 = sqrt_occ[k2][s2];
+                    g3 = sqrt_occ[k3][s3];
+                    Qemit[ik][s1] += 0.5 * g1 * g2 * g3 * L_emitt[offset_emitt[ik] + j][s1][ib] * multi;
                 }
             }
         }
@@ -745,14 +742,14 @@ void CollisionOperator::calc_Q_from_L(const double *const *n, double **q1) const
             auto k3 = pair.group[0].ks[1];
 
             for (s1 = 0; s1 < ns; ++s1) {
-                n1 = n[k1][s1];
+                g1 = sqrt_occ[k1][s1];
 
                 for (int ib = 0; ib < ns2; ++ib) {
                     s2 = ib / ns;
                     s3 = ib % ns;
-                    n2 = n[k2][s2];
-                    n3 = n[k3][s3];
-                    Qabsorb[ik][s1] += (n1 * n2 * (n3 + 1.0)) * L_absorb[offset_absorb[ik] + j][s1][ib] * multi;
+                    g2 = sqrt_occ[k2][s2];
+                    g3 = sqrt_occ[k3][s3];
+                    Qabsorb[ik][s1] += g1 * g2 * g3 * L_absorb[offset_absorb[ik] + j][s1][ib] * multi;
                 }
             }
         }
@@ -767,7 +764,7 @@ void CollisionOperator::calc_Q_from_L(const double *const *n, double **q1) const
     deallocate(Qabsorb);
 }
 
-void CollisionOperator::calc_W_at(const int ikl, const double *const *fb, const double *const *const *dF,
+void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, const double *const *const *dF,
                                   double **Wks_out) const
 {
     // The scattering partners in L are stored for the representative
@@ -796,12 +793,10 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *fb, const 
                     const int s2 = ib / ns;
                     const int s3 = ib % ns;
 
-                    const double nn1 = fb[k1][s1];
-                    const double nn2 = fb[k2][s2];
-                    const double nn3 = fb[k3][s3];
+                    const auto ggg = sqrt_occ[k1][s1] * sqrt_occ[k2][s2] * sqrt_occ[k3][s3];
                     for (int ix = 0; ix < 3; ++ix) {
-                        Wks_out[s1][ix] -= 0.5 * (dF[k2][s2][ix] + dF[k3][s3][ix]) * nn1 *
-                                           (nn2 + 1.0) * (nn3 + 1.0) * L_emitt[kp_index][s1][ib];
+                        Wks_out[s1][ix] -= 0.5 * (dF[k2][s2][ix] + dF[k3][s3][ix]) * ggg *
+                                           L_emitt[kp_index][s1][ib];
                     }
                 }
             }
@@ -823,12 +818,10 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *fb, const 
                     const int s2 = ib / ns;
                     const int s3 = ib % ns;
 
-                    const double nn1 = fb[k1][s1];
-                    const double nn2 = fb[k2][s2];
-                    const double nn3 = fb[k3][s3];
+                    const auto ggg = sqrt_occ[k1][s1] * sqrt_occ[k2][s2] * sqrt_occ[k3][s3];
                     for (int ix = 0; ix < 3; ++ix) {
-                        Wks_out[s1][ix] += (dF[k2][s2][ix] - dF[k3_minus][s3][ix]) * nn1 * nn2 *
-                                           (nn3 + 1.0) * L_absorb[kp_index][s1][ib];
+                        Wks_out[s1][ix] += (dF[k2][s2][ix] - dF[k3_minus][s3][ix]) * ggg *
+                                           L_absorb[kp_index][s1][ib];
                     }
                 }
             }
@@ -837,21 +830,22 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *fb, const 
     } // s1
 
     if (with_isotope) {
-        // Elastic in-scattering: -2 n1(n1+1) w(row,partner) dF(partner);
+        // Elastic in-scattering: -2 g1 g2 w(row,partner) dF(partner);
         // together with the row-sum diagonal this annihilates constant
         // fields exactly.
         for (int s1 = 0; s1 < ns; ++s1) {
-            const auto occ = 2.0 * fb[k1][s1] * (fb[k1][s1] + 1.0);
+            const auto g1 = 2.0 * sqrt_occ[k1][s1];
             for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s1]) {
                 for (int ix = 0; ix < 3; ++ix) {
-                    Wks_out[s1][ix] -= occ * entry.val * dF[entry.knum][entry.snum][ix];
+                    Wks_out[s1][ix] -= g1 * sqrt_occ[entry.knum][entry.snum] * entry.val *
+                                       dF[entry.knum][entry.snum][ix];
                 }
             }
         }
     }
 }
 
-void CollisionOperator::assemble_dense_rows(const double *const *fb, const double *const *Qfin_loc,
+void CollisionOperator::assemble_dense_rows(const double *const *sqrt_occ, const double *const *Qfin_loc,
                                             double *slab) const
 {
     const auto nk_irred = dos->kmesh_dos->nk_irred;
@@ -905,10 +899,8 @@ void CollisionOperator::assemble_dense_rows(const double *const *fb, const doubl
                     for (int ib = 0; ib < ns2; ++ib) {
                         const int s2 = ib / ns;
                         const int s3 = ib % ns;
-                        const double nn1 = fb[k1][s1];
-                        const double nn2 = fb[k2][s2];
-                        const double nn3 = fb[k3][s3];
-                        const auto coeff = -0.5 * nn1 * (nn2 + 1.0) * (nn3 + 1.0) * L_emitt[kp_index][s1][ib];
+                        const auto ggg = sqrt_occ[k1][s1] * sqrt_occ[k2][s2] * sqrt_occ[k3][s3];
+                        const auto coeff = -0.5 * ggg * L_emitt[kp_index][s1][ib];
                         if (coeff == 0.0) continue;
                         scatter(coeff, k2, s2);
                         scatter(coeff, k3, s3);
@@ -927,10 +919,8 @@ void CollisionOperator::assemble_dense_rows(const double *const *fb, const doubl
                     for (int ib = 0; ib < ns2; ++ib) {
                         const int s2 = ib / ns;
                         const int s3 = ib % ns;
-                        const double nn1 = fb[k1][s1];
-                        const double nn2 = fb[k2][s2];
-                        const double nn3 = fb[k3][s3];
-                        const auto coeff = nn1 * nn2 * (nn3 + 1.0) * L_absorb[kp_index][s1][ib];
+                        const auto ggg = sqrt_occ[k1][s1] * sqrt_occ[k2][s2] * sqrt_occ[k3][s3];
+                        const auto coeff = ggg * L_absorb[kp_index][s1][ib];
                         if (coeff == 0.0) continue;
                         scatter(coeff, k2, s2);
                         scatter(-coeff, k3_minus, s3);
@@ -939,9 +929,9 @@ void CollisionOperator::assemble_dense_rows(const double *const *fb, const doubl
             }
 
             if (with_isotope) {
-                const auto occ = 2.0 * fb[k1][s1] * (fb[k1][s1] + 1.0);
+                const auto g1 = 2.0 * sqrt_occ[k1][s1];
                 for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s1]) {
-                    scatter(-occ * entry.val, entry.knum, entry.snum);
+                    scatter(-g1 * sqrt_occ[entry.knum][entry.snum] * entry.val, entry.knum, entry.snum);
                 }
             }
         }

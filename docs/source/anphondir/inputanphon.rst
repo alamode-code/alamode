@@ -1648,20 +1648,24 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  ``PREFIX``.kappa.h5.
 
  ``SOLVER = DBTE`` is a diagnostic solver: it assembles the collision kernel
- on the irreducible wedge as an explicit dense matrix (in the degeneracy-
- reduced, multiplicity-symmetrized basis), symmetrizes it, and computes its
- full eigendecomposition with LAPACK. It reports what the matrix-free solvers
- cannot access: the asymmetry of the discretized kernel, violations of
- positive semidefiniteness (a direct probe of a too-coarse mesh or an
- inadequate smearing width), the near-null part of the spectrum with its
- overlap onto the momentum-drift directions, and the sensitivity of kappa to
- dropping the softest modes. Because the kernel is symmetrized explicitly,
- the kappa value can differ from ``IBTE``/``VBTE`` at the percent level when
- the discretization asymmetry is large or the kernel is ill conditioned -
- that difference is itself diagnostic information. Memory scales as
- ``(3 * nk_irred * nbranches)^2``; oversized problems abort with a clear
- message (memory-distributed ELPA/ScaLAPACK and GPU MAGMA/cuSOLVER backends
- are planned behind the same interface).
+ on the irreducible wedge as an explicit dense matrix - restricted to the
+ degeneracy-reduced, little-group-invariant basis, in the Omega normalization
+ whose diagonal is :math:`1/\tau` - and computes its full eigendecomposition
+ with LAPACK. It reports what the matrix-free solvers cannot access: the
+ residual asymmetry of the discretized kernel, violations of positive
+ semidefiniteness (a direct probe of a too-coarse mesh or an inadequate
+ smearing width), the near-null part of the spectrum (scattering rates in
+ cm^-1) with its overlap onto the momentum-drift directions, and the
+ sensitivity of kappa to dropping the softest modes. All iterative-family
+ solvers use the detailed-balance-symmetric occupation kernel
+ (:math:`g_1 g_2 g_3` with :math:`g = \sqrt{n(n+1)}`, identical on the
+ energy shell to the raw occupation products), so for fixed-width smearing
+ the three solvers agree to their tolerances; with the tetrahedron or
+ adaptive methods a small residual difference remains from the direction
+ dependence of the integration weights. Memory scales with the square of the
+ reduced dimension; oversized problems abort with a clear message
+ (memory-distributed ELPA/ScaLAPACK and GPU MAGMA/cuSOLVER backends are
+ planned behind the same interface).
 
  .. caution::
 

@@ -269,9 +269,11 @@ void Iterativebte::iterative_solver()
     allocate(dFold, nk_3ph, ns, 3);
 
     double **fb;
+    double **gb; // sqrt(n(n+1)): the detailed-balance-symmetric kernel table
     double **dndt;
     allocate(dndt, nklocal, ns);
     allocate(fb, nk_3ph, ns);
+    allocate(gb, nk_3ph, ns);
 
     double **isotope_damping_loc;
     if (isotope->include_isotope) {
@@ -378,6 +380,12 @@ void Iterativebte::iterative_solver()
 
         calc_boson(itemp, fb, dndt);
 
+        for (ik = 0; ik < nk_3ph; ++ik) {
+            for (is = 0; is < ns; ++is) {
+                gb[ik][is] = std::sqrt(fb[ik][is] * (fb[ik][is] + 1.0));
+            }
+        }
+
         if (mympi->my_rank == 0) {
             std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                       << Temperature[itemp] << " K" << "    -----------------------------\n";
@@ -389,7 +397,7 @@ void Iterativebte::iterative_solver()
                       << "          zx          zy          zz  |df'-df|/|df|\n";
         }
 
-        collision_op->calc_Q_from_L(fb, Q);
+        collision_op->calc_Q_from_L(gb, Q);
 
         for (ik = 0; ik < nklocal; ik++) {
             auto tmpk = nk_l[ik];
@@ -421,7 +429,7 @@ void Iterativebte::iterative_solver()
             }
         }
         if (collision_op->has_isotope_channel()) {
-            collision_op->add_isotope_diagonal(fb, Qfin);
+            collision_op->add_isotope_diagonal(gb, Qfin);
         }
 
         if (warm_start) {
@@ -444,7 +452,7 @@ void Iterativebte::iterative_solver()
             // Dense eigendecomposition of the collision kernel.
             int iters = 0;
             double fres = 0.0;
-            converged_this_temp = solve_direct_at_temperature(itemp, beta, fb, Qfin, iters, fres);
+            converged_this_temp = solve_direct_at_temperature(itemp, beta, gb, Qfin, iters, fres);
             iterations_used[itemp] = iters;
             final_residual[itemp] = fres;
             t_converged[itemp] = converged_this_temp ? 1 : 0;
@@ -456,7 +464,7 @@ void Iterativebte::iterative_solver()
             // Conjugate-gradient solution of the same linear system.
             int iters = 0;
             double fres = 0.0;
-            converged_this_temp = solve_variational_cg(itemp, beta, fb, Qfin,
+            converged_this_temp = solve_variational_cg(itemp, beta, gb, Qfin,
                                                        warm_start ? dF_ir_glob : nullptr, iters, fres);
             iterations_used[itemp] = iters;
             final_residual[itemp] = fres;
@@ -500,7 +508,7 @@ void Iterativebte::iterative_solver()
                 double **Wks_loc;
                 allocate(Wks_loc, ns, 3);
 
-                collision_op->calc_W_at(ikl, fb, dFold, Wks_loc);
+                collision_op->calc_W_at(ikl, gb, dFold, Wks_loc);
 
                 // Wks_loc is a contiguous [ns][3] block from allocate().
                 average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 3, Wks_loc[0]);
@@ -662,6 +670,7 @@ void Iterativebte::iterative_solver()
     deallocate(kappa_new);
     deallocate(kappa_old);
     deallocate(fb);
+    deallocate(gb);
     deallocate(dF_ir_loc);
     deallocate(dF_ir_glob);
     deallocate(dF_ir_best);
@@ -738,13 +747,15 @@ void Iterativebte::project_wedge_vector(std::vector<double> &v, const std::vecto
     }
 }
 
-bool Iterativebte::solve_direct_at_temperature(const int itemp, const double beta, double **fb, double **Qfin_loc,
-                                               int &iterations_out, double &residual_out)
+bool Iterativebte::solve_direct_at_temperature(const int itemp, const double beta, double **sqrt_occ,
+                                               double **Qfin_loc, int &iterations_out, double &residual_out)
 {
     // SOLVER = DBTE: assemble the multiplicity-symmetrized dense operator
-    // from the stored L entries (one-application cost), take its full
-    // eigendecomposition, and report the spectrum diagnostics that the
-    // matrix-free solvers cannot access: discretization asymmetry,
+    // from the stored L entries (one-application cost), transform it to the
+    // Omega normalization Omega = D^{-1/2} A D^{-1/2} with D = diag(n(n+1))
+    // - whose diagonal is 1/tau, so the eigenvalues are scattering rates -
+    // take its full eigendecomposition, and report the spectrum diagnostics
+    // that the matrix-free solvers cannot access: discretization asymmetry,
     // positive-semidefiniteness, near-null modes with their overlap onto
     // the momentum-drift directions, and the sensitivity of kappa to a
     // low-eigenvalue cutoff. Intended for small meshes.
@@ -777,7 +788,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
     // Row-distributed assembly, gathered on rank 0.
     const size_t nrows_loc = static_cast<size_t>(nklocal) * ns * 3;
     std::vector<double> slab(nrows_loc * nrows3, 0.0);
-    collision_op->assemble_dense_rows(fb, Qfin_loc, slab.data());
+    collision_op->assemble_dense_rows(sqrt_occ, Qfin_loc, slab.data());
 
     // One-time cross-validation of the assembled rows against the
     // independently coded matrix-free application (calc_W_at + diagonal):
@@ -800,7 +811,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
 
             double **Wks_loc;
             allocate(Wks_loc, ns, 3);
-            collision_op->calc_W_at(ikl, fb, dFold, Wks_loc);
+            collision_op->calc_W_at(ikl, sqrt_occ, dFold, Wks_loc);
 
             for (int s1 = 0; s1 < ns; ++s1) {
                 const auto grow = static_cast<size_t>(tmpk) * ns + s1;
@@ -895,8 +906,12 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
 
         std::vector<double> A(static_cast<size_t>(nred3) * nred3, 0.0);
         std::vector<double> inv_sqrt_d(blocks.size());
+        std::vector<double> gblk(blocks.size()); // sqrt(n(n+1)) per block (equal within it)
         for (size_t I = 0; I < blocks.size(); ++I) {
             inv_sqrt_d[I] = 1.0 / std::sqrt(static_cast<double>(blocks[I].second - blocks[I].first));
+            const auto ikI = static_cast<unsigned int>(blocks[I].first / ns);
+            const int k1I = dos->kmesh_dos->kpoint_irred_all[ikI][0].knum;
+            gblk[I] = sqrt_occ[k1I][blocks[I].first % ns];
         }
         for (size_t I = 0; I < blocks.size(); ++I) {
             for (size_t J = 0; J < blocks.size(); ++J) {
@@ -917,55 +932,126 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         S.clear();
         S.shrink_to_fit();
 
+        // Omega normalization: divide out the occupation metric so the
+        // diagonal becomes 1/tau and the eigenvalues are scattering rates.
+        for (size_t J = 0; J < blocks.size(); ++J) {
+            for (size_t I = 0; I < blocks.size(); ++I) {
+                const auto fac = 1.0 / (gblk[I] * gblk[J]);
+                for (auto x = 0; x < 3; ++x) {
+                    for (auto y = 0; y < 3; ++y) {
+                        A[(J * 3 + y) * nred3 + I * 3 + x] *= fac;
+                    }
+                }
+            }
+        }
+
+        // Right-hand side in the Omega-normalized metric, block-reduced (b
+        // is block constant, so the reduced component is sqrt(d) b, and the
+        // congruence divides by g).
+        std::vector<double> btil3(nred3);
+        for (size_t I = 0; I < blocks.size(); ++I) {
+            const auto srow = blocks[I].first; // representative scalar row
+            const auto fac = std::sqrt(wrow[srow]) / (inv_sqrt_d[I] * gblk[I]);
+            for (auto x = 0; x < 3; ++x) {
+                btil3[I * 3 + x] = fac * b[static_cast<size_t>(srow) * 3 + x];
+            }
+        }
+
+        // Restrict to the little-group-invariant subspace. The collision
+        // operator is only defined on fields with dF(Rk) = R dF(k); the
+        // complementary vector components at high-symmetry k points carry an
+        // arbitrary (choice-of-operation dependent, non-symmetric) extension
+        // that must not enter the spectrum. Per block, an orthonormal basis
+        // of range(P_littlegroup) is taken from the projector eigenvectors.
+        std::vector<Eigen::Matrix3d> Ebasis(blocks.size());
+        std::vector<int> mdim(blocks.size()), offs(blocks.size());
+        int ndim = 0;
+        for (size_t I = 0; I < blocks.size(); ++I) {
+            const auto ikI = static_cast<unsigned int>(blocks[I].first / ns);
+            Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(
+                collision_op->get_littlegroup_projector(static_cast<int>(ikI)));
+            Ebasis[I] = es.eigenvectors(); // eigenvalues ascending
+            auto m = 0;
+            for (auto a = 0; a < 3; ++a) {
+                if (es.eigenvalues()(a) > 0.5) ++m;
+            }
+            mdim[I] = m;
+            offs[I] = ndim;
+            ndim += m;
+        }
+        const auto ecol = [&](const size_t I, const int a) { // a-th invariant basis vector
+            return Ebasis[I].col(3 - mdim[I] + a);
+        };
+
+        std::vector<double> btil;
+        {
+            std::vector<double> Ainv(static_cast<size_t>(ndim) * ndim, 0.0);
+            std::vector<double> btil_inv(ndim, 0.0);
+            for (size_t I = 0; I < blocks.size(); ++I) {
+                for (auto a = 0; a < mdim[I]; ++a) {
+                    const auto eI = ecol(I, a);
+                    double sum_b = 0.0;
+                    for (auto x = 0; x < 3; ++x) sum_b += eI(x) * btil3[I * 3 + x];
+                    btil_inv[offs[I] + a] = sum_b;
+                    for (size_t J = 0; J < blocks.size(); ++J) {
+                        for (auto bb = 0; bb < mdim[J]; ++bb) {
+                            const auto eJ = ecol(J, bb);
+                            double sum = 0.0;
+                            for (auto x = 0; x < 3; ++x) {
+                                for (auto y = 0; y < 3; ++y) {
+                                    sum += eI(x) * A[(static_cast<size_t>(J) * 3 + y) * nred3 +
+                                                     static_cast<size_t>(I) * 3 + x] * eJ(y);
+                                }
+                            }
+                            Ainv[static_cast<size_t>(offs[J] + bb) * ndim + offs[I] + a] = sum;
+                        }
+                    }
+                }
+            }
+            A = std::move(Ainv);
+            btil = std::move(btil_inv);
+        }
+
         double asym2 = 0.0, norm2 = 0.0;
-        for (int i = 0; i < nred3; ++i) {
+        for (int i = 0; i < ndim; ++i) {
             for (int j = 0; j < i; ++j) {
-                const auto aij = A[static_cast<size_t>(j) * nred3 + i];
-                const auto aji = A[static_cast<size_t>(i) * nred3 + j];
+                const auto aij = A[static_cast<size_t>(j) * ndim + i];
+                const auto aji = A[static_cast<size_t>(i) * ndim + j];
                 asym2 += pow2(aij - aji);
                 norm2 += pow2(aij) + pow2(aji);
             }
-            norm2 += pow2(A[static_cast<size_t>(i) * nred3 + i]);
+            norm2 += pow2(A[static_cast<size_t>(i) * ndim + i]);
         }
         const auto asym = norm2 > 0.0 ? std::sqrt(2.0 * asym2 / norm2) : 0.0;
-        for (int i = 0; i < nred3; ++i) {
+        for (int i = 0; i < ndim; ++i) {
             for (int j = 0; j < i; ++j) {
-                const auto sym = 0.5 * (A[static_cast<size_t>(j) * nred3 + i] + A[static_cast<size_t>(i) * nred3 + j]);
-                A[static_cast<size_t>(j) * nred3 + i] = sym;
-                A[static_cast<size_t>(i) * nred3 + j] = sym;
+                const auto sym = 0.5 * (A[static_cast<size_t>(j) * ndim + i] + A[static_cast<size_t>(i) * ndim + j]);
+                A[static_cast<size_t>(j) * ndim + i] = sym;
+                A[static_cast<size_t>(i) * ndim + j] = sym;
             }
         }
 
-        std::cout << "      dense collision kernel: dimension " << nred3 << " (" << nrows3 - nact3
-                  << " excluded rows, " << nact3 - nred3 << " folded into degenerate blocks), memory "
-                  << std::fixed << std::setprecision(1)
-                  << static_cast<double>(nred3) * nred3 * 8.0 / 1048576.0 << " MB\n";
+        std::cout << "      dense collision kernel: dimension " << ndim << " (" << nrows3 - nact3
+                  << " excluded rows, " << nact3 - nred3 << " folded into degenerate blocks, "
+                  << nred3 - ndim << " non-invariant components removed), memory " << std::fixed
+                  << std::setprecision(1) << static_cast<double>(ndim) * ndim * 8.0 / 1048576.0 << " MB\n";
         std::cout << "      asymmetry |S - S^T|_F / |S|_F = " << std::scientific << std::setprecision(1) << asym
-                  << " (symmetrized for the eigendecomposition)\n";
-
-        // Right-hand side in the symmetrized metric, block-reduced (b is
-        // block constant, so the reduced component is sqrt(d) b).
-        std::vector<double> btil(nred3);
-        for (size_t I = 0; I < blocks.size(); ++I) {
-            const auto srow = blocks[I].first; // representative scalar row
-            const auto fac = std::sqrt(wrow[srow]) / inv_sqrt_d[I];
-            for (auto x = 0; x < 3; ++x) {
-                btil[I * 3 + x] = fac * b[static_cast<size_t>(srow) * 3 + x];
-            }
-        }
+                  << " (on the invariant subspace; symmetrized for the eigendecomposition)\n";
 
         std::vector<double> evals;
-        solve_dense_symmetric(nred3, A, evals);
+        solve_dense_symmetric(ndim, A, evals);
 
         const auto lam_max = evals.empty() ? 0.0 : evals.back();
         const auto lam_tol = lam_max * 1.0e-12;
+        const auto to_kayser = Hz_to_kayser / time_ry; // rates: internal -> cm^-1
         int n_negative = 0, n_nearnull = 0;
         for (const auto lam: evals) {
             if (lam < -lam_tol) ++n_negative;
             if (std::abs(lam) < 1.0e-8 * lam_max) ++n_nearnull;
         }
-        std::cout << "      eigenvalues: min = " << std::scientific << std::setprecision(2) << evals.front()
-                  << ", max = " << lam_max << "; negative (< -1e-12 max): " << n_negative
+        std::cout << "      eigenvalues (Omega normalization; scattering rates 1/tau in cm^-1):\n";
+        std::cout << "        min = " << std::scientific << std::setprecision(2) << evals.front() * to_kayser
+                  << ", max = " << lam_max * to_kayser << "; negative (< -1e-12 max): " << n_negative
                   << "; near-null (|lambda| < 1e-8 max): " << n_nearnull << '\n';
         if (n_negative > 0) {
             std::cout << "      WARNING: the physical collision kernel is positive semidefinite;\n"
@@ -983,60 +1069,64 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 for (auto j = 0; j < 3; ++j) mat_k2cart(j, i) = rlavec(i, j);
             }
 
-            std::vector<std::vector<double>> drift(3, std::vector<double>(nred3, 0.0));
+            std::vector<std::vector<double>> drift(3, std::vector<double>(ndim, 0.0));
             for (size_t I = 0; I < blocks.size(); ++I) {
                 const auto ik = static_cast<unsigned int>(blocks[I].first / ns);
                 const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
                 Eigen::Vector3d kf;
                 for (auto j = 0; j < 3; ++j) kf(j) = dos->kmesh_dos->xk[k1][j];
                 const Eigen::Vector3d kc = mat_k2cart * kf;
-                // The three drift generators are the Cartesian components of
-                // the (branch-independent) vector field dF(k) = k_cart.
-                const auto fac = std::sqrt(wrow[blocks[I].first]) / inv_sqrt_d[I];
-                for (auto x = 0; x < 3; ++x) {
-                    drift[x][I * 3 + x] = fac * kc(x);
+                // In the Omega variables the drift candidate carries the
+                // occupation weight (y = G x), projected onto the invariant
+                // basis of the block.
+                const auto fac = std::sqrt(wrow[blocks[I].first]) * gblk[I] / inv_sqrt_d[I];
+                for (auto a = 0; a < mdim[I]; ++a) {
+                    const auto eI = ecol(I, a);
+                    for (auto c = 0; c < 3; ++c) {
+                        drift[c][offs[I] + a] = fac * eI(c) * kc(c);
+                    }
                 }
             }
             std::vector<int> kept;
             for (auto a = 0; a < 3; ++a) {
                 for (const auto kb: kept) {
                     double pr = 0.0;
-                    for (int i = 0; i < nred3; ++i) pr += drift[a][i] * drift[kb][i];
-                    for (int i = 0; i < nred3; ++i) drift[a][i] -= pr * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i) pr += drift[a][i] * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i) drift[a][i] -= pr * drift[kb][i];
                 }
                 double nrm = 0.0;
-                for (int i = 0; i < nred3; ++i) nrm += pow2(drift[a][i]);
+                for (int i = 0; i < ndim; ++i) nrm += pow2(drift[a][i]);
                 if (nrm > 1.0e-24) {
                     nrm = 1.0 / std::sqrt(nrm);
-                    for (int i = 0; i < nred3; ++i) drift[a][i] *= nrm;
+                    for (int i = 0; i < ndim; ++i) drift[a][i] *= nrm;
                     kept.push_back(a);
                 }
             }
-            for (auto m = 0; m < std::min(3, nred3); ++m) {
+            for (auto m = 0; m < std::min(3, ndim); ++m) {
                 double ov2 = 0.0;
                 for (const auto kb: kept) {
                     double pr = 0.0;
-                    for (int i = 0; i < nred3; ++i) pr += A[static_cast<size_t>(m) * nred3 + i] * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i) pr += A[static_cast<size_t>(m) * ndim + i] * drift[kb][i];
                     ov2 += pow2(pr);
                 }
-                std::cout << "      softest mode " << m << ": lambda = " << std::scientific << std::setprecision(2)
-                          << evals[m] << ", overlap with the momentum-drift space = " << std::fixed
-                          << std::setprecision(3) << std::sqrt(ov2) << '\n';
+                std::cout << "      softest mode " << m << ": 1/tau = " << std::scientific << std::setprecision(2)
+                          << evals[m] * to_kayser << " cm^-1, overlap with the momentum-drift space = "
+                          << std::fixed << std::setprecision(3) << std::sqrt(ov2) << '\n';
             }
         }
 
         // kappa via the spectral pseudo-inverse; the cutoff table exposes
         // near-singular directions.
-        std::vector<double> coef(nred3, 0.0);
+        std::vector<double> coef(ndim, 0.0);
         const auto lam_null = std::max(0.0, lam_max * 1.0e-12);
         int n_null = 0;
-        for (int i = 0; i < nred3; ++i) {
+        for (int i = 0; i < ndim; ++i) {
             if (evals[i] <= lam_null) {
                 ++n_null;
                 continue;
             }
             double pr = 0.0;
-            for (int j = 0; j < nred3; ++j) pr += A[static_cast<size_t>(i) * nred3 + j] * btil[j];
+            for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
             coef[i] = pr / evals[i];
         }
         if (n_null > 0) {
@@ -1044,25 +1134,31 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         }
 
         const auto kappa_of_drop = [&](const int mdrop, double *k9, std::vector<double> *dF_keep) {
-            std::vector<double> xt(nred3, 0.0);
+            std::vector<double> xt(ndim, 0.0);
             int skipped = 0;
-            for (int i = 0; i < nred3; ++i) {
+            for (int i = 0; i < ndim; ++i) {
                 if (coef[i] == 0.0) continue;
                 if (skipped < mdrop) {
                     ++skipped;
                     continue;
                 }
                 const auto c = coef[i];
-                for (int j = 0; j < nred3; ++j) xt[j] += c * A[static_cast<size_t>(i) * nred3 + j];
+                for (int j = 0; j < ndim; ++j) xt[j] += c * A[static_cast<size_t>(i) * ndim + j];
             }
-            // Expand: block-constant over degenerate partners, then undo the
-            // multiplicity metric.
+            // Expand: invariant basis -> Cartesian per block, undo the Omega
+            // congruence (divide by g), then block-constant over degenerate
+            // partners and the multiplicity metric.
             std::vector<double> dF(nrows3, 0.0);
             for (size_t I = 0; I < blocks.size(); ++I) {
-                const auto fac = inv_sqrt_d[I] / std::sqrt(wrow[blocks[I].first]);
+                const auto fac = inv_sqrt_d[I] / (std::sqrt(wrow[blocks[I].first]) * gblk[I]);
+                double v3[3] = {0.0, 0.0, 0.0};
+                for (auto a = 0; a < mdim[I]; ++a) {
+                    const auto eI = ecol(I, a);
+                    for (auto x = 0; x < 3; ++x) v3[x] += eI(x) * xt[offs[I] + a];
+                }
                 for (auto srow = blocks[I].first; srow < blocks[I].second; ++srow) {
                     for (auto x = 0; x < 3; ++x) {
-                        dF[static_cast<size_t>(srow) * 3 + x] = fac * xt[I * 3 + x];
+                        dF[static_cast<size_t>(srow) * 3 + x] = fac * v3[x];
                     }
                 }
             }
@@ -1080,7 +1176,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         std::cout << "      kappa_xx/yy/zz vs dropping the m softest (non-null) modes:\n";
         double k9tmp[9];
         for (const auto mdrop: {0, 1, 2, 4, 8, 16}) {
-            if (mdrop >= nred3 - n_null) break;
+            if (mdrop >= ndim - n_null) break;
             if (mdrop == 0) {
                 kappa_of_drop(0, kappa9, &dF_wedge);
                 std::copy(kappa9, kappa9 + 9, k9tmp);
@@ -1096,9 +1192,9 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         // (the direct analogue of an unresolvable residual).
         {
             double r2 = 0.0, b2 = 0.0;
-            for (int i = 0; i < nred3; ++i) {
+            for (int i = 0; i < ndim; ++i) {
                 double pr = 0.0;
-                for (int j = 0; j < nred3; ++j) pr += A[static_cast<size_t>(i) * nred3 + j] * btil[j];
+                for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
                 b2 += pow2(pr);
                 if (evals[i] <= lam_null) r2 += pow2(pr);
             }
@@ -1122,7 +1218,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
     return true;
 }
 
-bool Iterativebte::solve_variational_cg(const int itemp, const double beta, double **fb, double **Qfin_loc,
+bool Iterativebte::solve_variational_cg(const int itemp, const double beta, double **sqrt_occ, double **Qfin_loc,
                                         const double *x0_wedge, int &iterations_out, double &residual_out)
 {
     // Solve (Q_diag + W) dF = b with preconditioned conjugate gradients.
@@ -1178,7 +1274,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
 
             double **Wks_loc;
             allocate(Wks_loc, ns, 3);
-            collision_op->calc_W_at(ikl, fb, dFold, Wks_loc);
+            collision_op->calc_W_at(ikl, sqrt_occ, dFold, Wks_loc);
             average_over_degenerate_modes(ns, eval[k1], 3, Wks_loc[0]);
 
             for (int s = 0; s < ns; ++s) {

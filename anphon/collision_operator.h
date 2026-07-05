@@ -55,17 +55,28 @@ public:
         return with_isotope;
     }
 
-    // Add the isotope diagonal 2 n(n+1) sum_j w(row,j) to the local rows of
-    // q_inout ([nklocal][ns]).
-    void add_isotope_diagonal(const double *const *fb, double **q_inout) const;
+    // Add the isotope diagonal 2 g1 sum_j g2_j w(row,j) to the local rows
+    // of q_inout ([nklocal][ns]) - the row sum of the in-scattering entries,
+    // so the elastic channel annihilates constant fields exactly.
+    void add_isotope_diagonal(const double *const *sqrt_occ, double **q_inout) const;
 
-    // Diagonal (out-scattering) part at the local wedge points from the
-    // equilibrium occupations n; q1 is [nklocal][ns].
-    void calc_Q_from_L(const double *const *n, double **q1) const;
+    // The occupation factors enter through the detailed-balance-symmetric
+    // kernel: every three-phonon product n1 n2 (n3+1) / n1 (n2+1)(n3+1) is
+    // replaced by g1 g2 g3 with g = sqrt(n(n+1)) = 1/(2 sinh(bw/2)), to
+    // which it is identical on the energy shell. This makes the operator
+    // exactly symmetric off shell as well (up to the direction dependence
+    // of tetrahedron/adaptive weights), so the three solvers agree on the
+    // same discretized problem. Callers pass the precomputed table
+    // sqrt_occ[k][s] = sqrt(n(n+1)).
+
+    // Diagonal (out-scattering) part at the local wedge points; q1 is
+    // [nklocal][ns].
+    void calc_Q_from_L(const double *const *sqrt_occ, double **q1) const;
 
     // In-scattering action at local wedge point ikl for all (s1, xyz);
     // Wks_out is [ns][3]. Thread-safe for concurrent calls on distinct ikl.
-    void calc_W_at(const int ikl, const double *const *fb, const double *const *const *dF, double **Wks_out) const;
+    void calc_W_at(const int ikl, const double *const *sqrt_occ, const double *const *const *dF,
+                   double **Wks_out) const;
 
     // Reconstruct a full-grid vector field from its wedge values:
     // dF_full[p] = expand_mat[p] . dF_ir[rep(p)], with dF_ir laid out as
@@ -77,6 +88,11 @@ public:
     // and self-adjoint only on it).
     void project_onto_littlegroup(double *dF_ir) const;
 
+    const Eigen::Matrix3d &get_littlegroup_projector(const int ik) const
+    {
+        return littlegroup_proj[ik];
+    }
+
     // Assemble this rank's wedge rows of the dense operator in the
     // multiplicity-symmetrized metric, S = M^{1/2} (Q_diag + W) M^{-1/2}
     // with M = diag(star multiplicity): slab is row-major
@@ -84,7 +100,7 @@ public:
     // Assembly runs over the stored L entries (3ph and, when enabled,
     // isotope), i.e. it costs one operator application. Used by SOLVER =
     // DBTE.
-    void assemble_dense_rows(const double *const *fb, const double *const *Qfin_loc, double *slab) const;
+    void assemble_dense_rows(const double *const *sqrt_occ, const double *const *Qfin_loc, double *slab) const;
 
     int get_nklocal() const
     {
@@ -124,7 +140,6 @@ private:
 
     bool with_isotope;
     std::vector<std::vector<IsotopeEntry>> L_iso; // [ikl * ns + s]
-    std::vector<double> L_iso_rowsum;
 
     void build_L_isotope();
 
