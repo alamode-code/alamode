@@ -8,443 +8,516 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-29 21:28+0900\n"
+"POT-Creation-Date: 2026-07-05 21:53+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: ../../source/almdir/inputalm.rst:8
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:8
 msgid "ALM: Input files"
 msgstr "ALM: 入力ファイル"
 
-#: ../../source/almdir/inputalm.rst:13
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:13
 msgid "Format of input files"
 msgstr "入力ファイルの書式"
 
-#: ../../source/almdir/inputalm.rst:15
-msgid "Each input file should consist of entry fields. Available entry fields are"
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:15
+msgid ""
+"Each input file should consist of entry fields. Available entry fields are"
 msgstr "各入力ファイルはエントリーフィールドから構成されます。利用可能なエントリーフィールドは"
 
-#: ../../source/almdir/inputalm.rst:18
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:18
 msgid ""
-"**&general**, **&interaction**, **&cutoff**, **&cell**, **&position**, "
-"and **&optimize**."
-msgstr "**&general**、**&interaction**、**&cutoff**、**&cell**、**&position**、および **&optimize** です。"
+"**&general**, **&interaction**, **&cutoff**, **&cell**, **&position**, and "
+"**&optimize**."
+msgstr ""
+"**&general**、**&interaction**、**&cutoff**、**&cell**、**&position**、および "
+"**&optimize** です。"
 
-#: ../../source/almdir/inputalm.rst:21
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:21
 msgid ""
 "Each entry field starts from the key label **&field** and ends at the "
 "terminate character \"/\". (This is equivalent to Fortran namelist.)"
-msgstr "各エントリーフィールドはキーラベル **&field** から始まり、終端文字 \"/\" で終わります。(これは Fortran のネームリストに相当します。)"
+msgstr ""
+"各エントリーフィールドはキーラベル **&field** から始まり、終端文字 \"/\" で終わります。(これは Fortran "
+"のネームリストに相当します。)"
 
-#: ../../source/almdir/inputalm.rst:23
-msgid "For example, &general entry field of program *alm* should be given like"
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:23
+msgid ""
+"For example, &general entry field of program *alm* should be given like"
 msgstr "例えば、プログラム *alm* の &general エントリーフィールドは次のように与えます"
 
-#: ../../source/almdir/inputalm.rst:33
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:33
 msgid ""
-"Multiple entries can be put in a single line. Also, characters put on the"
-" right of sharp (“#”) are neglected. Therefore, the above example is "
+"Multiple entries can be put in a single line. Also, characters put on the "
+"right of sharp (“#”) are neglected. Therefore, the above example is "
 "equivalent to the following::"
-msgstr "複数のエントリーを1行に書くこともできます。また、シャープ (“#”) の右側に書かれた文字は無視されます。したがって、上記の例は次のものと等価です::"
+msgstr ""
+"複数のエントリーを1行に書くこともできます。また、シャープ (“#”) の右側に書かれた文字は無視されます。したがって、上記の例は次のものと等価です::"
 
-#: ../../source/almdir/inputalm.rst:39
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:39
 msgid "Each variable must be given inside the appropriate entry field."
 msgstr "各変数は適切なエントリーフィールド内で与える必要があります。"
 
-#: ../../source/almdir/inputalm.rst:45
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:45
 msgid "List of supported input variables"
 msgstr "サポートされている入力変数の一覧"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid "**&general**"
 msgstr "**&general**"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
+msgid ":ref:`FCS_UNIT_OUTPUT <alm_fcs_unit_output>`"
+msgstr ":ref:`FCS_UNIT_OUTPUT <alm_fcs_unit_output>`"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
+msgid ":ref:`FORCE_UNIT <alm_force_unit>`"
+msgstr ":ref:`FORCE_UNIT <alm_force_unit>`"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`HESSIAN <alm_hessian>`"
 msgstr ":ref:`HESSIAN <alm_hessian>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`FC3_SHENGBTE <alm_fc3_shengbte>`"
 msgstr ":ref:`FC3_SHENGBTE <alm_fc3_shengbte>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`FCSYM_BASIS <alm_fcsym_basis>`"
 msgstr ":ref:`FCSYM_BASIS <alm_fcsym_basis>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`FC_ZERO_THR <alm_fc_zero_thr>`"
 msgstr ":ref:`FC_ZERO_THR <alm_fc_zero_thr>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`KD <alm_kd>`"
 msgstr ":ref:`KD <alm_kd>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
+msgid ":ref:`LENGTH_UNIT <alm_length_unit>`"
+msgstr ":ref:`LENGTH_UNIT <alm_length_unit>`"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`MAGMOM <alm_magmom>`"
 msgstr ":ref:`MAGMOM <alm_magmom>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`MODE <alm_mode>`"
 msgstr ":ref:`MODE <alm_mode>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NAT <alm_nat>`"
 msgstr ":ref:`NAT <alm_nat>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NMAXSAVE <alm_nmaxsave>`"
 msgstr ":ref:`NMAXSAVE <alm_nmaxsave>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NONCOLLINEAR <alm_noncollinear>`"
 msgstr ":ref:`NONCOLLINEAR <alm_noncollinear>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`PERIODIC <alm_periodic>`"
 msgstr ":ref:`PERIODIC <alm_periodic>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`PREFIX <alm_prefix>`"
 msgstr ":ref:`PREFIX <alm_prefix>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`PRIMCELL <alm_primcell>`"
 msgstr ":ref:`PRIMCELL <alm_primcell>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`PRINTSYM <alm_printsym>`"
 msgstr ":ref:`PRINTSYM <alm_printsym>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`STRUCTURE_FILE <alm_structure_file>`"
 msgstr ":ref:`STRUCTURE_FILE <alm_structure_file>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`SUPERCELL <alm_supercell>`"
 msgstr ":ref:`SUPERCELL <alm_supercell>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`TOLERANCE <alm_tolerance>`"
 msgstr ":ref:`TOLERANCE <alm_tolerance>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid "**&interaction**"
 msgstr "**&interaction**"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NBODY <alm_nbody>`"
 msgstr ":ref:`NBODY <alm_nbody>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NORDER <alm_norder>`"
 msgstr ":ref:`NORDER <alm_norder>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid "**&optimize**"
 msgstr "**&optimize**"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`CHUNKSIZE <alm_chunksize>`"
 msgstr ":ref:`CHUNKSIZE <alm_chunksize>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`CONV_TOL <alm_conv_tol>`"
 msgstr ":ref:`CONV_TOL <alm_conv_tol>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`CV <alm_cv>`"
 msgstr ":ref:`CV <alm_cv>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`CV_MINALPHA <alm_cv_minalpha>`"
 msgstr ":ref:`CV_MINALPHA <alm_cv_minalpha>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`DEBIAS_OLS <alm_debias_ols>`"
 msgstr ":ref:`DEBIAS_OLS <alm_debias_ols>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`DFSET <alm_dfset>`"
 msgstr ":ref:`DFSET <alm_dfset>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`DFSET_CV <alm_dfset_cv>`"
 msgstr ":ref:`DFSET_CV <alm_dfset_cv>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`ENET_DNORM <alm_enet_dnorm>`"
 msgstr ":ref:`ENET_DNORM <alm_enet_dnorm>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`FC2FIX <alm_fc2fix>`"
 msgstr ":ref:`FC2FIX <alm_fc2fix>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`FC3FIX <alm_fc3fix>`"
 msgstr ":ref:`FC3FIX <alm_fc3fix>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`ICONST <alm_iconst>`"
 msgstr ":ref:`ICONST <alm_iconst>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`L1_ALPHA <alm_l1_alpha>`"
 msgstr ":ref:`L1_ALPHA <alm_l1_alpha>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`L1_RATIO <alm_l1_ratio>`"
 msgstr ":ref:`L1_RATIO <alm_l1_ratio>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`L1_SOLVER <alm_l1_solver>`"
 msgstr ":ref:`L1_SOLVER <alm_l1_solver>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`LMODEL <alm_lmodel>`"
 msgstr ":ref:`LMODEL <alm_lmodel>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`MAXITER <alm_maxiter>`"
 msgstr ":ref:`MAXITER <alm_maxiter>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NDATA <alm_ndata>`"
 msgstr ":ref:`NDATA <alm_ndata>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NDATA_CV <alm_ndata_cv>`"
 msgstr ":ref:`NDATA_CV <alm_ndata_cv>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NSTART NEND <alm_nstart>`"
 msgstr ":ref:`NSTART NEND <alm_nstart>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`NSTART_CV NEND_CV <alm_nstart_cv>`"
 msgstr ":ref:`NSTART_CV NEND_CV <alm_nstart_cv>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`"
 msgstr ":ref:`PERIODIC_IMAGE_CONV<alm_periodic_image_conv>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`ROTAXIS <alm_rotaxis>`"
 msgstr ":ref:`ROTAXIS <alm_rotaxis>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`SKIP <alm_skip>`"
 msgstr ":ref:`SKIP <alm_skip>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`SOLUTION_PATH <alm_solution_path>`"
 msgstr ":ref:`SOLUTION_PATH <alm_solution_path>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`SPARSE <alm_sparse>`"
 msgstr ":ref:`SPARSE <alm_sparse>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`SPARSESOLVER <alm_sparsesolver>`"
 msgstr ":ref:`SPARSESOLVER <alm_sparsesolver>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`STANDARDIZE <alm_standardize>`"
 msgstr ":ref:`STANDARDIZE <alm_standardize>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`STOP_CRITERION <alm_stop_criterion>`"
 msgstr ":ref:`STOP_CRITERION <alm_stop_criterion>`"
 
-#: ../../source/almdir/inputalm.rst:1
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1
 msgid ":ref:`USE_CHOLESKY <alm_use_cholesky>`"
 msgstr ":ref:`USE_CHOLESKY <alm_use_cholesky>`"
 
-#: ../../source/almdir/inputalm.rst:71
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:72
 msgid "Description of input variables"
 msgstr "入力変数の説明"
 
-#: ../../source/almdir/inputalm.rst:74
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:75
 msgid "\"&general\"-field"
 msgstr "\"&general\" フィールド"
 
-#: ../../source/almdir/inputalm.rst:78
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:79
 msgid "**PREFIX**-tag : Job prefix to be used for names of output files"
 msgstr "**PREFIX** タグ: 出力ファイルの名前に使用されるジョブの接頭辞"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Default"
 msgstr "デフォルト"
 
-#: ../../source/almdir/inputalm.rst:80 ../../source/almdir/inputalm.rst:97
-#: ../../source/almdir/inputalm.rst:106 ../../source/almdir/inputalm.rst:115
-#: ../../source/almdir/inputalm.rst:125 ../../source/almdir/inputalm.rst:336
-#: ../../source/almdir/inputalm.rst:491 ../../source/almdir/inputalm.rst:501
-#: ../../source/almdir/inputalm.rst:521 ../../source/almdir/inputalm.rst:575
-#: ../../source/almdir/inputalm.rst:585 ../../source/almdir/inputalm.rst:603
-#: ../../source/almdir/inputalm.rst:836
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:81
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:98
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:107
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:116
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:126
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:370
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:525
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:535
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:555
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:609
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:619
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:637
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:870
 msgid "None"
 msgstr "なし"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Type"
 msgstr "型"
 
-#: ../../source/almdir/inputalm.rst:81 ../../source/almdir/inputalm.rst:98
-#: ../../source/almdir/inputalm.rst:126 ../../source/almdir/inputalm.rst:201
-#: ../../source/almdir/inputalm.rst:478 ../../source/almdir/inputalm.rst:492
-#: ../../source/almdir/inputalm.rst:576 ../../source/almdir/inputalm.rst:586
-#: ../../source/almdir/inputalm.rst:604 ../../source/almdir/inputalm.rst:654
-#: ../../source/almdir/inputalm.rst:767 ../../source/almdir/inputalm.rst:827
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:82
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:99
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:127
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:205
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:337
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:347
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:357
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:512
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:526
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:610
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:620
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:638
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:688
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:801
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:861
 msgid "String"
 msgstr "文字列"
 
-#: ../../source/almdir/inputalm.rst:87
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:88
 msgid "**MODE**-tag = optimize | suggest"
 msgstr "**MODE** タグ = optimize | suggest"
 
-#: ../../source/almdir/inputalm.rst:90
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:91
 msgid "optimize (:red:`>= 1.1.0`)"
 msgstr "optimize (:red:`>= 1.1.0`)"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Estimate harmonic and anharmonic IFCs."
 msgstr "調和および非調和の原子間力定数 (interatomic force constants; IFCs) を推定します。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "This mode requires an appropriate &optimize field."
 msgstr "このモードには適切な &optimize フィールドが必要です。"
 
-#: ../../source/almdir/inputalm.rst:93
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:94
 msgid "suggest"
 msgstr "suggest"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Suggests the displacement patterns necessary"
 msgstr "必要な変位パターンを提案します"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "to estimate harmonic and anharmonic IFCs."
 msgstr "調和および非調和の原子間力定数を推定するために。"
 
-#: ../../source/almdir/inputalm.rst:104
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:105
 msgid "**NAT**-tag : Number of atoms in the supercell"
 msgstr "**NAT** タグ: スーパーセル (supercell) 内の原子数"
 
-#: ../../source/almdir/inputalm.rst:107 ../../source/almdir/inputalm.rst:186
-#: ../../source/almdir/inputalm.rst:235 ../../source/almdir/inputalm.rst:267
-#: ../../source/almdir/inputalm.rst:282 ../../source/almdir/inputalm.rst:311
-#: ../../source/almdir/inputalm.rst:337 ../../source/almdir/inputalm.rst:502
-#: ../../source/almdir/inputalm.rst:512 ../../source/almdir/inputalm.rst:547
-#: ../../source/almdir/inputalm.rst:566 ../../source/almdir/inputalm.rst:624
-#: ../../source/almdir/inputalm.rst:679 ../../source/almdir/inputalm.rst:704
-#: ../../source/almdir/inputalm.rst:726 ../../source/almdir/inputalm.rst:816
-#: ../../source/almdir/inputalm.rst:837 ../../source/almdir/inputalm.rst:847
-#: ../../source/almdir/inputalm.rst:878 ../../source/almdir/inputalm.rst:906
-#: ../../source/almdir/inputalm.rst:924 ../../source/almdir/inputalm.rst:935
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:108
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:190
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:239
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:271
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:286
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:315
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:371
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:536
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:546
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:581
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:600
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:658
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:713
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:738
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:760
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:850
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:871
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:881
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:912
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:940
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:958
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:969
 msgid "Integer"
 msgstr "整数"
 
-#: ../../source/almdir/inputalm.rst:113
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:114
 msgid "**KD**-tag : List of atomic species"
 msgstr "**KD** タグ: 原子種のリスト"
 
-#: ../../source/almdir/inputalm.rst:116
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:117
 msgid "Array of strings"
 msgstr "文字列の配列"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Example"
 msgstr "例"
 
-#: ../../source/almdir/inputalm.rst:117
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:118
 msgid "In the case of GaAs, it should be ``KD = Ga As``."
 msgstr "GaAs の場合、``KD = Ga As`` とします。"
 
-#: ../../source/almdir/inputalm.rst:123
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:124
 msgid "**STRUCTURE_FILE**-tag : File containing the input structure"
 msgstr "**STRUCTURE_FILE** タグ: 入力構造を含むファイル"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Description"
 msgstr "説明"
 
-#: ../../source/almdir/inputalm.rst:127
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:128
 msgid ""
-"When this tag is given, *alm* reads the lattice vectors, atomic species, "
-"and atomic coordinates from the specified file in the VASP POSCAR format."
-" In this case, the ``&cell`` and ``&position`` fields are ignored, and "
-"``NAT`` and ``KD`` are inferred from the structure file."
-msgstr "このタグが与えられると、*alm* は指定された VASP POSCAR 形式のファイルから格子ベクトル、原子種、原子座標を読み込みます。この場合、``&cell`` および ``&position`` フィールドは無視され、``NAT`` と ``KD`` は構造ファイルから推定されます。"
+"When this tag is given, *alm* reads the lattice vectors, atomic species, and"
+" atomic coordinates from the specified file in the VASP POSCAR format. In "
+"this case, the ``&cell`` and ``&position`` fields are ignored, and ``NAT`` "
+"and ``KD`` are inferred from the structure file."
+msgstr ""
+"このタグが与えられると、*alm* は指定された VASP POSCAR "
+"形式のファイルから格子ベクトル、原子種、原子座標を読み込みます。この場合、``&cell`` および ``&position`` "
+"フィールドは無視され、``NAT`` と ``KD`` は構造ファイルから推定されます。"
 
-#: ../../source/almdir/inputalm.rst:129
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:130
 msgid ""
 "The POSCAR file may use direct or Cartesian coordinates. A ``Selective "
-"dynamics`` line is accepted, but the selective-dynamics flags themselves "
-"are ignored."
-msgstr "POSCAR ファイルは direct 座標または Cartesian 座標のいずれを使用しても構いません。``Selective dynamics`` 行は受け付けられますが、selective-dynamics のフラグ自体は無視されます。"
+"dynamics`` line is accepted, but the selective-dynamics flags themselves are"
+" ignored."
+msgstr ""
+"POSCAR ファイルは direct 座標または Cartesian 座標のいずれを使用しても構いません。``Selective dynamics``"
+" 行は受け付けられますが、selective-dynamics のフラグ自体は無視されます。"
 
-#: ../../source/almdir/inputalm.rst:135
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:133
+msgid ""
+"A POSCAR is always interpreted in Angstrom (the VASP convention), "
+"independent of the :ref:`LENGTH_UNIT <alm_length_unit>` tag."
+msgstr ""
+"POSCAR は :ref:`LENGTH_UNIT <alm_length_unit>` タグとは無関係に、常に Angstrom 単位 (VASP "
+"の規約) として解釈されます。"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:139
 msgid ""
 "**SUPERCELL**-tag : Transformation matrix from the input cell to the "
 "supercell"
 msgstr "**SUPERCELL** タグ: 入力セルからスーパーセルへの変換行列"
 
-#: ../../source/almdir/inputalm.rst:137 ../../source/almdir/inputalm.rst:154
-#: ../../source/almdir/inputalm.rst:182 ../../source/almdir/inputalm.rst:252
-#: ../../source/almdir/inputalm.rst:278 ../../source/almdir/inputalm.rst:307
-#: ../../source/almdir/inputalm.rst:533 ../../source/almdir/inputalm.rst:558
-#: ../../source/almdir/inputalm.rst:565 ../../source/almdir/inputalm.rst:620
-#: ../../source/almdir/inputalm.rst:675 ../../source/almdir/inputalm.rst:873
-#: ../../source/almdir/inputalm.rst:877 ../../source/almdir/inputalm.rst:902
-#: ../../source/almdir/inputalm.rst:917
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:141
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:158
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:186
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:256
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:282
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:311
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:567
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:592
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:599
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:654
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:709
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:907
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:911
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:936
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:951
 msgid "1"
 msgstr "1"
 
-#: ../../source/almdir/inputalm.rst:138
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:142
 msgid "Integer matrix"
 msgstr "整数行列"
 
-#: ../../source/almdir/inputalm.rst:139
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:143
 msgid ""
 "This tag specifies the target supercell as :math:`(\\boldsymbol{a}_{s}, "
 "\\boldsymbol{b}_{s}, \\boldsymbol{c}_{s})^{T} = M "
 "(\\boldsymbol{a}_{\\mathrm{in}}, \\boldsymbol{b}_{\\mathrm{in}}, "
-"\\boldsymbol{c}_{\\mathrm{in}})^{T}`. If the input structure is already "
-"the supercell used for the force calculations, keep the default value."
-msgstr "このタグは対象のスーパーセルを :math:`(\\boldsymbol{a}_{s}, \\boldsymbol{b}_{s}, \\boldsymbol{c}_{s})^{T} = M (\\boldsymbol{a}_{\\mathrm{in}}, \\boldsymbol{b}_{\\mathrm{in}}, \\boldsymbol{c}_{\\mathrm{in}})^{T}` として指定します。入力構造がすでに力の計算に用いるスーパーセルである場合は、デフォルト値のままにしてください。"
+"\\boldsymbol{c}_{\\mathrm{in}})^{T}`. If the input structure is already the "
+"supercell used for the force calculations, keep the default value."
+msgstr ""
+"このタグは対象のスーパーセルを :math:`(\\boldsymbol{a}_{s}, \\boldsymbol{b}_{s}, "
+"\\boldsymbol{c}_{s})^{T} = M (\\boldsymbol{a}_{\\mathrm{in}}, "
+"\\boldsymbol{b}_{\\mathrm{in}}, \\boldsymbol{c}_{\\mathrm{in}})^{T}` "
+"として指定します。入力構造がすでに力の計算に用いるスーパーセルである場合は、デフォルト値のままにしてください。"
 
-#: ../../source/almdir/inputalm.rst:144
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:148
 msgid ""
-"The matrix can be written as one, three, or nine entries. One entry ``n``"
-" means ``n n n``; three entries ``n1 n2 n3`` mean a diagonal matrix; nine"
-" entries give the full matrix in row-major order. The determinant must be"
-" a nonzero integer."
-msgstr "行列は1個、3個、または9個の要素として書くことができます。1個の要素 ``n`` は ``n n n`` を意味します。3個の要素 ``n1 n2 n3`` は対角行列を意味します。9個の要素は行優先順 (row-major) で完全な行列を与えます。行列式は非ゼロの整数でなければなりません。"
+"The matrix can be written as one, three, or nine entries. One entry ``n`` "
+"means ``n n n``; three entries ``n1 n2 n3`` mean a diagonal matrix; nine "
+"entries give the full matrix in row-major order. The determinant must be a "
+"nonzero integer."
+msgstr ""
+"行列は1個、3個、または9個の要素として書くことができます。1個の要素 ``n`` は ``n n n`` を意味します。3個の要素 ``n1 n2 "
+"n3`` は対角行列を意味します。9個の要素は行優先順 (row-major) で完全な行列を与えます。行列式は非ゼロの整数でなければなりません。"
 
-#: ../../source/almdir/inputalm.rst:146
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:150
 msgid ""
 "``SUPERCELL = 2 2 2`` creates a 2x2x2 supercell from the input cell. "
 "``SUPERCELL = 2 0 0 0 2 0 0 0 1`` creates a 2x2x1 supercell."
-msgstr "``SUPERCELL = 2 2 2`` は入力セルから 2x2x2 のスーパーセルを作成します。``SUPERCELL = 2 0 0 0 2 0 0 0 1`` は 2x2x1 のスーパーセルを作成します。"
+msgstr ""
+"``SUPERCELL = 2 2 2`` は入力セルから 2x2x2 のスーパーセルを作成します。``SUPERCELL = 2 0 0 0 2 0 "
+"0 0 1`` は 2x2x1 のスーパーセルを作成します。"
 
-#: ../../source/almdir/inputalm.rst:152
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:156
 msgid ""
 "**PRIMCELL**-tag : Transformation matrix from the input cell to the "
 "primitive cell"
 msgstr "**PRIMCELL** タグ: 入力セルから基本セル (primitive cell) への変換行列"
 
-#: ../../source/almdir/inputalm.rst:155
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:159
 msgid "Matrix or ``Auto``"
 msgstr "行列または ``Auto``"
 
-#: ../../source/almdir/inputalm.rst:156
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:160
 msgid ""
 "This tag specifies the primitive cell as :math:`(\\boldsymbol{a}_{p}, "
 "\\boldsymbol{b}_{p}, \\boldsymbol{c}_{p})^{T} = M "
@@ -453,1400 +526,1720 @@ msgid ""
 "three, or nine entries, using the same convention as ``SUPERCELL``. "
 "Fractional entries such as ``1/2`` are accepted. The determinant of the "
 "inverse matrix must be a nonzero integer."
-msgstr "このタグは基本セルを :math:`(\\boldsymbol{a}_{p}, \\boldsymbol{b}_{p}, \\boldsymbol{c}_{p})^{T} = M (\\boldsymbol{a}_{\\mathrm{in}}, \\boldsymbol{b}_{\\mathrm{in}}, \\boldsymbol{c}_{\\mathrm{in}})^{T}` として指定します。行列は ``SUPERCELL`` と同じ規則を用いて1個、3個、または9個の要素として書くことができます。``1/2`` のような分数の要素も受け付けられます。逆行列の行列式は非ゼロの整数でなければなりません。"
+msgstr ""
+"このタグは基本セルを :math:`(\\boldsymbol{a}_{p}, \\boldsymbol{b}_{p}, "
+"\\boldsymbol{c}_{p})^{T} = M (\\boldsymbol{a}_{\\mathrm{in}}, "
+"\\boldsymbol{b}_{\\mathrm{in}}, \\boldsymbol{c}_{\\mathrm{in}})^{T}` "
+"として指定します。行列は ``SUPERCELL`` と同じ規則を用いて1個、3個、または9個の要素として書くことができます。``1/2`` "
+"のような分数の要素も受け付けられます。逆行列の行列式は非ゼロの整数でなければなりません。"
 
-#: ../../source/almdir/inputalm.rst:161
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:165
 msgid ""
-"``PRIMCELL = Auto`` uses spglib to detect the primitive cell from the "
-"input structure. This is useful when the input structure is a "
-"conventional cell or a supercell and the primitive-cell transformation is"
-" not obvious."
-msgstr "``PRIMCELL = Auto`` は spglib を用いて入力構造から基本セルを検出します。これは、入力構造が慣用セル (conventional cell) やスーパーセルであり、基本セルへの変換が自明でない場合に便利です。"
+"``PRIMCELL = Auto`` uses spglib to detect the primitive cell from the input "
+"structure. This is useful when the input structure is a conventional cell or"
+" a supercell and the primitive-cell transformation is not obvious."
+msgstr ""
+"``PRIMCELL = Auto`` は spglib を用いて入力構造から基本セルを検出します。これは、入力構造が慣用セル "
+"(conventional cell) やスーパーセルであり、基本セルへの変換が自明でない場合に便利です。"
 
-#: ../../source/almdir/inputalm.rst:163
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:167
 msgid ""
 "``PRIMCELL = 1/2 0 0 0 1/2 0 0 0 1/2`` defines a primitive cell whose "
 "lattice vectors are one half of the corresponding input-cell lattice "
 "vectors."
-msgstr "``PRIMCELL = 1/2 0 0 0 1/2 0 0 0 1/2`` は、格子ベクトルが対応する入力セルの格子ベクトルの半分である基本セルを定義します。"
+msgstr ""
+"``PRIMCELL = 1/2 0 0 0 1/2 0 0 0 1/2`` "
+"は、格子ベクトルが対応する入力セルの格子ベクトルの半分である基本セルを定義します。"
 
-#: ../../source/almdir/inputalm.rst:169
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:173
 msgid "TOLERANCE-tag : Tolerance for finding symmetry operations"
 msgstr "TOLERANCE タグ: 対称操作を見つけるための許容誤差"
 
-#: ../../source/almdir/inputalm.rst:171
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:175
 msgid "1.0e-3"
 msgstr "1.0e-3"
 
-#: ../../source/almdir/inputalm.rst:172 ../../source/almdir/inputalm.rst:320
-#: ../../source/almdir/inputalm.rst:736 ../../source/almdir/inputalm.rst:751
-#: ../../source/almdir/inputalm.rst:785 ../../source/almdir/inputalm.rst:889
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:176
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:324
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:770
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:785
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:819
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:923
 msgid "Double"
 msgstr "倍精度実数"
 
-#: ../../source/almdir/inputalm.rst:178
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:182
 msgid "PRINTSYM-tag = 0 | 1"
 msgstr "PRINTSYM タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:181 ../../source/almdir/inputalm.rst:185
-#: ../../source/almdir/inputalm.rst:234 ../../source/almdir/inputalm.rst:249
-#: ../../source/almdir/inputalm.rst:277 ../../source/almdir/inputalm.rst:281
-#: ../../source/almdir/inputalm.rst:306 ../../source/almdir/inputalm.rst:310
-#: ../../source/almdir/inputalm.rst:532 ../../source/almdir/inputalm.rst:557
-#: ../../source/almdir/inputalm.rst:619 ../../source/almdir/inputalm.rst:623
-#: ../../source/almdir/inputalm.rst:674 ../../source/almdir/inputalm.rst:678
-#: ../../source/almdir/inputalm.rst:795 ../../source/almdir/inputalm.rst:815
-#: ../../source/almdir/inputalm.rst:872 ../../source/almdir/inputalm.rst:901
-#: ../../source/almdir/inputalm.rst:905 ../../source/almdir/inputalm.rst:916
-#: ../../source/almdir/inputalm.rst:923
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:185
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:189
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:238
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:253
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:281
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:285
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:310
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:314
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:566
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:591
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:653
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:657
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:708
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:712
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:829
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:849
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:906
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:935
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:939
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:950
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:957
 msgid "0"
 msgstr "0"
 
-#: ../../source/almdir/inputalm.rst:181
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:185
 msgid "Symmetry operations won’t be saved in “SYMM_INFO”"
 msgstr "対称操作は “SYMM_INFO” に保存されません"
 
-#: ../../source/almdir/inputalm.rst:182
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:186
 msgid "Symmetry operations will be saved in “SYMM_INFO”"
 msgstr "対称操作は “SYMM_INFO” に保存されます"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "type"
 msgstr "型"
 
-#: ../../source/almdir/inputalm.rst:192
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:196
 msgid "FCSYM_BASIS-tag = Cartesian | Lattice"
 msgstr "FCSYM_BASIS タグ = Cartesian | Lattice"
 
-#: ../../source/almdir/inputalm.rst:195
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:199
 msgid "Cartesian, C"
 msgstr "Cartesian, C"
 
-#: ../../source/almdir/inputalm.rst:195
-msgid "Symmetry reduction of force constant is performed in the Cartesian basis"
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:199
+msgid ""
+"Symmetry reduction of force constant is performed in the Cartesian basis"
 msgstr "力定数 (force constant) の対称性による簡約が Cartesian 基底で行われます"
 
-#: ../../source/almdir/inputalm.rst:197
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:201
 msgid "Lattice, L"
 msgstr "Lattice, L"
 
-#: ../../source/almdir/inputalm.rst:197
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:201
 #, python-brace-format
 msgid ""
 "Symmetry reduction of force constant is performed in the "
 ":math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` basis"
-msgstr "力定数の対称性による簡約が :math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` 基底で行われます"
+msgstr ""
+"力定数の対称性による簡約が :math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, "
+"\\boldsymbol{a}_3` 基底で行われます"
 
-#: ../../source/almdir/inputalm.rst:200
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:204
 msgid "Lattice"
 msgstr "Lattice"
 
-#: ../../source/almdir/inputalm.rst:202
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:206
 msgid ""
-"The calculation results should not depend on the choice of "
-"``FCSYM_BASIS`` when ``LMODEL = ols``. For other regression methods "
-"(enet, adaptive LASSO), an optimal value of the ``L1_ALPHA`` changes when"
-" you change the ``FCSYM_BASIS`` option."
-msgstr "``LMODEL = ols`` の場合、計算結果は ``FCSYM_BASIS`` の選択に依存しないはずです。その他の回帰手法 (enet、adaptive LASSO) では、``FCSYM_BASIS`` オプションを変更すると ``L1_ALPHA`` の最適値が変わります。"
+"The calculation results should not depend on the choice of ``FCSYM_BASIS`` "
+"when ``LMODEL = ols``. For other regression methods (enet, adaptive LASSO), "
+"an optimal value of the ``L1_ALPHA`` changes when you change the "
+"``FCSYM_BASIS`` option."
+msgstr ""
+"``LMODEL = ols`` の場合、計算結果は ``FCSYM_BASIS`` の選択に依存しないはずです。その他の回帰手法 "
+"(enet、adaptive LASSO) では、``FCSYM_BASIS`` オプションを変更すると ``L1_ALPHA`` "
+"の最適値が変わります。"
 
-#: ../../source/almdir/inputalm.rst:204
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:208
 msgid ""
-"In some cases, ``FCSYM_BASIS = Lattice`` is more stable and efficient. In"
-" particular, we recommend setting ``FCSYM_BASIS = Lattice`` for hexagonal"
-" systems. If a calculation with ``FCSYM_BASIS = Lattice`` is slow, please"
-" switch to ``FCSYM_BASIS = Cartesian``."
-msgstr "場合によっては、``FCSYM_BASIS = Lattice`` の方が安定で効率的です。特に、六方晶系には ``FCSYM_BASIS = Lattice`` を設定することを推奨します。``FCSYM_BASIS = Lattice`` での計算が遅い場合は、``FCSYM_BASIS = Cartesian`` に切り替えてください。"
+"In some cases, ``FCSYM_BASIS = Lattice`` is more stable and efficient. In "
+"particular, we recommend setting ``FCSYM_BASIS = Lattice`` for hexagonal "
+"systems. If a calculation with ``FCSYM_BASIS = Lattice`` is slow, please "
+"switch to ``FCSYM_BASIS = Cartesian``."
+msgstr ""
+"場合によっては、``FCSYM_BASIS = Lattice`` の方が安定で効率的です。特に、六方晶系には ``FCSYM_BASIS = "
+"Lattice`` を設定することを推奨します。``FCSYM_BASIS = Lattice`` での計算が遅い場合は、``FCSYM_BASIS ="
+" Cartesian`` に切り替えてください。"
 
-#: ../../source/almdir/inputalm.rst:206
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:210
 msgid ""
-"For more details about the symmetry reduction of force constants, please "
-"see :ref:`here <IFC_crystal_symmetry>`."
+"For more details about the symmetry reduction of force constants, please see"
+" :ref:`here <IFC_crystal_symmetry>`."
 msgstr "力定数の対称性による簡約の詳細については、:ref:`here <IFC_crystal_symmetry>` を参照してください。"
 
-#: ../../source/almdir/inputalm.rst:210
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:214
 #, python-brace-format
 msgid ""
 "When ``FCSYM_BASIS = Lattice``, the basis of force constants saved in "
 "``PREFIX``.fcs becomes the :math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, "
-"\\boldsymbol{a}_3` basis. Hence, to compare the values of force constants"
-" saved in ``PREFIX``.fcs, you will have to change their basis to the "
+"\\boldsymbol{a}_3` basis. Hence, to compare the values of force constants "
+"saved in ``PREFIX``.fcs, you will have to change their basis to the "
 "Cartesian basis manually. The basis of force constants saved in "
 "``PREFIX``.xml is Cartesian irrespective of the ``FCSYM_BASIS`` value."
-msgstr "``FCSYM_BASIS = Lattice`` の場合、``PREFIX``.fcs に保存される力定数の基底は :math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` 基底になります。したがって、``PREFIX``.fcs に保存された力定数の値を比較するには、それらの基底を手動で Cartesian 基底に変換する必要があります。``PREFIX``.xml に保存される力定数の基底は、``FCSYM_BASIS`` の値によらず Cartesian です。"
+msgstr ""
+"``FCSYM_BASIS = Lattice`` の場合、``PREFIX``.fcs に保存される力定数の基底は "
+":math:`\\boldsymbol{a}_1, \\boldsymbol{a}_2, \\boldsymbol{a}_3` "
+"基底になります。したがって、``PREFIX``.fcs に保存された力定数の値を比較するには、それらの基底を手動で Cartesian "
+"基底に変換する必要があります。``PREFIX``.xml に保存される力定数の基底は、``FCSYM_BASIS`` の値によらず Cartesian"
+" です。"
 
-#: ../../source/almdir/inputalm.rst:212
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:216
 msgid ""
-"Also, imposing the constraints for rotational invariance with "
-"``FCSYM_BASIS = Lattice`` is not supported. Therefore, if you want to "
-"apply the constraints for rotational invariance, please use ``FCSYM_BASIS"
-" = Cartesian``."
-msgstr "また、``FCSYM_BASIS = Lattice`` で回転不変性の制約を課すことはサポートされていません。したがって、回転不変性の制約を適用したい場合は、``FCSYM_BASIS = Cartesian`` を使用してください。"
+"Also, imposing the constraints for rotational invariance with ``FCSYM_BASIS "
+"= Lattice`` is not supported. Therefore, if you want to apply the "
+"constraints for rotational invariance, please use ``FCSYM_BASIS = "
+"Cartesian``."
+msgstr ""
+"また、``FCSYM_BASIS = Lattice`` "
+"で回転不変性の制約を課すことはサポートされていません。したがって、回転不変性の制約を適用したい場合は、``FCSYM_BASIS = "
+"Cartesian`` を使用してください。"
 
-#: ../../source/almdir/inputalm.rst:218
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:222
 msgid "MAGMOM-tag : List of magnetic moments"
 msgstr "MAGMOM タグ: 磁気モーメントのリスト"
 
-#: ../../source/almdir/inputalm.rst:220
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:224
 msgid ""
 "0 ... 0 (``NAT`` entries when ``NONCOLLINEAR = 0``, 3x\\ ``NAT`` entries "
 "when ``NONCOLLINEAR = 1``.)"
-msgstr "0 ... 0 (``NONCOLLINEAR = 0`` のとき ``NAT`` 個の要素、``NONCOLLINEAR = 1`` のとき 3x\\ ``NAT`` 個の要素。)"
+msgstr ""
+"0 ... 0 (``NONCOLLINEAR = 0`` のとき ``NAT`` 個の要素、``NONCOLLINEAR = 1`` のとき 3x\\"
+" ``NAT`` 個の要素。)"
 
-#: ../../source/almdir/inputalm.rst:221
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:225
 msgid "Array of double"
 msgstr "倍精度実数の配列"
 
-#: ../../source/almdir/inputalm.rst:222
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:226
 msgid ""
-"When a supercell containts 64 atoms and the local magnetic moments of the"
-" first 32 atoms are up and those of the last 32 atoms are down, please "
-"set the ``MAGMOM`` tag as ``MAGMOM = 32*1 32*-1``. The wildcard (``*``) "
-"is available when ``NONCOLLINEAR = 0``. For the noncollinear case "
-"(``NONCOLLINEAR = 1``), the wildcard is not supported. So, please give "
-"the magnetic moment explicitly as ``MAGMOM = 0 0 1 0 0 1 0 0 1 ... 0 0 -1"
-" 0 0 -1 ...`` (3\\ :math:`\\times`\\ ``NAT`` entries in *one line*)."
-msgstr "スーパーセルが 64 原子を含み、最初の 32 原子の局所磁気モーメントが上向き、最後の 32 原子のものが下向きの場合、``MAGMOM`` タグを ``MAGMOM = 32*1 32*-1`` と設定してください。ワイルドカード (``*``) は ``NONCOLLINEAR = 0`` のときに利用できます。非共線 (noncollinear) の場合 (``NONCOLLINEAR = 1``) はワイルドカードはサポートされていません。そのため、磁気モーメントを ``MAGMOM = 0 0 1 0 0 1 0 0 1 ... 0 0 -1 0 0 -1 ...`` のように明示的に与えてください (*1行に* 3\\ :math:`\\times`\\ ``NAT`` 個の要素)。"
+"When a supercell containts 64 atoms and the local magnetic moments of the "
+"first 32 atoms are up and those of the last 32 atoms are down, please set "
+"the ``MAGMOM`` tag as ``MAGMOM = 32*1 32*-1``. The wildcard (``*``) is "
+"available when ``NONCOLLINEAR = 0``. For the noncollinear case "
+"(``NONCOLLINEAR = 1``), the wildcard is not supported. So, please give the "
+"magnetic moment explicitly as ``MAGMOM = 0 0 1 0 0 1 0 0 1 ... 0 0 -1 0 0 -1"
+" ...`` (3\\ :math:`\\times`\\ ``NAT`` entries in *one line*)."
+msgstr ""
+"スーパーセルが 64 原子を含み、最初の 32 原子の局所磁気モーメントが上向き、最後の 32 原子のものが下向きの場合、``MAGMOM`` タグを "
+"``MAGMOM = 32*1 32*-1`` と設定してください。ワイルドカード (``*``) は ``NONCOLLINEAR = 0`` "
+"のときに利用できます。非共線 (noncollinear) の場合 (``NONCOLLINEAR = 1``) "
+"はワイルドカードはサポートされていません。そのため、磁気モーメントを ``MAGMOM = 0 0 1 0 0 1 0 0 1 ... 0 0 -1 0"
+" 0 -1 ...`` のように明示的に与えてください (*1行に* 3\\ :math:`\\times`\\ ``NAT`` 個の要素)。"
 
-#: ../../source/almdir/inputalm.rst:226
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:230
 msgid ""
-"``MAGMOM`` information is used only for generating space group "
-"operations. So, the values of the magnetic moment are somewhat arbitrary."
-" For the 4\\ :math:`\\times` 4\\ :math:`\\times` 4 supercell of "
-"ferromagnetic bcc Fe (64 atoms), for instance, ``MAGMOM = 64*1`` and "
-"``MAGMOM = 64*2`` give the same results. By contrast, ``MAGMOM = 32*1 "
-"32*2`` of course gives a different result because it breaks the symmetry "
-"of the original lattice."
-msgstr "``MAGMOM`` の情報は空間群操作の生成にのみ使用されます。そのため、磁気モーメントの値はある程度任意です。例えば、強磁性 bcc Fe の 4\\ :math:`\\times` 4\\ :math:`\\times` 4 スーパーセル (64 原子) では、``MAGMOM = 64*1`` と ``MAGMOM = 64*2`` は同じ結果を与えます。対照的に、``MAGMOM = 32*1 32*2`` はもちろん異なる結果を与えます。なぜなら、元の格子の対称性を破るからです。"
+"``MAGMOM`` information is used only for generating space group operations. "
+"So, the values of the magnetic moment are somewhat arbitrary. For the 4\\ "
+":math:`\\times` 4\\ :math:`\\times` 4 supercell of ferromagnetic bcc Fe (64 "
+"atoms), for instance, ``MAGMOM = 64*1`` and ``MAGMOM = 64*2`` give the same "
+"results. By contrast, ``MAGMOM = 32*1 32*2`` of course gives a different "
+"result because it breaks the symmetry of the original lattice."
+msgstr ""
+"``MAGMOM`` の情報は空間群操作の生成にのみ使用されます。そのため、磁気モーメントの値はある程度任意です。例えば、強磁性 bcc Fe の "
+"4\\ :math:`\\times` 4\\ :math:`\\times` 4 スーパーセル (64 原子) では、``MAGMOM = "
+"64*1`` と ``MAGMOM = 64*2`` は同じ結果を与えます。対照的に、``MAGMOM = 32*1 32*2`` "
+"はもちろん異なる結果を与えます。なぜなら、元の格子の対称性を破るからです。"
 
-#: ../../source/almdir/inputalm.rst:232
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:236
 msgid "NONCOLLINEAR-tag = 0 | 1"
 msgstr "NONCOLLINEAR タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:236
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:240
 msgid ""
 "When ``NONCOLLINEAR = 1``, the code accepts a noncollinear magnetic "
-"structure as an input to the ``MAGMOM`` tag and uses it for generating "
-"space group operations. The spin quantization axis is fixed to the "
-"(0,0,1) direction of the Cartesian axis."
-msgstr "``NONCOLLINEAR = 1`` の場合、コードは ``MAGMOM`` タグへの入力として非共線磁気構造を受け付け、それを空間群操作の生成に使用します。スピン量子化軸は Cartesian 軸の (0,0,1) 方向に固定されます。"
+"structure as an input to the ``MAGMOM`` tag and uses it for generating space"
+" group operations. The spin quantization axis is fixed to the (0,0,1) "
+"direction of the Cartesian axis."
+msgstr ""
+"``NONCOLLINEAR = 1`` の場合、コードは ``MAGMOM`` "
+"タグへの入力として非共線磁気構造を受け付け、それを空間群操作の生成に使用します。スピン量子化軸は Cartesian 軸の (0,0,1) "
+"方向に固定されます。"
 
-#: ../../source/almdir/inputalm.rst:240
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:244
 msgid "Still experimental. Please use with care."
 msgstr "まだ実験的な機能です。注意してご利用ください。"
 
-#: ../../source/almdir/inputalm.rst:246
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:250
 msgid "PERIODIC-tag = PERIODIC[1], PERIODIC[2], PERIODIC[3]"
 msgstr "PERIODIC タグ = PERIODIC[1], PERIODIC[2], PERIODIC[3]"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Do not consider periodic boundary conditions when"
 msgstr "周期境界条件を考慮しません。対象は"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "searching for interacting atoms."
 msgstr "相互作用する原子の探索です。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Consider periodic boundary conditions when"
 msgstr "周期境界条件を考慮します。対象は"
 
-#: ../../source/almdir/inputalm.rst:256
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:260
 msgid "1 1 1"
 msgstr "1 1 1"
 
-#: ../../source/almdir/inputalm.rst:257 ../../source/almdir/inputalm.rst:348
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:261
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:382
 msgid "Array of integers"
 msgstr "整数の配列"
 
-#: ../../source/almdir/inputalm.rst:258
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:262
 #, python-brace-format
 msgid ""
 "This tag is useful for generating interacting atoms in low dimensional "
-"systems. When ``PERIODIC[i]`` is zero, periodic boundary condition is "
-"turned off along the direction of the lattice vector "
-":math:`\\boldsymbol{a}_{i}`."
-msgstr "このタグは低次元系で相互作用する原子を生成する際に便利です。``PERIODIC[i]`` がゼロの場合、格子ベクトル :math:`\\boldsymbol{a}_{i}` の方向に沿った周期境界条件がオフになります。"
+"systems. When ``PERIODIC[i]`` is zero, periodic boundary condition is turned"
+" off along the direction of the lattice vector :math:`\\boldsymbol{a}_{i}`."
+msgstr ""
+"このタグは低次元系で相互作用する原子を生成する際に便利です。``PERIODIC[i]`` がゼロの場合、格子ベクトル "
+":math:`\\boldsymbol{a}_{i}` の方向に沿った周期境界条件がオフになります。"
 
-#: ../../source/almdir/inputalm.rst:264
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:268
 msgid ""
-"NMAXSAVE-tag : The maximum order of anharmonic force constants printed "
-"out in ``PREFIX``.xml"
-msgstr "NMAXSAVE タグ: ``PREFIX``.xml に出力される非調和力定数 (anharmonic force constants) の最大次数"
+"NMAXSAVE-tag : The maximum order of anharmonic force constants printed out "
+"in ``PREFIX``.xml"
+msgstr ""
+"NMAXSAVE タグ: ``PREFIX``.xml に出力される非調和力定数 (anharmonic force constants) の最大次数"
 
-#: ../../source/almdir/inputalm.rst:266
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:270
 msgid "min(5, ``NORDER``)"
 msgstr "min(5, ``NORDER``)"
 
-#: ../../source/almdir/inputalm.rst:268
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:272
 msgid ""
-"If your model includes anharmonic terms up to the sixth-order (``NORDER ="
-" 5``), but you want to avoid printing out the fifth-order and sixth-order"
-" IFCs in ``PREFIX``.xml, please set ``NMAXSAVE = 3``."
-msgstr "モデルが6次まで (``NORDER = 5``) の非調和項を含むが、5次および6次の原子間力定数を ``PREFIX``.xml に出力したくない場合は、``NMAXSAVE = 3`` を設定してください。"
+"If your model includes anharmonic terms up to the sixth-order (``NORDER = "
+"5``), but you want to avoid printing out the fifth-order and sixth-order "
+"IFCs in ``PREFIX``.xml, please set ``NMAXSAVE = 3``."
+msgstr ""
+"モデルが6次まで (``NORDER = 5``) の非調和項を含むが、5次および6次の原子間力定数を ``PREFIX``.xml "
+"に出力したくない場合は、``NMAXSAVE = 3`` を設定してください。"
 
-#: ../../source/almdir/inputalm.rst:274
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:278
 msgid "HESSIAN-tag = 0 | 1"
 msgstr "HESSIAN タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:277
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:281
 msgid "Do not save the Hessian matrix"
 msgstr "ヘッセ行列を保存しません"
 
-#: ../../source/almdir/inputalm.rst:278
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:282
 msgid "Save the entire Hessian matrix of the supercell as PREFIX.hessian."
 msgstr "スーパーセルのヘッセ行列全体を PREFIX.hessian として保存します。"
 
-#: ../../source/almdir/inputalm.rst:303
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:307
 msgid "FC3_SHENGBTE-tag = 0 | 1"
 msgstr "FC3_SHENGBTE タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Do not save the third-order force constants for ShengBTE code"
 msgstr "ShengBTE コード用の3次力定数を保存しません"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "Save the third-order force constants for the ShengBTE code in "
 "PREFIX.FORCE_CONSTANT_3RD."
 msgstr "ShengBTE コード用の3次力定数を PREFIX.FORCE_CONSTANT_3RD に保存します。"
 
-#: ../../source/almdir/inputalm.rst:317
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:321
 msgid ""
-"FC_ZERO_THR-tag : Threshold value used when trimming force constants when"
-" creating PREFIX.xml"
+"FC_ZERO_THR-tag : Threshold value used when trimming force constants when "
+"creating PREFIX.xml"
 msgstr "FC_ZERO_THR タグ: PREFIX.xml を作成する際に力定数を切り捨てるために使用される閾値"
 
-#: ../../source/almdir/inputalm.rst:319
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:323
 msgid "1.0e-12"
 msgstr "1.0e-12"
 
-#: ../../source/almdir/inputalm.rst:321
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:325
 msgid ""
-"``FC_ZERO_THR`` defines the threshold of force constants to be saved in "
-"an XML file. If the absolute value of a force constant is smaller than "
+"``FC_ZERO_THR`` defines the threshold of force constants to be saved in an "
+"XML file. If the absolute value of a force constant is smaller than "
 "``FC_ZERO_THR``, it will NOT be printed out."
-msgstr "``FC_ZERO_THR`` は XML ファイルに保存される力定数の閾値を定義します。力定数の絶対値が ``FC_ZERO_THR`` より小さい場合、それは出力されません。"
+msgstr ""
+"``FC_ZERO_THR`` は XML ファイルに保存される力定数の閾値を定義します。力定数の絶対値が ``FC_ZERO_THR`` "
+"より小さい場合、それは出力されません。"
 
-#: ../../source/almdir/inputalm.rst:324
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:328
 msgid ""
 "If the harmonic force constants are calculated using a model potential "
 "(e.g., classical FF) where the interaction becomes zero beyond a certain "
-"cutoff radius, the default value of ``FC_ZERO_THR`` may raise a warning "
-"when creating a renormalized harmonic force constant file using "
-"``tools/dfc2``. This issue may be resolved by using a smaller "
-"``FC_ZERO_THR``, say ``FC_ZERO_THR = 1.0e-15``. The force constants that "
-"become exactly zero due to symmetry and acoustic sum rule constraints "
-"will not be printed even when setting ``FC_ZERO_THR = 0``."
-msgstr "ある特定のカットオフ半径を超えると相互作用がゼロになるモデルポテンシャル (例: 古典的な力場) を用いて調和力定数を計算する場合、``FC_ZERO_THR`` のデフォルト値では、``tools/dfc2`` を使って繰り込まれた調和力定数ファイルを作成する際に警告が出ることがあります。この問題は、より小さい ``FC_ZERO_THR`` (例えば ``FC_ZERO_THR = 1.0e-15``) を使用することで解決される場合があります。対称性および音響和則の制約により厳密にゼロとなる力定数は、``FC_ZERO_THR = 0`` を設定しても出力されません。"
+"cutoff radius, the default value of ``FC_ZERO_THR`` may raise a warning when"
+" creating a renormalized harmonic force constant file using ``tools/dfc2``. "
+"This issue may be resolved by using a smaller ``FC_ZERO_THR``, say "
+"``FC_ZERO_THR = 1.0e-15``. The force constants that become exactly zero due "
+"to symmetry and acoustic sum rule constraints will not be printed even when "
+"setting ``FC_ZERO_THR = 0``."
+msgstr ""
+"ある特定のカットオフ半径を超えると相互作用がゼロになるモデルポテンシャル (例: 古典的な力場) "
+"を用いて調和力定数を計算する場合、``FC_ZERO_THR`` のデフォルト値では、``tools/dfc2`` "
+"を使って繰り込まれた調和力定数ファイルを作成する際に警告が出ることがあります。この問題は、より小さい ``FC_ZERO_THR`` (例えば "
+"``FC_ZERO_THR = 1.0e-15``) "
+"を使用することで解決される場合があります。対称性および音響和則の制約により厳密にゼロとなる力定数は、``FC_ZERO_THR = 0`` "
+"を設定しても出力されません。"
 
-#: ../../source/almdir/inputalm.rst:329
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:334
+msgid "LENGTH_UNIT-tag = bohr | angstrom"
+msgstr "LENGTH_UNIT タグ = bohr | angstrom"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:336
+msgid "bohr"
+msgstr "bohr"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:338
+msgid ""
+"Unit of the length-type input data: the ``&cell`` lattice vectors, the "
+"displacements in the ``DFSET`` file, and the ``&cutoff`` radii. The data are"
+" converted to Bohr internally, so the internal model and all outputs are "
+"unaffected. A ``STRUCTURE_FILE`` (POSCAR) is always interpreted in Angstrom,"
+" independent of this tag."
+msgstr ""
+"長さの次元を持つ入力データ (``&cell`` の格子ベクトル、``DFSET`` ファイル内の変位、``&cutoff`` の半径) "
+"の単位。データは内部で Bohr に変換されるため、内部モデルとすべての出力には影響しません。``STRUCTURE_FILE`` (POSCAR) "
+"は、このタグとは無関係に常に Angstrom として解釈されます。"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:344
+msgid "FORCE_UNIT-tag = Ry/bohr | eV/angstrom | Ha/bohr"
+msgstr "FORCE_UNIT タグ = Ry/bohr | eV/angstrom | Ha/bohr"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:346
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:356
+msgid "Ry/bohr"
+msgstr "Ry/bohr"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:348
+msgid ""
+"Unit of the forces in the ``DFSET`` file, converted to Ry/bohr internally. "
+"This tag does not affect the ``E_pot`` energies optionally given in the "
+"``DFSET`` comment headers, whose unit is declared per snapshot as ``E_pot "
+"(eV|Ry|Ha)``."
+msgstr ""
+"``DFSET`` ファイル内の力の単位。内部で Ry/bohr に変換されます。このタグは、``DFSET`` "
+"のコメントヘッダにオプションで記載される ``E_pot`` エネルギーには影響しません。そちらの単位はスナップショットごとに ``E_pot "
+"(eV|Ry|Ha)`` として宣言します。"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:354
+msgid "FCS_UNIT_OUTPUT-tag = Ry/bohr | eV/angstrom"
+msgstr "FCS_UNIT_OUTPUT タグ = Ry/bohr | eV/angstrom"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:358
+msgid ""
+"Unit system of the force constants written to the HDF5 file (``PREFIX``.h5)."
+" With ``eV/angstrom``, the force constant values (eV/angstrom\\ :sup:`n`\\ "
+"), the lattice vectors, and the shift vectors (angstrom) are converted "
+"consistently, and the ``unit`` attributes stored in the file are updated "
+"accordingly; *anphon* reads these attributes and converts the data back "
+"internally. The XML (``PREFIX``.xml) and ``PREFIX``.fcs outputs always stay "
+"in Rydberg atomic units."
+msgstr ""
+"HDF5 ファイル (``PREFIX``.h5) に書き出す力定数の単位系。``eV/angstrom`` を指定すると、力定数の値 "
+"(eV/angstrom\\ :sup:`n`\\ )、格子ベクトル、並進ベクトル (angstrom) が一貫して変換され、ファイルに保存される "
+"``unit`` 属性もそれに合わせて更新されます。*anphon* はこれらの属性を読み取り、内部でデータを逆変換します。XML "
+"(``PREFIX``.xml) および ``PREFIX``.fcs の出力は常に Rydberg 原子単位系のままです。"
+
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:363
 msgid "\"&interaction\"-field"
 msgstr "\"&interaction\" フィールド"
 
-#: ../../source/almdir/inputalm.rst:334
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:368
 msgid ""
-"**NORDER**-tag : The order of force constants to be calculated. "
-"Anharmonic terms up to :math:`(m+1)`\\ th order will be considered with "
-"``NORDER`` = :math:`m`."
-msgstr "**NORDER** タグ: 計算する力定数の次数。``NORDER`` = :math:`m` とすると、:math:`(m+1)`\\ 次までの非調和項が考慮されます。"
+"**NORDER**-tag : The order of force constants to be calculated. Anharmonic "
+"terms up to :math:`(m+1)`\\ th order will be considered with ``NORDER`` = "
+":math:`m`."
+msgstr ""
+"**NORDER** タグ: 計算する力定数の次数。``NORDER`` = :math:`m` とすると、:math:`(m+1)`\\ "
+"次までの非調和項が考慮されます。"
 
-#: ../../source/almdir/inputalm.rst:338
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:372
 msgid ""
-"``NORDER = 1`` to calculate harmonic terms only, ``NORDER = 2`` to "
-"include cubic terms as well, and so on."
+"``NORDER = 1`` to calculate harmonic terms only, ``NORDER = 2`` to include "
+"cubic terms as well, and so on."
 msgstr "調和項のみを計算するには ``NORDER = 1``、3次項も含めるには ``NORDER = 2``、というように設定します。"
 
-#: ../../source/almdir/inputalm.rst:345
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:379
 msgid ""
-"NBODY-tag : Entry for excluding multiple-body interactions from "
-"anharmonic force constants"
+"NBODY-tag : Entry for excluding multiple-body interactions from anharmonic "
+"force constants"
 msgstr "NBODY タグ: 非調和力定数から多体相互作用を除外するためのエントリー"
 
-#: ../../source/almdir/inputalm.rst:347
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:381
 msgid "``NBODY`` = [2, 3, 4, ..., ``NORDER`` + 1]"
 msgstr "``NBODY`` = [2, 3, 4, ..., ``NORDER`` + 1]"
 
-#: ../../source/almdir/inputalm.rst:349
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:383
 msgid ""
 "This tag may be useful for excluding multi-body clusters which are "
 "supposedly less important. For example, a set of fourth-order IFCs "
-":math:`\\{\\Phi_{ijkl}\\}`, where :math:`i, j, k`, and :math:`l` label "
-"atoms in the supercell, can be categorized into four different subsets; "
-"**on-site**, **two-body**, **three-body**, and **four-body** terms. "
-"Neglecting the Cartesian coordinates of IFCs for simplicity, each subset "
-"contains the IFC elements shown as follows:"
-msgstr "このタグは、相対的に重要性が低いと思われる多体クラスターを除外するのに便利な場合があります。例えば、4次の原子間力定数の集合 :math:`\\{\\Phi_{ijkl}\\}` (:math:`i, j, k` および :math:`l` はスーパーセル内の原子を表す) は、4つの異なる部分集合、すなわち **on-site (オンサイト)**、**two-body (2体)**、**three-body (3体)**、**four-body (4体)** の項に分類できます。簡単のため原子間力定数の Cartesian 座標を無視すると、各部分集合は以下に示す原子間力定数の要素を含みます:"
+":math:`\\{\\Phi_{ijkl}\\}`, where :math:`i, j, k`, and :math:`l` label atoms"
+" in the supercell, can be categorized into four different subsets; **on-"
+"site**, **two-body**, **three-body**, and **four-body** terms. Neglecting "
+"the Cartesian coordinates of IFCs for simplicity, each subset contains the "
+"IFC elements shown as follows:"
+msgstr ""
+"このタグは、相対的に重要性が低いと思われる多体クラスターを除外するのに便利な場合があります。例えば、4次の原子間力定数の集合 "
+":math:`\\{\\Phi_{ijkl}\\}` (:math:`i, j, k` および :math:`l` はスーパーセル内の原子を表す) "
+"は、4つの異なる部分集合、すなわち **on-site (オンサイト)**、**two-body (2体)**、**three-body "
+"(3体)**、**four-body (4体)** の項に分類できます。簡単のため原子間力定数の Cartesian "
+"座標を無視すると、各部分集合は以下に示す原子間力定数の要素を含みます:"
 
-#: ../../source/almdir/inputalm.rst:352
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:386
 msgid "on-site"
 msgstr "オンサイト (on-site)"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ":math:`\\{\\Phi_{iiii}\\}`"
 msgstr ":math:`\\{\\Phi_{iiii}\\}`"
 
-#: ../../source/almdir/inputalm.rst:353
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:387
 msgid "two-body"
 msgstr "2体 (two-body)"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ":math:`\\{\\Phi_{iijj}\\}`, :math:`\\{\\Phi_{iiij}\\}` (:math:`i\\neq j`)"
 msgstr ":math:`\\{\\Phi_{iijj}\\}`, :math:`\\{\\Phi_{iiij}\\}` (:math:`i\\neq j`)"
 
-#: ../../source/almdir/inputalm.rst:354
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:388
 msgid "three-body"
 msgstr "3体 (three-body)"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ":math:`\\{\\Phi_{iijk}\\}` (:math:`i\\neq j, i\\neq k, j \\neq k`)"
 msgstr ":math:`\\{\\Phi_{iijk}\\}` (:math:`i\\neq j, i\\neq k, j \\neq k`)"
 
-#: ../../source/almdir/inputalm.rst:355
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:389
 msgid "four-body"
 msgstr "4体 (four-body)"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ":math:`\\{\\Phi_{ijkl}\\}` (all subscripts are different from each other)"
 msgstr ":math:`\\{\\Phi_{ijkl}\\}` (すべての添字が互いに異なる)"
 
-#: ../../source/almdir/inputalm.rst:358
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:392
 msgid ""
 "Since the four-body clusters are expected to be less important than the "
 "three-body and less-body clusters, you may want to exclude the four-body "
-"terms from the Taylor expansion potential because the number of such "
-"terms is huge. This can be done by setting the ``NBODY`` tag as ``NBODY ="
-" 2 3 3`` together with ``NORDER = 3``."
-msgstr "4体クラスターは3体やそれより少数体のクラスターよりも重要性が低いと予想されるため、そのような項の数が膨大であることから、テイラー展開ポテンシャルから4体項を除外したい場合があります。これは ``NORDER = 3`` とともに ``NBODY`` タグを ``NBODY = 2 3 3`` と設定することで実現できます。"
+"terms from the Taylor expansion potential because the number of such terms "
+"is huge. This can be done by setting the ``NBODY`` tag as ``NBODY = 2 3 3`` "
+"together with ``NORDER = 3``."
+msgstr ""
+"4体クラスターは3体やそれより少数体のクラスターよりも重要性が低いと予想されるため、そのような項の数が膨大であることから、テイラー展開ポテンシャルから4体項を除外したい場合があります。これは"
+" ``NORDER = 3`` とともに ``NBODY`` タグを ``NBODY = 2 3 3`` と設定することで実現できます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "More examples"
 msgstr "その他の例"
 
-#: ../../source/almdir/inputalm.rst:360
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:394
 msgid ""
-"``NORDER = 2; NBODY = 2 2`` includes harmonic and cubic IFCs but excludes"
-" three-body clusters from the cubic terms."
+"``NORDER = 2; NBODY = 2 2`` includes harmonic and cubic IFCs but excludes "
+"three-body clusters from the cubic terms."
 msgstr "``NORDER = 2; NBODY = 2 2`` は調和および3次の原子間力定数を含みますが、3次項から3体クラスターを除外します。"
 
-#: ../../source/almdir/inputalm.rst:362
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:396
 msgid ""
-"``NORDER = 5; NBODY = 2 3 3 2 2`` includes anharmonic terms up to the "
-"sixth-order, where the four-body clusters are excluded from the fourth-"
-"order IFCs, and the multi (:math:`\\geq 3`)-body clusters are excluded "
-"from the fifth- and sixth-order IFCs."
-msgstr "``NORDER = 5; NBODY = 2 3 3 2 2`` は6次までの非調和項を含み、4次の原子間力定数からは4体クラスターが除外され、5次および6次の原子間力定数からは多体 (:math:`\\geq 3` 体) クラスターが除外されます。"
+"``NORDER = 5; NBODY = 2 3 3 2 2`` includes anharmonic terms up to the sixth-"
+"order, where the four-body clusters are excluded from the fourth-order IFCs,"
+" and the multi (:math:`\\geq 3`)-body clusters are excluded from the fifth- "
+"and sixth-order IFCs."
+msgstr ""
+"``NORDER = 5; NBODY = 2 3 3 2 2`` "
+"は6次までの非調和項を含み、4次の原子間力定数からは4体クラスターが除外され、5次および6次の原子間力定数からは多体 (:math:`\\geq 3` "
+"体) クラスターが除外されます。"
 
-#: ../../source/almdir/inputalm.rst:367
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:401
 msgid "\"&cutoff\"-field"
 msgstr "\"&cutoff\" フィールド"
 
-#: ../../source/almdir/inputalm.rst:369
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:403
 msgid ""
-"In this entry field, one needs to specify cutoff radii of interaction for"
-" each order in units of bohr. In the current implementation, cutoff radii"
-" should be defined for every possible pair of atomic elements. For "
-"example, the cutoff entry for a harmonic calculation (``NORDER = 1``) of "
-"Si should be like ::"
-msgstr "このエントリーフィールドでは、各次数について相互作用のカットオフ半径を bohr 単位で指定する必要があります。現在の実装では、カットオフ半径はすべての可能な原子元素の組について定義する必要があります。例えば、Si の調和計算 (``NORDER = 1``) のカットオフエントリーは次のようになります::"
+"In this entry field, one needs to specify cutoff radii of interaction for "
+"each order in units of bohr (or of :ref:`LENGTH_UNIT <alm_length_unit>` if "
+"given). In the current implementation, cutoff radii should be defined for "
+"every possible pair of atomic elements. For example, the cutoff entry for a "
+"harmonic calculation (``NORDER = 1``) of Si should be like ::"
+msgstr ""
+"このエントリーフィールドでは、各次数について相互作用のカットオフ半径を bohr 単位 (:ref:`LENGTH_UNIT "
+"<alm_length_unit>` が指定されている場合はその単位) "
+"で指定する必要があります。現在の実装では、カットオフ半径はすべての可能な原子元素の組について定義する必要があります。例えば、Si の調和計算 "
+"(``NORDER = 1``) のカットオフエントリーは次のようになります::"
 
-#: ../../source/almdir/inputalm.rst:378
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:412
 #, python-brace-format
 msgid ""
-"This means that the cutoff radius of 10 :math:`a_{0}` is used for "
-"harmonic Si-Si terms. Please note that the first column should be two "
-"character strings, which are contained in the ``KD``-tag, connected by a "
-"hyphen (’-’)."
-msgstr "これは、調和の Si-Si 項に対して 10 :math:`a_{0}` のカットオフ半径が使用されることを意味します。最初の列は、``KD`` タグに含まれる2つの文字列をハイフン (’-’) で連結したものでなければならないことに注意してください。"
+"This means that the cutoff radius of 10 :math:`a_{0}` is used for harmonic "
+"Si-Si terms. Please note that the first column should be two character "
+"strings, which are contained in the ``KD``-tag, connected by a hyphen (’-’)."
+msgstr ""
+"これは、調和の Si-Si 項に対して 10 :math:`a_{0}` のカットオフ半径が使用されることを意味します。最初の列は、``KD`` "
+"タグに含まれる2つの文字列をハイフン (’-’) で連結したものでなければならないことに注意してください。"
 
-#: ../../source/almdir/inputalm.rst:382
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:416
 msgid ""
-"When one wants to consider cubic terms (``NORDER = 2``), please specify "
-"the cutoff radius for cubic terms in the third column as the following::"
+"When one wants to consider cubic terms (``NORDER = 2``), please specify the "
+"cutoff radius for cubic terms in the third column as the following::"
 msgstr "3次項を考慮したい場合 (``NORDER = 2``)、次のように3列目に3次項のカットオフ半径を指定してください::"
 
-#: ../../source/almdir/inputalm.rst:389
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:423
 msgid ""
-"Instead of giving specific cutoff radii, one can write \"None\" as "
-"follows::"
+"Instead of giving specific cutoff radii, one can write \"None\" as follows::"
 msgstr "特定のカットオフ半径を与える代わりに、次のように \"None\" と書くこともできます::"
 
-#: ../../source/almdir/inputalm.rst:395
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:429
 msgid ""
 "which means that all possible harmonic terms between Si-Si atoms will be "
 "included."
 msgstr "これは Si-Si 原子間のすべての可能な調和項が含まれることを意味します。"
 
-#: ../../source/almdir/inputalm.rst:399
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:433
 msgid ""
 "Setting 'None' for anharmonic terms can greatly increase the number of "
 "parameters and thereby increase the computational cost."
 msgstr "非調和項に 'None' を設定すると、パラメータの数が大幅に増加し、それによって計算コストが増大する可能性があります。"
 
-#: ../../source/almdir/inputalm.rst:401
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:435
 msgid ""
 "When there are more than two atomic elements, please specify the cutoff "
-"radii between every possible pair of atomic elements. In the case of MgO,"
-" the cutoff entry should be like ::"
-msgstr "3つ以上の原子元素がある場合は、すべての可能な原子元素の組の間のカットオフ半径を指定してください。MgO の場合、カットオフエントリーは次のようになります::"
+"radii between every possible pair of atomic elements. In the case of MgO, "
+"the cutoff entry should be like ::"
+msgstr ""
+"3つ以上の原子元素がある場合は、すべての可能な原子元素の組の間のカットオフ半径を指定してください。MgO "
+"の場合、カットオフエントリーは次のようになります::"
 
-#: ../../source/almdir/inputalm.rst:410
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:444
 msgid "which can equivalently be written by using the wild card (’*’) as ::"
 msgstr "これはワイルドカード (’*’) を使って次のように等価に書くことができます::"
 
-#: ../../source/almdir/inputalm.rst:420
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:454
 msgid ""
-"Cutoff radii specified by an earlier entry are overwritten by a new entry"
-" that comes later."
+"Cutoff radii specified by an earlier entry are overwritten by a new entry "
+"that comes later."
 msgstr "先のエントリーで指定されたカットオフ半径は、後から来る新しいエントリーによって上書きされます。"
 
-#: ../../source/almdir/inputalm.rst:422
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:456
 msgid ""
 "Once the cutoff radii are properly given, harmonic force constants "
 ":math:`\\Phi_{i,j}^{\\mu,\\nu}` satisfying :math:`r_{ij} \\le "
 "r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}` will be searched."
-msgstr "カットオフ半径が適切に与えられると、:math:`r_{ij} \\le r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}` を満たす調和力定数 :math:`\\Phi_{i,j}^{\\mu,\\nu}` が探索されます。"
+msgstr ""
+"カットオフ半径が適切に与えられると、:math:`r_{ij} \\le "
+"r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}` を満たす調和力定数 "
+":math:`\\Phi_{i,j}^{\\mu,\\nu}` が探索されます。"
 
-#: ../../source/almdir/inputalm.rst:425
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:459
 msgid ""
 "In the case of cubic terms, force constants "
 ":math:`\\Phi_{ijk}^{\\mu\\nu\\lambda}` satisfying :math:`r_{ij} \\le "
 "r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}`, :math:`r_{ik} \\le "
 "r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[k]}`, and :math:`r_{jk} \\le "
-"r_{c}^{\\mathrm{KD}[j]-\\mathrm{KD}[k]}` will be searched and determined "
-"by fitting."
-msgstr "3次項の場合、:math:`r_{ij} \\le r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}`、:math:`r_{ik} \\le r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[k]}`、:math:`r_{jk} \\le r_{c}^{\\mathrm{KD}[j]-\\mathrm{KD}[k]}` を満たす力定数 :math:`\\Phi_{ijk}^{\\mu\\nu\\lambda}` が探索され、フィッティングによって決定されます。"
+"r_{c}^{\\mathrm{KD}[j]-\\mathrm{KD}[k]}` will be searched and determined by "
+"fitting."
+msgstr ""
+"3次項の場合、:math:`r_{ij} \\le "
+"r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[j]}`、:math:`r_{ik} \\le "
+"r_{c}^{\\mathrm{KD}[i]-\\mathrm{KD}[k]}`、:math:`r_{jk} \\le "
+"r_{c}^{\\mathrm{KD}[j]-\\mathrm{KD}[k]}` を満たす力定数 "
+":math:`\\Phi_{ijk}^{\\mu\\nu\\lambda}` が探索され、フィッティングによって決定されます。"
 
-#: ../../source/almdir/inputalm.rst:431
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:465
 msgid "\"&cell\"-field"
 msgstr "\"&cell\" フィールド"
 
-#: ../../source/almdir/inputalm.rst:433
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:467
 msgid ""
-"Please give the cell parameters in this entry in units of bohr as the "
-"following::"
-msgstr "このエントリーでは、セルパラメータを bohr 単位で次のように与えてください::"
+"Please give the cell parameters in this entry in units of bohr (or of "
+":ref:`LENGTH_UNIT <alm_length_unit>` if given) as the following::"
+msgstr ""
+"このエントリーでは、セルパラメータを bohr 単位 (:ref:`LENGTH_UNIT <alm_length_unit>` "
+"が指定されている場合はその単位) で次のように与えてください::"
 
-#: ../../source/almdir/inputalm.rst:442
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:476
 #, python-brace-format
 msgid ""
 "The cell parameters are then given by :math:`\\vec{a}_{1} = a \\times "
-"(a_{11}, a_{12}, a_{13})`, :math:`\\vec{a}_{2} = a \\times (a_{21}, "
-"a_{22}, a_{23})`, and :math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, "
-"a_{33})`."
-msgstr "セルパラメータは :math:`\\vec{a}_{1} = a \\times (a_{11}, a_{12}, a_{13})`、:math:`\\vec{a}_{2} = a \\times (a_{21}, a_{22}, a_{23})`、:math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, a_{33})` で与えられます。"
+"(a_{11}, a_{12}, a_{13})`, :math:`\\vec{a}_{2} = a \\times (a_{21}, a_{22}, "
+"a_{23})`, and :math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, a_{33})`."
+msgstr ""
+"セルパラメータは :math:`\\vec{a}_{1} = a \\times (a_{11}, a_{12}, "
+"a_{13})`、:math:`\\vec{a}_{2} = a \\times (a_{21}, a_{22}, "
+"a_{23})`、:math:`\\vec{a}_{3} = a \\times (a_{31}, a_{32}, a_{33})` で与えられます。"
 
-#: ../../source/almdir/inputalm.rst:448
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:482
 msgid "\"&position\"-field"
 msgstr "\"&position\" フィールド"
 
-#: ../../source/almdir/inputalm.rst:450
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:484
 msgid ""
 "In this field, one needs to specify the atomic element and fractional "
 "coordinate of atoms in the supercell. Each line should be ::"
 msgstr "このフィールドでは、スーパーセル内の原子の原子元素と分数座標を指定する必要があります。各行は次のようにします::"
 
-#: ../../source/almdir/inputalm.rst:456
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:490
 msgid ""
-"where `ikd` is an integer specifying the atomic element in the order of "
-"the ``KD`` tag and `xf[i]` is the fractional coordinate of an atom. There"
-" should be ``NAT`` such lines in the &position entry field."
-msgstr "ここで `ikd` は ``KD`` タグの順序で原子元素を指定する整数であり、`xf[i]` は原子の分数座標です。&position エントリーフィールドには ``NAT`` 行のこのような行が必要です。"
+"where `ikd` is an integer specifying the atomic element in the order of the "
+"``KD`` tag and `xf[i]` is the fractional coordinate of an atom. There should"
+" be ``NAT`` such lines in the &position entry field."
+msgstr ""
+"ここで `ikd` は ``KD`` タグの順序で原子元素を指定する整数であり、`xf[i]` は原子の分数座標です。&position "
+"エントリーフィールドには ``NAT`` 行のこのような行が必要です。"
 
-#: ../../source/almdir/inputalm.rst:463
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:497
 msgid "\"&optimize\"-field"
 msgstr "\"&optimize\" フィールド"
 
-#: ../../source/almdir/inputalm.rst:465
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:499
 msgid "This field is necessary when ``MODE = optimize``."
 msgstr "このフィールドは ``MODE = optimize`` のときに必要です。"
 
-#: ../../source/almdir/inputalm.rst:469
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:503
 msgid ""
-"LMODEL-tag : Choice of the linear model used for estimating force "
-"constants"
+"LMODEL-tag : Choice of the linear model used for estimating force constants"
 msgstr "LMODEL タグ: 力定数の推定に用いる線形モデルの選択"
 
-#: ../../source/almdir/inputalm.rst:472
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:506
 msgid "\"least-squares\", \"LS\", \"OLS\",  1"
 msgstr "\"least-squares\", \"LS\", \"OLS\",  1"
 
-#: ../../source/almdir/inputalm.rst:472
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:506
 msgid "Ordinary least square"
 msgstr "通常の最小二乗法 (ordinary least squares)"
 
-#: ../../source/almdir/inputalm.rst:473
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:507
 msgid "\"elastic-net\", \"enet\", 2"
 msgstr "\"elastic-net\", \"enet\", 2"
 
-#: ../../source/almdir/inputalm.rst:473
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:507
 msgid "Elastic net"
 msgstr "Elastic net (エラスティックネット)"
 
-#: ../../source/almdir/inputalm.rst:474
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:508
 msgid "\"adaptive-lasso\", 3"
 msgstr "\"adaptive-lasso\", 3"
 
-#: ../../source/almdir/inputalm.rst:474
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:508
 msgid "Adaptive LASSO"
 msgstr "Adaptive LASSO (適応的 LASSO)"
 
-#: ../../source/almdir/inputalm.rst:477
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:511
 msgid "least-squares"
 msgstr "least-squares"
 
-#: ../../source/almdir/inputalm.rst:479
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:513
 msgid ""
 "When ``LMODEL = ols``, the force constants are estimated from the "
-"displacement-force datasets via the ordinary least-squares (OLS), which "
-"is usually sufficient to calculate harmonic and third-order force "
-"constants."
-msgstr "``LMODEL = ols`` の場合、力定数は変位-力データセットから通常の最小二乗法 (OLS) によって推定されます。これは通常、調和および3次の力定数を計算するのに十分です。"
+"displacement-force datasets via the ordinary least-squares (OLS), which is "
+"usually sufficient to calculate harmonic and third-order force constants."
+msgstr ""
+"``LMODEL = ols`` の場合、力定数は変位-力データセットから通常の最小二乗法 (OLS) "
+"によって推定されます。これは通常、調和および3次の力定数を計算するのに十分です。"
 
-#: ../../source/almdir/inputalm.rst:481
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:515
 msgid ""
-"The elastic net (``LMODEL = enet``) or adaptive LASSO (``LMODEL = "
-"adaptive-lasso``) are useful for calculating fourth-order (and higher-"
-"order) force constants. When the elastic net or adaptive LASSO is "
-"selected, the users have to set the following related tags: ``CV``, "
-"``L1_RATIO``, ``L1_ALPHA``, ``CV_MAXALPHA``, ``CV_MINALPHA``, "
-"``CV_NALPHA``, ``STANDARDIZE``, ``ENET_DNORM``, ``MAXITER``, "
-"``CONV_TOL``, ``NWRITE``, ``SOLUTION_PATH``, ``DEBIAS_OLS``, "
-"``STOP_CRITERION``. Please note that ``STANDARDIZE`` will be effective "
-"only for the elastic net."
-msgstr "elastic net (``LMODEL = enet``) または adaptive LASSO (``LMODEL = adaptive-lasso``) は、4次 (およびそれ以上の高次) の力定数を計算するのに便利です。elastic net または adaptive LASSO を選択した場合、ユーザーは次の関連タグを設定する必要があります: ``CV``、``L1_RATIO``、``L1_ALPHA``、``CV_MAXALPHA``、``CV_MINALPHA``、``CV_NALPHA``、``STANDARDIZE``、``ENET_DNORM``、``MAXITER``、``CONV_TOL``、``NWRITE``、``SOLUTION_PATH``、``DEBIAS_OLS``、``STOP_CRITERION``。``STANDARDIZE`` は elastic net のときのみ有効であることに注意してください。"
+"The elastic net (``LMODEL = enet``) or adaptive LASSO (``LMODEL = adaptive-"
+"lasso``) are useful for calculating fourth-order (and higher-order) force "
+"constants. When the elastic net or adaptive LASSO is selected, the users "
+"have to set the following related tags: ``CV``, ``L1_RATIO``, ``L1_ALPHA``, "
+"``CV_MAXALPHA``, ``CV_MINALPHA``, ``CV_NALPHA``, ``STANDARDIZE``, "
+"``ENET_DNORM``, ``MAXITER``, ``CONV_TOL``, ``NWRITE``, ``SOLUTION_PATH``, "
+"``DEBIAS_OLS``, ``STOP_CRITERION``. Please note that ``STANDARDIZE`` will be"
+" effective only for the elastic net."
+msgstr ""
+"elastic net (``LMODEL = enet``) または adaptive LASSO (``LMODEL = adaptive-"
+"lasso``) は、4次 (およびそれ以上の高次) の力定数を計算するのに便利です。elastic net または adaptive LASSO "
+"を選択した場合、ユーザーは次の関連タグを設定する必要があります: "
+"``CV``、``L1_RATIO``、``L1_ALPHA``、``CV_MAXALPHA``、``CV_MINALPHA``、``CV_NALPHA``、``STANDARDIZE``、``ENET_DNORM``、``MAXITER``、``CONV_TOL``、``NWRITE``、``SOLUTION_PATH``、``DEBIAS_OLS``、``STOP_CRITERION``。``STANDARDIZE``"
+" は elastic net のときのみ有効であることに注意してください。"
 
-#: ../../source/almdir/inputalm.rst:487
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:521
 msgid ""
-"**DFSET**-tag: File name containing displacement-force datasets for "
-"training"
+"**DFSET**-tag: File name containing displacement-force datasets for training"
 msgstr "**DFSET** タグ: 学習用の変位-力データセットを含むファイル名"
 
-#: ../../source/almdir/inputalm.rst:493
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:527
 msgid "The format of ``DFSET`` can be found :ref:`here <label_format_DFSET>`"
 msgstr "``DFSET`` の書式は :ref:`here <label_format_DFSET>` にあります"
 
-#: ../../source/almdir/inputalm.rst:499
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:533
 msgid "NDATA-tag : Number of displacement-force data sets"
 msgstr "NDATA タグ: 変位-力データセットの数"
 
-#: ../../source/almdir/inputalm.rst:503
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:537
 msgid ""
-"If ``NDATA`` is not given, the code reads all lines of ``DFSET`` "
-"(excluding comment lines) and estimates ``NDATA`` by dividing the line "
-"number by ``NAT``. If the number of lines is not divisible by ``NAT``, an"
-" error is raised. ``DFSET`` should contain at least "
-"``NDATA``:math:`\\times` ``NAT`` lines."
-msgstr "``NDATA`` が与えられない場合、コードは ``DFSET`` の全行 (コメント行を除く) を読み込み、行数を ``NAT`` で割って ``NDATA`` を推定します。行数が ``NAT`` で割り切れない場合はエラーが発生します。``DFSET`` には少なくとも ``NDATA``:math:`\\times` ``NAT`` 行が含まれている必要があります。"
+"If ``NDATA`` is not given, the code reads all lines of ``DFSET`` (excluding "
+"comment lines) and estimates ``NDATA`` by dividing the line number by "
+"``NAT``. If the number of lines is not divisible by ``NAT``, an error is "
+"raised. ``DFSET`` should contain at least ``NDATA``:math:`\\times` ``NAT`` "
+"lines."
+msgstr ""
+"``NDATA`` が与えられない場合、コードは ``DFSET`` の全行 (コメント行を除く) を読み込み、行数を ``NAT`` で割って "
+"``NDATA`` を推定します。行数が ``NAT`` で割り切れない場合はエラーが発生します。``DFSET`` には少なくとも "
+"``NDATA``:math:`\\times` ``NAT`` 行が含まれている必要があります。"
 
-#: ../../source/almdir/inputalm.rst:509
-msgid "NSTART, NEND-tags : Specifies the range of data to be used for training"
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:543
+msgid ""
+"NSTART, NEND-tags : Specifies the range of data to be used for training"
 msgstr "NSTART, NEND タグ: 学習に使用するデータの範囲を指定します"
 
-#: ../../source/almdir/inputalm.rst:511
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:545
 msgid "``NSTART = 1``, ``NEND = NDATA``"
 msgstr "``NSTART = 1``, ``NEND = NDATA``"
 
-#: ../../source/almdir/inputalm.rst:513
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:547
 msgid ""
-"To use the data in the range of [20:30] out of 50 entries, the tags "
-"should be ``NSTART = 20`` and ``NEND = 30``."
-msgstr "50 個のエントリーのうち [20:30] の範囲のデータを使用するには、タグを ``NSTART = 20`` および ``NEND = 30`` とします。"
+"To use the data in the range of [20:30] out of 50 entries, the tags should "
+"be ``NSTART = 20`` and ``NEND = 30``."
+msgstr ""
+"50 個のエントリーのうち [20:30] の範囲のデータを使用するには、タグを ``NSTART = 20`` および ``NEND = 30`` "
+"とします。"
 
-#: ../../source/almdir/inputalm.rst:519
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:553
 msgid "SKIP-tag : Specifies the range of data to be skipped for training"
 msgstr "SKIP タグ: 学習でスキップするデータの範囲を指定します"
 
-#: ../../source/almdir/inputalm.rst:522
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:556
 msgid "Two integers connected by a hyphen"
 msgstr "ハイフンで連結された2つの整数"
 
-#: ../../source/almdir/inputalm.rst:523
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:557
 msgid ""
 "``SKIP`` =\\ :math:`i`-:math:`j` skips the data in the range of "
 "[:math:`i`:\\ :math:`j`]. The :math:`i` and :math:`j` must satisfy "
-":math:`1\\leq i \\leq j \\leq` ``NDATA``.  This option may be useful when"
-" doing cross-validation manually (``CV=-1``)."
-msgstr "``SKIP`` =\\ :math:`i`-:math:`j` は [:math:`i`:\\ :math:`j`] の範囲のデータをスキップします。:math:`i` と :math:`j` は :math:`1\\leq i \\leq j \\leq` ``NDATA`` を満たす必要があります。このオプションは交差検証を手動で行う (``CV=-1``) 場合に便利です。"
+":math:`1\\leq i \\leq j \\leq` ``NDATA``.  This option may be useful when "
+"doing cross-validation manually (``CV=-1``)."
+msgstr ""
+"``SKIP`` =\\ :math:`i`-:math:`j` は [:math:`i`:\\ :math:`j`] "
+"の範囲のデータをスキップします。:math:`i` と :math:`j` は :math:`1\\leq i \\leq j \\leq` "
+"``NDATA`` を満たす必要があります。このオプションは交差検証を手動で行う (``CV=-1``) 場合に便利です。"
 
-#: ../../source/almdir/inputalm.rst:529
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:563
 msgid "ICONST-tag = 0 | 1 | 2 | 3 | 4 | 11"
 msgstr "ICONST タグ = 0 | 1 | 2 | 3 | 4 | 11"
 
-#: ../../source/almdir/inputalm.rst:532
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:566
 msgid "No constraints"
 msgstr "制約なし"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Constraint for translational invariance is imposed between IFCs."
 msgstr "原子間力定数間に並進不変性の制約が課されます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Available only when ``LMODEL = ols``."
 msgstr "``LMODEL = ols`` のときのみ利用可能です。"
 
-#: ../../source/almdir/inputalm.rst:535 ../../source/almdir/inputalm.rst:546
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:569
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:580
 msgid "11"
 msgstr "11"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"Same as ``ICONST = 1`` but the constraint is imposed *algebraically* "
-"rather than numerically."
+"Same as ``ICONST = 1`` but the constraint is imposed *algebraically* rather "
+"than numerically."
 msgstr "``ICONST = 1`` と同じですが、制約は数値的にではなく *代数的に* 課されます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Select this option when ``LMODEL = enet``."
 msgstr "``LMODEL = enet`` のときはこのオプションを選択してください。"
 
-#: ../../source/almdir/inputalm.rst:537
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:571
 msgid "2"
 msgstr "2"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"In addition to ``ICONST = 1``, constraints for rotational invariance will"
-" be"
+"In addition to ``ICONST = 1``, constraints for rotational invariance will be"
 msgstr "``ICONST = 1`` に加えて、回転不変性の制約が"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "imposed up to (``NORDER`` + 1)th order. Available only when ``LMODEL = "
 "ols``."
 msgstr "(``NORDER`` + 1) 次まで課されます。``LMODEL = ols`` のときのみ利用可能です。"
 
-#: ../../source/almdir/inputalm.rst:539
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:573
 msgid "3"
 msgstr "3"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"In addition to ``ICONST = 2``, constraints for rotational invariance "
-"between (``NORDER`` + 1)th order"
+"In addition to ``ICONST = 2``, constraints for rotational invariance between"
+" (``NORDER`` + 1)th order"
 msgstr "``ICONST = 2`` に加えて、(``NORDER`` + 1) 次と"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "and (``NORDER`` + 2)th order, which are zero, will be considered."
 msgstr "ゼロである (``NORDER`` + 2) 次の間の回転不変性の制約が考慮されます。"
 
-#: ../../source/almdir/inputalm.rst:542
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:576
 msgid "4"
 msgstr "4"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"In addition to ``ICONST = 2``, constraints for the Huang invariance will "
-"be imposed."
+"In addition to ``ICONST = 2``, constraints for the Huang invariance will be "
+"imposed."
 msgstr "``ICONST = 2`` に加えて、Huang 不変性の制約が課されます。"
 
-#: ../../source/almdir/inputalm.rst:548
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:582
 msgid "See :ref:`this page<constraint_IFC>` for the numerical formulae."
 msgstr "数値的な式については :ref:`this page<constraint_IFC>` を参照してください。"
 
-#: ../../source/almdir/inputalm.rst:554
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:588
 msgid "PERIODIC_IMAGE_CONV-tag = 0 | 1"
 msgstr "PERIODIC_IMAGE_CONV タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:557
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:591
 msgid ""
 "Impose the constraints on IFCs (acoustic sum rule) in the considering "
 "supercell."
 msgstr "対象のスーパーセルにおいて原子間力定数に制約 (音響和則) を課します。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Consider the periodic images when generating the constraints."
 msgstr "制約を生成する際に周期像を考慮します。"
 
-#: ../../source/almdir/inputalm.rst
-msgid "The resultant IFCs simultaneously satisfy the permutation symmetry, ASR,"
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
+msgid ""
+"The resultant IFCs simultaneously satisfy the permutation symmetry, ASR,"
 msgstr "得られる原子間力定数は、置換対称性、音響和則 (ASR)、"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "and the space group symmetry in the infinite space."
 msgstr "および無限空間における空間群対称性を同時に満たします。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "For more details, please see Appendix D of the `original paper "
 "<https://arxiv.org/abs/2205.08789>`_."
-msgstr "詳細については、`original paper <https://arxiv.org/abs/2205.08789>`_ の付録 D を参照してください。"
+msgstr ""
+"詳細については、`original paper <https://arxiv.org/abs/2205.08789>`_ の付録 D "
+"を参照してください。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"(Note that we use the term \"mirror image\" instead of \"periodic image\""
-" in the paper.)"
+"(Note that we use the term \"mirror image\" instead of \"periodic image\" in"
+" the paper.)"
 msgstr "(論文中では \"periodic image\" の代わりに \"mirror image\" という用語を使用していることに注意してください。)"
 
-#: ../../source/almdir/inputalm.rst:573
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:607
 msgid ""
 "ROTAXIS-tag : Rotation axis used to estimate constraints for rotational "
 "invariance. This entry is necessary when ``ICONST = 2, 3, 4``."
-msgstr "ROTAXIS タグ: 回転不変性の制約を推定するために使用する回転軸。このエントリーは ``ICONST = 2, 3, 4`` のときに必要です。"
+msgstr ""
+"ROTAXIS タグ: 回転不変性の制約を推定するために使用する回転軸。このエントリーは ``ICONST = 2, 3, 4`` のときに必要です。"
 
-#: ../../source/almdir/inputalm.rst:577
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:611
 msgid ""
-"When one wants to consider the rotational invariance around the "
-":math:`x`\\ -axis, one should give ``ROTAXIS = x``. If one needs "
-"additional constraints for the rotation around the :math:`y`\\ -axis, "
-"``ROTAXIS`` should be ``ROTAXIS = xy``."
-msgstr ":math:`x`\\ 軸まわりの回転不変性を考慮したい場合は、``ROTAXIS = x`` を与えます。:math:`y`\\ 軸まわりの回転に対する追加の制約が必要な場合は、``ROTAXIS`` を ``ROTAXIS = xy`` とします。"
+"When one wants to consider the rotational invariance around the :math:`x`\\ "
+"-axis, one should give ``ROTAXIS = x``. If one needs additional constraints "
+"for the rotation around the :math:`y`\\ -axis, ``ROTAXIS`` should be "
+"``ROTAXIS = xy``."
+msgstr ""
+":math:`x`\\ 軸まわりの回転不変性を考慮したい場合は、``ROTAXIS = x`` を与えます。:math:`y`\\ "
+"軸まわりの回転に対する追加の制約が必要な場合は、``ROTAXIS`` を ``ROTAXIS = xy`` とします。"
 
-#: ../../source/almdir/inputalm.rst:583
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:617
 msgid "FC2FIX-tag : File to which the harmonic terms are fixed upon training"
 msgstr "FC2FIX タグ: 学習時に調和項を固定するファイル"
 
-#: ../../source/almdir/inputalm.rst:587
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:621
 msgid ""
-"When the ``FC2FIX``-tag is given, harmonic force constants are fixed to "
-"the values stored in the ``FC2FIX`` file. This may be useful for "
-"optimizing cubic and higher-order terms without changing the harmonic "
-"terms. Please make sure that the number of harmonic terms in the new "
-"computational condition is the same as that in the ``FC2FIX`` file."
-msgstr "``FC2FIX`` タグが与えられると、調和力定数は ``FC2FIX`` ファイルに保存された値に固定されます。これは、調和項を変更せずに3次および高次の項を最適化するのに便利な場合があります。新しい計算条件における調和項の数が ``FC2FIX`` ファイル内のものと同じであることを確認してください。"
+"When the ``FC2FIX``-tag is given, harmonic force constants are fixed to the "
+"values stored in the ``FC2FIX`` file. This may be useful for optimizing "
+"cubic and higher-order terms without changing the harmonic terms. Please "
+"make sure that the number of harmonic terms in the new computational "
+"condition is the same as that in the ``FC2FIX`` file."
+msgstr ""
+"``FC2FIX`` タグが与えられると、調和力定数は ``FC2FIX`` "
+"ファイルに保存された値に固定されます。これは、調和項を変更せずに3次および高次の項を最適化するのに便利な場合があります。新しい計算条件における調和項の数が"
+" ``FC2FIX`` ファイル内のものと同じであることを確認してください。"
 
-#: ../../source/almdir/inputalm.rst:591
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:625
 msgid ""
 "``FC2XML`` is a deprecated alias of ``FC2FIX`` kept for backward "
 "compatibility. It will be removed in a future release, so please use "
 "``FC2FIX`` instead."
-msgstr "``FC2XML`` は後方互換性のために残されている ``FC2FIX`` の非推奨のエイリアスです。将来のリリースで削除される予定なので、代わりに ``FC2FIX`` を使用してください。"
+msgstr ""
+"``FC2XML`` は後方互換性のために残されている ``FC2FIX`` の非推奨のエイリアスです。将来のリリースで削除される予定なので、代わりに "
+"``FC2FIX`` を使用してください。"
 
-#: ../../source/almdir/inputalm.rst:595
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:629
 msgid ""
-"The ``FCSYM_BASIS`` option must be the same as the one used when creating"
-" the reference harmonic force constant file (``FC2FIX``). The code raises"
-" an error when they are inconsistent."
-msgstr "``FCSYM_BASIS`` オプションは、参照する調和力定数ファイル (``FC2FIX``) を作成したときに使用したものと同じでなければなりません。これらが矛盾する場合、コードはエラーを発生させます。"
+"The ``FCSYM_BASIS`` option must be the same as the one used when creating "
+"the reference harmonic force constant file (``FC2FIX``). The code raises an "
+"error when they are inconsistent."
+msgstr ""
+"``FCSYM_BASIS`` オプションは、参照する調和力定数ファイル (``FC2FIX``) "
+"を作成したときに使用したものと同じでなければなりません。これらが矛盾する場合、コードはエラーを発生させます。"
 
-#: ../../source/almdir/inputalm.rst:601
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:635
 msgid "FC3FIX-tag : File to which the cubic terms are fixed upon training"
 msgstr "FC3FIX タグ: 学習時に3次項を固定するファイル"
 
-#: ../../source/almdir/inputalm.rst:605
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:639
 msgid ""
 "Same as the ``FC2FIX``-tag, but ``FC3FIX`` is used to fix cubic force "
 "constants. (``FC3XML`` is a deprecated alias of ``FC3FIX``.)"
-msgstr "``FC2FIX`` タグと同じですが、``FC3FIX`` は3次力定数を固定するために使用されます。(``FC3XML`` は ``FC3FIX`` の非推奨のエイリアスです。)"
+msgstr ""
+"``FC2FIX`` タグと同じですが、``FC3FIX`` は3次力定数を固定するために使用されます。(``FC3XML`` は ``FC3FIX``"
+" の非推奨のエイリアスです。)"
 
-#: ../../source/almdir/inputalm.rst:609
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:643
 msgid ""
-"The ``FCSYM_BASIS`` option must be the same as the one used when creating"
-" the reference cubic force constant file (``FC3FIX``). The code raises an"
-" error when they are inconsistent."
-msgstr "``FCSYM_BASIS`` オプションは、参照する3次力定数ファイル (``FC3FIX``) を作成したときに使用したものと同じでなければなりません。これらが矛盾する場合、コードはエラーを発生させます。"
+"The ``FCSYM_BASIS`` option must be the same as the one used when creating "
+"the reference cubic force constant file (``FC3FIX``). The code raises an "
+"error when they are inconsistent."
+msgstr ""
+"``FCSYM_BASIS`` オプションは、参照する3次力定数ファイル (``FC3FIX``) "
+"を作成したときに使用したものと同じでなければなりません。これらが矛盾する場合、コードはエラーを発生させます。"
 
-#: ../../source/almdir/inputalm.rst:616
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:650
 msgid "SPARSE-tag = 0 | 1"
 msgstr "SPARSE タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:619 ../../source/almdir/inputalm.rst:674
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:653
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:708
 msgid "Use a direct solver (SVD or QRD) to estimate force constants"
 msgstr "直接ソルバー (SVD または QRD) を使用して力定数を推定します"
 
-#: ../../source/almdir/inputalm.rst:620
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:654
 msgid "Use a sparse solver to estimate force constants"
 msgstr "疎ソルバーを使用して力定数を推定します"
 
-#: ../../source/almdir/inputalm.rst:625
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:659
 msgid ""
-"When you want to calculate force constants of a large system and generate"
-" training datasets by displacing only a few atoms from equilibrium "
-"positions, the resulting sensing matrix becomes large but sparse. For "
-"such matrices, a sparse solver is expected to be more efficient than SVD "
-"or QRD in terms of both memory usage and computational time. Effective "
-"when ``LMODEL = ols``."
-msgstr "大きな系の力定数を計算し、平衡位置からわずかな原子のみを変位させて学習データセットを生成する場合、得られるセンシング行列は大きいが疎になります。そのような行列に対しては、疎ソルバーはメモリ使用量と計算時間の両面で SVD や QRD よりも効率的であると期待されます。``LMODEL = ols`` のときに有効です。"
+"When you want to calculate force constants of a large system and generate "
+"training datasets by displacing only a few atoms from equilibrium positions,"
+" the resulting sensing matrix becomes large but sparse. For such matrices, a"
+" sparse solver is expected to be more efficient than SVD or QRD in terms of "
+"both memory usage and computational time. Effective when ``LMODEL = ols``."
+msgstr ""
+"大きな系の力定数を計算し、平衡位置からわずかな原子のみを変位させて学習データセットを生成する場合、得られるセンシング行列は大きいが疎になります。そのような行列に対しては、疎ソルバーはメモリ使用量と計算時間の両面で"
+" SVD や QRD よりも効率的であると期待されます。``LMODEL = ols`` のときに有効です。"
 
-#: ../../source/almdir/inputalm.rst:627
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:661
 msgid ""
 "**When to use:** prefer ``SPARSE = 1`` for large systems whose sensing "
 "matrix is genuinely sparse (only a handful of atoms displaced per "
 "configuration). For small or dense problems the default direct solvers "
-"(``SPARSE = 0``) are usually faster, and the sparse factorization can "
-"even use more memory because of fill-in. When the sensing matrix is dense"
-" but large, consider :ref:`USE_CHOLESKY <alm_use_cholesky>` instead."
-msgstr "**使用する場面:** センシング行列が本当に疎である (構成ごとにごくわずかな原子しか変位しない) 大きな系には ``SPARSE = 1`` を選ぶとよいです。小さい問題や密な問題では、デフォルトの直接ソルバー (``SPARSE = 0``) の方が通常は高速であり、疎分解はフィルイン (fill-in) のためにかえって多くのメモリを使うことがあります。センシング行列が密だが大きい場合は、代わりに :ref:`USE_CHOLESKY <alm_use_cholesky>` を検討してください。"
+"(``SPARSE = 0``) are usually faster, and the sparse factorization can even "
+"use more memory because of fill-in. When the sensing matrix is dense but "
+"large, consider :ref:`USE_CHOLESKY <alm_use_cholesky>` instead."
+msgstr ""
+"**使用する場面:** センシング行列が本当に疎である (構成ごとにごくわずかな原子しか変位しない) 大きな系には ``SPARSE = 1`` "
+"を選ぶとよいです。小さい問題や密な問題では、デフォルトの直接ソルバー (``SPARSE = 0``) の方が通常は高速であり、疎分解はフィルイン "
+"(fill-in) のためにかえって多くのメモリを使うことがあります。センシング行列が密だが大きい場合は、代わりに :ref:`USE_CHOLESKY"
+" <alm_use_cholesky>` を検討してください。"
 
-#: ../../source/almdir/inputalm.rst:631
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:665
 msgid ""
-"The sparse path has two different solver routes. With algebraic "
-"constraints (``ICONST >= 10``; the default is ``ICONST = 11``), the "
-"reduced sparse least-squares problem is solved by the ``SPARSESOLVER`` "
-"selected below. With constraints imposed numerically (``ICONST = 1, 2, 3,"
-" 4``), the sparse path instead assembles the symmetric-indefinite KKT "
-"system. The merged constraint matrix is first reduced to full row rank by"
-" a rank-revealing QR (essential: a rank-deficient constraint matrix makes"
-" the KKT singular and the fitted IFCs violate the acoustic-sum-rule / "
-"rotational invariance). The KKT solver is then chosen by build: Intel MKL"
-" **PARDISO** (``-DUSE_MKL_BACKEND=yes``) or Apple **Accelerate** "
-"(``-DUSE_ACCEL_BACKEND=yes``) use a symmetric-indefinite ``LDLT``; "
-"**SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) adds the "
-"multithreaded **SuiteSparseQR** fallback; otherwise Eigen's serial "
-"``SparseLU`` and ``SparseQR`` fallbacks are used. See :ref:`Optional "
-"linear-algebra backends <install_backends>` on the installation page."
-msgstr "疎な経路には2つの異なるソルバールートがあります。代数的制約 (``ICONST >= 10``; デフォルトは ``ICONST = 11``) の場合、簡約された疎な最小二乗問題は以下で選択する ``SPARSESOLVER`` によって解かれます。制約が数値的に課される場合 (``ICONST = 1, 2, 3, 4``)、疎な経路は代わりに対称不定 (symmetric-indefinite) の KKT 系を組み立てます。統合された制約行列は、まずランク明示 (rank-revealing) QR によって行フルランクに簡約されます (これは必須です: ランク落ちした制約行列は KKT を特異にし、フィッティングされた原子間力定数が音響和則 / 回転不変性を満たさなくなります)。続いて KKT ソルバーはビルドに応じて選ばれます: Intel MKL **PARDISO** (``-DUSE_MKL_BACKEND=yes``) または Apple **Accelerate** (``-DUSE_ACCEL_BACKEND=yes``) は対称不定の ``LDLT`` を使用します。**SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) はマルチスレッドの **SuiteSparseQR** フォールバックを追加します。それ以外の場合は Eigen の逐次 ``SparseLU`` および ``SparseQR`` フォールバックが使用されます。インストールページの :ref:`Optional linear-algebra backends <install_backends>` を参照してください。"
+"The sparse path has two different solver routes. With algebraic constraints "
+"(``ICONST >= 10``; the default is ``ICONST = 11``), the reduced sparse "
+"least-squares problem is solved by the ``SPARSESOLVER`` selected below. With"
+" constraints imposed numerically (``ICONST = 1, 2, 3, 4``), the sparse path "
+"instead assembles the symmetric-indefinite KKT system. The merged constraint"
+" matrix is first reduced to full row rank by a rank-revealing QR (essential:"
+" a rank-deficient constraint matrix makes the KKT singular and the fitted "
+"IFCs violate the acoustic-sum-rule / rotational invariance). The KKT solver "
+"is then chosen by build: Intel MKL **PARDISO** (``-DUSE_MKL_BACKEND=yes``) "
+"or Apple **Accelerate** (``-DUSE_ACCEL_BACKEND=yes``) use a symmetric-"
+"indefinite ``LDLT``; **SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) "
+"adds the multithreaded **SuiteSparseQR** fallback; otherwise Eigen's serial "
+"``SparseLU`` and ``SparseQR`` fallbacks are used. See :ref:`Optional linear-"
+"algebra backends <install_backends>` on the installation page."
+msgstr ""
+"疎な経路には2つの異なるソルバールートがあります。代数的制約 (``ICONST >= 10``; デフォルトは ``ICONST = 11``) "
+"の場合、簡約された疎な最小二乗問題は以下で選択する ``SPARSESOLVER`` によって解かれます。制約が数値的に課される場合 (``ICONST"
+" = 1, 2, 3, 4``)、疎な経路は代わりに対称不定 (symmetric-indefinite) の KKT "
+"系を組み立てます。統合された制約行列は、まずランク明示 (rank-revealing) QR によって行フルランクに簡約されます (これは必須です: "
+"ランク落ちした制約行列は KKT を特異にし、フィッティングされた原子間力定数が音響和則 / 回転不変性を満たさなくなります)。続いて KKT "
+"ソルバーはビルドに応じて選ばれます: Intel MKL **PARDISO** (``-DUSE_MKL_BACKEND=yes``) または "
+"Apple **Accelerate** (``-DUSE_ACCEL_BACKEND=yes``) は対称不定の ``LDLT`` "
+"を使用します。**SuiteSparse** (``-DUSE_SUITESPARSE_BACKEND=yes``) はマルチスレッドの "
+"**SuiteSparseQR** フォールバックを追加します。それ以外の場合は Eigen の逐次 ``SparseLU`` および "
+"``SparseQR`` フォールバックが使用されます。インストールページの :ref:`Optional linear-algebra "
+"backends <install_backends>` を参照してください。"
 
-#: ../../source/almdir/inputalm.rst:651
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:685
 msgid "SPARSESOLVER-tag : Type of the sparse solver to use"
 msgstr "SPARSESOLVER タグ: 使用する疎ソルバーの種類"
 
-#: ../../source/almdir/inputalm.rst:653
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:687
 msgid "SimplicialLDLT"
 msgstr "SimplicialLDLT"
 
-#: ../../source/almdir/inputalm.rst:655
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:689
 msgid ""
 "Selects the sparse solver used for the unconstrained or algebraically "
-"constrained sparse OLS fit (``LMODEL = ols``, ``SPARSE = 1``, and "
-"``ICONST >= 10``). Available options are `SimplicialLDLT` (sparse "
-"Cholesky on the normal matrix, direct), `SparseQR` (direct sparse QR), "
-"and the iterative Krylov solvers `ConjugateGradient`, "
-"`LeastSquaresConjugateGradient`, and `BiCGSTAB`. When an iterative solver"
-" is selected, the stopping criterion is controlled by the ``CONV_TOL`` "
-"and ``MAXITER`` tags. As a rule of thumb, use `SimplicialLDLT` (the "
-"default) for well-conditioned problems, `SparseQR` when the direct "
-"factorization fails or the matrix is poorly conditioned, and the "
-"iterative solvers when even the sparse factorization is too large to "
+"constrained sparse OLS fit (``LMODEL = ols``, ``SPARSE = 1``, and ``ICONST "
+">= 10``). Available options are `SimplicialLDLT` (sparse Cholesky on the "
+"normal matrix, direct), `SparseQR` (direct sparse QR), and the iterative "
+"Krylov solvers `ConjugateGradient`, `LeastSquaresConjugateGradient`, and "
+"`BiCGSTAB`. When an iterative solver is selected, the stopping criterion is "
+"controlled by the ``CONV_TOL`` and ``MAXITER`` tags. As a rule of thumb, use"
+" `SimplicialLDLT` (the default) for well-conditioned problems, `SparseQR` "
+"when the direct factorization fails or the matrix is poorly conditioned, and"
+" the iterative solvers when even the sparse factorization is too large to "
 "store."
-msgstr "制約なし、または代数的に制約された疎な OLS フィッティング (``LMODEL = ols``、``SPARSE = 1``、``ICONST >= 10``) に使用される疎ソルバーを選択します。利用可能なオプションは、`SimplicialLDLT` (正規行列に対する疎なコレスキー分解、直接法)、`SparseQR` (直接的な疎 QR)、および反復的な Krylov ソルバー `ConjugateGradient`、`LeastSquaresConjugateGradient`、`BiCGSTAB` です。反復ソルバーを選択した場合、停止判定基準は ``CONV_TOL`` および ``MAXITER`` タグで制御されます。目安として、条件の良い問題には `SimplicialLDLT` (デフォルト) を、直接分解が失敗する場合や行列の条件が悪い場合には `SparseQR` を、疎分解さえ大きすぎて保存できない場合には反復ソルバーを使用してください。"
+msgstr ""
+"制約なし、または代数的に制約された疎な OLS フィッティング (``LMODEL = ols``、``SPARSE = 1``、``ICONST >="
+" 10``) に使用される疎ソルバーを選択します。利用可能なオプションは、`SimplicialLDLT` "
+"(正規行列に対する疎なコレスキー分解、直接法)、`SparseQR` (直接的な疎 QR)、および反復的な Krylov ソルバー "
+"`ConjugateGradient`、`LeastSquaresConjugateGradient`、`BiCGSTAB` "
+"です。反復ソルバーを選択した場合、停止判定基準は ``CONV_TOL`` および ``MAXITER`` "
+"タグで制御されます。目安として、条件の良い問題には `SimplicialLDLT` (デフォルト) "
+"を、直接分解が失敗する場合や行列の条件が悪い場合には `SparseQR` を、疎分解さえ大きすぎて保存できない場合には反復ソルバーを使用してください。"
 
-#: ../../source/almdir/inputalm.rst:657
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:691
 #, python-brace-format
 msgid ""
-"Two additional high-performance solvers are available when ALM is built "
-"with the SuiteSparse backend (``-DUSE_SUITESPARSE_BACKEND=yes``; see "
+"Two additional high-performance solvers are available when ALM is built with"
+" the SuiteSparse backend (``-DUSE_SUITESPARSE_BACKEND=yes``; see "
 ":ref:`Optional linear-algebra backends <install_backends>`): "
-"`SuiteSparseQR`, a multithreaded rank-revealing multifrontal sparse QR "
-"that factorizes the rectangular sensing matrix directly (a faster, "
-"parallel alternative to `SparseQR` for large or ill-conditioned "
-"problems), and `CHOLMOD`, a supernodal sparse Cholesky on the normal "
-"matrix :math:`A^{\\mathsf T}A` (a faster alternative to `SimplicialLDLT` "
-"for well-conditioned problems). Selecting either of these without "
-"building the SuiteSparse backend stops with an error."
-msgstr "ALM を SuiteSparse バックエンド付きでビルドした場合 (``-DUSE_SUITESPARSE_BACKEND=yes``; :ref:`Optional linear-algebra backends <install_backends>` を参照)、2つの追加の高性能ソルバーが利用可能になります: `SuiteSparseQR` は、長方形のセンシング行列を直接分解するマルチスレッドのランク明示マルチフロンタル疎 QR です (大きい問題や条件の悪い問題に対する `SparseQR` のより高速で並列な代替)。`CHOLMOD` は、正規行列 :math:`A^{\\mathsf T}A` に対するスーパーノード型の疎コレスキー分解です (条件の良い問題に対する `SimplicialLDLT` のより高速な代替)。SuiteSparse バックエンドをビルドせずにこれらのいずれかを選択すると、エラーで停止します。"
+"`SuiteSparseQR`, a multithreaded rank-revealing multifrontal sparse QR that "
+"factorizes the rectangular sensing matrix directly (a faster, parallel "
+"alternative to `SparseQR` for large or ill-conditioned problems), and "
+"`CHOLMOD`, a supernodal sparse Cholesky on the normal matrix "
+":math:`A^{\\mathsf T}A` (a faster alternative to `SimplicialLDLT` for well-"
+"conditioned problems). Selecting either of these without building the "
+"SuiteSparse backend stops with an error."
+msgstr ""
+"ALM を SuiteSparse バックエンド付きでビルドした場合 (``-DUSE_SUITESPARSE_BACKEND=yes``; "
+":ref:`Optional linear-algebra backends <install_backends>` "
+"を参照)、2つの追加の高性能ソルバーが利用可能になります: `SuiteSparseQR` "
+"は、長方形のセンシング行列を直接分解するマルチスレッドのランク明示マルチフロンタル疎 QR です (大きい問題や条件の悪い問題に対する "
+"`SparseQR` のより高速で並列な代替)。`CHOLMOD` は、正規行列 :math:`A^{\\mathsf T}A` "
+"に対するスーパーノード型の疎コレスキー分解です (条件の良い問題に対する `SimplicialLDLT` のより高速な代替)。SuiteSparse "
+"バックエンドをビルドせずにこれらのいずれかを選択すると、エラーで停止します。"
 
-#: ../../source/almdir/inputalm.rst:659
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:693
 #, python-brace-format
 msgid ""
-"With numerically imposed constraints (``ICONST = 1, 2, 3, 4``), most "
-"values of ``SPARSESOLVER`` do **not** select the KKT direct solver. The "
-"code first tries the KKT backend compiled into the executable "
-"(MKL/PARDISO or Apple/Accelerate LDLT), then SuiteSparseQR if the "
-"SuiteSparse backend is enabled, then Eigen's built-in sparse fallbacks. "
-"`MINRES` is the special exception (experimental): selecting "
-"``SPARSESOLVER = MINRES`` chooses an iterative solver for this KKT path. "
-"It never forms the dense factor used by direct solvers, so it can be the "
-"memory-feasible choice when direct KKT factorizations exhaust memory "
-"because the constraint matrix has dense rows (the rotational-invariance "
-"constraints of ``ICONST = 2, 3``). It is preconditioned by a block-"
-"diagonal SPD preconditioner (Jacobi on :math:`A^{\\mathsf T}A` plus the "
-"dense constraint Schur complement); ``CONV_TOL`` and ``MAXITER`` control "
-"the stopping criterion. After the solve it checks the *true* KKT residual"
-" and ``\\|C x - d\\|`` and **aborts** if they are not met, rather than "
-"returning a solution that would violate the sum rules. On badly-scaled or"
-" extremely ill-conditioned KKT systems the simple block-diagonal "
-"preconditioner may be insufficient and `MINRES` will report non-"
-"convergence -- in that case raise ``MAXITER`` / loosen ``CONV_TOL``, or "
-"use a direct LDLT backend on a reduced problem."
-msgstr "数値的に課される制約 (``ICONST = 1, 2, 3, 4``) の場合、``SPARSESOLVER`` のほとんどの値は KKT 直接ソルバーを **選択しません**。コードはまず実行ファイルにコンパイルされた KKT バックエンド (MKL/PARDISO または Apple/Accelerate の LDLT) を試し、次に SuiteSparse バックエンドが有効であれば SuiteSparseQR を、続いて Eigen の組み込み疎フォールバックを試します。`MINRES` は特別な例外 (実験的) です: ``SPARSESOLVER = MINRES`` を選択すると、この KKT 経路に対して反復ソルバーが選ばれます。これは直接ソルバーが使用する密な因子を一切形成しないため、制約行列が密な行を持つ (``ICONST = 2, 3`` の回転不変性制約) ために直接 KKT 分解がメモリを使い果たす場合に、メモリ的に実行可能な選択肢となり得ます。これはブロック対角の SPD 前処理 (:math:`A^{\\mathsf T}A` に対する Jacobi に密な制約のシューア補元を加えたもの) で前処理されます。``CONV_TOL`` と ``MAXITER`` が停止判定基準を制御します。求解後、*真の* KKT 残差と ``\\|C x - d\\|`` を確認し、和則を満たさない解を返す代わりに、それらが満たされない場合は **中断** します。スケーリングの悪い、あるいは極端に条件の悪い KKT 系では、単純なブロック対角前処理では不十分なことがあり、`MINRES` は収束しないと報告します。その場合は ``MAXITER`` を上げる / ``CONV_TOL`` を緩める、または簡約した問題に対して直接 LDLT バックエンドを使用してください。"
+"With numerically imposed constraints (``ICONST = 1, 2, 3, 4``), most values "
+"of ``SPARSESOLVER`` do **not** select the KKT direct solver. The code first "
+"tries the KKT backend compiled into the executable (MKL/PARDISO or "
+"Apple/Accelerate LDLT), then SuiteSparseQR if the SuiteSparse backend is "
+"enabled, then Eigen's built-in sparse fallbacks. `MINRES` is the special "
+"exception (experimental): selecting ``SPARSESOLVER = MINRES`` chooses an "
+"iterative solver for this KKT path. It never forms the dense factor used by "
+"direct solvers, so it can be the memory-feasible choice when direct KKT "
+"factorizations exhaust memory because the constraint matrix has dense rows "
+"(the rotational-invariance constraints of ``ICONST = 2, 3``). It is "
+"preconditioned by a block-diagonal SPD preconditioner (Jacobi on "
+":math:`A^{\\mathsf T}A` plus the dense constraint Schur complement); "
+"``CONV_TOL`` and ``MAXITER`` control the stopping criterion. After the solve"
+" it checks the *true* KKT residual and ``\\|C x - d\\|`` and **aborts** if "
+"they are not met, rather than returning a solution that would violate the "
+"sum rules. On badly-scaled or extremely ill-conditioned KKT systems the "
+"simple block-diagonal preconditioner may be insufficient and `MINRES` will "
+"report non-convergence -- in that case raise ``MAXITER`` / loosen "
+"``CONV_TOL``, or use a direct LDLT backend on a reduced problem."
+msgstr ""
+"数値的に課される制約 (``ICONST = 1, 2, 3, 4``) の場合、``SPARSESOLVER`` のほとんどの値は KKT "
+"直接ソルバーを **選択しません**。コードはまず実行ファイルにコンパイルされた KKT バックエンド (MKL/PARDISO または "
+"Apple/Accelerate の LDLT) を試し、次に SuiteSparse バックエンドが有効であれば SuiteSparseQR "
+"を、続いて Eigen の組み込み疎フォールバックを試します。`MINRES` は特別な例外 (実験的) です: ``SPARSESOLVER = "
+"MINRES`` を選択すると、この KKT "
+"経路に対して反復ソルバーが選ばれます。これは直接ソルバーが使用する密な因子を一切形成しないため、制約行列が密な行を持つ (``ICONST = 2, "
+"3`` の回転不変性制約) ために直接 KKT 分解がメモリを使い果たす場合に、メモリ的に実行可能な選択肢となり得ます。これはブロック対角の SPD "
+"前処理 (:math:`A^{\\mathsf T}A` に対する Jacobi に密な制約のシューア補元を加えたもの) "
+"で前処理されます。``CONV_TOL`` と ``MAXITER`` が停止判定基準を制御します。求解後、*真の* KKT 残差と ``\\|C x "
+"- d\\|`` を確認し、和則を満たさない解を返す代わりに、それらが満たされない場合は **中断** "
+"します。スケーリングの悪い、あるいは極端に条件の悪い KKT 系では、単純なブロック対角前処理では不十分なことがあり、`MINRES` "
+"は収束しないと報告します。その場合は ``MAXITER`` を上げる / ``CONV_TOL`` を緩める、または簡約した問題に対して直接 LDLT"
+" バックエンドを使用してください。"
 
-#: ../../source/almdir/inputalm.rst:661
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:695
 #, python-brace-format
 msgid ""
-"``SPARSESOLVER`` is ignored by ``USE_CHOLESKY = 1``. In that mode the "
-"code forms :math:`A^{\\mathsf T}A` directly and uses a sparse Cholesky "
+"``SPARSESOLVER`` is ignored by ``USE_CHOLESKY = 1``. In that mode the code "
+"forms :math:`A^{\\mathsf T}A` directly and uses a sparse Cholesky "
 "factorization (`CHOLMOD` when the SuiteSparse backend is available, "
 "otherwise `SimplicialLDLT`)."
-msgstr "``SPARSESOLVER`` は ``USE_CHOLESKY = 1`` では無視されます。そのモードでは、コードは :math:`A^{\\mathsf T}A` を直接形成し、疎なコレスキー分解 (SuiteSparse バックエンドが利用可能な場合は `CHOLMOD`、それ以外は `SimplicialLDLT`) を使用します。"
+msgstr ""
+"``SPARSESOLVER`` は ``USE_CHOLESKY = 1`` では無視されます。そのモードでは、コードは "
+":math:`A^{\\mathsf T}A` を直接形成し、疎なコレスキー分解 (SuiteSparse バックエンドが利用可能な場合は "
+"`CHOLMOD`、それ以外は `SimplicialLDLT`) を使用します。"
 
-#: ../../source/almdir/inputalm.rst:665
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:699
 msgid ""
 "Eigen documentation page: `Solving Sparse Linear Systems "
 "<https://eigen.tuxfamily.org/dox/group__TopicSparseSystems.html>`__"
-msgstr "Eigen のドキュメントページ: `Solving Sparse Linear Systems <https://eigen.tuxfamily.org/dox/group__TopicSparseSystems.html>`__"
+msgstr ""
+"Eigen のドキュメントページ: `Solving Sparse Linear Systems "
+"<https://eigen.tuxfamily.org/dox/group__TopicSparseSystems.html>`__"
 
-#: ../../source/almdir/inputalm.rst:671
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:705
 msgid "USE_CHOLESKY-tag = 0 | 1"
 msgstr "USE_CHOLESKY タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:675
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:709
 msgid "Solve the normal equations by Cholesky decomposition"
 msgstr "正規方程式をコレスキー分解で解きます"
 
-#: ../../source/almdir/inputalm.rst:680
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:714
 msgid ""
 "When ``USE_CHOLESKY = 1``, the ordinary least-squares fit is obtained by "
-"forming the normal equations :math:`A^{\\mathsf{T}} "
-"A\\,\\boldsymbol{\\Phi} = A^{\\mathsf{T}} \\boldsymbol{b}` and "
-"factorizing :math:`A^{\\mathsf{T}} A` with a Cholesky decomposition (a "
-"dense ``LLT``, or a sparse ``SimplicialLDLT`` when ``SPARSE = 1``). This "
-"is typically about twice as fast and uses noticeably less memory than the"
-" default SVD/QRD direct solvers, which makes it attractive for large, "
-"**well-conditioned** overdetermined fits (many more rows than columns). "
-"The trade-off is accuracy: forming :math:`A^{\\mathsf{T}} A` squares the "
-"condition number of :math:`A`, so the solution degrades when the sensing "
-"matrix is ill-conditioned. Keep the default ``USE_CHOLESKY = 0`` "
-"(SVD/QRD) when robustness matters or the fit is close to rank-deficient. "
-"Effective when ``LMODEL = ols``."
-msgstr "``USE_CHOLESKY = 1`` の場合、通常の最小二乗フィッティングは、正規方程式 :math:`A^{\\mathsf{T}} A\\,\\boldsymbol{\\Phi} = A^{\\mathsf{T}} \\boldsymbol{b}` を形成し、:math:`A^{\\mathsf{T}} A` をコレスキー分解 (密な ``LLT``、または ``SPARSE = 1`` のときは疎な ``SimplicialLDLT``) で分解することによって得られます。これは通常、デフォルトの SVD/QRD 直接ソルバーよりも約2倍高速で、著しく少ないメモリしか使用しません。そのため、大きく **条件の良い** 優決定フィッティング (列よりもはるかに多くの行) に魅力的です。トレードオフは精度です: :math:`A^{\\mathsf{T}} A` を形成すると :math:`A` の条件数が2乗になるため、センシング行列の条件が悪い場合は解の精度が劣化します。頑健性が重要な場合やフィッティングがランク落ちに近い場合は、デフォルトの ``USE_CHOLESKY = 0`` (SVD/QRD) のままにしてください。``LMODEL = ols`` のときに有効です。"
+"forming the normal equations :math:`A^{\\mathsf{T}} A\\,\\boldsymbol{\\Phi} "
+"= A^{\\mathsf{T}} \\boldsymbol{b}` and factorizing :math:`A^{\\mathsf{T}} A`"
+" with a Cholesky decomposition (a dense ``LLT``, or a sparse "
+"``SimplicialLDLT`` when ``SPARSE = 1``). This is typically about twice as "
+"fast and uses noticeably less memory than the default SVD/QRD direct "
+"solvers, which makes it attractive for large, **well-conditioned** "
+"overdetermined fits (many more rows than columns). The trade-off is "
+"accuracy: forming :math:`A^{\\mathsf{T}} A` squares the condition number of "
+":math:`A`, so the solution degrades when the sensing matrix is ill-"
+"conditioned. Keep the default ``USE_CHOLESKY = 0`` (SVD/QRD) when robustness"
+" matters or the fit is close to rank-deficient. Effective when ``LMODEL = "
+"ols``."
+msgstr ""
+"``USE_CHOLESKY = 1`` の場合、通常の最小二乗フィッティングは、正規方程式 :math:`A^{\\mathsf{T}} "
+"A\\,\\boldsymbol{\\Phi} = A^{\\mathsf{T}} \\boldsymbol{b}` "
+"を形成し、:math:`A^{\\mathsf{T}} A` をコレスキー分解 (密な ``LLT``、または ``SPARSE = 1`` "
+"のときは疎な ``SimplicialLDLT``) で分解することによって得られます。これは通常、デフォルトの SVD/QRD "
+"直接ソルバーよりも約2倍高速で、著しく少ないメモリしか使用しません。そのため、大きく **条件の良い** 優決定フィッティング "
+"(列よりもはるかに多くの行) に魅力的です。トレードオフは精度です: :math:`A^{\\mathsf{T}} A` を形成すると "
+":math:`A` "
+"の条件数が2乗になるため、センシング行列の条件が悪い場合は解の精度が劣化します。頑健性が重要な場合やフィッティングがランク落ちに近い場合は、デフォルトの"
+" ``USE_CHOLESKY = 0`` (SVD/QRD) のままにしてください。``LMODEL = ols`` のときに有効です。"
 
-#: ../../source/almdir/inputalm.rst:693
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:727
 msgid ""
 "``USE_CHOLESKY = 1`` cannot be combined with the numerically imposed "
-"constraints ``ICONST = 1, 2, 3``. When constraints are required, impose "
-"them algebraically with ``ICONST = 11`` instead; otherwise the code stops"
-" with an error."
-msgstr "``USE_CHOLESKY = 1`` は数値的に課される制約 ``ICONST = 1, 2, 3`` と組み合わせることはできません。制約が必要な場合は、代わりに ``ICONST = 11`` で代数的に課してください。そうでない場合、コードはエラーで停止します。"
+"constraints ``ICONST = 1, 2, 3``. When constraints are required, impose them"
+" algebraically with ``ICONST = 11`` instead; otherwise the code stops with "
+"an error."
+msgstr ""
+"``USE_CHOLESKY = 1`` は数値的に課される制約 ``ICONST = 1, 2, 3`` "
+"と組み合わせることはできません。制約が必要な場合は、代わりに ``ICONST = 11`` "
+"で代数的に課してください。そうでない場合、コードはエラーで停止します。"
 
-#: ../../source/almdir/inputalm.rst:701
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:735
 msgid ""
-"CHUNKSIZE-tag : Number of configurations processed per pass when building"
-" :math:`A^{\\mathsf{T}} A`"
+"CHUNKSIZE-tag : Number of configurations processed per pass when building "
+":math:`A^{\\mathsf{T}} A`"
 msgstr "CHUNKSIZE タグ: :math:`A^{\\mathsf{T}} A` を構築する際に1パスあたりに処理する構成の数"
 
-#: ../../source/almdir/inputalm.rst:703
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:737
 msgid "100"
 msgstr "100"
 
-#: ../../source/almdir/inputalm.rst:705
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:739
 msgid ""
-"Relevant only when ``USE_CHOLESKY = 1``. Instead of forming the full "
-"dense sensing matrix :math:`A` (size :math:`N_{\\mathrm{rows}} \\times "
+"Relevant only when ``USE_CHOLESKY = 1``. Instead of forming the full dense "
+"sensing matrix :math:`A` (size :math:`N_{\\mathrm{rows}} \\times "
 "N_{\\mathrm{cols}}`) at once, the normal-equations matrix "
-":math:`A^{\\mathsf{T}} A` is accumulated in chunks of ``CHUNKSIZE`` "
-"training configurations: for each chunk only a small block of :math:`A` "
-"is built and added into :math:`A^{\\mathsf{T}} A`. This caps the peak "
-"memory at roughly the larger of :math:`A^{\\mathsf{T}} A` itself and one "
-"chunk's block (proportional to ``CHUNKSIZE`` :math:`\\times\\, "
-"N_{\\mathrm{cols}}`), rather than the full :math:`A`. A smaller "
-"``CHUNKSIZE`` lowers the peak memory but uses more passes with smaller, "
-"less efficient matrix products; a larger ``CHUNKSIZE`` is faster but "
-"needs more memory. Lowering it below the point where one chunk is already"
-" smaller than :math:`A^{\\mathsf{T}} A` gives no further savings, since "
-":math:`A^{\\mathsf{T}} A` sets the memory floor. The default (100) is a "
-"reasonable balance; reduce it if the chunk block does not fit in memory."
-msgstr "``USE_CHOLESKY = 1`` のときのみ関係します。完全な密センシング行列 :math:`A` (サイズ :math:`N_{\\mathrm{rows}} \\times N_{\\mathrm{cols}}`) を一度に形成する代わりに、正規方程式の行列 :math:`A^{\\mathsf{T}} A` は ``CHUNKSIZE`` 個の学習構成のチャンク単位で累積されます: 各チャンクについて :math:`A` の小さなブロックのみを構築し、:math:`A^{\\mathsf{T}} A` に加算します。これにより、ピークメモリは完全な :math:`A` ではなく、おおよそ :math:`A^{\\mathsf{T}} A` 自体と1つのチャンクのブロック (``CHUNKSIZE`` :math:`\\times\\, N_{\\mathrm{cols}}` に比例) のうち大きい方に抑えられます。``CHUNKSIZE`` を小さくするとピークメモリは下がりますが、より小さく効率の悪い行列積でより多くのパスを使います。``CHUNKSIZE`` を大きくすると高速になりますが、より多くのメモリが必要です。1つのチャンクがすでに :math:`A^{\\mathsf{T}} A` より小さくなる点よりさらに小さくしても、:math:`A^{\\mathsf{T}} A` がメモリの下限を決めるため、それ以上の節約にはなりません。デフォルト (100) は妥当なバランスです。チャンクのブロックがメモリに収まらない場合は小さくしてください。"
+":math:`A^{\\mathsf{T}} A` is accumulated in chunks of ``CHUNKSIZE`` training"
+" configurations: for each chunk only a small block of :math:`A` is built and"
+" added into :math:`A^{\\mathsf{T}} A`. This caps the peak memory at roughly "
+"the larger of :math:`A^{\\mathsf{T}} A` itself and one chunk's block "
+"(proportional to ``CHUNKSIZE`` :math:`\\times\\, N_{\\mathrm{cols}}`), "
+"rather than the full :math:`A`. A smaller ``CHUNKSIZE`` lowers the peak "
+"memory but uses more passes with smaller, less efficient matrix products; a "
+"larger ``CHUNKSIZE`` is faster but needs more memory. Lowering it below the "
+"point where one chunk is already smaller than :math:`A^{\\mathsf{T}} A` "
+"gives no further savings, since :math:`A^{\\mathsf{T}} A` sets the memory "
+"floor. The default (100) is a reasonable balance; reduce it if the chunk "
+"block does not fit in memory."
+msgstr ""
+"``USE_CHOLESKY = 1`` のときのみ関係します。完全な密センシング行列 :math:`A` (サイズ "
+":math:`N_{\\mathrm{rows}} \\times N_{\\mathrm{cols}}`) を一度に形成する代わりに、正規方程式の行列"
+" :math:`A^{\\mathsf{T}} A` は ``CHUNKSIZE`` 個の学習構成のチャンク単位で累積されます: 各チャンクについて "
+":math:`A` の小さなブロックのみを構築し、:math:`A^{\\mathsf{T}} A` に加算します。これにより、ピークメモリは完全な "
+":math:`A` ではなく、おおよそ :math:`A^{\\mathsf{T}} A` 自体と1つのチャンクのブロック (``CHUNKSIZE``"
+" :math:`\\times\\, N_{\\mathrm{cols}}` に比例) のうち大きい方に抑えられます。``CHUNKSIZE`` "
+"を小さくするとピークメモリは下がりますが、より小さく効率の悪い行列積でより多くのパスを使います。``CHUNKSIZE`` "
+"を大きくすると高速になりますが、より多くのメモリが必要です。1つのチャンクがすでに :math:`A^{\\mathsf{T}} A` "
+"より小さくなる点よりさらに小さくしても、:math:`A^{\\mathsf{T}} A` "
+"がメモリの下限を決めるため、それ以上の節約にはなりません。デフォルト (100) "
+"は妥当なバランスです。チャンクのブロックがメモリに収まらない場合は小さくしてください。"
 
-#: ../../source/almdir/inputalm.rst:723
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:757
 msgid "MAXITER-tag : Number of maximum iterations in iterative algorithms"
 msgstr "MAXITER タグ: 反復アルゴリズムにおける最大反復回数"
 
-#: ../../source/almdir/inputalm.rst:725
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:759
 msgid "10,000"
 msgstr "10,000"
 
-#: ../../source/almdir/inputalm.rst:727
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:761
 msgid ""
-"Effective when an iterative solver is selected via ``SPARSESOLVER`` (when"
-" ``LMODEL = ols``) or when ``LMODEL = enet | adaptive-lasso``."
-msgstr "``SPARSESOLVER`` を通じて反復ソルバーが選択された場合 (``LMODEL = ols`` のとき)、または ``LMODEL = enet | adaptive-lasso`` のときに有効です。"
+"Effective when an iterative solver is selected via ``SPARSESOLVER`` (when "
+"``LMODEL = ols``) or when ``LMODEL = enet | adaptive-lasso``."
+msgstr ""
+"``SPARSESOLVER`` を通じて反復ソルバーが選択された場合 (``LMODEL = ols`` のとき)、または ``LMODEL = "
+"enet | adaptive-lasso`` のときに有効です。"
 
-#: ../../source/almdir/inputalm.rst:733
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:767
 msgid "CONV_TOL-tag : Convergence criterion of iterative algorithms"
 msgstr "CONV_TOL タグ: 反復アルゴリズムの収束判定基準"
 
-#: ../../source/almdir/inputalm.rst:735
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:769
 msgid "1.0e-8"
 msgstr "1.0e-8"
 
-#: ../../source/almdir/inputalm.rst:737
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:771
 msgid ""
 "When ``LMODEL = ols`` and an iterative solver is selected via "
-"``SPARSESOLVER``, ``CONV_TOL`` value is passed to the Eigen3 function via"
-" `setTolerance()`. When ``LMODEL = enet | adaptive-lasso``, the L1 solver"
-" iteration stops at :math:`i`\\ th iteration if "
+"``SPARSESOLVER``, ``CONV_TOL`` value is passed to the Eigen3 function via "
+"`setTolerance()`. When ``LMODEL = enet | adaptive-lasso``, the L1 solver "
+"iteration stops at :math:`i`\\ th iteration if "
 ":math:`\\sqrt{\\frac{1}{N}|\\boldsymbol{\\Phi}_{i} - "
 "\\boldsymbol{\\Phi}_{i-1}|_{2}^{2}} <` ``CONV_TOL`` is satisfied, where "
 ":math:`N` is the length of the vector :math:`\\boldsymbol{\\Phi}`."
-msgstr "``LMODEL = ols`` で ``SPARSESOLVER`` を通じて反復ソルバーが選択された場合、``CONV_TOL`` の値は `setTolerance()` を介して Eigen3 の関数に渡されます。``LMODEL = enet | adaptive-lasso`` の場合、L1 ソルバーの反復は、:math:`\\sqrt{\\frac{1}{N}|\\boldsymbol{\\Phi}_{i} - \\boldsymbol{\\Phi}_{i-1}|_{2}^{2}} <` ``CONV_TOL`` が満たされると :math:`i`\\ 回目の反復で停止します。ここで :math:`N` はベクトル :math:`\\boldsymbol{\\Phi}` の長さです。"
+msgstr ""
+"``LMODEL = ols`` で ``SPARSESOLVER`` を通じて反復ソルバーが選択された場合、``CONV_TOL`` の値は "
+"`setTolerance()` を介して Eigen3 の関数に渡されます。``LMODEL = enet | adaptive-lasso`` "
+"の場合、L1 ソルバーの反復は、:math:`\\sqrt{\\frac{1}{N}|\\boldsymbol{\\Phi}_{i} - "
+"\\boldsymbol{\\Phi}_{i-1}|_{2}^{2}} <` ``CONV_TOL`` が満たされると :math:`i`\\ "
+"回目の反復で停止します。ここで :math:`N` はベクトル :math:`\\boldsymbol{\\Phi}` の長さです。"
 
-#: ../../source/almdir/inputalm.rst:742
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:776
 msgid ""
 "Eigen documentation page: `IterativeSolverBase "
 "<https://eigen.tuxfamily.org/dox/classEigen_1_1IterativeSolverBase.html>`__"
-msgstr "Eigen のドキュメントページ: `IterativeSolverBase <https://eigen.tuxfamily.org/dox/classEigen_1_1IterativeSolverBase.html>`__"
+msgstr ""
+"Eigen のドキュメントページ: `IterativeSolverBase "
+"<https://eigen.tuxfamily.org/dox/classEigen_1_1IterativeSolverBase.html>`__"
 
-#: ../../source/almdir/inputalm.rst:748
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:782
 msgid "L1_RATIO-tag : The ratio of the L1 regularization term"
 msgstr "L1_RATIO タグ: L1 正則化項の比率"
 
-#: ../../source/almdir/inputalm.rst:750
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:784
 msgid "1.0 (LASSO)"
 msgstr "1.0 (LASSO)"
 
-#: ../../source/almdir/inputalm.rst:752
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:786
 #, python-brace-format
 msgid ""
 "The ``L1_RATIO`` changes the regularization term as ``L1_ALPHA`` "
 ":math:`\\times` [``L1_RATIO`` :math:`|\\boldsymbol{\\Phi}|_{1}` + "
 ":math:`\\frac{1}{2}` (1-``L1_RATIO``) "
 ":math:`|\\boldsymbol{\\Phi}|_{2}^{2}`]. Therefore, ``L1_RATIO = 1`` "
-"corresponds to LASSO. ``L1_RATIO`` must be ``0 < L1_ratio <= 1``. "
-"Effective when ``LMODEL = enet``. See also :ref:`here <alm_theory_enet>`."
-msgstr "``L1_RATIO`` は正則化項を ``L1_ALPHA`` :math:`\\times` [``L1_RATIO`` :math:`|\\boldsymbol{\\Phi}|_{1}` + :math:`\\frac{1}{2}` (1-``L1_RATIO``) :math:`|\\boldsymbol{\\Phi}|_{2}^{2}`] のように変えます。したがって、``L1_RATIO = 1`` は LASSO に対応します。``L1_RATIO`` は ``0 < L1_ratio <= 1`` でなければなりません。``LMODEL = enet`` のときに有効です。:ref:`here <alm_theory_enet>` も参照してください。"
+"corresponds to LASSO. ``L1_RATIO`` must be ``0 < L1_ratio <= 1``. Effective "
+"when ``LMODEL = enet``. See also :ref:`here <alm_theory_enet>`."
+msgstr ""
+"``L1_RATIO`` は正則化項を ``L1_ALPHA`` :math:`\\times` [``L1_RATIO`` "
+":math:`|\\boldsymbol{\\Phi}|_{1}` + :math:`\\frac{1}{2}` (1-``L1_RATIO``) "
+":math:`|\\boldsymbol{\\Phi}|_{2}^{2}`] のように変えます。したがって、``L1_RATIO = 1`` は "
+"LASSO に対応します。``L1_RATIO`` は ``0 < L1_ratio <= 1`` でなければなりません。``LMODEL = "
+"enet`` のときに有効です。:ref:`here <alm_theory_enet>` も参照してください。"
 
-#: ../../source/almdir/inputalm.rst:758
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:792
 msgid "L1_SOLVER-tag = cd | fista | admm"
 msgstr "L1_SOLVER タグ = cd | fista | admm"
 
-#: ../../source/almdir/inputalm.rst:761 ../../source/almdir/inputalm.rst:766
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:795
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:800
 msgid "cd"
 msgstr "cd"
 
-#: ../../source/almdir/inputalm.rst:761
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:795
 msgid "Use the coordinate descent solver."
 msgstr "座標降下法 (coordinate descent) ソルバーを使用します。"
 
-#: ../../source/almdir/inputalm.rst:762
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:796
 msgid "fista"
 msgstr "fista"
 
-#: ../../source/almdir/inputalm.rst:762
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:796
 msgid "Use the fast iterative shrinkage-thresholding algorithm."
-msgstr "高速反復縮小閾値アルゴリズム (fast iterative shrinkage-thresholding algorithm) を使用します。"
+msgstr ""
+"高速反復縮小閾値アルゴリズム (fast iterative shrinkage-thresholding algorithm) を使用します。"
 
-#: ../../source/almdir/inputalm.rst:763
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:797
 msgid "admm"
 msgstr "admm"
 
-#: ../../source/almdir/inputalm.rst:763
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:797
 msgid "Use the alternating direction method of multipliers (experimental)."
 msgstr "交互方向乗数法 (alternating direction method of multipliers) を使用します (実験的)。"
 
-#: ../../source/almdir/inputalm.rst:768
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:802
 msgid ""
-"Selects the iterative solver used when ``LMODEL = enet | adaptive-"
-"lasso``. All three solvers target the same elastic-net or adaptive-LASSO "
-"objective and are interchangeable. The ``cd`` solver is the coordinate "
-"descent method; it warm-starts along the cross-validation alpha path and "
-"is the fastest choice for that path, so it is the recommended default. "
-"The ``fista`` solver avoids forming the dense :math:`N \\times N` Gram "
-"matrix and can reduce memory usage for large dense L1-regularized "
-"problems. The ``admm`` solver is provided mainly for research and cross-"
-"checking; on warm-started alpha paths it is generally slower than ``cd`` "
-"and offers no advantage for the typical problem sizes here."
-msgstr "``LMODEL = enet | adaptive-lasso`` のときに使用される反復ソルバーを選択します。3つのソルバーはいずれも同じ elastic net または adaptive LASSO の目的関数を対象としており、相互に置き換え可能です。``cd`` ソルバーは座標降下法です。これは交差検証の alpha パスに沿ってウォームスタートし、そのパスにおいて最速の選択肢であるため、推奨されるデフォルトです。``fista`` ソルバーは密な :math:`N \\times N` グラム行列の形成を回避し、大きな密 L1 正則化問題のメモリ使用量を削減できます。``admm`` ソルバーは主に研究と相互検証のために提供されています。ウォームスタートした alpha パスでは一般に ``cd`` より遅く、ここで扱う典型的な問題サイズでは利点がありません。"
+"Selects the iterative solver used when ``LMODEL = enet | adaptive-lasso``. "
+"All three solvers target the same elastic-net or adaptive-LASSO objective "
+"and are interchangeable. The ``cd`` solver is the coordinate descent method;"
+" it warm-starts along the cross-validation alpha path and is the fastest "
+"choice for that path, so it is the recommended default. The ``fista`` solver"
+" avoids forming the dense :math:`N \\times N` Gram matrix and can reduce "
+"memory usage for large dense L1-regularized problems. The ``admm`` solver is"
+" provided mainly for research and cross-checking; on warm-started alpha "
+"paths it is generally slower than ``cd`` and offers no advantage for the "
+"typical problem sizes here."
+msgstr ""
+"``LMODEL = enet | adaptive-lasso`` のときに使用される反復ソルバーを選択します。3つのソルバーはいずれも同じ "
+"elastic net または adaptive LASSO の目的関数を対象としており、相互に置き換え可能です。``cd`` "
+"ソルバーは座標降下法です。これは交差検証の alpha "
+"パスに沿ってウォームスタートし、そのパスにおいて最速の選択肢であるため、推奨されるデフォルトです。``fista`` ソルバーは密な :math:`N "
+"\\times N` グラム行列の形成を回避し、大きな密 L1 正則化問題のメモリ使用量を削減できます。``admm`` "
+"ソルバーは主に研究と相互検証のために提供されています。ウォームスタートした alpha パスでは一般に ``cd`` "
+"より遅く、ここで扱う典型的な問題サイズでは利点がありません。"
 
-#: ../../source/almdir/inputalm.rst:782
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:816
 msgid "L1_ALPHA-tag : The coefficient of the L1 regularization term"
 msgstr "L1_ALPHA タグ: L1 正則化項の係数"
 
-#: ../../source/almdir/inputalm.rst:784
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:818
 msgid "0.0"
 msgstr "0.0"
 
-#: ../../source/almdir/inputalm.rst:786
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:820
 msgid ""
-"This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = 0``. "
-"See also :ref:`here <alm_theory_enet>`."
-msgstr "このタグは ``LMODEL = enet | adaptive-lasso`` かつ ``CV = 0`` のときに使用されます。:ref:`here <alm_theory_enet>` も参照してください。"
+"This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = 0``. See"
+" also :ref:`here <alm_theory_enet>`."
+msgstr ""
+"このタグは ``LMODEL = enet | adaptive-lasso`` かつ ``CV = 0`` のときに使用されます。:ref:`here"
+" <alm_theory_enet>` も参照してください。"
 
-#: ../../source/almdir/inputalm.rst:792
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:826
 msgid "CV-tag : Cross-validation mode for elastic net"
 msgstr "CV タグ: elastic net の交差検証 (cross-validation) モード"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "Cross-validation mode is off."
 msgstr "交差検証モードはオフです。"
 
-#: ../../source/almdir/inputalm.rst
-msgid "The elastic net optimization is solved with the given ``L1_ALPHA`` value."
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
+msgid ""
+"The elastic net optimization is solved with the given ``L1_ALPHA`` value."
 msgstr "elastic net の最適化が与えられた ``L1_ALPHA`` 値で解かれます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "The force constants are written to ``PREFIX``.fcs and ``PREFIX``.xml."
 msgstr "力定数は ``PREFIX``.fcs および ``PREFIX``.xml に書き出されます。"
 
-#: ../../source/almdir/inputalm.rst:799
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:833
 msgid ">= 2"
 msgstr ">= 2"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "``CV``-fold cross-validation is performed *automatically*."
 msgstr "``CV`` 分割交差検証が *自動的に* 実行されます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "``NDATA`` training datasets are divided into ``CV`` subsets, and ``CV`` "
 "different combinations of"
 msgstr "``NDATA`` 個の学習データセットが ``CV`` 個の部分集合に分割され、``CV`` 通りの異なる"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"training-validation datasets are created internally. For each "
-"combination, the elastic net"
+"training-validation datasets are created internally. For each combination, "
+"the elastic net"
 msgstr "学習-検証データセットの組み合わせが内部的に作成されます。各組み合わせについて、elastic net の"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"optimization is solved with the various ``L1_ALPHA`` values defined by "
-"the ``CV_MINALPHA``,"
+"optimization is solved with the various ``L1_ALPHA`` values defined by the "
+"``CV_MINALPHA``,"
 msgstr "最適化がさまざまな ``L1_ALPHA`` 値で解かれます。これらの値は ``CV_MINALPHA``、"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"``CV_MAXALPHA``, and ``CV_NALPHA`` tags. The result of each cross-"
-"validation is stored in"
+"``CV_MAXALPHA``, and ``CV_NALPHA`` tags. The result of each cross-validation"
+" is stored in"
 msgstr "``CV_MAXALPHA``、``CV_NALPHA`` タグで定義されます。各交差検証の結果は"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"``PREFIX``.cvset[1, ..., ``CV``], and their average and deviation are "
-"stored in ``PREFIX``.cvscore."
-msgstr "``PREFIX``.cvset[1, ..., ``CV``] に保存され、それらの平均と偏差は ``PREFIX``.cvscore に保存されます。"
+"``PREFIX``.cvset[1, ..., ``CV``], and their average and deviation are stored"
+" in ``PREFIX``.cvscore."
+msgstr ""
+"``PREFIX``.cvset[1, ..., ``CV``] に保存され、それらの平均と偏差は ``PREFIX``.cvscore "
+"に保存されます。"
 
-#: ../../source/almdir/inputalm.rst:806
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:840
 msgid "-1"
 msgstr "-1"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "The cross-validation is performed *manually*."
 msgstr "交差検証が *手動で* 実行されます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"The Taylor expansion potential is trained by using the training datasets "
-"in ``DFSET``, and"
+"The Taylor expansion potential is trained by using the training datasets in "
+"``DFSET``, and"
 msgstr "テイラー展開ポテンシャルが ``DFSET`` 内の学習データセットを用いて学習され、"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "the validation score is calculated by using the data in ``DFSET_CV`` for "
 "various ``L1_ALPHA`` values"
 msgstr "検証スコアが ``DFSET_CV`` 内のデータを用いてさまざまな ``L1_ALPHA`` 値について計算されます。これらの値は"
 
-#: ../../source/almdir/inputalm.rst
-msgid "defined by the ``CV_MINALPHA``, ``CV_MAXALPHA``, and ``CV_NALPHA`` tags."
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
+msgid ""
+"defined by the ``CV_MINALPHA``, ``CV_MAXALPHA``, and ``CV_NALPHA`` tags."
 msgstr "``CV_MINALPHA``、``CV_MAXALPHA``、``CV_NALPHA`` タグで定義されます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "After the calculation, the fitting and validation errors are stored in "
 "``PREFIX``.cvset."
 msgstr "計算後、フィッティング誤差と検証誤差が ``PREFIX``.cvset に保存されます。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "This option may be convenient for a large-scale problem since multiple "
 "optimization tasks with"
 msgstr "このオプションは大規模な問題に便利な場合があります。なぜなら、異なる学習-検証データセットを用いた複数の最適化タスクを"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "different training-validation datasets can be done in parallel."
 msgstr "並列に実行できるからです。"
 
-#: ../../source/almdir/inputalm.rst:817
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:851
 msgid "This tag is used when ``LMODEL = enet | adaptive-lasso``."
 msgstr "このタグは ``LMODEL = enet | adaptive-lasso`` のときに使用されます。"
 
-#: ../../source/almdir/inputalm.rst:824
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:858
 msgid ""
 "DFSET_CV-tag : File name containing displacement-force datasets used for "
 "manual cross-validation"
 msgstr "DFSET_CV タグ: 手動の交差検証に使用する変位-力データセットを含むファイル名"
 
-#: ../../source/almdir/inputalm.rst:826
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:860
 msgid "``DFSET_CV = DFSET``"
 msgstr "``DFSET_CV = DFSET``"
 
-#: ../../source/almdir/inputalm.rst:828 ../../source/almdir/inputalm.rst:838
-#: ../../source/almdir/inputalm.rst:848
-msgid "This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = -1``."
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:862
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:872
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:882
+msgid ""
+"This tag is used when ``LMODEL = enet | adaptive-lasso`` and ``CV = -1``."
 msgstr "このタグは ``LMODEL = enet | adaptive-lasso`` かつ ``CV = -1`` のときに使用されます。"
 
-#: ../../source/almdir/inputalm.rst:834
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:868
 msgid "NDATA_CV-tag : Number of displacement-force validation datasets"
 msgstr "NDATA_CV タグ: 変位-力の検証データセットの数"
 
-#: ../../source/almdir/inputalm.rst:844
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:878
 msgid ""
 "NSTART_CV, NEND_CV-tags : Specifies the range of data to be used for "
 "validation"
 msgstr "NSTART_CV, NEND_CV タグ: 検証に使用するデータの範囲を指定します"
 
-#: ../../source/almdir/inputalm.rst:846
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:880
 msgid "``NSTART_CV = 1``, ``NEND_CV = NDATA_CV``"
 msgstr "``NSTART_CV = 1``, ``NEND_CV = NDATA_CV``"
 
-#: ../../source/almdir/inputalm.rst:855
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:889
 msgid ""
 "CV_MINALPHA, CV_MAXALPHA, CV_NALPHA-tags : Options to specify the "
 "``L1_ALPHA`` values used in cross-validation"
-msgstr "CV_MINALPHA, CV_MAXALPHA, CV_NALPHA タグ: 交差検証で使用する ``L1_ALPHA`` 値を指定するオプション"
+msgstr ""
+"CV_MINALPHA, CV_MAXALPHA, CV_NALPHA タグ: 交差検証で使用する ``L1_ALPHA`` 値を指定するオプション"
 
-#: ../../source/almdir/inputalm.rst:857
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:891
 msgid "``CV_MAXALPHA`` is set automatically"
 msgstr "``CV_MAXALPHA`` は自動的に設定されます"
 
-#: ../../source/almdir/inputalm.rst:859
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:893
 msgid "``CV_MINALPHA = CV_MAXALPHA * 1.0e-6``"
 msgstr "``CV_MINALPHA = CV_MAXALPHA * 1.0e-6``"
 
-#: ../../source/almdir/inputalm.rst:861
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:895
 msgid "``CV_NALPHA = 50``"
 msgstr "``CV_NALPHA = 50``"
 
-#: ../../source/almdir/inputalm.rst:862
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:896
 msgid "Double, Double, Integer"
 msgstr "倍精度実数, 倍精度実数, 整数"
 
-#: ../../source/almdir/inputalm.rst:863
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:897
 msgid ""
-"``CV_NALPHA`` values of ``L1_ALPHA`` are generated from ``CV_MINALPHA`` "
-"to ``CV_MAXALPHA`` in logarithmic scale. When ``CV_MAXALPHA`` is not "
-"specified by user, the code automatically sets ``CV_MAXALPHA`` so that "
-"the maximum ``L1_ALPHA`` makes all coefficients zero. The default value "
-"of ``CV_MINALPHA`` is ``CV_MAXALPHA * 1.0e-6``, which is reasonable in "
-"many cases. If the minimum value of the validation score is found at "
+"``CV_NALPHA`` values of ``L1_ALPHA`` are generated from ``CV_MINALPHA`` to "
+"``CV_MAXALPHA`` in logarithmic scale. When ``CV_MAXALPHA`` is not specified "
+"by user, the code automatically sets ``CV_MAXALPHA`` so that the maximum "
+"``L1_ALPHA`` makes all coefficients zero. The default value of "
+"``CV_MINALPHA`` is ``CV_MAXALPHA * 1.0e-6``, which is reasonable in many "
+"cases. If the minimum value of the validation score is found at "
 "``CV_MINALPHA``, you may need to use a smaller value of ``CV_MINALPHA``. "
 "This tag is used when ``LMODEL = enet | adaptive-lasso`` and the cross-"
 "validation mode is on (``CV > 0`` or ``CV = -1``)."
-msgstr "``CV_NALPHA`` 個の ``L1_ALPHA`` の値が、``CV_MINALPHA`` から ``CV_MAXALPHA`` まで対数スケールで生成されます。``CV_MAXALPHA`` がユーザーによって指定されない場合、コードは最大の ``L1_ALPHA`` がすべての係数をゼロにするように ``CV_MAXALPHA`` を自動的に設定します。``CV_MINALPHA`` のデフォルト値は ``CV_MAXALPHA * 1.0e-6`` であり、多くの場合これで妥当です。検証スコアの最小値が ``CV_MINALPHA`` で見つかった場合は、より小さい ``CV_MINALPHA`` の値を使用する必要があるかもしれません。このタグは ``LMODEL = enet | adaptive-lasso`` かつ交差検証モードがオン (``CV > 0`` または ``CV = -1``) のときに使用されます。"
+msgstr ""
+"``CV_NALPHA`` 個の ``L1_ALPHA`` の値が、``CV_MINALPHA`` から ``CV_MAXALPHA`` "
+"まで対数スケールで生成されます。``CV_MAXALPHA`` がユーザーによって指定されない場合、コードは最大の ``L1_ALPHA`` "
+"がすべての係数をゼロにするように ``CV_MAXALPHA`` を自動的に設定します。``CV_MINALPHA`` のデフォルト値は "
+"``CV_MAXALPHA * 1.0e-6`` であり、多くの場合これで妥当です。検証スコアの最小値が ``CV_MINALPHA`` "
+"で見つかった場合は、より小さい ``CV_MINALPHA`` の値を使用する必要があるかもしれません。このタグは ``LMODEL = enet | "
+"adaptive-lasso`` かつ交差検証モードがオン (``CV > 0`` または ``CV = -1``) のときに使用されます。"
 
-#: ../../source/almdir/inputalm.rst:869
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:903
 msgid "STANDARDIZE-tag = 0 | 1"
 msgstr "STANDARDIZE タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:872
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:906
 msgid "Do not standardize the sensing matrix"
 msgstr "センシング行列を標準化しません"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "Each column of the sensing matrix is standardized in such a way that its "
 "mean value"
 msgstr "センシング行列の各列が、その平均値が"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid "becomes 0 and standard deviation becomes 1."
 msgstr "0、標準偏差が 1 になるように標準化されます。"
 
-#: ../../source/almdir/inputalm.rst:879
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:913
 msgid ""
-"This option influences the optimal ``L1_ALPHA`` value. So, if you change "
-"the ``STANDARDIZE`` option, you have to rerun the cross-validation. "
-"Effective only when ``LMODEL = enet``."
-msgstr "このオプションは最適な ``L1_ALPHA`` 値に影響します。そのため、``STANDARDIZE`` オプションを変更した場合は、交差検証をやり直す必要があります。``LMODEL = enet`` のときのみ有効です。"
+"This option influences the optimal ``L1_ALPHA`` value. So, if you change the"
+" ``STANDARDIZE`` option, you have to rerun the cross-validation. Effective "
+"only when ``LMODEL = enet``."
+msgstr ""
+"このオプションは最適な ``L1_ALPHA`` 値に影響します。そのため、``STANDARDIZE`` "
+"オプションを変更した場合は、交差検証をやり直す必要があります。``LMODEL = enet`` のときのみ有効です。"
 
-#: ../../source/almdir/inputalm.rst:886
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:920
 msgid "ENET_DNORM-tag : Normalization factor of atomic displacements"
 msgstr "ENET_DNORM タグ: 原子変位の正規化係数"
 
-#: ../../source/almdir/inputalm.rst:888
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:922
 msgid "1.0"
 msgstr "1.0"
 
-#: ../../source/almdir/inputalm.rst:890
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:924
 #, python-brace-format
 msgid ""
-"The normalization factor of atomic displacement :math:`u_{0}` in units of"
-" bohr. When :math:`u_{0} (\\neq 1)` is given, the displacement data are "
+"The normalization factor of atomic displacement :math:`u_{0}` in units of "
+"bohr. When :math:`u_{0} (\\neq 1)` is given, the displacement data are "
 "scaled as :math:`u_{i} \\rightarrow u_{i}/u_{0}` before constructing the "
-"sensing matrix. This option influences the optimal ``L1_ALPHA`` value. "
-"So, if you change the ``ENET_DNORM`` value, you will have to rerun the "
-"cross-validation. Effective only when ``LMODEL = enet`` and ``STANDARDIZE"
-" = 0``."
-msgstr "bohr 単位の原子変位の正規化係数 :math:`u_{0}` です。:math:`u_{0} (\\neq 1)` が与えられると、変位データはセンシング行列を構築する前に :math:`u_{i} \\rightarrow u_{i}/u_{0}` のようにスケーリングされます。このオプションは最適な ``L1_ALPHA`` 値に影響します。そのため、``ENET_DNORM`` の値を変更した場合は、交差検証をやり直す必要があります。``LMODEL = enet`` かつ ``STANDARDIZE = 0`` のときのみ有効です。"
+"sensing matrix. This option influences the optimal ``L1_ALPHA`` value. So, "
+"if you change the ``ENET_DNORM`` value, you will have to rerun the cross-"
+"validation. Effective only when ``LMODEL = enet`` and ``STANDARDIZE = 0``."
+msgstr ""
+"bohr 単位の原子変位の正規化係数 :math:`u_{0}` です。:math:`u_{0} (\\neq 1)` "
+"が与えられると、変位データはセンシング行列を構築する前に :math:`u_{i} \\rightarrow u_{i}/u_{0}` "
+"のようにスケーリングされます。このオプションは最適な ``L1_ALPHA`` 値に影響します。そのため、``ENET_DNORM`` "
+"の値を変更した場合は、交差検証をやり直す必要があります。``LMODEL = enet`` かつ ``STANDARDIZE = 0`` "
+"のときのみ有効です。"
 
-#: ../../source/almdir/inputalm.rst:898
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:932
 msgid "SOLUTION_PATH-tag = 0 | 1"
 msgstr "SOLUTION_PATH タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:901
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:935
 msgid "Do not save the solution path."
 msgstr "解パスを保存しません。"
 
-#: ../../source/almdir/inputalm.rst:902
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:936
 msgid ""
 "Save the solution path of each cross-validation combination in "
 "``PREFIX``.solution_path."
 msgstr "各交差検証の組み合わせの解パスを ``PREFIX``.solution_path に保存します。"
 
-#: ../../source/almdir/inputalm.rst:907
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:941
 msgid ""
-"Effective when ``LMODEL = enet | adaptive-lasso`` and the cross-"
-"validation mode is on."
+"Effective when ``LMODEL = enet | adaptive-lasso`` and the cross-validation "
+"mode is on."
 msgstr "``LMODEL = enet | adaptive-lasso`` かつ交差検証モードがオンのときに有効です。"
 
-#: ../../source/almdir/inputalm.rst:913
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:947
 msgid "DEBIAS_OLS-tag = 0 | 1"
 msgstr "DEBIAS_OLS タグ = 0 | 1"
 
-#: ../../source/almdir/inputalm.rst:916
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:950
 msgid ""
 "Save the solution of the L1-regularized problem to ``PREFIX``.fcs and "
 "``PREFIX``.xml."
 msgstr "L1 正則化問題の解を ``PREFIX``.fcs および ``PREFIX``.xml に保存します。"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
-"After the solution of the elastic net or adaptive LASSO optimization "
-"problem is obtained,"
+"After the solution of the elastic net or adaptive LASSO optimization problem"
+" is obtained,"
 msgstr "elastic net または adaptive LASSO の最適化問題の解が得られた後、"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "only non-zero coefficients are collected, and the ordinary least-squares "
 "fitting is"
 msgstr "非ゼロの係数のみが集められ、通常の最小二乗フィッティングが"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "solved again with the non-zero coefficients before saving the results to "
 "``PREFIX``.fcs and"
 msgstr "非ゼロの係数を用いて再度解かれてから、結果が ``PREFIX``.fcs および"
 
-#: ../../source/almdir/inputalm.rst
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst
 msgid ""
 "``PREFIX``.xml. This might be useful to reduce the bias of the "
 "L1-regularized solution."
 msgstr "``PREFIX``.xml に保存されます。これは L1 正則化解のバイアスを低減するのに役立つ場合があります。"
 
-#: ../../source/almdir/inputalm.rst:925
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:959
 msgid "Effective when ``LMODEL = enet | adaptive-lasso`` and ``CV = 0``."
 msgstr "``LMODEL = enet | adaptive-lasso`` かつ ``CV = 0`` のときに有効です。"
 
-#: ../../source/almdir/inputalm.rst:932
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:966
 msgid ""
 "STOP_CRITERION-tag : The scan over ``L1_ALPHA`` stops when the cross-"
 "validation score keeps increasing in ``STOP_CRITERION`` consecutive steps"
-msgstr "STOP_CRITERION タグ: 交差検証スコアが ``STOP_CRITERION`` 回連続のステップで増加し続けると、``L1_ALPHA`` のスキャンが停止します"
+msgstr ""
+"STOP_CRITERION タグ: 交差検証スコアが ``STOP_CRITERION`` 回連続のステップで増加し続けると、``L1_ALPHA``"
+" のスキャンが停止します"
 
-#: ../../source/almdir/inputalm.rst:934
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:968
 msgid "5"
 msgstr "5"
 
-#: ../../source/almdir/inputalm.rst:936
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:970
 msgid ""
-"Effective when ``LMODEL = enet | adaptive-lasso`` and the cross-"
-"validation mode is turned on (``CV > 0`` or ``CV = -1``)."
-msgstr "``LMODEL = enet | adaptive-lasso`` かつ交差検証モードがオン (``CV > 0`` または ``CV = -1``) のときに有効です。"
+"Effective when ``LMODEL = enet | adaptive-lasso`` and the cross-validation "
+"mode is turned on (``CV > 0`` or ``CV = -1``)."
+msgstr ""
+"``LMODEL = enet | adaptive-lasso`` かつ交差検証モードがオン (``CV > 0`` または ``CV = -1``)"
+" のときに有効です。"
 
-#: ../../source/almdir/inputalm.rst:943
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:977
 msgid "How to make a DFSET file"
 msgstr "DFSET ファイルの作り方"
 
-#: ../../source/almdir/inputalm.rst:948
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:982
 msgid "Format of ``DFSET``"
 msgstr "``DFSET`` の書式"
 
-#: ../../source/almdir/inputalm.rst:950
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:984
 msgid ""
-"The displacement-force data sets obtained by first-principles (or "
-"classical force-field) calculations have to be saved to a file, say "
-"*DFSET*. Then, the force constants are estimated by setting ``DFSET =`` "
-"*DFSET* and with ``MODE = optimize``."
-msgstr "第一原理 (または古典的な力場) 計算によって得られた変位-力データセットは、例えば *DFSET* というファイルに保存する必要があります。その後、``DFSET =`` *DFSET* を設定し、``MODE = optimize`` とすることで力定数が推定されます。"
+"The displacement-force data sets obtained by first-principles (or classical "
+"force-field) calculations have to be saved to a file, say *DFSET*. Then, the"
+" force constants are estimated by setting ``DFSET =`` *DFSET* and with "
+"``MODE = optimize``."
+msgstr ""
+"第一原理 (または古典的な力場) 計算によって得られた変位-力データセットは、例えば *DFSET* "
+"というファイルに保存する必要があります。その後、``DFSET =`` *DFSET* を設定し、``MODE = optimize`` "
+"とすることで力定数が推定されます。"
 
-#: ../../source/almdir/inputalm.rst:953
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:987
 msgid ""
 "The *DFSET* file must contain the atomic displacements and corresponding "
 "forces in Cartesian coordinate for at least ``NDATA`` structures "
-"(displacement patterns) in the following format (one line per atom, "
-"blocks separated by an optional comment line beginning with ``#``)::"
-msgstr "*DFSET* ファイルには、少なくとも ``NDATA`` 個の構造 (変位パターン) について、原子変位と対応する力を Cartesian 座標で次の書式で含める必要があります (原子1個につき1行、ブロックは ``#`` で始まる任意のコメント行で区切られます)::"
+"(displacement patterns) in the following format (one line per atom, blocks "
+"separated by an optional comment line beginning with ``#``)::"
+msgstr ""
+"*DFSET* ファイルには、少なくとも ``NDATA`` 個の構造 (変位パターン) について、原子変位と対応する力を Cartesian "
+"座標で次の書式で含める必要があります (原子1個につき1行、ブロックは ``#`` で始まる任意のコメント行で区切られます)::"
 
-#: ../../source/almdir/inputalm.rst:966
+#: ../../../../../../../Users/tadano/src/alamode/docs/source/almdir/inputalm.rst:1000
 msgid ""
 "Here, ``NAT`` is the number of atoms in the supercell. The unit of "
-"displacements and forces must be **bohr** and **Ryd/bohr**, respectively."
-msgstr "ここで、``NAT`` はスーパーセル内の原子数です。変位と力の単位は、それぞれ **bohr** と **Ryd/bohr** でなければなりません。"
+"displacements and forces must be **bohr** and **Ryd/bohr**, respectively, "
+"unless other units are declared with the :ref:`LENGTH_UNIT "
+"<alm_length_unit>` and :ref:`FORCE_UNIT <alm_force_unit>` tags (e.g., "
+"``LENGTH_UNIT = angstrom; FORCE_UNIT = eV/angstrom`` for data taken directly"
+" from VASP output)."
+msgstr ""
+"ここで、``NAT`` はスーパーセルに含まれる原子数です。変位と力の単位は、:ref:`LENGTH_UNIT <alm_length_unit>` "
+"および :ref:`FORCE_UNIT <alm_force_unit>` タグで別の単位を宣言しない限り、それぞれ **bohr** と "
+"**Ryd/bohr** でなければなりません (例えば、VASP の出力をそのまま使用する場合は ``LENGTH_UNIT = angstrom; "
+"FORCE_UNIT = eV/angstrom``)。"
+
+#~ msgid ""
+#~ "Here, ``NAT`` is the number of atoms in the supercell. The unit of "
+#~ "displacements and forces must be **bohr** and **Ryd/bohr**, respectively."
+#~ msgstr ""
+#~ "ここで、``NAT`` はスーパーセル内の原子数です。変位と力の単位は、それぞれ **bohr** と **Ryd/bohr** でなければなりません。"

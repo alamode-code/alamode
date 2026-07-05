@@ -91,7 +91,7 @@ Description of input variables
   kappa    | Calculate phonon lifetimes and lattice thermal conductivity
            | based on the Boltzmann transport equation (BTE). The solver
            | level (RTA, IBTE, ...) is chosen by the :ref:`SOLVER <anphon_solver>`
-           | tag of the &kappa field. ``MODE = kappa`` is a deprecated alias.
+           | tag of the &kappa field. ``MODE = RTA`` is a deprecated alias.
 
    SCPH    | Calculate temperature dependent phonon dispersion curves
            | by the self-consistent phonon method.
