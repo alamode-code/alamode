@@ -41,6 +41,24 @@ public:
     // following integration->ismear).
     void build_L();
 
+    // Include the elastic isotope-disorder channel (Tamura kernel) in the
+    // operator: its in-scattering enters calc_W_at and its diagonal is the
+    // row sum, so the channel conserves the constant mode exactly. Must be
+    // set before build_L().
+    void set_isotope_channel(const bool flag)
+    {
+        with_isotope = flag;
+    }
+
+    bool has_isotope_channel() const
+    {
+        return with_isotope;
+    }
+
+    // Add the isotope diagonal 2 n(n+1) sum_j w(row,j) to the local rows of
+    // q_inout ([nklocal][ns]).
+    void add_isotope_diagonal(const double *const *fb, double **q_inout) const;
+
     // Diagonal (out-scattering) part at the local wedge points from the
     // equilibrium occupations n; q1 is [nklocal][ns].
     void calc_Q_from_L(const double *const *n, double **q1) const;
@@ -84,6 +102,22 @@ private:
 
     double ***L_absorb; // L q0 + q1 -> q2
     double ***L_emitt;  // L q0 -> q1 + q2
+
+    // Elastic isotope-disorder kernel: sparse partners of each local wedge
+    // row with the temperature-independent value w = (pi/4N) w1 w2 g2
+    // |<e2|e1>|^2 delta(w1-w2); rowsum feeds the diagonal.
+    struct IsotopeEntry
+    {
+        int knum;
+        int snum;
+        double val;
+    };
+
+    bool with_isotope;
+    std::vector<std::vector<IsotopeEntry>> L_iso; // [ikl * ns + s]
+    std::vector<double> L_iso_rowsum;
+
+    void build_L_isotope();
 
     std::vector<std::vector<KsListGroup>> localnk_triplets_emitt;
     std::vector<std::vector<KsListGroup>> localnk_triplets_absorb;

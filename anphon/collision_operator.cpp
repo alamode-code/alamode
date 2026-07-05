@@ -16,6 +16,7 @@
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
+#include "isotope.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -36,6 +37,7 @@ CollisionOperator::CollisionOperator(PHON *phon) : Pointers(phon)
     ns2 = 0;
     use_triplet_symmetry = true;
     sym_permutation = false;
+    with_isotope = false;
     L_absorb = nullptr;
     L_emitt = nullptr;
 }
@@ -229,6 +231,185 @@ void CollisionOperator::build_L()
         setup_L_smear();
     } else if (integration->ismear == -1) {
         setup_L_tetra();
+    }
+    if (with_isotope) {
+        build_L_isotope();
+    }
+}
+
+void CollisionOperator::build_L_isotope()
+{
+    // Elastic isotope-disorder kernel between mode (k1,s1) at a local wedge
+    // point and every mode (k2,s2) of the full mesh (Tamura formula),
+    // discretized exactly like Isotope::calc_isotope_selfenergy[_tetra] so
+    // that the row sums reproduce the SERTA isotope linewidths.
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto eval_in = dos->dymat_dos->get_eigenvalues();
+    const auto evec_in = dos->dymat_dos->get_eigenvectors();
+    const auto &g2 = isotope->isotope_factor;
+    const auto &kind = system->get_primcell().kind;
+
+    L_iso.assign(static_cast<size_t>(nklocal) * ns, {});
+    L_iso_rowsum.assign(static_cast<size_t>(nklocal) * ns, 0.0);
+
+    // Degeneracy-averaged frequencies (tetrahedron path only), built once.
+    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
+    double **eval_tetra = nullptr;
+    if (integration->ismear == -1) {
+        allocate(eval_tetra, ns, nk_3ph);
+        for (int ik = 0; ik < nk_3ph; ++ik) {
+            auto begin = 0;
+            auto omega_ref = eval_in[ik][0];
+            auto omega_sum = eval_in[ik][0];
+            for (int is = 1; is < ns; ++is) {
+                const auto omega_now = eval_in[ik][is];
+                if (std::abs(omega_now - omega_ref) < tol_degenerate) {
+                    omega_sum += omega_now;
+                } else {
+                    const auto omega_avg = omega_sum / static_cast<double>(is - begin);
+                    for (auto js = begin; js < is; ++js) eval_tetra[js][ik] = omega_avg;
+                    begin = is;
+                    omega_ref = omega_now;
+                    omega_sum = omega_now;
+                }
+            }
+            const auto omega_avg = omega_sum / static_cast<double>(ns - begin);
+            for (auto js = begin; js < ns; ++js) eval_tetra[js][ik] = omega_avg;
+        }
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        double *energy_tmp = nullptr;
+        double **weight_tetra = nullptr;
+        unsigned int *kmap_identity = nullptr;
+        if (integration->ismear == -1) {
+            allocate(energy_tmp, nk_3ph);
+            allocate(weight_tetra, ns, nk_3ph);
+            allocate(kmap_identity, nk_3ph);
+            for (int ik = 0; ik < nk_3ph; ++ik) kmap_identity[ik] = ik;
+        }
+
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int irow = 0; irow < nklocal * ns; ++irow) {
+            const int ikl = irow / ns;
+            const int s1 = irow % ns;
+            const int k1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ikl]][0].knum;
+            const auto omega1 = eval_in[k1][s1];
+            if (omega1 < eps8) continue;
+
+            auto &row = L_iso[irow];
+            double rowsum = 0.0;
+
+            const auto prod_overlap = [&](const int k2, const int s2) {
+                auto prod = 0.0;
+                for (auto iat = 0; iat < natmin; ++iat) {
+                    auto dprod = std::complex<double>(0.0, 0.0);
+                    for (auto icrd = 0; icrd < 3; ++icrd) {
+                        dprod += std::conj(evec_in[k2][s2][3 * iat + icrd]) * evec_in[k1][s1][3 * iat + icrd];
+                    }
+                    prod += g2[kind[iat]] * std::norm(dprod);
+                }
+                return prod;
+            };
+
+            if (integration->ismear >= 0) {
+                const auto epsilon = integration->epsilon;
+                const auto prefactor = pi * omega1 * 0.25 / static_cast<double>(nk_3ph);
+                for (int k2 = 0; k2 < nk_3ph; ++k2) {
+                    for (int s2 = 0; s2 < ns; ++s2) {
+                        const auto omega2 = eval_in[k2][s2];
+                        double delta_loc = 0.0;
+                        double peak;
+                        if (integration->ismear == 0) {
+                            delta_loc = delta_lorentz(omega1 - omega2, epsilon);
+                            peak = delta_lorentz(0.0, epsilon);
+                        } else if (integration->ismear == 1) {
+                            delta_loc = delta_gauss(omega1 - omega2, epsilon);
+                            peak = delta_gauss(0.0, epsilon);
+                        } else {
+                            double eps_loc;
+                            integration->adaptive_sigma->get_sigma(k2, s2, eps_loc);
+                            delta_loc = delta_gauss(omega1 - omega2, eps_loc);
+                            peak = delta_gauss(0.0, eps_loc);
+                        }
+                        // Sparsity cutoff far off shell (<= 1e-12 of the
+                        // on-shell weight); negligible for the row sums.
+                        if (delta_loc <= 1.0e-12 * peak) continue;
+                        const auto val = prefactor * omega2 * delta_loc * prod_overlap(k2, s2);
+                        if (val == 0.0) continue;
+                        row.push_back({k2, s2, val});
+                        rowsum += val;
+                    }
+                }
+            } else {
+                // Tetrahedron: weights per s2 over the k2 grid, then
+                // block-averaged within degenerate manifolds (mirrors
+                // Isotope::calc_isotope_selfenergy_tetra).
+                for (int s2 = 0; s2 < ns; ++s2) {
+                    for (int ik = 0; ik < nk_3ph; ++ik) energy_tmp[ik] = eval_tetra[s2][ik];
+                    integration->calc_weight_tetrahedron(nk_3ph,
+                                                         kmap_identity,
+                                                         energy_tmp,
+                                                         omega1,
+                                                         dos->tetra_nodes_dos->get_ntetra(),
+                                                         dos->tetra_nodes_dos->get_tetras(),
+                                                         weight_tetra[s2]);
+                }
+                for (int k2 = 0; k2 < nk_3ph; ++k2) {
+                    auto begin = 0;
+                    auto omega_ref = eval_tetra[0][k2];
+                    for (int s2 = 1; s2 <= ns; ++s2) {
+                        if (s2 < ns && std::abs(eval_tetra[s2][k2] - omega_ref) < tol_degenerate) continue;
+                        if (s2 - begin > 1) {
+                            auto wsum = 0.0;
+                            for (auto js = begin; js < s2; ++js) wsum += weight_tetra[js][k2];
+                            wsum /= static_cast<double>(s2 - begin);
+                            for (auto js = begin; js < s2; ++js) weight_tetra[js][k2] = wsum;
+                        }
+                        if (s2 < ns) {
+                            begin = s2;
+                            omega_ref = eval_tetra[s2][k2];
+                        }
+                    }
+                }
+                const auto prefactor = pi * omega1 * 0.25;
+                for (int k2 = 0; k2 < nk_3ph; ++k2) {
+                    for (int s2 = 0; s2 < ns; ++s2) {
+                        if (weight_tetra[s2][k2] == 0.0) continue;
+                        const auto val =
+                            prefactor * weight_tetra[s2][k2] * eval_tetra[s2][k2] * prod_overlap(k2, s2);
+                        if (val == 0.0) continue;
+                        row.push_back({k2, s2, val});
+                        rowsum += val;
+                    }
+                }
+            }
+            L_iso_rowsum[irow] = rowsum;
+        }
+
+        if (integration->ismear == -1) {
+            deallocate(energy_tmp);
+            deallocate(weight_tetra);
+            deallocate(kmap_identity);
+        }
+    }
+
+    if (eval_tetra) deallocate(eval_tetra);
+}
+
+void CollisionOperator::add_isotope_diagonal(const double *const *fb, double **q_inout) const
+{
+    for (int ikl = 0; ikl < nklocal; ++ikl) {
+        const int k1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ikl]][0].knum;
+        for (int s = 0; s < ns; ++s) {
+            q_inout[ikl][s] += fb[k1][s] * (fb[k1][s] + 1.0) * 2.0 *
+                               L_iso_rowsum[static_cast<size_t>(ikl) * ns + s];
+        }
     }
 }
 
@@ -654,6 +835,20 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *fb, const 
         }
 
     } // s1
+
+    if (with_isotope) {
+        // Elastic in-scattering: -2 n1(n1+1) w(row,partner) dF(partner);
+        // together with the row-sum diagonal this annihilates constant
+        // fields exactly.
+        for (int s1 = 0; s1 < ns; ++s1) {
+            const auto occ = 2.0 * fb[k1][s1] * (fb[k1][s1] + 1.0);
+            for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s1]) {
+                for (int ix = 0; ix < 3; ++ix) {
+                    Wks_out[s1][ix] -= occ * entry.val * dF[entry.knum][entry.snum][ix];
+                }
+            }
+        }
+    }
 }
 
 void CollisionOperator::reconstruct_full_from_wedge(const double *dF_ir, double ***dF_full) const

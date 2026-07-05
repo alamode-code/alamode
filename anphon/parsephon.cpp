@@ -423,6 +423,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
                                               "WRITE_INTERPOL",
                                               "ADAPTIVE_FACTOR",
                                               "SOLVER",
+                                              "ISOTOPE_INSCATTERING",
                                               "ITERATIVE",
                                               "MAX_CYCLE",
                                               "MIN_CYCLE",
@@ -464,6 +465,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
     int min_cycle = 5;
     auto iter_threshold = 0.02;
     auto iterative_mixing = 0.9;
+    int isotope_inscattering = 1;
 
     // -1 = tag not given; resolved below (legacy QUARTIC fallback).
     int include_4ph = -1;
@@ -483,6 +485,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
         assign_val(adaptive_factor, "ADAPTIVE_FACTOR", kappa_var_dict);
         iterative_given = !kappa_var_dict["ITERATIVE"].empty();
         assign_val(iterative, "ITERATIVE", kappa_var_dict);
+        assign_val(isotope_inscattering, "ISOTOPE_INSCATTERING", kappa_var_dict);
         assign_val(solver, "SOLVER", kappa_var_dict);
         assign_val(max_cycle, "MAX_CYCLE", kappa_var_dict);
         assign_val(min_cycle, "MIN_CYCLE", kappa_var_dict);
@@ -556,6 +559,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
     }
     conductivity->solver_ibte = solver == "IBTE" || solver == "VBTE";
     iterativebte->use_variational = solver == "VBTE";
+    iterativebte->isotope_inscattering = isotope_inscattering != 0;
     iterativebte->max_cycle = max_cycle;
     iterativebte->min_cycle = min_cycle;
     iterativebte->mixing_factor = iterative_mixing;

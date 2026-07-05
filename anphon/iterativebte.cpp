@@ -53,6 +53,7 @@ void Iterativebte::set_default_variables()
     mixing_factor = 0.9;
     convergence_criteria = 0.02;
     use_variational = false;
+    isotope_inscattering = true;
     cg_symmetry_checked = false;
     kappa = nullptr;
 
@@ -90,6 +91,7 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(&mixing_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&convergence_criteria, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_variational, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&isotope_inscattering, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     // The 4ph channel follows conductivity->fph_rta, decided by the
     // INCLUDE_4PH tag at parse time (same as SOLVER = RTA).
@@ -109,7 +111,14 @@ void Iterativebte::setup_iterative()
     // Build the collision operator: wedge distribution over the MPI ranks,
     // triplet lists of the local k points and the symmetry table.
     collision_op = std::make_unique<CollisionOperator>(phon);
+    collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering);
     collision_op->setup();
+
+    if (collision_op->has_isotope_channel() && mympi->my_rank == 0) {
+        std::cout << '\n' << " ISOTOPE_INSCATTERING = 1: the elastic isotope-disorder channel enters\n"
+                  << " the collision operator with its in-scattering term (its diagonal is the\n"
+                  << " operator row sum; set ISOTOPE_INSCATTERING = 0 for the RTA-level diagonal).\n";
+    }
 
     nk_l = collision_op->get_local_irred_ks();
     nklocal = collision_op->get_nklocal();
@@ -380,14 +389,18 @@ void Iterativebte::iterative_solver()
             average_over_degenerate_modes(ns, dos->dymat_dos->get_eigenvalues()[k1], 1, Q[ik]);
         }
 
-        // Total diagonal: the 3ph out-scattering part plus the RTA-level
-        // add-on channels (isotope, boundary, 4ph), shared by both solvers.
+        // Total diagonal: the 3ph out-scattering part plus the add-on
+        // channels, shared by both solvers. The isotope diagonal comes from
+        // the operator row sums when its in-scattering is active (so the
+        // channel annihilates constant fields exactly), and from the SERTA
+        // linewidths otherwise; boundary is exactly diagonal, and 4ph is
+        // treated at the RTA level.
         for (ik = 0; ik < nklocal; ik++) {
             auto tmpk = nk_l[ik];
             const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
             for (int s1 = 0; s1 < ns; ++s1) {
                 auto qf = Q[ik][s1];
-                if (isotope->include_isotope) {
+                if (isotope->include_isotope && !collision_op->has_isotope_channel()) {
                     qf += fb[k1][s1] * (fb[k1][s1] + 1.0) * 2.0 * isotope_damping_loc[ik][s1];
                 }
                 if (conductivity->len_boundary > eps) {
@@ -398,6 +411,9 @@ void Iterativebte::iterative_solver()
                 }
                 Qfin[ik][s1] = qf;
             }
+        }
+        if (collision_op->has_isotope_channel()) {
+            collision_op->add_isotope_diagonal(fb, Qfin);
         }
 
         if (warm_start) {

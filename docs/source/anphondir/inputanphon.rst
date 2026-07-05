@@ -57,7 +57,8 @@ List of supported input variables
    **&kappa**
    :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
    :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
-   :ref:`ITERATIVE <anphon_iterative>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_SPEC <anphon_kappa_spec>`
+   :ref:`ISOTOPE_INSCATTERING <anphon_isotope_inscattering>`, :ref:`ITERATIVE <anphon_iterative>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`
+   :ref:`KAPPA_SPEC <anphon_kappa_spec>`
    :ref:`KMESH_COARSE <anphon_kmesh_coarse>`, :ref:`LEN_BOUNDARY <anphon_len_boundary>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`MIN_CYCLE <anphon_min_cycle>`
    :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`SOLVER <anphon_solver>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
 
@@ -1878,6 +1879,31 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                and :math:`\bar{m}=\sum_{i}f_{i}m_{i}` is the average mass, respectively. 
                This quantity is equivalent to :math:`g_{2}` appearing in the original paper by S. Tamura [Phys. Rev. B, 27, 858.].
 
+
+````
+
+.. _anphon_isotope_inscattering:
+
+* ISOTOPE_INSCATTERING-tag = 0 | 1
+
+ === =========================================================================
+  0   Isotope scattering enters the iterative solvers as an RTA-level
+      (diagonal) rate only
+  1   The elastic isotope-disorder channel (Tamura kernel) becomes part of
+      the collision operator, including its in-scattering term
+ === =========================================================================
+
+ :Default: 1
+ :Type: Integer
+ :Description: Used by ``SOLVER = IBTE`` and ``VBTE`` when ``ISOTOPE >= 1``
+               (``SOLVER = RTA`` is unaffected). With the in-scattering term the
+               isotope diagonal is the row sum of the operator entries, so the
+               elastic channel annihilates constant deviation functions exactly.
+               The effect on kappa is positive (in-scattering restores heat flux)
+               and grows with the mass variance and towards low temperatures; for
+               natural silicon it is below 0.2 %. Boundary scattering remains
+               exactly diagonal (it has no in-scattering term), and the
+               four-phonon channel is treated at the RTA level.
 
 ````
 

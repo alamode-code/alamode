@@ -62,7 +62,8 @@ public:
     int max_cycle;
     int min_cycle;
     double mixing_factor;
-    bool use_variational; // SOLVER = VBTE: conjugate gradients instead of Jacobi
+    bool use_variational;      // SOLVER = VBTE: conjugate gradients instead of Jacobi
+    bool isotope_inscattering; // include the elastic isotope in-scattering term
 
     double convergence_criteria; // dF(i+1) - dF(i) < cc
 

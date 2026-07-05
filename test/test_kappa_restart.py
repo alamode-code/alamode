@@ -417,6 +417,38 @@ def check_ibte_h5(anphonbin):
     return 0
 
 
+ISO_PREFIX = "si222_iso"
+
+
+def check_isotope_inscattering(anphonbin):
+    """Isotope in-scattering raises kappa vs the diagonal-only treatment."""
+    kappa = {}
+    for state, tag in (("on", ""), ("off", " ISOTOPE_INSCATTERING = 0\n")):
+        with open("iso_%s.in" % state, "w") as f:
+            f.write(
+                "&general\n PREFIX = %s_%s; MODE = kappa; FCSFILE = si222_cubic.xml; KD = Si\n"
+                % (ISO_PREFIX, state)
+            )
+            f.write(" TMIN = 300; TMAX = 300; DT = 100\n/\n")
+            f.write("&cell\n  10.203\n  0.0 0.5 0.5\n  0.5 0.0 0.5\n  0.5 0.5 0.0\n/\n")
+            f.write("&kpoint\n  2\n  4 4 4\n/\n")
+            f.write("&kappa\n SOLVER = IBTE\n ISOFACT = 0.02\n%s/\n" % tag)
+        if run_anphon(anphonbin, "iso_%s.in" % state, "iso_%s.log" % state):
+            print("isotope in-scattering run (%s) failed" % state)
+            return 1
+        kappa[state] = np.loadtxt("%s_%s.kl_iter" % (ISO_PREFIX, state)).reshape(-1)[1]
+    if not kappa["on"] > kappa["off"]:
+        print(
+            "in-scattering did not raise kappa (on %.5f vs off %.5f)"
+            % (kappa["on"], kappa["off"])
+        )
+        return 1
+    if (kappa["on"] - kappa["off"]) / kappa["off"] > 0.1:
+        print("in-scattering effect is implausibly large")
+        return 1
+    return 0
+
+
 VBTE_PREFIX = "si222_vbte"
 
 
@@ -490,6 +522,10 @@ def runtest_kappa_restart(almbin, anphonbin, project_root):
     if check_vbte(anphonbin):
         return 1
     print("VBTE (CG) solver --> pass")
+
+    if check_isotope_inscattering(anphonbin):
+        return 1
+    print("Isotope in-scattering --> pass")
 
     if os.environ.get("ALAMODE_TEST_KILL", "1") != "0":
         if check_kill_recovery(anphonbin, fresh_runtime):
