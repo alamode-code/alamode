@@ -64,7 +64,11 @@ jobs:
           mkdir -p _build
           cd _build
           cmake -DCMAKE_BUILD_TYPE=Release ..
-          make -j
+          # Bounded parallelism: unbounded "make -j" compiles every target's
+          # translation units at once and OOM-kills the 16 GB runner (the
+          # runner agent dies and the job ends as "canceled" with no
+          # compiler diagnostics). The tests only need alm and anphon.
+          make alm anphon -j4
           cd ..
       
       - name: Run test Si
