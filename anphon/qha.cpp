@@ -80,6 +80,11 @@ void Qha::exec_qha_optimization()
 
     MPI_Bcast(&restart_qha, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    // These are parsed on rank 0 only and read on every rank below:
+    // ialgo selects between V4 kernels with different MPI collectives, and
+    // selfenergy_offdiagonal enters the collective V3/V4 element computations.
+    MPI_Bcast(&selfenergy_offdiagonal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&ialgo, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (restart_qha) {
 
