@@ -45,12 +45,6 @@ void Dos::set_default_variables()
     two_phonon_dos = false;
     longitudinal_projected_dos = false;
     scattering_phase_space = 0;
-    dos_phonon = nullptr;
-    pdos_phonon = nullptr;
-    dos2_phonon = nullptr;
-    longitude_dos = nullptr;
-    sps3_mode = nullptr;
-    sps3_with_bose = nullptr;
     auto_set_emin = true;
     auto_set_emax = true;
     emin = 0.0;
@@ -60,22 +54,22 @@ void Dos::set_default_variables()
 void Dos::deallocate_variables()
 {
     if (dos_phonon) {
-        deallocate(dos_phonon);
+        dos_phonon.clear();
     }
     if (pdos_phonon) {
-        deallocate(pdos_phonon);
+        pdos_phonon.clear();
     }
     if (longitude_dos) {
-        deallocate(longitude_dos);
+        longitude_dos.clear();
     }
     if (dos2_phonon) {
-        deallocate(dos2_phonon);
+        dos2_phonon.clear();
     }
     if (sps3_mode) {
-        deallocate(sps3_mode);
+        sps3_mode.clear();
     }
     if (sps3_with_bose) {
-        deallocate(sps3_with_bose);
+        sps3_with_bose.clear();
     }
 
     tetra_nodes_dos.reset();
@@ -152,9 +146,9 @@ void Dos::calc_dos_all()
 {
     const auto nk = kmesh_dos->nk;
     const auto neval = dynamical->neval;
-    double **eval;
+    NDArray<double, 2> eval;
 
-    allocate(eval, neval, nk);
+    eval.resize(neval, nk);
 
     for (unsigned int j = 0; j < nk; ++j) {
         for (unsigned int k = 0; k < neval; ++k) {
@@ -177,7 +171,7 @@ void Dos::calc_dos_all()
     update_dos_energy_grid(emin_now, emax_now);
 
     if (compute_dos) {
-        allocate(dos_phonon, n_energy);
+        dos_phonon.resize(n_energy);
         calc_dos(nk,
                  kmesh_dos->nk_irred,
                  kmesh_dos->kmap_to_irreducible.data(),
@@ -192,7 +186,7 @@ void Dos::calc_dos_all()
     }
 
     if (projected_dos) {
-        allocate(pdos_phonon, system->get_primcell().number_of_atoms, n_energy);
+        pdos_phonon.resize(system->get_primcell().number_of_atoms, n_energy);
         calc_atom_projected_dos(nk,
                                 eval,
                                 n_energy,
@@ -205,7 +199,7 @@ void Dos::calc_dos_all()
     }
 
     if (longitudinal_projected_dos) {
-        allocate(longitude_dos, n_energy);
+        longitude_dos.resize(n_energy);
         calc_longitudinal_projected_dos(nk,
                                         kmesh_dos->xk,
                                         system->get_primcell().reciprocal_lattice_vector,
@@ -219,15 +213,15 @@ void Dos::calc_dos_all()
                                         dymat_dos->get_eigenvectors());
     }
 
-    deallocate(eval);
+    eval.clear();
 
     if (two_phonon_dos) {
-        allocate(dos2_phonon, kmesh_dos->nk_irred, n_energy, 4);
+        dos2_phonon.resize(kmesh_dos->nk_irred, n_energy, 4);
         calc_two_phonon_dos(dymat_dos->get_eigenvalues(), n_energy, energy_dos, integration->ismear, dos2_phonon);
     }
 
     if (scattering_phase_space == 1) {
-        allocate(sps3_mode, kmesh_dos->nk_irred, dynamical->neval, 2);
+        sps3_mode.resize(kmesh_dos->nk_irred, dynamical->neval, 2);
         calc_total_scattering_phase_space(dymat_dos->get_eigenvalues(), integration->ismear, sps3_mode, total_sps3);
     } else if (scattering_phase_space == 2) {
         const auto Tmin = system->Tmin;
@@ -235,7 +229,7 @@ void Dos::calc_dos_all()
         const auto dT = system->dT;
         const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-        allocate(sps3_with_bose, kmesh_dos->nk_irred, dynamical->neval, NT, 2);
+        sps3_with_bose.resize(kmesh_dos->nk_irred, dynamical->neval, NT, 2);
         calc_scattering_phase_space_with_Bose(dymat_dos->get_eigenvalues(), integration->ismear, sps3_with_bose);
     }
 }
@@ -245,13 +239,13 @@ void Dos::calc_dos(const unsigned int nk, const unsigned int nk_irreducible, con
                    const unsigned int neval, const int smearing_method, const unsigned int ntetra,
                    const unsigned int *const *tetras, double *ret) const
 {
-    double *weight;
+    NDArray<double, 1> weight;
 
 #ifdef _OPENMP
 #pragma omp parallel private(weight)
 #endif
     {
-        allocate(weight, nk_irreducible);
+        weight.resize(nk_irreducible);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -273,7 +267,7 @@ void Dos::calc_dos(const unsigned int nk, const unsigned int nk_irreducible, con
                 }
             }
         }
-        deallocate(weight);
+        weight.clear();
     }
 
     //    if (mympi->my_rank == 0) std::cout << " done." << '\n';
@@ -287,14 +281,14 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     // Calculate atom projected phonon-DOS
 
     int i;
-    unsigned int *kmap_identity;
-    double *weight;
-    double **proj;
+    NDArray<unsigned int, 1> kmap_identity;
+    NDArray<double, 1> weight;
+    NDArray<double, 2> proj;
 
     if (mympi->my_rank == 0) std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
 
-    allocate(kmap_identity, nk);
-    allocate(proj, neval, nk);
+    kmap_identity.resize(nk);
+    proj.resize(neval, nk);
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -315,7 +309,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
 #pragma omp parallel private(weight)
 #endif
         {
-            allocate(weight, nk);
+            weight.resize(nk);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -342,11 +336,11 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
                 }
             }
 
-            deallocate(weight);
+            weight.clear();
         }
     }
-    deallocate(proj);
-    deallocate(kmap_identity);
+    proj.clear();
+    kmap_identity.clear();
 
     if (mympi->my_rank == 0) std::cout << " done!\n";
 }
@@ -361,9 +355,9 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     // Calculate atom projected phonon-DOS
 
     int i;
-    unsigned int *kmap_identity;
-    double *weight;
-    double **proj;
+    NDArray<unsigned int, 1> kmap_identity;
+    NDArray<double, 1> weight;
+    NDArray<double, 2> proj;
 
     double xq_cart[3];
 
@@ -373,8 +367,8 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     if (mympi->my_rank == 0)
         std::cout << " LONGITUDE_DOS = 1 : Calculating longitudinal-mode projected phonon DOS ... ";
 
-    allocate(kmap_identity, nk);
-    allocate(proj, neval, nk);
+    kmap_identity.resize(nk);
+    proj.resize(neval, nk);
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -425,7 +419,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
 #pragma omp parallel private(weight)
 #endif
     {
-        allocate(weight, nk);
+        weight.resize(nk);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -452,10 +446,10 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
             }
         }
 
-        deallocate(weight);
+        weight.clear();
     }
-    deallocate(proj);
-    deallocate(kmap_identity);
+    proj.clear();
+    kmap_identity.clear();
 
     if (mympi->my_rank == 0) std::cout << " done!\n";
 }
@@ -474,25 +468,25 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
 
     const int ns2 = ns * ns;
 
-    unsigned int *kmap_identity;
+    NDArray<unsigned int, 1> kmap_identity;
 
-    double **e_tmp;
-    double **weight;
+    NDArray<double, 2> e_tmp;
+    NDArray<double, 2> weight;
 
     double xk_tmp[3];
 
     int loc;
-    int *k_pair;
+    NDArray<int, 1> k_pair;
 
     if (mympi->my_rank == 0) {
         std::cout << " TDOS = 1 : Calculating two-phonon DOS for all irreducible k points.\n";
         std::cout << "            This may take a while ... ";
     }
 
-    allocate(kmap_identity, nk);
-    allocate(e_tmp, 2, nk);
-    allocate(weight, n, nk);
-    allocate(k_pair, nk);
+    kmap_identity.resize(nk);
+    e_tmp.resize(2, nk);
+    weight.resize(n, nk);
+    k_pair.resize(nk);
 
     const auto xk = kmesh_dos->xk;
 
@@ -571,10 +565,10 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
         }
     }
 
-    deallocate(e_tmp);
-    deallocate(weight);
-    deallocate(kmap_identity);
-    deallocate(k_pair);
+    e_tmp.clear();
+    weight.clear();
+    kmap_identity.clear();
+    k_pair.clear();
 
     if (mympi->my_rank == 0) {
         std::cout << "done!\n";
@@ -590,13 +584,13 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
     const auto ns = dynamical->neval;
     const int ns2 = ns * ns;
 
-    unsigned int *kmap_identity;
+    NDArray<unsigned int, 1> kmap_identity;
 
     if (mympi->my_rank == 0) {
         std::cout << " SPS = 1 : Calculating three-phonon scattering phase space ... ";
     }
 
-    allocate(kmap_identity, nk);
+    kmap_identity.resize(nk);
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -622,14 +616,14 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 #pragma omp parallel
 #endif
             {
-                double **e_tmp;
-                double *weight;
+                NDArray<double, 2> e_tmp;
+                NDArray<double, 1> weight;
                 int js, ks;
                 int loc;
                 double xk_tmp[3];
 
-                allocate(weight, nk);
-                allocate(e_tmp, 2, nk);
+                weight.resize(nk);
+                e_tmp.resize(2, nk);
 #ifdef _OPENMP
 #pragma omp for private(i, j), reduction(+ : sps_tmp1, sps_tmp2)
 #endif
@@ -682,8 +676,8 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
                             sps_tmp2 += weight[j];
                     }
                 }
-                deallocate(e_tmp);
-                deallocate(weight);
+                e_tmp.clear();
+                weight.clear();
             }
             sps_sum1 += multi * sps_tmp1;
             sps_sum2 += multi * sps_tmp2;
@@ -693,7 +687,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
         }
     }
 
-    deallocate(kmap_identity);
+    kmap_identity.clear();
 
     ret = (sps_sum1 + 2.0 * sps_sum2) / (3.0 * static_cast<double>(std::pow(ns, 3.0)));
 
@@ -708,9 +702,9 @@ void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in, const
 {
     const auto nk = kmesh_in->nk;
     const auto neval = dynamical->neval;
-    double **eval;
+    NDArray<double, 2> eval;
 
-    allocate(eval, neval, nk);
+    eval.resize(neval, nk);
     for (unsigned int j = 0; j < nk; ++j) {
         for (unsigned int k = 0; k < neval; ++k) {
             eval[k][j] = writes->in_kayser(eval_in[j][k]);
@@ -730,7 +724,7 @@ void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in, const
              tetras_in,
              dos_out);
 
-    deallocate(eval);
+    eval.clear();
 }
 
 void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, const int smearing_method,
@@ -739,19 +733,19 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     unsigned int i, j;
     unsigned int knum;
     double xk_tmp[3];
-    double **ret_mode;
+    NDArray<double, 2> ret_mode;
     double omega0;
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
-    double *temperature;
+    NDArray<double, 1> temperature;
     int ik, iT;
     const auto nk_irred = kmesh_dos->nk_irred;
     const auto nk = kmesh_dos->nk;
     const auto ns = dynamical->neval;
     unsigned int imode;
-    unsigned int *k2_arr;
-    double **recv_buf;
+    NDArray<unsigned int, 1> k2_arr;
+    NDArray<double, 2> recv_buf;
     const auto omega_max = emax;
     const auto omega_min = emin;
 
@@ -763,11 +757,11 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     }
 
     const auto N = static_cast<int>((Tmax - Tmin) / dT) + 1;
-    allocate(temperature, N);
+    temperature.resize(N);
     for (i = 0; i < N; ++i)
         temperature[i] = Tmin + static_cast<double>(i) * dT;
 
-    allocate(k2_arr, nk);
+    k2_arr.resize(nk);
 
     for (i = 0; i < nk_irred; ++i) {
         for (j = 0; j < ns; ++j) {
@@ -778,16 +772,16 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
         }
     }
 
-    allocate(ret_mode, N, 2);
+    ret_mode.resize(N, 2);
 
     const auto nks_total = nk_irred * ns;
     const auto nks_each_thread = nks_total / mympi->nprocs;
     const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
 
     if (nrem > 0) {
-        allocate(recv_buf, (nks_each_thread + 1) * mympi->nprocs, 2 * N);
+        recv_buf.resize((nks_each_thread + 1) * mympi->nprocs, 2 * N);
     } else {
-        allocate(recv_buf, nks_total, 2 * N);
+        recv_buf.resize(nks_total, 2 * N);
     }
 
     ks_g.clear();
@@ -883,10 +877,10 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
         }
     }
 
-    deallocate(ret_mode);
-    deallocate(k2_arr);
-    deallocate(recv_buf);
-    deallocate(temperature);
+    ret_mode.clear();
+    k2_arr.clear();
+    recv_buf.clear();
+    temperature.clear();
 
     if (mympi->my_rank == 0) {
         std::cout << " done!\n";
@@ -906,15 +900,15 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
     double ret1, ret2;
     double n1, n2, f1, f2;
 
-    double **energy_tmp;
-    double **weight;
-    double ***delta_arr;
+    NDArray<double, 2> energy_tmp;
+    NDArray<double, 2> weight;
+    NDArray<double, 3> delta_arr;
 
-    unsigned int *kmap_identity;
+    NDArray<unsigned int, 1> kmap_identity;
 
-    allocate(delta_arr, nk, ns2, 2);
+    delta_arr.resize(nk, ns2, 2);
 
-    allocate(kmap_identity, nk);
+    kmap_identity.resize(nk);
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
 
@@ -924,8 +918,8 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
 #pragma omp parallel private(i, is, js, k1, k2, omega1, omega2, energy_tmp, weight)
 #endif
     {
-        allocate(energy_tmp, 2, nk);
-        allocate(weight, 2, nk);
+        energy_tmp.resize(2, nk);
+        weight.resize(2, nk);
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -972,8 +966,8 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
             }
         }
 
-        deallocate(energy_tmp);
-        deallocate(weight);
+        energy_tmp.clear();
+        weight.clear();
     }
 
     for (unsigned int iT = 0; iT < N; ++iT) {
@@ -1017,6 +1011,6 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
         ret[iT][1] = ret2;
     }
 
-    deallocate(delta_arr);
-    deallocate(kmap_identity);
+    delta_arr.clear();
+    kmap_identity.clear();
 }

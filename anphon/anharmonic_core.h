@@ -12,6 +12,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include <complex>
 #include <memory>
+#include "ndarray.h"
 #include <vector>
 #include "fcs_phonon.h"
 #include "kpoint.h"
@@ -78,20 +79,10 @@ public:
         for (auto i = 0; i < 3; ++i) {
             nk_grid[i] = static_cast<int>(nk_grid_in[i]);
         }
-
-        if (exp_phase) deallocate(exp_phase);
-        if (exp_phase3) deallocate(exp_phase3);
     };
 
-    ~PhaseFactorStorage()
-    {
-        if (exp_phase) deallocate(exp_phase);
-        if (exp_phase3) deallocate(exp_phase3);
-    }
-
-    // Owns raw arrays; copying would double-free.
     PhaseFactorStorage(const PhaseFactorStorage &) = delete;
-    PhaseFactorStorage &operator=(const PhaseFactorStorage &) = delete;;
+    PhaseFactorStorage &operator=(const PhaseFactorStorage &) = delete;
 
     void create(const bool use_tuned_ver, const bool switch_to_type2 = false);
 
@@ -108,8 +99,8 @@ private:
     unsigned int tune_type;
     double dnk_represent;
     double dnk[3];
-    std::complex<double> *exp_phase = nullptr;
-    std::complex<double> ***exp_phase3 = nullptr;
+    NDArray<std::complex<double>, 1> exp_phase;
+    NDArray<std::complex<double>, 3> exp_phase3;
 };
 
 class AnharmonicCore: protected Pointers
@@ -216,7 +207,7 @@ public:
                                         std::vector<double> *fcs_group, std::vector<RelativeVector> *vec_out);
 
     static void prepare_group_of_force_constants(const std::vector<FcsArrayWithCell> &fcs_in, int &number_of_groups,
-                                                 std::vector<double> *&fcs_group_out);
+                                                 NDArray<std::vector<double>, 1> &fcs_group_out);
 
     void calc_self3omega_tetrahedron(const double Temp, const KpointMeshUniform *kmesh_in, const double *const *eval,
                                      const std::complex<double> *const *const *evec, const unsigned int ik_in,
@@ -224,7 +215,7 @@ public:
                                      double *ret);
 
     void calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
-                              std::vector<double, std::allocator<double>> *fcs_group_v3_in,
+                              const std::vector<double> *fcs_group_v3_in,
                               const std::vector<RelativeVector> *relvec_v3_in,
                               const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
                               const bool use_openmp = true);
@@ -235,13 +226,13 @@ public:
 
     int get_ngroup_fcs(const unsigned int order) const;
 
-    std::vector<double> *get_fcs_group(const unsigned int order) const;
+    const std::vector<double> *get_fcs_group(const unsigned int order) const;
 
-    double *get_invmass_factor(const unsigned int order) const;
+    const double *get_invmass_factor(const unsigned int order) const;
 
-    int **get_evec_index(const unsigned int order) const;
+    const int *const *get_evec_index(const unsigned int order) const;
 
-    std::vector<RelativeVector> *get_relvec(const unsigned int order) const;
+    const std::vector<RelativeVector> *get_relvec(const unsigned int order) const;
 
     void calc_analytic_k_from_FcsArrayWithCell(const double *, const std::vector<FcsArrayWithCell> &,
                                                std::complex<double> **) const;
@@ -251,16 +242,16 @@ private:
 
     void deallocate_variables();
 
-    double *invmass_v3;
-    double *invmass_v4;
-    int **evec_index_v3;
-    int **evec_index_v4;
+    NDArray<double, 1> invmass_v3;
+    NDArray<double, 1> invmass_v4;
+    NDArray<int, 2> evec_index_v3;
+    NDArray<int, 2> evec_index_v4;
     int ngroup_v3;
     int ngroup_v4;
-    std::vector<double> *fcs_group_v3;
-    std::vector<double> *fcs_group_v4;
-    std::complex<double> *phi3_reciprocal, *phi4_reciprocal;
-    std::vector<RelativeVector> *relvec_v3, *relvec_v4;
+    NDArray<std::vector<double>, 1> fcs_group_v3;
+    NDArray<std::vector<double>, 1> fcs_group_v4;
+    NDArray<std::complex<double>, 1> phi3_reciprocal, phi4_reciprocal;
+    NDArray<std::vector<RelativeVector>, 1> relvec_v3, relvec_v4;
 
     std::unique_ptr<PhaseFactorStorage> phase_storage_dos;
 

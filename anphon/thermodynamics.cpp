@@ -25,13 +25,13 @@
 
 using namespace PHON_NS;
 
-Thermodynamics::Thermodynamics() : classical(false), calc_FE_bubble(false), FE_bubble(nullptr)
+Thermodynamics::Thermodynamics() : classical(false), calc_FE_bubble(false)
 {}
 
 Thermodynamics::~Thermodynamics()
 {
     if (FE_bubble) {
-        deallocate(FE_bubble);
+        FE_bubble.clear();
     }
 };
 
@@ -404,7 +404,7 @@ auto Thermodynamics::compute_free_energy_bubble(const System &system_in, const K
         std::cout << " Calculating the vibrational free energy from the Bubble diagram \n" << std::flush;
     }
 
-    allocate(FE_bubble, NT);
+    FE_bubble.resize(NT);
 
     compute_FE_bubble(dymat_dos_in.get_eigenvalues(),
                       dymat_dos_in.get_eigenvectors(),
@@ -441,11 +441,11 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
     const auto factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
     double n0, n1, n2;
-    double *FE_local;
-    double *FE_tmp;
+    NDArray<double, 1> FE_local;
+    NDArray<double, 1> FE_tmp;
 
-    allocate(FE_local, NT);
-    allocate(FE_tmp, NT);
+    FE_local.resize(NT);
+    FE_tmp.resize(NT);
     std::vector<KsListGroup> triplet;
 
     std::vector<int> vks_l;
@@ -553,8 +553,8 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
         FE_bubble_out[iT] *= factor;
     }
 
-    deallocate(FE_local);
-    deallocate(FE_tmp);
+    FE_local.clear();
+    FE_tmp.clear();
 }
 
 auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble,
@@ -576,11 +576,11 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
     const unsigned int NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
     const double factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
-    double *FE_local;
-    double *FE_tmp;
+    NDArray<double, 1> FE_local;
+    NDArray<double, 1> FE_tmp;
 
-    allocate(FE_local, NT);
-    allocate(FE_tmp, NT);
+    FE_local.resize(NT);
+    FE_tmp.resize(NT);
     std::vector<KsListGroup> triplet;
 
     std::vector<int> vks_l;
@@ -713,8 +713,8 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
         FE_bubble[iT] *= factor;
     }
 
-    deallocate(FE_local);
-    deallocate(FE_tmp);
+    FE_local.clear();
+    FE_tmp.clear();
 }
 
 auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::complex<double> ***evec,

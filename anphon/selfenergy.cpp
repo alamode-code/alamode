@@ -47,13 +47,15 @@ void Selfenergy::mpi_reduce_complex(unsigned int N, std::complex<double> *in_mpi
     MPI_Reduce(&in_mpi[0], &out[0], N, MPI_COMPLEX16, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
     unsigned int i;
-    double *ret_mpi_re, *ret_mpi_im;
-    double *ret_re, *ret_im;
+    NDArray<double, 1> ret_mpi_re;
+    NDArray<double, 1> ret_mpi_im;
+    NDArray<double, 1> ret_re;
+    NDArray<double, 1> ret_im;
 
-    allocate(ret_mpi_re, N);
-    allocate(ret_mpi_im, N);
-    allocate(ret_im, N);
-    allocate(ret_re, N);
+    ret_mpi_re.resize(N);
+    ret_mpi_im.resize(N);
+    ret_im.resize(N);
+    ret_re.resize(N);
 
     for (i = 0; i < N; ++i) {
         ret_mpi_re[i] = in_mpi[i].real();
@@ -65,10 +67,10 @@ void Selfenergy::mpi_reduce_complex(unsigned int N, std::complex<double> *in_mpi
     for (i = 0; i < N; ++i) {
         out[i] = ret_re[i] + im * ret_im[i];
     }
-    deallocate(ret_mpi_re);
-    deallocate(ret_mpi_im);
-    deallocate(ret_re);
-    deallocate(ret_im);
+    ret_mpi_re.clear();
+    ret_mpi_im.clear();
+    ret_re.clear();
+    ret_im.clear();
 #endif
 }
 
@@ -79,15 +81,16 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
 {
     unsigned int i;
     unsigned int arr_cubic1[3], arr_cubic2[3];
-    std::complex<double> *ret_mpi, *ret_tmp;
+    NDArray<std::complex<double>, 1> ret_mpi;
+    NDArray<std::complex<double>, 1> ret_tmp;
     double n2;
     const auto nk = kmesh_in->nk;
 
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic1[1] = ns * knum + snum;
 
-    allocate(ret_mpi, N);
-    allocate(ret_tmp, N);
+    ret_mpi.resize(N);
+    ret_tmp.resize(N);
 
     for (i = 0; i < N; ++i)
         ret[i] = std::complex<double>(0.0, 0.0);
@@ -137,8 +140,8 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
     for (i = 0; i < N; ++i)
         ret[i] *= factor;
 
-    deallocate(ret_tmp);
-    deallocate(ret_mpi);
+    ret_tmp.clear();
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -157,7 +160,7 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
     unsigned int arr_cubic[3];
     double xk_tmp[3];
     std::complex<double> omega_sum[2];
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
     const auto nk = kmesh_in->nk;
     const auto xk = kmesh_in->xk;
@@ -168,7 +171,7 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     for (i = 0; i < N; ++i)
         ret_mpi[i] = std::complex<double>(0.0, 0.0);
@@ -221,7 +224,7 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -241,9 +244,9 @@ void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const doubl
     double n1;
     const auto nk = kmesh_in->nk;
 
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     for (i = 0; i < N; ++i)
         ret_mpi[i] = std::complex<double>(0.0, 0.0);
@@ -282,7 +285,7 @@ void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -305,9 +308,9 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
     double xk_tmp[3];
 
     std::complex<double> omega_sum[4];
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -379,7 +382,7 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -399,9 +402,9 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
     unsigned int arr_quartic[4];
 
     std::complex<double> omega_sum[4];
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -480,7 +483,7 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -505,9 +508,9 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
     double xk_tmp[3];
 
     std::complex<double> omega_sum[4];
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -600,7 +603,7 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -634,11 +637,11 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
     std::complex<double> v_prod;
     std::complex<double> omega_sum14[4], omega_sum24[4];
     std::complex<double> omega_prod[6];
-    std::complex<double> *prod_tmp;
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> prod_tmp;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
-    allocate(prod_tmp, N);
+    ret_mpi.resize(N);
+    prod_tmp.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -816,8 +819,8 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(prod_tmp);
-    deallocate(ret_mpi);
+    prod_tmp.clear();
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -846,9 +849,9 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
     double T_inv;
 
     std::complex<double> omega_sum[3];
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -1031,7 +1034,7 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -1055,9 +1058,9 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
 
     std::complex<double> omega_sum[2];
 
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -1160,7 +1163,7 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -1183,9 +1186,9 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
     double N_prod[4];
 
     std::complex<double> omega_sum[4];
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     std::complex<double> omega_shift = omega + im * epsilon;
 
@@ -1329,7 +1332,7 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -1366,9 +1369,9 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
 
     std::complex<double> v3_tmp1, v3_tmp2;
     std::complex<double> v_prod;
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     for (i = 0; i < N; ++i)
         ret_mpi[i] = std::complex<double>(0.0, 0.0);
@@ -1523,7 +1526,7 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }
 
 void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const double omega, const unsigned int knum,
@@ -1552,9 +1555,9 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
 
     std::complex<double> v4_tmp2;
     std::complex<double> v_prod;
-    std::complex<double> *ret_mpi;
+    NDArray<std::complex<double>, 1> ret_mpi;
 
-    allocate(ret_mpi, N);
+    ret_mpi.resize(N);
 
     for (i = 0; i < N; ++i)
         ret_mpi[i] = std::complex<double>(0.0, 0.0);
@@ -1649,5 +1652,5 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
 
     mpi_reduce_complex(N, ret_mpi, ret);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
 }

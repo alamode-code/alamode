@@ -12,6 +12,7 @@
 
 #include <complex>
 #include <memory>
+#include "ndarray.h"
 #include <vector>
 #include "dynamical.h"
 #include "integration.h"
@@ -47,12 +48,13 @@ public:
     int n_energy;
     double emin, emax, delta_e;
     std::vector<double> energy_dos;
-    double *dos_phonon;
-    double **pdos_phonon;
-    double *longitude_dos;
-    double ***dos2_phonon;
-    double total_sps3, ***sps3_mode;
-    double ****sps3_with_bose;
+    NDArray<double, 1> dos_phonon;
+    NDArray<double, 2> pdos_phonon;
+    NDArray<double, 1> longitude_dos;
+    NDArray<double, 3> dos2_phonon;
+    double total_sps3;
+    NDArray<double, 3> sps3_mode;
+    NDArray<double, 4> sps3_with_bose;
 
     std::unique_ptr<TetraNodes> tetra_nodes_dos;
     std::unique_ptr<KpointMeshUniform> kmesh_dos;

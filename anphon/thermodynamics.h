@@ -12,6 +12,7 @@
 
 #include <complex>
 #include <vector>
+#include "ndarray.h"
 #include "kpoint.h"
 
 namespace PHON_NS
@@ -35,7 +36,7 @@ public:
     static const double T_to_Ryd;
     bool classical;
     bool calc_FE_bubble;
-    double *FE_bubble;
+    NDArray<double, 1> FE_bubble;
 
     void setup();
 

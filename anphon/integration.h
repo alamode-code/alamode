@@ -51,7 +51,6 @@ public:
         nk2 = 0;
         nk3 = 0;
         ntetra = 0;
-        tetras = nullptr;
     };
 
     TetraNodes(unsigned int nk1_in, unsigned int nk2_in, unsigned int nk3_in)
@@ -60,15 +59,9 @@ public:
         nk2 = nk2_in;
         nk3 = nk3_in;
         ntetra = 6 * nk1 * nk2 * nk3;
-        allocate(tetras, ntetra, 4);
+        tetras.resize(ntetra, 4);
     };
 
-    ~TetraNodes()
-    {
-        if (tetras) deallocate(tetras);
-    }
-
-    // Owns raw arrays; copying would double-free.
     TetraNodes(const TetraNodes &) = delete;
     TetraNodes &operator=(const TetraNodes &) = delete;
 
@@ -76,12 +69,12 @@ public:
 
     unsigned int get_ntetra() const;
 
-    unsigned int **get_tetras() const;
+    const unsigned int *const *get_tetras() const;
 
 private:
     unsigned int nk1, nk2, nk3;
     unsigned int ntetra;
-    unsigned int **tetras;
+    NDArray<unsigned int, 2> tetras;
 };
 
 class AdaptiveSmearingSigma
@@ -92,16 +85,10 @@ public:
     AdaptiveSmearingSigma(const unsigned int nk_in, const unsigned int ns_in, const double factor)
     {
 
-        allocate(vel, nk_in, ns_in, 3);
+        vel.resize(nk_in, ns_in, 3);
         adaptive_factor = factor;
     };
 
-    ~AdaptiveSmearingSigma()
-    {
-        if (vel) deallocate(vel);
-    };
-
-    // Owns raw arrays; copying would double-free.
     AdaptiveSmearingSigma(const AdaptiveSmearingSigma &) = delete;
     AdaptiveSmearingSigma &operator=(const AdaptiveSmearingSigma &) = delete;
 
@@ -119,7 +106,7 @@ public:
 
 private:
     double adaptive_factor;
-    double ***vel = nullptr;
+    NDArray<double, 3> vel;
     double dq[3][3];
 };
 

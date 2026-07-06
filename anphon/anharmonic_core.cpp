@@ -53,49 +53,39 @@ void AnharmonicCore::set_default_variables()
     use_tuned_ver = true;
     use_triplet_symmetry = true;
     use_quartet_symmetry = true;
-    relvec_v3 = nullptr;
-    relvec_v4 = nullptr;
-    invmass_v3 = nullptr;
-    invmass_v4 = nullptr;
-    evec_index_v3 = nullptr;
-    evec_index_v4 = nullptr;
-    fcs_group_v3 = nullptr;
-    fcs_group_v4 = nullptr;
-    phi3_reciprocal = nullptr;
-    phi4_reciprocal = nullptr;
 }
 
 void AnharmonicCore::deallocate_variables()
 {
     if (relvec_v3) {
-        deallocate(relvec_v3);
+        relvec_v3.clear();
     }
     if (relvec_v4) {
-        deallocate(relvec_v4);
+        relvec_v4.clear();
     }
     if (invmass_v3) {
-        deallocate(invmass_v3);
+        invmass_v3.clear();
     }
     if (invmass_v4) {
-        deallocate(invmass_v4);
+        invmass_v4.clear();
     }
     if (evec_index_v3) {
-        deallocate(evec_index_v3);
+        evec_index_v3.clear();
     }
     if (evec_index_v4) {
-        deallocate(evec_index_v4);
+        evec_index_v4.clear();
     }
     if (fcs_group_v3) {
-        deallocate(fcs_group_v3);
+        fcs_group_v3.clear();
     }
     if (fcs_group_v4) {
-        deallocate(fcs_group_v4);
+        fcs_group_v4.clear();
     }
     if (phi3_reciprocal) {
-        deallocate(phi3_reciprocal);
+        phi3_reciprocal.clear();
     }
     if (phi4_reciprocal) {
-        deallocate(phi4_reciprocal);
+        phi4_reciprocal.clear();
     }
     phase_storage_dos.reset();
 }
@@ -145,7 +135,7 @@ void AnharmonicCore::prepare_relative_vector(const std::vector<FcsArrayWithCell>
 }
 
 void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArrayWithCell> &fcs_in,
-                                                      int &number_of_groups, std::vector<double> *&fcs_group_out)
+                                                      int &number_of_groups, NDArray<std::vector<double>, 1> &fcs_group_out)
 {
     // Find the number of groups which has different evecs.
 
@@ -154,7 +144,7 @@ void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArray
     number_of_groups = 0;
 
     if (fcs_in.empty()) {
-        fcs_group_out = nullptr;
+        fcs_group_out.clear();
         return;
     }
 
@@ -173,7 +163,8 @@ void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArray
         }
     }
 
-    allocate(fcs_group_out, number_of_groups);
+    fcs_group_out.clear();
+    fcs_group_out.resize(number_of_groups);
 
     int igroup = -1;
 
@@ -382,7 +373,7 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double
 }
 
 void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
-                                          std::vector<double, std::allocator<double>> *fcs_group_v3_in,
+                                          const std::vector<double> *fcs_group_v3_in,
                                           const std::vector<RelativeVector> *relvec_v3_in,
                                           const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
                                           const bool use_openmp)
@@ -716,8 +707,8 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
     for (i = 0; i < ntemp; ++i)
         ret[i] = 0.0;
 
-    double **v3_arr;
-    double ***delta_arr;
+    NDArray<double, 2> v3_arr;
+    NDArray<double, 3> delta_arr;
     double ret_tmp;
 
     double f1, f2;
@@ -730,8 +721,8 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
 
     const auto npair_uniq = triplet.size();
 
-    allocate(v3_arr, npair_uniq, ns * ns);
-    allocate(delta_arr, npair_uniq, ns * ns, 2);
+    v3_arr.resize(npair_uniq, ns * ns);
+    delta_arr.resize(npair_uniq, ns * ns, 2);
 
     const auto knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const auto knum_minus = kmesh_in->kindex_minus_xk[knum];
@@ -862,8 +853,8 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
         ret[i] = ret_tmp;
     }
 
-    deallocate(v3_arr);
-    deallocate(delta_arr);
+    v3_arr.clear();
+    delta_arr.clear();
     triplet.clear();
 
     for (i = 0; i < ntemp; ++i)
@@ -901,11 +892,11 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     double ret_tmp;
 
-    unsigned int *kmap_identity;
-    double **energy_tmp;
-    double **weight_tetra;
-    double **v3_arr;
-    double ***delta_arr;
+    NDArray<unsigned int, 1> kmap_identity;
+    NDArray<double, 2> energy_tmp;
+    NDArray<double, 2> weight_tetra;
+    NDArray<double, 2> v3_arr;
+    NDArray<double, 3> delta_arr;
 
     std::vector<KsListGroup> triplet;
 
@@ -916,14 +907,14 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     const auto npair_uniq = triplet.size();
 
-    allocate(v3_arr, npair_uniq, ns2);
-    allocate(delta_arr, npair_uniq, ns2, 2);
+    v3_arr.resize(npair_uniq, ns2);
+    delta_arr.resize(npair_uniq, ns2, 2);
 
     const auto knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const auto knum_minus = kmesh_in->kindex_minus_xk[knum];
     const auto xk = kmesh_in->xk;
 
-    allocate(kmap_identity, nk);
+    kmap_identity.resize(nk);
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -932,8 +923,8 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 #pragma omp parallel private(is, js, k1, k2, xk_tmp, energy_tmp, i, weight_tetra, ik, jk, arr)
 #endif
     {
-        allocate(energy_tmp, 3, nk);
-        allocate(weight_tetra, 3, nk);
+        energy_tmp.resize(3, nk);
+        weight_tetra.resize(3, nk);
 
 #ifdef _OPENMP
 #pragma omp for
@@ -973,8 +964,8 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
             }
         }
 
-        deallocate(energy_tmp);
-        deallocate(weight_tetra);
+        energy_tmp.clear();
+        weight_tetra.clear();
     }
 
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
@@ -1119,9 +1110,9 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
         ret[i] = ret_tmp;
     }
 
-    deallocate(v3_arr);
-    deallocate(delta_arr);
-    deallocate(kmap_identity);
+    v3_arr.clear();
+    delta_arr.clear();
+    kmap_identity.clear();
 
     for (i = 0; i < ntemp; ++i)
         ret[i] *= pi * std::pow(0.5, 4);
@@ -1155,8 +1146,8 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     for (i = 0; i < ntemp; ++i)
         ret[i] = 0.0;
 
-    double **v4_arr;
-    double ***delta_arr;
+    NDArray<double, 2> v4_arr;
+    NDArray<double, 3> delta_arr;
     double ret_tmp;
 
     double f1, f2, f3;
@@ -1182,8 +1173,8 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     const int knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const int knum_minus = kmesh_in->kindex_minus_xk[knum];
 
-    allocate(v4_arr, batchsize, ns3);
-    allocate(delta_arr, batchsize, ns3, 4);
+    v4_arr.resize(batchsize, ns3);
+    delta_arr.resize(batchsize, ns3, 4);
 
     const double signs_omega[7][3] =
         {{-1, -1, -1}, {-1, -1, 1}, {1, 1, -1}, {1, -1, -1}, {-1, 1, 1}, {-1, 1, -1}, {1, -1, 1}};
@@ -1401,8 +1392,8 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
         }
     }
 
-    deallocate(v4_arr);
-    deallocate(delta_arr);
+    v4_arr.clear();
+    delta_arr.clear();
     quartet.clear();
     for (i = 0; i < ntemp; ++i)
         ret[i] *= pi * std::pow(0.5, 5) / (3.0 * static_cast<double>(nk * nk));
@@ -1570,10 +1561,10 @@ void AnharmonicCore::setup_cubic()
 
     prepare_group_of_force_constants(fcs_phonon->force_constant_with_cell[1], ngroup_v3, fcs_group_v3);
 
-    allocate(invmass_v3, ngroup_v3);
-    allocate(evec_index_v3, ngroup_v3, 3);
-    allocate(relvec_v3, ngroup_v3);
-    allocate(phi3_reciprocal, ngroup_v3);
+    invmass_v3.resize(ngroup_v3);
+    evec_index_v3.resize(ngroup_v3, 3);
+    relvec_v3.resize(ngroup_v3);
+    phi3_reciprocal.resize(ngroup_v3);
 
     prepare_relative_vector(fcs_phonon->force_constant_with_cell[1], ngroup_v3, fcs_group_v3, relvec_v3);
 
@@ -1595,10 +1586,10 @@ void AnharmonicCore::setup_quartic()
     std::sort(fcs_phonon->force_constant_with_cell[2].begin(), fcs_phonon->force_constant_with_cell[2].end());
     prepare_group_of_force_constants(fcs_phonon->force_constant_with_cell[2], ngroup_v4, fcs_group_v4);
 
-    allocate(invmass_v4, ngroup_v4);
-    allocate(evec_index_v4, ngroup_v4, 4);
-    allocate(relvec_v4, ngroup_v4);
-    allocate(phi4_reciprocal, ngroup_v4);
+    invmass_v4.resize(ngroup_v4);
+    evec_index_v4.resize(ngroup_v4, 4);
+    relvec_v4.resize(ngroup_v4);
+    phi4_reciprocal.resize(ngroup_v4);
 
     prepare_relative_vector(fcs_phonon->force_constant_with_cell[2], ngroup_v4, fcs_group_v4, relvec_v4);
 
@@ -1661,7 +1652,7 @@ void PhaseFactorStorage::create(const bool use_tuned_ver, const bool switch_to_t
             // for different phase angles ranging from [-2pi + 2pi/nk_represent: 2pi*(nk_represent-1)/nk_represent].
             // The redundancy of the data here is intentional and helpful for accepting
             // both positive and negative modulo.
-            allocate(exp_phase, 2 * nk_represent - 1);
+            exp_phase.resize(2 * nk_represent - 1);
 #ifdef _OPENMP
 #pragma omp parallel for private(phase)
 #endif
@@ -1678,7 +1669,7 @@ void PhaseFactorStorage::create(const bool use_tuned_ver, const bool switch_to_t
             for (auto i = 0; i < 3; ++i)
                 inv_dnk[i] = 1.0 / dnk[i];
 
-            allocate(exp_phase3, 2 * nk_grid[0] - 1, 2 * nk_grid[1] - 1, 2 * nk_grid[2] - 1);
+            exp_phase3.resize(2 * nk_grid[0] - 1, 2 * nk_grid[1] - 1, 2 * nk_grid[2] - 1);
 #ifdef _OPENMP
 #pragma omp parallel for private(phase, jj, kk)
 #endif
@@ -1746,12 +1737,13 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
     double f1, f2;
     double omega_inner[2];
 
-    unsigned int *kmap_identity;
-    int **kpairs;
-    double **energy_tmp;
-    double **weight_tetra;
-    double **v3_arr, *v3_arr_loc;
-    double *ret_private;
+    NDArray<unsigned int, 1> kmap_identity;
+    NDArray<int, 2> kpairs;
+    NDArray<double, 2> energy_tmp;
+    NDArray<double, 2> weight_tetra;
+    NDArray<double, 2> v3_arr;
+    NDArray<double, 1> v3_arr_loc;
+    NDArray<double, 1> ret_private;
 
     std::vector<KsListGroup> triplet;
     std::vector<int> vk_l;
@@ -1767,8 +1759,8 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
         exit("calc_self3omega_tetrahedron", "Something is wrong.");
     }
 
-    allocate(kpairs, nk, 2);
-    allocate(kmap_identity, nk);
+    kpairs.resize(nk, 2);
+    kmap_identity.resize(nk);
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -1799,8 +1791,8 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
         vk_l.push_back(-1);
     }
 
-    allocate(v3_arr_loc, ns2);
-    allocate(v3_arr, nk_tmp * mympi->nprocs, ns2);
+    v3_arr_loc.resize(ns2);
+    v3_arr.resize(nk_tmp * mympi->nprocs, ns2);
 
     for (ik = 0; ik < nk_tmp; ++ik) {
 
@@ -1829,7 +1821,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
         }
         MPI_Gather(&v3_arr_loc[0], ns2, MPI_DOUBLE, v3_arr[ik * mympi->nprocs], ns2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
-    deallocate(v3_arr_loc);
+    v3_arr_loc.clear();
 
     if (mympi->my_rank == 0) {
 
@@ -1837,8 +1829,8 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
 #pragma omp parallel private(is, js, k1, k2, energy_tmp, i, iomega, weight_tetra, ik, omega_inner, f1, f2, n1, n2)
 #endif
         {
-            allocate(energy_tmp, 2, nk);
-            allocate(weight_tetra, 2, nk);
+            energy_tmp.resize(2, nk);
+            weight_tetra.resize(2, nk);
 #ifdef _OPENMP
             const int nthreads = omp_get_num_threads();
             const int ithread = omp_get_thread_num();
@@ -1851,7 +1843,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
 #pragma omp single
 #endif
             {
-                allocate(ret_private, nthreads * nomega);
+                ret_private.resize(nthreads * nomega);
                 for (i = 0; i < nthreads * nomega; ++i)
                     ret_private[i] = 0.0;
             }
@@ -1913,8 +1905,8 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
                     ret[iomega] += ret_private[nomega * t + iomega];
                 }
             }
-            deallocate(energy_tmp);
-            deallocate(weight_tetra);
+            energy_tmp.clear();
+            weight_tetra.clear();
         }
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -1922,12 +1914,12 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
         for (iomega = 0; iomega < nomega; ++iomega) {
             ret[iomega] *= pi * std::pow(0.5, 4);
         }
-        deallocate(ret_private);
+        ret_private.clear();
     }
 
-    deallocate(v3_arr);
-    deallocate(kmap_identity);
-    deallocate(kpairs);
+    v3_arr.clear();
+    kmap_identity.clear();
+    kpairs.clear();
 }
 
 int AnharmonicCore::get_ngroup_fcs(const unsigned int order) const
@@ -1937,28 +1929,28 @@ int AnharmonicCore::get_ngroup_fcs(const unsigned int order) const
     return 0;
 }
 
-std::vector<double> *AnharmonicCore::get_fcs_group(const unsigned int order) const
+const std::vector<double> *AnharmonicCore::get_fcs_group(const unsigned int order) const
 {
     if (order == 3) return fcs_group_v3;
     if (order == 4) return fcs_group_v4;
     return nullptr;
 }
 
-double *AnharmonicCore::get_invmass_factor(const unsigned int order) const
+const double *AnharmonicCore::get_invmass_factor(const unsigned int order) const
 {
     if (order == 3) return invmass_v3;
     if (order == 4) return invmass_v4;
     return nullptr;
 }
 
-int **AnharmonicCore::get_evec_index(const unsigned int order) const
+const int *const *AnharmonicCore::get_evec_index(const unsigned int order) const
 {
     if (order == 3) return evec_index_v3;
     if (order == 4) return evec_index_v4;
     return nullptr;
 }
 
-std::vector<RelativeVector> *AnharmonicCore::get_relvec(const unsigned int order) const
+const std::vector<RelativeVector> *AnharmonicCore::get_relvec(const unsigned int order) const
 {
     if (order == 3) return relvec_v3;
     if (order == 4) return relvec_v4;

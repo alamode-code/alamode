@@ -359,7 +359,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     int ngroup_tmp;
     NDArray<double, 1> invmass_v3_tmp;
     NDArray<int, 2> evec_index_v3_tmp;
-    std::vector<double> *fcs_group_tmp;
+    NDArray<std::vector<double>, 1> fcs_group_tmp;
     NDArray<std::vector<RelativeVector>, 1> relvec_tmp;
 
     int i;
@@ -409,7 +409,6 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                 for (int ik = 0; ik < nk_dense; ++ik) {
                     per_strain[ik].setZero();
                 }
-                deallocate(fcs_group_tmp);
                 continue;
             }
 
@@ -455,7 +454,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                                my_rank_,
                                                nprocs_);
 
-            deallocate(fcs_group_tmp);
+            fcs_group_tmp.clear();
             invmass_v3_tmp.clear();
             evec_index_v3_tmp.clear();
             relvec_tmp.clear();

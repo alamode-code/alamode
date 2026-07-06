@@ -134,13 +134,13 @@ void ModeAnalysis::setup_mode_analysis()
        
     } else {
 
-        unsigned int *kslist_arr;
+        NDArray<unsigned int, 1> kslist_arr;
         nlist = kslist.size();
 
         // Broadcast kslist
 
         MPI_Bcast(&nlist, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        allocate(kslist_arr, nlist);
+        kslist_arr.resize(nlist);
 
         if (mympi->my_rank == 0) {
             for (i = 0; i < nlist; ++i)
@@ -153,7 +153,7 @@ void ModeAnalysis::setup_mode_analysis()
             for (i = 0; i < nlist; ++i)
                 kslist.push_back(kslist_arr[i]);
         }
-        deallocate(kslist_arr);
+        kslist_arr.clear();
     }
 
     if (ks_analyze_mode) {
@@ -212,10 +212,10 @@ void ModeAnalysis::run_mode_analysis()
     const auto Tmax = system->Tmax;
     const auto Tmin = system->Tmin;
     const auto dT = system->dT;
-    double *T_arr;
+    NDArray<double, 1> T_arr;
 
     unsigned int NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
-    allocate(T_arr, NT);
+    T_arr.resize(NT);
     for (unsigned int i = 0; i < NT; ++i)
         T_arr[i] = Tmin + static_cast<double>(i) * dT;
 
@@ -245,7 +245,7 @@ void ModeAnalysis::run_mode_analysis()
         if (spectral_func) print_spectral_function(NT, T_arr);
     }
 
-    deallocate(T_arr);
+    T_arr.clear();
 }
 
 void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
@@ -255,18 +255,18 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
 
     std::ofstream ofs_linewidth, ofs_shift;
 
-    double *damping_a = nullptr;
-    std::complex<double> *self_tadpole = nullptr;
-    std::complex<double> *self_a = nullptr;
-    std::complex<double> *self_b = nullptr;
-    std::complex<double> *self_c = nullptr;
-    std::complex<double> *self_d = nullptr;
-    std::complex<double> *self_e = nullptr;
-    std::complex<double> *self_f = nullptr;
-    std::complex<double> *self_g = nullptr;
-    std::complex<double> *self_h = nullptr;
-    std::complex<double> *self_i = nullptr;
-    std::complex<double> *self_j = nullptr;
+    NDArray<double, 1> damping_a;
+    NDArray<std::complex<double>, 1> self_tadpole;
+    NDArray<std::complex<double>, 1> self_a;
+    NDArray<std::complex<double>, 1> self_b;
+    NDArray<std::complex<double>, 1> self_c;
+    NDArray<std::complex<double>, 1> self_d;
+    NDArray<std::complex<double>, 1> self_e;
+    NDArray<std::complex<double>, 1> self_f;
+    NDArray<std::complex<double>, 1> self_g;
+    NDArray<std::complex<double>, 1> self_h;
+    NDArray<std::complex<double>, 1> self_i;
+    NDArray<std::complex<double>, 1> self_j;
 
     if (mympi->my_rank == 0) {
         std::cout << "\n Calculate the line width (FWHM) of phonons\n";
@@ -291,20 +291,20 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
         }
     }
 
-    allocate(damping_a, NT);
-    allocate(self_a, NT);
-    allocate(self_b, NT);
-    allocate(self_tadpole, NT);
+    damping_a.resize(NT);
+    self_a.resize(NT);
+    self_b.resize(NT);
+    self_tadpole.resize(NT);
 
     if (anharmonic_core->quartic_mode == 2) {
-        allocate(self_c, NT);
-        allocate(self_d, NT);
-        allocate(self_e, NT);
-        allocate(self_f, NT);
-        allocate(self_g, NT);
-        allocate(self_h, NT);
-        allocate(self_i, NT);
-        allocate(self_j, NT);
+        self_c.resize(NT);
+        self_d.resize(NT);
+        self_e.resize(NT);
+        self_f.resize(NT);
+        self_g.resize(NT);
+        self_h.resize(NT);
+        self_i.resize(NT);
+        self_j.resize(NT);
     }
 
     for (int i = 0; i < kslist.size(); ++i) {
@@ -499,53 +499,53 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
     }
 
     if (damping_a) {
-        deallocate(damping_a);
+        damping_a.clear();
     }
     if (self_tadpole) {
-        deallocate(self_tadpole);
+        self_tadpole.clear();
     }
     if (self_a) {
-        deallocate(self_a);
+        self_a.clear();
     }
     if (self_b) {
-        deallocate(self_b);
+        self_b.clear();
     }
     if (self_c) {
-        deallocate(self_c);
+        self_c.clear();
     }
     if (self_d) {
-        deallocate(self_d);
+        self_d.clear();
     }
     if (self_e) {
-        deallocate(self_e);
+        self_e.clear();
     }
     if (self_f) {
-        deallocate(self_f);
+        self_f.clear();
     }
     if (self_g) {
-        deallocate(self_g);
+        self_g.clear();
     }
     if (self_h) {
-        deallocate(self_h);
+        self_h.clear();
     }
     if (self_i) {
-        deallocate(self_i);
+        self_i.clear();
     }
     if (self_j) {
-        deallocate(self_j);
+        self_j.clear();
     }
 }
 
 void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, double *T_arr)
 {
     int i, j;
-    double ***gamma_final;
-    double *freq_array;
+    NDArray<double, 3> gamma_final;
+    NDArray<double, 1> freq_array;
     std::ofstream ofs_omega;
     const auto ns = dynamical->neval;
 
-    allocate(gamma_final, NT, dos->n_energy, 2);
-    allocate(freq_array, dos->n_energy);
+    gamma_final.resize(NT, dos->n_energy, 2);
+    freq_array.resize(dos->n_energy);
 
     for (i = 0; i < dos->n_energy; ++i) {
         freq_array[i] = dos->energy_dos[i] * time_ry / Hz_to_kayser;
@@ -638,8 +638,8 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
         }
     }
 
-    deallocate(freq_array);
-    deallocate(gamma_final);
+    freq_array.clear();
+    gamma_final.clear();
 }
 
 void ModeAnalysis::calc_frequency_resolved_final_state(
@@ -654,7 +654,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state(
     double n1, n2;
     double f1, f2;
     double prod_tmp[2];
-    double ***ret_mpi;
+    NDArray<double, 3> ret_mpi;
     const auto nk = kmesh_in->nk;
     const auto ns = dynamical->neval;
 
@@ -664,7 +664,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state(
 
     kmesh_in->get_unique_triplet_k(ik_in, symmetry->SymmList, anharmonic_core->use_triplet_symmetry, false, triplet);
 
-    allocate(ret_mpi, ntemp, nomegas, 2);
+    ret_mpi.resize(ntemp, nomegas, 2);
 
     for (i = 0; i < ntemp; ++i) {
         for (j = 0; j < nomegas; ++j) {
@@ -745,7 +745,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state(
 
     MPI_Reduce(&ret_mpi[0][0][0], &ret[0][0][0], 2 * ntemp * nomegas, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    deallocate(ret_mpi);
+    ret_mpi.clear();
     triplet.clear();
 }
 
@@ -771,11 +771,11 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
     const auto ns = dynamical->neval;
     const auto ns2 = ns * ns;
 
-    unsigned int *kmap_identity;
-    double **energy_tmp;
-    double **weight_tetra;
-    double **v3_arr;
-    double ***delta_arr;
+    NDArray<unsigned int, 1> kmap_identity;
+    NDArray<double, 2> energy_tmp;
+    NDArray<double, 2> weight_tetra;
+    NDArray<double, 2> v3_arr;
+    NDArray<double, 3> delta_arr;
     double prod_tmp[2];
 
     const auto epsilon = integration->epsilon;
@@ -795,13 +795,13 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
 
     const auto npair_uniq = triplet.size();
 
-    allocate(v3_arr, npair_uniq, ns2);
-    allocate(delta_arr, npair_uniq, ns2, 2);
+    v3_arr.resize(npair_uniq, ns2);
+    delta_arr.resize(npair_uniq, ns2, 2);
 
     const auto knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const auto knum_minus = kmesh_in->kindex_minus_xk[knum];
 
-    allocate(kmap_identity, nk);
+    kmap_identity.resize(nk);
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -810,8 +810,8 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
 #pragma omp parallel private(is, js, k1, k2, xk_tmp, energy_tmp, i, weight_tetra, ik, jk, arr)
 #endif
     {
-        allocate(energy_tmp, 3, nk);
-        allocate(weight_tetra, 3, nk);
+        energy_tmp.resize(3, nk);
+        weight_tetra.resize(3, nk);
 
 #ifdef _OPENMP
 #pragma omp for
@@ -876,8 +876,8 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
             }
         }
 
-        deallocate(energy_tmp);
-        deallocate(weight_tetra);
+        energy_tmp.clear();
+        weight_tetra.clear();
     }
 
     for (ik = 0; ik < npair_uniq; ++ik) {
@@ -932,9 +932,9 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
         }
     }
 
-    deallocate(v3_arr);
-    deallocate(delta_arr);
-    deallocate(kmap_identity);
+    v3_arr.clear();
+    delta_arr.clear();
+    kmap_identity.clear();
 
     triplet.clear();
 }
@@ -1132,11 +1132,11 @@ void ModeAnalysis::calc_V3norm2(const unsigned int ik_in, const unsigned int snu
     const auto knum_minus = dos->kmesh_dos->kindex_minus_xk[knum];
     const auto ntriplet = triplet.size();
 
-    double **ret_loc = nullptr;
-    double **ret_sum = nullptr;
+    NDArray<double, 2> ret_loc;
+    NDArray<double, 2> ret_sum;
 
-    allocate(ret_loc, ntriplet, ns2);
-    allocate(ret_sum, ntriplet, ns2);
+    ret_loc.resize(ntriplet, ns2);
+    ret_sum.resize(ntriplet, ns2);
 
     for (size_t ik = 0; ik < ntriplet; ++ik) {
         for (size_t ib = 0; ib < ns2; ++ib) {
@@ -1172,8 +1172,8 @@ void ModeAnalysis::calc_V3norm2(const unsigned int ik_in, const unsigned int snu
         }
     }
 
-    deallocate(ret_loc);
-    deallocate(ret_sum);
+    ret_loc.clear();
+    ret_sum.clear();
 }
 
 void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum,
@@ -1189,11 +1189,11 @@ void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum
     const double factor = std::pow(0.5, 4) * pow2(Hz_to_kayser / time_ry);
     const auto nquartet = quartet.size();
 
-    double **ret_loc = nullptr;
-    double **ret_sum = nullptr;
+    NDArray<double, 2> ret_loc;
+    NDArray<double, 2> ret_sum;
 
-    allocate(ret_loc, nquartet, ns3);
-    allocate(ret_sum, nquartet, ns3);
+    ret_loc.resize(nquartet, ns3);
+    ret_sum.resize(nquartet, ns3);
 
     for (size_t ik = 0; ik < nquartet; ++ik) {
         for (size_t ib = 0; ib < ns3; ++ib) {
@@ -1234,8 +1234,8 @@ void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum
         }
     }
 
-    deallocate(ret_loc);
-    deallocate(ret_sum);
+    ret_loc.clear();
+    ret_sum.clear();
 }
 
 void ModeAnalysis::print_Phi3_elements() const
@@ -1440,11 +1440,11 @@ void ModeAnalysis::calc_Phi3(const unsigned int knum, const unsigned int snum, c
     const auto factor = std::pow(amu_ry, 1.5);
     const auto ntriplet = triplet.size();
 
-    std::complex<double> **ret_loc = nullptr;
-    std::complex<double> **ret_sum = nullptr;
+    NDArray<std::complex<double>, 2> ret_loc;
+    NDArray<std::complex<double>, 2> ret_sum;
 
-    allocate(ret_loc, ntriplet, ns2);
-    allocate(ret_sum, ntriplet, ns2);
+    ret_loc.resize(ntriplet, ns2);
+    ret_sum.resize(ntriplet, ns2);
 
     for (size_t ik = 0; ik < ntriplet; ++ik) {
         for (size_t ib = 0; ib < ns2; ++ib) {
@@ -1482,8 +1482,8 @@ void ModeAnalysis::calc_Phi3(const unsigned int knum, const unsigned int snum, c
         }
     }
 
-    deallocate(ret_loc);
-    deallocate(ret_sum);
+    ret_loc.clear();
+    ret_sum.clear();
 }
 
 void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, const std::vector<KsListGroup> &quartet,
@@ -1499,11 +1499,11 @@ void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, c
     double factor = pow2(amu_ry);
     const auto nquartet = quartet.size();
 
-    std::complex<double> **ret_loc = nullptr;
-    std::complex<double> **ret_sum = nullptr;
+    NDArray<std::complex<double>, 2> ret_loc;
+    NDArray<std::complex<double>, 2> ret_sum;
 
-    allocate(ret_loc, nquartet, ns3);
-    allocate(ret_sum, nquartet, ns3);
+    ret_loc.resize(nquartet, ns3);
+    ret_sum.resize(nquartet, ns3);
 
     for (size_t ik = 0; ik < nquartet; ++ik) {
         for (size_t ib = 0; ib < ns3; ++ib) {
@@ -1542,8 +1542,8 @@ void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, c
         }
     }
 
-    deallocate(ret_loc);
-    deallocate(ret_sum);
+    ret_loc.clear();
+    ret_sum.clear();
 }
 
 void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *T_arr)
@@ -1551,9 +1551,10 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
     auto ns = dynamical->neval;
     int i, j;
     int iomega;
-    double **self3_imag, **self3_real;
+    NDArray<double, 2> self3_imag;
+    NDArray<double, 2> self3_real;
     std::ofstream ofs_self;
-    double *omega_array;
+    NDArray<double, 1> omega_array;
     //    const auto Omega_min = dos->emin;
     //    const auto Omega_max = dos->emax;
     const auto delta_omega = dos->delta_e;
@@ -1579,9 +1580,9 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
 
     const auto nomega = static_cast<unsigned int>((Omega_max - Omega_min) / delta_omega) + 1;
 
-    allocate(omega_array, nomega);
-    allocate(self3_imag, NT, nomega);
-    allocate(self3_real, NT, nomega);
+    omega_array.resize(nomega);
+    self3_imag.resize(NT, nomega);
+    self3_real.resize(NT, nomega);
 
     for (i = 0; i < nomega; ++i) {
         omega_array[i] = Omega_min + delta_omega * static_cast<double>(i);
@@ -1664,7 +1665,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
         if (mympi->my_rank == 0) ofs_self.close();
     }
 
-    deallocate(omega_array);
-    deallocate(self3_imag);
-    deallocate(self3_real);
+    omega_array.clear();
+    self3_imag.clear();
+    self3_real.clear();
 }

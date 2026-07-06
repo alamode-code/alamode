@@ -64,7 +64,7 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                      "  the number of temperature grids.\n\n";
     }
 
-    allocate(thermodynamics->FE_bubble, NT);
+    thermodynamics->FE_bubble.resize(NT);
     eval.resize(NT, nk_ref, ns);
     evec.resize(NT, nk_ref, ns, ns); // This requires lots of RAM
 

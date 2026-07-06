@@ -200,7 +200,7 @@ unsigned int TetraNodes::get_ntetra() const
     return this->ntetra;
 }
 
-unsigned int **TetraNodes::get_tetras() const
+const unsigned int *const *TetraNodes::get_tetras() const
 {
     return this->tetras;
 }
