@@ -416,3 +416,74 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
     }
     return true;
 }
+
+void ScphQhaCommon::load_V0_from_file()
+{
+    const auto Tmin = system->Tmin;
+    const auto Tmax = system->Tmax;
+    const auto dT = system->dT;
+
+    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+
+    if (mympi->my_rank == 0) {
+
+        std::vector<double> Temp_array(NT);
+        double temp;
+
+        for (int i = 0; i < NT; ++i) {
+            Temp_array[i] = Tmin + dT * static_cast<double>(i);
+        }
+
+        std::ifstream ifs_v0;
+        const auto file_v0 = input->job_title + ".V0";
+        ifs_v0.open(file_v0.c_str(), std::ios::in);
+
+        if (!ifs_v0) {
+            exit("load_V0_from_file", "Cannot open V0 file.");
+        }
+
+        for (int iT = 0; iT < NT; iT++) {
+            ifs_v0 >> temp >> V0[iT];
+
+            if (std::fabs(temp - Temp_array[iT]) > eps6) {
+                exit("load_V0_from_file", "Temperature grid is not consistent.");
+            }
+        }
+
+        ifs_v0.close();
+    }
+    MPI_Bcast(V0.data(), NT, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+}
+
+void ScphQhaCommon::store_V0_to_file() const
+{
+    const auto Tmin = system->Tmin;
+    const auto Tmax = system->Tmax;
+    const auto dT = system->dT;
+
+    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    std::vector<double> Temp_array(NT);
+
+    for (int i = 0; i < NT; ++i) {
+        Temp_array[i] = Tmin + dT * static_cast<double>(i);
+    }
+
+    std::ofstream ofs_v0;
+    const auto file_v0 = input->job_title + ".V0";
+
+    ofs_v0.open(file_v0.c_str(), std::ios::out);
+
+    if (!ofs_v0) {
+        exit("store_V0_to_file", "Cannot open V0 file");
+    }
+
+    for (int i = 0; i < NT; i++) {
+        ofs_v0 << std::scientific << std::setprecision(15);
+        ofs_v0 << std::setw(30) << Temp_array[i] << std::setw(30) << V0[i] << '\n';
+    }
+
+    ofs_v0.close();
+
+    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_v0;
+    std::cout << " : Renormalized static potential V0 (restart file)\n";
+}

@@ -79,7 +79,7 @@ public:
     double FE_scph_correction(unsigned int, double **, std::complex<double> ***, double **,
                               std::complex<double> ***) const;
 
-    double compute_FE_total(unsigned int, double, double) const;
+    double compute_FE_total(unsigned int, double, double, double v0_renorm) const;
 };
 
 } // namespace PHON_NS

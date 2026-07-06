@@ -751,7 +751,7 @@ auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::com
 }
 
 auto Thermodynamics::compute_FE_total(const unsigned int iT, const double fe_qha,
-                                      const double dfe_scph = 0.0) const -> double
+                                      const double dfe_scph, const double v0_renorm) const -> double
 {
     double fe_total = fe_qha;
     // skip scph correction for QHA + structural optimization
@@ -761,9 +761,9 @@ auto Thermodynamics::compute_FE_total(const unsigned int iT, const double fe_qha
     if (thermodynamics->calc_FE_bubble) {
         fe_total += thermodynamics->FE_bubble[iT];
     }
-    if (relaxation->relax_str != 0) {
-        fe_total += relaxation->V0[iT];
-    }
+    // The renormalized static potential of the relaxed structure; the caller
+    // passes 0.0 when no structural optimization is performed.
+    fe_total += v0_renorm;
 
     return fe_total;
 }

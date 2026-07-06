@@ -3218,7 +3218,8 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
 }
 
 void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity_correction, double *FE_QHA,
-                                    double *dFE_scph, double *FE_total, double *entropy, const bool is_qha) const
+                                    double *dFE_scph, double *FE_total, double *entropy, const double *v0_renorm,
+                                    const bool is_qha) const
 {
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
@@ -3243,7 +3244,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     if (!ofs_thermo) exit("writeThermodynamicFunc", "cannot open file_thermo");
 
     // write header
-    if (relaxation->relax_str != 0) {
+    if (v0_renorm) {
         ofs_thermo << "# The renormalized static potential Phi_0 is also shown.\n";
     }
     if (thermodynamics->calc_FE_bubble) {
@@ -3269,7 +3270,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
         ofs_thermo << ", F_{vib} (Bubble correction) [Ry]";
     }
     // write renormalized zero-th order IFC
-    if (relaxation->relax_str != 0) {
+    if (v0_renorm) {
         ofs_thermo << ", Phi0 [Ry]";
     }
     ofs_thermo << ", F_{total} [Ry], S_{vib} [in kB unit]\n";
@@ -3296,8 +3297,8 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
             ofs_thermo << std::setw(18) << thermodynamics->FE_bubble[iT];
         }
 
-        if (relaxation->relax_str != 0) {
-            ofs_thermo << std::setw(18) << relaxation->V0[iT];
+        if (v0_renorm) {
+            ofs_thermo << std::setw(18) << v0_renorm[iT];
         }
         ofs_thermo << std::setw(18) << FE_total[iT];
         ofs_thermo << std::setw(18) << entropy[iT] << '\n';

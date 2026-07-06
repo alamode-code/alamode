@@ -119,6 +119,10 @@ void Scph::exec_scph()
     converged_scph_temp.assign(NT, 1);
     converged_str_temp.assign(NT, 1);
 
+    // Sized on every rank before the restart branch below, which broadcasts
+    // loaded values into it.
+    V0.assign(NT, 0.0);
+
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
 
     if (relax_mode != RelaxationStrMode::None && thermodynamics->calc_FE_bubble) {
@@ -148,13 +152,13 @@ void Scph::exec_scph()
                                            relaxation->relax_str,
                                            delta_dymat_scph,
                                            with_relax ? delta_harmonic_dymat_renormalize : nullptr,
-                                           with_relax ? &relaxation->V0 : nullptr);
+                                           with_relax ? &V0 : nullptr);
         }
 
         if (loaded_h5) {
             // Regenerate the human-readable V0-vs-T output, which may be
             // absent when restarting from the unified file alone.
-            if (with_relax && mympi->my_rank == 0) relaxation->store_V0_to_file();
+            if (with_relax && mympi->my_rank == 0) store_V0_to_file();
         } else {
             // Read anharmonic correction to the dynamical matrix from the legacy text files.
             // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
@@ -174,7 +178,7 @@ void Scph::exec_scph()
                                           dynamical->nonanalytic,
                                           selfenergy_offdiagonal);
                 // Load previously optimized static potential offset V0.
-                relaxation->load_V0_from_file();
+                load_V0_from_file();
             }
 
             // One-way migration of the legacy state into the unified file;
@@ -189,7 +193,7 @@ void Scph::exec_scph()
                                     "scph",
                                     delta_dymat_scph,
                                     with_relax ? delta_harmonic_dymat_renormalize : nullptr,
-                                    with_relax ? &relaxation->V0 : nullptr,
+                                    with_relax ? &V0 : nullptr,
                                     kmesh_coarse,
                                     mindist_list);
             }
@@ -221,12 +225,12 @@ void Scph::exec_scph()
                                     "scph",
                                     delta_dymat_scph,
                                     with_relax ? delta_harmonic_dymat_renormalize : nullptr,
-                                    with_relax ? &relaxation->V0 : nullptr,
+                                    with_relax ? &V0 : nullptr,
                                     kmesh_coarse,
                                     mindist_list);
                 // .V0 doubles as a human-readable physical output (V0 vs T),
                 // so the text file is kept; restart reads only the h5.
-                if (with_relax) relaxation->store_V0_to_file();
+                if (with_relax) store_V0_to_file();
             } else {
                 // write dymat to file
                 // write scph dynamical matrix when scph calculation is performed
@@ -246,7 +250,7 @@ void Scph::exec_scph()
                                                      kmesh_coarse,
                                                      dynamical->nonanalytic,
                                                      selfenergy_offdiagonal);
-                    relaxation->store_V0_to_file();
+                    store_V0_to_file();
                 }
             }
             // Convert dynamical-matrix correction back to real-space FC2 and
@@ -470,7 +474,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                   eval_harm_renorm[iT],
                                                                   evec_harm_renorm);
 
-                FE_total[iT] = thermodynamics->compute_FE_total(iT, FE_QHA[iT], dFE_scph[iT]);
+                FE_total[iT] = thermodynamics->compute_FE_total(
+                    iT, FE_QHA[iT], dFE_scph[iT], relaxation->relax_str != 0 ? V0[iT] : 0.0);
 
                 entropy[iT] = thermodynamics->vibrational_entropy(temperature,
                                                                   dos->kmesh_dos->nk_irred,
@@ -553,6 +558,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                            dFE_scph,
                                            FE_total,
                                            entropy,
+                                           relaxation->relax_str != 0 ? V0.data() : nullptr,
                                            is_qha);
             if (writes->getPrintMSD()) {
                 writes->writeMSD(msd_update, is_qha, 0);
@@ -1288,7 +1294,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     }
                 }
             }
-            relaxation->V0[dst] = relaxation->V0[src];
+            V0[dst] = V0[src];
         };
 
         auto set_harmonic_temperature_result = [&](const unsigned int dst) {
@@ -1310,7 +1316,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     }
                 }
             }
-            relaxation->V0[dst] = v0_ref;
+            V0[dst] = v0_ref;
         };
 
         std::cout << " Start structural optimization.\n";
@@ -1850,7 +1856,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             }
 
             // record zero-th order term of PES
-            if (converged_this_temp) relaxation->V0[iT] = v0_renorm;
+            if (converged_this_temp) V0[iT] = v0_renorm;
 
             // print obtained structure
             relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);

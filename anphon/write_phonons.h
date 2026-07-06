@@ -64,7 +64,8 @@ public:
     void writePhononDos(double **dos_in, const bool is_qha = false, const int bubble = 0) const;
 
     void writeThermodynamicFunc(double *heat_capacity, double *heat_capacity_correction, double *FE_QHA,
-                                double *dFE_scph, double *FE_total, double *entropy, const bool is_qha = false) const;
+                                double *dFE_scph, double *FE_total, double *entropy, const double *v0_renorm,
+                                const bool is_qha = false) const;
 
     void writeMSD(double **msd_in, const bool is_qha = false, const int bubble = 0) const;
 

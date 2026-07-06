@@ -77,6 +77,19 @@ protected:
     std::vector<unsigned char> converged_scph_temp;
     std::vector<unsigned char> converged_str_temp;
 
+    // Zeroth-order (static) potential energy V0(T) of the relaxed structure,
+    // recorded per temperature by the structural-optimization drivers and
+    // stored in the state file. Owned here (not by Relaxation) because it is
+    // per-run result state of the SCPH/QHA drivers. The drivers size it on
+    // every rank (exec entry) before any restart loader broadcasts into it.
+    std::vector<double> V0;
+
+    // Legacy-text restart IO for V0 (PREFIX.V0). The text file also serves
+    // as the human-readable V0-vs-T output. Definitions in scph_io.cpp.
+    void load_V0_from_file();
+
+    void store_V0_to_file() const;
+
     void initialize_variables();
 
     void deallocate_variables();

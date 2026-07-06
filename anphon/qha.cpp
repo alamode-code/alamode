@@ -78,6 +78,10 @@ void Qha::exec_qha_optimization()
     converged_scph_temp.assign(NT, 1);
     converged_str_temp.assign(NT, 1);
 
+    // Sized on every rank before the restart branch below, which broadcasts
+    // loaded values into it.
+    V0.assign(NT, 0.0);
+
     MPI_Bcast(&restart_qha, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     // These are parsed on rank 0 only and read on every rank below:
@@ -109,13 +113,13 @@ void Qha::exec_qha_optimization()
                                            relaxation->relax_str,
                                            delta_dymat_qha,
                                            delta_harmonic_dymat_renormalize,
-                                           with_relax ? &relaxation->V0 : nullptr);
+                                           with_relax ? &V0 : nullptr);
         }
 
         if (loaded_h5) {
             // Regenerate the human-readable V0-vs-T output, which may be
             // absent when restarting from the unified file alone.
-            if (with_relax && mympi->my_rank == 0) relaxation->store_V0_to_file();
+            if (with_relax && mympi->my_rank == 0) store_V0_to_file();
         } else {
             load_scph_dymat_from_file(delta_dymat_qha,
                                       input->job_title + ".renorm_harm_dymat",
@@ -132,7 +136,7 @@ void Qha::exec_qha_optimization()
 
             // structural optimization
             if (with_relax) {
-                relaxation->load_V0_from_file();
+                load_V0_from_file();
             }
 
             // One-way migration of the legacy state into the unified file.
@@ -146,7 +150,7 @@ void Qha::exec_qha_optimization()
                                     "qha",
                                     delta_dymat_qha,
                                     delta_harmonic_dymat_renormalize,
-                                    with_relax ? &relaxation->V0 : nullptr,
+                                    with_relax ? &V0 : nullptr,
                                     kmesh_coarse,
                                     mindist_list);
             }
@@ -175,12 +179,12 @@ void Qha::exec_qha_optimization()
                                     "qha",
                                     delta_dymat_qha,
                                     delta_harmonic_dymat_renormalize,
-                                    with_relax ? &relaxation->V0 : nullptr,
+                                    with_relax ? &V0 : nullptr,
                                     kmesh_coarse,
                                     mindist_list);
                 // .V0 doubles as a human-readable physical output (V0 vs T),
                 // so the text file is kept; restart reads only the h5.
-                if (with_relax) relaxation->store_V0_to_file();
+                if (with_relax) store_V0_to_file();
             } else if (with_relax) {
                 // write dymat to file
                 // write renormalized harmonic dynamical matrix when the crystal structure is optimized
@@ -190,7 +194,7 @@ void Qha::exec_qha_optimization()
                                                  kmesh_coarse,
                                                  dynamical->nonanalytic,
                                                  true);
-                relaxation->store_V0_to_file();
+                store_V0_to_file();
             }
             // Text .qha_dfc2 is kept in both modes during the transition.
             write_anharmonic_correction_fc2(delta_dymat_qha, NT, kmesh_coarse, mindist_list, true);
@@ -844,7 +848,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             }
 
             // record zero-th order term of PES
-            relaxation->V0[iT] = v0_renorm;
+            V0[iT] = v0_renorm;
 
             // copy delta_harmonic_dymat_renormalize to dymat_anharm
             // This process is required for postprocess.
@@ -1236,7 +1240,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                v4_array_dummy,
                                                q0);
 
-            relaxation->V0[iT] = v0_renorm;
+            V0[iT] = v0_renorm;
 
             // calculate renormalizations of harmonic IFCs, which is stored in delta_harmonic_dymat_renormalize
             dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm[iT],

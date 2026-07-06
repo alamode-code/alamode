@@ -216,9 +216,6 @@ public:
     double init_u_tensor[3][3]{{0.0}};
     std::vector<double> init_u0;
 
-    // zeroth order term of the potential energy surface
-    std::vector<double> V0;
-
     // variables related to structural optimization
     int relax_algo;
     int max_str_iter;
@@ -269,10 +266,6 @@ public:
                               MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in);
 
     void setInitialDistortion(const double (*u_tensor_in)[3]);
-
-    void load_V0_from_file();
-
-    void store_V0_to_file() const;
 
     void set_init_structure_atT(RelaxationStructureState &structure_state, bool &converged_prev, int &str_diverged,
                                 const int i_temp_loop, double **omega2_harmonic,
