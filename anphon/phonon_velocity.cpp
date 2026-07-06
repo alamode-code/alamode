@@ -38,9 +38,8 @@ PhononVelocity::~PhononVelocity()
 void PhononVelocity::set_default_variables()
 {
     print_velocity = false;
-    velmat = nullptr;
 
-    allocate(xshift_s, 27, 3);
+    xshift_s.resize(27, 3);
 
     for (auto i = 0; i < 3; ++i)
         xshift_s[0][i] = 0.0;
@@ -62,12 +61,6 @@ void PhononVelocity::set_default_variables()
 
 void PhononVelocity::deallocate_variables()
 {
-    if (xshift_s) {
-        deallocate(xshift_s);
-    }
-    if (velmat) {
-        deallocate(velmat);
-    }
 }
 
 void PhononVelocity::setup_velocity()
@@ -86,22 +79,23 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
     unsigned int idiff;
     const auto nk = kpoint_bs_in->nk;
     const auto n = dynamical->neval;
-    double **xk_shift;
-    double *xk_tmp;
-    double **omega_shift, *omega_tmp;
+    NDArray<double, 2> xk_shift;
+    NDArray<double, 1> xk_tmp;
+    NDArray<double, 2> omega_shift;
+    NDArray<double, 1> omega_tmp;
 
     const auto h = 1.0e-4;
 
-    std::complex<double> **evec_tmp;
+    NDArray<std::complex<double>, 2> evec_tmp;
 
-    allocate(evec_tmp, 1, 1);
+    evec_tmp.resize(1, 1);
 
     const unsigned int ndiff = 2;
-    allocate(xk_shift, ndiff, 3);
-    allocate(omega_shift, ndiff, n);
-    allocate(omega_tmp, ndiff);
+    xk_shift.resize(ndiff, 3);
+    omega_shift.resize(ndiff, n);
+    omega_tmp.resize(ndiff);
 
-    allocate(xk_tmp, 3);
+    xk_tmp.resize(3);
 
     for (unsigned int ik = 0; ik < nk; ++ik) {
 
@@ -143,12 +137,12 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
             phvel_out[ik][i] = diff(omega_tmp, ndiff, h);
         }
     }
-    deallocate(omega_tmp);
-    deallocate(omega_shift);
-    deallocate(xk_shift);
-    deallocate(xk_tmp);
+    omega_tmp.clear();
+    omega_shift.clear();
+    xk_shift.clear();
+    xk_tmp.clear();
 
-    deallocate(evec_tmp);
+    evec_tmp.clear();
 }
 
 void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
@@ -159,9 +153,9 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
     const auto nk_irred = kmesh_in.nk_irred;
     const auto ns = dynamical->neval;
 
-    double **vel;
+    NDArray<double, 2> vel;
 
-    allocate(vel, ns, 3);
+    vel.resize(ns, 3);
 
     if (irreducible_only) {
         for (unsigned int i = 0; i < nk_irred; ++i) {
@@ -188,7 +182,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
             }
         }
     }
-    deallocate(vel);
+    vel.clear();
 }
 
 void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform &kmesh_in,
@@ -199,16 +193,16 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     const auto nk = kmesh_in.nk;
     const auto ns = dynamical->neval;
 
-    double **vel;
-    double ***phvel3_loc = nullptr;
-    int *displs = nullptr;
-    int *sendcount = nullptr;
-    int *recvcount = nullptr;
+    NDArray<double, 2> vel;
+    NDArray<double, 3> phvel3_loc;
+    NDArray<int, 1> displs;
+    NDArray<int, 1> sendcount;
+    NDArray<int, 1> recvcount;
     std::vector<int> nk_proc;
     std::vector<int> ik_begin_proc, ik_end_proc;
 
-    allocate(sendcount, mympi->nprocs);
-    allocate(recvcount, mympi->nprocs);
+    sendcount.resize(mympi->nprocs);
+    recvcount.resize(mympi->nprocs);
     nk_proc.resize(mympi->nprocs);
 
     auto nk_loc = nk / mympi->nprocs;
@@ -222,7 +216,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     }
 
     if (mympi->my_rank == 0) {
-        allocate(displs, mympi->nprocs);
+        displs.resize(mympi->nprocs);
         displs[0] = 0;
         for (auto i = 1; i < mympi->nprocs; ++i) {
             displs[i] = displs[i - 1] + recvcount[i - 1];
@@ -245,8 +239,8 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
 
     nk_loc = klist_proc.size();
 
-    allocate(phvel3_loc, nk_loc, ns, 3);
-    allocate(vel, ns, 3);
+    phvel3_loc.resize(nk_loc, ns, 3);
+    vel.resize(ns, 3);
 
     for (unsigned int i = 0; i < nk_loc; ++i) {
         phonon_vel_k(&kmesh_in.xk[klist_proc[i]][0], vel);
@@ -260,7 +254,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
         }
     }
 
-    deallocate(vel);
+    vel.clear();
 
     MPI_Gatherv(nk_loc > 0 ? &phvel3_loc[0][0][0] : nullptr,
                 sendcount[mympi->my_rank],
@@ -272,10 +266,10 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
                 0,
                 MPI_COMM_WORLD);
 
-    deallocate(phvel3_loc);
-    deallocate(sendcount);
-    deallocate(recvcount);
-    if (displs) deallocate(displs);
+    phvel3_loc.clear();
+    sendcount.clear();
+    recvcount.clear();
+    displs.clear();
 }
 
 void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
@@ -320,10 +314,10 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
     const auto nk = dos->kmesh_dos->nk;
     const auto ns = dynamical->neval;
 
-    std::complex<double> ****velmat_loc = nullptr;
-    int *displs = nullptr;
-    int *sendcount = nullptr;
-    int *recvcount = nullptr;
+    NDArray<std::complex<double>, 4> velmat_loc;
+    NDArray<int, 1> displs;
+    NDArray<int, 1> sendcount;
+    NDArray<int, 1> recvcount;
     std::vector<int> nk_proc;
     std::vector<int> ik_begin_proc, ik_end_proc;
 
@@ -333,8 +327,8 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
         std::cout << " Calculating group velocity matrix of phonons on uniform grid ... ";
     }
 
-    allocate(sendcount, mympi->nprocs);
-    allocate(recvcount, mympi->nprocs);
+    sendcount.resize(mympi->nprocs);
+    recvcount.resize(mympi->nprocs);
     nk_proc.resize(mympi->nprocs);
 
     auto nk_loc = nk / mympi->nprocs;
@@ -348,7 +342,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
     }
 
     if (mympi->my_rank == 0) {
-        allocate(displs, mympi->nprocs);
+        displs.resize(mympi->nprocs);
         displs[0] = 0;
         for (auto i = 1; i < mympi->nprocs; ++i) {
             displs[i] = displs[i - 1] + recvcount[i - 1];
@@ -371,7 +365,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
 
     nk_loc = klist_proc.size();
 
-    allocate(velmat_loc, nk_loc, ns, ns, 3);
+    velmat_loc.resize(nk_loc, ns, ns, 3);
 
     for (auto i = 0; i < nk_loc; ++i) {
         auto knum = klist_proc[i];
@@ -412,10 +406,10 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
                 0,
                 MPI_COMM_WORLD);
 
-    deallocate(velmat_loc);
-    deallocate(sendcount);
-    deallocate(recvcount);
-    if (displs) deallocate(displs);
+    velmat_loc.clear();
+    sendcount.clear();
+    recvcount.clear();
+    displs.clear();
 
     if (mympi->my_rank == 0) {
         std::cout << "done!\n";
@@ -427,19 +421,20 @@ void PhononVelocity::phonon_vel_k(const double *xk_in, double **vel_out) const
     unsigned int j;
     unsigned int idiff;
     const auto n = dynamical->neval;
-    double **xk_shift;
-    std::complex<double> **evec_tmp;
-    double **omega_shift, *omega_tmp;
-    double **kvec_na_tmp;
+    NDArray<double, 2> xk_shift;
+    NDArray<std::complex<double>, 2> evec_tmp;
+    NDArray<double, 2> omega_shift;
+    NDArray<double, 1> omega_tmp;
+    NDArray<double, 2> kvec_na_tmp;
     const auto h = 1.0e-4;
 
     const unsigned int ndiff = 2;
 
-    allocate(omega_shift, ndiff, n);
-    allocate(xk_shift, ndiff, 3);
-    allocate(omega_tmp, ndiff);
-    allocate(evec_tmp, 1, 1);
-    allocate(kvec_na_tmp, 2, 3);
+    omega_shift.resize(ndiff, n);
+    xk_shift.resize(ndiff, 3);
+    omega_tmp.resize(ndiff);
+    evec_tmp.resize(1, 1);
+    kvec_na_tmp.resize(2, 3);
 
     for (unsigned int i = 0; i < 3; ++i) {
 
@@ -501,11 +496,11 @@ void PhononVelocity::phonon_vel_k(const double *xk_in, double **vel_out) const
         }
     }
 
-    deallocate(xk_shift);
-    deallocate(omega_shift);
-    deallocate(omega_tmp);
-    deallocate(evec_tmp);
-    deallocate(kvec_na_tmp);
+    xk_shift.clear();
+    omega_shift.clear();
+    omega_tmp.clear();
+    evec_tmp.clear();
+    kvec_na_tmp.clear();
 }
 
 double PhononVelocity::diff(const double *f, const unsigned int n, const double h) const
@@ -528,13 +523,13 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, 
     unsigned int icrd;
     const auto nmode = 3 * system->get_primcell().number_of_atoms;
 
-    std::complex<double> ***ddyn;
+    NDArray<std::complex<double>, 3> ddyn;
     std::complex<double> ctmp;
-    std::complex<double> **vel_tmp;
-    std::complex<double> ***mat_tmp;
+    NDArray<std::complex<double>, 2> vel_tmp;
+    NDArray<std::complex<double>, 3> mat_tmp;
     std::complex<double> czero(0.0, 0.0);
     std::vector<int> smallgroup_k;
-    double **eval_tmp;
+    NDArray<double, 2> eval_tmp;
 
     if (dynamical->nonanalytic) {
         exit("phonon_vel_k2",
@@ -542,8 +537,8 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, 
              "group velocity is not supported for NONANALYTIC>0.");
     }
 
-    allocate(ddyn, 3, nmode, nmode);
-    allocate(vel_tmp, 3, nmode);
+    ddyn.resize(3, nmode, nmode);
+    vel_tmp.resize(3, nmode);
     calc_derivative_dynmat_k(xk_in, fcs_phonon->force_constant_with_cell[0], ddyn);
 
     const auto do_diagonalize = false;
@@ -601,8 +596,8 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, 
                 // we have to construct a MxM matrix and diagonalize it to obtain
                 // group velocities.
 
-                allocate(mat_tmp, 3, ideg, ideg);
-                allocate(eval_tmp, 3, ideg);
+                mat_tmp.resize(3, ideg, ideg);
+                eval_tmp.resize(3, ideg);
 
                 for (icrd = 0; icrd < 3; ++icrd) {
 
@@ -628,8 +623,8 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, 
                     }
                 }
 
-                deallocate(mat_tmp);
-                deallocate(eval_tmp);
+                mat_tmp.clear();
+                eval_tmp.clear();
 
             } else {
                 exit("phonon_vel_k2", "This cannot happen.");
@@ -665,10 +660,10 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, 
     }
 
     if (ddyn) {
-        deallocate(ddyn);
+        ddyn.clear();
     }
     if (vel_tmp) {
-        deallocate(vel_tmp);
+        vel_tmp.clear();
     }
 
     double symmetrizer_k[3][3];
@@ -722,18 +717,18 @@ void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in, const std::ve
 
 void PhononVelocity::diagonalize_hermite_mat(const int n, std::complex<double> **mat_in, double *eval_out) const
 {
-    std::complex<double> *mat_1D;
+    NDArray<std::complex<double>, 1> mat_1D;
     int LWORK = (2 * n - 1) * 10;
     int INFO;
-    std::complex<double> *WORK;
-    double *RWORK;
+    NDArray<std::complex<double>, 1> WORK;
+    NDArray<double, 1> RWORK;
     char JOBZ = 'N';
     char UPLO = 'U';
     int n_ = n;
 
-    allocate(mat_1D, n * n);
-    allocate(RWORK, 3 * n - 2);
-    allocate(WORK, LWORK);
+    mat_1D.resize(n * n);
+    RWORK.resize(3 * n - 2);
+    WORK.resize(LWORK);
 
     int k = 0;
     for (int j = 0; j < n; ++j) {
@@ -748,9 +743,9 @@ void PhononVelocity::diagonalize_hermite_mat(const int n, std::complex<double> *
              "zheev failed to diagonalize the Hermitian matrix (INFO != 0).");
     }
 
-    deallocate(RWORK);
-    deallocate(WORK);
-    deallocate(mat_1D);
+    RWORK.clear();
+    WORK.clear();
+    mat_1D.clear();
 }
 
 void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
@@ -765,9 +760,9 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::ve
 
     const auto nmode = dynamical->neval;
 
-    std::complex<double> ***ddymat;
+    NDArray<std::complex<double>, 3> ddymat;
 
-    allocate(ddymat, nmode, nmode, 3);
+    ddymat.resize(nmode, nmode, 3);
 
     for (i = 0; i < nmode; ++i) {
         for (j = 0; j < nmode; ++j) {

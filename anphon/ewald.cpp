@@ -45,22 +45,19 @@ void Ewald::set_default_variables()
     file_longrange = "";
     prec_ewald = 1.0e-15;
     rate_ab = 1.0;
-    multiplicity = nullptr;
-    Born_charge = nullptr;
-    distall_ewald = nullptr;
     force_permutation_sym = true;
 }
 
 void Ewald::deallocate_variables()
 {
     if (multiplicity) {
-        deallocate(multiplicity);
+        multiplicity.clear();
     }
     if (Born_charge) {
-        deallocate(Born_charge);
+        Born_charge.clear();
     }
     if (distall_ewald) {
-        deallocate(distall_ewald);
+        distall_ewald.clear();
     }
 }
 
@@ -75,9 +72,9 @@ void Ewald::init()
 
         const auto nat_tmp = system->get_supercell(0).number_of_atoms;
         const auto natmin_tmp = system->get_primcell().number_of_atoms;
-        allocate(multiplicity, nat_tmp, nat_tmp);
-        allocate(Born_charge, natmin_tmp, 3, 3);
-        allocate(distall_ewald, nat_tmp, nat_tmp);
+        multiplicity.resize(nat_tmp, nat_tmp);
+        Born_charge.resize(natmin_tmp, 3, 3);
+        distall_ewald.resize(nat_tmp, nat_tmp);
 
         get_pairs_of_minimum_distance(nat_tmp, nsize, system->get_supercell(0).x_fractional);
 
@@ -284,18 +281,18 @@ void Ewald::prepare_G()
     }
 }
 
-void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], const Eigen::MatrixXd &xf) const
+void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], const Eigen::MatrixXd &xf)
 {
     // Get pairs and multiplicities
 
     int icell = 0;
     int iat, jat;
     double dist_tmp;
-    double ***xcrd; // fractional coordinate
+    NDArray<double, 3> xcrd; // fractional coordinate
 
     const auto ncell = (2 * nsize[0] + 1) * (2 * nsize[1] + 1) * (2 * nsize[2] + 1);
 
-    allocate(xcrd, ncell, nat, 3);
+    xcrd.resize(ncell, nat, 3);
 
     for (iat = 0; iat < nat; ++iat) {
         for (int icrd = 0; icrd < 3; ++icrd) {
@@ -344,7 +341,7 @@ void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], con
             }
         }
     }
-    deallocate(xcrd);
+    xcrd.clear();
 }
 
 void Ewald::compute_ewald_fcs()
@@ -355,7 +352,8 @@ void Ewald::compute_ewald_fcs()
     int atm_s;
     const auto nat = system->get_supercell(0).number_of_atoms;
     const auto natmin = system->get_primcell().number_of_atoms;
-    double **fc_ewald_real_space_sum, **fc_ewald_reciprocal_space_sum;
+    NDArray<double, 2> fc_ewald_real_space_sum;
+    NDArray<double, 2> fc_ewald_reciprocal_space_sum;
     const std::string file_fcs_ewald = input->job_title + ".fc2_ewald";
 
     if (mympi->my_rank == 0) {
@@ -369,8 +367,8 @@ void Ewald::compute_ewald_fcs()
     Eigen::MatrixXd fcs_total(3 * natmin, 3 * nat);
     Eigen::MatrixXd fcs_other(3 * natmin, 3 * nat);
 
-    allocate(fc_ewald_real_space_sum, 3, 3);
-    allocate(fc_ewald_reciprocal_space_sum, 3, 3);
+    fc_ewald_real_space_sum.resize(3, 3);
+    fc_ewald_reciprocal_space_sum.resize(3, 3);
 
     for (iat = 0; iat < natmin; ++iat) {
         atm_s = map_p2s[iat][0];
@@ -387,8 +385,8 @@ void Ewald::compute_ewald_fcs()
         }
     }
 
-    deallocate(fc_ewald_real_space_sum);
-    deallocate(fc_ewald_reciprocal_space_sum);
+    fc_ewald_real_space_sum.clear();
+    fc_ewald_reciprocal_space_sum.clear();
 
     fcs_total.setZero();
 
@@ -727,10 +725,11 @@ void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std
 
 #pragma omp parallel
     {
-        std::complex<double> **dymat_tmp_l, **dymat_tmp_g;
+        NDArray<std::complex<double>, 2> dymat_tmp_l;
+        NDArray<std::complex<double>, 2> dymat_tmp_g;
 
-        allocate(dymat_tmp_l, 3, 3);
-        allocate(dymat_tmp_g, 3, 3);
+        dymat_tmp_l.resize(3, 3);
+        dymat_tmp_g.resize(3, 3);
 
 #pragma omp for private(iat, jat, icrd, jcrd)
         for (long i = 0; i < natmin2; ++i) {
@@ -745,8 +744,8 @@ void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std
             }
         }
 
-        deallocate(dymat_tmp_l);
-        deallocate(dymat_tmp_g);
+        dymat_tmp_l.clear();
+        dymat_tmp_g.clear();
     }
 }
 

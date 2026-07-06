@@ -13,6 +13,7 @@
 #include <cmath>
 #include <iomanip>
 #include <vector>
+#include "ndarray.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -35,9 +36,9 @@ public:
 
         T v_cubes[8];
         int corner_index[8];
-        double **corner_coord;
+        NDArray<double, 2> corner_coord;
 
-        allocate(corner_coord, 8, 3);
+        corner_coord.resize(8, 3);
 
         for (auto i = 0; i < ngrid_f; ++i) {
 
@@ -53,7 +54,6 @@ public:
             val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
         }
 
-        deallocate(corner_coord);
     }
 
     template <typename T>
@@ -62,11 +62,11 @@ public:
         T v_cubes[8];
         bool contain_gamma;
         int corner_index[8];
-        double **corner_coord;
+        NDArray<double, 2> corner_coord;
 
         double limit = -100; // only for at acoustic branch at gamma
 
-        allocate(corner_coord, 8, 3);
+        corner_coord.resize(8, 3);
 
         const double sign[2] = {-1.0, 1.0};
 
@@ -111,8 +111,8 @@ public:
                 int counter = 0;
 
                 int neigh_corner_index[8];
-                double **neigh_corner_coord;
-                allocate(neigh_corner_coord, 8, 3);
+                NDArray<double, 2> neigh_corner_coord;
+                neigh_corner_coord.resize(8, 3);
 
                 for (auto tmpi = 0; tmpi < 2; ++tmpi) {
                     for (auto tmpj = 0; tmpj < 2; ++tmpj) {
@@ -147,7 +147,6 @@ public:
                 } // tmpi
 
                 val_f[i] = val_sum / static_cast<T>(counter);
-                deallocate(neigh_corner_coord);
 
             } else {
 
@@ -158,7 +157,6 @@ public:
                 val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
             }
         }
-        deallocate(corner_coord);
     }
 
 
@@ -168,8 +166,8 @@ private:
     unsigned int grid_c[3]{};
     unsigned int grid_f[3]{};
     unsigned int ngrid_f, ngrid_c;
-    double **xf = nullptr; // coordinate of fine grid
-    double **xc = nullptr; // coordinate of coarse grid
+    NDArray<double, 2> xf; // coordinate of fine grid
+    NDArray<double, 2> xc; // coordinate of coarse grid
 
 
     static void set_grid(const unsigned int ngrid_in[3], double **x_out);

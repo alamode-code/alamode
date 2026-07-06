@@ -41,14 +41,11 @@ Dielec::~Dielec()
 void Dielec::set_default_variables()
 {
     calc_dielectric_constant = 0;
-    dielec = nullptr;
-    omega_grid = nullptr;
     emin = 0.0;
     emax = 1.0;
     delta_e = 1.0;
     nomega = 1;
     file_born = "";
-    borncharge = nullptr;
     symmetrize_borncharge = 0;
     dielec_tensor.setZero();
 }
@@ -56,13 +53,13 @@ void Dielec::set_default_variables()
 void Dielec::deallocate_variables()
 {
     if (dielec) {
-        deallocate(dielec);
+        dielec.clear();
     }
     if (omega_grid) {
-        deallocate(omega_grid);
+        omega_grid.clear();
     }
     if (borncharge) {
-        deallocate(borncharge);
+        borncharge.clear();
     }
 }
 
@@ -97,7 +94,7 @@ void Dielec::init()
     }
 
     if (calc_dielectric_constant) {
-        allocate(omega_grid, nomega);
+        omega_grid.resize(nomega);
 
         for (auto i = 0; i < nomega; ++i) {
             omega_grid[i] = emin + delta_e * static_cast<double>(i);
@@ -107,9 +104,9 @@ void Dielec::init()
 
 void Dielec::setup_dielectric(const unsigned int verbosity)
 {
-    if (borncharge) deallocate(borncharge);
+    if (borncharge) borncharge.clear();
 
-    allocate(borncharge, system->get_primcell().number_of_atoms, 3, 3);
+    borncharge.resize(system->get_primcell().number_of_atoms, 3, 3);
     if (mympi->my_rank == 0) load_born(symmetrize_borncharge, verbosity);
 
     MPI_Bcast(dielec_tensor.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -210,10 +207,10 @@ void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verb
         // particularly for NONANALYTIC=3 (Ewald summation).
 
         int iat;
-        double ***born_sym;
+        NDArray<double, 3> born_sym;
         double rot[3][3];
 
-        allocate(born_sym, natmin_tmp, 3, 3);
+        born_sym.resize(natmin_tmp, 3, 3);
 
         for (iat = 0; iat < natmin_tmp; ++iat) {
             for (i = 0; i < 3; ++i) {
@@ -276,7 +273,7 @@ void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verb
                 }
             }
         }
-        deallocate(born_sym);
+        born_sym.clear();
 
         if (verbosity > 0) {
             if (diff_sym > eps8 || res > eps10) {
@@ -300,28 +297,28 @@ void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verb
     std::cout << std::scientific;
 }
 
-double *Dielec::get_omega_grid(unsigned int &nomega_in) const
+const double *Dielec::get_omega_grid(unsigned int &nomega_in) const
 {
     nomega_in = nomega;
     return omega_grid;
 }
 
-double ***Dielec::get_dielectric_func() const
+const double *const *const *Dielec::get_dielectric_func() const
 {
     return dielec;
 }
 
 void Dielec::run_dielec_calculation()
 {
-    double *xk;
-    double *eval;
-    std::complex<double> **evec;
+    NDArray<double, 1> xk;
+    NDArray<double, 1> eval;
+    NDArray<std::complex<double>, 2> evec;
     const auto ns = dynamical->neval;
 
-    allocate(xk, 3);
-    allocate(eval, ns);
-    allocate(evec, ns, ns);
-    allocate(dielec, nomega, 3, 3);
+    xk.resize(3);
+    eval.resize(ns);
+    evec.resize(ns, ns);
+    dielec.resize(nomega, 3, 3);
 
     for (auto i = 0; i < 3; ++i)
         xk[i] = 0.0;
@@ -330,16 +327,16 @@ void Dielec::run_dielec_calculation()
 
     compute_dielectric_function(nomega, omega_grid, eval, evec, dielec);
 
-    deallocate(xk);
-    deallocate(eval);
-    deallocate(evec);
+    xk.clear();
+    eval.clear();
+    evec.clear();
 }
 
-void Dielec::compute_dielectric_function(const unsigned int nomega_in, double *omega_grid_in, double *eval_in,
+void Dielec::compute_dielectric_function(const unsigned int nomega_in, const double *omega_grid_in, double *eval_in,
                                          std::complex<double> **evec_in, double ***dielec_out)
 {
     const auto ns = dynamical->neval;
-    const auto zstar = borncharge;
+    const auto &zstar = borncharge;
 
 #ifdef _DEBUG
     for (auto i = 0; i < ns; ++i) {
@@ -371,11 +368,11 @@ void Dielec::compute_dielectric_function(const unsigned int nomega_in, double *o
     }
 #endif
 
-    double ***s_born;
-    double **zstar_u;
+    NDArray<double, 3> s_born;
+    NDArray<double, 2> zstar_u;
 
-    allocate(zstar_u, 3, ns);
-    allocate(s_born, 3, 3, ns);
+    zstar_u.resize(3, ns);
+    s_born.resize(3, 3, ns);
 
     for (auto i = 0; i < 3; ++i) {
         for (auto is = 0; is < ns; ++is) {
@@ -436,8 +433,8 @@ void Dielec::compute_dielectric_function(const unsigned int nomega_in, double *o
         }
     }
 
-    deallocate(zstar_u);
-    deallocate(s_born);
+    zstar_u.clear();
+    s_born.clear();
 }
 
 std::vector<std::vector<double>> Dielec::get_zstar_mode() const
@@ -453,13 +450,13 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
     // Compute the effective charges of normal coordinate at q = 0.
 
     std::vector<double> xk(3);
-    double *eval;
-    std::complex<double> **evec;
+    NDArray<double, 1> eval;
+    NDArray<std::complex<double>, 2> evec;
     const auto ns = dynamical->neval;
-    const auto zstar_atom = borncharge;
+    const auto &zstar_atom = borncharge;
 
-    allocate(eval, ns);
-    allocate(evec, ns, ns);
+    eval.resize(ns);
+    evec.resize(ns, ns);
 
     for (auto i = 0; i < 3; ++i)
         xk[i] = 0.0;
@@ -501,11 +498,11 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
         }
     }
 
-    deallocate(eval);
-    deallocate(evec);
+    eval.clear();
+    evec.clear();
 }
 
-double ***Dielec::get_borncharge() const
+const double *const *const *Dielec::get_borncharge() const
 {
     return borncharge;
 }

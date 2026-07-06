@@ -26,11 +26,8 @@ TriLinearInterpolator::TriLinearInterpolator(const unsigned int ngrid_coarse_in[
     ngrid_c = grid_c[0] * grid_c[1] * grid_c[2];
     ngrid_f = grid_f[0] * grid_f[1] * grid_f[2];
 
-    if (xf) deallocate(xf);
-    if (xc) deallocate(xc);
-
-    allocate(xf, ngrid_f, 3);
-    allocate(xc, ngrid_c, 3);
+    xf.resize(ngrid_f, 3);
+    xc.resize(ngrid_c, 3);
 }
 
 void TriLinearInterpolator::setup()
@@ -41,8 +38,7 @@ void TriLinearInterpolator::setup()
 
 TriLinearInterpolator::~TriLinearInterpolator()
 {
-    if (xf) deallocate(xf);
-    if (xc) deallocate(xc);
+
 }
 
 void TriLinearInterpolator::set_grid(const unsigned int ngrid_in[3], double **x_out)

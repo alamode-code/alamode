@@ -400,7 +400,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         NDArray<double, 2> msd_update;
         NDArray<double, 3> ucorr_update;
         NDArray<double, 4> dielec_update;
-        double *omega_grid = nullptr;
+        const double *omega_grid = nullptr;
         NDArray<double, 2> domega_dt;
 
         if (dos->kmesh_dos.get()) {

@@ -56,10 +56,9 @@ public:
                                   std::complex<double> ***velmat_out) const;
 
     bool print_velocity;
-    std::complex<double> ***velmat;
 
 private:
-    double **xshift_s;
+    NDArray<double, 2> xshift_s;
 
     double diff(const double *, unsigned int, double) const;
 

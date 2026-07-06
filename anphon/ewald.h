@@ -13,6 +13,7 @@
 #include <complex>
 #include <string>
 #include <vector>
+#include "ndarray.h"
 #include "fcs_phonon.h"
 #include "pointers.h"
 #include "system.h"
@@ -68,10 +69,10 @@ public:
     double prec_ewald;
     double rate_ab;
 
-    int **multiplicity;
+    NDArray<int, 2> multiplicity;
     double epsilon[3][3], epsilon_inv[3][3];
     double det_epsilon;
-    double ***Born_charge;
+    NDArray<double, 3> Born_charge;
 
     std::vector<FcsArrayWithCell> fc2_without_dipole;
 
@@ -93,7 +94,7 @@ private:
 
     Eigen::Matrix3d epsilon_mat, invepsilon_mat;
 
-    std::vector<DistInfo> **distall_ewald;
+    NDArray<std::vector<DistInfo>, 2> distall_ewald;
 
     void set_default_variables();
 
@@ -107,7 +108,7 @@ private:
 
     void compute_ewald_fcs2();
 
-    void get_pairs_of_minimum_distance(int, const int[3], const Eigen::MatrixXd &) const;
+    void get_pairs_of_minimum_distance(int, const int[3], const Eigen::MatrixXd &);
 
     void calc_longrange_fcs(int, int, int, int, int, double *);
 

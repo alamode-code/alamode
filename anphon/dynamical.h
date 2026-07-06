@@ -44,30 +44,20 @@ class DymatEigenValue
 {
 public:
     DymatEigenValue() :
-        nk(0), ns(0), eval(nullptr), evec(nullptr), is_stored_eigvec(true), is_irreducible_only(false) {};
+        nk(0), ns(0), is_stored_eigvec(true), is_irreducible_only(false) {};
 
     DymatEigenValue(const bool stored_eigvec_, const bool store_irreducible_only_, const unsigned int nk_in,
                     const unsigned int ns_in) :
         nk(nk_in), ns(ns_in), is_stored_eigvec(stored_eigvec_), is_irreducible_only(store_irreducible_only_)
     {
-        if (eval) deallocate(eval);
-        if (evec) deallocate(evec);
-
-        allocate(eval, nk_in, ns_in);
+        eval.resize(nk_in, ns_in);
         if (is_stored_eigvec) {
-            allocate(evec, nk_in, ns_in, ns_in);
+            evec.resize(nk_in, ns_in, ns_in);
         }
     };
 
-    ~DymatEigenValue()
-    {
-        if (eval) deallocate(eval);
-        if (evec) deallocate(evec);
-    }
-
-    // Owns raw arrays; copying would double-free.
     DymatEigenValue(const DymatEigenValue &) = delete;
-    DymatEigenValue &operator=(const DymatEigenValue &) = delete;;
+    DymatEigenValue &operator=(const DymatEigenValue &) = delete;
 
     void set_eigenvalues(const unsigned int n, double **eval_in);
 
@@ -75,14 +65,18 @@ public:
 
     void set_eigenvals_and_eigenvecs(const unsigned int n, double **eval_in, std::complex<double> ***evec_in);
 
-    double **get_eigenvalues() const;
+    double **get_eigenvalues();
 
-    std::complex<double> ***get_eigenvectors() const;
+    const double *const *get_eigenvalues() const;
+
+    std::complex<double> ***get_eigenvectors();
+
+    const std::complex<double> *const *const *get_eigenvectors() const;
 
 private:
     unsigned int nk, ns;
-    double **eval = nullptr;
-    std::complex<double> ***evec = nullptr;
+    NDArray<double, 2> eval;
+    NDArray<std::complex<double>, 3> evec;
     bool is_stored_eigvec = true;
     bool is_irreducible_only = false;
 };
@@ -104,8 +98,8 @@ public:
 
     double na_sigma{};
 
-    int **index_bconnect{};
-    bool **is_imaginary{};
+    NDArray<int, 2> index_bconnect;
+    NDArray<bool, 2> is_imaginary;
 
     std::unique_ptr<DymatEigenValue> dymat_band, dymat_general;
 
@@ -178,7 +172,7 @@ public:
 
     void diagonalize_interpolated_matrix(std::complex<double> **, double *, std::complex<double> **, bool) const;
 
-    double **get_xrs_image() const;
+    const double *const *get_xrs_image() const;
 
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                             const unsigned int nk_dense, double **xk_dense, double **kvec_dense, double **eval_out,
@@ -229,10 +223,9 @@ private:
     void duplicate_xk_boundary(double *, std::vector<std::vector<double>> &);
 
 
-    double **xshift_s;
+    NDArray<double, 2> xshift_s;
     char UPLO{};
-    std::complex<double> ***dymat{};
-    std::vector<int> **mindist_list{};
+    NDArray<std::vector<int>, 2> mindist_list;
 };
 
 extern "C"

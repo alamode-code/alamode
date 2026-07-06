@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <complex>
 #include <vector>
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS
@@ -28,11 +29,11 @@ public:
 
     void run_dielec_calculation();
 
-    double *get_omega_grid(unsigned int &nomega) const;
+    const double *get_omega_grid(unsigned int &nomega) const;
 
-    double ***get_dielectric_func() const;
+    const double *const *const *get_dielectric_func() const;
 
-    void compute_dielectric_function(const unsigned int nomega_in, double *omega_grid_in, double *eval_in,
+    void compute_dielectric_function(const unsigned int nomega_in, const double *omega_grid_in, double *eval_in,
                                      std::complex<double> **evec_in, double ***dielec_out);
 
     int calc_dielectric_constant;
@@ -41,7 +42,7 @@ public:
 
     std::vector<std::vector<double>> get_zstar_mode() const;
 
-    double ***get_borncharge() const;
+    const double *const *const *get_borncharge() const;
 
     Eigen::Matrix3d get_dielec_tensor() const;
 
@@ -57,12 +58,12 @@ private:
 
     void load_born(const unsigned int flag_symmborn, const unsigned int verbosity = 1);
 
-    double *omega_grid;
-    double ***dielec;
+    NDArray<double, 1> omega_grid;
+    NDArray<double, 3> dielec;
     unsigned int nomega;
     double emax, emin, delta_e;
 
     Eigen::Matrix3d dielec_tensor;
-    double ***borncharge{};
+    NDArray<double, 3> borncharge;
 };
 } // namespace PHON_NS
