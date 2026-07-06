@@ -49,22 +49,13 @@ void Gruneisen::set_default_variables()
     delta_a = 0.01;
     print_gruneisen = false;
     print_newfcs = false;
-    gruneisen_bs = nullptr;
-    gruneisen_dos = nullptr;
-    xshift_s = nullptr;
 }
 
 void Gruneisen::deallocate_variables()
 {
-    if (gruneisen_bs) {
-        deallocate(gruneisen_bs);
-    }
-    if (gruneisen_dos) {
-        deallocate(gruneisen_dos);
-    }
-    if (xshift_s) {
-        deallocate(xshift_s);
-    }
+    gruneisen_bs.clear();
+    gruneisen_dos.clear();
+    xshift_s.clear();
     delta_fc2.clear();
     delta_fc3.clear();
 }
@@ -74,7 +65,7 @@ void Gruneisen::setup()
     MPI_Bcast(&delta_a, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    allocate(xshift_s, 27, 3);
+    xshift_s.resize(27, 3);
 
     for (int i = 0; i < 3; ++i)
         xshift_s[0][i] = 0.0;
@@ -106,10 +97,10 @@ void Gruneisen::setup()
     }
     if (print_gruneisen) {
         if (kpoint->kpoint_bs) {
-            allocate(gruneisen_bs, kpoint->kpoint_bs->nk, dynamical->neval);
+            gruneisen_bs.resize(kpoint->kpoint_bs->nk, dynamical->neval);
         }
         if (dos->kmesh_dos) {
-            allocate(gruneisen_dos, dos->kmesh_dos->nk, dynamical->neval);
+            gruneisen_dos.resize(dos->kmesh_dos->nk, dynamical->neval);
         }
     }
 
@@ -131,9 +122,8 @@ void Gruneisen::setup()
 void Gruneisen::calc_gruneisen()
 {
     const auto ns = dynamical->neval;
-    std::complex<double> **dfc2_reciprocal;
 
-    allocate(dfc2_reciprocal, ns, ns);
+    NDArray<std::complex<double>, 2> dfc2_reciprocal(ns, ns);
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -207,7 +197,6 @@ void Gruneisen::calc_gruneisen()
         }
     }
 
-    deallocate(dfc2_reciprocal);
 
     if (mympi->my_rank == 0) {
         std::cout << "done!" << '\n';

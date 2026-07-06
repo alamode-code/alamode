@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include "fcs_phonon.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS
@@ -32,8 +33,8 @@ public:
 
     void setup();
 
-    std::complex<double> **gruneisen_bs;
-    std::complex<double> **gruneisen_dos;
+    NDArray<std::complex<double>, 2> gruneisen_bs;
+    NDArray<std::complex<double>, 2> gruneisen_dos;
 
     void calc_gruneisen();
 
@@ -44,7 +45,7 @@ private:
 
     void deallocate_variables();
 
-    double **xshift_s;
+    NDArray<double, 2> xshift_s;
     std::vector<FcsArrayWithCell> delta_fc2, delta_fc3;
 
     void prepare_delta_fcs(const std::vector<FcsArrayWithCell> &, std::vector<FcsArrayWithCell> &) const;

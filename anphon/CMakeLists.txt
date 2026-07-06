@@ -272,3 +272,13 @@ target_link_libraries(anphon
     ${hdf5_target}
     ${hdf5library}
 )
+
+# Unit test for the RAII array owner (include/ndarray.h): layout identity
+# with the legacy memory.h allocate(), view-conversion semantics, and the
+# compile-time safety properties. Header-only dependencies; no MPI.
+option(BUILD_NDARRAY_TEST "Build the ndarray.h unit test" ON)
+if (BUILD_NDARRAY_TEST)
+    add_executable(test_ndarray ${PROJECT_SOURCE_DIR}/../test/test_ndarray.cpp)
+    target_compile_options(test_ndarray PRIVATE -Wall -Wextra)
+    target_include_directories(test_ndarray PRIVATE ${PROJECT_SOURCE_DIR}/../include)
+endif ()

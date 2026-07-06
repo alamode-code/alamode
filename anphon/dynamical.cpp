@@ -9,6 +9,7 @@
 */
 
 #include "dynamical.h"
+#include "ndarray.h"
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <algorithm>
@@ -1993,13 +1994,10 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
     const auto nk2 = kmesh_orig[1];
     const auto nk3 = kmesh_orig[2];
 
-    double *eval_real = nullptr;
-    std::complex<double> **mat_tmp = nullptr;
-
     std::vector<double> eval_vec(ns);
 
-    allocate(mat_tmp, ns, ns);
-    allocate(eval_real, ns);
+    NDArray<std::complex<double>, 2> mat_tmp(ns, ns);
+    NDArray<double, 1> eval_real(ns);
 
     if (use_precomputed_dymat) {
 
@@ -2041,12 +2039,10 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
 
     } else {
 
-        std::complex<double> **mat_harmonic = nullptr;
-        std::complex<double> **mat_harmonic_na = nullptr;
-
-        allocate(mat_harmonic, ns, ns);
+        NDArray<std::complex<double>, 2> mat_harmonic(ns, ns);
+        NDArray<std::complex<double>, 2> mat_harmonic_na;
         if (nonanalytic) {
-            allocate(mat_harmonic_na, ns, ns);
+            mat_harmonic_na.resize(ns, ns);
         }
 
         for (int ik = 0; ik < nk_dense; ++ik) {
@@ -2093,12 +2089,7 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
                     eval_out[ik][is] = eval_real[is];
             }
         }
-        if (mat_harmonic) deallocate(mat_harmonic);
-        if (mat_harmonic_na) deallocate(mat_harmonic_na);
     }
-
-    if (eval_real) deallocate(eval_real);
-    if (mat_tmp) deallocate(mat_tmp);
 }
 
 
@@ -2108,15 +2099,14 @@ void Dynamical::diagonalize_interpolated_matrix(std::complex<double> **mat_in, d
     unsigned int i, j;
     char JOBZ;
     int INFO;
-    double *RWORK;
-    std::complex<double> *amat;
-    std::complex<double> *WORK;
 
     int ns = dynamical->neval;
 
+    // Hot per-k scratch: NDArray keeps the historical default-initialized
+    // new[] allocation (std::vector would zero these on every call).
     int LWORK = (2 * ns - 1) * 10;
-    allocate(RWORK, 3 * ns - 2);
-    allocate(WORK, LWORK);
+    NDArray<double, 1> RWORK(3 * ns - 2);
+    NDArray<std::complex<double>, 1> WORK(LWORK);
 
     if (require_evec) {
         JOBZ = 'V';
@@ -2126,7 +2116,7 @@ void Dynamical::diagonalize_interpolated_matrix(std::complex<double> **mat_in, d
 
     char UPLO = 'U';
 
-    allocate(amat, ns * ns);
+    NDArray<std::complex<double>, 1> amat(static_cast<std::size_t>(ns) * ns);
 
     unsigned int k = 0;
     for (j = 0; j < ns; ++j) {
@@ -2152,10 +2142,6 @@ void Dynamical::diagonalize_interpolated_matrix(std::complex<double> **mat_in, d
             }
         }
     }
-
-    deallocate(amat);
-    deallocate(WORK);
-    deallocate(RWORK);
 }
 
 
@@ -2163,10 +2149,6 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
                                          std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
                                          const std::vector<int> &kmap_interpolate_to_scph)
 {
-    std::complex<double> *polarization_matrix, *mat_tmp;
-    std::complex<double> *eigval_matrix, *dmat;
-    std::complex<double> *beta;
-    std::complex<double> ***dymat_q, **dymat_harmonic;
     std::complex<double> im(0.0, 1.0);
 
     unsigned int ik, is, js;
@@ -2179,13 +2161,15 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
     char TRANSA[] = "N";
     char TRANSB[] = "C";
 
-    allocate(polarization_matrix, ns2);
-    allocate(mat_tmp, ns2);
-    allocate(eigval_matrix, ns2);
-    allocate(beta, ns);
-    allocate(dmat, ns2);
-    allocate(dymat_q, ns, ns, kmesh_coarse->nk);
-    allocate(dymat_harmonic, ns, ns);
+    // Hot zgemm scratch: NDArray keeps the default-initialized new[]
+    // allocation of the historical allocate() calls.
+    NDArray<std::complex<double>, 1> polarization_matrix(ns2);
+    NDArray<std::complex<double>, 1> mat_tmp(ns2);
+    NDArray<std::complex<double>, 1> eigval_matrix(ns2);
+    NDArray<std::complex<double>, 1> beta(ns);
+    NDArray<std::complex<double>, 1> dmat(ns2);
+    NDArray<std::complex<double>, 3> dymat_q(ns, ns, kmesh_coarse->nk);
+    NDArray<std::complex<double>, 2> dymat_harmonic(ns, ns);
 
     for (is = 0; is < ns; ++is)
         beta[is] = std::complex<double>(0.0, 0.0);
@@ -2254,12 +2238,14 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
         }
     }
 
-    deallocate(polarization_matrix);
-    deallocate(mat_tmp);
-    deallocate(eigval_matrix);
-    deallocate(beta);
-    deallocate(dmat);
-    deallocate(dymat_harmonic);
+    // Cap peak memory before the Fourier loop, matching the historical
+    // mid-function deallocations.
+    polarization_matrix.clear();
+    mat_tmp.clear();
+    eigval_matrix.clear();
+    beta.clear();
+    dmat.clear();
+    dymat_harmonic.clear();
 
     const auto nk1 = kmesh_coarse->nk_i[0];
     const auto nk2 = kmesh_coarse->nk_i[1];
@@ -2310,8 +2296,6 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
             }
         }
     }
-
-    deallocate(dymat_q);
 }
 
 void Dynamical::duplicate_xk_boundary(double *xk_in, std::vector<std::vector<double>> &vec_xk)
