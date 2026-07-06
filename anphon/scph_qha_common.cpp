@@ -951,3 +951,122 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         if (xk_gam) deallocate(xk_gam);
     }
 }
+
+void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
+{
+    auto &q0 = ws.structure_state.q0;
+    auto &u_tensor = ws.structure_state.u_tensor;
+    auto &eta_tensor = ws.structure_state.eta_tensor;
+
+    // get eta tensor
+    relaxation->calculate_eta_tensor(eta_tensor, u_tensor);
+
+    // calculate IFCs under strain
+    relaxation->renormalize_v0_from_umn(ws.v0_with_umn,
+                                        ws.v0_ref,
+                                        eta_tensor,
+                                        ws.C1_array,
+                                        ws.C2_array,
+                                        ws.C3_array,
+                                        u_tensor,
+                                        ws.pvcell);
+
+    relaxation->renormalize_v1_from_umn(ws.v1_with_umn, ws.v1_ref, *ws.del_v_strain, u_tensor);
+
+    relaxation->renormalize_v2_from_umn(kmesh_coarse,
+                                        kmap_coarse_to_dense,
+                                        ws.delta_v2_with_umn,
+                                        *ws.del_v_strain,
+                                        u_tensor);
+    relaxation->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, ws.v3_with_umn, ws.v3_ref, *ws.del_v_strain,
+                                        u_tensor);
+
+    // Renormalize the IFCs by the internal displacement q0 (exact Taylor
+    // recentering of the quartic PES). The strain-renormalized v1..v3
+    // (_with_umn) enter here; v4 enters through ws.v4_for_renorm because its
+    // strain renormalization would require d(v4)/du IFC data, which
+    // del_v_strain does not include (it stops at d(v3)/du) -- within this
+    // truncation the strain-renormalized v4 equals the reference v4.
+    relaxation->renormalize_v1_from_q0(omega2_harmonic,
+                                       kmesh_coarse,
+                                       kmesh_dense,
+                                       ws.v1_renorm,
+                                       ws.v1_with_umn,
+                                       ws.delta_v2_with_umn,
+                                       ws.v3_with_umn,
+                                       ws.v4_for_renorm,
+                                       q0);
+    relaxation->renormalize_v2_from_q0(evec_harmonic,
+                                       kmesh_coarse,
+                                       kmesh_dense,
+                                       kmap_coarse_to_dense,
+                                       mat_transform_sym,
+                                       ws.delta_v2_renorm,
+                                       ws.delta_v2_with_umn,
+                                       ws.v3_with_umn,
+                                       ws.v4_for_renorm,
+                                       q0);
+    relaxation->renormalize_v3_from_q0(kmesh_dense, kmesh_coarse, ws.v3_renorm, ws.v3_with_umn, ws.v4_for_renorm,
+                                       q0);
+    relaxation->renormalize_v0_from_q0(omega2_harmonic,
+                                       kmesh_dense,
+                                       ws.v0_renorm,
+                                       ws.v0_with_umn,
+                                       ws.v1_with_umn,
+                                       ws.delta_v2_with_umn,
+                                       ws.v3_with_umn,
+                                       ws.v4_for_renorm,
+                                       q0);
+
+    // calculate PES gradient by strain
+    if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
+        for (auto i1 = 0; i1 < 9; i1++) {
+            ws.del_v0_del_umn_renorm[i1] = 0.0;
+        }
+    } else if (ws.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        calculate_del_v0_del_umn_renorm(ws.del_v0_del_umn_renorm,
+                                        ws.C1_array,
+                                        ws.C2_array,
+                                        ws.C3_array,
+                                        eta_tensor,
+                                        u_tensor,
+                                        *ws.del_v_strain,
+                                        q0,
+                                        ws.pvcell,
+                                        kmesh_dense);
+    }
+}
+
+void ScphQhaCommon::print_initial_structure(const RelaxationStructureState &state,
+                                            const RelaxationStrMode relax_mode) const
+{
+    std::string str_tmp;
+
+    std::cout << " Initial atomic displacements [Bohr] : \n";
+    for (auto iat1 = 0; iat1 < system->get_primcell().number_of_atoms; iat1++) {
+        std::cout << " ";
+        for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+            relaxation->get_xyz_string(ixyz1, str_tmp);
+            std::cout << std::setw(10) << ("u_{" + std::to_string(iat1) + "," + str_tmp + "}");
+        }
+        std::cout << " :";
+        for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+            std::cout << std::scientific << std::setw(15) << std::setprecision(6) << state.u0[iat1 * 3 + ixyz1];
+        }
+        std::cout << '\n';
+    }
+    std::cout << '\n';
+
+    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        std::cout << " Initial strain (displacement gradient tensor u_{mu nu}) : \n";
+        for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+            std::cout << " ";
+            for (auto ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+                std::cout << std::scientific << std::setw(15) << std::setprecision(6)
+                          << state.u_tensor[ixyz1][ixyz2];
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+}

@@ -88,6 +88,14 @@ private:
 
     void exec_scph_relax_cell_coordinate_main(std::complex<double> ****, std::complex<double> ****);
 
+    // One structural step's lattice-dynamics stage: solve the SCP equation at
+    // the current (renormalized) IFCs and derive the SCP forces and stress.
+    void solve_scp_and_compute_forces(StructuralOptWorkspace &ws, unsigned int iT, double temp,
+                                      std::complex<double> ***cmat_convert, bool &converged_prev,
+                                      bool &scp_converged_step, std::complex<double> ****dymat_anharm,
+                                      double ***omega2_anharm, std::complex<double> ***evec_anharm_tmp,
+                                      std::complex<double> *v1_SCP, std::complex<double> *del_v0_del_umn_SCP);
+
     void compute_anharmonic_frequency(std::complex<double> ***, double **, std::complex<double> ***, double, bool &,
                                       std::complex<double> ***, bool, std::complex<double> **,
                                       const unsigned int verbosity, const bool compact_progress = false);

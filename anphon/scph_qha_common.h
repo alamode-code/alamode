@@ -28,6 +28,7 @@
 #include "mpi.h"
 #include "mpi_common.h"
 #include "pointers.h"
+#include "relaxation_types.h"
 #include "scph_result_io.h"
 #include "symmetry_core.h"
 #include "system.h"
@@ -152,6 +153,15 @@ protected:
     void postprocess(std::complex<double> ****delta_dymat, std::complex<double> ****delta_harmonic_dymat_renormalize,
                      std::complex<double> ****delta_dymat_scph_plus_bubble, const KpointMeshUniform *kmesh_coarse_in,
                      MinimumDistList ***mindist_list_in, bool is_qha = false, int bubble_in = 0);
+
+    // One structural-optimization step's IFC update: recompute the strain-
+    // and q0-renormalized IFC arrays (and the strain gradient of the PES)
+    // for the structure currently held in ws.structure_state.
+    void renormalize_ifcs_at_structure(StructuralOptWorkspace &ws);
+
+    // Print the initial atomic displacements (and, when the cell is relaxed,
+    // the initial strain tensor) at the head of a temperature point.
+    void print_initial_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode) const;
 
     void compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
                                              std::complex<double> ***evec_in, bool self_offdiag, bool relax,

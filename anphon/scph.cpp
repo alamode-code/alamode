@@ -491,27 +491,37 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     const auto dT = system->dT;
     double ***omega2_anharm;
     std::complex<double> ***evec_anharm_tmp;
+
+    // Scratch IFC/structure buffers grouped in the workspace consumed by the
+    // loop-stage helpers; the names below are aliases into it.
+    StructuralOptWorkspace ws;
     // renormalization of harmonic dynamical matrix
-    std::complex<double> **delta_v2_renorm;
-    std::complex<double> **delta_v2_with_umn;
+    auto &delta_v2_renorm = ws.delta_v2_renorm;
+    auto &delta_v2_with_umn = ws.delta_v2_with_umn;
     double ***omega2_harm_renorm;
     std::complex<double> ***evec_harm_renorm_tmp;
     // k-space IFCs at the reference and updated structures
-    std::complex<double> *v1_ref, *v1_renorm, *v1_with_umn;
-    std::complex<double> ***v3_ref, ***v3_renorm, ***v3_with_umn;
-    std::complex<double> ***v4_ref; //, ***v4_renorm, ***v4_with_umn;
-    double v0_ref, v0_renorm, v0_with_umn;
+    auto &v1_ref = ws.v1_ref;
+    auto &v1_renorm = ws.v1_renorm;
+    auto &v3_ref = ws.v3_ref;
+    auto &v3_renorm = ws.v3_renorm;
+    auto &v3_with_umn = ws.v3_with_umn;
+    auto &v4_ref = ws.v4_ref;
+    auto &v1_with_umn = ws.v1_with_umn;
+    auto &v0_ref = ws.v0_ref;
+    auto &v0_renorm = ws.v0_renorm;
     v0_ref = 0.0; // set original ground state energy as zero
 
     // elastic constants
-    double *C1_array;
-    double **C2_array;
-    double ***C3_array;
+    auto &C1_array = ws.C1_array;
+    auto &C2_array = ws.C2_array;
+    auto &C3_array = ws.C3_array;
 
     // strain-derivative of k-space IFCs
     DelVStrainData del_v_strain;
+    ws.del_v_strain = &del_v_strain;
 
-    std::complex<double> *del_v0_del_umn_renorm;
+    auto &del_v0_del_umn_renorm = ws.del_v0_del_umn_renorm;
 
     // atomic forces and stress tensor at finite temperatures
     std::complex<double> *v1_SCP;
@@ -523,15 +533,18 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     // structure update
     double du0;
     double du_tensor;
-    std::vector<int> harm_optical_modes(ns - 3);
+    auto &harm_optical_modes = ws.harm_optical_modes;
+    harm_optical_modes.resize(ns - 3);
 
     // cell optimization
     double pvcell = 0.0; // pressure * v_{cell,reference} [Ry]
     pvcell = relaxation->stat_pressure * system->get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) *
              1.0e-30;      // in 10^9 J = GJ
     pvcell *= 1.0e9 / Ryd; // in Ry
+    ws.pvcell = pvcell;
 
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
+    ws.relax_mode = relax_mode;
 
     // temperature grid
     std::vector<double> vec_temp;
@@ -550,12 +563,11 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     allocate(v1_with_umn, ns);
     allocate(v1_renorm, ns);
 
-    RelaxationStructureState structure_state;
+    auto &structure_state = ws.structure_state;
     structure_state.resize(ns);
     auto &q0 = structure_state.q0;
     auto &u0 = structure_state.u0;
     auto &u_tensor = structure_state.u_tensor;
-    auto &eta_tensor = structure_state.eta_tensor;
 
     allocate(v1_SCP, ns);
     allocate(del_v0_del_umn_renorm, 9);
@@ -588,6 +600,9 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                      phase_factor);
 
     allocate(v4_ref, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
+    // SCPH feeds the reference v4 directly into the q0 renormalization (its
+    // strain renormalization is not available; see renormalize_ifcs_at_structure).
+    ws.v4_for_renorm = v4_ref;
 
     // initialize optimizer
     relaxation->create_optimizer(ns);
@@ -824,32 +839,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             const auto initial_structure_state_this_temp = structure_state;
 
 
-            std::cout << " Initial atomic displacements [Bohr] : \n";
-            for (iat1 = 0; iat1 < system->get_primcell().number_of_atoms; iat1++) {
-                std::cout << " ";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    relaxation->get_xyz_string(ixyz1, str_tmp);
-                    std::cout << std::setw(10) << ("u_{" + std::to_string(iat1) + "," + str_tmp + "}");
-                }
-                std::cout << " :";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u0[iat1 * 3 + ixyz1];
-                }
-                std::cout << '\n';
-            }
-            std::cout << '\n';
-
-            if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                std::cout << " Initial strain (displacement gradient tensor u_{mu nu}) : \n";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    std::cout << " ";
-                    for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                        std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u_tensor[ixyz1][ixyz2];
-                    }
-                    std::cout << '\n';
-                }
-                std::cout << '\n';
-            }
+            print_initial_structure(structure_state, relax_mode);
 
             relaxation->write_stepresfile_header_atT(fout_step_q0, fout_step_u0, fout_step_u_tensor, temp);
 
@@ -870,185 +860,24 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                           << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
                 std::cout << " ----------------------------------------------------------------\n";
 
-                // get eta tensor
-                relaxation->calculate_eta_tensor(eta_tensor, u_tensor);
+                // recompute the strain- and q0-renormalized IFCs at the
+                // current structure
+                renormalize_ifcs_at_structure(ws);
 
-                // calculate IFCs under strain
-                relaxation->renormalize_v0_from_umn(v0_with_umn,
-                                                    v0_ref,
-                                                    eta_tensor,
-                                                    C1_array,
-                                                    C2_array,
-                                                    C3_array,
-                                                    u_tensor,
-                                                    pvcell);
-
-                // std::cout << "u_tensor\n";
-                // for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                //     for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                //         std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u_tensor[ixyz1][ixyz2]
-                //                   << " ";
-                //     }
-                //     std::cout << '\n';
-                // }
-
-                relaxation->renormalize_v1_from_umn(v1_with_umn, v1_ref, del_v_strain, u_tensor);
-
-
-                relaxation->renormalize_v2_from_umn(kmesh_coarse,
-                                                    kmap_coarse_to_dense,
-                                                    delta_v2_with_umn,
-                                                    del_v_strain,
-                                                    u_tensor);
-                relaxation
-                    ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, v3_with_umn, v3_ref, del_v_strain, u_tensor);
-
-                // Renormalize the IFCs by the internal displacement q0 (exact
-                // Taylor recentering of the quartic PES). The strain-renormalized
-                // v1..v3 (_with_umn) enter here; v4 is passed unmodified because
-                // its strain renormalization would require d(v4)/du IFC data,
-                // which del_v_strain does not include (it stops at d(v3)/du).
-                // Within this truncation v4_with_umn == v4_ref identically, so
-                // passing v4_ref is consistent, not an approximation error
-                // (QHA spells the same thing out as an explicit copy).
-                relaxation->renormalize_v1_from_q0(omega2_harmonic,
-                                                   kmesh_coarse,
-                                                   kmesh_dense,
-                                                   v1_renorm,
-                                                   v1_with_umn,
-                                                   delta_v2_with_umn,
-                                                   v3_with_umn,
-                                                   v4_ref,
-                                                   q0);
-                relaxation->renormalize_v2_from_q0(evec_harmonic,
-                                                   kmesh_coarse,
-                                                   kmesh_dense,
-                                                   kmap_coarse_to_dense,
-                                                   mat_transform_sym,
-                                                   delta_v2_renorm,
-                                                   delta_v2_with_umn,
-                                                   v3_with_umn,
-                                                   v4_ref,
-                                                   q0);
-                relaxation->renormalize_v3_from_q0(kmesh_dense, kmesh_coarse, v3_renorm, v3_with_umn, v4_ref, q0);
-                relaxation->renormalize_v0_from_q0(omega2_harmonic,
-                                                   kmesh_dense,
-                                                   v0_renorm,
-                                                   v0_with_umn,
-                                                   v1_with_umn,
-                                                   delta_v2_with_umn,
-                                                   v3_with_umn,
-                                                   v4_ref,
-                                                   q0);
-
-                // calculate PES gradient by strain
-                if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-                    for (i1 = 0; i1 < 9; i1++) {
-                        del_v0_del_umn_renorm[i1] = 0.0;
-                    }
-                } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                    calculate_del_v0_del_umn_renorm(del_v0_del_umn_renorm,
-                                                    C1_array,
-                                                    C2_array,
-                                                    C3_array,
-                                                    eta_tensor,
-                                                    u_tensor,
-                                                    del_v_strain,
-                                                    q0,
-                                                    pvcell,
-                                                    kmesh_dense);
-
-                    // for (i1 = 0; i1 < 9; i1++) {
-                    //     std::cout << " del_v0_del_umn_renorm[" << i1 << "] = " << std::scientific << std::setw(15)
-                    //               << std::setprecision(6) << del_v0_del_umn_renorm[i1] << '\n';
-                    // }
-                }
-
-
-                // copy v4_ref to v4_renorm
-                //                for (ik = 0; ik < nk_irred_interpolate * kmesh_dense->nk; ik++) {
-                //                    for (is1 = 0; is1 < ns * ns; is1++) {
-                //                        for (is2 = 0; is2 < ns * ns; is2++) {
-                //                            v4_renorm[ik][is1][is2] = v4_ref[ik][is1][is2];
-                //                        }
-                //                    }
-                //                }
-
-                // solve SCP equation
-                if (imix_scph == 1) {
-                    compute_anharmonic_frequency_diis(v4_ref,
-                                                      omega2_anharm[iT],
-                                                      evec_anharm_tmp,
-                                                      temp,
-                                                      converged_prev,
-                                                      cmat_convert,
-                                                      selfenergy_offdiagonal,
-                                                      delta_v2_renorm,
-                                                      writes->getVerbosity(),
-                                                      true);
-                } else {
-                    compute_anharmonic_frequency(v4_ref,
-                                                 omega2_anharm[iT],
-                                                 evec_anharm_tmp,
-                                                 temp,
-                                                 converged_prev,
-                                                 cmat_convert,
-                                                 selfenergy_offdiagonal,
-                                                 delta_v2_renorm,
-                                                 writes->getVerbosity(),
-                                                 true);
-                }
-
-                // SCP convergence of this structure step. converged_prev is reused as the
-                // warm-start flag of the next SCP solve, so keep a snapshot here.
-                const bool scp_converged_step = converged_prev;
-                converged_scph_temp[iT] = scp_converged_step ? 1 : 0;
-
-                dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
-                                                    omega2_anharm[iT],
-                                                    evec_anharm_tmp,
-                                                    kmesh_coarse,
-                                                    kmap_coarse_to_dense);
-
-                // calculate SCP force
-                compute_anharmonic_v1_array(v1_SCP,
-                                            v1_renorm,
-                                            v3_renorm,
-                                            cmat_convert,
-                                            omega2_anharm[iT],
-                                            temp,
-                                            kmesh_dense);
-
-                // std::cout << std::setw(15) << "v1_with_umn";
-                // std::cout << std::setw(15) << "v1_renorm";
-                // std::cout << std::setw(15) << "v1_SCP\n";
-                // for (auto ii = 0; ii < ns; ++ii) {
-                //     std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_with_umn[ii];
-                //     std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_renorm[ii];
-                //     std::cout << std::setw(15) << std::setprecision(6) << std::scientific << v1_SCP[ii] << '\n';
-                // }
-
-                // calculate SCP stress tensor
-                if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-                    for (i1 = 0; i1 < 9; i1++) {
-                        del_v0_del_umn_SCP[i1] = 0.0;
-                    }
-                } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                    compute_anharmonic_del_v0_del_umn(del_v0_del_umn_SCP,
-                                                      del_v0_del_umn_renorm,
-                                                      del_v_strain,
-                                                      u_tensor,
-                                                      q0,
-                                                      cmat_convert,
-                                                      omega2_anharm[iT],
-                                                      temp,
-                                                      kmesh_dense);
-                }
-
-                // for (i1 = 0; i1 < 9; i1++) {
-                //     std::cout << " del_v0_del_umn_SCP[" << i1 << "] = " << std::scientific << std::setw(15)
-                //               << std::setprecision(6) << del_v0_del_umn_SCP[i1] << '\n';
-                // }
+                // solve the SCP equation at this structure and compute the
+                // SCP forces and stress from the converged solution
+                bool scp_converged_step = false;
+                solve_scp_and_compute_forces(ws,
+                                             iT,
+                                             temp,
+                                             cmat_convert,
+                                             converged_prev,
+                                             scp_converged_step,
+                                             dymat_anharm,
+                                             omega2_anharm,
+                                             evec_anharm_tmp,
+                                             v1_SCP,
+                                             del_v0_del_umn_SCP);
 
                 // Print the structure the SCP equation was solved at, together with the
                 // SCP stress (cell relaxation only) and the space group detected by spglib.
@@ -1394,6 +1223,75 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     deallocate(del_v0_del_umn_renorm);
     deallocate(v1_SCP);
     deallocate(del_v0_del_umn_SCP);
+}
+
+void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsigned int iT, const double temp,
+                                        std::complex<double> ***cmat_convert, bool &converged_prev,
+                                        bool &scp_converged_step, std::complex<double> ****dymat_anharm,
+                                        double ***omega2_anharm, std::complex<double> ***evec_anharm_tmp,
+                                        std::complex<double> *v1_SCP, std::complex<double> *del_v0_del_umn_SCP)
+{
+    // solve SCP equation
+    if (imix_scph == 1) {
+        compute_anharmonic_frequency_diis(ws.v4_ref,
+                                          omega2_anharm[iT],
+                                          evec_anharm_tmp,
+                                          temp,
+                                          converged_prev,
+                                          cmat_convert,
+                                          selfenergy_offdiagonal,
+                                          ws.delta_v2_renorm,
+                                          writes->getVerbosity(),
+                                          true);
+    } else {
+        compute_anharmonic_frequency(ws.v4_ref,
+                                     omega2_anharm[iT],
+                                     evec_anharm_tmp,
+                                     temp,
+                                     converged_prev,
+                                     cmat_convert,
+                                     selfenergy_offdiagonal,
+                                     ws.delta_v2_renorm,
+                                     writes->getVerbosity(),
+                                     true);
+    }
+
+    // SCP convergence of this structure step. converged_prev is reused as the
+    // warm-start flag of the next SCP solve, so keep a snapshot here.
+    scp_converged_step = converged_prev;
+    converged_scph_temp[iT] = scp_converged_step ? 1 : 0;
+
+    dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
+                                        omega2_anharm[iT],
+                                        evec_anharm_tmp,
+                                        kmesh_coarse,
+                                        kmap_coarse_to_dense);
+
+    // calculate SCP force
+    compute_anharmonic_v1_array(v1_SCP,
+                                ws.v1_renorm,
+                                ws.v3_renorm,
+                                cmat_convert,
+                                omega2_anharm[iT],
+                                temp,
+                                kmesh_dense);
+
+    // calculate SCP stress tensor
+    if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
+        for (auto i1 = 0; i1 < 9; i1++) {
+            del_v0_del_umn_SCP[i1] = 0.0;
+        }
+    } else if (ws.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        compute_anharmonic_del_v0_del_umn(del_v0_del_umn_SCP,
+                                          ws.del_v0_del_umn_renorm,
+                                          *ws.del_v_strain,
+                                          ws.structure_state.u_tensor,
+                                          ws.structure_state.q0,
+                                          cmat_convert,
+                                          omega2_anharm[iT],
+                                          temp,
+                                          kmesh_dense);
+    }
 }
 
 
