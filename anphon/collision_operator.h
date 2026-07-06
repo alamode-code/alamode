@@ -14,10 +14,15 @@
 #include <vector>
 #include <Eigen/Dense>
 #include "kpoint.h"
-#include "pointers.h"
 
 namespace PHON_NS
 {
+class System;
+class Symmetry;
+class Integration;
+class AnharmonicCore;
+class TetraNodes;
+class DymatEigenValue;
 // Distributed three-phonon collision operator on the irreducible wedge,
 // shared by the iterative-family BTE solvers (SOLVER = IBTE today; a
 // variational/CG solver can reuse it later). The irreducible k points are
@@ -26,10 +31,16 @@ namespace PHON_NS
 // table maps wedge values of Cartesian vector fields back onto the full
 // grid. Diagonal add-ons beyond 3ph (isotope, boundary, 4ph) remain the
 // solver's responsibility.
-class CollisionOperator: protected Pointers
+// All dependencies are explicit constructor arguments (no Pointers base):
+// the operator is constructed by Iterativebte::setup, after setup_base(),
+// when every input already exists.
+class CollisionOperator
 {
 public:
-    CollisionOperator(class PHON *);
+    CollisionOperator(const KpointMeshUniform &kmesh_dos_in, const TetraNodes &tetra_nodes_dos_in,
+                      const DymatEigenValue &dymat_dos_in, const System &system_in, const Symmetry &symmetry_in,
+                      Integration &integration_in, AnharmonicCore &anharmonic_core_in, unsigned int ns_in,
+                      int my_rank_in, int nprocs_in);
 
     ~CollisionOperator();
 
@@ -44,10 +55,13 @@ public:
     // Include the elastic isotope-disorder channel (Tamura kernel) in the
     // operator: its in-scattering enters calc_W_at and its diagonal is the
     // row sum, so the channel conserves the constant mode exactly. Must be
-    // set before build_L().
-    void set_isotope_channel(const bool flag)
+    // set before build_L(). isotope_factor_in points at the per-species
+    // mass-variance factors (Isotope::isotope_factor) and must stay alive
+    // for the lifetime of this object.
+    void set_isotope_channel(const bool flag, const double *isotope_factor_in = nullptr)
     {
         with_isotope = flag;
+        isotope_factor = isotope_factor_in;
     }
 
     bool has_isotope_channel() const
@@ -118,6 +132,16 @@ public:
     }
 
 private:
+    const KpointMeshUniform &kmesh_dos_;
+    const TetraNodes &tetra_nodes_dos_;
+    const DymatEigenValue &dymat_dos_;
+    const System &system_;
+    const Symmetry &symmetry_;
+    Integration &integration_;         // smearing settings and weight kernels
+    AnharmonicCore &anharmonic_core_;  // V3 evaluation
+    const int my_rank_;
+    const int nprocs_;
+
     int kplength_emitt;
     int kplength_absorb;
     int nk_3ph, nklocal, ns, ns2;
@@ -139,6 +163,7 @@ private:
     };
 
     bool with_isotope;
+    const double *isotope_factor = nullptr; // per-species mass variance (set_isotope_channel)
     std::vector<std::vector<IsotopeEntry>> L_iso; // [ikl * ns + s]
 
     void build_L_isotope();

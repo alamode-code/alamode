@@ -27,13 +27,21 @@
 
 using namespace PHON_NS;
 
-CollisionOperator::CollisionOperator(PHON *phon) : Pointers(phon)
+CollisionOperator::CollisionOperator(const KpointMeshUniform &kmesh_dos_in,
+                                     const TetraNodes &tetra_nodes_dos_in,
+                                     const DymatEigenValue &dymat_dos_in, const System &system_in,
+                                     const Symmetry &symmetry_in, Integration &integration_in,
+                                     AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
+                                     const int my_rank_in, const int nprocs_in)
+    : kmesh_dos_(kmesh_dos_in), tetra_nodes_dos_(tetra_nodes_dos_in), dymat_dos_(dymat_dos_in),
+      system_(system_in), symmetry_(symmetry_in), integration_(integration_in),
+      anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
 {
     kplength_emitt = 0;
     kplength_absorb = 0;
     nk_3ph = 0;
     nklocal = 0;
-    ns = 0;
+    ns = static_cast<int>(ns_in);
     ns2 = 0;
     use_triplet_symmetry = true;
     sym_permutation = false;
@@ -54,16 +62,15 @@ CollisionOperator::~CollisionOperator()
 
 void CollisionOperator::setup()
 {
-    nk_3ph = dos->kmesh_dos->nk;
-    ns = dynamical->neval;
+    nk_3ph = kmesh_dos_.nk;
     ns2 = ns * ns;
 
     // distribute the irreducible q points among the processors
-    const auto nk_ir = dos->kmesh_dos->nk_irred;
+    const auto nk_ir = kmesh_dos_.nk_irred;
 
     nk_l.clear();
     for (auto i = 0; i < nk_ir; ++i) {
-        if (i % mympi->nprocs == mympi->my_rank) nk_l.push_back(i);
+        if (i % nprocs_ == my_rank_) nk_l.push_back(i);
     }
 
     nklocal = static_cast<int>(nk_l.size());
@@ -88,11 +95,10 @@ void CollisionOperator::get_triplets()
         std::vector<KsListGroup> triplet2;
 
         // k3 = k1 - k2
-        dos->kmesh_dos->get_unique_triplet_k(ik, symmetry->SymmList, use_triplet_symmetry, sym_permutation, triplet);
+        kmesh_dos_.get_unique_triplet_k(ik, symmetry_.SymmList, use_triplet_symmetry, sym_permutation, triplet);
 
         // k3 = - (k1 + k2)
-        dos->kmesh_dos
-            ->get_unique_triplet_k(ik, symmetry->SymmList, use_triplet_symmetry, sym_permutation, triplet2, 1);
+        kmesh_dos_.get_unique_triplet_k(ik, symmetry_.SymmList, use_triplet_symmetry, sym_permutation, triplet2, 1);
 
         counter += triplet.size();
         counter2 += triplet2.size();
@@ -145,13 +151,13 @@ void CollisionOperator::build_expansion_table()
     // M columns the reciprocal lattice vectors, hence
     // R_cart = M (S^{-1})^T M^{-1}.
     // ------------------------------------------------------------------
-    const int nsym = symmetry->SymmList.size();
-    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const int nsym = symmetry_.SymmList.size();
+    const auto nk_irred = kmesh_dos_.nk_irred;
 
     expand_mat.resize(nk_3ph);
 
     Eigen::Matrix3d mat_k2cart;
-    const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
+    const auto &rlavec = system_.get_primcell().reciprocal_lattice_vector;
     for (auto i = 0; i < 3; ++i) {
         for (auto j = 0; j < 3; ++j) {
             mat_k2cart(j, i) = rlavec(i, j); // columns = reciprocal vectors
@@ -162,18 +168,18 @@ void CollisionOperator::build_expansion_table()
     littlegroup_proj.resize(nk_irred);
 
     for (unsigned int tmpk = 0; tmpk < nk_irred; ++tmpk) {
-        const auto kref = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
-        for (const auto &kp: dos->kmesh_dos->kpoint_irred_all[tmpk]) {
+        const auto kref = kmesh_dos_.kpoint_irred_all[tmpk][0].knum;
+        for (const auto &kp: kmesh_dos_.kpoint_irred_all[tmpk]) {
             const auto p = kp.knum;
             auto found = false;
             for (auto isym = 0; isym < nsym && !found; ++isym) {
-                const auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
+                const auto krot = kmesh_dos_.knum_sym(kref, symmetry_.SymmList[isym].rotation);
                 const auto direct = (p == krot);
                 const auto time_reversed =
-                    symmetry->time_reversal_sym && p == dos->kmesh_dos->kindex_minus_xk[krot];
+                    symmetry_.time_reversal_sym && p == kmesh_dos_.kindex_minus_xk[krot];
                 if (!direct && !time_reversed) continue;
                 const Eigen::Matrix3d srot_inv_t =
-                    symmetry->SymmList[isym].rotation.cast<double>().inverse().transpose();
+                    symmetry_.SymmList[isym].rotation.cast<double>().inverse().transpose();
                 const Eigen::Matrix3d rot_cart = mat_k2cart * srot_inv_t * mat_cart2k;
                 expand_mat[p] = direct ? rot_cart : Eigen::Matrix3d(-rot_cart);
                 found = true;
@@ -189,13 +195,13 @@ void CollisionOperator::build_expansion_table()
         Eigen::Matrix3d proj = Eigen::Matrix3d::Zero();
         auto nops = 0;
         for (auto isym = 0; isym < nsym; ++isym) {
-            const auto krot = dos->kmesh_dos->knum_sym(kref, symmetry->SymmList[isym].rotation);
+            const auto krot = kmesh_dos_.knum_sym(kref, symmetry_.SymmList[isym].rotation);
             const auto direct = (kref == static_cast<int>(krot));
             const auto time_reversed =
-                symmetry->time_reversal_sym && kref == static_cast<int>(dos->kmesh_dos->kindex_minus_xk[krot]);
+                symmetry_.time_reversal_sym && kref == static_cast<int>(kmesh_dos_.kindex_minus_xk[krot]);
             if (!direct && !time_reversed) continue;
             const Eigen::Matrix3d srot_inv_t =
-                symmetry->SymmList[isym].rotation.cast<double>().inverse().transpose();
+                symmetry_.SymmList[isym].rotation.cast<double>().inverse().transpose();
             const Eigen::Matrix3d rot_cart = mat_k2cart * srot_inv_t * mat_cart2k;
             if (direct) {
                 proj += rot_cart;
@@ -212,7 +218,7 @@ void CollisionOperator::build_expansion_table()
 
 void CollisionOperator::project_onto_littlegroup(double *dF_ir) const
 {
-    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const auto nk_irred = kmesh_dos_.nk_irred;
     for (unsigned int ik = 0; ik < nk_irred; ++ik) {
         const auto &m = littlegroup_proj[ik];
         for (int s = 0; s < ns; ++s) {
@@ -227,9 +233,9 @@ void CollisionOperator::project_onto_littlegroup(double *dF_ir) const
 
 void CollisionOperator::build_L()
 {
-    if (integration->ismear >= 0) {
+    if (integration_.ismear >= 0) {
         setup_L_smear();
-    } else if (integration->ismear == -1) {
+    } else if (integration_.ismear == -1) {
         setup_L_tetra();
     }
     if (with_isotope) {
@@ -243,18 +249,18 @@ void CollisionOperator::build_L_isotope()
     // point and every mode (k2,s2) of the full mesh (Tamura formula),
     // discretized exactly like Isotope::calc_isotope_selfenergy[_tetra] so
     // that the row sums reproduce the SERTA isotope linewidths.
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto eval_in = dos->dymat_dos->get_eigenvalues();
-    const auto evec_in = dos->dymat_dos->get_eigenvectors();
-    const auto &g2 = isotope->isotope_factor;
-    const auto &kind = system->get_primcell().kind;
+    const auto natmin = system_.get_primcell().number_of_atoms;
+    const auto eval_in = dymat_dos_.get_eigenvalues();
+    const auto evec_in = dymat_dos_.get_eigenvectors();
+    const auto &g2 = isotope_factor;
+    const auto &kind = system_.get_primcell().kind;
 
     L_iso.assign(static_cast<size_t>(nklocal) * ns, {});
 
     // Degeneracy-averaged frequencies (tetrahedron path only), built once.
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
     double **eval_tetra = nullptr;
-    if (integration->ismear == -1) {
+    if (integration_.ismear == -1) {
         allocate(eval_tetra, ns, nk_3ph);
         for (int ik = 0; ik < nk_3ph; ++ik) {
             auto begin = 0;
@@ -284,7 +290,7 @@ void CollisionOperator::build_L_isotope()
         double *energy_tmp = nullptr;
         double **weight_tetra = nullptr;
         unsigned int *kmap_identity = nullptr;
-        if (integration->ismear == -1) {
+        if (integration_.ismear == -1) {
             allocate(energy_tmp, nk_3ph);
             allocate(weight_tetra, ns, nk_3ph);
             allocate(kmap_identity, nk_3ph);
@@ -297,7 +303,7 @@ void CollisionOperator::build_L_isotope()
         for (int irow = 0; irow < nklocal * ns; ++irow) {
             const int ikl = irow / ns;
             const int s1 = irow % ns;
-            const int k1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ikl]][0].knum;
+            const int k1 = kmesh_dos_.kpoint_irred_all[nk_l[ikl]][0].knum;
             const auto omega1 = eval_in[k1][s1];
             if (omega1 < eps8) continue;
 
@@ -315,23 +321,23 @@ void CollisionOperator::build_L_isotope()
                 return prod;
             };
 
-            if (integration->ismear >= 0) {
-                const auto epsilon = integration->epsilon;
+            if (integration_.ismear >= 0) {
+                const auto epsilon = integration_.epsilon;
                 const auto prefactor = pi * omega1 * 0.25 / static_cast<double>(nk_3ph);
                 for (int k2 = 0; k2 < nk_3ph; ++k2) {
                     for (int s2 = 0; s2 < ns; ++s2) {
                         const auto omega2 = eval_in[k2][s2];
                         double delta_loc = 0.0;
                         double peak;
-                        if (integration->ismear == 0) {
+                        if (integration_.ismear == 0) {
                             delta_loc = delta_lorentz(omega1 - omega2, epsilon);
                             peak = delta_lorentz(0.0, epsilon);
-                        } else if (integration->ismear == 1) {
+                        } else if (integration_.ismear == 1) {
                             delta_loc = delta_gauss(omega1 - omega2, epsilon);
                             peak = delta_gauss(0.0, epsilon);
                         } else {
                             double eps_loc;
-                            integration->adaptive_sigma->get_sigma(k2, s2, eps_loc);
+                            integration_.adaptive_sigma->get_sigma(k2, s2, eps_loc);
                             delta_loc = delta_gauss(omega1 - omega2, eps_loc);
                             peak = delta_gauss(0.0, eps_loc);
                         }
@@ -349,12 +355,12 @@ void CollisionOperator::build_L_isotope()
                 // Isotope::calc_isotope_selfenergy_tetra).
                 for (int s2 = 0; s2 < ns; ++s2) {
                     for (int ik = 0; ik < nk_3ph; ++ik) energy_tmp[ik] = eval_tetra[s2][ik];
-                    integration->calc_weight_tetrahedron(nk_3ph,
+                    integration_.calc_weight_tetrahedron(nk_3ph,
                                                          kmap_identity,
                                                          energy_tmp,
                                                          omega1,
-                                                         dos->tetra_nodes_dos->get_ntetra(),
-                                                         dos->tetra_nodes_dos->get_tetras(),
+                                                         tetra_nodes_dos_.get_ntetra(),
+                                                         tetra_nodes_dos_.get_tetras(),
                                                          weight_tetra[s2]);
                 }
                 for (int k2 = 0; k2 < nk_3ph; ++k2) {
@@ -387,7 +393,7 @@ void CollisionOperator::build_L_isotope()
             }
         }
 
-        if (integration->ismear == -1) {
+        if (integration_.ismear == -1) {
             deallocate(energy_tmp);
             deallocate(weight_tetra);
             deallocate(kmap_identity);
@@ -400,7 +406,7 @@ void CollisionOperator::build_L_isotope()
 void CollisionOperator::add_isotope_diagonal(const double *const *sqrt_occ, double **q_inout) const
 {
     for (int ikl = 0; ikl < nklocal; ++ikl) {
-        const int k1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ikl]][0].knum;
+        const int k1 = kmesh_dos_.kpoint_irred_all[nk_l[ikl]][0].knum;
         for (int s = 0; s < ns; ++s) {
             auto sum = 0.0;
             for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s]) {
@@ -418,10 +424,10 @@ void CollisionOperator::setup_L_smear()
     allocate(L_absorb, kplength_absorb, ns, ns2);
     allocate(L_emitt, kplength_emitt, ns, ns2);
 
-    const auto epsilon = integration->epsilon;
+    const auto epsilon = integration_.epsilon;
 
-    const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
-    const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
+    const auto omega_tmp = dymat_dos_.get_eigenvalues();
+    const auto evec_tmp = dymat_dos_.get_eigenvectors();
 
     // The loops run over the flattened triplet index (pairs_emitt/absorb,
     // built in get_triplets) and parallelize over triplets with the
@@ -431,7 +437,7 @@ void CollisionOperator::setup_L_smear()
 #pragma omp parallel
 #endif
     {
-        std::vector<std::complex<double>> phi3_work(anharmonic_core->get_ngroup_fcs(3));
+        std::vector<std::complex<double>> phi3_work(anharmonic_core_.get_ngroup_fcs(3));
         int kindex_work[2] = {-1, -1};
         unsigned int arr_loc[3];
         std::array<double, 2> epsilon2;
@@ -445,13 +451,13 @@ void CollisionOperator::setup_L_smear()
 
             const auto ik = pairs_emitt[idx][0];
             const auto j = pairs_emitt[idx][1];
-            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const int kk1 = kmesh_dos_.kpoint_irred_all[nk_l[ik]][0].knum;
             const auto &pair = localnk_triplets_emitt[ik][j];
             const int kk2 = pair.group[0].ks[0];
             const int kk3 = pair.group[0].ks[1];
 
             for (int is1 = 0; is1 < ns; ++is1) {
-                arr_loc[0] = dos->kmesh_dos->kindex_minus_xk[kk1] * ns + is1;
+                arr_loc[0] = kmesh_dos_.kindex_minus_xk[kk1] * ns + is1;
                 const auto w1 = omega_tmp[kk1][is1];
 
                 for (int ib = 0; ib < ns2; ++ib) {
@@ -464,16 +470,16 @@ void CollisionOperator::setup_L_smear()
                     const auto w3 = omega_tmp[kk3][is3];
 
                     double delta_loc = 0.0;
-                    if (integration->ismear == 0) {
+                    if (integration_.ismear == 0) {
                         delta_loc = delta_lorentz(w1 - w2 - w3, epsilon);
-                    } else if (integration->ismear == 1) {
+                    } else if (integration_.ismear == 1) {
                         delta_loc = delta_gauss(w1 - w2 - w3, epsilon);
-                    } else if (integration->ismear == 2) {
-                        integration->adaptive_sigma->get_sigma(kk2, is2, kk3, is3, epsilon2);
+                    } else if (integration_.ismear == 2) {
+                        integration_.adaptive_sigma->get_sigma(kk2, is2, kk3, is3, epsilon2);
                         delta_loc = delta_gauss(w1 - w2 - w3, epsilon2[0]);
                     }
 
-                    const auto v3_tmp2 = std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                    const auto v3_tmp2 = std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
                                                                        evec_tmp, phi3_work.data(), kindex_work));
 
                     L_emitt[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
@@ -490,7 +496,7 @@ void CollisionOperator::setup_L_smear()
 
             const auto ik = pairs_absorb[idx][0];
             const auto j = pairs_absorb[idx][1];
-            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const int kk1 = kmesh_dos_.kpoint_irred_all[nk_l[ik]][0].knum;
             const auto &pair = localnk_triplets_absorb[ik][j];
             const int kk2 = pair.group[0].ks[0];
             const int kk3 = pair.group[0].ks[1];
@@ -509,19 +515,19 @@ void CollisionOperator::setup_L_smear()
                     const auto w3 = omega_tmp[kk3][is3];
 
                     double delta_loc = 0.0;
-                    if (integration->ismear == 0) {
+                    if (integration_.ismear == 0) {
                         delta_loc = delta_lorentz(w1 + w2 - w3, epsilon);
-                    } else if (integration->ismear == 1) {
+                    } else if (integration_.ismear == 1) {
                         delta_loc = delta_gauss(w1 + w2 - w3, epsilon);
-                    } else if (integration->ismear == 2) {
-                        integration->adaptive_sigma->get_sigma(kk2, is2, kk3, is3, epsilon2);
+                    } else if (integration_.ismear == 2) {
+                        integration_.adaptive_sigma->get_sigma(kk2, is2, kk3, is3, epsilon2);
                         // epsilon2[1] is built from (v2 + v3), the gradient of the
                         // argument of delta(w1 + w2 - w3) over the mesh cell —
                         // the same channel convention as the SERTA path.
                         delta_loc = delta_gauss(w1 + w2 - w3, epsilon2[1]);
                     }
 
-                    const auto v3_tmp2 = std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                    const auto v3_tmp2 = std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
                                                                        evec_tmp, phi3_work.data(), kindex_work));
 
                     L_absorb[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
@@ -543,8 +549,8 @@ void CollisionOperator::setup_L_tetra()
     for (auto i = 0; i < nk_3ph; ++i)
         kmap_identity[i] = i;
 
-    const auto omega_tmp = dos->dymat_dos->get_eigenvalues();
-    const auto evec_tmp = dos->dymat_dos->get_eigenvectors();
+    const auto omega_tmp = dymat_dos_.get_eigenvalues();
+    const auto evec_tmp = dymat_dos_.get_eigenvectors();
 
     // Pass 1: tetrahedron weights into L (per-thread energy/weight buffers).
 #ifdef _OPENMP
@@ -568,23 +574,23 @@ void CollisionOperator::setup_L_tetra()
             const int is2 = ib / ns;
             const int is3 = ib % ns;
 
-            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const int kk1 = kmesh_dos_.kpoint_irred_all[nk_l[ik]][0].knum;
             const auto w1 = omega_tmp[kk1][is1];
 
             // emission: delta(w1 - w2 - w3) with k3 = k1 - k2
             for (int k2 = 0; k2 < nk_3ph; k2++) {
                 for (auto i = 0; i < 3; ++i) {
-                    xk_tmp[i] = dos->kmesh_dos->xk[kk1][i] - dos->kmesh_dos->xk[k2][i];
+                    xk_tmp[i] = kmesh_dos_.xk[kk1][i] - kmesh_dos_.xk[k2][i];
                 }
-                const auto k3 = dos->kmesh_dos->get_knum(xk_tmp);
+                const auto k3 = kmesh_dos_.get_knum(xk_tmp);
                 energy_tmp[k2] = omega_tmp[k2][is2] + omega_tmp[k3][is3];
             }
-            integration->calc_weight_tetrahedron(nk_3ph,
+            integration_.calc_weight_tetrahedron(nk_3ph,
                                                  kmap_identity,
                                                  energy_tmp,
                                                  w1,
-                                                 dos->tetra_nodes_dos->get_ntetra(),
-                                                 dos->tetra_nodes_dos->get_tetras(),
+                                                 tetra_nodes_dos_.get_ntetra(),
+                                                 tetra_nodes_dos_.get_tetras(),
                                                  weight_tetra);
 
             for (size_t j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
@@ -595,17 +601,17 @@ void CollisionOperator::setup_L_tetra()
             // absorption: delta(w1 + w2 - w3) with k3 = -(k1 + k2)
             for (int k2 = 0; k2 < nk_3ph; k2++) {
                 for (auto i = 0; i < 3; ++i) {
-                    xk_tmp[i] = dos->kmesh_dos->xk[kk1][i] + dos->kmesh_dos->xk[k2][i];
+                    xk_tmp[i] = kmesh_dos_.xk[kk1][i] + kmesh_dos_.xk[k2][i];
                 }
-                const auto k3 = dos->kmesh_dos->get_knum(xk_tmp);
+                const auto k3 = kmesh_dos_.get_knum(xk_tmp);
                 energy_tmp[k2] = -omega_tmp[k2][is2] + omega_tmp[k3][is3];
             }
-            integration->calc_weight_tetrahedron(nk_3ph,
+            integration_.calc_weight_tetrahedron(nk_3ph,
                                                  kmap_identity,
                                                  energy_tmp,
                                                  w1,
-                                                 dos->tetra_nodes_dos->get_ntetra(),
-                                                 dos->tetra_nodes_dos->get_tetras(),
+                                                 tetra_nodes_dos_.get_ntetra(),
+                                                 tetra_nodes_dos_.get_tetras(),
                                                  weight_tetra);
 
             for (size_t j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
@@ -626,7 +632,7 @@ void CollisionOperator::setup_L_tetra()
 #pragma omp parallel
 #endif
     {
-        std::vector<std::complex<double>> phi3_work(anharmonic_core->get_ngroup_fcs(3));
+        std::vector<std::complex<double>> phi3_work(anharmonic_core_.get_ngroup_fcs(3));
         int kindex_work[2] = {-1, -1};
         unsigned int arr_loc[3];
 
@@ -637,19 +643,19 @@ void CollisionOperator::setup_L_tetra()
 
             const auto ik = pairs_emitt[idx][0];
             const auto j = pairs_emitt[idx][1];
-            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const int kk1 = kmesh_dos_.kpoint_irred_all[nk_l[ik]][0].knum;
             const auto &pair = localnk_triplets_emitt[ik][j];
             const int kk2 = pair.group[0].ks[0];
             const int kk3 = pair.group[0].ks[1];
 
             // emitt k1 -> k2 + k3 : V(-q1, q2, q3)
             for (int is1 = 0; is1 < ns; ++is1) {
-                arr_loc[0] = dos->kmesh_dos->kindex_minus_xk[kk1] * ns + is1;
+                arr_loc[0] = kmesh_dos_.kindex_minus_xk[kk1] * ns + is1;
                 for (int ib = 0; ib < ns2; ++ib) {
                     if (L_emitt[idx][is1][ib] == 0.0) continue;
                     arr_loc[1] = kk2 * ns + ib / ns;
                     arr_loc[2] = kk3 * ns + ib % ns;
-                    L_emitt[idx][is1][ib] *= std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                    L_emitt[idx][is1][ib] *= std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
                                                                            evec_tmp, phi3_work.data(), kindex_work));
                 }
             }
@@ -662,7 +668,7 @@ void CollisionOperator::setup_L_tetra()
 
             const auto ik = pairs_absorb[idx][0];
             const auto j = pairs_absorb[idx][1];
-            const int kk1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ik]][0].knum;
+            const int kk1 = kmesh_dos_.kpoint_irred_all[nk_l[ik]][0].knum;
             const auto &pair = localnk_triplets_absorb[ik][j];
             const int kk2 = pair.group[0].ks[0];
             const int kk3 = pair.group[0].ks[1];
@@ -674,7 +680,7 @@ void CollisionOperator::setup_L_tetra()
                     if (L_absorb[idx][is1][ib] == 0.0) continue;
                     arr_loc[1] = kk2 * ns + ib / ns;
                     arr_loc[2] = kk3 * ns + ib % ns;
-                    L_absorb[idx][is1][ib] *= std::norm(anharmonic_core->V3(arr_loc, dos->kmesh_dos->xk, omega_tmp,
+                    L_absorb[idx][is1][ib] *= std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
                                                                             evec_tmp, phi3_work.data(), kindex_work));
                 }
             }
@@ -705,7 +711,7 @@ void CollisionOperator::calc_Q_from_L(const double *const *sqrt_occ, double **q1
     for (auto ik = 0; ik < nklocal; ++ik) {
 
         auto tmpk = nk_l[ik];
-        const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+        const int k1 = kmesh_dos_.kpoint_irred_all[tmpk][0].knum;
 
         for (auto j = 0; j < localnk_triplets_emitt[ik].size(); ++j) {
 
@@ -732,7 +738,7 @@ void CollisionOperator::calc_Q_from_L(const double *const *sqrt_occ, double **q1
     for (auto ik = 0; ik < nklocal; ++ik) {
 
         auto tmpk = nk_l[ik];
-        const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+        const int k1 = kmesh_dos_.kpoint_irred_all[tmpk][0].knum;
 
         for (auto j = 0; j < localnk_triplets_absorb[ik].size(); ++j) {
 
@@ -770,7 +776,7 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, 
     // The scattering partners in L are stored for the representative
     // points; equivalent points carry no new information because
     // dF(Rk) = R dF(k), so W is only needed at the wedge points.
-    const int k1 = dos->kmesh_dos->kpoint_irred_all[nk_l[ikl]][0].knum;
+    const int k1 = kmesh_dos_.kpoint_irred_all[nk_l[ikl]][0].knum;
 
     for (int s1 = 0; s1 < ns; ++s1) {
 
@@ -812,7 +818,7 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, 
 
                 const int k2 = pair.group[ig].ks[0];
                 const int k3 = pair.group[ig].ks[1];
-                const int k3_minus = dos->kmesh_dos->kindex_minus_xk[k3];
+                const int k3_minus = kmesh_dos_.kindex_minus_xk[k3];
 
                 for (int ib = 0; ib < ns2; ++ib) {
                     const int s2 = ib / ns;
@@ -848,12 +854,12 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, 
 void CollisionOperator::assemble_dense_rows(const double *const *sqrt_occ, const double *const *Qfin_loc,
                                             double *slab) const
 {
-    const auto nk_irred = dos->kmesh_dos->nk_irred;
+    const auto nk_irred = kmesh_dos_.nk_irred;
     const size_t ncol = static_cast<size_t>(nk_irred) * ns * 3;
 
     std::vector<double> sqrt_mult(nk_irred);
     for (unsigned int ik = 0; ik < nk_irred; ++ik) {
-        sqrt_mult[ik] = std::sqrt(static_cast<double>(dos->kmesh_dos->kpoint_irred_all[ik].size()));
+        sqrt_mult[ik] = std::sqrt(static_cast<double>(kmesh_dos_.kpoint_irred_all[ik].size()));
     }
 
 #ifdef _OPENMP
@@ -862,7 +868,7 @@ void CollisionOperator::assemble_dense_rows(const double *const *sqrt_occ, const
     for (int ikl = 0; ikl < nklocal; ++ikl) {
 
         const auto tmpk = nk_l[ikl];
-        const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
+        const int k1 = kmesh_dos_.kpoint_irred_all[tmpk][0].knum;
         const auto sqrt_mrow = sqrt_mult[tmpk];
 
         for (int s1 = 0; s1 < ns; ++s1) {
@@ -872,7 +878,7 @@ void CollisionOperator::assemble_dense_rows(const double *const *sqrt_occ, const
             // Fold a coupling coefficient to the full-grid mode (kt, st)
             // onto the wedge: dF(kt) = expand_mat[kt] . dF_ir(rep(kt)).
             const auto scatter = [&](const double coeff, const int kt, const int st) {
-                const auto ikc = dos->kmesh_dos->kmap_to_irreducible[kt];
+                const auto ikc = kmesh_dos_.kmap_to_irreducible[kt];
                 const auto &B = expand_mat[kt];
                 const auto factor = coeff * sqrt_mrow / sqrt_mult[ikc];
                 const size_t colbase = (static_cast<size_t>(ikc) * ns + st) * 3;
@@ -915,7 +921,7 @@ void CollisionOperator::assemble_dense_rows(const double *const *sqrt_occ, const
                 for (size_t ig = 0; ig < pair.group.size(); ig++) {
                     const int k2 = pair.group[ig].ks[0];
                     const int k3 = pair.group[ig].ks[1];
-                    const int k3_minus = dos->kmesh_dos->kindex_minus_xk[k3];
+                    const int k3_minus = kmesh_dos_.kindex_minus_xk[k3];
                     for (int ib = 0; ib < ns2; ++ib) {
                         const int s2 = ib / ns;
                         const int s3 = ib % ns;
@@ -944,7 +950,7 @@ void CollisionOperator::reconstruct_full_from_wedge(const double *dF_ir, double 
 #pragma omp parallel for
 #endif
     for (int p = 0; p < nk_3ph; ++p) {
-        const auto irr = dos->kmesh_dos->kmap_to_irreducible[p];
+        const auto irr = kmesh_dos_.kmap_to_irreducible[p];
         const auto &m = expand_mat[p];
         for (int s = 0; s < ns; ++s) {
             const double fx = dF_ir[(irr * ns + s) * 3 + 0];

@@ -114,8 +114,11 @@ void Iterativebte::setup_iterative()
 
     // Build the collision operator: wedge distribution over the MPI ranks,
     // triplet lists of the local k points and the symmetry table.
-    collision_op = std::make_unique<CollisionOperator>(phon);
-    collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering);
+    collision_op = std::make_unique<CollisionOperator>(*dos->kmesh_dos, *dos->tetra_nodes_dos, *dos->dymat_dos,
+                                                       *system, *symmetry, *integration, *anharmonic_core,
+                                                       dynamical->neval, mympi->my_rank, mympi->nprocs);
+    collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering,
+                                      isotope->isotope_factor.data());
     collision_op->setup();
 
     if (collision_op->has_isotope_channel() && mympi->my_rank == 0) {
