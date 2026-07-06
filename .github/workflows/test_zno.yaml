@@ -86,3 +86,11 @@ jobs:
       - name: Compare results
         working-directory: ./test
         run: python test_zno.py --job compare
+
+      - name: Run QHA regression tests (restart, IALGO, perturbative)
+        working-directory: ./test
+        run: python test_qha.py
+
+      - name: Run SCPH KPMODE=0 regression test
+        working-directory: ./test
+        run: python test_kpmode0.py

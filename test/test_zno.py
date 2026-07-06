@@ -65,8 +65,12 @@ def print_max_errors(file, data_ref, data_now, rel_min_scale=1.0e-15):
 def run_anphon_zno(anphonbin):
     try:
         with open("ZnO_qha_thermo.log", "w") as f:
-            subprocess.run([anphonbin, "ZnO_qha_thermo.in"], stdout=f)
+            proc = subprocess.run([anphonbin, "ZnO_qha_thermo.in"], stdout=f)
     except Exception:
+        return 1
+
+    if proc.returncode != 0:
+        print("anphon exited with code %d" % proc.returncode)
         return 1
 
     return 0
