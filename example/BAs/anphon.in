@@ -1,10 +1,9 @@
 &general
 prefix = BAs
-mode = RTA
-nkd = 2
+mode = KAPPA
 kd = As B
 mass = 74.9216 10.81
-fcsxml = BAs.xml
+fcsfile = BAs-paw-40-480-N60-rcut12-8.xml
 nonanalytic = 2
 borninfo = BAs.born
 restart = 0
@@ -12,7 +11,6 @@ tmin = 100
 tmax = 1000
 dt   = 50 
 ismear = 2
-restart_4ph = 1
 /
 
 &cell
@@ -28,14 +26,12 @@ restart_4ph = 1
 /
 
 &kappa
+SOLVER = RTA
 ismear_4ph = 2
+INCLUDE_4PH = 1
 isotope = 1 
-iterative = 1
 interpolator = log-linear
 kmesh_coarse = 8 8 8
+RESTART_4PH = 1
+RESTART = 1
 /
-
-&analysis
-quartic = 1
-/
-

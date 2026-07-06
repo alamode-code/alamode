@@ -193,13 +193,6 @@ void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArray
     }
 }
 
-//std::complex<double> AnharmonicCore::get_v3(const unsigned int ks[3],
-//                                            double **eval_phonon,
-//                                            std::complex<double> ***evec_phonon)
-//{
-//    return V3(ks,eval_phonon,evec_phonon);
-//}
-
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3])
 {
     return V3(ks,
@@ -406,8 +399,6 @@ void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, 
 
 #pragma omp parallel for private(ret_in, nsize_group, j, phase) if (use_openmp)
         for (i = 0; i < ngroup_v3_in; ++i) {
-
-            // std::cout << "i = " << i << '\n' << std::flush;
 
             ret_in = std::complex<double>(0.0, 0.0);
             nsize_group = fcs_group_v3_in[i].size();
@@ -768,6 +759,8 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
                 omega_inner[1] = eval_in[k2][js];
 
                 if (integration->ismear == 0) {
+                    // Lorentzian smearing
+
                     delta_arr[ik][ns * is + js][0] =
                         delta_lorentz(omega_in - omega_inner[0] - omega_inner[1], epsilon) -
                         delta_lorentz(omega_in + omega_inner[0] + omega_inner[1], epsilon);
@@ -775,16 +768,16 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
                         delta_lorentz(omega_in - omega_inner[0] + omega_inner[1], epsilon) -
                         delta_lorentz(omega_in + omega_inner[0] - omega_inner[1], epsilon);
                 } else if (integration->ismear == 1) {
+                    // Gaussian smearing
 
                     delta_arr[ik][ns * is + js][0] = delta_gauss(omega_in - omega_inner[0] - omega_inner[1], epsilon) -
                                                      delta_gauss(omega_in + omega_inner[0] + omega_inner[1], epsilon);
                     delta_arr[ik][ns * is + js][1] = delta_gauss(omega_in - omega_inner[0] + omega_inner[1], epsilon) -
                                                      delta_gauss(omega_in + omega_inner[0] - omega_inner[1], epsilon);
                 } else if (integration->ismear == 2) {
-                    //double epsilon2[2];
+                    // Adaptive smearing
+
                     integration->adaptive_sigma->get_sigma(k1, is, k2, js, epsilon2);
-                    //integration->adaptive_smearing(k1, is, k2, js, epsilon2);
-                    //sum_smear += epsilon2[0] + epsilon2[1];
                     delta_arr[ik][ns * is + js][0] =
                         delta_gauss(omega_in - omega_inner[0] - omega_inner[1], epsilon2[0]) -
                         delta_gauss(omega_in + omega_inner[0] + omega_inner[1], epsilon2[0]);
@@ -795,8 +788,6 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
             }
         }
     }
-    // debug
-    //std::cout << "phonon (" << ik_in << ", " << snum << ") : " << sum_smear / static_cast<double>(2*ns*ns*npair_uniq) << std::endl;
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -1278,7 +1269,6 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                             // add adaptive smearing
                             std::array<double, 4> epsilon2;
                             integration->adaptive_sigma4->get_sigma(k1, is, k2, js, k3, ks, epsilon2);
-                            //integration->adaptive_smearing(k1, is, k2, js, k3, ks, epsilon2);
                             delta_arr[ik0][jb][0] = 0.0;
                             delta_arr[ik0][jb][1] = 0.0;
                             delta_arr[ik0][jb][2] = 0.0;
@@ -1435,20 +1425,8 @@ std::vector<std::vector<QuartS>> AnharmonicCore::reduce_pair(const int k_in, con
     int ns = dynamical->neval;
 
     const int k0 = kmesh_in->kpoint_irred_all[k_in][0].knum;
-
     const int npair_uniq = quartet.size();
-
     const auto epsilon = integration->epsilon;
-
-    //double threshold = 0;
-    //if (ismear == 0) {
-    // lorentzian, we set threshold at omega = 3 epsilon
-    //    threshold = delta_lorentz(3.0 * epsilon, epsilon);
-    //} else if (ismear >= 1) {
-    // gaussian, we set threshold at omega = 2 epsilon
-    // threshold will be independent of epsilon
-    //    threshold = delta_gauss(2.0 * epsilon, epsilon);
-    //}
 
     std::array<double, 4> epsilon2;
     //for (auto ip = 0; ip < npair_uniq; ip++) {
@@ -1457,9 +1435,6 @@ std::vector<std::vector<QuartS>> AnharmonicCore::reduce_pair(const int k_in, con
         std::vector<QuartS> tmp;
         tmp.clear();
 
-        //k1 = quartet[ip].group[0].ks[0];
-        //k2 = quartet[ip].group[0].ks[1];
-        //k3 = quartet[ip].group[0].ks[2];
         k1 = it->group[0].ks[0];
         k2 = it->group[0].ks[1];
         k3 = it->group[0].ks[2];
@@ -1496,7 +1471,6 @@ std::vector<std::vector<QuartS>> AnharmonicCore::reduce_pair(const int k_in, con
                         }
                     } else if (ismear == 2) {
                         integration->adaptive_sigma4->get_sigma(k1, s1, k2, s2, k3, s3, epsilon2);
-                        //integration->adaptive_smearing(k1, s1, k2, s2, k3, s3, epsilon2);
                         const auto sum1 = omega - omega1 - omega2 - omega3;
                         const auto sum2 = omega - omega1 - omega2 + omega3;
                         const auto sum3 = omega + omega1 + omega2 - omega3;
@@ -1523,8 +1497,6 @@ std::vector<std::vector<QuartS>> AnharmonicCore::reduce_pair(const int k_in, con
             ++it;
         } else {
             it = quartet.erase(it);
-            // https://www.cplusplus.com/reference/vector/vector/erase/
-            //https://stackoverflow.com/questions/9927163/erase-element-in-vector-while-iterating-the-same-vector
         }
     }
 
@@ -1588,9 +1560,6 @@ void AnharmonicCore::reduce_pair_simple(const int ik_in, const int snum, const d
         } else {
             it = quartet.erase(it);
         }
-
-        // https://www.cplusplus.com/reference/vector/vector/erase/
-        //https://stackoverflow.com/questions/9927163/erase-element-in-vector-while-iterating-the-same-vector
     }
 }
 
@@ -1996,69 +1965,3 @@ std::vector<RelativeVector> *AnharmonicCore::get_relvec(const unsigned int order
     if (order == 4) return relvec_v4;
     return nullptr;
 }
-
-//void AnharmonicCore::calc_analytic_k_from_FcsArrayWithCell(const double *xk_in,
-//                                                           const std::vector<FcsArrayWithCell> &fc2_in,
-//                                                           std::complex<double> **dymat_out) const
-//{
-//    int i;
-//    const auto nmode = 3 * system->natmin;
-//    double vec[3];
-//
-//    // prepare supercell shift
-//    double **xshift_s;
-//    const auto ncell_s = 27;
-//
-//    allocate(xshift_s, ncell_s, 3);
-//
-//    unsigned int icell = 0;
-//    int ix, iy, iz;
-//    for (i = 0; i < 3; ++i) xshift_s[0][i] = 0;
-//    icell = 1;
-//    for (ix = -1; ix <= 1; ++ix) {
-//        for (iy = -1; iy <= 1; ++iy) {
-//            for (iz = -1; iz <= 1; ++iz) {
-//                if (ix == 0 && iy == 0 && iz == 0) continue;
-//
-//                xshift_s[icell][0] = ix * 1.0;
-//                xshift_s[icell][1] = iy * 1.0;
-//                xshift_s[icell][2] = iz * 1.0;
-//
-//                ++icell;
-//            }
-//        }
-//    }
-//
-//    for (i = 0; i < nmode; ++i) {
-//        for (auto j = 0; j < nmode; ++j) {
-//            dymat_out[i][j] = std::complex<double>(0.0, 0.0);
-//        }
-//    }
-//
-//    for (const auto &it: fc2_in) {
-//
-//        const auto atm1_p = it.pairs[0].index / 3;
-//        const auto atm2_p = it.pairs[1].index / 3;
-//        const auto atm1_s = system->map_p2s_anharm[atm1_p][0];
-//        const auto atm2_s = system->map_p2s_anharm[atm2_p][it.pairs[1].tran];
-//        const auto xyz1 = it.pairs[0].index % 3;
-//        const auto xyz2 = it.pairs[1].index % 3;
-//        const auto icell = it.pairs[1].cell_s;
-//
-//        for (i = 0; i < 3; ++i) {
-//            vec[i] = system->xr_s_anharm[atm2_s][i] + xshift_s[icell][i]
-//                     - system->xr_s_anharm[system->map_p2s_anharm[atm2_p][0]][i];
-//        }
-//
-//        rotvec(vec, vec, system->lavec_s_anharm);
-//        rotvec(vec, vec, system->rlavec_p);
-//
-//        const auto phase = vec[0] * xk_in[0] + vec[1] * xk_in[1] + vec[2] * xk_in[2];
-//
-//        dymat_out[3 * atm1_p + xyz1][3 * atm2_p + xyz2]
-//                += it.fcs_val * std::exp(im * phase) /
-//                   std::sqrt(system->mass_anharm[atm1_s] * system->mass_anharm[atm2_s]);
-//    }
-//
-//    deallocate(xshift_s);
-//}

@@ -300,7 +300,6 @@ void Dynamical::prepare_mindist_list(std::vector<int> **mindist_out) const
     }
 
     for (i = 0; i < natmin; ++i) {
-        // TODO: replace map_p2s
         const auto iat = system->get_map_p2s(0)[i][0];
         for (j = 0; j < nat; ++j) {
             distall[i][j].clear();
@@ -780,10 +779,6 @@ void Dynamical::calc_nonanalytic_k2(const double *xk_in, const double *kvec_na_i
                             vec[k] = xf_tmp(system->get_map_p2s(0)[jat][i], k) + xshift_s[cell][k] - xf_tmp(atm_p2, k);
                         }
 
-
-                        //                        rotvec(vec, vec, system->get_supercell(0).lattice_vector);
-                        //                        rotvec(vec, vec, system->get_primcell().reciprocal_lattice_vector);
-
                         vec = convmat * vec;
                         double phase = vec[0] * xk_in[0] + vec[1] * xk_in[1] + vec[2] * xk_in[2];
 
@@ -1036,10 +1031,6 @@ void Dynamical::modify_eigenvectors() const
     deallocate(evec_tmp);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    //if (mympi->my_rank == 0) {
-    //    std::cout << " done !" << '\n';
-    //    std::cout << " **************************************" << '\n';
-    //}
 }
 
 void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,

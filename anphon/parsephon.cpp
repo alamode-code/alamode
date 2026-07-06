@@ -1354,7 +1354,6 @@ void Input::parse_analysis_vars(const bool use_default_values)
                                         "KS_INPUT",
                                         "REALPART",
                                         "FSTATE_W",
-                                        "FSTATE_K",
                                         "PRINTMSD",
                                         "DOS",
                                         "PDOS",
@@ -1420,7 +1419,6 @@ void Input::parse_analysis_vars(const bool use_default_values)
     auto quartic_mode = 0;
     auto calc_realpart = false;
     auto fstate_omega = false;
-    auto fstate_k = false;
     auto bubble_omega = false;
 
     auto print_fc2_ewald = false;
@@ -1457,7 +1455,6 @@ void Input::parse_analysis_vars(const bool use_default_values)
         assign_val(quartic_mode, "QUARTIC", analysis_var_dict);
         assign_val(calc_realpart, "REALPART", analysis_var_dict);
         assign_val(fstate_omega, "FSTATE_W", analysis_var_dict);
-        assign_val(fstate_k, "FSTATE_K", analysis_var_dict);
         assign_val(ks_input, "KS_INPUT", analysis_var_dict);
         assign_val(bubble_omega, "SELF_W", analysis_var_dict);
         assign_val(calc_selfenergy, "SELF_ENERGY", analysis_var_dict);
@@ -1613,7 +1610,6 @@ void Input::parse_analysis_vars(const bool use_default_values)
     mode_analysis->ks_input = ks_input;
     mode_analysis->calc_realpart = calc_realpart;
     mode_analysis->calc_fstate_omega = fstate_omega;
-    mode_analysis->calc_fstate_k = fstate_k;
     mode_analysis->print_V3 = print_V3;
     mode_analysis->print_V4 = print_V4;
     mode_analysis->spectral_func = bubble_omega;
@@ -1795,7 +1791,7 @@ void Input::parse_kpoints()
                     exit("parse_kpoints", "KPMODE must be an integer. [0, 1, or 2]");
                 }
 
-                if (!(kpmode >= 0 && kpmode <= 3)) {
+                if (!(kpmode >= 0 && kpmode <= 2)) {
                     exit("parse_kpoints", "KPMODE must be 0, 1, or 2.");
                 }
 
@@ -1814,9 +1810,6 @@ void Input::parse_kpoints()
             }
             if (kpmode == 2 && kpelem.size() != 3) {
                 exit("parse_kpoints", "The number of columns must be 3 when KPMODE = 2");
-            }
-            if (kpmode == 3 && kpelem.size() != 8) {
-                exit("parse_kpoints", "The number of columns must be 8 when KPMODE = 3");
             }
 
             kpoint->kpInp.emplace_back(kpelem);
