@@ -18,20 +18,25 @@ using namespace PHON_NS;
 namespace
 {}
 
-DerivativeIFC::DerivativeIFC(PHON *phon) : Pointers(phon)
+DerivativeIFC::DerivativeIFC(const System &system_in, const Symmetry &symmetry_in,
+                             const Fcs_phonon &fcs_phonon_in, const Dynamical &dynamical_in,
+                             AnharmonicCore &anharmonic_core_in, const int my_rank_in,
+                             const int nprocs_in)
+    : system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), dynamical_(dynamical_in),
+      anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
 {}
 
 void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
                                      const std::complex<double> *const *const *const evec_harmonic) const
 {
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto ns = dynamical->neval;
-    const auto invsqrt_mass = system->get_invsqrt_mass();
+    const auto natmin = system_.get_primcell().number_of_atoms;
+    const auto ns = dynamical_.neval;
+    const auto invsqrt_mass = system_.get_invsqrt_mass();
     Eigen::MatrixXd del_v1_del_umn_in_real_space(9, ns);
 
     del_v1_del_umn_in_real_space.setZero();
 
-    const auto &force_constants = fcs_phonon->force_constant_with_cell[0];
+    const auto &force_constants = fcs_phonon_.force_constant_with_cell[0];
     std::vector<FcsArrayWithCell> fcs_aligned;
     fcs_aligned.reserve(force_constants.size());
     for (const auto &it: force_constants) {
@@ -82,14 +87,14 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
 {
     // Calculates the second-order derivative of IFC1 with respect to strain in real space and transforms it to the reciprocal space representation.
     // It can be obtained from the IFC3 in the unstrained system.
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto ns = dynamical->neval;
-    const auto invsqrt_mass = system->get_invsqrt_mass();
+    const auto natmin = system_.get_primcell().number_of_atoms;
+    const auto ns = dynamical_.neval;
+    const auto invsqrt_mass = system_.get_invsqrt_mass();
     Eigen::MatrixXd del2_v1_del_umn2_in_real_space(81, ns);
 
     del2_v1_del_umn2_in_real_space.setZero();
 
-    const auto &force_constants = fcs_phonon->force_constant_with_cell[1];
+    const auto &force_constants = fcs_phonon_.force_constant_with_cell[1];
     std::vector<FcsArrayWithCell> fcs_aligned;
     fcs_aligned.reserve(force_constants.size());
     for (const auto &it: force_constants) {
@@ -144,14 +149,14 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
 {
     // Calculates the third-order derivative of IFC1 with respect to strain in real space and transforms it to the reciprocal space representation.
     // It can be obtained from the IFC4 in the unstrained system.
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto ns = dynamical->neval;
-    const auto invsqrt_mass = system->get_invsqrt_mass();
+    const auto natmin = system_.get_primcell().number_of_atoms;
+    const auto ns = dynamical_.neval;
+    const auto invsqrt_mass = system_.get_invsqrt_mass();
     Eigen::MatrixXd del3_v1_del_umn3_in_real_space(729, ns);
 
     del3_v1_del_umn3_in_real_space.setZero();
 
-    const auto &force_constants = fcs_phonon->force_constant_with_cell[2];
+    const auto &force_constants = fcs_phonon_.force_constant_with_cell[2];
     std::vector<FcsArrayWithCell> fcs_aligned;
     fcs_aligned.reserve(force_constants.size());
     for (const auto &it: force_constants) {
@@ -214,7 +219,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
 {
     using namespace Eigen;
 
-    const auto ns = dynamical->neval;
+    const auto ns = dynamical_.neval;
     int is1, is2;
 
     std::vector<FcsArrayWithCell> delta_fcs;
@@ -229,7 +234,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
 
     fcs_aligned.clear();
 
-    for (const auto &it: fcs_phonon->force_constant_with_cell[1]) {
+    for (const auto &it: fcs_phonon_.force_constant_with_cell[1]) {
         fcs_aligned.emplace_back(it);
     }
     sort_by_heading_indices const operator_fcs(1);
@@ -242,7 +247,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (int ik = 0; ik < nk; ik++) {
 
-                dynamical->calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
+                dynamical_.calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
 
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
@@ -270,11 +275,11 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
 {
     using namespace Eigen;
 
-    const auto ns = dynamical->neval;
+    const auto ns = dynamical_.neval;
 
     std::vector<FcsArrayWithCell> fcs_aligned;
     fcs_aligned.clear();
-    for (const auto &it: fcs_phonon->force_constant_with_cell[2]) {
+    for (const auto &it: fcs_phonon_.force_constant_with_cell[2]) {
         fcs_aligned.emplace_back(it);
     }
     sort_by_heading_indices const operator_fcs(2);
@@ -306,7 +311,7 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
 
             auto &per_strain = del2_v2_del_umn2[ixyz];
             for (int ik = 0; ik < nk; ik++) {
-                dynamical->calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
+                dynamical_.calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
 
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
@@ -334,7 +339,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                      const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                                      const PhaseFactorStorage *phase_storage_in) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = dynamical_.neval;
     const auto ns2 = static_cast<std::size_t>(ns) * ns;
     const auto nk_dense = static_cast<int>(kmesh_dense_in->nk);
 
@@ -362,15 +367,15 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     int ixyz1, ixyz2;
 
     double *invsqrt_mass_p;
-    allocate(invsqrt_mass_p, system->get_primcell().number_of_atoms);
-    for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
-        invsqrt_mass_p[i] = std::sqrt(1.0 / system->get_mass_prim()[i]);
+    allocate(invsqrt_mass_p, system_.get_primcell().number_of_atoms);
+    for (i = 0; i < system_.get_primcell().number_of_atoms; ++i) {
+        invsqrt_mass_p[i] = std::sqrt(1.0 / system_.get_mass_prim()[i]);
     }
 
     std::vector<FcsArrayWithCell> delta_fcs;
     std::vector<FcsArrayWithCell> fcs_aligned;
     fcs_aligned.clear();
-    for (const auto &it: fcs_phonon->force_constant_with_cell[2]) {
+    for (const auto &it: fcs_phonon_.force_constant_with_cell[2]) {
         fcs_aligned.emplace_back(it);
     }
     const sort_by_heading_indices operator_fcs(1);
@@ -398,7 +403,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
 
             boost::sort::block_indirect_sort(delta_fcs.begin(), delta_fcs.end());
 
-            anharmonic_core->prepare_group_of_force_constants(delta_fcs, ngroup_tmp, fcs_group_tmp);
+            AnharmonicCore::prepare_group_of_force_constants(delta_fcs, ngroup_tmp, fcs_group_tmp);
 
             if (ngroup_tmp == 0) {
 #pragma omp parallel for schedule(static)
@@ -413,7 +418,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
             allocate(evec_index_v3_tmp, ngroup_tmp, 3);
             allocate(relvec_tmp, ngroup_tmp);
 
-            anharmonic_core->prepare_relative_vector(delta_fcs, ngroup_tmp, fcs_group_tmp, relvec_tmp);
+            AnharmonicCore::prepare_relative_vector(delta_fcs, ngroup_tmp, fcs_group_tmp, relvec_tmp);
 
             int k = 0;
             for (i = 0; i < ngroup_tmp; ++i) {
@@ -447,9 +452,9 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                                kmesh_coarse_in,
                                                kmesh_dense_in,
                                                phase_storage_in,
-                                               *anharmonic_core,
-                                               mympi->my_rank,
-                                               mympi->nprocs);
+                                               anharmonic_core_,
+                                               my_rank_,
+                                               nprocs_);
 
             deallocate(fcs_group_tmp);
             deallocate(invmass_v3_tmp);
@@ -489,7 +494,7 @@ void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCel
         }
     }
 
-    const auto convmat = system->get_primcell().lattice_vector;
+    const auto convmat = system_.get_primcell().lattice_vector;
     const auto nelems = norder - m;
 
     delta_fcs.clear();
@@ -659,21 +664,21 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
 
     switch (renorm_2to1st) {
     case 0:
-        if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
+        if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
         del_v_strain.del_v1.setZero();
-        if (mympi->my_rank == 0) std::cout << "  done!\n";
+        if (my_rank_ == 0) std::cout << "  done!\n";
         break;
     case 1:
-        if (mympi->my_rank == 0)
+        if (my_rank_ == 0)
             std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
         compute_dV1_dumn(del_v_strain.del_v1, evec_harmonic);
-        if (mympi->my_rank == 0) std::cout << "  done!\n";
+        if (my_rank_ == 0) std::cout << "  done!\n";
         break;
     case 2:
-        if (mympi->my_rank == 0)
+        if (my_rank_ == 0)
             std::cout << "  - first-order derivatives of first-order IFCs (finite difference method) ... ";
         calculate_delv1_delumn_finite_difference(del_v_strain.del_v1, evec_harmonic, strain_ifc_dir);
-        if (mympi->my_rank == 0) std::cout << "  done!\n";
+        if (my_rank_ == 0) std::cout << "  done!\n";
         break;
     default:
         break;
@@ -681,26 +686,26 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
 
     switch (renorm_34to1st) {
     case 0:
-        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
+        if (my_rank_ == 0) std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
         del_v_strain.del2_v1.setZero();
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  done!\n";
             std::cout << "  - third-order derivatives of first-order IFCs (set zero) ... ";
         }
         del_v_strain.del3_v1.setZero();
-        if (mympi->my_rank == 0) std::cout << "  done!\n";
+        if (my_rank_ == 0) std::cout << "  done!\n";
         break;
     case 1:
-        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
+        if (my_rank_ == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
         compute_d2V1_dumn2(del_v_strain.del2_v1, evec_harmonic);
 
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  done!\n";
             std::cout << "  - third-order derivatives of first-order IFCs (from quartic IFCs) ... ";
         }
         compute_d3V1_dumn3(del_v_strain.del3_v1, evec_harmonic);
 
-        if (mympi->my_rank == 0) std::cout << "  done!\n";
+        if (my_rank_ == 0) std::cout << "  done!\n";
         break;
     default:
         break;
@@ -708,13 +713,13 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
 
     switch (renorm_3to2nd) {
     case 1:
-        if (mympi->my_rank == 0)
+        if (my_rank_ == 0)
             std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... " << std::flush;
 
         compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk_interpolate, kmesh_coarse->xk);
         break;
     case 2:
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
             std::cout << "    use inputs with all strain patterns ... " << std::flush;
         }
@@ -730,7 +735,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         break;
 
     case 3:
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
             std::cout << "    use inputs with specified strain patterns ... " << std::flush;
         }
@@ -746,7 +751,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         break;
 
     case 4:
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs\n";
             std::cout << "    (read from file in k-space representation) ... " << std::flush;
         }
@@ -757,21 +762,21 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
     default:
         break;
     }
-    if (mympi->my_rank == 0) std::cout << "  done!\n";
+    if (my_rank_ == 0) std::cout << "  done!\n";
 
-    if (mympi->my_rank == 0)
+    if (my_rank_ == 0)
         std::cout << "  - second-order derivatives of harmonic IFCs (from quartic IFCs) ... " << std::flush;
 
     compute_d2V2_dumn2(del_v_strain.del2_v2, evec_harmonic, nk, kmesh_dense->xk);
 
-    if (mympi->my_rank == 0) {
+    if (my_rank_ == 0) {
         std::cout << "  done!\n";
         std::cout << "  - first-order derivatives of cubic IFCs (from quartic IFCs) ... " << std::flush;
     }
 
     compute_dV3_dumn(del_v_strain.del_v3, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_storage_in);
 
-    if (mympi->my_rank == 0) {
+    if (my_rank_ == 0) {
         std::cout << "  done!\n";
     }
 }
@@ -790,40 +795,40 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
     }
 
     if (renorm_2to1st == 0) {
-        if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
+        if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
         del_v_strain.del_v1.setZero();
     } else if (renorm_2to1st == 1) {
-        if (mympi->my_rank == 0)
+        if (my_rank_ == 0)
             std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
         compute_dV1_dumn(del_v_strain.del_v1, evec_harmonic);
 
     } else if (renorm_2to1st == 2) {
-        if (mympi->my_rank == 0)
+        if (my_rank_ == 0)
             std::cout << "  - first-order derivatives of first-order IFCs (finite difference method) ... ";
         calculate_delv1_delumn_finite_difference(del_v_strain.del_v1, evec_harmonic, strain_ifc_dir);
     }
-    if (mympi->my_rank == 0) {
+    if (my_rank_ == 0) {
         std::cout << "  done!\n";
     }
 
     if (renorm_34to1st == 0) {
-        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
+        if (my_rank_ == 0) std::cout << "  - second-order derivatives of first-order IFCs (set zero) ... ";
         del_v_strain.del2_v1.setZero();
 
     } else if (renorm_34to1st == 1) {
-        if (mympi->my_rank == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
+        if (my_rank_ == 0) std::cout << "  - second-order derivatives of first-order IFCs (from cubic IFCs) ... ";
         compute_d2V1_dumn2(del_v_strain.del2_v1, evec_harmonic);
     }
-    if (mympi->my_rank == 0) {
+    if (my_rank_ == 0) {
         std::cout << "  done!\n";
     }
 
     if (renorm_3to2nd == 1) {
-        if (mympi->my_rank == 0) std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
+        if (my_rank_ == 0) std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
 
         compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk, kmesh_coarse->xk);
     } else if (renorm_3to2nd == 2 || renorm_3to2nd == 3) {
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
             if (renorm_3to2nd == 2) {
                 std::cout << "   use inputs with all strain patterns ...\n";
@@ -841,13 +846,13 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
                                                  strain_ifc_dir,
                                                  mindist_list);
     } else if (renorm_3to2nd == 4) {
-        if (mympi->my_rank == 0) {
+        if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs\n";
             std::cout << "    (read from file in k-space representation) ... ";
         }
         read_del_v2_del_umn_in_kspace(omega2_harmonic, evec_harmonic, del_v_strain.del_v2, nk);
     }
-    if (mympi->my_rank == 0) {
+    if (my_rank_ == 0) {
         std::cout << "  done!\n";
     }
 }
@@ -859,7 +864,7 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
 {
     using namespace Eigen;
 
-    const auto ns = dynamical->neval;
+    const auto ns = dynamical_.neval;
 
     int ixyz1, ixyz2;
     int ik, is, js;
@@ -949,8 +954,8 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
     MatrixXcdRowMajor &del_v1_del_umn, const std::complex<double> *const *const *const evec_harmonic,
     const std::string &strain_ifc_dir) const
 {
-    const auto natmin = system->get_primcell().number_of_atoms;
-    auto ns = dynamical->neval;
+    const auto natmin = system_.get_primcell().number_of_atoms;
+    auto ns = dynamical_.neval;
 
     int ixyz1, ixyz2, ixyz3, ixyz12, ixyz22, ixyz32, i1, i2;
     int iat1, iat2, is1, isymm;
@@ -1038,9 +1043,9 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
         std::fill_n(del_v1_del_umn_in_real_space_symm[ixyz1], ns, 0.0);
     }
 
-    for (isymm = 0; isymm < symmetry->SymmListWithMap_ref.size(); isymm++) {
+    for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
         for (iat1 = 0; iat1 < natmin; iat1++) {
-            iat2 = symmetry->SymmListWithMap_ref[isymm].mapping[iat1];
+            iat2 = symmetry_.SymmListWithMap_ref[isymm].mapping[iat1];
 
             for (i1 = 0; i1 < 27; i1++) {
                 ixyz1 = i1 / 9;
@@ -1053,9 +1058,9 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
 
                     del_v1_del_umn_in_real_space_symm[ixyz12 * 3 + ixyz22][iat2 * 3 + ixyz32] +=
                         del_v1_del_umn_in_real_space[ixyz1 * 3 + ixyz2][iat1 * 3 + ixyz3] *
-                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz12 * 3 + ixyz1] *
-                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz22 * 3 + ixyz2] *
-                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz32 * 3 + ixyz3];
+                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz12 * 3 + ixyz1] *
+                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz22 * 3 + ixyz2] *
+                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz32 * 3 + ixyz3];
                 }
             }
         }
@@ -1063,7 +1068,7 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
 
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         for (is1 = 0; is1 < ns; is1++) {
-            del_v1_del_umn_in_real_space_symm[ixyz1][is1] /= static_cast<double>(symmetry->SymmListWithMap_ref.size());
+            del_v1_del_umn_in_real_space_symm[ixyz1][is1] /= static_cast<double>(symmetry_.SymmListWithMap_ref.size());
         }
     }
 
@@ -1072,7 +1077,7 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
             std::complex<double> sum(0.0, 0.0);
             for (iat1 = 0; iat1 < natmin; iat1++) {
                 for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                    sum += evec_harmonic[0][is1][iat1 * 3 + ixyz2] * system->get_invsqrt_mass()[iat1] *
+                    sum += evec_harmonic[0][is1][iat1 * 3 + ixyz2] * system_.get_invsqrt_mass()[iat1] *
                            del_v1_del_umn_in_real_space_symm[ixyz1][iat1 * 3 + ixyz2];
                 }
             }
@@ -1092,13 +1097,13 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 {
     using namespace Eigen;
 
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto nat = system->get_supercell(0).number_of_atoms;
+    const auto natmin = system_.get_primcell().number_of_atoms;
+    const auto nat = system_.get_supercell(0).number_of_atoms;
     const auto natmin3 = natmin * 3;
     const auto nat3 = nat * 3;
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto nk = kmesh_dense->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = dynamical_.neval;
 
     int **symm_mapping_s;
     int **inv_translation_mapping;
@@ -1189,8 +1194,8 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     std::vector<std::vector<FcsArrayWithCell>> fc2_deformed(nmode);
 
     for (imode = 0; imode < nmode; imode++) {
-        fcs_phonon->get_fcs_from_file(strain_ifc_dir + filename_list[imode], 0, fc2_deformed[imode]);
-        fcs_phonon->replicate_force_constant(system, fc2_deformed[imode]);
+        fcs_phonon_.get_fcs_from_file(strain_ifc_dir + filename_list[imode], 0, fc2_deformed[imode]);
+        fcs_phonon_.replicate_force_constant(&system_, fc2_deformed[imode]);
     }
 
     weight_sum.setZero();
@@ -1218,11 +1223,11 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
         dphi2_dumn_realspace_tmp.setZero();
 
         for (const auto &it: fc2_deformed[imode]) {
-            index2 = system->get_map_p2s(0)[it.pairs[1].index / 3][it.pairs[1].tran];
+            index2 = system_.get_map_p2s(0)[it.pairs[1].index / 3][it.pairs[1].tran];
             dphi2_dumn_realspace_tmp(it.pairs[0].index, index2 * 3 + it.pairs[1].index % 3) += it.fcs_val;
         }
-        for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
-            index2 = system->get_map_p2s(0)[it.pairs[1].index / 3][it.pairs[1].tran];
+        for (const auto &it: fcs_phonon_.force_constant_with_cell[0]) {
+            index2 = system_.get_map_p2s(0)[it.pairs[1].index / 3][it.pairs[1].tran];
             dphi2_dumn_realspace_tmp(it.pairs[0].index, index2 * 3 + it.pairs[1].index % 3) -= it.fcs_val;
         }
 
@@ -1272,16 +1277,16 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
         }
     }
 
-    allocate(symm_mapping_s, symmetry->SymmListWithMap_ref.size(), nat);
+    allocate(symm_mapping_s, symmetry_.SymmListWithMap_ref.size(), nat);
     make_supercell_mapping_by_symmetry_operations(symm_mapping_s);
 
-    const auto ntran = system->get_map_p2s(0)[0].size();
+    const auto ntran = system_.get_map_p2s(0)[0].size();
 
     allocate(inv_translation_mapping, ntran, ntran);
     make_inverse_translation_mapping(inv_translation_mapping);
 
     if (renorm_3to2nd == 2) {
-        for (isymm = 0; isymm < symmetry->SymmListWithMap_ref.size(); isymm++) {
+        for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
             for (iat1 = 0; iat1 < natmin; iat1++) {
                 for (ixyz_comb1 = 0; ixyz_comb1 < 81; ixyz_comb1++) {
                     ixyz1 = ixyz_comb1 / 27;
@@ -1294,11 +1299,11 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
                         ixyz3_2 = (ixyz_comb2 / 3) % 3;
                         ixyz4_2 = ixyz_comb2 % 3;
 
-                        iat1_2 = symmetry->SymmListWithMap_ref[isymm].mapping[iat1];
+                        iat1_2 = symmetry_.SymmListWithMap_ref[isymm].mapping[iat1];
 
                         for (i1 = 0; i1 < ntran; i1++) {
-                            if (system->get_map_p2s(0)[iat1_2][i1] ==
-                                symm_mapping_s[isymm][system->get_map_p2s(0)[iat1][0]])
+                            if (system_.get_map_p2s(0)[iat1_2][i1] ==
+                                symm_mapping_s[isymm][system_.get_map_p2s(0)[iat1][0]])
                             {
                                 itran1 = i1;
                             }
@@ -1306,17 +1311,17 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 
                         for (iat2 = 0; iat2 < nat; iat2++) {
                             iat2_2 = symm_mapping_s[isymm][iat2];
-                            iat2_2_prim = system->get_map_s2p(0)[iat2_2].atom_num;
-                            itran2 = system->get_map_s2p(0)[iat2_2].tran_num;
+                            iat2_2_prim = system_.get_map_s2p(0)[iat2_2].atom_num;
+                            itran2 = system_.get_map_s2p(0)[iat2_2].tran_num;
 
-                            iat2_2 = system->get_map_p2s(0)[iat2_2_prim][inv_translation_mapping[itran1][itran2]];
+                            iat2_2 = system_.get_map_p2s(0)[iat2_2_prim][inv_translation_mapping[itran1][itran2]];
 
                             dphi2_dumn_realspace_symm[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2][iat2_2 * 3 + ixyz4_2] +=
                                 dphi2_dumn_realspace_in[ixyz1][ixyz2][iat1 * 3 + ixyz3][iat2 * 3 + ixyz4] *
-                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1] *
-                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2] *
-                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3] *
-                                symmetry->SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
+                                symmetry_.SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1] *
+                                symmetry_.SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2] *
+                                symmetry_.SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3] *
+                                symmetry_.SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
                         }
                     }
                 }
@@ -1327,21 +1332,21 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
             for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
                 for (i1 = 0; i1 < natmin * 3; i1++) {
                     for (i2 = 0; i2 < nat * 3; i2++) {
-                        dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] /= symmetry->SymmListWithMap_ref.size();
+                        dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] /= symmetry_.SymmListWithMap_ref.size();
                     }
                 }
             }
         }
     } else if (renorm_3to2nd == 3) {
         int mapping_xyz[3];
-        for (isymm = 0; isymm < symmetry->SymmListWithMap_ref.size(); isymm++) {
+        for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
             for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                 mapping_xyz[ixyz1] = -1;
             }
 
             for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                 for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                    if (std::fabs(std::fabs(symmetry->SymmListWithMap_ref[isymm].rot[ixyz1 * 3 + ixyz2]) - 1.0) < eps6)
+                    if (std::fabs(std::fabs(symmetry_.SymmListWithMap_ref[isymm].rot[ixyz1 * 3 + ixyz2]) - 1.0) < eps6)
                     {
                         mapping_xyz[ixyz2] = ixyz1;
                     }
@@ -1363,13 +1368,13 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 
                     for (iat1 = 0; iat1 < natmin; iat1++) {
 
-                        iat1_2 = symmetry->SymmListWithMap_ref[isymm].mapping[iat1];
+                        iat1_2 = symmetry_.SymmListWithMap_ref[isymm].mapping[iat1];
                         ixyz1_2 = mapping_xyz[ixyz1];
                         ixyz2_2 = mapping_xyz[ixyz2];
 
                         for (i1 = 0; i1 < ntran; i1++) {
-                            if (system->get_map_p2s(0)[iat1_2][i1] ==
-                                symm_mapping_s[isymm][system->get_map_p2s(0)[iat1][0]])
+                            if (system_.get_map_p2s(0)[iat1_2][i1] ==
+                                symm_mapping_s[isymm][system_.get_map_p2s(0)[iat1][0]])
                             {
                                 itran1 = i1;
                             }
@@ -1377,10 +1382,10 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 
                         for (iat2 = 0; iat2 < nat; iat2++) {
                             iat2_2 = symm_mapping_s[isymm][iat2];
-                            iat2_2_prim = system->get_map_s2p(0)[iat2_2].atom_num;
-                            itran2 = system->get_map_s2p(0)[iat2_2].tran_num;
+                            iat2_2_prim = system_.get_map_s2p(0)[iat2_2].atom_num;
+                            itran2 = system_.get_map_s2p(0)[iat2_2].tran_num;
 
-                            iat2_2 = system->get_map_p2s(0)[iat2_2_prim][inv_translation_mapping[itran1][itran2]];
+                            iat2_2 = system_.get_map_p2s(0)[iat2_2_prim][inv_translation_mapping[itran1][itran2]];
 
                             for (ixyz3 = 0; ixyz3 < 3; ixyz3++) {
                                 for (ixyz4 = 0; ixyz4 < 3; ixyz4++) {
@@ -1390,10 +1395,10 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
                                     dphi2_dumn_realspace_symm[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2]
                                                              [iat2_2 * 3 + ixyz4_2] +=
                                         dphi2_dumn_realspace_in[ixyz1][ixyz2][iat1 * 3 + ixyz3][iat2 * 3 + ixyz4] *
-                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1] *
-                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2] *
-                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3] *
-                                        symmetry->SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
+                                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz1_2 * 3 + ixyz1] *
+                                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz2_2 * 3 + ixyz2] *
+                                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz3_2 * 3 + ixyz3] *
+                                        symmetry_.SymmListWithMap_ref[isymm].rot[ixyz4_2 * 3 + ixyz4];
 
                                     count_tmp[ixyz1_2][ixyz2_2][iat1_2 * 3 + ixyz3_2][iat2_2 * 3 + ixyz4_2]++;
                                 }
@@ -1446,7 +1451,7 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
             }
 
             for (ik = 0; ik < nk_interpolate; ik++) {
-                dynamical->calc_analytic_k(kmesh_coarse->xk[ik], fc2_tmp, dymat_tmp);
+                dynamical_.calc_analytic_k(kmesh_coarse->xk[ik], fc2_tmp, dymat_tmp);
 
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
@@ -1459,7 +1464,7 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (ik = 0; ik < static_cast<int>(nk); ik++) {
-                dynamical->r2q(kmesh_dense->xk[ik], nk1, nk2, nk3, ns, mindist_list, dymat_new, dymat_tmp);
+                dynamical_.r2q(kmesh_dense->xk[ik], nk1, nk2, nk3, ns, mindist_list, dymat_new, dymat_tmp);
 
                 for (is = 0; is < ns; is++) {
                     for (js = 0; js < ns; js++) {
@@ -1531,8 +1536,8 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 
 void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const
 {
-    const auto nat = system->get_supercell(0).number_of_atoms;
-    const auto ntran = system->get_map_p2s()[0].size();
+    const auto nat = system_.get_supercell(0).number_of_atoms;
+    const auto ntran = system_.get_map_p2s()[0].size();
 
     Eigen::Matrix3d rotmat;
     Eigen::Vector3d shift;
@@ -1540,10 +1545,10 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
     int i, j;
     int iat1;
 
-    xtmp = system->get_supercell(0).x_cartesian;
+    xtmp = system_.get_supercell(0).x_cartesian;
 
     int isymm = -1;
-    for (const auto &it: symmetry->SymmListWithMap_ref) {
+    for (const auto &it: symmetry_.SymmListWithMap_ref) {
         isymm++;
 
         for (i = 0; i < 3; ++i) {
@@ -1554,12 +1559,12 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
         for (i = 0; i < 3; ++i) {
             shift[i] = it.shift[i];
         }
-        shift = system->get_primcell().lattice_vector * shift;
+        shift = system_.get_primcell().lattice_vector * shift;
 
         for (iat1 = 0; iat1 < nat; iat1++) {
             Eigen::Vector3d xr_tmp = rotmat * xtmp.row(iat1).transpose() + shift;
 
-            xr_tmp = system->get_supercell(0).reciprocal_lattice_vector * xr_tmp * inv_tpi;
+            xr_tmp = system_.get_supercell(0).reciprocal_lattice_vector * xr_tmp * inv_tpi;
 
             for (i = 0; i < 3; i++) {
                 xr_tmp[i] = std::fmod(xr_tmp[i] + 1.0, 1.0);
@@ -1567,13 +1572,13 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
 
             int atm_found = 0;
             for (int itran1 = 0; itran1 < ntran; itran1++) {
-                int jat1 = system->get_map_p2s(0)[it.mapping[system->get_map_s2p(0)[iat1].atom_num]][itran1];
+                int jat1 = system_.get_map_p2s(0)[it.mapping[system_.get_map_s2p(0)[iat1].atom_num]][itran1];
                 int iflag = 1;
                 for (i = 0; i < 3; i++) {
                     double dtmp =
-                        std::min(std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i]),
-                                 std::min(std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] + 1.0),
-                                          std::fabs(system->get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] - 1.0)));
+                        std::min(std::fabs(system_.get_supercell(0).x_fractional(jat1, i) - xr_tmp[i]),
+                                 std::min(std::fabs(system_.get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] + 1.0),
+                                          std::fabs(system_.get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] - 1.0)));
                     if (dtmp > eps6) {
                         iflag = 0;
                     }
@@ -1593,7 +1598,7 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
     int *map_tmp;
     allocate(map_tmp, nat);
 
-    for (isymm = 0; isymm < symmetry->SymmListWithMap_ref.size(); isymm++) {
+    for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
         for (iat1 = 0; iat1 < nat; iat1++) {
             map_tmp[iat1] = 0;
         }
@@ -1613,15 +1618,15 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
 
 void DerivativeIFC::make_inverse_translation_mapping(int **inv_translation_mapping) const
 {
-    const auto ntran = system->get_map_p2s(0)[0].size();
+    const auto ntran = system_.get_map_p2s(0)[0].size();
 
     int ixyz1;
     double x_tran1[3], x_tran2[3];
 
     for (int i1 = 0; i1 < ntran; i1++) {
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-            x_tran1[ixyz1] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i1], ixyz1) -
-                             system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][0], ixyz1);
+            x_tran1[ixyz1] = system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][i1], ixyz1) -
+                             system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][0], ixyz1);
             x_tran1[ixyz1] = std::fmod(x_tran1[ixyz1] + 1.0, 1.0);
         }
 
@@ -1629,8 +1634,8 @@ void DerivativeIFC::make_inverse_translation_mapping(int **inv_translation_mappi
             int is_found = 0;
             for (int i3 = 0; i3 < ntran; i3++) {
                 for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    x_tran2[ixyz1] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i2], ixyz1) -
-                                     system->get_supercell(0).x_fractional(system->get_map_p2s(0)[0][i3], ixyz1);
+                    x_tran2[ixyz1] = system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][i2], ixyz1) -
+                                     system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][i3], ixyz1);
                     x_tran2[ixyz1] = std::fmod(x_tran2[ixyz1] + 1.0, 1.0);
                 }
 

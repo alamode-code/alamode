@@ -34,7 +34,8 @@ using namespace PHON_NS;
 Relaxation::Relaxation(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
-    derivative_ifc = std::make_unique<DerivativeIFC>(phon);
+    derivative_ifc = std::make_unique<DerivativeIFC>(*system, *symmetry, *fcs_phonon, *dynamical, *anharmonic_core,
+                                                     mympi->my_rank, mympi->nprocs);
 }
 
 Relaxation::~Relaxation()

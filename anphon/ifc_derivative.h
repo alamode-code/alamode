@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 #include "fcs_phonon.h"
-#include "pointers.h"
 
 namespace PHON_NS
 {
@@ -15,13 +14,22 @@ class KpointMeshUniform;
 class PhaseFactorStorage;
 struct MinimumDistList;
 class DelVStrainData;
+class System;
+class Symmetry;
+class Dynamical;
+class AnharmonicCore;
 
-class DerivativeIFC: protected Pointers
+// Computes strain derivatives of the IFCs for the SCPH/QHA structural
+// relaxation. All dependencies are explicit constructor arguments (no
+// Pointers base): it is constructed by Relaxation after setup_base(), when
+// every input already exists.
+class DerivativeIFC
 {
 public:
     using MatrixXcdRowMajor = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-    explicit DerivativeIFC(class PHON *phon);
+    DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in,
+                  const Dynamical &dynamical_in, AnharmonicCore &anharmonic_core_in, int my_rank_in, int nprocs_in);
     ~DerivativeIFC() = default;
 
     void compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
@@ -72,6 +80,14 @@ public:
                                         MinimumDistList ***mindist_list) const;
 
 private:
+    const System &system_;
+    const Symmetry &symmetry_;
+    const Fcs_phonon &fcs_phonon_;
+    const Dynamical &dynamical_;
+    AnharmonicCore &anharmonic_core_; // phi3(k) evaluation in the V3 kernel
+    const int my_rank_;
+    const int nprocs_;
+
     void read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
                                        const std::complex<double> *const *const *const evec_harmonic,
                                        std::vector<MatrixXcdRowMajor> &del_v2_del_umn, unsigned int nk) const;
