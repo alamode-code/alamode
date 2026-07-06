@@ -43,20 +43,12 @@ Kpoint::~Kpoint()
 
 void Kpoint::set_default_variables()
 {
-    kp_planes = nullptr;
-    kp_planes_tri = nullptr;
     kpoint_bs = nullptr;
     kpoint_general = nullptr;
 }
 
 void Kpoint::deallocate_variables()
 {
-    if (kp_planes) {
-        deallocate(kp_planes);
-    }
-    if (kp_planes_tri) {
-        deallocate(kp_planes_tri);
-    }
     if (kpoint_bs) delete kpoint_bs;
     if (kpoint_general) delete kpoint_general;
 }
@@ -457,22 +449,6 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
             return distances[i1] < distances[i2];
         });
 
-        //        const auto minimum_distance = distances[idx[0]];
-        //        std::cout << "ik = " << ik << '\n';
-        //        std::cout << "xk = " << std::setw(15) << xkr[ik][0] << std::setw(15) << xkr[ik][1]
-        //        << std::setw(15) << xkr[ik][2] << '\n';
-        //        std::cout  << "icell = " << idx[0] << " distance = " << distances[idx[0]] << '\n';
-        //        std::cout << " Gvec = " << gvec_shift[idx[0]][0] << " " << gvec_shift[idx[0]][1]
-        //        << " " << gvec_shift[idx[0]][2] << '\n';
-        //        for (auto icell = 1; icell < 27; ++icell) {
-        //            if (distances[idx[icell]] - minimum_distance > eps4) {
-        //                break;
-        //            } else {
-        //                std::cout << "icell = " << idx[icell] << " distance = " << distances[idx[icell]] << '\n';
-        //                std::cout << " Gvec = " << gvec_shift[idx[icell]][0]
-        //                << " " << gvec_shift[idx[icell]][1] << " " << gvec_shift[idx[icell]][2] << '\n';
-        //            }
-        //        }
         // Select the first periodic image that gives the shortest |q+G|
         for (auto i = 0; i < 3; ++i) {
             xkr[ik][i] += static_cast<double>(gvec_shift[idx[0]][i]);
@@ -488,7 +464,6 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
 
     for (ik = 0; ik < nk; ++ik) {
         for (unsigned int i = 0; i < 3; ++i) {
-            //            xk[ik][i] = xkr[ik][i] - static_cast<double>(nint(xkr[ik][i]));
             xk[ik][i] = xkr[ik][i];
         }
     }
@@ -595,17 +570,6 @@ void KpointMeshUniform::gen_kmesh_niggli(const std::vector<SymmetryOperation> &s
             return distances[i1] < distances[i2];
         });
 
-        //        const auto minimum_distance = distances[idx[0]];
-        //        std::cout << "ik = " << ik << '\n';
-        //        std::cout  << "icell = " << idx[0] << " distance = " << distances[idx[0]] << '\n';
-        //        for (auto icell = 1; icell < 27; ++icell) {
-        //            if (distances[idx[icell]] - minimum_distance > eps4) {
-        //                break;
-        //            } else {
-        //                std::cout << "icell = " << idx[icell] << " distance = " << distances[idx[icell]] << '\n';
-        //            }
-        //        }
-
         // Select the first G that minimizes |q+G|
         for (auto i = 0; i < 3; ++i) {
             xkr(i, ik) += static_cast<double>(gvec_shift[idx[0]][i]);
@@ -633,7 +597,6 @@ void KpointMeshUniform::gen_kmesh_niggli(const std::vector<SymmetryOperation> &s
 
     for (ik = 0; ik < nk; ++ik) {
         for (unsigned int i = 0; i < 3; ++i) {
-            // xk[ik][i] = xkr[ik][i] - static_cast<double>(nint(xkr[ik][i]));
             xk[ik][i] = xkr_arr[ik][i];
         }
     }
@@ -768,8 +731,7 @@ void KpointMeshUniform::gen_nkminus()
         const auto ik_minus = get_knum(minus_xk);
 
         if (ik_minus == -1) {
-            //            exit("gen_nkminus",
-            //                        "-xk doesn't exist on the mesh point.");
+            exit("gen_nkminus", "-xk doesn't exist on the mesh point.");
         }
 
         if (ik_minus < ik) continue;
@@ -896,146 +858,6 @@ void Kpoint::mpi_broadcast_kplane_vector(const unsigned int nplane, std::vector<
     }
 }
 
-void Kpoint::setup_kpoint_plane(const std::vector<KpointInp> &kpinfo, unsigned int &nplane,
-                                std::vector<KpointPlane> *&kp_plane)
-{
-    nplane = kpinfo.size();
-    MPI_Bcast(&nplane, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-
-    allocate(kp_plane, nplane);
-    allocate(kp_planes_tri, nplane);
-
-    if (mympi->my_rank == 0) {
-        gen_kpoints_plane(kpinfo, kp_plane, kp_planes_tri);
-    }
-
-    mpi_broadcast_kplane_vector(nplane, kp_plane);
-}
-
-void Kpoint::gen_kpoints_plane(const std::vector<KpointInp> &kplist, std::vector<KpointPlane> *kpout,
-                               std::vector<KpointPlaneTriangle> *kpout_tri)
-{
-    int j;
-    const int nplane = kplist.size();
-
-    int ik1, ik2;
-
-    int **triangle;
-
-    double xk_tmp[3];
-    double xk0[3], xk1[3], xk2[3], xk3[3];
-    double **xk;
-    int n_in[2];
-
-    for (int i = 0; i < nplane; ++i) {
-        const auto N1 = std::atoi(kplist[i].kpelem[3].c_str());
-        const auto N2 = std::atoi(kplist[i].kpelem[7].c_str());
-
-        if (N1 < 2 || N2 < 2) {
-            exit("gen_kpoints_plane", "The number of grid points along each k-plane axis must be an integer >= 2.");
-        }
-
-        n_in[0] = N1;
-        n_in[1] = N2;
-
-        const auto frac1 = 1.0 / static_cast<double>(N1 - 1);
-        const auto frac2 = 1.0 / static_cast<double>(N2 - 1);
-
-        for (j = 0; j < 3; ++j) {
-            xk0[j] = 0.0;
-            xk1[j] = std::atof(kplist[i].kpelem[j].c_str());
-            xk2[j] = std::atof(kplist[i].kpelem[4 + j].c_str());
-        }
-
-        auto dprod = 0.0;
-        auto norm1 = 0.0;
-        auto norm2 = 0.0;
-
-        for (j = 0; j < 3; ++j) {
-            dprod += xk1[j] * xk2[j];
-            norm1 += xk1[j] * xk1[j];
-            norm2 += xk2[j] * xk2[j];
-        }
-        const auto costheta = dprod / std::sqrt(norm1 * norm2);
-        if (std::abs(std::abs(costheta) - 1.0) < eps12) {
-            exit("gen_kpoints_plane", "Two vectors have to be linearly independent with each other.");
-        }
-
-        kp_plane_geometry.emplace_back(xk0, xk1, xk2, n_in);
-
-        for (ik1 = 0; ik1 < N1; ++ik1) {
-            for (ik2 = 0; ik2 < N2; ++ik2) {
-
-                for (j = 0; j < 3; ++j) {
-                    xk_tmp[j] = static_cast<double>(ik1) * frac1 * xk1[j] + static_cast<double>(ik2) * frac2 * xk2[j];
-                }
-                if (in_first_BZ(xk_tmp)) {
-                    n_in[0] = ik1;
-                    n_in[1] = ik2;
-                    kpout[i].emplace_back(xk_tmp, n_in);
-                }
-            }
-        }
-
-        allocate(xk, N1 * N2, 3);
-
-        int m = 0;
-        for (ik1 = 0; ik1 < N1; ++ik1) {
-            for (ik2 = 0; ik2 < N2; ++ik2) {
-
-                for (j = 0; j < 3; ++j) {
-                    xk[m][j] = static_cast<double>(ik1) * frac1 * xk1[j] + static_cast<double>(ik2) * frac2 * xk2[j];
-                }
-                ++m;
-            }
-        }
-
-        const auto number_of_tiles = (N1 - 1) * (N2 - 1);
-        const auto number_of_triangle_tiles = 2 * number_of_tiles;
-
-        allocate(triangle, number_of_triangle_tiles, 3);
-
-        for (ik1 = 0; ik1 < N1 - 1; ++ik1) {
-            for (ik2 = 0; ik2 < N2 - 1; ++ik2) {
-
-                const auto n1 = ik2 + ik1 * N2;
-                const auto n2 = ik2 + (ik1 + 1) * N2;
-                const auto n3 = ik2 + 1 + ik1 * N2;
-                const auto n4 = ik2 + 1 + (ik1 + 1) * N2;
-
-                m = 2 * (ik2 + ik1 * (N2 - 1));
-
-                triangle[m][0] = n1;
-                triangle[m][1] = n2;
-                triangle[m][2] = n4;
-
-                ++m;
-
-                triangle[m][0] = n1;
-                triangle[m][1] = n3;
-                triangle[m][2] = n4;
-            }
-        }
-
-        for (int itri = 0; itri < number_of_triangle_tiles; ++itri) {
-
-            for (j = 0; j < 3; ++j) {
-                xk1[j] = xk[triangle[itri][0]][j];
-                xk2[j] = xk[triangle[itri][1]][j];
-                xk3[j] = xk[triangle[itri][2]][j];
-            }
-
-            const auto is_inside_FBZ = in_first_BZ(xk1) || in_first_BZ(xk2) || in_first_BZ(xk3);
-            if (is_inside_FBZ) {
-                kpout_tri[i].emplace_back(itri, triangle[itri]);
-            }
-        }
-
-        deallocate(xk);
-        deallocate(triangle);
-    }
-}
-
 int Kpoint::get_knum(const double xk[3], const unsigned int nk[3]) const
 {
     int i;
@@ -1056,49 +878,6 @@ int Kpoint::get_knum(const double xk[3], const unsigned int nk[3]) const
     const int kloc = nint(xk[2] * dnk[2] + 2.0 * dnk[2]) % nk[2];
 
     return kloc + nk[2] * jloc + nk[1] * nk[2] * iloc;
-}
-
-bool Kpoint::in_first_BZ(const double *xk_in) const
-{
-    int i;
-    const auto nmax = 1;
-    double tmp[3];
-
-    for (i = 0; i < 3; ++i)
-        tmp[i] = xk_in[i];
-
-    rotvec(tmp, tmp, system->get_primcell().reciprocal_lattice_vector, 'T');
-
-    const auto dist_min = std::sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]);
-
-    auto ncount = 0;
-
-    auto iloc = ncount;
-
-    for (i = -nmax; i <= nmax; ++i) {
-        for (int j = -nmax; j <= nmax; ++j) {
-            for (int k = -nmax; k <= nmax; ++k) {
-
-                if (i == 0 && j == 0 && k == 0) continue;
-
-                ++ncount;
-
-                tmp[0] = xk_in[0] - static_cast<double>(i);
-                tmp[1] = xk_in[1] - static_cast<double>(j);
-                tmp[2] = xk_in[2] - static_cast<double>(k);
-
-                rotvec(tmp, tmp, system->get_primcell().reciprocal_lattice_vector, 'T');
-                const auto dist = std::sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]);
-
-                if (dist < dist_min) {
-                    iloc = ncount;
-                    break;
-                }
-            }
-        }
-    }
-
-    return iloc == 0;
 }
 
 void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int> &sym_list, double S_avg[3][3]) const
@@ -1175,19 +954,10 @@ void Kpoint::get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const 
     Eigen::Matrix3d convmat;
 
     inv_lavec_super = lavec_super.inverse();
-    //invmat3(inv_lavec_super, lavec_super);
     convmat = (inv_lavec_super * lavec_prim).transpose();
-    //    matmul3(convmat, inv_lavec_super, lavec_prim);
-    //transpose3(convmat, convmat);
-
-    //    const auto det = convmat[0][0] * (convmat[1][1] * convmat[2][2] - convmat[2][1] * convmat[1][2])
-    //                     - convmat[1][0] * (convmat[0][1] * convmat[2][2] - convmat[2][1] * convmat[0][2])
-    //                     + convmat[2][0] * (convmat[0][1] * convmat[1][2] - convmat[1][1] * convmat[0][2]);
 
     const auto det = convmat.determinant();
-
     const auto nkmax = static_cast<int>(std::ceil(1.0 / det));
-
     const auto tol = 1.0e-6;
     const auto max_denom = 10000; // for safety
     int k;

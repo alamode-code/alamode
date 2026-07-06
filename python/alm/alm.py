@@ -80,12 +80,24 @@ class ALM:
     """
 
     # Sparse solvers accepted by the 2.0dev core (see alm/least_squares.cpp).
-    _SPARSE_SOLVERS = ("SimplicialLDLT", "SparseQR", "ConjugateGradient",
-                       "LeastSquaresConjugateGradient", "BiCGSTAB",
-                       "SuiteSparseQR", "CHOLMOD")
+    _SPARSE_SOLVERS = (
+        "SimplicialLDLT",
+        "SparseQR",
+        "ConjugateGradient",
+        "LeastSquaresConjugateGradient",
+        "BiCGSTAB",
+        "SuiteSparseQR",
+        "CHOLMOD",
+    )
     # Output formats accepted by ALMCore.save_fc (see alm/writer.cpp).
-    _SAVE_FORMATS = ("alamode", "alamode_h5", "shengbte", "shengbte4",
-                     "qefc", "hessian")
+    _SAVE_FORMATS = (
+        "alamode",
+        "alamode_h5",
+        "shengbte",
+        "shengbte4",
+        "qefc",
+        "hessian",
+    )
     # Units accepted for the input data and the alamode_h5 output (see include/units.h).
     _LENGTH_UNITS = ("bohr", "angstrom")
     _FORCE_UNITS = ("Ry/bohr", "eV/angstrom", "Ha/bohr")
@@ -100,10 +112,18 @@ class ALM:
             if value_lower == unit.lower():
                 return unit
         raise ValueError(
-            f"{name} must be one of {valid} (case-insensitive), got {value!r}.")
+            f"{name} must be one of {valid} (case-insensitive), got {value!r}."
+        )
 
-    def __init__(self, lavec, xcoord, numbers, verbosity: int = 0,
-                 length_unit: str = "bohr", force_unit: str = "Ry/bohr"):
+    def __init__(
+        self,
+        lavec,
+        xcoord,
+        numbers,
+        verbosity: int = 0,
+        length_unit: str = "bohr",
+        force_unit: str = "Ry/bohr",
+    ):
         self._core = None
         self._maxorder = 1
         self._defined = False
@@ -115,9 +135,11 @@ class ALM:
         self._output_filename_prefix = None
         self._verbosity = verbosity
         self._length_unit = self._canonical_unit(
-            length_unit, self._LENGTH_UNITS, "length_unit")
+            length_unit, self._LENGTH_UNITS, "length_unit"
+        )
         self._force_unit = self._canonical_unit(
-            force_unit, self._FORCE_UNITS, "force_unit")
+            force_unit, self._FORCE_UNITS, "force_unit"
+        )
         self._lavec = np.array(lavec, dtype="double", order="C")
         self._xcoord = np.array(xcoord, dtype="double", order="C")
         self._numbers = np.array(numbers, dtype="intc")
@@ -200,7 +222,8 @@ class ALM:
         if self._core is None:
             raise RuntimeError(
                 "The C++ ALM instance has been released by close()/alm_delete(). "
-                "Call alm_new() to re-create it, or construct a new ALM object.")
+                "Call alm_new() to re-create it, or construct a new ALM object."
+            )
 
     def _check_defined(self):
         if not self._defined:
@@ -210,7 +233,8 @@ class ALM:
         if not (1 <= fc_order <= self._maxorder):
             raise ValueError(
                 f"fc_order must be in [1 (harmonic), maxorder={self._maxorder}], "
-                f"got {fc_order}.")
+                f"got {fc_order}."
+            )
 
     # ---- structure properties -------------------------------------------
     @property
@@ -263,7 +287,8 @@ class ALM:
         if len(self._numbers) != nat:
             raise ValueError(
                 f"len(numbers) = {len(self._numbers)} does not match the "
-                f"number of atoms in xcoord ({nat}).")
+                f"number of atoms in xcoord ({nat})."
+            )
         self._kind_names = OrderedDict()
         for z in self._numbers:
             self._kind_names.setdefault(int(z), element_symbol(z))
@@ -273,7 +298,8 @@ class ALM:
         self._core.set_element_names(list(self._kind_names.values()))
         # Non-magnetic defaults (the CLI always sets these; required for correct symmetry).
         self._core.set_magnetic_params(
-            np.zeros((nat, 3), dtype="double"), False, 0, 1, "")
+            np.zeros((nat, 3), dtype="double"), False, 0, 1, ""
+        )
 
     # ---- units ------------------------------------------------------------
     @property
@@ -328,8 +354,13 @@ class ALM:
         return self.cv_l1_alpha
 
     # ---- model definition ------------------------------------------------
-    def define(self, maxorder: int, cutoff_radii=None, nbody=None,
-               symmetrization_basis: str = "Lattice"):
+    def define(
+        self,
+        maxorder: int,
+        cutoff_radii=None,
+        nbody=None,
+        symmetrization_basis: str = "Lattice",
+    ):
         """Define the force-constant model (orders, cutoffs, interaction bodies).
 
         Parameters
@@ -355,7 +386,8 @@ class ALM:
             nbody = [i + 2 for i in range(maxorder)]
         elif len(nbody) != maxorder:
             raise ValueError(
-                f"len(nbody) = {len(nbody)} must equal maxorder = {maxorder}.")
+                f"len(nbody) = {len(nbody)} must equal maxorder = {maxorder}."
+            )
         if cutoff_radii is None:
             # Pass explicit -1 (= no cutoff) values instead of letting the C++
             # side fall back to a nullptr: Cluster::define() re-allocates its
@@ -368,12 +400,14 @@ class ALM:
                 raise ValueError(
                     f"cutoff_radii must have shape (maxorder={maxorder}, "
                     f"nkd={nkd}, nkd={nkd}), i.e. {maxorder * nkd * nkd} "
-                    f"elements in total; got {cut.size}.")
+                    f"elements in total; got {cut.size}."
+                )
         basis = str(symmetrization_basis).capitalize()
         if basis not in ("Lattice", "Cartesian"):
             raise ValueError(
                 "symmetrization_basis must be 'Lattice' or 'Cartesian', "
-                f"got {symmetrization_basis!r}.")
+                f"got {symmetrization_basis!r}."
+            )
         self._core.set_forceconstant_basis(basis)
         self._core.define(maxorder, nkd, np.array(nbody, dtype="intc"), cut)
         self._core.init_fc_table()
@@ -381,8 +415,9 @@ class ALM:
         self._defined = True
         self._patterns_ready = False
 
-    def set_supercell(self, transmat_to_super, transmat_to_prim=None,
-                      autoset_primcell: bool = False):
+    def set_supercell(
+        self, transmat_to_super, transmat_to_prim=None, autoset_primcell: bool = False
+    ):
         """Declare the cell given to the constructor as the PRIMITIVE cell.
 
         The model is then built on the supercell obtained from
@@ -392,8 +427,11 @@ class ALM:
         """
         self._check()
         ts = np.array(transmat_to_super, dtype="double", order="C").reshape(3, 3)
-        tp = (np.eye(3) if transmat_to_prim is None
-              else np.array(transmat_to_prim, dtype="double", order="C").reshape(3, 3))
+        tp = (
+            np.eye(3)
+            if transmat_to_prim is None
+            else np.array(transmat_to_prim, dtype="double", order="C").reshape(3, 3)
+        )
         self._core.set_periodicity(np.array([1, 1, 1], dtype="intc"))
         self._core.set_transformation_matrices(ts, tp, int(autoset_primcell))
         # The supercell is generated inside the C++ core, so training-data
@@ -411,7 +449,8 @@ class ALM:
             raise NotImplementedError(
                 "rotation=True is not supported by this wrapper yet. "
                 "The C++ core supports rotational invariance through the CLI "
-                "(ICONST=2/3 with ROTAXIS and FCSYM_BASIS=Cartesian).")
+                "(ICONST=2/3 with ROTAXIS and FCSYM_BASIS=Cartesian)."
+            )
         iconst = 11 if translation else 0
         self._core.set_constraint_mode(iconst)
         self._core.set_algebraic_constraint(iconst // 10)
@@ -427,7 +466,8 @@ class ALM:
         if fc_order not in (1, 2):
             raise ValueError(
                 "fc_order must be 1 (harmonic) or 2 (cubic); fixing higher "
-                f"orders from a file is not supported, got {fc_order}.")
+                f"orders from a file is not supported, got {fc_order}."
+            )
         self._core.set_fc_file(fc_order + 1, str(filename))
         self._core.set_fc_fix(fc_order + 1, True)
 
@@ -455,8 +495,8 @@ class ALM:
         if len(fc_indices) != len(fc_values):
             raise ValueError("fc_indices and fc_values must have the same length.")
         self._core.set_forceconstants_to_fix(
-            [list(map(int, p)) for p in fc_indices],
-            fc_values.tolist())
+            [list(map(int, p)) for p in fc_indices], fc_values.tolist()
+        )
 
     def set_forceconstants_to_fix(self, intpair_fix, values_fix):
         """Legacy alias for :meth:`fix_fc` (note the swapped argument order)."""
@@ -479,18 +519,21 @@ class ALM:
                 return arr
             raise ValueError(
                 f"{name} must have shape (nsnap, nat_supercell, 3) or "
-                f"(nsnap, 3*nat_supercell); got {arr.shape}.")
+                f"(nsnap, 3*nat_supercell); got {arr.shape}."
+            )
         nat = len(self._numbers)
         if arr.ndim == 3:
             if arr.shape[1:] != (nat, 3):
                 raise ValueError(
                     f"{name} must have shape (nsnap, {nat}, 3) to match the "
-                    f"{nat}-atom cell; got {arr.shape}.")
+                    f"{nat}-atom cell; got {arr.shape}."
+                )
         elif arr.ndim == 2:
             if arr.shape[1] != 3 * nat:
                 raise ValueError(
                     f"{name} must have shape (nsnap, {3 * nat}) when 2-D; "
-                    f"got {arr.shape}.")
+                    f"got {arr.shape}."
+                )
         else:
             raise ValueError(f"{name} must be 2-D or 3-D, got ndim={arr.ndim}.")
         return arr
@@ -502,11 +545,13 @@ class ALM:
         if self._u is None or self._f is None:
             raise RuntimeError(
                 "both displacements and forces must be set before fitting; "
-                "use set_training_data(u, f) or assign both properties.")
+                "use set_training_data(u, f) or assign both properties."
+            )
         if self._u.shape != self._f.shape:
             raise ValueError(
                 f"displacements {self._u.shape} and forces {self._f.shape} "
-                "must have the same shape.")
+                "must have the same shape."
+            )
         nsnap = self._u.shape[0]
         self._core.set_u_train(self._u.reshape(nsnap, -1))
         self._core.set_f_train(self._f.reshape(nsnap, -1))
@@ -550,16 +595,17 @@ class ALM:
         u = self._as_data_array(u, "u (displacements)")
         f = self._as_data_array(f, "f (forces)")
         if u.shape != f.shape:
-            raise ValueError(
-                f"u {u.shape} and f {f.shape} must have the same shape.")
+            raise ValueError(f"u {u.shape} and f {f.shape} must have the same shape.")
         self._u, self._f = u, f
         self._need_data_transfer = True
         self._transfer_training_data()
 
     def set_displacement_and_force(self, u, f):
         """Deprecated alias for :meth:`set_training_data`."""
-        warnings.warn("set_displacement_and_force is deprecated; use set_training_data.",
-                      DeprecationWarning)
+        warnings.warn(
+            "set_displacement_and_force is deprecated; use set_training_data.",
+            DeprecationWarning,
+        )
         self.set_training_data(u, f)
 
     def set_validation_data(self, u, f):
@@ -569,8 +615,7 @@ class ALM:
         u = self._as_data_array(u, "u (displacements)")
         f = self._as_data_array(f, "f (forces)")
         if u.shape != f.shape:
-            raise ValueError(
-                f"u {u.shape} and f {f.shape} must have the same shape.")
+            raise ValueError(f"u {u.shape} and f {f.shape} must have the same shape.")
         n = u.shape[0]
         self._core.set_validation_data(u.reshape(n, -1), f.reshape(n, -1))
 
@@ -584,8 +629,11 @@ class ALM:
         accepted as an alias of ``periodic_image_conv``."""
         self._check()
         oc = self._core.get_optimizer_control()
-        d = {k: getattr(oc, k) for k in dir(oc)
-             if not k.startswith("_") and not callable(getattr(oc, k))}
+        d = {
+            k: getattr(oc, k)
+            for k in dir(oc)
+            if not k.startswith("_") and not callable(getattr(oc, k))
+        }
         # expose legacy aliases too
         for old, new in self._OC_ALIASES.items():
             if new in d:
@@ -601,13 +649,15 @@ class ALM:
         :attr:`optimizer_control`)."""
         self._check()
         oc = self._core.get_optimizer_control()
-        valid = sorted(k for k in dir(oc)
-                       if not k.startswith("_") and not callable(getattr(oc, k)))
+        valid = sorted(
+            k for k in dir(oc) if not k.startswith("_") and not callable(getattr(oc, k))
+        )
         for k, v in params.items():
             key = self._OC_ALIASES.get(k, k)
             if key not in valid:
                 raise KeyError(
-                    f"unknown optimizer_control key: {k!r}; valid keys: {valid}")
+                    f"unknown optimizer_control key: {k!r}; valid keys: {valid}"
+                )
             setattr(oc, key, v)
         self._core.set_optimizer_control(oc)
 
@@ -647,12 +697,15 @@ class ALM:
         if self._core.get_number_of_data() == 0:
             raise RuntimeError(
                 "no training data; call set_training_data(u, f) (or assign the "
-                "displacements/forces properties) before optimize().")
+                "displacements/forces properties) before optimize()."
+            )
         if self._core.get_number_of_free_parameters() == 0:
             warnings.warn(
                 "the model has no free FC parameters left after symmetry and "
                 "constraint reduction; the fit will be empty. Check the "
-                "structure and cutoff_radii.", stacklevel=2)
+                "structure and cutoff_radii.",
+                stacklevel=2,
+            )
         canonical = {s.lower(): s for s in self._SPARSE_SOLVERS}
         oc = self._core.get_optimizer_control()
         if solver.lower() == "dense":
@@ -663,7 +716,8 @@ class ALM:
         else:
             raise ValueError(
                 f"solver must be 'dense' or one of {self._SPARSE_SOLVERS}, "
-                f"got {solver!r}.")
+                f"got {solver!r}."
+            )
         self._core.set_optimizer_control(oc)
         return self._core.run_optimize()
 
@@ -680,12 +734,14 @@ class ALM:
         self._transfer_training_data()
         if self._u is None or self._f is None:
             raise RuntimeError(
-                "set training data via set_training_data() before get_matrix_elements().")
+                "set training data via set_training_data() before get_matrix_elements()."
+            )
         amat, bvec, nrows, ncols = self._core.get_matrix_elements()
         return np.reshape(amat, (nrows, ncols), order="F"), bvec
 
-    def get_fc(self, fc_order: int, mode: str = "origin",
-               permutation: bool = True) -> tuple:
+    def get_fc(
+        self, fc_order: int, mode: str = "origin", permutation: bool = True
+    ) -> tuple:
         """Return force constants as ``(values, elem_indices)``.
 
         Parameters
@@ -724,7 +780,8 @@ class ALM:
             v, idx = self._core.get_fc_all(fc_order, perm)
         else:
             raise ValueError(
-                f"mode must be 'origin', 'irreducible', or 'all', got {mode!r}.")
+                f"mode must be 'origin', 'irreducible', or 'all', got {mode!r}."
+            )
         return v, idx.reshape(-1, fc_order + 1)
 
     def set_fc(self, fc_in):
@@ -775,7 +832,9 @@ class ALM:
         atom_indices, disp_flat, nbasis = self._core.get_displacement_patterns(fc_order)
         disp = np.reshape(disp_flat, (-1, 3))
         if nbasis not in (0, 1):
-            raise RuntimeError(f"ALM returned invalid displacement basis index {nbasis}")
+            raise RuntimeError(
+                f"ALM returned invalid displacement basis index {nbasis}"
+            )
         basis = ["Cartesian", "Fractional"][nbasis]
         all_disps, pos = [], 0
         for num in numbers:
@@ -787,8 +846,13 @@ class ALM:
         return all_disps
 
     # ---- save ------------------------------------------------------------
-    def save_fc(self, filename: str, format: str = "alamode",
-                maxorder_to_save: int = None, fc_unit: str = "Ry/bohr"):
+    def save_fc(
+        self,
+        filename: str,
+        format: str = "alamode",
+        maxorder_to_save: int = None,
+        fc_unit: str = "Ry/bohr",
+    ):
         """Write the force constants to a file.
 
         Parameters
@@ -811,18 +875,21 @@ class ALM:
         fmt = str(format).lower()
         if fmt not in self._SAVE_FORMATS:
             raise ValueError(
-                f"format must be one of {self._SAVE_FORMATS}, got {format!r}.")
+                f"format must be one of {self._SAVE_FORMATS}, got {format!r}."
+            )
         fc_unit = self._canonical_unit(fc_unit, self._FC_OUTPUT_UNITS, "fc_unit")
         if fc_unit != "Ry/bohr" and fmt != "alamode_h5":
             raise ValueError(
                 "fc_unit is only supported for format='alamode_h5'; the other "
-                "formats have fixed units (the XML is always Ry/bohr^n).")
+                "formats have fixed units (the XML is always Ry/bohr^n)."
+            )
         if maxorder_to_save is None:
             maxorder_to_save = self._maxorder
         elif not (1 <= maxorder_to_save <= self._maxorder):
             raise ValueError(
                 f"maxorder_to_save must be in [1, maxorder={self._maxorder}], "
-                f"got {maxorder_to_save}.")
+                f"got {maxorder_to_save}."
+            )
         # fc_unit is passed on every call (defaults included) so the writer
         # state can never leak from a previous save.
         self._core.save_fc(str(filename), fmt, maxorder_to_save, fc_unit)

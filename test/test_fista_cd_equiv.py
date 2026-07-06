@@ -78,9 +78,7 @@ def gen_enet_input(fname, prefix, dfset, l1_ratio, l1_solver):
         "CONV_TOL = 1.0e-8\n"
         "MAXITER = 500000\n"
     ) % (l1_ratio, l1_solver)
-    gen_alminput_si(
-        fname, norder=2, prefix=prefix, dfset=dfset, opt_extra=opt_extra
-    )
+    gen_alminput_si(fname, norder=2, prefix=prefix, dfset=dfset, opt_extra=opt_extra)
 
 
 def run_alm(almbin, infile, logfile):
@@ -113,7 +111,11 @@ def runtest_fista_cd(almbin, project_root, rtol=5.0e-3):
         for other in ("fista", "admm"):
             va, vb = aligned_vectors(coefs["cd"], coefs[other])
             denom = np.linalg.norm(va)
-            rel = np.linalg.norm(va - vb) / denom if denom > 0 else np.linalg.norm(va - vb)
+            rel = (
+                np.linalg.norm(va - vb) / denom
+                if denom > 0
+                else np.linalg.norm(va - vb)
+            )
             nnz_cd = int(np.count_nonzero(np.abs(va) > 1.0e-12))
             nnz_other = int(np.count_nonzero(np.abs(vb) > 1.0e-12))
 
@@ -121,7 +123,16 @@ def runtest_fista_cd(almbin, project_root, rtol=5.0e-3):
             overall_ok &= ok
             print(
                 "L1_RATIO=%s  CD vs %-5s: rel.L2 diff=%.3e  nnz(cd)=%d nnz(%s)=%d / %d  --> %s"
-                % (ratio, other.upper(), rel, nnz_cd, other, nnz_other, len(va), "pass" if ok else "FAILED")
+                % (
+                    ratio,
+                    other.upper(),
+                    rel,
+                    nnz_cd,
+                    other,
+                    nnz_other,
+                    len(va),
+                    "pass" if ok else "FAILED",
+                )
             )
             if not ok:
                 imax = int(np.argmax(np.abs(va - vb)))

@@ -13,7 +13,6 @@
 """
 
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -55,9 +54,7 @@ def gen_alminput_units(fname, norder, prefix, dfset, opt_extra=None):
     text = text.replace(
         "&cell\n 20.406\n", "&cell\n %.16f\n" % (20.406 * BOHR_IN_ANGSTROM)
     )
-    text = text.replace(
-        "Si-Si None 7.6", "Si-Si None %.16f" % (7.6 * BOHR_IN_ANGSTROM)
-    )
+    text = text.replace("Si-Si None 7.6", "Si-Si None %.16f" % (7.6 * BOHR_IN_ANGSTROM))
     with open(fname, "w") as f:
         f.write(text)
 
@@ -77,7 +74,9 @@ def check_fcs_equivalence():
     ref = read_irreducible_fc2("si222u_a.fcs")
     now = read_irreducible_fc2("si222u_b.fcs")
     if not np.allclose(now, ref, rtol=1e-8, atol=1e-12):
-        print("Failed: si222u_b.fcs (angstrom/eV input) != si222u_a.fcs (bohr/Ry input)")
+        print(
+            "Failed: si222u_b.fcs (angstrom/eV input) != si222u_a.fcs (bohr/Ry input)"
+        )
         print("max abs diff:", np.max(np.abs(now - ref)))
         return 1
     return 0
@@ -88,7 +87,12 @@ def check_h5_units():
         checks = [
             ("SuperCell/lattice_vector", "bohr", "angstrom", BOHR_IN_ANGSTROM),
             ("PrimitiveCell/lattice_vector", "bohr", "angstrom", BOHR_IN_ANGSTROM),
-            ("ForceConstants/Order2/shift_vectors", "bohr", "angstrom", BOHR_IN_ANGSTROM),
+            (
+                "ForceConstants/Order2/shift_vectors",
+                "bohr",
+                "angstrom",
+                BOHR_IN_ANGSTROM,
+            ),
             (
                 "ForceConstants/Order2/force_constant_values",
                 "Ry/bohr^2",
@@ -109,8 +113,12 @@ def check_h5_units():
                     % (path, unit_a, unit_b, attr_a, attr_b)
                 )
                 return 1
-            if not np.allclose(h5b[path][:], h5a[path][:] * factor, rtol=1e-8, atol=1e-12):
-                print("Failed: values of %s do not match the analytic unit factor" % path)
+            if not np.allclose(
+                h5b[path][:], h5a[path][:] * factor, rtol=1e-8, atol=1e-12
+            ):
+                print(
+                    "Failed: values of %s do not match the analytic unit factor" % path
+                )
                 return 1
     return 0
 
@@ -118,9 +126,11 @@ def check_h5_units():
 def strip_unit_attributes(src, dst):
     shutil.copy(src, dst)
     with h5py.File(dst, "r+") as h5:
+
         def strip(name, obj):
             if "unit" in obj.attrs:
                 del obj.attrs["unit"]
+
         h5.visititems(strip)
 
 
@@ -184,8 +194,16 @@ def runtest_units_python():
     a = 10.263
     lavec = a * np.eye(3)
     xcoord = np.array(
-        [[0, 0, 0], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0],
-         [0.25, 0.25, 0.25], [0.25, 0.75, 0.75], [0.75, 0.25, 0.75], [0.75, 0.75, 0.25]]
+        [
+            [0, 0, 0],
+            [0, 0.5, 0.5],
+            [0.5, 0, 0.5],
+            [0.5, 0.5, 0],
+            [0.25, 0.25, 0.25],
+            [0.25, 0.75, 0.75],
+            [0.75, 0.25, 0.75],
+            [0.75, 0.75, 0.25],
+        ]
     )
     numbers = [14] * 8
     rng = np.random.default_rng(1)
@@ -193,8 +211,9 @@ def runtest_units_python():
     f = -0.1 * u + 0.001 * rng.standard_normal((12, 8, 3))
 
     def fit(lavec_in, u_in, f_in, length_unit, force_unit):
-        obj = ALM(lavec_in, xcoord, numbers,
-                  length_unit=length_unit, force_unit=force_unit)
+        obj = ALM(
+            lavec_in, xcoord, numbers, length_unit=length_unit, force_unit=force_unit
+        )
         obj.define(1)
         obj.set_training_data(u_in, f_in)
         obj.optimize()
@@ -203,14 +222,21 @@ def runtest_units_python():
         return obj, {tuple(idx): val for idx, val in zip(indices, values)}
 
     alm_ry, fc_ry = fit(lavec, u, f, "bohr", "Ry/bohr")
-    _, fc_ev = fit(lavec * BOHR_IN_ANGSTROM, u * BOHR_IN_ANGSTROM,
-                   f * RYD_IN_EV / BOHR_IN_ANGSTROM, "angstrom", "eV/angstrom")
+    _, fc_ev = fit(
+        lavec * BOHR_IN_ANGSTROM,
+        u * BOHR_IN_ANGSTROM,
+        f * RYD_IN_EV / BOHR_IN_ANGSTROM,
+        "angstrom",
+        "eV/angstrom",
+    )
     _, fc_ha = fit(lavec, u, 0.5 * f, "bohr", "Ha/bohr")
 
     scale = max(abs(v) for v in fc_ry.values())
     for name, fc in [("angstrom/eV", fc_ev), ("Ha/bohr", fc_ha)]:
-        if set(fc) != set(fc_ry) or max(
-                abs(fc_ry[k] - fc[k]) for k in fc_ry) > 1e-10 * scale:
+        if (
+            set(fc) != set(fc_ry)
+            or max(abs(fc_ry[k] - fc[k]) for k in fc_ry) > 1e-10 * scale
+        ):
             print("Failed: Python fit with %s input != canonical fit" % name)
             return 1
 
@@ -218,8 +244,11 @@ def runtest_units_python():
     alm_ry.save_fc("py_ry.h5", format="alamode_h5")
     alm_ry.save_fc("py_ev.h5", format="alamode_h5", fc_unit="eV/angstrom")
     alm_ry.save_fc("py_again.h5", format="alamode_h5")
-    with h5py.File("py_ry.h5") as h5r, h5py.File("py_ev.h5") as h5e, \
-            h5py.File("py_again.h5") as h5a:
+    with (
+        h5py.File("py_ry.h5") as h5r,
+        h5py.File("py_ev.h5") as h5e,
+        h5py.File("py_again.h5") as h5a,
+    ):
         path = "ForceConstants/Order2/force_constant_values"
         unit_e = h5e[path].attrs["unit"]
         if isinstance(unit_e, bytes):
@@ -268,7 +297,10 @@ def runtest_units(almbin, anphonbin, project_root):
     # --- alm: canonical run (A) vs angstrom / eV/angstrom run (B) ---
     gen_alminput_si("UNITS_A.in", 1, prefix="si222u_a", dfset="DFSET_harmonic")
     gen_alminput_units("UNITS_B.in", 1, prefix="si222u_b", dfset="DFSET_harmonic_ang")
-    for input_file, log_file in [("UNITS_A.in", "UNITS_A.log"), ("UNITS_B.in", "UNITS_B.log")]:
+    for input_file, log_file in [
+        ("UNITS_A.in", "UNITS_A.log"),
+        ("UNITS_B.in", "UNITS_B.log"),
+    ]:
         if run_alm(almbin, input_file, log_file) != 0:
             print("ALM failed on %s" % input_file)
             return 1
@@ -302,11 +334,17 @@ def runtest_units(almbin, anphonbin, project_root):
 
     # --- FC2FIX with mixed-unit h5 files ---
     gen_alminput_si(
-        "UNITS_FIX_A.in", 2, prefix="si222u_fix_a", dfset="DFSET_merged",
+        "UNITS_FIX_A.in",
+        2,
+        prefix="si222u_fix_a",
+        dfset="DFSET_merged",
         opt_extra="FC2FIX = si222u_a.h5\n",
     )
     gen_alminput_si(
-        "UNITS_FIX_B.in", 2, prefix="si222u_fix_b", dfset="DFSET_merged",
+        "UNITS_FIX_B.in",
+        2,
+        prefix="si222u_fix_b",
+        dfset="DFSET_merged",
         opt_extra="FC2FIX = si222u_b.h5\n",
     )
     for input_file, log_file in [

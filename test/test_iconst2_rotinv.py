@@ -39,14 +39,18 @@ def fcs_agree(label, ref, others, rtol=1.0e-8, atol=1.0e-10):
     ok = True
     for name, vals in others.items():
         if vals.shape != ref.shape:
-            print("  [%s] %s: FC count mismatch (%d vs %d)"
-                  % (label, name, vals.size, ref.size))
+            print(
+                "  [%s] %s: FC count mismatch (%d vs %d)"
+                % (label, name, vals.size, ref.size)
+            )
             ok = False
             continue
         if not np.allclose(vals, ref, rtol=rtol, atol=atol):
             i = int(np.argmax(np.abs(vals - ref)))
-            print("  [%s] %s disagrees: max|d|=%.3e at idx %d (%.6e vs %.6e)"
-                  % (label, name, np.max(np.abs(vals - ref)), i, ref[i], vals[i]))
+            print(
+                "  [%s] %s disagrees: max|d|=%.3e at idx %d (%.6e vs %.6e)"
+                % (label, name, np.max(np.abs(vals - ref)), i, ref[i], vals[i])
+            )
             ok = False
     return ok
 
@@ -70,12 +74,20 @@ def run_backends(almbin, label, norder, opt_extra, dfset):
     for algo, name in BACKENDS.items():
         prefix = "si_%s_%s" % (label, name)
         infile = "ALM_%s.in" % prefix
-        gen_alminput_si(infile, norder=norder, prefix=prefix, dfset=dfset,
-                        algo_reduction=algo, opt_extra=opt_extra)
+        gen_alminput_si(
+            infile,
+            norder=norder,
+            prefix=prefix,
+            dfset=dfset,
+            algo_reduction=algo,
+            opt_extra=opt_extra,
+        )
         add_cartesian_basis(infile)
         if run_alm(almbin, infile, "ALM_%s.log" % prefix) != 0:
-            print("ALM failed for ALGO_REDUCTION=%d (%s).\n  binary: %s"
-                  % (algo, label, almbin))
+            print(
+                "ALM failed for ALGO_REDUCTION=%d (%s).\n  binary: %s"
+                % (algo, label, almbin)
+            )
             return None
         fcs[name] = parse_fcs_values("%s.fcs" % prefix)
     return fcs
@@ -91,14 +103,21 @@ def runtest(almbin, project_root):
     failed = False
 
     # 1) Non-algebraic path: ICONST = 2 (translational + rotational invariance).
-    fcs = run_backends(almbin, "ic2", norder=2,
-                       opt_extra="ICONST = 2\nROTAXIS = xyz\n", dfset="DFSET_merged")
+    fcs = run_backends(
+        almbin,
+        "ic2",
+        norder=2,
+        opt_extra="ICONST = 2\nROTAXIS = xyz\n",
+        dfset="DFSET_merged",
+    )
     if fcs is None:
         return 1
     ref = fcs["qrd"]  # QR rank-revealing reference
     if fcs_agree("ICONST=2", ref, {k: v for k, v in fcs.items() if k != "qrd"}):
-        print("ICONST=2 (non-algebraic): rref == qrd == coord (%d FCs) --> pass"
-              % ref.size)
+        print(
+            "ICONST=2 (non-algebraic): rref == qrd == coord (%d FCs) --> pass"
+            % ref.size
+        )
     else:
         print("ICONST=2 (non-algebraic): backends disagree --> FAIL")
         failed = True
@@ -109,8 +128,9 @@ def runtest(almbin, project_root):
         return 1
     ref = fcs["rref"]
     if fcs_agree("algebraic", ref, {k: v for k, v in fcs.items() if k != "rref"}):
-        print("algebraic (ICONST=11): rref == qrd == coord (%d FCs) --> pass"
-              % ref.size)
+        print(
+            "algebraic (ICONST=11): rref == qrd == coord (%d FCs) --> pass" % ref.size
+        )
     else:
         print("algebraic (ICONST=11): backends disagree --> FAIL")
         failed = True
@@ -123,8 +143,10 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         almbin = os.path.abspath(sys.argv[1])
     else:
-        candidates = ["%s/_build/alm/alm" % project_root,
-                      "%s/build/alm/alm" % project_root]
+        candidates = [
+            "%s/_build/alm/alm" % project_root,
+            "%s/build/alm/alm" % project_root,
+        ]
         almbin = next((c for c in candidates if os.path.exists(c)), candidates[0])
 
     workdir = "%s/test/si_iconst2" % project_root

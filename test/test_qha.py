@@ -72,28 +72,30 @@ def compare_files(file_now, file_ref, rel_tol, abs_tol, label):
     return 0
 
 
-def rewrite_input(template, fname, prefix, extra_general="", extra_qha="",
-                  relax_str=None):
+def rewrite_input(
+    template, fname, prefix, extra_general="", extra_qha="", relax_str=None
+):
     with open(template) as f:
         text = f.read()
 
-    for pattern in ["PREFIX = ZnO_qha", "  TMIN = 0\n  TMAX = 1000\n  DT = 100\n",
-                    "MODE = QHA\n", "RESTART_QHA = 0", "RELAX_STR = 2"]:
+    for pattern in [
+        "PREFIX = ZnO_qha",
+        "  TMIN = 0\n  TMAX = 1000\n  DT = 100\n",
+        "MODE = QHA\n",
+        "RESTART_QHA = 0",
+        "RELAX_STR = 2",
+    ]:
         if pattern not in text:
             raise RuntimeError(
                 "Template %s no longer contains %r" % (template, pattern)
             )
 
     text = text.replace("PREFIX = ZnO_qha", "PREFIX = %s" % prefix)
-    text = text.replace(
-        "  TMIN = 0\n  TMAX = 1000\n  DT = 100\n", TEMPERATURE_TAG
-    )
+    text = text.replace("  TMIN = 0\n  TMAX = 1000\n  DT = 100\n", TEMPERATURE_TAG)
     if extra_general:
         text = text.replace("MODE = QHA\n", "MODE = QHA\n  %s\n" % extra_general)
     if extra_qha:
-        text = text.replace(
-            "RESTART_QHA = 0", "RESTART_QHA = 0\n  %s" % extra_qha
-        )
+        text = text.replace("RESTART_QHA = 0", "RESTART_QHA = 0\n  %s" % extra_qha)
     if relax_str is not None:
         text = text.replace("RELAX_STR = 2", "RELAX_STR = %d" % relax_str)
 
@@ -241,9 +243,7 @@ def stage_ialgo_mpi(anphonbin):
 
 
 def stage_perturbative(anphonbin, refdir):
-    rewrite_input(
-        "ZnO_qha_thermo.in", "qha_pert.in", "ZnO_pqha", relax_str=3
-    )
+    rewrite_input("ZnO_qha_thermo.in", "qha_pert.in", "ZnO_pqha", relax_str=3)
     if run_anphon(anphonbin, "qha_pert.in", "qha_pert.log"):
         return 1
 
@@ -277,9 +277,7 @@ def copy_input_files(workdir, example_dir):
     if not os.path.exists(strain_dir):
         print("Directory strain_IFC not found in %s" % example_dir)
         return 1
-    shutil.copytree(
-        strain_dir, os.path.join(workdir, "strain_IFC"), dirs_exist_ok=True
-    )
+    shutil.copytree(strain_dir, os.path.join(workdir, "strain_IFC"), dirs_exist_ok=True)
     return 0
 
 

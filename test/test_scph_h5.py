@@ -21,7 +21,9 @@ PREFIX = "cBTO222_scph"
 
 def run_anphon(anphonbin, input_file, logfile):
     with open(logfile, "w") as f:
-        ret = subprocess.run([anphonbin, input_file], stdout=f, stderr=subprocess.STDOUT)
+        ret = subprocess.run(
+            [anphonbin, input_file], stdout=f, stderr=subprocess.STDOUT
+        )
     return ret.returncode
 
 
@@ -64,7 +66,9 @@ def check_fresh_run(anphonbin, reference_dir):
         # The temperature-dependent FC2 minus the base FC2 must reproduce the
         # text .scph_dfc2 corrections (first temperature block).
         base = f["ForceConstants/Order2/force_constant_values"][...]
-        total = f["ForceConstants/Order2_temperature_dependent/force_constant_values"][...]
+        total = f["ForceConstants/Order2_temperature_dependent/force_constant_values"][
+            ...
+        ]
         rows = []
         with open(PREFIX + ".scph_dfc2") as fh:
             lines = fh.read().splitlines()
@@ -74,7 +78,11 @@ def check_fresh_run(anphonbin, reference_dir):
             print("unexpected .scph_dfc2 layout")
             return 1
         idx += 1
-        while idx < len(lines) and lines[idx].strip() and not lines[idx].startswith("# Temp"):
+        while (
+            idx < len(lines)
+            and lines[idx].strip()
+            and not lines[idx].startswith("# Temp")
+        ):
             rows.append(float(lines[idx].split()[-1]))
             idx += 1
         if not np.allclose(total[0] - base, np.array(rows), rtol=1e-8, atol=1e-14):
@@ -105,10 +113,14 @@ def check_fc2_temperature(anphonbin, project_root):
         [
             sys.executable,
             os.path.join(project_root, "tools", "dfc2.py"),
-            "-i", "cBTO222.h5",
-            "-o", "cBTO222_300K.h5",
-            "--dfc2", PREFIX + ".scph_dfc2",
-            "--temp", "300",
+            "-i",
+            "cBTO222.h5",
+            "-o",
+            "cBTO222_300K.h5",
+            "--dfc2",
+            PREFIX + ".scph_dfc2",
+            "--temp",
+            "300",
         ],
         capture_output=True,
     )
@@ -118,10 +130,15 @@ def check_fc2_temperature(anphonbin, project_root):
 
     kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 51\n/\n"
     with open("band_dfc2.in", "w") as f:
-        f.write("&general\n PREFIX = bto_dfc2; MODE = phonons; FCSFILE = cBTO222_300K.h5\n/\n")
+        f.write(
+            "&general\n PREFIX = bto_dfc2; MODE = phonons; FCSFILE = cBTO222_300K.h5\n/\n"
+        )
         f.write(kpath)
     with open("band_fc2t.in", "w") as f:
-        f.write("&general\n PREFIX = bto_fc2t; MODE = phonons; FCSFILE = %s.scph.h5;" % PREFIX)
+        f.write(
+            "&general\n PREFIX = bto_fc2t; MODE = phonons; FCSFILE = %s.scph.h5;"
+            % PREFIX
+        )
         f.write(" FC2_TEMPERATURE = 300\n/\n")
         f.write(kpath)
 
@@ -148,7 +165,9 @@ def check_fc2_temperature(anphonbin, project_root):
     # a larger harmonic supercell). With equal cells it must reproduce the
     # dfc2.py route exactly.
     with open("band_dfc2file.in", "w") as f:
-        f.write("&general\n PREFIX = bto_dfc2file; MODE = phonons; FCSFILE = cBTO222.h5;")
+        f.write(
+            "&general\n PREFIX = bto_dfc2file; MODE = phonons; FCSFILE = cBTO222.h5;"
+        )
         f.write(" DFC2FILE = %s.scph.h5; FC2_TEMPERATURE = 300\n/\n" % PREFIX)
         f.write(kpath)
     if run_anphon(anphonbin, "band_dfc2file.in", "band_dfc2file.log") != 0:
@@ -168,8 +187,10 @@ def check_kappa_on_scph(anphonbin):
     def gen_rta(temp, fname):
         with open(fname, "w") as f:
             f.write("&general\n PREFIX = kbto; MODE = kappa; FCSFILE = cBTO222.h5;\n")
-            f.write(" FC2FILE = %s.scph.h5; FC2_TEMPERATURE = %d; TMIN = %d; TMAX = %d\n/\n"
-                    % (PREFIX, temp, temp, temp))
+            f.write(
+                " FC2FILE = %s.scph.h5; FC2_TEMPERATURE = %d; TMIN = %d; TMAX = %d\n/\n"
+                % (PREFIX, temp, temp, temp)
+            )
             f.write("&kpoint\n 2\n 2 2 2\n/\n")
 
     for temp in (280, 300):
@@ -224,12 +245,14 @@ def check_convergence_guard(anphonbin):
     # unless ALLOW_UNCONVERGED = 1 is given.
     with open("BTO_scph_thermo.in") as f:
         src = f.read()
-    src = (src.replace("PREFIX = cBTO222_scph", "PREFIX = ucbto")
-              .replace("TMIN = 280", "TMIN = 300")
-              .replace("MAXITER = 500", "MAXITER = 1")
-              .replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 2 2 2")
-              .replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 1")
-              .replace("COORD_CONV_TOL = 1.0e-5", "COORD_CONV_TOL = 1.0e-12"))
+    src = (
+        src.replace("PREFIX = cBTO222_scph", "PREFIX = ucbto")
+        .replace("TMIN = 280", "TMIN = 300")
+        .replace("MAXITER = 500", "MAXITER = 1")
+        .replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 2 2 2")
+        .replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 1")
+        .replace("COORD_CONV_TOL = 1.0e-5", "COORD_CONV_TOL = 1.0e-12")
+    )
     with open("uc.in", "w") as f:
         f.write(src)
     if run_anphon(anphonbin, "uc.in", "uc.log") != 0:
@@ -261,8 +284,9 @@ def check_convergence_guard(anphonbin):
 def runtest_scph_h5(anphonbin, project_root):
     scph_example_dir = os.path.join(project_root, "example", "BaTiO3", "scph_relax")
     reference_dir = os.path.join(scph_example_dir, "reference_for_test")
-    fc_reference_dir = os.path.join(project_root, "example", "BaTiO3", "anharm_IFCs", "4_optimize",
-                                    "reference")
+    fc_reference_dir = os.path.join(
+        project_root, "example", "BaTiO3", "anharm_IFCs", "4_optimize", "reference"
+    )
 
     if copy_input_files(os.getcwd(), scph_example_dir, fc_reference_dir) != 0:
         return 1

@@ -16,7 +16,7 @@ _BOHR = 0.529177210903
 class Fcsxml:
     """Writer of harmonic and anharmonic interatomic force constants for alamode."""
 
-    def __init__(self, lavec, xcoord, numbers, symprec=1.0e-3, unit='angstrom'):
+    def __init__(self, lavec, xcoord, numbers, symprec=1.0e-3, unit="angstrom"):
         """Initialize the object with the input crystal structure.
 
         Parameters
@@ -38,9 +38,9 @@ class Fcsxml:
             Length unit of lavec: 'angstrom' (default) or 'bohr'.
 
         """
-        if unit == 'angstrom':
+        if unit == "angstrom":
             self._lavec = np.array(lavec).transpose() / _BOHR
-        elif unit == 'bohr':
+        elif unit == "bohr":
             self._lavec = np.array(lavec).transpose()
         else:
             raise ValueError(f"unit must be 'angstrom' or 'bohr', got {unit!r}.")
@@ -229,7 +229,8 @@ class Fcsxml:
             clusters = self._fc2_info[1]
             for fcval, cluster in zip(fcvals, clusters):
                 list_mir_imgs = self._closest_mirror_images[cluster[0] // 3][
-                    cluster[1] // 3][0]
+                    cluster[1] // 3
+                ][0]
                 num_mir_img = len(list_mir_imgs)
                 fcval_scale = fcval / float(num_mir_img)
                 for mir_img in list_mir_imgs:
@@ -425,8 +426,9 @@ class Fcsxml:
                 symnum_translation.append(elem)
 
         self._nat_prim = self._nat_super // len(symnum_translation)
-        self._map_p2s = (np.ones((self._nat_prim,
-                                  len(symnum_translation)), dtype="int") * -1)
+        self._map_p2s = (
+            np.ones((self._nat_prim, len(symnum_translation)), dtype="int") * -1
+        )
 
         unique_set, atom_in_primitive_at_origin = np.unique(
             mapping_to_primitive, return_index=True

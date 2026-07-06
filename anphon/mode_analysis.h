@@ -100,8 +100,6 @@ private:
         const double *omega, const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
         const double *const *eval_in, const std::complex<double> *const *const *evec_in, double ***ret) const;
 
-    void print_momentum_resolved_final_state(const unsigned int, double *, const double);
-
     void print_frequency_resolved_final_state(const unsigned int, double *);
 
     void print_V3_elements() const;

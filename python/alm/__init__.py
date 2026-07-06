@@ -17,5 +17,6 @@ def __getattr__(name):
     # Lazy re-export: importing Fcsxml pulls in spglib, which is optional.
     if name == "Fcsxml":
         from .fcsxml import Fcsxml
+
         return Fcsxml
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

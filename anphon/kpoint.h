@@ -334,10 +334,6 @@ public:
 
     std::vector<KpointInp> kpInp;
 
-    std::vector<KpointPlane> *kp_planes;
-    std::vector<KpointPlaneGeometry> kp_plane_geometry;
-    std::vector<KpointPlaneTriangle> *kp_planes_tri;
-
     KpointBandStructure *kpoint_bs;
     KpointGeneral *kpoint_general;
 
@@ -359,13 +355,6 @@ private:
     void setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
     void setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
-
-    void setup_kpoint_plane(const std::vector<KpointInp> &, unsigned int &, std::vector<KpointPlane> *&);
-
-    void gen_kpoints_plane(const std::vector<KpointInp> &, std::vector<KpointPlane> *,
-                           std::vector<KpointPlaneTriangle> *);
-
-    bool in_first_BZ(const double *) const;
 
     void mpi_broadcast_kplane_vector(unsigned int, std::vector<KpointPlane> *&) const;
 };

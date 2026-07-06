@@ -124,9 +124,7 @@ if __name__ == "__main__":
         print("STO KPMODE=0 --> failed")
         sys.exit(1)
 
-    info = compare_eval(
-        "STO_kp0.scph_eval", os.path.join(refdir, "STO_kp0.scph_eval")
-    )
+    info = compare_eval("STO_kp0.scph_eval", os.path.join(refdir, "STO_kp0.scph_eval"))
 
     if info == 0:
         print("STO KPMODE=0 --> pass")

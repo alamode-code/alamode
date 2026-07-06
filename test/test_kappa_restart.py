@@ -11,7 +11,6 @@ ALAMODE_TEST_KILL=1) physical crash recovery via SIGKILL.
 
 import hashlib
 import os
-import shutil
 import signal
 import subprocess
 import sys
@@ -48,7 +47,9 @@ def gen_rta_input(fname, extra_general="", extra_kappa="", mode="kappa"):
 
 def run_anphon(anphonbin, input_file, logfile):
     with open(logfile, "w") as f:
-        ret = subprocess.run([anphonbin, input_file], stdout=f, stderr=subprocess.STDOUT)
+        ret = subprocess.run(
+            [anphonbin, input_file], stdout=f, stderr=subprocess.STDOUT
+        )
     return ret.returncode
 
 
@@ -71,7 +72,10 @@ def check_fresh_run(anphonbin):
         return 1
 
     with h5py.File(PREFIX + ".kappa.h5", "r") as f:
-        if f.attrs["schema"] != "alamode:kappa_result" or f.attrs["format_version"] != 1:
+        if (
+            f.attrs["schema"] != "alamode:kappa_result"
+            or f.attrs["format_version"] != 1
+        ):
             print("schema attributes are wrong:", dict(f.attrs))
             return 1
         g = f["scattering/3ph"]
@@ -95,9 +99,15 @@ def check_fresh_run(anphonbin):
             print("metadata/isotope should default to 1")
             return 1
         gi = f["scattering/isotope/gamma"][...]
-        if gi.shape != (nmodes // f["scattering/3ph"].attrs["nbranches"],
-                        f["scattering/3ph"].attrs["nbranches"]) or not np.isfinite(gi).all() \
-                or gi.max() <= 0.0:
+        if (
+            gi.shape
+            != (
+                nmodes // f["scattering/3ph"].attrs["nbranches"],
+                f["scattering/3ph"].attrs["nbranches"],
+            )
+            or not np.isfinite(gi).all()
+            or gi.max() <= 0.0
+        ):
             print("isotope gamma dataset is missing or empty")
             return 1
         # The kappa tensors must state which scattering processes they include.
@@ -105,8 +115,10 @@ def check_fresh_run(anphonbin):
             print("includes_isotope_scattering flag is wrong")
             return 1
         if f["kappa/kappa_peierls"].attrs["scattering_processes"] != "3ph+isotope":
-            print("scattering_processes label is wrong:",
-                  f["kappa/kappa_peierls"].attrs["scattering_processes"])
+            print(
+                "scattering_processes label is wrong:",
+                f["kappa/kappa_peierls"].attrs["scattering_processes"],
+            )
             return 1
         kappa_h5 = f["kappa/kappa_peierls"][...]
 
@@ -123,7 +135,9 @@ def check_noop_restart(anphonbin):
     if run_anphon(anphonbin, "RTA.in", "restart_noop.log") != 0:
         print("no-op restart run failed")
         return 1
-    if not log_contains("restart_noop.log", "Total Number of phonon modes to be calculated : 0"):
+    if not log_contains(
+        "restart_noop.log", "Total Number of phonon modes to be calculated : 0"
+    ):
         print("no-op restart recomputed modes")
         return 1
     if not np.array_equal(kl_before, np.loadtxt(PREFIX + ".kl")):
@@ -149,7 +163,8 @@ def check_partial_restart(anphonbin):
         print("partial restart run failed")
         return 1
     if not log_contains(
-        "restart_partial.log", "Total Number of phonon modes to be calculated : %d" % (nmodes - keep)
+        "restart_partial.log",
+        "Total Number of phonon modes to be calculated : %d" % (nmodes - keep),
     ):
         print("partial restart did not recompute exactly the missing modes")
         return 1
@@ -177,7 +192,8 @@ def check_partial_restart(anphonbin):
         print("gap restart did not report the non-prefix flags")
         return 1
     if not log_contains(
-        "restart_gap.log", "Total Number of phonon modes to be calculated : %d" % (nmodes - 10)
+        "restart_gap.log",
+        "Total Number of phonon modes to be calculated : %d" % (nmodes - 10),
     ):
         print("gap restart did not recompute from the gap onwards")
         return 1
@@ -209,14 +225,18 @@ def check_forced_recompute(anphonbin):
     if run_anphon(anphonbin, "RTA0g.in", "restart_off_general.log") != 0:
         print("deprecated &general RESTART=0 run failed")
         return 1
-    if not log_contains("restart_off_general.log", "RESTART and RESTART_4PH in the &general field are deprecated"):
+    if not log_contains(
+        "restart_off_general.log",
+        "RESTART and RESTART_4PH in the &general field are deprecated",
+    ):
         print("deprecated &general RESTART did not warn")
         return 1
     if not log_contains("restart_off_general.log", "MODE = RTA is deprecated"):
         print("deprecated MODE = RTA did not warn")
         return 1
     if not log_contains(
-        "restart_off_general.log", "Total Number of phonon modes to be calculated : %d" % nmodes
+        "restart_off_general.log",
+        "Total Number of phonon modes to be calculated : %d" % nmodes,
     ):
         print("deprecated &general RESTART=0 was not honored")
         return 1
@@ -249,7 +269,9 @@ def check_legacy_text_roundtrip(anphonbin):
     if not log_contains("import.log", "Imported"):
         print("legacy import did not run")
         return 1
-    if not log_contains("import.log", "Total Number of phonon modes to be calculated : 0"):
+    if not log_contains(
+        "import.log", "Total Number of phonon modes to be calculated : 0"
+    ):
         print("import run recomputed modes")
         return 1
     if file_sha256(PREFIX + ".result") != digest_before:
@@ -276,7 +298,9 @@ def check_kill_recovery(anphonbin, fresh_runtime):
     # (the import test leaves a text-precision variant behind).
     kl_ref = np.load("kl_fresh.npy")
     with open("killed.log", "w") as f:
-        proc = subprocess.Popen([anphonbin, "RTA.in"], stdout=f, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(
+            [anphonbin, "RTA.in"], stdout=f, stderr=subprocess.STDOUT
+        )
         time.sleep(max(0.5, 0.5 * fresh_runtime))
         proc.send_signal(signal.SIGKILL)
         proc.wait()
@@ -316,7 +340,11 @@ def kl_iter_matches(reference):
 
 def check_ibte_h5(anphonbin):
     """SOLVER = IBTE: /iterativebte group, per-temperature restart, reset."""
-    for fname in (IBTE_PREFIX + ".kappa.h5", IBTE_PREFIX + ".kl_iter", IBTE_PREFIX + ".result"):
+    for fname in (
+        IBTE_PREFIX + ".kappa.h5",
+        IBTE_PREFIX + ".kl_iter",
+        IBTE_PREFIX + ".result",
+    ):
         if os.path.exists(fname):
             os.remove(fname)
     gen_ibte_input("ibte.in")
@@ -343,7 +371,9 @@ def check_ibte_h5(anphonbin):
     if run_anphon(anphonbin, "ibte.in", "ibte_noop.log"):
         print("IBTE no-op restart failed")
         return 1
-    if not log_contains("ibte_noop.log", "skipping the calculation of the transition probabilities"):
+    if not log_contains(
+        "ibte_noop.log", "skipping the calculation of the transition probabilities"
+    ):
         print("IBTE no-op restart rebuilt the transition probabilities")
         return 1
     if not kl_iter_matches(kl_fresh):
@@ -401,7 +431,9 @@ def check_ibte_h5(anphonbin):
     if run_anphon(anphonbin, "ibte.in", "ibte_continue.log"):
         print("IBTE warm restart failed")
         return 1
-    if not log_contains("ibte_continue.log", "continuing from the stored deviation function"):
+    if not log_contains(
+        "ibte_continue.log", "continuing from the stored deviation function"
+    ):
         print("warm restart did not continue from the stored dF")
         return 1
     with h5py.File(IBTE_PREFIX + ".kappa.h5", "r") as f:
@@ -458,7 +490,11 @@ def check_vbte(anphonbin):
         if os.path.exists(fname):
             os.remove(fname)
     with open("ibte.in") as f:
-        content = f.read().replace(IBTE_PREFIX, VBTE_PREFIX).replace("SOLVER = IBTE", "SOLVER = VBTE")
+        content = (
+            f.read()
+            .replace(IBTE_PREFIX, VBTE_PREFIX)
+            .replace("SOLVER = IBTE", "SOLVER = VBTE")
+        )
     with open("vbte.in", "w") as f:
         f.write(content)
     if run_anphon(anphonbin, "vbte.in", "vbte_fresh.log"):
@@ -482,7 +518,9 @@ def check_vbte(anphonbin):
     if run_anphon(anphonbin, "vbte.in", "vbte_noop.log"):
         print("VBTE no-op restart failed")
         return 1
-    if not log_contains("vbte_noop.log", "skipping the calculation of the transition probabilities"):
+    if not log_contains(
+        "vbte_noop.log", "skipping the calculation of the transition probabilities"
+    ):
         print("VBTE no-op restart rebuilt L")
         return 1
     return 0
@@ -495,13 +533,21 @@ def check_dbte(anphonbin):
         if os.path.exists(fname):
             os.remove(fname)
     with open("ibte.in") as f:
-        content = f.read().replace(IBTE_PREFIX, prefix).replace("SOLVER = IBTE", "SOLVER = DBTE")
+        content = (
+            f.read()
+            .replace(IBTE_PREFIX, prefix)
+            .replace("SOLVER = IBTE", "SOLVER = DBTE")
+        )
     with open("dbte.in", "w") as f:
         f.write(content)
     if run_anphon(anphonbin, "dbte.in", "dbte_fresh.log"):
         print("DBTE run failed")
         return 1
-    for text in ("assembly cross-check", "eigenvalues (Omega normalization", "dense collision kernel"):
+    for text in (
+        "assembly cross-check",
+        "eigenvalues (Omega normalization",
+        "dense collision kernel",
+    ):
         if not log_contains("dbte_fresh.log", text):
             print("DBTE diagnostics missing: %s" % text)
             return 1
