@@ -54,6 +54,19 @@ private:
 
     void exec_QHA_relax_main(std::complex<double> ****, std::complex<double> ****);
 
+    // One structural step's lattice-dynamics stage: solve the renormalized-
+    // harmonic problem at the current IFCs and compute the QHA forces and
+    // stress, applying the ZSISA / v-ZSISA overwrites when requested.
+    void solve_qha_and_compute_forces(StructuralOptWorkspace &ws, unsigned int iT, double temp,
+                                      std::complex<double> ***cmat_convert,
+                                      std::complex<double> ****delta_harmonic_dymat_renormalize,
+                                      double ***omega2_harm_renorm, std::complex<double> ***evec_harm_renorm_tmp,
+                                      std::complex<double> *v1_QHA, std::complex<double> *del_v0_del_umn_QHA,
+                                      std::complex<double> *del_v0_del_umn_ZSISA,
+                                      std::complex<double> *del_v0_del_umn_vZSISA,
+                                      std::complex<double> **del_v1_del_umn_renorm, double **delq_delu_ZSISA,
+                                      double **C2_array_renorm, double **C2_array_ZSISA);
+
     void exec_perturbative_QHA(std::complex<double> ****, std::complex<double> ****);
 
     void calc_del_v0_del_umn_vib(std::complex<double> *, const DelVStrainData &, double);
