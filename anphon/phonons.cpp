@@ -121,7 +121,7 @@ void PHON::create_pointers()
     writes = new Writes(this);
     dos = new Dos(this);
     gruneisen = new Gruneisen(this);
-    isotope = new Isotope(this);
+    isotope = new Isotope();
     scph = new Scph(this);
     ewald = new Ewald(this);
     dielec = new Dielec(this);
@@ -241,8 +241,9 @@ void PHON::execute_kappa() const
         dynamical->diagonalize_dynamical_all();
     }
 
-    isotope->setup_isotope_scattering();
-    isotope->calc_isotope_selfenergy_all();
+    isotope->setup_isotope_scattering(*system, dos->kmesh_dos->nk_irred, dynamical->neval, mympi->my_rank);
+    isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos, *dos->dymat_dos, *dos->tetra_nodes_dos, *system,
+                                         *integration, dynamical->neval, mympi->my_rank, mympi->nprocs);
 
     mode_analysis->setup_mode_analysis();
     selfenergy->setup_selfenergy();

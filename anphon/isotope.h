@@ -8,17 +8,26 @@
  or http://opensource.org/licenses/mit-license.php for information.
 */
 
+#pragma once
+
 #include <complex>
 #include <vector>
 #include "kpoint.h"
-#include "pointers.h"
 
 namespace PHON_NS
 {
-class Isotope: protected Pointers
+class System;
+class Integration;
+class TetraNodes;
+class DymatEigenValue;
+
+// Phonon-isotope (mass-disorder) scattering rates via the Tamura formula.
+// No Pointers base: the entry points take their inputs explicitly from the
+// caller (PHON::execute_kappa); the parser fills the public config members.
+class Isotope
 {
 public:
-    Isotope(class PHON *);
+    Isotope();
 
     ~Isotope();
 
@@ -26,9 +35,15 @@ public:
     std::vector<double> isotope_factor;
     double **gamma_isotope;
 
-    void setup_isotope_scattering();
+    // Broadcast the parsed configuration, fill missing ISOFACT entries from
+    // the built-in database, and allocate gamma_isotope (rank 0).
+    void setup_isotope_scattering(const System &system_in, unsigned int nk_irred_in, unsigned int ns_in,
+                                  int my_rank_in);
 
-    void calc_isotope_selfenergy_all() const;
+    void calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
+                                     const TetraNodes &tetra_nodes_dos_in, const System &system_in,
+                                     Integration &integration_in, unsigned int ns_in, int my_rank_in,
+                                     int nprocs_in) const;
 
 private:
     void set_default_variables();
@@ -37,13 +52,17 @@ private:
 
     void calc_isotope_selfenergy(const unsigned int knum, const unsigned int snum, const double omega,
                                  const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                 const std::complex<double> *const *const *evec_in, double &ret) const;
+                                 const std::complex<double> *const *const *evec_in, const System &system_in,
+                                 Integration &integration_in, const unsigned int ns_in, double &ret) const;
 
     void calc_isotope_selfenergy_tetra(const unsigned int knum, const unsigned int snum, const double omega,
                                        const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                       const std::complex<double> *const *const *evec_in, double &ret) const;
+                                       const std::complex<double> *const *const *evec_in, const System &system_in,
+                                       Integration &integration_in, const TetraNodes &tetra_nodes_in,
+                                       const unsigned int ns_in, double &ret) const;
 
-    void set_isotope_factor_from_database(const int, const std::string *, std::vector<double> &);
+    void set_isotope_factor_from_database(const System &system_in, const int, const std::string *,
+                                          std::vector<double> &);
 
     std::vector<double> isotope_factors{0.00011460742534756168,
                                         1.2150768298148375e-07,

@@ -1173,7 +1173,7 @@ void System::recips(const Eigen::Matrix3d &mat_in, Eigen::Matrix3d &rmat_out)
 //    map_anh2harm.clear();
 //}
 
-int System::get_atomic_number_by_name(const std::string &kdname_in)
+int System::get_atomic_number_by_name(const std::string &kdname_in) const
 {
     auto kdname_copy = kdname_in;
     kdname_copy[0] = toupper(kdname_copy[0]);

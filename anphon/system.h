@@ -140,7 +140,7 @@ public:
         return grid;
     }
 
-    int get_atomic_number_by_name(const std::string &);
+    int get_atomic_number_by_name(const std::string &) const;
 
     const std::vector<double> &get_invsqrt_mass() const;
 
