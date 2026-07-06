@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <complex>
 #include <memory>
+#include "ndarray.h"
 #include <string>
 #include <vector>
 #include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
@@ -194,7 +195,7 @@ public:
     void get_symmetry_gamma_dynamical(KpointMeshUniform *kmesh_in, const unsigned int natmin_in,
                                       const Eigen::MatrixXd &x_fractional_in,
                                       const std::vector<SymmetryOperationWithMapping> &symmlist,
-                                      std::complex<double> ****&mat_transform_sym) const;
+                                      NDArray<std::complex<double>, 4> &mat_transform_sym) const;
 
     void get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                                const std::vector<FcsArrayWithCell> &fc2,

@@ -1343,7 +1343,7 @@ auto System::get_spin_super() const -> const Spin &
     return spin_super;
 }
 
-void System::get_minimum_distances(const unsigned int nsize[3], MinimumDistList ***&mindist_list_out)
+void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumDistList, 3> &mindist_list_out)
 {
     // Compute mindist_list necessary to calculate dynamical matrix
     // from the real-space force constants
@@ -1367,8 +1367,9 @@ void System::get_minimum_distances(const unsigned int nsize[3], MinimumDistList 
     allocate(shift_cell_super, ncell_s, 3);
     allocate(x_all, ncell_s, ncell, natmin_tmp, 3);
 
-    if (mindist_list_out) deallocate(mindist_list_out);
-    allocate(mindist_list_out, natmin_tmp, natmin_tmp, ncell);
+    // Fresh elements on every call, matching the historical dealloc+alloc.
+    mindist_list_out.clear();
+    mindist_list_out.resize(natmin_tmp, natmin_tmp, ncell);
 
     unsigned int icell = 0;
     for (ix = 0; ix < nkx; ++ix) {

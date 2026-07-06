@@ -2332,7 +2332,7 @@ void Dynamical::duplicate_xk_boundary(double *xk_in, std::vector<std::vector<dou
 void Dynamical::get_symmetry_gamma_dynamical(KpointMeshUniform *kmesh_in, const unsigned int natmin_in,
                                              const Eigen::MatrixXd &x_fractional_in,
                                              const std::vector<SymmetryOperationWithMapping> &symmlist,
-                                             std::complex<double> ****&mat_transform_sym) const
+                                             NDArray<std::complex<double>, 4> &mat_transform_sym) const
 {
     // Construct the transformation matrix for the dynamical matrix.
 
@@ -2351,8 +2351,8 @@ void Dynamical::get_symmetry_gamma_dynamical(KpointMeshUniform *kmesh_in, const 
 
     allocate(gamma_tmp, ns, ns);
 
-    if (mat_transform_sym) deallocate(mat_transform_sym);
-    allocate(mat_transform_sym, nk_irred_interpolate, nsym, ns, ns);
+    mat_transform_sym.clear();
+    mat_transform_sym.resize(nk_irred_interpolate, nsym, ns, ns);
 
     for (ik = 0; ik < nk_irred_interpolate; ++ik) {
 

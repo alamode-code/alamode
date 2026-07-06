@@ -30,12 +30,6 @@ ScphQhaCommon::~ScphQhaCommon() = default;
 
 void ScphQhaCommon::initialize_variables()
 {
-    evec_harmonic = nullptr;
-    omega2_harmonic = nullptr;
-    phi3_reciprocal = nullptr;
-    phi4_reciprocal = nullptr;
-    mindist_list = nullptr;
-    mat_transform_sym = nullptr;
     kmap_coarse_to_dense.clear();
     dymat_harm_short.clear();
     dymat_harm_long.clear();
@@ -45,24 +39,12 @@ void ScphQhaCommon::initialize_variables()
 
 void ScphQhaCommon::deallocate_variables()
 {
-    if (mindist_list) {
-        deallocate(mindist_list);
-    }
-    if (evec_harmonic) {
-        deallocate(evec_harmonic);
-    }
-    if (omega2_harmonic) {
-        deallocate(omega2_harmonic);
-    }
-    if (phi3_reciprocal) {
-        deallocate(phi3_reciprocal);
-    }
-    if (phi4_reciprocal) {
-        deallocate(phi4_reciprocal);
-    }
-    if (mat_transform_sym) {
-        deallocate(mat_transform_sym);
-    }
+    mindist_list.clear();
+    evec_harmonic.clear();
+    omega2_harmonic.clear();
+    phi3_reciprocal.clear();
+    phi4_reciprocal.clear();
+    mat_transform_sym.clear();
 
     kmesh_coarse.reset();
     kmesh_dense.reset();
@@ -117,15 +99,11 @@ void ScphQhaCommon::setup_eigvecs()
         std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
     }
 
-    if (evec_harmonic) {
-        deallocate(evec_harmonic);
-    }
-    if (omega2_harmonic) {
-        deallocate(omega2_harmonic);
-    }
+    evec_harmonic.clear();
+    omega2_harmonic.clear();
 
-    allocate(evec_harmonic, kmesh_dense->nk, ns, ns);
-    allocate(omega2_harmonic, kmesh_dense->nk, ns);
+    evec_harmonic.resize(kmesh_dense->nk, ns, ns);
+    omega2_harmonic.resize(kmesh_dense->nk, ns);
 
     for (int ik = 0; ik < kmesh_dense->nk; ++ik) {
         dynamical->eval_k(kmesh_dense->xk[ik],
@@ -149,12 +127,8 @@ void ScphQhaCommon::setup_eigvecs()
 
 void ScphQhaCommon::setup_structural_data()
 {
-    if (mindist_list) {
-        deallocate(mindist_list);
-    }
-    if (mat_transform_sym) {
-        deallocate(mat_transform_sym);
-    }
+    mindist_list.clear();
+    mat_transform_sym.clear();
 
     system->get_minimum_distances(kmesh_coarse->nk_i, mindist_list);
     dynamical->get_symmetry_gamma_dynamical(kmesh_coarse.get(),
@@ -178,17 +152,13 @@ void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
         exit("setup_pp_interaction", "quartic_mode should be 1 for SCPH");
     }
 
-    if (phi3_reciprocal) {
-        deallocate(phi3_reciprocal);
-    }
-    if (phi4_reciprocal) {
-        deallocate(phi4_reciprocal);
-    }
+    phi3_reciprocal.clear();
+    phi4_reciprocal.clear();
 
     if (prepare_v3) {
-        allocate(phi3_reciprocal, anharmonic_core->get_ngroup_fcs(3));
+        phi3_reciprocal.resize(anharmonic_core->get_ngroup_fcs(3));
     }
-    allocate(phi4_reciprocal, anharmonic_core->get_ngroup_fcs(4));
+    phi4_reciprocal.resize(anharmonic_core->get_ngroup_fcs(4));
 
     phase_factor = std::make_unique<PhaseFactorStorage>(kmesh_dense->nk_i);
     phase_factor->create(true);

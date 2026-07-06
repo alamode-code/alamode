@@ -14,6 +14,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 #include <vector>
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS
@@ -150,7 +151,7 @@ public:
 
     const std::vector<std::vector<unsigned int>> &get_atomtype_group(const bool distort = false) const;
 
-    void get_minimum_distances(const unsigned int nsize[3], MinimumDistList ***&mindist_list_out);
+    void get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumDistList, 3> &mindist_list_out);
 
 private:
     enum LatticeType

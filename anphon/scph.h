@@ -114,7 +114,7 @@ private:
     void setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
                                            const std::vector<Eigen::MatrixXcd> &evec_initial,
                                            std::complex<double> **delta_v2_renorm, std::vector<Eigen::MatrixXcd> &Fmat0,
-                                           std::complex<double> ***dymat_q_HA) const;
+                                           std::complex<double> ***dymat_q_HA);
 
     void compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double temp,
                                std::complex<double> ***cmat_convert, std::vector<Eigen::MatrixXcd> &dmat_convert) const;
@@ -129,13 +129,13 @@ private:
                                     const unsigned int knum, const unsigned int knum_interpolate,
                                     const bool flag_converged, double **omega2_out, const unsigned int verbosity,
                                     int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q,
-                                    bool *eval_repaired = nullptr) const;
+                                    bool *eval_repaired = nullptr);
 
     void interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
                                    const std::complex<double> *const *const *dymat_q_HA,
                                    const std::vector<Eigen::MatrixXcd> &evec_initial, Eigen::MatrixXd &eval_interpolate,
                                    std::vector<Eigen::MatrixXcd> &evec_new, std::complex<double> ***cmat_convert,
-                                   Eigen::MatrixXd &omega_now) const;
+                                   Eigen::MatrixXd &omega_now);
 
     bool check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,
                            const unsigned int verbosity, const int iloop, double &diff) const;

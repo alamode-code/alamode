@@ -28,6 +28,7 @@
 #include "memory.h"
 #include "mpi.h"
 #include "mpi_common.h"
+#include "ndarray.h"
 #include "pointers.h"
 #include "relaxation_types.h"
 #include "scph_result_io.h"
@@ -56,14 +57,14 @@ protected:
     std::unique_ptr<KpointMeshUniform> kmesh_dense;
     std::vector<int> kmap_coarse_to_dense;
 
-    std::complex<double> *phi3_reciprocal = nullptr;
-    std::complex<double> *phi4_reciprocal = nullptr;
+    NDArray<std::complex<double>, 1> phi3_reciprocal;
+    NDArray<std::complex<double>, 1> phi4_reciprocal;
     std::unique_ptr<PhaseFactorStorage> phase_factor;
 
-    double **omega2_harmonic = nullptr;
-    std::complex<double> ***evec_harmonic = nullptr;
-    MinimumDistList ***mindist_list = nullptr;
-    std::complex<double> ****mat_transform_sym = nullptr;
+    NDArray<double, 2> omega2_harmonic;
+    NDArray<std::complex<double>, 3> evec_harmonic;
+    NDArray<MinimumDistList, 3> mindist_list;
+    NDArray<std::complex<double>, 4> mat_transform_sym;
 
     std::vector<Eigen::MatrixXcd> dymat_harm_short;
     std::vector<Eigen::MatrixXcd> dymat_harm_long;

@@ -1227,7 +1227,7 @@ void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
                                              const std::vector<Eigen::MatrixXcd> &evec_initial,
                                              std::complex<double> **delta_v2_renorm,
                                              std::vector<Eigen::MatrixXcd> &Fmat0,
-                                             std::complex<double> ***dymat_q_HA) const
+                                             std::complex<double> ***dymat_q_HA)
 {
     using namespace Eigen;
     const auto ns = dynamical->neval;
@@ -1381,7 +1381,7 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
                                       const unsigned int knum, const unsigned int knum_interpolate,
                                       const bool flag_converged, double **omega2_out, const unsigned int verbosity,
                                       int &icount, Eigen::VectorXd &eval_tmp, std::complex<double> ***dymat_q,
-                                      bool *eval_repaired) const
+                                      bool *eval_repaired)
 {
     using namespace Eigen;
     const auto ns = dynamical->neval;
@@ -1446,7 +1446,7 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
                                      const std::complex<double> *const *const *dymat_q_HA,
                                      const std::vector<Eigen::MatrixXcd> &evec_initial,
                                      Eigen::MatrixXd &eval_interpolate, std::vector<Eigen::MatrixXcd> &evec_new,
-                                     std::complex<double> ***cmat_convert, Eigen::MatrixXd &omega_now) const
+                                     std::complex<double> ***cmat_convert, Eigen::MatrixXd &omega_now)
 {
     using namespace Eigen;
     const auto nk = kmesh_dense->nk;
