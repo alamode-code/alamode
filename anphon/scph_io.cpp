@@ -44,7 +44,7 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
     unsigned int i, j;
     const auto Tmin = system->Tmin;
     const auto dT = system->dT;
-    double ***delta_fc2;
+    NDArray<double, 3> delta_fc2;
     const auto ns = dynamical->neval;
     unsigned int is, js, icell;
     unsigned int iat, jat;
@@ -71,7 +71,7 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
 
     const auto ncell = kmesh_coarse_in->nk_i[0] * kmesh_coarse_in->nk_i[1] * kmesh_coarse_in->nk_i[2];
 
-    allocate(delta_fc2, ns, ns, ncell);
+    delta_fc2.resize(ns, ns, ncell);
 
     ofs_fc2.precision(10);
     for (i = 0; i < 3; ++i) {
@@ -144,7 +144,7 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
         ofs_fc2 << '\n';
     }
 
-    deallocate(delta_fc2);
+    delta_fc2.clear();
 
     ofs_fc2.close();
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_fc2;
@@ -233,12 +233,12 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
     const auto ncell = nk1 * nk2 * nk3;
 
     // Harmonic (short-range) dynamical matrix on the coarse mesh -> real space
-    std::complex<double> **dymat_tmp = nullptr;
-    std::complex<double> ***dymat_harm_q = nullptr;
-    std::complex<double> ***dymat_harm_r = nullptr;
-    allocate(dymat_tmp, ns, ns);
-    allocate(dymat_harm_q, ns, ns, ncell);
-    allocate(dymat_harm_r, ns, ns, ncell);
+    NDArray<std::complex<double>, 2> dymat_tmp;
+    NDArray<std::complex<double>, 3> dymat_harm_q;
+    NDArray<std::complex<double>, 3> dymat_harm_r;
+    dymat_tmp.resize(ns, ns);
+    dymat_harm_q.resize(ns, ns, ncell);
+    dymat_harm_r.resize(ns, ns, ncell);
 
     for (unsigned int ik = 0; ik < ncell; ++ik) {
         dynamical->calc_analytic_k(kmesh_coarse_in->xk[ik], fcs_phonon->force_constant_with_cell[0], dymat_tmp);
@@ -319,9 +319,9 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
         }
     }
 
-    deallocate(dymat_tmp);
-    deallocate(dymat_harm_q);
-    deallocate(dymat_harm_r);
+    dymat_tmp.clear();
+    dymat_harm_q.clear();
+    dymat_harm_r.clear();
 
     return fc2;
 }

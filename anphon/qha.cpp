@@ -64,10 +64,10 @@ void Qha::exec_qha_optimization()
     const auto dT = system->dT;
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-    std::complex<double> ****delta_dymat_qha = nullptr;
-    std::complex<double> ****delta_harmonic_dymat_renormalize = nullptr;
-    allocate(delta_dymat_qha, NT, ns, ns, kmesh_coarse->nk);
-    allocate(delta_harmonic_dymat_renormalize, NT, ns, ns, kmesh_coarse->nk);
+    NDArray<std::complex<double>, 4> delta_dymat_qha;
+    NDArray<std::complex<double>, 4> delta_harmonic_dymat_renormalize;
+    delta_dymat_qha.resize(NT, ns, ns, kmesh_coarse->nk);
+    delta_harmonic_dymat_renormalize.resize(NT, ns, ns, kmesh_coarse->nk);
 
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
 
@@ -209,8 +209,8 @@ void Qha::exec_qha_optimization()
                 true,
                 0);
 
-    deallocate(delta_dymat_qha);
-    deallocate(delta_harmonic_dymat_renormalize);
+    delta_dymat_qha.clear();
+    delta_harmonic_dymat_renormalize.clear();
 }
 
 void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
@@ -237,8 +237,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     // renormalization of harmonic dynamical matrix
     auto &delta_v2_renorm = ws.delta_v2_renorm;
     auto &delta_v2_with_umn = ws.delta_v2_with_umn;
-    double ***omega2_harm_renorm;
-    std::complex<double> ***evec_harm_renorm_tmp;
+    NDArray<double, 3> omega2_harm_renorm;
+    NDArray<std::complex<double>, 3> evec_harm_renorm_tmp;
     // k-space IFCs at the reference and updated structures
     auto &v1_ref = ws.v1_ref;
     auto &v1_renorm = ws.v1_renorm;
@@ -247,7 +247,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     auto &v3_renorm = ws.v3_renorm;
     auto &v3_with_umn = ws.v3_with_umn;
     auto &v4_ref = ws.v4_ref;
-    std::complex<double> ***v4_renorm, ***v4_with_umn;
+    NDArray<std::complex<double>, 3> v4_renorm;
+    NDArray<std::complex<double>, 3> v4_with_umn;
     auto &v0_ref = ws.v0_ref;
     auto &v0_renorm = ws.v0_renorm;
     v0_ref = 0.0; // set original ground state energy as zero
@@ -256,23 +257,23 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     auto &C1_array = ws.C1_array;
     auto &C2_array = ws.C2_array;
     auto &C3_array = ws.C3_array;
-    double **C2_array_ZSISA;
+    NDArray<double, 2> C2_array_ZSISA;
 
     // strain-derivative of k-space IFCs
     DelVStrainData del_v_strain;
     ws.del_v_strain = &del_v_strain;
 
     auto &del_v0_del_umn_renorm = ws.del_v0_del_umn_renorm;
-    std::complex<double> **del_v1_del_umn_renorm;
-    double **C2_array_renorm;
+    NDArray<std::complex<double>, 2> del_v1_del_umn_renorm;
+    NDArray<double, 2> C2_array_renorm;
 
     // atomic forces and stress tensor at finite temperatures
-    std::complex<double> *v1_QHA;
-    std::complex<double> *del_v0_del_umn_QHA;
-    std::complex<double> *del_v0_del_umn_ZSISA;
-    std::complex<double> *del_v0_del_umn_vZSISA;
+    NDArray<std::complex<double>, 1> v1_QHA;
+    NDArray<std::complex<double>, 1> del_v0_del_umn_QHA;
+    NDArray<std::complex<double>, 1> del_v0_del_umn_ZSISA;
+    NDArray<std::complex<double>, 1> del_v0_del_umn_vZSISA;
 
-    double **delq_delu_ZSISA;
+    NDArray<double, 2> delq_delu_ZSISA;
 
     // structure optimization
     int i_str_loop, i_temp_loop;
@@ -292,8 +293,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     std::vector<double> vec_temp;
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-    allocate(omega2_harm_renorm, NT, nk, ns);
-    allocate(evec_harm_renorm_tmp, nk, ns, ns);
+    omega2_harm_renorm.resize(NT, nk, ns);
+    evec_harm_renorm_tmp.resize(nk, ns, ns);
 
     // Common buffers, reference V3/V4 elements, strain derivatives of the
     // IFCs, optimizer, and Gamma-point optical modes (collective).
@@ -304,17 +305,17 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     auto &u0 = structure_state.u0;
     auto &u_tensor = structure_state.u_tensor;
 
-    allocate(v1_QHA, ns);
-    allocate(del_v0_del_umn_QHA, 9);
-    allocate(del_v0_del_umn_ZSISA, 9);
-    allocate(del_v0_del_umn_vZSISA, 9);
-    allocate(del_v1_del_umn_renorm, 9, ns);
+    v1_QHA.resize(ns);
+    del_v0_del_umn_QHA.resize(9);
+    del_v0_del_umn_ZSISA.resize(9);
+    del_v0_del_umn_vZSISA.resize(9);
+    del_v1_del_umn_renorm.resize(9, ns);
 
-    allocate(delq_delu_ZSISA, ns, 9);
-    allocate(C2_array_renorm, 9, 9);
+    delq_delu_ZSISA.resize(ns, 9);
+    C2_array_renorm.resize(9, 9);
 
-    allocate(v4_renorm, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
-    allocate(v4_with_umn, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
+    v4_renorm.resize(nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
+    v4_with_umn.resize(nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
     // QHA feeds the (numerically identical) v4_with_umn copy into the q0
     // renormalization; see renormalize_ifcs_at_structure.
     ws.v4_for_renorm = v4_with_umn;
@@ -328,8 +329,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                          dymat_harm_long);
 
 
-        std::complex<double> ***cmat_convert;
-        allocate(cmat_convert, nk, ns, ns);
+        NDArray<std::complex<double>, 3> cmat_convert;
+        cmat_convert.resize(nk, ns, ns);
 
         vec_temp.clear();
 
@@ -349,7 +350,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         C1_array.resize(9);
         C2_array.resize(9, 9);
         C3_array.resize(9, 9, 9);
-        allocate(C2_array_ZSISA, 9, 9);
+        C2_array_ZSISA.resize(9, 9);
 
         relaxation->set_elastic_constants(C1_array, C2_array, C3_array);
 
@@ -572,18 +573,18 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             fout_u_tensor.close();
         }
 
-        deallocate(cmat_convert);
+        cmat_convert.clear();
 
         C1_array.clear();
         C2_array.clear();
         C3_array.clear();
-        deallocate(C2_array_ZSISA);
+        C2_array_ZSISA.clear();
     }
 
     delta_v2_renorm.clear();
     delta_v2_with_umn.clear();
-    deallocate(omega2_harm_renorm);
-    deallocate(evec_harm_renorm_tmp);
+    omega2_harm_renorm.clear();
+    evec_harm_renorm_tmp.clear();
 
     v1_ref.clear();
     v1_with_umn.clear();
@@ -594,19 +595,19 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     v3_with_umn.clear();
 
     v4_ref.clear();
-    deallocate(v4_renorm);
-    deallocate(v4_with_umn);
+    v4_renorm.clear();
+    v4_with_umn.clear();
 
-    deallocate(v1_QHA);
-    deallocate(del_v1_del_umn_renorm);
-    deallocate(del_v0_del_umn_QHA);
-    deallocate(del_v0_del_umn_ZSISA);
-    deallocate(del_v0_del_umn_vZSISA);
+    v1_QHA.clear();
+    del_v1_del_umn_renorm.clear();
+    del_v0_del_umn_QHA.clear();
+    del_v0_del_umn_ZSISA.clear();
+    del_v0_del_umn_vZSISA.clear();
     del_v0_del_umn_renorm.clear();
 
-    deallocate(delq_delu_ZSISA);
+    delq_delu_ZSISA.clear();
 
-    deallocate(C2_array_renorm);
+    C2_array_renorm.clear();
 }
 
 void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigned int iT, const double temp,
@@ -748,8 +749,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     // renormalization of harmonic dynamical matrix
     NDArray<std::complex<double>, 2> delta_v2_renorm;
     NDArray<std::complex<double>, 2> delta_v2_with_umn;
-    double ***omega2_harm_renorm;
-    std::complex<double> ***evec_harm_renorm_tmp;
+    NDArray<double, 3> omega2_harm_renorm;
+    NDArray<std::complex<double>, 3> evec_harm_renorm_tmp;
     // original and renormalized IFCs
     NDArray<std::complex<double>, 1> v1_ref, v1_renorm, v1_with_umn;
     NDArray<std::complex<double>, 3> v3_ref;         // We fix cubic IFCs in perturbative QHA.
@@ -783,8 +784,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     MatrixXcd elastic_mat_tmp(ns - 3 + 6, ns - 3 + 6); // optical phonons + independent strain
     VectorXcd q0_umn(ns - 3 + 6), del_Fvib_q0_umn(ns - 3 + 6);
 
-    allocate(omega2_harm_renorm, NT, nk, ns);
-    allocate(evec_harm_renorm_tmp, nk, ns, ns);
+    omega2_harm_renorm.resize(NT, nk, ns);
+    evec_harm_renorm_tmp.resize(nk, ns, ns);
     delta_v2_renorm.resize(nk_interpolate, ns * ns);
     delta_v2_with_umn.resize(nk_interpolate, ns * ns);
 
@@ -1096,8 +1097,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     v1_with_umn.clear();
     v1_renorm.clear();
 
-    deallocate(omega2_harm_renorm);
-    deallocate(evec_harm_renorm_tmp);
+    omega2_harm_renorm.clear();
+    evec_harm_renorm_tmp.clear();
     delta_v2_renorm.clear();
     delta_v2_with_umn.clear();
 
@@ -1250,14 +1251,14 @@ void Qha::calculate_C2_array_renorm(double **C2_array_renorm, const std::array<s
                                     const std::vector<double> &q0)
 {
     int ns = dynamical->neval;
-    double **del_eta_del_u;
-    allocate(del_eta_del_u, 9, 9);
+    NDArray<double, 2> del_eta_del_u;
+    del_eta_del_u.resize(9, 9);
 
     int i1, i2, i3, i4, ixyz1, ixyz2, ixyz3, ixyz4;
     int is1, is2;
 
-    double **C2_array_with_strain_eta;
-    allocate(C2_array_with_strain_eta, 9, 9);
+    NDArray<double, 2> C2_array_with_strain_eta;
+    C2_array_with_strain_eta.resize(9, 9);
 
 
     // calculate the derivative of eta_tensor by u_tensor
@@ -1329,8 +1330,8 @@ void Qha::calculate_C2_array_renorm(double **C2_array_renorm, const std::array<s
         }
     }
 
-    deallocate(C2_array_with_strain_eta);
-    deallocate(del_eta_del_u);
+    C2_array_with_strain_eta.clear();
+    del_eta_del_u.clear();
 }
 
 void Qha::calculate_C2_array_ZSISA(double **C2_array_ZSISA, double **C2_array_renorm,

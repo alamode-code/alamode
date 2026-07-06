@@ -127,7 +127,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     auto ns2 = ns * ns;
     auto ns3 = ns * ns * ns;
     unsigned int is, js, ks;
-    unsigned int **ind;
+    NDArray<unsigned int, 2> ind;
     unsigned int i, j;
 
     size_t js2_1, js2_2;
@@ -140,9 +140,12 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     const auto ngroup_v3 = anharmonic_core->get_ngroup_fcs(3);
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-    std::complex<double> *v3_array_at_kpair;
+    NDArray<std::complex<double>, 1> v3_array_at_kpair;
 
-    std::complex<double> **v3_tmp0, **v3_tmp1, **v3_tmp2, **v3_tmp3;
+    NDArray<std::complex<double>, 2> v3_tmp0;
+    NDArray<std::complex<double>, 2> v3_tmp1;
+    NDArray<std::complex<double>, 2> v3_tmp2;
+    NDArray<std::complex<double>, 2> v3_tmp3;
 
     if (mympi->my_rank == 0) {
         if (self_offdiag) {
@@ -152,13 +155,13 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
         }
     }
 
-    allocate(v3_array_at_kpair, ngroup_v3);
-    allocate(ind, ngroup_v3, 3);
+    v3_array_at_kpair.resize(ngroup_v3);
+    ind.resize(ngroup_v3, 3);
 
-    allocate(v3_tmp0, ns, ns2);
-    allocate(v3_tmp1, ns, ns2);
-    allocate(v3_tmp2, ns, ns2);
-    allocate(v3_tmp3, ns, ns2);
+    v3_tmp0.resize(ns, ns2);
+    v3_tmp1.resize(ns, ns2);
+    v3_tmp2.resize(ns, ns2);
+    v3_tmp3.resize(ns, ns2);
 
     // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
     // to be contiguous across the k-point dimension, so the MPI reduction cannot happen
@@ -299,8 +302,8 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
         }
     }
 
-    deallocate(v3_array_at_kpair);
-    deallocate(ind);
+    v3_array_at_kpair.clear();
+    ind.clear();
 #ifdef MPI_CXX_DOUBLE_COMPLEX
     MPI_Allreduce(MPI_IN_PLACE,
                   v3_allreduce_buffer.data(),
@@ -327,10 +330,10 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
         }
     }
 
-    deallocate(v3_tmp0);
-    deallocate(v3_tmp1);
-    deallocate(v3_tmp2);
-    deallocate(v3_tmp3);
+    v3_tmp0.clear();
+    v3_tmp1.clear();
+    v3_tmp2.clear();
+    v3_tmp3.clear();
 
 
     zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
@@ -357,7 +360,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
     auto ns2 = ns * ns;
     auto ns3 = ns * ns * ns;
     unsigned int is, js, ks;
-    unsigned int **ind;
+    NDArray<unsigned int, 2> ind;
     unsigned int i, j;
     size_t js2_1, js2_2;
     size_t is2, js2, ks2;
@@ -368,10 +371,13 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
     const auto nk_scph = kmesh_dense_in->nk;
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     static auto complex_zero = std::complex<double>(0.0, 0.0);
-    std::complex<double> *v3_array_at_kpair;
-    std::complex<double> *phi3_reciprocal_tmp;
+    NDArray<std::complex<double>, 1> v3_array_at_kpair;
+    NDArray<std::complex<double>, 1> phi3_reciprocal_tmp;
 
-    std::complex<double> **v3_tmp0, **v3_tmp1, **v3_tmp2, **v3_tmp3;
+    NDArray<std::complex<double>, 2> v3_tmp0;
+    NDArray<std::complex<double>, 2> v3_tmp1;
+    NDArray<std::complex<double>, 2> v3_tmp2;
+    NDArray<std::complex<double>, 2> v3_tmp3;
 
     if (ngroup_v3_in == 0) {
 #pragma omp parallel for collapse(3) schedule(static)
@@ -391,14 +397,14 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
         return;
     }
 
-    allocate(phi3_reciprocal_tmp, ngroup_v3_in);
-    allocate(v3_array_at_kpair, ngroup_v3_in);
-    allocate(ind, ngroup_v3_in, 3);
+    phi3_reciprocal_tmp.resize(ngroup_v3_in);
+    v3_array_at_kpair.resize(ngroup_v3_in);
+    ind.resize(ngroup_v3_in, 3);
 
-    allocate(v3_tmp0, ns, ns2);
-    allocate(v3_tmp1, ns, ns2);
-    allocate(v3_tmp2, ns, ns2);
-    allocate(v3_tmp3, ns, ns2);
+    v3_tmp0.resize(ns, ns2);
+    v3_tmp1.resize(ns, ns2);
+    v3_tmp2.resize(ns, ns2);
+    v3_tmp3.resize(ns, ns2);
 
     // v3_out may come from STL-backed storage via pointer bridges and is not guaranteed
     // to be contiguous across the k-point dimension, so the MPI reduction cannot happen
@@ -541,8 +547,8 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
         }
     }
 
-    deallocate(v3_array_at_kpair);
-    deallocate(ind);
+    v3_array_at_kpair.clear();
+    ind.clear();
 #ifdef MPI_CXX_DOUBLE_COMPLEX
     MPI_Allreduce(MPI_IN_PLACE,
                   v3_allreduce_buffer.data(),
@@ -569,10 +575,10 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
         }
     }
 
-    deallocate(v3_tmp0);
-    deallocate(v3_tmp1);
-    deallocate(v3_tmp2);
-    deallocate(v3_tmp3);
+    v3_tmp0.clear();
+    v3_tmp1.clear();
+    v3_tmp2.clear();
+    v3_tmp3.clear();
 
     zerofill_elements_acoustic_at_gamma(omega2_harmonic_in,
                                         v3_out,
@@ -606,9 +612,10 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     const auto ngroup_v4 = anharmonic_core->get_ngroup_fcs(4);
     const auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-    std::complex<double> ***evec_conj;
+    NDArray<std::complex<double>, 3> evec_conj;
 
-    std::complex<double> **v4_tmp1, **v4_tmp2;
+    NDArray<std::complex<double>, 2> v4_tmp1;
+    NDArray<std::complex<double>, 2> v4_tmp2;
 
     const size_t nk2_prod = nk_reduced_interpolate * nk_scph;
 
@@ -624,10 +631,10 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
         }
     }
 
-    allocate(evec_conj, kmesh_dense_in->nk, ns, ns);
+    evec_conj.resize(kmesh_dense_in->nk, ns, ns);
 
-    allocate(v4_tmp1, ns2, ns2);
-    allocate(v4_tmp2, ns2, ns2);
+    v4_tmp1.resize(ns2, ns2);
+    v4_tmp2.resize(ns2, ns2);
 
     // Sparse representation of the phi4 scatter pattern; the indices are fixed for
     // the entire calculation, only the values are refilled per (k1,k2) pair.
@@ -764,10 +771,10 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     }
 
 
-    deallocate(evec_conj);
+    evec_conj.clear();
 
-    deallocate(v4_tmp1);
-    deallocate(v4_tmp2);
+    v4_tmp1.clear();
+    v4_tmp2.clear();
 
     // Now, communicate the calculated data. Each rank filled a disjoint subset of
     // v4_out (zero elsewhere), so an in-place summation assembles the full tensor
@@ -845,14 +852,15 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
     size_t is2;
     unsigned int knum;
     unsigned int i;
-    long int *nset_mpi;
+    NDArray<long int, 1> nset_mpi;
 
     const auto nk_scph = kmesh_dense_in->nk;
     const auto ngroup_v4 = anharmonic_core->get_ngroup_fcs(4);
     auto factor = pow2(0.5) / static_cast<double>(nk_scph);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
 
-    std::complex<double> **v4_tmp1, **v4_tmp2;
+    NDArray<std::complex<double>, 2> v4_tmp1;
+    NDArray<std::complex<double>, 2> v4_tmp2;
 
     std::vector<int> ik_vec, jk_vec, is_vec;
 
@@ -871,7 +879,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
         }
     }
 
-    allocate(nset_mpi, mympi->nprocs);
+    nset_mpi.resize(mympi->nprocs);
 
     const long int nset_tot = nk2_prod * ns;
     long int nset_each = nset_tot / mympi->nprocs;
@@ -891,7 +899,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
     }
     long int nend = nstart + nset_mpi[mympi->my_rank];
     nset_each = nset_mpi[mympi->my_rank];
-    deallocate(nset_mpi);
+    nset_mpi.clear();
 
     ik_vec.clear();
     jk_vec.clear();
@@ -911,8 +919,8 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
         }
     }
 
-    allocate(v4_tmp1, ns, ns2);
-    allocate(v4_tmp2, ns, ns2);
+    v4_tmp1.resize(ns, ns2);
+    v4_tmp2.resize(ns, ns2);
 
     // Sparse representation of the phi4 scatter pattern; the indices are fixed for
     // the entire calculation, only the values are refilled per (k1,k2) pair.
@@ -1102,8 +1110,8 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
         std::cout << "done.\n";
     }
 
-    deallocate(v4_tmp1);
-    deallocate(v4_tmp2);
+    v4_tmp1.clear();
+    v4_tmp2.clear();
 
     zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
@@ -1135,8 +1143,8 @@ void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<
     int jk;
     int is, js, ks, ls;
     const auto ns = ns_in;
-    bool *is_acoustic;
-    allocate(is_acoustic, ns);
+    NDArray<bool, 1> is_acoustic;
+    is_acoustic.resize(ns);
     int nacoustic;
     auto threshould = 1.0e-24;
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
@@ -1221,5 +1229,5 @@ void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<
         }
     }
 
-    deallocate(is_acoustic);
+    is_acoustic.clear();
 }

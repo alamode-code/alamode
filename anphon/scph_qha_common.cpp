@@ -366,8 +366,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                 const KpointMeshUniform *kmesh_coarse_in, MinimumDistList ***mindist_list_in,
                                 const bool is_qha, const int bubble_in)
 {
-    double ***eval_update = nullptr;
-    double ***eval_harm_renorm = nullptr;
+    NDArray<double, 3> eval_update;
+    NDArray<double, 3> eval_harm_renorm;
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
@@ -383,54 +383,54 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         std::cout << " The number of temperature points: " << std::setw(4) << NT << '\n';
         std::cout << "   ";
 
-        std::complex<double> ***evec_tmp = nullptr;
-        std::complex<double> ***evec_harm_renorm = nullptr;
-        double **eval_gam = nullptr;
-        std::complex<double> ***evec_gam = nullptr;
-        double **xk_gam = nullptr;
+        NDArray<std::complex<double>, 3> evec_tmp;
+        NDArray<std::complex<double>, 3> evec_harm_renorm;
+        NDArray<double, 2> eval_gam;
+        NDArray<std::complex<double>, 3> evec_gam;
+        NDArray<double, 2> xk_gam;
 
-        double **dos_update = nullptr;
-        double ***pdos_update = nullptr;
-        double *heat_capacity = nullptr;
-        double *heat_capacity_correction = nullptr;
-        double *FE_QHA = nullptr;
-        double *dFE_scph = nullptr;
-        double *FE_total = nullptr;
-        double *entropy = nullptr;
-        double **msd_update = nullptr;
-        double ***ucorr_update = nullptr;
-        double ****dielec_update = nullptr;
+        NDArray<double, 2> dos_update;
+        NDArray<double, 3> pdos_update;
+        NDArray<double, 1> heat_capacity;
+        NDArray<double, 1> heat_capacity_correction;
+        NDArray<double, 1> FE_QHA;
+        NDArray<double, 1> dFE_scph;
+        NDArray<double, 1> FE_total;
+        NDArray<double, 1> entropy;
+        NDArray<double, 2> msd_update;
+        NDArray<double, 3> ucorr_update;
+        NDArray<double, 4> dielec_update;
         double *omega_grid = nullptr;
-        double **domega_dt = nullptr;
+        NDArray<double, 2> domega_dt;
 
         if (dos->kmesh_dos.get()) {
-            allocate(eval_update, NT, dos->kmesh_dos->nk, ns);
-            allocate(evec_tmp, dos->kmesh_dos->nk, ns, ns);
-            allocate(eval_harm_renorm, NT, dos->kmesh_dos->nk, ns);
-            allocate(evec_harm_renorm, dos->kmesh_dos->nk, ns, ns);
+            eval_update.resize(NT, dos->kmesh_dos->nk, ns);
+            evec_tmp.resize(dos->kmesh_dos->nk, ns, ns);
+            eval_harm_renorm.resize(NT, dos->kmesh_dos->nk, ns);
+            evec_harm_renorm.resize(dos->kmesh_dos->nk, ns, ns);
 
             if (dos->compute_dos) {
-                allocate(dos_update, NT, dos->n_energy);
+                dos_update.resize(NT, dos->n_energy);
 
                 if (dos->projected_dos) {
-                    allocate(pdos_update, NT, ns, dos->n_energy);
+                    pdos_update.resize(NT, ns, dos->n_energy);
                 }
             }
-            allocate(heat_capacity, NT);
-            allocate(FE_QHA, NT);
-            allocate(dFE_scph, NT);
-            allocate(FE_total, NT);
-            allocate(entropy, NT);
+            heat_capacity.resize(NT);
+            FE_QHA.resize(NT);
+            dFE_scph.resize(NT);
+            FE_total.resize(NT);
+            entropy.resize(NT);
 
             if (writes->getPrintMSD()) {
-                allocate(msd_update, NT, ns);
+                msd_update.resize(NT, ns);
             }
             if (writes->getPrintUcorr()) {
-                allocate(ucorr_update, NT, ns, ns);
+                ucorr_update.resize(NT, ns, ns);
             }
             if (compute_Cv_anharmonic) {
-                allocate(heat_capacity_correction, NT);
-                allocate(domega_dt, dos->kmesh_dos->nk, ns);
+                heat_capacity_correction.resize(NT);
+                domega_dt.resize(dos->kmesh_dos->nk, ns);
                 if (compute_Cv_anharmonic == 1) {
                     // Use central difference to evaluate temperature derivative of
                     // anharmonic frequencies
@@ -765,15 +765,13 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                     writes->writeDispCorrelation(ucorr_update, false, bubble_in);
                 }
             }
-            deallocate(eval_update);
-            eval_update = nullptr;
-            deallocate(evec_tmp);
-            evec_tmp = nullptr;
+            eval_update.clear();
+            evec_tmp.clear();
         }
 
         if (kpoint->kpoint_general.get()) {
-            allocate(eval_update, NT, kpoint->kpoint_general->nk, ns);
-            allocate(evec_tmp, kpoint->kpoint_general->nk, ns, ns);
+            eval_update.resize(NT, kpoint->kpoint_general->nk, ns);
+            evec_tmp.resize(kpoint->kpoint_general->nk, ns, ns);
 
             for (auto iT = 0; iT < NT; ++iT) {
                 // The short/long harmonic dymats are ignored here because
@@ -809,15 +807,13 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                 }
                 writes->writePhononEnergies(kpoint->kpoint_general->nk, eval_update, false, bubble_in);
             }
-            deallocate(eval_update);
-            deallocate(evec_tmp);
-            eval_update = nullptr;
-            evec_tmp = nullptr;
+            eval_update.clear();
+            evec_tmp.clear();
         }
 
         if (kpoint->kpoint_bs.get()) {
-            allocate(eval_update, NT, kpoint->kpoint_bs->nk, ns);
-            allocate(evec_tmp, kpoint->kpoint_bs->nk, ns, ns);
+            eval_update.resize(NT, kpoint->kpoint_bs->nk, ns);
+            evec_tmp.resize(kpoint->kpoint_bs->nk, ns, ns);
 
             dynamical->precompute_dymat_harm(kpoint->kpoint_bs->nk,
                                              kpoint->kpoint_bs->xk,
@@ -861,18 +857,16 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                          false,
                                          bubble_in);
             }
-            deallocate(eval_update);
-            deallocate(evec_tmp);
-            eval_update = nullptr;
-            evec_tmp = nullptr;
+            eval_update.clear();
+            evec_tmp.clear();
         }
 
         if (dielec->calc_dielectric_constant) {
             omega_grid = dielec->get_omega_grid(nomega_dielec);
-            allocate(dielec_update, NT, nomega_dielec, 3, 3);
-            allocate(eval_gam, 1, ns);
-            allocate(evec_gam, 1, ns, ns);
-            allocate(xk_gam, 1, 3);
+            dielec_update.resize(NT, nomega_dielec, 3, 3);
+            eval_gam.resize(1, ns);
+            evec_gam.resize(1, ns, ns);
+            xk_gam.resize(1, 3);
             for (auto i = 0; i < 3; ++i)
                 xk_gam[0][i] = 0.0;
 
@@ -904,22 +898,22 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             writes->writeDielecFunc(dielec_update, is_qha);
         }
 
-        if (eval_update) deallocate(eval_update);
-        if (evec_tmp) deallocate(evec_tmp);
+        eval_update.clear();
+        evec_tmp.clear();
 
-        if (dos_update) deallocate(dos_update);
-        if (pdos_update) deallocate(pdos_update);
-        if (heat_capacity) deallocate(heat_capacity);
-        if (heat_capacity_correction) deallocate(heat_capacity_correction);
-        if (FE_QHA) deallocate(FE_QHA);
-        if (dFE_scph) deallocate(dFE_scph);
-        if (FE_total) deallocate(FE_total);
-        if (entropy) deallocate(entropy);
-        if (dielec_update) deallocate(dielec_update);
+        dos_update.clear();
+        pdos_update.clear();
+        heat_capacity.clear();
+        heat_capacity_correction.clear();
+        FE_QHA.clear();
+        dFE_scph.clear();
+        FE_total.clear();
+        entropy.clear();
+        dielec_update.clear();
 
-        if (eval_gam) deallocate(eval_gam);
-        if (evec_gam) deallocate(evec_gam);
-        if (xk_gam) deallocate(xk_gam);
+        eval_gam.clear();
+        evec_gam.clear();
+        xk_gam.clear();
     }
 }
 

@@ -96,10 +96,10 @@ void Scph::exec_scph()
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
 
-    std::complex<double> ****delta_dymat_scph = nullptr;
-    std::complex<double> ****delta_dymat_scph_plus_bubble = nullptr;
+    NDArray<std::complex<double>, 4> delta_dymat_scph;
+    NDArray<std::complex<double>, 4> delta_dymat_scph_plus_bubble;
     // change of harmonic dymat by IFC renormalization
-    std::complex<double> ****delta_harmonic_dymat_renormalize = nullptr;
+    NDArray<std::complex<double>, 4> delta_harmonic_dymat_renormalize;
 
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
@@ -109,8 +109,8 @@ void Scph::exec_scph()
     MPI_Bcast(&ialgo, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&imix_scph, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    allocate(delta_dymat_scph, NT, ns, ns, kmesh_coarse->nk);
-    allocate(delta_harmonic_dymat_renormalize, NT, ns, ns, kmesh_coarse->nk);
+    delta_dymat_scph.resize(NT, ns, ns, kmesh_coarse->nk);
+    delta_harmonic_dymat_renormalize.resize(NT, ns, ns, kmesh_coarse->nk);
 
     zerofill_harmonic_dymat_renormalize(delta_harmonic_dymat_renormalize, NT);
 
@@ -268,7 +268,7 @@ void Scph::exec_scph()
     }
 
     if (bubble) {
-        allocate(delta_dymat_scph_plus_bubble, NT, ns, ns, kmesh_coarse->nk);
+        delta_dymat_scph_plus_bubble.resize(NT, ns, ns, kmesh_coarse->nk);
         // Add bubble self-energy to SCPH dynamical-matrix correction.
         bubble_correction(delta_dymat_scph, delta_dymat_scph_plus_bubble);
         if (mympi->my_rank == 0) {
@@ -290,9 +290,9 @@ void Scph::exec_scph()
                 false,
                 bubble);
 
-    deallocate(delta_dymat_scph);
-    deallocate(delta_harmonic_dymat_renormalize);
-    if (delta_dymat_scph_plus_bubble) deallocate(delta_dymat_scph_plus_bubble);
+    delta_dymat_scph.clear();
+    delta_harmonic_dymat_renormalize.clear();
+    delta_dymat_scph_plus_bubble.clear();
 }
 
 
@@ -368,8 +368,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
 
     if (mympi->my_rank == 0) {
         std::vector<double> vec_temp;
-        std::complex<double> ***cmat_convert;
-        allocate(cmat_convert, nk, ns, ns);
+        NDArray<std::complex<double>, 3> cmat_convert;
+        cmat_convert.resize(nk, ns, ns);
 
         vec_temp.clear();
 
@@ -453,7 +453,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
             if (!warmstart_scph) converged_prev = false;
         }
 
-        deallocate(cmat_convert);
+        cmat_convert.clear();
     }
 
     mpi_bcast_complex(dymat_anharm, NT, kmesh_coarse->nk, ns);
@@ -491,8 +491,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     // renormalization of harmonic dynamical matrix
     auto &delta_v2_renorm = ws.delta_v2_renorm;
     auto &delta_v2_with_umn = ws.delta_v2_with_umn;
-    double ***omega2_harm_renorm;
-    std::complex<double> ***evec_harm_renorm_tmp;
+    NDArray<double, 3> omega2_harm_renorm;
+    NDArray<std::complex<double>, 3> evec_harm_renorm_tmp;
     // k-space IFCs at the reference and updated structures
     auto &v1_ref = ws.v1_ref;
     auto &v1_renorm = ws.v1_renorm;
@@ -517,8 +517,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     auto &del_v0_del_umn_renorm = ws.del_v0_del_umn_renorm;
 
     // atomic forces and stress tensor at finite temperatures
-    std::complex<double> *v1_SCP;
-    std::complex<double> *del_v0_del_umn_SCP;
+    NDArray<std::complex<double>, 1> v1_SCP;
+    NDArray<std::complex<double>, 1> del_v0_del_umn_SCP;
 
     // structure optimization
     int i_str_loop, i_temp_loop;
@@ -546,8 +546,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     omega2_anharm.resize(NT, nk, ns);
     evec_anharm_tmp.resize(nk, ns, ns);
 
-    allocate(omega2_harm_renorm, NT, nk, ns);
-    allocate(evec_harm_renorm_tmp, nk, ns, ns);
+    omega2_harm_renorm.resize(NT, nk, ns);
+    evec_harm_renorm_tmp.resize(nk, ns, ns);
 
     // Common buffers, reference V3/V4 elements, strain derivatives of the
     // IFCs, optimizer, and Gamma-point optical modes (collective).
@@ -557,8 +557,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     auto &q0 = structure_state.q0;
     auto &u0 = structure_state.u0;
 
-    allocate(v1_SCP, ns);
-    allocate(del_v0_del_umn_SCP, 9);
+    v1_SCP.resize(ns);
+    del_v0_del_umn_SCP.resize(9);
 
     // SCPH feeds the reference v4 directly into the q0 renormalization (its
     // strain renormalization is not available; see renormalize_ifcs_at_structure).
@@ -574,8 +574,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                          dymat_harm_long);
 
 
-        std::complex<double> ***cmat_convert;
-        allocate(cmat_convert, nk, ns, ns);
+        NDArray<std::complex<double>, 3> cmat_convert;
+        cmat_convert.resize(nk, ns, ns);
 
         vec_temp.clear();
 
@@ -1028,7 +1028,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             fout_u_tensor.close();
         }
 
-        deallocate(cmat_convert);
+        cmat_convert.clear();
 
         C1_array.clear();
         C2_array.clear();
@@ -1043,8 +1043,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     delta_v2_renorm.clear();
     delta_v2_with_umn.clear();
 
-    deallocate(omega2_harm_renorm);
-    deallocate(evec_harm_renorm_tmp);
+    omega2_harm_renorm.clear();
+    evec_harm_renorm_tmp.clear();
 
     v1_ref.clear();
     v1_with_umn.clear();
@@ -1054,8 +1054,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     v3_with_umn.clear();
     v4_ref.clear();
     del_v0_del_umn_renorm.clear();
-    deallocate(v1_SCP);
-    deallocate(del_v0_del_umn_SCP);
+    v1_SCP.clear();
+    del_v0_del_umn_SCP.clear();
 }
 
 void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsigned int iT, const double temp,
@@ -1450,8 +1450,8 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
     const auto ns = dynamical->neval;
     const auto nk_interpolate = kmesh_coarse->nk;
 
-    std::complex<double> ***dymat_r_new;
-    allocate(dymat_r_new, ns, ns, nk_interpolate);
+    NDArray<std::complex<double>, 3> dymat_r_new;
+    dymat_r_new.resize(ns, ns, nk_interpolate);
 
     dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse.get(), mat_transform_sym, dymat_q);
 
@@ -1472,10 +1472,10 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
                                     dymat_r_new);
 
     // Create temporary C-style arrays for exec_interpolation
-    double **eval_temp;
-    std::complex<double> ***evec_temp;
-    allocate(eval_temp, nk, ns);
-    allocate(evec_temp, nk, ns, ns);
+    NDArray<double, 2> eval_temp;
+    NDArray<std::complex<double>, 3> evec_temp;
+    eval_temp.resize(nk, ns);
+    evec_temp.resize(nk, ns, ns);
 
     dynamical->exec_interpolation(kmesh_interpolate,
                                   dymat_r_new,
@@ -1517,9 +1517,9 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
         }
     }
 
-    deallocate(eval_temp);
-    deallocate(evec_temp);
-    deallocate(dymat_r_new);
+    eval_temp.clear();
+    evec_temp.clear();
+    dymat_r_new.clear();
 }
 
 
@@ -1606,7 +1606,8 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     MatrixXd eval_interpolate(nk, ns);
     std::vector<MatrixXcd> evec_new;
 
-    std::complex<double> ***dymat_q, ***dymat_q_HA;
+    NDArray<std::complex<double>, 3> dymat_q;
+    NDArray<std::complex<double>, 3> dymat_q_HA;
 
     std::vector<MatrixXcd> dmat_convert, dmat_convert_old;
     std::vector<MatrixXcd> evec_initial, evec_initial_adjoint;
@@ -1632,8 +1633,8 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         Fmat0.emplace_back(ns, ns);
     }
 
-    allocate(dymat_q, ns, ns, nk_interpolate);
-    allocate(dymat_q_HA, ns, ns, nk_interpolate);
+    dymat_q.resize(ns, ns, nk_interpolate);
+    dymat_q_HA.resize(ns, ns, nk_interpolate);
 
     const auto T_in = temp;
 
@@ -1777,8 +1778,8 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
     }
 
     // Eigen matrices are automatically deallocated
-    deallocate(dymat_q);
-    deallocate(dymat_q_HA);
+    dymat_q.clear();
+    dymat_q_HA.clear();
 }
 
 
@@ -1825,7 +1826,8 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
     MatrixXd eval_interpolate(nk, ns);
     std::vector<MatrixXcd> evec_new;
 
-    std::complex<double> ***dymat_q, ***dymat_q_HA;
+    NDArray<std::complex<double>, 3> dymat_q;
+    NDArray<std::complex<double>, 3> dymat_q_HA;
 
     std::vector<MatrixXcd> dmat_convert, dmat_new, dmat_trial;
     std::vector<MatrixXcd> evec_initial, evec_initial_adjoint;
@@ -1852,8 +1854,8 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
         Fmat0.emplace_back(ns, ns);
     }
 
-    allocate(dymat_q, ns, ns, nk_interpolate);
-    allocate(dymat_q_HA, ns, ns, nk_interpolate);
+    dymat_q.resize(ns, ns, nk_interpolate);
+    dymat_q_HA.resize(ns, ns, nk_interpolate);
 
     const auto T_in = temp;
 
@@ -2103,8 +2105,8 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
         }
     }
 
-    deallocate(dymat_q);
-    deallocate(dymat_q_HA);
+    dymat_q.clear();
+    dymat_q_HA.clear();
 }
 
 
@@ -2155,11 +2157,11 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
     VectorXcd Kmat(ns);
     MatrixXcd Cmat(ns, ns), Dmat(ns, ns);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-    std::complex<double> ***dymat_q;
-    std::complex<double> ***dymat_r_new;
+    NDArray<std::complex<double>, 3> dymat_q;
+    NDArray<std::complex<double>, 3> dymat_r_new;
 
-    allocate(dymat_q, ns, ns, nk_interpolate);
-    allocate(dymat_r_new, ns, ns, nk_interpolate);
+    dymat_q.resize(ns, ns, nk_interpolate);
+    dymat_r_new.resize(ns, ns, nk_interpolate);
 
     for (auto ik = 0; ik < nk; ++ik) {
         for (auto is = 0; is < ns; ++is) {
@@ -2269,9 +2271,9 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
                                     dymat_out,
                                     dymat_r_new);
 
-    double **eval_tmp;
+    NDArray<double, 2> eval_tmp;
 
-    allocate(eval_tmp, nk, ns);
+    eval_tmp.resize(nk, ns);
 
     dynamical->exec_interpolation(kmesh_interpolate,
                                   dymat_r_new,
@@ -2305,6 +2307,6 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
             }
         }
     }
-    deallocate(dymat_q);
-    deallocate(dymat_r_new);
+    dymat_q.clear();
+    dymat_r_new.clear();
 }

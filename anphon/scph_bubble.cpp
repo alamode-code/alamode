@@ -44,8 +44,8 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
     const auto NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
     const auto nk_ref = dos->kmesh_dos->nk;
     const auto ns = dynamical->neval;
-    double ***eval;
-    std::complex<double> ****evec;
+    NDArray<double, 3> eval;
+    NDArray<std::complex<double>, 4> evec;
 
     if (mympi->my_rank == 0) {
         std::cout << '\n';
@@ -65,8 +65,8 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
     }
 
     allocate(thermodynamics->FE_bubble, NT);
-    allocate(eval, NT, nk_ref, ns);
-    allocate(evec, NT, nk_ref, ns, ns); // This requires lots of RAM
+    eval.resize(NT, nk_ref, ns);
+    evec.resize(NT, nk_ref, ns, ns); // This requires lots of RAM
 
     for (auto iT = 0; iT < NT; ++iT) {
         dynamical->exec_interpolation(kmesh,
@@ -92,8 +92,8 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                            mympi->my_rank,
                                            mympi->nprocs);
 
-    deallocate(eval);
-    deallocate(evec);
+    eval.clear();
+    evec.clear();
 
     if (mympi->my_rank == 0) {
         std::cout << " done!\n\n";
@@ -110,10 +110,10 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
     const auto nk_scph = kmesh_dense->nk;
 
-    double **eval = nullptr;
-    double ***eval_bubble = nullptr;
-    std::complex<double> ***evec;
-    double *real_self = nullptr;
+    NDArray<double, 2> eval;
+    NDArray<double, 3> eval_bubble;
+    NDArray<std::complex<double>, 3> evec;
+    NDArray<double, 1> real_self;
     std::vector<std::complex<double>> omegalist;
 
     if (mympi->my_rank == 0) {
@@ -123,11 +123,11 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
         std::cout << " on top of the SCPH calculation.\n\n";
     }
 
-    allocate(eval, nk_scph, ns);
-    allocate(evec, nk_scph, ns, ns);
+    eval.resize(nk_scph, ns);
+    evec.resize(nk_scph, ns, ns);
 
     if (mympi->my_rank == 0) {
-        allocate(eval_bubble, NT, nk_scph, ns);
+        eval_bubble.resize(NT, nk_scph, ns);
         for (auto iT = 0; iT < NT; ++iT) {
             for (auto ik = 0; ik < nk_scph; ++ik) {
                 for (auto is = 0; is < ns; ++is) {
@@ -135,11 +135,11 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                 }
             }
         }
-        allocate(real_self, ns);
+        real_self.resize(ns);
     }
 
-    std::vector<int> *degeneracy_at_k;
-    allocate(degeneracy_at_k, nk_scph);
+    NDArray<std::vector<int>, 1> degeneracy_at_k;
+    degeneracy_at_k.resize(nk_scph);
 
     for (auto iT = 0; iT < NT; ++iT) {
         const auto temp = system->Tmin + system->dT * float(iT);
@@ -318,11 +318,11 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
         }
     }
 
-    deallocate(eval);
-    deallocate(evec);
-    deallocate(degeneracy_at_k);
+    eval.clear();
+    evec.clear();
+    degeneracy_at_k.clear();
 
-    if (eval_bubble) deallocate(eval_bubble);
+    eval_bubble.clear();
 
     if (mympi->my_rank == 0) {
         std::cout << " done!\n\n";
@@ -354,9 +354,10 @@ std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUn
 
     const auto nomega = omegalist.size();
 
-    std::complex<double> *ret_sum, *ret_mpi;
-    allocate(ret_sum, nomega);
-    allocate(ret_mpi, nomega);
+    NDArray<std::complex<double>, 1> ret_sum;
+    NDArray<std::complex<double>, 1> ret_mpi;
+    ret_sum.resize(nomega);
+    ret_mpi.resize(nomega);
 
     for (auto iomega = 0; iomega < nomega; ++iomega) {
         ret_sum[iomega] = std::complex<double>(0.0, 0.0);
@@ -408,8 +409,8 @@ std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUn
         se_bubble[iomega] = ret_sum[iomega];
     }
 
-    deallocate(ret_mpi);
-    deallocate(ret_sum);
+    ret_mpi.clear();
+    ret_sum.clear();
 
     return se_bubble;
 }

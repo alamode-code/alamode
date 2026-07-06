@@ -46,19 +46,19 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0
 
     const auto ns = dynamical->neval;
     const auto nk = kmesh_dense_in->nk;
-    double **del_eta_del_u;
-    double *del_v0_del_eta;
-    double *del_v0_strain_with_strain;
+    NDArray<double, 2> del_eta_del_u;
+    NDArray<double, 1> del_v0_del_eta;
+    NDArray<double, 1> del_v0_strain_with_strain;
 
-    std::complex<double> **del_v1_del_umn_with_umn;
-    std::complex<double> ***del_v2_del_umn_with_umn;
+    NDArray<std::complex<double>, 2> del_v1_del_umn_with_umn;
+    NDArray<std::complex<double>, 3> del_v2_del_umn_with_umn;
 
-    allocate(del_eta_del_u, 9, 9);
-    allocate(del_v0_del_eta, 9);
-    allocate(del_v0_strain_with_strain, 9);
+    del_eta_del_u.resize(9, 9);
+    del_v0_del_eta.resize(9);
+    del_v0_strain_with_strain.resize(9);
 
-    allocate(del_v1_del_umn_with_umn, 9, ns);
-    allocate(del_v2_del_umn_with_umn, 9, ns, ns);
+    del_v1_del_umn_with_umn.resize(9, ns);
+    del_v2_del_umn_with_umn.resize(9, ns, ns);
 
     const double factor = 1.0 / 6.0 * 4.0 * nk;
     int i1, i2, i3, ixyz1, ixyz2, ixyz3, ixyz4;
@@ -173,11 +173,11 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0
     }
 
 
-    deallocate(del_eta_del_u);
-    deallocate(del_v0_del_eta);
-    deallocate(del_v0_strain_with_strain);
-    deallocate(del_v1_del_umn_with_umn);
-    deallocate(del_v2_del_umn_with_umn);
+    del_eta_del_u.clear();
+    del_v0_del_eta.clear();
+    del_v0_strain_with_strain.clear();
+    del_v1_del_umn_with_umn.clear();
+    del_v2_del_umn_with_umn.clear();
 }
 
 
