@@ -1372,10 +1372,10 @@ void Conductivity::compute_kappa()
 
         if (use_h5_io) {
             result_io_h5->store_kappa(kappa,
-                                      fph_rta > 0 ? kappa_3only : nullptr,
-                                      calc_coherent ? kappa_coherent : nullptr,
-                                      calc_kappa_spec ? kappa_spec : nullptr,
-                                      isotope->include_isotope ? isotope->gamma_isotope : nullptr);
+                                      fph_rta > 0 ? kappa_3only.ptr() : nullptr,
+                                      calc_coherent ? kappa_coherent.ptr() : nullptr,
+                                      calc_kappa_spec ? kappa_spec.ptr() : nullptr,
+                                      isotope->include_isotope ? isotope->gamma_isotope.ptr() : nullptr);
         }
 
         gamma_total.clear();

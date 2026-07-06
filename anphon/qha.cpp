@@ -479,7 +479,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                 std::cout << "\n Structure at this step :\n";
                 const auto spg_label = relaxation->print_structure_and_symmetry(
                     structure_state,
-                    relax_mode == RelaxationStrMode::CoordinatesAndCell ? del_v0_del_umn_QHA : nullptr);
+                    relax_mode == RelaxationStrMode::CoordinatesAndCell ? del_v0_del_umn_QHA.ptr() : nullptr);
                 std::cout << '\n';
 
                 relaxation->update_cell_coordinate(structure_state,

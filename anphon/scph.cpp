@@ -151,7 +151,7 @@ void Scph::exec_scph()
                                            selfenergy_offdiagonal,
                                            relaxation->relax_str,
                                            delta_dymat_scph,
-                                           with_relax ? delta_harmonic_dymat_renormalize : nullptr,
+                                           with_relax ? delta_harmonic_dymat_renormalize.ptr() : nullptr,
                                            with_relax ? &V0 : nullptr);
         }
 
@@ -192,7 +192,7 @@ void Scph::exec_scph()
                                     relaxation->relax_str,
                                     "scph",
                                     delta_dymat_scph,
-                                    with_relax ? delta_harmonic_dymat_renormalize : nullptr,
+                                    with_relax ? delta_harmonic_dymat_renormalize.ptr() : nullptr,
                                     with_relax ? &V0 : nullptr,
                                     kmesh_coarse.get(),
                                     mindist_list);
@@ -224,7 +224,7 @@ void Scph::exec_scph()
                                     relaxation->relax_str,
                                     "scph",
                                     delta_dymat_scph,
-                                    with_relax ? delta_harmonic_dymat_renormalize : nullptr,
+                                    with_relax ? delta_harmonic_dymat_renormalize.ptr() : nullptr,
                                     with_relax ? &V0 : nullptr,
                                     kmesh_coarse.get(),
                                     mindist_list);

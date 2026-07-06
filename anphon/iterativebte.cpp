@@ -474,7 +474,7 @@ void Iterativebte::iterative_solver()
             int iters = 0;
             double fres = 0.0;
             converged_this_temp =
-                solve_variational_cg(itemp, beta, gb, Qfin, warm_start ? dF_ir_glob : nullptr, iters, fres);
+                solve_variational_cg(itemp, beta, gb, Qfin, warm_start ? dF_ir_glob.ptr() : nullptr, iters, fres);
             iterations_used[itemp] = iters;
             final_residual[itemp] = fres;
             t_converged[itemp] = converged_this_temp ? 1 : 0;
