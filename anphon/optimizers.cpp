@@ -3,6 +3,7 @@
 #include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <iomanip>
+#include "constants.h"
 #include "timer.h"
 
 using namespace PHON_NS;
@@ -10,6 +11,78 @@ using namespace PHON_NS;
 
 Newton_Optimizer::Newton_Optimizer(double mixbeta) : mixbeta(mixbeta)
 {}
+
+FarkasIII_Optimizer::FarkasIII_Optimizer(const int max_vectors, const Eigen::MatrixXd &H_ini,
+                                         const bool gdiis_control)
+    : max_vectors(max_vectors), gdiis_control(gdiis_control), H(H_ini)
+{
+    gradient_old = Eigen::VectorXd::Zero(H_ini.size());
+    threshold_angle = angle_threshold(max_vectors);
+}
+
+Eigen::VectorXd FarkasIII_Optimizer::update(const Eigen::VectorXd &point, const Eigen::VectorXd &gradient)
+{
+    if (points.size() == max_vectors) {
+        points.erase(points.begin());
+        residuals.erase(residuals.begin());
+    }
+    points.push_back(point);
+    int const size = points.size();
+    if (size > 1) {
+        int const dim = gradient.size();
+        Eigen::VectorXd s = point - point_old;
+        Eigen::VectorXd y = gradient - gradient_old;
+        double ys = y.dot(s);
+
+        if (ys > 1e-12) {
+            // Update when the condition is satisfied
+            Eigen::MatrixXd I = Eigen::MatrixXd::Identity(dim, dim);
+            Eigen::MatrixXd A = I - y * s.transpose() / ys;
+            H = A.transpose() * H * A + s * s.transpose() / ys;
+        }
+    }
+    threshold_angle = angle_threshold(size);
+
+    gradient_old = gradient;
+    point_old = point;
+
+    Eigen::VectorXd diff_BFGS = -H * gradient;
+    residuals.push_back(diff_BFGS);
+    Eigen::VectorXd point_BFGS = point + diff_BFGS;
+
+    if (size == 1) return point_BFGS;
+
+    Eigen::MatrixXd B(size + 1, size + 1);
+    B.setZero();
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            B(i, j) = residuals[i].dot(residuals[j]);
+        }
+    }
+    for (int i = 0; i < size; ++i) {
+        B(i, size) = B(size, i) = 1.0;
+    }
+    B(size, size) = 0.0;
+    Eigen::VectorXd rhs(size + 1);
+    rhs.setZero();
+    rhs(size) = 1.0;
+    Eigen::VectorXd coeffs = B.colPivHouseholderQr().solve(rhs);
+    Eigen::VectorXd result_point = Eigen::VectorXd::Zero(points[0].size());
+    Eigen::VectorXd result_residual = Eigen::VectorXd::Zero(residuals[0].size());
+    for (int i = 0; i < size; ++i) {
+        result_point += coeffs(i) * points[i];
+        result_residual += coeffs(i) * residuals[i];
+    }
+    Eigen::VectorXd point_DIIS = result_point + result_residual;
+    Eigen::VectorXd diff_REF = point_BFGS - point;
+    Eigen::VectorXd diff_DIIS = point_DIIS - point;
+    double cos_angle = diff_DIIS.dot(diff_REF) / (diff_DIIS.norm() * diff_REF.norm());
+    if (cos_angle < threshold_angle) {
+        point_DIIS = point_BFGS;
+    }
+
+    return point_DIIS;
+}
 
 void Newton_Optimizer::update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
                                     const std::vector<std::vector<double>> &hessian, std::vector<double> &delta)

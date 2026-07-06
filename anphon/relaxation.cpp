@@ -200,7 +200,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
 
     // The optimizer is null for relaxation modes that do not use a coordinate
     // optimizer (e.g. PerturbativeQha), so guard every access to it here.
-    if (optimizer) optimizer->initialize_flag = 1;
+    if (optimizer) optimizer->reset();
 
     if (str_diverged) {
         std::cout << " The crystal structure at the previous temperature is divergent.\n";
@@ -223,7 +223,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
         str_diverged = 0;
 
         // set the flag to initialize the optimizer
-        if (optimizer) optimizer->initialize_flag = 1;
+        if (optimizer) optimizer->reset();
 
         return;
     }
@@ -245,7 +245,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             set_initial_strain(u_tensor);
         }
         converged_prev = false;
-        if (optimizer) optimizer->initialize_flag = 1;
+        if (optimizer) optimizer->reset();
 
     } else if (set_init_str == 2) {
         if (i_temp_loop == 0) {
@@ -263,7 +263,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
                 set_initial_strain(u_tensor);
             }
             converged_prev = false;
-            if (optimizer) optimizer->initialize_flag = 1;
+            if (optimizer) optimizer->reset();
         } else {
             std::cout << " start from structure from the previous temperature.\n\n";
         }
@@ -284,7 +284,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             } else {
                 set_initial_strain(u_tensor);
             }
-            if (optimizer) optimizer->initialize_flag = 1;
+            if (optimizer) optimizer->reset();
         }
         // read initial DISPLACEMENT if the structure converges
         // to the high-symmetry one.
@@ -299,7 +299,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
             converged_prev = false;
-            if (optimizer) optimizer->initialize_flag = 1;
+            if (optimizer) optimizer->reset();
         } else {
             std::cout << " start from the structure at the previous temperature.\n\n";
         }
