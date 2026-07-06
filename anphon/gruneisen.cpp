@@ -132,7 +132,7 @@ void Gruneisen::calc_gruneisen()
 
     if (kpoint->kpoint_bs.get()) {
         const auto nk = kpoint->kpoint_bs->nk;
-        const auto xk = kpoint->kpoint_bs->xk;
+        const auto &xk = kpoint->kpoint_bs->xk;
         const auto eval = dynamical->dymat_band->get_eigenvalues();
         const auto evec = dynamical->dymat_band->get_eigenvectors();
 
@@ -165,7 +165,7 @@ void Gruneisen::calc_gruneisen()
 
     if (dos->kmesh_dos.get()) {
         const auto nk = dos->kmesh_dos->nk;
-        const auto xk = dos->kmesh_dos->xk;
+        const auto &xk = dos->kmesh_dos->xk;
         const auto eval = dos->dymat_dos->get_eigenvalues();
         const auto evec = dos->dymat_dos->get_eigenvectors();
 

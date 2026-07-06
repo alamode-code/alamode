@@ -15,6 +15,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <string>
 #include <memory>
 #include <vector>
+#include "ndarray.h"
 #include "memory.h"
 #include "pointers.h"
 #include "symmetry_core.h"
@@ -144,17 +145,13 @@ public:
     KpointGeneral()
     {
         nk = 0;
-        xk = nullptr;
-        kvec_na = nullptr;
     };
 
     KpointGeneral(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in)
     {
         nk = nk_in;
-        if (xk) deallocate(xk);
-        if (kvec_na) deallocate(kvec_na);
-        allocate(xk, nk, 3);
-        allocate(kvec_na, nk, 3);
+        xk.resize(nk, 3);
+        kvec_na.resize(nk, 3);
 
         for (auto i = 0; i < nk; ++i) {
             for (auto j = 0; j < 3; ++j) {
@@ -164,25 +161,12 @@ public:
         }
     };
 
-    ~KpointGeneral()
-    {
-        if (xk) {
-            deallocate(xk);
-            xk = nullptr;
-        }
-        if (kvec_na) {
-            deallocate(kvec_na);
-            kvec_na = nullptr;
-        }
-    }
-
-    // Owns raw arrays; copying would double-free.
     KpointGeneral(const KpointGeneral &) = delete;
     KpointGeneral &operator=(const KpointGeneral &) = delete;
 
     unsigned int nk;
-    double **xk = nullptr;
-    double **kvec_na = nullptr;
+    NDArray<double, 2> xk;
+    NDArray<double, 2> kvec_na;
 };
 
 struct KpointSymmetry
@@ -204,33 +188,18 @@ public:
             nk_i[i] = nk_in[i];
         }
         nk = nk_i[0] * nk_i[1] * nk_i[2];
-        if (xk) deallocate(xk);
-        if (kvec_na) deallocate(kvec_na);
-        allocate(xk, nk, 3);
-        allocate(kvec_na, nk, 3);
+        xk.resize(nk, 3);
+        kvec_na.resize(nk, 3);
     };
 
-    ~KpointMeshUniform()
-    {
-        if (xk) {
-            deallocate(xk);
-            xk = nullptr;
-        }
-        if (kvec_na) {
-            deallocate(kvec_na);
-            kvec_na = nullptr;
-        }
-    }
-
-    // Owns raw arrays; copying would double-free.
     KpointMeshUniform(const KpointMeshUniform &) = delete;
-    KpointMeshUniform &operator=(const KpointMeshUniform &) = delete;;
+    KpointMeshUniform &operator=(const KpointMeshUniform &) = delete;
 
     unsigned int nk_i[3]{};
     unsigned int nk{}, nk_irred{};
 
-    double **xk = nullptr;
-    double **kvec_na = nullptr;
+    NDArray<double, 2> xk;
+    NDArray<double, 2> kvec_na;
     std::vector<double> weight_k;
     std::vector<unsigned int> kmap_to_irreducible;
     std::vector<std::vector<KpointList>> kpoint_irred_all;
@@ -282,22 +251,15 @@ public:
     KpointBandStructure()
     {
         nk = 0;
-        xk = nullptr;
-        kvec_na = nullptr;
-        kaxis = nullptr;
     };
 
     KpointBandStructure(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                         const double *kaxis_in)
     {
         nk = nk_in;
-        if (xk) deallocate(xk);
-        if (kvec_na) deallocate(kvec_na);
-        if (kaxis) deallocate(kaxis);
-
-        allocate(xk, nk, 3);
-        allocate(kvec_na, nk, 3);
-        allocate(kaxis, nk);
+        xk.resize(nk, 3);
+        kvec_na.resize(nk, 3);
+        kaxis.resize(nk);
 
         for (auto i = 0; i < nk; ++i) {
             for (auto j = 0; j < 3; ++j) {
@@ -308,30 +270,13 @@ public:
         }
     };
 
-    ~KpointBandStructure()
-    {
-        if (xk) {
-            deallocate(xk);
-            xk = nullptr;
-        }
-        if (kvec_na) {
-            deallocate(kvec_na);
-            kvec_na = nullptr;
-        }
-        if (kaxis) {
-            deallocate(kaxis);
-            kaxis = nullptr;
-        }
-    }
-
-    // Owns raw arrays; copying would double-free.
     KpointBandStructure(const KpointBandStructure &) = delete;
     KpointBandStructure &operator=(const KpointBandStructure &) = delete;
 
     unsigned int nk;
-    double **xk = nullptr;
-    double **kvec_na = nullptr;
-    double *kaxis = nullptr;
+    NDArray<double, 2> xk;
+    NDArray<double, 2> kvec_na;
+    NDArray<double, 1> kaxis;
 };
 
 class Kpoint: protected Pointers

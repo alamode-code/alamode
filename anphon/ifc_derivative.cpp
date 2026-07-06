@@ -214,7 +214,7 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
 
 void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
                                      const std::complex<double> *const *const *const evec_harmonic,
-                                     const unsigned int nk, double **xk_in) const
+                                     const unsigned int nk, const double *const *xk_in) const
 {
     using namespace Eigen;
 
@@ -270,7 +270,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
 
 void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_del_umn2,
                                        const std::complex<double> *const *const *const evec_harmonic,
-                                       const unsigned int nk, double **xk_in) const
+                                       const unsigned int nk, const double *const *xk_in) const
 {
     using namespace Eigen;
 

@@ -912,7 +912,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     const auto knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
     const auto knum_minus = kmesh_in->kindex_minus_xk[knum];
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     kmap_identity.resize(nk);
 

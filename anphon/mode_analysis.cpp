@@ -780,7 +780,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
 
     const auto epsilon = integration->epsilon;
 
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     std::vector<KsListGroup> triplet;
 

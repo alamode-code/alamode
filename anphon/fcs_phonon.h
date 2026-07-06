@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include "ndarray.h"
 #include "mathfunctions.h"
 #include "pointers.h"
 
@@ -193,7 +194,7 @@ public:
     unsigned int maxorder;
     std::string file_fcs, file_fc2, file_fc3, file_fc4;
 
-    std::vector<FcsArrayWithCell> *force_constant_with_cell;
+    NDArray<std::vector<FcsArrayWithCell>, 1> force_constant_with_cell;
 
     bool update_fc2;
 
@@ -229,17 +230,17 @@ private:
 
     void append_delta_fc2_from_scph(const std::string &fname_dfc2, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    void load_fcs_from_file(const int maxorder_in) const;
+    void load_fcs_from_file(const int maxorder_in);
 
 
     static double examine_translational_invariance(int order, unsigned int nat, unsigned int natmin,
                                                    const std::vector<FcsArrayWithCell> &fc_in);
 
-    void replicate_force_constants(const int maxorder_in) const;
+    void replicate_force_constants(const int maxorder_in);
 
     void MPI_Bcast_fc_class(unsigned int) const;
 
-    void MPI_Bcast_fcs_array(unsigned int) const;
+    void MPI_Bcast_fcs_array(unsigned int);
 
     void MPI_Bcast_fc2_ext();
 };

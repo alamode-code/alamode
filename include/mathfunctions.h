@@ -86,7 +86,7 @@ inline auto rotvec(T vec_out[3], const T vec_in[3], const double mat[3][3], char
     }
 }
 
-inline auto rotvec(double vec_out[3], double vec_in[3], double **mat, char mode = 'N') -> void
+inline auto rotvec(double vec_out[3], const double vec_in[3], double **mat, char mode = 'N') -> void
 {
     // Perform matrix x vector multiplication.
     //
@@ -115,7 +115,7 @@ inline auto rotvec(double vec_out[3], double vec_in[3], double **mat, char mode 
     }
 }
 
-inline auto rotvec(double vec_out[3], double vec_in[3], const Eigen::Matrix3d &mat_in, char mode = 'N') -> void
+inline auto rotvec(double vec_out[3], const double vec_in[3], const Eigen::Matrix3d &mat_in, char mode = 'N') -> void
 {
     Eigen::Vector3d vec_tmp;
 
@@ -134,7 +134,7 @@ inline auto rotvec(double vec_out[3], double vec_in[3], const Eigen::Matrix3d &m
         vec_out[i] = vec_tmp[i];
 }
 
-inline auto rotvec(std::complex<double> vec_out[3], std::complex<double> vec_in[3], const Eigen::Matrix3d &mat_in,
+inline auto rotvec(std::complex<double> vec_out[3], const std::complex<double> vec_in[3], const Eigen::Matrix3d &mat_in,
                    char mode = 'N') -> void
 {
     Eigen::Vector3cd vec_tmp;

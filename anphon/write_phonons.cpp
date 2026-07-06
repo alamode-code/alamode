@@ -352,7 +352,7 @@ void Writes::printPhononEnergies() const
     if (kpoint->kpoint_mode == 0) {
 
         auto nk_now = kpoint->kpoint_general->nk;
-        auto xk_now = kpoint->kpoint_general->xk;
+        auto &xk_now = kpoint->kpoint_general->xk;
         auto eval_now = dynamical->dymat_general->get_eigenvalues();
 
         for (ik = 0; ik < nk_now; ++ik) {
@@ -561,7 +561,7 @@ void Writes::writePhononBands() const
 
     unsigned int i, j;
     const auto nk = kpoint->kpoint_bs->nk;
-    const auto kaxis = kpoint->kpoint_bs->kaxis;
+    const auto &kaxis = kpoint->kpoint_bs->kaxis;
     const auto eval = dynamical->dymat_band->get_eigenvalues();
 
     auto kcount = 0;
@@ -651,11 +651,11 @@ void Writes::writePhononVel() const
     if (!ofs_vel) exit("writePhononVel", "cannot open file_vel");
 
     const auto nk = kpoint->kpoint_bs->nk;
-    const auto kaxis = kpoint->kpoint_bs->kaxis;
+    const auto &kaxis = kpoint->kpoint_bs->kaxis;
     const auto Ry_to_SI_vel = Bohr_in_Angstrom * 1.0e-10 / time_ry;
 
-    double **phvel_bs;
-    allocate(phvel_bs, nk, dynamical->neval);
+    NDArray<double, 2> phvel_bs;
+    phvel_bs.resize(nk, dynamical->neval);
 
     phonon_velocity->get_phonon_group_velocity_bandstructure(kpoint->kpoint_bs.get(),
                                                              system->get_primcell().lattice_vector,
@@ -690,7 +690,7 @@ void Writes::writePhononVel() const
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_vel;
     std::cout << " : Phonon velocity along given k path\n";
 
-    deallocate(phvel_bs);
+    phvel_bs.clear();
 }
 
 void Writes::writePhononVelAll() const
@@ -707,11 +707,11 @@ void Writes::writePhononVelAll() const
     const auto Ry_to_SI_vel = Bohr_in_Angstrom * 1.0e-10 / time_ry;
     const auto eval = dos->dymat_dos->get_eigenvalues();
 
-    double ***phvel_xyz;
-    double **phvel;
+    NDArray<double, 3> phvel_xyz;
+    NDArray<double, 2> phvel;
 
-    allocate(phvel, nk, ns);
-    allocate(phvel_xyz, nk, ns, 3);
+    phvel.resize(nk, ns);
+    phvel_xyz.resize(nk, ns, 3);
 
     phonon_velocity->get_phonon_group_velocity_mesh(*dos->kmesh_dos.get(),
                                                     system->get_primcell().lattice_vector,
@@ -768,8 +768,8 @@ void Writes::writePhononVelAll() const
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_vel;
     std::cout << " : Phonon velocity at all k points\n";
 
-    deallocate(phvel);
-    deallocate(phvel_xyz);
+    phvel.clear();
+    phvel_xyz.clear();
 }
 
 
@@ -789,8 +789,8 @@ void Writes::writePhononDos() const
     ofs_dos << '\n';
     ofs_dos << "#";
 
-    unsigned int *nat_each_kd;
-    allocate(nat_each_kd, system->get_primcell().number_of_elems);
+    NDArray<unsigned int, 1> nat_each_kd;
+    nat_each_kd.resize(system->get_primcell().number_of_elems);
     for (i = 0; i < system->get_primcell().number_of_elems; ++i)
         nat_each_kd[i] = 0;
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
@@ -801,7 +801,7 @@ void Writes::writePhononDos() const
         ofs_dos << std::setw(5) << nat_each_kd[i];
     }
     ofs_dos << '\n';
-    deallocate(nat_each_kd);
+    nat_each_kd.clear();
 
     if (dos->compute_dos) {
         ofs_dos << "# Energy [cm^-1], TOTAL-DOS";
@@ -1015,11 +1015,11 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
     const auto natmin = system->get_primcell().number_of_atoms;
     const auto force_factor = 100.0;
 
-    double **xmod;
-    std::string *kd_tmp;
+    NDArray<double, 2> xmod;
+    NDArray<std::string, 1> kd_tmp;
 
-    allocate(xmod, natmin, 3);
-    allocate(kd_tmp, natmin);
+    xmod.resize(natmin, 3);
+    kd_tmp.resize(natmin);
 
     ofs_anime << "ANIMSTEPS " << nbands * nk_in << '\n';
     ofs_anime << "CRYSTAL\n";
@@ -1079,8 +1079,8 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
         }
     }
 
-    deallocate(xmod);
-    deallocate(kd_tmp);
+    xmod.clear();
+    kd_tmp.clear();
 
     ofs_anime.close();
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_axsf;
@@ -1153,8 +1153,8 @@ void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned 
     ofs_eval << "\n\n";
     ofs_eval << "# Eigenvalues (omega^2) for each phonon modes below:\n\n";
 
-    unsigned int **index_bconnect_tmp;
-    allocate(index_bconnect_tmp, nk_in, nbands);
+    NDArray<unsigned int, 2> index_bconnect_tmp;
+    index_bconnect_tmp.resize(nk_in, nbands);
 
     if (dynamical->index_bconnect) {
         for (i = 0; i < nk_in; ++i) {
@@ -1194,7 +1194,7 @@ void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned 
     }
     ofs_eval.close();
 
-    deallocate(index_bconnect_tmp);
+    index_bconnect_tmp.clear();
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_eval;
     std::cout << " : Eigenvalues of all k points\n";
@@ -1337,9 +1337,9 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
 
     // write eigenvalues
 
-    unsigned int **index_bconnect_tmp;
+    NDArray<unsigned int, 2> index_bconnect_tmp;
     int band_index_reordered = 0;
-    allocate(index_bconnect_tmp, nk_in, nbands);
+    index_bconnect_tmp.resize(nk_in, nbands);
 
     if (dynamical->index_bconnect) {
         band_index_reordered = 1;
@@ -1360,8 +1360,8 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     dims[0] = nk_in;
     dims[1] = nbands;
 
-    double **freq_kayser;
-    allocate(freq_kayser, nk_in, nbands);
+    NDArray<double, 2> freq_kayser;
+    freq_kayser.resize(nk_in, nbands);
 
     for (i = 0; i < nk_in; ++i) {
         for (j = 0; j < nbands; ++j) {
@@ -1383,9 +1383,9 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     myatt_in.close();
     dataset.close();
     dataspace.close();
-    deallocate(freq_kayser);
+    freq_kayser.clear();
 
-    deallocate(index_bconnect_tmp);
+    index_bconnect_tmp.clear();
 
     group_cell.close();
     group_band.close();
@@ -1411,7 +1411,7 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     dataspace.close();
 
     if (kpmode_in == 1 && kpoint->kpoint_bs.get()) {
-        const auto kaxis = kpoint->kpoint_bs->kaxis;
+        const auto &kaxis = kpoint->kpoint_bs->kaxis;
         dims2[0] = nk_in;
         dataspace = DataSpace(1, dims2);
         dataset = DataSet(group_kpoint.createDataSet("bandstructure_xaxis", PredType::NATIVE_DOUBLE, dataspace));
@@ -1509,8 +1509,8 @@ void Writes::writeEigenvectorsEach(const std::string &fname_evec, const unsigned
     ofs_evec << "\n\n";
     ofs_evec << "# Eigenvalues and eigenvectors for each phonon modes below:\n\n";
 
-    unsigned int **index_bconnect_tmp;
-    allocate(index_bconnect_tmp, nk_in, nbands);
+    NDArray<unsigned int, 2> index_bconnect_tmp;
+    index_bconnect_tmp.resize(nk_in, nbands);
 
     if (dynamical->index_bconnect) {
         for (i = 0; i < nk_in; ++i) {
@@ -1556,7 +1556,7 @@ void Writes::writeEigenvectorsEach(const std::string &fname_evec, const unsigned
     }
     ofs_evec.close();
 
-    deallocate(index_bconnect_tmp);
+    index_bconnect_tmp.clear();
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_evec;
     std::cout << " : Eigenvector of all k points\n";
@@ -1705,9 +1705,9 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
 
     // write eigenvalues
 
-    unsigned int **index_bconnect_tmp;
+    NDArray<unsigned int, 2> index_bconnect_tmp;
     int band_index_reordered = 0;
-    allocate(index_bconnect_tmp, nk_in, nbands);
+    index_bconnect_tmp.resize(nk_in, nbands);
 
     if (dynamical->index_bconnect) {
         band_index_reordered = 1;
@@ -1734,10 +1734,10 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     dims_evec[2] = neval;
     dims_evec[3] = 2;
 
-    double **freq_kayser;
-    double ****evec_tmp;
-    allocate(freq_kayser, nk_in, nbands);
-    allocate(evec_tmp, nk_in, nbands, neval, 2);
+    NDArray<double, 2> freq_kayser;
+    NDArray<double, 4> evec_tmp;
+    freq_kayser.resize(nk_in, nbands);
+    evec_tmp.resize(nk_in, nbands, neval, 2);
 
     for (i = 0; i < nk_in; ++i) {
         for (j = 0; j < nbands; ++j) {
@@ -1764,7 +1764,7 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     myatt_in.close();
     dataset.close();
     dataspace.close();
-    deallocate(freq_kayser);
+    freq_kayser.clear();
 
     dataspace = DataSpace(4, dims_evec);
     dataset = DataSet(group_band.createDataSet("polarization_vectors", PredType::NATIVE_DOUBLE, dataspace));
@@ -1772,7 +1772,7 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     dataset.close();
     dataspace.close();
 
-    deallocate(evec_tmp);
+    evec_tmp.clear();
 
     group_cell.close();
     group_band.close();
@@ -1798,7 +1798,7 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     dataspace.close();
 
     if (kpmode_in == 1 && kpoint->kpoint_bs.get()) {
-        const auto kaxis = kpoint->kpoint_bs->kaxis;
+        const auto &kaxis = kpoint->kpoint_bs->kaxis;
         dims2[0] = nk_in;
         dataspace = DataSpace(1, dims2);
         dataset = DataSet(group_kpoint.createDataSet("bandstructure_xaxis", PredType::NATIVE_DOUBLE, dataspace));
@@ -1912,7 +1912,7 @@ void Writes::writeGruneisen()
         if (!ofs_gruneisen) exit("writeGruneisen", "cannot open file_vel");
 
         const auto nk = kpoint->kpoint_bs->nk;
-        const auto kaxis = kpoint->kpoint_bs->kaxis;
+        const auto &kaxis = kpoint->kpoint_bs->kaxis;
 
         ofs_gruneisen << "# k-axis, gamma\n";
         ofs_gruneisen.setf(std::ios::fixed);
@@ -1951,7 +1951,7 @@ void Writes::writeGruneisen()
 
         const auto nk = dos->kmesh_dos->nk;
         const auto ns = dynamical->neval;
-        const auto xk = dos->kmesh_dos->xk;
+        const auto &xk = dos->kmesh_dos->xk;
         const auto eval = dos->dymat_dos->get_eigenvalues();
 
         ofs_gruall << "# knum, snum, omega [cm^-1], gruneisen parameter\n";
@@ -1991,7 +1991,7 @@ void Writes::writeMSD() const
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
     const auto nk = dos->kmesh_dos->nk;
-    const auto xk = dos->kmesh_dos->xk;
+    const auto &xk = dos->kmesh_dos->xk;
     const auto eval = dos->dymat_dos->get_eigenvalues();
     const auto evec = dos->dymat_dos->get_eigenvectors();
 
@@ -2481,18 +2481,21 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
     double dmod[3];
     double xk[3], kvec[3];
 
-    double *eval, **evec_mag, **evec_theta;
-    double **disp_mag, *mass;
-    double *phase_cell;
-    double ***xmod;
+    NDArray<double, 1> eval;
+    NDArray<double, 2> evec_mag;
+    NDArray<double, 2> evec_theta;
+    NDArray<double, 2> disp_mag;
+    NDArray<double, 1> mass;
+    NDArray<double, 1> phase_cell;
+    NDArray<double, 3> xmod;
     Eigen::MatrixXd xtmp;
 
-    std::complex<double> **evec;
+    NDArray<std::complex<double>, 2> evec;
 
     std::ofstream ofs_anime;
     std::ostringstream ss;
     std::string file_anime;
-    std::string *kd_tmp;
+    NDArray<std::string, 1> kd_tmp;
 
     for (i = 0; i < 3; ++i) {
         xk[i] = xk_in[i];
@@ -2521,15 +2524,15 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 
     // Allocation
 
-    allocate(eval, ns);
-    allocate(evec, ns, ns);
-    allocate(evec_mag, ns, ns);
-    allocate(evec_theta, ns, ns);
-    allocate(disp_mag, ns, ns);
-    allocate(xmod, nsuper, natmin, 3);
-    allocate(kd_tmp, natmin);
-    allocate(mass, natmin);
-    allocate(phase_cell, nsuper);
+    eval.resize(ns);
+    evec.resize(ns, ns);
+    evec_mag.resize(ns, ns);
+    evec_theta.resize(ns, ns);
+    disp_mag.resize(ns, ns);
+    xmod.resize(nsuper, natmin, 3);
+    kd_tmp.resize(natmin);
+    mass.resize(natmin);
+    phase_cell.resize(nsuper);
 
     // Get eigenvalues and eigenvectors at xk
 
@@ -2738,15 +2741,15 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
         }
     }
 
-    deallocate(xmod);
-    deallocate(kd_tmp);
-    deallocate(eval);
-    deallocate(evec);
-    deallocate(phase_cell);
-    deallocate(evec_mag);
-    deallocate(evec_theta);
-    deallocate(disp_mag);
-    deallocate(mass);
+    xmod.clear();
+    kd_tmp.clear();
+    eval.clear();
+    evec.clear();
+    phase_cell.clear();
+    evec_mag.clear();
+    evec_theta.clear();
+    disp_mag.clear();
+    mass.clear();
 }
 
 void Writes::printNormalmodeBorncharge() const
@@ -2826,8 +2829,8 @@ void Writes::writeParticipationRatioEach(const std::string &fname_pr, const std:
     const auto neval = dynamical->neval;
     const auto natmin = system->get_primcell().number_of_atoms;
 
-    double **participation_ratio = nullptr;
-    double ***atomic_participation_ratio = nullptr;
+    NDArray<double, 2> participation_ratio;
+    NDArray<double, 3> atomic_participation_ratio;
 
     std::ofstream ofs_pr, ofs_apr;
 
@@ -2839,8 +2842,8 @@ void Writes::writeParticipationRatioEach(const std::string &fname_pr, const std:
     if (!ofs_apr) exit("writeParticipationRatio", "cannot open file_apr");
     ofs_apr.setf(std::ios::scientific);
 
-    allocate(participation_ratio, nk_in, neval);
-    allocate(atomic_participation_ratio, nk_in, neval, natmin);
+    participation_ratio.resize(nk_in, neval);
+    atomic_participation_ratio.resize(nk_in, neval, natmin);
 
     dynamical->calc_participation_ratio_all(nk_in, evec_in, participation_ratio, atomic_participation_ratio);
 
@@ -2887,8 +2890,8 @@ void Writes::writeParticipationRatioEach(const std::string &fname_pr, const std:
     }
     ofs_apr.close();
 
-    deallocate(participation_ratio);
-    deallocate(atomic_participation_ratio);
+    participation_ratio.clear();
+    atomic_participation_ratio.clear();
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_pr;
     std::cout << " : Participation ratio for all k points\n";
@@ -2906,8 +2909,8 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
     const auto natmin = system->get_primcell().number_of_atoms;
     const auto nk = kmesh_in->nk;
 
-    double **participation_ratio = nullptr;
-    double ***atomic_participation_ratio = nullptr;
+    NDArray<double, 2> participation_ratio;
+    NDArray<double, 3> atomic_participation_ratio;
 
     std::ofstream ofs_pr, ofs_apr;
 
@@ -2919,8 +2922,8 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
     if (!ofs_apr) exit("writeParticipationRatio", "cannot open file_apr");
     ofs_apr.setf(std::ios::scientific);
 
-    allocate(participation_ratio, nk, neval);
-    allocate(atomic_participation_ratio, nk, neval, natmin);
+    participation_ratio.resize(nk, neval);
+    atomic_participation_ratio.resize(nk, neval, natmin);
 
     dynamical->calc_participation_ratio_all(nk, evec_in, participation_ratio, atomic_participation_ratio);
 
@@ -2972,8 +2975,8 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
     }
     ofs_apr.close();
 
-    deallocate(participation_ratio);
-    deallocate(atomic_participation_ratio);
+    participation_ratio.clear();
+    atomic_participation_ratio.clear();
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << fname_pr;
     std::cout << " : Participation ratio for all k points\n";

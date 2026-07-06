@@ -52,14 +52,10 @@ void Fcs_phonon::set_default_variables()
     file_fc4 = "";
 
     update_fc2 = false;
-    force_constant_with_cell = nullptr;
 }
 
 void Fcs_phonon::deallocate_variables()
 {
-    if (force_constant_with_cell) {
-        deallocate(force_constant_with_cell);
-    }
 }
 
 void Fcs_phonon::setup(const std::string &mode)
@@ -111,7 +107,7 @@ void Fcs_phonon::setup(const std::string &mode)
         // parser (parse_analysis_vars).
     }
 
-    allocate(force_constant_with_cell, maxorder);
+    force_constant_with_cell.resize(maxorder);
 
     if (mympi->my_rank == 0) {
 
@@ -138,7 +134,7 @@ void Fcs_phonon::setup(const std::string &mode)
     replicate_force_constants(maxorder);
 }
 
-void Fcs_phonon::replicate_force_constants(const int maxorder_in) const
+void Fcs_phonon::replicate_force_constants(const int maxorder_in)
 {
     for (auto order = 0; order < maxorder_in; ++order) {
         replicate_force_constant(system.get(), force_constant_with_cell[order]);
@@ -245,7 +241,7 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
 }
 
 
-void Fcs_phonon::load_fcs_from_file(const int maxorder_in) const
+void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
 {
     std::vector filename_list{file_fc2, file_fc3, file_fc4};
 
@@ -725,9 +721,9 @@ double Fcs_phonon::examine_translational_invariance(const int order, const unsig
     const auto natmin3 = 3 * natmin;
 
     switch (order) {
-    case 0:
-        double **sum2;
-        allocate(sum2, natmin3, 3);
+    case 0: {
+        NDArray<double, 2> sum2;
+        sum2.resize(natmin3, 3);
 
         for (j = 0; j < natmin3; ++j) {
             for (k = 0; k < 3; ++k) {
@@ -747,11 +743,12 @@ double Fcs_phonon::examine_translational_invariance(const int order, const unsig
                 ret = std::max(ret, dev);
             }
         }
-        deallocate(sum2);
+        sum2.clear();
         break;
-    case 1:
-        double ***sum3;
-        allocate(sum3, 3 * natmin, 3 * nat, 3);
+    }
+    case 1: {
+        NDArray<double, 3> sum3;
+        sum3.resize(3 * natmin, 3 * nat, 3);
 
         for (j = 0; j < natmin3; ++j) {
             for (k = 0; k < nat3; ++k) {
@@ -775,11 +772,12 @@ double Fcs_phonon::examine_translational_invariance(const int order, const unsig
                 }
             }
         }
-        deallocate(sum3);
+        sum3.clear();
         break;
-    case 2:
-        double ****sum4;
-        allocate(sum4, natmin3, nat3, nat3, 3);
+    }
+    case 2: {
+        NDArray<double, 4> sum4;
+        sum4.resize(natmin3, nat3, nat3, 3);
 
         for (j = 0; j < natmin3; ++j) {
             for (k = 0; k < nat3; ++k) {
@@ -809,8 +807,9 @@ double Fcs_phonon::examine_translational_invariance(const int order, const unsig
                 }
             }
         }
-        deallocate(sum4);
+        sum4.clear();
         break;
+    }
     default:
         break;
     }
@@ -818,12 +817,12 @@ double Fcs_phonon::examine_translational_invariance(const int order, const unsig
     return ret;
 }
 
-void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N) const
+void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N)
 {
     int j, k;
-    double *fcs_tmp;
-    unsigned int ***ind;
-    double ***relative_vector_tmp;
+    NDArray<double, 1> fcs_tmp;
+    NDArray<unsigned int, 3> ind;
+    NDArray<double, 3> relative_vector_tmp;
 
     std::vector<AtomCellSuper> ivec_array;
     std::vector<unsigned int> atoms_s_tmp;
@@ -840,9 +839,9 @@ void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N) const
 
         if (len == 0) continue;
 
-        allocate(fcs_tmp, len);
-        allocate(ind, len, nelem, 4);
-        allocate(relative_vector_tmp, len, nelem - 1, 3);
+        fcs_tmp.resize(len);
+        ind.resize(len, nelem, 4);
+        relative_vector_tmp.resize(len, nelem - 1, 3);
 
         if (mympi->my_rank == 0) {
             for (j = 0; j < len; ++j) {
@@ -892,8 +891,8 @@ void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N) const
             }
         }
 
-        deallocate(fcs_tmp);
-        deallocate(ind);
-        deallocate(relative_vector_tmp);
+        fcs_tmp.clear();
+        ind.clear();
+        relative_vector_tmp.clear();
     }
 }

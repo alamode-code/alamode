@@ -1982,7 +1982,7 @@ void Dynamical::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_c
 
 
 void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
-                                   const unsigned int nk_dense, double **xk_dense, double **kvec_dense,
+                                   const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
                                    double **eval_out, std::complex<double> ***evec_out,
                                    const std::vector<Eigen::MatrixXcd> &dymat_short,
                                    const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
@@ -2298,7 +2298,7 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
     }
 }
 
-void Dynamical::duplicate_xk_boundary(double *xk_in, std::vector<std::vector<double>> &vec_xk)
+void Dynamical::duplicate_xk_boundary(const double *xk_in, std::vector<std::vector<double>> &vec_xk)
 {
     int i;
     int n[3];

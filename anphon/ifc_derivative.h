@@ -54,11 +54,11 @@ public:
 
     void compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &dV2_dumn,
                           const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
-                          double **xk_in) const;
+                          const double *const *xk_in) const;
 
     void compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &d2V2_dumn2,
                             const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
-                            double **xk_in) const;
+                            const double *const *xk_in) const;
 
     void compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &dV3_dumn, double **omega2_harmonic,
                           const std::complex<double> *const *const *const evec_harmonic,

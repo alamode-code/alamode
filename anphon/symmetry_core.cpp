@@ -459,17 +459,19 @@ int Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<uns
                              const Spin &spin, std::string &spgsymbol, std::vector<SymmetryOperation> &symm_out) const
 {
     int i, j;
+    // spg_get_dataset takes double(*)[3] / int(*)[3][3] (spglib C ABI boundary),
+    // so these three stay on allocate()/deallocate().
     double(*position)[3];
     double(*translation)[3];
     int(*rotation)[3][3];
     char symbol[11];
     double aa_tmp[3][3];
-    int *types_tmp;
+    NDArray<int, 1> types_tmp;
 
     const auto nat = cell.number_of_atoms;
 
     allocate(position, nat);
-    allocate(types_tmp, nat);
+    types_tmp.resize(nat);
 
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
@@ -535,7 +537,7 @@ int Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<uns
 
     deallocate(rotation);
     deallocate(translation);
-    deallocate(types_tmp);
+    types_tmp.clear();
     deallocate(position);
 
     return spgnum;
@@ -563,13 +565,13 @@ void Symmetry::gensym_withmap(const Eigen::Matrix3d &aa, const Eigen::MatrixXd &
 
     Eigen::Matrix3d T;
     Eigen::Vector3d shift, tmp;
-    unsigned int *map_tmp;
+    NDArray<unsigned int, 1> map_tmp;
     int i, j;
     unsigned int natmin = x.rows();
 
     symmlist_withmap_out.clear();
 
-    allocate(map_tmp, natmin);
+    map_tmp.resize(natmin);
 
     for (const auto &isym: symmlist_in) {
 
@@ -633,9 +635,9 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
 {
     int i, j, k;
     int n;
-    int ***rot_tmp;
-    double ***rot_tmp2;
-    double **tran_tmp;
+    NDArray<int, 3> rot_tmp;
+    NDArray<double, 3> rot_tmp2;
+    NDArray<double, 2> tran_tmp;
 
     if (mympi->my_rank == 0) n = sym.size();
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -646,9 +648,9 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     // zero, which would write past a zero-size allocation.
     if (n == 0) return;
 
-    allocate(rot_tmp, n, 3, 3);
-    allocate(rot_tmp2, n, 3, 3);
-    allocate(tran_tmp, n, 3);
+    rot_tmp.resize(n, 3, 3);
+    rot_tmp2.resize(n, 3, 3);
+    tran_tmp.resize(n, 3);
 
     if (mympi->my_rank == 0) {
         for (i = 0; i < n; ++i) {
@@ -681,9 +683,9 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
         }
     }
 
-    deallocate(rot_tmp);
-    deallocate(rot_tmp2);
-    deallocate(tran_tmp);
+    rot_tmp.clear();
+    rot_tmp2.clear();
+    tran_tmp.clear();
 }
 
 bool Symmetry::is_proper(const Eigen::Matrix3d &rot)

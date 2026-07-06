@@ -375,11 +375,11 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 {
     unsigned int nat_tmp, nkd_tmp, ntran_tmp, natmin_tmp;
     double lavec_s_tmp[3][3];
-    double **xr_s_tmp = nullptr;
-    int *kd_tmp = nullptr;
-    unsigned int **map_p2s_tmp = nullptr;
-    Maps *map_s2p_tmp = nullptr;
-    double **magmom_tmp = nullptr;
+    NDArray<double, 2> xr_s_tmp;
+    NDArray<int, 1> kd_tmp;
+    NDArray<unsigned int, 2> map_p2s_tmp;
+    NDArray<Maps, 1> map_s2p_tmp;
+    NDArray<double, 2> magmom_tmp;
     int lspin_tmp, noncollinear_tmp, time_reversal_symmetry_tmp;
 
     elements.clear();
@@ -417,8 +417,8 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 
         // Parse atomic elements and coordinates
 
-        allocate(xr_s_tmp, nat_tmp, 3);
-        allocate(kd_tmp, nat_tmp);
+        xr_s_tmp.resize(nat_tmp, 3);
+        kd_tmp.resize(nat_tmp);
 
         BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Structure.AtomicElements")) {
             const auto &child = child_.second;
@@ -450,8 +450,8 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 
         // Parse mapping information
 
-        allocate(map_p2s_tmp, natmin_tmp, ntran_tmp);
-        allocate(map_s2p_tmp, nat_tmp);
+        map_p2s_tmp.resize(natmin_tmp, ntran_tmp);
+        map_s2p_tmp.resize(nat_tmp);
 
         BOOST_FOREACH (const ptree::value_type &child_, pt.get_child("Data.Symmetry.Translations")) {
             const auto &child = child_.second;
@@ -473,9 +473,9 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 
         // Parse magnetic moments
 
-        double **magmom_tmp2;
-        allocate(magmom_tmp2, nat_tmp, 3);
-        allocate(magmom_tmp, natmin_tmp, 3);
+        NDArray<double, 2> magmom_tmp2;
+        magmom_tmp2.resize(nat_tmp, 3);
+        magmom_tmp.resize(natmin_tmp, 3);
 
         lspin_tmp = true;
         try {
@@ -530,7 +530,7 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
             noncollinear_tmp = 0;
             time_reversal_symmetry_tmp = 1;
         }
-        deallocate(magmom_tmp2);
+        magmom_tmp2.clear();
     }
 
     MPI_Bcast(&lavec_s_tmp[0][0], 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -543,13 +543,13 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
     MPI_Bcast(&time_reversal_symmetry_tmp, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank > 0) {
-        allocate(xr_s_tmp, nat_tmp, 3);
-        allocate(kd_tmp, nat_tmp);
-        allocate(map_p2s_tmp, natmin_tmp, ntran_tmp);
-        allocate(map_s2p_tmp, nat_tmp);
+        xr_s_tmp.resize(nat_tmp, 3);
+        kd_tmp.resize(nat_tmp);
+        map_p2s_tmp.resize(natmin_tmp, ntran_tmp);
+        map_s2p_tmp.resize(nat_tmp);
 
         if (lspin_tmp) {
-            allocate(magmom_tmp, natmin_tmp, 3);
+            magmom_tmp.resize(natmin_tmp, 3);
         }
         elements.resize(nkd_tmp);
     }
@@ -621,11 +621,11 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 
     scell_out.has_entry = 1;
 
-    if (xr_s_tmp) deallocate(xr_s_tmp);
-    if (kd_tmp) deallocate(kd_tmp);
-    if (magmom_tmp) deallocate(magmom_tmp);
-    if (map_p2s_tmp) deallocate(map_p2s_tmp);
-    if (map_s2p_tmp) deallocate(map_s2p_tmp);
+    xr_s_tmp.clear();
+    kd_tmp.clear();
+    magmom_tmp.clear();
+    map_p2s_tmp.clear();
+
 }
 
 void System::get_structure_and_mapping_table_h5(const std::string &filename, Cell &scell_out, Cell &pcell_out,
@@ -1139,7 +1139,7 @@ void System::recips(const Eigen::Matrix3d &mat_in, Eigen::Matrix3d &rmat_out)
 //
 //    unsigned int **map_p2s_tmp;
 //
-//    allocate(map_p2s_tmp, natmin, ntran_anharm);
+//    map_p2s_tmp.resize(natmin, ntran_anharm);
 //
 //    for (i = 0; i < natmin; ++i) {
 //        for (j = 0; j < ntran_anharm; ++j) {
@@ -1167,7 +1167,7 @@ void System::recips(const Eigen::Matrix3d &mat_in, Eigen::Matrix3d &rmat_out)
 //        }
 //    }
 //
-//    deallocate(map_p2s_tmp);
+//    map_p2s_tmp.clear();
 //    map_anh2harm.clear();
 //}
 
@@ -1353,8 +1353,9 @@ void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumD
     const auto natmin_tmp = primcell.number_of_atoms;
     unsigned int iat;
 
-    int **shift_cell, **shift_cell_super;
-    double ****x_all;
+    NDArray<int, 2> shift_cell;
+    NDArray<int, 2> shift_cell_super;
+    NDArray<double, 4> x_all;
 
     const int nkx = static_cast<int>(nsize[0]); // This should be int (must not be unsigned int).
     const int nky = static_cast<int>(nsize[1]); // same as above
@@ -1363,9 +1364,9 @@ void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumD
     const auto ncell = nsize[0] * nsize[1] * nsize[2];
     const auto ncell_s = 27;
 
-    allocate(shift_cell, ncell, 3);
-    allocate(shift_cell_super, ncell_s, 3);
-    allocate(x_all, ncell_s, ncell, natmin_tmp, 3);
+    shift_cell.resize(ncell, 3);
+    shift_cell_super.resize(ncell_s, 3);
+    x_all.resize(ncell_s, ncell, natmin_tmp, 3);
 
     // Fresh elements on every call, matching the historical dealloc+alloc.
     mindist_list_out.clear();
@@ -1454,7 +1455,7 @@ void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumD
         }
     }
 
-    deallocate(shift_cell);
-    deallocate(shift_cell_super);
-    deallocate(x_all);
+    shift_cell.clear();
+    shift_cell_super.clear();
+    x_all.clear();
 }

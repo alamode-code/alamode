@@ -174,12 +174,13 @@ void Kpoint::kpoint_setups(const std::string mode)
 void Kpoint::setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p)
 {
     int i;
-    double **k, **kdirec;
+    NDArray<double, 2> k;
+    NDArray<double, 2> kdirec;
     unsigned int n = kpinfo.size();
 
     MPI_Bcast(&n, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-    allocate(k, n, 3);
-    allocate(kdirec, n, 3);
+    k.resize(n, 3);
+    kdirec.resize(n, 3);
 
     if (mympi->my_rank == 0) {
         int j = 0;
@@ -210,31 +211,32 @@ void Kpoint::setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eige
 
     kpoint_general = std::make_unique<KpointGeneral>(n, k, kdirec);
 
-    deallocate(k);
-    deallocate(kdirec);
+    k.clear();
+    kdirec.clear();
 }
 
 void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p)
 {
     int j, k;
 
-    double **xk_tmp;
-    double **kdirec_tmp;
-    double *axis_tmp;
+    NDArray<double, 2> xk_tmp;
+    NDArray<double, 2> kdirec_tmp;
+    NDArray<double, 1> axis_tmp;
     unsigned int n = 0;
 
     if (mympi->my_rank == 0) {
 
-        std::string **kp_symbol;
-        unsigned int *nk_path;
-        double **k_start, **k_end;
+        NDArray<std::string, 2> kp_symbol;
+        NDArray<unsigned int, 1> nk_path;
+        NDArray<double, 2> k_start;
+        NDArray<double, 2> k_end;
 
         const auto npath = kpinfo.size();
 
-        allocate(kp_symbol, npath, 2);
-        allocate(k_start, npath, 3);
-        allocate(k_end, npath, 3);
-        allocate(nk_path, npath);
+        kp_symbol.resize(npath, 2);
+        k_start.resize(npath, 3);
+        k_end.resize(npath, 3);
+        nk_path.resize(npath);
 
         n = 0;
         int i = 0;
@@ -257,9 +259,9 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
             ++i;
         }
 
-        allocate(xk_tmp, n, 3);
-        allocate(kdirec_tmp, n, 3);
-        allocate(axis_tmp, n);
+        xk_tmp.resize(n, 3);
+        kdirec_tmp.resize(n, 3);
+        axis_tmp.resize(n);
 
         unsigned int ik = 0;
         double direc_tmp[3], tmp[3];
@@ -302,18 +304,18 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
                 ++ik;
             }
         }
-        deallocate(nk_path);
-        deallocate(k_start);
-        deallocate(k_end);
-        deallocate(kp_symbol);
+        nk_path.clear();
+        k_start.clear();
+        k_end.clear();
+
     }
 
     MPI_Bcast(&n, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank > 0) {
-        allocate(xk_tmp, n, 3);
-        allocate(kdirec_tmp, n, 3);
-        allocate(axis_tmp, n);
+        xk_tmp.resize(n, 3);
+        kdirec_tmp.resize(n, 3);
+        axis_tmp.resize(n);
     }
 
     MPI_Bcast(&xk_tmp[0][0], 3 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -322,9 +324,9 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
 
     kpoint_bs = std::make_unique<KpointBandStructure>(n, xk_tmp, kdirec_tmp, axis_tmp);
 
-    deallocate(xk_tmp);
-    deallocate(kdirec_tmp);
-    deallocate(axis_tmp);
+    xk_tmp.clear();
+    kdirec_tmp.clear();
+    axis_tmp.clear();
 }
 
 void KpointMeshUniform::setup(const std::vector<SymmetryOperation> &symmlist, const Eigen::Matrix3d &rlavec_p,
@@ -379,7 +381,7 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
     // TODO: save all q+G having the same Euclidean distance from origin for later use
 
     unsigned int ik;
-    double **xkr;
+    NDArray<double, 2> xkr;
     unsigned int nsym;
     Eigen::Matrix3d rlat;
 
@@ -411,7 +413,7 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
         }
     }
 
-    allocate(xkr, nk, 3);
+    xkr.resize(nk, 3);
     for (unsigned int ix = 0; ix < nk_i[0]; ++ix) {
         for (unsigned int iy = 0; iy < nk_i[1]; ++iy) {
             for (unsigned int iz = 0; iz < nk_i[2]; ++iz) {
@@ -466,7 +468,7 @@ void KpointMeshUniform::gen_kmesh(const std::vector<SymmetryOperation> &symmlist
         }
     }
 
-    deallocate(xkr);
+    xkr.clear();
 }
 
 void KpointMeshUniform::gen_kmesh_niggli(const std::vector<SymmetryOperation> &symmlist,
@@ -577,8 +579,8 @@ void KpointMeshUniform::gen_kmesh_niggli(const std::vector<SymmetryOperation> &s
     // Move back to the original basis
     xkr = c_matrix * xkr;
 
-    double **xkr_arr;
-    allocate(xkr_arr, nk, 3);
+    NDArray<double, 2> xkr_arr;
+    xkr_arr.resize(nk, 3);
 
     for (ik = 0; ik < nk; ++ik) {
         for (auto i = 0; i < 3; ++i) {
@@ -599,7 +601,7 @@ void KpointMeshUniform::gen_kmesh_niggli(const std::vector<SymmetryOperation> &s
         }
     }
 
-    deallocate(xkr_arr);
+    xkr_arr.clear();
 }
 
 void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vector<SymmetryOperation> &symmlist,
@@ -609,7 +611,7 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
     unsigned int i, j;
     int isym;
 
-    bool *k_found;
+    NDArray<bool, 1> k_found;
 
     std::vector<KpointList> k_group;
     std::vector<double> ktmp;
@@ -618,9 +620,9 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
     double xk_sym[3], xk_orig[3];
     double srot_inv[3][3], srot_inv_t[3][3];
 
-    double ***symop_k;
+    NDArray<double, 3> symop_k;
 
-    allocate(symop_k, nsym, 3, 3);
+    symop_k.resize(nsym, 3, 3);
 
     for (isym = 0; isym < nsym; ++isym) {
 
@@ -642,7 +644,7 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
 
     kpoint_irred_all.clear();
 
-    allocate(k_found, nk);
+    k_found.resize(nk);
 
     for (ik = 0; ik < nk; ++ik)
         k_found[ik] = false;
@@ -712,8 +714,8 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
         kpoint_irred_all.push_back(k_group);
     }
 
-    deallocate(k_found);
-    deallocate(symop_k);
+    k_found.clear();
+    symop_k.clear();
 }
 
 void KpointMeshUniform::gen_nkminus()
@@ -822,16 +824,16 @@ int KpointMeshUniform::get_knum(const double xk[3]) const
 void Kpoint::mpi_broadcast_kplane_vector(const unsigned int nplane, std::vector<KpointPlane> *&kp_plane) const
 {
     int j;
-    int **naxis;
-    double **xk_plane;
+    NDArray<int, 2> naxis;
+    NDArray<double, 2> xk_plane;
 
     for (int i = 0; i < nplane; ++i) {
         int nkp = kp_plane[i].size();
 
         MPI_Bcast(&nkp, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-        allocate(naxis, nkp, 2);
-        allocate(xk_plane, nkp, 3);
+        naxis.resize(nkp, 2);
+        xk_plane.resize(nkp, 3);
 
         if (mympi->my_rank == 0) {
             for (j = 0; j < nkp; ++j) {
@@ -851,8 +853,8 @@ void Kpoint::mpi_broadcast_kplane_vector(const unsigned int nplane, std::vector<
                 kp_plane[i].emplace_back(xk_plane[j], naxis[j]);
             }
         }
-        deallocate(naxis);
-        deallocate(xk_plane);
+        naxis.clear();
+        xk_plane.clear();
     }
 }
 
@@ -1058,11 +1060,11 @@ void KpointMeshUniform::get_unique_triplet_k(const int ik, const std::vector<Sym
     unsigned int num_group_k;
     int ks_in[2];
     const auto knum = kpoint_irred_all[ik][0].knum;
-    bool *flag_found;
+    NDArray<bool, 1> flag_found;
     std::vector<KsList> kslist;
     double xk0[3], xk1[3], xk2[3];
 
-    allocate(flag_found, nk);
+    flag_found.resize(nk);
 
     if (use_triplet_symmetry) {
         num_group_k = small_group_of_k[ik].size();
@@ -1129,7 +1131,7 @@ void KpointMeshUniform::get_unique_triplet_k(const int ik, const std::vector<Sym
         }
     }
 
-    deallocate(flag_found);
+    flag_found.clear();
 }
 
 void KpointMeshUniform::get_unique_quartet_k(const int ik, const std::vector<SymmetryOperation> &symmlist,
@@ -1145,11 +1147,11 @@ void KpointMeshUniform::get_unique_quartet_k(const int ik, const std::vector<Sym
     unsigned int num_group_k;
     std::vector<int> ks_in(3);
     const auto knum = kpoint_irred_all[ik][0].knum;
-    bool **flag_found;
+    NDArray<bool, 2> flag_found;
     std::vector<KsList> kslist;
     double xk0[3], xk1[3], xk2[3], xk3[3];
 
-    allocate(flag_found, nk, nk);
+    flag_found.resize(nk, nk);
 
     if (use_quartet_symmetry) {
         num_group_k = small_group_of_k[ik].size();
@@ -1227,7 +1229,7 @@ void KpointMeshUniform::get_unique_quartet_k(const int ik, const std::vector<Sym
         }
     }
 
-    deallocate(flag_found);
+    flag_found.clear();
 }
 
 void KpointMeshUniform::setup_kpoint_symmetry(const std::vector<SymmetryOperationWithMapping> &symmlist)

@@ -163,7 +163,7 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
     NDArray<std::complex<double>, 1> ret_mpi;
 
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
     double n1, n2;
     double f1, f2;
 
@@ -304,7 +304,7 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
     unsigned int arr_quartic[4];
 
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
     double xk_tmp[3];
 
     std::complex<double> omega_sum[4];
@@ -503,7 +503,7 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
     unsigned int arr_cubic1[3], arr_cubic2[3];
     unsigned int arr_quartic[4];
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     double xk_tmp[3];
 
@@ -624,7 +624,7 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
     unsigned int arr_cubic1[3], arr_cubic2[3];
     unsigned int arr_quartic[4];
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     double T_tmp;
     double omega3, omega4;
@@ -837,7 +837,7 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
     unsigned int i;
     unsigned int arr_cubic1[3], arr_cubic2[3], arr_cubic3[3], arr_cubic4[3];
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     int ip1, ip2, ip3, ip4;
 
@@ -1050,7 +1050,7 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
     unsigned int i;
 
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     unsigned int arr_quartic[4], arr_cubic1[3], arr_cubic2[3];
 
@@ -1180,7 +1180,7 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
     unsigned int i;
     unsigned int arr_cubic1[3], arr_cubic2[3], arr_cubic3[3], arr_cubic4[3];
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     double xk_tmp[3];
     double N_prod[4];
@@ -1354,7 +1354,7 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
     unsigned int arr_quartic[4];
     unsigned int arr_cubic1[3], arr_cubic2[3];
     const auto nk = kmesh_in->nk;
-    const auto xk = kmesh_in->xk;
+    const auto &xk = kmesh_in->xk;
 
     int ip1, ip2, ip3;
 

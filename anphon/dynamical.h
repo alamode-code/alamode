@@ -175,7 +175,7 @@ public:
     const double *const *get_xrs_image() const;
 
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
-                            const unsigned int nk_dense, double **xk_dense, double **kvec_dense, double **eval_out,
+                            const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense, double **eval_out,
                             std::complex<double> ***evec_out, const std::vector<Eigen::MatrixXcd> &dymat_short,
                             const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
                             const bool use_precomputed_dymat = false, const bool return_sqrt = true) const;
@@ -220,7 +220,7 @@ private:
                                Eigen::MatrixXcd &evec_sub) const;
 
 
-    void duplicate_xk_boundary(double *, std::vector<std::vector<double>> &);
+    void duplicate_xk_boundary(const double *, std::vector<std::vector<double>> &);
 
 
     NDArray<double, 2> xshift_s;

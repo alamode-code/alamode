@@ -488,7 +488,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
     weight.resize(n, nk);
     k_pair.resize(nk);
 
-    const auto xk = kmesh_dos->xk;
+    const auto &xk = kmesh_dos->xk;
 
     for (i = 0; i < nk; ++i)
         kmap_identity[i] = i;
@@ -599,7 +599,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
     auto sps_sum1 = 0.0;
     auto sps_sum2 = 0.0;
 
-    const auto xk = kmesh_dos->xk;
+    const auto &xk = kmesh_dos->xk;
 
     for (int ik = 0; ik < kmesh_dos->nk_irred; ++ik) {
 
