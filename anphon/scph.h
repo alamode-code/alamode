@@ -81,15 +81,6 @@ public:
     using ScphQhaCommon::store_renormalized_dymat_to_file;
     using ScphQhaCommon::write_anharmonic_correction_fc2;
 
-    void compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in,
-                                            const int ngroup_v3_in, std::vector<double> *fcs_group_v3_in,
-                                            std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
-                                            int **evec_index_v3_in, const std::complex<double> *const *const *evec_in,
-                                            const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in,
-                                            const KpointMeshUniform *kmesh_dense_in,
-                                            const PhaseFactorStorage *phase_storage_in);
-
-
 private:
     void set_default_variables();
 

@@ -22,6 +22,7 @@
 #include "mpi_common.h"
 #include "relaxation.h"
 #include "scph.h"
+#include "scph_v3v4_elements.h"
 #include "timer.h"
 using namespace PHON_NS;
 
@@ -334,17 +335,24 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     }
 }
 
-// This function should be merged with void Scph::compute_V3_elements_mpi_over_kpoint
-// after merged with dev2.0 because the implementation is redundant.
-void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in,
-                                              const int ngroup_v3_in, std::vector<double> *fcs_group_v3_in,
-                                              std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
-                                              int **evec_index_v3_in, const std::complex<double> *const *const *evec_in,
-                                              const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in,
-                                              const KpointMeshUniform *kmesh_dense_in,
-                                              const PhaseFactorStorage *phase_storage_in)
+// A free function (all inputs explicit) so that DerivativeIFC can compute
+// V3 elements of strain-derivative IFCs without a live Scph instance.
+// The implementation shares its structure with
+// ScphQhaCommon::compute_V3_elements_mpi_over_kpoint; merging the two is a
+// possible future cleanup.
+void PHON_NS::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in,
+                                                 const int ngroup_v3_in, std::vector<double> *fcs_group_v3_in,
+                                                 std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
+                                                 int **evec_index_v3_in,
+                                                 const std::complex<double> *const *const *evec_in,
+                                                 const bool self_offdiag, const unsigned int ns_in,
+                                                 const KpointMeshUniform *kmesh_coarse_in,
+                                                 const KpointMeshUniform *kmesh_dense_in,
+                                                 const PhaseFactorStorage *phase_storage_in,
+                                                 AnharmonicCore &anharmonic_core_in, const int my_rank,
+                                                 const int nprocs)
 {
-    auto ns = dynamical->neval;
+    const auto ns = ns_in;
     auto ns2 = ns * ns;
     auto ns3 = ns * ns * ns;
     unsigned int is, js, ks;
@@ -376,6 +384,7 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
         zerofill_elements_acoustic_at_gamma(omega2_harmonic_in,
                                             v3_out,
                                             3,
+                                            ns,
                                             kmesh_dense_in->nk,
                                             kmesh_coarse_in->nk_irred);
         return;
@@ -396,15 +405,15 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
     // zero-initialized contiguous buffer, which is then summed in place over MPI.
     std::vector<std::complex<double>> v3_allreduce_buffer(static_cast<std::size_t>(nk_scph) * ns3);
 
-    for (unsigned int ik = mympi->my_rank; ik < nk_scph; ik += mympi->nprocs) {
+    for (unsigned int ik = my_rank; ik < nk_scph; ik += nprocs) {
 
-        anharmonic_core->calc_phi3_reciprocal(kmesh_dense_in->xk[ik],
-                                              kmesh_dense_in->xk[kmesh_dense_in->kindex_minus_xk[ik]],
-                                              ngroup_v3_in,
-                                              fcs_group_v3_in,
-                                              relvec_v3_in,
-                                              phase_storage_in,
-                                              phi3_reciprocal_tmp);
+        anharmonic_core_in.calc_phi3_reciprocal(kmesh_dense_in->xk[ik],
+                                                kmesh_dense_in->xk[kmesh_dense_in->kindex_minus_xk[ik]],
+                                                ngroup_v3_in,
+                                                fcs_group_v3_in,
+                                                relvec_v3_in,
+                                                phase_storage_in,
+                                                phi3_reciprocal_tmp);
 
 #ifdef _OPENMP
 #pragma omp parallel for private(j)
@@ -565,7 +574,8 @@ void Scph::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, do
     deallocate(v3_tmp2);
     deallocate(v3_tmp3);
 
-    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
+    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, ns, kmesh_dense_in->nk,
+                                        kmesh_coarse_in->nk_irred);
 }
 
 
@@ -1120,12 +1130,21 @@ void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(double **omega2, std::co
                                                         const int fc_order, const unsigned int nk_dense_in,
                                                         const unsigned int nk_irred_coarse_in) const
 {
+    PHON_NS::zerofill_elements_acoustic_at_gamma(omega2, v_elems, fc_order, dynamical->neval, nk_dense_in,
+                                                 nk_irred_coarse_in);
+}
+
+void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems,
+                                                  const int fc_order, const unsigned int ns_in,
+                                                  const unsigned int nk_dense_in,
+                                                  const unsigned int nk_irred_coarse_in)
+{
     // Set V3 or V4 elements involving acoustic modes at Gamma point
     // exactly zero.
 
     int jk;
     int is, js, ks, ls;
-    const auto ns = dynamical->neval;
+    const auto ns = ns_in;
     bool *is_acoustic;
     allocate(is_acoustic, ns);
     int nacoustic;

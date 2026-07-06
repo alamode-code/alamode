@@ -10,7 +10,7 @@
 #include "error.h"
 #include "mpi_common.h"
 #include "relaxation.h"
-#include "scph.h"
+#include "scph_v3v4_elements.h"
 #include "system.h"
 
 using namespace PHON_NS;
@@ -434,18 +434,22 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                 kptr_view[ik] = row_ptrs.data() + static_cast<std::size_t>(ik) * ns;
             }
 
-            scph->compute_V3_elements_for_given_IFCs(kptr_view.data(),
-                                                     omega2_harmonic,
-                                                     ngroup_tmp,
-                                                     fcs_group_tmp,
-                                                     relvec_tmp,
-                                                     invmass_v3_tmp,
-                                                     evec_index_v3_tmp,
-                                                     evec_harmonic,
-                                                     true,
-                                                     kmesh_coarse_in,
-                                                     kmesh_dense_in,
-                                                     phase_storage_in);
+            compute_V3_elements_for_given_IFCs(kptr_view.data(),
+                                               omega2_harmonic,
+                                               ngroup_tmp,
+                                               fcs_group_tmp,
+                                               relvec_tmp,
+                                               invmass_v3_tmp,
+                                               evec_index_v3_tmp,
+                                               evec_harmonic,
+                                               true,
+                                               ns,
+                                               kmesh_coarse_in,
+                                               kmesh_dense_in,
+                                               phase_storage_in,
+                                               *anharmonic_core,
+                                               mympi->my_rank,
+                                               mympi->nprocs);
 
             deallocate(fcs_group_tmp);
             deallocate(invmass_v3_tmp);
