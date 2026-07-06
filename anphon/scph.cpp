@@ -695,6 +695,10 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             allocate(evec_tmp, kpoint->kpoint_general->nk, ns, ns);
 
             for (auto iT = 0; iT < NT; ++iT) {
+                // The short/long harmonic dymats are ignored here because
+                // use_precomputed_dymat is left false (they were precomputed on
+                // the DOS mesh, not on these k points); still pass the correct
+                // pair to keep this call consistent with the other branches.
                 dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
                                               delta_dymat[iT],
                                               kpoint->kpoint_general->nk,
@@ -703,7 +707,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                               eval_update[iT],
                                               evec_tmp,
                                               dymat_harm_short,
-                                              dymat_harm_short,
+                                              dymat_harm_long,
                                               mindist_list_in);
             }
 
@@ -1446,16 +1450,14 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 relaxation
                     ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, v3_with_umn, v3_ref, del_v_strain, u_tensor);
 
-                //                for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
-                //                    for (is = 0; is < ns * ns; is++) {
-                //                        for (is1 = 0; is1 < ns * ns; is1++) {
-                //                            v4_with_umn[ik][is][is1] = v4_ref[ik][is][is1];
-                //                        }
-                //                    }
-                //                }
-
-                //renormalize IFC
-                // TODO: check whether bug exists here
+                // Renormalize the IFCs by the internal displacement q0 (exact
+                // Taylor recentering of the quartic PES). The strain-renormalized
+                // v1..v3 (_with_umn) enter here; v4 is passed unmodified because
+                // its strain renormalization would require d(v4)/du IFC data,
+                // which del_v_strain does not include (it stops at d(v3)/du).
+                // Within this truncation v4_with_umn == v4_ref identically, so
+                // passing v4_ref is consistent, not an approximation error
+                // (QHA spells the same thing out as an explicit copy).
                 relaxation->renormalize_v1_from_q0(omega2_harmonic,
                                                    kmesh_coarse,
                                                    kmesh_dense,
@@ -2448,7 +2450,6 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         Fmat0.emplace_back(ns, ns);
     }
 
-    // dymat arrays still use C-style for FFTW compatibility (old method)
     allocate(dymat_q, ns, ns, nk_interpolate);
     allocate(dymat_q_HA, ns, ns, nk_interpolate);
 
