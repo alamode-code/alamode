@@ -159,6 +159,25 @@ protected:
     // for the structure currently held in ws.structure_state.
     void renormalize_ifcs_at_structure(StructuralOptWorkspace &ws);
 
+    // Allocate the workspace buffers common to both structural-optimization
+    // drivers, compute the reference V3/V4 elements and the strain
+    // derivatives of the IFCs, create the optimizer, and detect the optical
+    // modes at Gamma. Collective: every rank must call it. eps_optical
+    // reproduces each driver's historical acoustic-mode threshold.
+    void setup_structural_opt_buffers(StructuralOptWorkspace &ws, double eps_optical);
+
+    // Residual force/stress norms of one structural step, the per-step
+    // du/residual report, and the history-table record.
+    void compute_and_print_step_gradients(const StructuralOptWorkspace &ws, const std::complex<double> *v1_eff,
+                                          const std::complex<double> *del_v0_del_umn_eff, double du0,
+                                          double du_tensor, const std::string &spg_label,
+                                          std::vector<StructOptStepRecord> &step_history, double &grad_norm,
+                                          double &cell_grad_norm) const;
+
+    // Final structure report of one temperature point.
+    void print_final_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode, double temp,
+                               bool last_temperature) const;
+
     // Print the initial atomic displacements (and, when the cell is relaxed,
     // the initial strain tensor) at the head of a temperature point.
     void print_initial_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode) const;

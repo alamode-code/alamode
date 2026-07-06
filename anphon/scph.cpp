@@ -478,14 +478,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     using namespace Eigen;
 
     int is, js;
-    int i1;
-    int iat1, ixyz1, ixyz2;
-    std::string str_tmp;
 
     const auto nk = kmesh_dense->nk;
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
-    const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
@@ -534,7 +530,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     double du0;
     double du_tensor;
     auto &harm_optical_modes = ws.harm_optical_modes;
-    harm_optical_modes.resize(ns - 3);
 
     // cell optimization
     double pvcell = 0.0; // pressure * v_{cell,reference} [Ry]
@@ -554,111 +549,23 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     allocate(omega2_anharm, NT, nk, ns);
     allocate(evec_anharm_tmp, nk, ns, ns);
 
-    allocate(delta_v2_renorm, nk_interpolate, ns * ns);
-    allocate(delta_v2_with_umn, nk_interpolate, ns * ns);
     allocate(omega2_harm_renorm, NT, nk, ns);
     allocate(evec_harm_renorm_tmp, nk, ns, ns);
 
-    allocate(v1_ref, ns);
-    allocate(v1_with_umn, ns);
-    allocate(v1_renorm, ns);
+    // Common buffers, reference V3/V4 elements, strain derivatives of the
+    // IFCs, optimizer, and Gamma-point optical modes (collective).
+    setup_structural_opt_buffers(ws, eps10);
 
     auto &structure_state = ws.structure_state;
-    structure_state.resize(ns);
     auto &q0 = structure_state.q0;
     auto &u0 = structure_state.u0;
-    auto &u_tensor = structure_state.u_tensor;
 
     allocate(v1_SCP, ns);
-    allocate(del_v0_del_umn_renorm, 9);
     allocate(del_v0_del_umn_SCP, 9);
 
-    // assume that the atomic forces are zero at initial structure
-    for (is = 0; is < ns; is++) {
-        v1_ref[is] = 0.0;
-    }
-    // compute IFC renormalization by lattice relaxation
-    std::cout << " RELAX_STR = " << to_int(relax_mode) << ": ";
-    if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-        std::cout << "Set zeros in derivatives of k-space IFCs by strain.\n\n";
-    }
-    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-        std::cout << "Calculating derivatives of k-space IFCs by strain.\n\n";
-    }
-
-    del_v_strain.resize(nk, ns);
-
-    // This function precomputes the 1st, 2nd, and 3rd order derivatives of v1
-    // 1st and 2nd order derivatives of v2, and 1st order derivative of v3.
-    relaxation->compute_del_v_strain(kmesh_coarse,
-                                     kmesh_dense,
-                                     del_v_strain,
-                                     omega2_harmonic,
-                                     evec_harmonic,
-                                     relax_mode,
-                                     mindist_list,
-                                     phase_factor);
-
-    allocate(v4_ref, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
     // SCPH feeds the reference v4 directly into the q0 renormalization (its
     // strain renormalization is not available; see renormalize_ifcs_at_structure).
     ws.v4_for_renorm = v4_ref;
-
-    // initialize optimizer
-    relaxation->create_optimizer(ns);
-
-    // Compute matrix element of 4-phonon interaction
-    // This operation is the most expensive part of the calculation.
-    if (selfenergy_offdiagonal & (ialgo == 1)) {
-
-        compute_V4_elements_mpi_over_band(v4_ref,
-                                          omega2_harmonic,
-                                          evec_harmonic,
-                                          selfenergy_offdiagonal,
-                                          kmesh_coarse,
-                                          kmesh_dense,
-                                          kmap_coarse_to_dense,
-                                          phase_factor,
-                                          phi4_reciprocal);
-    } else {
-        compute_V4_elements_mpi_over_kpoint(v4_ref,
-                                            omega2_harmonic,
-                                            evec_harmonic,
-                                            selfenergy_offdiagonal,
-                                            relax_mode != RelaxationStrMode::None,
-                                            kmesh_coarse,
-                                            kmesh_dense,
-                                            kmap_coarse_to_dense,
-                                            phase_factor,
-                                            phi4_reciprocal);
-    }
-
-    allocate(v3_ref, nk, ns, ns * ns);
-    allocate(v3_renorm, nk, ns, ns * ns);
-    allocate(v3_with_umn, nk, ns, ns * ns);
-
-    compute_V3_elements_mpi_over_kpoint(v3_ref,
-                                        omega2_harmonic,
-                                        evec_harmonic,
-                                        selfenergy_offdiagonal,
-                                        kmesh_coarse,
-                                        kmesh_dense,
-                                        phase_factor,
-                                        phi3_reciprocal);
-
-
-    // get indices of optical modes at Gamma point
-    js = 0;
-    for (is = 0; is < ns; is++) {
-        if (std::fabs(omega2_harmonic[0][is]) < eps10) {
-            continue;
-        }
-        harm_optical_modes[js] = is;
-        js++;
-    }
-    if (js != ns - 3) {
-        exit("exec_scph_relax_cell_coordinate_main", "The number of detected optical modes is not ns-3.");
-    }
 
     if (mympi->my_rank == 0) {
         int ik;
@@ -976,50 +883,9 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                     break;
                 }
 
-                // Residual gradient norms over the optimized degrees of freedom (the same
-                // gradients the optimizer acts on). A small step (du0/du_tensor) does not by
-                // itself imply a small gradient for the GDIIS optimizer (relax_algo == 3), so
-                // these are printed for diagnostics and, when the corresponding tolerance is
-                // > 0, also required for convergence to guard against false convergence at a
-                // non-stationary point. The coordinate force (gradient w.r.t. q0) and the
-                // cell gradient (stress conjugate to the strain tensor) have different units,
-                // so they are checked separately (cf. COORD_CONV_TOL vs CELL_CONV_TOL).
-                double grad_norm = 0.0;
-                for (is = 0; is < ns - 3; is++) {
-                    const double f = v1_SCP[harm_optical_modes[is]].real();
-                    grad_norm += f * f;
-                }
-                grad_norm = std::sqrt(grad_norm);
-
-                double cell_grad_norm = 0.0;
-                if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                    for (i1 = 0; i1 < 3; i1++) {
-                        const double fd = del_v0_del_umn_SCP[i1 * 3 + i1].real();
-                        const int j1 = (i1 + 1) % 3;
-                        const int j2 = (i1 + 2) % 3;
-                        const double fs = del_v0_del_umn_SCP[j1 * 3 + j2].real();
-                        cell_grad_norm += fd * fd + fs * fs;
-                    }
-                    cell_grad_norm = std::sqrt(cell_grad_norm);
-                }
-
-                // check convergence
-                std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0 << " [Bohr]";
-
-                std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
-                          << '\n';
-
-                std::cout << " |residual force| =" << std::scientific << std::setw(15) << std::setprecision(6)
-                          << grad_norm;
-                if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                    std::cout << " |residual stress| =" << std::scientific << std::setw(15) << std::setprecision(6)
-                              << cell_grad_norm;
-                }
-                std::cout << '\n';
-
-                step_history.push_back({true, du0, du_tensor, grad_norm,
-                                        relax_mode == RelaxationStrMode::CoordinatesAndCell ? cell_grad_norm : -1.0,
-                                        spg_label});
+                double grad_norm, cell_grad_norm;
+                compute_and_print_step_gradients(ws, v1_SCP, del_v0_del_umn_SCP, du0, du_tensor, spg_label,
+                                                 step_history, grad_norm, cell_grad_norm);
 
                 const bool step_converged =
                     (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol);
@@ -1095,41 +961,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             Relaxation::print_optimization_history(step_history, temp,
                                                    relax_mode == RelaxationStrMode::CoordinatesAndCell, true);
 
-            std::cout << " ----------------------------------------------------------------\n";
-            std::cout << " Final atomic displacements [Bohr] at " << temp << " K\n";
-            for (iat1 = 0; iat1 < system->get_primcell().number_of_atoms; iat1++) {
-                std::cout << " ";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    relaxation->get_xyz_string(ixyz1, str_tmp);
-                    std::cout << std::setw(10) << ("u_{" + std::to_string(iat1) + "," + str_tmp + "}");
-                }
-                std::cout << " :";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u0[iat1 * 3 + ixyz1];
-                }
-                std::cout << '\n';
-            }
-            std::cout << '\n';
-
-            if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                std::cout << " Final strain (displacement gradient tensor u_{mu nu}) : \n";
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    std::cout << " ";
-                    for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                        std::cout << std::scientific << std::setw(15) << std::setprecision(6) << u_tensor[ixyz1][ixyz2];
-                    }
-                    std::cout << '\n';
-                }
-            }
-
-            std::cout << "\n Final structure at " << temp << " K :\n";
-            relaxation->print_structure_and_symmetry(structure_state, nullptr);
-
-            if (i_temp_loop == NT - 1) {
-                std::cout << " ----------------------------------------------------------------\n\n";
-            } else {
-                std::cout << '\n';
-            }
+            print_final_structure(structure_state, relax_mode, temp, i_temp_loop == NT - 1);
 
             // record zero-th order term of PES
             if (converged_this_temp) V0[iT] = v0_renorm;
