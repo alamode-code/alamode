@@ -145,9 +145,8 @@ void TriLinearInterpolator::get_corners_regular(double *xk_i, int *corner_index,
 
 FourierInterpolator::FourierInterpolator(const KpointMeshUniform &kmesh_coarse_in,
                                          const KpointMeshUniform &kmesh_dense_in, const bool subtract_harmonic_term_in)
+    : kmesh_coarse(kmesh_coarse_in), kmesh_dense(kmesh_dense_in)
 {
-    kmesh_coarse = kmesh_coarse_in;
-    kmesh_dense = kmesh_dense_in;
     subtract_harmonic_term = subtract_harmonic_term_in;
 
     get_map_coarse_to_dense(kmesh_coarse, kmesh_dense, map_corase_to_dense);

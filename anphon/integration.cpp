@@ -41,15 +41,11 @@ void Integration::set_default_variables()
     ismear_4ph = 1; // for 4ph scattering
     epsilon = 10.0;
     epsilon_4ph = 10.0;
-    adaptive_sigma = nullptr;
-    adaptive_sigma4 = nullptr;
     adaptive_factor = 1.0;
 }
 
 void Integration::deallocate_variables()
 {
-    delete adaptive_sigma;
-    delete adaptive_sigma4;
 }
 
 void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
@@ -116,7 +112,7 @@ void Integration::prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in
                                            const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
 {
     if (ismear == 2) {
-        adaptive_sigma = new AdaptiveSmearingSigma(kmesh_dos_in->nk, ns_in, adaptive_factor);
+        adaptive_sigma = std::make_unique<AdaptiveSmearingSigma>(kmesh_dos_in->nk, ns_in, adaptive_factor);
         adaptive_sigma->setup(phonon_velocity_in, kmesh_dos_in, lavec_p, rlavec_p);
     }
 }
@@ -126,7 +122,7 @@ void Integration::create_adaptive_sigma4(const unsigned int nk_in, const unsigne
                                          const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
 {
     if (adaptive_sigma4) return;
-    adaptive_sigma4 = new AdaptiveSmearingSigma(nk_in, ns_in, adaptive_factor);
+    adaptive_sigma4 = std::make_unique<AdaptiveSmearingSigma>(nk_in, ns_in, adaptive_factor);
     adaptive_sigma4->setup(phonon_velocity_in, kmesh_in, lavec_p, rlavec_p);
 }
 

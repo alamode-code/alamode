@@ -11,6 +11,7 @@
 #pragma once
 
 #include <complex>
+#include <memory>
 #include <vector>
 #include "dynamical.h"
 #include "integration.h"
@@ -53,9 +54,9 @@ public:
     double total_sps3, ***sps3_mode;
     double ****sps3_with_bose;
 
-    TetraNodes *tetra_nodes_dos;
-    KpointMeshUniform *kmesh_dos;
-    DymatEigenValue *dymat_dos;
+    std::unique_ptr<TetraNodes> tetra_nodes_dos;
+    std::unique_ptr<KpointMeshUniform> kmesh_dos;
+    std::unique_ptr<DymatEigenValue> dymat_dos;
 
     void calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                        const unsigned int ntetra_in, const unsigned int *const *tetras_in,

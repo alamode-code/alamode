@@ -14,6 +14,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <memory>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -51,13 +52,13 @@ public:
 
 protected:
     // Shared state between Scph and Qha.
-    KpointMeshUniform *kmesh_coarse = nullptr;
-    KpointMeshUniform *kmesh_dense = nullptr;
+    std::unique_ptr<KpointMeshUniform> kmesh_coarse;
+    std::unique_ptr<KpointMeshUniform> kmesh_dense;
     std::vector<int> kmap_coarse_to_dense;
 
     std::complex<double> *phi3_reciprocal = nullptr;
     std::complex<double> *phi4_reciprocal = nullptr;
-    PhaseFactorStorage *phase_factor = nullptr;
+    std::unique_ptr<PhaseFactorStorage> phase_factor;
 
     double **omega2_harmonic = nullptr;
     std::complex<double> ***evec_harmonic = nullptr;

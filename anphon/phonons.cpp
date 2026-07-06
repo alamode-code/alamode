@@ -49,8 +49,8 @@ using namespace PHON_NS;
 
 PHON::PHON(int narg, char **arg, MPI_Comm comm)
 {
-    mympi = new MyMPI(this, comm);
-    input = new Input(this);
+    mympi = std::make_unique<MyMPI>(this, comm);
+    input = std::make_unique<Input>(this);
 
     create_pointers();
 
@@ -99,62 +99,62 @@ PHON::PHON(int narg, char **arg, MPI_Comm comm)
 
 PHON::~PHON()
 {
-    delete input;
-    delete mympi;
+    input.reset();
+    mympi.reset();
 }
 
 void PHON::create_pointers()
 {
-    timer = new Timer(this);
-    system = new System(this);
-    symmetry = new Symmetry(this);
-    kpoint = new Kpoint(this);
-    fcs_phonon = new Fcs_phonon(this);
-    dynamical = new Dynamical(this);
-    integration = new Integration();
-    phonon_velocity = new PhononVelocity(this);
-    thermodynamics = new Thermodynamics();
-    anharmonic_core = new AnharmonicCore(this);
-    mode_analysis = new ModeAnalysis(this);
-    selfenergy = new Selfenergy();
-    conductivity = new Conductivity(this);
-    writes = new Writes(this);
-    dos = new Dos(this);
-    gruneisen = new Gruneisen(this);
-    isotope = new Isotope();
-    scph = new Scph(this);
-    ewald = new Ewald(this);
-    dielec = new Dielec(this);
-    qha = new Qha(this);
-    iterativebte = new Iterativebte(this);
-    relaxation = new Relaxation(this);
+    timer = std::make_unique<Timer>(this);
+    system = std::make_unique<System>(this);
+    symmetry = std::make_unique<Symmetry>(this);
+    kpoint = std::make_unique<Kpoint>(this);
+    fcs_phonon = std::make_unique<Fcs_phonon>(this);
+    dynamical = std::make_unique<Dynamical>(this);
+    integration = std::make_unique<Integration>();
+    phonon_velocity = std::make_unique<PhononVelocity>(this);
+    thermodynamics = std::make_unique<Thermodynamics>();
+    anharmonic_core = std::make_unique<AnharmonicCore>(this);
+    mode_analysis = std::make_unique<ModeAnalysis>(this);
+    selfenergy = std::make_unique<Selfenergy>();
+    conductivity = std::make_unique<Conductivity>(this);
+    writes = std::make_unique<Writes>(this);
+    dos = std::make_unique<Dos>(this);
+    gruneisen = std::make_unique<Gruneisen>(this);
+    isotope = std::make_unique<Isotope>();
+    scph = std::make_unique<Scph>(this);
+    ewald = std::make_unique<Ewald>(this);
+    dielec = std::make_unique<Dielec>(this);
+    qha = std::make_unique<Qha>(this);
+    iterativebte = std::make_unique<Iterativebte>(this);
+    relaxation = std::make_unique<Relaxation>(this);
 }
 
-void PHON::destroy_pointers() const
+void PHON::destroy_pointers()
 {
-    delete timer;
-    delete system;
-    delete symmetry;
-    delete kpoint;
-    delete fcs_phonon;
-    delete dynamical;
-    delete integration;
-    delete phonon_velocity;
-    delete thermodynamics;
-    delete anharmonic_core;
-    delete mode_analysis;
-    delete selfenergy;
-    delete conductivity;
-    delete writes;
-    delete dos;
-    delete gruneisen;
-    delete isotope;
-    delete scph;
-    delete ewald;
-    delete dielec;
-    delete iterativebte;
-    delete qha;
-    delete relaxation;
+    timer.reset();
+    system.reset();
+    symmetry.reset();
+    kpoint.reset();
+    fcs_phonon.reset();
+    dynamical.reset();
+    integration.reset();
+    phonon_velocity.reset();
+    thermodynamics.reset();
+    anharmonic_core.reset();
+    mode_analysis.reset();
+    selfenergy.reset();
+    conductivity.reset();
+    writes.reset();
+    dos.reset();
+    gruneisen.reset();
+    isotope.reset();
+    scph.reset();
+    ewald.reset();
+    dielec.reset();
+    iterativebte.reset();
+    qha.reset();
+    relaxation.reset();
 }
 
 void PHON::setup_base() const
@@ -165,8 +165,8 @@ void PHON::setup_base() const
     dynamical->setup_dynamical();
     fcs_phonon->setup(mode);
     phonon_velocity->setup_velocity();
-    integration->setup_integration(dos->kmesh_dos,
-                                   phonon_velocity,
+    integration->setup_integration(dos->kmesh_dos.get(),
+                                   phonon_velocity.get(),
                                    dynamical->neval,
                                    system->get_primcell().lattice_vector,
                                    system->get_primcell().reciprocal_lattice_vector,
@@ -219,8 +219,8 @@ void PHON::execute_phonons() const
 
     if (thermodynamics->calc_FE_bubble) {
         thermodynamics->compute_free_energy_bubble(*system,
-                                                   *dos->kmesh_dos,
-                                                   *dos->dymat_dos,
+                                                   *dos->kmesh_dos.get(),
+                                                   *dos->dymat_dos.get(),
                                                    symmetry->SymmList,
                                                    *anharmonic_core,
                                                    dynamical->neval,
@@ -255,9 +255,9 @@ void PHON::execute_kappa() const
     }
 
     isotope->setup_isotope_scattering(*system, dos->kmesh_dos->nk_irred, dynamical->neval, mympi->my_rank);
-    isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos,
-                                         *dos->dymat_dos,
-                                         *dos->tetra_nodes_dos,
+    isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos.get(),
+                                         *dos->dymat_dos.get(),
+                                         *dos->tetra_nodes_dos.get(),
                                          *system,
                                          *integration,
                                          dynamical->neval,

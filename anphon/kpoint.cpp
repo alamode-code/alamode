@@ -43,14 +43,12 @@ Kpoint::~Kpoint()
 
 void Kpoint::set_default_variables()
 {
-    kpoint_bs = nullptr;
-    kpoint_general = nullptr;
 }
 
 void Kpoint::deallocate_variables()
 {
-    if (kpoint_bs) delete kpoint_bs;
-    if (kpoint_general) delete kpoint_general;
+    kpoint_bs.reset();
+    kpoint_general.reset();
 }
 
 void Kpoint::kpoint_setups(const std::string mode)
@@ -210,7 +208,7 @@ void Kpoint::setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eige
     MPI_Bcast(&k[0][0], 3 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&kdirec[0][0], 3 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    kpoint_general = new KpointGeneral(n, k, kdirec);
+    kpoint_general = std::make_unique<KpointGeneral>(n, k, kdirec);
 
     deallocate(k);
     deallocate(kdirec);
@@ -322,7 +320,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
     MPI_Bcast(&kdirec_tmp[0][0], 3 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&axis_tmp[0], n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    kpoint_bs = new KpointBandStructure(n, xk_tmp, kdirec_tmp, axis_tmp);
+    kpoint_bs = std::make_unique<KpointBandStructure>(n, xk_tmp, kdirec_tmp, axis_tmp);
 
     deallocate(xk_tmp);
     deallocate(kdirec_tmp);

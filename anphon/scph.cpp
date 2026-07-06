@@ -164,8 +164,8 @@ void Scph::exec_scph()
             // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
             load_scph_dymat_from_file(delta_dymat_scph,
                                       input->job_title + ".scph_dymat",
-                                      kmesh_dense,
-                                      kmesh_coarse,
+                                      kmesh_dense.get(),
+                                      kmesh_coarse.get(),
                                       dynamical->nonanalytic,
                                       selfenergy_offdiagonal);
 
@@ -173,8 +173,8 @@ void Scph::exec_scph()
                 // Resume harmonic-dynamical-matrix renormalization used in structural relaxation.
                 load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
                                           input->job_title + ".renorm_harm_dymat",
-                                          kmesh_dense,
-                                          kmesh_coarse,
+                                          kmesh_dense.get(),
+                                          kmesh_coarse.get(),
                                           dynamical->nonanalytic,
                                           selfenergy_offdiagonal);
                 // Load previously optimized static potential offset V0.
@@ -194,7 +194,7 @@ void Scph::exec_scph()
                                     delta_dymat_scph,
                                     with_relax ? delta_harmonic_dymat_renormalize : nullptr,
                                     with_relax ? &V0 : nullptr,
-                                    kmesh_coarse,
+                                    kmesh_coarse.get(),
                                     mindist_list);
             }
         }
@@ -226,7 +226,7 @@ void Scph::exec_scph()
                                     delta_dymat_scph,
                                     with_relax ? delta_harmonic_dymat_renormalize : nullptr,
                                     with_relax ? &V0 : nullptr,
-                                    kmesh_coarse,
+                                    kmesh_coarse.get(),
                                     mindist_list);
                 // .V0 doubles as a human-readable physical output (V0 vs T),
                 // so the text file is kept; restart reads only the h5.
@@ -237,8 +237,8 @@ void Scph::exec_scph()
                 // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
                 store_renormalized_dymat_to_file(delta_dymat_scph,
                                                  input->job_title + ".scph_dymat",
-                                                 kmesh_dense,
-                                                 kmesh_coarse,
+                                                 kmesh_dense.get(),
+                                                 kmesh_coarse.get(),
                                                  dynamical->nonanalytic,
                                                  selfenergy_offdiagonal);
                 // write renormalized harmonic dynamical matrix when the crystal structure is optimized
@@ -246,8 +246,8 @@ void Scph::exec_scph()
                     // Persist renormalized harmonic dynamical matrix and relaxation offset.
                     store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
                                                      input->job_title + ".renorm_harm_dymat",
-                                                     kmesh_dense,
-                                                     kmesh_coarse,
+                                                     kmesh_dense.get(),
+                                                     kmesh_coarse.get(),
                                                      dynamical->nonanalytic,
                                                      selfenergy_offdiagonal);
                     store_V0_to_file();
@@ -256,7 +256,7 @@ void Scph::exec_scph()
             // Convert dynamical-matrix correction back to real-space FC2 and
             // write the text .scph_dfc2 (kept in both modes during the
             // transition; consumed by dfc2.py / dfc2 / scph_to_qefc.py).
-            write_anharmonic_correction_fc2(delta_dymat_scph, NT, kmesh_coarse, mindist_list, false, 0);
+            write_anharmonic_correction_fc2(delta_dymat_scph, NT, kmesh_coarse.get(), mindist_list, false, 0);
         }
     }
 
@@ -275,7 +275,7 @@ void Scph::exec_scph()
             // Output FC2 after including bubble self-energy contribution.
             write_anharmonic_correction_fc2(delta_dymat_scph_plus_bubble,
                                             NT,
-                                            kmesh_coarse,
+                                            kmesh_coarse.get(),
                                             mindist_list,
                                             false,
                                             bubble);
@@ -285,7 +285,7 @@ void Scph::exec_scph()
     postprocess(delta_dymat_scph,
                 delta_harmonic_dymat_renormalize,
                 delta_dymat_scph_plus_bubble,
-                kmesh_coarse,
+                kmesh_coarse.get(),
                 mindist_list,
                 false,
                 bubble);
@@ -338,10 +338,10 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                           omega2_harmonic,
                                           evec_harmonic,
                                           selfenergy_offdiagonal,
-                                          kmesh_coarse,
-                                          kmesh_dense,
+                                          kmesh_coarse.get(),
+                                          kmesh_dense.get(),
                                           kmap_coarse_to_dense,
-                                          phase_factor,
+                                          phase_factor.get(),
                                           phi4_reciprocal);
     } else {
         compute_V4_elements_mpi_over_kpoint(v4_array_all,
@@ -349,10 +349,10 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                             evec_harmonic,
                                             selfenergy_offdiagonal,
                                             relax_mode != RelaxationStrMode::None,
-                                            kmesh_coarse,
-                                            kmesh_dense,
+                                            kmesh_coarse.get(),
+                                            kmesh_dense.get(),
                                             kmap_coarse_to_dense,
-                                            phase_factor,
+                                            phase_factor.get(),
                                             phi4_reciprocal);
     }
 
@@ -363,9 +363,9 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                             omega2_harmonic,
                                             evec_harmonic,
                                             selfenergy_offdiagonal,
-                                            kmesh_coarse,
-                                            kmesh_dense,
-                                            phase_factor,
+                                            kmesh_coarse.get(),
+                                            kmesh_dense.get(),
+                                            phase_factor.get(),
                                             phi3_reciprocal);
     }
 
@@ -450,7 +450,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
             dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                                 omega2_anharm[iT],
                                                 evec_anharm_tmp,
-                                                kmesh_coarse,
+                                                kmesh_coarse.get(),
                                                 kmap_coarse_to_dense);
 
             if (!warmstart_scph) converged_prev = false;
@@ -676,7 +676,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             dynamical->calc_new_dymat_with_evec(dymat_anharm[dst],
                                                 omega2_anharm[dst],
                                                 evec_harmonic,
-                                                kmesh_coarse,
+                                                kmesh_coarse.get(),
                                                 kmap_coarse_to_dense);
             for (is = 0; is < ns; ++is) {
                 for (js = 0; js < ns; ++js) {
@@ -984,8 +984,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                                                    delta_v2_renorm,
                                                                    omega2_harmonic,
                                                                    evec_harmonic,
-                                                                   kmesh_coarse,
-                                                                   kmesh_dense,
+                                                                   kmesh_coarse.get(),
+                                                                   kmesh_dense.get(),
                                                                    kmap_coarse_to_dense,
                                                                    mat_transform_sym,
                                                                    mindist_list,
@@ -994,7 +994,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
                                                     omega2_harm_renorm[iT],
                                                     evec_harm_renorm_tmp,
-                                                    kmesh_coarse,
+                                                    kmesh_coarse.get(),
                                                     kmap_coarse_to_dense);
             }
 
@@ -1100,11 +1100,11 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
     dynamical->calc_new_dymat_with_evec(dymat_anharm[iT],
                                         omega2_anharm[iT],
                                         evec_anharm_tmp,
-                                        kmesh_coarse,
+                                        kmesh_coarse.get(),
                                         kmap_coarse_to_dense);
 
     // calculate SCP force
-    compute_anharmonic_v1_array(v1_SCP, ws.v1_renorm, ws.v3_renorm, cmat_convert, omega2_anharm[iT], temp, kmesh_dense);
+    compute_anharmonic_v1_array(v1_SCP, ws.v1_renorm, ws.v3_renorm, cmat_convert, omega2_anharm[iT], temp, kmesh_dense.get());
 
     // calculate SCP stress tensor
     if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
@@ -1120,7 +1120,7 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                           cmat_convert,
                                           omega2_anharm[iT],
                                           temp,
-                                          kmesh_dense);
+                                          kmesh_dense.get());
     }
 }
 
@@ -1245,7 +1245,7 @@ void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
 
         // Harmonic dynamical matrix
         Dymat = evec_tmp * Dymat * evec_tmp.adjoint();
-        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse, mat_transform_sym, Dymat);
+        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse.get(), mat_transform_sym, Dymat);
 
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
@@ -1262,7 +1262,7 @@ void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
         }
     }
 
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_q_HA);
+    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse.get(), mat_transform_sym, dymat_q_HA);
 }
 
 void Scph::compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double temp,
@@ -1434,7 +1434,7 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
     const auto mat_tmp = evec_initial[knum] * saes.eigenvectors();
     MatrixXcd Dymat = mat_tmp * eval_tmp.asDiagonal() * mat_tmp.adjoint();
 
-    dynamical->symmetrize_dynamical_matrix(ik_irred, kmesh_coarse, mat_transform_sym, Dymat);
+    dynamical->symmetrize_dynamical_matrix(ik_irred, kmesh_coarse.get(), mat_transform_sym, Dymat);
     for (unsigned int is = 0; is < ns; ++is) {
         for (unsigned int js = 0; js < ns; ++js) {
             dymat_q[is][js][knum_interpolate] = Dymat(is, js);
@@ -1456,7 +1456,7 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
     std::complex<double> ***dymat_r_new;
     allocate(dymat_r_new, ns, ns, nk_interpolate);
 
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_q);
+    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse.get(), mat_transform_sym, dymat_q);
 
     // Subtract harmonic contribution from the dynamical matrix
     for (unsigned int ik = 0; ik < nk_interpolate; ++ik) {
@@ -2245,7 +2245,7 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
         mat_tmp = evec0[knum] * saes.eigenvectors();
         // Construct the new (true) dynamical matrix
         Dymat = mat_tmp * saes.eigenvalues().asDiagonal() * mat_tmp.adjoint();
-        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse, mat_transform_sym, Dymat);
+        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse.get(), mat_transform_sym, Dymat);
 
         for (auto is = 0; is < ns; ++is) {
             for (auto js = 0; js < ns; ++js) {
@@ -2254,7 +2254,7 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
         }
     } // close loop ik
 
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_out);
+    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse.get(), mat_transform_sym, dymat_out);
 
     // Subtract harmonic contribution to the dynamical matrix
     for (auto ik = 0; ik < nk_interpolate; ++ik) {

@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <memory>
 #include "phonons.h"
 
 namespace PHON_NS
@@ -32,30 +33,30 @@ public:
 
 protected:
     PHON *phon;
-    Input *&input;
-    System *&system;
-    Symmetry *&symmetry;
-    Kpoint *&kpoint;
-    Integration *&integration;
-    Fcs_phonon *&fcs_phonon;
-    Dynamical *&dynamical;
-    PhononVelocity *&phonon_velocity;
-    Thermodynamics *&thermodynamics;
-    AnharmonicCore *&anharmonic_core;
-    ModeAnalysis *&mode_analysis;
-    Selfenergy *&selfenergy;
-    Conductivity *&conductivity;
-    Iterativebte *&iterativebte;
-    Writes *&writes;
-    Dos *&dos;
-    Gruneisen *&gruneisen;
-    MyMPI *&mympi;
-    Isotope *&isotope;
-    Scph *&scph;
-    Ewald *&ewald;
-    Dielec *&dielec;
-    Qha *&qha;
-    Relaxation *&relaxation;
-    Timer *&timer;
+    std::unique_ptr<Input> &input;
+    std::unique_ptr<System> &system;
+    std::unique_ptr<Symmetry> &symmetry;
+    std::unique_ptr<Kpoint> &kpoint;
+    std::unique_ptr<Integration> &integration;
+    std::unique_ptr<Fcs_phonon> &fcs_phonon;
+    std::unique_ptr<Dynamical> &dynamical;
+    std::unique_ptr<PhononVelocity> &phonon_velocity;
+    std::unique_ptr<Thermodynamics> &thermodynamics;
+    std::unique_ptr<AnharmonicCore> &anharmonic_core;
+    std::unique_ptr<ModeAnalysis> &mode_analysis;
+    std::unique_ptr<Selfenergy> &selfenergy;
+    std::unique_ptr<Conductivity> &conductivity;
+    std::unique_ptr<Iterativebte> &iterativebte;
+    std::unique_ptr<Writes> &writes;
+    std::unique_ptr<Dos> &dos;
+    std::unique_ptr<Gruneisen> &gruneisen;
+    std::unique_ptr<MyMPI> &mympi;
+    std::unique_ptr<Isotope> &isotope;
+    std::unique_ptr<Scph> &scph;
+    std::unique_ptr<Ewald> &ewald;
+    std::unique_ptr<Dielec> &dielec;
+    std::unique_ptr<Qha> &qha;
+    std::unique_ptr<Relaxation> &relaxation;
+    std::unique_ptr<Timer> &timer;
 };
 } // namespace PHON_NS

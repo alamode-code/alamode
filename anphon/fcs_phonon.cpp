@@ -141,7 +141,7 @@ void Fcs_phonon::setup(const std::string &mode)
 void Fcs_phonon::replicate_force_constants(const int maxorder_in) const
 {
     for (auto order = 0; order < maxorder_in; ++order) {
-        replicate_force_constant(system, force_constant_with_cell[order]);
+        replicate_force_constant(system.get(), force_constant_with_cell[order]);
     }
 }
 

@@ -123,14 +123,14 @@ void Qha::exec_qha_optimization()
         } else {
             load_scph_dymat_from_file(delta_dymat_qha,
                                       input->job_title + ".renorm_harm_dymat",
-                                      kmesh_dense,
-                                      kmesh_coarse,
+                                      kmesh_dense.get(),
+                                      kmesh_coarse.get(),
                                       dynamical->nonanalytic,
                                       true);
             load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
                                       input->job_title + ".renorm_harm_dymat",
-                                      kmesh_dense,
-                                      kmesh_coarse,
+                                      kmesh_dense.get(),
+                                      kmesh_coarse.get(),
                                       dynamical->nonanalytic,
                                       true);
 
@@ -151,7 +151,7 @@ void Qha::exec_qha_optimization()
                                     delta_dymat_qha,
                                     delta_harmonic_dymat_renormalize,
                                     with_relax ? &V0 : nullptr,
-                                    kmesh_coarse,
+                                    kmesh_coarse.get(),
                                     mindist_list);
             }
         }
@@ -180,7 +180,7 @@ void Qha::exec_qha_optimization()
                                     delta_dymat_qha,
                                     delta_harmonic_dymat_renormalize,
                                     with_relax ? &V0 : nullptr,
-                                    kmesh_coarse,
+                                    kmesh_coarse.get(),
                                     mindist_list);
                 // .V0 doubles as a human-readable physical output (V0 vs T),
                 // so the text file is kept; restart reads only the h5.
@@ -190,21 +190,21 @@ void Qha::exec_qha_optimization()
                 // write renormalized harmonic dynamical matrix when the crystal structure is optimized
                 store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
                                                  input->job_title + ".renorm_harm_dymat",
-                                                 kmesh_dense,
-                                                 kmesh_coarse,
+                                                 kmesh_dense.get(),
+                                                 kmesh_coarse.get(),
                                                  dynamical->nonanalytic,
                                                  true);
                 store_V0_to_file();
             }
             // Text .qha_dfc2 is kept in both modes during the transition.
-            write_anharmonic_correction_fc2(delta_dymat_qha, NT, kmesh_coarse, mindist_list, true);
+            write_anharmonic_correction_fc2(delta_dymat_qha, NT, kmesh_coarse.get(), mindist_list, true);
         }
     }
 
     postprocess(delta_dymat_qha,
                 delta_harmonic_dymat_renormalize,
                 delta_dymat_qha,
-                kmesh_coarse,
+                kmesh_coarse.get(),
                 mindist_list,
                 true,
                 0);
@@ -630,8 +630,8 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                                        ws.delta_v2_renorm,
                                                        omega2_harmonic,
                                                        evec_harmonic,
-                                                       kmesh_coarse,
-                                                       kmesh_dense,
+                                                       kmesh_coarse.get(),
+                                                       kmesh_dense.get(),
                                                        kmap_coarse_to_dense,
                                                        mat_transform_sym,
                                                        mindist_list,
@@ -640,7 +640,7 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
     dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
                                         omega2_harm_renorm[iT],
                                         evec_harm_renorm_tmp,
-                                        kmesh_coarse,
+                                        kmesh_coarse.get(),
                                         kmap_coarse_to_dense);
     // delta_harmonic_dymat_renormalize is copied to dymat_anharm after structure convergence,
     // which is required for postprocess.
@@ -657,7 +657,7 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                 cmat_convert,
                                 omega2_harm_renorm[iT],
                                 temp,
-                                kmesh_dense);
+                                kmesh_dense.get());
 
     if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
         for (auto i1 = 0; i1 < 9; i1++) {
@@ -672,7 +672,7 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                           cmat_convert,
                                           omega2_harm_renorm[iT],
                                           temp,
-                                          kmesh_dense);
+                                          kmesh_dense.get());
 
         compute_ZSISA_stress(delq_delu_ZSISA,
                              del_v0_del_umn_ZSISA,
@@ -817,9 +817,9 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                         omega2_harmonic,
                                         evec_harmonic,
                                         selfenergy_offdiagonal,
-                                        kmesh_coarse,
-                                        kmesh_dense,
-                                        phase_factor,
+                                        kmesh_coarse.get(),
+                                        kmesh_dense.get(),
+                                        phase_factor.get(),
                                         phi3_reciprocal);
 
     // assume that the atomic forces are zero at initial structure
@@ -829,14 +829,14 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
     del_v_strain.resize(nk, ns);
 
-    relaxation->compute_del_v_strain(kmesh_coarse,
-                                     kmesh_dense,
+    relaxation->compute_del_v_strain(kmesh_coarse.get(),
+                                     kmesh_dense.get(),
                                      del_v_strain,
                                      omega2_harmonic,
                                      evec_harmonic,
                                      RelaxationStrMode::PerturbativeQha,
                                      mindist_list,
-                                     phase_factor);
+                                     phase_factor.get());
 
     // set dummy variables as zero for perturbative-QHA paths
     del_v_strain.del3_v1.setZero();
@@ -1015,7 +1015,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
             relaxation->renormalize_v1_from_umn(v1_with_umn, v1_ref, del_v_strain, u_tensor);
 
-            relaxation->renormalize_v2_from_umn(kmesh_coarse,
+            relaxation->renormalize_v2_from_umn(kmesh_coarse.get(),
                                                 kmap_coarse_to_dense,
                                                 delta_v2_with_umn,
                                                 del_v_strain,
@@ -1023,8 +1023,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
             // renormalization by displacements
             relaxation->renormalize_v1_from_q0(omega2_harmonic,
-                                               kmesh_coarse,
-                                               kmesh_dense,
+                                               kmesh_coarse.get(),
+                                               kmesh_dense.get(),
                                                v1_renorm,
                                                v1_with_umn,
                                                delta_v2_with_umn,
@@ -1033,8 +1033,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                q0);
 
             relaxation->renormalize_v2_from_q0(evec_harmonic,
-                                               kmesh_coarse,
-                                               kmesh_dense,
+                                               kmesh_coarse.get(),
+                                               kmesh_dense.get(),
                                                kmap_coarse_to_dense,
                                                mat_transform_sym,
                                                delta_v2_renorm,
@@ -1044,7 +1044,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                q0);
 
             relaxation->renormalize_v0_from_q0(omega2_harmonic,
-                                               kmesh_dense,
+                                               kmesh_dense.get(),
                                                v0_renorm,
                                                v0_with_umn,
                                                v1_with_umn,
@@ -1061,8 +1061,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                                delta_v2_renorm,
                                                                omega2_harmonic,
                                                                evec_harmonic,
-                                                               kmesh_coarse,
-                                                               kmesh_dense,
+                                                               kmesh_coarse.get(),
+                                                               kmesh_dense.get(),
                                                                kmap_coarse_to_dense,
                                                                mat_transform_sym,
                                                                mindist_list,
@@ -1071,7 +1071,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
             dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
                                                 omega2_harm_renorm[iT],
                                                 evec_harm_renorm_tmp,
-                                                kmesh_coarse,
+                                                kmesh_coarse.get(),
                                                 kmap_coarse_to_dense);
 
             // copy delta_harmonic_dymat_renormalize to dymat_anharm

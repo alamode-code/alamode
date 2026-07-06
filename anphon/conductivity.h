@@ -104,9 +104,9 @@ private:
     std::string file_coherent_elems;
 
     unsigned int nk_coarse[3] = {};
-    KpointMeshUniform *kmesh_4ph = nullptr;
-    DymatEigenValue *dymat_4ph = nullptr;
-    PhaseFactorStorage *phase_storage_4ph = nullptr;
+    std::unique_ptr<KpointMeshUniform> kmesh_4ph;
+    std::unique_ptr<DymatEigenValue> dymat_4ph;
+    std::unique_ptr<PhaseFactorStorage> phase_storage_4ph;
 
     std::fstream fs_result3, fs_result4;
     std::string file_result3, file_result4;

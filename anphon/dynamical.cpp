@@ -64,8 +64,6 @@ void Dynamical::set_default_variables()
     xshift_s = nullptr;
     dymat = nullptr;
     mindist_list = nullptr;
-    dymat_band = nullptr;
-    dymat_general = nullptr;
 }
 
 void Dynamical::deallocate_variables()
@@ -85,9 +83,8 @@ void Dynamical::deallocate_variables()
     if (mindist_list) {
         deallocate(mindist_list);
     }
-
-    delete dymat_band;
-    delete dymat_general;
+    dymat_band.reset();
+    dymat_general.reset();
 }
 
 void DymatEigenValue::set_eigenvalues(const unsigned int n, double **eval_in)
@@ -211,12 +208,12 @@ void Dynamical::setup_dynamical()
     MPI_Bcast(&nonanalytic, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&band_connection, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    if (kpoint->kpoint_bs) {
-        dymat_band = new DymatEigenValue(eigenvectors, false, kpoint->kpoint_bs->nk, neval);
+    if (kpoint->kpoint_bs.get()) {
+        dymat_band = std::make_unique<DymatEigenValue>(eigenvectors, false, kpoint->kpoint_bs->nk, neval);
     }
 
-    if (kpoint->kpoint_general) {
-        dymat_general = new DymatEigenValue(eigenvectors, false, kpoint->kpoint_general->nk, neval);
+    if (kpoint->kpoint_general.get()) {
+        dymat_general = std::make_unique<DymatEigenValue>(eigenvectors, false, kpoint->kpoint_general->nk, neval);
     }
 
     // Bcast projection_directions
@@ -821,7 +818,7 @@ void Dynamical::diagonalize_dynamical_all()
     std::complex<double> ***evec_tmp;
     // k points for general mode (manual entry)
 
-    if (kpoint->kpoint_general) {
+    if (kpoint->kpoint_general.get()) {
         nk = kpoint->kpoint_general->nk;
         allocate(eval_tmp, nk, neval);
         if (eigenvectors) {
@@ -860,7 +857,7 @@ void Dynamical::diagonalize_dynamical_all()
     }
 
     // k points for band structure
-    if (kpoint->kpoint_bs) {
+    if (kpoint->kpoint_bs.get()) {
         nk = kpoint->kpoint_bs->nk;
         allocate(eval_tmp, nk, neval);
         if (eigenvectors) {
@@ -898,7 +895,7 @@ void Dynamical::diagonalize_dynamical_all()
     }
 
     // k points for dos
-    if (dos->kmesh_dos) {
+    if (dos->kmesh_dos.get()) {
         nk = dos->kmesh_dos->nk;
         allocate(eval_tmp, nk, neval);
         if (eigenvectors) {
@@ -934,7 +931,7 @@ void Dynamical::diagonalize_dynamical_all()
         deallocate(evec_tmp);
     }
 
-    if (band_connection > 0 && kpoint->kpoint_bs) {
+    if (band_connection > 0 && kpoint->kpoint_bs.get()) {
         allocate(index_bconnect, kpoint->kpoint_bs->nk, neval);
         connect_band_by_eigen_similarity(kpoint->kpoint_bs->nk, dymat_band->get_eigenvectors(), index_bconnect);
     }
@@ -943,8 +940,8 @@ void Dynamical::diagonalize_dynamical_all()
         std::cout << "done!\n";
     }
 
-    if (dos->kmesh_dos && phon->mode == "KAPPA") {
-        detect_imaginary_branches(*dos->kmesh_dos, dos->dymat_dos->get_eigenvalues());
+    if (dos->kmesh_dos.get() && phon->mode == "KAPPA") {
+        detect_imaginary_branches(*dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
     }
 }
 

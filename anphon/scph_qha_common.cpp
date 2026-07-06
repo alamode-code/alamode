@@ -34,10 +34,7 @@ void ScphQhaCommon::initialize_variables()
     omega2_harmonic = nullptr;
     phi3_reciprocal = nullptr;
     phi4_reciprocal = nullptr;
-    kmesh_coarse = nullptr;
-    kmesh_dense = nullptr;
     mindist_list = nullptr;
-    phase_factor = nullptr;
     mat_transform_sym = nullptr;
     kmap_coarse_to_dense.clear();
     dymat_harm_short.clear();
@@ -67,12 +64,9 @@ void ScphQhaCommon::deallocate_variables()
         deallocate(mat_transform_sym);
     }
 
-    delete kmesh_coarse;
-    kmesh_coarse = nullptr;
-    delete kmesh_dense;
-    kmesh_dense = nullptr;
-    delete phase_factor;
-    phase_factor = nullptr;
+    kmesh_coarse.reset();
+    kmesh_dense.reset();
+    phase_factor.reset();
 
     kmap_coarse_to_dense.clear();
     dymat_harm_short.clear();
@@ -85,10 +79,8 @@ void ScphQhaCommon::setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int 
     MPI_Bcast(&kmesh_dense_input[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&kmesh_coarse_input[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    delete kmesh_coarse;
-    delete kmesh_dense;
-    kmesh_coarse = new KpointMeshUniform(kmesh_coarse_input);
-    kmesh_dense = new KpointMeshUniform(kmesh_dense_input);
+    kmesh_coarse = std::make_unique<KpointMeshUniform>(kmesh_coarse_input);
+    kmesh_dense = std::make_unique<KpointMeshUniform>(kmesh_dense_input);
     kmesh_coarse->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector, true);
     kmesh_dense->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector, true);
 
@@ -109,7 +101,7 @@ void ScphQhaCommon::setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int 
         std::cout << "  Number of irreducible k points : " << kmesh_coarse->nk_irred << '\n';
     }
 
-    const auto info_mapping = kpoint->get_kmap_coarse_to_dense(kmesh_coarse, kmesh_dense, kmap_coarse_to_dense);
+    const auto info_mapping = kpoint->get_kmap_coarse_to_dense(kmesh_coarse.get(), kmesh_dense.get(), kmap_coarse_to_dense);
     if (info_mapping == 1) {
         exit("setup_kmesh", mapping_error_message);
     }
@@ -165,7 +157,7 @@ void ScphQhaCommon::setup_structural_data()
     }
 
     system->get_minimum_distances(kmesh_coarse->nk_i, mindist_list);
-    dynamical->get_symmetry_gamma_dynamical(kmesh_coarse,
+    dynamical->get_symmetry_gamma_dynamical(kmesh_coarse.get(),
                                             system->get_primcell().number_of_atoms,
                                             system->get_primcell().x_fractional,
                                             symmetry->SymmListWithMap,
@@ -198,8 +190,7 @@ void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
     }
     allocate(phi4_reciprocal, anharmonic_core->get_ngroup_fcs(4));
 
-    delete phase_factor;
-    phase_factor = new PhaseFactorStorage(kmesh_dense->nk_i);
+    phase_factor = std::make_unique<PhaseFactorStorage>(kmesh_dense->nk_i);
     phase_factor->create(true);
 
     if (mympi->my_rank == 0) {
@@ -442,7 +433,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         double *omega_grid = nullptr;
         double **domega_dt = nullptr;
 
-        if (dos->kmesh_dos) {
+        if (dos->kmesh_dos.get()) {
             allocate(eval_update, NT, dos->kmesh_dos->nk, ns);
             allocate(evec_tmp, dos->kmesh_dos->nk, ns, ns);
             allocate(eval_harm_renorm, NT, dos->kmesh_dos->nk, ns);
@@ -550,7 +541,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                 if (dos->compute_dos) {
                     // Compute total DOS from interpolated frequencies via tetrahedron integration.
-                    dos->calc_dos_from_given_frequency(dos->kmesh_dos,
+                    dos->calc_dos_from_given_frequency(dos->kmesh_dos.get(),
                                                        eval_update[iT],
                                                        dos->tetra_nodes_dos->get_ntetra(),
                                                        dos->tetra_nodes_dos->get_tetras(),
@@ -577,7 +568,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                   evec_tmp,
                                                                   eval_harm_renorm[iT],
                                                                   evec_harm_renorm,
-                                                                  *dos->kmesh_dos,
+                                                                  *dos->kmesh_dos.get(),
                                                                   ns,
                                                                   *system);
 
@@ -734,7 +725,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                   true);
 
                     if (dos->compute_dos) {
-                        dos->calc_dos_from_given_frequency(dos->kmesh_dos,
+                        dos->calc_dos_from_given_frequency(dos->kmesh_dos.get(),
                                                            eval_update[iT],
                                                            dos->tetra_nodes_dos->get_ntetra(),
                                                            dos->tetra_nodes_dos->get_tetras(),
@@ -810,7 +801,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             evec_tmp = nullptr;
         }
 
-        if (kpoint->kpoint_general) {
+        if (kpoint->kpoint_general.get()) {
             allocate(eval_update, NT, kpoint->kpoint_general->nk, ns);
             allocate(evec_tmp, kpoint->kpoint_general->nk, ns, ns);
 
@@ -854,7 +845,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             evec_tmp = nullptr;
         }
 
-        if (kpoint->kpoint_bs) {
+        if (kpoint->kpoint_bs.get()) {
             allocate(eval_update, NT, kpoint->kpoint_bs->nk, ns);
             allocate(evec_tmp, kpoint->kpoint_bs->nk, ns, ns);
 
@@ -983,13 +974,13 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
 
     relaxation->renormalize_v1_from_umn(ws.v1_with_umn, ws.v1_ref, *ws.del_v_strain, u_tensor);
 
-    relaxation->renormalize_v2_from_umn(kmesh_coarse,
+    relaxation->renormalize_v2_from_umn(kmesh_coarse.get(),
                                         kmap_coarse_to_dense,
                                         ws.delta_v2_with_umn,
                                         *ws.del_v_strain,
                                         u_tensor);
     relaxation
-        ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, ws.v3_with_umn, ws.v3_ref, *ws.del_v_strain, u_tensor);
+        ->renormalize_v3_from_umn(kmesh_coarse.get(), kmesh_dense.get(), ws.v3_with_umn, ws.v3_ref, *ws.del_v_strain, u_tensor);
 
     // Renormalize the IFCs by the internal displacement q0 (exact Taylor
     // recentering of the quartic PES). The strain-renormalized v1..v3
@@ -998,8 +989,8 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
     // del_v_strain does not include (it stops at d(v3)/du) -- within this
     // truncation the strain-renormalized v4 equals the reference v4.
     relaxation->renormalize_v1_from_q0(omega2_harmonic,
-                                       kmesh_coarse,
-                                       kmesh_dense,
+                                       kmesh_coarse.get(),
+                                       kmesh_dense.get(),
                                        ws.v1_renorm,
                                        ws.v1_with_umn,
                                        ws.delta_v2_with_umn,
@@ -1007,8 +998,8 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                        ws.v4_for_renorm,
                                        q0);
     relaxation->renormalize_v2_from_q0(evec_harmonic,
-                                       kmesh_coarse,
-                                       kmesh_dense,
+                                       kmesh_coarse.get(),
+                                       kmesh_dense.get(),
                                        kmap_coarse_to_dense,
                                        mat_transform_sym,
                                        ws.delta_v2_renorm,
@@ -1016,9 +1007,9 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                        ws.v3_with_umn,
                                        ws.v4_for_renorm,
                                        q0);
-    relaxation->renormalize_v3_from_q0(kmesh_dense, kmesh_coarse, ws.v3_renorm, ws.v3_with_umn, ws.v4_for_renorm, q0);
+    relaxation->renormalize_v3_from_q0(kmesh_dense.get(), kmesh_coarse.get(), ws.v3_renorm, ws.v3_with_umn, ws.v4_for_renorm, q0);
     relaxation->renormalize_v0_from_q0(omega2_harmonic,
-                                       kmesh_dense,
+                                       kmesh_dense.get(),
                                        ws.v0_renorm,
                                        ws.v0_with_umn,
                                        ws.v1_with_umn,
@@ -1042,7 +1033,7 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                         *ws.del_v_strain,
                                         q0,
                                         ws.pvcell,
-                                        kmesh_dense);
+                                        kmesh_dense.get());
     }
 }
 
@@ -1116,14 +1107,14 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
 
     // Precompute the strain derivatives of v1 (1st..3rd order), v2 (1st and
     // 2nd order), and v3 (1st order).
-    relaxation->compute_del_v_strain(kmesh_coarse,
-                                     kmesh_dense,
+    relaxation->compute_del_v_strain(kmesh_coarse.get(),
+                                     kmesh_dense.get(),
                                      *ws.del_v_strain,
                                      omega2_harmonic,
                                      evec_harmonic,
                                      ws.relax_mode,
                                      mindist_list,
-                                     phase_factor);
+                                     phase_factor.get());
 
     allocate(ws.v4_ref, nk_irred_interpolate * nk, ns * ns, ns * ns);
 
@@ -1137,10 +1128,10 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                           omega2_harmonic,
                                           evec_harmonic,
                                           selfenergy_offdiagonal,
-                                          kmesh_coarse,
-                                          kmesh_dense,
+                                          kmesh_coarse.get(),
+                                          kmesh_dense.get(),
                                           kmap_coarse_to_dense,
-                                          phase_factor,
+                                          phase_factor.get(),
                                           phi4_reciprocal);
     } else {
         compute_V4_elements_mpi_over_kpoint(ws.v4_ref,
@@ -1148,10 +1139,10 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                             evec_harmonic,
                                             selfenergy_offdiagonal,
                                             ws.relax_mode != RelaxationStrMode::None,
-                                            kmesh_coarse,
-                                            kmesh_dense,
+                                            kmesh_coarse.get(),
+                                            kmesh_dense.get(),
                                             kmap_coarse_to_dense,
-                                            phase_factor,
+                                            phase_factor.get(),
                                             phi4_reciprocal);
     }
 
@@ -1163,9 +1154,9 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                         omega2_harmonic,
                                         evec_harmonic,
                                         selfenergy_offdiagonal,
-                                        kmesh_coarse,
-                                        kmesh_dense,
-                                        phase_factor,
+                                        kmesh_coarse.get(),
+                                        kmesh_dense.get(),
+                                        phase_factor.get(),
                                         phi3_reciprocal);
 
     // get indices of optical modes at the Gamma point

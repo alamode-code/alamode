@@ -12,6 +12,7 @@
 
 #include <Eigen/Core>
 #include <complex>
+#include <memory>
 #include <string>
 #include <vector>
 #include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
@@ -61,7 +62,11 @@ public:
     {
         if (eval) deallocate(eval);
         if (evec) deallocate(evec);
-    };
+    }
+
+    // Owns raw arrays; copying would double-free.
+    DymatEigenValue(const DymatEigenValue &) = delete;
+    DymatEigenValue &operator=(const DymatEigenValue &) = delete;;
 
     void set_eigenvalues(const unsigned int n, double **eval_in);
 
@@ -101,7 +106,7 @@ public:
     int **index_bconnect{};
     bool **is_imaginary{};
 
-    DymatEigenValue *dymat_band, *dymat_general;
+    std::unique_ptr<DymatEigenValue> dymat_band, dymat_general;
 
     void diagonalize_dynamical_all();
 

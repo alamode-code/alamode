@@ -96,10 +96,10 @@ void Gruneisen::setup()
         prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3);
     }
     if (print_gruneisen) {
-        if (kpoint->kpoint_bs) {
+        if (kpoint->kpoint_bs.get()) {
             gruneisen_bs.resize(kpoint->kpoint_bs->nk, dynamical->neval);
         }
-        if (dos->kmesh_dos) {
+        if (dos->kmesh_dos.get()) {
             gruneisen_dos.resize(dos->kmesh_dos->nk, dynamical->neval);
         }
     }
@@ -130,7 +130,7 @@ void Gruneisen::calc_gruneisen()
         std::cout << " GRUNEISEN = 1 : Calculating Gruneisen parameters ... ";
     }
 
-    if (kpoint->kpoint_bs) {
+    if (kpoint->kpoint_bs.get()) {
         const auto nk = kpoint->kpoint_bs->nk;
         const auto xk = kpoint->kpoint_bs->xk;
         const auto eval = dynamical->dymat_band->get_eigenvalues();
@@ -163,7 +163,7 @@ void Gruneisen::calc_gruneisen()
         }
     }
 
-    if (dos->kmesh_dos) {
+    if (dos->kmesh_dos.get()) {
         const auto nk = dos->kmesh_dos->nk;
         const auto xk = dos->kmesh_dos->xk;
         const auto eval = dos->dymat_dos->get_eigenvalues();

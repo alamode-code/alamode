@@ -107,7 +107,7 @@ void Iterativebte::setup_iterative()
 
     // Full-grid velocities in atomic units on every rank (calc_kappa and
     // the boundary rate convert units at the point of use).
-    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos,
+    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos.get(),
                                                   system->get_primcell().lattice_vector,
                                                   vel,
                                                   1.0,
@@ -117,9 +117,9 @@ void Iterativebte::setup_iterative()
 
     // Build the collision operator: wedge distribution over the MPI ranks,
     // triplet lists of the local k points and the symmetry table.
-    collision_op = std::make_unique<CollisionOperator>(*dos->kmesh_dos,
-                                                       *dos->tetra_nodes_dos,
-                                                       *dos->dymat_dos,
+    collision_op = std::make_unique<CollisionOperator>(*dos->kmesh_dos.get(),
+                                                       *dos->tetra_nodes_dos.get(),
+                                                       *dos->dymat_dos.get(),
                                                        *system,
                                                        *symmetry,
                                                        *integration,
@@ -253,7 +253,7 @@ void Iterativebte::calc_damping4()
     double **damping4_dense = nullptr;
     allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-    conductivity->compute_damping4_interpolated(dos->kmesh_dos, damping4_dense);
+    conductivity->compute_damping4_interpolated(dos->kmesh_dos.get(), damping4_dense);
 
     allocate(damping4, ntemp, nklocal, ns);
     for (auto ik = 0; ik < nklocal; ++ik) {

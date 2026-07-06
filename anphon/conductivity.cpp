@@ -119,9 +119,9 @@ void Conductivity::deallocate_variables()
     if (vel_4ph) {
         deallocate(vel_4ph);
     }
-    delete kmesh_4ph;
-    delete dymat_4ph;
-    delete phase_storage_4ph;
+    kmesh_4ph.reset();
+    dymat_4ph.reset();
+    phase_storage_4ph.reset();
 }
 
 void Conductivity::run_kappa()
@@ -191,7 +191,7 @@ void Conductivity::setup_kappa()
     }
 
     // Velocities in m/s on rank 0 (the only rank that assembles kappa).
-    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos,
+    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos.get(),
                                                   system->get_primcell().lattice_vector,
                                                   vel,
                                                   Bohr_in_Angstrom * 1.0e-10 / time_ry,
@@ -204,7 +204,7 @@ void Conductivity::setup_kappa()
             allocate(velmat, 1, 1, 1, 3);
         }
         phonon_velocity->calc_phonon_velmat_mesh(velmat);
-        check_velocity_matrix_consistency(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues());
+        check_velocity_matrix_consistency(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
         if (calc_coherent == 2) {
             file_coherent_elems = input->job_title + ".kc_elem";
         }
@@ -270,10 +270,10 @@ void Conductivity::setup_kappa_4ph()
 
     const auto neval = dynamical->neval;
 
-    kmesh_4ph = new KpointMeshUniform(nkc_tmp);
+    kmesh_4ph = std::make_unique<KpointMeshUniform>(nkc_tmp);
     kmesh_4ph->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector);
     auto nk_4ph = kmesh_4ph->nk;
-    dymat_4ph = new DymatEigenValue(true, false, nk_4ph, neval);
+    dymat_4ph = std::make_unique<DymatEigenValue>(true, false, nk_4ph, neval);
 
     allocate(eval_tmp, nk_4ph, neval);
     allocate(evec_tmp, nk_4ph, neval, neval);
@@ -305,11 +305,11 @@ void Conductivity::setup_kappa_4ph()
     deallocate(eval_tmp);
     deallocate(evec_tmp);
 
-    phase_storage_4ph = new PhaseFactorStorage(kmesh_4ph->nk_i);
+    phase_storage_4ph = std::make_unique<PhaseFactorStorage>(kmesh_4ph->nk_i);
     phase_storage_4ph->create(true);
 
     // Velocities in m/s on rank 0, matching the 3ph channel.
-    phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph,
+    phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph.get(),
                                                   system->get_primcell().lattice_vector,
                                                   vel_4ph,
                                                   Bohr_in_Angstrom * 1.0e-10 / time_ry,
@@ -324,8 +324,8 @@ void Conductivity::setup_kappa_4ph()
 
     integration->create_adaptive_sigma4(kmesh_4ph->nk,
                                         ns,
-                                        kmesh_4ph,
-                                        phonon_velocity,
+                                        kmesh_4ph.get(),
+                                        phonon_velocity.get(),
                                         system->get_primcell().lattice_vector,
                                         system->get_primcell().reciprocal_lattice_vector);
 
@@ -368,7 +368,7 @@ void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_
     calc_anharmonic_imagself4();
 
     if (mympi->my_rank == 0) {
-        interpolate_data(kmesh_4ph, kmesh_dense_in, damping4, damping4_dense_out);
+        interpolate_data(kmesh_4ph.get(), kmesh_dense_in, damping4, damping4_dense_out);
     }
 
     MPI_Bcast(&damping4_dense_out[0][0],
@@ -702,7 +702,7 @@ void Conductivity::setup_result_io(const int mode)
 
                 write_header_result(fs_result3,
                                     file_result3,
-                                    dos->kmesh_dos,
+                                    dos->kmesh_dos.get(),
                                     system->get_primcell(),
                                     thermodynamics->classical,
                                     integration->ismear,
@@ -737,7 +737,7 @@ void Conductivity::setup_result_io(const int mode)
 
                 write_header_result(fs_result4,
                                     file_result4,
-                                    kmesh_4ph,
+                                    kmesh_4ph.get(),
                                     system->get_primcell(),
                                     thermodynamics->classical,
                                     integration->ismear,
@@ -796,7 +796,7 @@ KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
 
 KappaChannelMetaH5 Conductivity::build_kappa_channel_meta(const int mode) const
 {
-    const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos : kmesh_4ph;
+    const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos.get() : kmesh_4ph.get();
     const auto eval_in = (mode == 1) ? dos->dymat_dos->get_eigenvalues() : dymat_4ph->get_eigenvalues();
     const auto vel_in = (mode == 1) ? vel : vel_4ph;
 
@@ -889,7 +889,7 @@ void Conductivity::import_legacy_result_text(const int mode)
 
     if (!result_io_h5->load_computed_gamma(tag, damping).empty()) return;
 
-    const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos : kmesh_4ph;
+    const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos.get() : kmesh_4ph.get();
 
     std::cout << "\n Found a legacy text restart file " << file_legacy << ".\n"
               << " Its contents will be imported into " << file_kappa_h5
@@ -1005,7 +1005,7 @@ void Conductivity::calc_anharmonic_imagself3()
                                                        omega,
                                                        iks / ns,
                                                        snum,
-                                                       dos->kmesh_dos,
+                                                       dos->kmesh_dos.get(),
                                                        dos->dymat_dos->get_eigenvalues(),
                                                        dos->dymat_dos->get_eigenvectors(),
                                                        damping3_loc);
@@ -1015,7 +1015,7 @@ void Conductivity::calc_anharmonic_imagself3()
                                                           omega,
                                                           iks / ns,
                                                           snum,
-                                                          dos->kmesh_dos,
+                                                          dos->kmesh_dos.get(),
                                                           dos->dymat_dos->get_eigenvalues(),
                                                           dos->dymat_dos->get_eigenvectors(),
                                                           damping3_loc);
@@ -1129,10 +1129,10 @@ void Conductivity::calc_anharmonic_imagself4()
                                                               omega,
                                                               iks / ns,
                                                               snum,
-                                                              kmesh_4ph,
+                                                              kmesh_4ph.get(),
                                                               dymat_4ph->get_eigenvalues(),
                                                               dymat_4ph->get_eigenvectors(),
-                                                              phase_storage_4ph,
+                                                              phase_storage_4ph.get(),
                                                               damping4_loc);
 
             } else if (integration->ismear_4ph == -1) {
@@ -1283,7 +1283,7 @@ void Conductivity::compute_kappa()
         allocate(lifetime, dos->kmesh_dos->nk_irred * ns, ntemp);
         allocate(gamma_total, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), damping3);
+        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), damping3);
 
         for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks) {
             for (i = 0; i < ntemp; ++i) {
@@ -1318,7 +1318,7 @@ void Conductivity::compute_kappa()
             }
         }
 
-        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), gamma_total);
+        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), gamma_total);
 
         // kappa_spec must be allocated before the FPH_RTA block below, because
         // compute_kappa_intraband() writes into it on the intermediate 3-phonon-only
@@ -1335,7 +1335,7 @@ void Conductivity::compute_kappa()
             lifetime_from_gamma(gamma_total, lifetime_3only);
 
             allocate(kappa_3only, ntemp, 3, 3);
-            compute_kappa_intraband(dos->kmesh_dos,
+            compute_kappa_intraband(dos->kmesh_dos.get(),
                                     dos->dymat_dos->get_eigenvalues(),
                                     lifetime_3only,
                                     kappa_3only,
@@ -1343,13 +1343,13 @@ void Conductivity::compute_kappa()
 
             deallocate(lifetime_3only);
 
-            average_self_energy_at_degenerate_point(ntemp, kmesh_4ph, dymat_4ph->get_eigenvalues(), damping4);
+            average_self_energy_at_degenerate_point(ntemp, kmesh_4ph.get(), dymat_4ph->get_eigenvalues(), damping4);
 
             double **damping4_dense = nullptr;
 
             allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
 
-            interpolate_data(kmesh_4ph, dos->kmesh_dos, damping4, damping4_dense);
+            interpolate_data(kmesh_4ph.get(), dos->kmesh_dos.get(), damping4, damping4_dense);
 
             for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ++ik) {
                 for (auto is = 0; is < ns; ++is) {
@@ -1360,7 +1360,7 @@ void Conductivity::compute_kappa()
             }
 
             average_self_energy_at_degenerate_point(ntemp,
-                                                    dos->kmesh_dos,
+                                                    dos->kmesh_dos.get(),
                                                     dos->dymat_dos->get_eigenvalues(),
                                                     gamma_total);
         }
@@ -1370,12 +1370,12 @@ void Conductivity::compute_kappa()
         allocate(kappa, ntemp, 3, 3);
 
         // kappa_spec is already allocated above (before the FPH_RTA block).
-        compute_kappa_intraband(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), lifetime, kappa, kappa_spec);
+        compute_kappa_intraband(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), lifetime, kappa, kappa_spec);
         deallocate(lifetime);
 
         if (calc_coherent) {
             allocate(kappa_coherent, ntemp, 3, 3);
-            compute_kappa_coherent(dos->kmesh_dos, dos->dymat_dos->get_eigenvalues(), gamma_total, kappa_coherent);
+            compute_kappa_coherent(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), gamma_total, kappa_coherent);
         }
 
 
@@ -1472,7 +1472,7 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, co
         //allocate(kappa_spec_out, dos->n_energy, ntemp, 3);
         compute_frequency_resolved_kappa(ntemp,
                                          integration->ismear,
-                                         dos->kmesh_dos,
+                                         dos->kmesh_dos.get(),
                                          dos->dymat_dos->get_eigenvalues(),
                                          kappa_mode,
                                          kappa_spec_out);
@@ -1785,7 +1785,7 @@ void Conductivity::set_kmesh_coarse(const unsigned int *nk_in)
 
 KpointMeshUniform *Conductivity::get_kmesh_coarse() const
 {
-    return kmesh_4ph;
+    return kmesh_4ph.get();
 }
 
 void Conductivity::set_conductivity_params(const std::string &file_result3_in, const std::string &file_result4_in,

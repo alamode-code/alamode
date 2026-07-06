@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include "constants.h"
 #include "kpoint.h"
@@ -67,6 +68,10 @@ public:
         if (tetras) deallocate(tetras);
     }
 
+    // Owns raw arrays; copying would double-free.
+    TetraNodes(const TetraNodes &) = delete;
+    TetraNodes &operator=(const TetraNodes &) = delete;
+
     void setup();
 
     unsigned int get_ntetra() const;
@@ -95,6 +100,10 @@ public:
     {
         if (vel) deallocate(vel);
     };
+
+    // Owns raw arrays; copying would double-free.
+    AdaptiveSmearingSigma(const AdaptiveSmearingSigma &) = delete;
+    AdaptiveSmearingSigma &operator=(const AdaptiveSmearingSigma &) = delete;
 
     void setup(const PhononVelocity *phvel_class, const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &lavec_p_in,
                const Eigen::Matrix3d &rlavec_p_in);
@@ -130,8 +139,8 @@ public:
     double epsilon_4ph;
     double adaptive_factor;
 
-    AdaptiveSmearingSigma *adaptive_sigma = nullptr;
-    AdaptiveSmearingSigma *adaptive_sigma4 = nullptr;
+    std::unique_ptr<AdaptiveSmearingSigma> adaptive_sigma;
+    std::unique_ptr<AdaptiveSmearingSigma> adaptive_sigma4;
 
     void setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
                            unsigned int ns_in, const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p,

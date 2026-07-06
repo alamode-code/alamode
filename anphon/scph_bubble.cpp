@@ -85,7 +85,7 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                            evec,
                                            thermodynamics->FE_bubble,
                                            *system,
-                                           *dos->kmesh_dos,
+                                           *dos->kmesh_dos.get(),
                                            symmetry->SymmList,
                                            *anharmonic_core,
                                            dynamical->neval,
@@ -183,7 +183,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         omegalist.push_back(im * epsilon);
 
                         auto se_bubble =
-                            get_bubble_selfenergy(kmesh_dense, ns, eval, evec, knum, snum, temp, omegalist);
+                            get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist);
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -192,7 +192,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         omegalist.push_back(eval[knum][snum] + im * epsilon);
 
                         auto se_bubble =
-                            get_bubble_selfenergy(kmesh_dense, ns, eval, evec, knum, snum, temp, omegalist);
+                            get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist);
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -211,7 +211,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         }
 
                         auto se_bubble =
-                            get_bubble_selfenergy(kmesh_dense, ns, eval, evec, knum, snum, temp, omegalist);
+                            get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist);
 
                         if (mympi->my_rank == 0) {
 
@@ -313,7 +313,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
             dynamical->calc_new_dymat_with_evec(delta_dymat_scph_plus_bubble[iT],
                                                 eval_bubble[iT],
                                                 evec,
-                                                kmesh_coarse,
+                                                kmesh_coarse.get(),
                                                 kmap_coarse_to_dense);
         }
     }
@@ -379,7 +379,7 @@ std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUn
         arr_cubic[1] = ns_in * ik1 + is1;
         arr_cubic[2] = ns_in * ik2 + is2;
 
-        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_factor));
+        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_factor.get()));
 
         if (thermodynamics->classical) {
             n1 = thermodynamics->fC(omega1, temp_in);

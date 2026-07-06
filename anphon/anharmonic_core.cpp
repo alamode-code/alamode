@@ -63,7 +63,6 @@ void AnharmonicCore::set_default_variables()
     fcs_group_v4 = nullptr;
     phi3_reciprocal = nullptr;
     phi4_reciprocal = nullptr;
-    phase_storage_dos = nullptr;
 }
 
 void AnharmonicCore::deallocate_variables()
@@ -98,7 +97,7 @@ void AnharmonicCore::deallocate_variables()
     if (phi4_reciprocal) {
         deallocate(phi4_reciprocal);
     }
-    if (phase_storage_dos) delete phase_storage_dos;
+    phase_storage_dos.reset();
 }
 
 void AnharmonicCore::setup()
@@ -110,8 +109,8 @@ void AnharmonicCore::setup()
     if (fcs_phonon->maxorder >= 2) setup_cubic();
     if (fcs_phonon->maxorder >= 3) setup_quartic();
 
-    if (!mode_analysis->calc_fstate_k && dos->kmesh_dos) {
-        phase_storage_dos = new PhaseFactorStorage(dos->kmesh_dos->nk_i);
+    if (!mode_analysis->calc_fstate_k && dos->kmesh_dos.get()) {
+        phase_storage_dos = std::make_unique<PhaseFactorStorage>(dos->kmesh_dos->nk_i);
         phase_storage_dos->create(use_tuned_ver);
     }
 }
@@ -199,13 +198,13 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3])
               dos->kmesh_dos->xk,
               dos->dymat_dos->get_eigenvalues(),
               dos->dymat_dos->get_eigenvectors(),
-              this->phase_storage_dos);
+              this->phase_storage_dos.get());
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in)
 {
-    return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos);
+    return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos.get());
 }
 
 std::complex<double> AnharmonicCore::V4(const unsigned int ks[4])
@@ -214,7 +213,7 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4])
               dos->kmesh_dos->xk,
               dos->dymat_dos->get_eigenvalues(),
               dos->dymat_dos->get_eigenvectors(),
-              this->phase_storage_dos);
+              this->phase_storage_dos.get());
 }
 
 std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3])
@@ -223,7 +222,7 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3])
                 dos->kmesh_dos->xk,
                 dos->dymat_dos->get_eigenvalues(),
                 dos->dymat_dos->get_eigenvectors(),
-                this->phase_storage_dos);
+                this->phase_storage_dos.get());
 }
 
 std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4])
@@ -232,7 +231,7 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4])
                 dos->kmesh_dos->xk,
                 dos->dymat_dos->get_eigenvalues(),
                 dos->dymat_dos->get_eigenvectors(),
-                this->phase_storage_dos);
+                this->phase_storage_dos.get());
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
@@ -285,7 +284,7 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                         std::complex<double> *phi3_work, int *kindex_work)
 {
-    return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos, phi3_work, kindex_work);
+    return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos.get(), phi3_work, kindex_work);
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
@@ -816,7 +815,7 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
 
                 v3_arr[iik][ib] =
                     std::norm(
-                        V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos, phi3_work.data(), kindex_work)) *
+                        V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos.get(), phi3_work.data(), kindex_work)) *
                     multi_loc;
             }
         }
@@ -1067,7 +1066,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
                                                     kmesh_in->xk,
                                                     eval_in,
                                                     evec_in,
-                                                    phase_storage_dos,
+                                                    phase_storage_dos.get(),
                                                     phi3_work.data(),
                                                     kindex_work)) *
                                        multi_loc;
@@ -1825,7 +1824,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
                 arr[1] = ns * kpairs[ik_now][0] + is;
                 arr[2] = ns * kpairs[ik_now][1] + js;
 
-                v3_arr_loc[ib] = std::norm(V3(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_dos));
+                v3_arr_loc[ib] = std::norm(V3(arr, kmesh_in->xk, eval_in, evec_in, phase_storage_dos.get()));
             }
         }
         MPI_Gather(&v3_arr_loc[0], ns2, MPI_DOUBLE, v3_arr[ik * mympi->nprocs], ns2, MPI_DOUBLE, 0, MPI_COMM_WORLD);

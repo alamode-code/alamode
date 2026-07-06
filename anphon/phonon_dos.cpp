@@ -51,9 +51,6 @@ void Dos::set_default_variables()
     longitude_dos = nullptr;
     sps3_mode = nullptr;
     sps3_with_bose = nullptr;
-    tetra_nodes_dos = nullptr;
-    kmesh_dos = nullptr;
-    dymat_dos = nullptr;
     auto_set_emin = true;
     auto_set_emax = true;
     emin = 0.0;
@@ -81,15 +78,15 @@ void Dos::deallocate_variables()
         deallocate(sps3_with_bose);
     }
 
-    delete tetra_nodes_dos;
-    delete kmesh_dos;
-    delete dymat_dos;
+    tetra_nodes_dos.reset();
+    kmesh_dos.reset();
+    dymat_dos.reset();
 }
 
 void Dos::create_kmesh_dos(const unsigned int nk_in[3], const std::vector<SymmetryOperation> &symmlist,
                            const Eigen::Matrix3d &rlavec_p, const bool time_reversal_sym)
 {
-    kmesh_dos = new KpointMeshUniform(nk_in);
+    kmesh_dos = std::make_unique<KpointMeshUniform>(nk_in);
     kmesh_dos->setup(symmlist, rlavec_p, time_reversal_sym, true);
 }
 
@@ -108,7 +105,7 @@ void Dos::setup()
     MPI_Bcast(&scattering_phase_space, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&longitudinal_projected_dos, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    if (kmesh_dos) {
+    if (kmesh_dos.get()) {
         flag_dos = true;
     } else {
         flag_dos = false;
@@ -120,13 +117,13 @@ void Dos::setup()
 
         update_dos_energy_grid(emin, emax, true);
 
-        dymat_dos = new DymatEigenValue(dynamical->eigenvectors, false, kmesh_dos->nk, dynamical->neval);
+        dymat_dos = std::make_unique<DymatEigenValue>(dynamical->eigenvectors, false, kmesh_dos->nk, dynamical->neval);
 
         if (integration->ismear == -1) {
-            tetra_nodes_dos = new TetraNodes(kmesh_dos->nk_i[0], kmesh_dos->nk_i[1], kmesh_dos->nk_i[2]);
+            tetra_nodes_dos = std::make_unique<TetraNodes>(kmesh_dos->nk_i[0], kmesh_dos->nk_i[1], kmesh_dos->nk_i[2]);
             tetra_nodes_dos->setup();
         } else {
-            tetra_nodes_dos = new TetraNodes();
+            tetra_nodes_dos = std::make_unique<TetraNodes>();
         }
     }
 }

@@ -11,6 +11,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #pragma once
 
 #include <complex>
+#include <memory>
 #include <vector>
 #include "fcs_phonon.h"
 #include "kpoint.h"
@@ -86,7 +87,11 @@ public:
     {
         if (exp_phase) deallocate(exp_phase);
         if (exp_phase3) deallocate(exp_phase3);
-    };
+    }
+
+    // Owns raw arrays; copying would double-free.
+    PhaseFactorStorage(const PhaseFactorStorage &) = delete;
+    PhaseFactorStorage &operator=(const PhaseFactorStorage &) = delete;;
 
     void create(const bool use_tuned_ver, const bool switch_to_type2 = false);
 
@@ -257,7 +262,7 @@ private:
     std::complex<double> *phi3_reciprocal, *phi4_reciprocal;
     std::vector<RelativeVector> *relvec_v3, *relvec_v4;
 
-    PhaseFactorStorage *phase_storage_dos;
+    std::unique_ptr<PhaseFactorStorage> phase_storage_dos;
 
     bool sym_permutation;
 

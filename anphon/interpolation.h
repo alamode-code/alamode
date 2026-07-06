@@ -208,8 +208,10 @@ public:
                         const bool subtract_harmonic_term_in = true);
 
 private:
-    KpointMeshUniform kmesh_coarse;
-    KpointMeshUniform kmesh_dense;
+    // Borrowed views of the caller-owned meshes (copying KpointMeshUniform
+    // is deleted -- it owns raw arrays and a shallow copy would double-free).
+    const KpointMeshUniform &kmesh_coarse;
+    const KpointMeshUniform &kmesh_dense;
     std::vector<int> map_corase_to_dense;
     bool subtract_harmonic_term = true;
 

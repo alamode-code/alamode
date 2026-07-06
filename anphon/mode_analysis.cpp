@@ -333,7 +333,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                                       omega,
                                                       ik_irred,
                                                       snum,
-                                                      dos->kmesh_dos,
+                                                      dos->kmesh_dos.get(),
                                                       dos->dymat_dos->get_eigenvalues(),
                                                       dos->dymat_dos->get_eigenvectors(),
                                                       damping_a);
@@ -343,7 +343,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                      omega,
                                      knum,
                                      snum,
-                                     dos->kmesh_dos,
+                                     dos->kmesh_dos.get(),
                                      dos->dymat_dos->get_eigenvalues(),
                                      dos->dymat_dos->get_eigenvectors(),
                                      self_a);
@@ -356,42 +356,42 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                      omega,
                                      knum,
                                      snum,
-                                     dos->kmesh_dos,
+                                     dos->kmesh_dos.get(),
                                      dos->dymat_dos->get_eigenvalues(),
                                      dos->dymat_dos->get_eigenvectors(),
                                      self_c);
             //            selfenergy->selfenergy_d(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_d);
             //            selfenergy->selfenergy_e(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_e);
             //            selfenergy->selfenergy_f(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_f);
             //            selfenergy->selfenergy_g(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_g);
             //            selfenergy->selfenergy_h(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_h);
             //            selfenergy->selfenergy_i(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_i);
             //            selfenergy->selfenergy_j(NT, T_arr, omega, knum, snum,
-            //                                     dos->kmesh_dos,
+            //                                     dos->kmesh_dos.get(),
             //                                     dos->dymat_dos->get_eigenvalues(),
             //                                     dos->dymat_dos->get_eigenvectors(),
             //                                     self_j);
@@ -442,7 +442,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                            omega,
                                            knum,
                                            snum,
-                                           dos->kmesh_dos,
+                                           dos->kmesh_dos.get(),
                                            dos->dymat_dos->get_eigenvalues(),
                                            dos->dymat_dos->get_eigenvectors(),
                                            self_tadpole);
@@ -454,7 +454,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                          omega,
                                          knum,
                                          snum,
-                                         dos->kmesh_dos,
+                                         dos->kmesh_dos.get(),
                                          dos->dymat_dos->get_eigenvalues(),
                                          dos->dymat_dos->get_eigenvectors(),
                                          self_b);
@@ -584,7 +584,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
                                                             freq_array,
                                                             dos->kmesh_dos->kmap_to_irreducible[knum],
                                                             snum,
-                                                            dos->kmesh_dos,
+                                                            dos->kmesh_dos.get(),
                                                             dos->dymat_dos->get_eigenvalues(),
                                                             dos->dymat_dos->get_eigenvectors(),
                                                             gamma_final);
@@ -596,7 +596,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
                                                 freq_array,
                                                 dos->kmesh_dos->kmap_to_irreducible[knum],
                                                 snum,
-                                                dos->kmesh_dos,
+                                                dos->kmesh_dos.get(),
                                                 dos->dymat_dos->get_eigenvalues(),
                                                 dos->dymat_dos->get_eigenvectors(),
                                                 gamma_final);
@@ -1630,7 +1630,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
             }
 
             anharmonic_core->calc_self3omega_tetrahedron(T_now,
-                                                         dos->kmesh_dos,
+                                                         dos->kmesh_dos.get(),
                                                          dos->dymat_dos->get_eigenvalues(),
                                                          dos->dymat_dos->get_eigenvectors(),
                                                          ik_irred,

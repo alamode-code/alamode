@@ -13,6 +13,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <Eigen/Core>
 #include <map>
 #include <string>
+#include <memory>
 #include <vector>
 #include "memory.h"
 #include "pointers.h"
@@ -175,6 +176,10 @@ public:
         }
     }
 
+    // Owns raw arrays; copying would double-free.
+    KpointGeneral(const KpointGeneral &) = delete;
+    KpointGeneral &operator=(const KpointGeneral &) = delete;
+
     unsigned int nk;
     double **xk = nullptr;
     double **kvec_na = nullptr;
@@ -215,7 +220,11 @@ public:
             deallocate(kvec_na);
             kvec_na = nullptr;
         }
-    };
+    }
+
+    // Owns raw arrays; copying would double-free.
+    KpointMeshUniform(const KpointMeshUniform &) = delete;
+    KpointMeshUniform &operator=(const KpointMeshUniform &) = delete;;
 
     unsigned int nk_i[3]{};
     unsigned int nk{}, nk_irred{};
@@ -315,6 +324,10 @@ public:
         }
     }
 
+    // Owns raw arrays; copying would double-free.
+    KpointBandStructure(const KpointBandStructure &) = delete;
+    KpointBandStructure &operator=(const KpointBandStructure &) = delete;
+
     unsigned int nk;
     double **xk = nullptr;
     double **kvec_na = nullptr;
@@ -334,8 +347,8 @@ public:
 
     std::vector<KpointInp> kpInp;
 
-    KpointBandStructure *kpoint_bs;
-    KpointGeneral *kpoint_general;
+    std::unique_ptr<KpointBandStructure> kpoint_bs;
+    std::unique_ptr<KpointGeneral> kpoint_general;
 
     int get_knum(const double[3], const unsigned int[3]) const;
 

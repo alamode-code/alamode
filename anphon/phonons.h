@@ -18,6 +18,7 @@
 
 #endif
 
+#include <memory>
 #include <string>
 
 namespace PHON_NS
@@ -29,59 +30,59 @@ public:
 
     virtual ~PHON();
 
-    class Timer *timer;
+    std::unique_ptr<class Timer> timer;
 
-    class Input *input;
+    std::unique_ptr<class Input> input;
 
-    class System *system;
+    std::unique_ptr<class System> system;
 
-    class Symmetry *symmetry;
+    std::unique_ptr<class Symmetry> symmetry;
 
-    class Kpoint *kpoint;
+    std::unique_ptr<class Kpoint> kpoint;
 
-    class Integration *integration;
+    std::unique_ptr<class Integration> integration;
 
-    class Fcs_phonon *fcs_phonon;
+    std::unique_ptr<class Fcs_phonon> fcs_phonon;
 
-    class Dynamical *dynamical;
+    std::unique_ptr<class Dynamical> dynamical;
 
-    class PhononVelocity *phonon_velocity;
+    std::unique_ptr<class PhononVelocity> phonon_velocity;
 
-    class Thermodynamics *thermodynamics;
+    std::unique_ptr<class Thermodynamics> thermodynamics;
 
-    class AnharmonicCore *anharmonic_core;
+    std::unique_ptr<class AnharmonicCore> anharmonic_core;
 
-    class ModeAnalysis *mode_analysis;
+    std::unique_ptr<class ModeAnalysis> mode_analysis;
 
-    class Selfenergy *selfenergy;
+    std::unique_ptr<class Selfenergy> selfenergy;
 
-    class Conductivity *conductivity;
+    std::unique_ptr<class Conductivity> conductivity;
 
-    class Writes *writes;
+    std::unique_ptr<class Writes> writes;
 
-    class Dos *dos;
+    std::unique_ptr<class Dos> dos;
 
-    class Iterativebte *iterativebte;
+    std::unique_ptr<class Iterativebte> iterativebte;
 
-    class Gruneisen *gruneisen;
+    std::unique_ptr<class Gruneisen> gruneisen;
 
-    class MyMPI *mympi;
+    std::unique_ptr<class MyMPI> mympi;
 
-    class Isotope *isotope;
+    std::unique_ptr<class Isotope> isotope;
 
-    class Scph *scph;
+    std::unique_ptr<class Scph> scph;
 
-    class Ewald *ewald;
+    std::unique_ptr<class Ewald> ewald;
 
-    class Dielec *dielec;
+    std::unique_ptr<class Dielec> dielec;
 
-    class Qha *qha;
+    std::unique_ptr<class Qha> qha;
 
-    class Relaxation *relaxation;
+    std::unique_ptr<class Relaxation> relaxation;
 
     void create_pointers();
 
-    void destroy_pointers() const;
+    void destroy_pointers();
 
     std::string mode;
     //bool restart_flag;
