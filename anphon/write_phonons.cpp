@@ -2420,7 +2420,7 @@ void Writes::writeSelfenergyIsotope() const
     unsigned int k;
     const auto ns = dynamical->neval;
     const auto eval = dos->dymat_dos->get_eigenvalues();
-    const auto gamma_iso = isotope->gamma_isotope;
+    const auto &gamma_iso = isotope->gamma_isotope;
 
     if (mympi->my_rank == 0) {
         if (isotope->include_isotope == 2) {

@@ -13,6 +13,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <vector>
+#include "ndarray.h"
 #include "kpoint.h"
 
 namespace PHON_NS
@@ -149,8 +150,8 @@ private:
     bool use_triplet_symmetry;
     bool sym_permutation;
 
-    double ***L_absorb; // L q0 + q1 -> q2
-    double ***L_emitt;  // L q0 -> q1 + q2
+    NDArray<double, 3> L_absorb; // L q0 + q1 -> q2
+    NDArray<double, 3> L_emitt;  // L q0 -> q1 + q2
 
     // Elastic isotope-disorder kernel: sparse partners of each local wedge
     // row with the temperature-independent value w = (pi/4N) w1 w2 g2

@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include "ndarray.h"
 #include "anharmonic_core.h"
 #include "dynamical.h"
 #include "kappa_result_io.h"
@@ -57,13 +58,13 @@ public:
 
     int calc_kappa_spec;
     unsigned int ntemp;
-    double **damping3;
-    double **damping4;
-    double ***kappa;
-    double ***kappa_3only;
-    double ***kappa_spec;
-    double ***kappa_coherent;
-    double *temperature;
+    NDArray<double, 2> damping3;
+    NDArray<double, 2> damping4;
+    NDArray<double, 3> kappa;
+    NDArray<double, 3> kappa_3only;
+    NDArray<double, 3> kappa_spec;
+    NDArray<double, 3> kappa_coherent;
+    NDArray<double, 1> temperature;
     int calc_coherent;
     int write_interpolation;
 
@@ -95,8 +96,8 @@ private:
 
     void deallocate_variables();
 
-    double ***vel, ***vel_4ph;
-    std::complex<double> ****velmat;
+    NDArray<double, 3> vel, vel_4ph;
+    NDArray<std::complex<double>, 4> velmat;
     unsigned int nk_3ph, ns;
     int nshift_restart, nshift_restart4;
     std::vector<int> vks_l, vks_done, vks_done4;
@@ -155,7 +156,7 @@ private:
 
     void setup_kappa_4ph();
 
-    void lifetime_from_gamma(double **&, double **&);
+    void lifetime_from_gamma(NDArray<double, 2> &, NDArray<double, 2> &);
 
     void write_result_gamma(unsigned int, unsigned int, double ***, double **, int);
 

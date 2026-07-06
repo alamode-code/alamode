@@ -12,6 +12,7 @@
 
 #include <complex>
 #include <vector>
+#include "ndarray.h"
 #include "kpoint.h"
 
 namespace PHON_NS
@@ -33,7 +34,7 @@ public:
 
     int include_isotope;
     std::vector<double> isotope_factor;
-    double **gamma_isotope;
+    NDArray<double, 2> gamma_isotope;
 
     // Broadcast the parsed configuration, fill missing ISOFACT entries from
     // the built-in database, and allocate gamma_isotope (rank 0).
@@ -43,7 +44,7 @@ public:
     void calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
                                      const TetraNodes &tetra_nodes_dos_in, const System &system_in,
                                      Integration &integration_in, unsigned int ns_in, int my_rank_in,
-                                     int nprocs_in) const;
+                                     int nprocs_in);
 
 private:
     void set_default_variables();

@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <complex>
 #include <vector>
+#include "ndarray.h"
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "pointers.h"
@@ -39,7 +40,8 @@ public:
                                             double ***phvel3_out) const;
 
     void gather_group_velocities_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
-                                      double ***&vel_out, const double unit_factor, const bool bcast_full) const;
+                                      NDArray<double, 3> &vel_out, const double unit_factor,
+                                      const bool bcast_full) const;
 
     void calc_phonon_velmat_mesh(std::complex<double> ****velmat_out) const;
 

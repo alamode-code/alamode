@@ -45,17 +45,15 @@ CollisionOperator::CollisionOperator(const KpointMeshUniform &kmesh_dos_in, cons
     use_triplet_symmetry = true;
     sym_permutation = false;
     with_isotope = false;
-    L_absorb = nullptr;
-    L_emitt = nullptr;
 }
 
 CollisionOperator::~CollisionOperator()
 {
     if (L_absorb) {
-        deallocate(L_absorb);
+        L_absorb.clear();
     }
     if (L_emitt) {
-        deallocate(L_emitt);
+        L_emitt.clear();
     }
 }
 
@@ -256,9 +254,9 @@ void CollisionOperator::build_L_isotope()
 
     // Degeneracy-averaged frequencies (tetrahedron path only), built once.
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
-    double **eval_tetra = nullptr;
+    NDArray<double, 2> eval_tetra;
     if (integration_.ismear == -1) {
-        allocate(eval_tetra, ns, nk_3ph);
+        eval_tetra.resize(ns, nk_3ph);
         for (int ik = 0; ik < nk_3ph; ++ik) {
             auto begin = 0;
             auto omega_ref = eval_in[ik][0];
@@ -286,13 +284,13 @@ void CollisionOperator::build_L_isotope()
 #pragma omp parallel
 #endif
     {
-        double *energy_tmp = nullptr;
-        double **weight_tetra = nullptr;
-        unsigned int *kmap_identity = nullptr;
+        NDArray<double, 1> energy_tmp;
+        NDArray<double, 2> weight_tetra;
+        NDArray<unsigned int, 1> kmap_identity;
         if (integration_.ismear == -1) {
-            allocate(energy_tmp, nk_3ph);
-            allocate(weight_tetra, ns, nk_3ph);
-            allocate(kmap_identity, nk_3ph);
+            energy_tmp.resize(nk_3ph);
+            weight_tetra.resize(ns, nk_3ph);
+            kmap_identity.resize(nk_3ph);
             for (int ik = 0; ik < nk_3ph; ++ik)
                 kmap_identity[ik] = ik;
         }
@@ -396,13 +394,13 @@ void CollisionOperator::build_L_isotope()
         }
 
         if (integration_.ismear == -1) {
-            deallocate(energy_tmp);
-            deallocate(weight_tetra);
-            deallocate(kmap_identity);
+            energy_tmp.clear();
+            weight_tetra.clear();
+            kmap_identity.clear();
         }
     }
 
-    if (eval_tetra) deallocate(eval_tetra);
+    eval_tetra.clear();
 }
 
 void CollisionOperator::add_isotope_diagonal(const double *const *sqrt_occ, double **q_inout) const
@@ -423,8 +421,8 @@ void CollisionOperator::setup_L_smear()
 {
     // we calculate V for all pairs L+(local_nk*eachpair,ns,ns2) and L-
 
-    allocate(L_absorb, kplength_absorb, ns, ns2);
-    allocate(L_emitt, kplength_emitt, ns, ns2);
+    L_absorb.resize(kplength_absorb, ns, ns2);
+    L_emitt.resize(kplength_emitt, ns, ns2);
 
     const auto epsilon = integration_.epsilon;
 
@@ -545,11 +543,11 @@ void CollisionOperator::setup_L_tetra()
 {
     // we calculate V for all pairs L+(local_nk*eachpair,ns,ns2) and L-
 
-    allocate(L_absorb, kplength_absorb, ns, ns2);
-    allocate(L_emitt, kplength_emitt, ns, ns2);
+    L_absorb.resize(kplength_absorb, ns, ns2);
+    L_emitt.resize(kplength_emitt, ns, ns2);
 
-    unsigned int *kmap_identity;
-    allocate(kmap_identity, nk_3ph);
+    NDArray<unsigned int, 1> kmap_identity;
+    kmap_identity.resize(nk_3ph);
     for (auto i = 0; i < nk_3ph; ++i)
         kmap_identity[i] = i;
 
@@ -561,10 +559,10 @@ void CollisionOperator::setup_L_tetra()
 #pragma omp parallel
 #endif
     {
-        double *energy_tmp;
-        double *weight_tetra;
-        allocate(energy_tmp, nk_3ph);
-        allocate(weight_tetra, nk_3ph);
+        NDArray<double, 1> energy_tmp;
+        NDArray<double, 1> weight_tetra;
+        energy_tmp.resize(nk_3ph);
+        weight_tetra.resize(nk_3ph);
         double xk_tmp[3];
 
 #ifdef _OPENMP
@@ -624,8 +622,8 @@ void CollisionOperator::setup_L_tetra()
             }
         }
 
-        deallocate(energy_tmp);
-        deallocate(weight_tetra);
+        energy_tmp.clear();
+        weight_tetra.clear();
     }
 
     // Pass 2: multiply |V3|^2, parallel over triplets so the per-triplet
@@ -693,7 +691,7 @@ void CollisionOperator::setup_L_tetra()
         }
     }
 
-    deallocate(kmap_identity);
+    kmap_identity.clear();
 }
 
 void CollisionOperator::calc_Q_from_L(const double *const *sqrt_occ, double **q1) const
@@ -701,10 +699,10 @@ void CollisionOperator::calc_Q_from_L(const double *const *sqrt_occ, double **q1
     int s1, s2, s3;
     double g1, g2, g3;
 
-    double **Qemit;
-    double **Qabsorb;
-    allocate(Qemit, nklocal, ns);
-    allocate(Qabsorb, nklocal, ns);
+    NDArray<double, 2> Qemit;
+    NDArray<double, 2> Qabsorb;
+    Qemit.resize(nklocal, ns);
+    Qabsorb.resize(nklocal, ns);
 
     for (auto ik = 0; ik < nklocal; ++ik) {
         for (s1 = 0; s1 < ns; ++s1) {
@@ -772,8 +770,8 @@ void CollisionOperator::calc_Q_from_L(const double *const *sqrt_occ, double **q1
             q1[ik][s1] = Qemit[ik][s1] + Qabsorb[ik][s1];
         }
     }
-    deallocate(Qemit);
-    deallocate(Qabsorb);
+    Qemit.clear();
+    Qabsorb.clear();
 }
 
 void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, const double *const *const *dF,

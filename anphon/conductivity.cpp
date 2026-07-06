@@ -57,16 +57,6 @@ void Conductivity::set_default_variables()
 {
     calc_kappa_spec = 0;
     ntemp = 0;
-    damping3 = nullptr;
-    damping4 = nullptr;
-    kappa = nullptr;
-    kappa_3only = nullptr;
-    kappa_spec = nullptr;
-    kappa_coherent = nullptr;
-    temperature = nullptr;
-    vel = nullptr;
-    vel_4ph = nullptr;
-    velmat = nullptr;
     calc_coherent = 0;
     file_coherent_elems = "";
     nshift_restart = 0;
@@ -90,34 +80,34 @@ void Conductivity::set_default_variables()
 void Conductivity::deallocate_variables()
 {
     if (damping3) {
-        deallocate(damping3);
+        damping3.clear();
     }
     if (damping4) {
-        deallocate(damping4);
+        damping4.clear();
     }
     if (kappa) {
-        deallocate(kappa);
+        kappa.clear();
     }
     if (kappa_3only) {
-        deallocate(kappa_3only);
+        kappa_3only.clear();
     }
     if (kappa_spec) {
-        deallocate(kappa_spec);
+        kappa_spec.clear();
     }
     if (kappa_coherent) {
-        deallocate(kappa_coherent);
+        kappa_coherent.clear();
     }
     if (temperature) {
-        deallocate(temperature);
+        temperature.clear();
     }
     if (vel) {
-        deallocate(vel);
+        vel.clear();
     }
     if (velmat) {
-        deallocate(velmat);
+        velmat.clear();
     }
     if (vel_4ph) {
-        deallocate(vel_4ph);
+        vel_4ph.clear();
     }
     kmesh_4ph.reset();
     dymat_4ph.reset();
@@ -153,7 +143,7 @@ void Conductivity::init_temperature_grid()
 
     const auto tgrid = system->get_temperature_grid();
     ntemp = static_cast<unsigned int>(tgrid.size());
-    allocate(temperature, ntemp);
+    temperature.resize(ntemp);
     for (unsigned int i = 0; i < ntemp; ++i) {
         temperature[i] = tgrid[i];
     }
@@ -178,9 +168,9 @@ void Conductivity::setup_kappa()
     const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
 
     if (nrem > 0) {
-        allocate(damping3, (nks_each_thread + 1) * mympi->nprocs, ntemp);
+        damping3.resize((nks_each_thread + 1) * mympi->nprocs, ntemp);
     } else {
-        allocate(damping3, nks_total, ntemp);
+        damping3.resize(nks_total, ntemp);
     }
 
     if (len_boundary > eps) {
@@ -199,9 +189,9 @@ void Conductivity::setup_kappa()
 
     if (calc_coherent) {
         if (mympi->my_rank == 0) {
-            allocate(velmat, nk_3ph, ns, ns, 3);
+            velmat.resize(nk_3ph, ns, ns, 3);
         } else {
-            allocate(velmat, 1, 1, 1, 3);
+            velmat.resize(1, 1, 1, 3);
         }
         phonon_velocity->calc_phonon_velmat_mesh(velmat);
         check_velocity_matrix_consistency(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
@@ -260,13 +250,13 @@ void Conductivity::setup_kappa_4ph()
     }
 
     if (nrem > 0) {
-        allocate(damping4, (nks_each_thread + 1) * mympi->nprocs, ntemp);
+        damping4.resize((nks_each_thread + 1) * mympi->nprocs, ntemp);
     } else {
-        allocate(damping4, nks_total, ntemp);
+        damping4.resize(nks_total, ntemp);
     }
 
-    double **eval_tmp;
-    std::complex<double> ***evec_tmp;
+    NDArray<double, 2> eval_tmp;
+    NDArray<std::complex<double>, 3> evec_tmp;
 
     const auto neval = dynamical->neval;
 
@@ -275,8 +265,8 @@ void Conductivity::setup_kappa_4ph()
     auto nk_4ph = kmesh_4ph->nk;
     dymat_4ph = std::make_unique<DymatEigenValue>(true, false, nk_4ph, neval);
 
-    allocate(eval_tmp, nk_4ph, neval);
-    allocate(evec_tmp, nk_4ph, neval, neval);
+    eval_tmp.resize(nk_4ph, neval);
+    evec_tmp.resize(nk_4ph, neval, neval);
 
     dynamical->get_eigenvalues_dymat(nk_4ph,
                                      kmesh_4ph->xk,
@@ -302,8 +292,8 @@ void Conductivity::setup_kappa_4ph()
     }
 
     dymat_4ph->set_eigenvals_and_eigenvecs(nk_4ph, eval_tmp, evec_tmp);
-    deallocate(eval_tmp);
-    deallocate(evec_tmp);
+    eval_tmp.clear();
+    evec_tmp.clear();
 
     phase_storage_4ph = std::make_unique<PhaseFactorStorage>(kmesh_4ph->nk_i);
     phase_storage_4ph->create(true);
@@ -383,7 +373,8 @@ void Conductivity::prepare_restart(const int mode)
 {
     // prepare restart for either 3ph or 4ph
     int i;
-    int nks_done = 0, *arr_done;
+    int nks_done = 0;
+    NDArray<int, 1> arr_done;
 
     if (mode == 1) {
         // 3ph
@@ -433,7 +424,7 @@ void Conductivity::prepare_restart(const int mode)
         nshift_restart = nks_done;
 
         if (nks_done > 0) {
-            allocate(arr_done, nks_done);
+            arr_done.resize(nks_done);
 
             if (mympi->my_rank == 0) {
                 for (i = 0; i < nks_done; ++i) {
@@ -455,7 +446,7 @@ void Conductivity::prepare_restart(const int mode)
                     vks_job.erase(it_set);
                 }
             }
-            deallocate(arr_done);
+            arr_done.clear();
         }
         vks_done.clear();
 
@@ -505,7 +496,7 @@ void Conductivity::prepare_restart(const int mode)
         nshift_restart4 = nks_done;
 
         if (nks_done > 0) {
-            allocate(arr_done, nks_done);
+            arr_done.resize(nks_done);
 
             if (mympi->my_rank == 0) {
                 for (i = 0; i < nks_done; ++i) {
@@ -527,7 +518,7 @@ void Conductivity::prepare_restart(const int mode)
                     vks_job4.erase(it_set);
                 }
             }
-            deallocate(arr_done);
+            arr_done.clear();
         }
         vks_done4.clear();
     } else {
@@ -757,7 +748,7 @@ void Conductivity::setup_result_io(const int mode)
 KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
 {
     KappaFileMetaH5 meta;
-    meta.temperatures.assign(temperature, temperature + ntemp);
+    meta.temperatures.assign(temperature.data(), temperature.data() + ntemp);
     meta.classical = thermodynamics->classical ? 1 : 0;
     meta.ismear = integration->ismear;
     meta.smearing_width = integration->epsilon * Hz_to_kayser / time_ry; // Ry -> cm^-1
@@ -798,7 +789,7 @@ KappaChannelMetaH5 Conductivity::build_kappa_channel_meta(const int mode) const
 {
     const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos.get() : kmesh_4ph.get();
     const auto eval_in = (mode == 1) ? dos->dymat_dos->get_eigenvalues() : dymat_4ph->get_eigenvalues();
-    const auto vel_in = (mode == 1) ? vel : vel_4ph;
+    auto &vel_in = (mode == 1) ? vel : vel_4ph;
 
     KappaChannelMetaH5 meta;
     meta.tag = (mode == 1) ? "3ph" : "4ph";
@@ -885,7 +876,7 @@ void Conductivity::import_legacy_result_text(const int mode)
     if (stat(file_legacy.c_str(), &st) != 0) return;
 
     const std::string tag = (mode == 1) ? "3ph" : "4ph";
-    const auto damping = (mode == 1) ? damping3 : damping4;
+    auto &damping = (mode == 1) ? damping3 : damping4;
 
     if (!result_io_h5->load_computed_gamma(tag, damping).empty()) return;
 
@@ -929,8 +920,8 @@ void Conductivity::import_legacy_result_text(const int mode)
 void Conductivity::calc_anharmonic_imagself3()
 {
     unsigned int i;
-    unsigned int *nks_thread = nullptr;
-    double *damping3_loc = nullptr;
+    NDArray<unsigned int, 1> nks_thread;
+    NDArray<double, 1> damping3_loc;
 
     // Distribute (k,s) to individual MPI threads
 
@@ -947,7 +938,7 @@ void Conductivity::calc_anharmonic_imagself3()
     }
 
     if (mympi->my_rank == 0) {
-        allocate(nks_thread, mympi->nprocs);
+        nks_thread.resize(mympi->nprocs);
     }
 
     auto nks_tmp = vks_l.size();
@@ -962,7 +953,7 @@ void Conductivity::calc_anharmonic_imagself3()
         std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
         std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
         std::cout << '\n' << std::flush;
-        deallocate(nks_thread);
+        nks_thread.clear();
     }
 
     unsigned int nk_tmp;
@@ -977,7 +968,7 @@ void Conductivity::calc_anharmonic_imagself3()
         vks_l.push_back(-1);
     }
 
-    allocate(damping3_loc, ntemp);
+    damping3_loc.resize(ntemp);
 
     auto startTime = std::chrono::system_clock::now();
     auto lastUpdate = startTime;
@@ -1044,14 +1035,14 @@ void Conductivity::calc_anharmonic_imagself3()
             if (i == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
         }
     }
-    deallocate(damping3_loc);
+    damping3_loc.clear();
 }
 
 
 void Conductivity::calc_anharmonic_imagself4()
 {
     unsigned int i;
-    unsigned int *nks_thread = nullptr;
+    NDArray<unsigned int, 1> nks_thread;
 
     // Distribute (k,s) to individual MPI threads
 
@@ -1068,10 +1059,10 @@ void Conductivity::calc_anharmonic_imagself4()
     }
 
     if (mympi->my_rank == 0) {
-        allocate(nks_thread, mympi->nprocs);
+        nks_thread.resize(mympi->nprocs);
     }
 
-    double *damping4_loc;
+    NDArray<double, 1> damping4_loc;
 
     auto nks_tmp = vks_l.size();
     // Only root's recvbuf is significant; pass nks_thread directly (it is the
@@ -1086,7 +1077,7 @@ void Conductivity::calc_anharmonic_imagself4()
         std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
         std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
         std::cout << '\n' << std::flush;
-        deallocate(nks_thread);
+        nks_thread.clear();
     }
 
     unsigned int nk_tmp;
@@ -1101,7 +1092,7 @@ void Conductivity::calc_anharmonic_imagself4()
         vks_l.push_back(-1);
     }
 
-    allocate(damping4_loc, ntemp);
+    damping4_loc.resize(ntemp);
 
     auto startTime = std::chrono::system_clock::now();
     auto lastUpdate = startTime;
@@ -1168,7 +1159,7 @@ void Conductivity::calc_anharmonic_imagself4()
             if (i == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
         }
     }
-    deallocate(damping4_loc);
+    damping4_loc.clear();
 }
 
 
@@ -1277,11 +1268,11 @@ void Conductivity::compute_kappa()
         std::string file_kl;
         std::ofstream ofs_kl;
 
-        double **lifetime;
-        double **gamma_total;
+        NDArray<double, 2> lifetime;
+        NDArray<double, 2> gamma_total;
 
-        allocate(lifetime, dos->kmesh_dos->nk_irred * ns, ntemp);
-        allocate(gamma_total, dos->kmesh_dos->nk_irred * ns, ntemp);
+        lifetime.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
+        gamma_total.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
 
         average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), damping3);
 
@@ -1324,30 +1315,30 @@ void Conductivity::compute_kappa()
         // compute_kappa_intraband() writes into it on the intermediate 3-phonon-only
         // call when KAPPA_SPEC = 1. The final full call overwrites it cleanly.
         if (calc_kappa_spec) {
-            allocate(kappa_spec, dos->n_energy, ntemp, 3);
+            kappa_spec.resize(dos->n_energy, ntemp, 3);
         }
 
         if (fph_rta > 0) {
 
             // calculate kappa_3ph
-            double **lifetime_3only;
-            allocate(lifetime_3only, dos->kmesh_dos->nk_irred * ns, ntemp);
+            NDArray<double, 2> lifetime_3only;
+            lifetime_3only.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
             lifetime_from_gamma(gamma_total, lifetime_3only);
 
-            allocate(kappa_3only, ntemp, 3, 3);
+            kappa_3only.resize(ntemp, 3, 3);
             compute_kappa_intraband(dos->kmesh_dos.get(),
                                     dos->dymat_dos->get_eigenvalues(),
                                     lifetime_3only,
                                     kappa_3only,
                                     kappa_spec);
 
-            deallocate(lifetime_3only);
+            lifetime_3only.clear();
 
             average_self_energy_at_degenerate_point(ntemp, kmesh_4ph.get(), dymat_4ph->get_eigenvalues(), damping4);
 
-            double **damping4_dense = nullptr;
+            NDArray<double, 2> damping4_dense;
 
-            allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
+            damping4_dense.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
 
             interpolate_data(kmesh_4ph.get(), dos->kmesh_dos.get(), damping4, damping4_dense);
 
@@ -1367,14 +1358,14 @@ void Conductivity::compute_kappa()
 
         lifetime_from_gamma(gamma_total, lifetime);
 
-        allocate(kappa, ntemp, 3, 3);
+        kappa.resize(ntemp, 3, 3);
 
         // kappa_spec is already allocated above (before the FPH_RTA block).
         compute_kappa_intraband(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), lifetime, kappa, kappa_spec);
-        deallocate(lifetime);
+        lifetime.clear();
 
         if (calc_coherent) {
-            allocate(kappa_coherent, ntemp, 3, 3);
+            kappa_coherent.resize(ntemp, 3, 3);
             compute_kappa_coherent(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), gamma_total, kappa_coherent);
         }
 
@@ -1387,7 +1378,7 @@ void Conductivity::compute_kappa()
                                       isotope->include_isotope ? isotope->gamma_isotope : nullptr);
         }
 
-        deallocate(gamma_total);
+        gamma_total.clear();
     }
 }
 
@@ -1410,11 +1401,11 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, co
                                            double ***kappa_spec_out) const
 {
     int i, is, ik;
-    double ****kappa_mode;
+    NDArray<double, 4> kappa_mode;
     const auto factor_toSI = 1.0e+18 / (std::pow(Bohr_in_Angstrom, 3) * system->get_primcell().volume);
 
     const auto nk_irred = kmesh_in->nk_irred;
-    allocate(kappa_mode, ntemp, 9, ns, nk_irred);
+    kappa_mode.resize(ntemp, 9, ns, nk_irred);
 
     for (i = 0; i < ntemp; ++i) {
         for (unsigned int j = 0; j < 3; ++j) {
@@ -1478,7 +1469,7 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, co
                                          kappa_spec_out);
     }
 
-    deallocate(kappa_mode);
+    kappa_mode.clear();
 }
 
 void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
@@ -1493,7 +1484,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
     const int ns2 = ns * ns;
     const auto czero = std::complex<double>(0.0, 0.0);
     std::vector<std::complex<double>> kappa_tmp(ns2, czero);
-    std::complex<double> **kappa_save = nullptr;
+    NDArray<std::complex<double>, 2> kappa_save;
 
     const auto nk_irred = kmesh_in->nk_irred;
 
@@ -1503,7 +1494,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
         if (!ofs) exit("compute_kappa_coherent", "cannot open file_kc");
         ofs << "# Temperature [K], 1st and 2nd xyz components, ibranch, jbranch, ik_irred, "
                "omega1 [cm^-1], omega2 [cm^-1], kappa_elems real, kappa_elems imag\n";
-        allocate(kappa_save, ns2, nk_irred);
+        kappa_save.resize(ns2, nk_irred);
     }
 
     for (auto i = 0; i < ntemp; ++i) {
@@ -1592,7 +1583,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
 
     if (calc_coherent == 2) {
         ofs.close();
-        deallocate(kappa_save);
+        kappa_save.clear();
     }
 }
 
@@ -1701,14 +1692,14 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
                                                     double ***kappa_spec_out) const
 {
     int i, j;
-    unsigned int *kmap_identity;
-    double **eval;
+    NDArray<unsigned int, 1> kmap_identity;
+    NDArray<double, 2> eval;
 
     std::cout << '\n';
     std::cout << " KAPPA_SPEC = 1 : Calculating thermal conductivity spectra ... ";
 
-    allocate(kmap_identity, nk_3ph);
-    allocate(eval, ns, nk_3ph);
+    kmap_identity.resize(nk_3ph);
+    eval.resize(ns, nk_3ph);
 
     for (i = 0; i < nk_3ph; ++i)
         kmap_identity[i] = i;
@@ -1725,8 +1716,8 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
     {
         int k;
         int knum;
-        double *weight;
-        allocate(weight, nk_3ph);
+        NDArray<double, 1> weight;
+        weight.resize(nk_3ph);
 
 #ifdef _OPENMP
 #pragma omp for
@@ -1768,11 +1759,11 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
                 }
             }
         }
-        deallocate(weight);
+        weight.clear();
     }
 
-    deallocate(kmap_identity);
-    deallocate(eval);
+    kmap_identity.clear();
+    eval.clear();
 
     std::cout << " done!\n";
 }
@@ -2017,10 +2008,10 @@ void Conductivity::write_header_result(std::fstream &fs_result, const std::strin
 void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                                     const double *const *val_coarse_in, double **val_dense_out) const
 {
-    double ***damping4_coarse = nullptr;
-    double ***damping4_interpolated = nullptr;
-    allocate(damping4_interpolated, ns, ntemp, kmesh_dense_in->nk);
-    allocate(damping4_coarse, ns, ntemp, kmesh_coarse_in->nk);
+    NDArray<double, 3> damping4_coarse;
+    NDArray<double, 3> damping4_interpolated;
+    damping4_interpolated.resize(ns, ntemp, kmesh_dense_in->nk);
+    damping4_coarse.resize(ns, ntemp, kmesh_coarse_in->nk);
 
     auto interpol = new TriLinearInterpolator(kmesh_coarse_in->nk_i, kmesh_dense_in->nk_i);
     interpol->setup();
@@ -2115,12 +2106,12 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
         ofs_itp.close();
     }
 
-    deallocate(damping4_coarse);
-    deallocate(damping4_interpolated);
+    damping4_coarse.clear();
+    damping4_interpolated.clear();
     delete interpol;
 }
 
-void Conductivity::lifetime_from_gamma(double **&gamma, double **&lifetime)
+void Conductivity::lifetime_from_gamma(NDArray<double, 2> &gamma, NDArray<double, 2> &lifetime)
 {
     unsigned int i;
     double damp_tmp;

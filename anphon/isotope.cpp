@@ -38,14 +38,13 @@ Isotope::~Isotope()
 void Isotope::set_default_variables()
 {
     include_isotope = false;
-    gamma_isotope = nullptr;
 }
 
 void Isotope::deallocate_variables()
 {
     isotope_factor.clear();
     if (gamma_isotope) {
-        deallocate(gamma_isotope);
+        gamma_isotope.clear();
     }
 }
 
@@ -84,7 +83,7 @@ void Isotope::setup_isotope_scattering(const System &system_in, const unsigned i
             }
             std::cout << '\n';
 
-            allocate(gamma_isotope, nk_irred_in, ns_in);
+            gamma_isotope.resize(nk_irred_in, ns_in);
         }
     }
 }
@@ -157,17 +156,17 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
 
     ret = 0.0;
 
-    double *eval;
-    double **eval_tetra;
-    double **prod_omega;
-    double **weight_tetra;
-    unsigned int *kmap_identity;
+    NDArray<double, 1> eval;
+    NDArray<double, 2> eval_tetra;
+    NDArray<double, 2> prod_omega;
+    NDArray<double, 2> weight_tetra;
+    NDArray<unsigned int, 1> kmap_identity;
 
-    allocate(eval, nk);
-    allocate(eval_tetra, ns, nk);
-    allocate(prod_omega, ns, nk);
-    allocate(weight_tetra, ns, nk);
-    allocate(kmap_identity, nk);
+    eval.resize(nk);
+    eval_tetra.resize(ns, nk);
+    prod_omega.resize(ns, nk);
+    weight_tetra.resize(ns, nk);
+    kmap_identity.resize(nk);
 
     for (ik = 0; ik < nk; ++ik) {
         kmap_identity[ik] = ik;
@@ -262,24 +261,24 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
 
     ret *= pi * omega * 0.25;
 
-    deallocate(eval);
-    deallocate(eval_tetra);
-    deallocate(prod_omega);
-    deallocate(weight_tetra);
-    deallocate(kmap_identity);
+    eval.clear();
+    eval_tetra.clear();
+    prod_omega.clear();
+    weight_tetra.clear();
+    kmap_identity.clear();
 }
 
 void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
                                           const TetraNodes &tetra_nodes_dos_in, const System &system_in,
                                           Integration &integration_in, const unsigned int ns_in, const int my_rank_in,
-                                          const int nprocs_in) const
+                                          const int nprocs_in)
 {
     int i;
     const auto ns = static_cast<int>(ns_in);
     const auto nks = kmesh_dos_in.nk_irred * ns;
     double tmp;
-    double *gamma_tmp = nullptr;
-    double *gamma_loc = nullptr;
+    NDArray<double, 1> gamma_tmp;
+    NDArray<double, 1> gamma_loc;
 
     if (include_isotope) {
 
@@ -296,11 +295,11 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
         }
 
         if (my_rank_in == 0) {
-            allocate(gamma_tmp, nks);
+            gamma_tmp.resize(nks);
         } else {
-            allocate(gamma_tmp, 1);
+            gamma_tmp.resize(1);
         }
-        allocate(gamma_loc, nks);
+        gamma_loc.resize(nks);
 
         for (i = 0; i < nks; ++i)
             gamma_loc[i] = 0.0;
@@ -394,8 +393,8 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
             }
         }
 
-        deallocate(gamma_tmp);
-        deallocate(gamma_loc);
+        gamma_tmp.clear();
+        gamma_loc.clear();
 
         if (my_rank_in == 0) {
             std::cout << "done!\n";

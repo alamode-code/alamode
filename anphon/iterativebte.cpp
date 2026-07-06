@@ -58,28 +58,24 @@ void Iterativebte::set_default_variables()
     isotope_inscattering = true;
     cg_symmetry_checked = false;
     dbte_assembly_checked = false;
-    kappa = nullptr;
 
     // private
-    vel = nullptr;
-    dFold = nullptr;
-    damping4 = nullptr;
 }
 
 void Iterativebte::deallocate_variables()
 {
     // Temperature is a non-owning alias of conductivity->temperature.
     if (kappa) {
-        deallocate(kappa);
+        kappa.clear();
     }
     if (vel) {
-        deallocate(vel);
+        vel.clear();
     }
     if (dFold) {
-        deallocate(dFold);
+        dFold.clear();
     }
     if (damping4) {
-        deallocate(damping4);
+        damping4.clear();
     }
 }
 
@@ -113,7 +109,7 @@ void Iterativebte::setup_iterative()
                                                   1.0,
                                                   true);
 
-    allocate(kappa, ntemp, 3, 3);
+    kappa.resize(ntemp, 3, 3);
 
     // Build the collision operator: wedge distribution over the MPI ranks,
     // triplet lists of the local k points and the symmetry table.
@@ -250,12 +246,12 @@ void Iterativebte::calc_damping4()
 {
     // 4ph linewidths from the SERTA machinery in Conductivity, interpolated
     // onto the dense 3ph mesh and scattered to the local k points here.
-    double **damping4_dense = nullptr;
-    allocate(damping4_dense, dos->kmesh_dos->nk_irred * ns, ntemp);
+    NDArray<double, 2> damping4_dense;
+    damping4_dense.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
 
     conductivity->compute_damping4_interpolated(dos->kmesh_dos.get(), damping4_dense);
 
-    allocate(damping4, ntemp, nklocal, ns);
+    damping4.resize(ntemp, nklocal, ns);
     for (auto ik = 0; ik < nklocal; ++ik) {
         auto tmpk = nk_l[ik];
         for (auto itemp = 0; itemp < ntemp; ++itemp) {
@@ -265,35 +261,35 @@ void Iterativebte::calc_damping4()
         }
     }
 
-    deallocate(damping4_dense);
+    damping4_dense.clear();
 }
 
 void Iterativebte::iterative_solver()
 {
     // f_new = f_new * mixing_factor + f_old * (1 - mixing_factor)
-    double **Q;
-    double **Qfin;
-    double **kappa_new;
-    double **kappa_old;
+    NDArray<double, 2> Q;
+    NDArray<double, 2> Qfin;
+    NDArray<double, 2> kappa_new;
+    NDArray<double, 2> kappa_old;
 
-    allocate(kappa_new, 3, 3);
-    allocate(kappa_old, 3, 3);
-    allocate(Q, nklocal, ns);
-    allocate(Qfin, nklocal, ns);
+    kappa_new.resize(3, 3);
+    kappa_old.resize(3, 3);
+    Q.resize(nklocal, ns);
+    Qfin.resize(nklocal, ns);
 
-    allocate(dFold, nk_3ph, ns, 3);
+    dFold.resize(nk_3ph, ns, 3);
 
-    double **fb;
-    double **gb; // sqrt(n(n+1)): the detailed-balance-symmetric kernel table
-    double **dndt;
-    allocate(dndt, nklocal, ns);
-    allocate(fb, nk_3ph, ns);
-    allocate(gb, nk_3ph, ns);
+    NDArray<double, 2> fb;
+    NDArray<double, 2> gb; // sqrt(n(n+1)): the detailed-balance-symmetric kernel table
+    NDArray<double, 2> dndt;
+    dndt.resize(nklocal, ns);
+    fb.resize(nk_3ph, ns);
+    gb.resize(nk_3ph, ns);
 
-    double **isotope_damping_loc;
+    NDArray<double, 2> isotope_damping_loc;
     if (isotope->include_isotope) {
-        double **isotope_damping;
-        allocate(isotope_damping, dos->kmesh_dos->nk_irred, ns);
+        NDArray<double, 2> isotope_damping;
+        isotope_damping.resize(dos->kmesh_dos->nk_irred, ns);
 
         if (mympi->my_rank == 0) {
             for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ik++) {
@@ -305,7 +301,7 @@ void Iterativebte::iterative_solver()
 
         MPI_Bcast(&isotope_damping[0][0], dos->kmesh_dos->nk_irred * ns, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        allocate(isotope_damping_loc, nklocal, ns); // this is for reducing some memory usage
+        isotope_damping_loc.resize(nklocal, ns); // this is for reducing some memory usage
         for (auto ik = 0; ik < nklocal; ik++) {
             auto tmpk = nk_l[ik];
             for (auto is = 0; is < ns; is++) {
@@ -313,13 +309,13 @@ void Iterativebte::iterative_solver()
             }
         }
 
-        deallocate(isotope_damping);
+        isotope_damping.clear();
     }
 
-    double **boundary_damping_loc;
+    NDArray<double, 2> boundary_damping_loc;
     if (conductivity->len_boundary > eps) {
 
-        allocate(boundary_damping_loc, nklocal, ns);
+        boundary_damping_loc.resize(nklocal, ns);
 
         for (auto ik = 0; ik < nklocal; ++ik) {
             auto tmpk = nk_l[ik];
@@ -356,12 +352,12 @@ void Iterativebte::iterative_solver()
     // Wedge buffers of the deviation function (local rows + allreduced sum),
     // plus a snapshot of the lowest-residual iterate for runs that end
     // without convergence.
-    double *dF_ir_loc = nullptr;
-    double *dF_ir_glob = nullptr;
-    double *dF_ir_best = nullptr;
-    allocate(dF_ir_loc, nk_irred * ns * 3);
-    allocate(dF_ir_glob, nk_irred * ns * 3);
-    allocate(dF_ir_best, nk_irred * ns * 3);
+    NDArray<double, 1> dF_ir_loc;
+    NDArray<double, 1> dF_ir_glob;
+    NDArray<double, 1> dF_ir_best;
+    dF_ir_loc.resize(nk_irred * ns * 3);
+    dF_ir_glob.resize(nk_irred * ns * 3);
+    dF_ir_best.resize(nk_irred * ns * 3);
 
     // start iteration
 
@@ -518,8 +514,8 @@ void Iterativebte::iterative_solver()
                 const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
                 const auto num_equivalent = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size());
 
-                double **Wks_loc;
-                allocate(Wks_loc, ns, 3);
+                NDArray<double, 2> Wks_loc;
+                Wks_loc.resize(ns, 3);
 
                 collision_op->calc_W_at(ikl, gb, dFold, Wks_loc);
 
@@ -548,7 +544,7 @@ void Iterativebte::iterative_solver()
                     }
                 }
 
-                deallocate(Wks_loc);
+                Wks_loc.clear();
             } // ikl
 
             local_reduce[0] = local_difference;
@@ -678,20 +674,20 @@ void Iterativebte::iterative_solver()
         std::cout << std::flush;
     }
 
-    deallocate(Q);
-    deallocate(Qfin);
-    deallocate(dndt);
+    Q.clear();
+    Qfin.clear();
+    dndt.clear();
 
-    deallocate(kappa_new);
-    deallocate(kappa_old);
-    deallocate(fb);
-    deallocate(gb);
-    deallocate(dF_ir_loc);
-    deallocate(dF_ir_glob);
-    deallocate(dF_ir_best);
+    kappa_new.clear();
+    kappa_old.clear();
+    fb.clear();
+    gb.clear();
+    dF_ir_loc.clear();
+    dF_ir_glob.clear();
+    dF_ir_best.clear();
     if (isotope->include_isotope) {
-        deallocate(isotope_damping_loc);
-        //deallocate(isotope_damping);
+        isotope_damping_loc.clear();
+        //isotope_damping.clear();
     }
     if (mympi->my_rank == 0 && !conductivity->get_use_h5_io()) {
         fs_result.close();
@@ -826,8 +822,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
             const auto sqrt_mrow = std::sqrt(static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size()));
 
-            double **Wks_loc;
-            allocate(Wks_loc, ns, 3);
+            NDArray<double, 2> Wks_loc;
+            Wks_loc.resize(ns, 3);
             collision_op->calc_W_at(ikl, sqrt_occ, dFold, Wks_loc);
 
             for (int s1 = 0; s1 < ns; ++s1) {
@@ -849,7 +845,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                     scale_loc = std::max(scale_loc, std::abs(y_free));
                 }
             }
-            deallocate(Wks_loc);
+            Wks_loc.clear();
         }
         double maxdiff = 0.0, scale = 0.0;
         MPI_Allreduce(&maxdiff_loc, &maxdiff, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -1192,14 +1188,14 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 }
             }
             collision_op->reconstruct_full_from_wedge(dF.data(), dFold);
-            double **ktmp;
-            allocate(ktmp, 3, 3);
+            NDArray<double, 2> ktmp;
+            ktmp.resize(3, 3);
             calc_kappa(itemp, dFold, ktmp);
             for (auto a = 0; a < 3; ++a) {
                 for (auto c2 = 0; c2 < 3; ++c2)
                     k9[3 * a + c2] = ktmp[a][c2];
             }
-            deallocate(ktmp);
+            ktmp.clear();
             if (dF_keep) *dF_keep = dF;
         };
 
@@ -1305,8 +1301,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
             const auto tmpk = nk_l[ikl];
             const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
 
-            double **Wks_loc;
-            allocate(Wks_loc, ns, 3);
+            NDArray<double, 2> Wks_loc;
+            Wks_loc.resize(ns, 3);
             collision_op->calc_W_at(ikl, sqrt_occ, dFold, Wks_loc);
             average_over_degenerate_modes(ns, eval[k1], 3, Wks_loc[0]);
 
@@ -1317,7 +1313,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
                     yloc[row * 3 + j] = qdiag[row] * x[row * 3 + j] + Wks_loc[s][j];
                 }
             }
-            deallocate(Wks_loc);
+            Wks_loc.clear();
         }
         MPI_Allreduce(yloc.data(), y.data(), static_cast<int>(nrows3), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     };
@@ -1438,8 +1434,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
 
         // Progress display: kappa of the current iterate.
         collision_op->reconstruct_full_from_wedge(x.data(), dFold);
-        double **kappa_now;
-        allocate(kappa_now, 3, 3);
+        NDArray<double, 2> kappa_now;
+        kappa_now.resize(3, 3);
         calc_kappa(itemp, dFold, kappa_now);
         if (mympi->my_rank == 0) {
             for (auto i = 0; i < 3; ++i) {
@@ -1465,7 +1461,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
                     kappa[itemp][i][j] = kappa_now[i][j];
                 }
             }
-            deallocate(kappa_now);
+            kappa_now.clear();
             if (mympi->my_rank == 0) {
                 std::cout << "   -> Converged is achieved                 "
                           << "                                            "
@@ -1475,7 +1471,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
             }
             break;
         }
-        deallocate(kappa_now);
+        kappa_now.clear();
 
         if (n_growth >= 3) {
             if (mympi->my_rank == 0) {
@@ -1498,15 +1494,15 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         // Keep the lowest-residual iterate and report honestly.
         x = x_best;
         collision_op->reconstruct_full_from_wedge(x.data(), dFold);
-        double **kappa_now;
-        allocate(kappa_now, 3, 3);
+        NDArray<double, 2> kappa_now;
+        kappa_now.resize(3, 3);
         calc_kappa(itemp, dFold, kappa_now);
         for (auto i = 0; i < 3; ++i) {
             for (auto j = 0; j < 3; ++j) {
                 kappa[itemp][i][j] = kappa_now[i][j];
             }
         }
-        deallocate(kappa_now);
+        kappa_now.clear();
         if (mympi->my_rank == 0) {
             std::cout << "   -> WARNING: NOT converged within MAX_CYCLE = " << max_cycle
                       << " CG iterations. Keeping the lowest-residual iterate (iter " << itr_best
@@ -1543,7 +1539,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     return converged;
 }
 
-void Iterativebte::calc_boson(int itemp, double **&b_out, double **&dndt_out)
+void Iterativebte::calc_boson(int itemp, NDArray<double, 2> &b_out, NDArray<double, 2> &dndt_out)
 {
     auto etemp = Temperature[itemp];
     double omega;
@@ -1568,13 +1564,13 @@ void Iterativebte::calc_boson(int itemp, double **&b_out, double **&dndt_out)
 }
 
 
-void Iterativebte::calc_kappa(int itemp, double ***&df, double **&kappa_out)
+void Iterativebte::calc_kappa(int itemp, NDArray<double, 3> &df, NDArray<double, 2> &kappa_out)
 {
     auto etemp = Temperature[itemp];
     double omega;
     double beta = 1.0 / (thermodynamics->T_to_Ryd * etemp);
-    double **tmpkappa;
-    allocate(tmpkappa, 3, 3);
+    NDArray<double, 2> tmpkappa;
+    tmpkappa.resize(3, 3);
 
     for (auto ix = 0; ix < 3; ++ix) {
         for (auto iy = 0; iy < 3; ++iy) {
@@ -1607,11 +1603,11 @@ void Iterativebte::calc_kappa(int itemp, double ***&df, double **&kappa_out)
         }
     }
 
-    deallocate(tmpkappa);
+    tmpkappa.clear();
 }
 
 
-bool Iterativebte::check_convergence(double **&k_old, double **&k_new)
+bool Iterativebte::check_convergence(const NDArray<double, 2> &k_old, const NDArray<double, 2> &k_new)
 {
     // check diagonal components only, since they are the most important
     double max_diff = -100;
@@ -1710,15 +1706,15 @@ void Iterativebte::write_result()
     }
 }
 
-void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df, const bool converged)
+void Iterativebte::write_Q_dF(int itemp, NDArray<double, 2> &q, NDArray<double, 3> &df, const bool converged)
 {
     auto etemp = Temperature[itemp];
 
     auto nk_ir = dos->kmesh_dos->nk_irred;
-    double **Q_tmp;
-    double **Q_all;
-    allocate(Q_all, nk_ir, ns);
-    allocate(Q_tmp, nk_ir, ns);
+    NDArray<double, 2> Q_tmp;
+    NDArray<double, 2> Q_all;
+    Q_all.resize(nk_ir, ns);
+    Q_tmp.resize(nk_ir, ns);
     for (auto ik = 0; ik < nk_ir; ++ik) {
         for (auto is = 0; is < ns; ++is) {
             Q_all[ik][is] = 0.0;
@@ -1732,7 +1728,7 @@ void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df, const bool 
         }
     }
     MPI_Allreduce(&Q_tmp[0][0], &Q_all[0][0], nk_ir * ns, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    deallocate(Q_tmp);
+    Q_tmp.clear();
 
     // now we have Q
     if (mympi->my_rank == 0) {
@@ -1770,5 +1766,5 @@ void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df, const bool 
             fs_result << '\n';
         }
     }
-    deallocate(Q_all);
+    Q_all.clear();
 }

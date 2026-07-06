@@ -38,6 +38,7 @@ Improvement:
 #include <fstream>
 #include <memory>
 #include <vector>
+#include "ndarray.h"
 #include "collision_operator.h"
 #include "pointers.h"
 
@@ -68,7 +69,7 @@ public:
 
     double convergence_criteria; // dF(i+1) - dF(i) < cc
 
-    double ***kappa;
+    NDArray<double, 3> kappa;
 
     std::fstream fs_result;
 
@@ -92,12 +93,12 @@ private:
     std::vector<unsigned char> t_computed;
     std::vector<unsigned char> t_converged;
 
-    double ***vel;
+    NDArray<double, 3> vel;
 
     // linear response to deltaT
-    double ***dFold;
+    NDArray<double, 3> dFold;
 
-    double ***damping4; // four phonon selfenergy
+    NDArray<double, 3> damping4; // four phonon selfenergy
 
     void calc_damping4();
 
@@ -133,16 +134,16 @@ private:
     bool cg_symmetry_checked;
     bool dbte_assembly_checked;
 
-    void calc_kappa(int, double ***&, double **&); // calculate kappa with off equilibrium part
+    void calc_kappa(int, NDArray<double, 3> &, NDArray<double, 2> &); // calculate kappa with off equilibrium part
 
-    void calc_boson(int, double **&, double **&);
+    void calc_boson(int, NDArray<double, 2> &, NDArray<double, 2> &);
 
-    bool check_convergence(double **&, double **&); // check if convergence cirteria is meet
+    bool check_convergence(const NDArray<double, 2> &, const NDArray<double, 2> &); // check if convergence cirteria is meet
 
     //void write_result_gamma(unsigned int,unsigned int,double ***,double **) const;
     void write_result();
 
-    void write_Q_dF(int, double **&, double ***&, bool converged);
+    void write_Q_dF(int, NDArray<double, 2> &, NDArray<double, 3> &, bool converged);
 
     void write_kappa_iterative();
 };
