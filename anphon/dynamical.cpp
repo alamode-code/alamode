@@ -1678,10 +1678,10 @@ void Dynamical::fourier_dymat_k_to_r(const unsigned int nk1, const unsigned int 
             const auto k1 = ik / (nk2 * nk3);
             const auto k2 = (ik / nk3) % nk2;
             const auto k3 = ik % nk3;
-            const auto phase = -2.0 * pi
-                               * (static_cast<double>(r1 * k1) / static_cast<double>(nk1)
-                                  + static_cast<double>(r2 * k2) / static_cast<double>(nk2)
-                                  + static_cast<double>(r3 * k3) / static_cast<double>(nk3));
+            const auto phase = -2.0 * pi *
+                               (static_cast<double>(r1 * k1) / static_cast<double>(nk1) +
+                                static_cast<double>(r2 * k2) / static_cast<double>(nk2) +
+                                static_cast<double>(r3 * k3) / static_cast<double>(nk3));
             dft_matrix(ir, ik) = std::complex<double>(std::cos(phase), std::sin(phase));
         }
     }
@@ -2228,7 +2228,19 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
             }
         }
 
-        zgemm_cpx(TRANSA, TRANSB, &ns, &ns, &ns, &alpha, eigval_matrix, &ns, polarization_matrix, &ns, beta, mat_tmp, &ns);
+        zgemm_cpx(TRANSA,
+                  TRANSB,
+                  &ns,
+                  &ns,
+                  &ns,
+                  &alpha,
+                  eigval_matrix,
+                  &ns,
+                  polarization_matrix,
+                  &ns,
+                  beta,
+                  mat_tmp,
+                  &ns);
         zgemm_cpx(TRANSA, TRANSA, &ns, &ns, &ns, &alpha, polarization_matrix, &ns, mat_tmp, &ns, beta, dmat, &ns);
 
         m = 0;

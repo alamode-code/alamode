@@ -9,6 +9,7 @@
  Functions for computing V3 and V4 phonon interaction elements.
  These are used by both SCPH and QHA calculations.
 */
+#include "scph_v3v4_elements.h"
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -22,7 +23,6 @@
 #include "mpi_common.h"
 #include "relaxation.h"
 #include "scph.h"
-#include "scph_v3v4_elements.h"
 #include "timer.h"
 using namespace PHON_NS;
 
@@ -50,22 +50,29 @@ struct SparsePhi4Skeleton
 // flat layout rotates [a b c d] -> [b c d out]. In column-major BLAS terms this
 // is C(ns x ns^3) = E_buf^T * In_buf^T.
 inline void transform_v4_index_gemm(const std::complex<double> *evec_row_major, const std::complex<double> *buf_in,
-                                    std::complex<double> *buf_out, const size_t ns,
-                                    const std::complex<double> alpha_in)
+                                    std::complex<double> *buf_out, const size_t ns, const std::complex<double> alpha_in)
 {
     int m = static_cast<int>(ns);
     int n = static_cast<int>(ns * ns * ns);
     int k = static_cast<int>(ns);
     auto alpha = alpha_in;
     auto beta = std::complex<double>(0.0, 0.0);
-    zgemm_cpx("T", "T", &m, &n, &k, &alpha,
-              const_cast<std::complex<double> *>(evec_row_major), &m,
-              const_cast<std::complex<double> *>(buf_in), &n,
-              &beta, buf_out, &m);
+    zgemm_cpx("T",
+              "T",
+              &m,
+              &n,
+              &k,
+              &alpha,
+              const_cast<std::complex<double> *>(evec_row_major),
+              &m,
+              const_cast<std::complex<double> *>(buf_in),
+              &n,
+              &beta,
+              buf_out,
+              &m);
 }
 
-auto build_phi4_skeleton(const int *const *evec_index, const long int ngroup,
-                         const size_t ns) -> SparsePhi4Skeleton
+auto build_phi4_skeleton(const int *const *evec_index, const long int ngroup, const size_t ns) -> SparsePhi4Skeleton
 {
     struct Entry
     {
@@ -286,8 +293,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
                                std::conj(evec_in[ik][js][ind[i][2]]);
                     }
 
-                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] =
-                        factor * ret;
+                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] = factor * ret;
                 }
             }
         }
@@ -340,17 +346,12 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 // The implementation shares its structure with
 // ScphQhaCommon::compute_V3_elements_mpi_over_kpoint; merging the two is a
 // possible future cleanup.
-void PHON_NS::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in,
-                                                 const int ngroup_v3_in, std::vector<double> *fcs_group_v3_in,
-                                                 std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
-                                                 int **evec_index_v3_in,
-                                                 const std::complex<double> *const *const *evec_in,
-                                                 const bool self_offdiag, const unsigned int ns_in,
-                                                 const KpointMeshUniform *kmesh_coarse_in,
-                                                 const KpointMeshUniform *kmesh_dense_in,
-                                                 const PhaseFactorStorage *phase_storage_in,
-                                                 AnharmonicCore &anharmonic_core_in, const int my_rank,
-                                                 const int nprocs)
+void PHON_NS::compute_V3_elements_for_given_IFCs(
+    std::complex<double> ***v3_out, double **omega2_harmonic_in, const int ngroup_v3_in,
+    std::vector<double> *fcs_group_v3_in, std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
+    int **evec_index_v3_in, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
+    const unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+    const PhaseFactorStorage *phase_storage_in, AnharmonicCore &anharmonic_core_in, const int my_rank, const int nprocs)
 {
     const auto ns = ns_in;
     auto ns2 = ns * ns;
@@ -534,8 +535,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out,
                                std::conj(evec_in[ik][js][ind[i][2]]);
                     }
 
-                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] =
-                        factor * ret;
+                    v3_allreduce_buffer[(static_cast<std::size_t>(ik) * ns + is) * ns2 + (ns + 1) * js] = factor * ret;
                 }
             }
         }
@@ -574,7 +574,11 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out,
     deallocate(v3_tmp2);
     deallocate(v3_tmp3);
 
-    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, ns, kmesh_dense_in->nk,
+    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in,
+                                        v3_out,
+                                        3,
+                                        ns,
+                                        kmesh_dense_in->nk,
                                         kmesh_coarse_in->nk_irred);
 }
 
@@ -710,7 +714,10 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
             transform_v4_index_gemm(&evec_in[jk][0][0], &v4_tmp2[0][0], &v4_tmp1[0][0], ns, complex_one);
 
             // transform the fourth index and store to the final matrix (v4_tmp1 -> v4_out)
-            transform_v4_index_gemm(&evec_conj[jk][0][0], &v4_tmp1[0][0], &v4_out[ik_prod][0][0], ns,
+            transform_v4_index_gemm(&evec_conj[jk][0][0],
+                                    &v4_tmp1[0][0],
+                                    &v4_out[ik_prod][0][0],
+                                    ns,
                                     std::complex<double>(factor, 0.0));
 
         } else {
@@ -789,12 +796,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                           MPI_SUM,
                           MPI_COMM_WORLD);
 #else
-            MPI_Allreduce(MPI_IN_PLACE,
-                          &v4_out[ik_prod][0][0],
-                          count_sub,
-                          MPI_COMPLEX16,
-                          MPI_SUM,
-                          MPI_COMM_WORLD);
+            MPI_Allreduce(MPI_IN_PLACE, &v4_out[ik_prod][0][0], count_sub, MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD);
 #endif
         }
     } else {
@@ -808,12 +810,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
                               MPI_SUM,
                               MPI_COMM_WORLD);
 #else
-                MPI_Allreduce(MPI_IN_PLACE,
-                              &v4_out[ik_prod][is][0],
-                              ns2,
-                              MPI_COMPLEX16,
-                              MPI_SUM,
-                              MPI_COMM_WORLD);
+                MPI_Allreduce(MPI_IN_PLACE, &v4_out[ik_prod][is][0], ns2, MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD);
 #endif
             }
         }
@@ -1082,12 +1079,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
                           MPI_SUM,
                           MPI_COMM_WORLD);
 #else
-            MPI_Allreduce(MPI_IN_PLACE,
-                          &v4_out[ik_prod][0][0],
-                          count_sub,
-                          MPI_COMPLEX16,
-                          MPI_SUM,
-                          MPI_COMM_WORLD);
+            MPI_Allreduce(MPI_IN_PLACE, &v4_out[ik_prod][0][0], count_sub, MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD);
 #endif
         }
     } else {
@@ -1101,12 +1093,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
                               MPI_SUM,
                               MPI_COMM_WORLD);
 #else
-                MPI_Allreduce(MPI_IN_PLACE,
-                              &v4_out[ik_prod][is][0],
-                              ns2,
-                              MPI_COMPLEX16,
-                              MPI_SUM,
-                              MPI_COMM_WORLD);
+                MPI_Allreduce(MPI_IN_PLACE, &v4_out[ik_prod][is][0], ns2, MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD);
 #endif
             }
         }
@@ -1130,13 +1117,16 @@ void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(double **omega2, std::co
                                                         const int fc_order, const unsigned int nk_dense_in,
                                                         const unsigned int nk_irred_coarse_in) const
 {
-    PHON_NS::zerofill_elements_acoustic_at_gamma(omega2, v_elems, fc_order, dynamical->neval, nk_dense_in,
+    PHON_NS::zerofill_elements_acoustic_at_gamma(omega2,
+                                                 v_elems,
+                                                 fc_order,
+                                                 dynamical->neval,
+                                                 nk_dense_in,
                                                  nk_irred_coarse_in);
 }
 
-void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems,
-                                                  const int fc_order, const unsigned int ns_in,
-                                                  const unsigned int nk_dense_in,
+void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, const int fc_order,
+                                                  const unsigned int ns_in, const unsigned int nk_dense_in,
                                                   const unsigned int nk_irred_coarse_in)
 {
     // Set V3 or V4 elements involving acoustic modes at Gamma point

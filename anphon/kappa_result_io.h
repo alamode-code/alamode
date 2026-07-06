@@ -10,10 +10,10 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <memory>
 #include <string>
 #include <vector>
-#include <Eigen/Core>
 
 namespace PHON_NS
 {
@@ -22,16 +22,16 @@ namespace PHON_NS
 // no HDF5 types appear here so the physics code never depends on HighFive.
 struct KappaFileMetaH5
 {
-    std::vector<double> temperatures;   // K
+    std::vector<double> temperatures; // K
     int classical = 0;
     int ismear = -1;
-    double smearing_width = 0.0;        // cm^-1
+    double smearing_width = 0.0; // cm^-1
     std::string fcs_file;
 
     // Primitive cell (informational; validated on restart)
-    Eigen::Matrix3d lattice_vector;     // columns = a1,a2,a3, bohr
-    Eigen::MatrixXd x_fractional;       // [natmin, 3]
-    std::vector<int> atomic_kinds;      // 0-based
+    Eigen::Matrix3d lattice_vector; // columns = a1,a2,a3, bohr
+    Eigen::MatrixXd x_fractional;   // [natmin, 3]
+    std::vector<int> atomic_kinds;  // 0-based
     std::vector<std::string> elements;
     double volume = 0.0;
 
@@ -43,14 +43,14 @@ struct KappaFileMetaH5
 
     // Boundary scattering (LEN_BOUNDARY), included in the total linewidth
     // used for the kappa tensors when boundary_length > 0.
-    double boundary_length = 0.0;       // m
+    double boundary_length = 0.0; // m
 
     // Which final-kappa datasets this run will produce (fixes the /kappa
     // layout at setup so no dataset is created after the file is published).
     bool with_kappa_3ph_only = false;
     bool with_kappa_coherent = false;
     bool with_kappa_spec = false;
-    std::vector<double> energy_axis;    // cm^-1; used when with_kappa_spec
+    std::vector<double> energy_axis; // cm^-1; used when with_kappa_spec
 
     // Temperature-resolved mode (format_version 2), used when the run's
     // harmonic basis is itself temperature dependent (FC2_TEMPERATURE with
@@ -59,8 +59,8 @@ struct KappaFileMetaH5
     // and runs at different temperatures accumulate into one file whose
     // temperature grid grows by union.
     bool temperature_resolved = false;
-    double fc2_temperature = -1.0;      // basis temperature of this run
-    std::string fc2_source;             // file the renormalized FC2 came from
+    double fc2_temperature = -1.0; // basis temperature of this run
+    std::string fc2_source;        // file the renormalized FC2 came from
 };
 
 // Static description of the /iterativebte group: the mesh the iterative
@@ -78,15 +78,15 @@ struct IbteMetaH5
 // and the per-mode quantities that do not change during the run.
 struct KappaChannelMetaH5
 {
-    std::string tag;                        // "3ph" or "4ph"
+    std::string tag; // "3ph" or "4ph"
     unsigned int nk_i[3] = {0, 0, 0};
     unsigned int nk_irred = 0;
     unsigned int ns = 0;
-    Eigen::MatrixXd xk_irred;               // [nk_irred, 3] fractional q of representatives
-    std::vector<double> weights;            // [nk_irred]
+    Eigen::MatrixXd xk_irred;                 // [nk_irred, 3] fractional q of representatives
+    std::vector<double> weights;              // [nk_irred]
     std::vector<std::vector<int>> equiv_knum; // full-mesh k indices of each irreducible star
-    Eigen::MatrixXd frequencies;            // [nk_irred, ns], cm^-1
-    std::vector<double> velocities;         // [sum(multiplicity)*ns*3] flattened, m/s
+    Eigen::MatrixXd frequencies;              // [nk_irred, ns], cm^-1
+    std::vector<double> velocities;           // [sum(multiplicity)*ns*3] flattened, m/s
 };
 
 // Crash-safe writer/reader of PREFIX.kappa.h5. All methods must be called
@@ -111,8 +111,7 @@ public:
     // when it is absent or its structure must change. Channels present in
     // an existing file are carried over with their computed gamma rows;
     // reset_channel discards the named channel's previous data instead.
-    void open_or_create(const KappaFileMetaH5 &fmeta, const KappaChannelMetaH5 &channel,
-                        bool reset_channel);
+    void open_or_create(const KappaFileMetaH5 &fmeta, const KappaChannelMetaH5 &channel, bool reset_channel);
 
     // Validate an additional channel against an open file, creating it (via
     // rebuild-and-swap) when absent; reset_channel discards previous data.
@@ -156,8 +155,7 @@ public:
                            const double *const *damping);
 
     // Bulk variant for scattered rows (legacy .result import).
-    void store_gamma_rows(const std::string &tag, const std::vector<int> &rows,
-                          const double *const *damping);
+    void store_gamma_rows(const std::string &tag, const std::vector<int> &rows, const double *const *damping);
 
     // Fill the pre-created /kappa datasets (shapes fixed by KappaFileMetaH5)
     // and mark them valid. Null pointers skip the corresponding dataset.
@@ -167,10 +165,8 @@ public:
     // gamma_isotope is the per-mode isotope linewidth [nk_irred][ns] on the
     // 3ph mesh (internal units), stored when the file was set up with
     // isotope scattering enabled.
-    void store_kappa(const double *const *const *kappa_peierls,
-                     const double *const *const *kappa_3ph_only,
-                     const double *const *const *kappa_coherent,
-                     const double *const *const *kappa_spec,
+    void store_kappa(const double *const *const *kappa_peierls, const double *const *const *kappa_3ph_only,
+                     const double *const *const *kappa_coherent, const double *const *const *kappa_spec,
                      const double *const *gamma_isotope);
 
     [[nodiscard]] const std::string &get_filename() const;

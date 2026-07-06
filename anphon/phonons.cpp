@@ -165,10 +165,13 @@ void PHON::setup_base() const
     dynamical->setup_dynamical();
     fcs_phonon->setup(mode);
     phonon_velocity->setup_velocity();
-    integration->setup_integration(dos->kmesh_dos, phonon_velocity, dynamical->neval,
+    integration->setup_integration(dos->kmesh_dos,
+                                   phonon_velocity,
+                                   dynamical->neval,
                                    system->get_primcell().lattice_vector,
                                    system->get_primcell().reciprocal_lattice_vector,
-                                   anharmonic_core->quartic_mode, mympi->my_rank);
+                                   anharmonic_core->quartic_mode,
+                                   mympi->my_rank);
     dos->setup();
     thermodynamics->setup();
     anharmonic_core->setup();
@@ -215,9 +218,14 @@ void PHON::execute_phonons() const
     }
 
     if (thermodynamics->calc_FE_bubble) {
-        thermodynamics->compute_free_energy_bubble(*system, *dos->kmesh_dos, *dos->dymat_dos,
-                                                   symmetry->SymmList, *anharmonic_core,
-                                                   dynamical->neval, mympi->my_rank, mympi->nprocs);
+        thermodynamics->compute_free_energy_bubble(*system,
+                                                   *dos->kmesh_dos,
+                                                   *dos->dymat_dos,
+                                                   symmetry->SymmList,
+                                                   *anharmonic_core,
+                                                   dynamical->neval,
+                                                   mympi->my_rank,
+                                                   mympi->nprocs);
     }
 
     if (mympi->my_rank == 0) {
@@ -247,12 +255,23 @@ void PHON::execute_kappa() const
     }
 
     isotope->setup_isotope_scattering(*system, dos->kmesh_dos->nk_irred, dynamical->neval, mympi->my_rank);
-    isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos, *dos->dymat_dos, *dos->tetra_nodes_dos, *system,
-                                         *integration, dynamical->neval, mympi->my_rank, mympi->nprocs);
+    isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos,
+                                         *dos->dymat_dos,
+                                         *dos->tetra_nodes_dos,
+                                         *system,
+                                         *integration,
+                                         dynamical->neval,
+                                         mympi->my_rank,
+                                         mympi->nprocs);
 
     mode_analysis->setup_mode_analysis();
-    selfenergy->setup_selfenergy(dynamical->neval, integration->epsilon, thermodynamics->classical,
-                                 symmetry->SymmList, *anharmonic_core, mympi->my_rank, mympi->nprocs);
+    selfenergy->setup_selfenergy(dynamical->neval,
+                                 integration->epsilon,
+                                 thermodynamics->classical,
+                                 symmetry->SymmList,
+                                 *anharmonic_core,
+                                 mympi->my_rank,
+                                 mympi->nprocs);
 
     if (mode_analysis->ks_analyze_mode) {
         mode_analysis->run_mode_analysis();

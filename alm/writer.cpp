@@ -23,7 +23,9 @@
 #include "constraint.h"
 #include "error.h"
 #include "fcs.h"
+#include "fcs_hdf5_schema.h"
 #include "files.h"
+#include "hdf5_parser.h"
 #include "memory.h"
 #include "optimize.h"
 #include "patterndisp.h"
@@ -31,8 +33,6 @@
 #include "system.h"
 #include "timer.h"
 #include "version.h"
-#include "fcs_hdf5_schema.h"
-#include "hdf5_parser.h"
 
 #ifdef _BOOST_LIBRARY_LINKABLE
 #include <boost/asio/ip/host_name.hpp>
@@ -958,7 +958,8 @@ auto Writer::write_structures_h5(H5Easy::File &file, const Cell &cell, const Spi
     for (auto &it: kind_copy)
         it -= 1;
 
-    write_cell_group_h5(file, celltype,
+    write_cell_group_h5(file,
+                        celltype,
                         cell.lattice_vector,
                         cell.x_fractional,
                         kind_copy,
@@ -973,13 +974,10 @@ auto Writer::write_structures_h5(H5Easy::File &file, const Cell &cell, const Spi
 }
 
 
-auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int order,
-                                                   const std::vector<ForceConstantTable> &fc_cart,
-                                                   const std::vector<Eigen::MatrixXd> &x_image,
-                                                   const std::vector<Maps> &map_s2tp,
-                                                   const std::unique_ptr<Cluster> &cluster,
-                                                   const units::FcUnitSystem unit_system,
-                                                   const int compression_level) -> void
+auto Writer::write_forceconstant_at_given_order_h5(
+    H5Easy::File &file, const int order, const std::vector<ForceConstantTable> &fc_cart,
+    const std::vector<Eigen::MatrixXd> &x_image, const std::vector<Maps> &map_s2tp,
+    const std::unique_ptr<Cluster> &cluster, const units::FcUnitSystem unit_system, const int compression_level) -> void
 {
     using namespace H5Easy;
     std::vector<ForceConstantsWithShifts> fc;
@@ -1055,10 +1053,15 @@ auto Writer::write_forceconstant_at_given_order_h5(H5Easy::File &file, const int
         fcs_arrays[counter] = it.fcs_value;
         ++counter;
     }
-    write_fc_order_group_h5(file, order,
-                            atom_indices, atom_indices_super, coord_indices,
-                            std::move(shift_vectors), std::move(fcs_arrays),
-                            unit_system, compression_level);
+    write_fc_order_group_h5(file,
+                            order,
+                            atom_indices,
+                            atom_indices_super,
+                            coord_indices,
+                            std::move(shift_vectors),
+                            std::move(fcs_arrays),
+                            unit_system,
+                            compression_level);
 }
 
 

@@ -577,10 +577,15 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                   evec_tmp,
                                                                   eval_harm_renorm[iT],
                                                                   evec_harm_renorm,
-                                                                  *dos->kmesh_dos, ns, *system);
+                                                                  *dos->kmesh_dos,
+                                                                  ns,
+                                                                  *system);
 
-                FE_total[iT] = thermodynamics->compute_FE_total(
-                    iT, FE_QHA[iT], dFE_scph[iT], relaxation->relax_str != 0 ? V0[iT] : 0.0, !is_qha);
+                FE_total[iT] = thermodynamics->compute_FE_total(iT,
+                                                                FE_QHA[iT],
+                                                                dFE_scph[iT],
+                                                                relaxation->relax_str != 0 ? V0[iT] : 0.0,
+                                                                !is_qha);
 
                 entropy[iT] = thermodynamics->vibrational_entropy(temperature,
                                                                   dos->kmesh_dos->nk_irred,
@@ -603,7 +608,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                            dos->kmesh_dos->xk,
                                                                            eval_update[iT],
                                                                            evec_tmp,
-                                                                                     *system);
+                                                                           *system);
                     }
                 }
 
@@ -756,7 +761,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                                dos->kmesh_dos->xk,
                                                                                eval_update[iT],
                                                                                evec_tmp,
-                                                                                     *system);
+                                                                               *system);
                         }
                     }
 
@@ -776,7 +781,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                                          dos->kmesh_dos->xk,
                                                                                          eval_update[iT],
                                                                                          evec_tmp,
-                                                                                     *system);
+                                                                                         *system);
                             }
                         }
                     }
@@ -983,8 +988,8 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                         ws.delta_v2_with_umn,
                                         *ws.del_v_strain,
                                         u_tensor);
-    relaxation->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, ws.v3_with_umn, ws.v3_ref, *ws.del_v_strain,
-                                        u_tensor);
+    relaxation
+        ->renormalize_v3_from_umn(kmesh_coarse, kmesh_dense, ws.v3_with_umn, ws.v3_ref, *ws.del_v_strain, u_tensor);
 
     // Renormalize the IFCs by the internal displacement q0 (exact Taylor
     // recentering of the quartic PES). The strain-renormalized v1..v3
@@ -1011,8 +1016,7 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                        ws.v3_with_umn,
                                        ws.v4_for_renorm,
                                        q0);
-    relaxation->renormalize_v3_from_q0(kmesh_dense, kmesh_coarse, ws.v3_renorm, ws.v3_with_umn, ws.v4_for_renorm,
-                                       q0);
+    relaxation->renormalize_v3_from_q0(kmesh_dense, kmesh_coarse, ws.v3_renorm, ws.v3_with_umn, ws.v4_for_renorm, q0);
     relaxation->renormalize_v0_from_q0(omega2_harmonic,
                                        kmesh_dense,
                                        ws.v0_renorm,
@@ -1067,8 +1071,7 @@ void ScphQhaCommon::print_initial_structure(const RelaxationStructureState &stat
         for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             std::cout << " ";
             for (auto ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                std::cout << std::scientific << std::setw(15) << std::setprecision(6)
-                          << state.u_tensor[ixyz1][ixyz2];
+                std::cout << std::scientific << std::setw(15) << std::setprecision(6) << state.u_tensor[ixyz1][ixyz2];
             }
             std::cout << '\n';
         }
@@ -1182,11 +1185,10 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
 
 void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspace &ws,
                                                      const std::complex<double> *v1_eff,
-                                                     const std::complex<double> *del_v0_del_umn_eff,
-                                                     const double du0, const double du_tensor,
-                                                     const std::string &spg_label,
-                                                     std::vector<StructOptStepRecord> &step_history,
-                                                     double &grad_norm, double &cell_grad_norm) const
+                                                     const std::complex<double> *del_v0_del_umn_eff, const double du0,
+                                                     const double du_tensor, const std::string &spg_label,
+                                                     std::vector<StructOptStepRecord> &step_history, double &grad_norm,
+                                                     double &cell_grad_norm) const
 {
     const auto ns = dynamical->neval;
 
@@ -1257,8 +1259,7 @@ void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state,
         for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             std::cout << " ";
             for (auto ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                std::cout << std::scientific << std::setw(15) << std::setprecision(6)
-                          << state.u_tensor[ixyz1][ixyz2];
+                std::cout << std::scientific << std::setw(15) << std::setprecision(6) << state.u_tensor[ixyz1][ixyz2];
             }
             std::cout << '\n';
         }

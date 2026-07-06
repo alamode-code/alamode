@@ -40,8 +40,7 @@ public:
     // .kl_iter written by the SOLVER = IBTE path (kappa owned by
     // Iterativebte); header lines record the non-iterative extra channels
     // and any temperatures whose iteration did not converge.
-    void writeKappaIterative(unsigned int ntemp_in, const double *temperature_in,
-                             const double *const *const *kappa_in,
+    void writeKappaIterative(unsigned int ntemp_in, const double *temperature_in, const double *const *const *kappa_in,
                              const std::vector<unsigned char> &converged_in) const;
 
     void writeSelfenergyIsotope() const;
@@ -175,6 +174,5 @@ public:
     // FILE_FORMAT: with h5 (default) the eigenvalue/eigenvector outputs are
     // written as schema-stamped HDF5 files; with text as plain-text files.
     bool use_h5_io = true;
-
 };
 } // namespace PHON_NS

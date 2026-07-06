@@ -25,19 +25,17 @@ class RelativeVector;
 // with the same inputs. A free function with fully explicit inputs so that
 // consumers (e.g. DerivativeIFC during QHA runs) do not depend on a live
 // Scph instance.
-void compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in,
-                                        int ngroup_v3_in, std::vector<double> *fcs_group_v3_in,
-                                        std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
-                                        int **evec_index_v3_in, const std::complex<double> *const *const *evec_in,
-                                        bool self_offdiag, unsigned int ns_in,
-                                        const KpointMeshUniform *kmesh_coarse_in,
+void compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double **omega2_harmonic_in, int ngroup_v3_in,
+                                        std::vector<double> *fcs_group_v3_in, std::vector<RelativeVector> *relvec_v3_in,
+                                        double *invmass_v3_in, int **evec_index_v3_in,
+                                        const std::complex<double> *const *const *evec_in, bool self_offdiag,
+                                        unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in,
                                         const KpointMeshUniform *kmesh_dense_in,
-                                        const PhaseFactorStorage *phase_storage_in,
-                                        AnharmonicCore &anharmonic_core_in, int my_rank, int nprocs);
+                                        const PhaseFactorStorage *phase_storage_in, AnharmonicCore &anharmonic_core_in,
+                                        int my_rank, int nprocs);
 
 // Set V3 (fc_order = 3) or V4 (fc_order = 4) elements involving acoustic
 // modes at the Gamma point exactly to zero.
 void zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, int fc_order,
-                                         unsigned int ns_in, unsigned int nk_dense_in,
-                                         unsigned int nk_irred_coarse_in);
+                                         unsigned int ns_in, unsigned int nk_dense_in, unsigned int nk_irred_coarse_in);
 } // namespace PHON_NS

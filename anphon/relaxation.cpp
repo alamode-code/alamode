@@ -34,8 +34,13 @@ using namespace PHON_NS;
 Relaxation::Relaxation(PHON *phon) : Pointers(phon)
 {
     set_default_variables();
-    derivative_ifc = std::make_unique<DerivativeIFC>(*system, *symmetry, *fcs_phonon, *dynamical, *anharmonic_core,
-                                                     mympi->my_rank, mympi->nprocs);
+    derivative_ifc = std::make_unique<DerivativeIFC>(*system,
+                                                     *symmetry,
+                                                     *fcs_phonon,
+                                                     *dynamical,
+                                                     *anharmonic_core,
+                                                     mympi->my_rank,
+                                                     mympi->nprocs);
 }
 
 Relaxation::~Relaxation()
@@ -620,8 +625,7 @@ void Relaxation::update_cell_coordinate(
 
 void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structure_state,
                                                const std::complex<double> *const v1_array_atT,
-                                               const std::vector<int> &harm_optical_modes,
-                                               double **omega2_harmonic,
+                                               const std::vector<int> &harm_optical_modes, double **omega2_harmonic,
                                                std::complex<double> ***evec_harmonic) const
 {
     // Called instead of update_cell_coordinate when the SCP equation did not
@@ -755,8 +759,7 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         }
         xf_new[iat] = lavec_new_inv * r_cart;
 
-        std::cout << "   " << std::setw(4) << std::left << system->symbol_kd[primcell.kind[iat]] << std::right
-                  << " :";
+        std::cout << "   " << std::setw(4) << std::left << system->symbol_kd[primcell.kind[iat]] << std::right << " :";
         for (auto i = 0; i < 3; ++i) {
             std::cout << std::setw(15) << std::setprecision(8) << std::fixed << xf_new[iat](i);
         }
@@ -818,8 +821,8 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
     std::string spg_label = "detection failed";
     const auto spgdataset = spg_get_dataset(aa, position, types, static_cast<int>(natmin), symmetry->tolerance);
     if (spgdataset && spgdataset->spacegroup_number > 0) {
-        spg_label = std::string(spgdataset->international_symbol) + " (#" +
-                    std::to_string(spgdataset->spacegroup_number) + ")";
+        spg_label =
+            std::string(spgdataset->international_symbol) + " (#" + std::to_string(spgdataset->spacegroup_number) + ")";
     }
     std::cout << "  Space group :  " << spg_label << '\n';
     if (spgdataset) spg_free_dataset(spgdataset);

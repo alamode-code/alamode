@@ -9,9 +9,9 @@
 */
 
 #include "scph_result_io.h"
-#include <mpi.h>
 #include <cmath>
 #include <filesystem>
+#include <mpi.h>
 #include <utility>
 #include "constants.h"
 #include "error.h"
@@ -26,8 +26,8 @@ struct ScphResultIOH5::Impl
 
     // Map each requested temperature to its row in the file's grid;
     // a missing temperature is fatal (mirrors the legacy text loader).
-    auto temperature_rows(const HighFive::File &fh, const std::vector<double> &temps_requested) const
-        -> std::vector<size_t>
+    auto temperature_rows(const HighFive::File &fh,
+                          const std::vector<double> &temps_requested) const -> std::vector<size_t>
     {
         const auto temps_file = H5Easy::load<std::vector<double>>(fh, "/settings/temperatures");
         std::vector<size_t> rows;
@@ -49,14 +49,13 @@ struct ScphResultIOH5::Impl
     }
 
     static auto write_dymat_dataset(HighFive::File &fh, const std::string &path,
-                                    const std::complex<double> *const *const *const *dymat,
-                                    const size_t nt, const size_t ns, const size_t ncell) -> void
+                                    const std::complex<double> *const *const *const *dymat, const size_t nt,
+                                    const size_t ns, const size_t ncell) -> void
     {
         HighFive::DataSetCreateProps props;
         props.add(HighFive::Chunking({1, ns, ns, ncell}));
         props.add(HighFive::Deflate(1));
-        auto dset = fh.createDataSet<std::complex<double>>(path, HighFive::DataSpace({nt, ns, ns, ncell}),
-                                                           props);
+        auto dset = fh.createDataSet<std::complex<double>>(path, HighFive::DataSpace({nt, ns, ns, ncell}), props);
         dset.write_raw(&dymat[0][0][0][0]);
     }
 };
@@ -160,12 +159,14 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         fh.createAttribute("mode", settings.mode);
 
         // Settings
-        dump(fh, "/settings/kmesh_interpolate",
-             std::vector<unsigned int>{settings.kmesh_interpolate[0], settings.kmesh_interpolate[1],
+        dump(fh,
+             "/settings/kmesh_interpolate",
+             std::vector<unsigned int>{settings.kmesh_interpolate[0],
+                                       settings.kmesh_interpolate[1],
                                        settings.kmesh_interpolate[2]});
-        dump(fh, "/settings/kmesh_dense",
-             std::vector<unsigned int>{settings.kmesh_dense[0], settings.kmesh_dense[1],
-                                       settings.kmesh_dense[2]});
+        dump(fh,
+             "/settings/kmesh_dense",
+             std::vector<unsigned int>{settings.kmesh_dense[0], settings.kmesh_dense[1], settings.kmesh_dense[2]});
         dump(fh, "/settings/temperatures", settings.temperatures);
         dumpAttribute(fh, "/settings/temperatures", "unit", std::string("K"));
         dump(fh, "/settings/nonanalytic", settings.nonanalytic);
@@ -176,11 +177,22 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         // (primitive cell tiled by KMESH_INTERPOLATE, cell-major atom order:
         // atom index = icell * natmin + iat with icell = ix*nk2*nk3 + iy*nk3 + iz).
         std::vector<std::vector<int>> mapping_prim(natmin, std::vector<int>(1));
-        for (size_t i = 0; i < natmin; ++i) mapping_prim[i][0] = static_cast<int>(i);
-        write_cell_group_h5(fh, "PrimitiveCell", cells.lavec_prim, cells.xf_prim, cells.kinds,
-                            cells.elements, cells.spin_polarized, cells.magmom, cells.noncollinear,
-                            cells.time_reversal_symmetry, 1, mapping_prim,
-                            units::FcUnitSystem::ry_bohr, cells.masses_amu);
+        for (size_t i = 0; i < natmin; ++i)
+            mapping_prim[i][0] = static_cast<int>(i);
+        write_cell_group_h5(fh,
+                            "PrimitiveCell",
+                            cells.lavec_prim,
+                            cells.xf_prim,
+                            cells.kinds,
+                            cells.elements,
+                            cells.spin_polarized,
+                            cells.magmom,
+                            cells.noncollinear,
+                            cells.time_reversal_symmetry,
+                            1,
+                            mapping_prim,
+                            units::FcUnitSystem::ry_bohr,
+                            cells.masses_amu);
 
         Eigen::Matrix3d lavec_super = cells.lavec_prim;
         lavec_super.col(0) *= static_cast<double>(nk1);
@@ -208,9 +220,18 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
                 }
             }
         }
-        write_cell_group_h5(fh, "SuperCell", lavec_super, xf_super, kinds_super, cells.elements,
-                            cells.spin_polarized, magmom_super, cells.noncollinear,
-                            cells.time_reversal_symmetry, ncell, mapping_super,
+        write_cell_group_h5(fh,
+                            "SuperCell",
+                            lavec_super,
+                            xf_super,
+                            kinds_super,
+                            cells.elements,
+                            cells.spin_polarized,
+                            magmom_super,
+                            cells.noncollinear,
+                            cells.time_reversal_symmetry,
+                            ncell,
+                            mapping_super,
                             units::FcUnitSystem::ry_bohr);
 
         // Dynamical-matrix corrections (restart payload)
@@ -236,9 +257,15 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         if (fc2) {
             // Base harmonic FC2 (readable by any current anphon as a plain
             // force-constant file) ...
-            write_fc_order_group_h5(fh, 0, fc2->atom_indices, fc2->atom_indices_super,
-                                    fc2->coord_indices, fc2->shift_vectors, fc2->base_values,
-                                    units::FcUnitSystem::ry_bohr, 1);
+            write_fc_order_group_h5(fh,
+                                    0,
+                                    fc2->atom_indices,
+                                    fc2->atom_indices_super,
+                                    fc2->coord_indices,
+                                    fc2->shift_vectors,
+                                    fc2->base_values,
+                                    units::FcUnitSystem::ry_bohr,
+                                    1);
             // ... plus the total renormalized FC2 per temperature on the
             // same rows, selected downstream via FC2_TEMPERATURE.
             const auto nrows = static_cast<size_t>(fc2->atom_indices.rows());
@@ -260,8 +287,7 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
     h5_publish_file(part, impl->filename);
 }
 
-void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requested,
-                                       const bool allow_unconverged) const
+void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requested, const bool allow_unconverged) const
 {
     const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
     // Absent datasets mean the file predates the flags (legacy import);
@@ -284,12 +310,12 @@ void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requeste
     collect_bad("structure", bad_str);
     if (bad_scph.empty() && bad_str.empty()) return;
 
-    std::cout << "\n The state file " << impl->filename
-              << " contains data whose iterations did NOT converge:\n";
+    std::cout << "\n The state file " << impl->filename << " contains data whose iterations did NOT converge:\n";
     const auto list_temps = [](const char *label, const std::vector<double> &bad) {
         if (bad.empty()) return;
         std::cout << "  " << label << " :";
-        for (const auto t: bad) std::cout << ' ' << t << " K";
+        for (const auto t: bad)
+            std::cout << ' ' << t << " K";
         std::cout << '\n';
     };
     list_temps("SCPH iteration       ", bad_scph);

@@ -10,13 +10,13 @@
 
 #include "constraint.h"
 #include <algorithm>
-#include <chrono>
 #include <boost/algorithm/string.hpp>
 #include <boost/bimap.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <chrono>
 #include <highfive/H5Easy.hpp>
 #include <iomanip>
 #include <iostream>
@@ -500,8 +500,8 @@ auto Constraint::update_constraint_matrix(const std::unique_ptr<System> &system,
         // otherwise alter the formatting of all subsequent floating-point output.
         const auto saved_flags = std::cout.flags();
         const auto saved_prec = std::cout.precision();
-        std::cout << "  Constraint reduction (merge + rank reduction + mapping) took "
-                  << std::fixed << std::setprecision(3) << elapsed_reduce << " sec.\n\n";
+        std::cout << "  Constraint reduction (merge + rank reduction + mapping) took " << std::fixed
+                  << std::setprecision(3) << elapsed_reduce << " sec.\n\n";
         std::cout.flags(saved_flags);
         std::cout.precision(saved_prec);
     }
@@ -1872,8 +1872,11 @@ auto Constraint::generate_rotational_constraint(const std::unique_ptr<System> &s
             }
         } else if (algo_in == ReductionAlgo::qrd) {
             int rank;
-            auto info = get_independent_rows_lapack_sparse(nparams[order], const_rotation_self[order], verbosity,
-                                                           rank_tolerance_auto, rank);
+            auto info = get_independent_rows_lapack_sparse(nparams[order],
+                                                           const_rotation_self[order],
+                                                           verbosity,
+                                                           rank_tolerance_auto,
+                                                           rank);
             if (order > 0) {
                 auto info2 = get_independent_rows_lapack_sparse(nparams[order - 1] + nparams[order],
                                                                 const_rotation_cross[order],

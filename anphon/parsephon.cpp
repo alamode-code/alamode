@@ -409,27 +409,12 @@ void Input::parse_general_vars()
 void Input::parse_kappa_vars(const bool use_default_values)
 {
     std::string str_tmp;
-    const std::vector<std::string> input_list{"KMESH_COARSE",
-                                              "EPSILON_4PH",
-                                              "ISMEAR_4PH",
-                                              "INCLUDE_4PH",
-                                              "RESTART",
-                                              "RESTART_4PH",
-                                              "INTERPOLATOR",
-                                              "LEN_BOUNDARY",
-                                              "ISOTOPE",
-                                              "ISOFACT",
-                                              "KAPPA_COHERENT",
-                                              "KAPPA_SPEC",
-                                              "WRITE_INTERPOL",
-                                              "ADAPTIVE_FACTOR",
-                                              "SOLVER",
-                                              "ISOTOPE_INSCATTERING",
-                                              "ITERATIVE",
-                                              "MAX_CYCLE",
-                                              "MIN_CYCLE",
-                                              "ITER_THRESHOLD",
-                                              "IBTE_MIXING"};
+    const std::vector<std::string> input_list{
+        "KMESH_COARSE",         "EPSILON_4PH",  "ISMEAR_4PH",     "INCLUDE_4PH",     "RESTART",
+        "RESTART_4PH",          "INTERPOLATOR", "LEN_BOUNDARY",   "ISOTOPE",         "ISOFACT",
+        "KAPPA_COHERENT",       "KAPPA_SPEC",   "WRITE_INTERPOL", "ADAPTIVE_FACTOR", "SOLVER",
+        "ISOTOPE_INSCATTERING", "ITERATIVE",    "MAX_CYCLE",      "MIN_CYCLE",       "ITER_THRESHOLD",
+        "IBTE_MIXING"};
 
     std::vector<double> isotope_factor;
     std::map<std::string, std::string> kappa_var_dict;
@@ -538,8 +523,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
     std::transform(solver.begin(), solver.end(), solver.begin(), toupper);
     if (solver.empty()) {
         if (iterative_given) {
-            warn("parse_kappa_vars",
-                 "The ITERATIVE tag is deprecated; please use SOLVER = RTA or SOLVER = IBTE.");
+            warn("parse_kappa_vars", "The ITERATIVE tag is deprecated; please use SOLVER = RTA or SOLVER = IBTE.");
         }
         solver = iterative ? "IBTE" : "RTA";
     } else if (iterative_given) {
@@ -551,8 +535,10 @@ void Input::parse_kappa_vars(const bool use_default_values)
     }
     if (solver == "IBTE" || solver == "VBTE") {
         warn("parse_kappa_vars",
-             ("SOLVER = " + solver + " is a pilot implementation under development;\n"
-             " please check the validity of the results carefully.").c_str());
+             ("SOLVER = " + solver +
+              " is a pilot implementation under development;\n"
+              " please check the validity of the results carefully.")
+                 .c_str());
     }
     if (solver == "DBTE") {
         warn("parse_kappa_vars",
@@ -923,26 +909,11 @@ void Input::parse_relax_vars()
 {
     // Read input parameters in the &relax-field.
 
-    const std::vector<std::string> input_list{"RELAX_ALGO",
-                                              "MAX_STR_ITER",
-                                              "COORD_CONV_TOL",
-                                              "GRADIENT_CONV_TOL",
-                                              "CELL_GRADIENT_CONV_TOL",
-                                              "GDIIS_CONTROL",
-                                              "GDIIS_PLAIN",
-                                              "MIXBETA_COORD",
-                                              "ALPHA_STDECENT",
-                                              "CELL_CONV_TOL",
-                                              "MIXBETA_CELL",
-                                              "SET_INIT_STR",
-                                              "COOLING_U0_INDEX",
-                                              "COOLING_U0_THR",
-                                              "ADD_HESS_DIAG",
-                                              "STAT_PRESSURE",
-                                              "RENORM_3TO2ND",
-                                              "RENORM_2TO1ST",
-                                              "RENORM_34TO1ST",
-                                              "STRAIN_IFC_DIR"};
+    const std::vector<std::string> input_list{
+        "RELAX_ALGO",    "MAX_STR_ITER",  "COORD_CONV_TOL",   "GRADIENT_CONV_TOL", "CELL_GRADIENT_CONV_TOL",
+        "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",    "ALPHA_STDECENT",    "CELL_CONV_TOL",
+        "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX", "COOLING_U0_THR",    "ADD_HESS_DIAG",
+        "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR"};
 
     std::map<std::string, std::string> stropt_var_dict;
 

@@ -145,9 +145,15 @@ public:
     // ModeAnalysis legitimately overrides the parser defaults: mode-resolved
     // analyses on a uniform mesh need the full triplet/quartet lists, so the
     // symmetry reduction must be switched off through these entry points.
-    void disable_triplet_symmetry() { use_triplet_symmetry = false; }
+    void disable_triplet_symmetry()
+    {
+        use_triplet_symmetry = false;
+    }
 
-    void disable_quartet_symmetry() { use_quartet_symmetry = false; }
+    void disable_quartet_symmetry()
+    {
+        use_quartet_symmetry = false;
+    }
 
     std::complex<double> V3(const unsigned int[3]);
 
@@ -171,8 +177,8 @@ public:
     // region per V3 call is far too fine-grained (measured to give negative
     // scaling in the SERTA and IBTE setups).
     std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
-                            const std::complex<double> *const *const *evec_in,
-                            std::complex<double> *phi3_work, int *kindex_work);
+                            const std::complex<double> *const *const *evec_in, std::complex<double> *phi3_work,
+                            int *kindex_work);
 
     std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in,

@@ -14,6 +14,5 @@
 
 // Solve the symmetric-indefinite KKT system K x = rhs with Apple Accelerate's sparse LDL^T
 // factorization. Returns true on success (factorization and solve both reported Eigen::Success).
-bool solve_kkt_accelerate_ldlt(const Eigen::SparseMatrix<double> &K, const Eigen::VectorXd &rhs,
-                               Eigen::VectorXd &sol);
+bool solve_kkt_accelerate_ldlt(const Eigen::SparseMatrix<double> &K, const Eigen::VectorXd &rhs, Eigen::VectorXd &sol);
 #endif

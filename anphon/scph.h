@@ -12,8 +12,8 @@
 
 #include <Eigen/Dense>
 #include <complex>
-#include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
 #include "anharmonic_core.h"
+#include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
 #include "dynamical.h"
 #include "gruneisen.h"
 #include "kpoint.h"
@@ -100,10 +100,9 @@ private:
                                       std::complex<double> ***, bool, std::complex<double> **,
                                       const unsigned int verbosity, const bool compact_progress = false);
 
-    void compute_anharmonic_frequency_diis(std::complex<double> ***, double **, std::complex<double> ***,
-                                           double, bool &, std::complex<double> ***, bool,
-                                           std::complex<double> **, const unsigned int verbosity,
-                                           const bool compact_progress = false);
+    void compute_anharmonic_frequency_diis(std::complex<double> ***, double **, std::complex<double> ***, double,
+                                           bool &, std::complex<double> ***, bool, std::complex<double> **,
+                                           const unsigned int verbosity, const bool compact_progress = false);
 
     // Helper methods for compute_anharmonic_frequency
     void initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,

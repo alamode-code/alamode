@@ -148,9 +148,8 @@ public:
     auto build_energy_block(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
                             const std::unique_ptr<Constraint> &constraint, const int maxorder,
                             const size_t ncols_compact, const std::vector<std::vector<double>> &u_in,
-                            const std::vector<double> &e_in, const double emin,
-                            std::vector<double> &amat_out, std::vector<double> &evec_out,
-                            double &enorm_out) const -> void;
+                            const std::vector<double> &e_in, const double emin, std::vector<double> &amat_out,
+                            std::vector<double> &evec_out, double &enorm_out) const -> void;
 
     // Production entry: builds the energy block for the full training set (u_train/e_train).
     auto build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, const std::unique_ptr<Fcs> &fcs,
@@ -193,8 +192,8 @@ private:
 
     std::vector<std::vector<double>> u_train, f_train;
     std::vector<std::vector<double>> u_validation, f_validation;
-    std::vector<double> e_train;       // reference (DFT) total-supercell energies, Ry, one per training config
-    std::vector<double> e_validation;  // reference energies for the manual-CV validation set (EFIT_CV)
+    std::vector<double> e_train;      // reference (DFT) total-supercell energies, Ry, one per training config
+    std::vector<double> e_validation; // reference energies for the manual-CV validation set (EFIT_CV)
 
     OptimizerControl optcontrol;
 
@@ -356,9 +355,8 @@ private:
     // basis (e_compact, length ncols_compact), moving the FC2FIX-fixed-coefficient energy onto the
     // RHS scalar e_rhs. Single-row analogue of project_constraints' const_fix/index_bimap/const_relate.
     static auto project_energy_row(const int maxorder, const std::unique_ptr<Fcs> &fcs,
-                                   const std::unique_ptr<Constraint> &constraint,
-                                   const std::vector<double> &e_full, std::vector<double> &e_compact,
-                                   double &e_rhs) -> void;
+                                   const std::unique_ptr<Constraint> &constraint, const std::vector<double> &e_full,
+                                   std::vector<double> &e_compact, double &e_rhs) -> void;
 
     auto run_eigen_sparse_solver(const SpMat &sp_mat, const Eigen::VectorXd &sp_bvec, std::vector<double> &param_out,
                                  const double fnorm, const int maxorder, const std::unique_ptr<Fcs> &fcs,
@@ -383,9 +381,8 @@ private:
                             const int verbosity) const -> void;
 
     auto fista(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
-               const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm,
-               const double lipschitz_l2, const Eigen::VectorXd &penalty_scale,
-               const int verbosity) const -> void;
+               const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const double fnorm, const double lipschitz_l2,
+               const Eigen::VectorXd &penalty_scale, const int verbosity) const -> void;
 
     // ADMM (scaled form, Boyd et al. 2011) for the same elastic-net / adaptive-LASSO objective.
     // `llt` is the Cholesky factor of G = (1/M) A^T A + diag(lambda2 p^2 + tau), `q = (1/M) A^T b`,
@@ -394,8 +391,8 @@ private:
     // from x; the scaled dual is reset to zero on each call. z is returned in x.
     auto admm(const int M, const int N, const double alpha, const int warm_start, Eigen::VectorXd &x,
               const Eigen::MatrixXd &A, const Eigen::VectorXd &b, const Eigen::LLT<Eigen::MatrixXd> &llt,
-              const Eigen::VectorXd &q, const double tau, const Eigen::VectorXd &penalty_scale,
-              const double fnorm, const int verbosity) const -> void;
+              const Eigen::VectorXd &q, const double tau, const Eigen::VectorXd &penalty_scale, const double fnorm,
+              const int verbosity) const -> void;
 
     static auto estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double;
 

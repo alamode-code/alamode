@@ -141,8 +141,7 @@ auto InputSetter::set_optimize_vars(ALM *alm, const std::vector<std::vector<doub
                                     const std::vector<std::vector<double>> &f_train_in,
                                     const std::vector<std::vector<double>> &u_validation_in,
                                     const std::vector<std::vector<double>> &f_validation_in,
-                                    const std::vector<double> &e_train_in,
-                                    const std::vector<double> &e_validation_in,
+                                    const std::vector<double> &e_train_in, const std::vector<double> &e_validation_in,
                                     const OptimizerControl &optcontrol_in) const -> void
 {
     alm->set_u_train(u_train_in);

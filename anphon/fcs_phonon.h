@@ -225,11 +225,9 @@ private:
 
     void load_fcs_xml(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    void parse_fcs_from_h5(const std::string &fname_fcs, const int order,
-                           std::vector<FcsArrayWithCell> &fcs_out) const;
+    void parse_fcs_from_h5(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    void append_delta_fc2_from_scph(const std::string &fname_dfc2,
-                                    std::vector<FcsArrayWithCell> &fcs_out) const;
+    void append_delta_fc2_from_scph(const std::string &fname_dfc2, std::vector<FcsArrayWithCell> &fcs_out) const;
 
     void load_fcs_from_file(const int maxorder_in) const;
 

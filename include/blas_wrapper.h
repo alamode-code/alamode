@@ -44,13 +44,13 @@ extern "C"
 {
 #endif
 
-// DGEMV: y := alpha*A*x + beta*y   (A column-major)
-void dgemv_(char *trans, int *m, int *n, double *alpha, double *a, int *lda, double *x, int *incx, double *beta,
-            double *y, int *incy);
+    // DGEMV: y := alpha*A*x + beta*y   (A column-major)
+    void dgemv_(char *trans, int *m, int *n, double *alpha, double *a, int *lda, double *x, int *incx, double *beta,
+                double *y, int *incy);
 
-// DGEMM: C := alpha*A*B + beta*C   (all column-major)
-void dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha, double *a, int *lda, double *b,
-            int *ldb, double *beta, double *c, int *ldc);
+    // DGEMM: C := alpha*A*B + beta*C   (all column-major)
+    void dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha, double *a, int *lda, double *b,
+                int *ldb, double *beta, double *c, int *ldc);
 
 #ifdef __cplusplus
 }
@@ -74,9 +74,9 @@ extern "C"
 {
 #endif
 
-// ZGEMM: complex C := alpha*A*B + beta*C   (column-major; complex args as double* per BLAS convention)
-void zgemm_(const char *transa, const char *transb, int *m, int *n, int *k, double *alpha, double *a, int *lda,
-            double *b, int *ldb, double *beta, double *c, int *ldc);
+    // ZGEMM: complex C := alpha*A*B + beta*C   (column-major; complex args as double* per BLAS convention)
+    void zgemm_(const char *transa, const char *transb, int *m, int *n, int *k, double *alpha, double *a, int *lda,
+                double *b, int *ldb, double *beta, double *c, int *ldc);
 
 #ifdef __cplusplus
 }
@@ -92,11 +92,21 @@ void zgemm_(const char *transa, const char *transb, int *m, int *n, int *k, doub
 // NOTE: under EIGEN_USE_BLAS the raw zgemm_ above is suppressed and comes from Eigen's blas.h, so
 // this header must be included AFTER the Eigen headers in that build (both alm, via lapack_wrapper.h,
 // and anphon satisfy this).
-inline void zgemm_cpx(const char *transa, const char *transb, int *m, int *n, int *k,
-                      std::complex<double> *alpha, std::complex<double> *a, int *lda,
-                      std::complex<double> *b, int *ldb, std::complex<double> *beta,
+inline void zgemm_cpx(const char *transa, const char *transb, int *m, int *n, int *k, std::complex<double> *alpha,
+                      std::complex<double> *a, int *lda, std::complex<double> *b, int *ldb, std::complex<double> *beta,
                       std::complex<double> *c, int *ldc)
 {
-    zgemm_(transa, transb, m, n, k, reinterpret_cast<double *>(alpha), reinterpret_cast<double *>(a), lda,
-           reinterpret_cast<double *>(b), ldb, reinterpret_cast<double *>(beta), reinterpret_cast<double *>(c), ldc);
+    zgemm_(transa,
+           transb,
+           m,
+           n,
+           k,
+           reinterpret_cast<double *>(alpha),
+           reinterpret_cast<double *>(a),
+           lda,
+           reinterpret_cast<double *>(b),
+           ldb,
+           reinterpret_cast<double *>(beta),
+           reinterpret_cast<double *>(c),
+           ldc);
 }

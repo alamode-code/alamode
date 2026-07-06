@@ -18,12 +18,11 @@ using namespace PHON_NS;
 namespace
 {}
 
-DerivativeIFC::DerivativeIFC(const System &system_in, const Symmetry &symmetry_in,
-                             const Fcs_phonon &fcs_phonon_in, const Dynamical &dynamical_in,
-                             AnharmonicCore &anharmonic_core_in, const int my_rank_in,
-                             const int nprocs_in)
-    : system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), dynamical_(dynamical_in),
-      anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
+DerivativeIFC::DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in,
+                             const Dynamical &dynamical_in, AnharmonicCore &anharmonic_core_in, const int my_rank_in,
+                             const int nprocs_in) :
+    system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), dynamical_(dynamical_in),
+    anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
 {}
 
 void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
@@ -669,8 +668,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         if (my_rank_ == 0) std::cout << "  done!\n";
         break;
     case 1:
-        if (my_rank_ == 0)
-            std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
+        if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
         compute_dV1_dumn(del_v_strain.del_v1, evec_harmonic);
         if (my_rank_ == 0) std::cout << "  done!\n";
         break;
@@ -798,8 +796,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
         if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
         del_v_strain.del_v1.setZero();
     } else if (renorm_2to1st == 1) {
-        if (my_rank_ == 0)
-            std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
+        if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
         compute_dV1_dumn(del_v_strain.del_v1, evec_harmonic);
 
     } else if (renorm_2to1st == 2) {

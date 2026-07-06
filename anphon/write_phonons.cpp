@@ -2119,7 +2119,7 @@ void Writes::writeDispCorrelation() const
                                                                  dos->kmesh_dos->xk,
                                                                  dos->dymat_dos->get_eigenvalues(),
                                                                  dos->dymat_dos->get_eigenvectors(),
-                                                              *system);
+                                                                 *system);
 
                 ofs << std::setw(17) << T;
                 ofs << std::setw(11) << j / 3 + 1;
@@ -2256,8 +2256,8 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
     if (isotope->include_isotope) ofs_kl << "# Isotope effects are included." << '\n';
     if (conductivity->fph_rta > 0) ofs_kl << "# 4ph is included non-iteratively." << '\n';
     if (conductivity->len_boundary > eps) {
-        ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2)
-               << conductivity->len_boundary * 1e9 << " [nm]" << '\n';
+        ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2) << conductivity->len_boundary * 1e9
+               << " [nm]" << '\n';
     }
 
     for (unsigned int itemp = 0; itemp < ntemp_in; ++itemp) {

@@ -161,9 +161,8 @@ private:
 
     void deallocate_variables();
 
-    void prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in,
-                                  const PhononVelocity *phonon_velocity_in, unsigned int ns_in,
-                                  const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p);
+    void prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
+                                  unsigned int ns_in, const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p);
 
     static inline double fij(double, double, double);
 

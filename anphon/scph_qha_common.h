@@ -123,21 +123,19 @@ protected:
                                          const KpointMeshUniform *kmesh_coarse_in, MinimumDistList ***mindist_list_in,
                                          bool is_qha = false, int type = 0);
 
-    ScphSettingsH5 build_scph_settings_h5(const std::string &mode_name, unsigned int NT,
-                                          unsigned int nonanalytic_in, bool selfenergy_offdiagonal_in,
-                                          int relax_str_in) const;
+    ScphSettingsH5 build_scph_settings_h5(const std::string &mode_name, unsigned int NT, unsigned int nonanalytic_in,
+                                          bool selfenergy_offdiagonal_in, int relax_str_in) const;
 
     ScphCellsH5 build_scph_cells_h5() const;
 
-    ScphFc2RowsH5 build_fc2_rows_h5(const std::complex<double> *const *const *const *delta_dymat,
-                                    unsigned int NT, const KpointMeshUniform *kmesh_coarse_in,
-                                    MinimumDistList ***mindist_list_in, const std::string &variant) const;
+    ScphFc2RowsH5 build_fc2_rows_h5(const std::complex<double> *const *const *const *delta_dymat, unsigned int NT,
+                                    const KpointMeshUniform *kmesh_coarse_in, MinimumDistList ***mindist_list_in,
+                                    const std::string &variant) const;
 
     // Rank-0 only: assemble the full state and publish it atomically.
     void write_scph_state_h5(const std::string &filename, const std::string &mode_name, unsigned int NT,
                              unsigned int nonanalytic_in, bool selfenergy_offdiagonal_in, int relax_str_in,
-                             const std::string &variant,
-                             const std::complex<double> *const *const *const *delta_main,
+                             const std::string &variant, const std::complex<double> *const *const *const *delta_main,
                              const std::complex<double> *const *const *const *delta_harm_renorm,
                              const std::vector<double> *v0, const KpointMeshUniform *kmesh_coarse_in,
                              MinimumDistList ***mindist_list_in) const;
@@ -169,10 +167,9 @@ protected:
     // Residual force/stress norms of one structural step, the per-step
     // du/residual report, and the history-table record.
     void compute_and_print_step_gradients(const StructuralOptWorkspace &ws, const std::complex<double> *v1_eff,
-                                          const std::complex<double> *del_v0_del_umn_eff, double du0,
-                                          double du_tensor, const std::string &spg_label,
-                                          std::vector<StructOptStepRecord> &step_history, double &grad_norm,
-                                          double &cell_grad_norm) const;
+                                          const std::complex<double> *del_v0_del_umn_eff, double du0, double du_tensor,
+                                          const std::string &spg_label, std::vector<StructOptStepRecord> &step_history,
+                                          double &grad_norm, double &cell_grad_norm) const;
 
     // Final structure report of one temperature point.
     void print_final_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode, double temp,

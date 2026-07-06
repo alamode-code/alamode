@@ -509,8 +509,15 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                 }
 
                 double grad_norm, cell_grad_norm;
-                compute_and_print_step_gradients(ws, v1_QHA, del_v0_del_umn_QHA, du0, du_tensor, spg_label,
-                                                 step_history, grad_norm, cell_grad_norm);
+                compute_and_print_step_gradients(ws,
+                                                 v1_QHA,
+                                                 del_v0_del_umn_QHA,
+                                                 du0,
+                                                 du_tensor,
+                                                 spg_label,
+                                                 step_history,
+                                                 grad_norm,
+                                                 cell_grad_norm);
 
                 if (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol) {
                     std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
@@ -529,8 +536,10 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
             // At-a-glance history of the structural optimization at this temperature.
             // QHA has no inner self-consistency loop, so the SCP column is omitted.
-            Relaxation::print_optimization_history(step_history, temp,
-                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell, false);
+            Relaxation::print_optimization_history(step_history,
+                                                   temp,
+                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell,
+                                                   false);
 
             print_final_structure(structure_state, relax_mode, temp, i_temp_loop == NT - 1);
 

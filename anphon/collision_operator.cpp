@@ -27,15 +27,14 @@
 
 using namespace PHON_NS;
 
-CollisionOperator::CollisionOperator(const KpointMeshUniform &kmesh_dos_in,
-                                     const TetraNodes &tetra_nodes_dos_in,
+CollisionOperator::CollisionOperator(const KpointMeshUniform &kmesh_dos_in, const TetraNodes &tetra_nodes_dos_in,
                                      const DymatEigenValue &dymat_dos_in, const System &system_in,
                                      const Symmetry &symmetry_in, Integration &integration_in,
-                                     AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
-                                     const int my_rank_in, const int nprocs_in)
-    : kmesh_dos_(kmesh_dos_in), tetra_nodes_dos_(tetra_nodes_dos_in), dymat_dos_(dymat_dos_in),
-      system_(system_in), symmetry_(symmetry_in), integration_(integration_in),
-      anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
+                                     AnharmonicCore &anharmonic_core_in, const unsigned int ns_in, const int my_rank_in,
+                                     const int nprocs_in) :
+    kmesh_dos_(kmesh_dos_in), tetra_nodes_dos_(tetra_nodes_dos_in), dymat_dos_(dymat_dos_in), system_(system_in),
+    symmetry_(symmetry_in), integration_(integration_in), anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in),
+    nprocs_(nprocs_in)
 {
     kplength_emitt = 0;
     kplength_absorb = 0;
@@ -175,8 +174,7 @@ void CollisionOperator::build_expansion_table()
             for (auto isym = 0; isym < nsym && !found; ++isym) {
                 const auto krot = kmesh_dos_.knum_sym(kref, symmetry_.SymmList[isym].rotation);
                 const auto direct = (p == krot);
-                const auto time_reversed =
-                    symmetry_.time_reversal_sym && p == kmesh_dos_.kindex_minus_xk[krot];
+                const auto time_reversed = symmetry_.time_reversal_sym && p == kmesh_dos_.kindex_minus_xk[krot];
                 if (!direct && !time_reversed) continue;
                 const Eigen::Matrix3d srot_inv_t =
                     symmetry_.SymmList[isym].rotation.cast<double>().inverse().transpose();
@@ -200,8 +198,7 @@ void CollisionOperator::build_expansion_table()
             const auto time_reversed =
                 symmetry_.time_reversal_sym && kref == static_cast<int>(kmesh_dos_.kindex_minus_xk[krot]);
             if (!direct && !time_reversed) continue;
-            const Eigen::Matrix3d srot_inv_t =
-                symmetry_.SymmList[isym].rotation.cast<double>().inverse().transpose();
+            const Eigen::Matrix3d srot_inv_t = symmetry_.SymmList[isym].rotation.cast<double>().inverse().transpose();
             const Eigen::Matrix3d rot_cart = mat_k2cart * srot_inv_t * mat_cart2k;
             if (direct) {
                 proj += rot_cart;
@@ -272,14 +269,16 @@ void CollisionOperator::build_L_isotope()
                     omega_sum += omega_now;
                 } else {
                     const auto omega_avg = omega_sum / static_cast<double>(is - begin);
-                    for (auto js = begin; js < is; ++js) eval_tetra[js][ik] = omega_avg;
+                    for (auto js = begin; js < is; ++js)
+                        eval_tetra[js][ik] = omega_avg;
                     begin = is;
                     omega_ref = omega_now;
                     omega_sum = omega_now;
                 }
             }
             const auto omega_avg = omega_sum / static_cast<double>(ns - begin);
-            for (auto js = begin; js < ns; ++js) eval_tetra[js][ik] = omega_avg;
+            for (auto js = begin; js < ns; ++js)
+                eval_tetra[js][ik] = omega_avg;
         }
     }
 
@@ -294,7 +293,8 @@ void CollisionOperator::build_L_isotope()
             allocate(energy_tmp, nk_3ph);
             allocate(weight_tetra, ns, nk_3ph);
             allocate(kmap_identity, nk_3ph);
-            for (int ik = 0; ik < nk_3ph; ++ik) kmap_identity[ik] = ik;
+            for (int ik = 0; ik < nk_3ph; ++ik)
+                kmap_identity[ik] = ik;
         }
 
 #ifdef _OPENMP
@@ -354,7 +354,8 @@ void CollisionOperator::build_L_isotope()
                 // block-averaged within degenerate manifolds (mirrors
                 // Isotope::calc_isotope_selfenergy_tetra).
                 for (int s2 = 0; s2 < ns; ++s2) {
-                    for (int ik = 0; ik < nk_3ph; ++ik) energy_tmp[ik] = eval_tetra[s2][ik];
+                    for (int ik = 0; ik < nk_3ph; ++ik)
+                        energy_tmp[ik] = eval_tetra[s2][ik];
                     integration_.calc_weight_tetrahedron(nk_3ph,
                                                          kmap_identity,
                                                          energy_tmp,
@@ -370,9 +371,11 @@ void CollisionOperator::build_L_isotope()
                         if (s2 < ns && std::abs(eval_tetra[s2][k2] - omega_ref) < tol_degenerate) continue;
                         if (s2 - begin > 1) {
                             auto wsum = 0.0;
-                            for (auto js = begin; js < s2; ++js) wsum += weight_tetra[js][k2];
+                            for (auto js = begin; js < s2; ++js)
+                                wsum += weight_tetra[js][k2];
                             wsum /= static_cast<double>(s2 - begin);
-                            for (auto js = begin; js < s2; ++js) weight_tetra[js][k2] = wsum;
+                            for (auto js = begin; js < s2; ++js)
+                                weight_tetra[js][k2] = wsum;
                         }
                         if (s2 < ns) {
                             begin = s2;
@@ -384,8 +387,7 @@ void CollisionOperator::build_L_isotope()
                 for (int k2 = 0; k2 < nk_3ph; ++k2) {
                     for (int s2 = 0; s2 < ns; ++s2) {
                         if (weight_tetra[s2][k2] == 0.0) continue;
-                        const auto val =
-                            prefactor * weight_tetra[s2][k2] * eval_tetra[s2][k2] * prod_overlap(k2, s2);
+                        const auto val = prefactor * weight_tetra[s2][k2] * eval_tetra[s2][k2] * prod_overlap(k2, s2);
                         if (val == 0.0) continue;
                         row.push_back({k2, s2, val});
                     }
@@ -479,8 +481,9 @@ void CollisionOperator::setup_L_smear()
                         delta_loc = delta_gauss(w1 - w2 - w3, epsilon2[0]);
                     }
 
-                    const auto v3_tmp2 = std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
-                                                                       evec_tmp, phi3_work.data(), kindex_work));
+                    const auto v3_tmp2 =
+                        std::norm(anharmonic_core_
+                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
 
                     L_emitt[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
                 }
@@ -527,8 +530,9 @@ void CollisionOperator::setup_L_smear()
                         delta_loc = delta_gauss(w1 + w2 - w3, epsilon2[1]);
                     }
 
-                    const auto v3_tmp2 = std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
-                                                                       evec_tmp, phi3_work.data(), kindex_work));
+                    const auto v3_tmp2 =
+                        std::norm(anharmonic_core_
+                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
 
                     L_absorb[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
                 }
@@ -655,8 +659,9 @@ void CollisionOperator::setup_L_tetra()
                     if (L_emitt[idx][is1][ib] == 0.0) continue;
                     arr_loc[1] = kk2 * ns + ib / ns;
                     arr_loc[2] = kk3 * ns + ib % ns;
-                    L_emitt[idx][is1][ib] *= std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
-                                                                           evec_tmp, phi3_work.data(), kindex_work));
+                    L_emitt[idx][is1][ib] *=
+                        std::norm(anharmonic_core_
+                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
                 }
             }
         }
@@ -680,8 +685,9 @@ void CollisionOperator::setup_L_tetra()
                     if (L_absorb[idx][is1][ib] == 0.0) continue;
                     arr_loc[1] = kk2 * ns + ib / ns;
                     arr_loc[2] = kk3 * ns + ib % ns;
-                    L_absorb[idx][is1][ib] *= std::norm(anharmonic_core_.V3(arr_loc, kmesh_dos_.xk, omega_tmp,
-                                                                            evec_tmp, phi3_work.data(), kindex_work));
+                    L_absorb[idx][is1][ib] *=
+                        std::norm(anharmonic_core_
+                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
                 }
             }
         }
@@ -801,8 +807,7 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, 
 
                     const auto ggg = sqrt_occ[k1][s1] * sqrt_occ[k2][s2] * sqrt_occ[k3][s3];
                     for (int ix = 0; ix < 3; ++ix) {
-                        Wks_out[s1][ix] -= 0.5 * (dF[k2][s2][ix] + dF[k3][s3][ix]) * ggg *
-                                           L_emitt[kp_index][s1][ib];
+                        Wks_out[s1][ix] -= 0.5 * (dF[k2][s2][ix] + dF[k3][s3][ix]) * ggg * L_emitt[kp_index][s1][ib];
                     }
                 }
             }
@@ -826,8 +831,7 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, 
 
                     const auto ggg = sqrt_occ[k1][s1] * sqrt_occ[k2][s2] * sqrt_occ[k3][s3];
                     for (int ix = 0; ix < 3; ++ix) {
-                        Wks_out[s1][ix] += (dF[k2][s2][ix] - dF[k3_minus][s3][ix]) * ggg *
-                                           L_absorb[kp_index][s1][ib];
+                        Wks_out[s1][ix] += (dF[k2][s2][ix] - dF[k3_minus][s3][ix]) * ggg * L_absorb[kp_index][s1][ib];
                     }
                 }
             }
@@ -843,8 +847,8 @@ void CollisionOperator::calc_W_at(const int ikl, const double *const *sqrt_occ, 
             const auto g1 = 2.0 * sqrt_occ[k1][s1];
             for (const auto &entry: L_iso[static_cast<size_t>(ikl) * ns + s1]) {
                 for (int ix = 0; ix < 3; ++ix) {
-                    Wks_out[s1][ix] -= g1 * sqrt_occ[entry.knum][entry.snum] * entry.val *
-                                       dF[entry.knum][entry.snum][ix];
+                    Wks_out[s1][ix] -=
+                        g1 * sqrt_occ[entry.knum][entry.snum] * entry.val * dF[entry.knum][entry.snum][ix];
                 }
             }
         }

@@ -1,15 +1,15 @@
 // least_squares.cpp
 
 #include "least_squares.h"
-#include <Eigen/Dense>  // dense LDLT for the Schur-complement block of the KKT preconditioner
+#include <Eigen/Dense> // dense LDLT for the Schur-complement block of the KKT preconditioner
 #include <Eigen/Sparse>
-#include <unsupported/Eigen/IterativeSolvers> // Eigen::MINRES for the iterative KKT solver
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <cmath> // for std::pow, std::sqrt
 #include <iostream>
 #include <limits>
 #include <numeric>
+#include <unsupported/Eigen/IterativeSolvers> // Eigen::MINRES for the iterative KKT solver
 #include <vector>
 #include "error.h"
 #include "logger.h"
@@ -59,8 +59,10 @@ static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const
 
     // Widen Eigen's 32-bit CSC index arrays to the 64-bit indices the long CHOLMOD interface expects.
     std::vector<SuiteSparse_long> outer(n + 1), inner(nnz);
-    for (SuiteSparse_long j = 0; j <= n; ++j) outer[j] = Ac.outerIndexPtr()[j];
-    for (SuiteSparse_long k = 0; k < nnz; ++k) inner[k] = Ac.innerIndexPtr()[k];
+    for (SuiteSparse_long j = 0; j <= n; ++j)
+        outer[j] = Ac.outerIndexPtr()[j];
+    for (SuiteSparse_long k = 0; k < nnz; ++k)
+        inner[k] = Ac.innerIndexPtr()[k];
 
     cholmod_common cc;
     cholmod_l_start(&cc);
@@ -96,7 +98,8 @@ static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const
     if (X && cc.status == CHOLMOD_OK) {
         x_out.resize(n);
         const auto *xd = static_cast<const double *>(X->x);
-        for (SuiteSparse_long i = 0; i < n; ++i) x_out(i) = xd[i];
+        for (SuiteSparse_long i = 0; i < n; ++i)
+            x_out(i) = xd[i];
         status = 0;
     } else {
         // Leave a correctly sized (zero) solution on failure so the caller's residual computation
@@ -117,8 +120,8 @@ static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const
 // Only the homogeneous case is handled (every invariance subset, and the merged matrix when no
 // FC2FIX/FC3FIX value is imposed); inhomogeneous d != 0 and any SuiteSparseQR failure fall back to
 // dgeqp3. Returns 0 on success, 1 on failure.
-static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, const int verbosity,
-                                      const double tolerance, Eigen::SparseMatrix<double> &C_red, int &r) -> int
+static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, const int verbosity, const double tolerance,
+                                      Eigen::SparseMatrix<double> &C_red, int &r) -> int
 {
     const SuiteSparse_long P = C.rows();
     const SuiteSparse_long Ncol = C.cols();
@@ -130,8 +133,10 @@ static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, cons
     // Widen Eigen's 32-bit CSC indices to the 64-bit indices the long CHOLMOD interface expects
     // (same pattern as solve_least_squares_spqr). C^T has P columns, so outer has P+1 entries.
     std::vector<SuiteSparse_long> outer(P + 1), inner(nnz);
-    for (SuiteSparse_long j = 0; j <= P; ++j) outer[j] = Ct.outerIndexPtr()[j];
-    for (SuiteSparse_long k = 0; k < nnz; ++k) inner[k] = Ct.innerIndexPtr()[k];
+    for (SuiteSparse_long j = 0; j <= P; ++j)
+        outer[j] = Ct.outerIndexPtr()[j];
+    for (SuiteSparse_long k = 0; k < nnz; ++k)
+        inner[k] = Ct.innerIndexPtr()[k];
 
     cholmod_common cc;
     cholmod_l_start(&cc);
@@ -160,10 +165,21 @@ static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, cons
 
     cholmod_sparse *R = nullptr;
     SuiteSparse_long *E = nullptr; // size P column permutation of C^T = row permutation of C
-    const SuiteSparse_long rank = SuiteSparseQR_C(SPQR_ORDERING_DEFAULT, spqr_tol, /*econ=*/0, /*getCTX=*/0,
-                                                  &A, /*Bsparse=*/nullptr, /*Bdense=*/nullptr,
-                                                  /*Zsparse=*/nullptr, /*Zdense=*/nullptr, &R, &E,
-                                                  /*H=*/nullptr, /*HPinv=*/nullptr, /*HTau=*/nullptr, &cc);
+    const SuiteSparse_long rank = SuiteSparseQR_C(SPQR_ORDERING_DEFAULT,
+                                                  spqr_tol,
+                                                  /*econ=*/0,
+                                                  /*getCTX=*/0,
+                                                  &A,
+                                                  /*Bsparse=*/nullptr,
+                                                  /*Bdense=*/nullptr,
+                                                  /*Zsparse=*/nullptr,
+                                                  /*Zdense=*/nullptr,
+                                                  &R,
+                                                  &E,
+                                                  /*H=*/nullptr,
+                                                  /*HPinv=*/nullptr,
+                                                  /*HTau=*/nullptr,
+                                                  &cc);
 
     int status = 1;
     if (rank >= 0 && cc.status == CHOLMOD_OK) {
@@ -183,8 +199,15 @@ static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, cons
         C_red.setFromTriplets(tri.begin(), tri.end());
         C_red.makeCompressed();
         status = 0;
-        LOG_IF(verbosity, 1, "SuiteSparseQR reduction: rank ", r, " of ", static_cast<int>(P),
-               " rows, C_red nnz=", C_red.nonZeros(), ".\n");
+        LOG_IF(verbosity,
+               1,
+               "SuiteSparseQR reduction: rank ",
+               r,
+               " of ",
+               static_cast<int>(P),
+               " rows, C_red nnz=",
+               C_red.nonZeros(),
+               ".\n");
     }
     if (R) cholmod_l_free_sparse(&R, &cc);
     if (E) cholmod_l_free(P, sizeof(SuiteSparse_long), E, &cc);
@@ -270,7 +293,8 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
     for (int i = 0; i < P_i; ++i) {
         for (int j = 0; j < N_i; ++j) {
             // Copy element (row=i, col=j) of C_mat into (row=j, col=i) of A_qr
-            A_qr[static_cast<size_t>(j) + static_cast<size_t>(i) * N_i] = C_mat[static_cast<size_t>(i) + static_cast<size_t>(j) * P_i];
+            A_qr[static_cast<size_t>(j) + static_cast<size_t>(i) * N_i] =
+                C_mat[static_cast<size_t>(i) + static_cast<size_t>(j) * P_i];
         }
     }
 
@@ -331,13 +355,8 @@ auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm
 
     Eigen::VectorXd dvec = Eigen::VectorXd::Zero(nrows);
     Eigen::VectorXd dvec_red(nrows);
-    const auto info = get_independent_rows_lapack_sparse(C_sparse_eigen,
-                                                         dvec,
-                                                         verbosity,
-                                                         tolerance,
-                                                         C_red_eigen,
-                                                         dvec_red,
-                                                         r);
+    const auto info =
+        get_independent_rows_lapack_sparse(C_sparse_eigen, dvec, verbosity, tolerance, C_red_eigen, dvec_red, r);
 
     // update the sparse matrix C_sparse with the reduced rows
     C_sparse.clear();
@@ -356,8 +375,8 @@ auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm
 }
 
 auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_sparse, const Eigen::VectorXd &dvec,
-                                        const int verbosity, const double tolerance,
-                                        Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red, int &r) -> int
+                                        const int verbosity, const double tolerance, Eigen::SparseMatrix<double> &C_red,
+                                        Eigen::VectorXd &d_red, int &r) -> int
 {
     const int P = C_sparse.rows();
     const int N = C_sparse.cols();
@@ -402,7 +421,8 @@ auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_spa
     std::vector<double> A_qr(static_cast<size_t>(N_i) * static_cast<size_t>(P_i));
     for (int i = 0; i < P_i; ++i)
         for (int j = 0; j < N_i; ++j)
-            A_qr[static_cast<size_t>(j) + static_cast<size_t>(i) * N_i] = C_mat[static_cast<size_t>(i) + static_cast<size_t>(j) * P_i];
+            A_qr[static_cast<size_t>(j) + static_cast<size_t>(i) * N_i] =
+                C_mat[static_cast<size_t>(i) + static_cast<size_t>(j) * P_i];
 
     // 3) Run QR with column pivoting on A_qr to determine numerical row rank
     std::vector<int> independent_rows;
@@ -839,8 +859,7 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
             return 1;
         }
 #else
-        std::cerr << "  SPARSESOLVER = " + solver_type +
-                         " requires building ALM with -DUSE_SUITESPARSE_BACKEND=yes.\n";
+        std::cerr << "  SPARSESOLVER = " + solver_type + " requires building ALM with -DUSE_SUITESPARSE_BACKEND=yes.\n";
         return 1;
 #endif
 
@@ -856,19 +875,17 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
         Eigen::VectorXd AtB = sp_mat.transpose() * sp_bvec;
         Eigen::CholmodSupernodalLLT<SpMat64, Eigen::Lower> chol(AtA);
         if (chol.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed (factorization) with the error code "
-                      << chol.info() << ".\n";
+            std::cerr << "  Fitting by " + solver_type + " failed (factorization) with the error code " << chol.info()
+                      << ".\n";
             return 1;
         }
         x_out = chol.solve(AtB);
         if (chol.info() != Eigen::Success) {
-            std::cerr << "  Fitting by " + solver_type + " failed (solve) with the error code "
-                      << chol.info() << ".\n";
+            std::cerr << "  Fitting by " + solver_type + " failed (solve) with the error code " << chol.info() << ".\n";
             return 1;
         }
 #else
-        std::cerr << "  SPARSESOLVER = " + solver_type +
-                         " requires building ALM with -DUSE_SUITESPARSE_BACKEND=yes.\n";
+        std::cerr << "  SPARSESOLVER = " + solver_type + " requires building ALM with -DUSE_SUITESPARSE_BACKEND=yes.\n";
         return 1;
 #endif
     } else {
@@ -898,17 +915,29 @@ auto least_squares_eigen_sparse_solver(const Eigen::SparseMatrix<double> &sp_mat
 class KKTBlockDiagPreconditioner
 {
 public:
-    KKTBlockDiagPreconditioner() : m_ready(false), m_N(0), m_P(0) {}
+    KKTBlockDiagPreconditioner() : m_ready(false), m_N(0), m_P(0)
+    {}
 
     // Eigen's IterativeSolverBase calls analyzePattern/factorize/compute on the system matrix K, but
     // this preconditioner is configured from H and C separately (via setup()); make them no-ops that
     // preserve an existing setup. Call setup() BEFORE minres.compute(K).
-    template <typename M> KKTBlockDiagPreconditioner &analyzePattern(const M &) { return *this; }
-    template <typename M> KKTBlockDiagPreconditioner &factorize(const M &) { return *this; }
-    template <typename M> KKTBlockDiagPreconditioner &compute(const M &) { return *this; }
+    template <typename M>
+    KKTBlockDiagPreconditioner &analyzePattern(const M &)
+    {
+        return *this;
+    }
+    template <typename M>
+    KKTBlockDiagPreconditioner &factorize(const M &)
+    {
+        return *this;
+    }
+    template <typename M>
+    KKTBlockDiagPreconditioner &compute(const M &)
+    {
+        return *this;
+    }
 
-    void setup(const Eigen::SparseMatrix<double> &H, const Eigen::SparseMatrix<double> &C,
-               double sigma, int verbosity)
+    void setup(const Eigen::SparseMatrix<double> &H, const Eigen::SparseMatrix<double> &C, double sigma, int verbosity)
     {
         using SpMat = Eigen::SparseMatrix<double>;
         m_N = static_cast<int>(H.rows());
@@ -916,10 +945,11 @@ public:
 
         // G = diag(H) + sigma  (strictly positive); store its inverse for O(1) application.
         m_Dinv.resize(m_N);
-        for (int i = 0; i < m_N; ++i) m_Dinv(i) = 1.0 / (H.coeff(i, i) + sigma);
+        for (int i = 0; i < m_N; ++i)
+            m_Dinv(i) = 1.0 / (H.coeff(i, i) + sigma);
 
         // S = C G^{-1} C^T = (C * Dinv) * C^T  -- sparse products only, no solves.
-        const SpMat Cs = C * m_Dinv.asDiagonal();          // P x N (scaled columns)
+        const SpMat Cs = C * m_Dinv.asDiagonal();                // P x N (scaled columns)
         Eigen::MatrixXd S = Eigen::MatrixXd(Cs * C.transpose()); // P x P dense
 
         // S can be extremely ill-conditioned -- even when C is full row rank -- because diag(A^T A)
@@ -942,13 +972,23 @@ public:
         }
         m_sigma = sigma;
 
-        LOG_IF(verbosity, 1, "KKT preconditioner: G = diag(A^T A) + ", sigma,
-               ", dense Schur complement S is ", m_P, "x", m_P, " (ridge ", ridge / 10.0, ")",
+        LOG_IF(verbosity,
+               1,
+               "KKT preconditioner: G = diag(A^T A) + ",
+               sigma,
+               ", dense Schur complement S is ",
+               m_P,
+               "x",
+               m_P,
+               " (ridge ",
+               ridge / 10.0,
+               ")",
                m_ready ? " factorized (SPD).\n" : " -- FAILED to make S SPD.\n");
     }
 
     // z = P^{-1} b = [ G^{-1} b_1 ;  S^{-1} b_2 ] = [ Dinv .* b_1 ;  S^{-1} b_2 ]
-    template <typename Rhs> Eigen::VectorXd solve(const Rhs &b) const
+    template <typename Rhs>
+    Eigen::VectorXd solve(const Rhs &b) const
     {
         Eigen::VectorXd z(m_N + m_P);
         z.head(m_N) = b.head(m_N).cwiseProduct(m_Dinv);
@@ -956,13 +996,16 @@ public:
         return z;
     }
 
-    Eigen::ComputationInfo info() const { return m_ready ? Eigen::Success : Eigen::NumericalIssue; }
+    Eigen::ComputationInfo info() const
+    {
+        return m_ready ? Eigen::Success : Eigen::NumericalIssue;
+    }
 
 private:
     bool m_ready;
     int m_N, m_P;
     double m_sigma = 0.0;
-    Eigen::VectorXd m_Dinv;             // (diag(H) + sigma)^{-1}
+    Eigen::VectorXd m_Dinv; // (diag(H) + sigma)^{-1}
     Eigen::LDLT<Eigen::MatrixXd> m_S_ldlt;
 };
 
@@ -1046,12 +1089,12 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
         // sigma keeps the preconditioner block G = diag(A^T A) + sigma strictly positive (not the final
         // solution); scale it to the mean diagonal of A^T A so it is dimensionless w.r.t. the problem.
         double mean_diag = 0.0;
-        for (int i = 0; i < N; ++i) mean_diag += ATA.coeff(i, i);
+        for (int i = 0; i < N; ++i)
+            mean_diag += ATA.coeff(i, i);
         mean_diag = (N > 0) ? mean_diag / N : 1.0;
         const double sigma = 1.0e-6 * (mean_diag > 0.0 ? mean_diag : 1.0);
 
-        Eigen::MINRES<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, KKTBlockDiagPreconditioner>
-            minres;
+        Eigen::MINRES<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, KKTBlockDiagPreconditioner> minres;
         minres.preconditioner().setup(ATA, C, sigma, verbosity); // configure BEFORE compute(K)
         if (minres.preconditioner().info() != Eigen::Success) {
             ALM_NS::exit("solveGQRSparse",
@@ -1079,14 +1122,30 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
             sol = minres.solve(rhs);
             kkt_rel_res = (K * sol - rhs).norm() / rhs_norm;
             cons_abs_res = (P > 0) ? (C * sol.head(N) - d).norm() : 0.0;
-            LOG_IF(verbosity, 1, "MINRES attempt ", attempt + 1, ": tol=", mtol, ", ", minres.iterations(),
-                   " iters, true relative KKT residual ", kkt_rel_res, ", ||C x - d|| ", cons_abs_res, "\n");
+            LOG_IF(verbosity,
+                   1,
+                   "MINRES attempt ",
+                   attempt + 1,
+                   ": tol=",
+                   mtol,
+                   ", ",
+                   minres.iterations(),
+                   " iters, true relative KKT residual ",
+                   kkt_rel_res,
+                   ", ||C x - d|| ",
+                   cons_abs_res,
+                   "\n");
             if (std::isfinite(kkt_rel_res) && kkt_rel_res <= accept_tol) solved = true;
         }
 
         if (solved) {
-            LOG_IF(verbosity, 1, "KKT system solved with MINRES (true relative KKT residual ", kkt_rel_res,
-                   ", ||C x - d|| ", cons_abs_res, ").\n");
+            LOG_IF(verbosity,
+                   1,
+                   "KKT system solved with MINRES (true relative KKT residual ",
+                   kkt_rel_res,
+                   ", ||C x - d|| ",
+                   cons_abs_res,
+                   ").\n");
         } else {
             ALM_NS::exit("solveGQRSparse",
                          "MINRES did not reach the requested accuracy on the KKT system; the solution "

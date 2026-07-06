@@ -10,11 +10,11 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <complex>
 #include <memory>
 #include <string>
 #include <vector>
-#include <Eigen/Core>
 
 namespace PHON_NS
 {
@@ -23,12 +23,12 @@ namespace PHON_NS
 // appear here.
 struct ScphSettingsH5
 {
-    std::string mode;                    // "SCPH" or "QHA"
+    std::string mode; // "SCPH" or "QHA"
     unsigned int kmesh_interpolate[3] = {0, 0, 0};
     unsigned int kmesh_dense[3] = {0, 0, 0};
-    std::vector<double> temperatures;    // K
-    int nonanalytic = 0;                 // warn on mismatch at restart
-    int selfenergy_offdiag = 1;          // exit on mismatch at restart
+    std::vector<double> temperatures; // K
+    int nonanalytic = 0;              // warn on mismatch at restart
+    int selfenergy_offdiag = 1;       // exit on mismatch at restart
     int relax_str = 0;
 };
 
@@ -36,16 +36,16 @@ struct ScphSettingsH5
 // tiled by KMESH_INTERPOLATE) is derived from it inside the writer.
 struct ScphCellsH5
 {
-    Eigen::Matrix3d lavec_prim;          // columns = a1,a2,a3, bohr
-    Eigen::MatrixXd xf_prim;             // [natmin, 3]
-    std::vector<int> kinds;              // 0-based
+    Eigen::Matrix3d lavec_prim; // columns = a1,a2,a3, bohr
+    Eigen::MatrixXd xf_prim;    // [natmin, 3]
+    std::vector<int> kinds;     // 0-based
     std::vector<std::string> elements;
     std::vector<double> masses_amu;
     int spin_polarized = 0;
     std::vector<std::vector<double>> magmom;
     int noncollinear = 0;
     int time_reversal_symmetry = 1;
-    unsigned int ncell_grid[3] = {1, 1, 1};   // = KMESH_INTERPOLATE
+    unsigned int ncell_grid[3] = {1, 1, 1}; // = KMESH_INTERPOLATE
 };
 
 // Renormalized FC2 on the virtual supercell, in the row layout of the
@@ -54,13 +54,13 @@ struct ScphCellsH5
 // (harmonic + anharmonic correction) FC2 per temperature.
 struct ScphFc2RowsH5
 {
-    Eigen::MatrixXi atom_indices;             // [nrows, 2]
-    Eigen::MatrixXi atom_indices_super;       // [nrows, 2]
-    Eigen::MatrixXi coord_indices;            // [nrows, 2]
-    Eigen::MatrixXd shift_vectors;            // [nrows, 3], Cartesian bohr
-    Eigen::ArrayXd base_values;               // [nrows], Ry/bohr^2
+    Eigen::MatrixXi atom_indices;               // [nrows, 2]
+    Eigen::MatrixXi atom_indices_super;         // [nrows, 2]
+    Eigen::MatrixXi coord_indices;              // [nrows, 2]
+    Eigen::MatrixXd shift_vectors;              // [nrows, 3], Cartesian bohr
+    Eigen::ArrayXd base_values;                 // [nrows], Ry/bohr^2
     std::vector<double> values_per_temperature; // [NT * nrows] row-major, Ry/bohr^2
-    std::string variant;                      // "scph" or "qha"
+    std::string variant;                        // "scph" or "qha"
 };
 
 // Writer/reader of the unified SCPH/QHA state file. All methods must be
@@ -85,8 +85,8 @@ public:
     // Load a /dymat dataset ("delta" or "delta_harm_renorm") for the
     // requested temperatures, which may be any subset of the file's grid
     // (a missing temperature is fatal). dymat_out is [NT][ns][ns][ncell].
-    void load_dymat(const std::string &name, const std::vector<double> &temps_requested,
-                    unsigned int ns, unsigned int ncell, std::complex<double> ****dymat_out) const;
+    void load_dymat(const std::string &name, const std::vector<double> &temps_requested, unsigned int ns,
+                    unsigned int ncell, std::complex<double> ****dymat_out) const;
 
     void load_v0(const std::vector<double> &temps_requested, std::vector<double> &v0_out) const;
 
@@ -96,15 +96,13 @@ public:
     // import, and are accepted on read).
     void write_state(const ScphSettingsH5 &settings, const ScphCellsH5 &cells,
                      const std::complex<double> *const *const *const *delta_main,
-                     const std::complex<double> *const *const *const *delta_harm_renorm,
-                     const std::vector<double> *v0, const ScphFc2RowsH5 *fc2,
-                     const std::vector<unsigned char> *converged_scph,
+                     const std::complex<double> *const *const *const *delta_harm_renorm, const std::vector<double> *v0,
+                     const ScphFc2RowsH5 *fc2, const std::vector<unsigned char> *converged_scph,
                      const std::vector<unsigned char> *converged_structure) const;
 
     // Refuse (or, with allow_unconverged, only warn about) temperatures
     // whose SCPH iteration or structural optimization did not converge.
-    void check_convergence(const std::vector<double> &temps_requested,
-                           bool allow_unconverged) const;
+    void check_convergence(const std::vector<double> &temps_requested, bool allow_unconverged) const;
 
     [[nodiscard]] const std::string &get_filename() const;
 

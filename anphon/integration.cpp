@@ -52,11 +52,9 @@ void Integration::deallocate_variables()
     delete adaptive_sigma4;
 }
 
-void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in,
-                                    const PhononVelocity *phonon_velocity_in,
+void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
                                     const unsigned int ns_in, const Eigen::Matrix3d &lavec_p,
-                                    const Eigen::Matrix3d &rlavec_p, const int quartic_mode_in,
-                                    const int my_rank_in)
+                                    const Eigen::Matrix3d &rlavec_p, const int quartic_mode_in, const int my_rank_in)
 {
     MPI_Bcast(&ismear, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -124,8 +122,7 @@ void Integration::prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in
 }
 
 void Integration::create_adaptive_sigma4(const unsigned int nk_in, const unsigned int ns_in,
-                                         const KpointMeshUniform *kmesh_in,
-                                         const PhononVelocity *phonon_velocity_in,
+                                         const KpointMeshUniform *kmesh_in, const PhononVelocity *phonon_velocity_in,
                                          const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
 {
     if (adaptive_sigma4) return;

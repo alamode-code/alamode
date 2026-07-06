@@ -289,18 +289,16 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
-                                        const double *const *eval_in,
-                                        const std::complex<double> *const *const *evec_in,
+                                        const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                         std::complex<double> *phi3_work, int *kindex_work)
 {
     return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos, phi3_work, kindex_work);
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
-                                        const double *const *eval_in,
-                                        const std::complex<double> *const *const *evec_in,
-                                        const PhaseFactorStorage *phase_storage_in,
-                                        std::complex<double> *phi3_work, int *kindex_work)
+                                        const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                                        const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi3_work,
+                                        int *kindex_work)
 {
     // Thread-safe serial variant of V3 (see the header note): the caller
     // owns the per-triplet reciprocal-FC3 cache and no OpenMP region is
@@ -507,10 +505,9 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
 }
 
 std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *const *xk_in,
-                                        const double *const *eval_in,
-                                        const std::complex<double> *const *const *evec_in,
-                                        const PhaseFactorStorage *phase_storage_in,
-                                        std::complex<double> *phi4_work, int *kindex_work)
+                                        const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                                        const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi4_work,
+                                        int *kindex_work)
 {
     // Thread-safe serial variant of V4 (see the V3 counterpart): the caller
     // owns the per-quartet reciprocal-FC4 cache and no OpenMP region is
@@ -531,7 +528,8 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
     }
 
     if (static_cast<int>(kn[1]) != kindex_work[0] || static_cast<int>(kn[2]) != kindex_work[1] ||
-        static_cast<int>(kn[3]) != kindex_work[2]) {
+        static_cast<int>(kn[3]) != kindex_work[2])
+    {
         calc_phi4_reciprocal(xk_in[kn[1]], xk_in[kn[2]], xk_in[kn[3]], phase_storage_in, phi4_work, false);
         kindex_work[0] = static_cast<int>(kn[1]);
         kindex_work[1] = static_cast<int>(kn[2]);
@@ -825,9 +823,10 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
                 arr_loc[1] = ns * kk1 + ib / ns;
                 arr_loc[2] = ns * kk2 + ib % ns;
 
-                v3_arr[iik][ib] = std::norm(V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos,
-                                               phi3_work.data(), kindex_work)) *
-                                  multi_loc;
+                v3_arr[iik][ib] =
+                    std::norm(
+                        V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos, phi3_work.data(), kindex_work)) *
+                    multi_loc;
             }
         }
     }
@@ -1073,12 +1072,17 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
                     arr_loc[1] = ns * kk1 + ib2 / ns;
                     arr_loc[2] = ns * kk2 + ib2 % ns;
 
-                    v3_arr[iik][ib2] = std::norm(V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos,
-                                                    phi3_work.data(), kindex_work)) *
+                    v3_arr[iik][ib2] = std::norm(V3(arr_loc,
+                                                    kmesh_in->xk,
+                                                    eval_in,
+                                                    evec_in,
+                                                    phase_storage_dos,
+                                                    phi3_work.data(),
+                                                    kindex_work)) *
                                        multi_loc;
 
                 } else {
-                v3_arr[iik][ib2] = 0.0;
+                    v3_arr[iik][ib2] = 0.0;
                 }
             }
         }
@@ -1338,8 +1342,13 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                         arr_loc[2] = ns * kk2 + (ib / ns) % ns;
                         arr_loc[3] = ns * kk3 + ib % ns;
 
-                        v4_arr[iik0][ib] = std::norm(V4(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_in,
-                                                        phi4_work.data(), kindex_work)) *
+                        v4_arr[iik0][ib] = std::norm(V4(arr_loc,
+                                                        kmesh_in->xk,
+                                                        eval_in,
+                                                        evec_in,
+                                                        phase_storage_in,
+                                                        phi4_work.data(),
+                                                        kindex_work)) *
                                            multi_loc;
                     } else {
                         v4_arr[iik0][ib] = 0.0;

@@ -28,13 +28,13 @@ namespace
 {
 // Scale every entry of a 2D training-data array; returns the input untouched
 // when the factor is exactly 1 (the default-unit fast path).
-auto scaled_copy(const std::vector<std::vector<double>> &data,
-                 const double factor) -> std::vector<std::vector<double>>
+auto scaled_copy(const std::vector<std::vector<double>> &data, const double factor) -> std::vector<std::vector<double>>
 {
     if (factor == 1.0) return data;
     auto scaled = data;
     for (auto &row: scaled) {
-        for (auto &val: row) val *= factor;
+        for (auto &val: row)
+            val *= factor;
     }
     return scaled;
 }
@@ -122,12 +122,11 @@ auto ALM::set_periodicity(const int is_periodic[3]) const -> void // PERIODIC
 
 auto ALM::set_input_units(const std::string &length_unit, const std::string &force_unit) -> void
 {
-    const auto lu = units::parse_length_unit(length_unit);   // throws std::invalid_argument
+    const auto lu = units::parse_length_unit(length_unit); // throws std::invalid_argument
     const auto fu = units::parse_force_unit(force_unit);
     const auto factor_l = units::length_to_bohr(lu);
     const auto factor_f = units::force_to_ry_bohr(fu);
-    if (unit_sensitive_setter_called_ &&
-        (factor_l != factor_length_to_bohr_ || factor_f != factor_force_to_ry_bohr_)) {
+    if (unit_sensitive_setter_called_ && (factor_l != factor_length_to_bohr_ || factor_f != factor_force_to_ry_bohr_)) {
         throw std::logic_error("set_input_units must be called before the cell, "
                                "displacement-force data, or cutoff radii are set.");
     }
@@ -216,8 +215,7 @@ auto ALM::set_validation_data(const std::vector<std::vector<double>> &u,
                               const std::vector<std::vector<double>> &f) const -> void
 {
     unit_sensitive_setter_called_ = true;
-    optimize->set_validation_data(scaled_copy(u, factor_length_to_bohr_),
-                                  scaled_copy(f, factor_force_to_ry_bohr_));
+    optimize->set_validation_data(scaled_copy(u, factor_length_to_bohr_), scaled_copy(f, factor_force_to_ry_bohr_));
 }
 
 auto ALM::set_optimizer_control(const OptimizerControl &optcontrol_in) const -> void
@@ -714,19 +712,29 @@ auto ALM::get_number_of_free_parameters() -> size_t
     // Ensure the (algebraic) constraints are set up, mirroring get_matrix_elements's prologue,
     // then count the free parameters per order from the algebraic index map.
     if (!initialized_constraint_class) {
-        constraint->setup(system, fcs, cluster, symmetry,
+        constraint->setup(system,
+                          fcs,
+                          cluster,
+                          symmetry,
                           get_optimizer_control().linear_model,
-                          get_optimizer_control().periodic_image_conv, verbosity, timer);
+                          get_optimizer_control().periodic_image_conv,
+                          verbosity,
+                          timer);
         initialized_constraint_class = true;
     }
     if (!ready_all_constraints()) {
-        constraint->update_constraint_matrix(system, symmetry, cluster, fcs, verbosity,
+        constraint->update_constraint_matrix(system,
+                                             symmetry,
+                                             cluster,
+                                             fcs,
+                                             verbosity,
                                              get_optimizer_control().periodic_image_conv,
                                              constraint->get_reduction_algorithm());
     }
     size_t n = 0;
     const int maxorder = cluster->get_maxorder();
-    for (int i = 0; i < maxorder; ++i) n += constraint->get_index_bimap(i).size();
+    for (int i = 0; i < maxorder; ++i)
+        n += constraint->get_index_bimap(i).size();
     return n;
 }
 

@@ -141,10 +141,9 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum, const unsigned in
 
 void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsigned int snum, const double omega,
                                             const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                            const std::complex<double> *const *const *evec_in,
-                                            const System &system_in, Integration &integration_in,
-                                            const TetraNodes &tetra_nodes_in, const unsigned int ns_in,
-                                            double &ret) const
+                                            const std::complex<double> *const *const *evec_in, const System &system_in,
+                                            Integration &integration_in, const TetraNodes &tetra_nodes_in,
+                                            const unsigned int ns_in, double &ret) const
 {
     // Compute phonon selfenergy of phonon (knum, snum)
     // due to phonon-isotope scatterings.
@@ -217,12 +216,12 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
             eval[ik] = eval_tetra[is][ik];
         }
         integration_in.calc_weight_tetrahedron(nk,
-                                             kmap_identity,
-                                             eval,
-                                             omega,
-                                             tetra_nodes_in.get_ntetra(),
-                                             tetra_nodes_in.get_tetras(),
-                                             weight_tetra[is]);
+                                               kmap_identity,
+                                               eval,
+                                               omega,
+                                               tetra_nodes_in.get_ntetra(),
+                                               tetra_nodes_in.get_tetras(),
+                                               weight_tetra[is]);
     }
 
     for (ik = 0; ik < nk; ++ik) {
@@ -270,11 +269,10 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
     deallocate(kmap_identity);
 }
 
-void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
-                                          const DymatEigenValue &dymat_dos_in,
+void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
                                           const TetraNodes &tetra_nodes_dos_in, const System &system_in,
-                                          Integration &integration_in, const unsigned int ns_in,
-                                          const int my_rank_in, const int nprocs_in) const
+                                          Integration &integration_in, const unsigned int ns_in, const int my_rank_in,
+                                          const int nprocs_in) const
 {
     int i;
     const auto ns = static_cast<int>(ns_in);
@@ -405,8 +403,7 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
     }
 }
 
-void Isotope::set_isotope_factor_from_database(const System &system_in, const int nkd,
-                                               const std::string *symbol_in,
+void Isotope::set_isotope_factor_from_database(const System &system_in, const int nkd, const std::string *symbol_in,
                                                std::vector<double> &isofact_out)
 {
     for (int i = 0; i < nkd; ++i) {

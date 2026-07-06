@@ -107,22 +107,32 @@ void Iterativebte::setup_iterative()
 
     // Full-grid velocities in atomic units on every rank (calc_kappa and
     // the boundary rate convert units at the point of use).
-    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos, system->get_primcell().lattice_vector, vel, 1.0,
+    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos,
+                                                  system->get_primcell().lattice_vector,
+                                                  vel,
+                                                  1.0,
                                                   true);
 
     allocate(kappa, ntemp, 3, 3);
 
     // Build the collision operator: wedge distribution over the MPI ranks,
     // triplet lists of the local k points and the symmetry table.
-    collision_op = std::make_unique<CollisionOperator>(*dos->kmesh_dos, *dos->tetra_nodes_dos, *dos->dymat_dos,
-                                                       *system, *symmetry, *integration, *anharmonic_core,
-                                                       dynamical->neval, mympi->my_rank, mympi->nprocs);
-    collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering,
-                                      isotope->isotope_factor.data());
+    collision_op = std::make_unique<CollisionOperator>(*dos->kmesh_dos,
+                                                       *dos->tetra_nodes_dos,
+                                                       *dos->dymat_dos,
+                                                       *system,
+                                                       *symmetry,
+                                                       *integration,
+                                                       *anharmonic_core,
+                                                       dynamical->neval,
+                                                       mympi->my_rank,
+                                                       mympi->nprocs);
+    collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering, isotope->isotope_factor.data());
     collision_op->setup();
 
     if (collision_op->has_isotope_channel() && mympi->my_rank == 0) {
-        std::cout << '\n' << " ISOTOPE_INSCATTERING = 1: the elastic isotope-disorder channel enters\n"
+        std::cout << '\n'
+                  << " ISOTOPE_INSCATTERING = 1: the elastic isotope-disorder channel enters\n"
                   << " the collision operator with its in-scattering term (its diagonal is the\n"
                   << " operator row sum; set ISOTOPE_INSCATTERING = 0 for the RTA-level diagonal).\n";
     }
@@ -154,7 +164,8 @@ void Iterativebte::setup_iterative()
                 if (!conv) ++n_unconv;
             }
             if (n_done > 0) {
-                std::cout << '\n' << " RESTART: " << n_done << " of " << ntemp
+                std::cout << '\n'
+                          << " RESTART: " << n_done << " of " << ntemp
                           << " temperature points were restored from the kappa.h5 file.\n";
                 if (n_unconv > 0) {
                     std::cout << "          " << n_unconv
@@ -179,8 +190,8 @@ void Iterativebte::setup_iterative()
             std::cout << " Variational solution (preconditioned conjugate gradients)" << '\n';
             std::cout << " ==========================================================" << '\n';
             std::cout << " MAX_CYCLE = " << max_cycle << '\n';
-            std::cout << " ITER_THRESHOLD (relative residual; the kappa error is quadratic in it) = "
-                      << std::setw(10) << std::right << std::setprecision(4) << convergence_criteria << '\n';
+            std::cout << " ITER_THRESHOLD (relative residual; the kappa error is quadratic in it) = " << std::setw(10)
+                      << std::right << std::setprecision(4) << convergence_criteria << '\n';
         } else {
             std::cout << " Iterative solution" << '\n';
             std::cout << " ==================" << '\n';
@@ -207,7 +218,8 @@ void Iterativebte::do_iterativebte()
         // Every temperature was restored from the kappa.h5 file; the
         // expensive L matrices are not needed at all.
         if (mympi->my_rank == 0) {
-            std::cout << '\n' << " All temperature points were restored from the kappa.h5 file;\n"
+            std::cout << '\n'
+                      << " All temperature points were restored from the kappa.h5 file;\n"
                       << " skipping the calculation of the transition probabilities.\n";
         }
         write_kappa_iterative();
@@ -322,8 +334,7 @@ void Iterativebte::iterative_solver()
                 // SERTA expression |v_SI| / L * time_ry, i.e. the boundary
                 // rate in the same internal units as gamma.
                 vel_norm = std::sqrt(vel_norm);
-                boundary_damping_loc[ik][is] =
-                    vel_norm * Bohr_in_Angstrom * 1.0e-10 / conductivity->len_boundary;
+                boundary_damping_loc[ik][is] = vel_norm * Bohr_in_Angstrom * 1.0e-10 / conductivity->len_boundary;
             }
         }
     }
@@ -374,8 +385,7 @@ void Iterativebte::iterative_solver()
         // Warm start: a computed-but-unconverged temperature continues its
         // iteration from the stored deviation function instead of restarting
         // from zero.
-        const auto warm_start = t_computed[itemp] && !t_converged[itemp] &&
-                                conductivity->get_use_h5_io();
+        const auto warm_start = t_computed[itemp] && !t_converged[itemp] && conductivity->get_use_h5_io();
 
         auto converged_this_temp = false;
 
@@ -467,8 +477,8 @@ void Iterativebte::iterative_solver()
             // Conjugate-gradient solution of the same linear system.
             int iters = 0;
             double fres = 0.0;
-            converged_this_temp = solve_variational_cg(itemp, beta, gb, Qfin,
-                                                       warm_start ? dF_ir_glob : nullptr, iters, fres);
+            converged_this_temp =
+                solve_variational_cg(itemp, beta, gb, Qfin, warm_start ? dF_ir_glob : nullptr, iters, fres);
             iterations_used[itemp] = iters;
             final_residual[itemp] = fres;
             t_converged[itemp] = converged_this_temp ? 1 : 0;
@@ -493,11 +503,12 @@ void Iterativebte::iterative_solver()
             }
 
             // zero the local wedge rows for the MPI_Allreduce
-            for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_loc[ii] = 0.0;
+            for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii)
+                dF_ir_loc[ii] = 0.0;
 
-            // The in-scattering action W is evaluated on the wedge only:
-            // equivalent points carry no new information because
-            // dF(Rk) = R dF(k).
+                // The in-scattering action W is evaluated on the wedge only:
+                // equivalent points carry no new information because
+                // dF(Rk) = R dF(k).
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic) reduction(+ : local_difference, local_norm2)
 #endif
@@ -505,8 +516,7 @@ void Iterativebte::iterative_solver()
 
                 const auto tmpk = nk_l[ikl];
                 const int k1 = dos->kmesh_dos->kpoint_irred_all[tmpk][0].knum;
-                const auto num_equivalent =
-                    static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size());
+                const auto num_equivalent = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[tmpk].size());
 
                 double **Wks_loc;
                 allocate(Wks_loc, ns, 3);
@@ -548,13 +558,10 @@ void Iterativebte::iterative_solver()
             // Relative change of the deviation function; the iterate is
             // always evaluated (the old code skipped the update when the
             // residual grew and silently reported that as convergence).
-            const auto rel = (itr > 0 && global_reduce[1] > 0.0)
-                                 ? std::sqrt(global_reduce[0] / global_reduce[1])
-                                 : 0.0;
+            const auto rel = (itr > 0 && global_reduce[1] > 0.0) ? std::sqrt(global_reduce[0] / global_reduce[1]) : 0.0;
             if (itr > 0) res_history.push_back(rel);
 
-            MPI_Allreduce(&dF_ir_loc[0], &dF_ir_glob[0], nk_irred * ns * 3, MPI_DOUBLE, MPI_SUM,
-                          MPI_COMM_WORLD);
+            MPI_Allreduce(&dF_ir_loc[0], &dF_ir_glob[0], nk_irred * ns * 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
             // Reconstruct the full-grid deviation function from the wedge.
             collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
@@ -581,7 +588,8 @@ void Iterativebte::iterative_solver()
                         kappa_best[3 * ix + iy] = kappa_new[ix][iy];
                     }
                 }
-                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_best[ii] = dF_ir_glob[ii];
+                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii)
+                    dF_ir_best[ii] = dF_ir_glob[ii];
             }
 
             auto converged = false;
@@ -598,7 +606,8 @@ void Iterativebte::iterative_solver()
                     std::cout << "   -> Converged is achieved                 "
                               << "                                            "
                               << "                                    " << std::setw(14) << std::scientific
-                              << std::setprecision(2) << rel << '\n' << std::flush;
+                              << std::setprecision(2) << rel << '\n'
+                              << std::flush;
                 }
                 iterations_used[itemp] = itr;
                 final_residual[itemp] = rel;
@@ -615,12 +624,12 @@ void Iterativebte::iterative_solver()
             // iterations. Stop, keep the best iterate, and mark the
             // temperature as NOT converged instead of pretending otherwise.
             const auto nres = res_history.size();
-            const auto diverged = itr >= min_cycle && nres >= 3 &&
-                                  res_history[nres - 1] > res_history[nres - 2] &&
+            const auto diverged = itr >= min_cycle && nres >= 3 && res_history[nres - 1] > res_history[nres - 2] &&
                                   res_history[nres - 2] > res_history[nres - 3];
 
             if (diverged || itr == (max_cycle - 1)) {
-                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_glob[ii] = dF_ir_best[ii];
+                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii)
+                    dF_ir_glob[ii] = dF_ir_best[ii];
                 collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
@@ -630,15 +639,18 @@ void Iterativebte::iterative_solver()
                 if (mympi->my_rank == 0) {
                     if (diverged) {
                         std::cout << "   -> WARNING: the iteration is diverging. Keeping the lowest-residual\n"
-                                  << "               iterate (iter " << itr_best << ", |df'-df|/|df| = "
-                                  << std::scientific << std::setprecision(2) << res_best << ") and marking this\n"
+                                  << "               iterate (iter " << itr_best
+                                  << ", |df'-df|/|df| = " << std::scientific << std::setprecision(2) << res_best
+                                  << ") and marking this\n"
                                   << "               temperature as NOT converged."
-                                  << " Consider reducing IBTE_MIXING.\n" << std::flush;
+                                  << " Consider reducing IBTE_MIXING.\n"
+                                  << std::flush;
                     } else {
                         std::cout << "   -> WARNING: max cycle reached but NOT converged. Keeping the\n"
                                   << "               lowest-residual iterate (iter " << itr_best
                                   << ", |df'-df|/|df| = " << std::scientific << std::setprecision(2) << res_best
-                                  << ").\n" << std::flush;
+                                  << ").\n"
+                                  << std::flush;
                     }
                 }
                 iterations_used[itemp] = itr;
@@ -686,9 +698,9 @@ void Iterativebte::iterative_solver()
     }
 }
 
-void Iterativebte::build_wedge_system(const int itemp, const double beta, double **Qfin_loc,
-                                      std::vector<double> &qdiag, std::vector<double> &wrow,
-                                      std::vector<unsigned char> &mask, std::vector<double> &b) const
+void Iterativebte::build_wedge_system(const int itemp, const double beta, double **Qfin_loc, std::vector<double> &qdiag,
+                                      std::vector<double> &wrow, std::vector<unsigned char> &mask,
+                                      std::vector<double> &b) const
 {
     const auto nk_irred = dos->kmesh_dos->nk_irred;
     const size_t nrows = static_cast<size_t>(nk_irred) * ns;
@@ -746,12 +758,13 @@ void Iterativebte::project_wedge_vector(std::vector<double> &v, const std::vecto
     }
     for (size_t row = 0; row < nrows; ++row) {
         if (!mask[row]) continue;
-        for (auto j = 0; j < 3; ++j) v[row * 3 + j] = 0.0;
+        for (auto j = 0; j < 3; ++j)
+            v[row * 3 + j] = 0.0;
     }
 }
 
-bool Iterativebte::solve_direct_at_temperature(const int itemp, const double beta, double **sqrt_occ,
-                                               double **Qfin_loc, int &iterations_out, double &residual_out)
+bool Iterativebte::solve_direct_at_temperature(const int itemp, const double beta, double **sqrt_occ, double **Qfin_loc,
+                                               int &iterations_out, double &residual_out)
 {
     // SOLVER = DBTE: assemble the multiplicity-symmetrized dense operator
     // from the stored L entries (one-application cost), transform it to the
@@ -801,7 +814,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         std::vector<double> xtest(nrows3, 0.0);
         for (size_t row = 0; row < nrows; ++row) {
             if (mask[row]) continue;
-            for (auto j = 0; j < 3; ++j) xtest[row * 3 + j] = b[row * 3 + j] / qdiag[row];
+            for (auto j = 0; j < 3; ++j)
+                xtest[row * 3 + j] = b[row * 3 + j] / qdiag[row];
         }
         project_wedge_vector(xtest, mask);
         collision_op->reconstruct_full_from_wedge(xtest.data(), dFold);
@@ -841,9 +855,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         MPI_Allreduce(&maxdiff_loc, &maxdiff, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         MPI_Allreduce(&scale_loc, &scale, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         if (mympi->my_rank == 0) {
-            std::cout << "      (assembly cross-check vs the matrix-free operator: max rel diff = "
-                      << std::scientific << std::setprecision(1) << (scale > 0.0 ? maxdiff / scale : 0.0)
-                      << ")\n";
+            std::cout << "      (assembly cross-check vs the matrix-free operator: max rel diff = " << std::scientific
+                      << std::setprecision(1) << (scale > 0.0 ? maxdiff / scale : 0.0) << ")\n";
         }
     }
 
@@ -862,14 +875,14 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 src = slab.data();
             } else {
                 buf.resize(irows.size() * ns * 3 * nrows3);
-                MPI_Recv(buf.data(), static_cast<int>(buf.size()), MPI_DOUBLE, r, r, MPI_COMM_WORLD,
-                         MPI_STATUS_IGNORE);
+                MPI_Recv(buf.data(), static_cast<int>(buf.size()), MPI_DOUBLE, r, r, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 src = buf.data();
             }
             for (size_t il = 0; il < irows.size(); ++il) {
                 const size_t gbase = static_cast<size_t>(irows[il]) * ns * 3;
                 for (int rs = 0; rs < ns * 3; ++rs) {
-                    std::copy(src + (il * ns * 3 + rs) * nrows3, src + (il * ns * 3 + rs + 1) * nrows3,
+                    std::copy(src + (il * ns * 3 + rs) * nrows3,
+                              src + (il * ns * 3 + rs + 1) * nrows3,
                               S.begin() + (gbase + rs) * nrows3);
                 }
             }
@@ -994,7 +1007,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 for (auto a = 0; a < mdim[I]; ++a) {
                     const auto eI = ecol(I, a);
                     double sum_b = 0.0;
-                    for (auto x = 0; x < 3; ++x) sum_b += eI(x) * btil3[I * 3 + x];
+                    for (auto x = 0; x < 3; ++x)
+                        sum_b += eI(x) * btil3[I * 3 + x];
                     btil_inv[offs[I] + a] = sum_b;
                     for (size_t J = 0; J < blocks.size(); ++J) {
                         for (auto bb = 0; bb < mdim[J]; ++bb) {
@@ -1002,8 +1016,10 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                             double sum = 0.0;
                             for (auto x = 0; x < 3; ++x) {
                                 for (auto y = 0; y < 3; ++y) {
-                                    sum += eI(x) * A[(static_cast<size_t>(J) * 3 + y) * nred3 +
-                                                     static_cast<size_t>(I) * 3 + x] * eJ(y);
+                                    sum +=
+                                        eI(x) *
+                                        A[(static_cast<size_t>(J) * 3 + y) * nred3 + static_cast<size_t>(I) * 3 + x] *
+                                        eJ(y);
                                 }
                             }
                             Ainv[static_cast<size_t>(offs[J] + bb) * ndim + offs[I] + a] = sum;
@@ -1034,10 +1050,10 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             }
         }
 
-        std::cout << "      dense collision kernel: dimension " << ndim << " (" << nrows3 - nact3
-                  << " excluded rows, " << nact3 - nred3 << " folded into degenerate blocks, "
-                  << nred3 - ndim << " non-invariant components removed), memory " << std::fixed
-                  << std::setprecision(1) << static_cast<double>(ndim) * ndim * 8.0 / 1048576.0 << " MB\n";
+        std::cout << "      dense collision kernel: dimension " << ndim << " (" << nrows3 - nact3 << " excluded rows, "
+                  << nact3 - nred3 << " folded into degenerate blocks, " << nred3 - ndim
+                  << " non-invariant components removed), memory " << std::fixed << std::setprecision(1)
+                  << static_cast<double>(ndim) * ndim * 8.0 / 1048576.0 << " MB\n";
         std::cout << "      asymmetry |S - S^T|_F / |S|_F = " << std::scientific << std::setprecision(1) << asym
                   << " (on the invariant subspace; symmetrized for the eigendecomposition)\n";
 
@@ -1069,7 +1085,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             Eigen::Matrix3d mat_k2cart;
             const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
             for (auto i = 0; i < 3; ++i) {
-                for (auto j = 0; j < 3; ++j) mat_k2cart(j, i) = rlavec(i, j);
+                for (auto j = 0; j < 3; ++j)
+                    mat_k2cart(j, i) = rlavec(i, j);
             }
 
             std::vector<std::vector<double>> drift(3, std::vector<double>(ndim, 0.0));
@@ -1077,7 +1094,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 const auto ik = static_cast<unsigned int>(blocks[I].first / ns);
                 const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
                 Eigen::Vector3d kf;
-                for (auto j = 0; j < 3; ++j) kf(j) = dos->kmesh_dos->xk[k1][j];
+                for (auto j = 0; j < 3; ++j)
+                    kf(j) = dos->kmesh_dos->xk[k1][j];
                 const Eigen::Vector3d kc = mat_k2cart * kf;
                 // In the Omega variables the drift candidate carries the
                 // occupation weight (y = G x), projected onto the invariant
@@ -1094,14 +1112,18 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             for (auto a = 0; a < 3; ++a) {
                 for (const auto kb: kept) {
                     double pr = 0.0;
-                    for (int i = 0; i < ndim; ++i) pr += drift[a][i] * drift[kb][i];
-                    for (int i = 0; i < ndim; ++i) drift[a][i] -= pr * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i)
+                        pr += drift[a][i] * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i)
+                        drift[a][i] -= pr * drift[kb][i];
                 }
                 double nrm = 0.0;
-                for (int i = 0; i < ndim; ++i) nrm += pow2(drift[a][i]);
+                for (int i = 0; i < ndim; ++i)
+                    nrm += pow2(drift[a][i]);
                 if (nrm > 1.0e-24) {
                     nrm = 1.0 / std::sqrt(nrm);
-                    for (int i = 0; i < ndim; ++i) drift[a][i] *= nrm;
+                    for (int i = 0; i < ndim; ++i)
+                        drift[a][i] *= nrm;
                     kept.push_back(a);
                 }
             }
@@ -1109,12 +1131,13 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 double ov2 = 0.0;
                 for (const auto kb: kept) {
                     double pr = 0.0;
-                    for (int i = 0; i < ndim; ++i) pr += A[static_cast<size_t>(m) * ndim + i] * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i)
+                        pr += A[static_cast<size_t>(m) * ndim + i] * drift[kb][i];
                     ov2 += pow2(pr);
                 }
                 std::cout << "      softest mode " << m << ": 1/tau = " << std::scientific << std::setprecision(2)
-                          << evals[m] * to_kayser << " cm^-1, overlap with the momentum-drift space = "
-                          << std::fixed << std::setprecision(3) << std::sqrt(ov2) << '\n';
+                          << evals[m] * to_kayser << " cm^-1, overlap with the momentum-drift space = " << std::fixed
+                          << std::setprecision(3) << std::sqrt(ov2) << '\n';
             }
         }
 
@@ -1129,7 +1152,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 continue;
             }
             double pr = 0.0;
-            for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
+            for (int j = 0; j < ndim; ++j)
+                pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
             coef[i] = pr / evals[i];
         }
         if (n_null > 0) {
@@ -1146,7 +1170,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                     continue;
                 }
                 const auto c = coef[i];
-                for (int j = 0; j < ndim; ++j) xt[j] += c * A[static_cast<size_t>(i) * ndim + j];
+                for (int j = 0; j < ndim; ++j)
+                    xt[j] += c * A[static_cast<size_t>(i) * ndim + j];
             }
             // Expand: invariant basis -> Cartesian per block, undo the Omega
             // congruence (divide by g), then block-constant over degenerate
@@ -1157,7 +1182,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 double v3[3] = {0.0, 0.0, 0.0};
                 for (auto a = 0; a < mdim[I]; ++a) {
                     const auto eI = ecol(I, a);
-                    for (auto x = 0; x < 3; ++x) v3[x] += eI(x) * xt[offs[I] + a];
+                    for (auto x = 0; x < 3; ++x)
+                        v3[x] += eI(x) * xt[offs[I] + a];
                 }
                 for (auto srow = blocks[I].first; srow < blocks[I].second; ++srow) {
                     for (auto x = 0; x < 3; ++x) {
@@ -1170,7 +1196,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             allocate(ktmp, 3, 3);
             calc_kappa(itemp, dFold, ktmp);
             for (auto a = 0; a < 3; ++a) {
-                for (auto c2 = 0; c2 < 3; ++c2) k9[3 * a + c2] = ktmp[a][c2];
+                for (auto c2 = 0; c2 < 3; ++c2)
+                    k9[3 * a + c2] = ktmp[a][c2];
             }
             deallocate(ktmp);
             if (dF_keep) *dF_keep = dF;
@@ -1197,13 +1224,15 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             double r2 = 0.0, b2 = 0.0;
             for (int i = 0; i < ndim; ++i) {
                 double pr = 0.0;
-                for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
+                for (int j = 0; j < ndim; ++j)
+                    pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
                 b2 += pow2(pr);
                 if (evals[i] <= lam_null) r2 += pow2(pr);
             }
             residual = b2 > 0.0 ? std::sqrt(r2 / b2) : 0.0;
-            std::cout << "      |b| fraction in the excluded null space = " << std::scientific
-                      << std::setprecision(2) << residual << '\n' << std::flush;
+            std::cout << "      |b| fraction in the excluded null space = " << std::scientific << std::setprecision(2)
+                      << residual << '\n'
+                      << std::flush;
         }
     }
 
@@ -1212,7 +1241,8 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
     MPI_Bcast(dF_wedge.data(), static_cast<int>(nrows3), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     for (auto a = 0; a < 3; ++a) {
-        for (auto c2 = 0; c2 < 3; ++c2) kappa[itemp][a][c2] = kappa9[3 * a + c2];
+        for (auto c2 = 0; c2 < 3; ++c2)
+            kappa[itemp][a][c2] = kappa9[3 * a + c2];
     }
     collision_op->reconstruct_full_from_wedge(dF_wedge.data(), dFold);
 
@@ -1295,9 +1325,11 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     auto precondition = [&](const std::vector<double> &rin, std::vector<double> &zout) {
         for (size_t row = 0; row < nrows; ++row) {
             if (mask[row]) {
-                for (auto j = 0; j < 3; ++j) zout[row * 3 + j] = 0.0;
+                for (auto j = 0; j < 3; ++j)
+                    zout[row * 3 + j] = 0.0;
             } else {
-                for (auto j = 0; j < 3; ++j) zout[row * 3 + j] = rin[row * 3 + j] / qdiag[row];
+                for (auto j = 0; j < 3; ++j)
+                    zout[row * 3 + j] = rin[row * 3 + j] / qdiag[row];
             }
         }
     };
@@ -1344,17 +1376,20 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     if (bnorm <= 0.0) {
         // No driving force (all modes masked): dF = 0 is the exact solution.
         for (auto i = 0; i < 3; ++i)
-            for (auto j = 0; j < 3; ++j) kappa[itemp][i][j] = 0.0;
+            for (auto j = 0; j < 3; ++j)
+                kappa[itemp][i][j] = 0.0;
         std::fill(x.begin(), x.end(), 0.0);
         collision_op->reconstruct_full_from_wedge(x.data(), dFold);
         return true;
     }
 
     if (x0_wedge) {
-        for (size_t i = 0; i < nrows3; ++i) x[i] = x0_wedge[i];
+        for (size_t i = 0; i < nrows3; ++i)
+            x[i] = x0_wedge[i];
         project(x);
         apply_operator(x, Ap);
-        for (size_t i = 0; i < nrows3; ++i) r[i] = b[i] - Ap[i];
+        for (size_t i = 0; i < nrows3; ++i)
+            r[i] = b[i] - Ap[i];
     } else {
         r = b;
     }
@@ -1380,15 +1415,18 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         const auto pAp = wdot(p, Ap);
         if (pAp <= 0.0) {
             if (mympi->my_rank == 0) {
-                std::cout << '\n' << "   -> WARNING: <p, Ap> <= 0 encountered; the discretized operator is not\n"
+                std::cout << '\n'
+                          << "   -> WARNING: <p, Ap> <= 0 encountered; the discretized operator is not\n"
                           << "               positive definite on this vector. Stopping with the best iterate.\n"
                           << std::flush;
             }
             break;
         }
         const auto alpha = rz / pAp;
-        for (size_t i = 0; i < nrows3; ++i) x[i] += alpha * p[i];
-        for (size_t i = 0; i < nrows3; ++i) r[i] -= alpha * Ap[i];
+        for (size_t i = 0; i < nrows3; ++i)
+            x[i] += alpha * p[i];
+        for (size_t i = 0; i < nrows3; ++i)
+            r[i] -= alpha * Ap[i];
 
         const auto rel_new = std::sqrt(wdot(r, r)) / bnorm;
         if (rel_new > rel) {
@@ -1432,7 +1470,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
                 std::cout << "   -> Converged is achieved                 "
                           << "                                            "
                           << "                                    " << std::setw(14) << std::scientific
-                          << std::setprecision(2) << rel << '\n' << std::flush;
+                          << std::setprecision(2) << rel << '\n'
+                          << std::flush;
             }
             break;
         }
@@ -1441,7 +1480,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         if (n_growth >= 3) {
             if (mympi->my_rank == 0) {
                 std::cout << "   -> WARNING: the residual keeps growing (non-symmetric discretization?).\n"
-                          << "               Stopping with the best iterate.\n" << std::flush;
+                          << "               Stopping with the best iterate.\n"
+                          << std::flush;
             }
             break;
         }
@@ -1450,7 +1490,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         const auto rz_new = wdot(r, z);
         const auto beta_cg = rz_new / rz;
         rz = rz_new;
-        for (size_t i = 0; i < nrows3; ++i) p[i] = z[i] + beta_cg * p[i];
+        for (size_t i = 0; i < nrows3; ++i)
+            p[i] = z[i] + beta_cg * p[i];
     }
 
     if (!converged) {
@@ -1478,7 +1519,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     // the recursive CG residual when the discretized operator is not
     // exactly symmetric (tetrahedron/adaptive weights).
     apply_operator(x, Ap);
-    for (size_t i = 0; i < nrows3; ++i) r[i] = b[i] - Ap[i];
+    for (size_t i = 0; i < nrows3; ++i)
+        r[i] = b[i] - Ap[i];
     const auto rel_true = std::sqrt(wdot(r, r)) / bnorm;
     residual_out = rel_true;
     if (converged && rel_true > convergence_criteria) {
@@ -1486,12 +1528,13 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         if (mympi->my_rank == 0) {
             std::cout << "   -> WARNING: the recursive CG residual converged but the explicitly\n"
                       << "               recomputed one is " << std::scientific << std::setprecision(2) << rel_true
-                      << "; marking this temperature as NOT converged.\n" << std::flush;
+                      << "; marking this temperature as NOT converged.\n"
+                      << std::flush;
         }
     }
     if (mympi->my_rank == 0) {
-        std::cout << "      final |r|/|b| (explicit) = " << std::scientific << std::setprecision(2) << rel_true
-                  << '\n' << std::flush;
+        std::cout << "      final |r|/|b| (explicit) = " << std::scientific << std::setprecision(2) << rel_true << '\n'
+                  << std::flush;
     }
 
     // dFold holds the reconstruction of the kept iterate, so write_Q_dF
@@ -1581,7 +1624,6 @@ bool Iterativebte::check_convergence(double **&k_old, double **&k_new)
 }
 
 
-
 void Iterativebte::write_kappa_iterative()
 {
     writes->writeKappaIterative(ntemp, Temperature, kappa, t_converged);
@@ -1610,8 +1652,7 @@ void Iterativebte::write_result()
 
         fs_result << "## General information" << '\n';
         fs_result << "#SYSTEM" << '\n';
-        fs_result << system->get_primcell().number_of_atoms << " " << system->get_primcell().number_of_elems
-                  << '\n';
+        fs_result << system->get_primcell().number_of_atoms << " " << system->get_primcell().number_of_elems << '\n';
         fs_result << system->get_primcell().volume << '\n';
         fs_result << "#END SYSTEM" << '\n';
 
@@ -1708,7 +1749,10 @@ void Iterativebte::write_Q_dF(int itemp, double **&q, double ***&df, const bool 
                     }
                 }
             }
-            ibte_io->store_ibte_temperature(itemp, &Q_all[0][0], df_flat.data(), &kappa[itemp][0][0],
+            ibte_io->store_ibte_temperature(itemp,
+                                            &Q_all[0][0],
+                                            df_flat.data(),
+                                            &kappa[itemp][0][0],
                                             converged ? 1 : 0);
         } else if (!conductivity->get_use_h5_io()) {
             fs_result << std::setw(10) << etemp << '\n';

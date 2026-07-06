@@ -81,9 +81,16 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                       mindist_list);
     }
 
-    thermodynamics->compute_FE_bubble_SCPH(eval, evec, thermodynamics->FE_bubble, *system, *dos->kmesh_dos,
-                                           symmetry->SymmList, *anharmonic_core, dynamical->neval,
-                                           mympi->my_rank, mympi->nprocs);
+    thermodynamics->compute_FE_bubble_SCPH(eval,
+                                           evec,
+                                           thermodynamics->FE_bubble,
+                                           *system,
+                                           *dos->kmesh_dos,
+                                           symmetry->SymmList,
+                                           *anharmonic_core,
+                                           dynamical->neval,
+                                           mympi->my_rank,
+                                           mympi->nprocs);
 
     deallocate(eval);
     deallocate(evec);

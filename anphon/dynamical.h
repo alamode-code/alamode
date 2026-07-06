@@ -14,11 +14,11 @@
 #include <complex>
 #include <string>
 #include <vector>
+#include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "memory.h"
 #include "pointers.h"
-#include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
 
 namespace PHON_NS
 {

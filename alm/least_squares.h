@@ -161,9 +161,8 @@ auto get_independent_rows(const size_t N, const size_t P, const double *const *c
  */
 auto solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd &b,
                     const Eigen::SparseMatrix<double> &C, const Eigen::VectorXd &d, Eigen::VectorXd &x,
-                    Eigen::VectorXd &lambda, const int verbosity = 0,
-                    const std::string &solver_type = "", const double tolerance_iteration = 1.0e-8,
-                    const int maxnum_iteration = 10000) -> void;
+                    Eigen::VectorXd &lambda, const int verbosity = 0, const std::string &solver_type = "",
+                    const double tolerance_iteration = 1.0e-8, const int maxnum_iteration = 10000) -> void;
 
 /**
  * Given a dense column-major matrix A (size M×N) stored in
@@ -200,8 +199,8 @@ constexpr double rank_tolerance_auto = -1.0;
 /// @param r         Output numerical row-rank
 /// @returns 0 on success, non-zero LAPACK INFO on failure
 auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_sparse, const Eigen::VectorXd &dvec,
-                                        const int verbosity, const double tolerance,
-                                        Eigen::SparseMatrix<double> &C_red, Eigen::VectorXd &d_red, int &r) -> int;
+                                        const int verbosity, const double tolerance, Eigen::SparseMatrix<double> &C_red,
+                                        Eigen::VectorXd &d_red, int &r) -> int;
 
 
 auto get_independent_rows_lapack_sparse(const size_t ncols, ConstraintSparseForm &C_sparse, const int verbosity,

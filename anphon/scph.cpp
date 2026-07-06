@@ -791,12 +791,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 std::cout << "\n Structure at this step";
                 if (!scp_converged_step) std::cout << " (SCP NOT converged)";
                 std::cout << " :\n";
-                const auto spg_label =
-                    relaxation->print_structure_and_symmetry(structure_state,
-                                                             (relax_mode == RelaxationStrMode::CoordinatesAndCell &&
-                                                              scp_converged_step)
-                                                                 ? del_v0_del_umn_SCP
-                                                                 : nullptr);
+                const auto spg_label = relaxation->print_structure_and_symmetry(
+                    structure_state,
+                    (relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step) ? del_v0_del_umn_SCP
+                                                                                                : nullptr);
                 std::cout << '\n';
 
                 if (!scp_converged_step) {
@@ -841,8 +839,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
                     std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0
                               << " [Bohr]";
-                    std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6)
-                              << du_tensor << '\n';
+                    std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
+                              << '\n';
 
                     // Do not test convergence on this step: du0/du_tensor describe the rescue
                     // step and the gradients are unreliable.
@@ -884,11 +882,17 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 }
 
                 double grad_norm, cell_grad_norm;
-                compute_and_print_step_gradients(ws, v1_SCP, del_v0_del_umn_SCP, du0, du_tensor, spg_label,
-                                                 step_history, grad_norm, cell_grad_norm);
+                compute_and_print_step_gradients(ws,
+                                                 v1_SCP,
+                                                 del_v0_del_umn_SCP,
+                                                 du0,
+                                                 du_tensor,
+                                                 spg_label,
+                                                 step_history,
+                                                 grad_norm,
+                                                 cell_grad_norm);
 
-                const bool step_converged =
-                    (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol);
+                const bool step_converged = (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol);
                 const bool force_converged =
                     (relaxation->gradient_conv_tol <= 0.0) || (grad_norm < relaxation->gradient_conv_tol);
                 const bool cell_force_converged = (relax_mode != RelaxationStrMode::CoordinatesAndCell) ||
@@ -906,10 +910,11 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                         std::cout << " |residual force| is smaller than GRADIENT_CONV_TOL = " << std::scientific
                                   << std::setw(15) << std::setprecision(6) << relaxation->gradient_conv_tol << '\n';
                     }
-                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell &&
-                        relaxation->cell_gradient_conv_tol > 0.0) {
+                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relaxation->cell_gradient_conv_tol > 0.0)
+                    {
                         std::cout << " |residual stress| is smaller than CELL_GRADIENT_CONV_TOL = " << std::scientific
-                                  << std::setw(15) << std::setprecision(6) << relaxation->cell_gradient_conv_tol << '\n';
+                                  << std::setw(15) << std::setprecision(6) << relaxation->cell_gradient_conv_tol
+                                  << '\n';
                     }
                     std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
                     std::cout << " break structural loop.\n\n";
@@ -922,8 +927,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             bench_temp.push_back(temp);
             // i_str_loop == max_str_iter only when the loop ran to completion without a break;
             // a converged or diverged break leaves i_str_loop at the 0-based loop index.
-            bench_steps.push_back(i_str_loop >= relaxation->max_str_iter ? relaxation->max_str_iter
-                                                                         : i_str_loop + 1);
+            bench_steps.push_back(i_str_loop >= relaxation->max_str_iter ? relaxation->max_str_iter : i_str_loop + 1);
 
             const auto final_structure_is_finite = structure_state_is_finite(structure_state);
             const auto accepted_this_temp = converged_this_temp && final_structure_is_finite;
@@ -958,8 +962,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             }
 
             // At-a-glance history of the structural optimization at this temperature.
-            Relaxation::print_optimization_history(step_history, temp,
-                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell, true);
+            Relaxation::print_optimization_history(step_history,
+                                                   temp,
+                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell,
+                                                   true);
 
             print_final_structure(structure_state, relax_mode, temp, i_temp_loop == NT - 1);
 
@@ -1000,16 +1006,14 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         // ---- structural-optimization benchmark summary (step counts to convergence) ----
         std::cout << " ============ Structural-optimization benchmark summary ============\n";
         std::cout << "  RELAX_ALGO = " << relaxation->relax_algo;
-        if (relaxation->relax_algo == 3)
-            std::cout << "   GDIIS_PLAIN = " << (relaxation->gdiis_control ? 0 : 1);
+        if (relaxation->relax_algo == 3) std::cout << "   GDIIS_PLAIN = " << (relaxation->gdiis_control ? 0 : 1);
         std::cout << '\n';
         std::cout << "  " << std::setw(15) << "Temp [K]" << std::setw(12) << "steps" << std::setw(12) << "converged"
                   << '\n';
         int bench_total = 0;
         for (std::size_t ib = 0; ib < bench_temp.size(); ++ib) {
-            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp[ib]
-                      << std::setw(12) << bench_steps[ib] << std::setw(12) << (bench_converged[ib] ? "yes" : "no")
-                      << '\n';
+            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp[ib] << std::setw(12)
+                      << bench_steps[ib] << std::setw(12) << (bench_converged[ib] ? "yes" : "no") << '\n';
             bench_total += bench_steps[ib];
         }
         std::cout << "  " << std::setw(15) << "Total" << std::setw(12) << bench_total << '\n';
@@ -1100,13 +1104,7 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                         kmap_coarse_to_dense);
 
     // calculate SCP force
-    compute_anharmonic_v1_array(v1_SCP,
-                                ws.v1_renorm,
-                                ws.v3_renorm,
-                                cmat_convert,
-                                omega2_anharm[iT],
-                                temp,
-                                kmesh_dense);
+    compute_anharmonic_v1_array(v1_SCP, ws.v1_renorm, ws.v3_renorm, cmat_convert, omega2_anharm[iT], temp, kmesh_dense);
 
     // calculate SCP stress tensor
     if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
@@ -1469,8 +1467,12 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
         }
     }
 
-    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0], kmesh_interpolate[1], kmesh_interpolate[2],
-                                    ns, dymat_q, dymat_r_new);
+    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0],
+                                    kmesh_interpolate[1],
+                                    kmesh_interpolate[2],
+                                    ns,
+                                    dymat_q,
+                                    dymat_r_new);
 
     // Create temporary C-style arrays for exec_interpolation
     double **eval_temp;
@@ -1900,15 +1902,15 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
     auto flatten_dmat = [&](const std::vector<MatrixXcd> &dmat, VectorXd &vec) {
 #pragma omp parallel for
         for (int k = 0; k < static_cast<int>(nk); ++k) {
-            vec.segment(static_cast<Index>(k) * blocksize, blocksize)
-                = Map<const VectorXd>(reinterpret_cast<const double *>(dmat[k].data()), blocksize);
+            vec.segment(static_cast<Index>(k) * blocksize, blocksize) =
+                Map<const VectorXd>(reinterpret_cast<const double *>(dmat[k].data()), blocksize);
         }
     };
     auto unflatten_dmat = [&](const VectorXd &vec, std::vector<MatrixXcd> &dmat) {
 #pragma omp parallel for
         for (int k = 0; k < static_cast<int>(nk); ++k) {
-            Map<VectorXd>(reinterpret_cast<double *>(dmat[k].data()), blocksize)
-                = vec.segment(static_cast<Index>(k) * blocksize, blocksize);
+            Map<VectorXd>(reinterpret_cast<double *>(dmat[k].data()), blocksize) =
+                vec.segment(static_cast<Index>(k) * blocksize, blocksize);
             // Remove the Hermiticity-breaking roundoff of the linear combination.
             dmat[k] = (0.5 * (dmat[k] + dmat[k].adjoint())).eval();
         }
@@ -2013,8 +2015,8 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
                 break;
             }
             if (verbosity > 1) {
-                std::cout << "  DIIS: frequency criterion met but |r|/|x| = "
-                          << std::scientific << rnorm_rel << " is still large; continuing.\n";
+                std::cout << "  DIIS: frequency criterion met but |r|/|x| = " << std::scientific << rnorm_rel
+                          << " is still large; continuing.\n";
             }
         }
         omega_old = omega_now;
@@ -2263,8 +2265,12 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
         }
     }
 
-    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0], kmesh_interpolate[1], kmesh_interpolate[2],
-                                    ns, dymat_out, dymat_r_new);
+    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0],
+                                    kmesh_interpolate[1],
+                                    kmesh_interpolate[2],
+                                    ns,
+                                    dymat_out,
+                                    dymat_r_new);
 
     double **eval_tmp;
 

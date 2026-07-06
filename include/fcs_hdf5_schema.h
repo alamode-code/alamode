@@ -34,16 +34,11 @@
 // spin_polarized is nonzero. The optional masses dataset (amu) is an
 // anphon extension absent from alm-written files; readers must tolerate
 // its absence.
-inline auto write_cell_group_h5(H5Easy::File &file, const std::string &celltype,
-                                const Eigen::Matrix3d &lattice_vector,
-                                const Eigen::MatrixXd &x_fractional,
-                                const std::vector<int> &atomic_kinds,
-                                const std::vector<std::string> &element_names,
-                                const int spin_polarized,
-                                const std::vector<std::vector<double>> &magnetic_moments,
-                                const int noncollinear,
-                                const int time_reversal_symmetry,
-                                const size_t number_of_primitive_translations,
+inline auto write_cell_group_h5(H5Easy::File &file, const std::string &celltype, const Eigen::Matrix3d &lattice_vector,
+                                const Eigen::MatrixXd &x_fractional, const std::vector<int> &atomic_kinds,
+                                const std::vector<std::string> &element_names, const int spin_polarized,
+                                const std::vector<std::vector<double>> &magnetic_moments, const int noncollinear,
+                                const int time_reversal_symmetry, const size_t number_of_primitive_translations,
                                 const std::vector<std::vector<int>> &mapping_table,
                                 const units::FcUnitSystem unit_system,
                                 const std::vector<double> &masses_amu = {}) -> void
@@ -53,8 +48,7 @@ inline auto write_cell_group_h5(H5Easy::File &file, const std::string &celltype,
     const std::string unitname(in_ev_ang ? "angstrom" : "bohr");
     const auto factor_length = in_ev_ang ? Bohr_in_Angstrom : 1.0;
 
-    dump(file, "/" + celltype + "/lattice_vector",
-         Eigen::Matrix3d(lattice_vector.transpose() * factor_length));
+    dump(file, "/" + celltype + "/lattice_vector", Eigen::Matrix3d(lattice_vector.transpose() * factor_length));
     dumpAttribute(file, "/" + celltype + "/lattice_vector", "unit", unitname);
     dump(file, "/" + celltype + "/number_of_atoms", static_cast<size_t>(x_fractional.rows()));
     dump(file, "/" + celltype + "/number_of_elements", element_names.size());
@@ -65,8 +59,7 @@ inline auto write_cell_group_h5(H5Easy::File &file, const std::string &celltype,
     if (spin_polarized) {
         dump(file, "/" + celltype + "/magnetic_moments", magnetic_moments);
         dumpAttribute(file, "/" + celltype + "/magnetic_moments", "noncollinear", noncollinear);
-        dumpAttribute(file, "/" + celltype + "/magnetic_moments", "time_reversal_symmetry",
-                      time_reversal_symmetry);
+        dumpAttribute(file, "/" + celltype + "/magnetic_moments", "time_reversal_symmetry", time_reversal_symmetry);
     }
     dump(file, "/" + celltype + "/number_of_primitive_translations", number_of_primitive_translations);
     dump(file, "/" + celltype + "/mapping_table", mapping_table);
@@ -80,14 +73,10 @@ inline auto write_cell_group_h5(H5Easy::File &file, const std::string &celltype,
 // Inputs are in the internal units (bohr, Ry/bohr^{order+2}) and are
 // converted on the fly when unit_system requests eV/angstrom; every value
 // dataset carries a "unit" attribute either way.
-inline auto write_fc_order_group_h5(H5Easy::File &file, const int order,
-                                    const Eigen::MatrixXi &atom_indices,
-                                    const Eigen::MatrixXi &atom_indices_super,
-                                    const Eigen::MatrixXi &coord_indices,
-                                    Eigen::MatrixXd shift_vectors,
-                                    Eigen::ArrayXd fcs_values,
-                                    const units::FcUnitSystem unit_system,
-                                    const int compression_level) -> void
+inline auto write_fc_order_group_h5(H5Easy::File &file, const int order, const Eigen::MatrixXi &atom_indices,
+                                    const Eigen::MatrixXi &atom_indices_super, const Eigen::MatrixXi &coord_indices,
+                                    Eigen::MatrixXd shift_vectors, Eigen::ArrayXd fcs_values,
+                                    const units::FcUnitSystem unit_system, const int compression_level) -> void
 {
     using namespace H5Easy;
     const auto in_ev_ang = unit_system == units::FcUnitSystem::ev_angstrom;

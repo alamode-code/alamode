@@ -13,8 +13,8 @@ Newton_Optimizer::Newton_Optimizer(double mixbeta) : mixbeta(mixbeta)
 {}
 
 FarkasIII_Optimizer::FarkasIII_Optimizer(const int max_vectors, const Eigen::MatrixXd &H_ini,
-                                         const bool gdiis_control)
-    : max_vectors(max_vectors), gdiis_control(gdiis_control), H(H_ini)
+                                         const bool gdiis_control) :
+    max_vectors(max_vectors), gdiis_control(gdiis_control), H(H_ini)
 {
     gradient_old = Eigen::VectorXd::Zero(H_ini.size());
     threshold_angle = angle_threshold(max_vectors);
@@ -247,15 +247,24 @@ double FarkasIII_Optimizer::angle_threshold(const int n_vectors)
 {
     // Farkas-Schlegel cut-offs for cos(theta); 0 for 10 or more vectors.
     switch (n_vectors) {
-    case 2: return 0.97;
-    case 3: return 0.84;
-    case 4: return 0.71;
-    case 5: return 0.67;
-    case 6: return 0.62;
-    case 7: return 0.56;
-    case 8: return 0.49;
-    case 9: return 0.41;
-    default: return 0.0;
+    case 2:
+        return 0.97;
+    case 3:
+        return 0.84;
+    case 4:
+        return 0.71;
+    case 5:
+        return 0.67;
+    case 6:
+        return 0.62;
+    case 7:
+        return 0.56;
+    case 8:
+        return 0.49;
+    case 9:
+        return 0.41;
+    default:
+        return 0.0;
     }
 }
 
@@ -300,8 +309,7 @@ Eigen::MatrixXd FarkasIII_Optimizer::effective_inverse_Hessian() const
     return U * nu_eff.asDiagonal() * U.transpose();
 }
 
-Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &point,
-                                                       const Eigen::VectorXd &gradient)
+Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &point, const Eigen::VectorXd &gradient)
 {
     // --- history window ---
     if (static_cast<int>(points.size()) == max_vectors) {
@@ -339,7 +347,8 @@ Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &po
 
     // error vectors e_i = -H_eff * g_i, recomputed with the current effective Hessian
     std::vector<Eigen::VectorXd> errvec(size);
-    for (int i = 0; i < size; ++i) errvec[i] = -H_eff * gradients[i];
+    for (int i = 0; i < size; ++i)
+        errvec[i] = -H_eff * gradients[i];
 
     // --- adaptive subspace: grow from the most recent point, keep the last acceptable step ---
     Eigen::VectorXd best_step = point_BFGS; // fallback: reference step (eqn 7)
@@ -350,7 +359,8 @@ Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &po
 
         // (d, part 1) rescale error vectors so the smallest has unit length (eqn 9)
         double emin = errvec[i0].norm();
-        for (int i = i0 + 1; i < size; ++i) emin = std::min(emin, errvec[i].norm());
+        for (int i = i0 + 1; i < size; ++i)
+            emin = std::min(emin, errvec[i].norm());
         const double escale = (emin > eps15) ? 1.0 / emin : 1.0;
 
         Eigen::MatrixXd B(m + 1, m + 1);
@@ -360,7 +370,8 @@ Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &po
                 B(a, b) = (escale * escale) * errvec[i0 + a].dot(errvec[i0 + b]);
             }
         }
-        for (int a = 0; a < m; ++a) B(a, m) = B(m, a) = 1.0;
+        for (int a = 0; a < m; ++a)
+            B(a, m) = B(m, a) = 1.0;
         Eigen::VectorXd rhs = Eigen::VectorXd::Zero(m + 1);
         rhs(m) = 1.0;
         const Eigen::VectorXd coeffs = B.colPivHouseholderQr().solve(rhs);

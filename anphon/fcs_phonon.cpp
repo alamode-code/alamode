@@ -457,7 +457,8 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     // DFC2FILE is given, FC2_TEMPERATURE refers to that correction file
     // instead and the main FC2 file is read as-is.
     if (order == 0 && !file_dfc2.empty() &&
-        file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values")) {
+        file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values"))
+    {
         warn("parse_fcs_from_h5",
              "The harmonic FC2 source is itself an SCPH/QHA state file while DFC2FILE is also given:\n"
              " only the (coarse-mesh folded) base FC2 of this file is used here, and the anharmonic\n"
@@ -471,8 +472,7 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
                  "FC2_TEMPERATURE was given, but the FC2 file carries no "
                  "temperature-dependent force constants.");
         }
-        temperature_index = h5_resolve_temperature_index(file, fc2_temperature, eps6,
-                                                         "/settings/temperatures");
+        temperature_index = h5_resolve_temperature_index(file, fc2_temperature, eps6, "/settings/temperatures");
 
         // Refuse renormalized FC2 from unconverged SCPH/structural
         // iterations unless the user opted in (absent /convergence data,
@@ -481,8 +481,7 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
             if (!file.exist("/convergence/" + name)) return true;
             std::vector<unsigned char> flags;
             file.getDataSet("/convergence/" + name).read(flags);
-            return static_cast<size_t>(temperature_index) >= flags.size() ||
-                   flags[temperature_index] != 0;
+            return static_cast<size_t>(temperature_index) >= flags.size() || flags[temperature_index] != 0;
         };
         if (!iteration_converged("scph") || !iteration_converged("structure")) {
             if (input->allow_unconverged) {
@@ -584,8 +583,7 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
 }
 
 
-void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2,
-                                            std::vector<FcsArrayWithCell> &fcs_out) const
+void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::vector<FcsArrayWithCell> &fcs_out) const
 {
     using namespace H5Easy;
     const File file(fname_dfc2, File::ReadOnly);
@@ -627,8 +625,7 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2,
         get_structures_from_h5(file, "PrimitiveCell", lavec_dfc2, xf_dfc2, kinds_dfc2, elems_dfc2);
         const auto &primcell = system->get_primcell();
         if (static_cast<size_t>(xf_dfc2.rows()) != primcell.number_of_atoms) {
-            exit("append_delta_fc2_from_scph",
-                 "The primitive cell of DFC2FILE differs from the present one.");
+            exit("append_delta_fc2_from_scph", "The primitive cell of DFC2FILE differs from the present one.");
         }
         if ((lavec_dfc2 - primcell.lattice_vector).cwiseAbs().maxCoeff() > eps4) {
             warn("append_delta_fc2_from_scph",
@@ -640,10 +637,17 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2,
     Eigen::MatrixXi atom_indices, atom_indices_super, coord_indices;
     Eigen::MatrixXd shift_vectors;
     Eigen::ArrayXd fcs_base, fcs_total;
-    get_force_constants_from_h5(file, 0, atom_indices, atom_indices_super, coord_indices, shift_vectors,
-                                fcs_base);
-    get_force_constants_from_h5(file, 0, atom_indices, atom_indices_super, coord_indices, shift_vectors,
-                                fcs_total, nullptr, nullptr, itemp);
+    get_force_constants_from_h5(file, 0, atom_indices, atom_indices_super, coord_indices, shift_vectors, fcs_base);
+    get_force_constants_from_h5(file,
+                                0,
+                                atom_indices,
+                                atom_indices_super,
+                                coord_indices,
+                                shift_vectors,
+                                fcs_total,
+                                nullptr,
+                                nullptr,
+                                itemp);
     const Eigen::ArrayXd delta = fcs_total - fcs_base;
 
     // Re-express each row in the supercell of the harmonic FC2 file: the
@@ -668,7 +672,8 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2,
         const auto atom1_s = map_p2s[iat][0];
 
         Eigen::Vector3d relvec;
-        for (auto k = 0; k < 3; ++k) relvec[k] = shift_vectors(irow, k);
+        for (auto k = 0; k < 3; ++k)
+            relvec[k] = shift_vectors(irow, k);
 
         const Eigen::Vector3d target = scell.x_cartesian.row(atom1_s).transpose() + relvec;
         const Eigen::Vector3d xf_target = lavec_super_inv * target;
@@ -702,8 +707,8 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2,
         ++nadded;
     }
 
-    std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at "
-              << fc2_temperature << " K from " << fname_dfc2 << "\n  ";
+    std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at " << fc2_temperature
+              << " K from " << fname_dfc2 << "\n  ";
 }
 
 

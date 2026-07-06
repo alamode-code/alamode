@@ -191,8 +191,11 @@ void Conductivity::setup_kappa()
     }
 
     // Velocities in m/s on rank 0 (the only rank that assembles kappa).
-    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos, system->get_primcell().lattice_vector, vel,
-                                                  Bohr_in_Angstrom * 1.0e-10 / time_ry, false);
+    phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos,
+                                                  system->get_primcell().lattice_vector,
+                                                  vel,
+                                                  Bohr_in_Angstrom * 1.0e-10 / time_ry,
+                                                  false);
 
     if (calc_coherent) {
         if (mympi->my_rank == 0) {
@@ -306,8 +309,11 @@ void Conductivity::setup_kappa_4ph()
     phase_storage_4ph->create(true);
 
     // Velocities in m/s on rank 0, matching the 3ph channel.
-    phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph, system->get_primcell().lattice_vector, vel_4ph,
-                                                  Bohr_in_Angstrom * 1.0e-10 / time_ry, false);
+    phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph,
+                                                  system->get_primcell().lattice_vector,
+                                                  vel_4ph,
+                                                  Bohr_in_Angstrom * 1.0e-10 / time_ry,
+                                                  false);
 
     vks_job4.clear();
     for (auto i = 0; i < kmesh_4ph->nk_irred; ++i) {
@@ -316,7 +322,10 @@ void Conductivity::setup_kappa_4ph()
         }
     }
 
-    integration->create_adaptive_sigma4(kmesh_4ph->nk, ns, kmesh_4ph, phonon_velocity,
+    integration->create_adaptive_sigma4(kmesh_4ph->nk,
+                                        ns,
+                                        kmesh_4ph,
+                                        phonon_velocity,
                                         system->get_primcell().lattice_vector,
                                         system->get_primcell().reciprocal_lattice_vector);
 
@@ -331,7 +340,8 @@ KappaResultIOH5 *Conductivity::setup_ibte_io(const unsigned int nk_i[3], const u
     if (!use_h5_io || mympi->my_rank != 0) return nullptr;
 
     IbteMetaH5 imeta;
-    for (auto i = 0; i < 3; ++i) imeta.nk_i[i] = nk_i[i];
+    for (auto i = 0; i < 3; ++i)
+        imeta.nk_i[i] = nk_i[i];
     imeta.nk_irred = nk_irred_in;
     imeta.ns = ns_in;
 
@@ -347,8 +357,7 @@ KappaResultIOH5 *Conductivity::setup_ibte_io(const unsigned int nk_i[3], const u
     return result_io_h5.get();
 }
 
-void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_dense_in,
-                                                 double **damping4_dense_out)
+void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_dense_in, double **damping4_dense_out)
 {
     // Compute the 4ph SERTA linewidths on the (possibly coarser) 4ph mesh
     // and interpolate them onto kmesh_dense_in. Serves SOLVER = IBTE, where
@@ -362,7 +371,10 @@ void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_
         interpolate_data(kmesh_4ph, kmesh_dense_in, damping4, damping4_dense_out);
     }
 
-    MPI_Bcast(&damping4_dense_out[0][0], static_cast<int>(kmesh_dense_in->nk_irred * ns * ntemp), MPI_DOUBLE, 0,
+    MPI_Bcast(&damping4_dense_out[0][0],
+              static_cast<int>(kmesh_dense_in->nk_irred * ns * ntemp),
+              MPI_DOUBLE,
+              0,
               MPI_COMM_WORLD);
 }
 
@@ -790,7 +802,8 @@ KappaChannelMetaH5 Conductivity::build_kappa_channel_meta(const int mode) const
 
     KappaChannelMetaH5 meta;
     meta.tag = (mode == 1) ? "3ph" : "4ph";
-    for (auto i = 0; i < 3; ++i) meta.nk_i[i] = kmesh_in->nk_i[i];
+    for (auto i = 0; i < 3; ++i)
+        meta.nk_i[i] = kmesh_in->nk_i[i];
     meta.nk_irred = kmesh_in->nk_irred;
     meta.ns = ns;
     meta.weights = kmesh_in->weight_k;
@@ -846,12 +859,11 @@ void Conductivity::load_computed_modes_h5(const std::string &tag, double **dampi
 
     if (nprefix < rows_done.size()) {
         std::cout << "\n " << rows_done.size() - nprefix << " " << tag
-                  << " modes recorded after an incomplete batch in " << file_kappa_h5
-                  << " will be recomputed.\n";
+                  << " modes recorded after an incomplete batch in " << file_kappa_h5 << " will be recomputed.\n";
     }
     if (!vks_done_out.empty()) {
-        std::cout << "\n " << vks_done_out.size() << " previously computed " << tag
-                  << " modes were loaded from " << file_kappa_h5 << ".\n";
+        std::cout << "\n " << vks_done_out.size() << " previously computed " << tag << " modes were loaded from "
+                  << file_kappa_h5 << ".\n";
     }
 }
 
@@ -884,14 +896,27 @@ void Conductivity::import_legacy_result_text(const int mode)
               << "; the text file itself is left untouched.\n";
 
     std::fstream fs_legacy;
-    check_consistency_restart(fs_legacy, file_legacy, kmesh_in->nk_i, kmesh_in->nk_irred,
-                              system->get_primcell(), thermodynamics->classical, integration->ismear,
-                              integration->epsilon, system->Tmin, system->Tmax, system->dT,
+    check_consistency_restart(fs_legacy,
+                              file_legacy,
+                              kmesh_in->nk_i,
+                              kmesh_in->nk_irred,
+                              system->get_primcell(),
+                              thermodynamics->classical,
+                              integration->ismear,
+                              integration->epsilon,
+                              system->Tmin,
+                              system->Tmax,
+                              system->dT,
                               fcs_phonon->file_fcs);
 
     std::vector<int> rows_done;
-    load_restart_gamma_blocks(fs_legacy, file_legacy, kmesh_in->nk_irred, damping, rows_done,
-                              (mode == 1) ? "3-phonon" : "4-phonon", false);
+    load_restart_gamma_blocks(fs_legacy,
+                              file_legacy,
+                              kmesh_in->nk_irred,
+                              damping,
+                              rows_done,
+                              (mode == 1) ? "3-phonon" : "4-phonon",
+                              false);
     fs_legacy.close();
 
     if (!rows_done.empty()) {
@@ -1165,8 +1190,7 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
     if (use_h5_io) {
         // The gathered batch occupies consecutive rows; frequencies and
         // velocities were stored once at channel creation.
-        const unsigned int nrows_total =
-            ((mode == 1) ? dos->kmesh_dos->nk_irred : kmesh_4ph->nk_irred) * ns;
+        const unsigned int nrows_total = ((mode == 1) ? dos->kmesh_dos->nk_irred : kmesh_4ph->nk_irred) * ns;
         const unsigned int first_row = ik * np + nshift;
         if (first_row >= nrows_total) return;
         const auto nrow = std::min(np, nrows_total - first_row);

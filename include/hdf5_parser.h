@@ -58,8 +58,7 @@ constexpr int h5_version_scph_state = 1;
 // Write the root schema attributes plus provenance (code version, creation
 // date). Existing attributes are replaced, so this is safe to call again on
 // a file whose content is being rebuilt.
-inline auto stamp_h5_schema(HighFive::File &file, const std::string &schema_name,
-                            const int format_version) -> void
+inline auto stamp_h5_schema(HighFive::File &file, const std::string &schema_name, const int format_version) -> void
 {
     const auto replace_string_attr = [&file](const std::string &key, const std::string &val) {
         if (file.hasAttribute(key)) file.deleteAttribute(key);
@@ -81,28 +80,27 @@ inline auto stamp_h5_schema(HighFive::File &file, const std::string &schema_name
 // schemas and versions newer than max_supported_version are fatal: such a
 // file was written by a different or newer code and must not be reinterpreted.
 inline auto check_h5_schema(const HighFive::File &file, const std::string &expected_schema,
-                            const int max_supported_version,
-                            const bool allow_legacy_unversioned = false) -> int
+                            const int max_supported_version, const bool allow_legacy_unversioned = false) -> int
 {
     if (!file.hasAttribute("schema")) {
         if (allow_legacy_unversioned) return 0;
-        std::cout << "Error: file " << file.getName()
-                  << " has no schema attribute; expected schema \"" << expected_schema << "\".\n";
+        std::cout << "Error: file " << file.getName() << " has no schema attribute; expected schema \""
+                  << expected_schema << "\".\n";
         exit(1);
     }
     std::string schema_name;
     file.getAttribute("schema").read(schema_name);
     if (schema_name != expected_schema) {
-        std::cout << "Error: file " << file.getName() << " has schema \"" << schema_name
-                  << "\" but \"" << expected_schema << "\" is expected here.\n";
+        std::cout << "Error: file " << file.getName() << " has schema \"" << schema_name << "\" but \""
+                  << expected_schema << "\" is expected here.\n";
         exit(1);
     }
     int version = 0;
     file.getAttribute("format_version").read(version);
     if (version > max_supported_version) {
-        std::cout << "Error: file " << file.getName() << " uses format_version " << version
-                  << " of schema \"" << expected_schema << "\", but this build supports up to version "
-                  << max_supported_version << ". Please use a newer ALAMODE.\n";
+        std::cout << "Error: file " << file.getName() << " uses format_version " << version << " of schema \""
+                  << expected_schema << "\", but this build supports up to version " << max_supported_version
+                  << ". Please use a newer ALAMODE.\n";
         exit(1);
     }
     return version;
@@ -153,8 +151,7 @@ inline auto h5_publish_file(const std::string &path_part, const std::string &pat
     std::error_code ec;
     std::filesystem::rename(path_part, path_final, ec);
     if (ec) {
-        std::cout << "Error: failed to rename " << path_part << " to " << path_final
-                  << ": " << ec.message() << '\n';
+        std::cout << "Error: failed to rename " << path_part << " to " << path_final << ": " << ec.message() << '\n';
         exit(1);
     }
     h5_fsync_parent_directory(path_final);
@@ -180,17 +177,17 @@ inline auto h5_create_dataset_prealloc(HighFive::File &file, const std::string &
 // Resolve a physical temperature to a row index of a temperature-grid
 // dataset (e.g. /settings/temperatures of an alamode:scph_state file).
 // A missing match is fatal and lists the temperatures the file provides.
-inline auto h5_resolve_temperature_index(const H5Easy::File &file, const double temperature,
-                                         const double tolerance,
+inline auto h5_resolve_temperature_index(const H5Easy::File &file, const double temperature, const double tolerance,
                                          const std::string &path_temperatures) -> int
 {
     const auto temps = H5Easy::load<std::vector<double>>(file, path_temperatures);
     for (size_t i = 0; i < temps.size(); ++i) {
         if (std::abs(temps[i] - temperature) < tolerance) return static_cast<int>(i);
     }
-    std::cout << "Error: temperature " << temperature << " K is not available in "
-              << file.getName() << ".\n Available temperatures (K):";
-    for (const auto &t: temps) std::cout << ' ' << t;
+    std::cout << "Error: temperature " << temperature << " K is not available in " << file.getName()
+              << ".\n Available temperatures (K):";
+    for (const auto &t: temps)
+        std::cout << ' ' << t;
     std::cout << '\n';
     exit(1);
 }
@@ -321,23 +318,21 @@ inline auto get_force_constants_from_h5(const H5Easy::File &file, const int orde
         }
         path_values = "/ForceConstants/" + str_ordername + "_temperature_dependent/force_constant_values";
         if (!file.exist(path_values)) {
-            std::cout << "Error: file " << file.getName()
-                      << " does not contain temperature-dependent force constants ("
+            std::cout << "Error: file " << file.getName() << " does not contain temperature-dependent force constants ("
                       << path_values << ").\n";
             exit(1);
         }
         const auto dset = file.getDataSet(path_values);
         const auto dims = dset.getDimensions();
         if (dims.size() != 2 || static_cast<size_t>(temperature_index) >= dims[0]) {
-            std::cout << "Error: temperature index " << temperature_index
-                      << " is out of range for dataset " << path_values << " in file "
-                      << file.getName() << ".\n";
+            std::cout << "Error: temperature index " << temperature_index << " is out of range for dataset "
+                      << path_values << " in file " << file.getName() << ".\n";
             exit(1);
         }
         if (dims[1] != static_cast<size_t>(atom_indices.rows())) {
-            std::cout << "Error: dataset " << path_values << " in file " << file.getName()
-                      << " has " << dims[1] << " rows per temperature but the shared index datasets have "
-                      << atom_indices.rows() << " rows.\n";
+            std::cout << "Error: dataset " << path_values << " in file " << file.getName() << " has " << dims[1]
+                      << " rows per temperature but the shared index datasets have " << atom_indices.rows()
+                      << " rows.\n";
             exit(1);
         }
         fcs_values.resize(static_cast<Eigen::Index>(dims[1]));
@@ -352,8 +347,7 @@ inline auto get_force_constants_from_h5(const H5Easy::File &file, const int orde
     std::string unit_shift, unit_fc;
     const auto factor_shift =
         h5_length_factor_to_bohr(file, "/ForceConstants/" + str_ordername + "/shift_vectors", &unit_shift);
-    const auto factor_fc =
-        h5_fc_factor_to_ry_bohr(file, path_values, order, &unit_fc);
+    const auto factor_fc = h5_fc_factor_to_ry_bohr(file, path_values, order, &unit_fc);
     // Reject partially annotated files when a non-default unit is declared:
     // one dataset in a non-default unit while its sibling carries no unit
     // attribute is ambiguous, most likely a hand-edited or third-party file.

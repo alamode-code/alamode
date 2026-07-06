@@ -29,8 +29,8 @@ Selfenergy::~Selfenergy()
 {}
 
 void Selfenergy::setup_selfenergy(const unsigned int ns_in, const double epsilon_in, const bool classical_in,
-                                  const std::vector<SymmetryOperation> &symmlist_in,
-                                  AnharmonicCore &anharmonic_core_in, const int my_rank_in, const int nprocs_in)
+                                  const std::vector<SymmetryOperation> &symmlist_in, AnharmonicCore &anharmonic_core_in,
+                                  const int my_rank_in, const int nprocs_in)
 {
     ns = ns_in;
     epsilon = epsilon_in;

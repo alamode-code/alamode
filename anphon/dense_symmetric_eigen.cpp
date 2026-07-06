@@ -15,8 +15,8 @@
 
 extern "C"
 {
-    void dsyev_(const char *jobz, const char *uplo, int *n, double *a, int *lda, double *w, double *work,
-                int *lwork, int *info);
+    void dsyev_(const char *jobz, const char *uplo, int *n, double *a, int *lda, double *w, double *work, int *lwork,
+                int *info);
 }
 
 using namespace PHON_NS;
@@ -24,7 +24,7 @@ using namespace PHON_NS;
 void PHON_NS::solve_dense_symmetric(int n, std::vector<double> &A, std::vector<double> &w, int num_lowest)
 {
     // LAPACK backend: full spectrum regardless of num_lowest (see header).
-    (void) num_lowest;
+    (void)num_lowest;
 
     if (n <= 0) return;
     w.resize(n);
@@ -40,7 +40,6 @@ void PHON_NS::solve_dense_symmetric(int n, std::vector<double> &A, std::vector<d
     std::vector<double> work(lwork);
     dsyev_("V", "L", &n, A.data(), &n, w.data(), work.data(), &lwork, &info);
     if (info != 0) {
-        exit("solve_dense_symmetric",
-             ("dsyev failed with info = " + std::to_string(info)).c_str());
+        exit("solve_dense_symmetric", ("dsyev failed with info = " + std::to_string(info)).c_str());
     }
 }

@@ -56,8 +56,7 @@ NB_MODULE(_alm, m)
         .def_rw("tolerance_iteration", &OptimizerControl::tolerance_iteration)
         .def_rw("output_frequency", &OptimizerControl::output_frequency)
         .def_rw("standardize", &OptimizerControl::standardize)
-        .def_rw("displacement_normalization_factor",
-                &OptimizerControl::displacement_normalization_factor)
+        .def_rw("displacement_normalization_factor", &OptimizerControl::displacement_normalization_factor)
         .def_rw("debiase_after_l1opt", &OptimizerControl::debiase_after_l1opt)
         .def_rw("l1_solver", &OptimizerControl::l1_solver)
         .def_rw("efit_weight", &OptimizerControl::efit_weight)
@@ -95,92 +94,108 @@ NB_MODULE(_alm, m)
         .def("get_fcs_unit_output", &ALM::get_fcs_unit_output)
 
         // -- cell --------------------------------------------------------------
-        .def("set_cell",
-             [](ALM &self, f64in lavec, f64in xcoord, i32in kind) {
-                 if (lavec.ndim() != 2 || lavec.shape(0) != 3 || lavec.shape(1) != 3)
-                     throw std::invalid_argument("set_cell: lavec must have shape (3, 3)");
-                 if (xcoord.ndim() != 2 || xcoord.shape(1) != 3)
-                     throw std::invalid_argument("set_cell: xcoord must have shape (nat, 3)");
-                 if (kind.ndim() != 1 || kind.shape(0) != xcoord.shape(0))
-                     throw std::invalid_argument("set_cell: kind must have shape (nat,)");
-                 auto nat = static_cast<std::size_t>(xcoord.shape(0));
-                 const auto *lv = reinterpret_cast<const double(*)[3]>(lavec.data());
-                 const auto *xc = reinterpret_cast<const double(*)[3]>(xcoord.data());
-                 self.set_cell(nat, lv, xc, kind.data());
-             },
-             nb::arg("lavec").noconvert(), nb::arg("xcoord").noconvert(), nb::arg("kind").noconvert())
+        .def(
+            "set_cell",
+            [](ALM &self, f64in lavec, f64in xcoord, i32in kind) {
+                if (lavec.ndim() != 2 || lavec.shape(0) != 3 || lavec.shape(1) != 3)
+                    throw std::invalid_argument("set_cell: lavec must have shape (3, 3)");
+                if (xcoord.ndim() != 2 || xcoord.shape(1) != 3)
+                    throw std::invalid_argument("set_cell: xcoord must have shape (nat, 3)");
+                if (kind.ndim() != 1 || kind.shape(0) != xcoord.shape(0))
+                    throw std::invalid_argument("set_cell: kind must have shape (nat,)");
+                auto nat = static_cast<std::size_t>(xcoord.shape(0));
+                const auto *lv = reinterpret_cast<const double(*)[3]>(lavec.data());
+                const auto *xc = reinterpret_cast<const double(*)[3]>(xcoord.data());
+                self.set_cell(nat, lv, xc, kind.data());
+            },
+            nb::arg("lavec").noconvert(),
+            nb::arg("xcoord").noconvert(),
+            nb::arg("kind").noconvert())
         .def("set_element_names", &ALM::set_element_names)
-        .def("set_transformation_matrices",
-             [](ALM &self, f64in tsuper, f64in tprim, int autoset_primcell) {
-                 for (auto *a : {&tsuper, &tprim})
-                     if (a->ndim() != 2 || a->shape(0) != 3 || a->shape(1) != 3)
-                         throw std::invalid_argument("set_transformation_matrices: matrices must be (3,3)");
-                 const auto *ts = reinterpret_cast<const double(*)[3]>(tsuper.data());
-                 const auto *tp = reinterpret_cast<const double(*)[3]>(tprim.data());
-                 self.set_transformation_matrices(ts, tp, autoset_primcell);
-             },
-             nb::arg("transmat_to_super").noconvert(), nb::arg("transmat_to_prim").noconvert(),
-             nb::arg("autoset_primcell") = 0)
-        .def("set_magnetic_params",
-             [](ALM &self, f64in magmom, bool lspin, int noncollinear, int trev_sym_mag,
-                const std::string &str_magmom) {
-                 if (magmom.ndim() != 2 || magmom.shape(1) != 3)
-                     throw std::invalid_argument("set_magnetic_params: magmom must be (nat, 3)");
-                 const std::size_t nat = magmom.shape(0);
-                 const auto *mm = reinterpret_cast<const double(*)[3]>(magmom.data());
-                 self.set_magnetic_params(nat, mm, lspin, noncollinear, trev_sym_mag, str_magmom);
-             },
-             nb::arg("magmom").noconvert(), nb::arg("lspin") = false, nb::arg("noncollinear") = 0,
-             nb::arg("trev_sym_mag") = 1, nb::arg("str_magmom") = "")
-        .def("set_periodicity",
-             [](ALM &self, i32in is_periodic) {
-                 if (is_periodic.ndim() != 1 || is_periodic.shape(0) != 3)
-                     throw std::invalid_argument("set_periodicity: expected shape (3,)");
-                 int p[3] = {is_periodic.data()[0], is_periodic.data()[1], is_periodic.data()[2]};
-                 self.set_periodicity(p);
-             },
-             nb::arg("is_periodic").noconvert())
+        .def(
+            "set_transformation_matrices",
+            [](ALM &self, f64in tsuper, f64in tprim, int autoset_primcell) {
+                for (auto *a: {&tsuper, &tprim})
+                    if (a->ndim() != 2 || a->shape(0) != 3 || a->shape(1) != 3)
+                        throw std::invalid_argument("set_transformation_matrices: matrices must be (3,3)");
+                const auto *ts = reinterpret_cast<const double(*)[3]>(tsuper.data());
+                const auto *tp = reinterpret_cast<const double(*)[3]>(tprim.data());
+                self.set_transformation_matrices(ts, tp, autoset_primcell);
+            },
+            nb::arg("transmat_to_super").noconvert(),
+            nb::arg("transmat_to_prim").noconvert(),
+            nb::arg("autoset_primcell") = 0)
+        .def(
+            "set_magnetic_params",
+            [](ALM &self, f64in magmom, bool lspin, int noncollinear, int trev_sym_mag, const std::string &str_magmom) {
+                if (magmom.ndim() != 2 || magmom.shape(1) != 3)
+                    throw std::invalid_argument("set_magnetic_params: magmom must be (nat, 3)");
+                const std::size_t nat = magmom.shape(0);
+                const auto *mm = reinterpret_cast<const double(*)[3]>(magmom.data());
+                self.set_magnetic_params(nat, mm, lspin, noncollinear, trev_sym_mag, str_magmom);
+            },
+            nb::arg("magmom").noconvert(),
+            nb::arg("lspin") = false,
+            nb::arg("noncollinear") = 0,
+            nb::arg("trev_sym_mag") = 1,
+            nb::arg("str_magmom") = "")
+        .def(
+            "set_periodicity",
+            [](ALM &self, i32in is_periodic) {
+                if (is_periodic.ndim() != 1 || is_periodic.shape(0) != 3)
+                    throw std::invalid_argument("set_periodicity: expected shape (3,)");
+                int p[3] = {is_periodic.data()[0], is_periodic.data()[1], is_periodic.data()[2]};
+                self.set_periodicity(p);
+            },
+            nb::arg("is_periodic").noconvert())
 
         // -- training / validation data ---------------------------------------
-        .def("set_u_train",
-             [](ALM &self, f64in u) {
-                 if (u.ndim() != 2) throw std::invalid_argument("set_u_train: u must be 2-D (nsnap, 3*nat)");
-                 const auto nrow = static_cast<std::size_t>(u.shape(0));
-                 const auto ncol = static_cast<std::size_t>(u.shape(1));
-                 const double *d = u.data();
-                 std::vector<std::vector<double>> uv(nrow, std::vector<double>(ncol));
-                 for (std::size_t i = 0; i < nrow; ++i)
-                     for (std::size_t j = 0; j < ncol; ++j) uv[i][j] = d[i * ncol + j];
-                 self.set_u_train(uv);
-             },
-             nb::arg("u").noconvert())
-        .def("set_f_train",
-             [](ALM &self, f64in f) {
-                 if (f.ndim() != 2) throw std::invalid_argument("set_f_train: f must be 2-D (nsnap, 3*nat)");
-                 const auto nrow = static_cast<std::size_t>(f.shape(0));
-                 const auto ncol = static_cast<std::size_t>(f.shape(1));
-                 const double *d = f.data();
-                 std::vector<std::vector<double>> fv(nrow, std::vector<double>(ncol));
-                 for (std::size_t i = 0; i < nrow; ++i)
-                     for (std::size_t j = 0; j < ncol; ++j) fv[i][j] = d[i * ncol + j];
-                 self.set_f_train(fv);
-             },
-             nb::arg("f").noconvert())
-        .def("set_validation_data",
-             [](ALM &self, f64in u, f64in f) {
-                 auto to_vv = [](const f64in &a) {
-                     if (a.ndim() != 2) throw std::invalid_argument("set_validation_data: u/f must be 2-D");
-                     const auto nr = static_cast<std::size_t>(a.shape(0));
-                     const auto nc = static_cast<std::size_t>(a.shape(1));
-                     const double *d = a.data();
-                     std::vector<std::vector<double>> v(nr, std::vector<double>(nc));
-                     for (std::size_t i = 0; i < nr; ++i)
-                         for (std::size_t j = 0; j < nc; ++j) v[i][j] = d[i * nc + j];
-                     return v;
-                 };
-                 self.set_validation_data(to_vv(u), to_vv(f));
-             },
-             nb::arg("u").noconvert(), nb::arg("f").noconvert())
+        .def(
+            "set_u_train",
+            [](ALM &self, f64in u) {
+                if (u.ndim() != 2) throw std::invalid_argument("set_u_train: u must be 2-D (nsnap, 3*nat)");
+                const auto nrow = static_cast<std::size_t>(u.shape(0));
+                const auto ncol = static_cast<std::size_t>(u.shape(1));
+                const double *d = u.data();
+                std::vector<std::vector<double>> uv(nrow, std::vector<double>(ncol));
+                for (std::size_t i = 0; i < nrow; ++i)
+                    for (std::size_t j = 0; j < ncol; ++j)
+                        uv[i][j] = d[i * ncol + j];
+                self.set_u_train(uv);
+            },
+            nb::arg("u").noconvert())
+        .def(
+            "set_f_train",
+            [](ALM &self, f64in f) {
+                if (f.ndim() != 2) throw std::invalid_argument("set_f_train: f must be 2-D (nsnap, 3*nat)");
+                const auto nrow = static_cast<std::size_t>(f.shape(0));
+                const auto ncol = static_cast<std::size_t>(f.shape(1));
+                const double *d = f.data();
+                std::vector<std::vector<double>> fv(nrow, std::vector<double>(ncol));
+                for (std::size_t i = 0; i < nrow; ++i)
+                    for (std::size_t j = 0; j < ncol; ++j)
+                        fv[i][j] = d[i * ncol + j];
+                self.set_f_train(fv);
+            },
+            nb::arg("f").noconvert())
+        .def(
+            "set_validation_data",
+            [](ALM &self, f64in u, f64in f) {
+                auto to_vv = [](const f64in &a) {
+                    if (a.ndim() != 2) throw std::invalid_argument("set_validation_data: u/f must be 2-D");
+                    const auto nr = static_cast<std::size_t>(a.shape(0));
+                    const auto nc = static_cast<std::size_t>(a.shape(1));
+                    const double *d = a.data();
+                    std::vector<std::vector<double>> v(nr, std::vector<double>(nc));
+                    for (std::size_t i = 0; i < nr; ++i)
+                        for (std::size_t j = 0; j < nc; ++j)
+                            v[i][j] = d[i * nc + j];
+                    return v;
+                };
+                self.set_validation_data(to_vv(u), to_vv(f));
+            },
+            nb::arg("u").noconvert(),
+            nb::arg("f").noconvert())
         .def("get_u_train", &ALM::get_u_train)
         .def("get_f_train", &ALM::get_f_train)
         .def("get_number_of_data", &ALM::get_number_of_data)
@@ -188,13 +203,16 @@ NB_MODULE(_alm, m)
         .def("get_number_of_free_parameters", &ALM::get_number_of_free_parameters)
 
         // -- model definition --------------------------------------------------
-        .def("define",
-             [](ALM &self, int maxorder, std::size_t nkd, i32in nbody_include, f64in cutoff_radii) {
-                 const double *cut = (cutoff_radii.size() > 0) ? cutoff_radii.data() : nullptr;
-                 self.define(maxorder, nkd, nbody_include.data(), cut);
-             },
-             nb::arg("maxorder"), nb::arg("nkd"), nb::arg("nbody_include").noconvert(),
-             nb::arg("cutoff_radii").noconvert())
+        .def(
+            "define",
+            [](ALM &self, int maxorder, std::size_t nkd, i32in nbody_include, f64in cutoff_radii) {
+                const double *cut = (cutoff_radii.size() > 0) ? cutoff_radii.data() : nullptr;
+                self.define(maxorder, nkd, nbody_include.data(), cut);
+            },
+            nb::arg("maxorder"),
+            nb::arg("nkd"),
+            nb::arg("nbody_include").noconvert(),
+            nb::arg("cutoff_radii").noconvert())
         .def("set_forceconstant_basis", &ALM::set_forceconstant_basis)
         .def("get_forceconstant_basis", &ALM::get_forceconstant_basis)
         .def("init_fc_table", &ALM::init_fc_table)
@@ -205,17 +223,16 @@ NB_MODULE(_alm, m)
         .def("set_constraint_mode", &ALM::set_constraint_mode)
         .def("set_algebraic_constraint", &ALM::set_algebraic_constraint)
         .def("set_rotation_axis", &ALM::set_rotation_axis)
-        .def("set_fc_file", &ALM::set_fc_file)  // e.g. FC2FIX: set_fc_file(2, "supercell.h5")
+        .def("set_fc_file", &ALM::set_fc_file) // e.g. FC2FIX: set_fc_file(2, "supercell.h5")
         .def("set_fc_fix", &ALM::set_fc_fix)
         .def("set_forceconstants_to_fix",
-             [](ALM &self, const std::vector<std::vector<int>> &intpair_fix,
-                const std::vector<double> &values_fix) {
+             [](ALM &self, const std::vector<std::vector<int>> &intpair_fix, const std::vector<double> &values_fix) {
                  if (intpair_fix.empty())
                      throw std::invalid_argument("set_forceconstants_to_fix: intpair_fix is empty");
                  if (values_fix.size() != intpair_fix.size())
                      throw std::invalid_argument("set_forceconstants_to_fix: values_fix and "
                                                  "intpair_fix must have the same length");
-                 for (const auto &row : intpair_fix)
+                 for (const auto &row: intpair_fix)
                      if (row.size() < 2)
                          throw std::invalid_argument("set_forceconstants_to_fix: each intpair row "
                                                      "must have >= 2 flattened indices");
@@ -232,8 +249,7 @@ NB_MODULE(_alm, m)
         .def("run_suggest", &ALM::run_suggest, nb::call_guard<nb::gil_scoped_release>())
 
         // -- generic input dict ------------------------------------------------
-        .def("set_input_vars",
-             [](ALM &self, const std::map<std::string, std::string> &d) { self.set_input_vars(d); })
+        .def("set_input_vars", [](ALM &self, const std::map<std::string, std::string> &d) { self.set_input_vars(d); })
         .def("get_input_var", &ALM::get_input_var)
 
         // -- FC element counts -------------------------------------------------
@@ -264,91 +280,109 @@ NB_MODULE(_alm, m)
              })
 
         // -- get / set FCs -----------------------------------------------------
-        .def("get_fc_origin",
-             [](ALM &self, int fc_order, int permutation) {
-                 const std::size_t n = self.get_number_of_fc_origin(fc_order, permutation);
-                 double *vp = nullptr; int *ip = nullptr;
-                 auto vals = make_owned<double>(n, &vp);
-                 auto idx = make_owned<int>(n * (fc_order + 1), &ip);
-                 self.get_fc_origin(vp, ip, fc_order, permutation);
-                 return nb::make_tuple(vals, idx);
-             },
-             nb::arg("fc_order"), nb::arg("permutation") = 1)
-        .def("get_fc_irreducible",
-             [](ALM &self, int fc_order) {
-                 const std::size_t n = self.get_number_of_irred_fc_elements(fc_order);
-                 double *vp = nullptr; int *ip = nullptr;
-                 auto vals = make_owned<double>(n, &vp);
-                 auto idx = make_owned<int>(n * (fc_order + 1), &ip);
-                 self.get_fc_irreducible(vp, ip, fc_order);
-                 return nb::make_tuple(vals, idx);
-             },
-             nb::arg("fc_order"))
-        .def("get_fc_all",
-             [](ALM &self, int fc_order, int permutation) {
-                 // map_p2s has shape (nat_primitive, ntran); get_fc_all replicates the origin set
-                 // over the ntran pure translations -> use the inner dimension.
-                 const auto &map_p2s = self.get_atom_mapping_by_pure_translations();
-                 const std::size_t ntrans =
-                     (map_p2s.empty() || map_p2s[0].empty()) ? 0 : map_p2s[0].size();
-                 const std::size_t n = self.get_number_of_fc_origin(fc_order, permutation) * ntrans;
-                 double *vp = nullptr; int *ip = nullptr;
-                 auto vals = make_owned<double>(n, &vp);
-                 auto idx = make_owned<int>(n * (fc_order + 1), &ip);
-                 self.get_fc_all(vp, ip, fc_order, permutation);
-                 return nb::make_tuple(vals, idx);
-             },
-             nb::arg("fc_order"), nb::arg("permutation") = 1)
-        .def("set_fc",
-             [](ALM &self, f64in fc_in) {
-                 const std::size_t n = self.get_number_of_free_parameters();
-                 if (static_cast<std::size_t>(fc_in.size()) != n)
-                     throw std::invalid_argument("set_fc: expected " + std::to_string(n) +
-                                                 " free FCs, got " + std::to_string(fc_in.size()));
-                 std::vector<double> buf(fc_in.data(), fc_in.data() + fc_in.size());
-                 self.set_fc(buf.data());
-             },
-             nb::arg("fc_in").noconvert())
+        .def(
+            "get_fc_origin",
+            [](ALM &self, int fc_order, int permutation) {
+                const std::size_t n = self.get_number_of_fc_origin(fc_order, permutation);
+                double *vp = nullptr;
+                int *ip = nullptr;
+                auto vals = make_owned<double>(n, &vp);
+                auto idx = make_owned<int>(n * (fc_order + 1), &ip);
+                self.get_fc_origin(vp, ip, fc_order, permutation);
+                return nb::make_tuple(vals, idx);
+            },
+            nb::arg("fc_order"),
+            nb::arg("permutation") = 1)
+        .def(
+            "get_fc_irreducible",
+            [](ALM &self, int fc_order) {
+                const std::size_t n = self.get_number_of_irred_fc_elements(fc_order);
+                double *vp = nullptr;
+                int *ip = nullptr;
+                auto vals = make_owned<double>(n, &vp);
+                auto idx = make_owned<int>(n * (fc_order + 1), &ip);
+                self.get_fc_irreducible(vp, ip, fc_order);
+                return nb::make_tuple(vals, idx);
+            },
+            nb::arg("fc_order"))
+        .def(
+            "get_fc_all",
+            [](ALM &self, int fc_order, int permutation) {
+                // map_p2s has shape (nat_primitive, ntran); get_fc_all replicates the origin set
+                // over the ntran pure translations -> use the inner dimension.
+                const auto &map_p2s = self.get_atom_mapping_by_pure_translations();
+                const std::size_t ntrans = (map_p2s.empty() || map_p2s[0].empty()) ? 0 : map_p2s[0].size();
+                const std::size_t n = self.get_number_of_fc_origin(fc_order, permutation) * ntrans;
+                double *vp = nullptr;
+                int *ip = nullptr;
+                auto vals = make_owned<double>(n, &vp);
+                auto idx = make_owned<int>(n * (fc_order + 1), &ip);
+                self.get_fc_all(vp, ip, fc_order, permutation);
+                return nb::make_tuple(vals, idx);
+            },
+            nb::arg("fc_order"),
+            nb::arg("permutation") = 1)
+        .def(
+            "set_fc",
+            [](ALM &self, f64in fc_in) {
+                const std::size_t n = self.get_number_of_free_parameters();
+                if (static_cast<std::size_t>(fc_in.size()) != n)
+                    throw std::invalid_argument("set_fc: expected " + std::to_string(n) + " free FCs, got " +
+                                                std::to_string(fc_in.size()));
+                std::vector<double> buf(fc_in.data(), fc_in.data() + fc_in.size());
+                self.set_fc(buf.data());
+            },
+            nb::arg("fc_in").noconvert())
         .def("set_fc_zero_threshold", &ALM::set_fc_zero_threshold)
 
         // -- displacement patterns (suggest mode) -----------------------------
         .def("get_number_of_displacement_patterns", &ALM::get_number_of_displacement_patterns)
-        .def("get_number_of_displaced_atoms",
-             [](ALM &self, int fc_order) {
-                 const std::size_t npat = self.get_number_of_displacement_patterns(fc_order);
-                 int *np_ = nullptr;
-                 auto nums = make_owned<int>(npat, &np_);
-                 self.get_number_of_displaced_atoms(np_, fc_order);
-                 return nums;
-             },
-             nb::arg("fc_order"))
-        .def("get_displacement_patterns",
-             [](ALM &self, int fc_order) {
-                 const std::size_t npat = self.get_number_of_displacement_patterns(fc_order);
-                 std::vector<int> nums(npat);
-                 self.get_number_of_displaced_atoms(nums.data(), fc_order);
-                 std::size_t tot = 0;
-                 for (auto v : nums) tot += static_cast<std::size_t>(v);
-                 int *ai = nullptr; double *dp = nullptr;
-                 auto atom_indices = make_owned<int>(tot, &ai);
-                 auto disp = make_owned<double>(tot * 3, &dp);
-                 const int nbasis = self.get_displacement_patterns(ai, dp, fc_order);
-                 return nb::make_tuple(atom_indices, disp, nbasis);
-             },
-             nb::arg("fc_order"))
+        .def(
+            "get_number_of_displaced_atoms",
+            [](ALM &self, int fc_order) {
+                const std::size_t npat = self.get_number_of_displacement_patterns(fc_order);
+                int *np_ = nullptr;
+                auto nums = make_owned<int>(npat, &np_);
+                self.get_number_of_displaced_atoms(np_, fc_order);
+                return nums;
+            },
+            nb::arg("fc_order"))
+        .def(
+            "get_displacement_patterns",
+            [](ALM &self, int fc_order) {
+                const std::size_t npat = self.get_number_of_displacement_patterns(fc_order);
+                std::vector<int> nums(npat);
+                self.get_number_of_displaced_atoms(nums.data(), fc_order);
+                std::size_t tot = 0;
+                for (auto v: nums)
+                    tot += static_cast<std::size_t>(v);
+                int *ai = nullptr;
+                double *dp = nullptr;
+                auto atom_indices = make_owned<int>(tot, &ai);
+                auto disp = make_owned<double>(tot * 3, &dp);
+                const int nbasis = self.get_displacement_patterns(ai, dp, fc_order);
+                return nb::make_tuple(atom_indices, disp, nbasis);
+            },
+            nb::arg("fc_order"))
 
         // -- save --------------------------------------------------------------
         .def("set_fcs_save_flag", &ALM::set_fcs_save_flag)
-        .def("save_fc",
-             [](ALM &self, const std::string &filename, const std::string &fc_format,
-                int maxorder_to_save, const std::string &fc_unit) {
-                 if (maxorder_to_save < 0) maxorder_to_save = self.get_maxorder();
-                 // Applied on every call (including the default) so a previous
-                 // save with a non-default unit cannot leak into this one.
-                 self.set_fcs_unit_output(fc_unit);
-                 nb::gil_scoped_release rel;
-                 self.save_fc(filename, fc_format, maxorder_to_save);
-             },
-             nb::arg("filename"), nb::arg("fc_format") = "alamode", nb::arg("maxorder_to_save") = -1,
-             nb::arg("fc_unit") = "Ry/bohr");
+        .def(
+            "save_fc",
+            [](ALM &self,
+               const std::string &filename,
+               const std::string &fc_format,
+               int maxorder_to_save,
+               const std::string &fc_unit) {
+                if (maxorder_to_save < 0) maxorder_to_save = self.get_maxorder();
+                // Applied on every call (including the default) so a previous
+                // save with a non-default unit cannot leak into this one.
+                self.set_fcs_unit_output(fc_unit);
+                nb::gil_scoped_release rel;
+                self.save_fc(filename, fc_format, maxorder_to_save);
+            },
+            nb::arg("filename"),
+            nb::arg("fc_format") = "alamode",
+            nb::arg("maxorder_to_save") = -1,
+            nb::arg("fc_unit") = "Ry/bohr");
 }

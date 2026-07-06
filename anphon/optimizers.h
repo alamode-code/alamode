@@ -32,7 +32,10 @@ public:
     // Request re-initialization of any internal history before the next
     // update_state call (used when the structure is reset, e.g. at the start
     // of a new temperature point or after a divergence).
-    void reset() { initialize_flag = 1; }
+    void reset()
+    {
+        initialize_flag = 1;
+    }
 
 protected:
     int initialize_flag = 0; // flag to run initialization

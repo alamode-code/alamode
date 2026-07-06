@@ -11,9 +11,9 @@
 #include "input_parser.h"
 #include <Eigen/Core>
 #include <algorithm>
-#include <cmath>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -189,7 +189,7 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
     ifs_data.open(datfile_in.filename.c_str(), std::ios::in);
     if (!ifs_data) exit("parse_energies", "cannot open DFSET file for energy parsing");
 
-    std::vector<double> energy_all;  // one entry per original snapshot, in Rydberg
+    std::vector<double> energy_all; // one entry per original snapshot, in Rydberg
     std::string line;
     bool have_header = false;
     double pending_energy = 0.0;
@@ -201,16 +201,21 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
 
         if (line[first] == '#') {
             const auto pos = line.find("E_pot");
-            if (pos == std::string::npos) continue;  // unrelated comment
+            if (pos == std::string::npos) continue; // unrelated comment
             if (have_header) {
-                exit("parse_energies",
-                     "Two E_pot headers found before a snapshot's data block (exactly one E_pot per snapshot is required).");
+                exit(
+                    "parse_energies",
+                    "Two E_pot headers found before a snapshot's data block (exactly one E_pot per snapshot is required).");
             }
             double factor;
             if (line.find("(eV)", pos) != std::string::npos) factor = 1.0 / Ryd_in_eV;
-            else if (line.find("(Ry)", pos) != std::string::npos) factor = 1.0;
-            else if (line.find("(Ha)", pos) != std::string::npos) factor = 2.0;
-            else { exit("parse_energies", "E_pot present but unit (eV/Ry/Ha) not recognized in DFSET header."); }
+            else if (line.find("(Ry)", pos) != std::string::npos)
+                factor = 1.0;
+            else if (line.find("(Ha)", pos) != std::string::npos)
+                factor = 2.0;
+            else {
+                exit("parse_energies", "E_pot present but unit (eV/Ry/Ha) not recognized in DFSET header.");
+            }
             const auto colon = line.find(':', pos);
             if (colon == std::string::npos) exit("parse_energies", "Malformed E_pot header (missing ':').");
             std::istringstream iss(line.substr(colon + 1));
@@ -224,11 +229,11 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
 
         std::istringstream iss(line);
         double v;
-        while (iss >> v) ++ndata_tokens;
+        while (iss >> v)
+            ++ndata_tokens;
         while (ndata_tokens >= ntoken_per_snapshot) {
             if (!have_header) {
-                exit("parse_energies",
-                     "A snapshot has no parseable E_pot header (required when EFIT_WEIGHT>0).");
+                exit("parse_energies", "A snapshot has no parseable E_pot header (required when EFIT_WEIGHT>0).");
             }
             energy_all.push_back(pending_energy);
             have_header = false;
@@ -241,8 +246,7 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
     ifs_data.close();
 
     if (energy_all.size() != datfile_in.ndata) {
-        exit("parse_energies",
-             "Number of E_pot headers does not match NDATA; energy and force data are inconsistent.");
+        exit("parse_energies", "Number of E_pot headers does not match NDATA; energy and force data are inconsistent.");
     }
 
     auto idata = 0;
@@ -360,13 +364,37 @@ auto InputParser::parse_general_vars(ALM *alm) -> void
     std::string structure_file{};
     std::string format_pattern;
 
-    const std::vector<std::string> input_list{
-        "PREFIX",       "MODE",           "NAT",         "NKD",            "KD",          "PERIODIC",
-        "PRINTSYM",     "TOLERANCE",      "DBASIS",      "TRIMEVEN",       "VERBOSITY",   "MAGMOM",
-        "NONCOLLINEAR", "TREVSYM",        "HESSIAN",     "TOL_CONST",      "FCSYM_BASIS", "NMAXSAVE",
-        "FC3_SHENGBTE", "FC4_SHENGBTE",   "FC2_QEFC",    "FCS_ALAMODE",    "FC_ZERO_THR", "SUPERCELL",
-        "PRIMCELL",     "STRUCTURE_FILE", "COMPRESSION", "FORMAT_PATTERN", "LENGTH_UNIT", "FORCE_UNIT",
-        "FCS_UNIT_OUTPUT"};
+    const std::vector<std::string> input_list{"PREFIX",
+                                              "MODE",
+                                              "NAT",
+                                              "NKD",
+                                              "KD",
+                                              "PERIODIC",
+                                              "PRINTSYM",
+                                              "TOLERANCE",
+                                              "DBASIS",
+                                              "TRIMEVEN",
+                                              "VERBOSITY",
+                                              "MAGMOM",
+                                              "NONCOLLINEAR",
+                                              "TREVSYM",
+                                              "HESSIAN",
+                                              "TOL_CONST",
+                                              "FCSYM_BASIS",
+                                              "NMAXSAVE",
+                                              "FC3_SHENGBTE",
+                                              "FC4_SHENGBTE",
+                                              "FC2_QEFC",
+                                              "FCS_ALAMODE",
+                                              "FC_ZERO_THR",
+                                              "SUPERCELL",
+                                              "PRIMCELL",
+                                              "STRUCTURE_FILE",
+                                              "COMPRESSION",
+                                              "FORMAT_PATTERN",
+                                              "LENGTH_UNIT",
+                                              "FORCE_UNIT",
+                                              "FCS_UNIT_OUTPUT"};
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::map<std::string, std::string> general_var_dict;
 
@@ -1244,8 +1272,8 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
         const auto str_lower = boost::algorithm::to_lower_copy(str_sparsesolver);
 
         if (str_lower != "simplicialldlt" && str_lower != "sparseqr" && str_lower != "conjugategradient" &&
-            str_lower != "leastsquaresconjugategradient" && str_lower != "bicgstab" &&
-            str_lower != "suitesparseqr" && str_lower != "cholmod" && str_lower != "minres")
+            str_lower != "leastsquaresconjugategradient" && str_lower != "bicgstab" && str_lower != "suitesparseqr" &&
+            str_lower != "cholmod" && str_lower != "minres")
         {
             exit("parse_optimize_vars", "Unsupported SPARSESOLVER :", str_sparsesolver.c_str());
         }
@@ -1327,9 +1355,7 @@ auto InputParser::parse_optimize_vars(ALM *alm) -> void
     if (!optimize_var_dict["L1_SOLVER"].empty()) {
         auto str_l1_solver = optimize_var_dict["L1_SOLVER"];
         boost::to_lower(str_l1_solver);
-        if (str_l1_solver == "cd" || str_l1_solver == "coordinate-descent" ||
-            str_l1_solver == "coordinate_descent")
-        {
+        if (str_l1_solver == "cd" || str_l1_solver == "coordinate-descent" || str_l1_solver == "coordinate_descent") {
             optcontrol.l1_solver = 0;
         } else if (str_l1_solver == "fista") {
             optcontrol.l1_solver = 1;

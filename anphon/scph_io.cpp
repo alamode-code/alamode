@@ -167,8 +167,7 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
 
 ScphSettingsH5 ScphQhaCommon::build_scph_settings_h5(const std::string &mode_name, const unsigned int NT,
                                                      const unsigned int nonanalytic_in,
-                                                     const bool selfenergy_offdiagonal_in,
-                                                     const int relax_str_in) const
+                                                     const bool selfenergy_offdiagonal_in, const int relax_str_in) const
 {
     ScphSettingsH5 settings;
     settings.mode = mode_name;
@@ -214,8 +213,7 @@ ScphCellsH5 ScphQhaCommon::build_scph_cells_h5() const
 
 ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const *const *const *delta_dymat,
                                                const unsigned int NT, const KpointMeshUniform *kmesh_coarse_in,
-                                               MinimumDistList ***mindist_list_in,
-                                               const std::string &variant) const
+                                               MinimumDistList ***mindist_list_in, const std::string &variant) const
 {
     // Assemble the renormalized FC2 on the virtual supercell in the
     // alamode force-constant schema. The row enumeration is identical to
@@ -284,8 +282,7 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
                 const auto jat = js / 3;
                 const auto jcrd = js % 3;
 
-                const auto mass_factor =
-                    std::sqrt(system->get_mass_prim()[iat] * system->get_mass_prim()[jat]);
+                const auto mass_factor = std::sqrt(system->get_mass_prim()[iat] * system->get_mass_prim()[jat]);
                 const auto &shifts = mindist_list_in[iat][jat][icell].shift;
                 const auto nmulti = static_cast<double>(shifts.size());
 
@@ -304,10 +301,12 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
                     fc2.coord_indices(irow, 0) = static_cast<int>(icrd);
                     fc2.coord_indices(irow, 1) = static_cast<int>(jcrd);
 
-                    const Eigen::Vector3d tvec(static_cast<double>(shift.sx), static_cast<double>(shift.sy),
+                    const Eigen::Vector3d tvec(static_cast<double>(shift.sx),
+                                               static_cast<double>(shift.sy),
                                                static_cast<double>(shift.sz));
                     const Eigen::Vector3d relvec = lavec * tvec + xc.row(jat).transpose() - xc.row(iat).transpose();
-                    for (auto k = 0; k < 3; ++k) fc2.shift_vectors(irow, k) = relvec[k];
+                    for (auto k = 0; k < 3; ++k)
+                        fc2.shift_vectors(irow, k) = relvec[k];
 
                     fc2.base_values(irow) = base_val;
                     for (unsigned int iT = 0; iT < NT; ++iT) {
@@ -334,8 +333,7 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
                                         const std::string &variant,
                                         const std::complex<double> *const *const *const *delta_main,
                                         const std::complex<double> *const *const *const *delta_harm_renorm,
-                                        const std::vector<double> *v0,
-                                        const KpointMeshUniform *kmesh_coarse_in,
+                                        const std::vector<double> *v0, const KpointMeshUniform *kmesh_coarse_in,
                                         MinimumDistList ***mindist_list_in) const
 {
     const auto settings =
@@ -346,8 +344,7 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     // Empty convergence vectors mean "unknown" (legacy import) and are not
     // written; otherwise warn right away when something did not converge.
     const auto *conv_scph = converged_scph_temp.size() == NT ? &converged_scph_temp : nullptr;
-    const auto *conv_str =
-        (relax_str_in != 0 && converged_str_temp.size() == NT) ? &converged_str_temp : nullptr;
+    const auto *conv_str = (relax_str_in != 0 && converged_str_temp.size() == NT) ? &converged_str_temp : nullptr;
 
     const auto count_bad = [NT](const std::vector<unsigned char> *v) {
         if (!v) return 0U;
@@ -368,15 +365,13 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str);
 
     std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << filename;
-    std::cout << " : Unified " << mode_name
-              << " state (restart file + temperature-dependent FC2)\n";
+    std::cout << " : Unified " << mode_name << " state (restart file + temperature-dependent FC2)\n";
 }
 
 
-bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::string &mode_name,
-                                       const unsigned int NT, const unsigned int nonanalytic_in,
-                                       const bool selfenergy_offdiagonal_in, const int relax_str_in,
-                                       std::complex<double> ****delta_main,
+bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::string &mode_name, const unsigned int NT,
+                                       const unsigned int nonanalytic_in, const bool selfenergy_offdiagonal_in,
+                                       const int relax_str_in, std::complex<double> ****delta_main,
                                        std::complex<double> ****delta_harm_renorm, std::vector<double> *v0)
 {
     const auto ns = dynamical->neval;
@@ -398,8 +393,7 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
         io.check_convergence(settings.temperatures, input->allow_unconverged);
         io.load_dymat("delta", settings.temperatures, ns, kmesh_coarse->nk, delta_main);
         if (delta_harm_renorm) {
-            io.load_dymat("delta_harm_renorm", settings.temperatures, ns, kmesh_coarse->nk,
-                          delta_harm_renorm);
+            io.load_dymat("delta_harm_renorm", settings.temperatures, ns, kmesh_coarse->nk, delta_harm_renorm);
         }
         if (v0) {
             io.load_v0(settings.temperatures, *v0);

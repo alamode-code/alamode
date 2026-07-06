@@ -10,9 +10,9 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
 #include <vector>
-#include <Eigen/Dense>
 #include "kpoint.h"
 
 namespace PHON_NS
@@ -137,8 +137,8 @@ private:
     const DymatEigenValue &dymat_dos_;
     const System &system_;
     const Symmetry &symmetry_;
-    Integration &integration_;         // smearing settings and weight kernels
-    AnharmonicCore &anharmonic_core_;  // V3 evaluation
+    Integration &integration_;        // smearing settings and weight kernels
+    AnharmonicCore &anharmonic_core_; // V3 evaluation
     const int my_rank_;
     const int nprocs_;
 
@@ -163,7 +163,7 @@ private:
     };
 
     bool with_isotope;
-    const double *isotope_factor = nullptr; // per-species mass variance (set_isotope_channel)
+    const double *isotope_factor = nullptr;       // per-species mass variance (set_isotope_channel)
     std::vector<std::vector<IsotopeEntry>> L_iso; // [ikl * ns + s]
 
     void build_L_isotope();
