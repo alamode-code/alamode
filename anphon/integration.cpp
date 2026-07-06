@@ -25,7 +25,7 @@
 
 using namespace PHON_NS;
 
-Integration::Integration(PHON *phon) : Pointers(phon)
+Integration::Integration()
 {
     set_default_variables();
 }
@@ -52,12 +52,16 @@ void Integration::deallocate_variables()
     delete adaptive_sigma4;
 }
 
-void Integration::setup_integration()
+void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in,
+                                    const PhononVelocity *phonon_velocity_in,
+                                    const unsigned int ns_in, const Eigen::Matrix3d &lavec_p,
+                                    const Eigen::Matrix3d &rlavec_p, const int quartic_mode_in,
+                                    const int my_rank_in)
 {
     MPI_Bcast(&ismear, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (my_rank_in == 0) {
         std::cout << '\n';
 
         std::cout << " ================\n";
@@ -81,7 +85,7 @@ void Integration::setup_integration()
         }
         std::cout << '\n';
 
-        if (anharmonic_core->quartic_mode) {
+        if (quartic_mode_in) {
             std::cout << "  Additional settings for 4-phonon scattering rates:\n";
             if (ismear_4ph == -1) {
                 std::cout << "   Tetrahedron method (ISMEAR_4PH) is not implemented. Switch to adaptive smearing !\n";
@@ -101,7 +105,7 @@ void Integration::setup_integration()
         }
     }
 
-    prepare_adaptivesmearing();
+    prepare_adaptivesmearing(kmesh_dos_in, phonon_velocity_in, ns_in, lavec_p, rlavec_p);
 
     epsilon *= time_ry / Hz_to_kayser;     // Convert epsilon to a.u.
     epsilon_4ph *= time_ry / Hz_to_kayser; // Convert epsilon to a.u.
@@ -109,24 +113,24 @@ void Integration::setup_integration()
     MPI_Bcast(&epsilon_4ph, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
-void Integration::prepare_adaptivesmearing()
+void Integration::prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in,
+                                           const PhononVelocity *phonon_velocity_in, const unsigned int ns_in,
+                                           const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
 {
     if (ismear == 2) {
-        adaptive_sigma = new AdaptiveSmearingSigma(dos->kmesh_dos->nk, dynamical->neval, adaptive_factor);
-        adaptive_sigma->setup(phonon_velocity,
-                              dos->kmesh_dos,
-                              system->get_primcell().lattice_vector,
-                              system->get_primcell().reciprocal_lattice_vector);
+        adaptive_sigma = new AdaptiveSmearingSigma(kmesh_dos_in->nk, ns_in, adaptive_factor);
+        adaptive_sigma->setup(phonon_velocity_in, kmesh_dos_in, lavec_p, rlavec_p);
     }
 }
 
 void Integration::create_adaptive_sigma4(const unsigned int nk_in, const unsigned int ns_in,
-                                         const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &lavec_p,
-                                         const Eigen::Matrix3d &rlavec_p)
+                                         const KpointMeshUniform *kmesh_in,
+                                         const PhononVelocity *phonon_velocity_in,
+                                         const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
 {
     if (adaptive_sigma4) return;
     adaptive_sigma4 = new AdaptiveSmearingSigma(nk_in, ns_in, adaptive_factor);
-    adaptive_sigma4->setup(phonon_velocity, kmesh_in, lavec_p, rlavec_p);
+    adaptive_sigma4->setup(phonon_velocity_in, kmesh_in, lavec_p, rlavec_p);
 }
 
 void TetraNodes::setup()

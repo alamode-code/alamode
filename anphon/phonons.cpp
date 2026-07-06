@@ -111,7 +111,7 @@ void PHON::create_pointers()
     kpoint = new Kpoint(this);
     fcs_phonon = new Fcs_phonon(this);
     dynamical = new Dynamical(this);
-    integration = new Integration(this);
+    integration = new Integration();
     phonon_velocity = new PhononVelocity(this);
     thermodynamics = new Thermodynamics(this);
     anharmonic_core = new AnharmonicCore(this);
@@ -165,7 +165,10 @@ void PHON::setup_base() const
     dynamical->setup_dynamical();
     fcs_phonon->setup(mode);
     phonon_velocity->setup_velocity();
-    integration->setup_integration();
+    integration->setup_integration(dos->kmesh_dos, phonon_velocity, dynamical->neval,
+                                   system->get_primcell().lattice_vector,
+                                   system->get_primcell().reciprocal_lattice_vector,
+                                   anharmonic_core->quartic_mode, mympi->my_rank);
     dos->setup();
     thermodynamics->setup();
     anharmonic_core->setup();

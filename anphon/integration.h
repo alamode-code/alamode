@@ -12,13 +12,13 @@
 
 #include <vector>
 #include "constants.h"
-#include "fcs_phonon.h"
 #include "kpoint.h"
 #include "memory.h"
-#include "pointers.h"
 
 namespace PHON_NS
 {
+class PhononVelocity;
+
 struct tetra_pair
 {
     double e;
@@ -114,10 +114,13 @@ private:
     double dq[3][3];
 };
 
-class Integration: protected Pointers
+// Brillouin-zone integration kernels (tetrahedron / fixed and adaptive
+// smearing). No Pointers base: setup_integration receives its inputs from
+// the caller (PHON::setup_base); the parser fills the public settings.
+class Integration
 {
 public:
-    Integration(class PHON *);
+    Integration();
 
     ~Integration();
 
@@ -130,14 +133,17 @@ public:
     AdaptiveSmearingSigma *adaptive_sigma = nullptr;
     AdaptiveSmearingSigma *adaptive_sigma4 = nullptr;
 
-    void setup_integration();
+    void setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
+                           unsigned int ns_in, const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p,
+                           int quartic_mode_in, int my_rank_in);
 
     // Allocate and initialize the adaptive smearing table for the 4ph
     // channel on its (possibly coarser) mesh. Called from
     // Conductivity::setup_kappa_4ph; Integration owns the object and
     // deletes it in the destructor. No-op if already created.
     void create_adaptive_sigma4(unsigned int nk_in, unsigned int ns_in, const KpointMeshUniform *kmesh_in,
-                                const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p);
+                                const PhononVelocity *phonon_velocity_in, const Eigen::Matrix3d &lavec_p,
+                                const Eigen::Matrix3d &rlavec_p);
 
     double do_tetrahedron(const double *energy, const double *f, const unsigned int ntetra,
                           const unsigned int *const *tetras, const double e_ref);
@@ -155,7 +161,9 @@ private:
 
     void deallocate_variables();
 
-    void prepare_adaptivesmearing();
+    void prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in,
+                                  const PhononVelocity *phonon_velocity_in, unsigned int ns_in,
+                                  const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p);
 
     static inline double fij(double, double, double);
 

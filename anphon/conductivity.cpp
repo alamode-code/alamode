@@ -316,7 +316,7 @@ void Conductivity::setup_kappa_4ph()
         }
     }
 
-    integration->create_adaptive_sigma4(kmesh_4ph->nk, ns, kmesh_4ph,
+    integration->create_adaptive_sigma4(kmesh_4ph->nk, ns, kmesh_4ph, phonon_velocity,
                                         system->get_primcell().lattice_vector,
                                         system->get_primcell().reciprocal_lattice_vector);
 
