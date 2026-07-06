@@ -213,7 +213,7 @@ public:
                                  std::complex<double> ***) const;
 
     static void prepare_relative_vector(const std::vector<FcsArrayWithCell> &fcs_in, const int number_of_groups,
-                                        std::vector<double> *fcs_group, std::vector<RelativeVector> *&vec_out);
+                                        std::vector<double> *fcs_group, std::vector<RelativeVector> *vec_out);
 
     static void prepare_group_of_force_constants(const std::vector<FcsArrayWithCell> &fcs_in, int &number_of_groups,
                                                  std::vector<double> *&fcs_group_out);

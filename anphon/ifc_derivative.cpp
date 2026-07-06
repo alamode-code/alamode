@@ -223,8 +223,8 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
 
     std::vector<FcsArrayWithCell> delta_fcs;
 
-    std::complex<double> **mat_tmp;
-    allocate(mat_tmp, ns, ns);
+    NDArray<std::complex<double>, 2> mat_tmp;
+    mat_tmp.resize(ns, ns);
 
     MatrixXcd Dymat(ns, ns);
     MatrixXcd evec_tmp(ns, ns);
@@ -265,7 +265,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
         }
     }
 
-    deallocate(mat_tmp);
+    mat_tmp.clear();
 }
 
 void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_del_umn2,
@@ -290,8 +290,8 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
         int is1, is2;
         std::vector<FcsArrayWithCell> delta_fcs;
 
-        std::complex<double> **mat_tmp;
-        allocate(mat_tmp, ns, ns);
+        NDArray<std::complex<double>, 2> mat_tmp;
+        mat_tmp.resize(ns, ns);
 
         MatrixXcd Dymat(ns, ns);
         MatrixXcd evec_tmp(ns, ns);
@@ -328,7 +328,7 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
             }
         }
 
-        deallocate(mat_tmp);
+        mat_tmp.clear();
     }
 }
 
@@ -357,16 +357,16 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     }
 
     int ngroup_tmp;
-    double *invmass_v3_tmp;
-    int **evec_index_v3_tmp;
+    NDArray<double, 1> invmass_v3_tmp;
+    NDArray<int, 2> evec_index_v3_tmp;
     std::vector<double> *fcs_group_tmp;
-    std::vector<RelativeVector> *relvec_tmp;
+    NDArray<std::vector<RelativeVector>, 1> relvec_tmp;
 
     int i;
     int ixyz1, ixyz2;
 
-    double *invsqrt_mass_p;
-    allocate(invsqrt_mass_p, system_.get_primcell().number_of_atoms);
+    NDArray<double, 1> invsqrt_mass_p;
+    invsqrt_mass_p.resize(system_.get_primcell().number_of_atoms);
     for (i = 0; i < system_.get_primcell().number_of_atoms; ++i) {
         invsqrt_mass_p[i] = std::sqrt(1.0 / system_.get_mass_prim()[i]);
     }
@@ -413,9 +413,9 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                 continue;
             }
 
-            allocate(invmass_v3_tmp, ngroup_tmp);
-            allocate(evec_index_v3_tmp, ngroup_tmp, 3);
-            allocate(relvec_tmp, ngroup_tmp);
+            invmass_v3_tmp.resize(ngroup_tmp);
+            evec_index_v3_tmp.resize(ngroup_tmp, 3);
+            relvec_tmp.resize(ngroup_tmp);
 
             AnharmonicCore::prepare_relative_vector(delta_fcs, ngroup_tmp, fcs_group_tmp, relvec_tmp);
 
@@ -456,12 +456,12 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                                nprocs_);
 
             deallocate(fcs_group_tmp);
-            deallocate(invmass_v3_tmp);
-            deallocate(evec_index_v3_tmp);
-            deallocate(relvec_tmp);
+            invmass_v3_tmp.clear();
+            evec_index_v3_tmp.clear();
+            relvec_tmp.clear();
         }
     }
-    deallocate(invsqrt_mass_p);
+    invsqrt_mass_p.clear();
 }
 
 void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
@@ -874,8 +874,8 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
 
     std::fstream fin_strain_mode_coupling_kspace;
 
-    std::complex<double> ***del_v2_del_umn_alphamu;
-    allocate(del_v2_del_umn_alphamu, 9, nk, ns * ns);
+    NDArray<std::complex<double>, 3> del_v2_del_umn_alphamu;
+    del_v2_del_umn_alphamu.resize(9, nk, ns * ns);
 
     fin_strain_mode_coupling_kspace.open("B_array_kspace.txt");
 
@@ -911,7 +911,7 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
             }
         }
     }
-    deallocate(del_v2_del_umn_alphamu);
+    del_v2_del_umn_alphamu.clear();
 
     std::vector<int> is_acoustic(ns, 0);
 
@@ -962,10 +962,10 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
     Eigen::Matrix3d weight_sum;
     std::fstream fin_strain_force_coupling;
 
-    double **del_v1_del_umn_in_real_space;
-    double **del_v1_del_umn_in_real_space_symm;
-    allocate(del_v1_del_umn_in_real_space, 9, ns);
-    allocate(del_v1_del_umn_in_real_space_symm, 9, ns);
+    NDArray<double, 2> del_v1_del_umn_in_real_space;
+    NDArray<double, 2> del_v1_del_umn_in_real_space_symm;
+    del_v1_del_umn_in_real_space.resize(9, ns);
+    del_v1_del_umn_in_real_space_symm.resize(9, ns);
 
     fin_strain_force_coupling.open(strain_ifc_dir + "strain_force.in");
 
@@ -1082,8 +1082,8 @@ void DerivativeIFC::calculate_delv1_delumn_finite_difference(
         }
     }
 
-    deallocate(del_v1_del_umn_in_real_space);
-    deallocate(del_v1_del_umn_in_real_space_symm);
+    del_v1_del_umn_in_real_space.clear();
+    del_v1_del_umn_in_real_space_symm.clear();
 }
 
 void DerivativeIFC::calculate_delv2_delumn_finite_difference(
@@ -1102,8 +1102,8 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical_.neval;
 
-    int **symm_mapping_s;
-    int **inv_translation_mapping;
+    NDArray<int, 2> symm_mapping_s;
+    NDArray<int, 2> inv_translation_mapping;
 
     std::vector<FcsClassExtent> fc2_tmp;
 
@@ -1117,8 +1117,9 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     int isymm, imode;
     int index2;
 
-    std::complex<double> ***dymat_q, **dymat_tmp;
-    std::complex<double> ***dymat_new;
+    NDArray<std::complex<double>, 3> dymat_q;
+    NDArray<std::complex<double>, 2> dymat_tmp;
+    NDArray<std::complex<double>, 3> dymat_new;
 
     const auto nk1 = kmesh_coarse->nk_i[0];
     const auto nk2 = kmesh_coarse->nk_i[1];
@@ -1138,19 +1139,19 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     double smag_tmp, weight_tmp;
     std::string mode_tmp, filename_tmp;
 
-    double ****dphi2_dumn_realspace_in;
-    double ****dphi2_dumn_realspace_symm;
+    NDArray<double, 4> dphi2_dumn_realspace_in;
+    NDArray<double, 4> dphi2_dumn_realspace_symm;
     MatrixXd dphi2_dumn_realspace_tmp(natmin3, nat3);
     Matrix3i exist_in;
     Matrix3d weight_sum;
-    int ****count_tmp;
+    NDArray<int, 4> count_tmp;
 
-    allocate(dphi2_dumn_realspace_in, 3, 3, natmin3, nat3);
-    allocate(dphi2_dumn_realspace_symm, 3, 3, natmin3, nat3);
-    allocate(count_tmp, 3, 3, natmin3, nat3);
+    dphi2_dumn_realspace_in.resize(3, 3, natmin3, nat3);
+    dphi2_dumn_realspace_symm.resize(3, 3, natmin3, nat3);
+    count_tmp.resize(3, 3, natmin3, nat3);
 
-    std::complex<double> ***del_v2_strain_from_cubic_alphamu;
-    allocate(del_v2_strain_from_cubic_alphamu, 9, nk, ns * ns);
+    NDArray<std::complex<double>, 3> del_v2_strain_from_cubic_alphamu;
+    del_v2_strain_from_cubic_alphamu.resize(9, nk, ns * ns);
 
     exist_in.setZero();
     weight_sum.setZero();
@@ -1274,12 +1275,12 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
         }
     }
 
-    allocate(symm_mapping_s, symmetry_.SymmListWithMap_ref.size(), nat);
+    symm_mapping_s.resize(symmetry_.SymmListWithMap_ref.size(), nat);
     make_supercell_mapping_by_symmetry_operations(symm_mapping_s);
 
     const auto ntran = system_.get_map_p2s(0)[0].size();
 
-    allocate(inv_translation_mapping, ntran, ntran);
+    inv_translation_mapping.resize(ntran, ntran);
     make_inverse_translation_mapping(inv_translation_mapping);
 
     if (renorm_3to2nd == 2) {
@@ -1424,12 +1425,12 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
         }
     }
 
-    deallocate(symm_mapping_s);
-    deallocate(inv_translation_mapping);
+    symm_mapping_s.clear();
+    inv_translation_mapping.clear();
 
-    allocate(dymat_q, ns, ns, nk_interpolate);
-    allocate(dymat_new, ns, ns, nk_interpolate);
-    allocate(dymat_tmp, ns, ns);
+    dymat_q.resize(ns, ns, nk_interpolate);
+    dymat_new.resize(ns, ns, nk_interpolate);
+    dymat_tmp.resize(ns, ns);
 
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
@@ -1491,8 +1492,8 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
 
     const auto complex_zero = std::complex<double>(0.0, 0.0);
 
-    int *is_acoustic;
-    allocate(is_acoustic, ns);
+    NDArray<int, 1> is_acoustic;
+    is_acoustic.resize(ns);
 
     for (is = 0; is < ns; is++) {
         if (std::fabs(omega2_harmonic[0][is]) < threshold_acoustic) {
@@ -1520,15 +1521,15 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
         }
     }
 
-    deallocate(dphi2_dumn_realspace_symm);
-    deallocate(dphi2_dumn_realspace_in);
-    deallocate(count_tmp);
+    dphi2_dumn_realspace_symm.clear();
+    dphi2_dumn_realspace_in.clear();
+    count_tmp.clear();
 
-    deallocate(dymat_q);
-    deallocate(dymat_tmp);
-    deallocate(dymat_new);
+    dymat_q.clear();
+    dymat_tmp.clear();
+    dymat_new.clear();
 
-    deallocate(is_acoustic);
+    is_acoustic.clear();
 }
 
 void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const
@@ -1592,8 +1593,8 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
         }
     }
 
-    int *map_tmp;
-    allocate(map_tmp, nat);
+    NDArray<int, 1> map_tmp;
+    map_tmp.resize(nat);
 
     for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
         for (iat1 = 0; iat1 < nat; iat1++) {
@@ -1610,7 +1611,7 @@ void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_map
         }
     }
 
-    deallocate(map_tmp);
+    map_tmp.clear();
 }
 
 void DerivativeIFC::make_inverse_translation_mapping(int **inv_translation_mapping) const

@@ -116,7 +116,7 @@ void AnharmonicCore::setup()
 }
 
 void AnharmonicCore::prepare_relative_vector(const std::vector<FcsArrayWithCell> &fcs_in, const int number_of_groups,
-                                             std::vector<double> *fcs_group, std::vector<RelativeVector> *&vec_out)
+                                             std::vector<double> *fcs_group, std::vector<RelativeVector> *vec_out)
 {
     double vecs[3][3];
     unsigned int icount = 0;

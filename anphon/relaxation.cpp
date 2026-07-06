@@ -807,10 +807,11 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
             aa[i][j] = lavec_new(i, j);
         }
     }
+    // Kept raw: spg_get_dataset takes double(*)[3] (spglib C ABI boundary).
     double(*position)[3];
-    int *types;
+    NDArray<int, 1> types;
     allocate(position, natmin);
-    allocate(types, natmin);
+    types.resize(natmin);
     for (size_t iat = 0; iat < natmin; ++iat) {
         for (auto i = 0; i < 3; ++i) {
             position[iat][i] = xf_new[iat](i);
@@ -828,7 +829,7 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
     if (spgdataset) spg_free_dataset(spgdataset);
 
     deallocate(position);
-    deallocate(types);
+    types.clear();
 
     return spg_label;
 }
@@ -1205,10 +1206,10 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, c
     const auto ns = dynamical->neval;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
 
-    std::complex<double> ***dymat_q;
+    NDArray<std::complex<double>, 3> dymat_q;
     MatrixXcd Dymat(ns, ns);
     MatrixXcd evec_tmp(ns, ns);
-    allocate(dymat_q, ns, ns, nk_interpolate);
+    dymat_q.resize(ns, ns, nk_interpolate);
 
     for (ik = 0; ik < nk_irred_interpolate; ik++) {
 
@@ -1278,7 +1279,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, c
         }
     }
 
-    deallocate(dymat_q);
+    dymat_q.clear();
 }
 
 void Relaxation::renormalize_v3_from_q0(const KpointMeshUniform *kmesh_dense, const KpointMeshUniform *kmesh_coarse,
