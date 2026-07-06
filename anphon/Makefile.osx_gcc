@@ -6,8 +6,11 @@
 #-----------------------------------------------
 
 # Use gcc to activate openmp parallelization
+# NOTE: These legacy Makefiles are provided for convenience only; the
+# CMake build (see the top-level CMakeLists.txt) is the canonical and
+# tested way to build ALAMODE. The sources require C++17.
 MPICXX = g++-10
-CXXFLAGS = -O2 -std=c++11 -fopenmp -g 
+CXXFLAGS = -O2 -std=c++17 -fopenmp -g 
 INCLUDE = -I../include -I$(HOME)/include -I/usr/local/opt/openmpi/include -I/usr/local/include/ -I/usr/local/include/eigen3/
 
 LINKER = ${MPICXX}

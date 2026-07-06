@@ -5,11 +5,14 @@
 # We recommend to use Intel c++ compiler.
 #-----------------------------------------------
 
+# NOTE: These legacy Makefiles are provided for convenience only; the
+# CMake build (see the top-level CMakeLists.txt) is the canonical and
+# tested way to build ALAMODE. The sources require C++17.
 MPICXX = mpicxx 
 #MPICXX = mpiicpc 
 
 # add -D_HDF5 to activate HDF5 support
-CXXFLAGS = -O3 -xHOST -qopenmp -std=c++11
+CXXFLAGS = -O3 -xHOST -qopenmp -std=c++17
 
 # when the HDF5 support is activated, 
 # you may need to add -I$(HDF5_ROOT)/include
