@@ -14,18 +14,25 @@
 #include <string>
 #include <vector>
 #include "kpoint.h"
-#include "pointers.h"
 
 namespace PHON_NS
 {
-class Selfenergy: protected Pointers
+class AnharmonicCore;
+class SymmetryOperation;
+
+// Anharmonic phonon self-energy diagrams. No Pointers base: the run-wide
+// inputs are stored once by setup_selfenergy (called from
+// PHON::execute_kappa), and the per-call data enter as arguments.
+class Selfenergy
 {
 public:
-    Selfenergy(class PHON *phon);
+    Selfenergy();
 
     ~Selfenergy();
 
-    void setup_selfenergy();
+    void setup_selfenergy(unsigned int ns_in, double epsilon_in, bool classical_in,
+                          const std::vector<SymmetryOperation> &symmlist_in, AnharmonicCore &anharmonic_core_in,
+                          int my_rank_in, int nprocs_in);
 
     void selfenergy_tadpole(const unsigned int N, const double *T, const double omega, const unsigned int knum,
                             const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
@@ -78,6 +85,11 @@ public:
 private:
     unsigned int ns;
     double epsilon;
+    bool classical;
+    const std::vector<SymmetryOperation> *symmlist = nullptr;
+    AnharmonicCore *anharmonic_core = nullptr;
+    int my_rank;
+    int nprocs;
 
     void mpi_reduce_complex(unsigned int, std::complex<double> *, std::complex<double> *) const;
 };

@@ -24,7 +24,8 @@ public:
 
     ~Thermodynamics();
 
-    double T_to_Ryd;
+    // Conversion constant K -> Ry (k_Boltzmann / Ryd); fixed at compile time.
+    static const double T_to_Ryd;
     bool classical;
     bool calc_FE_bubble;
     double *FE_bubble;
@@ -35,9 +36,9 @@ public:
 
     static double Cv_classical(const double omega, const double temp_in);
 
-    double fB(const double omega, const double temp_in) const;
+    static double fB(const double omega, const double temp_in);
 
-    double fC(const double omega, const double temp_in) const;
+    static double fC(const double omega, const double temp_in);
 
     double Cv_tot(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
                   const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,

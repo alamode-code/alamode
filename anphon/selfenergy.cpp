@@ -22,16 +22,23 @@
 
 using namespace PHON_NS;
 
-Selfenergy::Selfenergy(PHON *phon) : Pointers(phon)
+Selfenergy::Selfenergy()
 {}
 
 Selfenergy::~Selfenergy()
 {}
 
-void Selfenergy::setup_selfenergy()
+void Selfenergy::setup_selfenergy(const unsigned int ns_in, const double epsilon_in, const bool classical_in,
+                                  const std::vector<SymmetryOperation> &symmlist_in,
+                                  AnharmonicCore &anharmonic_core_in, const int my_rank_in, const int nprocs_in)
 {
-    ns = dynamical->neval;
-    epsilon = integration->epsilon;
+    ns = ns_in;
+    epsilon = epsilon_in;
+    classical = classical_in;
+    symmlist = &symmlist_in;
+    anharmonic_core = &anharmonic_core_in;
+    my_rank = my_rank_in;
+    nprocs = nprocs_in;
 }
 
 void Selfenergy::mpi_reduce_complex(unsigned int N, std::complex<double> *in_mpi, std::complex<double> *out) const
@@ -97,7 +104,7 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
         for (i = 0; i < N; ++i)
             ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
-        for (unsigned int ik2 = mympi->my_rank; ik2 < nk; ik2 += mympi->nprocs) {
+        for (unsigned int ik2 = my_rank; ik2 < nk; ik2 += nprocs) {
             for (unsigned int is2 = 0; is2 < ns; ++is2) {
                 arr_cubic2[1] = ns * ik2 + is2;
                 arr_cubic2[2] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
@@ -109,11 +116,11 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
 
                 for (i = 0; i < N; ++i) {
                     const auto T_tmp = T[i];
-                    if (thermodynamics->classical) {
-                        n2 = thermodynamics->fC(omega2, T_tmp);
+                    if (classical) {
+                        n2 = Thermodynamics::fC(omega2, T_tmp);
                         ret_mpi[i] += v3_tmp2 * 2.0 * n2;
                     } else {
-                        n2 = thermodynamics->fB(omega2, T_tmp);
+                        n2 = Thermodynamics::fB(omega2, T_tmp);
                         ret_mpi[i] += v3_tmp2 * (2.0 * n2 + 1.0);
                     }
                 }
@@ -166,7 +173,7 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
     for (i = 0; i < N; ++i)
         ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         xk_tmp[0] = xk[knum][0] - xk[ik1][0];
         xk_tmp[1] = xk[knum][1] - xk[ik1][1];
@@ -191,14 +198,14 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
 
                 for (i = 0; i < N; ++i) {
                     double T_tmp = T[i];
-                    if (thermodynamics->classical) {
-                        n1 = thermodynamics->fC(omega1, T_tmp);
-                        n2 = thermodynamics->fC(omega2, T_tmp);
+                    if (classical) {
+                        n1 = Thermodynamics::fC(omega1, T_tmp);
+                        n2 = Thermodynamics::fC(omega2, T_tmp);
                         f1 = n1 + n2;
                         f2 = n2 - n1;
                     } else {
-                        n1 = thermodynamics->fB(omega1, T_tmp);
-                        n2 = thermodynamics->fB(omega2, T_tmp);
+                        n1 = Thermodynamics::fB(omega1, T_tmp);
+                        n2 = Thermodynamics::fB(omega2, T_tmp);
                         f1 = n1 + n2 + 1.0;
                         f2 = n2 - n1;
                     }
@@ -244,7 +251,7 @@ void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const doubl
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_quartic[3] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
         for (unsigned int is1 = 0; is1 < ns; ++is1) {
 
             arr_quartic[1] = ns * ik1 + is1;
@@ -255,14 +262,14 @@ void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const doubl
 
             std::complex<double> v4_tmp = anharmonic_core->V4(arr_quartic);
 
-            if (thermodynamics->classical) {
+            if (classical) {
                 for (i = 0; i < N; ++i) {
-                    n1 = thermodynamics->fC(omega1, T[i]);
+                    n1 = Thermodynamics::fC(omega1, T[i]);
                     ret_mpi[i] += v4_tmp * 2.0 * n1;
                 }
             } else {
                 for (i = 0; i < N; ++i) {
-                    n1 = thermodynamics->fB(omega1, T[i]);
+                    n1 = Thermodynamics::fB(omega1, T[i]);
                     ret_mpi[i] += v4_tmp * (2.0 * n1 + 1.0);
                 }
             }
@@ -309,7 +316,7 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
 
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
         for (unsigned int ik2 = 0; ik2 < nk; ++ik2) {
 
             xk_tmp[0] = xk[knum][0] - xk[ik1][0] - xk[ik2][0];
@@ -347,9 +354,9 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
                         for (i = 0; i < N; ++i) {
                             double T_tmp = T[i];
 
-                            double n1 = thermodynamics->fB(omega1, T_tmp);
-                            double n2 = thermodynamics->fB(omega2, T_tmp);
-                            double n3 = thermodynamics->fB(omega3, T_tmp);
+                            double n1 = Thermodynamics::fB(omega1, T_tmp);
+                            double n2 = Thermodynamics::fB(omega2, T_tmp);
+                            double n3 = Thermodynamics::fB(omega3, T_tmp);
 
                             double n12 = n1 * n2;
                             double n23 = n2 * n3;
@@ -405,14 +412,14 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
 
     auto ik_irred = kmesh_in->kmap_to_irreducible[knum];
 
-    kmesh_in->get_unique_quartet_k(ik_irred, symmetry->SymmList, true, true, quartet);
+    kmesh_in->get_unique_quartet_k(ik_irred, *symmlist, true, true, quartet);
 
     const size_t npair_uniq = quartet.size();
 
     auto knum_sym = kmesh_in->kpoint_irred_all[ik_irred][0].knum;
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum_sym] + snum;
 
-    for (unsigned int ik = mympi->my_rank; ik < npair_uniq; ik += mympi->nprocs) {
+    for (unsigned int ik = my_rank; ik < npair_uniq; ik += nprocs) {
 
         unsigned int ik1 = quartet[ik].group[0].ks[0];
         unsigned int ik2 = quartet[ik].group[0].ks[1];
@@ -449,9 +456,9 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
                     for (i = 0; i < N; ++i) {
                         double T_tmp = T[i];
 
-                        double n1 = thermodynamics->fB(omega1, T_tmp);
-                        double n2 = thermodynamics->fB(omega2, T_tmp);
-                        double n3 = thermodynamics->fB(omega3, T_tmp);
+                        double n1 = Thermodynamics::fB(omega1, T_tmp);
+                        double n2 = Thermodynamics::fB(omega2, T_tmp);
+                        double n3 = Thermodynamics::fB(omega3, T_tmp);
 
                         double n12 = n1 * n2;
                         double n23 = n2 * n3;
@@ -510,7 +517,7 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic2[2] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         xk_tmp[0] = xk[knum][0] - xk[ik1][0];
         xk_tmp[1] = xk[knum][1] - xk[ik1][1];
@@ -572,10 +579,10 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
                             for (i = 0; i < N; ++i) {
                                 double T_tmp = T[i];
 
-                                double n1 = thermodynamics->fB(omega1, T_tmp);
-                                double n2 = thermodynamics->fB(omega2, T_tmp);
-                                double n3 = thermodynamics->fB(omega3, T_tmp);
-                                double n4 = thermodynamics->fB(omega4, T_tmp);
+                                double n1 = Thermodynamics::fB(omega1, T_tmp);
+                                double n2 = Thermodynamics::fB(omega2, T_tmp);
+                                double n3 = Thermodynamics::fB(omega3, T_tmp);
+                                double n4 = Thermodynamics::fB(omega4, T_tmp);
 
                                 ret_mpi[i] += v_prod * ((1.0 + n1 + n2) * omega_sum[0] + (n2 - n1) * omega_sum[1]) *
                                               ((1.0 + n3 + n4) * omega_sum[2] + (n4 - n3) * omega_sum[3]);
@@ -641,7 +648,7 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic2[2] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         const auto ik2 = ik1;
 
@@ -704,8 +711,8 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                                         for (i = 0; i < N; ++i) {
                                             T_tmp = T[i];
 
-                                            n1 = thermodynamics->fB(dp1, T_tmp);
-                                            n4 = thermodynamics->fB(dp4, T_tmp);
+                                            n1 = Thermodynamics::fB(dp1, T_tmp);
+                                            n4 = Thermodynamics::fB(dp4, T_tmp);
 
                                             if (std::abs(T_tmp) < eps) {
                                                 //special treatment for T = 0
@@ -713,7 +720,7 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                                                 // which is zero when T = 0.
                                                 T_inv = 0.0;
                                             } else {
-                                                T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
+                                                T_inv = 1.0 / (Thermodynamics::T_to_Ryd * T_tmp);
                                             }
 
                                             prod_tmp[i] += static_cast<double>(ip4) * omega_sum *
@@ -726,7 +733,7 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                                 for (i = 0; i < N; ++i) {
                                     T_tmp = T[i];
 
-                                    n3 = thermodynamics->fB(omega3, T_tmp);
+                                    n3 = Thermodynamics::fB(omega3, T_tmp);
                                     ret_mpi[i] += v_prod * (2.0 * n3 + 1.0) * prod_tmp[i];
                                 }
                             }
@@ -778,10 +785,10 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                                 for (i = 0; i < N; ++i) {
                                     T_tmp = T[i];
 
-                                    n1 = thermodynamics->fB(omega1, T_tmp);
-                                    double n2 = thermodynamics->fB(omega2, T_tmp);
-                                    n3 = thermodynamics->fB(omega3, T_tmp);
-                                    n4 = thermodynamics->fB(omega4, T_tmp);
+                                    n1 = Thermodynamics::fB(omega1, T_tmp);
+                                    double n2 = Thermodynamics::fB(omega2, T_tmp);
+                                    n3 = Thermodynamics::fB(omega3, T_tmp);
+                                    n4 = Thermodynamics::fB(omega4, T_tmp);
 
                                     ret_mpi[i] +=
                                         v_prod * (2.0 * n3 + 1.0) *
@@ -851,7 +858,7 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic4[2] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         unsigned int ik5 = ik1;
 
@@ -934,15 +941,15 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
                                                     for (i = 0; i < N; ++i) {
                                                         T_tmp = T[i];
 
-                                                        n1 = thermodynamics->fB(dp1, T_tmp);
-                                                        n2 = thermodynamics->fB(dp2, T_tmp);
-                                                        n3 = thermodynamics->fB(dp3, T_tmp);
-                                                        n4 = thermodynamics->fB(dp4, T_tmp);
+                                                        n1 = Thermodynamics::fB(dp1, T_tmp);
+                                                        n2 = Thermodynamics::fB(dp2, T_tmp);
+                                                        n3 = Thermodynamics::fB(dp3, T_tmp);
+                                                        n4 = Thermodynamics::fB(dp4, T_tmp);
 
                                                         if (std::abs(T_tmp) < eps) {
                                                             T_inv = 0.0;
                                                         } else {
-                                                            T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
+                                                            T_inv = 1.0 / (Thermodynamics::T_to_Ryd * T_tmp);
                                                         }
 
                                                         ret_mpi[i] +=
@@ -989,11 +996,11 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
                                                         for (i = 0; i < N; ++i) {
                                                             T_tmp = T[i];
 
-                                                            n1 = thermodynamics->fB(dp1, T_tmp);
-                                                            n2 = thermodynamics->fB(dp2, T_tmp);
-                                                            n3 = thermodynamics->fB(dp3, T_tmp);
-                                                            n4 = thermodynamics->fB(dp4, T_tmp);
-                                                            double n5 = thermodynamics->fB(dp5, T_tmp);
+                                                            n1 = Thermodynamics::fB(dp1, T_tmp);
+                                                            n2 = Thermodynamics::fB(dp2, T_tmp);
+                                                            n3 = Thermodynamics::fB(dp3, T_tmp);
+                                                            n4 = Thermodynamics::fB(dp4, T_tmp);
+                                                            double n5 = Thermodynamics::fB(dp5, T_tmp);
 
                                                             ret_mpi[i] +=
                                                                 v3_prod *
@@ -1060,7 +1067,7 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic2[2] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         for (unsigned int ik2 = 0; ik2 < nk; ++ik2) {
 
@@ -1125,10 +1132,10 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
                                             for (i = 0; i < N; ++i) {
                                                 double T_tmp = T[i];
 
-                                                double n1 = thermodynamics->fB(dp1, T_tmp);
-                                                double n2 = thermodynamics->fB(dp2, T_tmp);
-                                                double n3 = thermodynamics->fB(dp3, T_tmp);
-                                                double n4 = thermodynamics->fB(dp4, T_tmp);
+                                                double n1 = Thermodynamics::fB(dp1, T_tmp);
+                                                double n2 = Thermodynamics::fB(dp2, T_tmp);
+                                                double n3 = Thermodynamics::fB(dp3, T_tmp);
+                                                double n4 = Thermodynamics::fB(dp4, T_tmp);
 
                                                 ret_mpi[i] +=
                                                     v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4) * D124 *
@@ -1188,7 +1195,7 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
     arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_cubic4[2] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         xk_tmp[0] = xk[knum][0] - xk[ik1][0];
         xk_tmp[1] = xk[knum][1] - xk[ik1][1];
@@ -1279,11 +1286,11 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
                                                     for (i = 0; i < N; ++i) {
                                                         double T_tmp = T[i];
 
-                                                        double n1 = thermodynamics->fB(dp1, T_tmp);
-                                                        double n2 = thermodynamics->fB(dp2, T_tmp);
-                                                        double n3 = thermodynamics->fB(dp3, T_tmp);
-                                                        double n4 = thermodynamics->fB(dp4, T_tmp);
-                                                        double n5 = thermodynamics->fB(dp5, T_tmp);
+                                                        double n1 = Thermodynamics::fB(dp1, T_tmp);
+                                                        double n2 = Thermodynamics::fB(dp2, T_tmp);
+                                                        double n3 = Thermodynamics::fB(dp3, T_tmp);
+                                                        double n4 = Thermodynamics::fB(dp4, T_tmp);
+                                                        double n5 = Thermodynamics::fB(dp5, T_tmp);
 
                                                         double N12 = n1 - n2;
                                                         double N34 = n3 - n4;
@@ -1369,7 +1376,7 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
     arr_quartic[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_quartic[3] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
         for (unsigned int ik2 = 0; ik2 < nk; ++ik2) {
 
             unsigned int ik4 = ik2;
@@ -1428,9 +1435,9 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
                                             for (i = 0; i < N; ++i) {
                                                 T_tmp = T[i];
 
-                                                n1 = thermodynamics->fB(dp1, T_tmp);
-                                                n2 = thermodynamics->fB(dp2, T_tmp);
-                                                n3 = thermodynamics->fB(dp3, T_tmp);
+                                                n1 = Thermodynamics::fB(dp1, T_tmp);
+                                                n2 = Thermodynamics::fB(dp2, T_tmp);
+                                                n3 = Thermodynamics::fB(dp3, T_tmp);
 
                                                 N_prod[0] = (1.0 + n1) * (1.0 + n3) + n2 * (1.0 + n2 + n3);
                                                 N_prod[1] = n2 * (1.0 + n2) * (1.0 + n2 + n3);
@@ -1438,7 +1445,7 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
                                                 if (std::abs(T_tmp) < eps) {
                                                     T_inv = 0.0;
                                                 } else {
-                                                    T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
+                                                    T_inv = 1.0 / (Thermodynamics::T_to_Ryd * T_tmp);
                                                 }
 
                                                 ret_mpi[i] += v_prod * static_cast<double>(ip1 * ip3) *
@@ -1489,10 +1496,10 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
                                                 for (i = 0; i < N; ++i) {
                                                     T_tmp = T[i];
 
-                                                    n1 = thermodynamics->fB(dp1, T_tmp);
-                                                    n2 = thermodynamics->fB(dp2, T_tmp);
-                                                    n3 = thermodynamics->fB(dp3, T_tmp);
-                                                    double n4 = thermodynamics->fB(dp4, T_tmp);
+                                                    n1 = Thermodynamics::fB(dp1, T_tmp);
+                                                    n2 = Thermodynamics::fB(dp2, T_tmp);
+                                                    n3 = Thermodynamics::fB(dp3, T_tmp);
+                                                    double n4 = Thermodynamics::fB(dp4, T_tmp);
 
                                                     ret_mpi[i] += v_prod * static_cast<double>(ip1 * ip2 * ip3 * ip4) *
                                                                   ((1.0 + n1 + n3) * D24 * (n4 * D134 - n2 * D123) +
@@ -1555,7 +1562,7 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
     arr_quartic1[0] = ns * kmesh_in->kindex_minus_xk[knum] + snum;
     arr_quartic1[3] = ns * knum + snum;
 
-    for (unsigned int ik1 = mympi->my_rank; ik1 < nk; ik1 += mympi->nprocs) {
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
 
         unsigned int ik3 = ik1;
 
@@ -1591,13 +1598,13 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
                             for (i = 0; i < N; ++i) {
                                 T_tmp = T[i];
 
-                                n1 = thermodynamics->fB(omega1, T_tmp);
-                                n2 = thermodynamics->fB(omega2, T_tmp);
+                                n1 = Thermodynamics::fB(omega1, T_tmp);
+                                n2 = Thermodynamics::fB(omega2, T_tmp);
 
                                 if (std::abs(T_tmp) < eps) {
                                     T_inv = 0.0;
                                 } else {
-                                    T_inv = 1.0 / (thermodynamics->T_to_Ryd * T_tmp);
+                                    T_inv = 1.0 / (Thermodynamics::T_to_Ryd * T_tmp);
                                 }
 
                                 ret_mpi[i] += v_prod * (2.0 * n2 + 1.0) *
@@ -1622,9 +1629,9 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
                             for (i = 0; i < N; ++i) {
                                 T_tmp = T[i];
 
-                                n1 = thermodynamics->fB(omega1, T_tmp);
-                                n2 = thermodynamics->fB(omega2, T_tmp);
-                                double n3 = thermodynamics->fB(omega3, T_tmp);
+                                n1 = Thermodynamics::fB(omega1, T_tmp);
+                                n2 = Thermodynamics::fB(omega2, T_tmp);
+                                double n3 = Thermodynamics::fB(omega3, T_tmp);
 
                                 ret_mpi[i] += v_prod * 2.0 * ((n1 - n3) * D13[0] - (1.0 + n1 + n3) * D13[1]);
                             }

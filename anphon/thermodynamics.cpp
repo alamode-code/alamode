@@ -26,7 +26,7 @@
 using namespace PHON_NS;
 
 Thermodynamics::Thermodynamics(PHON *phon) :
-    Pointers(phon), T_to_Ryd(k_Boltzmann / Ryd), classical(false), calc_FE_bubble(false), FE_bubble(nullptr)
+    Pointers(phon), classical(false), calc_FE_bubble(false), FE_bubble(nullptr)
 {}
 
 Thermodynamics::~Thermodynamics()
@@ -60,7 +60,9 @@ auto Thermodynamics::Cv_classical(const double omega, const double temp_in) -> d
     return k_Boltzmann;
 }
 
-auto Thermodynamics::fB(const double omega, const double temp_in) const -> double
+const double Thermodynamics::T_to_Ryd = k_Boltzmann / Ryd;
+
+auto Thermodynamics::fB(const double omega, const double temp_in) -> double
 {
     // Bose-Einstein distribution function
     if (std::abs(temp_in) < eps || omega < eps8) return 0.0;
@@ -69,7 +71,7 @@ auto Thermodynamics::fB(const double omega, const double temp_in) const -> doubl
     return 1.0 / (std::exp(x) - 1.0);
 }
 
-auto Thermodynamics::fC(const double omega, const double temp_in) const -> double
+auto Thermodynamics::fC(const double omega, const double temp_in) -> double
 {
     // Classical limit of Bose-Einstein distribution function
     if (std::abs(temp_in) < eps || omega < eps8) return 0.0;

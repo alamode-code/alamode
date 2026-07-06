@@ -116,7 +116,7 @@ void PHON::create_pointers()
     thermodynamics = new Thermodynamics(this);
     anharmonic_core = new AnharmonicCore(this);
     mode_analysis = new ModeAnalysis(this);
-    selfenergy = new Selfenergy(this);
+    selfenergy = new Selfenergy();
     conductivity = new Conductivity(this);
     writes = new Writes(this);
     dos = new Dos(this);
@@ -246,7 +246,8 @@ void PHON::execute_kappa() const
                                          *integration, dynamical->neval, mympi->my_rank, mympi->nprocs);
 
     mode_analysis->setup_mode_analysis();
-    selfenergy->setup_selfenergy();
+    selfenergy->setup_selfenergy(dynamical->neval, integration->epsilon, thermodynamics->classical,
+                                 symmetry->SymmList, *anharmonic_core, mympi->my_rank, mympi->nprocs);
 
     if (mode_analysis->ks_analyze_mode) {
         mode_analysis->run_mode_analysis();
