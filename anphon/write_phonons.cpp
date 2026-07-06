@@ -2009,7 +2009,7 @@ void Writes::writeMSD() const
         ofs_rmsd << std::setw(15) << T;
 
         for (unsigned int j = 0; j < ns; ++j) {
-            const auto d2_tmp = thermodynamics->disp2_avg(T, j, j, nk, ns, xk, eval, evec);
+            const auto d2_tmp = thermodynamics->disp2_avg(T, j, j, nk, ns, xk, eval, evec, *system);
             ofs_rmsd << std::setw(15) << d2_tmp * pow2(Bohr_in_Angstrom);
         }
         ofs_rmsd << '\n';
@@ -2118,7 +2118,8 @@ void Writes::writeDispCorrelation() const
                                                                  ns,
                                                                  dos->kmesh_dos->xk,
                                                                  dos->dymat_dos->get_eigenvalues(),
-                                                                 dos->dymat_dos->get_eigenvectors());
+                                                                 dos->dymat_dos->get_eigenvectors(),
+                                                              *system);
 
                 ofs << std::setw(17) << T;
                 ofs << std::setw(11) << j / 3 + 1;

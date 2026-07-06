@@ -25,8 +25,8 @@
 
 using namespace PHON_NS;
 
-Thermodynamics::Thermodynamics(PHON *phon) :
-    Pointers(phon), classical(false), calc_FE_bubble(false), FE_bubble(nullptr)
+Thermodynamics::Thermodynamics() :
+    classical(false), calc_FE_bubble(false), FE_bubble(nullptr)
 {}
 
 Thermodynamics::~Thermodynamics()
@@ -320,16 +320,17 @@ auto Thermodynamics::free_energy_QHA(const double temp_in, const unsigned int nk
 
 auto Thermodynamics::disp2_avg(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
                                const unsigned int nk, const unsigned int ns, const double *const *xk_in,
-                               const double *const *eval_in, std::complex<double> ***evec_in) const -> double
+                               const double *const *eval_in, std::complex<double> ***evec_in,
+                               const System &system_in) const -> double
 {
     constexpr double cell_shift[3]{0, 0, 0};
-    return disp_corrfunc(T_in, ncrd1, ncrd2, cell_shift, nk, ns, xk_in, eval_in, evec_in);
+    return disp_corrfunc(T_in, ncrd1, ncrd2, cell_shift, nk, ns, xk_in, eval_in, evec_in, system_in);
 }
 
 auto Thermodynamics::disp_corrfunc(const double T_in, const unsigned int ncrd1, const unsigned int ncrd2,
                                    const double cell_shift[3], const unsigned int nk, const unsigned int ns,
                                    const double *const *xk_in, const double *const *eval_in,
-                                   std::complex<double> ***evec_in) const -> double
+                                   std::complex<double> ***evec_in, const System &system_in) const -> double
 {
     int i;
     int const N = nk * ns;
@@ -372,8 +373,8 @@ auto Thermodynamics::disp_corrfunc(const double T_in, const unsigned int ncrd1, 
         }
     }
 
-    ret *= 1.0 / (static_cast<double>(nk) * std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[ncrd1 / 3][0]] *
-                                                      system->get_mass_super()[system->get_map_p2s(0)[ncrd2 / 3][0]]));
+    ret *= 1.0 / (static_cast<double>(nk) * std::sqrt(system_in.get_mass_super()[system_in.get_map_p2s(0)[ncrd1 / 3][0]] *
+                                                      system_in.get_mass_super()[system_in.get_map_p2s(0)[ncrd2 / 3][0]]));
 
     return ret;
 }
@@ -389,11 +390,16 @@ auto Thermodynamics::coth_T(const double omega, const double T) const -> double
     return 1.0 + 2.0 / (std::exp(2.0 * x) - 1.0);
 }
 
-auto Thermodynamics::compute_free_energy_bubble() -> void
+auto Thermodynamics::compute_free_energy_bubble(const System &system_in,
+                                                const KpointMeshUniform &kmesh_dos_in,
+                                                const DymatEigenValue &dymat_dos_in,
+                                                const std::vector<SymmetryOperation> &symmlist_in,
+                                                AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
+                                                const int my_rank_in, const int nprocs_in) -> void
 {
-    const auto NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
+    const auto NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
 
-    if (mympi->my_rank == 0) {
+    if (my_rank_in == 0) {
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n";
         std::cout << " Calculating the vibrational free energy from the Bubble diagram \n" << std::flush;
@@ -401,25 +407,30 @@ auto Thermodynamics::compute_free_energy_bubble() -> void
 
     allocate(FE_bubble, NT);
 
-    compute_FE_bubble(dos->dymat_dos->get_eigenvalues(), dos->dymat_dos->get_eigenvectors(), FE_bubble);
+    compute_FE_bubble(dymat_dos_in.get_eigenvalues(), dymat_dos_in.get_eigenvectors(), FE_bubble, system_in,
+                      kmesh_dos_in, symmlist_in, anharmonic_core_in, ns_in, my_rank_in, nprocs_in);
 
-    if (mympi->my_rank == 0) {
+    if (my_rank_in == 0) {
         std::cout << " done!\n\n";
     }
 }
 
-auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***evec, double *FE_bubble_out) const -> void
+auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***evec, double *FE_bubble_out,
+                                       const System &system_in, const KpointMeshUniform &kmesh_dos_in,
+                                       const std::vector<SymmetryOperation> &symmlist_in,
+                                       AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
+                                       const int my_rank_in, const int nprocs_in) const -> void
 {
     // This function calculates the free energy of the bubble diagram
     double omega_sum[2];
     double nsum[2];
-    const auto nk = dos->kmesh_dos->nk;
-    const auto nk_irred = dos->kmesh_dos->nk_irred;
-    const auto ns = dynamical->neval;
+    const auto nk = kmesh_dos_in.nk;
+    const auto nk_irred = kmesh_dos_in.nk_irred;
+    const auto ns = ns_in;
     unsigned int i0, iT;
     unsigned int arr_cubic[3];
     const auto nks0 = nk_irred * ns;
-    const auto NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
+    const auto NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
     const auto factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
     double n0, n1, n2;
@@ -434,17 +445,17 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
     vks_l.clear();
 
     for (i0 = 0; i0 < nks0; ++i0) {
-        if (i0 % mympi->nprocs == mympi->my_rank) {
+        if (i0 % nprocs_in == my_rank_in) {
             vks_l.push_back(i0);
         }
     }
 
     unsigned int nk_tmp;
 
-    if (nks0 % mympi->nprocs != 0) {
-        nk_tmp = nks0 / mympi->nprocs + 1;
+    if (nks0 % nprocs_in != 0) {
+        nk_tmp = nks0 / nprocs_in + 1;
     } else {
-        nk_tmp = nks0 / mympi->nprocs;
+        nk_tmp = nks0 / nprocs_in;
     }
     if (vks_l.size() < nk_tmp) {
         vks_l.push_back(-1);
@@ -457,12 +468,12 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
 
         if (vks_l[i0] != -1) {
 
-            const auto ik0 = dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns][0].knum;
+            const auto ik0 = kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns][0].knum;
             const auto is0 = vks_l[i0] % ns;
 
-            dos->kmesh_dos->get_unique_triplet_k(vks_l[i0] / ns,
-                                                 symmetry->SymmList,
-                                                 anharmonic_core->use_triplet_symmetry,
+            kmesh_dos_in.get_unique_triplet_k(vks_l[i0] / ns,
+                                                 symmlist_in,
+                                                 anharmonic_core_in.use_triplet_symmetry,
                                                  true,
                                                  triplet,
                                                  1);
@@ -497,10 +508,10 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
                         omega_sum[0] = 1.0 / (omega0 + omega1 + omega2);
                         omega_sum[1] = 1.0 / (-omega0 + omega1 + omega2);
 
-                        const auto v3_tmp = std::norm(anharmonic_core->V3(arr_cubic)) * static_cast<double>(multi);
+                        const auto v3_tmp = std::norm(anharmonic_core_in.V3(arr_cubic)) * static_cast<double>(multi);
 
                         for (iT = 0; iT < NT; ++iT) {
-                            const auto temp = system->Tmin + static_cast<double>(iT) * system->dT;
+                            const auto temp = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
 
                             if (classical) {
                                 n0 = fC(omega0, temp);
@@ -523,7 +534,7 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
                     }
                 }
             }
-            const auto weight = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns].size());
+            const auto weight = static_cast<double>(kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns].size());
             for (iT = 0; iT < NT; ++iT)
                 FE_local[iT] += FE_tmp[iT] * weight;
         }
@@ -540,19 +551,23 @@ auto Thermodynamics::compute_FE_bubble(double **eval, std::complex<double> ***ev
 }
 
 auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in,
-                                            double *FE_bubble) const -> void
+                                            double *FE_bubble, const System &system_in,
+                                            const KpointMeshUniform &kmesh_dos_in,
+                                            const std::vector<SymmetryOperation> &symmlist_in,
+                                            AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
+                                            const int my_rank_in, const int nprocs_in) const -> void
 {
     // This function calculates the free energy from the bubble diagram
     // at the given temperature and lattice dynamics wavefunction
     double omega_sum[2];
     double n0, n1, n2, nsum[2];
-    const auto nk = dos->kmesh_dos->nk;
-    const auto nk_reduced = dos->kmesh_dos->nk_irred;
-    const auto ns = dynamical->neval;
+    const auto nk = kmesh_dos_in.nk;
+    const auto nk_reduced = kmesh_dos_in.nk_irred;
+    const auto ns = ns_in;
     unsigned int i0, iT;
     unsigned int arr_cubic[3];
     const auto nks0 = nk_reduced * ns;
-    const unsigned int NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
+    const unsigned int NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
     const double factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
     double *FE_local;
@@ -566,7 +581,7 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
     vks_l.clear();
 
     for (i0 = 0; i0 < nks0; ++i0) {
-        if (i0 % mympi->nprocs == mympi->my_rank) {
+        if (i0 % nprocs_in == my_rank_in) {
             vks_l.push_back(i0);
         }
     }
@@ -577,10 +592,10 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
     unsigned int nk_tmp;
 
-    if (nks0 % mympi->nprocs != 0) {
-        nk_tmp = nks0 / mympi->nprocs + 1;
+    if (nks0 % nprocs_in != 0) {
+        nk_tmp = nks0 / nprocs_in + 1;
     } else {
-        nk_tmp = nks0 / mympi->nprocs;
+        nk_tmp = nks0 / nprocs_in;
     }
     if (vks_l.size() < nk_tmp) {
         vks_l.push_back(-1);
@@ -592,7 +607,7 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
         FE_local[iT] = 0.0;
     }
 
-    if (mympi->my_rank == 0) {
+    if (my_rank_in == 0) {
         std::cout << " Total number of modes per MPI process: " << nk_tmp << '\n';
     }
 
@@ -600,12 +615,12 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
         if (vks_l[i0] != -1) {
 
-            unsigned int const ik0 = dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns][0].knum;
+            unsigned int const ik0 = kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns][0].knum;
             unsigned int const is0 = vks_l[i0] % ns;
 
-            dos->kmesh_dos->get_unique_triplet_k(vks_l[i0] / ns,
-                                                 symmetry->SymmList,
-                                                 anharmonic_core->use_triplet_symmetry,
+            kmesh_dos_in.get_unique_triplet_k(vks_l[i0] / ns,
+                                                 symmlist_in,
+                                                 anharmonic_core_in.use_triplet_symmetry,
                                                  true,
                                                  triplet,
                                                  1);
@@ -633,7 +648,7 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
                         for (iT = 0; iT < NT; ++iT) {
 
-                            const double temp = system->Tmin + static_cast<double>(iT) * system->dT;
+                            const double temp = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
 
                             const double omega0 = eval_in[iT][ik0][is0];
                             const double omega1 = eval_in[iT][ik1][is1];
@@ -646,7 +661,7 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
                             const double v3_tmp =
                                 std::norm(
-                                    anharmonic_core->V3(arr_cubic, dos->kmesh_dos->xk, eval_in[iT], evec_in[iT])) *
+                                    anharmonic_core_in.V3(arr_cubic, kmesh_dos_in.xk, eval_in[iT], evec_in[iT])) *
                                 multi;
 
                             if (classical) {
@@ -670,12 +685,12 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
                     }
                 }
             }
-            const double weight = static_cast<double>(dos->kmesh_dos->kpoint_irred_all[vks_l[i0] / ns].size());
+            const double weight = static_cast<double>(kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns].size());
             for (iT = 0; iT < NT; ++iT) {
                 FE_local[iT] += FE_tmp[iT] * weight;
             }
         }
-        if (mympi->my_rank == 0) {
+        if (my_rank_in == 0) {
             auto currentTime = std::chrono::system_clock::now();
             const long long totalElapsedTime =
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
@@ -699,14 +714,16 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
 auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::complex<double> ***evec,
                                         double **eval_harm_renormalized,
-                                        std::complex<double> ***evec_harm_renormalized) const -> double
+                                        std::complex<double> ***evec_harm_renormalized,
+                                        const KpointMeshUniform &kmesh_dos_in, const unsigned int ns_in,
+                                        const System &system_in) const -> double
 {
     // The correction term to the free energy within SCPH theory.
     // This term is necessary to result in S =
     using namespace Eigen;
-    const auto nk = dos->kmesh_dos->nk;
-    const auto ns = dynamical->neval;
-    const auto temp = system->Tmin + static_cast<double>(iT) * system->dT;
+    const auto nk = kmesh_dos_in.nk;
+    const auto ns = ns_in;
+    const auto temp = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
     const auto N = nk * ns;
 
     double ret = 0.0;
@@ -742,10 +759,10 @@ auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::com
             tmp_c += std::conj(Cmat(js, is)) * omega2_harm * Cmat(js, is);
         }
 
-        if (thermodynamics->classical) {
-            ret += (tmp_c.real() - omega * omega) * thermodynamics->fC(omega, temp) / (4.0 * omega);
+        if (classical) {
+            ret += (tmp_c.real() - omega * omega) * fC(omega, temp) / (4.0 * omega);
         } else {
-            ret += (tmp_c.real() - omega * omega) * (1.0 + 2.0 * thermodynamics->fB(omega, temp)) / (8.0 * omega);
+            ret += (tmp_c.real() - omega * omega) * (1.0 + 2.0 * fB(omega, temp)) / (8.0 * omega);
         }
     }
 
@@ -753,15 +770,16 @@ auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::com
 }
 
 auto Thermodynamics::compute_FE_total(const unsigned int iT, const double fe_qha,
-                                      const double dfe_scph, const double v0_renorm) const -> double
+                                      const double dfe_scph, const double v0_renorm,
+                                      const bool is_scph_mode) const -> double
 {
     double fe_total = fe_qha;
     // skip scph correction for QHA + structural optimization
-    if (phon->mode == "SCPH") {
+    if (is_scph_mode) {
         fe_total += dfe_scph;
     }
-    if (thermodynamics->calc_FE_bubble) {
-        fe_total += thermodynamics->FE_bubble[iT];
+    if (calc_FE_bubble) {
+        fe_total += FE_bubble[iT];
     }
     // The renormalized static potential of the relaxed structure; the caller
     // passes 0.0 when no structural optimization is performed.

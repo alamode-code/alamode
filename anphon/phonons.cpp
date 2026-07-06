@@ -113,7 +113,7 @@ void PHON::create_pointers()
     dynamical = new Dynamical(this);
     integration = new Integration();
     phonon_velocity = new PhononVelocity(this);
-    thermodynamics = new Thermodynamics(this);
+    thermodynamics = new Thermodynamics();
     anharmonic_core = new AnharmonicCore(this);
     mode_analysis = new ModeAnalysis(this);
     selfenergy = new Selfenergy();
@@ -215,7 +215,9 @@ void PHON::execute_phonons() const
     }
 
     if (thermodynamics->calc_FE_bubble) {
-        thermodynamics->compute_free_energy_bubble();
+        thermodynamics->compute_free_energy_bubble(*system, *dos->kmesh_dos, *dos->dymat_dos,
+                                                   symmetry->SymmList, *anharmonic_core,
+                                                   dynamical->neval, mympi->my_rank, mympi->nprocs);
     }
 
     if (mympi->my_rank == 0) {

@@ -576,10 +576,11 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                   eval_update[iT],
                                                                   evec_tmp,
                                                                   eval_harm_renorm[iT],
-                                                                  evec_harm_renorm);
+                                                                  evec_harm_renorm,
+                                                                  *dos->kmesh_dos, ns, *system);
 
                 FE_total[iT] = thermodynamics->compute_FE_total(
-                    iT, FE_QHA[iT], dFE_scph[iT], relaxation->relax_str != 0 ? V0[iT] : 0.0);
+                    iT, FE_QHA[iT], dFE_scph[iT], relaxation->relax_str != 0 ? V0[iT] : 0.0, !is_qha);
 
                 entropy[iT] = thermodynamics->vibrational_entropy(temperature,
                                                                   dos->kmesh_dos->nk_irred,
@@ -601,7 +602,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                            ns,
                                                                            dos->kmesh_dos->xk,
                                                                            eval_update[iT],
-                                                                           evec_tmp);
+                                                                           evec_tmp,
+                                                                                     *system);
                     }
                 }
 
@@ -620,7 +622,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                                      ns,
                                                                                      dos->kmesh_dos->xk,
                                                                                      eval_update[iT],
-                                                                                     evec_tmp);
+                                                                                     evec_tmp,
+                                                                                     *system);
                         }
                     }
                 }
@@ -752,7 +755,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                                ns,
                                                                                dos->kmesh_dos->xk,
                                                                                eval_update[iT],
-                                                                               evec_tmp);
+                                                                               evec_tmp,
+                                                                                     *system);
                         }
                     }
 
@@ -771,7 +775,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                                                          ns,
                                                                                          dos->kmesh_dos->xk,
                                                                                          eval_update[iT],
-                                                                                         evec_tmp);
+                                                                                         evec_tmp,
+                                                                                     *system);
                             }
                         }
                     }
