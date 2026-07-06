@@ -1047,16 +1047,16 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
     const auto ns = dynamical->neval;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
 
-    allocate(ws.delta_v2_renorm, nk_interpolate, ns * ns);
-    allocate(ws.delta_v2_with_umn, nk_interpolate, ns * ns);
+    ws.delta_v2_renorm.resize(nk_interpolate, ns * ns);
+    ws.delta_v2_with_umn.resize(nk_interpolate, ns * ns);
 
-    allocate(ws.v1_ref, ns);
-    allocate(ws.v1_with_umn, ns);
-    allocate(ws.v1_renorm, ns);
+    ws.v1_ref.resize(ns);
+    ws.v1_with_umn.resize(ns);
+    ws.v1_renorm.resize(ns);
 
     ws.structure_state.resize(ns);
 
-    allocate(ws.del_v0_del_umn_renorm, 9);
+    ws.del_v0_del_umn_renorm.resize(9);
 
     // assume that the atomic forces are zero at the initial structure
     for (auto is = 0; is < ns; is++) {
@@ -1086,7 +1086,7 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                      mindist_list,
                                      phase_factor.get());
 
-    allocate(ws.v4_ref, nk_irred_interpolate * nk, ns * ns, ns * ns);
+    ws.v4_ref.resize(nk_irred_interpolate * nk, ns * ns, ns * ns);
 
     // initialize optimizer
     relaxation->create_optimizer(ns);
@@ -1116,9 +1116,9 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                             phi4_reciprocal);
     }
 
-    allocate(ws.v3_ref, nk, ns, ns * ns);
-    allocate(ws.v3_renorm, nk, ns, ns * ns);
-    allocate(ws.v3_with_umn, nk, ns, ns * ns);
+    ws.v3_ref.resize(nk, ns, ns * ns);
+    ws.v3_renorm.resize(nk, ns, ns * ns);
+    ws.v3_with_umn.resize(nk, ns, ns * ns);
 
     compute_V3_elements_mpi_over_kpoint(ws.v3_ref,
                                         omega2_harmonic,

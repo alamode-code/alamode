@@ -306,23 +306,20 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
-    double ***omega2_anharm;
-    std::complex<double> ***evec_anharm_tmp;
-    std::complex<double> ***v3_array_all;
-    std::complex<double> ***v4_array_all;
-
-    std::complex<double> **delta_v2_renorm;
-
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
     // Compute matrix element of 4-phonon interaction
 
-    allocate(omega2_anharm, NT, nk, ns);
-    allocate(evec_anharm_tmp, nk, ns, ns);
-    allocate(v4_array_all, nk_irred_interpolate * nk, ns * ns, ns * ns);
+    NDArray<double, 3> omega2_anharm(NT, nk, ns);
+    NDArray<std::complex<double>, 3> evec_anharm_tmp(nk, ns, ns);
+    NDArray<std::complex<double>, 3> v3_array_all;
+    NDArray<std::complex<double>, 3> v4_array_all(nk_irred_interpolate * nk,
+                                                  static_cast<std::size_t>(ns) * ns,
+                                                  static_cast<std::size_t>(ns) * ns);
+    NDArray<std::complex<double>, 2> delta_v2_renorm;
 
     // delta_v2_renorm is zero when structural optimization is not performed
-    allocate(delta_v2_renorm, nk_interpolate, ns * ns);
+    delta_v2_renorm.resize(nk_interpolate, ns * ns);
     for (ik = 0; ik < nk_interpolate; ik++) {
         for (is = 0; is < ns * ns; is++) {
             delta_v2_renorm[ik][is] = 0.0;
@@ -357,7 +354,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
     }
 
     if (relax_mode != RelaxationStrMode::None) {
-        allocate(v3_array_all, nk, ns, ns * ns);
+        v3_array_all.resize(nk, ns, ns * ns);
 
         compute_V3_elements_mpi_over_kpoint(v3_array_all,
                                             omega2_harmonic,
@@ -461,12 +458,12 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
 
     mpi_bcast_complex(dymat_anharm, NT, kmesh_coarse->nk, ns);
 
-    deallocate(omega2_anharm);
-    deallocate(v4_array_all);
-    deallocate(evec_anharm_tmp);
-    deallocate(delta_v2_renorm);
+    omega2_anharm.clear();
+    v4_array_all.clear();
+    evec_anharm_tmp.clear();
+    delta_v2_renorm.clear();
     if (relax_mode != RelaxationStrMode::None) {
-        deallocate(v3_array_all);
+        v3_array_all.clear();
     }
 }
 
@@ -485,8 +482,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
-    double ***omega2_anharm;
-    std::complex<double> ***evec_anharm_tmp;
+    NDArray<double, 3> omega2_anharm;
+    NDArray<std::complex<double>, 3> evec_anharm_tmp;
 
     // Scratch IFC/structure buffers grouped in the workspace consumed by the
     // loop-stage helpers; the names below are aliases into it.
@@ -546,8 +543,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
 
-    allocate(omega2_anharm, NT, nk, ns);
-    allocate(evec_anharm_tmp, nk, ns, ns);
+    omega2_anharm.resize(NT, nk, ns);
+    evec_anharm_tmp.resize(nk, ns, ns);
 
     allocate(omega2_harm_renorm, NT, nk, ns);
     allocate(evec_harm_renorm_tmp, nk, ns, ns);
@@ -595,9 +592,9 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         auto converged_prev = false;
         auto str_diverged = 0;
 
-        allocate(C1_array, 9);
-        allocate(C2_array, 9, 9);
-        allocate(C3_array, 9, 9, 9);
+        C1_array.resize(9);
+        C2_array.resize(9, 9);
+        C3_array.resize(9, 9, 9);
 
         relaxation->set_elastic_constants(C1_array, C2_array, C3_array);
 
@@ -1033,30 +1030,30 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
         deallocate(cmat_convert);
 
-        deallocate(C1_array);
-        deallocate(C2_array);
-        deallocate(C3_array);
+        C1_array.clear();
+        C2_array.clear();
+        C3_array.clear();
     }
 
     mpi_bcast_complex(dymat_anharm, NT, kmesh_coarse->nk, ns);
     mpi_bcast_complex(delta_harmonic_dymat_renormalize, NT, kmesh_coarse->nk, ns);
 
-    deallocate(omega2_anharm);
-    deallocate(evec_anharm_tmp);
-    deallocate(delta_v2_renorm);
-    deallocate(delta_v2_with_umn);
+    omega2_anharm.clear();
+    evec_anharm_tmp.clear();
+    delta_v2_renorm.clear();
+    delta_v2_with_umn.clear();
 
     deallocate(omega2_harm_renorm);
     deallocate(evec_harm_renorm_tmp);
 
-    deallocate(v1_ref);
-    deallocate(v1_with_umn);
-    deallocate(v1_renorm);
-    deallocate(v3_ref);
-    deallocate(v3_renorm);
-    deallocate(v3_with_umn);
-    deallocate(v4_ref);
-    deallocate(del_v0_del_umn_renorm);
+    v1_ref.clear();
+    v1_with_umn.clear();
+    v1_renorm.clear();
+    v3_ref.clear();
+    v3_renorm.clear();
+    v3_with_umn.clear();
+    v4_ref.clear();
+    del_v0_del_umn_renorm.clear();
     deallocate(v1_SCP);
     deallocate(del_v0_del_umn_SCP);
 }

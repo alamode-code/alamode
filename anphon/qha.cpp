@@ -346,9 +346,9 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         auto converged_prev = false;
         auto str_diverged = 0;
 
-        allocate(C1_array, 9);
-        allocate(C2_array, 9, 9);
-        allocate(C3_array, 9, 9, 9);
+        C1_array.resize(9);
+        C2_array.resize(9, 9);
+        C3_array.resize(9, 9, 9);
         allocate(C2_array_ZSISA, 9, 9);
 
         relaxation->set_elastic_constants(C1_array, C2_array, C3_array);
@@ -574,26 +574,26 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
         deallocate(cmat_convert);
 
-        deallocate(C1_array);
-        deallocate(C2_array);
-        deallocate(C3_array);
+        C1_array.clear();
+        C2_array.clear();
+        C3_array.clear();
         deallocate(C2_array_ZSISA);
     }
 
-    deallocate(delta_v2_renorm);
-    deallocate(delta_v2_with_umn);
+    delta_v2_renorm.clear();
+    delta_v2_with_umn.clear();
     deallocate(omega2_harm_renorm);
     deallocate(evec_harm_renorm_tmp);
 
-    deallocate(v1_ref);
-    deallocate(v1_with_umn);
-    deallocate(v1_renorm);
+    v1_ref.clear();
+    v1_with_umn.clear();
+    v1_renorm.clear();
 
-    deallocate(v3_ref);
-    deallocate(v3_renorm);
-    deallocate(v3_with_umn);
+    v3_ref.clear();
+    v3_renorm.clear();
+    v3_with_umn.clear();
 
-    deallocate(v4_ref);
+    v4_ref.clear();
     deallocate(v4_renorm);
     deallocate(v4_with_umn);
 
@@ -602,7 +602,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     deallocate(del_v0_del_umn_QHA);
     deallocate(del_v0_del_umn_ZSISA);
     deallocate(del_v0_del_umn_vZSISA);
-    deallocate(del_v0_del_umn_renorm);
+    del_v0_del_umn_renorm.clear();
 
     deallocate(delq_delu_ZSISA);
 
@@ -746,23 +746,23 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     const auto dT = system->dT;
 
     // renormalization of harmonic dynamical matrix
-    std::complex<double> **delta_v2_renorm;
-    std::complex<double> **delta_v2_with_umn;
+    NDArray<std::complex<double>, 2> delta_v2_renorm;
+    NDArray<std::complex<double>, 2> delta_v2_with_umn;
     double ***omega2_harm_renorm;
     std::complex<double> ***evec_harm_renorm_tmp;
     // original and renormalized IFCs
-    std::complex<double> *v1_ref, *v1_renorm, *v1_with_umn;
-    std::complex<double> ***v3_ref;         // We fix cubic IFCs in perturbative QHA.
-    std::complex<double> ***v4_array_dummy; // We set quartic IFCs as zero.
+    NDArray<std::complex<double>, 1> v1_ref, v1_renorm, v1_with_umn;
+    NDArray<std::complex<double>, 3> v3_ref;         // We fix cubic IFCs in perturbative QHA.
+    NDArray<std::complex<double>, 3> v4_array_dummy; // We set quartic IFCs as zero.
 
     // elastic constants
-    double *C1_array;
-    double **C2_array;
-    double ***C3_array;
+    NDArray<double, 1> C1_array;
+    NDArray<double, 2> C2_array;
+    NDArray<double, 3> C3_array;
 
     // force and stress tensor from F_vib
-    std::complex<double> *v1_vib;
-    std::complex<double> *del_v0_del_umn_vib;
+    NDArray<std::complex<double>, 1> v1_vib;
+    NDArray<std::complex<double>, 1> del_v0_del_umn_vib;
 
     // strain-derivative of k-space IFCs
     // (calculated by real-space IFC renormalization or finite-difference method)
@@ -785,15 +785,15 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
     allocate(omega2_harm_renorm, NT, nk, ns);
     allocate(evec_harm_renorm_tmp, nk, ns, ns);
-    allocate(delta_v2_renorm, nk_interpolate, ns * ns);
-    allocate(delta_v2_with_umn, nk_interpolate, ns * ns);
+    delta_v2_renorm.resize(nk_interpolate, ns * ns);
+    delta_v2_with_umn.resize(nk_interpolate, ns * ns);
 
-    allocate(v1_ref, ns);
-    allocate(v1_with_umn, ns);
-    allocate(v1_renorm, ns);
+    v1_ref.resize(ns);
+    v1_with_umn.resize(ns);
+    v1_renorm.resize(ns);
 
-    allocate(v1_vib, ns);
-    allocate(del_v0_del_umn_vib, 9);
+    v1_vib.resize(ns);
+    del_v0_del_umn_vib.resize(9);
 
     structure_state.resize(ns);
     auto &q0 = structure_state.q0;
@@ -801,7 +801,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     auto &u_tensor = structure_state.u_tensor;
     auto &eta_tensor = structure_state.eta_tensor;
 
-    allocate(v4_array_dummy, nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
+    v4_array_dummy.resize(nk_irred_interpolate * kmesh_dense->nk, ns * ns, ns * ns);
 
     for (ik1 = 0; ik1 < nk_irred_interpolate * kmesh_dense->nk; ik1++) {
         for (is1 = 0; is1 < ns * ns; is1++) {
@@ -811,7 +811,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         }
     }
 
-    allocate(v3_ref, nk, ns, ns * ns);
+    v3_ref.resize(nk, ns, ns * ns);
 
     compute_V3_elements_mpi_over_kpoint(v3_ref,
                                         omega2_harmonic,
@@ -849,9 +849,9 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         }
     }
 
-    allocate(C1_array, 9);
-    allocate(C2_array, 9, 9);
-    allocate(C3_array, 9, 9, 9);
+    C1_array.resize(9);
+    C2_array.resize(9, 9);
+    C3_array.resize(9, 9, 9);
 
     // get indices of optical modes at Gamma point
     js = 0;
@@ -1089,24 +1089,24 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         fout_u_tensor.close();
     }
 
-    deallocate(del_v0_del_umn_vib);
+    del_v0_del_umn_vib.clear();
 
-    deallocate(v1_vib);
-    deallocate(v1_ref);
-    deallocate(v1_with_umn);
-    deallocate(v1_renorm);
+    v1_vib.clear();
+    v1_ref.clear();
+    v1_with_umn.clear();
+    v1_renorm.clear();
 
     deallocate(omega2_harm_renorm);
     deallocate(evec_harm_renorm_tmp);
-    deallocate(delta_v2_renorm);
-    deallocate(delta_v2_with_umn);
+    delta_v2_renorm.clear();
+    delta_v2_with_umn.clear();
 
-    deallocate(v4_array_dummy);
-    deallocate(v3_ref);
+    v4_array_dummy.clear();
+    v3_ref.clear();
 
-    deallocate(C1_array);
-    deallocate(C2_array);
-    deallocate(C3_array);
+    C1_array.clear();
+    C2_array.clear();
+    C3_array.clear();
 }
 
 void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib, const DelVStrainData &del_v_strain,

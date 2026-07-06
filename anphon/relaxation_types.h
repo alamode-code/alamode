@@ -15,6 +15,7 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include "ndarray.h"
 
 namespace PHON_NS
 {
@@ -141,21 +142,21 @@ struct StructuralOptWorkspace
     double pvcell = 0.0; // pressure * reference cell volume [Ry]
 
     // k-space IFCs at the reference structure
-    std::complex<double> *v1_ref{};
-    std::complex<double> ***v3_ref{};
-    std::complex<double> ***v4_ref{};
+    NDArray<std::complex<double>, 1> v1_ref;
+    NDArray<std::complex<double>, 3> v3_ref;
+    NDArray<std::complex<double>, 3> v4_ref;
     double v0_ref = 0.0;
 
     // IFCs renormalized by the strain u_{mu nu}
-    std::complex<double> *v1_with_umn{};
-    std::complex<double> **delta_v2_with_umn{};
-    std::complex<double> ***v3_with_umn{};
+    NDArray<std::complex<double>, 1> v1_with_umn;
+    NDArray<std::complex<double>, 2> delta_v2_with_umn;
+    NDArray<std::complex<double>, 3> v3_with_umn;
     double v0_with_umn = 0.0;
 
     // IFCs renormalized by strain and internal displacement q0
-    std::complex<double> *v1_renorm{};
-    std::complex<double> **delta_v2_renorm{};
-    std::complex<double> ***v3_renorm{};
+    NDArray<std::complex<double>, 1> v1_renorm;
+    NDArray<std::complex<double>, 2> delta_v2_renorm;
+    NDArray<std::complex<double>, 3> v3_renorm;
     double v0_renorm = 0.0;
 
     // v4 entering the q0 renormalization: v4_ref in SCPH, the (numerically
@@ -165,12 +166,12 @@ struct StructuralOptWorkspace
 
     // strain derivatives of the IFCs and elastic constants
     DelVStrainData *del_v_strain{};
-    double *C1_array{};
-    double **C2_array{};
-    double ***C3_array{};
+    NDArray<double, 1> C1_array;
+    NDArray<double, 2> C2_array;
+    NDArray<double, 3> C3_array;
 
     // PES gradient w.r.t. strain at the current structure
-    std::complex<double> *del_v0_del_umn_renorm{};
+    NDArray<std::complex<double>, 1> del_v0_del_umn_renorm;
 
     // current structure
     RelaxationStructureState structure_state;
