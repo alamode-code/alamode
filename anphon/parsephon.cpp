@@ -1631,6 +1631,11 @@ void Input::parse_analysis_vars(const bool use_default_values)
     dos->scattering_phase_space = scattering_phase_space;
     dos->longitudinal_projected_dos = longitudinal_dos;
 
+    // MODE = SCPH/QHA always requires the quartic machinery. This decision
+    // is input policy, so it lives here; Fcs_phonon and the other consumers
+    // only read the value. (A QUARTIC = 2 request is overridden for these
+    // modes, matching the historical behavior.)
+    if (phon->mode == "SCPH" || phon->mode == "QHA") quartic_mode = 1;
     anharmonic_core->quartic_mode = quartic_mode;
     dielec->calc_dielectric_constant = calculate_dielectric_constant;
 

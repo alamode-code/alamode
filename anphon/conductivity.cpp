@@ -316,13 +316,9 @@ void Conductivity::setup_kappa_4ph()
         }
     }
 
-    if (!integration->adaptive_sigma4) {
-        integration->adaptive_sigma4 = new AdaptiveSmearingSigma(kmesh_4ph->nk, ns, integration->adaptive_factor);
-        integration->adaptive_sigma4->setup(phonon_velocity,
-                                            kmesh_4ph,
-                                            system->get_primcell().lattice_vector,
-                                            system->get_primcell().reciprocal_lattice_vector);
-    }
+    integration->create_adaptive_sigma4(kmesh_4ph->nk, ns, kmesh_4ph,
+                                        system->get_primcell().lattice_vector,
+                                        system->get_primcell().reciprocal_lattice_vector);
 
     // prepare IO for four phonon
     setup_result_io(-1);

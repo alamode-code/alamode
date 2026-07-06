@@ -28,6 +28,12 @@ public:
 
     void setup();
 
+    // Allocate and initialize the uniform DOS k mesh (KPMODE = 2). Called
+    // from Kpoint::kpoint_setups; Dos owns the mesh and deletes it in the
+    // destructor.
+    void create_kmesh_dos(const unsigned int nk_in[3], const std::vector<SymmetryOperation> &symmlist,
+                          const Eigen::Matrix3d &rlavec_p, bool time_reversal_sym);
+
     void calc_dos_all();
 
     bool flag_dos;

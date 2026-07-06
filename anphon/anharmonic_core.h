@@ -142,6 +142,13 @@ public:
     bool use_triplet_symmetry;
     bool use_quartet_symmetry;
 
+    // ModeAnalysis legitimately overrides the parser defaults: mode-resolved
+    // analyses on a uniform mesh need the full triplet/quartet lists, so the
+    // symmetry reduction must be switched off through these entry points.
+    void disable_triplet_symmetry() { use_triplet_symmetry = false; }
+
+    void disable_quartet_symmetry() { use_quartet_symmetry = false; }
+
     std::complex<double> V3(const unsigned int[3]);
 
     std::complex<double> V4(const unsigned int[4]);

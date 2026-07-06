@@ -107,7 +107,8 @@ void Fcs_phonon::setup(const std::string &mode)
         require_cubic = true;
         require_quartic = true;
         maxorder = 3;
-        anharmonic_core->quartic_mode = 1;
+        // quartic_mode == 1 is guaranteed for these modes by the input
+        // parser (parse_analysis_vars).
     }
 
     allocate(force_constant_with_cell, maxorder);

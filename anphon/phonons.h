@@ -29,8 +29,6 @@ public:
 
     virtual ~PHON();
 
-    class Memory *memory;
-
     class Timer *timer;
 
     class Input *input;

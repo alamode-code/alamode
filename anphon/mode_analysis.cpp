@@ -195,7 +195,7 @@ void ModeAnalysis::setup_mode_analysis()
 
     if (ks_analyze_mode) {
         if (kpoint->kpoint_mode == 2 && anharmonic_core->use_triplet_symmetry) {
-            anharmonic_core->use_triplet_symmetry = false;
+            anharmonic_core->disable_triplet_symmetry();
             if (mympi->my_rank == 0) {
                 std::cout << "\n TRISYM was automatically set to 0.\n\n";
             }
@@ -212,7 +212,7 @@ void ModeAnalysis::setup_mode_analysis()
             }
 
             if (kpoint->kpoint_mode == 2 && anharmonic_core->use_quartet_symmetry) {
-                anharmonic_core->use_quartet_symmetry = false;
+                anharmonic_core->disable_quartet_symmetry();
                 if (mympi->my_rank == 0) {
                     std::cout << "\n QUADRISYM was automatically set to 0.\n\n";
                 }

@@ -132,6 +132,13 @@ public:
 
     void setup_integration();
 
+    // Allocate and initialize the adaptive smearing table for the 4ph
+    // channel on its (possibly coarser) mesh. Called from
+    // Conductivity::setup_kappa_4ph; Integration owns the object and
+    // deletes it in the destructor. No-op if already created.
+    void create_adaptive_sigma4(unsigned int nk_in, unsigned int ns_in, const KpointMeshUniform *kmesh_in,
+                                const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p);
+
     double do_tetrahedron(const double *energy, const double *f, const unsigned int ntetra,
                           const unsigned int *const *tetras, const double e_ref);
 

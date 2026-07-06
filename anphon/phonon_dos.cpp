@@ -86,6 +86,13 @@ void Dos::deallocate_variables()
     delete dymat_dos;
 }
 
+void Dos::create_kmesh_dos(const unsigned int nk_in[3], const std::vector<SymmetryOperation> &symmlist,
+                           const Eigen::Matrix3d &rlavec_p, const bool time_reversal_sym)
+{
+    kmesh_dos = new KpointMeshUniform(nk_in);
+    kmesh_dos->setup(symmlist, rlavec_p, time_reversal_sym, true);
+}
+
 void Dos::setup()
 {
     // This function must not be called before dynamical->setup_dynamical()

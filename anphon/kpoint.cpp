@@ -149,11 +149,10 @@ void Kpoint::kpoint_setups(const std::string mode)
             }
         }
         MPI_Bcast(&nk_tmp[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        dos->kmesh_dos = new KpointMeshUniform(nk_tmp);
-        dos->kmesh_dos->setup(symmetry->SymmList,
+        dos->create_kmesh_dos(nk_tmp,
+                              symmetry->SymmList,
                               system->get_primcell().reciprocal_lattice_vector,
-                              symmetry->time_reversal_sym,
-                              true);
+                              symmetry->time_reversal_sym);
 
         if (mympi->my_rank == 0) {
             std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";

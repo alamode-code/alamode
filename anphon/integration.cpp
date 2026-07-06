@@ -120,6 +120,15 @@ void Integration::prepare_adaptivesmearing()
     }
 }
 
+void Integration::create_adaptive_sigma4(const unsigned int nk_in, const unsigned int ns_in,
+                                         const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &lavec_p,
+                                         const Eigen::Matrix3d &rlavec_p)
+{
+    if (adaptive_sigma4) return;
+    adaptive_sigma4 = new AdaptiveSmearingSigma(nk_in, ns_in, adaptive_factor);
+    adaptive_sigma4->setup(phonon_velocity, kmesh_in, lavec_p, rlavec_p);
+}
+
 void TetraNodes::setup()
 {
     // This menber function creates node information of the tetrahedra.
