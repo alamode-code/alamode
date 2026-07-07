@@ -15,6 +15,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "dynamical.h"
 #include "error.h"
 #include "ifc_derivative.h"
+#include "interpolation.h"
 #include "memory.h"
 #include "optimizers.h"
 #include "parsephon.h"
@@ -1240,7 +1241,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, c
         Dymat = evec_tmp * Dymat * evec_tmp.adjoint();
 
         // symmetrize dynamical matrix
-        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse, mat_transform_sym, Dymat);
+        symmetrize_dynamical_matrix(ik, kmesh_coarse, ns, mat_transform_sym, Dymat);
 
         // store to dymat_q
         for (is1 = 0; is1 < ns; is1++) {
@@ -1251,7 +1252,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, c
     }
 
     // replicate dymat_q to all q
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse, mat_transform_sym, dymat_q);
+    replicate_dymat_for_all_kpoints(kmesh_coarse, ns, mat_transform_sym, dymat_q);
 
     // copy to delta_v2_renorm
     for (ik = 0; ik < nk_interpolate; ik++) {

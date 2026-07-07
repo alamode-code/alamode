@@ -135,14 +135,6 @@ public:
 
     void set_projection_directions(const std::vector<std::vector<double>> projections_in);
 
-    static void r2q(const double *xk_in, const unsigned int nx, const unsigned int ny, const unsigned int nz,
-                    const unsigned int ns, MinimumDistList ***mindist_list_in, std::complex<double> ***dymat_r_in,
-                    std::complex<double> **dymat_k_out);
-
-    static void fourier_dymat_k_to_r(const unsigned int nk1, const unsigned int nk2, const unsigned int nk3,
-                                     const unsigned int ns, const std::complex<double> *const *const *dymat_k,
-                                     std::complex<double> ***dymat_r);
-
     void precompute_dymat_harm(const unsigned int nk_in, double **xk_in, double **kvec_in,
                                std::vector<Eigen::MatrixXcd> &dymat_short,
                                std::vector<Eigen::MatrixXcd> &dymat_long) const;
@@ -154,17 +146,6 @@ public:
         const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
         const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
         MinimumDistList ***mindist_list, const unsigned int verbosity);
-
-    void symmetrize_dynamical_matrix(const unsigned int ik, const KpointMeshUniform *kmesh_coarse,
-                                     std::complex<double> ****mat_transform_sym, Eigen::MatrixXcd &dymat) const;
-
-    void replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coarse,
-                                         std::complex<double> ****mat_transform_sym,
-                                         std::complex<double> ***dymat_inout) const;
-
-    void replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coarse,
-                                         std::complex<double> ****mat_transform_sym,
-                                         std::vector<Eigen::MatrixXcd> &dymat_inout) const;
 
     void diagonalize_interpolated_matrix(std::complex<double> **, double *, std::complex<double> **, bool) const;
 
@@ -181,12 +162,6 @@ public:
     void calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                   std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
                                   const std::vector<int> &kmap_interpolate_to_scph);
-
-
-    void get_symmetry_gamma_dynamical(KpointMeshUniform *kmesh_in, const unsigned int natmin_in,
-                                      const Eigen::MatrixXd &x_fractional_in,
-                                      const std::vector<SymmetryOperationWithMapping> &symmlist,
-                                      NDArray<std::complex<double>, 4> &mat_transform_sym) const;
 
     void get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                                const std::vector<FcsArrayWithCell> &fc2,

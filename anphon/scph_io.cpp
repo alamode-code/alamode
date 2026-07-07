@@ -25,6 +25,7 @@
 #include <iostream>
 #include "constants.h"
 #include "dynamical.h"
+#include "interpolation.h"
 #include "kpoint.h"
 #include "memory.h"
 #include "parsephon.h"
@@ -248,7 +249,7 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
             }
         }
     }
-    Dynamical::fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_harm_q, dymat_harm_r);
+    fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_harm_q, dymat_harm_r);
 
     // Count rows first, then fill.
     size_t nrows = 0;

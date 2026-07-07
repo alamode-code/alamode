@@ -28,6 +28,7 @@
 #include "ewald.h"
 #include "fcs_phonon.h"
 #include "integration.h"
+#include "interpolation.h"
 #include "kpoint.h"
 #include "memory.h"
 #include "mpi.h"
@@ -1218,7 +1219,7 @@ void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
 
         // Harmonic dynamical matrix
         Dymat = evec_tmp * Dymat * evec_tmp.adjoint();
-        dynamical->symmetrize_dynamical_matrix(ik, kmesh_coarse.get(), mat_transform_sym, Dymat);
+        symmetrize_dynamical_matrix(ik, kmesh_coarse.get(), ns, mat_transform_sym, Dymat);
 
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
@@ -1235,7 +1236,7 @@ void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
         }
     }
 
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse.get(), mat_transform_sym, dymat_q_HA);
+    replicate_dymat_for_all_kpoints(kmesh_coarse.get(), ns, mat_transform_sym, dymat_q_HA);
 }
 
 void Scph::compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double temp,
@@ -1402,7 +1403,7 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
     const auto mat_tmp = evec_initial[knum] * saes.eigenvectors();
     MatrixXcd Dymat = mat_tmp * eval_tmp.asDiagonal() * mat_tmp.adjoint();
 
-    dynamical->symmetrize_dynamical_matrix(ik_irred, kmesh_coarse.get(), mat_transform_sym, Dymat);
+    symmetrize_dynamical_matrix(ik_irred, kmesh_coarse.get(), ns, mat_transform_sym, Dymat);
     for (unsigned int is = 0; is < ns; ++is) {
         for (unsigned int js = 0; js < ns; ++js) {
             dymat_q[is][js][knum_interpolate] = Dymat(is, js);
@@ -1424,7 +1425,7 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
     NDArray<std::complex<double>, 3> dymat_r_new;
     dymat_r_new.resize(ns, ns, nk_interpolate);
 
-    dynamical->replicate_dymat_for_all_kpoints(kmesh_coarse.get(), mat_transform_sym, dymat_q);
+    replicate_dymat_for_all_kpoints(kmesh_coarse.get(), ns, mat_transform_sym, dymat_q);
 
     // Subtract harmonic contribution from the dynamical matrix
     for (unsigned int ik = 0; ik < nk_interpolate; ++ik) {
@@ -1435,12 +1436,12 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
         }
     }
 
-    Dynamical::fourier_dymat_k_to_r(kmesh_interpolate[0],
-                                    kmesh_interpolate[1],
-                                    kmesh_interpolate[2],
-                                    ns,
-                                    dymat_q,
-                                    dymat_r_new);
+    fourier_dymat_k_to_r(kmesh_interpolate[0],
+                         kmesh_interpolate[1],
+                         kmesh_interpolate[2],
+                         ns,
+                         dymat_q,
+                         dymat_r_new);
 
     // Create temporary C-style arrays for exec_interpolation
     NDArray<double, 2> eval_temp;

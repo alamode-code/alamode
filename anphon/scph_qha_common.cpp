@@ -16,6 +16,7 @@
 #include <vector>
 #include "constants.h"
 #include "dielec.h"
+#include "interpolation.h"
 #include "parsephon.h"
 #include "phonon_dos.h"
 #include "relaxation.h"
@@ -154,11 +155,12 @@ void ScphQhaCommon::setup_structural_data()
     mat_transform_sym.clear();
 
     system->get_minimum_distances(kmesh_coarse->nk_i, mindist_list);
-    dynamical->get_symmetry_gamma_dynamical(kmesh_coarse.get(),
-                                            system->get_primcell().number_of_atoms,
-                                            system->get_primcell().x_fractional,
-                                            symmetry->SymmListWithMap,
-                                            mat_transform_sym);
+    get_symmetry_gamma_dynamical(kmesh_coarse.get(),
+                                 system->get_primcell().number_of_atoms,
+                                 dynamical->neval,
+                                 system->get_primcell().x_fractional,
+                                 symmetry->SymmListWithMap,
+                                 mat_transform_sym);
 }
 
 void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)

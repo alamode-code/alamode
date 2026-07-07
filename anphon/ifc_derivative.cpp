@@ -8,6 +8,7 @@
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
+#include "interpolation.h"
 #include "mpi_common.h"
 #include "relaxation.h"
 #include "scph_v3v4_elements.h"
@@ -1457,11 +1458,11 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
                 }
             }
 
-            Dynamical::fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_q, dymat_new);
+            fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_q, dymat_new);
 
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (ik = 0; ik < static_cast<int>(nk); ik++) {
-                dynamical_.r2q(kmesh_dense->xk[ik], nk1, nk2, nk3, ns, mindist_list, dymat_new, dymat_tmp);
+                r2q(kmesh_dense->xk[ik], nk1, nk2, nk3, ns, mindist_list, dymat_new, dymat_tmp);
 
                 for (is = 0; is < ns; is++) {
                     for (js = 0; js < ns; js++) {
