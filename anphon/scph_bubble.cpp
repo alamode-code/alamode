@@ -25,6 +25,7 @@
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
+#include "degeneracy_utils.h"
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
@@ -154,7 +155,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                       dymat_harm_long,
                                       mindist_list);
 
-        find_degeneracy(degeneracy_at_k, nk_scph, eval);
+        for (unsigned int ik = 0; ik < nk_scph; ++ik) find_degenerate_groups(ns, eval[ik], degeneracy_at_k[ik]);
 
         if (mympi->my_rank == 0) std::cout << " Temperature (K) : " << std::setw(6) << temp << '\n';
 

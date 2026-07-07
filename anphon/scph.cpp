@@ -1150,36 +1150,6 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
 //}
 
 
-void Scph::find_degeneracy(std::vector<int> *degeneracy_out, const unsigned int nk_in, double **eval_in) const
-{
-    // eval is omega^2 in atomic unit
-
-    const auto ns = dynamical->neval;
-    const auto tol_omega = 1.0e-7;
-
-    for (unsigned int ik = 0; ik < nk_in; ++ik) {
-
-        degeneracy_out[ik].clear();
-
-        auto omega_prev = eval_in[ik][0];
-        auto ideg = 1;
-
-        for (unsigned int is = 1; is < ns; ++is) {
-            const auto omega_now = eval_in[ik][is];
-
-            if (std::abs(omega_now - omega_prev) < tol_omega) {
-                ++ideg;
-            } else {
-                degeneracy_out[ik].push_back(ideg);
-                ideg = 1;
-                omega_prev = omega_now;
-            }
-        }
-        degeneracy_out[ik].push_back(ideg);
-    }
-}
-
-
 void Scph::initialize_scph_iteration(const double temp, const bool flag_converged, double **omega2_prev,
                                      const unsigned int verbosity, Eigen::MatrixXd &omega_now,
                                      Eigen::MatrixXd &omega2_HA, std::vector<Eigen::MatrixXcd> &evec_initial,

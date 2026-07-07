@@ -22,6 +22,7 @@
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
+#include "degeneracy_utils.h"
 #include "dynamical.h"
 #include "error.h"
 #include "ewald.h"

@@ -7,6 +7,7 @@
 #include "anharmonic_core.h"
 #include "conductivity.h"
 #include "constants.h"
+#include "degeneracy_utils.h"
 #include "dense_symmetric_eigen.h"
 #include "dynamical.h"
 #include "error.h"

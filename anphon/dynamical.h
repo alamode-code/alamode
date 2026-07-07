@@ -230,49 +230,4 @@ extern "C"
     // zgemm_ is declared in blas_wrapper.h (call it via zgemm_cpx).
 }
 
-// Replace per-branch data by its average over each degenerate subspace at
-// one k point. eval_at_k holds the ns sorted eigenvalues; data is [ns][width]
-// row-major (width = 1 for scalars, 3 for Cartesian vectors, ntemp for
-// temperature rows) and is averaged column-wise within each group of
-// consecutive eigenvalues closer than tol_omega (~0.01 cm^-1 by default).
-inline void average_over_degenerate_modes(const int ns, const double *eval_at_k, const int width, double *data,
-                                          const double tol_omega = 1.0e-7)
-{
-    std::vector<int> degeneracy_at_k;
-
-    auto omega_prev = eval_at_k[0];
-    auto ideg = 1;
-
-    for (int j = 1; j < ns; ++j) {
-        const auto omega_now = eval_at_k[j];
-        if (std::abs(omega_now - omega_prev) < tol_omega) {
-            ++ideg;
-        } else {
-            degeneracy_at_k.push_back(ideg);
-            ideg = 1;
-            omega_prev = omega_now;
-        }
-    }
-    degeneracy_at_k.push_back(ideg);
-
-    std::vector<double> data_sum(width);
-
-    int is = 0;
-    for (const auto ideg_now: degeneracy_at_k) {
-        if (ideg_now > 1) {
-            for (int l = 0; l < width; ++l) data_sum[l] = 0.0;
-            for (int k = is; k < is + ideg_now; ++k) {
-                for (int l = 0; l < width; ++l) {
-                    data_sum[l] += data[k * width + l];
-                }
-            }
-            for (int k = is; k < is + ideg_now; ++k) {
-                for (int l = 0; l < width; ++l) {
-                    data[k * width + l] = data_sum[l] / static_cast<double>(ideg_now);
-                }
-            }
-        }
-        is += ideg_now;
-    }
-}
 } // namespace PHON_NS
