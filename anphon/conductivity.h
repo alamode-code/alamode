@@ -135,21 +135,6 @@ private:
 
     void load_computed_modes_h5(const std::string &tag, double **damping, std::vector<int> &vks_done_out) const;
 
-    void load_restart_gamma_blocks(std::fstream &fs_result, const std::string &file_result, const unsigned int nk_irred,
-                                   double **damping, std::vector<int> &vks_done_out, const char *label,
-                                   const bool allow_truncate);
-
-    void check_consistency_restart(std::fstream &fs_result, const std::string &file_result_in,
-                                   const unsigned int nk_in[3], const unsigned int nk_irred_in, const Cell &primcell,
-                                   const bool classical_in, const int ismear_in, const double epsilon_in,
-                                   const double tmin_in, const double tmax_in, const double delta_t_in,
-                                   const std::string &file_fcs_in);
-
-    void write_header_result(std::fstream &fs_result, const std::string &file_result, const KpointMeshUniform *kmesh_in,
-                             const Cell &primcell, const bool classical_in, const int ismear_in,
-                             const double epsilon_in, const double tmin_in, const double tmax_in,
-                             const double delta_t_in, const std::string &file_fcs_in);
-
     void calc_anharmonic_imagself3();
 
     void calc_anharmonic_imagself4();

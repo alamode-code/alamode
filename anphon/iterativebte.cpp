@@ -13,6 +13,7 @@
 #include "error.h"
 #include "integration.h"
 #include "isotope.h"
+#include "kappa_result_io_text.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -1606,73 +1607,27 @@ void Iterativebte::write_result()
     if (conductivity->get_use_h5_io()) return;
 
     // write Q and W for all phonon, only phonon in irreducible BZ is written
-    int i;
     if (mympi->my_rank == 0) {
         std::cout << " Prepare result file ..." << '\n';
 
-        fs_result.open(conductivity->get_filename_results(3).c_str(), std::ios::out);
+        KappaResultIOText::write_header(fs_result,
+                                        conductivity->get_filename_results(3),
+                                        dos->kmesh_dos.get(),
+                                        system->get_primcell(),
+                                        false,
+                                        thermodynamics->classical,
+                                        integration->ismear,
+                                        integration->epsilon,
+                                        system->Tmin,
+                                        system->Tmax,
+                                        system->dT,
+                                        fcs_phonon->file_fcs);
 
-        if (!fs_result) {
-            exit("setup_result_io", "Could not open file_result3");
-        }
-
-        fs_result << "## General information" << '\n';
-        fs_result << "#SYSTEM" << '\n';
-        fs_result << system->get_primcell().number_of_atoms << " " << system->get_primcell().number_of_elems << '\n';
-        fs_result << system->get_primcell().volume << '\n';
-        fs_result << "#END SYSTEM" << '\n';
-
-        fs_result << "#KPOINT" << '\n';
-        fs_result << dos->kmesh_dos->nk_i[0] << " " << dos->kmesh_dos->nk_i[1] << " " << dos->kmesh_dos->nk_i[2]
-                  << '\n';
-        fs_result << dos->kmesh_dos->nk_irred << '\n';
-
-        for (int i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
-            fs_result << std::setw(6) << i + 1 << ":";
-            for (int j = 0; j < 3; ++j) {
-                fs_result << std::setw(15) << std::scientific << dos->kmesh_dos->kpoint_irred_all[i][0].kval[j];
-            }
-            fs_result << std::setw(12) << std::fixed << dos->kmesh_dos->weight_k[i] << '\n';
-        }
-        fs_result.unsetf(std::ios::fixed);
-
-        fs_result << "#END KPOINT" << '\n';
-
-        fs_result << "#CLASSICAL" << '\n';
-        fs_result << thermodynamics->classical << '\n';
-        fs_result << "#END CLASSICAL" << '\n';
-
-        fs_result << "#FCSXML" << '\n';
-        fs_result << fcs_phonon->file_fcs << '\n';
-        fs_result << "#END  FCSXML" << '\n';
-
-        fs_result << "#SMEARING" << '\n';
-        fs_result << integration->ismear << '\n';
-        fs_result << integration->epsilon * Ry_to_kayser << '\n';
-        fs_result << "#END SMEARING" << '\n';
-
-        fs_result << "#TEMPERATURE" << '\n';
-        fs_result << system->Tmin << " " << system->Tmax << " " << system->dT << '\n';
-        fs_result << "#END TEMPERATURE" << '\n';
-
-        fs_result << "##END General information" << '\n';
-
-        fs_result << "##Phonon Frequency" << '\n';
-        fs_result << "#K-point (irreducible), Branch, Omega (cm^-1), Group velocity (m/s)" << '\n';
-
-        double factor = Bohr_in_Angstrom * 1.0e-10 / time_ry;
-        for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
-            const int ik = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
-            for (auto is = 0; is < dynamical->neval; ++is) {
-                fs_result << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                fs_result << std::setw(15) << in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is]);
-                fs_result << std::setw(15) << vel[ik][is][0] * factor << std::setw(15) << vel[ik][is][1] * factor
-                          << std::setw(15) << vel[ik][is][2] * factor << '\n';
-            }
-        }
-
-        fs_result << "##END Phonon Frequency" << '\n' << '\n';
-        fs_result << "##Q and W at each temperature" << '\n';
+        KappaResultIOText::write_frequency_velocity_block(fs_result,
+                                                          dos->kmesh_dos.get(),
+                                                          dos->dymat_dos->get_eigenvalues(),
+                                                          vel,
+                                                          ns);
     }
 }
 
@@ -1721,19 +1676,12 @@ void Iterativebte::write_Q_dF(int itemp, NDArray<double, 2> &q, NDArray<double, 
                                             &kappa[itemp][0][0],
                                             converged ? 1 : 0);
         } else if (!conductivity->get_use_h5_io()) {
-            fs_result << std::setw(10) << etemp << '\n';
-
-            for (auto ik = 0; ik < nk_ir; ++ik) {
-                for (auto is = 0; is < ns; ++is) {
-                    auto k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
-                    fs_result << std::setw(6) << ik + 1 << std::setw(6) << is + 1 << '\n';
-                    fs_result << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is]
-                              << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][0]
-                              << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][1]
-                              << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][2] << '\n';
-                }
-            }
-            fs_result << '\n';
+            KappaResultIOText::write_ibte_Q_dF_block(fs_result,
+                                                     etemp,
+                                                     dos->kmesh_dos.get(),
+                                                     Q_all,
+                                                     df,
+                                                     ns);
         }
     }
     Q_all.clear();

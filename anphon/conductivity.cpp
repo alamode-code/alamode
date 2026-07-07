@@ -10,15 +10,11 @@
 
 #include "conductivity.h"
 #include <algorithm>
-#include <cerrno>
 #include <cmath>
 #include <cstdlib>
-#include <cstring>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
@@ -31,6 +27,7 @@
 #include "isotope.h"
 #include "iterativebte.h"
 #include "kpoint.h"
+#include "kappa_result_io_text.h"
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
@@ -383,26 +380,20 @@ void Conductivity::prepare_restart(const int mode)
                 load_computed_modes_h5("3ph", damping3, vks_done);
             } else if (!restart_flag_3ph) {
 
-                fs_result3 << "##Phonon Frequency\n";
-                fs_result3 << "#K-point (irreducible), Branch, Omega (cm^-1)\n";
-                for (i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
-                    const auto ik = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
-                    for (auto is = 0; is < dynamical->neval; ++is) {
-                        fs_result3 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result3 << std::setw(15) << in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
-                                   << '\n';
-                    }
-                }
-                fs_result3 << "##END Phonon Frequency\n\n";
-                fs_result3 << "##Phonon Relaxation Time\n";
+                KappaResultIOText::write_frequency_block(fs_result3,
+                                                         dos->kmesh_dos.get(),
+                                                         dos->dymat_dos->get_eigenvalues(),
+                                                         ns);
             } else {
-                load_restart_gamma_blocks(fs_result3,
-                                          file_result3,
-                                          dos->kmesh_dos->nk_irred,
-                                          damping3,
-                                          vks_done,
-                                          "3-phonon",
-                                          true);
+                KappaResultIOText::load_gamma_blocks(fs_result3,
+                                                     file_result3,
+                                                     dos->kmesh_dos->nk_irred,
+                                                     ns,
+                                                     ntemp,
+                                                     damping3,
+                                                     vks_done,
+                                                     "3-phonon",
+                                                     true);
             }
 
             if (!use_h5_io) {
@@ -456,26 +447,20 @@ void Conductivity::prepare_restart(const int mode)
             if (use_h5_io) {
                 load_computed_modes_h5("4ph", damping4, vks_done4);
             } else if (!restart_flag_4ph) {
-                fs_result4 << "##Phonon Frequency\n";
-                fs_result4 << "#K-point (irreducible), Branch, Omega (cm^-1)\n";
-                for (i = 0; i < kmesh_4ph->nk_irred; ++i) {
-                    const int ik = kmesh_4ph->kpoint_irred_all[i][0].knum;
-                    for (auto is = 0; is < dynamical->neval; ++is) {
-                        fs_result4 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result4 << std::setw(15) << in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
-                    }
-                }
-
-                fs_result4 << "##END Phonon Frequency\n\n";
-                fs_result4 << "##Phonon Relaxation Time\n";
+                KappaResultIOText::write_frequency_block(fs_result4,
+                                                         kmesh_4ph.get(),
+                                                         dymat_4ph->get_eigenvalues(),
+                                                         ns);
             } else {
-                load_restart_gamma_blocks(fs_result4,
-                                          file_result4,
-                                          kmesh_4ph->nk_irred,
-                                          damping4,
-                                          vks_done4,
-                                          "4-phonon",
-                                          true);
+                KappaResultIOText::load_gamma_blocks(fs_result4,
+                                                     file_result4,
+                                                     kmesh_4ph->nk_irred,
+                                                     ns,
+                                                     ntemp,
+                                                     damping4,
+                                                     vks_done4,
+                                                     "4-phonon",
+                                                     true);
             }
             if (!use_h5_io) {
                 fs_result4.clear();
@@ -521,99 +506,6 @@ void Conductivity::prepare_restart(const int mode)
         vks_done4.clear();
     } else {
         exit("prepare_restart", "this could not happen");
-    }
-}
-
-
-void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std::string &file_result,
-                                             const unsigned int nk_irred, double **damping,
-                                             std::vector<int> &vks_done_out, const char *label,
-                                             const bool allow_truncate)
-{
-    std::string line_tmp;
-    unsigned int nk_tmp, ns_tmp;
-    unsigned int multiplicity;
-    double vel_dummy[3];
-    bool truncate_tail = false;
-    std::streampos truncate_pos = std::streampos(0);
-
-    fs_result.clear();
-    fs_result.seekg(0, std::ios::beg);
-
-    while (true) {
-        const auto block_start = fs_result.tellg();
-        if (!(fs_result >> line_tmp)) break;
-        if (line_tmp != "#GAMMA_EACH") continue;
-
-        truncate_pos = block_start;
-
-        if (!(fs_result >> nk_tmp >> ns_tmp >> multiplicity)) {
-            truncate_tail = true;
-            break;
-        }
-
-        if (nk_tmp < 1 || nk_tmp > nk_irred || ns_tmp < 1 || ns_tmp > ns) {
-            const auto message =
-                std::string("Invalid k-point or branch index in the ") + label + " restart (.result) file.";
-            exit("prepare_restart", message.c_str());
-        }
-
-        const auto nks_tmp = (nk_tmp - 1) * ns + ns_tmp - 1;
-
-        for (unsigned int i = 0; i < multiplicity; ++i) {
-            if (!(fs_result >> vel_dummy[0] >> vel_dummy[1] >> vel_dummy[2])) {
-                truncate_tail = true;
-                break;
-            }
-        }
-        if (truncate_tail) break;
-
-        std::vector<double> damping_tmp(ntemp);
-        for (unsigned int i = 0; i < ntemp; ++i) {
-            if (!(fs_result >> damping_tmp[i])) {
-                truncate_tail = true;
-                break;
-            }
-            damping_tmp[i] *= kayser_to_Ry;
-        }
-        if (truncate_tail) break;
-
-        std::string end_tag, end_name;
-        if (!(fs_result >> end_tag >> end_name) || end_tag != "#END" || end_name != "GAMMA_EACH") {
-            truncate_tail = true;
-            break;
-        }
-
-        for (unsigned int i = 0; i < ntemp; ++i) {
-            damping[nks_tmp][i] = damping_tmp[i];
-        }
-        vks_done_out.push_back(nks_tmp);
-    }
-
-    if (truncate_tail) {
-        const auto message =
-            std::string("Ignoring an incomplete ") + label + " #GAMMA_EACH block at the end of " + file_result + ".";
-        warn("prepare_restart", message.c_str());
-
-        // When the caller only imports the data (h5 migration), the legacy
-        // file must stay byte-identical; the incomplete tail is simply
-        // skipped in memory.
-        if (!allow_truncate) return;
-
-        fs_result.clear();
-        fs_result.close();
-
-        const auto truncate_offset = static_cast<off_t>(static_cast<std::streamoff>(truncate_pos));
-        if (truncate(file_result.c_str(), truncate_offset) != 0) {
-            const auto error_message = std::string("Could not truncate incomplete restart block in ") + file_result +
-                                       ": " + std::strerror(errno);
-            exit("prepare_restart", error_message.c_str());
-        }
-
-        fs_result.open(file_result.c_str(), std::ios::in | std::ios::out);
-        if (!fs_result) {
-            exit("prepare_restart", "Could not reopen restart file after truncating incomplete block.");
-        }
     }
 }
 
@@ -674,32 +566,33 @@ void Conductivity::setup_result_io(const int mode)
                 std::cout << "               Phonon lifetimes will be load from file " << file_result3 << '\n';
                 std::cout << "               and check the consistency of the computational settings.\n";
 
-                check_consistency_restart(fs_result3,
-                                          file_result3,
-                                          dos->kmesh_dos->nk_i,
-                                          dos->kmesh_dos->nk_irred,
-                                          system->get_primcell(),
-                                          thermodynamics->classical,
-                                          integration->ismear,
-                                          integration->epsilon,
-                                          system->Tmin,
-                                          system->Tmax,
-                                          system->dT,
-                                          fcs_phonon->file_fcs);
+                KappaResultIOText::check_consistency(fs_result3,
+                                                     file_result3,
+                                                     dos->kmesh_dos->nk_i,
+                                                     dos->kmesh_dos->nk_irred,
+                                                     system->get_primcell(),
+                                                     thermodynamics->classical,
+                                                     integration->ismear,
+                                                     integration->epsilon,
+                                                     system->Tmin,
+                                                     system->Tmax,
+                                                     system->dT,
+                                                     fcs_phonon->file_fcs);
 
             } else {
 
-                write_header_result(fs_result3,
-                                    file_result3,
-                                    dos->kmesh_dos.get(),
-                                    system->get_primcell(),
-                                    thermodynamics->classical,
-                                    integration->ismear,
-                                    integration->epsilon,
-                                    system->Tmin,
-                                    system->Tmax,
-                                    system->dT,
-                                    fcs_phonon->file_fcs);
+                KappaResultIOText::write_header(fs_result3,
+                                                file_result3,
+                                                dos->kmesh_dos.get(),
+                                                system->get_primcell(),
+                                                true,
+                                                thermodynamics->classical,
+                                                integration->ismear,
+                                                integration->epsilon,
+                                                system->Tmin,
+                                                system->Tmax,
+                                                system->dT,
+                                                fcs_phonon->file_fcs);
             }
         } else if (mode == -1) {
 
@@ -709,32 +602,33 @@ void Conductivity::setup_result_io(const int mode)
                 std::cout << "                   Phonon lifetimes will be load from file " << file_result4 << '\n';
                 std::cout << "                   and check the consistency of the computational settings.\n";
 
-                check_consistency_restart(fs_result4,
-                                          file_result4,
-                                          kmesh_4ph->nk_i,
-                                          kmesh_4ph->nk_irred,
-                                          system->get_primcell(),
-                                          thermodynamics->classical,
-                                          integration->ismear,
-                                          integration->epsilon,
-                                          system->Tmin,
-                                          system->Tmax,
-                                          system->dT,
-                                          fcs_phonon->file_fcs);
+                KappaResultIOText::check_consistency(fs_result4,
+                                                     file_result4,
+                                                     kmesh_4ph->nk_i,
+                                                     kmesh_4ph->nk_irred,
+                                                     system->get_primcell(),
+                                                     thermodynamics->classical,
+                                                     integration->ismear,
+                                                     integration->epsilon,
+                                                     system->Tmin,
+                                                     system->Tmax,
+                                                     system->dT,
+                                                     fcs_phonon->file_fcs);
 
             } else {
 
-                write_header_result(fs_result4,
-                                    file_result4,
-                                    kmesh_4ph.get(),
-                                    system->get_primcell(),
-                                    thermodynamics->classical,
-                                    integration->ismear,
-                                    integration->epsilon,
-                                    system->Tmin,
-                                    system->Tmax,
-                                    system->dT,
-                                    fcs_phonon->file_fcs);
+                KappaResultIOText::write_header(fs_result4,
+                                                file_result4,
+                                                kmesh_4ph.get(),
+                                                system->get_primcell(),
+                                                true,
+                                                thermodynamics->classical,
+                                                integration->ismear,
+                                                integration->epsilon,
+                                                system->Tmin,
+                                                system->Tmax,
+                                                system->dT,
+                                                fcs_phonon->file_fcs);
             }
         } else {
             exit("set_up_result_io", "this could not happen");
@@ -884,27 +778,29 @@ void Conductivity::import_legacy_result_text(const int mode)
               << "; the text file itself is left untouched.\n";
 
     std::fstream fs_legacy;
-    check_consistency_restart(fs_legacy,
-                              file_legacy,
-                              kmesh_in->nk_i,
-                              kmesh_in->nk_irred,
-                              system->get_primcell(),
-                              thermodynamics->classical,
-                              integration->ismear,
-                              integration->epsilon,
-                              system->Tmin,
-                              system->Tmax,
-                              system->dT,
-                              fcs_phonon->file_fcs);
+    KappaResultIOText::check_consistency(fs_legacy,
+                                         file_legacy,
+                                         kmesh_in->nk_i,
+                                         kmesh_in->nk_irred,
+                                         system->get_primcell(),
+                                         thermodynamics->classical,
+                                         integration->ismear,
+                                         integration->epsilon,
+                                         system->Tmin,
+                                         system->Tmax,
+                                         system->dT,
+                                         fcs_phonon->file_fcs);
 
     std::vector<int> rows_done;
-    load_restart_gamma_blocks(fs_legacy,
-                              file_legacy,
-                              kmesh_in->nk_irred,
-                              damping,
-                              rows_done,
-                              (mode == 1) ? "3-phonon" : "4-phonon",
-                              false);
+    KappaResultIOText::load_gamma_blocks(fs_legacy,
+                                         file_legacy,
+                                         kmesh_in->nk_irred,
+                                         ns,
+                                         ntemp,
+                                         damping,
+                                         rows_done,
+                                         (mode == 1) ? "3-phonon" : "4-phonon",
+                                         false);
     fs_legacy.close();
 
     if (!rows_done.empty()) {
@@ -1171,8 +1067,6 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
                                       double **damp_in, int mode)
 {
     const unsigned int np = mympi->nprocs;
-    unsigned int k;
-
     if (use_h5_io) {
         // The gathered batch occupies consecutive rows; frequencies and
         // velocities were stored once at channel creation.
@@ -1186,69 +1080,29 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
 
     if (mode == 1) {
         // damping 3
-        std::ostringstream result_block;
-        for (unsigned int j = 0; j < np; ++j) {
-
-            const auto iks_g = ik * np + j + nshift;
-
-            if (iks_g >= dos->kmesh_dos->nk_irred * ns) break;
-
-            result_block << "#GAMMA_EACH\n";
-            result_block << iks_g / ns + 1 << " " << iks_g % ns + 1 << '\n';
-
-            const auto nk_equiv = dos->kmesh_dos->kpoint_irred_all[iks_g / ns].size();
-
-            result_block << nk_equiv << '\n';
-            for (k = 0; k < nk_equiv; ++k) {
-                const auto ktmp = dos->kmesh_dos->kpoint_irred_all[iks_g / ns][k].knum;
-                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
-                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
-                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
-            }
-
-            for (k = 0; k < ntemp; ++k) {
-                result_block << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
-            }
-            result_block << "#END GAMMA_EACH\n";
-        }
-        fs_result3 << result_block.str();
-        fs_result3.flush();
-        if (!fs_result3) {
-            exit("write_result_gamma", "Could not write 3-phonon restart block.");
-        }
+        KappaResultIOText::write_gamma_batch(fs_result3,
+                                             ik,
+                                             nshift,
+                                             np,
+                                             dos->kmesh_dos.get(),
+                                             ns,
+                                             ntemp,
+                                             vel_in,
+                                             damp_in,
+                                             "3-phonon");
 
     } else if (mode == -1) {
         // damping 4
-        std::ostringstream result_block;
-        for (unsigned int j = 0; j < np; ++j) {
-
-            const auto iks_g = ik * np + j + nshift;
-
-            if (iks_g >= kmesh_4ph->nk_irred * ns) break;
-
-            result_block << "#GAMMA_EACH\n";
-            result_block << iks_g / ns + 1 << " " << iks_g % ns + 1 << '\n';
-
-            const auto nk_equiv = kmesh_4ph->kpoint_irred_all[iks_g / ns].size();
-
-            result_block << nk_equiv << '\n';
-            for (k = 0; k < nk_equiv; ++k) {
-                const auto ktmp = kmesh_4ph->kpoint_irred_all[iks_g / ns][k].knum;
-                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][0];
-                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][1];
-                result_block << std::setw(15) << vel_in[ktmp][iks_g % ns][2] << '\n';
-            }
-
-            for (k = 0; k < ntemp; ++k) {
-                result_block << std::setw(15) << damp_in[iks_g][k] * Hz_to_kayser / time_ry << '\n';
-            }
-            result_block << "#END GAMMA_EACH\n";
-        }
-        fs_result4 << result_block.str();
-        fs_result4.flush();
-        if (!fs_result4) {
-            exit("write_result_gamma", "Could not write 4-phonon restart block.");
-        }
+        KappaResultIOText::write_gamma_batch(fs_result4,
+                                             ik,
+                                             nshift,
+                                             np,
+                                             kmesh_4ph.get(),
+                                             ns,
+                                             ntemp,
+                                             vel_in,
+                                             damp_in,
+                                             "4-phonon");
     }
 }
 
@@ -1813,194 +1667,6 @@ std::string Conductivity::get_filename_results(const int order) const
     if (order == 4) return file_result4;
 
     return "";
-}
-
-void Conductivity::check_consistency_restart(std::fstream &fs_result, const std::string &file_result_in,
-                                             const unsigned int nk_in[3], const unsigned int nk_irred_in,
-                                             const Cell &primcell, const bool classical_in, const int ismear_in,
-                                             const double epsilon_in, const double tmin_in, const double tmax_in,
-                                             const double delta_t_in, const std::string &file_fcs_in)
-{
-    // Read-only: this function only validates the header. The text path
-    // reopens the stream for appending afterwards; the h5 import path must
-    // never modify the legacy file.
-    fs_result.open(file_result_in.c_str(), std::ios::in);
-    if (!fs_result) {
-        exit("check_consistency_restart", "Could not open file_result_in");
-    }
-
-    // Check the consistency
-
-    std::string line_tmp, str_tmp;
-    int natmin_tmp, nkd_tmp;
-    int nk_tmp[3], nksym_tmp;
-    int ismear, is_classical;
-    double epsilon_tmp, T1, T2, delta_T;
-
-    bool found_tag = false;
-    while (fs_result >> line_tmp) {
-        if (line_tmp == "#SYSTEM") {
-            found_tag = true;
-            break;
-        }
-    }
-    if (!found_tag) exit("check_consistency_restart", "Could not find #SYSTEM tag");
-
-    fs_result >> natmin_tmp >> nkd_tmp;
-
-    if (!(natmin_tmp == primcell.number_of_atoms && nkd_tmp == primcell.number_of_elems)) {
-        exit("check_consistency_restart", "SYSTEM information is not consistent");
-    }
-
-    found_tag = false;
-    while (fs_result >> line_tmp) {
-        if (line_tmp == "#KPOINT") {
-            found_tag = true;
-            break;
-        }
-    }
-    if (!found_tag) exit("check_consistency_restart", "Could not find #KPOINT tag");
-
-    fs_result >> nk_tmp[0] >> nk_tmp[1] >> nk_tmp[2];
-    fs_result >> nksym_tmp;
-
-    if (!(nk_in[0] == nk_tmp[0] && nk_in[1] == nk_tmp[1] && nk_in[2] == nk_tmp[2] && nk_irred_in == nksym_tmp)) {
-        exit("check_consistency_restart", "KPOINT information is not consistent");
-    }
-
-    found_tag = false;
-    while (fs_result >> line_tmp) {
-        if (line_tmp == "#CLASSICAL") {
-            found_tag = true;
-            break;
-        }
-    }
-    if (!found_tag) {
-        std::cout << " Could not find the #CLASSICAL tag in the restart file.\n";
-        std::cout << " CLASSIACAL = 0 is assumed.\n";
-        is_classical = 0;
-    } else {
-        fs_result >> is_classical;
-    }
-    if (static_cast<bool>(is_classical) != classical_in) {
-        warn("check_consistency_restart", "CLASSICAL val is not consistent");
-    }
-
-    found_tag = false;
-    while (fs_result >> line_tmp) {
-        if (line_tmp == "#FCSXML") {
-            found_tag = true;
-            break;
-        }
-    }
-    if (!found_tag) exit("check_consistency_restart", "Could not find #FCSXML tag");
-
-    fs_result >> str_tmp;
-    if (str_tmp != file_fcs_in) {
-        warn("check_consistency_restart", "FCSXML is not consistent");
-    }
-
-    found_tag = false;
-    while (fs_result >> line_tmp) {
-        if (line_tmp == "#SMEARING") {
-            found_tag = true;
-            break;
-        }
-    }
-    if (!found_tag) exit("check_consistency_restart", "Could not find #SMEARING tag");
-
-    fs_result >> ismear;
-    fs_result >> epsilon_tmp;
-
-    if (ismear != ismear_in) {
-        warn("check_consistency_restart", "Smearing method is not consistent");
-    }
-    if (ismear != -1 && std::abs(epsilon_tmp - epsilon_in * Ry_to_kayser) >= eps4) {
-        std::cout << "epsilon from file : " << std::setw(15) << std::setprecision(10) << epsilon_tmp * Ry_to_kayser
-                  << '\n';
-        std::cout << "epsilon from input: " << std::setw(15) << std::setprecision(10) << epsilon_in * Ry_to_kayser
-                  << '\n';
-        warn("check_consistency_restart", "Smearing width is not consistent");
-    }
-
-    found_tag = false;
-    while (fs_result >> line_tmp) {
-        if (line_tmp == "#TEMPERATURE") {
-            found_tag = true;
-            break;
-        }
-    }
-    if (!found_tag) exit("check_consistency_restart", "Could not find #TEMPERATURE tag");
-
-    fs_result >> T1 >> T2 >> delta_T;
-
-    if (!(T1 == tmin_in && T2 == tmax_in && delta_T == delta_t_in)) {
-        exit("check_consistency_restart", "Temperature information is not consistent");
-    }
-}
-
-void Conductivity::write_header_result(std::fstream &fs_result, const std::string &file_result,
-                                       const KpointMeshUniform *kmesh_in, const Cell &primcell, const bool classical_in,
-                                       const int ismear_in, const double epsilon_in, const double tmin_in,
-                                       const double tmax_in, const double delta_t_in, const std::string &file_fcs_in)
-{
-    fs_result.open(file_result.c_str(), std::ios::out);
-    if (!fs_result) {
-        exit("setup_result_io", "Could not open file_result3");
-    }
-
-    fs_result << "## General information\n";
-    fs_result << "#SYSTEM\n";
-    fs_result << primcell.number_of_atoms << " " << primcell.number_of_elems << '\n';
-    fs_result << primcell.volume << '\n';
-    for (auto i = 0; i < 3; ++i) {
-        for (auto j = 0; j < 3; ++j) {
-            fs_result << std::setw(20) << std::scientific << primcell.lattice_vector(i, j);
-        }
-        fs_result << '\n';
-    }
-    for (auto i = 0; i < primcell.number_of_atoms; ++i) {
-        for (auto j = 0; j < 3; ++j) {
-            fs_result << std::setw(20) << std::scientific << primcell.x_fractional(i, j);
-        }
-        fs_result << '\n';
-    }
-    fs_result << "#END SYSTEM\n";
-
-    fs_result << "#KPOINT\n";
-    fs_result << kmesh_in->nk_i[0] << " " << kmesh_in->nk_i[1] << " " << kmesh_in->nk_i[2] << '\n';
-    fs_result << kmesh_in->nk_irred << '\n';
-
-    for (int i = 0; i < kmesh_in->nk_irred; ++i) {
-        fs_result << std::setw(6) << i + 1 << ":";
-        for (int j = 0; j < 3; ++j) {
-            fs_result << std::setw(15) << std::scientific << kmesh_in->kpoint_irred_all[i][0].kval[j];
-        }
-        fs_result << std::setw(12) << std::fixed << kmesh_in->weight_k[i] << '\n';
-    }
-
-    fs_result.unsetf(std::ios::fixed);
-
-    fs_result << "#END KPOINT\n";
-
-    fs_result << "#CLASSICAL\n";
-    fs_result << classical_in << '\n';
-    fs_result << "#END CLASSICAL\n";
-
-    fs_result << "#FCSXML\n";
-    fs_result << file_fcs_in << '\n';
-    fs_result << "#END  FCSXML\n";
-
-    fs_result << "#SMEARING\n";
-    fs_result << ismear_in << '\n';
-    fs_result << epsilon_in * Ry_to_kayser << '\n';
-    fs_result << "#END SMEARING\n";
-
-    fs_result << "#TEMPERATURE\n";
-    fs_result << tmin_in << " " << tmax_in << " " << delta_t_in << '\n';
-    fs_result << "#END TEMPERATURE\n";
-
-    fs_result << "##END General information\n";
 }
 
 void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
