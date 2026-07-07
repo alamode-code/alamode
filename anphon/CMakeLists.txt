@@ -157,6 +157,7 @@ endif()
 set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/collision_operator.cpp
             ${PROJECT_SOURCE_DIR}/conductivity.cpp
+            ${PROJECT_SOURCE_DIR}/dense_hermitian_eigen.cpp
             ${PROJECT_SOURCE_DIR}/dense_symmetric_eigen.cpp
             ${PROJECT_SOURCE_DIR}/dielec.cpp
             ${PROJECT_SOURCE_DIR}/diis.cpp
@@ -201,6 +202,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
 set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/cell_shift_table.h
             ${PROJECT_SOURCE_DIR}/conductivity.h
+            ${PROJECT_SOURCE_DIR}/dense_hermitian_eigen.h
             ${PROJECT_SOURCE_DIR}/dielec.h
             ${PROJECT_SOURCE_DIR}/diis.h
             ${PROJECT_SOURCE_DIR}/dynamical.h

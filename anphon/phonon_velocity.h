@@ -68,7 +68,5 @@ private:
 
     void calc_derivative_dynmat_k(const double *, const std::vector<FcsArrayWithCell> &,
                                   std::complex<double> ***) const;
-
-    void diagonalize_hermite_mat(int, std::complex<double> **, double *) const;
 };
 } // namespace PHON_NS

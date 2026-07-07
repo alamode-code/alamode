@@ -21,6 +21,7 @@
 #include <vector>
 #include "cell_shift_table.h"
 #include "constants.h"
+#include "dense_hermitian_eigen.h"
 #include "dielec.h"
 #include "error.h"
 #include "ewald.h"
@@ -358,55 +359,9 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
         }
     }
 
-    char JOBZ;
-    int INFO;
-    NDArray<double, 1> RWORK;
-    NDArray<std::complex<double>, 1> WORK;
-
-    int LWORK = (2 * neval - 1) * 10;
-    RWORK.resize(3 * neval - 2);
-    WORK.resize(LWORK);
-
-    NDArray<std::complex<double>, 1> amat;
-    amat.resize(neval * neval);
-
-    unsigned int k = 0;
-    int n = dynamical->neval;
-
-    for (j = 0; j < neval; ++j) {
-        for (i = 0; i < neval; ++i) {
-            amat[k++] = dymat_k[i][j];
-        }
-    }
-
+    solve_dense_hermitian(neval, dymat_k, eval_out, (require_eigenvectors && require_evec) ? evec_out : nullptr,
+                          require_evec, UPLO);
     dymat_k.clear();
-
-    if (require_evec) {
-        JOBZ = 'V';
-    } else {
-        JOBZ = 'N';
-    }
-
-    // Perform diagonalization
-    zheev_(&JOBZ, &UPLO, &n, amat, &n, eval_out, WORK, &LWORK, RWORK, &INFO);
-    if (INFO != 0) {
-        exit("Dynamical::diagonalize", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
-    }
-
-    if (require_eigenvectors && require_evec) {
-        k = 0;
-        // Here we transpose the matrix evec_out so that
-        // evec_out[i] becomes phonon eigenvector of i-th mode.
-        for (j = 0; j < neval; ++j) {
-            for (i = 0; i < neval; ++i) {
-                evec_out[j][i] = amat[k++];
-            }
-        }
-    }
-
-    RWORK.clear();
-    WORK.clear();
-    amat.clear();
 }
 
 void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2_in,
@@ -461,54 +416,9 @@ void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const s
         }
     }
 
-    char JOBZ;
-    int INFO;
-    NDArray<double, 1> RWORK;
-    NDArray<std::complex<double>, 1> WORK;
-
-    int LWORK = (2 * neval - 1) * 10;
-    RWORK.resize(3 * neval - 2);
-    WORK.resize(LWORK);
-
-    NDArray<std::complex<double>, 1> amat;
-    amat.resize(neval * neval);
-
-    unsigned int k = 0;
-    int n = dynamical->neval;
-    for (j = 0; j < neval; ++j) {
-        for (i = 0; i < neval; ++i) {
-            amat[k++] = dymat_k[i][j];
-        }
-    }
-
+    solve_dense_hermitian(neval, dymat_k, eval_out, (require_eigenvectors && require_evec) ? evec_out : nullptr,
+                          require_evec, UPLO);
     dymat_k.clear();
-
-    if (require_evec) {
-        JOBZ = 'V';
-    } else {
-        JOBZ = 'N';
-    }
-
-    // Perform diagonalization
-    zheev_(&JOBZ, &UPLO, &n, amat, &n, eval_out, WORK, &LWORK, RWORK, &INFO);
-    if (INFO != 0) {
-        exit("Dynamical::diagonalize", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
-    }
-
-    if (require_eigenvectors && require_evec) {
-        k = 0;
-        // Here we transpose the matrix evec_out so that
-        // evec_out[i] becomes phonon eigenvector of i-th mode.
-        for (j = 0; j < neval; ++j) {
-            for (i = 0; i < neval; ++i) {
-                evec_out[j][i] = amat[k++];
-            }
-        }
-    }
-
-    RWORK.clear();
-    WORK.clear();
-    amat.clear();
 }
 
 void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsClassExtent> &fc2_in,
@@ -2051,52 +1961,7 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
 void Dynamical::diagonalize_interpolated_matrix(std::complex<double> **mat_in, double *eval_out,
                                                 std::complex<double> **evec_out, const bool require_evec) const
 {
-    unsigned int i, j;
-    char JOBZ;
-    int INFO;
-
-    int ns = dynamical->neval;
-
-    // Hot per-k scratch: NDArray keeps the historical default-initialized
-    // new[] allocation (std::vector would zero these on every call).
-    int LWORK = (2 * ns - 1) * 10;
-    NDArray<double, 1> RWORK(3 * ns - 2);
-    NDArray<std::complex<double>, 1> WORK(LWORK);
-
-    if (require_evec) {
-        JOBZ = 'V';
-    } else {
-        JOBZ = 'N';
-    }
-
-    char UPLO = 'U';
-
-    NDArray<std::complex<double>, 1> amat(static_cast<std::size_t>(ns) * ns);
-
-    unsigned int k = 0;
-    for (j = 0; j < ns; ++j) {
-        for (i = 0; i < ns; ++i) {
-            amat[k++] = mat_in[i][j];
-        }
-    }
-
-    zheev_(&JOBZ, &UPLO, &ns, amat, &ns, eval_out, WORK, &LWORK, RWORK, &INFO);
-    if (INFO != 0) {
-        exit("Dynamical::diagonalize_interpolated_matrix",
-             "zheev failed to diagonalize the interpolated matrix (INFO != 0).");
-    }
-
-    k = 0;
-
-    if (require_evec) {
-        // Here we transpose the matrix evec_out so that
-        // evec_out[i] becomes phonon eigenvector of i-th mode.
-        for (j = 0; j < ns; ++j) {
-            for (i = 0; i < ns; ++i) {
-                evec_out[j][i] = amat[k++];
-            }
-        }
-    }
+    solve_dense_hermitian(dynamical->neval, mat_in, eval_out, require_evec ? evec_out : nullptr, require_evec, 'U');
 }
 
 

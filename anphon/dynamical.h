@@ -223,11 +223,4 @@ private:
     NDArray<std::vector<int>, 2> mindist_list;
 };
 
-extern "C"
-{
-    void zheev_(const char *jobz, const char *uplo, int *n, std::complex<double> *a, int *lda, double *w,
-                std::complex<double> *work, int *lwork, double *rwork, int *info);
-    // zgemm_ is declared in blas_wrapper.h (call it via zgemm_cpx).
-}
-
 } // namespace PHON_NS

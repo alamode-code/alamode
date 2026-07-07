@@ -13,6 +13,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <iomanip>
 #include "cell_shift_table.h"
 #include "constants.h"
+#include "dense_hermitian_eigen.h"
 #include "dynamical.h"
 #include "error.h"
 #include "ewald.h"
@@ -596,7 +597,7 @@ void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, 
                     }
                     // Diagonalize the matrix here
 
-                    diagonalize_hermite_mat(ideg, mat_tmp[icrd], eval_tmp[icrd]);
+                    solve_dense_hermitian(ideg, mat_tmp[icrd], eval_tmp[icrd], nullptr, false);
 
                     for (j = 0; j < ideg; ++j) {
                         vel_tmp[icrd][j + is] = eval_tmp[icrd][j] / (2.0 * omega_in[j + is]);
@@ -693,39 +694,6 @@ void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in, const std::ve
             }
         }
     }
-}
-
-void PhononVelocity::diagonalize_hermite_mat(const int n, std::complex<double> **mat_in, double *eval_out) const
-{
-    NDArray<std::complex<double>, 1> mat_1D;
-    int LWORK = (2 * n - 1) * 10;
-    int INFO;
-    NDArray<std::complex<double>, 1> WORK;
-    NDArray<double, 1> RWORK;
-    char JOBZ = 'N';
-    char UPLO = 'U';
-    int n_ = n;
-
-    mat_1D.resize(n * n);
-    RWORK.resize(3 * n - 2);
-    WORK.resize(LWORK);
-
-    int k = 0;
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            mat_1D[k++] = mat_in[i][j];
-        }
-    }
-
-    zheev_(&JOBZ, &UPLO, &n_, mat_1D, &n_, eval_out, WORK, &LWORK, RWORK, &INFO);
-    if (INFO != 0) {
-        exit("PhononVelocity::diagonalize_hermite_mat",
-             "zheev failed to diagonalize the Hermitian matrix (INFO != 0).");
-    }
-
-    RWORK.clear();
-    WORK.clear();
-    mat_1D.clear();
 }
 
 void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
