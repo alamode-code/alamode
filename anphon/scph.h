@@ -126,13 +126,6 @@ private:
     void compute_free_energy_bubble_SCPH(const unsigned int[3], std::complex<double> ****);
 
     void bubble_correction(std::complex<double> ****, std::complex<double> ****);
-
-    std::vector<std::complex<double>> get_bubble_selfenergy(const KpointMeshUniform *kmesh_in, const unsigned int ns_in,
-                                                            const double *const *eval_in,
-                                                            const std::complex<double> *const *const *evec_in,
-                                                            const unsigned int knum, const unsigned int snum,
-                                                            const double temp_in,
-                                                            const std::vector<std::complex<double>> &omegalist);
 };
 
 // zgemm_ is declared in blas_wrapper.h (call it via zgemm_cpx).

@@ -18,11 +18,12 @@
 namespace PHON_NS
 {
 class AnharmonicCore;
+class PhaseFactorStorage;
 class SymmetryOperation;
 
 // Anharmonic phonon self-energy diagrams. No Pointers base: the run-wide
 // inputs are stored once by setup_selfenergy (called from
-// PHON::execute_kappa), and the per-call data enter as arguments.
+// PHON::execute_kappa and Scph::bubble_correction), and the per-call data enter as arguments.
 class Selfenergy
 {
 public:
@@ -81,6 +82,15 @@ public:
     void selfenergy_j(const unsigned int N, const double *T, const double omega, const unsigned int knum,
                       const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                       const std::complex<double> *const *const *evec_in, std::complex<double> *ret) const;
+
+    std::vector<std::complex<double>> get_bubble_selfenergy(const KpointMeshUniform *kmesh_in,
+                                                            const unsigned int ns_in,
+                                                            const double *const *eval_in,
+                                                            const std::complex<double> *const *const *evec_in,
+                                                            const unsigned int knum, const unsigned int snum,
+                                                            const double temp_in,
+                                                            const std::vector<std::complex<double>> &omegalist,
+                                                            const PhaseFactorStorage *phase_storage_in) const;
 
 private:
     unsigned int ns;

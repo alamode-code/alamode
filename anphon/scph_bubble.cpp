@@ -16,7 +16,6 @@
  Functions included:
  - compute_free_energy_bubble_SCPH: Compute free energy from bubble diagrams
  - bubble_correction: Calculate bubble self-energy corrections to frequencies
- - get_bubble_selfenergy: Compute bubble self-energy at specific k-point and mode
 */
 
 #include <complex>
@@ -34,6 +33,7 @@
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "scph.h"
+#include "selfenergy.h"
 #include "system.h"
 #include "thermodynamics.h"
 
@@ -125,6 +125,8 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
     eval.resize(nk_scph, ns);
     evec.resize(nk_scph, ns, ns);
+    selfenergy->setup_selfenergy(dynamical->neval, integration->epsilon, thermodynamics->classical,
+                                 symmetry->SymmList, *anharmonic_core, mympi->my_rank, mympi->nprocs);
 
     if (mympi->my_rank == 0) {
         eval_bubble.resize(NT, nk_scph, ns);
@@ -182,7 +184,8 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         omegalist.push_back(im * epsilon);
 
                         auto se_bubble =
-                            get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist);
+                            selfenergy->get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist,
+                                                              phase_factor.get());
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -191,7 +194,8 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         omegalist.push_back(eval[knum][snum] + im * epsilon);
 
                         auto se_bubble =
-                            get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist);
+                            selfenergy->get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist,
+                                                              phase_factor.get());
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -210,7 +214,8 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         }
 
                         auto se_bubble =
-                            get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist);
+                            selfenergy->get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist,
+                                                              phase_factor.get());
 
                         if (mympi->my_rank == 0) {
 
@@ -326,89 +331,4 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
     if (mympi->my_rank == 0) {
         std::cout << " done!\n\n";
     }
-}
-
-std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUniform *kmesh_in,
-                                                              const unsigned int ns_in, const double *const *eval_in,
-                                                              const std::complex<double> *const *const *evec_in,
-                                                              const unsigned int knum, const unsigned int snum,
-                                                              const double temp_in,
-                                                              const std::vector<std::complex<double>> &omegalist)
-{
-    unsigned int arr_cubic[3];
-    double xk_tmp[3];
-    std::complex<double> omega_sum[2];
-
-    double factor = 1.0 / (static_cast<double>(kmesh_in->nk) * std::pow(2.0, 4));
-    const auto ns2 = ns_in * ns_in;
-    const auto nks = kmesh_in->nk * ns2;
-
-    double n1, n2;
-    double f1, f2;
-
-    auto knum_minus = kmesh_in->kindex_minus_xk[knum];
-    arr_cubic[0] = ns_in * knum_minus + snum;
-
-    std::vector<std::complex<double>> se_bubble(omegalist.size());
-
-    const auto nomega = omegalist.size();
-
-    NDArray<std::complex<double>, 1> ret_sum;
-    NDArray<std::complex<double>, 1> ret_mpi;
-    ret_sum.resize(nomega);
-    ret_mpi.resize(nomega);
-
-    for (auto iomega = 0; iomega < nomega; ++iomega) {
-        ret_sum[iomega] = std::complex<double>(0.0, 0.0);
-        ret_mpi[iomega] = std::complex<double>(0.0, 0.0);
-    }
-
-    for (auto iks = mympi->my_rank; iks < nks; iks += mympi->nprocs) {
-
-        auto ik1 = iks / ns2;
-        auto is1 = (iks % ns2) / ns_in;
-        auto is2 = iks % ns_in;
-
-        for (auto m = 0; m < 3; ++m) xk_tmp[m] = kmesh_in->xk[knum][m] - kmesh_in->xk[ik1][m];
-        auto ik2 = kmesh_in->get_knum(xk_tmp);
-
-        double omega1 = eval_in[ik1][is1];
-        double omega2 = eval_in[ik2][is2];
-
-        arr_cubic[1] = ns_in * ik1 + is1;
-        arr_cubic[2] = ns_in * ik2 + is2;
-
-        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_factor.get()));
-
-        if (thermodynamics->classical) {
-            n1 = thermodynamics->fC(omega1, temp_in);
-            n2 = thermodynamics->fC(omega2, temp_in);
-            f1 = n1 + n2;
-            f2 = n2 - n1;
-        } else {
-            n1 = thermodynamics->fB(omega1, temp_in);
-            n2 = thermodynamics->fB(omega2, temp_in);
-            f1 = n1 + n2 + 1.0;
-            f2 = n2 - n1;
-        }
-        for (auto iomega = 0; iomega < nomega; ++iomega) {
-            omega_sum[0] = 1.0 / (omegalist[iomega] + omega1 + omega2) - 1.0 / (omegalist[iomega] - omega1 - omega2);
-            omega_sum[1] = 1.0 / (omegalist[iomega] + omega1 - omega2) - 1.0 / (omegalist[iomega] - omega1 + omega2);
-            ret_mpi[iomega] += v3_tmp * (f1 * omega_sum[0] + f2 * omega_sum[1]);
-        }
-    }
-    for (auto iomega = 0; iomega < nomega; ++iomega) {
-        ret_mpi[iomega] *= factor;
-    }
-
-    MPI_Reduce(&ret_mpi[0], &ret_sum[0], nomega, MPI_COMPLEX16, MPI_SUM, 0, MPI_COMM_WORLD);
-
-    for (auto iomega = 0; iomega < nomega; ++iomega) {
-        se_bubble[iomega] = ret_sum[iomega];
-    }
-
-    ret_mpi.clear();
-    ret_sum.clear();
-
-    return se_bubble;
 }

@@ -74,6 +74,94 @@ void Selfenergy::mpi_reduce_complex(unsigned int N, std::complex<double> *in_mpi
 #endif
 }
 
+std::vector<std::complex<double>> Selfenergy::get_bubble_selfenergy(const KpointMeshUniform *kmesh_in,
+                                                                    const unsigned int ns_in,
+                                                                    const double *const *eval_in,
+                                                                    const std::complex<double> *const *const *evec_in,
+                                                                    const unsigned int knum,
+                                                                    const unsigned int snum,
+                                                                    const double temp_in,
+                                                                    const std::vector<std::complex<double>> &omegalist,
+                                                                    const PhaseFactorStorage *phase_storage_in) const
+{
+    unsigned int arr_cubic[3];
+    double xk_tmp[3];
+    std::complex<double> omega_sum[2];
+
+    double factor = 1.0 / (static_cast<double>(kmesh_in->nk) * std::pow(2.0, 4));
+    const auto ns2 = ns_in * ns_in;
+    const auto nks = kmesh_in->nk * ns2;
+
+    double n1, n2;
+    double f1, f2;
+
+    auto knum_minus = kmesh_in->kindex_minus_xk[knum];
+    arr_cubic[0] = ns_in * knum_minus + snum;
+
+    std::vector<std::complex<double>> se_bubble(omegalist.size());
+
+    const auto nomega = omegalist.size();
+
+    NDArray<std::complex<double>, 1> ret_sum;
+    NDArray<std::complex<double>, 1> ret_mpi;
+    ret_sum.resize(nomega);
+    ret_mpi.resize(nomega);
+
+    for (auto iomega = 0; iomega < nomega; ++iomega) {
+        ret_sum[iomega] = std::complex<double>(0.0, 0.0);
+        ret_mpi[iomega] = std::complex<double>(0.0, 0.0);
+    }
+
+    for (auto iks = my_rank; iks < nks; iks += nprocs) {
+
+        auto ik1 = iks / ns2;
+        auto is1 = (iks % ns2) / ns_in;
+        auto is2 = iks % ns_in;
+
+        for (auto m = 0; m < 3; ++m) xk_tmp[m] = kmesh_in->xk[knum][m] - kmesh_in->xk[ik1][m];
+        auto ik2 = kmesh_in->get_knum(xk_tmp);
+
+        double omega1 = eval_in[ik1][is1];
+        double omega2 = eval_in[ik2][is2];
+
+        arr_cubic[1] = ns_in * ik1 + is1;
+        arr_cubic[2] = ns_in * ik2 + is2;
+
+        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_storage_in));
+
+        if (classical) {
+            n1 = Thermodynamics::fC(omega1, temp_in);
+            n2 = Thermodynamics::fC(omega2, temp_in);
+            f1 = n1 + n2;
+            f2 = n2 - n1;
+        } else {
+            n1 = Thermodynamics::fB(omega1, temp_in);
+            n2 = Thermodynamics::fB(omega2, temp_in);
+            f1 = n1 + n2 + 1.0;
+            f2 = n2 - n1;
+        }
+        for (auto iomega = 0; iomega < nomega; ++iomega) {
+            omega_sum[0] = 1.0 / (omegalist[iomega] + omega1 + omega2) - 1.0 / (omegalist[iomega] - omega1 - omega2);
+            omega_sum[1] = 1.0 / (omegalist[iomega] + omega1 - omega2) - 1.0 / (omegalist[iomega] - omega1 + omega2);
+            ret_mpi[iomega] += v3_tmp * (f1 * omega_sum[0] + f2 * omega_sum[1]);
+        }
+    }
+    for (auto iomega = 0; iomega < nomega; ++iomega) {
+        ret_mpi[iomega] *= factor;
+    }
+
+    mpi_reduce_complex(static_cast<unsigned int>(nomega), ret_mpi, ret_sum);
+
+    for (auto iomega = 0; iomega < nomega; ++iomega) {
+        se_bubble[iomega] = ret_sum[iomega];
+    }
+
+    ret_mpi.clear();
+    ret_sum.clear();
+
+    return se_bubble;
+}
+
 void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const double omega, const unsigned int knum,
                                     const unsigned int snum, const KpointMeshUniform *kmesh_in,
                                     const double *const *eval_in, const std::complex<double> *const *const *evec_in,
