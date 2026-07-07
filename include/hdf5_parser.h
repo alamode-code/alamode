@@ -186,8 +186,7 @@ inline auto h5_resolve_temperature_index(const H5Easy::File &file, const double 
     }
     std::cout << "Error: temperature " << temperature << " K is not available in " << file.getName()
               << ".\n Available temperatures (K):";
-    for (const auto &t: temps)
-        std::cout << ' ' << t;
+    for (const auto &t: temps) std::cout << ' ' << t;
     std::cout << '\n';
     exit(1);
 }

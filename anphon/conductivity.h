@@ -15,11 +15,11 @@
 #include <memory>
 #include <set>
 #include <vector>
-#include "ndarray.h"
 #include "anharmonic_core.h"
 #include "dynamical.h"
 #include "kappa_result_io.h"
 #include "kpoint.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS

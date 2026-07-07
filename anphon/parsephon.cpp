@@ -575,8 +575,7 @@ void Input::parse_kappa_vars(const bool use_default_values)
         }
     } else {
         kmesh_v.resize(3);
-        for (auto i = 0; i < 3; ++i)
-            kmesh_v[i] = 0;
+        for (auto i = 0; i < 3; ++i) kmesh_v[i] = 0;
     }
 
     boost::to_lower(interpolator);

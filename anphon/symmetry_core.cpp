@@ -331,8 +331,7 @@ void Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
             }
         }
 
-        for (i = 0; i < 3; ++i)
-            x_tmp[i] = cell.x_fractional(iat, i);
+        for (i = 0; i < 3; ++i) x_tmp[i] = cell.x_fractional(iat, i);
         //rotvec(x_rot, x_tmp, rot);
         x_rot = rot * x_tmp;
 
@@ -380,8 +379,7 @@ void Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
 
                     kat = atomtype_group[itype][jj];
 
-                    for (i = 0; i < 3; ++i)
-                        x_tmp[i] = cell.x_fractional(kat, i);
+                    for (i = 0; i < 3; ++i) x_tmp[i] = cell.x_fractional(kat, i);
                     x_rot_tmp = rot * x_tmp;
 
                     for (i = 0; i < 3; ++i) {

@@ -131,7 +131,7 @@ void ModeAnalysis::setup_mode_analysis()
 
     if (kpoint->kpoint_mode == 3) {
 
-       
+
     } else {
 
         NDArray<unsigned int, 1> kslist_arr;
@@ -143,15 +143,13 @@ void ModeAnalysis::setup_mode_analysis()
         kslist_arr.resize(nlist);
 
         if (mympi->my_rank == 0) {
-            for (i = 0; i < nlist; ++i)
-                kslist_arr[i] = kslist[i];
+            for (i = 0; i < nlist; ++i) kslist_arr[i] = kslist[i];
         }
         MPI_Bcast(&kslist_arr[0], nlist, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
         if (mympi->my_rank > 0) {
             kslist.clear();
-            for (i = 0; i < nlist; ++i)
-                kslist.push_back(kslist_arr[i]);
+            for (i = 0; i < nlist; ++i) kslist.push_back(kslist_arr[i]);
         }
         kslist_arr.clear();
     }
@@ -216,8 +214,7 @@ void ModeAnalysis::run_mode_analysis()
 
     unsigned int NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
     T_arr.resize(NT);
-    for (unsigned int i = 0; i < NT; ++i)
-        T_arr[i] = Tmin + static_cast<double>(i) * dT;
+    for (unsigned int i = 0; i < NT; ++i) T_arr[i] = Tmin + static_cast<double>(i) * dT;
 
     const auto epsilon = integration->epsilon;
 
@@ -347,8 +344,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                      dos->dymat_dos->get_eigenvalues(),
                                      dos->dymat_dos->get_eigenvectors(),
                                      self_a);
-            for (j = 0; j < NT; ++j)
-                damping_a[j] = self_a[j].imag();
+            for (j = 0; j < NT; ++j) damping_a[j] = self_a[j].imag();
         }
         if (anharmonic_core->quartic_mode == 2) {
             selfenergy->selfenergy_c(NT,
@@ -803,8 +799,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
 
     kmap_identity.resize(nk);
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
 #ifdef _OPENMP
 #pragma omp parallel private(is, js, k1, k2, xk_tmp, energy_tmp, i, weight_tetra, ik, jk, arr)
@@ -823,8 +818,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state_tetrahedron(
             for (k1 = 0; k1 < nk; ++k1) {
                 // Prepare two-phonon frequency for the tetrahedron method
 
-                for (i = 0; i < 3; ++i)
-                    xk_tmp[i] = xk[knum][i] - xk[k1][i];
+                for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] - xk[k1][i];
 
                 k2 = kmesh_in->get_knum(xk_tmp);
 

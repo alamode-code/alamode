@@ -166,8 +166,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
             if (mympi->my_rank == 0) {
                 std::cout << "  Irred. k: " << std::setw(5) << ik + 1 << " (";
-                for (auto m = 0; m < 3; ++m)
-                    std::cout << std::setw(15) << kmesh_dense->xk[knum][m];
+                for (auto m = 0; m < 3; ++m) std::cout << std::setw(15) << kmesh_dense->xk[knum][m];
                 std::cout << ")\n";
             }
 
@@ -370,8 +369,7 @@ std::vector<std::complex<double>> Scph::get_bubble_selfenergy(const KpointMeshUn
         auto is1 = (iks % ns2) / ns_in;
         auto is2 = iks % ns_in;
 
-        for (auto m = 0; m < 3; ++m)
-            xk_tmp[m] = kmesh_in->xk[knum][m] - kmesh_in->xk[ik1][m];
+        for (auto m = 0; m < 3; ++m) xk_tmp[m] = kmesh_in->xk[knum][m] - kmesh_in->xk[ik1][m];
         auto ik2 = kmesh_in->get_knum(xk_tmp);
 
         double omega1 = eval_in[ik1][is1];

@@ -305,8 +305,7 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
                                                static_cast<double>(shift.sy),
                                                static_cast<double>(shift.sz));
                     const Eigen::Vector3d relvec = lavec * tvec + xc.row(jat).transpose() - xc.row(iat).transpose();
-                    for (auto k = 0; k < 3; ++k)
-                        fc2.shift_vectors(irow, k) = relvec[k];
+                    for (auto k = 0; k < 3; ++k) fc2.shift_vectors(irow, k) = relvec[k];
 
                     fc2.base_values(irow) = base_val;
                     for (unsigned int iT = 0; iT < NT; ++iT) {

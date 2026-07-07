@@ -41,8 +41,7 @@ void PhononVelocity::set_default_variables()
 
     xshift_s.resize(27, 3);
 
-    for (auto i = 0; i < 3; ++i)
-        xshift_s[0][i] = 0.0;
+    for (auto i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
     auto icell = 0;
     for (auto ix = -1; ix <= 1; ++ix) {
         for (auto iy = -1; iy <= 1; ++iy) {
@@ -60,8 +59,7 @@ void PhononVelocity::set_default_variables()
 }
 
 void PhononVelocity::deallocate_variables()
-{
-}
+{}
 
 void PhononVelocity::setup_velocity()
 {
@@ -114,8 +112,7 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
             // Move back to fractional basis
 
             rotvec(xk_shift[idiff], xk_shift[idiff], lavec_p, 'T');
-            for (i = 0; i < 3; ++i)
-                xk_shift[idiff][i] /= 2.0 * pi;
+            for (i = 0; i < 3; ++i) xk_shift[idiff][i] /= 2.0 * pi;
 
             if (dynamical->nonanalytic == 3) {
                 dynamical->eval_k_ewald(xk_shift[idiff],
@@ -458,15 +455,13 @@ void PhononVelocity::phonon_vel_k(const double *xk_in, double **vel_out) const
                               kvec_na_tmp[0][2] * kvec_na_tmp[0][2]);
 
         if (norm > eps) {
-            for (j = 0; j < 3; ++j)
-                kvec_na_tmp[0][j] /= norm;
+            for (j = 0; j < 3; ++j) kvec_na_tmp[0][j] /= norm;
         }
         norm = std::sqrt(kvec_na_tmp[1][0] * kvec_na_tmp[1][0] + kvec_na_tmp[1][1] * kvec_na_tmp[1][1] +
                          kvec_na_tmp[1][2] * kvec_na_tmp[1][2]);
 
         if (norm > eps) {
-            for (j = 0; j < 3; ++j)
-                kvec_na_tmp[1][j] /= norm;
+            for (j = 0; j < 3; ++j) kvec_na_tmp[1][j] /= norm;
         }
 
         for (idiff = 0; idiff < ndiff; ++idiff) {

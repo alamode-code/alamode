@@ -50,16 +50,14 @@ public:
     {
         cell = n;
         dist = d;
-        for (int i = 0; i < 3; ++i)
-            relvec[i] = x[i];
+        for (int i = 0; i < 3; ++i) relvec[i] = x[i];
     }
 
     DistInfo(const DistInfo &obj)
     {
         cell = obj.cell;
         dist = obj.dist;
-        for (int i = 0; i < 3; ++i)
-            relvec[i] = obj.relvec[i];
+        for (int i = 0; i < 3; ++i) relvec[i] = obj.relvec[i];
     }
 };
 

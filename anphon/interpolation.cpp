@@ -37,9 +37,7 @@ void TriLinearInterpolator::setup()
 }
 
 TriLinearInterpolator::~TriLinearInterpolator()
-{
-
-}
+{}
 
 void TriLinearInterpolator::set_grid(const unsigned int ngrid_in[3], double **x_out)
 {
@@ -75,8 +73,7 @@ void TriLinearInterpolator::get_corners_regular(double *xk_i, int *corner_index,
         igrid[i] = static_cast<int>(grid_c[i]);
     }
 
-    for (auto j = 0; j < 3; ++j)
-        tmp[j] = xk_i[j] * dn_c[j];
+    for (auto j = 0; j < 3; ++j) tmp[j] = xk_i[j] * dn_c[j];
     iloc[0] = nint(std::floor(tmp[0]));
     iloc[1] = nint(std::ceil(tmp[0]));
     jloc[0] = nint(std::floor(tmp[1]));
@@ -140,8 +137,9 @@ void TriLinearInterpolator::get_corners_regular(double *xk_i, int *corner_index,
 // FourierInterpolator implementations
 
 FourierInterpolator::FourierInterpolator(const KpointMeshUniform &kmesh_coarse_in,
-                                         const KpointMeshUniform &kmesh_dense_in, const bool subtract_harmonic_term_in)
-    : kmesh_coarse(kmesh_coarse_in), kmesh_dense(kmesh_dense_in)
+                                         const KpointMeshUniform &kmesh_dense_in,
+                                         const bool subtract_harmonic_term_in) :
+    kmesh_coarse(kmesh_coarse_in), kmesh_dense(kmesh_dense_in)
 {
     subtract_harmonic_term = subtract_harmonic_term_in;
 
@@ -155,8 +153,7 @@ void FourierInterpolator::get_map_coarse_to_dense(const KpointMeshUniform &kmesh
     double xtmp[3];
 
     for (auto ik = 0; ik < kmesh_coarse.nk; ++ik) {
-        for (auto i = 0; i < 3; ++i)
-            xtmp[i] = kmesh_coarse.xk[ik][i];
+        for (auto i = 0; i < 3; ++i) xtmp[i] = kmesh_coarse.xk[ik][i];
 
         const auto loc = kmesh_dense.get_knum(xtmp);
 

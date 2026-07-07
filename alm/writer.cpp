@@ -82,13 +82,11 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
     std::cout << "  PRINTSYM = " << symmetry->get_print_symmetry() << "; TOLERANCE = " << symmetry->get_tolerance()
               << '\n';
     std::cout << "  KD = ";
-    for (i = 0; i < nkd; ++i)
-        std::cout << std::setw(4) << system->get_kdname()[i];
+    for (i = 0; i < nkd; ++i) std::cout << std::setw(4) << system->get_kdname()[i];
     std::cout << '\n';
     std::cout << "  FCSYM_BASIS = " << fcs->get_forceconstant_basis() << '\n';
     std::cout << "  PERIODIC = ";
-    for (i = 0; i < 3; ++i)
-        std::cout << std::setw(3) << system->get_periodicity()[i];
+    for (i = 0; i < 3; ++i) std::cout << std::setw(3) << system->get_periodicity()[i];
     std::cout << '\n';
     std::cout << "  MAGMOM = " << input_variables.at("MAGMOM") << '\n';
     std::cout << "  FCS_ALAMODE = " << save_format_flags.at("alamode") << ';';
@@ -642,8 +640,7 @@ void Writer::save_fcs_alamode_oldformat(const std::unique_ptr<System> &system,
 
     for (i = 0; i < system_structure.nat; ++i) {
         str_tmp.clear();
-        for (j = 0; j < 3; ++j)
-            str_tmp += " " + double2string(system->get_supercell().x_fractional(i, j));
+        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(system->get_supercell().x_fractional(i, j));
         auto &child = pt.add("Data.Structure.Position.pos", str_tmp);
         child.put("<xmlattr>.index", i + 1);
         child.put("<xmlattr>.element", system->get_kdname()[system->get_supercell().kind[i] - 1]);
@@ -664,8 +661,7 @@ void Writer::save_fcs_alamode_oldformat(const std::unique_ptr<System> &system,
         pt.put("Data.MagneticMoments.TimeReversalSymmetry", system->get_spin().time_reversal_symm);
         for (i = 0; i < system_structure.nat; ++i) {
             str_tmp.clear();
-            for (j = 0; j < 3; ++j)
-                str_tmp += " " + double2string(system->get_spin().magmom[i][j], 5);
+            for (j = 0; j < 3; ++j) str_tmp += " " + double2string(system->get_spin().magmom[i][j], 5);
             auto &child = pt.add("Data.MagneticMoments.mag", str_tmp);
             child.put("<xmlattr>.index", i + 1);
         }
@@ -955,8 +951,7 @@ auto Writer::write_structures_h5(H5Easy::File &file, const Cell &cell, const Spi
         kind_names.push_back(kdnames[i]);
     }
     std::vector<int> kind_copy(cell.kind);
-    for (auto &it: kind_copy)
-        it -= 1;
+    for (auto &it: kind_copy) it -= 1;
 
     write_cell_group_h5(file,
                         celltype,
@@ -1087,8 +1082,7 @@ auto Writer::write_hessian(const std::unique_ptr<System> &system, const std::uni
 
     for (const auto &it: fcs->get_fc_cart()[0]) {
 
-        for (i = 0; i < 2; ++i)
-            pair_tmp[i] = it.atoms[i];
+        for (i = 0; i < 2; ++i) pair_tmp[i] = it.atoms[i];
 
         for (size_t itran = 0; itran < symmetry->get_ntran(); ++itran) {
             for (i = 0; i < 2; ++i) {
@@ -1150,8 +1144,7 @@ auto Writer::save_fc2_QEfc_format(const std::unique_ptr<System> &system, const s
     }
     for (const auto &it: fcs->get_fc_cart()[0]) {
 
-        for (i = 0; i < 2; ++i)
-            pair_tmp[i] = it.atoms[i];
+        for (i = 0; i < 2; ++i) pair_tmp[i] = it.atoms[i];
         for (size_t itran = 0; itran < symmetry->get_ntran(); ++itran) {
             for (i = 0; i < 2; ++i) {
                 pair_tran[i] = symmetry->get_map_sym()[pair_tmp[i]][symmetry->get_symnum_tran()[itran]];
@@ -1267,8 +1260,7 @@ auto Writer::save_fc3_shengbte_format(const std::unique_ptr<System> &system, con
                             atom_tmp_orig[m] = atom_tmp[m];
                         }
                         std::sort(atom_tmp.begin(), atom_tmp.end());
-                        for (auto m = 0; m < 2; ++m)
-                            index_found[m] = 0;
+                        for (auto m = 0; m < 2; ++m) index_found[m] = 0;
                         for (auto m = 0; m < 2; ++m) {
                             for (auto mm = 0; mm < 2; ++mm) {
                                 if (index_found[mm] == 0) {
@@ -1448,8 +1440,7 @@ auto Writer::save_fc4_shengbte_format(const std::unique_ptr<System> &system, con
                                     atom_tmp_orig[m] = atom_tmp[m];
                                 }
                                 std::sort(atom_tmp.begin(), atom_tmp.end());
-                                for (auto m = 0; m < 3; ++m)
-                                    index_found[m] = 0;
+                                for (auto m = 0; m < 3; ++m) index_found[m] = 0;
                                 for (auto m = 0; m < 3; ++m) {
                                     for (auto mm = 0; mm < 3; ++mm) {
                                         if (index_found[mm] == 0) {

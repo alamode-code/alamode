@@ -55,8 +55,7 @@ int main(int argc, char *argv[])
     if (abs(dt) < eps && (tmin == tmax)) dt = 1.0;
     nt = static_cast<int>((tmax - tmin) / dt) + 1;
     allocate(temp, nt);
-    for (i = 0; i < nt; ++i)
-        temp[i] = tmin + dt * static_cast<double>(i);
+    for (i = 0; i < nt; ++i) temp[i] = tmin + dt * static_cast<double>(i);
 
     if (!locate_tag("#CLASSICAL")) {
         classical = false;
@@ -109,8 +108,7 @@ int main(int argc, char *argv[])
             for (k = 0; k < n_weight[i]; ++k) {
                 ifs >> vel_tmp[0] >> vel_tmp[1] >> vel_tmp[2];
 
-                for (l = 0; l < 3; ++l)
-                    vel[i][j][k][l] = vel_tmp[l];
+                for (l = 0; l < 3; ++l) vel[i][j][k][l] = vel_tmp[l];
             }
 
             for (k = 0; k < nt; ++k) {
@@ -963,8 +961,7 @@ void update_tau_isotope(const std::string file, double **omega, double ***tau, c
 
     allocate(tau_isotope, nk, ns);
 
-    for (i = 0; i < 3; ++i)
-        getline(ifs, line);
+    for (i = 0; i < 3; ++i) getline(ifs, line);
 
     for (ik = 0; ik < nk; ++ik) {
         getline(ifs, line);
@@ -1047,18 +1044,15 @@ void average_gamma_at_degenerate_point(double **e, double ***tau, const int nt, 
 
             if (ideg > 1) {
 
-                for (k = 0; k < nt; ++k)
-                    damp_sum[k] = 0.0;
+                for (k = 0; k < nt; ++k) damp_sum[k] = 0.0;
 
                 for (k = is; k < is + ideg; ++k) {
-                    for (l = 0; l < nt; ++l)
-                        damp_sum[l] += 1.0 / tau[l][i][k];
+                    for (l = 0; l < nt; ++l) damp_sum[l] += 1.0 / tau[l][i][k];
                 }
 
 
                 for (k = is; k < is + ideg; ++k) {
-                    for (l = 0; l < nt; ++l)
-                        tau[l][i][k] = static_cast<double>(ideg) / damp_sum[l];
+                    for (l = 0; l < nt; ++l) tau[l][i][k] = static_cast<double>(ideg) / damp_sum[l];
                 }
             }
 

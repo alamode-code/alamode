@@ -13,9 +13,9 @@
 #include <Eigen/Core>
 #include <complex>
 #include <vector>
-#include "ndarray.h"
 #include "fcs_phonon.h"
 #include "kpoint.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS

@@ -38,8 +38,8 @@ Improvement:
 #include <fstream>
 #include <memory>
 #include <vector>
-#include "ndarray.h"
 #include "collision_operator.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS
@@ -138,7 +138,8 @@ private:
 
     void calc_boson(int, NDArray<double, 2> &, NDArray<double, 2> &);
 
-    bool check_convergence(const NDArray<double, 2> &, const NDArray<double, 2> &); // check if convergence cirteria is meet
+    bool check_convergence(const NDArray<double, 2> &,
+                           const NDArray<double, 2> &); // check if convergence cirteria is meet
 
     //void write_result_gamma(unsigned int,unsigned int,double ***,double **) const;
     void write_result();

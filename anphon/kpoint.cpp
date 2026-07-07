@@ -42,8 +42,7 @@ Kpoint::~Kpoint()
 }
 
 void Kpoint::set_default_variables()
-{
-}
+{}
 
 void Kpoint::deallocate_variables()
 {
@@ -198,8 +197,7 @@ void Kpoint::setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eige
             const auto norm = kdirec[j][0] * kdirec[j][0] + kdirec[j][1] * kdirec[j][1] + kdirec[j][2] * kdirec[j][2];
 
             if (norm > eps) {
-                for (i = 0; i < 3; ++i)
-                    kdirec[j][i] /= std::sqrt(norm);
+                for (i = 0; i < 3; ++i) kdirec[j][i] /= std::sqrt(norm);
             }
 
             ++j;
@@ -276,8 +274,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
             norm = std::sqrt(norm);
 
             if (norm > eps) {
-                for (j = 0; j < 3; ++j)
-                    direc_tmp[j] /= norm;
+                for (j = 0; j < 3; ++j) direc_tmp[j] /= norm;
             }
 
             for (j = 0; j < nk_path[i]; ++j) {
@@ -294,8 +291,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
                     if (j == 0) {
                         axis_tmp[ik] = axis_tmp[ik - 1];
                     } else {
-                        for (k = 0; k < 3; ++k)
-                            tmp[k] = xk_tmp[ik][k] - xk_tmp[ik - 1][k];
+                        for (k = 0; k < 3; ++k) tmp[k] = xk_tmp[ik][k] - xk_tmp[ik - 1][k];
                         rotvec(tmp, tmp, rlavec_p, 'T');
                         axis_tmp[ik] =
                             axis_tmp[ik - 1] + std::sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]);
@@ -307,7 +303,6 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
         nk_path.clear();
         k_start.clear();
         k_end.clear();
-
     }
 
     MPI_Bcast(&n, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -343,15 +338,13 @@ void KpointMeshUniform::setup(const std::vector<SymmetryOperation> &symmlist, co
     }
 
     for (auto i = 0; i < nk; ++i) {
-        for (auto j = 0; j < 3; ++j)
-            kvec_na[i][j] = xk[i][j];
+        for (auto j = 0; j < 3; ++j) kvec_na[i][j] = xk[i][j];
 
         rotvec(&kvec_na[i][0], &kvec_na[i][0], rlavec_p, 'T');
         const auto norm = kvec_na[i][0] * kvec_na[i][0] + kvec_na[i][1] * kvec_na[i][1] + kvec_na[i][2] * kvec_na[i][2];
 
         if (norm > eps) {
-            for (auto j = 0; j < 3; ++j)
-                kvec_na[i][j] /= std::sqrt(norm);
+            for (auto j = 0; j < 3; ++j) kvec_na[i][j] /= std::sqrt(norm);
         }
     }
 
@@ -646,8 +639,7 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
 
     k_found.resize(nk);
 
-    for (ik = 0; ik < nk; ++ik)
-        k_found[ik] = false;
+    for (ik = 0; ik < nk; ++ik) k_found[ik] = false;
 
     for (ik = 0; ik < nk; ++ik) {
 
@@ -655,15 +647,13 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
 
         k_group.clear();
 
-        for (i = 0; i < 3; ++i)
-            xk_orig[i] = xkr[ik][i];
+        for (i = 0; i < 3; ++i) xk_orig[i] = xkr[ik][i];
 
         for (isym = 0; isym < nsym; ++isym) {
 
             rotvec(xk_sym, xk_orig, symop_k[isym]);
 
-            for (i = 0; i < 3; ++i)
-                xk_sym[i] = xk_sym[i] - nint(xk_sym[i]);
+            for (i = 0; i < 3; ++i) xk_sym[i] = xk_sym[i] - nint(xk_sym[i]);
 
             int nloc = get_knum(xk_sym);
 
@@ -688,8 +678,7 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
 
             if (0) {
 
-                for (i = 0; i < 3; ++i)
-                    xk_sym[i] *= -1.0;
+                for (i = 0; i < 3; ++i) xk_sym[i] *= -1.0;
 
                 nloc = get_knum(xk_sym);
 
@@ -725,8 +714,7 @@ void KpointMeshUniform::gen_nkminus()
 
     for (unsigned int ik = 0; ik < nk; ++ik) {
 
-        for (auto i = 0; i < 3; ++i)
-            minus_xk[i] = -xk[ik][i];
+        for (auto i = 0; i < 3; ++i) minus_xk[i] = -xk[ik][i];
 
         const auto ik_minus = get_knum(minus_xk);
 
@@ -788,8 +776,7 @@ int KpointMeshUniform::knum_sym(const unsigned int ik, const Eigen::Matrix3i &ro
     invmat3(srot_inv, srot);
     transpose3(srot_inv_t, srot_inv);
 
-    for (i = 0; i < 3; ++i)
-        xk_orig[i] = xk[ik][i];
+    for (i = 0; i < 3; ++i) xk_orig[i] = xk[ik][i];
 
     rotvec(xk_sym, xk_orig, srot_inv_t);
     for (i = 0; i < 3; ++i) {
@@ -805,10 +792,8 @@ int KpointMeshUniform::get_knum(const double xk[3]) const
     double diff[3];
     double dnk[3];
 
-    for (i = 0; i < 3; ++i)
-        dnk[i] = static_cast<double>(nk_i[i]);
-    for (i = 0; i < 3; ++i)
-        diff[i] = static_cast<double>(nint(xk[i] * dnk[i])) - xk[i] * dnk[i];
+    for (i = 0; i < 3; ++i) dnk[i] = static_cast<double>(nk_i[i]);
+    for (i = 0; i < 3; ++i) diff[i] = static_cast<double>(nint(xk[i] * dnk[i])) - xk[i] * dnk[i];
 
     const auto norm = std::sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
 
@@ -864,10 +849,8 @@ int Kpoint::get_knum(const double xk[3], const unsigned int nk[3]) const
     double diff[3];
     double dnk[3];
 
-    for (i = 0; i < 3; ++i)
-        dnk[i] = static_cast<double>(nk[i]);
-    for (i = 0; i < 3; ++i)
-        diff[i] = static_cast<double>(nint(xk[i] * dnk[i])) - xk[i] * dnk[i];
+    for (i = 0; i < 3; ++i) dnk[i] = static_cast<double>(nk[i]);
+    for (i = 0; i < 3; ++i) diff[i] = static_cast<double>(nint(xk[i] * dnk[i])) - xk[i] * dnk[i];
 
     const auto norm = std::sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
 
@@ -896,8 +879,7 @@ void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int
         }
     }
 
-    for (i = 0; i < 3; ++i)
-        xk_orig[i] = xk_in[i];
+    for (i = 0; i < 3; ++i) xk_orig[i] = xk_in[i];
 
     for (auto isym = 0; isym < symmetry->nsym; ++isym) {
 
@@ -1008,8 +990,7 @@ void Kpoint::get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const 
     double qtmp[3], qdiff[3];
 
     for (const auto &p: comb) {
-        for (i = 0; i < 3; ++i)
-            qtmp[i] = p[i];
+        for (i = 0; i < 3; ++i) qtmp[i] = p[i];
         rotvec(qtmp, qtmp, convmat);
 
         for (i = 0; i < 3; ++i) {
@@ -1072,24 +1053,19 @@ void KpointMeshUniform::get_unique_triplet_k(const int ik, const std::vector<Sym
         num_group_k = 1;
     }
 
-    for (i = 0; i < 3; ++i)
-        xk0[i] = xk[knum][i];
-    for (i = 0; i < nk; ++i)
-        flag_found[i] = false;
+    for (i = 0; i < 3; ++i) xk0[i] = xk[knum][i];
+    for (i = 0; i < nk; ++i) flag_found[i] = false;
 
     triplet.clear();
 
     for (auto ik1 = 0; ik1 < nk; ++ik1) {
 
-        for (i = 0; i < 3; ++i)
-            xk1[i] = xk[ik1][i];
+        for (i = 0; i < 3; ++i) xk1[i] = xk[ik1][i];
 
         if (sign == -1) {
-            for (i = 0; i < 3; ++i)
-                xk2[i] = xk0[i] - xk1[i];
+            for (i = 0; i < 3; ++i) xk2[i] = xk0[i] - xk1[i];
         } else if (sign == 1) {
-            for (i = 0; i < 3; ++i)
-                xk2[i] = -xk0[i] - xk1[i];
+            for (i = 0; i < 3; ++i) xk2[i] = -xk0[i] - xk1[i];
         } else {
             //exit("get_unituq_triplet_k", "Invalid sign");
         }
@@ -1159,8 +1135,7 @@ void KpointMeshUniform::get_unique_quartet_k(const int ik, const std::vector<Sym
         num_group_k = 1;
     }
 
-    for (i = 0; i < 3; ++i)
-        xk0[i] = xk[knum][i];
+    for (i = 0; i < 3; ++i) xk0[i] = xk[knum][i];
     for (i = 0; i < nk; ++i) {
         for (int j = 0; j < nk; ++j) {
             flag_found[i][j] = false;
@@ -1171,22 +1146,18 @@ void KpointMeshUniform::get_unique_quartet_k(const int ik, const std::vector<Sym
 
     for (int ik1 = 0; ik1 < nk; ++ik1) {
 
-        for (i = 0; i < 3; ++i)
-            xk1[i] = xk[ik1][i];
+        for (i = 0; i < 3; ++i) xk1[i] = xk[ik1][i];
 
         int ik2_start = 0;
         if (use_permutation_symmetry) ik2_start = ik1;
 
         for (int ik2 = ik2_start; ik2 < nk; ++ik2) {
-            for (i = 0; i < 3; ++i)
-                xk2[i] = this->xk[ik2][i];
+            for (i = 0; i < 3; ++i) xk2[i] = this->xk[ik2][i];
 
             if (sign == -1) {
-                for (i = 0; i < 3; ++i)
-                    xk3[i] = xk0[i] - xk1[i] - xk2[i];
+                for (i = 0; i < 3; ++i) xk3[i] = xk0[i] - xk1[i] - xk2[i];
             } else {
-                for (i = 0; i < 3; ++i)
-                    xk3[i] = -xk0[i] - xk1[i] - xk2[i];
+                for (i = 0; i < 3; ++i) xk3[i] = -xk0[i] - xk1[i] - xk2[i];
             }
 
             int ik3 = get_knum(xk3);
@@ -1264,8 +1235,7 @@ void KpointMeshUniform::setup_kpoint_symmetry(const std::vector<SymmetryOperatio
             invmat3(S_frac_inv, S_frac);
             rotvec(Sk, k, S_recip);
 
-            for (double &x: Sk)
-                x = x - nint(x);
+            for (double &x: Sk) x = x - nint(x);
             const auto knum_sym = get_knum(Sk);
 
             if (knum_sym == -1) {
@@ -1312,8 +1282,7 @@ int Kpoint::get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, cons
     double xtmp[3];
 
     for (auto ik = 0; ik < kmesh_coarse->nk; ++ik) {
-        for (auto i = 0; i < 3; ++i)
-            xtmp[i] = kmesh_coarse->xk[ik][i];
+        for (auto i = 0; i < 3; ++i) xtmp[i] = kmesh_coarse->xk[ik][i];
 
         const auto loc = kmesh_dense->get_knum(xtmp);
 

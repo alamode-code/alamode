@@ -13,8 +13,8 @@
 #include <complex>
 #include <string>
 #include <vector>
-#include "ndarray.h"
 #include "fcs_phonon.h"
+#include "ndarray.h"
 #include "pointers.h"
 #include "system.h"
 

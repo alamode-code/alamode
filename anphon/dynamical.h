@@ -13,13 +13,13 @@
 #include <Eigen/Core>
 #include <complex>
 #include <memory>
-#include "ndarray.h"
 #include <string>
 #include <vector>
 #include "blas_wrapper.h" // zgemm_ / zgemm_cpx (guarded for EIGEN_USE_BLAS); must follow <Eigen/...>
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "memory.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS
@@ -43,8 +43,7 @@ inline bool operator<(const DistWithCell a, const DistWithCell b)
 class DymatEigenValue
 {
 public:
-    DymatEigenValue() :
-        nk(0), ns(0), is_stored_eigvec(true), is_irreducible_only(false) {};
+    DymatEigenValue() : nk(0), ns(0), is_stored_eigvec(true), is_irreducible_only(false) {};
 
     DymatEigenValue(const bool stored_eigvec_, const bool store_irreducible_only_, const unsigned int nk_in,
                     const unsigned int ns_in) :
@@ -175,8 +174,9 @@ public:
     const double *const *get_xrs_image() const;
 
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
-                            const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense, double **eval_out,
-                            std::complex<double> ***evec_out, const std::vector<Eigen::MatrixXcd> &dymat_short,
+                            const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
+                            double **eval_out, std::complex<double> ***evec_out,
+                            const std::vector<Eigen::MatrixXcd> &dymat_short,
                             const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
                             const bool use_precomputed_dymat = false, const bool return_sqrt = true) const;
 
@@ -265,8 +265,7 @@ inline void average_over_degenerate_modes(const int ns, const double *eval_at_k,
     int is = 0;
     for (const auto ideg_now: degeneracy_at_k) {
         if (ideg_now > 1) {
-            for (int l = 0; l < width; ++l)
-                data_sum[l] = 0.0;
+            for (int l = 0; l < width; ++l) data_sum[l] = 0.0;
             for (int k = is; k < is + ideg_now; ++k) {
                 for (int l = 0; l < width; ++l) {
                     data_sum[l] += data[k * width + l];

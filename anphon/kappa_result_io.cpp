@@ -556,8 +556,7 @@ struct KappaResultIOH5::Impl
                         const auto ogroup = oldfile.getGroup(opath);
                         std::vector<unsigned int> kmesh;
                         ogroup.getAttribute("kmesh").read(kmesh);
-                        for (auto i = 0; i < 3; ++i)
-                            cmeta.nk_i[i] = kmesh[i];
+                        for (auto i = 0; i < 3; ++i) cmeta.nk_i[i] = kmesh[i];
                         ogroup.getAttribute("nk_irred").read(cmeta.nk_irred);
                         ogroup.getAttribute("nbranches").read(cmeta.ns);
                         cmeta.xk_irred = H5Easy::load<Eigen::MatrixXd>(oldfile, opath + "/xk_irred");
@@ -771,8 +770,7 @@ void KappaResultIOH5::open_or_create(const KappaFileMetaH5 &fmeta, const KappaCh
             }
             // keep sorted by temperature
             std::vector<size_t> order(merged.size());
-            for (size_t i = 0; i < order.size(); ++i)
-                order[i] = i;
+            for (size_t i = 0; i < order.size(); ++i) order[i] = i;
             std::sort(order.begin(), order.end(), [&merged](const size_t a, const size_t b) {
                 return merged[a] < merged[b];
             });
@@ -1118,8 +1116,7 @@ void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls, con
             std::vector<double> col(ne * 3);
             for (size_t j = 0; j < impl->run_cols.size(); ++j) {
                 for (size_t e = 0; e < ne; ++e) {
-                    for (auto x = 0; x < 3; ++x)
-                        col[e * 3 + x] = kappa_spec[e][j][x];
+                    for (auto x = 0; x < 3; ++x) col[e * 3 + x] = kappa_spec[e][j][x];
                 }
                 dset.select({0, impl->run_cols[j], 0}, {ne, 1, 3}).write_raw(col.data());
             }

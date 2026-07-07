@@ -160,7 +160,6 @@ class Fcsxml:
         return self._map_p2s[:, 0]
 
     def _add_header_xml(self, root_in):
-
         elem = Element("ALM_version")
         elem.text = "None"
         root_in.append(elem)
@@ -220,7 +219,6 @@ class Fcsxml:
                 subsubelem.text = str(self._map_p2s[j, i] + 1)
 
     def _add_force_constants_xml(self, root_in):
-
         elem = Element("ForceConstants")
         root_in.append(elem)
         if self._fc2_info:
@@ -351,7 +349,6 @@ class Fcsxml:
                 current.tail = "\n" + ("  " * (depth - 1))
 
     def _set_x_images(self):
-
         self._xf_image = np.zeros((27, self._nat_super, 3), dtype="float")
         self._xf_image[0] = self._xf
 
@@ -368,7 +365,6 @@ class Fcsxml:
         self._xc_image = np.dot(self._xf_image, self._lavec.transpose())
 
     def _compute_closest_mirror_images(self):
-
         if self._xc_image is None:
             self._set_x_images()
 
@@ -393,7 +389,6 @@ class Fcsxml:
             self._closest_mirror_images.append(mirror_image_tmp)
 
     def _setup_symmetry(self):
-
         cell = (self._lavec.transpose(), self._xf, self._atomic_kinds)
         dataset = spglib.get_symmetry_dataset(cell, symprec=self._symprec)
 

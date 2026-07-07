@@ -290,8 +290,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     kmap_identity.resize(nk);
     proj.resize(neval, nk);
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
     for (unsigned int iat = 0; iat < natmin; ++iat) {
 
@@ -370,28 +369,24 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     kmap_identity.resize(nk);
     proj.resize(neval, nk);
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
     double dot_prod_sum;
     double cross_prod_sum;
 
     for (unsigned int ik = 0; ik < nk; ++ik) {
 
-        for (i = 0; i < 3; ++i)
-            xq_cart[i] = xk_in[ik][i];
+        for (i = 0; i < 3; ++i) xq_cart[i] = xk_in[ik][i];
 
         rotvec(xq_cart, xq_cart, rlavec_p, 'T');
 
         const double norm = std::sqrt(xq_cart[0] * xq_cart[0] + xq_cart[1] * xq_cart[1] + xq_cart[2] * xq_cart[2]);
 
         if (norm > eps) {
-            for (i = 0; i < 3; ++i)
-                xq_cart[i] /= norm;
+            for (i = 0; i < 3; ++i) xq_cart[i] /= norm;
         }
 
-        for (i = 0; i < 3; ++i)
-            qvec(i) = xq_cart[i];
+        for (i = 0; i < 3; ++i) qvec(i) = xq_cart[i];
 
         for (unsigned int imode = 0; imode < neval; ++imode) {
             dot_prod_sum = 0.0;
@@ -490,16 +485,14 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
 
     const auto &xk = kmesh_dos->xk;
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
     for (int ik = 0; ik < nk_reduced; ++ik) {
 
         auto knum = kmesh_dos->kpoint_irred_all[ik][0].knum;
 
         for (jk = 0; jk < nk; ++jk) {
-            for (i = 0; i < 3; ++i)
-                xk_tmp[i] = xk[knum][i] + xk[jk][i];
+            for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] + xk[jk][i];
             k_pair[jk] = kmesh_dos->get_knum(xk_tmp);
         }
 
@@ -592,8 +585,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
     kmap_identity.resize(nk);
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
     ret = 0.0;
     auto sps_sum1 = 0.0;
@@ -634,8 +626,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
                     for (int jk = 0; jk < nk; ++jk) {
 
-                        for (i = 0; i < 3; ++i)
-                            xk_tmp[i] = xk[knum][i] + xk[jk][i];
+                        for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] + xk[jk][i];
                         loc = kmesh_dos->get_knum(xk_tmp);
 
                         e_tmp[0][jk] = writes->in_kayser(eval_in[jk][js] + eval_in[loc][ks]);
@@ -651,8 +642,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
 
-                        for (j = 0; j < nk; ++j)
-                            sps_tmp1 += weight[j];
+                        for (j = 0; j < nk; ++j) sps_tmp1 += weight[j];
 
                         integration->calc_weight_tetrahedron(nk,
                                                              kmap_identity,
@@ -661,19 +651,16 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
                                                              tetra_nodes_dos->get_ntetra(),
                                                              tetra_nodes_dos->get_tetras(),
                                                              weight);
-                        for (j = 0; j < nk; ++j)
-                            sps_tmp2 += weight[j];
+                        for (j = 0; j < nk; ++j) sps_tmp2 += weight[j];
 
                     } else {
 
                         integration
                             ->calc_weight_smearing(nk, nk, kmap_identity, e_tmp[0], omega0, smearing_method, weight);
-                        for (j = 0; j < nk; ++j)
-                            sps_tmp1 += weight[j];
+                        for (j = 0; j < nk; ++j) sps_tmp1 += weight[j];
                         integration
                             ->calc_weight_smearing(nk, nk, kmap_identity, e_tmp[1], omega0, smearing_method, weight);
-                        for (j = 0; j < nk; ++j)
-                            sps_tmp2 += weight[j];
+                        for (j = 0; j < nk; ++j) sps_tmp2 += weight[j];
                     }
                 }
                 e_tmp.clear();
@@ -758,8 +745,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
 
     const auto N = static_cast<int>((Tmax - Tmin) / dT) + 1;
     temperature.resize(N);
-    for (i = 0; i < N; ++i)
-        temperature[i] = Tmin + static_cast<double>(i) * dT;
+    for (i = 0; i < N; ++i) temperature[i] = Tmin + static_cast<double>(i) * dT;
 
     k2_arr.resize(nk);
 
@@ -832,8 +818,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
             const auto snum = iks % ns;
 
             for (unsigned int k1 = 0; k1 < nk; ++k1) {
-                for (j = 0; j < 3; ++j)
-                    xk_tmp[j] = kmesh_dos->xk[knum][j] - kmesh_dos->xk[k1][j];
+                for (j = 0; j < 3; ++j) xk_tmp[j] = kmesh_dos->xk[knum][j] - kmesh_dos->xk[k1][j];
                 unsigned int k2 = kmesh_dos->get_knum(xk_tmp);
                 k2_arr[k1] = k2;
             }
@@ -909,8 +894,7 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
     delta_arr.resize(nk, ns2, 2);
 
     kmap_identity.resize(nk);
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
     const auto omega0 = writes->in_kayser(omega);
 

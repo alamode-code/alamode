@@ -177,8 +177,7 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         // (primitive cell tiled by KMESH_INTERPOLATE, cell-major atom order:
         // atom index = icell * natmin + iat with icell = ix*nk2*nk3 + iy*nk3 + iz).
         std::vector<std::vector<int>> mapping_prim(natmin, std::vector<int>(1));
-        for (size_t i = 0; i < natmin; ++i)
-            mapping_prim[i][0] = static_cast<int>(i);
+        for (size_t i = 0; i < natmin; ++i) mapping_prim[i][0] = static_cast<int>(i);
         write_cell_group_h5(fh,
                             "PrimitiveCell",
                             cells.lavec_prim,
@@ -314,8 +313,7 @@ void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requeste
     const auto list_temps = [](const char *label, const std::vector<double> &bad) {
         if (bad.empty()) return;
         std::cout << "  " << label << " :";
-        for (const auto t: bad)
-            std::cout << ' ' << t << " K";
+        for (const auto t: bad) std::cout << ' ' << t << " K";
         std::cout << '\n';
     };
     list_temps("SCPH iteration       ", bad_scph);

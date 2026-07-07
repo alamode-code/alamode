@@ -43,8 +43,7 @@ public:
 
     DirectionVec(const double vec_in[3])
     {
-        for (auto i = 0; i < 3; ++i)
-            direction[i] = vec_in[i];
+        for (auto i = 0; i < 3; ++i) direction[i] = vec_in[i];
     }
 };
 

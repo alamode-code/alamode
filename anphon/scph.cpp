@@ -790,8 +790,9 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 std::cout << " :\n";
                 const auto spg_label = relaxation->print_structure_and_symmetry(
                     structure_state,
-                    (relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step) ? del_v0_del_umn_SCP.ptr()
-                                                                                                : nullptr);
+                    (relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step)
+                        ? del_v0_del_umn_SCP.ptr()
+                        : nullptr);
                 std::cout << '\n';
 
                 if (!scp_converged_step) {
@@ -1101,7 +1102,13 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                         kmap_coarse_to_dense);
 
     // calculate SCP force
-    compute_anharmonic_v1_array(v1_SCP, ws.v1_renorm, ws.v3_renorm, cmat_convert, omega2_anharm[iT], temp, kmesh_dense.get());
+    compute_anharmonic_v1_array(v1_SCP,
+                                ws.v1_renorm,
+                                ws.v3_renorm,
+                                cmat_convert,
+                                omega2_anharm[iT],
+                                temp,
+                                kmesh_dense.get());
 
     // calculate SCP stress tensor
     if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
@@ -1223,8 +1230,7 @@ void Scph::initialize_scph_iteration(const double temp, const bool flag_converge
 void Scph::setup_harmonic_dynamical_matrices(const Eigen::MatrixXd &omega2_HA,
                                              const std::vector<Eigen::MatrixXcd> &evec_initial,
                                              std::complex<double> **delta_v2_renorm,
-                                             std::vector<Eigen::MatrixXcd> &Fmat0,
-                                             std::complex<double> ***dymat_q_HA)
+                                             std::vector<Eigen::MatrixXcd> &Fmat0, std::complex<double> ***dymat_q_HA)
 {
     using namespace Eigen;
     const auto ns = dynamical->neval;

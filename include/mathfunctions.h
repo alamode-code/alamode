@@ -35,8 +35,7 @@ inline auto matmul3(T ret[3][3], const T amat[3][3], const T bmat[3][3]) -> void
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
             ret_tmp[i][j] = 0.0;
-            for (k = 0; k < 3; ++k)
-                ret_tmp[i][j] += amat[i][k] * bmat[k][j];
+            for (k = 0; k < 3; ++k) ret_tmp[i][j] += amat[i][k] * bmat[k][j];
         }
     }
 
@@ -119,8 +118,7 @@ inline auto rotvec(double vec_out[3], const double vec_in[3], const Eigen::Matri
 {
     Eigen::Vector3d vec_tmp;
 
-    for (auto i = 0; i < 3; ++i)
-        vec_tmp[i] = vec_in[i];
+    for (auto i = 0; i < 3; ++i) vec_tmp[i] = vec_in[i];
 
     if (mode == 'N') {
         vec_tmp = mat_in * vec_tmp;
@@ -130,8 +128,7 @@ inline auto rotvec(double vec_out[3], const double vec_in[3], const Eigen::Matri
         std::cout << "Invalid mode " << mode << std::endl;
         exit(1);
     }
-    for (auto i = 0; i < 3; ++i)
-        vec_out[i] = vec_tmp[i];
+    for (auto i = 0; i < 3; ++i) vec_out[i] = vec_tmp[i];
 }
 
 inline auto rotvec(std::complex<double> vec_out[3], const std::complex<double> vec_in[3], const Eigen::Matrix3d &mat_in,
@@ -139,8 +136,7 @@ inline auto rotvec(std::complex<double> vec_out[3], const std::complex<double> v
 {
     Eigen::Vector3cd vec_tmp;
 
-    for (auto i = 0; i < 3; ++i)
-        vec_tmp[i] = vec_in[i];
+    for (auto i = 0; i < 3; ++i) vec_tmp[i] = vec_in[i];
 
     if (mode == 'N') {
         vec_tmp = mat_in * vec_tmp;
@@ -150,8 +146,7 @@ inline auto rotvec(std::complex<double> vec_out[3], const std::complex<double> v
         std::cout << "Invalid mode " << mode << std::endl;
         exit(1);
     }
-    for (auto i = 0; i < 3; ++i)
-        vec_out[i] = vec_tmp[i];
+    for (auto i = 0; i < 3; ++i) vec_out[i] = vec_tmp[i];
 }
 
 inline auto invmat3(double invmat[3][3], const double mat[3][3]) -> void

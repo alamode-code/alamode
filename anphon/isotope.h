@@ -12,8 +12,8 @@
 
 #include <complex>
 #include <vector>
-#include "ndarray.h"
 #include "kpoint.h"
+#include "ndarray.h"
 
 namespace PHON_NS
 {
@@ -43,8 +43,7 @@ public:
 
     void calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
                                      const TetraNodes &tetra_nodes_dos_in, const System &system_in,
-                                     Integration &integration_in, unsigned int ns_in, int my_rank_in,
-                                     int nprocs_in);
+                                     Integration &integration_in, unsigned int ns_in, int my_rank_in, int nprocs_in);
 
 private:
     void set_default_variables();

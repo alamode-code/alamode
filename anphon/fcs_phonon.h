@@ -13,8 +13,8 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "ndarray.h"
 #include "mathfunctions.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS

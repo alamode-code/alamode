@@ -499,8 +499,7 @@ void Iterativebte::iterative_solver()
             }
 
             // zero the local wedge rows for the MPI_Allreduce
-            for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii)
-                dF_ir_loc[ii] = 0.0;
+            for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_loc[ii] = 0.0;
 
                 // The in-scattering action W is evaluated on the wedge only:
                 // equivalent points carry no new information because
@@ -584,8 +583,7 @@ void Iterativebte::iterative_solver()
                         kappa_best[3 * ix + iy] = kappa_new[ix][iy];
                     }
                 }
-                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii)
-                    dF_ir_best[ii] = dF_ir_glob[ii];
+                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_best[ii] = dF_ir_glob[ii];
             }
 
             auto converged = false;
@@ -624,8 +622,7 @@ void Iterativebte::iterative_solver()
                                   res_history[nres - 2] > res_history[nres - 3];
 
             if (diverged || itr == (max_cycle - 1)) {
-                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii)
-                    dF_ir_glob[ii] = dF_ir_best[ii];
+                for (unsigned int ii = 0; ii < nk_irred * ns * 3; ++ii) dF_ir_glob[ii] = dF_ir_best[ii];
                 collision_op->reconstruct_full_from_wedge(dF_ir_glob, dFold);
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
@@ -754,8 +751,7 @@ void Iterativebte::project_wedge_vector(std::vector<double> &v, const std::vecto
     }
     for (size_t row = 0; row < nrows; ++row) {
         if (!mask[row]) continue;
-        for (auto j = 0; j < 3; ++j)
-            v[row * 3 + j] = 0.0;
+        for (auto j = 0; j < 3; ++j) v[row * 3 + j] = 0.0;
     }
 }
 
@@ -810,8 +806,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         std::vector<double> xtest(nrows3, 0.0);
         for (size_t row = 0; row < nrows; ++row) {
             if (mask[row]) continue;
-            for (auto j = 0; j < 3; ++j)
-                xtest[row * 3 + j] = b[row * 3 + j] / qdiag[row];
+            for (auto j = 0; j < 3; ++j) xtest[row * 3 + j] = b[row * 3 + j] / qdiag[row];
         }
         project_wedge_vector(xtest, mask);
         collision_op->reconstruct_full_from_wedge(xtest.data(), dFold);
@@ -1003,8 +998,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 for (auto a = 0; a < mdim[I]; ++a) {
                     const auto eI = ecol(I, a);
                     double sum_b = 0.0;
-                    for (auto x = 0; x < 3; ++x)
-                        sum_b += eI(x) * btil3[I * 3 + x];
+                    for (auto x = 0; x < 3; ++x) sum_b += eI(x) * btil3[I * 3 + x];
                     btil_inv[offs[I] + a] = sum_b;
                     for (size_t J = 0; J < blocks.size(); ++J) {
                         for (auto bb = 0; bb < mdim[J]; ++bb) {
@@ -1081,8 +1075,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             Eigen::Matrix3d mat_k2cart;
             const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
             for (auto i = 0; i < 3; ++i) {
-                for (auto j = 0; j < 3; ++j)
-                    mat_k2cart(j, i) = rlavec(i, j);
+                for (auto j = 0; j < 3; ++j) mat_k2cart(j, i) = rlavec(i, j);
             }
 
             std::vector<std::vector<double>> drift(3, std::vector<double>(ndim, 0.0));
@@ -1090,8 +1083,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 const auto ik = static_cast<unsigned int>(blocks[I].first / ns);
                 const int k1 = dos->kmesh_dos->kpoint_irred_all[ik][0].knum;
                 Eigen::Vector3d kf;
-                for (auto j = 0; j < 3; ++j)
-                    kf(j) = dos->kmesh_dos->xk[k1][j];
+                for (auto j = 0; j < 3; ++j) kf(j) = dos->kmesh_dos->xk[k1][j];
                 const Eigen::Vector3d kc = mat_k2cart * kf;
                 // In the Omega variables the drift candidate carries the
                 // occupation weight (y = G x), projected onto the invariant
@@ -1108,18 +1100,14 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             for (auto a = 0; a < 3; ++a) {
                 for (const auto kb: kept) {
                     double pr = 0.0;
-                    for (int i = 0; i < ndim; ++i)
-                        pr += drift[a][i] * drift[kb][i];
-                    for (int i = 0; i < ndim; ++i)
-                        drift[a][i] -= pr * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i) pr += drift[a][i] * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i) drift[a][i] -= pr * drift[kb][i];
                 }
                 double nrm = 0.0;
-                for (int i = 0; i < ndim; ++i)
-                    nrm += pow2(drift[a][i]);
+                for (int i = 0; i < ndim; ++i) nrm += pow2(drift[a][i]);
                 if (nrm > 1.0e-24) {
                     nrm = 1.0 / std::sqrt(nrm);
-                    for (int i = 0; i < ndim; ++i)
-                        drift[a][i] *= nrm;
+                    for (int i = 0; i < ndim; ++i) drift[a][i] *= nrm;
                     kept.push_back(a);
                 }
             }
@@ -1127,8 +1115,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 double ov2 = 0.0;
                 for (const auto kb: kept) {
                     double pr = 0.0;
-                    for (int i = 0; i < ndim; ++i)
-                        pr += A[static_cast<size_t>(m) * ndim + i] * drift[kb][i];
+                    for (int i = 0; i < ndim; ++i) pr += A[static_cast<size_t>(m) * ndim + i] * drift[kb][i];
                     ov2 += pow2(pr);
                 }
                 std::cout << "      softest mode " << m << ": 1/tau = " << std::scientific << std::setprecision(2)
@@ -1148,8 +1135,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 continue;
             }
             double pr = 0.0;
-            for (int j = 0; j < ndim; ++j)
-                pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
+            for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
             coef[i] = pr / evals[i];
         }
         if (n_null > 0) {
@@ -1166,8 +1152,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                     continue;
                 }
                 const auto c = coef[i];
-                for (int j = 0; j < ndim; ++j)
-                    xt[j] += c * A[static_cast<size_t>(i) * ndim + j];
+                for (int j = 0; j < ndim; ++j) xt[j] += c * A[static_cast<size_t>(i) * ndim + j];
             }
             // Expand: invariant basis -> Cartesian per block, undo the Omega
             // congruence (divide by g), then block-constant over degenerate
@@ -1178,8 +1163,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 double v3[3] = {0.0, 0.0, 0.0};
                 for (auto a = 0; a < mdim[I]; ++a) {
                     const auto eI = ecol(I, a);
-                    for (auto x = 0; x < 3; ++x)
-                        v3[x] += eI(x) * xt[offs[I] + a];
+                    for (auto x = 0; x < 3; ++x) v3[x] += eI(x) * xt[offs[I] + a];
                 }
                 for (auto srow = blocks[I].first; srow < blocks[I].second; ++srow) {
                     for (auto x = 0; x < 3; ++x) {
@@ -1192,8 +1176,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             ktmp.resize(3, 3);
             calc_kappa(itemp, dFold, ktmp);
             for (auto a = 0; a < 3; ++a) {
-                for (auto c2 = 0; c2 < 3; ++c2)
-                    k9[3 * a + c2] = ktmp[a][c2];
+                for (auto c2 = 0; c2 < 3; ++c2) k9[3 * a + c2] = ktmp[a][c2];
             }
             ktmp.clear();
             if (dF_keep) *dF_keep = dF;
@@ -1220,8 +1203,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             double r2 = 0.0, b2 = 0.0;
             for (int i = 0; i < ndim; ++i) {
                 double pr = 0.0;
-                for (int j = 0; j < ndim; ++j)
-                    pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
+                for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
                 b2 += pow2(pr);
                 if (evals[i] <= lam_null) r2 += pow2(pr);
             }
@@ -1237,8 +1219,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
     MPI_Bcast(dF_wedge.data(), static_cast<int>(nrows3), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     for (auto a = 0; a < 3; ++a) {
-        for (auto c2 = 0; c2 < 3; ++c2)
-            kappa[itemp][a][c2] = kappa9[3 * a + c2];
+        for (auto c2 = 0; c2 < 3; ++c2) kappa[itemp][a][c2] = kappa9[3 * a + c2];
     }
     collision_op->reconstruct_full_from_wedge(dF_wedge.data(), dFold);
 
@@ -1321,11 +1302,9 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     auto precondition = [&](const std::vector<double> &rin, std::vector<double> &zout) {
         for (size_t row = 0; row < nrows; ++row) {
             if (mask[row]) {
-                for (auto j = 0; j < 3; ++j)
-                    zout[row * 3 + j] = 0.0;
+                for (auto j = 0; j < 3; ++j) zout[row * 3 + j] = 0.0;
             } else {
-                for (auto j = 0; j < 3; ++j)
-                    zout[row * 3 + j] = rin[row * 3 + j] / qdiag[row];
+                for (auto j = 0; j < 3; ++j) zout[row * 3 + j] = rin[row * 3 + j] / qdiag[row];
             }
         }
     };
@@ -1372,20 +1351,17 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     if (bnorm <= 0.0) {
         // No driving force (all modes masked): dF = 0 is the exact solution.
         for (auto i = 0; i < 3; ++i)
-            for (auto j = 0; j < 3; ++j)
-                kappa[itemp][i][j] = 0.0;
+            for (auto j = 0; j < 3; ++j) kappa[itemp][i][j] = 0.0;
         std::fill(x.begin(), x.end(), 0.0);
         collision_op->reconstruct_full_from_wedge(x.data(), dFold);
         return true;
     }
 
     if (x0_wedge) {
-        for (size_t i = 0; i < nrows3; ++i)
-            x[i] = x0_wedge[i];
+        for (size_t i = 0; i < nrows3; ++i) x[i] = x0_wedge[i];
         project(x);
         apply_operator(x, Ap);
-        for (size_t i = 0; i < nrows3; ++i)
-            r[i] = b[i] - Ap[i];
+        for (size_t i = 0; i < nrows3; ++i) r[i] = b[i] - Ap[i];
     } else {
         r = b;
     }
@@ -1419,10 +1395,8 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
             break;
         }
         const auto alpha = rz / pAp;
-        for (size_t i = 0; i < nrows3; ++i)
-            x[i] += alpha * p[i];
-        for (size_t i = 0; i < nrows3; ++i)
-            r[i] -= alpha * Ap[i];
+        for (size_t i = 0; i < nrows3; ++i) x[i] += alpha * p[i];
+        for (size_t i = 0; i < nrows3; ++i) r[i] -= alpha * Ap[i];
 
         const auto rel_new = std::sqrt(wdot(r, r)) / bnorm;
         if (rel_new > rel) {
@@ -1486,8 +1460,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         const auto rz_new = wdot(r, z);
         const auto beta_cg = rz_new / rz;
         rz = rz_new;
-        for (size_t i = 0; i < nrows3; ++i)
-            p[i] = z[i] + beta_cg * p[i];
+        for (size_t i = 0; i < nrows3; ++i) p[i] = z[i] + beta_cg * p[i];
     }
 
     if (!converged) {
@@ -1515,8 +1488,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     // the recursive CG residual when the discretized operator is not
     // exactly symmetric (tetrahedron/adaptive weights).
     apply_operator(x, Ap);
-    for (size_t i = 0; i < nrows3; ++i)
-        r[i] = b[i] - Ap[i];
+    for (size_t i = 0; i < nrows3; ++i) r[i] = b[i] - Ap[i];
     const auto rel_true = std::sqrt(wdot(r, r)) / bnorm;
     residual_out = rel_true;
     if (converged && rel_true > convergence_criteria) {

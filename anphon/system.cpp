@@ -625,7 +625,6 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
     kd_tmp.clear();
     magmom_tmp.clear();
     map_p2s_tmp.clear();
-
 }
 
 void System::get_structure_and_mapping_table_h5(const std::string &filename, Cell &scell_out, Cell &pcell_out,
@@ -852,13 +851,11 @@ void System::update_primitive_lattice()
             }
 
             if (!is_duplicate) {
-                for (auto j = 0; j < 3; ++j)
-                    xf_tmp_vec[j] = xf_tmp[j];
+                for (auto j = 0; j < 3; ++j) xf_tmp_vec[j] = xf_tmp[j];
                 xf_unique.emplace_back(xf_tmp_vec);
                 kind_unique.emplace_back(supercell[0].kind[i]);
                 if (spin_super.lspin) {
-                    for (auto j = 0; j < 3; ++j)
-                        magmom_tmp_vec[j] = spin_super.magmom[i][j];
+                    for (auto j = 0; j < 3; ++j) magmom_tmp_vec[j] = spin_super.magmom[i][j];
                     magmom_unique.emplace_back(magmom_tmp_vec);
                 }
             }
@@ -1386,8 +1383,7 @@ void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumD
         }
     }
 
-    for (i = 0; i < 3; ++i)
-        shift_cell_super[0][i] = 0;
+    for (i = 0; i < 3; ++i) shift_cell_super[0][i] = 0;
     icell = 1;
     for (ix = -1; ix <= 1; ++ix) {
         for (iy = -1; iy <= 1; ++iy) {

@@ -279,8 +279,7 @@ auto Displace::generate_pattern_all(const int maxorder, const size_t nat, const 
                 }
                 disp_tmp[(*it).atomset[i] % 3] = 1.0;
 
-                for (j = 0; j < 3; ++j)
-                    directions.push_back(disp_tmp[j]);
+                for (j = 0; j < 3; ++j) directions.push_back(disp_tmp[j]);
             }
 
             const auto natom_disp = atoms.size();

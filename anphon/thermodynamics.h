@@ -12,8 +12,8 @@
 
 #include <complex>
 #include <vector>
-#include "ndarray.h"
 #include "kpoint.h"
+#include "ndarray.h"
 
 namespace PHON_NS
 {
@@ -85,9 +85,10 @@ public:
                                     AnharmonicCore &anharmonic_core_in, unsigned int ns_in, int my_rank_in,
                                     int nprocs_in);
 
-    void compute_FE_bubble(const double *const *eval, const std::complex<double> *const *const *evec, double *FE_bubble_out, const System &system_in,
-                           const KpointMeshUniform &kmesh_dos_in, const std::vector<SymmetryOperation> &symmlist_in,
-                           AnharmonicCore &anharmonic_core_in, unsigned int ns_in, int my_rank_in, int nprocs_in) const;
+    void compute_FE_bubble(const double *const *eval, const std::complex<double> *const *const *evec,
+                           double *FE_bubble_out, const System &system_in, const KpointMeshUniform &kmesh_dos_in,
+                           const std::vector<SymmetryOperation> &symmlist_in, AnharmonicCore &anharmonic_core_in,
+                           unsigned int ns_in, int my_rank_in, int nprocs_in) const;
 
     void compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble,
                                 const System &system_in, const KpointMeshUniform &kmesh_dos_in,

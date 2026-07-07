@@ -83,7 +83,8 @@ void ScphQhaCommon::setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int 
         std::cout << "  Number of irreducible k points : " << kmesh_coarse->nk_irred << '\n';
     }
 
-    const auto info_mapping = kpoint->get_kmap_coarse_to_dense(kmesh_coarse.get(), kmesh_dense.get(), kmap_coarse_to_dense);
+    const auto info_mapping =
+        kpoint->get_kmap_coarse_to_dense(kmesh_coarse.get(), kmesh_dense.get(), kmap_coarse_to_dense);
     if (info_mapping == 1) {
         exit("setup_kmesh", mapping_error_message);
     }
@@ -575,8 +576,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                 if (writes->getPrintUcorr()) {
                     double shift[3];
-                    for (auto i = 0; i < 3; ++i)
-                        shift[i] = static_cast<double>(writes->getShiftUcorr()[i]);
+                    for (auto i = 0; i < 3; ++i) shift[i] = static_cast<double>(writes->getShiftUcorr()[i]);
 
                     for (auto is = 0; is < ns; ++is) {
                         for (auto js = 0; js < ns; ++js) {
@@ -728,8 +728,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                     if (writes->getPrintUcorr()) {
                         double shift[3];
-                        for (auto i = 0; i < 3; ++i)
-                            shift[i] = static_cast<double>(writes->getShiftUcorr()[i]);
+                        for (auto i = 0; i < 3; ++i) shift[i] = static_cast<double>(writes->getShiftUcorr()[i]);
 
                         for (auto is = 0; is < ns; ++is) {
                             for (auto js = 0; js < ns; ++js) {
@@ -867,8 +866,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             eval_gam.resize(1, ns);
             evec_gam.resize(1, ns, ns);
             xk_gam.resize(1, 3);
-            for (auto i = 0; i < 3; ++i)
-                xk_gam[0][i] = 0.0;
+            for (auto i = 0; i < 3; ++i) xk_gam[0][i] = 0.0;
 
             for (auto iT = 0; iT < NT; ++iT) {
                 dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
@@ -943,8 +941,12 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                         ws.delta_v2_with_umn,
                                         *ws.del_v_strain,
                                         u_tensor);
-    relaxation
-        ->renormalize_v3_from_umn(kmesh_coarse.get(), kmesh_dense.get(), ws.v3_with_umn, ws.v3_ref, *ws.del_v_strain, u_tensor);
+    relaxation->renormalize_v3_from_umn(kmesh_coarse.get(),
+                                        kmesh_dense.get(),
+                                        ws.v3_with_umn,
+                                        ws.v3_ref,
+                                        *ws.del_v_strain,
+                                        u_tensor);
 
     // Renormalize the IFCs by the internal displacement q0 (exact Taylor
     // recentering of the quartic PES). The strain-renormalized v1..v3
@@ -971,7 +973,12 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                        ws.v3_with_umn,
                                        ws.v4_for_renorm,
                                        q0);
-    relaxation->renormalize_v3_from_q0(kmesh_dense.get(), kmesh_coarse.get(), ws.v3_renorm, ws.v3_with_umn, ws.v4_for_renorm, q0);
+    relaxation->renormalize_v3_from_q0(kmesh_dense.get(),
+                                       kmesh_coarse.get(),
+                                       ws.v3_renorm,
+                                       ws.v3_with_umn,
+                                       ws.v4_for_renorm,
+                                       q0);
     relaxation->renormalize_v0_from_q0(omega2_harmonic,
                                        kmesh_dense.get(),
                                        ws.v0_renorm,

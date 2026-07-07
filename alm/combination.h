@@ -32,8 +32,7 @@ public:
 
         // remove redundunt elements
         std::set<TYPE> set_tmp;
-        for (InputIter iter = begin; iter != end; ++iter)
-            set_tmp.insert(*iter);
+        for (InputIter iter = begin; iter != end; ++iter) set_tmp.insert(*iter);
 
         vec.clear();
 
@@ -65,8 +64,7 @@ private:
     static auto factorial(const unsigned int max, const unsigned int min = 1) -> unsigned int
     {
         unsigned int result = 1;
-        for (auto i = min + 1; i <= max; ++i)
-            result *= i;
+        for (auto i = min + 1; i <= max; ++i) result *= i;
         return result;
     }
 };

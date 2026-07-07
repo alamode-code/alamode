@@ -59,10 +59,8 @@ static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const
 
     // Widen Eigen's 32-bit CSC index arrays to the 64-bit indices the long CHOLMOD interface expects.
     std::vector<SuiteSparse_long> outer(n + 1), inner(nnz);
-    for (SuiteSparse_long j = 0; j <= n; ++j)
-        outer[j] = Ac.outerIndexPtr()[j];
-    for (SuiteSparse_long k = 0; k < nnz; ++k)
-        inner[k] = Ac.innerIndexPtr()[k];
+    for (SuiteSparse_long j = 0; j <= n; ++j) outer[j] = Ac.outerIndexPtr()[j];
+    for (SuiteSparse_long k = 0; k < nnz; ++k) inner[k] = Ac.innerIndexPtr()[k];
 
     cholmod_common cc;
     cholmod_l_start(&cc);
@@ -98,8 +96,7 @@ static auto solve_least_squares_spqr(const Eigen::SparseMatrix<double> &A, const
     if (X && cc.status == CHOLMOD_OK) {
         x_out.resize(n);
         const auto *xd = static_cast<const double *>(X->x);
-        for (SuiteSparse_long i = 0; i < n; ++i)
-            x_out(i) = xd[i];
+        for (SuiteSparse_long i = 0; i < n; ++i) x_out(i) = xd[i];
         status = 0;
     } else {
         // Leave a correctly sized (zero) solution on failure so the caller's residual computation
@@ -133,10 +130,8 @@ static auto get_independent_rows_spqr(const Eigen::SparseMatrix<double> &C, cons
     // Widen Eigen's 32-bit CSC indices to the 64-bit indices the long CHOLMOD interface expects
     // (same pattern as solve_least_squares_spqr). C^T has P columns, so outer has P+1 entries.
     std::vector<SuiteSparse_long> outer(P + 1), inner(nnz);
-    for (SuiteSparse_long j = 0; j <= P; ++j)
-        outer[j] = Ct.outerIndexPtr()[j];
-    for (SuiteSparse_long k = 0; k < nnz; ++k)
-        inner[k] = Ct.innerIndexPtr()[k];
+    for (SuiteSparse_long j = 0; j <= P; ++j) outer[j] = Ct.outerIndexPtr()[j];
+    for (SuiteSparse_long k = 0; k < nnz; ++k) inner[k] = Ct.innerIndexPtr()[k];
 
     cholmod_common cc;
     cholmod_l_start(&cc);
@@ -450,8 +445,7 @@ auto get_independent_rows_lapack_sparse(const Eigen::SparseMatrix<double> &C_spa
 
     // 5) Build d_red
     d_red.resize(r);
-    for (int i = 0; i < r; ++i)
-        d_red[i] = dvec[independent_rows[i]];
+    for (int i = 0; i < r; ++i) d_red[i] = dvec[independent_rows[i]];
 
     LOG_IF(verbosity, 1, "built d_red (len=", r, ").\n");
 
@@ -671,8 +665,7 @@ auto least_squares_with_constraints_svd(const size_t N, const size_t M, const si
     // 4) Compute residual b' = b − A * x0
     // ------------------------------------------------------------
     std::vector<double> b_prime(m);
-    for (int i = 0; i < m; ++i)
-        b_prime[i] = bvec[i];
+    for (int i = 0; i < m; ++i) b_prime[i] = bvec[i];
     const auto f_square = std::inner_product(b_prime.begin(), b_prime.end(), b_prime.begin(), 0.0);
     {
         char trans = 'N';
@@ -691,8 +684,7 @@ auto least_squares_with_constraints_svd(const size_t N, const size_t M, const si
         for (int i = 0; i < n * n; ++i) {
             Nproj[i] = -Nproj[i];
         }
-        for (int i = 0; i < n; ++i)
-            Nproj[i + i * n] += 1.0;
+        for (int i = 0; i < n; ++i) Nproj[i + i * n] += 1.0;
     }
 
     // ------------------------------------------------------------
@@ -945,8 +937,7 @@ public:
 
         // G = diag(H) + sigma  (strictly positive); store its inverse for O(1) application.
         m_Dinv.resize(m_N);
-        for (int i = 0; i < m_N; ++i)
-            m_Dinv(i) = 1.0 / (H.coeff(i, i) + sigma);
+        for (int i = 0; i < m_N; ++i) m_Dinv(i) = 1.0 / (H.coeff(i, i) + sigma);
 
         // S = C G^{-1} C^T = (C * Dinv) * C^T  -- sparse products only, no solves.
         const SpMat Cs = C * m_Dinv.asDiagonal();                // P x N (scaled columns)
@@ -1089,8 +1080,7 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
         // sigma keeps the preconditioner block G = diag(A^T A) + sigma strictly positive (not the final
         // solution); scale it to the mean diagonal of A^T A so it is dimensionless w.r.t. the problem.
         double mean_diag = 0.0;
-        for (int i = 0; i < N; ++i)
-            mean_diag += ATA.coeff(i, i);
+        for (int i = 0; i < N; ++i) mean_diag += ATA.coeff(i, i);
         mean_diag = (N > 0) ? mean_diag / N : 1.0;
         const double sigma = 1.0e-6 * (mean_diag > 0.0 ? mean_diag : 1.0);
 

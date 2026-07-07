@@ -45,8 +45,7 @@ void Integration::set_default_variables()
 }
 
 void Integration::deallocate_variables()
-{
-}
+{}
 
 void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
                                     const unsigned int ns_in, const Eigen::Matrix3d &lavec_p,
@@ -296,8 +295,9 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, con
     double e_tmp[4];
     int sort_arg[4], kindex[4];
 
-    for (i = 0; i < nk_irreducible; ++i)
+    for (i = 0; i < nk_irreducible; ++i) {
         weight[i] = 0.0;
+    }
 
     for (i = 0; i < ntetra; ++i) {
 
@@ -353,8 +353,9 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, con
         weight[k4] += I4;
     }
     const auto factor = 1.0 / static_cast<double>(ntetra);
-    for (i = 0; i < nk_irreducible; ++i)
+    for (i = 0; i < nk_irreducible; ++i) {
         weight[i] *= factor;
+    }
 }
 
 void Integration::calc_weight_smearing(const unsigned int nk, const unsigned int nk_irreducible,
@@ -366,8 +367,9 @@ void Integration::calc_weight_smearing(const unsigned int nk, const unsigned int
     const auto epsilon_kayser = this->epsilon * Hz_to_kayser / time_ry;
     const auto invnk = 1.0 / static_cast<double>(nk);
 
-    for (i = 0; i < nk_irreducible; ++i)
+    for (i = 0; i < nk_irreducible; ++i) {
         weight[i] = 0.0;
+    }
 
     if (smearing_method == 0) {
         for (i = 0; i < nk; ++i) {
@@ -379,8 +381,9 @@ void Integration::calc_weight_smearing(const unsigned int nk, const unsigned int
         }
     }
 
-    for (i = 0; i < nk_irreducible; ++i)
+    for (i = 0; i < nk_irreducible; ++i) {
         weight[i] *= invnk;
+    }
 }
 
 double Integration::fij(const double ei, const double ej, const double e)
@@ -392,8 +395,7 @@ void Integration::insertion_sort(double *a, int *ind, int n)
 {
     int i;
 
-    for (i = 0; i < n; ++i)
-        ind[i] = i;
+    for (i = 0; i < n; ++i) ind[i] = i;
 
     for (i = 1; i < n; ++i) {
         double const tmp = a[i];
@@ -444,21 +446,18 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int 
     std::array<double, 2> parts, tmp;
     int i;
 
-    for (i = 0; i < 2; ++i)
-        parts[i] = 0;
+    for (i = 0; i < 2; ++i) parts[i] = 0;
 
     for (const auto &u: dq) {
 
-        for (i = 0; i < 2; ++i)
-            tmp[i] = 0;
+        for (i = 0; i < 2; ++i) tmp[i] = 0;
 
         for (auto a = 0; a < 3; ++a) {
             tmp[0] += (vel[k1][s1][a] - vel[k2][s2][a]) * u[a];
             tmp[1] += (vel[k1][s1][a] + vel[k2][s2][a]) * u[a];
         }
 
-        for (i = 0; i < 2; ++i)
-            parts[i] += pow2(tmp[i]);
+        for (i = 0; i < 2; ++i) parts[i] += pow2(tmp[i]);
     }
 
     sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[0] / 12)); // for (w1 - w2 - w3)
@@ -473,13 +472,11 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k2, const unsigned int 
     std::array<double, 4> parts;
     std::array<double, 4> tmp;
     int i;
-    for (i = 0; i < 4; ++i)
-        parts[i] = 0;
+    for (i = 0; i < 4; ++i) parts[i] = 0;
 
     for (auto &u: dq) {
 
-        for (i = 0; i < 4; ++i)
-            tmp[i] = 0;
+        for (i = 0; i < 4; ++i) tmp[i] = 0;
 
         for (auto a = 0; a < 3; ++a) {
             tmp[0] += (vel[k2][s2][a] - vel[k4][s4][a]) * u[a];
@@ -488,8 +485,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k2, const unsigned int 
             tmp[3] += (vel[k3][s3][a] + vel[k4][s4][a]) * u[a];
         }
 
-        for (i = 0; i < 4; ++i)
-            parts[i] += pow2(tmp[i]);
+        for (i = 0; i < 4; ++i) parts[i] += pow2(tmp[i]);
     }
 
     // for delta(w1 - w2 - w3 - w4)

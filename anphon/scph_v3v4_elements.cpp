@@ -182,8 +182,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 #pragma omp parallel for private(j)
         for (ii = 0; ii < ngroup_v3; ++ii) {
             v3_array_at_kpair[ii] = phi3_reciprocal_inout[ii] * anharmonic_core->get_invmass_factor(3)[ii];
-            for (j = 0; j < 3; ++j)
-                ind[ii][j] = anharmonic_core->get_evec_index(3)[ii][j];
+            for (j = 0; j < 3; ++j) ind[ii][j] = anharmonic_core->get_evec_index(3)[ii][j];
         }
 
         if (self_offdiag) {
@@ -427,8 +426,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
 #endif
         for (ii = 0; ii < ngroup_v3_in; ++ii) {
             v3_array_at_kpair[ii] = phi3_reciprocal_tmp[ii] * invmass_v3_in[ii];
-            for (j = 0; j < 3; ++j)
-                ind[ii][j] = evec_index_v3_in[ii][j];
+            for (j = 0; j < 3; ++j) ind[ii][j] = evec_index_v3_in[ii][j];
         }
 
         if (self_offdiag) {

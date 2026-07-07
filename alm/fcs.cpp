@@ -192,8 +192,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
         }
 
         for (int i1 = 0; i1 < nxyz; ++i1) {
-            for (i = 0; i < order + 2; ++i)
-                ind[i] = 3 * atmn[i] + xyzcomponent[i1][i];
+            for (i = 0; i < order + 2; ++i) ind[i] = 3 * atmn[i] + xyzcomponent[i1][i];
 
             if (!is_ascending(order + 2, ind)) continue;
 
@@ -215,8 +214,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
 
             for (unsigned int isym = 0; isym < nsym_in_use; ++isym) {
 
-                for (i = 0; i < order + 2; ++i)
-                    atmn_mapped[i] = map_sym[atmn[i]][isym];
+                for (i = 0; i < order + 2; ++i) atmn_mapped[i] = map_sym[atmn[i]][isym];
 
                 if (!is_inprim(order + 2,
                                atmn_mapped,
@@ -229,8 +227,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
                     double const c_tmp = coef_sym(order + 2, rotation[isym], xyzcomponent[i1], xyzcomponent[i2]);
 
                     if (std::abs(c_tmp) > eps12) {
-                        for (i = 0; i < order + 2; ++i)
-                            ind_mapped[i] = 3 * atmn_mapped[i] + xyzcomponent[i2][i];
+                        for (i = 0; i < order + 2; ++i) ind_mapped[i] = 3 * atmn_mapped[i] + xyzcomponent[i2][i];
 
                         i_prim = get_minimum_index_in_primitive(order + 2,
                                                                 ind_mapped,
@@ -261,8 +258,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
                             // which belong to the primitive cell.
                             // This procedure is necessary for constructing a sensing matrix.
 
-                            for (i = 0; i < 3 * nat; ++i)
-                                is_searched[i] = false;
+                            for (i = 0; i < 3 * nat; ++i) is_searched[i] = false;
                             is_searched[ind_mapped[0]] = true;
                             for (i = 1; i < order + 2; ++i) {
                                 if ((!is_searched[ind_mapped[i]]) && is_inprim(ind_mapped[i],
@@ -270,8 +266,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
                                                                                symm_in->get_map_trueprim_to_super()))
                                 {
 
-                                    for (size_t j = 0; j < order + 2; ++j)
-                                        ind_mapped_tmp[j] = ind_mapped[j];
+                                    for (size_t j = 0; j < order + 2; ++j) ind_mapped_tmp[j] = ind_mapped[j];
                                     std::swap(ind_mapped_tmp[0], ind_mapped_tmp[i]);
                                     sort_tail(order + 2, ind_mapped_tmp);
                                     fc_vec.emplace_back(order + 2, c_tmp, ind_mapped_tmp, nmother);
@@ -293,8 +288,7 @@ auto Fcs::generate_force_constant_table(const int order, const size_t nat, const
                         fc_zeros_out.push_back(*it);
                     }
                 }
-                for (i = 0; i < ndeps; ++i)
-                    fc_vec.pop_back();
+                for (i = 0; i < ndeps; ++i) fc_vec.pop_back();
             } else {
                 ndup.push_back(ndeps);
                 ++nmother;
@@ -360,8 +354,7 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
     // Generate temporary list of parameters
     list_found.clear();
     for (const auto &p: fc_table_in) {
-        for (i = 0; i < order + 2; ++i)
-            index_tmp[i] = p.elems[i];
+        for (i = 0; i < order + 2; ++i) index_tmp[i] = p.elems[i];
         list_found.insert(FcProperty(order + 2, p.sign, index_tmp, p.mother));
     }
 
@@ -406,18 +399,15 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
 
             for (isym = 0; isym < nsym_in_use; ++isym) {
 
-                for (i = 0; i < order + 2; ++i)
-                    atm_index_symm[i] = map_sym[atm_index[i]][isym];
+                for (i = 0; i < order + 2; ++i) atm_index_symm[i] = map_sym[atm_index[i]][isym];
                 if (!is_inprim(order + 2, atm_index_symm, natmin, symmetry->get_map_trueprim_to_super())) continue;
 
-                for (i = 0; i < nparams; ++i)
-                    const_now_omp[i] = 0.0;
+                for (i = 0; i < nparams; ++i) const_now_omp[i] = 0.0;
 
                 const_now_omp[fc_table_in[ii].mother] = -fc_table_in[ii].sign;
 
                 for (ixyz = 0; ixyz < nxyz; ++ixyz) {
-                    for (i = 0; i < order + 2; ++i)
-                        ind[i] = 3 * atm_index_symm[i] + xyzcomponent[ixyz][i];
+                    for (i = 0; i < order + 2; ++i) ind[i] = 3 * atm_index_symm[i] + xyzcomponent[ixyz][i];
 
                     i_prim = get_minimum_index_in_primitive(order + 2,
                                                             ind,
@@ -436,8 +426,7 @@ auto Fcs::get_constraint_symmetry(const size_t nat, const std::unique_ptr<Symmet
 
                 if (!is_allzero(const_now_omp, eps8, loc_nonzero)) {
                     if (const_now_omp[loc_nonzero] < 0.0) {
-                        for (j = 0; j < nparams; ++j)
-                            const_now_omp[j] *= -1.0;
+                        for (j = 0; j < nparams; ++j) const_now_omp[j] *= -1.0;
                     }
 
                     const_tmp_omp.clear();
@@ -542,8 +531,7 @@ auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique
     // Generate temporary lists of parameters
     list_found.clear();
     for (const auto &p: fc_table_in) {
-        for (i = 0; i < order + 2; ++i)
-            index_tmp[i] = p.elems[i];
+        for (i = 0; i < order + 2; ++i) index_tmp[i] = p.elems[i];
         list_found.insert(FcProperty(order + 2, p.sign, index_tmp, p.mother));
     }
 
@@ -586,18 +574,15 @@ auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique
 
             for (isym = 0; isym < nsym_in_use; ++isym) {
 
-                for (i = 0; i < order + 2; ++i)
-                    atm_index_symm[i] = map_sym[atm_index[i]][isym];
+                for (i = 0; i < order + 2; ++i) atm_index_symm[i] = map_sym[atm_index[i]][isym];
                 if (!is_inprim(order + 2, atm_index_symm, natmin, symmetry->get_map_trueprim_to_super())) continue;
 
-                for (i = 0; i < nparams; ++i)
-                    const_now_omp[i] = 0;
+                for (i = 0; i < nparams; ++i) const_now_omp[i] = 0;
 
                 const_now_omp[fc_table_in[ii].mother] = -nint(fc_table_in[ii].sign);
 
                 for (ixyz = 0; ixyz < nxyz; ++ixyz) {
-                    for (i = 0; i < order + 2; ++i)
-                        ind[i] = 3 * atm_index_symm[i] + xyzcomponent[ixyz][i];
+                    for (i = 0; i < order + 2; ++i) ind[i] = 3 * atm_index_symm[i] + xyzcomponent[ixyz][i];
 
                     i_prim = get_minimum_index_in_primitive(order + 2,
                                                             ind,
@@ -616,8 +601,7 @@ auto Fcs::get_constraint_symmetry_in_integer(const size_t nat, const std::unique
 
                 if (!is_allzero(const_now_omp, loc_nonzero)) {
                     if (const_now_omp[loc_nonzero] < 0) {
-                        for (j = 0; j < nparams; ++j)
-                            const_now_omp[j] *= -1;
+                        for (j = 0; j < nparams; ++j) const_now_omp[j] *= -1;
                     }
 
                     const_tmp_omp.clear();
@@ -836,8 +820,7 @@ auto Fcs::change_basis_force_constants(const std::vector<ForceConstantTable> &fc
     allocate(xyzcomponent, nxyz, nelems);
     get_xyzcomponent(nelems, xyzcomponent);
 
-    for (auto j = 0; j < nelems; ++j)
-        atoms_old[j] = -1;
+    for (auto j = 0; j < nelems; ++j) atoms_old[j] = -1;
     auto icount = 0;
 
     fc_table_copy.clear();
@@ -1087,19 +1070,15 @@ auto Fcs::get_xyzcomponent(const int n, int **xyz) -> void
 
     std::vector<int> v(3 * n);
 
-    for (i = 0; i < n; ++i)
-        v[i] = 0;
-    for (i = n; i < 2 * n; ++i)
-        v[i] = 1;
-    for (i = 2 * n; i < 3 * n; ++i)
-        v[i] = 2;
+    for (i = 0; i < n; ++i) v[i] = 0;
+    for (i = n; i < 2 * n; ++i) v[i] = 1;
+    for (i = 2 * n; i < 3 * n; ++i) v[i] = 2;
 
     auto m = 0;
 
     do {
         xyz[m][0] = v[0];
-        for (i = 1; i < n; ++i)
-            xyz[m][i] = v[i];
+        for (i = 1; i < n; ++i) xyz[m][i] = v[i];
         ++m;
     } while (boost::next_partial_permutation(v.begin(), v.begin() + n, v.end()));
 }

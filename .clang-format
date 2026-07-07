@@ -12,7 +12,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: OnlyFirstIf
 AllowShortFunctionsOnASingleLine: None
-AllowShortLoopsOnASingleLine: false
+AllowShortLoopsOnASingleLine: true
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BraceWrapping: 

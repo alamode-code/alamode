@@ -126,12 +126,10 @@ void Writes::writeInputVars()
     } else if (phon->mode == "SCPH") {
         std::cout << " Scph:" << '\n';
         std::cout << "  KMESH_INTERPOLATE = ";
-        for (i = 0; i < 3; ++i)
-            std::cout << std::setw(5) << scph->kmesh_interpolate[i];
+        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << scph->kmesh_interpolate[i];
         std::cout << '\n';
         std::cout << "  KMESH_SCPH        = ";
-        for (i = 0; i < 3; ++i)
-            std::cout << std::setw(5) << scph->kmesh_scph[i];
+        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << scph->kmesh_scph[i];
         std::cout << '\n';
         std::cout << "  SELF_OFFDIAG = " << scph->selfenergy_offdiagonal << '\n';
         std::cout << "  IALGO = " << scph->ialgo << '\n' << '\n';
@@ -149,12 +147,10 @@ void Writes::writeInputVars()
     } else if (phon->mode == "QHA") {
         std::cout << " QHA:" << '\n';
         std::cout << "  KMESH_INTERPOLATE = ";
-        for (i = 0; i < 3; ++i)
-            std::cout << std::setw(5) << qha->kmesh_interpolate[i];
+        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << qha->kmesh_interpolate[i];
         std::cout << '\n';
         std::cout << "  KMESH_QHA         = ";
-        for (i = 0; i < 3; ++i)
-            std::cout << std::setw(5) << qha->kmesh_qha[i];
+        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << qha->kmesh_qha[i];
         std::cout << '\n';
         std::cout << "  SELF_OFFDIAG = " << qha->selfenergy_offdiagonal << '\n';
         std::cout << "  IALGO = " << qha->ialgo << '\n';
@@ -251,12 +247,10 @@ void Writes::writeInputVars()
 
         if (print_anime) {
             std::cout << "  ANIME = ";
-            for (i = 0; i < 3; ++i)
-                std::cout << std::setw(5) << anime_kpoint[i];
+            for (i = 0; i < 3; ++i) std::cout << std::setw(5) << anime_kpoint[i];
             std::cout << '\n';
             std::cout << "  ANIME_CELL = ";
-            for (i = 0; i < 3; ++i)
-                std::cout << std::setw(5) << anime_cellsize[i];
+            for (i = 0; i < 3; ++i) std::cout << std::setw(5) << anime_cellsize[i];
             std::cout << '\n';
             std::cout << "  ANIME_FORMAT = " << anime_format << '\n';
             std::cout << '\n';
@@ -791,8 +785,7 @@ void Writes::writePhononDos() const
 
     NDArray<unsigned int, 1> nat_each_kd;
     nat_each_kd.resize(system->get_primcell().number_of_elems);
-    for (i = 0; i < system->get_primcell().number_of_elems; ++i)
-        nat_each_kd[i] = 0;
+    for (i = 0; i < system->get_primcell().number_of_elems; ++i) nat_each_kd[i] = 0;
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
         //        ++nat_each_kd[system->get_supercell(0).kind[system->get_map_p2s(0)[i][0]]];
         ++nat_each_kd[system->get_primcell().kind[i]];
@@ -856,8 +849,7 @@ void Writes::writeTwoPhononDos() const
         for (auto i = 0; i < n; ++i) {
             ofs_tdos << std::setw(15) << dos->emin + dos->delta_e * static_cast<double>(i);
 
-            for (auto j = 0; j < 2; ++j)
-                ofs_tdos << std::setw(15) << dos->dos2_phonon[ik][i][j];
+            for (auto j = 0; j < 2; ++j) ofs_tdos << std::setw(15) << dos->dos2_phonon[ik][i][j];
             ofs_tdos << '\n';
         }
         ofs_tdos << '\n';
@@ -945,8 +937,7 @@ void Writes::writeScatteringAmplitude() const
         ofs_w << "#" << std::setw(5) << i + 1;
 
         knum = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
-        for (j = 0; j < 3; ++j)
-            ofs_w << std::setw(15) << dos->kmesh_dos->xk[knum][j];
+        for (j = 0; j < 3; ++j) ofs_w << std::setw(15) << dos->kmesh_dos->xk[knum][j];
         ofs_w << '\n';
     }
     ofs_w << '\n';
@@ -1299,12 +1290,10 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
 
     double xtmp[3];
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
-        for (j = 0; j < 3; ++j)
-            xtmp[j] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[i][0], j);
+        for (j = 0; j < 3; ++j) xtmp[j] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[i][0], j);
         rotvec(xtmp, xtmp, system->get_supercell(0).lattice_vector);
         rotvec(xtmp, xtmp, system->get_primcell().reciprocal_lattice_vector);
-        for (j = 0; j < 3; ++j)
-            xtmp[j] /= 2.0 * pi;
+        for (j = 0; j < 3; ++j) xtmp[j] /= 2.0 * pi;
         for (j = 0; j < 3; ++j) {
             while (xtmp[j] >= 1.0) {
                 xtmp[j] -= 1.0;
@@ -1667,12 +1656,10 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
 
     double xtmp[3];
     for (i = 0; i < system->get_primcell().number_of_atoms; ++i) {
-        for (j = 0; j < 3; ++j)
-            xtmp[j] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[i][0], j);
+        for (j = 0; j < 3; ++j) xtmp[j] = system->get_supercell(0).x_fractional(system->get_map_p2s(0)[i][0], j);
         rotvec(xtmp, xtmp, system->get_supercell(0).lattice_vector);
         rotvec(xtmp, xtmp, system->get_primcell().reciprocal_lattice_vector);
-        for (j = 0; j < 3; ++j)
-            xtmp[j] /= 2.0 * pi;
+        for (j = 0; j < 3; ++j) xtmp[j] /= 2.0 * pi;
         for (j = 0; j < 3; ++j) {
             while (xtmp[j] >= 1.0) {
                 xtmp[j] -= 1.0;
@@ -2442,8 +2429,7 @@ void Writes::writeSelfenergyIsotope() const
                 const auto knum = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
 
                 ofs_iso << "## xk = " << std::setw(3);
-                for (k = 0; k < 3; ++k)
-                    ofs_iso << std::setw(15) << dos->kmesh_dos->xk[knum][k];
+                for (k = 0; k < 3; ++k) ofs_iso << std::setw(15) << dos->kmesh_dos->xk[knum][k];
                 ofs_iso << '\n';
 
                 for (k = 0; k < ns; ++k) {
@@ -2508,8 +2494,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
     std::cout << std::setw(3) << ncell[0] << std::setw(3) << ncell[1] << std::setw(3) << ncell[2] << '\n';
     std::cout << " ANIME_FORMAT = " << anime_format << '\n';
 
-    for (i = 0; i < 3; ++i)
-        dmod[i] = std::fmod(xk[i] * static_cast<double>(ncell[i]), 1.0);
+    for (i = 0; i < 3; ++i) dmod[i] = std::fmod(xk[i] * static_cast<double>(ncell[i]), 1.0);
 
     if (std::sqrt(dmod[0] * dmod[0] + dmod[1] * dmod[1] + dmod[2] * dmod[2]) > eps12) {
         warn("writeNormalModeAnimation", "The supercell size is not commensurate with given k point.");
@@ -2518,8 +2503,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
     rotvec(kvec, xk, system->get_primcell().reciprocal_lattice_vector, 'T');
     const auto norm = std::sqrt(kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2]);
     if (norm > eps) {
-        for (i = 0; i < 3; ++i)
-            kvec[i] /= norm;
+        for (i = 0; i < 3; ++i) kvec[i] /= norm;
     }
 
     // Allocation
@@ -2610,14 +2594,12 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 
         for (j = 0; j < natmin; ++j) {
             auto disp_mag_tmp = 0.0;
-            for (k = 0; k < 3; ++k)
-                disp_mag_tmp += pow2(disp_mag[iband][3 * j + k]);
+            for (k = 0; k < 3; ++k) disp_mag_tmp += pow2(disp_mag[iband][3 * j + k]);
             disp_mag_tmp = std::sqrt(disp_mag_tmp);
             max_disp_mag = std::max(max_disp_mag, disp_mag_tmp);
         }
 
-        for (j = 0; j < ns; ++j)
-            disp_mag[iband][j] *= max_disp_factor / max_disp_mag;
+        for (j = 0; j < ns; ++j) disp_mag[iband][j] *= max_disp_factor / max_disp_mag;
     }
 
     // Convert atomic positions to Cartesian coordinate
@@ -2715,8 +2697,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 
                 ofs_anime << natmin * nsuper << '\n';
                 ofs_anime << "Mode " << std::setw(4) << iband + 1 << " at (";
-                for (i = 0; i < 3; ++i)
-                    ofs_anime << std::setw(8) << xk_in[i];
+                for (i = 0; i < 3; ++i) ofs_anime << std::setw(8) << xk_in[i];
                 ofs_anime << "), Frequency (cm^-1) = " << in_kayser(eval[iband]) << ", Time step = " << std::setw(4)
                           << istep + 1 << '\n';
 

@@ -55,8 +55,7 @@ void Fcs_phonon::set_default_variables()
 }
 
 void Fcs_phonon::deallocate_variables()
-{
-}
+{}
 
 void Fcs_phonon::setup(const std::string &mode)
 {
@@ -668,8 +667,7 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
         const auto atom1_s = map_p2s[iat][0];
 
         Eigen::Vector3d relvec;
-        for (auto k = 0; k < 3; ++k)
-            relvec[k] = shift_vectors(irow, k);
+        for (auto k = 0; k < 3; ++k) relvec[k] = shift_vectors(irow, k);
 
         const Eigen::Vector3d target = scell.x_cartesian.row(atom1_s).transpose() + relvec;
         const Eigen::Vector3d xf_target = lavec_super_inv * target;
@@ -721,95 +719,98 @@ double Fcs_phonon::examine_translational_invariance(const int order, const unsig
     const auto natmin3 = 3 * natmin;
 
     switch (order) {
-    case 0: {
-        NDArray<double, 2> sum2;
-        sum2.resize(natmin3, 3);
+    case 0:
+        {
+            NDArray<double, 2> sum2;
+            sum2.resize(natmin3, 3);
 
-        for (j = 0; j < natmin3; ++j) {
-            for (k = 0; k < 3; ++k) {
-                sum2[j][k] = 0.0;
-            }
-        }
-
-        for (const auto &it: fc_in) {
-            j = it.pairs[0].index;
-            k = it.pairs[1].index % 3;
-            sum2[j][k] += it.fcs_val;
-        }
-
-        for (j = 0; j < natmin3; ++j) {
-            for (k = 0; k < 3; ++k) {
-                dev = std::abs(sum2[j][k]);
-                ret = std::max(ret, dev);
-            }
-        }
-        sum2.clear();
-        break;
-    }
-    case 1: {
-        NDArray<double, 3> sum3;
-        sum3.resize(3 * natmin, 3 * nat, 3);
-
-        for (j = 0; j < natmin3; ++j) {
-            for (k = 0; k < nat3; ++k) {
-                for (l = 0; l < 3; ++l) {
-                    sum3[j][k][l] = 0.0;
+            for (j = 0; j < natmin3; ++j) {
+                for (k = 0; k < 3; ++k) {
+                    sum2[j][k] = 0.0;
                 }
             }
-        }
 
-        for (const auto &it: fc_in) {
-            j = it.pairs[0].index;
-            k = 3 * it.atoms_s[1] + it.pairs[1].index % 3;
-            l = it.pairs[2].index % 3;
-            sum3[j][k][l] += it.fcs_val;
-        }
-        for (j = 0; j < natmin3; ++j) {
-            for (k = 0; k < nat3; ++k) {
-                for (l = 0; l < 3; ++l) {
-                    dev = std::abs(sum3[j][k][l]);
+            for (const auto &it: fc_in) {
+                j = it.pairs[0].index;
+                k = it.pairs[1].index % 3;
+                sum2[j][k] += it.fcs_val;
+            }
+
+            for (j = 0; j < natmin3; ++j) {
+                for (k = 0; k < 3; ++k) {
+                    dev = std::abs(sum2[j][k]);
                     ret = std::max(ret, dev);
                 }
             }
+            sum2.clear();
+            break;
         }
-        sum3.clear();
-        break;
-    }
-    case 2: {
-        NDArray<double, 4> sum4;
-        sum4.resize(natmin3, nat3, nat3, 3);
+    case 1:
+        {
+            NDArray<double, 3> sum3;
+            sum3.resize(3 * natmin, 3 * nat, 3);
 
-        for (j = 0; j < natmin3; ++j) {
-            for (k = 0; k < nat3; ++k) {
-                for (l = 0; l < nat3; ++l) {
-                    for (m = 0; m < 3; ++m) {
-                        sum4[j][k][l][m] = 0.0;
+            for (j = 0; j < natmin3; ++j) {
+                for (k = 0; k < nat3; ++k) {
+                    for (l = 0; l < 3; ++l) {
+                        sum3[j][k][l] = 0.0;
                     }
                 }
             }
-        }
 
-        for (const auto &it: fc_in) {
-            j = it.pairs[0].index;
-            k = 3 * it.atoms_s[1] + it.pairs[1].index % 3;
-            l = 3 * it.atoms_s[2] + it.pairs[2].index % 3;
-            m = it.pairs[3].index % 3;
-            sum4[j][k][l][m] += it.fcs_val;
-        }
-
-        for (j = 0; j < natmin3; ++j) {
-            for (k = 0; k < nat3; ++k) {
-                for (l = 0; l < nat3; ++l) {
-                    for (m = 0; m < 3; ++m) {
-                        dev = std::abs(sum4[j][k][l][m]);
+            for (const auto &it: fc_in) {
+                j = it.pairs[0].index;
+                k = 3 * it.atoms_s[1] + it.pairs[1].index % 3;
+                l = it.pairs[2].index % 3;
+                sum3[j][k][l] += it.fcs_val;
+            }
+            for (j = 0; j < natmin3; ++j) {
+                for (k = 0; k < nat3; ++k) {
+                    for (l = 0; l < 3; ++l) {
+                        dev = std::abs(sum3[j][k][l]);
                         ret = std::max(ret, dev);
                     }
                 }
             }
+            sum3.clear();
+            break;
         }
-        sum4.clear();
-        break;
-    }
+    case 2:
+        {
+            NDArray<double, 4> sum4;
+            sum4.resize(natmin3, nat3, nat3, 3);
+
+            for (j = 0; j < natmin3; ++j) {
+                for (k = 0; k < nat3; ++k) {
+                    for (l = 0; l < nat3; ++l) {
+                        for (m = 0; m < 3; ++m) {
+                            sum4[j][k][l][m] = 0.0;
+                        }
+                    }
+                }
+            }
+
+            for (const auto &it: fc_in) {
+                j = it.pairs[0].index;
+                k = 3 * it.atoms_s[1] + it.pairs[1].index % 3;
+                l = 3 * it.atoms_s[2] + it.pairs[2].index % 3;
+                m = it.pairs[3].index % 3;
+                sum4[j][k][l][m] += it.fcs_val;
+            }
+
+            for (j = 0; j < natmin3; ++j) {
+                for (k = 0; k < nat3; ++k) {
+                    for (l = 0; l < nat3; ++l) {
+                        for (m = 0; m < 3; ++m) {
+                            dev = std::abs(sum4[j][k][l][m]);
+                            ret = std::max(ret, dev);
+                        }
+                    }
+                }
+            }
+            sum4.clear();
+            break;
+        }
     default:
         break;
     }

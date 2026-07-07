@@ -12,10 +12,10 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include <complex>
 #include <memory>
-#include "ndarray.h"
 #include <vector>
 #include "fcs_phonon.h"
 #include "kpoint.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS

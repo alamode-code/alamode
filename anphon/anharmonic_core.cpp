@@ -135,7 +135,8 @@ void AnharmonicCore::prepare_relative_vector(const std::vector<FcsArrayWithCell>
 }
 
 void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArrayWithCell> &fcs_in,
-                                                      int &number_of_groups, NDArray<std::vector<double>, 1> &fcs_group_out)
+                                                      int &number_of_groups,
+                                                      NDArray<std::vector<double>, 1> &fcs_group_out)
 {
     // Find the number of groups which has different evecs.
 
@@ -704,8 +705,7 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
 
     double multi;
 
-    for (i = 0; i < ntemp; ++i)
-        ret[i] = 0.0;
+    for (i = 0; i < ntemp; ++i) ret[i] = 0.0;
 
     NDArray<double, 2> v3_arr;
     NDArray<double, 3> delta_arr;
@@ -804,10 +804,14 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
                 arr_loc[1] = ns * kk1 + ib / ns;
                 arr_loc[2] = ns * kk2 + ib % ns;
 
-                v3_arr[iik][ib] =
-                    std::norm(
-                        V3(arr_loc, kmesh_in->xk, eval_in, evec_in, phase_storage_dos.get(), phi3_work.data(), kindex_work)) *
-                    multi_loc;
+                v3_arr[iik][ib] = std::norm(V3(arr_loc,
+                                               kmesh_in->xk,
+                                               eval_in,
+                                               evec_in,
+                                               phase_storage_dos.get(),
+                                               phi3_work.data(),
+                                               kindex_work)) *
+                                  multi_loc;
             }
         }
     }
@@ -857,8 +861,7 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
     delta_arr.clear();
     triplet.clear();
 
-    for (i = 0; i < ntemp; ++i)
-        ret[i] *= pi * std::pow(0.5, 4) / static_cast<double>(nk);
+    for (i = 0; i < ntemp; ++i) ret[i] *= pi * std::pow(0.5, 4) / static_cast<double>(nk);
 }
 
 void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const double *temp_in, const double omega_in,
@@ -900,8 +903,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     std::vector<KsListGroup> triplet;
 
-    for (i = 0; i < ntemp; ++i)
-        ret[i] = 0.0;
+    for (i = 0; i < ntemp; ++i) ret[i] = 0.0;
 
     kmesh_in->get_unique_triplet_k(ik_in, symmetry->SymmList, use_triplet_symmetry, sym_permutation, triplet);
 
@@ -916,8 +918,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     kmap_identity.resize(nk);
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
 #ifdef _OPENMP
 #pragma omp parallel private(is, js, k1, k2, xk_tmp, energy_tmp, i, weight_tetra, ik, jk, arr)
@@ -937,8 +938,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
                 // Prepare two-phonon frequency for the tetrahedron method
 
-                for (i = 0; i < 3; ++i)
-                    xk_tmp[i] = xk[knum][i] - xk[k1][i];
+                for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] - xk[k1][i];
 
                 k2 = kmesh_in->get_knum(xk_tmp);
 
@@ -1114,8 +1114,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
     delta_arr.clear();
     kmap_identity.clear();
 
-    for (i = 0; i < ntemp; ++i)
-        ret[i] *= pi * std::pow(0.5, 4);
+    for (i = 0; i < ntemp; ++i) ret[i] *= pi * std::pow(0.5, 4);
 }
 
 
@@ -1143,8 +1142,7 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     std::array<double, 3> omega_inner;
 
 
-    for (i = 0; i < ntemp; ++i)
-        ret[i] = 0.0;
+    for (i = 0; i < ntemp; ++i) ret[i] = 0.0;
 
     NDArray<double, 2> v4_arr;
     NDArray<double, 3> delta_arr;
@@ -1395,8 +1393,7 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
     v4_arr.clear();
     delta_arr.clear();
     quartet.clear();
-    for (i = 0; i < ntemp; ++i)
-        ret[i] *= pi * std::pow(0.5, 5) / (3.0 * static_cast<double>(nk * nk));
+    for (i = 0; i < ntemp; ++i) ret[i] *= pi * std::pow(0.5, 5) / (3.0 * static_cast<double>(nk * nk));
 }
 
 std::vector<std::vector<QuartS>> AnharmonicCore::reduce_pair(const int k_in, const int s0, const double omega,
@@ -1614,8 +1611,7 @@ void PhaseFactorStorage::create(const bool use_tuned_ver, const bool switch_to_t
 
         const auto inv2pi = 1.0 / (2.0 * pi);
 
-        for (auto i = 0; i < 3; ++i)
-            dnk[i] = static_cast<double>(nk_grid[i]) * inv2pi;
+        for (auto i = 0; i < 3; ++i) dnk[i] = static_cast<double>(nk_grid[i]) * inv2pi;
 
         tune_type = 1;
 
@@ -1666,8 +1662,7 @@ void PhaseFactorStorage::create(const bool use_tuned_ver, const bool switch_to_t
             double phase[3];
             double inv_dnk[3];
 
-            for (auto i = 0; i < 3; ++i)
-                inv_dnk[i] = 1.0 / dnk[i];
+            for (auto i = 0; i < 3; ++i) inv_dnk[i] = 1.0 / dnk[i];
 
             exp_phase3.resize(2 * nk_grid[0] - 1, 2 * nk_grid[1] - 1, 2 * nk_grid[2] - 1);
 #ifdef _OPENMP
@@ -1762,11 +1757,9 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
     kpairs.resize(nk, 2);
     kmap_identity.resize(nk);
 
-    for (i = 0; i < nk; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
-    for (iomega = 0; iomega < nomega; ++iomega)
-        ret[iomega] = 0.0;
+    for (iomega = 0; iomega < nomega; ++iomega) ret[iomega] = 0.0;
 
     for (ik = 0; ik < npair_uniq; ++ik) {
         kpairs[ik][0] = triplet[ik].group[0].ks[0];
@@ -1800,8 +1793,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
 
         if (ik_now == -1) {
 
-            for (ib = 0; ib < ns2; ++ib)
-                v3_arr_loc[ib] = 0.0; // do nothing
+            for (ib = 0; ib < ns2; ++ib) v3_arr_loc[ib] = 0.0; // do nothing
 
         } else {
 #ifdef _OPENMP
@@ -1844,8 +1836,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
 #endif
             {
                 ret_private.resize(nthreads * nomega);
-                for (i = 0; i < nthreads * nomega; ++i)
-                    ret_private[i] = 0.0;
+                for (i = 0; i < nthreads * nomega; ++i) ret_private[i] = 0.0;
             }
 #ifdef _OPENMP
 #pragma omp for

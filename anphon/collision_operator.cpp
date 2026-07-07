@@ -267,16 +267,14 @@ void CollisionOperator::build_L_isotope()
                     omega_sum += omega_now;
                 } else {
                     const auto omega_avg = omega_sum / static_cast<double>(is - begin);
-                    for (auto js = begin; js < is; ++js)
-                        eval_tetra[js][ik] = omega_avg;
+                    for (auto js = begin; js < is; ++js) eval_tetra[js][ik] = omega_avg;
                     begin = is;
                     omega_ref = omega_now;
                     omega_sum = omega_now;
                 }
             }
             const auto omega_avg = omega_sum / static_cast<double>(ns - begin);
-            for (auto js = begin; js < ns; ++js)
-                eval_tetra[js][ik] = omega_avg;
+            for (auto js = begin; js < ns; ++js) eval_tetra[js][ik] = omega_avg;
         }
     }
 
@@ -291,8 +289,7 @@ void CollisionOperator::build_L_isotope()
             energy_tmp.resize(nk_3ph);
             weight_tetra.resize(ns, nk_3ph);
             kmap_identity.resize(nk_3ph);
-            for (int ik = 0; ik < nk_3ph; ++ik)
-                kmap_identity[ik] = ik;
+            for (int ik = 0; ik < nk_3ph; ++ik) kmap_identity[ik] = ik;
         }
 
 #ifdef _OPENMP
@@ -352,8 +349,7 @@ void CollisionOperator::build_L_isotope()
                 // block-averaged within degenerate manifolds (mirrors
                 // Isotope::calc_isotope_selfenergy_tetra).
                 for (int s2 = 0; s2 < ns; ++s2) {
-                    for (int ik = 0; ik < nk_3ph; ++ik)
-                        energy_tmp[ik] = eval_tetra[s2][ik];
+                    for (int ik = 0; ik < nk_3ph; ++ik) energy_tmp[ik] = eval_tetra[s2][ik];
                     integration_.calc_weight_tetrahedron(nk_3ph,
                                                          kmap_identity,
                                                          energy_tmp,
@@ -369,11 +365,9 @@ void CollisionOperator::build_L_isotope()
                         if (s2 < ns && std::abs(eval_tetra[s2][k2] - omega_ref) < tol_degenerate) continue;
                         if (s2 - begin > 1) {
                             auto wsum = 0.0;
-                            for (auto js = begin; js < s2; ++js)
-                                wsum += weight_tetra[js][k2];
+                            for (auto js = begin; js < s2; ++js) wsum += weight_tetra[js][k2];
                             wsum /= static_cast<double>(s2 - begin);
-                            for (auto js = begin; js < s2; ++js)
-                                weight_tetra[js][k2] = wsum;
+                            for (auto js = begin; js < s2; ++js) weight_tetra[js][k2] = wsum;
                         }
                         if (s2 < ns) {
                             begin = s2;
@@ -548,8 +542,7 @@ void CollisionOperator::setup_L_tetra()
 
     NDArray<unsigned int, 1> kmap_identity;
     kmap_identity.resize(nk_3ph);
-    for (auto i = 0; i < nk_3ph; ++i)
-        kmap_identity[i] = i;
+    for (auto i = 0; i < nk_3ph; ++i) kmap_identity[i] = i;
 
     const auto omega_tmp = dymat_dos_.get_eigenvalues();
     const auto evec_tmp = dymat_dos_.get_eigenvectors();

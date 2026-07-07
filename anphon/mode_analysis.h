@@ -30,8 +30,7 @@ public:
 
     KsListMode(double xk_in[3], const int n)
     {
-        for (int i = 0; i < 3; ++i)
-            xk[i] = xk_in[i];
+        for (int i = 0; i < 3; ++i) xk[i] = xk_in[i];
         nmode = n;
     }
 };
@@ -49,8 +48,7 @@ public:
     KpointListWithCoordinate(const std::vector<double> &a, const double x_in, const double y_in, const int plane_in,
                              const int selection_type_in)
     {
-        for (int i = 0; i < 3; ++i)
-            xk[i] = a[i];
+        for (int i = 0; i < 3; ++i) xk[i] = a[i];
         x = x_in;
         y = y_in;
         plane = plane_in;

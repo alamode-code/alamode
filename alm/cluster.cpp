@@ -1005,8 +1005,7 @@ void Cluster::set_interaction_cluster(const int order, const size_t natmin, cons
             // Finally, we check if the generated combinations satisfy the NBODY-rule.
             for (const auto &it: data_vec_sub) {
                 list_now[0] = iat;
-                for (auto m = 0; m < order + 1; ++m)
-                    list_now[m + 1] = it[m];
+                for (auto m = 0; m < order + 1; ++m) list_now[m + 1] = it[m];
                 if (satisfy_nbody_rule(order + 2, list_now, order)) {
                     data_vec.emplace_back(it);
                 }

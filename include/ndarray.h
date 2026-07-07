@@ -84,7 +84,10 @@ class NDArray<T, 1>
 public:
     NDArray() = default;
 
-    explicit NDArray(const std::size_t n1) { resize(n1); }
+    explicit NDArray(const std::size_t n1)
+    {
+        resize(n1);
+    }
 
     NDArray(const NDArray &) = delete;
 
@@ -110,23 +113,50 @@ public:
         n_ = {0};
     }
 
-    operator T *() noexcept { return payload_.get(); }
+    operator T *() noexcept
+    {
+        return payload_.get();
+    }
 
-    operator const T *() const noexcept { return payload_.get(); }
+    operator const T *() const noexcept
+    {
+        return payload_.get();
+    }
 
-    T *data() noexcept { return payload_.get(); }
+    T *data() noexcept
+    {
+        return payload_.get();
+    }
 
-    const T *data() const noexcept { return payload_.get(); }
+    const T *data() const noexcept
+    {
+        return payload_.get();
+    }
 
-    T *ptr() noexcept { return payload_.get(); }
+    T *ptr() noexcept
+    {
+        return payload_.get();
+    }
 
-    std::size_t size() const noexcept { return n_[0]; }
+    std::size_t size() const noexcept
+    {
+        return n_[0];
+    }
 
-    std::size_t dim(const std::size_t i) const noexcept { return n_[i]; }
+    std::size_t dim(const std::size_t i) const noexcept
+    {
+        return n_[i];
+    }
 
-    const std::array<std::size_t, 1> &shape() const noexcept { return n_; }
+    const std::array<std::size_t, 1> &shape() const noexcept
+    {
+        return n_;
+    }
 
-    bool empty() const noexcept { return !payload_; }
+    bool empty() const noexcept
+    {
+        return !payload_;
+    }
 
 private:
     std::array<std::size_t, 1> n_{};
@@ -139,7 +169,10 @@ class NDArray<T, 2>
 public:
     NDArray() = default;
 
-    NDArray(const std::size_t n1, const std::size_t n2) { resize(n1, n2); }
+    NDArray(const std::size_t n1, const std::size_t n2)
+    {
+        resize(n1, n2);
+    }
 
     NDArray(const NDArray &) = delete;
 
@@ -173,23 +206,50 @@ public:
         n_ = {0, 0};
     }
 
-    operator T **() noexcept { return table_.get(); }
+    operator T **() noexcept
+    {
+        return table_.get();
+    }
 
-    operator const T *const *() const noexcept { return table_.get(); }
+    operator const T * const *() const noexcept
+    {
+        return table_.get();
+    }
 
-    T *data() noexcept { return payload_.get(); }
+    T *data() noexcept
+    {
+        return payload_.get();
+    }
 
-    const T *data() const noexcept { return payload_.get(); }
+    const T *data() const noexcept
+    {
+        return payload_.get();
+    }
 
-    T **ptr() noexcept { return table_.get(); }
+    T **ptr() noexcept
+    {
+        return table_.get();
+    }
 
-    std::size_t size() const noexcept { return n_[0] * n_[1]; }
+    std::size_t size() const noexcept
+    {
+        return n_[0] * n_[1];
+    }
 
-    std::size_t dim(const std::size_t i) const noexcept { return n_[i]; }
+    std::size_t dim(const std::size_t i) const noexcept
+    {
+        return n_[i];
+    }
 
-    const std::array<std::size_t, 2> &shape() const noexcept { return n_; }
+    const std::array<std::size_t, 2> &shape() const noexcept
+    {
+        return n_;
+    }
 
-    bool empty() const noexcept { return !table_; }
+    bool empty() const noexcept
+    {
+        return !table_;
+    }
 
 private:
     std::array<std::size_t, 2> n_{};
@@ -203,7 +263,10 @@ class NDArray<T, 3>
 public:
     NDArray() = default;
 
-    NDArray(const std::size_t n1, const std::size_t n2, const std::size_t n3) { resize(n1, n2, n3); }
+    NDArray(const std::size_t n1, const std::size_t n2, const std::size_t n3)
+    {
+        resize(n1, n2, n3);
+    }
 
     NDArray(const NDArray &) = delete;
 
@@ -240,23 +303,50 @@ public:
         n_ = {0, 0, 0};
     }
 
-    operator T ***() noexcept { return table_.get(); }
+    operator T ***() noexcept
+    {
+        return table_.get();
+    }
 
-    operator const T *const *const *() const noexcept { return table_.get(); }
+    operator const T * const * const *() const noexcept
+    {
+        return table_.get();
+    }
 
-    T *data() noexcept { return payload_.get(); }
+    T *data() noexcept
+    {
+        return payload_.get();
+    }
 
-    const T *data() const noexcept { return payload_.get(); }
+    const T *data() const noexcept
+    {
+        return payload_.get();
+    }
 
-    T ***ptr() noexcept { return table_.get(); }
+    T ***ptr() noexcept
+    {
+        return table_.get();
+    }
 
-    std::size_t size() const noexcept { return n_[0] * n_[1] * n_[2]; }
+    std::size_t size() const noexcept
+    {
+        return n_[0] * n_[1] * n_[2];
+    }
 
-    std::size_t dim(const std::size_t i) const noexcept { return n_[i]; }
+    std::size_t dim(const std::size_t i) const noexcept
+    {
+        return n_[i];
+    }
 
-    const std::array<std::size_t, 3> &shape() const noexcept { return n_; }
+    const std::array<std::size_t, 3> &shape() const noexcept
+    {
+        return n_;
+    }
 
-    bool empty() const noexcept { return !table_; }
+    bool empty() const noexcept
+    {
+        return !table_;
+    }
 
 private:
     std::array<std::size_t, 3> n_{};
@@ -316,23 +406,50 @@ public:
         n_ = {0, 0, 0, 0};
     }
 
-    operator T ****() noexcept { return table_.get(); }
+    operator T ****() noexcept
+    {
+        return table_.get();
+    }
 
-    operator const T *const *const *const *() const noexcept { return table_.get(); }
+    operator const T * const * const * const *() const noexcept
+    {
+        return table_.get();
+    }
 
-    T *data() noexcept { return payload_.get(); }
+    T *data() noexcept
+    {
+        return payload_.get();
+    }
 
-    const T *data() const noexcept { return payload_.get(); }
+    const T *data() const noexcept
+    {
+        return payload_.get();
+    }
 
-    T ****ptr() noexcept { return table_.get(); }
+    T ****ptr() noexcept
+    {
+        return table_.get();
+    }
 
-    std::size_t size() const noexcept { return n_[0] * n_[1] * n_[2] * n_[3]; }
+    std::size_t size() const noexcept
+    {
+        return n_[0] * n_[1] * n_[2] * n_[3];
+    }
 
-    std::size_t dim(const std::size_t i) const noexcept { return n_[i]; }
+    std::size_t dim(const std::size_t i) const noexcept
+    {
+        return n_[i];
+    }
 
-    const std::array<std::size_t, 4> &shape() const noexcept { return n_; }
+    const std::array<std::size_t, 4> &shape() const noexcept
+    {
+        return n_;
+    }
 
-    bool empty() const noexcept { return !table_; }
+    bool empty() const noexcept
+    {
+        return !table_;
+    }
 
 private:
     std::array<std::size_t, 4> n_{};

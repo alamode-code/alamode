@@ -12,11 +12,11 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include <Eigen/Core>
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
-#include "ndarray.h"
 #include "memory.h"
+#include "ndarray.h"
 #include "pointers.h"
 #include "symmetry_core.h"
 
@@ -80,10 +80,8 @@ public:
 
     KpointPlane(const double *xk_in, const int *n_in)
     {
-        for (int i = 0; i < 3; ++i)
-            k[i] = xk_in[i];
-        for (int i = 0; i < 2; ++i)
-            n[i] = n_in[i];
+        for (int i = 0; i < 3; ++i) k[i] = xk_in[i];
+        for (int i = 0; i < 2; ++i) n[i] = n_in[i];
     }
 };
 

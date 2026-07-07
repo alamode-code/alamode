@@ -229,8 +229,7 @@ auto InputParser::parse_energies(std::vector<double> &energies, const DispForceF
 
         std::istringstream iss(line);
         double v;
-        while (iss >> v)
-            ++ndata_tokens;
+        while (iss >> v) ++ndata_tokens;
         while (ndata_tokens >= ntoken_per_snapshot) {
             if (!have_header) {
                 exit("parse_energies", "A snapshot has no parseable E_pot header (required when EFIT_WEIGHT>0).");

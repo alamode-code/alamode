@@ -422,8 +422,9 @@ auto Thermodynamics::compute_free_energy_bubble(const System &system_in, const K
     }
 }
 
-auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::complex<double> *const *const *evec, double *FE_bubble_out,
-                                       const System &system_in, const KpointMeshUniform &kmesh_dos_in,
+auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::complex<double> *const *const *evec,
+                                       double *FE_bubble_out, const System &system_in,
+                                       const KpointMeshUniform &kmesh_dos_in,
                                        const std::vector<SymmetryOperation> &symmlist_in,
                                        AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
                                        const int my_rank_in, const int nprocs_in) const -> void
@@ -468,8 +469,7 @@ auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::com
         vks_l.push_back(-1);
     }
 
-    for (iT = 0; iT < NT; ++iT)
-        FE_local[iT] = 0.0;
+    for (iT = 0; iT < NT; ++iT) FE_local[iT] = 0.0;
 
     for (i0 = 0; i0 < nk_tmp; ++i0) {
 
@@ -489,8 +489,7 @@ auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::com
 
             arr_cubic[0] = ns * ik0 + is0;
 
-            for (iT = 0; iT < NT; ++iT)
-                FE_tmp[iT] = 0.0;
+            for (iT = 0; iT < NT; ++iT) FE_tmp[iT] = 0.0;
 
             for (auto ik = 0; ik < npair_uniq; ++ik) {
                 const int multi = triplet[ik].group.size();
@@ -542,8 +541,7 @@ auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::com
                 }
             }
             const auto weight = static_cast<double>(kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns].size());
-            for (iT = 0; iT < NT; ++iT)
-                FE_local[iT] += FE_tmp[iT] * weight;
+            for (iT = 0; iT < NT; ++iT) FE_local[iT] += FE_tmp[iT] * weight;
         }
     }
 
@@ -635,8 +633,7 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
 
             arr_cubic[0] = ns * ik0 + is0;
 
-            for (iT = 0; iT < NT; ++iT)
-                FE_tmp[iT] = 0.0;
+            for (iT = 0; iT < NT; ++iT) FE_tmp[iT] = 0.0;
 
             for (size_t ik = 0; ik < npair_uniq; ++ik) {
                 const auto multi = static_cast<double>(triplet[ik].group.size());

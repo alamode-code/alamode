@@ -296,8 +296,7 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in, std::vector<De
 
     allocate(xshift_s, 27, 3);
 
-    for (i = 0; i < 3; ++i)
-        xshift_s[0][i] = 0.0;
+    for (i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
 
     icell = 0;
 
@@ -352,8 +351,7 @@ void calculate_new_fc2(const std::vector<FcsClassExtent> &fc2_in, std::vector<De
         arr_tmp.push_back(it.xyz1);
         arr_tmp.push_back(map_s2p[it.atm2].atom_num);
         arr_tmp.push_back(it.xyz2);
-        for (i = 0; i < 3; ++i)
-            arr_tmp.push_back(nint(vec[i]));
+        for (i = 0; i < 3; ++i) arr_tmp.push_back(nint(vec[i]));
 
         //        std::cout << std::setw(5) << vec[0];
         //        std::cout << std::setw(5) << vec[1];
@@ -493,8 +491,7 @@ void write_new_xml(const std::vector<FcsClassExtent> fc2_in, const std::string x
 
     for (i = 0; i < nat; ++i) {
         str_tmp.clear();
-        for (j = 0; j < 3; ++j)
-            str_tmp += " " + double2string(xr_s[i][j]);
+        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(xr_s[i][j]);
         ptree &child = pt.add("Data.Structure.Position.pos", str_tmp);
         child.put("<xmlattr>.index", i + 1);
         child.put("<xmlattr>.element", kd_symbol[kd[i]]);

@@ -1217,8 +1217,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
 
                 for (jcrd = 0; jcrd < 3; ++jcrd) {
                     // Reset the temporary array for another constraint
-                    for (j = 0; j < nparams; ++j)
-                        const_now[j] = 0;
+                    for (j = 0; j < nparams; ++j) const_now[j] = 0;
 
                     for (jat = 0; jat < 3 * nat; jat += 3) {
                         intarr[1] = jat + jcrd;
@@ -1234,8 +1233,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
                     // Add to the constraint list
                     if (!is_allzero(const_now, loc_nonzero)) {
                         if (const_now[loc_nonzero] < 0) {
-                            for (j = 0; j < nparams; ++j)
-                                const_now[j] *= -1;
+                            for (j = 0; j < nparams; ++j) const_now[j] *= -1;
                         }
                         const_tmp.clear();
                         for (j = 0; j < nparams; ++j) {
@@ -1311,8 +1309,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
                         // Loop for the xyz index of the last atom
                         for (jcrd = 0; jcrd < 3; ++jcrd) {
                             // Reset the temporary array for another constraint
-                            for (j = 0; j < nparams; ++j)
-                                const_now_omp[j] = 0;
+                            for (j = 0; j < nparams; ++j) const_now_omp[j] = 0;
 
                             // Loop for the last atom index
                             for (jat = 0; jat < 3 * nat; jat += 3) {
@@ -1336,8 +1333,7 @@ auto Constraint::get_constraint_translation(const Cell &supercell, const std::un
                             // Add the constraint to the private array
                             if (!is_allzero(const_now_omp, loc_nonzero)) {
                                 if (const_now_omp[loc_nonzero] < 0) {
-                                    for (j = 0; j < nparams; ++j)
-                                        const_now_omp[j] *= -1;
+                                    for (j = 0; j < nparams; ++j) const_now_omp[j] *= -1;
                                 }
 
                                 const_tmp_omp.clear();
@@ -1655,8 +1651,7 @@ void Constraint::get_constraint_translation_for_periodic_images(
                             for (i_mi_tmp = 0; i_mi_tmp < periodic_images_found.size(); i_mi_tmp++) {
                                 if (!is_allzero(consts_now_omp[i_mi_tmp], eps8, loc_nonzero, 0)) {
                                     if (consts_now_omp[i_mi_tmp][loc_nonzero] < 0) {
-                                        for (j = 0; j < nparams; ++j)
-                                            consts_now_omp[i_mi_tmp][j] *= -1.0;
+                                        for (j = 0; j < nparams; ++j) consts_now_omp[i_mi_tmp][j] *= -1.0;
                                     }
 
                                     const_tmp_omp.clear();
@@ -1989,8 +1984,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
 
                         // Clear history
 
-                        for (int j = 0; j < nparam_sub; ++j)
-                            arr_constraint[j] = 0.0;
+                        for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] = 0.0;
 
                         for (auto &iter_list: interaction_list_now) {
                             jat = iter_list;
@@ -2034,8 +2028,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                         if (!is_allzero(arr_constraint, tolerance, loc_nonzero)) {
                             // Add to constraint list
                             if (arr_constraint[loc_nonzero] < 0.0) {
-                                for (int j = 0; j < nparam_sub; ++j)
-                                    arr_constraint[j] *= -1.0;
+                                for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] *= -1.0;
                             }
                             const_tmp.clear();
                             for (int j = 0; j < nparam_sub; ++j) {
@@ -2098,8 +2091,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
 
                                     // Search for a new constraint below
 
-                                    for (int j = 0; j < nparam_sub; ++j)
-                                        arr_constraint[j] = 0.0;
+                                    for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] = 0.0;
 
                                     // Loop for m_{N+1}, a_{N+1}
                                     for (auto &iter_list: interaction_list) {
@@ -2137,8 +2129,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                                 exit("generate_rotational_constraint", "This cannot happen.");
                                             }
 
-                                            for (int j = 0; j < 3; ++j)
-                                                vec_for_rot[j] = 0.0;
+                                            for (int j = 0; j < 3; ++j) vec_for_rot[j] = 0.0;
 
                                             const auto nsize_equiv = (*iter_cluster).cell.size();
 
@@ -2158,8 +2149,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         // mu, nu
 
                                         interaction_index[order + 1] = 3 * jat + mu;
-                                        for (int j = 0; j < order + 2; ++j)
-                                            interaction_tmp[j] = interaction_index[j];
+                                        for (int j = 0; j < order + 2; ++j) interaction_tmp[j] = interaction_index[j];
 
                                         sort_tail(order + 2, interaction_tmp.data());
 
@@ -2173,8 +2163,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         // Exchange mu <--> nu and repeat again.
 
                                         interaction_index[order + 1] = 3 * jat + nu;
-                                        for (int j = 0; j < order + 2; ++j)
-                                            interaction_tmp[j] = interaction_index[j];
+                                        for (int j = 0; j < order + 2; ++j) interaction_tmp[j] = interaction_index[j];
 
                                         sort_tail(order + 2, &interaction_tmp[0]);
 
@@ -2220,8 +2209,7 @@ auto Constraint::set_rotation_constraints(const std::unique_ptr<System> &system,
                                         // Add to the appropriate set
 
                                         if (arr_constraint[loc_nonzero] < 0.0) {
-                                            for (int j = 0; j < nparam_sub; ++j)
-                                                arr_constraint[j] *= -1.0;
+                                            for (int j = 0; j < nparam_sub; ++j) arr_constraint[j] *= -1.0;
                                         }
                                         for (int j = 0; j < nparams[order]; ++j) {
                                             arr_constraint_self[j] = arr_constraint[j + nparams[order - 1]];
@@ -2348,8 +2336,7 @@ auto Constraint::set_rotation_constraints_extra(
             do {
                 auto data = g_now.now();
 
-                for (auto idata = 0; idata < data.size(); ++idata)
-                    interaction_atom[idata + 1] = data[idata];
+                for (auto idata = 0; idata < data.size(); ++idata) interaction_atom[idata + 1] = data[idata];
 
                 for (ixyz = 0; ixyz < nxyz; ++ixyz) {
                     for (j = 0; j < order + 1; ++j)
@@ -2359,15 +2346,13 @@ auto Constraint::set_rotation_constraints_extra(
                         for (nu = 0; nu < 3; ++nu) {
                             if (!valid_rotation_axis[mu][nu]) continue;
 
-                            for (j = 0; j < nparams[order]; ++j)
-                                arr_constraint_self[j] = 0.0;
+                            for (j = 0; j < nparams[order]; ++j) arr_constraint_self[j] = 0.0;
 
                             for (lambda = 0; lambda < order + 2; ++lambda) {
                                 mu_lambda = interaction_index[lambda] % 3;
 
                                 for (int jcrd = 0; jcrd < 3; ++jcrd) {
-                                    for (j = 0; j < order + 2; ++j)
-                                        interaction_tmp[j] = interaction_index[j];
+                                    for (j = 0; j < order + 2; ++j) interaction_tmp[j] = interaction_index[j];
 
                                     interaction_tmp[lambda] = 3 * interaction_atom[lambda] + jcrd;
 
@@ -2391,8 +2376,7 @@ auto Constraint::set_rotation_constraints_extra(
 
                             if (!is_allzero(arr_constraint_self, tolerance, loc_nonzero)) {
                                 if (arr_constraint_self[loc_nonzero] < 0.0) {
-                                    for (j = 0; j < nparams[order]; ++j)
-                                        arr_constraint_self[j] *= -1.0;
+                                    for (j = 0; j < nparams[order]; ++j) arr_constraint_self[j] *= -1.0;
                                 }
                                 const_tmp.clear();
                                 for (j = 0; j < nparams[order]; ++j) {
@@ -2804,8 +2788,7 @@ auto Constraint::parse_forceconstants_from_h5(const int order, const std::unique
 
     fc_cart_unique.clear();
     fc_cart_copy.clear();
-    for (auto i = 0; i < order + 2; ++i)
-        flatten_array[i] = -1;
+    for (auto i = 0; i < order + 2; ++i) flatten_array[i] = -1;
     double fc_sum = 0.0;
     for (const auto &it: fc_cart) {
         if (flatten_array == it.flattenarray) {

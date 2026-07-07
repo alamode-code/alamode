@@ -320,8 +320,7 @@ void Dielec::run_dielec_calculation()
     evec.resize(ns, ns);
     dielec.resize(nomega, 3, 3);
 
-    for (auto i = 0; i < 3; ++i)
-        xk[i] = 0.0;
+    for (auto i = 0; i < 3; ++i) xk[i] = 0.0;
 
     dynamical->eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0], eval, evec, true);
 
@@ -458,8 +457,7 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
     eval.resize(ns);
     evec.resize(ns, ns);
 
-    for (auto i = 0; i < 3; ++i)
-        xk[i] = 0.0;
+    for (auto i = 0; i < 3; ++i) xk[i] = 0.0;
 
     // Probably, I need to symmetrize the eigenvector here.
     std::vector<std::vector<double>> projectors;

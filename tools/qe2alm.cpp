@@ -270,8 +270,7 @@ int main()
 
         for (j = 0; j < natmin; ++j) {
             str_tmp.clear();
-            for (k = 0; k < 3; ++k)
-                str_tmp += " " + double2string(xcrd_super[map_p2s[i][j]][k]);
+            for (k = 0; k < 3; ++k) str_tmp += " " + double2string(xcrd_super[map_p2s[i][j]][k]);
             ptree &child = pt.add("Data.Structure.Position.pos", str_tmp);
             child.put("<xmlattr>.index", icount + 1);
             child.put("<xmlattr>.element", kd_symbol[kd_super[i][j] - 1]);
@@ -767,8 +766,7 @@ void get_pairs_of_minimum_distance(const int natmin, const int nat, int **map_p2
 
                 dist_tmp = distance(xcrd[0][iat], xcrd[icell][j]);
 
-                for (k = 0; k < 3; ++k)
-                    vec[k] = xcrd[icell][j][k] - xcrd[0][iat][k];
+                for (k = 0; k < 3; ++k) vec[k] = xcrd[icell][j][k] - xcrd[0][iat][k];
 
                 distall[i][j].push_back(DistInfo(icell, dist_tmp, vec));
             }

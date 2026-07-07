@@ -11,12 +11,12 @@
  test/test_ndarray.py or directly. Exits 0 on success.
 */
 
-#include "memory.h"
-#include "ndarray.h"
 #include <complex>
 #include <cstdio>
 #include <cstdlib>
 #include <type_traits>
+#include "memory.h"
+#include "ndarray.h"
 
 // ---- compile-time properties -------------------------------------------
 
@@ -25,8 +25,7 @@ static_assert(std::is_convertible<NDArray<double, 1> &, double *>::value, "1D vi
 static_assert(std::is_convertible<NDArray<double, 2> &, double **>::value, "2D view");
 static_assert(std::is_convertible<NDArray<double, 3> &, double ***>::value, "3D view");
 static_assert(std::is_convertible<NDArray<std::complex<double>, 4> &, std::complex<double> ****>::value, "4D view");
-static_assert(std::is_convertible<NDArray<std::complex<double>, 3> &,
-                                  std::complex<double> *const *const *>::value,
+static_assert(std::is_convertible<NDArray<std::complex<double>, 3> &, std::complex<double> *const *const *>::value,
               "kernel view convention (T *const *const *) reachable in one conversion sequence");
 static_assert(std::is_convertible<const NDArray<double, 2> &, const double *const *>::value, "const 2D view");
 static_assert(std::is_convertible<const NDArray<double, 3> &, const double *const *const *>::value, "const 3D view");
@@ -65,8 +64,7 @@ void check(const bool ok, const char *what)
 void fill_through_view(double **v, const std::size_t n1, const std::size_t n2)
 {
     for (std::size_t i = 0; i < n1; ++i)
-        for (std::size_t j = 0; j < n2; ++j)
-            v[i][j] = static_cast<double>(100 * i + j);
+        for (std::size_t j = 0; j < n2; ++j) v[i][j] = static_cast<double>(100 * i + j);
 }
 
 double sum_through_const_view(const double *const *const *v, const std::size_t n1, const std::size_t n2,
@@ -75,8 +73,7 @@ double sum_through_const_view(const double *const *const *v, const std::size_t n
     double s = 0.0;
     for (std::size_t i = 0; i < n1; ++i)
         for (std::size_t j = 0; j < n2; ++j)
-            for (std::size_t k = 0; k < n3; ++k)
-                s += v[i][j][k];
+            for (std::size_t k = 0; k < n3; ++k) s += v[i][j][k];
     return s;
 }
 } // namespace
@@ -97,8 +94,7 @@ int main()
                     const auto off_a = &a[i][j][k] - a.data();
                     const auto off_b = &b[i][j][k] - &b[0][0][0];
                     same = same && (off_a == off_b);
-                    contiguous = contiguous &&
-                                 (off_a == static_cast<std::ptrdiff_t>(i * n2 * n3 + j * n3 + k));
+                    contiguous = contiguous && (off_a == static_cast<std::ptrdiff_t>(i * n2 * n3 + j * n3 + k));
                 }
         check(same, "3D offsets identical to memory.h");
         check(contiguous, "3D payload contiguous");
@@ -111,11 +107,9 @@ int main()
         check(&a[n1 - 1][n2 - 1] - a.data() == static_cast<std::ptrdiff_t>(n1 * n2 - 1), "2D contiguous");
 
         NDArray<std::complex<double>, 4> c(n1, n2, n3, n4);
-        check(&c[n1 - 1][n2 - 1][n3 - 1][n4 - 1] - c.data() ==
-                  static_cast<std::ptrdiff_t>(n1 * n2 * n3 * n4 - 1),
+        check(&c[n1 - 1][n2 - 1][n3 - 1][n4 - 1] - c.data() == static_cast<std::ptrdiff_t>(n1 * n2 * n3 * n4 - 1),
               "4D contiguous");
-        check(&c[2][3][4][1] - c.data() ==
-                  static_cast<std::ptrdiff_t>(((2 * n2 + 3) * n3 + 4) * n4 + 1),
+        check(&c[2][3][4][1] - c.data() == static_cast<std::ptrdiff_t>(((2 * n2 + 3) * n3 + 4) * n4 + 1),
               "4D index arithmetic");
     }
 

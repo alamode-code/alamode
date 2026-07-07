@@ -233,11 +233,9 @@ void Conductivity::setup_kappa_4ph()
     // If nk_coarse is not set, use the same k-mesh as the 3-ph calculation.
     unsigned int nkc_tmp[3] = {};
     if (nk_coarse[0] * nk_coarse[1] * nk_coarse[2] > 0) {
-        for (auto i = 0; i < 3; i++)
-            nkc_tmp[i] = nk_coarse[i];
+        for (auto i = 0; i < 3; i++) nkc_tmp[i] = nk_coarse[i];
     } else {
-        for (auto i = 0; i < 3; i++)
-            nkc_tmp[i] = dos->kmesh_dos->nk_i[i];
+        for (auto i = 0; i < 3; i++) nkc_tmp[i] = dos->kmesh_dos->nk_i[i];
     }
 
     if (mympi->my_rank == 0) {
@@ -330,8 +328,7 @@ KappaResultIOH5 *Conductivity::setup_ibte_io(const unsigned int nk_i[3], const u
     if (!use_h5_io || mympi->my_rank != 0) return nullptr;
 
     IbteMetaH5 imeta;
-    for (auto i = 0; i < 3; ++i)
-        imeta.nk_i[i] = nk_i[i];
+    for (auto i = 0; i < 3; ++i) imeta.nk_i[i] = nk_i[i];
     imeta.nk_irred = nk_irred_in;
     imeta.ns = ns_in;
 
@@ -793,8 +790,7 @@ KappaChannelMetaH5 Conductivity::build_kappa_channel_meta(const int mode) const
 
     KappaChannelMetaH5 meta;
     meta.tag = (mode == 1) ? "3ph" : "4ph";
-    for (auto i = 0; i < 3; ++i)
-        meta.nk_i[i] = kmesh_in->nk_i[i];
+    for (auto i = 0; i < 3; ++i) meta.nk_i[i] = kmesh_in->nk_i[i];
     meta.nk_irred = kmesh_in->nk_irred;
     meta.ns = ns;
     meta.weights = kmesh_in->weight_k;
@@ -980,8 +976,7 @@ void Conductivity::calc_anharmonic_imagself3()
 
         if (iks == -1) {
 
-            for (unsigned int j = 0; j < ntemp; ++j)
-                damping3_loc[j] = eps; // do nothing
+            for (unsigned int j = 0; j < ntemp; ++j) damping3_loc[j] = eps; // do nothing
 
         } else {
 
@@ -1104,8 +1099,7 @@ void Conductivity::calc_anharmonic_imagself4()
 
         if (iks == -1) {
 
-            for (unsigned int j = 0; j < ntemp; ++j)
-                damping4_loc[j] = eps; // do nothing
+            for (unsigned int j = 0; j < ntemp; ++j) damping4_loc[j] = eps; // do nothing
 
         } else {
 
@@ -1274,7 +1268,10 @@ void Conductivity::compute_kappa()
         lifetime.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
         gamma_total.resize(dos->kmesh_dos->nk_irred * ns, ntemp);
 
-        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), damping3);
+        average_self_energy_at_degenerate_point(ntemp,
+                                                dos->kmesh_dos.get(),
+                                                dos->dymat_dos->get_eigenvalues(),
+                                                damping3);
 
         for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks) {
             for (i = 0; i < ntemp; ++i) {
@@ -1309,7 +1306,10 @@ void Conductivity::compute_kappa()
             }
         }
 
-        average_self_energy_at_degenerate_point(ntemp, dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), gamma_total);
+        average_self_energy_at_degenerate_point(ntemp,
+                                                dos->kmesh_dos.get(),
+                                                dos->dymat_dos->get_eigenvalues(),
+                                                gamma_total);
 
         // kappa_spec must be allocated before the FPH_RTA block below, because
         // compute_kappa_intraband() writes into it on the intermediate 3-phonon-only
@@ -1366,7 +1366,10 @@ void Conductivity::compute_kappa()
 
         if (calc_coherent) {
             kappa_coherent.resize(ntemp, 3, 3);
-            compute_kappa_coherent(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), gamma_total, kappa_coherent);
+            compute_kappa_coherent(dos->kmesh_dos.get(),
+                                   dos->dymat_dos->get_eigenvalues(),
+                                   gamma_total,
+                                   kappa_coherent);
         }
 
 
@@ -1701,8 +1704,7 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
     kmap_identity.resize(nk_3ph);
     eval.resize(ns, nk_3ph);
 
-    for (i = 0; i < nk_3ph; ++i)
-        kmap_identity[i] = i;
+    for (i = 0; i < nk_3ph; ++i) kmap_identity[i] = i;
 
     for (i = 0; i < nk_3ph; ++i) {
         for (j = 0; j < ns; ++j) {
@@ -1770,8 +1772,7 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
 
 void Conductivity::set_kmesh_coarse(const unsigned int *nk_in)
 {
-    for (auto i = 0; i < 3; ++i)
-        nk_coarse[i] = nk_in[i];
+    for (auto i = 0; i < 3; ++i) nk_coarse[i] = nk_in[i];
 }
 
 KpointMeshUniform *Conductivity::get_kmesh_coarse() const

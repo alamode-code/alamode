@@ -13,8 +13,8 @@
 #include <Eigen/Dense>
 #include <array>
 #include <vector>
-#include "ndarray.h"
 #include "kpoint.h"
+#include "ndarray.h"
 
 namespace PHON_NS
 {

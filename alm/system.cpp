@@ -261,13 +261,11 @@ auto System::build_primcell() -> void
         }
 
         if (!is_duplicate) {
-            for (auto j = 0; j < 3; ++j)
-                xf_tmp_vec[j] = xf_tmp[j];
+            for (auto j = 0; j < 3; ++j) xf_tmp_vec[j] = xf_tmp[j];
             xf_unique.emplace_back(xf_tmp_vec);
             kind_unique.emplace_back(inputcell.kind[i]);
             if (spin_input.lspin) {
-                for (auto j = 0; j < 3; ++j)
-                    magmom_tmp_vec[j] = spin_input.magmom[i][j];
+                for (auto j = 0; j < 3; ++j) magmom_tmp_vec[j] = spin_input.magmom[i][j];
                 magmom_unique.emplace_back(magmom_tmp_vec);
             }
         }

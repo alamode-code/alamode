@@ -14,9 +14,9 @@
 #include <array>
 #include <cmath>
 #include <complex>
-#include <memory>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 #include "anharmonic_core.h"

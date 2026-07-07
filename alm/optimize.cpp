@@ -305,8 +305,7 @@ auto Optimize::optimize_main(const std::unique_ptr<Symmetry> &symmetry, std::uni
             deallocate(params);
         }
         allocate(params, nparams);
-        for (auto i = 0; i < nparams; ++i)
-            params[i] = fcs_tmp[i];
+        for (auto i = 0; i < nparams; ++i) params[i] = fcs_tmp[i];
 
         // Set calculated force constants in FCS class
         auto maxorder_min = std::min(maxorder, output_maxorder);
@@ -684,12 +683,10 @@ static void append_energy_block(Eigen::MatrixXd &A, Eigen::VectorXd &b, const st
     Eigen::MatrixXd A2(m0 + n, N_new);
     A2.topRows(m0) = A;
     for (size_t c = 0; c < n; ++c)
-        for (size_t q = 0; q < N_new; ++q)
-            A2(m0 + c, q) = amat_e[c * N_new + q];
+        for (size_t q = 0; q < N_new; ++q) A2(m0 + c, q) = amat_e[c * N_new + q];
     Eigen::VectorXd b2(m0 + n);
     b2.head(m0) = b;
-    for (size_t c = 0; c < n; ++c)
-        b2(m0 + c) = evec_e[c];
+    for (size_t c = 0; c < n; ++c) b2(m0 + c) = evec_e[c];
     A.swap(A2);
     b.swap(b2);
 }
@@ -776,8 +773,7 @@ auto Optimize::run_manual_cv(const std::string &job_prefix, const int maxorder, 
         fnorm_force_train = fnorm;
         fnorm_force_val = fnorm_validation;
         double emin = e_train[0];
-        for (const auto v: e_train)
-            emin = std::min(emin, v);
+        for (const auto v: e_train) emin = std::min(emin, v);
         std::vector<double> amat_e, evec_e, amat_e_val, evec_e_val;
         build_energy_block(symmetry,
                            fcs,
@@ -974,8 +970,7 @@ auto Optimize::run_auto_cv(const std::string &job_prefix, const int maxorder, co
         if (e_train.size() != nstructures)
             exit("run_auto_cv", "EFIT_CV is set but the number of reference energies != training configs.");
         emin_energy = e_train[0];
-        for (const auto v: e_train)
-            emin_energy = std::min(emin_energy, v);
+        for (const auto v: e_train) emin_energy = std::min(emin_energy, v);
         if (verbosity > 0)
             std::cout << "  EFIT_CV: energy term included in CV; CV errors are combined "
                          "(force + w*energy) relative residuals.\n\n";
@@ -1756,8 +1751,7 @@ auto Optimize::solution_path(const int maxorder, Eigen::MatrixXd &A, Eigen::Vect
         if (optcontrol.save_solution_path) {
             ofs_coef << std::setw(15) << l1_alpha;
 
-            for (auto i = 0; i < N_new; ++i)
-                params_tmp[i] = x[i];
+            for (auto i = 0; i < N_new; ++i) params_tmp[i] = x[i];
 
             apply_scaler_force_constants(maxorder,
                                          optcontrol.displacement_normalization_factor,
@@ -1875,13 +1869,11 @@ auto Optimize::optimize_with_given_l1alpha(const int maxorder, const size_t M, c
         Eigen::MatrixXd A_aug(M + n_ene, N_new);
         A_aug.topRows(M) = A;
         for (size_t c = 0; c < n_ene; ++c) {
-            for (size_t q = 0; q < N_new; ++q)
-                A_aug(M + c, q) = amat_e[c * N_new + q];
+            for (size_t q = 0; q < N_new; ++q) A_aug(M + c, q) = amat_e[c * N_new + q];
         }
         Eigen::VectorXd b_aug(M + n_ene);
         b_aug.head(M) = b;
-        for (size_t c = 0; c < n_ene; ++c)
-            b_aug(M + c) = evec_e[c];
+        for (size_t c = 0; c < n_ene; ++c) b_aug(M + c) = evec_e[c];
         A = A_aug;
         b = b_aug;
         M_eff = M + n_ene;
@@ -2110,8 +2102,7 @@ auto Optimize::run_least_squares_with_nonzero_coefs(const Eigen::MatrixXd &A_in,
     }
     Eigen::VectorXd x_nonzero = A_nonzero.colPivHouseholderQr().solve(b_in);
 
-    for (auto i = 0; i < N_new; ++i)
-        params_inout[i] = 0.0;
+    for (auto i = 0; i < N_new; ++i) params_inout[i] = 0.0;
     for (auto i = 0; i < N_nonzero; ++i) {
         params_inout[nonzero_index[i]] = x_nonzero[i] * factor_std[nonzero_index[i]];
     }
@@ -2477,8 +2468,7 @@ auto Optimize::fit_algebraic_constraints(const size_t N, const size_t M, double 
     for (i = 0; i < M; ++i) {
         fsum2[i] = bvec[i];
     }
-    for (i = M; i < LMAX; ++i)
-        fsum2[i] = 0.0;
+    for (i = M; i < LMAX; ++i) fsum2[i] = 0.0;
 
     if (verbosity > 0) std::cout << "  SVD has started ... " << std::flush;
 
@@ -2518,8 +2508,7 @@ auto Optimize::fit_algebraic_constraints(const size_t N, const size_t M, double 
 
     if (INFO == 0) {
         std::vector<double> param_irred(N, 0.0);
-        for (i = 0; i < LMIN; ++i)
-            param_irred[i] = fsum2[i];
+        for (i = 0; i < LMIN; ++i) param_irred[i] = fsum2[i];
         deallocate(fsum2);
 
         // Recover reducible set of force constants
@@ -2553,8 +2542,7 @@ auto Optimize::solve_normal_equation(const size_t N, double *amat, double *bvec,
         if (algebraic_constraint) {
 
             std::vector<double> param_irred(N, 0.0);
-            for (auto i = 0; i < N; ++i)
-                param_irred[i] = bvec[i];
+            for (auto i = 0; i < N; ++i) param_irred[i] = bvec[i];
             // Recover reducible set of force constants
 
             recover_original_forceconstants(maxorder, param_irred, param_out, fcs->get_nequiv(), constraint);
@@ -3394,8 +3382,7 @@ auto Optimize::recover_original_forceconstants(const int maxorder, const std::ve
 
     size_t nparams = 0;
 
-    for (i = 0; i < maxorder; ++i)
-        nparams += nequiv[i].size();
+    for (i = 0; i < maxorder; ++i) nparams += nequiv[i].size();
 
     param_out.resize(nparams, 0.0);
 
@@ -3528,8 +3515,7 @@ auto Optimize::fill_amat_energy(const int maxorder, const size_t ncols, const st
 {
     // Single energy row for one displacement image, in the full (non-compact) ncols basis.
     // iparam advances once per symmetry-irreducible group (cf. fill_amat).
-    for (size_t j = 0; j < ncols; ++j)
-        energy_row[j] = 0.0;
+    for (size_t j = 0; j < ncols; ++j) energy_row[j] = 0.0;
 
     size_t iparam = 0;
 
@@ -3585,16 +3571,14 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     }
 
     size_t ncols = 0;
-    for (auto i = 0; i < maxorder; ++i)
-        ncols += fcs->get_nequiv()[i].size();
+    for (auto i = 0; i < maxorder; ++i) ncols += fcs->get_nequiv()[i].size();
 
     // order index for each parameter column (iparam -> order)
     std::vector<int> order_of_param(ncols);
     {
         size_t ip = 0;
         for (int o = 0; o < maxorder; ++o)
-            for (size_t g = 0; g < fcs->get_nequiv()[o].size(); ++g)
-                order_of_param[ip++] = o;
+            for (size_t g = 0; g < fcs->get_nequiv()[o].size(); ++g) order_of_param[ip++] = o;
     }
 
     // translation-replicated displacements (same preprocessing as the force matrix builder)
@@ -3613,8 +3597,7 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
         size_t ii = 0;
         for (const auto &iter: fcs->get_nequiv()[order]) {
             for (size_t i = 0; i < iter; ++i) {
-                for (int j = 0; j < order + 2; ++j)
-                    ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
+                for (int j = 0; j < order + 2; ++j) ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
                 const double sign = fcs->get_fc_table()[order][ii].sign;
                 gamma_precomputed[order][ii] = gamma(order + 2, ind_tmp.data()) * sign;
                 gamma_energy_precomputed[order][ii] = gamma_energy(order + 2, ind_tmp.data()) * sign;
@@ -3630,8 +3613,7 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     // holds. (A single A_F column carries only the lead atom's share, so a column-wise check
     // would spuriously fail by (n-1)/n; the theta contraction is the correct test.)
     std::vector<double> theta(ncols);
-    for (size_t p = 0; p < ncols; ++p)
-        theta[p] = 1.5 + std::sin(0.3 * static_cast<double>(p) + 1.0);
+    for (size_t p = 0; p < ncols; ++p) theta[p] = 1.5 + std::sin(0.3 * static_cast<double>(p) + 1.0);
 
     // Phase 2: compact-projection validation of project_energy_row. We verify, per config,
     //   A_E_full . theta_full == A_E_compact . theta_c - e_rhs,   theta_full = recover(theta_c),
@@ -3639,11 +3621,9 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
     // parameter-recovery map and exercises the FC2FIX fixed-coefficient energy subtraction (e_rhs).
     const bool algebraic = constraint->get_constraint_algebraic();
     size_t ncols_c = 0;
-    for (int o = 0; o < maxorder; ++o)
-        ncols_c += constraint->get_index_bimap(o).size();
+    for (int o = 0; o < maxorder; ++o) ncols_c += constraint->get_index_bimap(o).size();
     std::vector<double> theta_c(ncols_c), theta_full, e_compact_c(ncols_c);
-    for (size_t q = 0; q < ncols_c; ++q)
-        theta_c[q] = 1.3 + std::sin(0.4 * static_cast<double>(q) + 0.5);
+    for (size_t q = 0; q < ncols_c; ++q) theta_c[q] = 1.3 + std::sin(0.4 * static_cast<double>(q) + 0.5);
     if (algebraic) {
         recover_original_forceconstants(maxorder, theta_c, theta_full, fcs->get_nequiv(), constraint);
     }
@@ -3704,11 +3684,9 @@ auto Optimize::run_energy_selftest(const std::unique_ptr<Symmetry> &symmetry, co
             double e_rhs = 0.0;
             project_energy_row(maxorder, fcs, constraint, e_full_c, e_compact_c, e_rhs);
             double lhs = 0.0;
-            for (size_t p = 0; p < ncols; ++p)
-                lhs += e_full_c[p] * theta_full[p];
+            for (size_t p = 0; p < ncols; ++p) lhs += e_full_c[p] * theta_full[p];
             double rhs = -e_rhs;
-            for (size_t q = 0; q < ncols_c; ++q)
-                rhs += e_compact_c[q] * theta_c[q];
+            for (size_t q = 0; q < ncols_c; ++q) rhs += e_compact_c[q] * theta_c[q];
             const double d = std::abs(lhs - rhs);
             max_abs_proj = std::max(max_abs_proj, d);
             const double sc = std::max(std::abs(lhs), std::abs(rhs));
@@ -3762,8 +3740,7 @@ auto Optimize::build_energy_block(const std::unique_ptr<Symmetry> &symmetry, con
     }
 
     size_t ncols = 0;
-    for (auto i = 0; i < maxorder; ++i)
-        ncols += fcs->get_nequiv()[i].size();
+    for (auto i = 0; i < maxorder; ++i) ncols += fcs->get_nequiv()[i].size();
 
     std::vector<std::vector<double>> u_multi;
     data_multiplier(u_in, u_multi, symmetry);
@@ -3778,8 +3755,7 @@ auto Optimize::build_energy_block(const std::unique_ptr<Symmetry> &symmetry, con
         size_t ii = 0;
         for (const auto &iter: fcs->get_nequiv()[order]) {
             for (size_t i = 0; i < iter; ++i) {
-                for (int j = 0; j < order + 2; ++j)
-                    ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
+                for (int j = 0; j < order + 2; ++j) ind_tmp[j] = fcs->get_fc_table()[order][ii].elems[j];
                 gamma_energy_precomputed[order][ii] =
                     gamma_energy(order + 2, ind_tmp.data()) * fcs->get_fc_table()[order][ii].sign;
                 ++ii;
@@ -3797,50 +3773,41 @@ auto Optimize::build_energy_block(const std::unique_ptr<Symmetry> &symmetry, con
         for (size_t itran = 0; itran < ntran; ++itran) {
             const size_t irow = c * ntran + itran;
             fill_amat_energy(maxorder, ncols, u_multi[irow], gamma_energy_precomputed, fcs, energy_row);
-            for (size_t p = 0; p < ncols; ++p)
-                e_full[p] += energy_row[p];
+            for (size_t p = 0; p < ncols; ++p) e_full[p] += energy_row[p];
         }
         double e_rhs = 0.0;
         project_energy_row(maxorder, fcs, constraint, e_full, e_compact, e_rhs);
-        for (size_t q = 0; q < ncols_compact; ++q)
-            amat_out[c * ncols_compact + q] = e_compact[q];
+        for (size_t q = 0; q < ncols_compact; ++q) amat_out[c * ncols_compact + q] = e_compact[q];
         evec_out[c] = e_in[c] + e_rhs; // A_E_compact . theta_c fits (E_ref + e_rhs)
     }
 
     // Per-configuration weights W_c = exp(-(E_c - emin)/escale) (escale in eV); escale<=0 => uniform.
     std::vector<double> wts(n_ene, 1.0);
     if (optcontrol.efit_escale > 0.0) {
-        for (size_t c = 0; c < n_ene; ++c)
-            wts[c] = std::exp(-(e_in[c] - emin) * Ryd_in_eV / optcontrol.efit_escale);
+        for (size_t c = 0; c < n_ene; ++c) wts[c] = std::exp(-(e_in[c] - emin) * Ryd_in_eV / optcontrol.efit_escale);
     }
     double wsum = 0.0;
-    for (size_t c = 0; c < n_ene; ++c)
-        wsum += wts[c];
+    for (size_t c = 0; c < n_ene; ++c) wsum += wts[c];
     const double inv_wsum = 1.0 / wsum;
 
     // Weighted Frisch-Waugh centering over THIS config set (offset-invariant; consistent across folds).
     for (size_t q = 0; q < ncols_compact; ++q) {
         double colmean = 0.0;
-        for (size_t c = 0; c < n_ene; ++c)
-            colmean += wts[c] * amat_out[c * ncols_compact + q];
+        for (size_t c = 0; c < n_ene; ++c) colmean += wts[c] * amat_out[c * ncols_compact + q];
         colmean *= inv_wsum;
-        for (size_t c = 0; c < n_ene; ++c)
-            amat_out[c * ncols_compact + q] -= colmean;
+        for (size_t c = 0; c < n_ene; ++c) amat_out[c * ncols_compact + q] -= colmean;
     }
     double emean = 0.0;
-    for (size_t c = 0; c < n_ene; ++c)
-        emean += wts[c] * evec_out[c];
+    for (size_t c = 0; c < n_ene; ++c) emean += wts[c] * evec_out[c];
     emean *= inv_wsum;
-    for (size_t c = 0; c < n_ene; ++c)
-        evec_out[c] -= emean;
+    for (size_t c = 0; c < n_ene; ++c) evec_out[c] -= emean;
 
     // Scale row c by w*sqrt(W_c) so the loss term is w^2 * sum_c W_c (A_E[c]·θ − target[c])^2.
     const double w = optcontrol.efit_weight;
     double e2 = 0.0;
     for (size_t c = 0; c < n_ene; ++c) {
         const double s = w * std::sqrt(wts[c]);
-        for (size_t q = 0; q < ncols_compact; ++q)
-            amat_out[c * ncols_compact + q] *= s;
+        for (size_t q = 0; q < ncols_compact; ++q) amat_out[c * ncols_compact + q] *= s;
         evec_out[c] *= s;
         e2 += evec_out[c] * evec_out[c];
     }
@@ -3862,8 +3829,7 @@ auto Optimize::build_energy_matrix(const std::unique_ptr<Symmetry> &symmetry, co
         exit("build_energy_matrix", "Number of reference energies != number of training configurations.");
     }
     double emin = e_train[0];
-    for (size_t c = 0; c < n_ene; ++c)
-        emin = std::min(emin, e_train[c]);
+    for (size_t c = 0; c < n_ene; ++c) emin = std::min(emin, e_train[c]);
 
     double enorm;
     build_energy_block(symmetry,
@@ -4009,11 +3975,9 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
     bool do_print_log;
 
     if (warm_start) {
-        for (i = 0; i < N; ++i)
-            beta(i) = x(i);
+        for (i = 0; i < N; ++i) beta(i) = x(i);
     } else {
-        for (i = 0; i < N; ++i)
-            beta(i) = 0.0;
+        for (i = 0; i < N; ++i) beta(i) = 0.0;
         grad = grad0;
     }
 
@@ -4101,8 +4065,7 @@ auto Optimize::coordinate_descent(const int M, const int N, const double alpha, 
         std::cout << '\n';
     }
 
-    for (i = 0; i < N; ++i)
-        x[i] = beta(i);
+    for (i = 0; i < N; ++i) x[i] = beta(i);
 }
 
 auto Optimize::estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double
@@ -4127,8 +4090,7 @@ auto Optimize::estimate_lipschitz_l2(const Eigen::MatrixXd &A) -> double
     // when the all-ones start lies in the null space of A and power iteration would otherwise return
     // 0. The starting L only needs to be reasonable; fista()'s backtracking guarantees correctness.
     double col_floor = 0.0;
-    for (Eigen::Index j = 0; j < ncols; ++j)
-        col_floor = std::max(col_floor, A.col(j).squaredNorm());
+    for (Eigen::Index j = 0; j < ncols; ++j) col_floor = std::max(col_floor, A.col(j).squaredNorm());
 
     double lambda_old = 0.0;
     double lambda = col_floor;

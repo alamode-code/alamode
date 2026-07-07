@@ -159,8 +159,7 @@ NB_MODULE(_alm, m)
                 const double *d = u.data();
                 std::vector<std::vector<double>> uv(nrow, std::vector<double>(ncol));
                 for (std::size_t i = 0; i < nrow; ++i)
-                    for (std::size_t j = 0; j < ncol; ++j)
-                        uv[i][j] = d[i * ncol + j];
+                    for (std::size_t j = 0; j < ncol; ++j) uv[i][j] = d[i * ncol + j];
                 self.set_u_train(uv);
             },
             nb::arg("u").noconvert())
@@ -173,8 +172,7 @@ NB_MODULE(_alm, m)
                 const double *d = f.data();
                 std::vector<std::vector<double>> fv(nrow, std::vector<double>(ncol));
                 for (std::size_t i = 0; i < nrow; ++i)
-                    for (std::size_t j = 0; j < ncol; ++j)
-                        fv[i][j] = d[i * ncol + j];
+                    for (std::size_t j = 0; j < ncol; ++j) fv[i][j] = d[i * ncol + j];
                 self.set_f_train(fv);
             },
             nb::arg("f").noconvert())
@@ -188,8 +186,7 @@ NB_MODULE(_alm, m)
                     const double *d = a.data();
                     std::vector<std::vector<double>> v(nr, std::vector<double>(nc));
                     for (std::size_t i = 0; i < nr; ++i)
-                        for (std::size_t j = 0; j < nc; ++j)
-                            v[i][j] = d[i * nc + j];
+                        for (std::size_t j = 0; j < nc; ++j) v[i][j] = d[i * nc + j];
                     return v;
                 };
                 self.set_validation_data(to_vv(u), to_vv(f));
@@ -354,8 +351,7 @@ NB_MODULE(_alm, m)
                 std::vector<int> nums(npat);
                 self.get_number_of_displaced_atoms(nums.data(), fc_order);
                 std::size_t tot = 0;
-                for (auto v: nums)
-                    tot += static_cast<std::size_t>(v);
+                for (auto v: nums) tot += static_cast<std::size_t>(v);
                 int *ai = nullptr;
                 double *dp = nullptr;
                 auto atom_indices = make_owned<int>(tot, &ai);

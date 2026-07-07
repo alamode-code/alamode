@@ -33,8 +33,7 @@ auto scaled_copy(const std::vector<std::vector<double>> &data, const double fact
     if (factor == 1.0) return data;
     auto scaled = data;
     for (auto &row: scaled) {
-        for (auto &val: row)
-            val *= factor;
+        for (auto &val: row) val *= factor;
     }
     return scaled;
 }
@@ -733,8 +732,7 @@ auto ALM::get_number_of_free_parameters() -> size_t
     }
     size_t n = 0;
     const int maxorder = cluster->get_maxorder();
-    for (int i = 0; i < maxorder; ++i)
-        n += constraint->get_index_bimap(i).size();
+    for (int i = 0; i < maxorder; ++i) n += constraint->get_index_bimap(i).size();
     return n;
 }
 

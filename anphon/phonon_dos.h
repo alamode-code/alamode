@@ -12,11 +12,11 @@
 
 #include <complex>
 #include <memory>
-#include "ndarray.h"
 #include <vector>
 #include "dynamical.h"
 #include "integration.h"
 #include "kpoint.h"
+#include "ndarray.h"
 #include "pointers.h"
 
 namespace PHON_NS

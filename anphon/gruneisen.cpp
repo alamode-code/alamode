@@ -67,8 +67,7 @@ void Gruneisen::setup()
 
     xshift_s.resize(27, 3);
 
-    for (int i = 0; i < 3; ++i)
-        xshift_s[0][i] = 0.0;
+    for (int i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
 
     int icell = 0;
 
@@ -410,8 +409,7 @@ void Gruneisen::write_new_fcsxml(const std::string &filename_xml, const double c
 
     for (i = 0; i < cell_tmp.number_of_atoms; ++i) {
         str_tmp.clear();
-        for (j = 0; j < 3; ++j)
-            str_tmp += " " + double2string(cell_tmp.x_fractional(i, j));
+        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(cell_tmp.x_fractional(i, j));
         auto &child = pt.add("Data.Structure.Position.pos", str_tmp);
         child.put("<xmlattr>.index", i + 1);
         child.put("<xmlattr>.element", system->symbol_kd[cell_tmp.kind[i]]);

@@ -9,7 +9,6 @@
 */
 
 #include "dynamical.h"
-#include "ndarray.h"
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <algorithm>
@@ -29,6 +28,7 @@
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
+#include "ndarray.h"
 #include "phonon_dos.h"
 #include "symmetry_core.h"
 #include "system.h"
@@ -185,8 +185,7 @@ void Dynamical::setup_dynamical()
 
     xshift_s.resize(27, 3);
 
-    for (auto i = 0; i < 3; ++i)
-        xshift_s[0][i] = 0.0;
+    for (auto i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
     auto icell = 0;
 
     for (auto ix = -1; ix <= 1; ++ix) {
@@ -233,8 +232,7 @@ void Dynamical::setup_dynamical()
         MPI_Bcast(&vec[0], 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         if (mympi->my_rank > 0) {
-            for (auto j = 0; j < 3; ++j)
-                vec2[j] = vec[j];
+            for (auto j = 0; j < 3; ++j) vec2[j] = vec[j];
             projection_directions.push_back(vec2);
         }
     }
@@ -243,7 +241,7 @@ void Dynamical::setup_dynamical()
         MPI_Bcast(&na_sigma, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         mindist_list.resize(system->get_primcell().number_of_atoms,
-                 system->get_supercell(0).number_of_atoms); // should use fc2 cell?
+                            system->get_supercell(0).number_of_atoms); // should use fc2 cell?
         prepare_mindist_list(mindist_list);
     }
 
@@ -668,8 +666,7 @@ void Dynamical::calc_nonanalytic_k(const double *xk_in, const double *kvec_na_in
     //        xk_tmp[i] = xk_in[i] - static_cast<double>(nint(xk_in[i]));
     //    }
 
-    for (i = 0; i < 3; ++i)
-        xk_tmp[i] = xk_in[i];
+    for (i = 0; i < 3; ++i) xk_tmp[i] = xk_in[i];
     xk_tmp = pcell.reciprocal_lattice_vector.transpose() * xk_tmp;
     const auto norm2 = xk_tmp.squaredNorm();
 
@@ -1004,8 +1001,7 @@ void Dynamical::modify_eigenvectors() const
         }
     }
 
-    for (ik = 0; ik < nk; ++ik)
-        flag_done[ik] = false;
+    for (ik = 0; ik < nk; ++ik) flag_done[ik] = false;
 
     for (ik = 0; ik < nk; ++ik) {
 
@@ -1057,8 +1053,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
             norm += vec[i] * vec[i];
         }
         norm = std::sqrt(norm);
-        for (i = 0; i < 3; ++i)
-            vec[i] = vec[i] / norm;
+        for (i = 0; i < 3; ++i) vec[i] = vec[i] / norm;
 
         directions.push_back(vec);
     }
@@ -1161,8 +1156,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
 
                 if (is_lifted == 0) {
                     std::cout << " xk = ";
-                    for (i = 0; i < 3; ++i)
-                        std::cout << std::setw(15) << xk_in[i];
+                    for (i = 0; i < 3; ++i) std::cout << std::setw(15) << xk_in[i];
                     std::cout << '\n';
                     std::cout << " All projections did not lift the two-fold degeneracy.\n"
                                  " Try another projection!\n";
@@ -1188,8 +1182,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
                 evec_new.block(0, ishift, ns, 3) = evec_sub.block(0, 0, ns, 3);
                 if (is_lifted == 0) {
                     std::cout << " xk = ";
-                    for (i = 0; i < 3; ++i)
-                        std::cout << std::setw(15) << xk_in[i];
+                    for (i = 0; i < 3; ++i) std::cout << std::setw(15) << xk_in[i];
                     std::cout << '\n';
                     std::cout << " The first projection did not lift the two-fold degeneracy.\n"
                                  " Try another projection!\n";
@@ -1208,8 +1201,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
 
                 if (is_lifted1 == 0 || is_lifted2 == 0) {
                     std::cout << " xk = ";
-                    for (i = 0; i < 3; ++i)
-                        std::cout << std::setw(15) << xk_in[i];
+                    for (i = 0; i < 3; ++i) std::cout << std::setw(15) << xk_in[i];
                     std::cout << '\n';
                     std::cout << " The given projections did not lift the three-fold degeneracy.\n"
                                  " Try another set of projections!\n";
@@ -1374,8 +1366,7 @@ void Dynamical::calc_atomic_participation_ratio(const std::complex<double> *evec
     unsigned int iat;
     const auto natmin = system->get_primcell().number_of_atoms;
 
-    for (iat = 0; iat < natmin; ++iat)
-        ret[iat] = 0.0;
+    for (iat = 0; iat < natmin; ++iat) ret[iat] = 0.0;
 
     for (iat = 0; iat < natmin; ++iat) {
         ret[iat] = (std::norm(evec_in[3 * iat]) + std::norm(evec_in[3 * iat + 1]) + std::norm(evec_in[3 * iat + 2])) /
@@ -1384,11 +1375,9 @@ void Dynamical::calc_atomic_participation_ratio(const std::complex<double> *evec
 
     auto sum = 0.0;
 
-    for (iat = 0; iat < natmin; ++iat)
-        sum += ret[iat] * ret[iat];
+    for (iat = 0; iat < natmin; ++iat) sum += ret[iat] * ret[iat];
 
-    for (iat = 0; iat < natmin; ++iat)
-        ret[iat] /= std::sqrt(static_cast<double>(natmin) * sum);
+    for (iat = 0; iat < natmin; ++iat) ret[iat] /= std::sqrt(static_cast<double>(natmin) * sum);
 }
 
 void Dynamical::connect_band_by_eigen_similarity(const unsigned int nk_in, std::complex<double> ***evec,
@@ -1417,8 +1406,7 @@ void Dynamical::connect_band_by_eigen_similarity(const unsigned int nk_in, std::
         abs_similarity[is].resize(ns);
     }
 
-    for (int i = 0; i < ns; ++i)
-        index[i] = i;
+    for (int i = 0; i < ns; ++i) index[i] = i;
 
     for (ik = 0; ik < nk_in; ++ik) {
 
@@ -1447,8 +1435,7 @@ void Dynamical::connect_band_by_eigen_similarity(const unsigned int nk_in, std::
             }
         }
 
-        for (auto &v: found)
-            v = 0;
+        for (auto &v: found) v = 0;
 
         for (is = 0; is < ns; ++is) {
 
@@ -1461,8 +1448,7 @@ void Dynamical::connect_band_by_eigen_similarity(const unsigned int nk_in, std::
             int loc = index[0];
             index_sorted[ik][loc] = is;
             found[loc] = 1;
-            for (js = 0; js < ns; ++js)
-                abs_similarity[js][loc] = -1.0;
+            for (js = 0; js < ns; ++js) abs_similarity[js][loc] = -1.0;
             for (js = 0; js < ns; ++js) {
                 evec_tmp[loc][js] = evec[ik][is][js];
             }
@@ -1982,8 +1968,8 @@ void Dynamical::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_c
 
 
 void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
-                                   const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
-                                   double **eval_out, std::complex<double> ***evec_out,
+                                   const unsigned int nk_dense, const double *const *xk_dense,
+                                   const double *const *kvec_dense, double **eval_out, std::complex<double> ***evec_out,
                                    const std::vector<Eigen::MatrixXcd> &dymat_short,
                                    const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
                                    const bool use_precomputed_dymat, const bool return_sqrt) const
@@ -2029,11 +2015,9 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
                         eval_vec[is] = std::sqrt(eval_tmp);
                     }
                 }
-                for (is = 0; is < ns; ++is)
-                    eval_out[ik][is] = eval_vec[is];
+                for (is = 0; is < ns; ++is) eval_out[ik][is] = eval_vec[is];
             } else {
-                for (is = 0; is < ns; ++is)
-                    eval_out[ik][is] = eval_real[is];
+                for (is = 0; is < ns; ++is) eval_out[ik][is] = eval_real[is];
             }
         }
 
@@ -2082,11 +2066,9 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
                         eval_vec[is] = std::sqrt(eval_tmp);
                     }
                 }
-                for (is = 0; is < ns; ++is)
-                    eval_out[ik][is] = eval_vec[is];
+                for (is = 0; is < ns; ++is) eval_out[ik][is] = eval_vec[is];
             } else {
-                for (is = 0; is < ns; ++is)
-                    eval_out[ik][is] = eval_real[is];
+                for (is = 0; is < ns; ++is) eval_out[ik][is] = eval_real[is];
             }
         }
     }
@@ -2171,8 +2153,7 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
     NDArray<std::complex<double>, 3> dymat_q(ns, ns, kmesh_coarse->nk);
     NDArray<std::complex<double>, 2> dymat_harmonic(ns, ns);
 
-    for (is = 0; is < ns; ++is)
-        beta[is] = std::complex<double>(0.0, 0.0);
+    for (is = 0; is < ns; ++is) beta[is] = std::complex<double>(0.0, 0.0);
 
     for (ik = 0; ik < kmesh_coarse->nk; ++ik) {
 
@@ -2180,8 +2161,7 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
 
         // create eigval matrix
 
-        for (is = 0; is < ns2; ++is)
-            eigval_matrix[is] = std::complex<double>(0.0, 0.0);
+        for (is = 0; is < ns2; ++is) eigval_matrix[is] = std::complex<double>(0.0, 0.0);
 
         unsigned int m = 0;
         for (is = 0; is < ns; ++is) {

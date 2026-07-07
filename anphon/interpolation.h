@@ -13,10 +13,10 @@
 #include <cmath>
 #include <iomanip>
 #include <vector>
-#include "ndarray.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "ndarray.h"
 
 namespace PHON_NS
 {
@@ -53,7 +53,6 @@ public:
 
             val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
         }
-
     }
 
     template <typename T>
@@ -102,8 +101,7 @@ public:
                     }
                     if (tmp < dist) {
                         dist = tmp;
-                        for (auto k = 0; k < 3; ++k)
-                            closest[k] = corner_coord[j][k];
+                        for (auto k = 0; k < 3; ++k) closest[k] = corner_coord[j][k];
                     }
                 }
 

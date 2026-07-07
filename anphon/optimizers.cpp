@@ -347,8 +347,7 @@ Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &po
 
     // error vectors e_i = -H_eff * g_i, recomputed with the current effective Hessian
     std::vector<Eigen::VectorXd> errvec(size);
-    for (int i = 0; i < size; ++i)
-        errvec[i] = -H_eff * gradients[i];
+    for (int i = 0; i < size; ++i) errvec[i] = -H_eff * gradients[i];
 
     // --- adaptive subspace: grow from the most recent point, keep the last acceptable step ---
     Eigen::VectorXd best_step = point_BFGS; // fallback: reference step (eqn 7)
@@ -359,8 +358,7 @@ Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &po
 
         // (d, part 1) rescale error vectors so the smallest has unit length (eqn 9)
         double emin = errvec[i0].norm();
-        for (int i = i0 + 1; i < size; ++i)
-            emin = std::min(emin, errvec[i].norm());
+        for (int i = i0 + 1; i < size; ++i) emin = std::min(emin, errvec[i].norm());
         const double escale = (emin > eps15) ? 1.0 / emin : 1.0;
 
         Eigen::MatrixXd B(m + 1, m + 1);
@@ -370,8 +368,7 @@ Eigen::VectorXd FarkasIII_Optimizer::update_controlled(const Eigen::VectorXd &po
                 B(a, b) = (escale * escale) * errvec[i0 + a].dot(errvec[i0 + b]);
             }
         }
-        for (int a = 0; a < m; ++a)
-            B(a, m) = B(m, a) = 1.0;
+        for (int a = 0; a < m; ++a) B(a, m) = B(m, a) = 1.0;
         Eigen::VectorXd rhs = Eigen::VectorXd::Zero(m + 1);
         rhs(m) = 1.0;
         const Eigen::VectorXd coeffs = B.colPivHouseholderQr().solve(rhs);

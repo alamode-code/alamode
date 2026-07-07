@@ -301,8 +301,7 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
         }
         gamma_loc.resize(nks);
 
-        for (i = 0; i < nks; ++i)
-            gamma_loc[i] = 0.0;
+        for (i = 0; i < nks; ++i) gamma_loc[i] = 0.0;
 
         const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
         const auto eval_dos = dymat_dos_in.get_eigenvalues();
