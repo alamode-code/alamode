@@ -22,23 +22,6 @@
 
 namespace PHON_NS
 {
-class DistList
-{
-public:
-    unsigned int cell_s;
-    double dist;
-
-    DistList();
-
-    DistList(const unsigned int cell_s_, const double dist_) : cell_s(cell_s_), dist(dist_) {};
-
-    bool operator<(const DistList &obj) const
-    {
-        return dist < obj.dist;
-    }
-};
-
-
 class Scph: protected ScphQhaCommon
 {
 public:

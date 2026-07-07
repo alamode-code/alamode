@@ -93,6 +93,23 @@ public:
     std::vector<ShiftCell> shift;
 } __attribute__((aligned(32)));
 
+// Near-duplicates of this pair (cell index + distance) exist as DistWithCell (dynamical.h) and DistInfo (ewald.h).
+class DistList
+{
+public:
+    unsigned int cell_s;
+    double dist;
+
+    DistList();
+
+    DistList(const unsigned int cell_s_, const double dist_) : cell_s(cell_s_), dist(dist_) {};
+
+    bool operator<(const DistList &obj) const
+    {
+        return dist < obj.dist;
+    }
+};
+
 class System: protected Pointers
 {
 public:

@@ -28,7 +28,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "memory.h"
 #include "mpi_common.h"
 #include "relaxation.h"
-#include "scph.h"
 #include "symmetry_core.h"
 #include "xml_parser.h"
 
