@@ -103,10 +103,6 @@ private:
                                                   const KpointMeshUniform *kmesh_dense, int renorm_3to2nd,
                                                   const std::string &strain_ifc_dir,
                                                   MinimumDistList ***mindist_list) const;
-
-    void make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const;
-
-    void make_inverse_translation_mapping(int **inv_translation_mapping) const;
 };
 
 } // namespace PHON_NS

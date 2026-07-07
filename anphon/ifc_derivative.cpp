@@ -1275,12 +1275,12 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     }
 
     symm_mapping_s.resize(symmetry_.SymmListWithMap_ref.size(), nat);
-    make_supercell_mapping_by_symmetry_operations(symm_mapping_s);
+    symmetry_.make_supercell_mapping_by_symmetry_operations(symm_mapping_s);
 
     const auto ntran = system_.get_map_p2s(0)[0].size();
 
     inv_translation_mapping.resize(ntran, ntran);
-    make_inverse_translation_mapping(inv_translation_mapping);
+    symmetry_.make_inverse_translation_mapping(inv_translation_mapping);
 
     if (renorm_3to2nd == 2) {
         for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
@@ -1529,134 +1529,4 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     dymat_new.clear();
 
     is_acoustic.clear();
-}
-
-void DerivativeIFC::make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const
-{
-    const auto nat = system_.get_supercell(0).number_of_atoms;
-    const auto ntran = system_.get_map_p2s()[0].size();
-
-    Eigen::Matrix3d rotmat;
-    Eigen::Vector3d shift;
-    Eigen::MatrixXd xtmp(nat, 3);
-    int i, j;
-    int iat1;
-
-    xtmp = system_.get_supercell(0).x_cartesian;
-
-    int isymm = -1;
-    for (const auto &it: symmetry_.SymmListWithMap_ref) {
-        isymm++;
-
-        for (i = 0; i < 3; ++i) {
-            for (j = 0; j < 3; ++j) {
-                rotmat(i, j) = it.rot[3 * i + j];
-            }
-        }
-        for (i = 0; i < 3; ++i) {
-            shift[i] = it.shift[i];
-        }
-        shift = system_.get_primcell().lattice_vector * shift;
-
-        for (iat1 = 0; iat1 < nat; iat1++) {
-            Eigen::Vector3d xr_tmp = rotmat * xtmp.row(iat1).transpose() + shift;
-
-            xr_tmp = system_.get_supercell(0).reciprocal_lattice_vector * xr_tmp * inv_tpi;
-
-            for (i = 0; i < 3; i++) {
-                xr_tmp[i] = std::fmod(xr_tmp[i] + 1.0, 1.0);
-            }
-
-            int atm_found = 0;
-            for (int itran1 = 0; itran1 < ntran; itran1++) {
-                int jat1 = system_.get_map_p2s(0)[it.mapping[system_.get_map_s2p(0)[iat1].atom_num]][itran1];
-                int iflag = 1;
-                for (i = 0; i < 3; i++) {
-                    double dtmp =
-                        std::min(std::fabs(system_.get_supercell(0).x_fractional(jat1, i) - xr_tmp[i]),
-                                 std::min(std::fabs(system_.get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] + 1.0),
-                                          std::fabs(system_.get_supercell(0).x_fractional(jat1, i) - xr_tmp[i] - 1.0)));
-                    if (dtmp > eps6) {
-                        iflag = 0;
-                    }
-                }
-                if (iflag == 1) {
-                    atm_found = 1;
-                    symm_mapping_s[isymm][iat1] = jat1;
-                    break;
-                }
-            }
-            if (atm_found == 0) {
-                exit("make_supercell_mapping_by_symmetry_operations", "corresponding atom is not found.");
-            }
-        }
-    }
-
-    NDArray<int, 1> map_tmp;
-    map_tmp.resize(nat);
-
-    for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
-        for (iat1 = 0; iat1 < nat; iat1++) {
-            map_tmp[iat1] = 0;
-        }
-        for (iat1 = 0; iat1 < nat; iat1++) {
-            map_tmp[symm_mapping_s[isymm][iat1]] = 1;
-        }
-        for (iat1 = 0; iat1 < nat; iat1++) {
-            if (map_tmp[iat1] == 0) {
-                exit("make_supercell_mapping_by_symmetry_operations",
-                     " the mapping of atoms is not a one-to-one mapping.");
-            }
-        }
-    }
-
-    map_tmp.clear();
-}
-
-void DerivativeIFC::make_inverse_translation_mapping(int **inv_translation_mapping) const
-{
-    const auto ntran = system_.get_map_p2s(0)[0].size();
-
-    int ixyz1;
-    double x_tran1[3], x_tran2[3];
-
-    for (int i1 = 0; i1 < ntran; i1++) {
-        for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-            x_tran1[ixyz1] = system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][i1], ixyz1) -
-                             system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][0], ixyz1);
-            x_tran1[ixyz1] = std::fmod(x_tran1[ixyz1] + 1.0, 1.0);
-        }
-
-        for (int i2 = 0; i2 < ntran; i2++) {
-            int is_found = 0;
-            for (int i3 = 0; i3 < ntran; i3++) {
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    x_tran2[ixyz1] = system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][i2], ixyz1) -
-                                     system_.get_supercell(0).x_fractional(system_.get_map_p2s(0)[0][i3], ixyz1);
-                    x_tran2[ixyz1] = std::fmod(x_tran2[ixyz1] + 1.0, 1.0);
-                }
-
-                int itmp = 1;
-                for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-                    double dtmp = std::min(std::fabs(x_tran1[ixyz1] - x_tran2[ixyz1]),
-                                           std::fabs(x_tran1[ixyz1] - x_tran2[ixyz1] + 1.0));
-                    dtmp = std::min(dtmp, std::fabs(x_tran1[ixyz1] - x_tran2[ixyz1] - 1.0));
-
-                    if (dtmp > eps6) {
-                        itmp = 0;
-                        break;
-                    }
-                }
-                if (itmp == 1) {
-                    inv_translation_mapping[i1][i2] = i3;
-                    is_found = 1;
-                    break;
-                }
-            }
-            if (is_found == 0) {
-                exit("make_inverse_translation_mapping",
-                     "failed to find the mapping of primitive cells for inverse translation operations.");
-            }
-        }
-    }
 }
