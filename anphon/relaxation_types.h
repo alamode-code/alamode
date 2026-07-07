@@ -180,63 +180,48 @@ struct StructuralOptWorkspace
     std::vector<int> harm_optical_modes;
 };
 
-struct RelaxationUpdateInput
+enum class StructOptStepStatus
 {
-    double *q0{};
-    double *u0{};
-    double **u_tensor{};
-    const std::complex<double> *v1_array_atT{};
-    const double *const *omega2_array{};
-    const std::complex<double> *del_v0_strain_atT{};
-    const double *const *C2_array{};
-    const std::complex<double> *const *const *cmat_convert{};
-    const std::vector<int> *harm_optical_modes{};
-    double **omega2_harmonic{};
-    std::complex<double> ***evec_harmonic{};
+    Continue,          // step done, not converged - keep looping
+    Converged,         // convergence prints already emitted by the model; break
+    Diverged,          // structure diverged (prints emitted); break
+    SolverFailedRetry, // solver failed, rescue applied - skip convergence test, continue
+    Aborted            // too many consecutive solver failures; break
 };
 
-struct RelaxationUpdateBuffers
+struct StructuralOptLoopContext
 {
-    double *delta_q0{};
-    double *delta_u0{};
-    double *delta_umn{};
-};
-
-struct RelaxationUpdateOutputs
-{
-    double *du0{};
-    double *du_tensor{};
-};
-
-struct TemperatureOptimizationLoopInputs
-{
-    const std::vector<double> *temperature_grid{};
+    RelaxationStructureState &structure_state;
+    StructuralOptWorkspace &ws;
+    std::ofstream &fout_step_q0;
+    std::ofstream &fout_step_u0;
+    std::ofstream &fout_step_u_tensor;
+    std::ofstream &fout_q0;
+    std::ofstream &fout_u0;
+    std::ofstream &fout_u_tensor;
+    const std::vector<double> &vec_temp;
     double Tmin{};
     double dT{};
     unsigned int NT{};
-    double *q0{};
-    double *u0{};
-    double **u_tensor{};
-    double **omega2_harmonic{};
-    std::complex<double> ***evec_harmonic{};
-    std::ofstream *fout_step_q0{};
-    std::ofstream *fout_step_u0{};
-    std::ofstream *fout_step_u_tensor{};
-    std::ofstream *fout_q0{};
-    std::ofstream *fout_u0{};
-    std::ofstream *fout_u_tensor{};
+    RelaxationStrMode relax_mode{RelaxationStrMode::None};
+    bool &converged_prev;
+    int &str_diverged;
 };
 
 class IRelaxationModel
 {
 public:
     virtual ~IRelaxationModel() = default;
-    virtual RelaxationUpdateInput *update_input() = 0;
-    virtual void before_temperature(unsigned int iT, double temp, bool &converged_prev) = 0;
-    virtual void evaluate_structure_step(unsigned int iT, double temp, int i_str_loop, bool &converged_prev) = 0;
-    virtual void evaluate_temperature(unsigned int iT, double temp, bool &converged_prev) = 0;
-    virtual void after_update_step(unsigned int iT, double temp, int i_str_loop) = 0;
-    virtual void after_temperature(unsigned int iT, double temp, bool &converged_prev) = 0;
-    virtual double current_v0() const = 0;
+    virtual void before_init_structure(unsigned int iT, unsigned int i_temp_loop, double temp, bool converged_prev) = 0;
+    virtual void after_init_structure(unsigned int iT, double temp) = 0;
+    virtual StructOptStepStatus do_structure_step(unsigned int iT, double temp, int i_str_loop,
+                                                  std::vector<StructOptStepRecord> &step_history) = 0;
+    virtual void after_structure_loop(unsigned int iT, double temp, int i_str_loop_exit,
+                                      bool &converged_this_temp) = 0;
+    virtual void record_v0(unsigned int iT) = 0;
+    virtual void finalize_temperature(unsigned int iT, double temp, bool converged_this_temp,
+                                      bool &converged_prev) = 0;
+    virtual void print_run_summary() = 0;
+    virtual bool history_has_scp_column() const = 0;
 };
 } // namespace PHON_NS

@@ -21,6 +21,7 @@
 namespace PHON_NS
 {
 class DelVStrainData;
+class QhaRelaxationModel;
 
 class Qha: protected ScphQhaCommon
 {
@@ -50,6 +51,8 @@ public:
     using ScphQhaCommon::selfenergy_offdiagonal;
 
 private:
+    friend class QhaRelaxationModel;
+
     void set_default_variables();
 
     void exec_QHA_relax_main(std::complex<double> ****, std::complex<double> ****);

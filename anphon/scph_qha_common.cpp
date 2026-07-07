@@ -1260,3 +1260,84 @@ void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state,
         std::cout << '\n';
     }
 }
+
+void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, StructuralOptLoopContext &ctx)
+{
+    auto i_temp_loop = -1;
+
+    for (double temp: ctx.vec_temp) {
+        i_temp_loop++;
+        auto iT = static_cast<unsigned int>((temp - ctx.Tmin) / ctx.dT);
+
+        std::cout << "\n ================================================================\n";
+        std::cout << "  Temperature = " << temp << " K    (" << std::setw(4) << i_temp_loop + 1 << " of "
+                  << std::setw(4) << ctx.NT << ")\n";
+        std::cout << " ================================================================\n\n";
+
+        model.before_init_structure(iT, static_cast<unsigned int>(i_temp_loop), temp, ctx.converged_prev);
+
+        relaxation->set_init_structure_atT(ctx.structure_state,
+                                           ctx.converged_prev,
+                                           ctx.str_diverged,
+                                           i_temp_loop,
+                                           omega2_harmonic,
+                                           evec_harmonic);
+
+        model.after_init_structure(iT, temp);
+
+        print_initial_structure(ctx.structure_state, ctx.relax_mode);
+
+        relaxation->write_stepresfile_header_atT(ctx.fout_step_q0, ctx.fout_step_u0, ctx.fout_step_u_tensor, temp);
+
+        relaxation->write_stepresfile(ctx.structure_state, 0, ctx.fout_step_q0, ctx.fout_step_u0,
+                                      ctx.fout_step_u_tensor);
+
+        std::cout << " Start structural optimization at " << temp << " K.\n";
+
+        // per-step records for the optimization-history table printed below
+        std::vector<StructOptStepRecord> step_history;
+
+        bool converged_this_temp = false;
+        int i_str_loop;
+        for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
+
+            std::cout << "\n ----------------------------------------------------------------\n";
+            std::cout << "  Structure opt. step " << std::setw(4) << i_str_loop + 1 << " of "
+                      << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
+            std::cout << " ----------------------------------------------------------------\n";
+
+            const auto status = model.do_structure_step(iT, temp, i_str_loop, step_history);
+            switch (status) {
+            case StructOptStepStatus::Continue:
+                break;
+            case StructOptStepStatus::SolverFailedRetry:
+                continue;
+            case StructOptStepStatus::Converged:
+            case StructOptStepStatus::Diverged:
+            case StructOptStepStatus::Aborted:
+                goto structure_loop_done;
+            }
+        }
+
+    structure_loop_done:
+        model.after_structure_loop(iT, temp, i_str_loop, converged_this_temp);
+
+        Relaxation::print_optimization_history(step_history,
+                                               temp,
+                                               ctx.relax_mode == RelaxationStrMode::CoordinatesAndCell,
+                                               model.history_has_scp_column());
+
+        print_final_structure(ctx.structure_state, ctx.relax_mode, temp, i_temp_loop == static_cast<int>(ctx.NT) - 1);
+
+        model.record_v0(iT);
+
+        // print obtained structure
+        relaxation->calculate_u0(ctx.structure_state.q0, ctx.structure_state.u0, omega2_harmonic, evec_harmonic);
+
+        relaxation->write_resfile_atT(ctx.structure_state, temp, ctx.fout_q0, ctx.fout_u0, ctx.fout_u_tensor);
+
+        model.finalize_temperature(iT, temp, converged_this_temp, ctx.converged_prev);
+    }
+
+    model.print_run_summary();
+}

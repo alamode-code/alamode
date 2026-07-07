@@ -177,6 +177,11 @@ protected:
     void print_final_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode, double temp,
                                bool last_temperature) const;
 
+    // Rank-0 structural-optimization temperature loop shared by QHA now and
+    // SCPH in a later phase. Driver-specific physics and acceptance policy
+    // live behind IRelaxationModel hooks.
+    void run_structural_optimization_loop(IRelaxationModel &model, StructuralOptLoopContext &ctx);
+
     // Print the initial atomic displacements (and, when the cell is relaxed,
     // the initial strain tensor) at the head of a temperature point.
     void print_initial_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode) const;

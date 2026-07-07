@@ -36,6 +36,243 @@ Qha::~Qha()
     deallocate_variables();
 }
 
+namespace PHON_NS
+{
+class QhaRelaxationModel final: public IRelaxationModel
+{
+public:
+    QhaRelaxationModel(Qha &qha, StructuralOptWorkspace &ws, std::complex<double> ****dymat_anharm,
+                       std::complex<double> ****delta_harmonic_dymat_renormalize,
+                       std::complex<double> ***cmat_convert, double ***omega2_harm_renorm,
+                       std::complex<double> ***evec_harm_renorm_tmp,
+                       std::complex<double> ***v4_renorm, std::complex<double> ***v4_with_umn,
+                       std::complex<double> *v1_QHA, std::complex<double> *del_v0_del_umn_QHA,
+                       std::complex<double> *del_v0_del_umn_ZSISA,
+                       std::complex<double> *del_v0_del_umn_vZSISA,
+                       std::complex<double> **del_v1_del_umn_renorm, double **delq_delu_ZSISA,
+                       double **C2_array_renorm, double **C2_array_ZSISA, DelVStrainData &del_v_strain,
+                       bool &converged_prev, int &str_diverged, std::ofstream &fout_step_q0,
+                       std::ofstream &fout_step_u0, std::ofstream &fout_step_u_tensor)
+        : qha_(qha),
+          ws_(ws),
+          dymat_anharm_(dymat_anharm),
+          delta_harmonic_dymat_renormalize_(delta_harmonic_dymat_renormalize),
+          cmat_convert_(cmat_convert),
+          omega2_harm_renorm_(omega2_harm_renorm),
+          evec_harm_renorm_tmp_(evec_harm_renorm_tmp),
+          v4_renorm_(v4_renorm),
+          v4_with_umn_(v4_with_umn),
+          v1_QHA_(v1_QHA),
+          del_v0_del_umn_QHA_(del_v0_del_umn_QHA),
+          del_v0_del_umn_ZSISA_(del_v0_del_umn_ZSISA),
+          del_v0_del_umn_vZSISA_(del_v0_del_umn_vZSISA),
+          del_v1_del_umn_renorm_(del_v1_del_umn_renorm),
+          delq_delu_ZSISA_(delq_delu_ZSISA),
+          C2_array_renorm_(C2_array_renorm),
+          C2_array_ZSISA_(C2_array_ZSISA),
+          del_v_strain_(del_v_strain),
+          converged_prev_(converged_prev),
+          str_diverged_(str_diverged),
+          fout_step_q0_(fout_step_q0),
+          fout_step_u0_(fout_step_u0),
+          fout_step_u_tensor_(fout_step_u_tensor)
+    {}
+
+    void before_init_structure(unsigned int, unsigned int, double, bool) override {}
+
+    void after_init_structure(const unsigned int iT, double) override
+    {
+        qha_.converged_str_temp[iT] = 0; // set to 1 only when the loop converges
+    }
+
+    StructOptStepStatus do_structure_step(const unsigned int iT, const double temp, const int i_str_loop,
+                                          std::vector<StructOptStepRecord> &step_history) override
+    {
+        const auto nk = qha_.kmesh_dense->nk;
+        const auto ns = qha_.dynamical->neval;
+        const auto nk_irred_interpolate = qha_.kmesh_coarse->nk_irred;
+        const auto complex_zero = std::complex<double>(0.0, 0.0);
+        auto &structure_state = ws_.structure_state;
+        auto &q0 = structure_state.q0;
+        auto &u_tensor = structure_state.u_tensor;
+        auto &v4_ref = ws_.v4_ref;
+        auto &C2_array = ws_.C2_array;
+        auto &harm_optical_modes = ws_.harm_optical_modes;
+
+        // Strain renormalization of v4 is not available; the identity
+        // copy keeps the historical bookkeeping (ws.v4_for_renorm
+        // points at v4_with_umn).
+        for (auto ik = 0; ik < nk_irred_interpolate * nk; ik++) {
+            for (auto is = 0; is < ns * ns; is++) {
+                for (auto is1 = 0; is1 < ns * ns; is1++) {
+                    v4_with_umn_[ik][is][is1] = v4_ref[ik][is][is1];
+                }
+            }
+        }
+
+        // recompute the strain- and q0-renormalized IFCs at the
+        // current structure
+        qha_.renormalize_ifcs_at_structure(ws_);
+
+        // copy v4_ref to v4_renorm
+        for (auto ik = 0; ik < nk_irred_interpolate * qha_.kmesh_dense->nk; ik++) {
+            for (auto is1 = 0; is1 < ns * ns; is1++) {
+                for (auto is2 = 0; is2 < ns * ns; is2++) {
+                    v4_renorm_[ik][is1][is2] = v4_ref[ik][is1][is2];
+                }
+            }
+        }
+
+        // QHA-only: strain-force coupling entering the ZSISA and
+        // v-ZSISA stress corrections.
+        if (ws_.relax_mode == RelaxationStrMode::CoordinatesOnly) {
+            for (auto i1 = 0; i1 < 9; i1++) {
+                for (auto is1 = 0; is1 < ns; is1++) {
+                    del_v1_del_umn_renorm_[i1][is1] = complex_zero;
+                }
+            }
+        } else if (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+            qha_.calculate_del_v1_del_umn_renorm(del_v1_del_umn_renorm_, u_tensor, del_v_strain_, q0);
+        }
+
+        // solve the renormalized-harmonic lattice dynamics at this
+        // structure and compute the QHA forces and stress (with the
+        // ZSISA/v-ZSISA overwrites when requested)
+        qha_.solve_qha_and_compute_forces(ws_,
+                                          iT,
+                                          temp,
+                                          cmat_convert_,
+                                          delta_harmonic_dymat_renormalize_,
+                                          omega2_harm_renorm_,
+                                          evec_harm_renorm_tmp_,
+                                          v1_QHA_,
+                                          del_v0_del_umn_QHA_,
+                                          del_v0_del_umn_ZSISA_,
+                                          del_v0_del_umn_vZSISA_,
+                                          del_v1_del_umn_renorm_,
+                                          delq_delu_ZSISA_,
+                                          C2_array_renorm_,
+                                          C2_array_ZSISA_);
+
+        // Print the structure the QHA forces were evaluated at, together with the
+        // stress used for the update (cell relaxation only) and the space group
+        // detected by spglib.
+        std::cout << "\n Structure at this step :\n";
+        const auto spg_label = qha_.relaxation->print_structure_and_symmetry(
+            structure_state,
+            ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell ? del_v0_del_umn_QHA_ : nullptr);
+        std::cout << '\n';
+
+        qha_.relaxation->update_cell_coordinate(structure_state,
+                                                v1_QHA_,
+                                                omega2_harm_renorm_[iT],
+                                                del_v0_del_umn_QHA_,
+                                                C2_array,
+                                                cmat_convert_,
+                                                harm_optical_modes,
+                                                qha_.omega2_harmonic,
+                                                qha_.evec_harmonic);
+        const auto du0 = structure_state.du0;
+        const auto du_tensor = structure_state.du_tensor;
+
+        qha_.relaxation->write_stepresfile(structure_state,
+                                           i_str_loop + 1,
+                                           fout_step_q0_,
+                                           fout_step_u0_,
+                                           fout_step_u_tensor_);
+        qha_.relaxation->check_str_divergence(str_diverged_, structure_state);
+
+        if (str_diverged_) {
+            converged_prev_ = false;
+            std::cout << " The crystal structure diverged.";
+            std::cout << " Break from the structure loop.\n";
+            step_history.push_back({true, du0, du_tensor, -1.0, -1.0, spg_label});
+            return StructOptStepStatus::Diverged;
+        }
+
+        double grad_norm, cell_grad_norm;
+        qha_.compute_and_print_step_gradients(ws_,
+                                              v1_QHA_,
+                                              del_v0_del_umn_QHA_,
+                                              du0,
+                                              du_tensor,
+                                              spg_label,
+                                              step_history,
+                                              grad_norm,
+                                              cell_grad_norm);
+
+        if (du0 < qha_.relaxation->coord_conv_tol && du_tensor < qha_.relaxation->cell_conv_tol) {
+            std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
+                      << std::setprecision(6) << qha_.relaxation->coord_conv_tol << '\n';
+            if (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+                std::cout << " du_tensor is smaller than CELL_CONV_TOL = " << std::scientific << std::setw(15)
+                          << std::setprecision(6) << qha_.relaxation->cell_conv_tol << '\n';
+            }
+            std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n\n";
+            std::cout << " break structural loop.\n\n";
+            qha_.converged_str_temp[iT] = 1;
+            return StructOptStepStatus::Converged;
+        }
+
+        return StructOptStepStatus::Continue;
+    }
+
+    void after_structure_loop(const unsigned int iT, double, int, bool &converged_this_temp) override
+    {
+        converged_this_temp = qha_.converged_str_temp[iT] != 0;
+    }
+
+    void record_v0(const unsigned int iT) override
+    {
+        const auto ns = qha_.dynamical->neval;
+
+        // record zero-th order term of PES
+        qha_.V0[iT] = ws_.v0_renorm;
+
+        // copy delta_harmonic_dymat_renormalize to dymat_anharm
+        // This process is required for postprocess.
+        for (auto is1 = 0; is1 < ns; is1++) {
+            for (auto is2 = 0; is2 < ns; is2++) {
+                for (auto ik = 0; ik < qha_.kmesh_coarse->nk; ik++) {
+                    dymat_anharm_[iT][is1][is2][ik] = delta_harmonic_dymat_renormalize_[iT][is1][is2][ik];
+                }
+            }
+        }
+    }
+
+    void finalize_temperature(unsigned int, double, bool, bool &) override {}
+
+    void print_run_summary() override {}
+
+    bool history_has_scp_column() const override { return false; }
+
+private:
+    Qha &qha_;
+    StructuralOptWorkspace &ws_;
+    std::complex<double> ****dymat_anharm_;
+    std::complex<double> ****delta_harmonic_dymat_renormalize_;
+    std::complex<double> ***cmat_convert_;
+    double ***omega2_harm_renorm_;
+    std::complex<double> ***evec_harm_renorm_tmp_;
+    std::complex<double> ***v4_renorm_;
+    std::complex<double> ***v4_with_umn_;
+    std::complex<double> *v1_QHA_;
+    std::complex<double> *del_v0_del_umn_QHA_;
+    std::complex<double> *del_v0_del_umn_ZSISA_;
+    std::complex<double> *del_v0_del_umn_vZSISA_;
+    std::complex<double> **del_v1_del_umn_renorm_;
+    double **delq_delu_ZSISA_;
+    double **C2_array_renorm_;
+    double **C2_array_ZSISA_;
+    DelVStrainData &del_v_strain_;
+    bool &converged_prev_;
+    int &str_diverged_;
+    std::ofstream &fout_step_q0_;
+    std::ofstream &fout_step_u0_;
+    std::ofstream &fout_step_u_tensor_;
+};
+} // namespace PHON_NS
+
 void Qha::set_default_variables()
 {
     restart_qha = false;
@@ -218,10 +455,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 {
     using namespace Eigen;
 
-    int ik, is;
-    int is1, is2, i1;
-    static auto complex_zero = std::complex<double>(0.0, 0.0);
-
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
@@ -250,7 +483,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     NDArray<std::complex<double>, 3> v4_renorm;
     NDArray<std::complex<double>, 3> v4_with_umn;
     auto &v0_ref = ws.v0_ref;
-    auto &v0_renorm = ws.v0_renorm;
     v0_ref = 0.0; // set original ground state energy as zero
 
     // elastic constants
@@ -275,14 +507,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
     NDArray<double, 2> delq_delu_ZSISA;
 
-    // structure optimization
-    int i_str_loop, i_temp_loop;
-
-    // structure update
-    double du0;
-    double du_tensor;
-    auto &harm_optical_modes = ws.harm_optical_modes;
-
     // cell optimization
     auto pvcell = relaxation->stat_pressure * system->get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) *
                   1.0e-30; // in 10^9 J = GJ
@@ -301,9 +525,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     setup_structural_opt_buffers(ws, eps8);
 
     auto &structure_state = ws.structure_state;
-    auto &q0 = structure_state.q0;
-    auto &u0 = structure_state.u0;
-    auto &u_tensor = structure_state.u_tensor;
 
     v1_QHA.resize(ns);
     del_v0_del_umn_QHA.resize(9);
@@ -371,8 +592,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
         relaxation->write_resfile_header(fout_q0, fout_u0, fout_u_tensor);
 
-        i_temp_loop = -1;
-
         std::cout << " Start structural optimization.\n";
         if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
             std::cout << "  Internal coordinates are relaxed.\n";
@@ -382,186 +601,45 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         }
 
 
-        for (double temp: vec_temp) {
-            i_temp_loop++;
-            auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
-
-            std::cout << "\n ================================================================\n";
-            std::cout << "  Temperature = " << temp << " K    (" << std::setw(4) << i_temp_loop + 1 << " of "
-                      << std::setw(4) << NT << ")\n";
-            std::cout << " ================================================================\n\n";
-
-            relaxation->set_init_structure_atT(structure_state,
-                                               converged_prev,
-                                               str_diverged,
-                                               i_temp_loop,
-                                               omega2_harmonic,
-                                               evec_harmonic);
-
-            print_initial_structure(structure_state, relax_mode);
-
-            relaxation->write_stepresfile_header_atT(fout_step_q0, fout_step_u0, fout_step_u_tensor, temp);
-
-            relaxation->write_stepresfile(structure_state, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
-
-            std::cout << " Start structural optimization at " << temp << " K.\n";
-
-            // per-step records for the optimization-history table printed below
-            std::vector<StructOptStepRecord> step_history;
-
-            converged_str_temp[iT] = 0; // set to 1 only when the loop converges
-
-            for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
-
-                std::cout << "\n ----------------------------------------------------------------\n";
-                std::cout << "  Structure opt. step " << std::setw(4) << i_str_loop + 1 << " of "
-                          << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
-                std::cout << " ----------------------------------------------------------------\n";
-
-                // Strain renormalization of v4 is not available; the identity
-                // copy keeps the historical bookkeeping (ws.v4_for_renorm
-                // points at v4_with_umn).
-                for (ik = 0; ik < nk_irred_interpolate * nk; ik++) {
-                    for (is = 0; is < ns * ns; is++) {
-                        for (is1 = 0; is1 < ns * ns; is1++) {
-                            v4_with_umn[ik][is][is1] = v4_ref[ik][is][is1];
-                        }
-                    }
-                }
-
-                // recompute the strain- and q0-renormalized IFCs at the
-                // current structure
-                renormalize_ifcs_at_structure(ws);
-
-                // copy v4_ref to v4_renorm
-                for (ik = 0; ik < nk_irred_interpolate * kmesh_dense->nk; ik++) {
-                    for (is1 = 0; is1 < ns * ns; is1++) {
-                        for (is2 = 0; is2 < ns * ns; is2++) {
-                            v4_renorm[ik][is1][is2] = v4_ref[ik][is1][is2];
-                        }
-                    }
-                }
-
-                // QHA-only: strain-force coupling entering the ZSISA and
-                // v-ZSISA stress corrections.
-                if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-                    for (i1 = 0; i1 < 9; i1++) {
-                        for (is1 = 0; is1 < ns; is1++) {
-                            del_v1_del_umn_renorm[i1][is1] = complex_zero;
-                        }
-                    }
-                } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                    calculate_del_v1_del_umn_renorm(del_v1_del_umn_renorm, u_tensor, del_v_strain, q0);
-                }
-
-                // solve the renormalized-harmonic lattice dynamics at this
-                // structure and compute the QHA forces and stress (with the
-                // ZSISA/v-ZSISA overwrites when requested)
-                solve_qha_and_compute_forces(ws,
-                                             iT,
-                                             temp,
-                                             cmat_convert,
-                                             delta_harmonic_dymat_renormalize,
-                                             omega2_harm_renorm,
-                                             evec_harm_renorm_tmp,
-                                             v1_QHA,
-                                             del_v0_del_umn_QHA,
-                                             del_v0_del_umn_ZSISA,
-                                             del_v0_del_umn_vZSISA,
-                                             del_v1_del_umn_renorm,
-                                             delq_delu_ZSISA,
-                                             C2_array_renorm,
-                                             C2_array_ZSISA);
-
-                // Print the structure the QHA forces were evaluated at, together with the
-                // stress used for the update (cell relaxation only) and the space group
-                // detected by spglib.
-                std::cout << "\n Structure at this step :\n";
-                const auto spg_label = relaxation->print_structure_and_symmetry(
-                    structure_state,
-                    relax_mode == RelaxationStrMode::CoordinatesAndCell ? del_v0_del_umn_QHA.ptr() : nullptr);
-                std::cout << '\n';
-
-                relaxation->update_cell_coordinate(structure_state,
-                                                   v1_QHA,
-                                                   omega2_harm_renorm[iT],
-                                                   del_v0_del_umn_QHA,
-                                                   C2_array,
-                                                   cmat_convert,
-                                                   harm_optical_modes,
-                                                   omega2_harmonic,
-                                                   evec_harmonic);
-                du0 = structure_state.du0;
-                du_tensor = structure_state.du_tensor;
-
-                relaxation->write_stepresfile(structure_state,
-                                              i_str_loop + 1,
-                                              fout_step_q0,
-                                              fout_step_u0,
-                                              fout_step_u_tensor);
-                relaxation->check_str_divergence(str_diverged, structure_state);
-
-                if (str_diverged) {
-                    converged_prev = false;
-                    std::cout << " The crystal structure diverged.";
-                    std::cout << " Break from the structure loop.\n";
-                    step_history.push_back({true, du0, du_tensor, -1.0, -1.0, spg_label});
-                    break;
-                }
-
-                double grad_norm, cell_grad_norm;
-                compute_and_print_step_gradients(ws,
-                                                 v1_QHA,
-                                                 del_v0_del_umn_QHA,
-                                                 du0,
-                                                 du_tensor,
-                                                 spg_label,
-                                                 step_history,
-                                                 grad_norm,
-                                                 cell_grad_norm);
-
-                if (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol) {
-                    std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
-                              << std::setprecision(6) << relaxation->coord_conv_tol << '\n';
-                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                        std::cout << " du_tensor is smaller than CELL_CONV_TOL = " << std::scientific << std::setw(15)
-                                  << std::setprecision(6) << relaxation->cell_conv_tol << '\n';
-                    }
-                    std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n\n";
-                    std::cout << " break structural loop.\n\n";
-                    converged_str_temp[iT] = 1;
-                    break;
-                }
-
-            } // close structure loop
-
-            // At-a-glance history of the structural optimization at this temperature.
-            // QHA has no inner self-consistency loop, so the SCP column is omitted.
-            Relaxation::print_optimization_history(step_history,
-                                                   temp,
-                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell,
-                                                   false);
-
-            print_final_structure(structure_state, relax_mode, temp, i_temp_loop == NT - 1);
-
-            // record zero-th order term of PES
-            V0[iT] = v0_renorm;
-
-            // copy delta_harmonic_dymat_renormalize to dymat_anharm
-            // This process is required for postprocess.
-            for (is1 = 0; is1 < ns; is1++) {
-                for (is2 = 0; is2 < ns; is2++) {
-                    for (ik = 0; ik < kmesh_coarse->nk; ik++) {
-                        dymat_anharm[iT][is1][is2][ik] = delta_harmonic_dymat_renormalize[iT][is1][is2][ik];
-                    }
-                }
-            }
-
-            // print obtained structure
-            relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
-
-            relaxation->write_resfile_atT(structure_state, temp, fout_q0, fout_u0, fout_u_tensor);
-        }
+        QhaRelaxationModel model(*this,
+                                 ws,
+                                 dymat_anharm,
+                                 delta_harmonic_dymat_renormalize,
+                                 cmat_convert,
+                                 omega2_harm_renorm,
+                                 evec_harm_renorm_tmp,
+                                 v4_renorm,
+                                 v4_with_umn,
+                                 v1_QHA,
+                                 del_v0_del_umn_QHA,
+                                 del_v0_del_umn_ZSISA,
+                                 del_v0_del_umn_vZSISA,
+                                 del_v1_del_umn_renorm,
+                                 delq_delu_ZSISA,
+                                 C2_array_renorm,
+                                 C2_array_ZSISA,
+                                 del_v_strain,
+                                 converged_prev,
+                                 str_diverged,
+                                 fout_step_q0,
+                                 fout_step_u0,
+                                 fout_step_u_tensor);
+        StructuralOptLoopContext loop_ctx{structure_state,
+                                          ws,
+                                          fout_step_q0,
+                                          fout_step_u0,
+                                          fout_step_u_tensor,
+                                          fout_q0,
+                                          fout_u0,
+                                          fout_u_tensor,
+                                          vec_temp,
+                                          Tmin,
+                                          dT,
+                                          NT,
+                                          relax_mode,
+                                          converged_prev,
+                                          str_diverged};
+        run_structural_optimization_loop(model, loop_ctx);
 
         // Output files of structural optimization
         fout_step_q0.close();
