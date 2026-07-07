@@ -146,10 +146,6 @@ private:
                           std::complex<double> ***cmat_convert, std::complex<double> ***dymat_out,
                           std::complex<double> ***evec_out, const bool offdiag, Eigen::MatrixXd &omega_out);
 
-
-    static void get_permutation_matrix(const int ns, std::complex<double> **cmat_in,
-                                       Eigen::MatrixXd &permutation_matrix);
-
     void find_degeneracy(std::vector<int> *degeneracy_out, unsigned int nk_in, double **eval_in) const;
 
     void compute_free_energy_bubble_SCPH(const unsigned int[3], std::complex<double> ****);

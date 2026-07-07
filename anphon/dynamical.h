@@ -114,8 +114,6 @@ public:
     void eval_k_ewald(const double *, const double *,
                       const std::vector<FcsArrayWithCell> &, double *, std::complex<double> **, const bool) const;
 
-    double fold(const double) const;
-
     double freq(const double) const;
 
     void calc_participation_ratio_all(const unsigned int nk_in, const std::complex<double> *const *const *evec_in,
@@ -204,8 +202,6 @@ private:
     void prepare_mindist_list(std::vector<int> **) const;
 
     void calc_atomic_participation_ratio(const std::complex<double> *evec_in, double *ret) const;
-
-    static double distance(double *, double *);
 
     void connect_band_by_eigen_similarity(const unsigned int nk_in, std::complex<double> ***evec,
                                           int **index_sorted) const;

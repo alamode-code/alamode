@@ -21,26 +21,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 namespace PHON_NS
 {
 
-struct QuartS
-{
-    // for an (k,s)
-    // we store for a single k quartic pair and {s1,s2,s3}, with the smearing result,
-    // only for smearing method
-
-    int s1, s2, s3;
-
-    double delta1;
-    double delta2;
-
-    QuartS();
-
-    QuartS(int in1, int in2, int in3) : s1(in1), s2(in2), s3(in3)
-    {}
-
-    QuartS(int in1, int in2, int in3, double d1, double d2) : s1(in1), s2(in2), s3(in3), delta1(d1), delta2(d2)
-    {}
-};
-
 class RelativeVector
 {
 public:
@@ -200,9 +180,6 @@ public:
                               const std::complex<double> *const *const *evec_in,
                               const PhaseFactorStorage *phase_storage_in);
 
-    std::complex<double> V3_mode(int, const double *, const double *, int, int, double **,
-                                 std::complex<double> ***) const;
-
     static void prepare_relative_vector(const std::vector<FcsArrayWithCell> &fcs_in, const int number_of_groups,
                                         std::vector<double> *fcs_group, std::vector<RelativeVector> *vec_out);
 
@@ -234,9 +211,6 @@ public:
 
     const std::vector<RelativeVector> *get_relvec(const unsigned int order) const;
 
-    void calc_analytic_k_from_FcsArrayWithCell(const double *, const std::vector<FcsArrayWithCell> &,
-                                               std::complex<double> **) const;
-
 private:
     void set_default_variables();
 
@@ -264,12 +238,5 @@ private:
 
     void setup_quartic();
 
-    std::vector<std::vector<QuartS>> reduce_pair(const int k_in, const int s0, const double omega, const int ismear,
-                                                 const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                                 std::vector<KsListGroup> &quartet);
-
-    void reduce_pair_simple(const int ik_in, const int snum, const double omega, const int ismear,
-                            const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                            std::vector<KsListGroup> &quartet);
 };
 } // namespace PHON_NS

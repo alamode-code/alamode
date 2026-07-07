@@ -2115,36 +2115,6 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
     dymat_q_HA.clear();
 }
 
-
-void Scph::get_permutation_matrix(const int ns, std::complex<double> **cmat_in, Eigen::MatrixXd &permutation_matrix)
-{
-    std::vector<int> has_visited(ns, 0);
-    permutation_matrix = Eigen::MatrixXd::Zero(ns, ns);
-
-    for (auto is = 0; is < ns; ++is) {
-
-        if (has_visited[is]) continue;
-        auto iloc = -1;
-        auto maxelem = 0.0;
-
-        for (auto js = 0; js < ns; ++js) {
-            const auto cnorm = std::abs(cmat_in[js][is]);
-            if (cnorm > maxelem && (has_visited[js] == 0)) {
-                iloc = js;
-                maxelem = cnorm;
-            }
-        }
-        if (iloc == -1) {
-            exit("get_permutation_matrix", "Band index mapping failed.");
-        } else {
-            permutation_matrix(is, iloc) = 1.0;
-            permutation_matrix(iloc, is) = 1.0;
-            has_visited[iloc] = 1;
-            has_visited[is] = 1;
-        }
-    }
-}
-
 void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &omega2_in,
                             const std::vector<Eigen::MatrixXcd> &Fmat0, const std::vector<Eigen::MatrixXcd> &evec0,
                             std::complex<double> ***dymat0, std::complex<double> ***v4_array_all,

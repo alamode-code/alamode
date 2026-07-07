@@ -327,11 +327,6 @@ void Dynamical::prepare_mindist_list(std::vector<int> **mindist_out) const
     xcrd.clear();
 }
 
-double Dynamical::distance(double *x1, double *x2)
-{
-    return std::sqrt(pow2(x1[0] - x2[0]) + pow2(x1[1] - x2[1]) + pow2(x1[2] - x2[2]));
-}
-
 void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
                        double *eval_out, std::complex<double> **evec_out, const bool require_evec) const
 {
@@ -1315,11 +1310,6 @@ int Dynamical::transform_eigenvectors(double *xk_in, std::vector<double> perturb
     }
 
     return is_lifted;
-}
-
-double Dynamical::fold(const double x) const
-{
-    return x - static_cast<double>(nint(x));
 }
 
 double Dynamical::freq(const double x) const
