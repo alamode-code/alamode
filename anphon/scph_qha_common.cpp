@@ -29,6 +29,27 @@ ScphQhaCommon::ScphQhaCommon(class PHON *phon) : Pointers(phon)
 
 ScphQhaCommon::~ScphQhaCommon() = default;
 
+void ScphQhaCommon::build_cmat_at_k(const unsigned int ns, const Eigen::MatrixXcd &evec_ref_mat,
+                                    const std::complex<double> *const *evec_new_at_k,
+                                    std::complex<double> **cmat_out)
+{
+    Eigen::MatrixXcd evec_new_mat(ns, ns);
+
+    for (unsigned int is = 0; is < ns; ++is) {
+        for (unsigned int js = 0; js < ns; ++js) {
+            evec_new_mat(is, js) = evec_new_at_k[js][is];
+        }
+    }
+
+    Eigen::MatrixXcd Cmat = evec_ref_mat.adjoint() * evec_new_mat;
+
+    for (unsigned int is = 0; is < ns; ++is) {
+        for (unsigned int js = 0; js < ns; ++js) {
+            cmat_out[is][js] = Cmat(is, js);
+        }
+    }
+}
+
 void ScphQhaCommon::initialize_variables()
 {
     kmap_coarse_to_dense.clear();

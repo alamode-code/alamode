@@ -1461,30 +1461,23 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
                                   true,
                                   true);
 
-    MatrixXcd evec_tmp(ns, ns);
-    MatrixXcd Cmat(ns, ns);
-
     for (unsigned int ik = 0; ik < nk; ++ik) {
         // Copy eigenvalues from temp array to Eigen matrix
         for (unsigned int is = 0; is < ns; ++is) {
             eval_interpolate(ik, is) = eval_temp[ik][is];
         }
 
-        // Copy eigenvectors from temp array to Eigen matrix and transpose
+        // Copy eigenvectors from temp array to Eigen matrix
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
-                evec_tmp(is, js) = evec_temp[ik][js][is];
                 evec_new[ik](is, js) = evec_temp[ik][is][js];
             }
         }
 
-        Cmat = evec_initial[ik].adjoint() * evec_tmp;
+        build_cmat_at_k(ns, evec_initial[ik], evec_temp[ik], cmat_convert[ik]);
 
         for (unsigned int is = 0; is < ns; ++is) {
             omega_now(ik, is) = eval_interpolate(ik, is);
-            for (unsigned int js = 0; js < ns; ++js) {
-                cmat_convert[ik][is][js] = Cmat(is, js);
-            }
         }
     }
 

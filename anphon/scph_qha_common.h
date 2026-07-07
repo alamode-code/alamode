@@ -226,6 +226,13 @@ protected:
     void get_derivative_central_diff(double delta_t, unsigned int nk, double **omega0, double **omega2,
                                      double **domega_dt);
 
+    // C(k) = U_ref(k)^dagger * U_new(k); evec_new_at_k is mode-major
+    // ([js][is] = component is of mode js, the storage layout of evec_harmonic
+    // and exec_interpolation output), transposed internally.
+    static void build_cmat_at_k(unsigned int ns, const Eigen::MatrixXcd &evec_ref_mat,
+                                const std::complex<double> *const *evec_new_at_k,
+                                std::complex<double> **cmat_out);
+
     void zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, int fc_order,
                                              unsigned int nk_dense_in, unsigned int nk_irred_coarse_in) const;
 

@@ -1573,23 +1573,16 @@ void Qha::compute_cmat(std::complex<double> ***cmat_convert, const std::complex<
     const auto ns = dynamical->neval;
 
     int ik, is, js;
-    MatrixXcd evec_mat_original(ns, ns), evec_mat_QHA(ns, ns), Cmat;
+    MatrixXcd evec_mat_original(ns, ns);
 
     for (ik = 0; ik < nk; ++ik) {
 
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {
                 evec_mat_original(is, js) = evec_harmonic[ik][js][is];
-                evec_mat_QHA(is, js) = evec_new[ik][js][is];
             }
         }
 
-        Cmat = evec_mat_original.adjoint() * evec_mat_QHA;
-
-        for (is = 0; is < ns; ++is) {
-            for (js = 0; js < ns; ++js) {
-                cmat_convert[ik][is][js] = Cmat(is, js);
-            }
-        }
+        build_cmat_at_k(ns, evec_mat_original, evec_new[ik], cmat_convert[ik]);
     }
 }
