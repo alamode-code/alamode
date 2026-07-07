@@ -123,12 +123,6 @@ private:
     bool check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::MatrixXd &omega_old, const double conv_tol,
                            const unsigned int verbosity, const int iloop, double &diff) const;
 
-    void update_frequency(const double temperature_in, const Eigen::MatrixXd &omega_in,
-                          const std::vector<Eigen::MatrixXcd> &Fmat0, const std::vector<Eigen::MatrixXcd> &evec0,
-                          std::complex<double> ***dymat0, std::complex<double> ***v4_array_all,
-                          std::complex<double> ***cmat_convert, std::complex<double> ***dymat_out,
-                          std::complex<double> ***evec_out, const bool offdiag, Eigen::MatrixXd &omega_out);
-
     void compute_free_energy_bubble_SCPH(const unsigned int[3], std::complex<double> ****);
 
     void bubble_correction(std::complex<double> ****, std::complex<double> ****);
