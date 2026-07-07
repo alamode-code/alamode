@@ -149,19 +149,8 @@ FourierInterpolator::FourierInterpolator(const KpointMeshUniform &kmesh_coarse_i
 void FourierInterpolator::get_map_coarse_to_dense(const KpointMeshUniform &kmesh_coarse,
                                                   const KpointMeshUniform &kmesh_dense, std::vector<int> &kmap)
 {
-    kmap.resize(kmesh_coarse.nk);
-    double xtmp[3];
-
-    for (auto ik = 0; ik < kmesh_coarse.nk; ++ik) {
-        for (auto i = 0; i < 3; ++i) xtmp[i] = kmesh_coarse.xk[ik][i];
-
-        const auto loc = kmesh_dense.get_knum(xtmp);
-
-        if (loc == -1) {
-            exit("FourierInterpolator::get_map_coarse_to_dense",
-                 "Cannot find the corresponding kpoint in the dense mesh");
-        }
-
-        kmap[ik] = loc;
+    if (Kpoint::get_kmap_coarse_to_dense(&kmesh_coarse, &kmesh_dense, kmap) != 0) {
+        exit("FourierInterpolator::get_map_coarse_to_dense",
+             "Cannot find the corresponding kpoint in the dense mesh");
     }
 }

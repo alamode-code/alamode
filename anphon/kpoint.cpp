@@ -1274,7 +1274,7 @@ void KpointMeshUniform::setup_kpoint_symmetry(const std::vector<SymmetryOperatio
 }
 
 int Kpoint::get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                     std::vector<int> &kmap) const
+                                     std::vector<int> &kmap)
 {
     int info_mapping = 0;
 

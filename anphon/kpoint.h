@@ -300,8 +300,8 @@ public:
     void get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const Eigen::Matrix3d &lavec_prim,
                                   std::vector<std::vector<double>> &klist) const;
 
-    int get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                 std::vector<int> &kmap) const;
+    static int get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
+                                        std::vector<int> &kmap);
 
 private:
     void set_default_variables();
