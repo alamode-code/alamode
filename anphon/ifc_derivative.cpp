@@ -337,7 +337,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                      double **omega2_harmonic,
                                      const std::complex<double> *const *const *const evec_harmonic,
                                      const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
-                                     const PhaseFactorStorage *phase_storage_in) const
+                                     const PhaseFactorCache *phase_cache_in) const
 {
     const auto ns = dynamical_.neval;
     const auto ns2 = static_cast<std::size_t>(ns) * ns;
@@ -450,7 +450,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                                ns,
                                                kmesh_coarse_in,
                                                kmesh_dense_in,
-                                               phase_storage_in,
+                                               phase_cache_in,
                                                anharmonic_core_,
                                                my_rank_,
                                                nprocs_);
@@ -653,7 +653,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
                                          std::complex<double> ***evec_harmonic, const int renorm_2to1st,
                                          const int renorm_34to1st, const int renorm_3to2nd,
                                          const std::string &strain_ifc_dir, MinimumDistList ***mindist_list,
-                                         const PhaseFactorStorage *phase_storage_in) const
+                                         const PhaseFactorCache *phase_cache_in) const
 {
     const auto nk = kmesh_dense->nk;
     const auto nk_interpolate = kmesh_coarse->nk;
@@ -772,7 +772,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         std::cout << "  - first-order derivatives of cubic IFCs (from quartic IFCs) ... " << std::flush;
     }
 
-    compute_dV3_dumn(del_v_strain.del_v3, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_storage_in);
+    compute_dV3_dumn(del_v_strain.del_v3, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_cache_in);
 
     if (my_rank_ == 0) {
         std::cout << "  done!\n";

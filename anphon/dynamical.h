@@ -111,8 +111,8 @@ public:
 
     void modify_eigenvectors() const;
 
-    void eval_k_ewald(const double *, const double *,
-                      const std::vector<FcsArrayWithCell> &, double *, std::complex<double> **, const bool) const;
+    void eval_k_ewald(const double *, const double *, const std::vector<FcsArrayWithCell> &, double *,
+                      std::complex<double> **, const bool) const;
 
     double freq(const double) const;
 

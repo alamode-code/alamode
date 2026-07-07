@@ -1563,8 +1563,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
 
     for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ++ik) {
         for (auto is = 0; is < ns; ++is) {
-            omega_tmp =
-                in_kayser(dos->dymat_dos->get_eigenvalues()[dos->kmesh_dos->kpoint_irred_all[ik][0].knum][is]);
+            omega_tmp = in_kayser(dos->dymat_dos->get_eigenvalues()[dos->kmesh_dos->kpoint_irred_all[ik][0].knum][is]);
             //            emin_now = std::min(emin_now, omega_tmp);
             emax_now = std::max(emax_now, omega_tmp);
         }
@@ -1650,8 +1649,8 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
                 for (iomega = 0; iomega < nomega; ++iomega) {
                     ofs_self << std::setw(10) << T_now << std::setw(15) << in_kayser(omega);
                     ofs_self << std::setw(10) << in_kayser(omega_array[iomega]) << std::setw(15)
-                             << in_kayser(self3_real[iT][iomega]) << std::setw(15)
-                             << in_kayser(self3_imag[iT][iomega]) << '\n';
+                             << in_kayser(self3_real[iT][iomega]) << std::setw(15) << in_kayser(self3_imag[iT][iomega])
+                             << '\n';
                 }
                 ofs_self << '\n';
             }

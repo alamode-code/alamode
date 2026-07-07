@@ -42,43 +42,27 @@ class QhaRelaxationModel final: public IRelaxationModel
 {
 public:
     QhaRelaxationModel(Qha &qha, StructuralOptWorkspace &ws, std::complex<double> ****dymat_anharm,
-                       std::complex<double> ****delta_harmonic_dymat_renormalize,
-                       std::complex<double> ***cmat_convert, double ***omega2_harm_renorm,
-                       std::complex<double> ***evec_harm_renorm_tmp,
+                       std::complex<double> ****delta_harmonic_dymat_renormalize, std::complex<double> ***cmat_convert,
+                       double ***omega2_harm_renorm, std::complex<double> ***evec_harm_renorm_tmp,
                        std::complex<double> ***v4_renorm, std::complex<double> ***v4_with_umn,
                        std::complex<double> *v1_QHA, std::complex<double> *del_v0_del_umn_QHA,
-                       std::complex<double> *del_v0_del_umn_ZSISA,
-                       std::complex<double> *del_v0_del_umn_vZSISA,
-                       std::complex<double> **del_v1_del_umn_renorm, double **delq_delu_ZSISA,
-                       double **C2_array_renorm, double **C2_array_ZSISA, DelVStrainData &del_v_strain,
-                       bool &converged_prev, int &str_diverged, std::ofstream &fout_step_q0,
-                       std::ofstream &fout_step_u0, std::ofstream &fout_step_u_tensor)
-        : qha_(qha),
-          ws_(ws),
-          dymat_anharm_(dymat_anharm),
-          delta_harmonic_dymat_renormalize_(delta_harmonic_dymat_renormalize),
-          cmat_convert_(cmat_convert),
-          omega2_harm_renorm_(omega2_harm_renorm),
-          evec_harm_renorm_tmp_(evec_harm_renorm_tmp),
-          v4_renorm_(v4_renorm),
-          v4_with_umn_(v4_with_umn),
-          v1_QHA_(v1_QHA),
-          del_v0_del_umn_QHA_(del_v0_del_umn_QHA),
-          del_v0_del_umn_ZSISA_(del_v0_del_umn_ZSISA),
-          del_v0_del_umn_vZSISA_(del_v0_del_umn_vZSISA),
-          del_v1_del_umn_renorm_(del_v1_del_umn_renorm),
-          delq_delu_ZSISA_(delq_delu_ZSISA),
-          C2_array_renorm_(C2_array_renorm),
-          C2_array_ZSISA_(C2_array_ZSISA),
-          del_v_strain_(del_v_strain),
-          converged_prev_(converged_prev),
-          str_diverged_(str_diverged),
-          fout_step_q0_(fout_step_q0),
-          fout_step_u0_(fout_step_u0),
-          fout_step_u_tensor_(fout_step_u_tensor)
+                       std::complex<double> *del_v0_del_umn_ZSISA, std::complex<double> *del_v0_del_umn_vZSISA,
+                       std::complex<double> **del_v1_del_umn_renorm, double **delq_delu_ZSISA, double **C2_array_renorm,
+                       double **C2_array_ZSISA, DelVStrainData &del_v_strain, bool &converged_prev, int &str_diverged,
+                       std::ofstream &fout_step_q0, std::ofstream &fout_step_u0, std::ofstream &fout_step_u_tensor) :
+        qha_(qha), ws_(ws), dymat_anharm_(dymat_anharm),
+        delta_harmonic_dymat_renormalize_(delta_harmonic_dymat_renormalize), cmat_convert_(cmat_convert),
+        omega2_harm_renorm_(omega2_harm_renorm), evec_harm_renorm_tmp_(evec_harm_renorm_tmp), v4_renorm_(v4_renorm),
+        v4_with_umn_(v4_with_umn), v1_QHA_(v1_QHA), del_v0_del_umn_QHA_(del_v0_del_umn_QHA),
+        del_v0_del_umn_ZSISA_(del_v0_del_umn_ZSISA), del_v0_del_umn_vZSISA_(del_v0_del_umn_vZSISA),
+        del_v1_del_umn_renorm_(del_v1_del_umn_renorm), delq_delu_ZSISA_(delq_delu_ZSISA),
+        C2_array_renorm_(C2_array_renorm), C2_array_ZSISA_(C2_array_ZSISA), del_v_strain_(del_v_strain),
+        converged_prev_(converged_prev), str_diverged_(str_diverged), fout_step_q0_(fout_step_q0),
+        fout_step_u0_(fout_step_u0), fout_step_u_tensor_(fout_step_u_tensor)
     {}
 
-    void before_init_structure(unsigned int, unsigned int, double, bool) override {}
+    void before_init_structure(unsigned int, unsigned int, double, bool) override
+    {}
 
     void after_init_structure(const unsigned int iT, double) override
     {
@@ -240,11 +224,16 @@ public:
         }
     }
 
-    void finalize_temperature(unsigned int, double, bool, bool &) override {}
+    void finalize_temperature(unsigned int, double, bool, bool &) override
+    {}
 
-    void print_run_summary() override {}
+    void print_run_summary() override
+    {}
 
-    bool history_has_scp_column() const override { return false; }
+    bool history_has_scp_column() const override
+    {
+        return false;
+    }
 
 private:
     Qha &qha_;

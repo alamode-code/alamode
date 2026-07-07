@@ -17,7 +17,7 @@ namespace PHON_NS
 {
 class AnharmonicCore;
 class KpointMeshUniform;
-class PhaseFactorStorage;
+class PhaseFactorCache;
 class RelativeVector;
 
 // Transform a given set of real-space cubic IFCs into normal-mode V3
@@ -30,9 +30,8 @@ void compute_V3_elements_for_given_IFCs(std::complex<double> ***v3_out, double *
                                         double *invmass_v3_in, int **evec_index_v3_in,
                                         const std::complex<double> *const *const *evec_in, bool self_offdiag,
                                         unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in,
-                                        const KpointMeshUniform *kmesh_dense_in,
-                                        const PhaseFactorStorage *phase_storage_in, AnharmonicCore &anharmonic_core_in,
-                                        int my_rank, int nprocs);
+                                        const KpointMeshUniform *kmesh_dense_in, const PhaseFactorCache *phase_cache_in,
+                                        AnharmonicCore &anharmonic_core_in, int my_rank, int nprocs);
 
 // Set V3 (fc_order = 3) or V4 (fc_order = 4) elements involving acoustic
 // modes at the Gamma point exactly to zero.

@@ -287,7 +287,9 @@ void CollisionOperator::build_L_isotope()
 
             auto &row = L_iso[irow];
 
-            const auto prod_overlap = [&](const int k2, const int s2) { return tamura_overlap(natmin, evec_in[k2][s2], evec_in[k1][s1], &g2[0], &kind[0]); };
+            const auto prod_overlap = [&](const int k2, const int s2) {
+                return tamura_overlap(natmin, evec_in[k2][s2], evec_in[k1][s1], &g2[0], &kind[0]);
+            };
 
             if (integration_.ismear >= 0) {
                 const auto epsilon = integration_.epsilon;

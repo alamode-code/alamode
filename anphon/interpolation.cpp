@@ -154,8 +154,7 @@ void FourierInterpolator::get_map_coarse_to_dense(const KpointMeshUniform &kmesh
                                                   const KpointMeshUniform &kmesh_dense, std::vector<int> &kmap)
 {
     if (Kpoint::get_kmap_coarse_to_dense(&kmesh_coarse, &kmesh_dense, kmap) != 0) {
-        exit("FourierInterpolator::get_map_coarse_to_dense",
-             "Cannot find the corresponding kpoint in the dense mesh");
+        exit("FourierInterpolator::get_map_coarse_to_dense", "Cannot find the corresponding kpoint in the dense mesh");
     }
 }
 

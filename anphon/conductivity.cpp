@@ -26,8 +26,8 @@
 #include "interpolation.h"
 #include "isotope.h"
 #include "iterativebte.h"
-#include "kpoint.h"
 #include "kappa_result_io_text.h"
+#include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
@@ -63,7 +63,7 @@ void Conductivity::set_default_variables()
     fph_rta = 0;
     solver_ibte = false;
     dymat_4ph = nullptr;
-    phase_storage_4ph = nullptr;
+    phase_cache_4ph = nullptr;
     restart_flag_3ph = false;
     restart_flag_4ph = false;
     file_result3 = "";
@@ -109,7 +109,7 @@ void Conductivity::deallocate_variables()
     }
     kmesh_4ph.reset();
     dymat_4ph.reset();
-    phase_storage_4ph.reset();
+    phase_cache_4ph.reset();
 }
 
 void Conductivity::run_kappa()
@@ -291,8 +291,8 @@ void Conductivity::setup_kappa_4ph()
     eval_tmp.clear();
     evec_tmp.clear();
 
-    phase_storage_4ph = std::make_unique<PhaseFactorStorage>(kmesh_4ph->nk_i);
-    phase_storage_4ph->create(true);
+    phase_cache_4ph = std::make_unique<PhaseFactorCache>(kmesh_4ph->nk_i);
+    phase_cache_4ph->create(true);
 
     // Velocities in m/s on rank 0, matching the 3ph channel.
     phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph.get(),
@@ -447,10 +447,7 @@ void Conductivity::prepare_restart(const int mode)
             if (use_h5_io) {
                 load_computed_modes_h5("4ph", damping4, vks_done4);
             } else if (!restart_flag_4ph) {
-                KappaResultIOText::write_frequency_block(fs_result4,
-                                                         kmesh_4ph.get(),
-                                                         dymat_4ph->get_eigenvalues(),
-                                                         ns);
+                KappaResultIOText::write_frequency_block(fs_result4, kmesh_4ph.get(), dymat_4ph->get_eigenvalues(), ns);
             } else {
                 KappaResultIOText::load_gamma_blocks(fs_result4,
                                                      file_result4,
@@ -1014,7 +1011,7 @@ void Conductivity::calc_anharmonic_imagself4()
                                                               kmesh_4ph.get(),
                                                               dymat_4ph->get_eigenvalues(),
                                                               dymat_4ph->get_eigenvectors(),
-                                                              phase_storage_4ph.get(),
+                                                              phase_cache_4ph.get(),
                                                               damping4_loc);
 
             } else if (integration->ismear_4ph == -1) {

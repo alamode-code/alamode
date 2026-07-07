@@ -30,17 +30,14 @@ void r2q(const double *xk_in, const unsigned int nx, const unsigned int ny, cons
          const unsigned int ns, MinimumDistList ***mindist_list_in, std::complex<double> ***dymat_r_in,
          std::complex<double> **dymat_k_out);
 
-void fourier_dymat_k_to_r(const unsigned int nk1, const unsigned int nk2, const unsigned int nk3,
-                          const unsigned int ns, const std::complex<double> *const *const *dymat_k,
-                          std::complex<double> ***dymat_r);
+void fourier_dymat_k_to_r(const unsigned int nk1, const unsigned int nk2, const unsigned int nk3, const unsigned int ns,
+                          const std::complex<double> *const *const *dymat_k, std::complex<double> ***dymat_r);
 
-void symmetrize_dynamical_matrix(const unsigned int ik, const KpointMeshUniform *kmesh_coarse,
-                                 const unsigned int ns, std::complex<double> ****mat_transform_sym,
-                                 Eigen::MatrixXcd &dymat);
+void symmetrize_dynamical_matrix(const unsigned int ik, const KpointMeshUniform *kmesh_coarse, const unsigned int ns,
+                                 std::complex<double> ****mat_transform_sym, Eigen::MatrixXcd &dymat);
 
 void replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coarse, const unsigned int ns,
-                                     std::complex<double> ****mat_transform_sym,
-                                     std::complex<double> ***dymat_inout);
+                                     std::complex<double> ****mat_transform_sym, std::complex<double> ***dymat_inout);
 
 void replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coarse, const unsigned int ns,
                                      std::complex<double> ****mat_transform_sym,

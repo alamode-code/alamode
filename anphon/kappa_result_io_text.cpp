@@ -14,9 +14,9 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <mpi.h>
 #include <sstream>
 #include <unistd.h>
-#include <mpi.h>
 #include "constants.h"
 #include "error.h"
 #include "kpoint.h"
@@ -216,9 +216,8 @@ void KappaResultIOText::check_consistency(std::fstream &fs_result, const std::st
 }
 
 void KappaResultIOText::load_gamma_blocks(std::fstream &fs_result, const std::string &file_result,
-                                          const unsigned int nk_irred, const unsigned int ns,
-                                          const unsigned int ntemp, double **damping,
-                                          std::vector<int> &vks_done_out, const char *label,
+                                          const unsigned int nk_irred, const unsigned int ns, const unsigned int ntemp,
+                                          double **damping, std::vector<int> &vks_done_out, const char *label,
                                           const bool allow_truncate)
 {
     std::string line_tmp;
@@ -357,8 +356,7 @@ void KappaResultIOText::write_frequency_block(std::fstream &fs_result, const Kpo
         const auto ik = kmesh_in->kpoint_irred_all[i][0].knum;
         for (auto is = 0; is < ns; ++is) {
             fs_result << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-            fs_result << std::setw(15) << in_kayser(eval_in[ik][is])
-                      << '\n';
+            fs_result << std::setw(15) << in_kayser(eval_in[ik][is]) << '\n';
         }
     }
     fs_result << "##END Phonon Frequency\n\n";
@@ -366,8 +364,8 @@ void KappaResultIOText::write_frequency_block(std::fstream &fs_result, const Kpo
 }
 
 void KappaResultIOText::write_frequency_velocity_block(std::fstream &fs_result, const KpointMeshUniform *kmesh_in,
-                                                       const double *const *eval_in,
-                                                       const double *const *const *vel_in, const unsigned int ns)
+                                                       const double *const *eval_in, const double *const *const *vel_in,
+                                                       const unsigned int ns)
 {
     fs_result << "##Phonon Frequency" << '\n';
     fs_result << "#K-point (irreducible), Branch, Omega (cm^-1), Group velocity (m/s)" << '\n';
@@ -397,10 +395,10 @@ void KappaResultIOText::write_ibte_Q_dF_block(std::fstream &fs_result, const dou
         for (auto is = 0; is < ns; ++is) {
             auto k1 = kmesh_in->kpoint_irred_all[ik][0].knum;
             fs_result << std::setw(6) << ik + 1 << std::setw(6) << is + 1 << '\n';
-            fs_result << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is]
-                      << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][0]
-                      << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][1]
-                      << std::setw(15) << std::scientific << std::setprecision(5) << df[k1][is][2] << '\n';
+            fs_result << std::setw(15) << std::scientific << std::setprecision(5) << Q_all[ik][is] << std::setw(15)
+                      << std::scientific << std::setprecision(5) << df[k1][is][0] << std::setw(15) << std::scientific
+                      << std::setprecision(5) << df[k1][is][1] << std::setw(15) << std::scientific
+                      << std::setprecision(5) << df[k1][is][2] << '\n';
         }
     }
     fs_result << '\n';

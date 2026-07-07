@@ -31,8 +31,7 @@ ScphQhaCommon::ScphQhaCommon(class PHON *phon) : Pointers(phon)
 ScphQhaCommon::~ScphQhaCommon() = default;
 
 void ScphQhaCommon::build_cmat_at_k(const unsigned int ns, const Eigen::MatrixXcd &evec_ref_mat,
-                                    const std::complex<double> *const *evec_new_at_k,
-                                    std::complex<double> **cmat_out)
+                                    const std::complex<double> *const *evec_new_at_k, std::complex<double> **cmat_out)
 {
     Eigen::MatrixXcd evec_new_mat(ns, ns);
 
@@ -185,7 +184,7 @@ void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
     }
     phi4_reciprocal.resize(anharmonic_core->get_ngroup_fcs(4));
 
-    phase_factor = std::make_unique<PhaseFactorStorage>(kmesh_dense->nk_i);
+    phase_factor = std::make_unique<PhaseFactorCache>(kmesh_dense->nk_i);
     phase_factor->create(true);
 
     if (mympi->my_rank == 0) {
@@ -492,8 +491,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                         for (unsigned int j = 0; j < dos->kmesh_dos->nk_irred; ++j) {
                             for (unsigned int k = 0; k < ns; ++k) {
-                                eval_tmp =
-                                    in_kayser(eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
+                                eval_tmp = in_kayser(eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
                                 emin_now = std::min(emin_now, eval_tmp);
                                 emax_now = std::max(emax_now, eval_tmp);
                             }
@@ -691,8 +689,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                             for (unsigned int j = 0; j < dos->kmesh_dos->nk_irred; ++j) {
                                 for (unsigned int k = 0; k < ns; ++k) {
-                                    eval_tmp = in_kayser(
-                                        eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
+                                    eval_tmp =
+                                        in_kayser(eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
                                     emin_now = std::min(emin_now, eval_tmp);
                                     emax_now = std::max(emax_now, eval_tmp);
                                 }
@@ -1289,7 +1287,10 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
 
         relaxation->write_stepresfile_header_atT(ctx.fout_step_q0, ctx.fout_step_u0, ctx.fout_step_u_tensor, temp);
 
-        relaxation->write_stepresfile(ctx.structure_state, 0, ctx.fout_step_q0, ctx.fout_step_u0,
+        relaxation->write_stepresfile(ctx.structure_state,
+                                      0,
+                                      ctx.fout_step_q0,
+                                      ctx.fout_step_u0,
                                       ctx.fout_step_u_tensor);
 
         std::cout << " Start structural optimization at " << temp << " K.\n";

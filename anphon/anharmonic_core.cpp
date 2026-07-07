@@ -100,7 +100,7 @@ void AnharmonicCore::setup()
     if (fcs_phonon->maxorder >= 3) setup_quartic();
 
     if (!mode_analysis->calc_fstate_k && dos->kmesh_dos.get()) {
-        phase_storage_dos = std::make_unique<PhaseFactorStorage>(dos->kmesh_dos->nk_i);
+        phase_storage_dos = std::make_unique<PhaseFactorCache>(dos->kmesh_dos->nk_i);
         phase_storage_dos->create(use_tuned_ver);
     }
 }
@@ -228,7 +228,7 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4])
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                        const PhaseFactorStorage *phase_storage_in)
+                                        const PhaseFactorCache *phase_storage_in)
 {
     int i;
     unsigned int kn[3], sn[3];
@@ -281,7 +281,7 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                        const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi3_work,
+                                        const PhaseFactorCache *phase_storage_in, std::complex<double> *phi3_work,
                                         int *kindex_work)
 {
     // Thread-safe serial variant of V3 (see the header note): the caller
@@ -331,7 +331,7 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
 std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double *const *xk_in,
                                           const double *const *eval_in,
                                           const std::complex<double> *const *const *evec_in,
-                                          const PhaseFactorStorage *phase_storage_in)
+                                          const PhaseFactorCache *phase_storage_in)
 {
     int i;
     unsigned int kn[3], sn[3];
@@ -376,7 +376,7 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double
 void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
                                           const std::vector<double> *fcs_group_v3_in,
                                           const std::vector<RelativeVector> *relvec_v3_in,
-                                          const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                                          const PhaseFactorCache *phase_storage_in, std::complex<double> *ret,
                                           const bool use_openmp)
 {
     int i, j;
@@ -445,7 +445,7 @@ void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, 
 
 std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *const *xk_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                        const PhaseFactorStorage *phase_storage_in)
+                                        const PhaseFactorCache *phase_storage_in)
 {
     int i;
     const int ns = dynamical->neval;
@@ -488,7 +488,7 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
 
 std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *const *xk_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                        const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi4_work,
+                                        const PhaseFactorCache *phase_storage_in, std::complex<double> *phi4_work,
                                         int *kindex_work)
 {
     // Thread-safe serial variant of V4 (see the V3 counterpart): the caller
@@ -534,7 +534,7 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
 std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double *const *xk_in,
                                           const double *const *eval_in,
                                           const std::complex<double> *const *const *evec_in,
-                                          const PhaseFactorStorage *phase_storage_in)
+                                          const PhaseFactorCache *phase_storage_in)
 {
     int i;
     int ns = dynamical->neval;
@@ -574,7 +574,7 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double
 }
 
 void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
-                                          const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                                          const PhaseFactorCache *phase_storage_in, std::complex<double> *ret,
                                           const bool use_openmp)
 {
     int i, j;
@@ -1092,7 +1092,7 @@ void AnharmonicCore::calc_damping4_smearing_batch(const unsigned int ntemp, cons
                                                   const unsigned int is_in, const KpointMeshUniform *kmesh_in,
                                                   const double *const *eval_in,
                                                   const std::complex<double> *const *const *evec_in,
-                                                  const PhaseFactorStorage *phase_storage_in, double *ret)
+                                                  const PhaseFactorCache *phase_storage_in, double *ret)
 {
 
     const int nk = kmesh_in->nk;
@@ -1418,7 +1418,7 @@ void AnharmonicCore::setup_quartic()
     }
 }
 
-void PhaseFactorStorage::create(const bool use_tuned_ver, const bool switch_to_type2)
+void PhaseFactorCache::create(const bool use_tuned_ver, const bool switch_to_type2)
 {
     // For accelerating function V3 and V4 by avoiding continual call of std::exp.
 
@@ -1499,18 +1499,18 @@ void PhaseFactorStorage::create(const bool use_tuned_ver, const bool switch_to_t
     }
 }
 
-unsigned int PhaseFactorStorage::get_tune_type() const
+unsigned int PhaseFactorCache::get_tune_type() const
 {
     return tune_type;
 }
 
-std::complex<double> PhaseFactorStorage::get_exp_type1(const double phase_in) const
+std::complex<double> PhaseFactorCache::get_exp_type1(const double phase_in) const
 {
     int iloc = nint(phase_in * dnk_represent) % nk_represent + nk_represent - 1;
     return exp_phase[iloc];
 }
 
-std::complex<double> PhaseFactorStorage::get_exp_type2(const double *phase3_in) const
+std::complex<double> PhaseFactorCache::get_exp_type2(const double *phase3_in) const
 {
     int loc[3];
     for (auto i = 0; i < 3; ++i) {

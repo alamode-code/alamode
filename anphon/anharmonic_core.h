@@ -49,20 +49,20 @@ public:
     }
 };
 
-class PhaseFactorStorage
+class PhaseFactorCache
 {
 public:
-    PhaseFactorStorage() {};
+    PhaseFactorCache() {};
 
-    PhaseFactorStorage(const unsigned int nk_grid_in[3])
+    PhaseFactorCache(const unsigned int nk_grid_in[3])
     {
         for (auto i = 0; i < 3; ++i) {
             nk_grid[i] = static_cast<int>(nk_grid_in[i]);
         }
     };
 
-    PhaseFactorStorage(const PhaseFactorStorage &) = delete;
-    PhaseFactorStorage &operator=(const PhaseFactorStorage &) = delete;
+    PhaseFactorCache(const PhaseFactorCache &) = delete;
+    PhaseFactorCache &operator=(const PhaseFactorCache &) = delete;
 
     void create(const bool use_tuned_ver, const bool switch_to_type2 = false);
 
@@ -106,7 +106,7 @@ public:
                                       const unsigned int ik_in, const unsigned int is_in,
                                       const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                       const std::complex<double> *const *const *evec_in,
-                                      const PhaseFactorStorage *phase_storage_in, double *ret);
+                                      const PhaseFactorCache *phase_storage_in, double *ret);
 
     // a wrapper to return v3
     //std::complex<double> get_v3(const unsigned int [3],
@@ -144,7 +144,7 @@ public:
 
     std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in,
-                            const PhaseFactorStorage *phase_storage_in);
+                            const PhaseFactorCache *phase_storage_in);
 
     // Thread-safe serial variants: the per-triplet reciprocal-FC3 cache
     // lives in caller-provided storage (phi3_work of size ngroup_v3 and
@@ -157,28 +157,26 @@ public:
                             int *kindex_work);
 
     std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
-                            const std::complex<double> *const *const *evec_in,
-                            const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi3_work,
-                            int *kindex_work);
+                            const std::complex<double> *const *const *evec_in, const PhaseFactorCache *phase_storage_in,
+                            std::complex<double> *phi3_work, int *kindex_work);
 
     std::complex<double> V4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in,
-                            const PhaseFactorStorage *phase_storage_in);
+                            const PhaseFactorCache *phase_storage_in);
 
     // Thread-safe serial variant of V4 (same design as the V3 overload
     // above): phi4_work has size ngroup_v4 and kindex_work[3] starts at -1.
     std::complex<double> V4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
-                            const std::complex<double> *const *const *evec_in,
-                            const PhaseFactorStorage *phase_storage_in, std::complex<double> *phi4_work,
-                            int *kindex_work);
+                            const std::complex<double> *const *const *evec_in, const PhaseFactorCache *phase_storage_in,
+                            std::complex<double> *phi4_work, int *kindex_work);
 
     std::complex<double> Phi3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
                               const std::complex<double> *const *const *evec_in,
-                              const PhaseFactorStorage *phase_storage_in);
+                              const PhaseFactorCache *phase_storage_in);
 
     std::complex<double> Phi4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
                               const std::complex<double> *const *const *evec_in,
-                              const PhaseFactorStorage *phase_storage_in);
+                              const PhaseFactorCache *phase_storage_in);
 
     static void prepare_relative_vector(const std::vector<FcsArrayWithCell> &fcs_in, const int number_of_groups,
                                         std::vector<double> *fcs_group, std::vector<RelativeVector> *vec_out);
@@ -193,12 +191,11 @@ public:
 
     void calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
                               const std::vector<double> *fcs_group_v3_in,
-                              const std::vector<RelativeVector> *relvec_v3_in,
-                              const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
-                              const bool use_openmp = true);
+                              const std::vector<RelativeVector> *relvec_v3_in, const PhaseFactorCache *phase_storage_in,
+                              std::complex<double> *ret, const bool use_openmp = true);
 
     void calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
-                              const PhaseFactorStorage *phase_storage_in, std::complex<double> *ret,
+                              const PhaseFactorCache *phase_storage_in, std::complex<double> *ret,
                               const bool use_openmp = true);
 
     int get_ngroup_fcs(const unsigned int order) const;
@@ -227,7 +224,7 @@ private:
     NDArray<std::complex<double>, 1> phi3_reciprocal, phi4_reciprocal;
     NDArray<std::vector<RelativeVector>, 1> relvec_v3, relvec_v4;
 
-    std::unique_ptr<PhaseFactorStorage> phase_storage_dos;
+    std::unique_ptr<PhaseFactorCache> phase_storage_dos;
 
     bool sym_permutation;
 
@@ -237,6 +234,5 @@ private:
     void setup_cubic();
 
     void setup_quartic();
-
 };
 } // namespace PHON_NS

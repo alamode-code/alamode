@@ -915,7 +915,7 @@ void Relaxation::check_str_divergence(int &diverged, const RelaxationStructureSt
 void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                       DelVStrainData &del_v_strain, double **omega2_harmonic,
                                       std::complex<double> ***evec_harmonic, const RelaxationStrMode relax_mode,
-                                      MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in)
+                                      MinimumDistList ***mindist_list, const PhaseFactorCache *phase_cache_in)
 {
     const auto ns = dynamical->neval;
     const auto nk = kmesh_dense->nk;
@@ -943,7 +943,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
                                              renorm_3to2nd,
                                              strain_IFC_dir,
                                              mindist_list,
-                                             phase_storage_in);
+                                             phase_cache_in);
 
         if (mympi->my_rank == 0) timer->print_elapsed();
 

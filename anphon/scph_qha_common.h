@@ -59,7 +59,7 @@ protected:
 
     NDArray<std::complex<double>, 1> phi3_reciprocal;
     NDArray<std::complex<double>, 1> phi4_reciprocal;
-    std::unique_ptr<PhaseFactorStorage> phase_factor;
+    std::unique_ptr<PhaseFactorCache> phase_factor;
 
     NDArray<double, 2> omega2_harmonic;
     NDArray<std::complex<double>, 3> evec_harmonic;
@@ -191,7 +191,7 @@ protected:
                                              const KpointMeshUniform *kmesh_coarse_in,
                                              const KpointMeshUniform *kmesh_dense_in,
                                              const std::vector<int> &kmap_coarse_to_dense,
-                                             const PhaseFactorStorage *phase_storage_in,
+                                             const PhaseFactorCache *phase_storage_in,
                                              std::complex<double> *phi4_reciprocal_inout);
 
     void compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, double **omega2_harmonic_in,
@@ -199,14 +199,14 @@ protected:
                                            const KpointMeshUniform *kmesh_coarse_in,
                                            const KpointMeshUniform *kmesh_dense_in,
                                            const std::vector<int> &kmap_coarse_to_scph,
-                                           const PhaseFactorStorage *phase_storage_in,
+                                           const PhaseFactorCache *phase_storage_in,
                                            std::complex<double> *phi4_reciprocal_inout);
 
     void compute_V3_elements_mpi_over_kpoint(std::complex<double> ***v3_out, double **omega2_harmonic_in,
                                              const std::complex<double> *const *const *evec_in, bool self_offdiag,
                                              const KpointMeshUniform *kmesh_coarse_in,
                                              const KpointMeshUniform *kmesh_dense_in,
-                                             const PhaseFactorStorage *phase_storage_in,
+                                             const PhaseFactorCache *phase_storage_in,
                                              std::complex<double> *phi3_reciprocal_inout);
 
     void calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0_del_umn_renorm, double *C1_array,
@@ -235,8 +235,7 @@ protected:
     // ([js][is] = component is of mode js, the storage layout of evec_harmonic
     // and exec_interpolation output), transposed internally.
     static void build_cmat_at_k(unsigned int ns, const Eigen::MatrixXcd &evec_ref_mat,
-                                const std::complex<double> *const *evec_new_at_k,
-                                std::complex<double> **cmat_out);
+                                const std::complex<double> *const *evec_new_at_k, std::complex<double> **cmat_out);
 
     void zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, int fc_order,
                                              unsigned int nk_dense_in, unsigned int nk_irred_coarse_in) const;

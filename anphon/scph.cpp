@@ -60,29 +60,17 @@ class ScphRelaxationModel final: public IRelaxationModel
 {
 public:
     ScphRelaxationModel(Scph &scph, StructuralOptWorkspace &ws, std::complex<double> ****dymat_anharm,
-                        std::complex<double> ****delta_harmonic_dymat_renormalize,
-                        std::complex<double> ***cmat_convert, double ***omega2_anharm,
-                        std::complex<double> ***evec_anharm_tmp, double ***omega2_harm_renorm,
+                        std::complex<double> ****delta_harmonic_dymat_renormalize, std::complex<double> ***cmat_convert,
+                        double ***omega2_anharm, std::complex<double> ***evec_anharm_tmp, double ***omega2_harm_renorm,
                         std::complex<double> ***evec_harm_renorm_tmp, std::complex<double> *v1_SCP,
                         std::complex<double> *del_v0_del_umn_SCP, bool &converged_prev, int &str_diverged,
-                        std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
-                        std::ofstream &fout_step_u_tensor)
-        : scph_(scph),
-          ws_(ws),
-          dymat_anharm_(dymat_anharm),
-          delta_harmonic_dymat_renormalize_(delta_harmonic_dymat_renormalize),
-          cmat_convert_(cmat_convert),
-          omega2_anharm_(omega2_anharm),
-          evec_anharm_tmp_(evec_anharm_tmp),
-          omega2_harm_renorm_(omega2_harm_renorm),
-          evec_harm_renorm_tmp_(evec_harm_renorm_tmp),
-          v1_SCP_(v1_SCP),
-          del_v0_del_umn_SCP_(del_v0_del_umn_SCP),
-          converged_prev_(converged_prev),
-          str_diverged_(str_diverged),
-          fout_step_q0_(fout_step_q0),
-          fout_step_u0_(fout_step_u0),
-          fout_step_u_tensor_(fout_step_u_tensor)
+                        std::ofstream &fout_step_q0, std::ofstream &fout_step_u0, std::ofstream &fout_step_u_tensor) :
+        scph_(scph), ws_(ws), dymat_anharm_(dymat_anharm),
+        delta_harmonic_dymat_renormalize_(delta_harmonic_dymat_renormalize), cmat_convert_(cmat_convert),
+        omega2_anharm_(omega2_anharm), evec_anharm_tmp_(evec_anharm_tmp), omega2_harm_renorm_(omega2_harm_renorm),
+        evec_harm_renorm_tmp_(evec_harm_renorm_tmp), v1_SCP_(v1_SCP), del_v0_del_umn_SCP_(del_v0_del_umn_SCP),
+        converged_prev_(converged_prev), str_diverged_(str_diverged), fout_step_q0_(fout_step_q0),
+        fout_step_u0_(fout_step_u0), fout_step_u_tensor_(fout_step_u_tensor)
     {}
 
     void before_init_structure(const unsigned int iT, unsigned int, double, const bool converged_prev) override
@@ -162,9 +150,8 @@ public:
         std::cout << " :\n";
         const auto spg_label = scph_.relaxation->print_structure_and_symmetry(
             structure_state,
-            (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step)
-                ? del_v0_del_umn_SCP_
-                : nullptr);
+            (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step) ? del_v0_del_umn_SCP_
+                                                                                            : nullptr);
         std::cout << '\n';
 
         if (!scp_converged_step) {
@@ -207,8 +194,7 @@ public:
                 return StructOptStepStatus::Diverged;
             }
 
-            std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0
-                      << " [Bohr]";
+            std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0 << " [Bohr]";
             std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
                       << '\n';
 
@@ -257,8 +243,8 @@ public:
                                                grad_norm,
                                                cell_grad_norm);
 
-        const bool step_converged = (du0 < scph_.relaxation->coord_conv_tol &&
-                                     du_tensor < scph_.relaxation->cell_conv_tol);
+        const bool step_converged =
+            (du0 < scph_.relaxation->coord_conv_tol && du_tensor < scph_.relaxation->cell_conv_tol);
         const bool force_converged =
             (scph_.relaxation->gradient_conv_tol <= 0.0) || (grad_norm < scph_.relaxation->gradient_conv_tol);
         const bool cell_force_converged = (ws_.relax_mode != RelaxationStrMode::CoordinatesAndCell) ||
@@ -280,8 +266,7 @@ public:
                 scph_.relaxation->cell_gradient_conv_tol > 0.0)
             {
                 std::cout << " |residual stress| is smaller than CELL_GRADIENT_CONV_TOL = " << std::scientific
-                          << std::setw(15) << std::setprecision(6) << scph_.relaxation->cell_gradient_conv_tol
-                          << '\n';
+                          << std::setw(15) << std::setprecision(6) << scph_.relaxation->cell_gradient_conv_tol << '\n';
             }
             std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
             std::cout << " break structural loop.\n\n";
@@ -350,22 +335,22 @@ public:
         if (converged_this_temp) {
             // get renormalization of harmonic dymat
             scph_.dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm_[iT],
-                                                                      evec_harm_renorm_tmp_,
-                                                                      ws_.delta_v2_renorm,
-                                                                      scph_.omega2_harmonic,
-                                                                      scph_.evec_harmonic,
-                                                                      scph_.kmesh_coarse.get(),
-                                                                      scph_.kmesh_dense.get(),
-                                                                      scph_.kmap_coarse_to_dense,
-                                                                      scph_.mat_transform_sym,
-                                                                      scph_.mindist_list,
-                                                                      scph_.writes->getVerbosity());
+                                                                     evec_harm_renorm_tmp_,
+                                                                     ws_.delta_v2_renorm,
+                                                                     scph_.omega2_harmonic,
+                                                                     scph_.evec_harmonic,
+                                                                     scph_.kmesh_coarse.get(),
+                                                                     scph_.kmesh_dense.get(),
+                                                                     scph_.kmap_coarse_to_dense,
+                                                                     scph_.mat_transform_sym,
+                                                                     scph_.mindist_list,
+                                                                     scph_.writes->getVerbosity());
 
             scph_.dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize_[iT],
-                                                       omega2_harm_renorm_[iT],
-                                                       evec_harm_renorm_tmp_,
-                                                       scph_.kmesh_coarse.get(),
-                                                       scph_.kmap_coarse_to_dense);
+                                                      omega2_harm_renorm_[iT],
+                                                      evec_harm_renorm_tmp_,
+                                                      scph_.kmesh_coarse.get(),
+                                                      scph_.kmap_coarse_to_dense);
         }
 
         scph_.converged_str_temp[iT] = converged_this_temp ? 1 : 0;
@@ -385,9 +370,8 @@ public:
                   << '\n';
         int bench_total = 0;
         for (std::size_t ib = 0; ib < bench_temp_.size(); ++ib) {
-            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp_[ib]
-                      << std::setw(12) << bench_steps_[ib] << std::setw(12)
-                      << (bench_converged_[ib] ? "yes" : "no") << '\n';
+            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp_[ib] << std::setw(12)
+                      << bench_steps_[ib] << std::setw(12) << (bench_converged_[ib] ? "yes" : "no") << '\n';
             bench_total += bench_steps_[ib];
         }
         std::cout << "  " << std::setw(15) << "Total" << std::setw(12) << bench_total << '\n';
@@ -395,7 +379,10 @@ public:
         std::cout.unsetf(std::ios::fixed);
     }
 
-    bool history_has_scp_column() const override { return true; }
+    bool history_has_scp_column() const override
+    {
+        return true;
+    }
 
 private:
     bool structure_state_is_finite(const RelaxationStructureState &state) const
@@ -1500,12 +1487,7 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
         }
     }
 
-    fourier_dymat_k_to_r(kmesh_interpolate[0],
-                         kmesh_interpolate[1],
-                         kmesh_interpolate[2],
-                         ns,
-                         dymat_q,
-                         dymat_r_new);
+    fourier_dymat_k_to_r(kmesh_interpolate[0], kmesh_interpolate[1], kmesh_interpolate[2], ns, dymat_q, dymat_r_new);
 
     // Create temporary C-style arrays for exec_interpolation
     NDArray<double, 2> eval_temp;

@@ -18,8 +18,7 @@ namespace PHON_NS
 // Tamura mass-variance overlap: sum_iat g2[kind[iat]] * |<e_a(iat)|e_b(iat)>|^2,
 // with e_a conjugated. Exact accumulation order of the historical loops.
 inline double tamura_overlap(const unsigned int natmin, const std::complex<double> *evec_conj,
-                             const std::complex<double> *evec_ref, const double *isotope_factor,
-                             const int *kind)
+                             const std::complex<double> *evec_ref, const double *isotope_factor, const int *kind)
 {
     auto prod = 0.0;
 
@@ -60,10 +59,8 @@ inline void average_degenerate_frequencies_transposed(const int nk, const int ns
     }
 }
 
-inline void average_tetra_weights_over_degenerate_modes(const int ns, const int ik,
-                                                        const double *const *eval_avg,
-                                                        double *const *weight_tetra,
-                                                        const double tol_degenerate)
+inline void average_tetra_weights_over_degenerate_modes(const int ns, const int ik, const double *const *eval_avg,
+                                                        double *const *weight_tetra, const double tol_degenerate)
 {
     auto begin = 0;
     auto omega_ref = eval_avg[0][ik];

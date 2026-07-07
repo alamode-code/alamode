@@ -198,7 +198,8 @@ void Dynamical::setup_dynamical()
     }
 
     if (kpoint->kpoint_general.get()) {
-        dymat_general = std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint->kpoint_general->nk, neval);
+        dymat_general =
+            std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint->kpoint_general->nk, neval);
     }
 
     // Bcast projection_directions
@@ -360,8 +361,12 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
         }
     }
 
-    solve_dense_hermitian(neval, dymat_k, eval_out, (require_eigenvectors && require_evec) ? evec_out : nullptr,
-                          require_evec, UPLO);
+    solve_dense_hermitian(neval,
+                          dymat_k,
+                          eval_out,
+                          (require_eigenvectors && require_evec) ? evec_out : nullptr,
+                          require_evec,
+                          UPLO);
     dymat_k.clear();
 }
 
@@ -417,8 +422,12 @@ void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const s
         }
     }
 
-    solve_dense_hermitian(neval, dymat_k, eval_out, (require_eigenvectors && require_evec) ? evec_out : nullptr,
-                          require_evec, UPLO);
+    solve_dense_hermitian(neval,
+                          dymat_k,
+                          eval_out,
+                          (require_eigenvectors && require_evec) ? evec_out : nullptr,
+                          require_evec,
+                          UPLO);
     dymat_k.clear();
 }
 
@@ -484,7 +493,7 @@ void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsArrayW
 }
 
 void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *kvec_na_in,
-                                   std::complex<double> **dymat_na_out) const
+                                             std::complex<double> **dymat_na_out) const
 {
     // Calculate the non-analytic part of dynamical matrices
     // by Parlinski's method.
@@ -593,7 +602,7 @@ void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *
 }
 
 void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double *kvec_na_in,
-                                    std::complex<double> **dymat_na_out) const
+                                              std::complex<double> **dymat_na_out) const
 {
     // Calculate the non-analytic part of dynamical matrices
     // by the mixed-space approach.

@@ -1676,12 +1676,7 @@ void Iterativebte::write_Q_dF(int itemp, NDArray<double, 2> &q, NDArray<double, 
                                             &kappa[itemp][0][0],
                                             converged ? 1 : 0);
         } else if (!conductivity->get_use_h5_io()) {
-            KappaResultIOText::write_ibte_Q_dF_block(fs_result,
-                                                     etemp,
-                                                     dos->kmesh_dos.get(),
-                                                     Q_all,
-                                                     df,
-                                                     ns);
+            KappaResultIOText::write_ibte_Q_dF_block(fs_result, etemp, dos->kmesh_dos.get(), Q_all, df, ns);
         }
     }
     Q_all.clear();

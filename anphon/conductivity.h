@@ -107,7 +107,7 @@ private:
     unsigned int nk_coarse[3] = {};
     std::unique_ptr<KpointMeshUniform> kmesh_4ph;
     std::unique_ptr<DymatEigenValue> dymat_4ph;
-    std::unique_ptr<PhaseFactorStorage> phase_storage_4ph;
+    std::unique_ptr<PhaseFactorCache> phase_cache_4ph;
 
     std::fstream fs_result3, fs_result4;
     std::string file_result3, file_result4;

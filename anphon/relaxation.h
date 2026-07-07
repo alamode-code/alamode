@@ -263,7 +263,7 @@ public:
     void compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                               DelVStrainData &del_v_strain, double **omega2_harmonic,
                               std::complex<double> ***evec_harmonic, RelaxationStrMode relax_mode,
-                              MinimumDistList ***mindist_list, const PhaseFactorStorage *phase_storage_in);
+                              MinimumDistList ***mindist_list, const PhaseFactorCache *phase_cache_in);
 
     void setInitialDistortion(const double (*u_tensor_in)[3]);
 

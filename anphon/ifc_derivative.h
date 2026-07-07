@@ -11,7 +11,7 @@ namespace PHON_NS
 {
 
 class KpointMeshUniform;
-class PhaseFactorStorage;
+class PhaseFactorCache;
 struct MinimumDistList;
 class DelVStrainData;
 class System;
@@ -63,7 +63,7 @@ public:
     void compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &dV3_dumn, double **omega2_harmonic,
                           const std::complex<double> *const *const *const evec_harmonic,
                           const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
-                          const PhaseFactorStorage *phase_storage_in) const;
+                          const PhaseFactorCache *phase_cache_in) const;
 
     void set_del_v_fixed_cell(std::size_t nk, std::size_t ns, DelVStrainData &del_v_strain) const;
 
@@ -71,7 +71,7 @@ public:
                               std::size_t ns, DelVStrainData &del_v_strain, double **omega2_harmonic,
                               std::complex<double> ***evec_harmonic, int renorm_2to1st, int renorm_34to1st,
                               int renorm_3to2nd, const std::string &strain_ifc_dir, MinimumDistList ***mindist_list,
-                              const PhaseFactorStorage *phase_storage_in) const;
+                              const PhaseFactorCache *phase_cache_in) const;
 
     void set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                         std::size_t ns, DelVStrainData &del_v_strain, double **omega2_harmonic,

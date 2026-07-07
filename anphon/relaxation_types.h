@@ -73,7 +73,7 @@ inline constexpr QhaScheme to_qha_scheme(const int scheme)
 
 class KpointMeshUniform;
 struct MinimumDistList;
-class PhaseFactorStorage;
+class PhaseFactorCache;
 class DelVStrainData;
 
 struct DelVStrainOutputs
@@ -89,7 +89,7 @@ struct DelVStrainComputeInputs
     std::complex<double> ***evec_harmonic{};
     RelaxationStrMode relax_str{RelaxationStrMode::None};
     MinimumDistList ***mindist_list{};
-    const PhaseFactorStorage *phase_storage{};
+    const PhaseFactorCache *phase_cache{};
 };
 
 // One row of the per-temperature structural-optimization history table.
@@ -216,11 +216,9 @@ public:
     virtual void after_init_structure(unsigned int iT, double temp) = 0;
     virtual StructOptStepStatus do_structure_step(unsigned int iT, double temp, int i_str_loop,
                                                   std::vector<StructOptStepRecord> &step_history) = 0;
-    virtual void after_structure_loop(unsigned int iT, double temp, int i_str_loop_exit,
-                                      bool &converged_this_temp) = 0;
+    virtual void after_structure_loop(unsigned int iT, double temp, int i_str_loop_exit, bool &converged_this_temp) = 0;
     virtual void record_v0(unsigned int iT) = 0;
-    virtual void finalize_temperature(unsigned int iT, double temp, bool converged_this_temp,
-                                      bool &converged_prev) = 0;
+    virtual void finalize_temperature(unsigned int iT, double temp, bool converged_this_temp, bool &converged_prev) = 0;
     virtual void print_run_summary() = 0;
     virtual bool history_has_scp_column() const = 0;
 };

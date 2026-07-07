@@ -74,15 +74,12 @@ void Selfenergy::mpi_reduce_complex(unsigned int N, std::complex<double> *in_mpi
 #endif
 }
 
-std::vector<std::complex<double>> Selfenergy::get_bubble_selfenergy(const KpointMeshUniform *kmesh_in,
-                                                                    const unsigned int ns_in,
-                                                                    const double *const *eval_in,
-                                                                    const std::complex<double> *const *const *evec_in,
-                                                                    const unsigned int knum,
-                                                                    const unsigned int snum,
-                                                                    const double temp_in,
-                                                                    const std::vector<std::complex<double>> &omegalist,
-                                                                    const PhaseFactorStorage *phase_storage_in) const
+std::vector<std::complex<double>>
+Selfenergy::get_bubble_selfenergy(const KpointMeshUniform *kmesh_in, const unsigned int ns_in,
+                                  const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                                  const unsigned int knum, const unsigned int snum, const double temp_in,
+                                  const std::vector<std::complex<double>> &omegalist,
+                                  const PhaseFactorCache *phase_cache_in) const
 {
     unsigned int arr_cubic[3];
     double xk_tmp[3];
@@ -127,7 +124,7 @@ std::vector<std::complex<double>> Selfenergy::get_bubble_selfenergy(const Kpoint
         arr_cubic[1] = ns_in * ik1 + is1;
         arr_cubic[2] = ns_in * ik2 + is2;
 
-        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_storage_in));
+        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_cache_in));
 
         if (classical) {
             n1 = Thermodynamics::fC(omega1, temp_in);

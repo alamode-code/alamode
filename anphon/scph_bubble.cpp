@@ -125,8 +125,13 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
     eval.resize(nk_scph, ns);
     evec.resize(nk_scph, ns, ns);
-    selfenergy->setup_selfenergy(dynamical->neval, integration->epsilon, thermodynamics->classical,
-                                 symmetry->SymmList, *anharmonic_core, mympi->my_rank, mympi->nprocs);
+    selfenergy->setup_selfenergy(dynamical->neval,
+                                 integration->epsilon,
+                                 thermodynamics->classical,
+                                 symmetry->SymmList,
+                                 *anharmonic_core,
+                                 mympi->my_rank,
+                                 mympi->nprocs);
 
     if (mympi->my_rank == 0) {
         eval_bubble.resize(NT, nk_scph, ns);
@@ -183,9 +188,15 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
                         omegalist.push_back(im * epsilon);
 
-                        auto se_bubble =
-                            selfenergy->get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist,
-                                                              phase_factor.get());
+                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_dense.get(),
+                                                                           ns,
+                                                                           eval,
+                                                                           evec,
+                                                                           knum,
+                                                                           snum,
+                                                                           temp,
+                                                                           omegalist,
+                                                                           phase_factor.get());
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -193,9 +204,15 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
                         omegalist.push_back(eval[knum][snum] + im * epsilon);
 
-                        auto se_bubble =
-                            selfenergy->get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist,
-                                                              phase_factor.get());
+                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_dense.get(),
+                                                                           ns,
+                                                                           eval,
+                                                                           evec,
+                                                                           knum,
+                                                                           snum,
+                                                                           temp,
+                                                                           omegalist,
+                                                                           phase_factor.get());
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -213,9 +230,15 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                             omegalist.push_back(minfreq + static_cast<double>(iomega) * domega + im * epsilon);
                         }
 
-                        auto se_bubble =
-                            selfenergy->get_bubble_selfenergy(kmesh_dense.get(), ns, eval, evec, knum, snum, temp, omegalist,
-                                                              phase_factor.get());
+                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_dense.get(),
+                                                                           ns,
+                                                                           eval,
+                                                                           evec,
+                                                                           knum,
+                                                                           snum,
+                                                                           temp,
+                                                                           omegalist,
+                                                                           phase_factor.get());
 
                         if (mympi->my_rank == 0) {
 
@@ -251,8 +274,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                          "Use the lowest-frequency solution");
                                     std::cout << "   solution found at the following frequencies:\n";
                                     for (auto iroot = 0; iroot < count_root; ++iroot) {
-                                        std::cout << std::setw(15)
-                                                  << in_kayser(omegalist[root_index[iroot]].real());
+                                        std::cout << std::setw(15) << in_kayser(omegalist[root_index[iroot]].real());
                                     }
                                     std::cout << '\n';
                                 }
@@ -276,8 +298,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                 }
                 if (mympi->my_rank == 0) {
                     std::cout << "   branch : " << std::setw(5) << snum + 1;
-                    std::cout << " omega (SC1) = " << std::setw(15) << in_kayser(eval[knum][snum])
-                              << " (cm^-1); ";
+                    std::cout << " omega (SC1) = " << std::setw(15) << in_kayser(eval[knum][snum]) << " (cm^-1); ";
                     std::cout << " Re[Self] = " << std::setw(15) << in_kayser(real_self[snum]) << " (cm^-1)\n";
                 }
             }

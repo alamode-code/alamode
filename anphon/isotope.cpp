@@ -109,7 +109,10 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum, const unsigned in
     for (auto ik = 0; ik < nk; ++ik) {
         for (auto is = 0; is < ns; ++is) {
 
-            const auto prod = tamura_overlap(natmin, evec_in[ik][is], evec_in[knum][snum], &isotope_factor[0],
+            const auto prod = tamura_overlap(natmin,
+                                             evec_in[ik][is],
+                                             evec_in[knum][snum],
+                                             &isotope_factor[0],
                                              &system_in.get_primcell().kind[0]);
 
             const auto omega1 = eval_in[ik][is];
@@ -170,7 +173,10 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
 #pragma omp parallel for
         for (ik = 0; ik < nk; ++ik) {
 
-            const auto prod = tamura_overlap(natmin, evec_in[ik][is], evec_in[knum][snum], &isotope_factor[0],
+            const auto prod = tamura_overlap(natmin,
+                                             evec_in[ik][is],
+                                             evec_in[knum][snum],
+                                             &isotope_factor[0],
                                              &system_in.get_primcell().kind[0]);
 
             prod_omega[is][ik] = prod * eval_tetra[is][ik];
