@@ -1260,13 +1260,8 @@ void Scph::compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double 
                 if (std::abs(omega1) > eps8) {
                     // Note that the missing factor 2 in the denominator of Qmat is
                     // already considered in the v4_array_all.
-                    if (thermodynamics->classical) {
-                        Qmat(is, is) =
-                            std::complex<double>(2.0 * temp * thermodynamics->T_to_Ryd / (omega1 * omega1), 0.0);
-                    } else {
-                        const auto n1 = thermodynamics->fB(omega1, temp);
-                        Qmat(is, is) = std::complex<double>((2.0 * n1 + 1.0) / omega1, 0.0);
-                    }
+                    const auto factor = thermodynamics->disp_corr_factor(omega1, temp);
+                    Qmat(is, is) = std::complex<double>(factor, 0.0);
                 }
             }
 
@@ -2119,6 +2114,7 @@ void Scph::update_frequency(const double temperature_in, const Eigen::MatrixXd &
             } else {
                 // Note that the missing factor 2 in the denominator of Qmat is
                 // already considered in the v4_array_all.
+                // Note: keep this inline variant; unlike Thermodynamics::disp_corr_factor it works on omega^2 directly.
                 if (thermodynamics->classical) {
                     Kmat(is) =
                         std::complex<double>(2.0 * temperature_in * thermodynamics->T_to_Ryd / (std::abs(omega_tmp)),

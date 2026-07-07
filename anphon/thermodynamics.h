@@ -48,6 +48,8 @@ public:
 
     static double fC(const double omega, const double temp_in);
 
+    double disp_corr_factor(const double omega, const double temp_in) const;
+
     double Cv_tot(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
                   const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                   const double *const *eval_in) const;

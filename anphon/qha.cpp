@@ -1120,7 +1120,7 @@ void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib, cons
 
     int ixyz1, ixyz2, is, ik;
     std::complex<double> Qtmp;
-    double omega1_tmp, n1;
+    double omega1_tmp;
 
     double factor = 0.25 / static_cast<double>(nk);
 
@@ -1139,14 +1139,8 @@ void Qha::calc_del_v0_del_umn_vib(std::complex<double> *del_v0_del_umn_vib, cons
                     if (std::abs(omega1_tmp) < eps8) {
                         Qtmp = 0.0;
                     } else {
-                        if (thermodynamics->classical) {
-                            Qtmp =
-                                std::complex<double>(2.0 * T_in * thermodynamics->T_to_Ryd / (omega1_tmp * omega1_tmp),
-                                                     0.0);
-                        } else {
-                            n1 = thermodynamics->fB(omega1_tmp, T_in);
-                            Qtmp = std::complex<double>((2.0 * n1 + 1.0) / omega1_tmp, 0.0);
-                        }
+                        const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
+                        Qtmp = std::complex<double>(factor, 0.0);
                     }
 
                     del_v0_del_umn_vib[ixyz1 * 3 + ixyz2] +=
@@ -1543,7 +1537,7 @@ void Qha::calc_v1_vib(std::complex<double> *v1_vib, std::complex<double> ***v3_r
 
     int is1, is2, ik;
     std::complex<double> Qtmp;
-    double omega1_tmp, n1;
+    double omega1_tmp;
 
 
     for (is1 = 0; is1 < ns; is1++) {
@@ -1560,13 +1554,8 @@ void Qha::calc_v1_vib(std::complex<double> *v1_vib, std::complex<double> ***v3_r
                 if (std::abs(omega1_tmp) < eps8) {
                     Qtmp = 0.0;
                 } else {
-                    if (thermodynamics->classical) {
-                        Qtmp = std::complex<double>(2.0 * T_in * thermodynamics->T_to_Ryd / (omega1_tmp * omega1_tmp),
-                                                    0.0);
-                    } else {
-                        n1 = thermodynamics->fB(omega1_tmp, T_in);
-                        Qtmp = std::complex<double>((2.0 * n1 + 1.0) / omega1_tmp, 0.0);
-                    }
+                    const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
+                    Qtmp = std::complex<double>(factor, 0.0);
                 }
 
                 v1_vib[is1] += v3_ref[ik][is1][is2 * ns + is2] * Qtmp;

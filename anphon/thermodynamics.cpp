@@ -79,6 +79,15 @@ auto Thermodynamics::fC(const double omega, const double temp_in) -> double
     return 1.0 / x;
 }
 
+// (2 n_B(omega) + 1)/omega, the equal-time displacement-correlation (Qmat)
+// factor; classical limit 2 kB T / omega^2. Zero/negative-frequency guards
+// remain the caller's responsibility.
+double Thermodynamics::disp_corr_factor(const double omega, const double temp_in) const
+{
+    if (classical) return 2.0 * temp_in * T_to_Ryd / (omega * omega);
+    return (2.0 * fB(omega, temp_in) + 1.0) / omega;
+}
+
 auto Thermodynamics::Cv_tot(const double temp_in, const unsigned int nk_irred, const unsigned int ns,
                             const std::vector<std::vector<KpointList>> &kp_irred, const double *weight_k_irred,
                             const double *const *eval_in) const -> double

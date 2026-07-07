@@ -221,13 +221,8 @@ void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, st
                     Qtmp = 0.0;
                     count_zero++;
                 } else {
-                    if (thermodynamics->classical) {
-                        Qtmp = std::complex<double>(2.0 * T_in * thermodynamics->T_to_Ryd / (omega1_tmp * omega1_tmp),
-                                                    0.0);
-                    } else {
-                        const double n1 = thermodynamics->fB(omega1_tmp, T_in);
-                        Qtmp = std::complex<double>((2.0 * n1 + 1.0) / omega1_tmp, 0.0);
-                    }
+                    const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
+                    Qtmp = std::complex<double>(factor, 0.0);
                 }
 
                 v1_SCP[is] += v3mat_tmp(js, js) * Qtmp;
@@ -263,7 +258,7 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     int i1, i2;
     int ik;
     int is1, is2, is3, js, js1, js2;
-    double n1, omega1_tmp;
+    double omega1_tmp;
     std::complex<double> Qtmp;
     int count_zero;
 
@@ -321,13 +316,8 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
                             << "Warning in compute_anharmonic_del_v0_del_umn: squared SCP frequency is negative. ik = "
                             << ik << '\n';
                     }
-                    if (thermodynamics->classical) {
-                        Qtmp = std::complex<double>(2.0 * T_in * thermodynamics->T_to_Ryd / (omega1_tmp * omega1_tmp),
-                                                    0.0);
-                    } else {
-                        n1 = thermodynamics->fB(omega1_tmp, T_in);
-                        Qtmp = std::complex<double>((2.0 * n1 + 1.0) / omega1_tmp, 0.0);
-                    }
+                    const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
+                    Qtmp = std::complex<double>(factor, 0.0);
                 }
 
                 del_v0_del_umn_SCP[i1] += factor2 * del_v2_strain_mat(js, js) * Qtmp;
