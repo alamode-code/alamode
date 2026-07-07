@@ -17,6 +17,7 @@
 #include "dynamical.h"
 #include "error.h"
 #include "integration.h"
+#include "isotope_kernel.h"
 #include "kpoint.h"
 #include "memory.h"
 #include "mpi_common.h"
@@ -108,16 +109,8 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum, const unsigned in
     for (auto ik = 0; ik < nk; ++ik) {
         for (auto is = 0; is < ns; ++is) {
 
-            auto prod = 0.0;
-
-            for (auto iat = 0; iat < natmin; ++iat) {
-
-                auto dprod = std::complex<double>(0.0, 0.0);
-                for (auto icrd = 0; icrd < 3; ++icrd) {
-                    dprod += std::conj(evec_in[ik][is][3 * iat + icrd]) * evec_in[knum][snum][3 * iat + icrd];
-                }
-                prod += isotope_factor[system_in.get_primcell().kind[iat]] * std::norm(dprod);
-            }
+            const auto prod = tamura_overlap(natmin, evec_in[ik][is], evec_in[knum][snum], &isotope_factor[0],
+                                             &system_in.get_primcell().kind[0]);
 
             const auto omega1 = eval_in[ik][is];
 
@@ -170,46 +163,15 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
 
     for (ik = 0; ik < nk; ++ik) {
         kmap_identity[ik] = ik;
-
-        auto begin = 0;
-        auto omega_ref = eval_in[ik][0];
-        auto omega_sum = eval_in[ik][0];
-
-        for (is = 1; is < ns; ++is) {
-            const auto omega_now = eval_in[ik][is];
-            if (std::abs(omega_now - omega_ref) < tol_degenerate) {
-                omega_sum += omega_now;
-            } else {
-                const auto omega_avg = omega_sum / static_cast<double>(is - begin);
-                for (auto js = begin; js < is; ++js) {
-                    eval_tetra[js][ik] = omega_avg;
-                }
-                begin = is;
-                omega_ref = omega_now;
-                omega_sum = omega_now;
-            }
-        }
-
-        const auto omega_avg = omega_sum / static_cast<double>(ns - begin);
-        for (auto js = begin; js < ns; ++js) {
-            eval_tetra[js][ik] = omega_avg;
-        }
     }
+    average_degenerate_frequencies_transposed(nk, ns, eval_in, tol_degenerate, eval_tetra);
 
     for (is = 0; is < ns; ++is) {
 #pragma omp parallel for
         for (ik = 0; ik < nk; ++ik) {
 
-            auto prod = 0.0;
-
-            for (auto iat = 0; iat < natmin; ++iat) {
-
-                auto dprod = std::complex<double>(0.0, 0.0);
-                for (auto icrd = 0; icrd < 3; ++icrd) {
-                    dprod += std::conj(evec_in[ik][is][3 * iat + icrd]) * evec_in[knum][snum][3 * iat + icrd];
-                }
-                prod += isotope_factor[system_in.get_primcell().kind[iat]] * std::norm(dprod);
-            }
+            const auto prod = tamura_overlap(natmin, evec_in[ik][is], evec_in[knum][snum], &isotope_factor[0],
+                                             &system_in.get_primcell().kind[0]);
 
             prod_omega[is][ik] = prod * eval_tetra[is][ik];
             eval[ik] = eval_tetra[is][ik];
@@ -224,33 +186,7 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
     }
 
     for (ik = 0; ik < nk; ++ik) {
-        std::vector<std::pair<int, int>> blocks;
-        auto begin = 0;
-        auto omega_ref = eval_tetra[0][ik];
-
-        for (is = 1; is < ns; ++is) {
-            const auto omega_now = eval_tetra[is][ik];
-            if (std::abs(omega_now - omega_ref) >= tol_degenerate) {
-                blocks.emplace_back(begin, is);
-                begin = is;
-                omega_ref = omega_now;
-            }
-        }
-        blocks.emplace_back(begin, ns);
-
-        for (const auto &block: blocks) {
-            if (block.second - block.first <= 1) continue;
-
-            auto weight_sum = 0.0;
-            for (is = block.first; is < block.second; ++is) {
-                weight_sum += weight_tetra[is][ik];
-            }
-            weight_sum /= static_cast<double>(block.second - block.first);
-
-            for (is = block.first; is < block.second; ++is) {
-                weight_tetra[is][ik] = weight_sum;
-            }
-        }
+        average_tetra_weights_over_degenerate_modes(ns, ik, eval_tetra, weight_tetra, tol_degenerate);
     }
 
     for (is = 0; is < ns; ++is) {

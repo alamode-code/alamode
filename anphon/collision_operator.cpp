@@ -17,6 +17,7 @@
 #include "error.h"
 #include "integration.h"
 #include "isotope.h"
+#include "isotope_kernel.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -257,25 +258,7 @@ void CollisionOperator::build_L_isotope()
     NDArray<double, 2> eval_tetra;
     if (integration_.ismear == -1) {
         eval_tetra.resize(ns, nk_3ph);
-        for (int ik = 0; ik < nk_3ph; ++ik) {
-            auto begin = 0;
-            auto omega_ref = eval_in[ik][0];
-            auto omega_sum = eval_in[ik][0];
-            for (int is = 1; is < ns; ++is) {
-                const auto omega_now = eval_in[ik][is];
-                if (std::abs(omega_now - omega_ref) < tol_degenerate) {
-                    omega_sum += omega_now;
-                } else {
-                    const auto omega_avg = omega_sum / static_cast<double>(is - begin);
-                    for (auto js = begin; js < is; ++js) eval_tetra[js][ik] = omega_avg;
-                    begin = is;
-                    omega_ref = omega_now;
-                    omega_sum = omega_now;
-                }
-            }
-            const auto omega_avg = omega_sum / static_cast<double>(ns - begin);
-            for (auto js = begin; js < ns; ++js) eval_tetra[js][ik] = omega_avg;
-        }
+        average_degenerate_frequencies_transposed(nk_3ph, ns, eval_in, tol_degenerate, eval_tetra);
     }
 
 #ifdef _OPENMP
@@ -304,17 +287,7 @@ void CollisionOperator::build_L_isotope()
 
             auto &row = L_iso[irow];
 
-            const auto prod_overlap = [&](const int k2, const int s2) {
-                auto prod = 0.0;
-                for (auto iat = 0; iat < natmin; ++iat) {
-                    auto dprod = std::complex<double>(0.0, 0.0);
-                    for (auto icrd = 0; icrd < 3; ++icrd) {
-                        dprod += std::conj(evec_in[k2][s2][3 * iat + icrd]) * evec_in[k1][s1][3 * iat + icrd];
-                    }
-                    prod += g2[kind[iat]] * std::norm(dprod);
-                }
-                return prod;
-            };
+            const auto prod_overlap = [&](const int k2, const int s2) { return tamura_overlap(natmin, evec_in[k2][s2], evec_in[k1][s1], &g2[0], &kind[0]); };
 
             if (integration_.ismear >= 0) {
                 const auto epsilon = integration_.epsilon;
@@ -359,21 +332,7 @@ void CollisionOperator::build_L_isotope()
                                                          weight_tetra[s2]);
                 }
                 for (int k2 = 0; k2 < nk_3ph; ++k2) {
-                    auto begin = 0;
-                    auto omega_ref = eval_tetra[0][k2];
-                    for (int s2 = 1; s2 <= ns; ++s2) {
-                        if (s2 < ns && std::abs(eval_tetra[s2][k2] - omega_ref) < tol_degenerate) continue;
-                        if (s2 - begin > 1) {
-                            auto wsum = 0.0;
-                            for (auto js = begin; js < s2; ++js) wsum += weight_tetra[js][k2];
-                            wsum /= static_cast<double>(s2 - begin);
-                            for (auto js = begin; js < s2; ++js) weight_tetra[js][k2] = wsum;
-                        }
-                        if (s2 < ns) {
-                            begin = s2;
-                            omega_ref = eval_tetra[s2][k2];
-                        }
-                    }
+                    average_tetra_weights_over_degenerate_modes(ns, k2, eval_tetra, weight_tetra, tol_degenerate);
                 }
                 const auto prefactor = pi * omega1 * 0.25;
                 for (int k2 = 0; k2 < nk_3ph; ++k2) {

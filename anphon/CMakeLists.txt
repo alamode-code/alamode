@@ -214,6 +214,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/integration.h
             ${PROJECT_SOURCE_DIR}/interpolation.h
             ${PROJECT_SOURCE_DIR}/isotope.h
+            ${PROJECT_SOURCE_DIR}/isotope_kernel.h
             ${PROJECT_SOURCE_DIR}/iterativebte.h
             ${PROJECT_SOURCE_DIR}/kpoint.h
             ${PROJECT_SOURCE_DIR}/mode_analysis.h
