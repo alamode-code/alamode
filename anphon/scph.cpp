@@ -790,7 +790,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                 std::cout << " :\n";
                 const auto spg_label = relaxation->print_structure_and_symmetry(
                     structure_state,
-                    (relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step) ? del_v0_del_umn_SCP
+                    (relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step) ? del_v0_del_umn_SCP.ptr()
                                                                                                 : nullptr);
                 std::cout << '\n';
 
