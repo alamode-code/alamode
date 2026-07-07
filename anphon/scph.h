@@ -22,6 +22,8 @@
 
 namespace PHON_NS
 {
+class ScphRelaxationModel;
+
 class Scph: protected ScphQhaCommon
 {
 public:
@@ -65,6 +67,8 @@ public:
     using ScphQhaCommon::write_anharmonic_correction_fc2;
 
 private:
+    friend class ScphRelaxationModel;
+
     void set_default_variables();
 
     void exec_scph_main(std::complex<double> ****);

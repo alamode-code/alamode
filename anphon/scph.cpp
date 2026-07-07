@@ -54,6 +54,446 @@ Scph::~Scph()
     deallocate_variables();
 }
 
+namespace PHON_NS
+{
+class ScphRelaxationModel final: public IRelaxationModel
+{
+public:
+    ScphRelaxationModel(Scph &scph, StructuralOptWorkspace &ws, std::complex<double> ****dymat_anharm,
+                        std::complex<double> ****delta_harmonic_dymat_renormalize,
+                        std::complex<double> ***cmat_convert, double ***omega2_anharm,
+                        std::complex<double> ***evec_anharm_tmp, double ***omega2_harm_renorm,
+                        std::complex<double> ***evec_harm_renorm_tmp, std::complex<double> *v1_SCP,
+                        std::complex<double> *del_v0_del_umn_SCP, bool &converged_prev, int &str_diverged,
+                        std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
+                        std::ofstream &fout_step_u_tensor)
+        : scph_(scph),
+          ws_(ws),
+          dymat_anharm_(dymat_anharm),
+          delta_harmonic_dymat_renormalize_(delta_harmonic_dymat_renormalize),
+          cmat_convert_(cmat_convert),
+          omega2_anharm_(omega2_anharm),
+          evec_anharm_tmp_(evec_anharm_tmp),
+          omega2_harm_renorm_(omega2_harm_renorm),
+          evec_harm_renorm_tmp_(evec_harm_renorm_tmp),
+          v1_SCP_(v1_SCP),
+          del_v0_del_umn_SCP_(del_v0_del_umn_SCP),
+          converged_prev_(converged_prev),
+          str_diverged_(str_diverged),
+          fout_step_q0_(fout_step_q0),
+          fout_step_u0_(fout_step_u0),
+          fout_step_u_tensor_(fout_step_u_tensor)
+    {}
+
+    void before_init_structure(const unsigned int iT, unsigned int, double, const bool converged_prev) override
+    {
+        const auto nk = scph_.kmesh_dense->nk;
+        const auto ns = scph_.dynamical->neval;
+
+        // Initialize phonon eigenvectors with harmonic values
+
+        for (auto ik = 0; ik < nk; ++ik) {
+            for (auto is = 0; is < ns; ++is) {
+                for (auto js = 0; js < ns; ++js) {
+                    evec_anharm_tmp_[ik][is][js] = scph_.evec_harmonic[ik][is][js];
+                }
+            }
+        }
+        if (converged_prev) {
+            if (scph_.lower_temp) {
+                for (auto ik = 0; ik < nk; ++ik) {
+                    for (auto is = 0; is < ns; ++is) {
+                        omega2_anharm_[iT][ik][is] = omega2_anharm_[iT + 1][ik][is];
+                    }
+                }
+            } else {
+                for (auto ik = 0; ik < nk; ++ik) {
+                    for (auto is = 0; is < ns; ++is) {
+                        omega2_anharm_[iT][ik][is] = omega2_anharm_[iT - 1][ik][is];
+                    }
+                }
+            }
+        }
+    }
+
+    void after_init_structure(unsigned int, double) override
+    {
+        auto &structure_state = ws_.structure_state;
+
+        // Forget the step history of the previous temperature so that the
+        // backtracking rescue for unconverged SCP steps never undoes a step
+        // taken at a different temperature.
+        std::fill(structure_state.delta_q0.begin(), structure_state.delta_q0.end(), 0.0);
+        structure_state.delta_umn.fill(0.0);
+        initial_structure_state_this_temp_ = structure_state;
+        converged_this_temp_ = false;
+        n_scp_failures_ = 0;
+    }
+
+    StructOptStepStatus do_structure_step(const unsigned int iT, const double temp, const int i_str_loop,
+                                          std::vector<StructOptStepRecord> &step_history) override
+    {
+        auto &structure_state = ws_.structure_state;
+        auto &harm_optical_modes = ws_.harm_optical_modes;
+
+        // recompute the strain- and q0-renormalized IFCs at the
+        // current structure
+        scph_.renormalize_ifcs_at_structure(ws_);
+
+        // solve the SCP equation at this structure and compute the
+        // SCP forces and stress from the converged solution
+        bool scp_converged_step = false;
+        scph_.solve_scp_and_compute_forces(ws_,
+                                           iT,
+                                           temp,
+                                           cmat_convert_,
+                                           converged_prev_,
+                                           scp_converged_step,
+                                           dymat_anharm_,
+                                           omega2_anharm_,
+                                           evec_anharm_tmp_,
+                                           v1_SCP_,
+                                           del_v0_del_umn_SCP_);
+
+        // Print the structure the SCP equation was solved at, together with the
+        // SCP stress (cell relaxation only) and the space group detected by spglib.
+        std::cout << "\n Structure at this step";
+        if (!scp_converged_step) std::cout << " (SCP NOT converged)";
+        std::cout << " :\n";
+        const auto spg_label = scph_.relaxation->print_structure_and_symmetry(
+            structure_state,
+            (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step)
+                ? del_v0_del_umn_SCP_
+                : nullptr);
+        std::cout << '\n';
+
+        if (!scp_converged_step) {
+            // The forces and stress from an unconverged SCP solution are unreliable.
+            // They are not passed to the optimizer; instead the structure is moved by
+            // a rescue step built from the accepted (converged) data only.
+            ++n_scp_failures_;
+            std::cout << " Warning: the SCP equation did not converge at this structure.\n"
+                      << " The SCP forces and stress are unreliable and are not passed to the optimizer.\n";
+
+            if (n_scp_failures_ >= max_consecutive_scp_failures_) {
+                std::cout << " The SCP equation failed " << n_scp_failures_
+                          << " times in a row. Give up the structural optimization at this temperature.\n";
+                step_history.push_back({false, 0.0, 0.0, -1.0, -1.0, spg_label});
+                return StructOptStepStatus::Aborted;
+            }
+
+            scph_.relaxation->rescue_step_after_scp_failure(structure_state,
+                                                            v1_SCP_,
+                                                            harm_optical_modes,
+                                                            scph_.omega2_harmonic,
+                                                            scph_.evec_harmonic);
+            const auto du0 = structure_state.du0;
+            const auto du_tensor = structure_state.du_tensor;
+
+            step_history.push_back({false, du0, du_tensor, -1.0, -1.0, spg_label});
+
+            scph_.relaxation->write_stepresfile(structure_state,
+                                                i_str_loop + 1,
+                                                fout_step_q0_,
+                                                fout_step_u0_,
+                                                fout_step_u_tensor_);
+
+            scph_.relaxation->check_str_divergence(str_diverged_, structure_state);
+
+            if (str_diverged_) {
+                converged_prev_ = false;
+                std::cout << " The crystal structure diverged.";
+                std::cout << " Break from the structure loop.\n";
+                return StructOptStepStatus::Diverged;
+            }
+
+            std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0
+                      << " [Bohr]";
+            std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
+                      << '\n';
+
+            // Do not test convergence on this step: du0/du_tensor describe the rescue
+            // step and the gradients are unreliable.
+            return StructOptStepStatus::SolverFailedRetry;
+        }
+        n_scp_failures_ = 0;
+
+        scph_.relaxation->update_cell_coordinate(structure_state,
+                                                 v1_SCP_,
+                                                 omega2_anharm_[iT],
+                                                 del_v0_del_umn_SCP_,
+                                                 ws_.C2_array,
+                                                 cmat_convert_,
+                                                 harm_optical_modes,
+                                                 scph_.omega2_harmonic,
+                                                 scph_.evec_harmonic);
+        const auto du0 = structure_state.du0;
+        const auto du_tensor = structure_state.du_tensor;
+
+        scph_.relaxation->write_stepresfile(structure_state,
+                                            i_str_loop + 1,
+                                            fout_step_q0_,
+                                            fout_step_u0_,
+                                            fout_step_u_tensor_);
+
+        scph_.relaxation->check_str_divergence(str_diverged_, structure_state);
+
+        if (str_diverged_) {
+            converged_prev_ = false;
+            std::cout << " The crystal structure diverged.";
+            std::cout << " Break from the structure loop.\n";
+            step_history.push_back({true, du0, du_tensor, -1.0, -1.0, spg_label});
+            return StructOptStepStatus::Diverged;
+        }
+
+        double grad_norm, cell_grad_norm;
+        scph_.compute_and_print_step_gradients(ws_,
+                                               v1_SCP_,
+                                               del_v0_del_umn_SCP_,
+                                               du0,
+                                               du_tensor,
+                                               spg_label,
+                                               step_history,
+                                               grad_norm,
+                                               cell_grad_norm);
+
+        const bool step_converged = (du0 < scph_.relaxation->coord_conv_tol &&
+                                     du_tensor < scph_.relaxation->cell_conv_tol);
+        const bool force_converged =
+            (scph_.relaxation->gradient_conv_tol <= 0.0) || (grad_norm < scph_.relaxation->gradient_conv_tol);
+        const bool cell_force_converged = (ws_.relax_mode != RelaxationStrMode::CoordinatesAndCell) ||
+                                          (scph_.relaxation->cell_gradient_conv_tol <= 0.0) ||
+                                          (cell_grad_norm < scph_.relaxation->cell_gradient_conv_tol);
+
+        if (step_converged && force_converged && cell_force_converged) {
+            std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
+                      << std::setprecision(6) << scph_.relaxation->coord_conv_tol << '\n';
+            if (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+                std::cout << " du_tensor is smaller than CELL_CONV_TOL = " << std::scientific << std::setw(15)
+                          << std::setprecision(6) << scph_.relaxation->cell_conv_tol << '\n';
+            }
+            if (scph_.relaxation->gradient_conv_tol > 0.0) {
+                std::cout << " |residual force| is smaller than GRADIENT_CONV_TOL = " << std::scientific
+                          << std::setw(15) << std::setprecision(6) << scph_.relaxation->gradient_conv_tol << '\n';
+            }
+            if (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell &&
+                scph_.relaxation->cell_gradient_conv_tol > 0.0)
+            {
+                std::cout << " |residual stress| is smaller than CELL_GRADIENT_CONV_TOL = " << std::scientific
+                          << std::setw(15) << std::setprecision(6) << scph_.relaxation->cell_gradient_conv_tol
+                          << '\n';
+            }
+            std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
+            std::cout << " break structural loop.\n\n";
+            converged_this_temp_ = true;
+            return StructOptStepStatus::Converged;
+        }
+
+        return StructOptStepStatus::Continue;
+    }
+
+    void after_structure_loop(unsigned int iT, const double temp, const int i_str_loop_exit,
+                              bool &converged_this_temp) override
+    {
+        converged_this_temp = converged_this_temp_;
+
+        bench_temp_.push_back(temp);
+        // i_str_loop == max_str_iter only when the loop ran to completion without a break;
+        // a converged or diverged break leaves i_str_loop at the 0-based loop index.
+        bench_steps_.push_back(i_str_loop_exit >= scph_.relaxation->max_str_iter ? scph_.relaxation->max_str_iter
+                                                                                 : i_str_loop_exit + 1);
+
+        const auto final_structure_is_finite = structure_state_is_finite(ws_.structure_state);
+        const auto accepted_this_temp = converged_this_temp && final_structure_is_finite;
+        bench_converged_.push_back(accepted_this_temp);
+
+        if (accepted_this_temp) {
+            last_converged_structure_state_ = ws_.structure_state;
+            last_converged_iT_ = iT;
+            has_last_converged_structure_ = true;
+        } else {
+            converged_this_temp = false;
+            converged_prev_ = false;
+            if (!final_structure_is_finite) str_diverged_ = 1;
+
+            std::cout << "\n Structural optimization at " << temp << " K did not converge";
+            if (!final_structure_is_finite) std::cout << " and produced non-finite structural parameters";
+            std::cout << ".\n";
+
+            if (has_last_converged_structure_) {
+                ws_.structure_state = last_converged_structure_state_;
+                copy_temperature_result(iT, last_converged_iT_);
+                std::cout << " The failed structure and SCP data are discarded; the last converged"
+                          << " temperature point is kept as the restart state for the next temperature.\n";
+            } else {
+                ws_.structure_state = initial_structure_state_this_temp_;
+                set_harmonic_temperature_result(iT);
+                std::cout << " No converged temperature point is available yet; the initial structure and"
+                          << " harmonic dynamical matrix are kept as the restart state.\n";
+            }
+
+            str_diverged_ = 0;
+        }
+
+        converged_this_temp_ = converged_this_temp;
+    }
+
+    void record_v0(const unsigned int iT) override
+    {
+        // record zero-th order term of PES
+        if (converged_this_temp_) scph_.V0[iT] = ws_.v0_renorm;
+    }
+
+    void finalize_temperature(const unsigned int iT, double, const bool converged_this_temp,
+                              bool &converged_prev) override
+    {
+        if (converged_this_temp) {
+            // get renormalization of harmonic dymat
+            scph_.dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm_[iT],
+                                                                      evec_harm_renorm_tmp_,
+                                                                      ws_.delta_v2_renorm,
+                                                                      scph_.omega2_harmonic,
+                                                                      scph_.evec_harmonic,
+                                                                      scph_.kmesh_coarse.get(),
+                                                                      scph_.kmesh_dense.get(),
+                                                                      scph_.kmap_coarse_to_dense,
+                                                                      scph_.mat_transform_sym,
+                                                                      scph_.mindist_list,
+                                                                      scph_.writes->getVerbosity());
+
+            scph_.dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize_[iT],
+                                                       omega2_harm_renorm_[iT],
+                                                       evec_harm_renorm_tmp_,
+                                                       scph_.kmesh_coarse.get(),
+                                                       scph_.kmap_coarse_to_dense);
+        }
+
+        scph_.converged_str_temp[iT] = converged_this_temp ? 1 : 0;
+        converged_prev = scph_.warmstart_scph && converged_this_temp;
+    }
+
+    void print_run_summary() override
+    {
+        // ---- structural-optimization benchmark summary (step counts to convergence) ----
+        std::cout << " ============ Structural-optimization benchmark summary ============\n";
+        std::cout << "  RELAX_ALGO = " << scph_.relaxation->relax_algo;
+        if (scph_.relaxation->relax_algo == 3) {
+            std::cout << "   GDIIS_PLAIN = " << (scph_.relaxation->gdiis_control ? 0 : 1);
+        }
+        std::cout << '\n';
+        std::cout << "  " << std::setw(15) << "Temp [K]" << std::setw(12) << "steps" << std::setw(12) << "converged"
+                  << '\n';
+        int bench_total = 0;
+        for (std::size_t ib = 0; ib < bench_temp_.size(); ++ib) {
+            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp_[ib]
+                      << std::setw(12) << bench_steps_[ib] << std::setw(12)
+                      << (bench_converged_[ib] ? "yes" : "no") << '\n';
+            bench_total += bench_steps_[ib];
+        }
+        std::cout << "  " << std::setw(15) << "Total" << std::setw(12) << bench_total << '\n';
+        std::cout << " ===================================================================\n\n";
+        std::cout.unsetf(std::ios::fixed);
+    }
+
+    bool history_has_scp_column() const override { return true; }
+
+private:
+    bool structure_state_is_finite(const RelaxationStructureState &state) const
+    {
+        for (const auto value: state.q0) {
+            if (!std::isfinite(value)) return false;
+        }
+        for (const auto value: state.u0) {
+            if (!std::isfinite(value)) return false;
+        }
+        for (const auto &row: state.u_tensor) {
+            for (const auto value: row) {
+                if (!std::isfinite(value)) return false;
+            }
+        }
+        return true;
+    }
+
+    void copy_temperature_result(const unsigned int dst, const unsigned int src) const
+    {
+        const auto nk = scph_.kmesh_dense->nk;
+        const auto nk_interpolate = scph_.kmesh_coarse->nk;
+        const auto ns = scph_.dynamical->neval;
+
+        for (auto ik = 0; ik < nk; ++ik) {
+            for (auto is = 0; is < ns; ++is) {
+                omega2_anharm_[dst][ik][is] = omega2_anharm_[src][ik][is];
+                omega2_harm_renorm_[dst][ik][is] = omega2_harm_renorm_[src][ik][is];
+            }
+        }
+        for (auto is = 0; is < ns; ++is) {
+            for (auto js = 0; js < ns; ++js) {
+                for (auto ik = 0; ik < nk_interpolate; ++ik) {
+                    dymat_anharm_[dst][is][js][ik] = dymat_anharm_[src][is][js][ik];
+                    delta_harmonic_dymat_renormalize_[dst][is][js][ik] =
+                        delta_harmonic_dymat_renormalize_[src][is][js][ik];
+                }
+            }
+        }
+        scph_.V0[dst] = scph_.V0[src];
+    }
+
+    void set_harmonic_temperature_result(const unsigned int dst) const
+    {
+        const auto nk = scph_.kmesh_dense->nk;
+        const auto nk_interpolate = scph_.kmesh_coarse->nk;
+        const auto ns = scph_.dynamical->neval;
+
+        for (auto ik = 0; ik < nk; ++ik) {
+            for (auto is = 0; is < ns; ++is) {
+                omega2_anharm_[dst][ik][is] = scph_.omega2_harmonic[ik][is];
+                omega2_harm_renorm_[dst][ik][is] = scph_.omega2_harmonic[ik][is];
+            }
+        }
+        scph_.dynamical->calc_new_dymat_with_evec(dymat_anharm_[dst],
+                                                  omega2_anharm_[dst],
+                                                  scph_.evec_harmonic,
+                                                  scph_.kmesh_coarse.get(),
+                                                  scph_.kmap_coarse_to_dense);
+        for (auto is = 0; is < ns; ++is) {
+            for (auto js = 0; js < ns; ++js) {
+                for (auto ik = 0; ik < nk_interpolate; ++ik) {
+                    delta_harmonic_dymat_renormalize_[dst][is][js][ik] = 0.0;
+                }
+            }
+        }
+        scph_.V0[dst] = ws_.v0_ref;
+    }
+
+    Scph &scph_;
+    StructuralOptWorkspace &ws_;
+    std::complex<double> ****dymat_anharm_;
+    std::complex<double> ****delta_harmonic_dymat_renormalize_;
+    std::complex<double> ***cmat_convert_;
+    double ***omega2_anharm_;
+    std::complex<double> ***evec_anharm_tmp_;
+    double ***omega2_harm_renorm_;
+    std::complex<double> ***evec_harm_renorm_tmp_;
+    std::complex<double> *v1_SCP_;
+    std::complex<double> *del_v0_del_umn_SCP_;
+    bool &converged_prev_;
+    int &str_diverged_;
+    std::ofstream &fout_step_q0_;
+    std::ofstream &fout_step_u0_;
+    std::ofstream &fout_step_u_tensor_;
+    int n_scp_failures_ = 0;
+    const int max_consecutive_scp_failures_ = 10;
+    std::vector<double> bench_temp_;
+    std::vector<int> bench_steps_;
+    std::vector<bool> bench_converged_;
+    RelaxationStructureState initial_structure_state_this_temp_;
+    RelaxationStructureState last_converged_structure_state_;
+    bool converged_this_temp_ = false;
+    bool has_last_converged_structure_ = false;
+    unsigned int last_converged_iT_ = 0;
+};
+} // namespace PHON_NS
+
 void Scph::set_default_variables()
 {
     restart_scph = false;
@@ -473,12 +913,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
 void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_anharm,
                                                 std::complex<double> ****delta_harmonic_dymat_renormalize)
 {
-    using namespace Eigen;
-
-    int is, js;
-
     const auto nk = kmesh_dense->nk;
-    const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
     const auto Tmax = system->Tmax;
@@ -503,7 +938,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     auto &v4_ref = ws.v4_ref;
     auto &v1_with_umn = ws.v1_with_umn;
     auto &v0_ref = ws.v0_ref;
-    auto &v0_renorm = ws.v0_renorm;
     v0_ref = 0.0; // set original ground state energy as zero
 
     // elastic constants
@@ -520,14 +954,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     // atomic forces and stress tensor at finite temperatures
     NDArray<std::complex<double>, 1> v1_SCP;
     NDArray<std::complex<double>, 1> del_v0_del_umn_SCP;
-
-    // structure optimization
-    int i_str_loop, i_temp_loop;
-
-    // structure update
-    double du0;
-    double du_tensor;
-    auto &harm_optical_modes = ws.harm_optical_modes;
 
     // cell optimization
     double pvcell = 0.0; // pressure * v_{cell,reference} [Ry]
@@ -555,8 +981,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     setup_structural_opt_buffers(ws, eps10);
 
     auto &structure_state = ws.structure_state;
-    auto &q0 = structure_state.q0;
-    auto &u0 = structure_state.u0;
 
     v1_SCP.resize(ns);
     del_v0_del_umn_SCP.resize(9);
@@ -566,8 +990,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     ws.v4_for_renorm = v4_ref;
 
     if (mympi->my_rank == 0) {
-        int ik;
-
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
@@ -619,73 +1041,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
         relaxation->write_resfile_header(fout_q0, fout_u0, fout_u_tensor);
 
-        i_temp_loop = -1;
-
-        // per-temperature benchmark accumulators (step counts to convergence)
-        std::vector<double> bench_temp;
-        std::vector<int> bench_steps;
-        std::vector<bool> bench_converged;
-        RelaxationStructureState last_converged_structure_state;
-        last_converged_structure_state.resize(ns);
-        auto has_last_converged_structure = false;
-        auto last_converged_iT = 0U;
-
-        auto structure_state_is_finite = [](const RelaxationStructureState &state) {
-            for (const auto value: state.q0) {
-                if (!std::isfinite(value)) return false;
-            }
-            for (const auto value: state.u0) {
-                if (!std::isfinite(value)) return false;
-            }
-            for (const auto &row: state.u_tensor) {
-                for (const auto value: row) {
-                    if (!std::isfinite(value)) return false;
-                }
-            }
-            return true;
-        };
-
-        auto copy_temperature_result = [&](const unsigned int dst, const unsigned int src) {
-            for (ik = 0; ik < nk; ++ik) {
-                for (is = 0; is < ns; ++is) {
-                    omega2_anharm[dst][ik][is] = omega2_anharm[src][ik][is];
-                    omega2_harm_renorm[dst][ik][is] = omega2_harm_renorm[src][ik][is];
-                }
-            }
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    for (ik = 0; ik < nk_interpolate; ++ik) {
-                        dymat_anharm[dst][is][js][ik] = dymat_anharm[src][is][js][ik];
-                        delta_harmonic_dymat_renormalize[dst][is][js][ik] =
-                            delta_harmonic_dymat_renormalize[src][is][js][ik];
-                    }
-                }
-            }
-            V0[dst] = V0[src];
-        };
-
-        auto set_harmonic_temperature_result = [&](const unsigned int dst) {
-            for (ik = 0; ik < nk; ++ik) {
-                for (is = 0; is < ns; ++is) {
-                    omega2_anharm[dst][ik][is] = omega2_harmonic[ik][is];
-                    omega2_harm_renorm[dst][ik][is] = omega2_harmonic[ik][is];
-                }
-            }
-            dynamical->calc_new_dymat_with_evec(dymat_anharm[dst],
-                                                omega2_anharm[dst],
-                                                evec_harmonic,
-                                                kmesh_coarse.get(),
-                                                kmap_coarse_to_dense);
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    for (ik = 0; ik < nk_interpolate; ++ik) {
-                        delta_harmonic_dymat_renormalize[dst][is][js][ik] = 0.0;
-                    }
-                }
-            }
-            V0[dst] = v0_ref;
-        };
-
         std::cout << " Start structural optimization.\n";
 
         if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
@@ -695,329 +1050,38 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             std::cout << "  Internal coordinates and shape of the unit cell are relaxed.\n\n";
         }
 
-        for (double temp: vec_temp) {
-            i_temp_loop++;
-            auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
-
-            std::cout << "\n ================================================================\n";
-            std::cout << "  Temperature = " << temp << " K    (" << std::setw(4) << i_temp_loop + 1 << " of "
-                      << std::setw(4) << NT << ")\n";
-            std::cout << " ================================================================\n\n";
-
-            // Initialize phonon eigenvectors with harmonic values
-
-            for (ik = 0; ik < nk; ++ik) {
-                for (is = 0; is < ns; ++is) {
-                    for (js = 0; js < ns; ++js) {
-                        evec_anharm_tmp[ik][is][js] = evec_harmonic[ik][is][js];
-                    }
-                }
-            }
-            if (converged_prev) {
-                if (lower_temp) {
-                    for (ik = 0; ik < nk; ++ik) {
-                        for (is = 0; is < ns; ++is) {
-                            omega2_anharm[iT][ik][is] = omega2_anharm[iT + 1][ik][is];
-                        }
-                    }
-                } else {
-                    for (ik = 0; ik < nk; ++ik) {
-                        for (is = 0; is < ns; ++is) {
-                            omega2_anharm[iT][ik][is] = omega2_anharm[iT - 1][ik][is];
-                        }
-                    }
-                }
-            }
-
-            relaxation->set_init_structure_atT(structure_state,
-                                               converged_prev,
-                                               str_diverged,
-                                               i_temp_loop,
-                                               omega2_harmonic,
-                                               evec_harmonic);
-
-            // Forget the step history of the previous temperature so that the
-            // backtracking rescue for unconverged SCP steps never undoes a step
-            // taken at a different temperature.
-            std::fill(structure_state.delta_q0.begin(), structure_state.delta_q0.end(), 0.0);
-            structure_state.delta_umn.fill(0.0);
-            const auto initial_structure_state_this_temp = structure_state;
-
-
-            print_initial_structure(structure_state, relax_mode);
-
-            relaxation->write_stepresfile_header_atT(fout_step_q0, fout_step_u0, fout_step_u_tensor, temp);
-
-            relaxation->write_stepresfile(structure_state, 0, fout_step_q0, fout_step_u0, fout_step_u_tensor);
-
-            std::cout << " Start structural optimization at " << temp << " K.\n";
-
-            // per-step records for the optimization-history table printed below
-            std::vector<StructOptStepRecord> step_history;
-
-            bool converged_this_temp = false;
-            int n_scp_failures = 0;
-            const int max_consecutive_scp_failures = 10;
-            for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
-
-                std::cout << "\n ----------------------------------------------------------------\n";
-                std::cout << "  Structure opt. step " << std::setw(4) << i_str_loop + 1 << " of "
-                          << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
-                std::cout << " ----------------------------------------------------------------\n";
-
-                // recompute the strain- and q0-renormalized IFCs at the
-                // current structure
-                renormalize_ifcs_at_structure(ws);
-
-                // solve the SCP equation at this structure and compute the
-                // SCP forces and stress from the converged solution
-                bool scp_converged_step = false;
-                solve_scp_and_compute_forces(ws,
-                                             iT,
-                                             temp,
-                                             cmat_convert,
-                                             converged_prev,
-                                             scp_converged_step,
-                                             dymat_anharm,
-                                             omega2_anharm,
-                                             evec_anharm_tmp,
-                                             v1_SCP,
-                                             del_v0_del_umn_SCP);
-
-                // Print the structure the SCP equation was solved at, together with the
-                // SCP stress (cell relaxation only) and the space group detected by spglib.
-                std::cout << "\n Structure at this step";
-                if (!scp_converged_step) std::cout << " (SCP NOT converged)";
-                std::cout << " :\n";
-                const auto spg_label = relaxation->print_structure_and_symmetry(
-                    structure_state,
-                    (relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step)
-                        ? del_v0_del_umn_SCP.ptr()
-                        : nullptr);
-                std::cout << '\n';
-
-                if (!scp_converged_step) {
-                    // The forces and stress from an unconverged SCP solution are unreliable.
-                    // They are not passed to the optimizer; instead the structure is moved by
-                    // a rescue step built from the accepted (converged) data only.
-                    ++n_scp_failures;
-                    std::cout << " Warning: the SCP equation did not converge at this structure.\n"
-                              << " The SCP forces and stress are unreliable and are not passed to the optimizer.\n";
-
-                    if (n_scp_failures >= max_consecutive_scp_failures) {
-                        std::cout << " The SCP equation failed " << n_scp_failures
-                                  << " times in a row. Give up the structural optimization at this temperature.\n";
-                        step_history.push_back({false, 0.0, 0.0, -1.0, -1.0, spg_label});
-                        break;
-                    }
-
-                    relaxation->rescue_step_after_scp_failure(structure_state,
-                                                              v1_SCP,
-                                                              harm_optical_modes,
-                                                              omega2_harmonic,
-                                                              evec_harmonic);
-                    du0 = structure_state.du0;
-                    du_tensor = structure_state.du_tensor;
-
-                    step_history.push_back({false, du0, du_tensor, -1.0, -1.0, spg_label});
-
-                    relaxation->write_stepresfile(structure_state,
-                                                  i_str_loop + 1,
-                                                  fout_step_q0,
-                                                  fout_step_u0,
-                                                  fout_step_u_tensor);
-
-                    relaxation->check_str_divergence(str_diverged, structure_state);
-
-                    if (str_diverged) {
-                        converged_prev = false;
-                        std::cout << " The crystal structure diverged.";
-                        std::cout << " Break from the structure loop.\n";
-                        break;
-                    }
-
-                    std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0
-                              << " [Bohr]";
-                    std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor
-                              << '\n';
-
-                    // Do not test convergence on this step: du0/du_tensor describe the rescue
-                    // step and the gradients are unreliable.
-                    continue;
-                }
-                n_scp_failures = 0;
-
-                relaxation->update_cell_coordinate(structure_state,
-                                                   v1_SCP,
-                                                   omega2_anharm[iT],
-                                                   del_v0_del_umn_SCP,
-                                                   C2_array,
-                                                   cmat_convert,
-                                                   harm_optical_modes,
-                                                   omega2_harmonic,
-                                                   evec_harmonic);
-                du0 = structure_state.du0;
-                du_tensor = structure_state.du_tensor;
-
-                // for (i1 = 0; i1 < ns; i1++) {
-                //     std::cout << " q0[" << i1 << "] = " << std::scientific << std::setw(15) << std::setprecision(6)
-                //               << q0[i1] << '\n';
-                // }
-
-                relaxation->write_stepresfile(structure_state,
-                                              i_str_loop + 1,
-                                              fout_step_q0,
-                                              fout_step_u0,
-                                              fout_step_u_tensor);
-
-                relaxation->check_str_divergence(str_diverged, structure_state);
-
-                if (str_diverged) {
-                    converged_prev = false;
-                    std::cout << " The crystal structure diverged.";
-                    std::cout << " Break from the structure loop.\n";
-                    step_history.push_back({true, du0, du_tensor, -1.0, -1.0, spg_label});
-                    break;
-                }
-
-                double grad_norm, cell_grad_norm;
-                compute_and_print_step_gradients(ws,
-                                                 v1_SCP,
-                                                 del_v0_del_umn_SCP,
-                                                 du0,
-                                                 du_tensor,
-                                                 spg_label,
-                                                 step_history,
-                                                 grad_norm,
-                                                 cell_grad_norm);
-
-                const bool step_converged = (du0 < relaxation->coord_conv_tol && du_tensor < relaxation->cell_conv_tol);
-                const bool force_converged =
-                    (relaxation->gradient_conv_tol <= 0.0) || (grad_norm < relaxation->gradient_conv_tol);
-                const bool cell_force_converged = (relax_mode != RelaxationStrMode::CoordinatesAndCell) ||
-                                                  (relaxation->cell_gradient_conv_tol <= 0.0) ||
-                                                  (cell_grad_norm < relaxation->cell_gradient_conv_tol);
-
-                if (step_converged && force_converged && cell_force_converged) {
-                    std::cout << "\n\n du0 is smaller than COORD_CONV_TOL = " << std::scientific << std::setw(15)
-                              << std::setprecision(6) << relaxation->coord_conv_tol << '\n';
-                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
-                        std::cout << " du_tensor is smaller than CELL_CONV_TOL = " << std::scientific << std::setw(15)
-                                  << std::setprecision(6) << relaxation->cell_conv_tol << '\n';
-                    }
-                    if (relaxation->gradient_conv_tol > 0.0) {
-                        std::cout << " |residual force| is smaller than GRADIENT_CONV_TOL = " << std::scientific
-                                  << std::setw(15) << std::setprecision(6) << relaxation->gradient_conv_tol << '\n';
-                    }
-                    if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relaxation->cell_gradient_conv_tol > 0.0)
-                    {
-                        std::cout << " |residual stress| is smaller than CELL_GRADIENT_CONV_TOL = " << std::scientific
-                                  << std::setw(15) << std::setprecision(6) << relaxation->cell_gradient_conv_tol
-                                  << '\n';
-                    }
-                    std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
-                    std::cout << " break structural loop.\n\n";
-                    converged_this_temp = true;
-                    break;
-                }
-
-            } // close structure loop
-
-            bench_temp.push_back(temp);
-            // i_str_loop == max_str_iter only when the loop ran to completion without a break;
-            // a converged or diverged break leaves i_str_loop at the 0-based loop index.
-            bench_steps.push_back(i_str_loop >= relaxation->max_str_iter ? relaxation->max_str_iter : i_str_loop + 1);
-
-            const auto final_structure_is_finite = structure_state_is_finite(structure_state);
-            const auto accepted_this_temp = converged_this_temp && final_structure_is_finite;
-            bench_converged.push_back(accepted_this_temp);
-
-            if (accepted_this_temp) {
-                last_converged_structure_state = structure_state;
-                last_converged_iT = iT;
-                has_last_converged_structure = true;
-            } else {
-                converged_this_temp = false;
-                converged_prev = false;
-                if (!final_structure_is_finite) str_diverged = 1;
-
-                std::cout << "\n Structural optimization at " << temp << " K did not converge";
-                if (!final_structure_is_finite) std::cout << " and produced non-finite structural parameters";
-                std::cout << ".\n";
-
-                if (has_last_converged_structure) {
-                    structure_state = last_converged_structure_state;
-                    copy_temperature_result(iT, last_converged_iT);
-                    std::cout << " The failed structure and SCP data are discarded; the last converged"
-                              << " temperature point is kept as the restart state for the next temperature.\n";
-                } else {
-                    structure_state = initial_structure_state_this_temp;
-                    set_harmonic_temperature_result(iT);
-                    std::cout << " No converged temperature point is available yet; the initial structure and"
-                              << " harmonic dynamical matrix are kept as the restart state.\n";
-                }
-
-                str_diverged = 0;
-            }
-
-            // At-a-glance history of the structural optimization at this temperature.
-            Relaxation::print_optimization_history(step_history,
-                                                   temp,
-                                                   relax_mode == RelaxationStrMode::CoordinatesAndCell,
-                                                   true);
-
-            print_final_structure(structure_state, relax_mode, temp, i_temp_loop == NT - 1);
-
-            // record zero-th order term of PES
-            if (converged_this_temp) V0[iT] = v0_renorm;
-
-            // print obtained structure
-            relaxation->calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
-
-            relaxation->write_resfile_atT(structure_state, temp, fout_q0, fout_u0, fout_u_tensor);
-
-            if (converged_this_temp) {
-                // get renormalization of harmonic dymat
-                dynamical->compute_renormalized_harmonic_frequency(omega2_harm_renorm[iT],
-                                                                   evec_harm_renorm_tmp,
-                                                                   delta_v2_renorm,
-                                                                   omega2_harmonic,
-                                                                   evec_harmonic,
-                                                                   kmesh_coarse.get(),
-                                                                   kmesh_dense.get(),
-                                                                   kmap_coarse_to_dense,
-                                                                   mat_transform_sym,
-                                                                   mindist_list,
-                                                                   writes->getVerbosity());
-
-                dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
-                                                    omega2_harm_renorm[iT],
-                                                    evec_harm_renorm_tmp,
-                                                    kmesh_coarse.get(),
-                                                    kmap_coarse_to_dense);
-            }
-
-            converged_str_temp[iT] = converged_this_temp ? 1 : 0;
-            converged_prev = warmstart_scph && converged_this_temp;
-
-        } // close temperature loop
-
-        // ---- structural-optimization benchmark summary (step counts to convergence) ----
-        std::cout << " ============ Structural-optimization benchmark summary ============\n";
-        std::cout << "  RELAX_ALGO = " << relaxation->relax_algo;
-        if (relaxation->relax_algo == 3) std::cout << "   GDIIS_PLAIN = " << (relaxation->gdiis_control ? 0 : 1);
-        std::cout << '\n';
-        std::cout << "  " << std::setw(15) << "Temp [K]" << std::setw(12) << "steps" << std::setw(12) << "converged"
-                  << '\n';
-        int bench_total = 0;
-        for (std::size_t ib = 0; ib < bench_temp.size(); ++ib) {
-            std::cout << "  " << std::setw(15) << std::fixed << std::setprecision(2) << bench_temp[ib] << std::setw(12)
-                      << bench_steps[ib] << std::setw(12) << (bench_converged[ib] ? "yes" : "no") << '\n';
-            bench_total += bench_steps[ib];
-        }
-        std::cout << "  " << std::setw(15) << "Total" << std::setw(12) << bench_total << '\n';
-        std::cout << " ===================================================================\n\n";
-        std::cout.unsetf(std::ios::fixed);
+        ScphRelaxationModel model(*this,
+                                  ws,
+                                  dymat_anharm,
+                                  delta_harmonic_dymat_renormalize,
+                                  cmat_convert,
+                                  omega2_anharm,
+                                  evec_anharm_tmp,
+                                  omega2_harm_renorm,
+                                  evec_harm_renorm_tmp,
+                                  v1_SCP,
+                                  del_v0_del_umn_SCP,
+                                  converged_prev,
+                                  str_diverged,
+                                  fout_step_q0,
+                                  fout_step_u0,
+                                  fout_step_u_tensor);
+        StructuralOptLoopContext loop_ctx{structure_state,
+                                          ws,
+                                          fout_step_q0,
+                                          fout_step_u0,
+                                          fout_step_u_tensor,
+                                          fout_q0,
+                                          fout_u0,
+                                          fout_u_tensor,
+                                          vec_temp,
+                                          Tmin,
+                                          dT,
+                                          NT,
+                                          relax_mode,
+                                          converged_prev,
+                                          str_diverged};
+        run_structural_optimization_loop(model, loop_ctx);
 
         // output files of structural optimization
         fout_step_q0.close();
