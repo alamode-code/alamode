@@ -199,6 +199,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             )
 
 set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
+            ${PROJECT_SOURCE_DIR}/cell_shift_table.h
             ${PROJECT_SOURCE_DIR}/conductivity.h
             ${PROJECT_SOURCE_DIR}/dielec.h
             ${PROJECT_SOURCE_DIR}/diis.h

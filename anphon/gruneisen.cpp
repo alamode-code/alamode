@@ -18,6 +18,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <iomanip>
 #include <iostream>
 #include "anharmonic_core.h"
+#include "cell_shift_table.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -65,25 +66,7 @@ void Gruneisen::setup()
     MPI_Bcast(&delta_a, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    xshift_s.resize(27, 3);
-
-    for (int i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
-
-    int icell = 0;
-
-    for (int ix = -1; ix <= 1; ++ix) {
-        for (int iy = -1; iy <= 1; ++iy) {
-            for (int iz = -1; iz <= 1; ++iz) {
-                if (ix == 0 && iy == 0 && iz == 0) continue;
-
-                ++icell;
-
-                xshift_s[icell][0] = static_cast<double>(ix);
-                xshift_s[icell][1] = static_cast<double>(iy);
-                xshift_s[icell][2] = static_cast<double>(iz);
-            }
-        }
-    }
+    build_27cell_shift_table(xshift_s);
 
     if (print_gruneisen || print_newfcs) {
         prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2);

@@ -11,6 +11,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "phonon_velocity.h"
 #include <complex>
 #include <iomanip>
+#include "cell_shift_table.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -39,23 +40,7 @@ void PhononVelocity::set_default_variables()
 {
     print_velocity = false;
 
-    xshift_s.resize(27, 3);
-
-    for (auto i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
-    auto icell = 0;
-    for (auto ix = -1; ix <= 1; ++ix) {
-        for (auto iy = -1; iy <= 1; ++iy) {
-            for (auto iz = -1; iz <= 1; ++iz) {
-                if (ix == 0 && iy == 0 && iz == 0) continue;
-
-                ++icell;
-
-                xshift_s[icell][0] = static_cast<double>(ix);
-                xshift_s[icell][1] = static_cast<double>(iy);
-                xshift_s[icell][2] = static_cast<double>(iz);
-            }
-        }
-    }
+    build_27cell_shift_table(xshift_s);
 }
 
 void PhononVelocity::deallocate_variables()

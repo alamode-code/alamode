@@ -19,6 +19,7 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include "cell_shift_table.h"
 #include "constants.h"
 #include "dielec.h"
 #include "error.h"
@@ -182,24 +183,7 @@ void Dynamical::setup_dynamical()
         }
     }
 
-    xshift_s.resize(27, 3);
-
-    for (auto i = 0; i < 3; ++i) xshift_s[0][i] = 0.0;
-    auto icell = 0;
-
-    for (auto ix = -1; ix <= 1; ++ix) {
-        for (auto iy = -1; iy <= 1; ++iy) {
-            for (auto iz = -1; iz <= 1; ++iz) {
-                if (ix == 0 && iy == 0 && iz == 0) continue;
-
-                ++icell;
-
-                xshift_s[icell][0] = static_cast<double>(ix);
-                xshift_s[icell][1] = static_cast<double>(iy);
-                xshift_s[icell][2] = static_cast<double>(iz);
-            }
-        }
-    }
+    build_27cell_shift_table(xshift_s);
 
     if (mympi->my_rank == 0) require_eigenvectors = true;
 
