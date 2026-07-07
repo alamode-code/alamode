@@ -111,7 +111,7 @@ void Dos::setup()
 
         update_dos_energy_grid(emin, emax, true);
 
-        dymat_dos = std::make_unique<DymatEigenValue>(dynamical->eigenvectors, false, kmesh_dos->nk, dynamical->neval);
+        dymat_dos = std::make_unique<DymatEigenValue>(dynamical->require_eigenvectors, false, kmesh_dos->nk, dynamical->neval);
 
         if (integration->ismear == -1) {
             tetra_nodes_dos = std::make_unique<TetraNodes>(kmesh_dos->nk_i[0], kmesh_dos->nk_i[1], kmesh_dos->nk_i[2]);
@@ -269,8 +269,6 @@ void Dos::calc_dos(const unsigned int nk, const unsigned int nk_irreducible, con
         }
         weight.clear();
     }
-
-    //    if (mympi->my_rank == 0) std::cout << " done." << '\n';
 }
 
 void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, const unsigned int n,

@@ -89,7 +89,7 @@ public:
     ~Dynamical();
 
     unsigned int neval{};
-    bool eigenvectors{};
+    bool require_eigenvectors{};
     bool print_eigenvectors{};
     unsigned int nonanalytic{};
     bool participation_ratio{};
@@ -112,7 +112,6 @@ public:
     void modify_eigenvectors() const;
 
     void eval_k_ewald(const double *, const double *,
-                      //                      const std::vector<FcsClassExtent> &,
                       const std::vector<FcsArrayWithCell> &, double *, std::complex<double> **, const bool) const;
 
     double fold(const double) const;
@@ -126,9 +125,9 @@ public:
 
     void calc_analytic_k(const double *, const std::vector<FcsArrayWithCell> &, std::complex<double> **) const;
 
-    void calc_nonanalytic_k(const double *, const double *, std::complex<double> **) const;
+    void calc_nonanalytic_k_parlinski(const double *, const double *, std::complex<double> **) const;
 
-    void calc_nonanalytic_k2(const double *, const double *, std::complex<double> **) const;
+    void calc_nonanalytic_k_mixedspace(const double *, const double *, std::complex<double> **) const;
 
     void project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p, const std::vector<FcsArrayWithCell> &fc2_in,
                                          double *xk_in, const std::vector<std::vector<double>> &project_directions,

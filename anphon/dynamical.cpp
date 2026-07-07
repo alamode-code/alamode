@@ -51,7 +51,7 @@ Dynamical::~Dynamical()
 void Dynamical::set_default_variables()
 {
     neval = 0;
-    eigenvectors = true;
+    require_eigenvectors = true;
     print_eigenvectors = false;
     nonanalytic = 0;
     participation_ratio = false;
@@ -202,18 +202,18 @@ void Dynamical::setup_dynamical()
         }
     }
 
-    if (mympi->my_rank == 0) eigenvectors = true;
+    if (mympi->my_rank == 0) require_eigenvectors = true;
 
-    MPI_Bcast(&eigenvectors, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&require_eigenvectors, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nonanalytic, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&band_connection, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (kpoint->kpoint_bs.get()) {
-        dymat_band = std::make_unique<DymatEigenValue>(eigenvectors, false, kpoint->kpoint_bs->nk, neval);
+        dymat_band = std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint->kpoint_bs->nk, neval);
     }
 
     if (kpoint->kpoint_general.get()) {
-        dymat_general = std::make_unique<DymatEigenValue>(eigenvectors, false, kpoint->kpoint_general->nk, neval);
+        dymat_general = std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint->kpoint_general->nk, neval);
     }
 
     // Bcast projection_directions
@@ -353,9 +353,9 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
         dymat_na_k.resize(neval, neval);
 
         if (nonanalytic == 1) {
-            calc_nonanalytic_k(xk_in, kvec_in, dymat_na_k);
+            calc_nonanalytic_k_parlinski(xk_in, kvec_in, dymat_na_k);
         } else if (nonanalytic == 2) {
-            calc_nonanalytic_k2(xk_in, kvec_in, dymat_na_k);
+            calc_nonanalytic_k_mixedspace(xk_in, kvec_in, dymat_na_k);
         }
 
         for (i = 0; i < neval; ++i) {
@@ -415,7 +415,7 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
         exit("Dynamical::diagonalize", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
     }
 
-    if (eigenvectors && require_evec) {
+    if (require_eigenvectors && require_evec) {
         k = 0;
         // Here we transpose the matrix evec_out so that
         // evec_out[i] becomes phonon eigenvector of i-th mode.
@@ -517,7 +517,7 @@ void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const s
         exit("Dynamical::diagonalize", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
     }
 
-    if (eigenvectors && require_evec) {
+    if (require_eigenvectors && require_evec) {
         k = 0;
         // Here we transpose the matrix evec_out so that
         // evec_out[i] becomes phonon eigenvector of i-th mode.
@@ -594,7 +594,7 @@ void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsArrayW
     }
 }
 
-void Dynamical::calc_nonanalytic_k(const double *xk_in, const double *kvec_na_in,
+void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *kvec_na_in,
                                    std::complex<double> **dymat_na_out) const
 {
     // Calculate the non-analytic part of dynamical matrices
@@ -703,7 +703,7 @@ void Dynamical::calc_nonanalytic_k(const double *xk_in, const double *kvec_na_in
     }
 }
 
-void Dynamical::calc_nonanalytic_k2(const double *xk_in, const double *kvec_na_in,
+void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double *kvec_na_in,
                                     std::complex<double> **dymat_na_out) const
 {
     // Calculate the non-analytic part of dynamical matrices
@@ -819,7 +819,7 @@ void Dynamical::diagonalize_dynamical_all()
     if (kpoint->kpoint_general.get()) {
         nk = kpoint->kpoint_general->nk;
         eval_tmp.resize(nk, neval);
-        if (eigenvectors) {
+        if (require_eigenvectors) {
             evec_tmp.resize(nk, neval, neval);
         } else {
             evec_tmp.resize(nk, 1, 1);
@@ -830,7 +830,7 @@ void Dynamical::diagonalize_dynamical_all()
                               kpoint->kpoint_general->kvec_na,
                               fcs_phonon->force_constant_with_cell[0],
                               ewald->fc2_without_dipole,
-                              eigenvectors,
+                              require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
 
@@ -858,7 +858,7 @@ void Dynamical::diagonalize_dynamical_all()
     if (kpoint->kpoint_bs.get()) {
         nk = kpoint->kpoint_bs->nk;
         eval_tmp.resize(nk, neval);
-        if (eigenvectors) {
+        if (require_eigenvectors) {
             evec_tmp.resize(nk, neval, neval);
         } else {
             evec_tmp.resize(nk, 1, 1);
@@ -868,7 +868,7 @@ void Dynamical::diagonalize_dynamical_all()
                               kpoint->kpoint_bs->kvec_na,
                               fcs_phonon->force_constant_with_cell[0],
                               ewald->fc2_without_dipole,
-                              eigenvectors,
+                              require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
 
@@ -896,7 +896,7 @@ void Dynamical::diagonalize_dynamical_all()
     if (dos->kmesh_dos.get()) {
         nk = dos->kmesh_dos->nk;
         eval_tmp.resize(nk, neval);
-        if (eigenvectors) {
+        if (require_eigenvectors) {
             evec_tmp.resize(nk, neval, neval);
         } else {
             evec_tmp.resize(nk, 1, 1);
@@ -906,7 +906,7 @@ void Dynamical::diagonalize_dynamical_all()
                               dos->kmesh_dos->kvec_na,
                               fcs_phonon->force_constant_with_cell[0],
                               ewald->fc2_without_dipole,
-                              eigenvectors,
+                              require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
 
@@ -1603,9 +1603,9 @@ void Dynamical::precompute_dymat_harm(const unsigned int nk_in, double **xk_in, 
 
         for (auto ik = 0; ik < nk_in; ++ik) {
             if (nonanalytic == 1) {
-                calc_nonanalytic_k(xk_in[ik], kvec_in[ik], mat_tmp);
+                calc_nonanalytic_k_parlinski(xk_in[ik], kvec_in[ik], mat_tmp);
             } else if (nonanalytic == 2) {
-                calc_nonanalytic_k2(xk_in[ik], kvec_in[ik], mat_tmp);
+                calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], mat_tmp);
 
             } else if (nonanalytic == 3) {
                 ewald->add_longrange_matrix(xk_in[ik], kvec_in[ik], mat_tmp);
@@ -2043,9 +2043,9 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
             }
             if (nonanalytic) {
                 if (nonanalytic == 1) {
-                    calc_nonanalytic_k(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
+                    calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
                 } else if (nonanalytic == 2) {
-                    calc_nonanalytic_k2(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
+                    calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
                 } else if (nonanalytic == 3) {
                     ewald->add_longrange_matrix(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
                 }
