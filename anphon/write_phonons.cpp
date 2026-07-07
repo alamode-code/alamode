@@ -47,8 +47,6 @@ using namespace PHON_NS;
 
 Writes::Writes(PHON *phon) : Pointers(phon)
 {
-    Ry_to_kayser = Hz_to_kayser / time_ry;
-
     print_ucorr = false;
     print_xsf = false;
     print_anime = false;
@@ -1806,11 +1804,6 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
 
 #endif
 
-double Writes::in_kayser(const double x) const
-{
-    return x * Ry_to_kayser;
-}
-
 void Writes::writeThermodynamicFunc() const
 {
     const auto Tmin = system->Tmin;
@@ -3038,7 +3031,7 @@ void Writes::writePhononEnergies(const unsigned int nk_in, const double *const *
                 ofs_energy << std::setw(5) << ik + 1;
                 ofs_energy << std::setw(5) << is + 1;
                 ofs_energy << std::setw(8) << temp;
-                ofs_energy << std::setw(15) << writes->in_kayser(eval_in[iT][ik][is]);
+                ofs_energy << std::setw(15) << in_kayser(eval_in[iT][ik][is]);
                 ofs_energy << '\n';
             }
             ofs_energy << '\n';
@@ -3116,7 +3109,7 @@ void Writes::writePhononBands(const unsigned int nk_in, const double *kaxis_in, 
             ofs_bands << std::setw(15) << std::fixed << temp;
             ofs_bands << std::setw(15) << std::fixed << kaxis_in[i];
             for (unsigned int j = 0; j < ns; ++j) {
-                ofs_bands << std::setw(15) << std::scientific << writes->in_kayser(eval[iT][i][j]);
+                ofs_bands << std::setw(15) << std::scientific << in_kayser(eval[iT][i][j]);
             }
             ofs_bands << '\n';
         }

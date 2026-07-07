@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include "constants.h"
 #include "dielec.h"
 #include "parsephon.h"
 #include "phonon_dos.h"
@@ -469,7 +470,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                         for (unsigned int j = 0; j < dos->kmesh_dos->nk_irred; ++j) {
                             for (unsigned int k = 0; k < ns; ++k) {
                                 eval_tmp =
-                                    writes->in_kayser(eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
+                                    in_kayser(eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
                                 emin_now = std::min(emin_now, eval_tmp);
                                 emax_now = std::max(emax_now, eval_tmp);
                             }
@@ -667,7 +668,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                             for (unsigned int j = 0; j < dos->kmesh_dos->nk_irred; ++j) {
                                 for (unsigned int k = 0; k < ns; ++k) {
-                                    eval_tmp = writes->in_kayser(
+                                    eval_tmp = in_kayser(
                                         eval_update[iT][dos->kmesh_dos->kpoint_irred_all[j][0].knum][k]);
                                     emin_now = std::min(emin_now, eval_tmp);
                                     emax_now = std::max(emax_now, eval_tmp);

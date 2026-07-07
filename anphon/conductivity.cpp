@@ -388,7 +388,7 @@ void Conductivity::prepare_restart(const int mode)
                     const auto ik = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
                     for (auto is = 0; is < dynamical->neval; ++is) {
                         fs_result3 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result3 << std::setw(15) << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
+                        fs_result3 << std::setw(15) << in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is])
                                    << '\n';
                     }
                 }
@@ -461,7 +461,7 @@ void Conductivity::prepare_restart(const int mode)
                     const int ik = kmesh_4ph->kpoint_irred_all[i][0].knum;
                     for (auto is = 0; is < dynamical->neval; ++is) {
                         fs_result4 << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                        fs_result4 << std::setw(15) << writes->in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
+                        fs_result4 << std::setw(15) << in_kayser(dymat_4ph->get_eigenvalues()[ik][is]) << '\n';
                     }
                 }
 
@@ -573,7 +573,7 @@ void Conductivity::load_restart_gamma_blocks(std::fstream &fs_result, const std:
                 truncate_tail = true;
                 break;
             }
-            damping_tmp[i] *= time_ry / Hz_to_kayser;
+            damping_tmp[i] *= kayser_to_Ry;
         }
         if (truncate_tail) break;
 
@@ -806,7 +806,7 @@ KappaChannelMetaH5 Conductivity::build_kappa_channel_meta(const int mode) const
             meta.xk_irred(i, j) = kmesh_in->kpoint_irred_all[i][0].kval[j];
         }
         for (auto is = 0; is < ns; ++is) {
-            meta.frequencies(i, is) = writes->in_kayser(eval_in[knum_rep][is]);
+            meta.frequencies(i, is) = in_kayser(eval_in[knum_rep][is]);
         }
         for (const auto &kp: kmesh_in->kpoint_irred_all[i]) {
             meta.equiv_knum[i].push_back(static_cast<int>(kp.knum));
@@ -1569,8 +1569,8 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                                 const auto knum = kmesh_in->kpoint_irred_all[ik][0].knum;
                                 const auto omega1 = eval_in[knum][is];
                                 const auto omega2 = eval_in[knum][js];
-                                ofs << std::setw(15) << writes->in_kayser(omega1);
-                                ofs << std::setw(15) << writes->in_kayser(omega2);
+                                ofs << std::setw(15) << in_kayser(omega1);
+                                ofs << std::setw(15) << in_kayser(omega2);
                                 ofs << std::setw(15) << kappa_save[ib][ik].real();
                                 ofs << std::setw(15) << kappa_save[ib][ik].imag();
                                 ofs << '\n';
@@ -1663,13 +1663,13 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
     ofs << "# Velocity-matrix consistency diagnostic\n";
     ofs << "# max |Re[v_ii] - group_velocity|\n";
     ofs << std::scientific << std::setprecision(16) << max_abs << ' ' << max_rel << ' ' << max_k + 1 << ' '
-        << max_mode + 1 << ' ' << max_mu + 1 << ' ' << writes->in_kayser(eval_in[max_k][max_mode]) << ' '
+        << max_mode + 1 << ' ' << max_mu + 1 << ' ' << in_kayser(eval_in[max_k][max_mode]) << ' '
         << vel[max_k][max_mode][max_mu] << ' ' << velmat[max_k][max_mode][max_mode][max_mu].real() << ' '
         << velmat[max_k][max_mode][max_mode][max_mu].imag() << '\n';
     ofs << "# max |v_ij - conj(v_ji)|\n";
     ofs << max_hermiticity << ' ' << max_hermiticity_rel << ' ' << max_herm_k + 1 << ' ' << max_herm_i + 1 << ' '
-        << max_herm_j + 1 << ' ' << max_herm_mu + 1 << ' ' << writes->in_kayser(eval_in[max_herm_k][max_herm_i]) << ' '
-        << writes->in_kayser(eval_in[max_herm_k][max_herm_j]) << ' '
+        << max_herm_j + 1 << ' ' << max_herm_mu + 1 << ' ' << in_kayser(eval_in[max_herm_k][max_herm_i]) << ' '
+        << in_kayser(eval_in[max_herm_k][max_herm_j]) << ' '
         << velmat[max_herm_k][max_herm_i][max_herm_j][max_herm_mu].real() << ' '
         << velmat[max_herm_k][max_herm_i][max_herm_j][max_herm_mu].imag() << ' '
         << velmat[max_herm_k][max_herm_j][max_herm_i][max_herm_mu].real() << ' '
@@ -1708,7 +1708,7 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
 
     for (i = 0; i < nk_3ph; ++i) {
         for (j = 0; j < ns; ++j) {
-            eval[j][i] = writes->in_kayser(eval_in[i][j]);
+            eval[j][i] = in_kayser(eval_in[i][j]);
         }
     }
 
@@ -1820,8 +1820,6 @@ void Conductivity::check_consistency_restart(std::fstream &fs_result, const std:
                                              const double epsilon_in, const double tmin_in, const double tmax_in,
                                              const double delta_t_in, const std::string &file_fcs_in)
 {
-    const auto Ry_to_kayser = Hz_to_kayser / time_ry;
-
     // Read-only: this function only validates the header. The text path
     // reopens the stream for appending afterwards; the h5 import path must
     // never modify the legacy file.
@@ -1945,8 +1943,6 @@ void Conductivity::write_header_result(std::fstream &fs_result, const std::strin
                                        const int ismear_in, const double epsilon_in, const double tmin_in,
                                        const double tmax_in, const double delta_t_in, const std::string &file_fcs_in)
 {
-    const auto Ry_to_kayser = Hz_to_kayser / time_ry;
-
     fs_result.open(file_result.c_str(), std::ios::out);
     if (!fs_result) {
         exit("setup_result_io", "Could not open file_result3");
@@ -2093,7 +2089,7 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
             for (auto ik = 0; ik < kmesh_dense_in->nk_irred; ++ik) {
                 auto knum = kmesh_dense_in->kpoint_irred_all[ik][0].knum;
                 ofs_itp << std::setw(10) << std::setprecision(2)
-                        << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[knum][is]);
+                        << in_kayser(dos->dymat_dos->get_eigenvalues()[knum][is]);
 
                 for (auto itemp = 0; itemp < ntemp; ++itemp) {
                     ofs_itp << std::setw(15) << std::scientific << std::setprecision(4)

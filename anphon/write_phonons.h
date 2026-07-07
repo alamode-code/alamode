@@ -47,8 +47,6 @@ public:
 
     bool print_zmode;
 
-    double in_kayser(const double) const;
-
     void setWriteOptions(const bool print_msd_, const bool print_xsf_, const bool print_anime_,
                          const std::string &anime_format_, const int anime_steps_,
                          const unsigned int anime_cellsize_[3], const double anime_kpoint_[3], const bool print_ucorr_,
@@ -153,7 +151,6 @@ private:
 
     void writeDielectricFunction() const;
 
-    double Ry_to_kayser;
     unsigned int verbosity;
 
     int anime_frames;

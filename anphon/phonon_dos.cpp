@@ -23,7 +23,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -152,7 +151,7 @@ void Dos::calc_dos_all()
 
     for (unsigned int j = 0; j < nk; ++j) {
         for (unsigned int k = 0; k < neval; ++k) {
-            eval[k][j] = writes->in_kayser(dymat_dos->get_eigenvalues()[j][k]);
+            eval[k][j] = in_kayser(dymat_dos->get_eigenvalues()[j][k]);
         }
     }
 
@@ -509,8 +508,8 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
 #endif
             for (jk = 0; jk < nk; ++jk) {
                 loc = k_pair[jk];
-                e_tmp[0][jk] = writes->in_kayser(eval_in[jk][is] + eval_in[loc][js]);
-                e_tmp[1][jk] = writes->in_kayser(eval_in[jk][is] - eval_in[loc][js]);
+                e_tmp[0][jk] = in_kayser(eval_in[jk][is] + eval_in[loc][js]);
+                e_tmp[1][jk] = in_kayser(eval_in[jk][is] - eval_in[loc][js]);
             }
 
             if (smearing_method == -1) {
@@ -598,7 +597,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
         for (int is = 0; is < ns; ++is) {
 
-            const auto omega0 = writes->in_kayser(eval_in[knum][is]);
+            const auto omega0 = in_kayser(eval_in[knum][is]);
 
             auto sps_tmp1 = 0.0;
             auto sps_tmp2 = 0.0;
@@ -627,8 +626,8 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
                         for (i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] + xk[jk][i];
                         loc = kmesh_dos->get_knum(xk_tmp);
 
-                        e_tmp[0][jk] = writes->in_kayser(eval_in[jk][js] + eval_in[loc][ks]);
-                        e_tmp[1][jk] = writes->in_kayser(eval_in[jk][js] - eval_in[loc][ks]);
+                        e_tmp[0][jk] = in_kayser(eval_in[jk][js] + eval_in[loc][ks]);
+                        e_tmp[1][jk] = in_kayser(eval_in[jk][js] - eval_in[loc][ks]);
                     }
 
                     if (smearing_method == -1) {
@@ -692,7 +691,7 @@ void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in, const
     eval.resize(neval, nk);
     for (unsigned int j = 0; j < nk; ++j) {
         for (unsigned int k = 0; k < neval; ++k) {
-            eval[k][j] = writes->in_kayser(eval_in[j][k]);
+            eval[k][j] = in_kayser(eval_in[j][k]);
         }
     }
 
@@ -775,7 +774,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
 
         for (imode = 0; imode < ns; ++imode) {
 
-            omega0 = writes->in_kayser(eval_in[knum][imode]);
+            omega0 = in_kayser(eval_in[knum][imode]);
             if (omega0 < omega_min || omega0 > omega_max) continue;
 
             ks_g.push_back(ik * ns + imode);
@@ -849,7 +848,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
 
         for (imode = 0; imode < ns; ++imode) {
 
-            omega0 = writes->in_kayser(eval_in[knum][imode]);
+            omega0 = in_kayser(eval_in[knum][imode]);
             if (omega0 < omega_min || omega0 > omega_max) continue;
 
             for (iT = 0; iT < N; ++iT) {
@@ -894,7 +893,7 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
     kmap_identity.resize(nk);
     for (i = 0; i < nk; ++i) kmap_identity[i] = i;
 
-    const auto omega0 = writes->in_kayser(omega);
+    const auto omega0 = in_kayser(omega);
 
 #ifdef _OPENMP
 #pragma omp parallel private(i, is, js, k1, k2, omega1, omega2, energy_tmp, weight)
@@ -916,8 +915,8 @@ void Dos::calc_scattering_phase_space_with_Bose_mode(const unsigned int nk, cons
                 omega1 = eval[k1][is];
                 omega2 = eval[k2][js];
 
-                energy_tmp[0][k1] = writes->in_kayser(omega1 + omega2);
-                energy_tmp[1][k1] = writes->in_kayser(omega1 - omega2);
+                energy_tmp[0][k1] = in_kayser(omega1 + omega2);
+                energy_tmp[1][k1] = in_kayser(omega1 - omega2);
             }
 
             if (smearing_method == -1) {

@@ -33,7 +33,6 @@
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
-#include "write_phonons.h"
 
 
 using namespace PHON_NS;
@@ -1496,7 +1495,7 @@ void Dynamical::detect_imaginary_branches(const KpointMeshUniform &kmesh_in, dou
                                 std::cout << std::setw(15) << kmesh_in.xk[knum][j];
                             }
                             std::cout << std::setw(4) << is + 1 << " :" << std::setw(10) << std::fixed
-                                      << writes->in_kayser(omega) << " (cm^-1)" << '\n';
+                                      << in_kayser(omega) << " (cm^-1)" << '\n';
                             std::cout << std::scientific;
                         }
                     }

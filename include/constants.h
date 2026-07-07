@@ -26,6 +26,14 @@ constexpr double h_planck = 6.62606896e-34;
 constexpr double Ryd = 4.35974394e-18 / 2.0;
 constexpr double time_ry = h_planck * inv_tpi / Ryd;
 constexpr double Hz_to_kayser = 1.0e-2 * inv_tpi / c_light;
+constexpr double Ry_to_kayser = Hz_to_kayser / time_ry; // Ry (energy) -> cm^-1
+constexpr double kayser_to_Ry = time_ry / Hz_to_kayser; // cm^-1 -> Ry
+
+inline double in_kayser(const double x)
+{
+    return x * Ry_to_kayser;
+}
+
 constexpr double Bohr_in_Angstrom = 0.52917721092;
 constexpr double Ryd_in_eV = 13.605693122994;
 constexpr double k_Boltzmann = 1.3806488e-23; // J/K

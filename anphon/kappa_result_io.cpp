@@ -957,7 +957,7 @@ std::vector<int> KappaResultIOH5::load_computed_gamma(const std::string &tag, do
     dset.read(buf.data());
 
     std::vector<int> rows_done;
-    const auto factor = time_ry / Hz_to_kayser; // cm^-1 -> internal
+    const auto factor = kayser_to_Ry; // cm^-1 -> internal
 
     if (impl->tdep) {
         // A mode counts as done only when every temperature column of THIS
@@ -1000,7 +1000,7 @@ void KappaResultIOH5::store_gamma_batch(const std::string &tag, const unsigned i
     if (nrow == 0) return;
     const auto path = channel_path(tag);
     const auto ntemp = impl->ntemp;
-    const auto factor = Hz_to_kayser / time_ry; // internal -> cm^-1
+    const auto factor = Ry_to_kayser; // internal -> cm^-1
 
     auto dset_gamma = impl->file->getDataSet(path + "/gamma");
     auto dset_flags = impl->file->getDataSet(path + "/gamma_computed");
@@ -1048,7 +1048,7 @@ void KappaResultIOH5::store_gamma_rows(const std::string &tag, const std::vector
     }
     const auto path = channel_path(tag);
     const auto ntemp = impl->ntemp;
-    const auto factor = Hz_to_kayser / time_ry;
+    const auto factor = Ry_to_kayser;
 
     auto dset_gamma = impl->file->getDataSet(path + "/gamma");
     std::vector<double> buf(ntemp);
@@ -1077,7 +1077,7 @@ void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls, con
     if (impl->fmeta.isotope > 0 && gamma_isotope) {
         auto dset = impl->file->getDataSet("/scattering/isotope/gamma");
         const auto dims = dset.getDimensions();
-        const auto factor = Hz_to_kayser / time_ry; // internal -> cm^-1
+        const auto factor = Ry_to_kayser; // internal -> cm^-1
         const auto d1 = impl->tdep ? dims[1] : dims[0];
         const auto d2 = impl->tdep ? dims[2] : dims[1];
         std::vector<double> buf(d1 * d2);

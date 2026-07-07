@@ -35,7 +35,6 @@
 #include "scph.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -247,7 +246,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                     std::cout << "   solution found at the following frequencies:\n";
                                     for (auto iroot = 0; iroot < count_root; ++iroot) {
                                         std::cout << std::setw(15)
-                                                  << writes->in_kayser(omegalist[root_index[iroot]].real());
+                                                  << in_kayser(omegalist[root_index[iroot]].real());
                                     }
                                     std::cout << '\n';
                                 }
@@ -271,9 +270,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                 }
                 if (mympi->my_rank == 0) {
                     std::cout << "   branch : " << std::setw(5) << snum + 1;
-                    std::cout << " omega (SC1) = " << std::setw(15) << writes->in_kayser(eval[knum][snum])
+                    std::cout << " omega (SC1) = " << std::setw(15) << in_kayser(eval[knum][snum])
                               << " (cm^-1); ";
-                    std::cout << " Re[Self] = " << std::setw(15) << writes->in_kayser(real_self[snum]) << " (cm^-1)\n";
+                    std::cout << " Re[Self] = " << std::setw(15) << in_kayser(real_self[snum]) << " (cm^-1)\n";
                 }
             }
 

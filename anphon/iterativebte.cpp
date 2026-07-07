@@ -1052,15 +1052,14 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
 
         const auto lam_max = evals.empty() ? 0.0 : evals.back();
         const auto lam_tol = lam_max * 1.0e-12;
-        const auto to_kayser = Hz_to_kayser / time_ry; // rates: internal -> cm^-1
         int n_negative = 0, n_nearnull = 0;
         for (const auto lam: evals) {
             if (lam < -lam_tol) ++n_negative;
             if (std::abs(lam) < 1.0e-8 * lam_max) ++n_nearnull;
         }
         std::cout << "      eigenvalues (Omega normalization; scattering rates 1/tau in cm^-1):\n";
-        std::cout << "        min = " << std::scientific << std::setprecision(2) << evals.front() * to_kayser
-                  << ", max = " << lam_max * to_kayser << "; negative (< -1e-12 max): " << n_negative
+        std::cout << "        min = " << std::scientific << std::setprecision(2) << evals.front() * Ry_to_kayser
+                  << ", max = " << lam_max * Ry_to_kayser << "; negative (< -1e-12 max): " << n_negative
                   << "; near-null (|lambda| < 1e-8 max): " << n_nearnull << '\n';
         if (n_negative > 0) {
             std::cout << "      WARNING: the physical collision kernel is positive semidefinite;\n"
@@ -1119,7 +1118,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                     ov2 += pow2(pr);
                 }
                 std::cout << "      softest mode " << m << ": 1/tau = " << std::scientific << std::setprecision(2)
-                          << evals[m] * to_kayser << " cm^-1, overlap with the momentum-drift space = " << std::fixed
+                          << evals[m] * Ry_to_kayser << " cm^-1, overlap with the momentum-drift space = " << std::fixed
                           << std::setprecision(3) << std::sqrt(ov2) << '\n';
             }
         }
@@ -1607,8 +1606,6 @@ void Iterativebte::write_result()
 
     // write Q and W for all phonon, only phonon in irreducible BZ is written
     int i;
-    double Ry_to_kayser = Hz_to_kayser / time_ry;
-
     if (mympi->my_rank == 0) {
         std::cout << " Prepare result file ..." << '\n';
 
@@ -1667,7 +1664,7 @@ void Iterativebte::write_result()
             const int ik = dos->kmesh_dos->kpoint_irred_all[i][0].knum;
             for (auto is = 0; is < dynamical->neval; ++is) {
                 fs_result << std::setw(6) << i + 1 << std::setw(6) << is + 1;
-                fs_result << std::setw(15) << writes->in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is]);
+                fs_result << std::setw(15) << in_kayser(dos->dymat_dos->get_eigenvalues()[ik][is]);
                 fs_result << std::setw(15) << vel[ik][is][0] * factor << std::setw(15) << vel[ik][is][1] * factor
                           << std::setw(15) << vel[ik][is][2] * factor << '\n';
             }

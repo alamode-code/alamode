@@ -13,6 +13,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <iomanip>
 #include <iostream>
 #include "anharmonic_core.h"
+#include "constants.h"
 #include "dielec.h"
 #include "dynamical.h"
 #include "error.h"
@@ -27,7 +28,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -319,7 +319,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
             }
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
-            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega) << '\n';
+            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
         }
 
         const auto ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
@@ -405,25 +405,25 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
             }
             ofs_linewidth << '\n';
             ofs_linewidth << "# mode = " << snum + 1 << '\n';
-            ofs_linewidth << "# Frequency = " << writes->in_kayser(omega) << '\n';
+            ofs_linewidth << "# Frequency = " << in_kayser(omega) << '\n';
             ofs_linewidth << "## Temperature dependence of 2*Gamma (FWHM) for the given mode\n";
             ofs_linewidth << "## T[K], 2*Gamma3 (cm^-1) (bubble)";
             if (anharmonic_core->quartic_mode == 2) ofs_linewidth << ", 2*Gamma4(cm^-1) <-- specific diagram only";
             ofs_linewidth << '\n';
 
             for (j = 0; j < NT; ++j) {
-                ofs_linewidth << std::setw(10) << T_arr[j] << std::setw(15) << writes->in_kayser(2.0 * damping_a[j]);
+                ofs_linewidth << std::setw(10) << T_arr[j] << std::setw(15) << in_kayser(2.0 * damping_a[j]);
 
                 if (anharmonic_core->quartic_mode == 2) {
-                    //							ofs_mode_tau << std::setw(15) << writes->in_kayser(damp4[j]);
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_c[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_d[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_e[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_f[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_g[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_h[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_i[j].imag());
-                    ofs_linewidth << std::setw(15) << writes->in_kayser(2.0 * self_j[j].imag());
+                    //							ofs_mode_tau << std::setw(15) << in_kayser(damp4[j]);
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_c[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_d[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_e[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_f[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_g[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_h[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_i[j].imag());
+                    ofs_linewidth << std::setw(15) << in_kayser(2.0 * self_j[j].imag());
                 }
 
                 ofs_linewidth << '\n';
@@ -468,23 +468,23 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                 }
                 ofs_shift << '\n';
                 ofs_shift << "# mode = " << snum + 1 << '\n';
-                ofs_shift << "# Frequency = " << writes->in_kayser(omega) << '\n';
+                ofs_shift << "# Frequency = " << in_kayser(omega) << '\n';
                 ofs_shift << "## T[K], Shift3 (cm^-1) (tadpole), Shift3 (cm^-1) (bubble)";
                 if (anharmonic_core->quartic_mode == 1) ofs_shift << ", Shift4 (cm^-1) (loop)";
                 ofs_shift << ", Shifted frequency (cm^-1)\n";
 
                 for (j = 0; j < NT; ++j) {
                     ofs_shift << std::setw(10) << T_arr[j];
-                    ofs_shift << std::setw(15) << writes->in_kayser(-self_tadpole[j].real());
-                    ofs_shift << std::setw(15) << writes->in_kayser(-self_a[j].real());
+                    ofs_shift << std::setw(15) << in_kayser(-self_tadpole[j].real());
+                    ofs_shift << std::setw(15) << in_kayser(-self_a[j].real());
 
                     auto omega_shift = omega - self_tadpole[j].real() - self_a[j].real();
 
                     if (anharmonic_core->quartic_mode == 1) {
-                        ofs_shift << std::setw(15) << writes->in_kayser(-self_b[j].real());
+                        ofs_shift << std::setw(15) << in_kayser(-self_b[j].real());
                         omega_shift -= self_b[j].real();
                     }
-                    ofs_shift << std::setw(15) << writes->in_kayser(omega_shift);
+                    ofs_shift << std::setw(15) << in_kayser(omega_shift);
                     ofs_shift << '\n';
                 }
 
@@ -569,7 +569,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
             }
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
-            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega0) << '\n';
+            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega0) << '\n';
         }
 
         if (integration->ismear == -1) {
@@ -610,7 +610,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
             }
             ofs_omega << '\n';
             ofs_omega << "# mode = " << snum << '\n';
-            ofs_omega << "# Frequency = " << writes->in_kayser(omega0) << '\n';
+            ofs_omega << "# Frequency = " << in_kayser(omega0) << '\n';
 
             ofs_omega << "## Frequency-resolved final state amplitude for given modes\n";
             ofs_omega << "## Gamma[omega][temperature] (absorption, emission)\n";
@@ -958,7 +958,7 @@ void ModeAnalysis::print_V3_elements() const
             }
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
-            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega) << '\n';
+            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
         }
 
         const auto ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
@@ -986,7 +986,7 @@ void ModeAnalysis::print_V3_elements() const
             }
             ofs_V3 << '\n';
             ofs_V3 << "# mode = " << snum + 1 << '\n';
-            ofs_V3 << "# Frequency = " << writes->in_kayser(omega) << '\n';
+            ofs_V3 << "# Frequency = " << in_kayser(omega) << '\n';
             ofs_V3 << "## Matrix elements |V3|^2 for given mode\n";
             ofs_V3 << "## q', j', omega(q'j') (cm^-1), q'', j'', ";
             ofs_V3 << "omega(q''j'') (cm^-1), |V3(-qj,q'j',q''j'')|^2 (cm^-2), multiplicity\n";
@@ -1001,9 +1001,9 @@ void ModeAnalysis::print_V3_elements() const
                 for (unsigned int is = 0; is < ns; ++is) {
                     for (unsigned int js = 0; js < ns; ++js) {
                         ofs_V3 << std::setw(5) << k1 + 1 << std::setw(5) << is + 1;
-                        ofs_V3 << std::setw(15) << writes->in_kayser(eval_tmp[k1][is]);
+                        ofs_V3 << std::setw(15) << in_kayser(eval_tmp[k1][is]);
                         ofs_V3 << std::setw(5) << k2 + 1 << std::setw(5) << js + 1;
-                        ofs_V3 << std::setw(15) << writes->in_kayser(eval_tmp[k2][js]);
+                        ofs_V3 << std::setw(15) << in_kayser(eval_tmp[k2][js]);
                         ofs_V3 << std::setw(15) << v3norm[j][ib];
                         ofs_V3 << std::setw(5) << multi;
                         ofs_V3 << '\n';
@@ -1044,7 +1044,7 @@ void ModeAnalysis::print_V4_elements() const
             }
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
-            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega) << '\n';
+            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
         }
 
         int ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
@@ -1072,7 +1072,7 @@ void ModeAnalysis::print_V4_elements() const
             }
             ofs_V4 << '\n';
             ofs_V4 << "# mode = " << snum + 1 << '\n';
-            ofs_V4 << "# Frequency = " << writes->in_kayser(omega) << '\n';
+            ofs_V4 << "# Frequency = " << in_kayser(omega) << '\n';
             ofs_V4 << "## Matrix elements |V4|^2 for given mode\n";
             ofs_V4 << "## q1, j1, omega(q1j1) (cm^-1), "
                       "q2, j2, omega(q2j2) (cm^-1), "
@@ -1091,11 +1091,11 @@ void ModeAnalysis::print_V4_elements() const
                     for (unsigned int js = 0; js < ns; ++js) {
                         for (unsigned int ks = 0; ks < ns; ++ks) {
                             ofs_V4 << std::setw(5) << k1 + 1 << std::setw(5) << is + 1;
-                            ofs_V4 << std::setw(15) << writes->in_kayser(eval_tmp[k1][is]);
+                            ofs_V4 << std::setw(15) << in_kayser(eval_tmp[k1][is]);
                             ofs_V4 << std::setw(5) << k2 + 1 << std::setw(5) << js + 1;
-                            ofs_V4 << std::setw(15) << writes->in_kayser(eval_tmp[k2][js]);
+                            ofs_V4 << std::setw(15) << in_kayser(eval_tmp[k2][js]);
                             ofs_V4 << std::setw(5) << k3 + 1 << std::setw(5) << ks + 1;
-                            ofs_V4 << std::setw(15) << writes->in_kayser(eval_tmp[k3][ks]);
+                            ofs_V4 << std::setw(15) << in_kayser(eval_tmp[k3][ks]);
                             ofs_V4 << std::setw(15) << v4norm[j][ib];
                             ofs_V4 << std::setw(5) << multi;
                             ofs_V4 << '\n';
@@ -1257,7 +1257,7 @@ void ModeAnalysis::print_Phi3_elements() const
             }
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
-            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega) << '\n';
+            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
         }
 
         const auto ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
@@ -1285,7 +1285,7 @@ void ModeAnalysis::print_Phi3_elements() const
             }
             ofs_V3 << '\n';
             ofs_V3 << "# mode = " << snum + 1 << '\n';
-            ofs_V3 << "# Frequency = " << writes->in_kayser(omega) << '\n';
+            ofs_V3 << "# Frequency = " << in_kayser(omega) << '\n';
             ofs_V3 << "## Matrix elements Phi3 for given mode\n";
             ofs_V3 << "## q', j', omega(q'j') (cm^-1), q'', j'', omega(q''j'') (cm^-1), ";
             ofs_V3 << "Phi3(qj,q'j',q''j'') (Ry/(u^{1/2}Bohr)^{3}), multiplicity\n";
@@ -1300,9 +1300,9 @@ void ModeAnalysis::print_Phi3_elements() const
                 for (unsigned int is = 0; is < ns; ++is) {
                     for (unsigned int js = 0; js < ns; ++js) {
                         ofs_V3 << std::setw(5) << k1 + 1 << std::setw(5) << is + 1;
-                        ofs_V3 << std::setw(15) << writes->in_kayser(eval_tmp[k1][is]);
+                        ofs_V3 << std::setw(15) << in_kayser(eval_tmp[k1][is]);
                         ofs_V3 << std::setw(5) << k2 + 1 << std::setw(5) << js + 1;
-                        ofs_V3 << std::setw(15) << writes->in_kayser(eval_tmp[k2][js]);
+                        ofs_V3 << std::setw(15) << in_kayser(eval_tmp[k2][js]);
                         ofs_V3 << std::setw(15) << phi3[j][ib].real();
                         ofs_V3 << std::setw(15) << phi3[j][ib].imag();
                         ofs_V3 << std::setw(5) << multi;
@@ -1343,7 +1343,7 @@ void ModeAnalysis::print_Phi4_elements() const
             }
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
-            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega) << '\n';
+            std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
         }
 
         int ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
@@ -1371,7 +1371,7 @@ void ModeAnalysis::print_Phi4_elements() const
             }
             ofs_V4 << '\n';
             ofs_V4 << "# mode = " << snum + 1 << '\n';
-            ofs_V4 << "# Frequency = " << writes->in_kayser(omega) << '\n';
+            ofs_V4 << "# Frequency = " << in_kayser(omega) << '\n';
             ofs_V4 << "# List of k-point coordinates\n";
             for (j = 0; j < dos->kmesh_dos->nk; ++j) {
                 ofs_V4 << "# ik = " << std::setw(4) << j + 1;
@@ -1400,11 +1400,11 @@ void ModeAnalysis::print_Phi4_elements() const
                     for (unsigned int js = 0; js < ns; ++js) {
                         for (unsigned int ks = 0; ks < ns; ++ks) {
                             ofs_V4 << std::setw(5) << k1 + 1 << std::setw(5) << is + 1;
-                            ofs_V4 << std::setw(15) << writes->in_kayser(eval_tmp[k1][is]);
+                            ofs_V4 << std::setw(15) << in_kayser(eval_tmp[k1][is]);
                             ofs_V4 << std::setw(5) << k2 + 1 << std::setw(5) << js + 1;
-                            ofs_V4 << std::setw(15) << writes->in_kayser(eval_tmp[k2][js]);
+                            ofs_V4 << std::setw(15) << in_kayser(eval_tmp[k2][js]);
                             ofs_V4 << std::setw(5) << k3 + 1 << std::setw(5) << ks + 1;
-                            ofs_V4 << std::setw(15) << writes->in_kayser(eval_tmp[k3][ks]);
+                            ofs_V4 << std::setw(15) << in_kayser(eval_tmp[k3][ks]);
                             ofs_V4 << std::setw(15) << phi4[j][ib].real();
                             ofs_V4 << std::setw(15) << phi4[j][ib].imag();
                             ofs_V4 << std::setw(5) << multi;
@@ -1564,7 +1564,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
     for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ++ik) {
         for (auto is = 0; is < ns; ++is) {
             omega_tmp =
-                writes->in_kayser(dos->dymat_dos->get_eigenvalues()[dos->kmesh_dos->kpoint_irred_all[ik][0].knum][is]);
+                in_kayser(dos->dymat_dos->get_eigenvalues()[dos->kmesh_dos->kpoint_irred_all[ik][0].knum][is]);
             //            emin_now = std::min(emin_now, omega_tmp);
             emax_now = std::max(emax_now, omega_tmp);
         }
@@ -1621,7 +1621,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
 
             if (mympi->my_rank == 0) {
                 std::cout << "  Temperature (K) : " << std::setw(15) << T_now << '\n';
-                std::cout << "  Frequency (cm^-1) : " << std::setw(15) << writes->in_kayser(omega) << '\n';
+                std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
             }
 
             anharmonic_core->calc_self3omega_tetrahedron(T_now,
@@ -1648,10 +1648,10 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
 
             if (mympi->my_rank == 0) {
                 for (iomega = 0; iomega < nomega; ++iomega) {
-                    ofs_self << std::setw(10) << T_now << std::setw(15) << writes->in_kayser(omega);
-                    ofs_self << std::setw(10) << writes->in_kayser(omega_array[iomega]) << std::setw(15)
-                             << writes->in_kayser(self3_real[iT][iomega]) << std::setw(15)
-                             << writes->in_kayser(self3_imag[iT][iomega]) << '\n';
+                    ofs_self << std::setw(10) << T_now << std::setw(15) << in_kayser(omega);
+                    ofs_self << std::setw(10) << in_kayser(omega_array[iomega]) << std::setw(15)
+                             << in_kayser(self3_real[iT][iomega]) << std::setw(15)
+                             << in_kayser(self3_imag[iT][iomega]) << '\n';
                 }
                 ofs_self << '\n';
             }
