@@ -18,7 +18,6 @@
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "parsephon.h"
 #include "phonon_dos.h"
 #include "phonon_velocity.h"
 #include "symmetry_core.h"

@@ -22,7 +22,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "parsephon.h"
 #include "phonon_dos.h"
 #include "selfenergy.h"
 #include "symmetry_core.h"
@@ -394,7 +393,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
         }
 
         if (mympi->my_rank == 0) {
-            auto file_linewidth = input->job_title + ".Gamma." + std::to_string(i + 1);
+            auto file_linewidth = phon->job_title + ".Gamma." + std::to_string(i + 1);
             ofs_linewidth.open(file_linewidth.c_str(), std::ios::out);
             if (!ofs_linewidth) exit("print_selfenergy", "Cannot open file file_linewidth");
 
@@ -457,7 +456,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
             }
 
             if (mympi->my_rank == 0) {
-                auto file_shift = input->job_title + ".Shift." + std::to_string(i + 1);
+                auto file_shift = phon->job_title + ".Shift." + std::to_string(i + 1);
                 ofs_shift.open(file_shift.c_str(), std::ios::out);
                 if (!ofs_shift) exit("print_selfenergy", "Cannot open file file_shift");
 
@@ -599,7 +598,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
         }
 
         if (mympi->my_rank == 0) {
-            std::string file_omega = input->job_title + ".fw." + std::to_string(i + 1);
+            std::string file_omega = phon->job_title + ".fw." + std::to_string(i + 1);
             ofs_omega.open(file_omega.c_str(), std::ios::out);
             if (!ofs_omega) exit("print_frequency_resolved_final_state", "Cannot open file file_omega");
 
@@ -975,7 +974,7 @@ void ModeAnalysis::print_V3_elements() const
         calc_V3norm2(ik_irred, snum, triplet, v3norm);
 
         if (mympi->my_rank == 0) {
-            auto file_V3 = input->job_title + ".V3." + std::to_string(i + 1);
+            auto file_V3 = phon->job_title + ".V3." + std::to_string(i + 1);
             ofs_V3.open(file_V3.c_str(), std::ios::out);
             if (!ofs_V3) exit("run_mode_analysis", "Cannot open file file_V3");
 
@@ -1061,7 +1060,7 @@ void ModeAnalysis::print_V4_elements() const
         calc_V4norm2(knum, snum, quartet, v4norm);
 
         if (mympi->my_rank == 0) {
-            std::string file_V4 = input->job_title + ".V4." + std::to_string(i + 1);
+            std::string file_V4 = phon->job_title + ".V4." + std::to_string(i + 1);
             ofs_V4.open(file_V4.c_str(), std::ios::out);
             if (!ofs_V4) exit("run_mode_analysis", "Cannot open file file_V4");
 
@@ -1274,7 +1273,7 @@ void ModeAnalysis::print_Phi3_elements() const
         calc_Phi3(knum, snum, triplet, phi3);
 
         if (mympi->my_rank == 0) {
-            auto file_V3 = input->job_title + ".Phi3." + std::to_string(i + 1);
+            auto file_V3 = phon->job_title + ".Phi3." + std::to_string(i + 1);
             ofs_V3.open(file_V3.c_str(), std::ios::out);
             if (!ofs_V3) exit("print_phi3_element", "Cannot open file file_V3");
 
@@ -1360,7 +1359,7 @@ void ModeAnalysis::print_Phi4_elements() const
         calc_Phi4(knum, snum, quartet, phi4);
 
         if (mympi->my_rank == 0) {
-            std::string file_V4 = input->job_title + ".Phi4." + std::to_string(i + 1);
+            std::string file_V4 = phon->job_title + ".Phi4." + std::to_string(i + 1);
             ofs_V4.open(file_V4.c_str(), std::ios::out);
             if (!ofs_V4) exit("print_phi4_element", "Cannot open file file_V3");
 
@@ -1600,7 +1599,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
             std::cout << ")\n";
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
 
-            std::string file_self = input->job_title + ".Self." + std::to_string(i + 1);
+            std::string file_self = phon->job_title + ".Self." + std::to_string(i + 1);
             ofs_self.open(file_self.c_str(), std::ios::out);
             if (!ofs_self) exit("run_mode_analysis", "Cannot open file file_shift");
 

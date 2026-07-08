@@ -23,7 +23,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "memory.h"
 #include "mpi_common.h"
 #include "niggli_wrapper.h"
-#include "parsephon.h"
 #include "phonon_dos.h"
 #include "symmetry_core.h"
 #include "system.h"

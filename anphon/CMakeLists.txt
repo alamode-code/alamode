@@ -166,6 +166,8 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/fcs_phonon.cpp
             ${PROJECT_SOURCE_DIR}/ifc_derivative.cpp
             ${PROJECT_SOURCE_DIR}/gruneisen.cpp
+            ${PROJECT_SOURCE_DIR}/input_parser.cpp
+            ${PROJECT_SOURCE_DIR}/input_setter.cpp
             ${PROJECT_SOURCE_DIR}/integration.cpp
             ${PROJECT_SOURCE_DIR}/interpolation.cpp
             ${PROJECT_SOURCE_DIR}/isotope.cpp
@@ -176,10 +178,10 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/main.cpp
             ${PROJECT_SOURCE_DIR}/mode_analysis.cpp
             ${PROJECT_SOURCE_DIR}/mpi_common.cpp
-            ${PROJECT_SOURCE_DIR}/parsephon.cpp
+            ${PROJECT_SOURCE_DIR}/phonon.cpp
+            ${PROJECT_SOURCE_DIR}/phonon_cui.cpp
             ${PROJECT_SOURCE_DIR}/phonon_dos.cpp
             ${PROJECT_SOURCE_DIR}/phonon_velocity.cpp
-            ${PROJECT_SOURCE_DIR}/phonons.cpp
             ${PROJECT_SOURCE_DIR}/optimizers.cpp
             ${PROJECT_SOURCE_DIR}/qha.cpp
             ${PROJECT_SOURCE_DIR}/relaxation.cpp
@@ -211,6 +213,8 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/fcs_phonon.h
             ${PROJECT_SOURCE_DIR}/ifc_derivative.h
             ${PROJECT_SOURCE_DIR}/gruneisen.h
+            ${PROJECT_SOURCE_DIR}/input_parser.h
+            ${PROJECT_SOURCE_DIR}/input_setter.h
             ${PROJECT_SOURCE_DIR}/integration.h
             ${PROJECT_SOURCE_DIR}/interpolation.h
             ${PROJECT_SOURCE_DIR}/isotope.h
@@ -219,10 +223,10 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/kpoint.h
             ${PROJECT_SOURCE_DIR}/mode_analysis.h
             ${PROJECT_SOURCE_DIR}/mpi_common.h
-            ${PROJECT_SOURCE_DIR}/parsephon.h
+            ${PROJECT_SOURCE_DIR}/phonon.h
+            ${PROJECT_SOURCE_DIR}/phonon_cui.h
             ${PROJECT_SOURCE_DIR}/phonon_dos.h
             ${PROJECT_SOURCE_DIR}/phonon_velocity.h
-            ${PROJECT_SOURCE_DIR}/phonons.h
             ${PROJECT_SOURCE_DIR}/pointers.h
             ${PROJECT_SOURCE_DIR}/optimizers.h
             ${PROJECT_SOURCE_DIR}/qha.h

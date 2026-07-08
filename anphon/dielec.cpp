@@ -21,7 +21,6 @@
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "parsephon.h"
 #include "phonon_dos.h"
 #include "system.h"
 #include "write_phonons.h"

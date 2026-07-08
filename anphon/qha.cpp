@@ -17,7 +17,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "error.h"
 #include "mathfunctions.h"
 #include "mpi_common.h"
-#include "parsephon.h"
 #include "relaxation.h"
 #include "system.h"
 #include "thermodynamics.h"
@@ -331,7 +330,7 @@ void Qha::exec_qha_optimization()
         // contents of .renorm_harm_dymat).
         auto loaded_h5 = false;
         if (use_h5_io) {
-            loaded_h5 = load_scph_state_h5(input->job_title + ".qha.h5",
+            loaded_h5 = load_scph_state_h5(phon->job_title + ".qha.h5",
                                            "QHA",
                                            NT,
                                            dynamical->nonanalytic,
@@ -348,13 +347,13 @@ void Qha::exec_qha_optimization()
             if (with_relax && mympi->my_rank == 0) store_V0_to_file();
         } else {
             load_scph_dymat_from_file(delta_dymat_qha,
-                                      input->job_title + ".renorm_harm_dymat",
+                                      phon->job_title + ".renorm_harm_dymat",
                                       kmesh_dense.get(),
                                       kmesh_coarse.get(),
                                       dynamical->nonanalytic,
                                       true);
             load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
-                                      input->job_title + ".renorm_harm_dymat",
+                                      phon->job_title + ".renorm_harm_dymat",
                                       kmesh_dense.get(),
                                       kmesh_coarse.get(),
                                       dynamical->nonanalytic,
@@ -367,7 +366,7 @@ void Qha::exec_qha_optimization()
 
             // One-way migration of the legacy state into the unified file.
             if (use_h5_io && mympi->my_rank == 0) {
-                write_scph_state_h5(input->job_title + ".qha.h5",
+                write_scph_state_h5(phon->job_title + ".qha.h5",
                                     "QHA",
                                     NT,
                                     dynamical->nonanalytic,
@@ -396,7 +395,7 @@ void Qha::exec_qha_optimization()
         if (mympi->my_rank == 0) {
             const auto with_relax = relax_mode != RelaxationStrMode::None;
             if (use_h5_io) {
-                write_scph_state_h5(input->job_title + ".qha.h5",
+                write_scph_state_h5(phon->job_title + ".qha.h5",
                                     "QHA",
                                     NT,
                                     dynamical->nonanalytic,
@@ -415,7 +414,7 @@ void Qha::exec_qha_optimization()
                 // write dymat to file
                 // write renormalized harmonic dynamical matrix when the crystal structure is optimized
                 store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
-                                                 input->job_title + ".renorm_harm_dymat",
+                                                 phon->job_title + ".renorm_harm_dymat",
                                                  kmesh_dense.get(),
                                                  kmesh_coarse.get(),
                                                  dynamical->nonanalytic,
@@ -571,12 +570,12 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
         fout_step_q0.open("step_q0.txt");
         fout_step_u0.open("step_u0.txt");
-        fout_q0.open(input->job_title + ".normal_disp");
-        fout_u0.open(input->job_title + ".atom_disp");
+        fout_q0.open(phon->job_title + ".normal_disp");
+        fout_u0.open(phon->job_title + ".atom_disp");
         // if the unit cell is relaxed
         if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             fout_step_u_tensor.open("step_u_tensor.txt");
-            fout_u_tensor.open(input->job_title + ".umn_tensor");
+            fout_u_tensor.open(phon->job_title + ".umn_tensor");
         }
 
         relaxation->write_resfile_header(fout_q0, fout_u0, fout_u_tensor);
@@ -961,9 +960,9 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         // output files of structural optimization
         std::ofstream fout_q0, fout_u0, fout_u_tensor;
 
-        fout_q0.open(input->job_title + ".normal_disp");
-        fout_u0.open(input->job_title + ".atom_disp");
-        fout_u_tensor.open(input->job_title + ".umn_tensor");
+        fout_q0.open(phon->job_title + ".normal_disp");
+        fout_u0.open(phon->job_title + ".atom_disp");
+        fout_u_tensor.open(phon->job_title + ".umn_tensor");
 
         relaxation->write_resfile_header(fout_q0, fout_u0, fout_u_tensor);
 

@@ -11,6 +11,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "relaxation.h"
 #include <Eigen/Core>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
+#include <fstream>
 #include <iomanip>
 #include "dynamical.h"
 #include "error.h"
@@ -18,7 +19,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "interpolation.h"
 #include "memory.h"
 #include "optimizers.h"
-#include "parsephon.h"
 #include "scph.h"
 #include "symmetry_core.h"
 #include "system.h"

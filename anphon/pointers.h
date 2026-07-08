@@ -11,7 +11,7 @@
 #pragma once
 
 #include <memory>
-#include "phonons.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
@@ -19,7 +19,7 @@ class Pointers
 {
 public:
     Pointers(PHON *ptr) :
-        phon(ptr), input(ptr->input), system(ptr->system), symmetry(ptr->symmetry), kpoint(ptr->kpoint),
+        phon(ptr), system(ptr->system), symmetry(ptr->symmetry), kpoint(ptr->kpoint),
         integration(ptr->integration), fcs_phonon(ptr->fcs_phonon), dynamical(ptr->dynamical),
         phonon_velocity(ptr->phonon_velocity), thermodynamics(ptr->thermodynamics),
         anharmonic_core(ptr->anharmonic_core), mode_analysis(ptr->mode_analysis), selfenergy(ptr->selfenergy),
@@ -33,7 +33,6 @@ public:
 
 protected:
     PHON *phon;
-    std::unique_ptr<Input> &input;
     std::unique_ptr<System> &system;
     std::unique_ptr<Symmetry> &symmetry;
     std::unique_ptr<Kpoint> &kpoint;

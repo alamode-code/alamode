@@ -23,7 +23,6 @@
 #include "error.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "parsephon.h"
 #include "system.h"
 
 using namespace PHON_NS;
@@ -354,7 +353,7 @@ void Ewald::compute_ewald_fcs()
     const auto natmin = system->get_primcell().number_of_atoms;
     NDArray<double, 2> fc_ewald_real_space_sum;
     NDArray<double, 2> fc_ewald_reciprocal_space_sum;
-    const std::string file_fcs_ewald = input->job_title + ".fc2_ewald";
+    const std::string file_fcs_ewald = phon->job_title + ".fc2_ewald";
 
     if (mympi->my_rank == 0) {
         std::cout << " Calculating long-range (dipole-dipole) FCs in the supercell ...";

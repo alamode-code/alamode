@@ -28,7 +28,6 @@
 #include "interpolation.h"
 #include "kpoint.h"
 #include "memory.h"
-#include "parsephon.h"
 #include "scph_qha_common.h"
 #include "scph_result_io.h"
 #include "system.h"
@@ -54,16 +53,16 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
     std::ofstream ofs_fc2;
 
     if (is_qha) {
-        file_fc2 = input->job_title + ".qha_dfc2";
+        file_fc2 = phon->job_title + ".qha_dfc2";
     } else {
         if (type == 0) {
-            file_fc2 = input->job_title + ".scph_dfc2";
+            file_fc2 = phon->job_title + ".scph_dfc2";
         } else if (type == 1) {
-            file_fc2 = input->job_title + ".scph+bubble(0)_dfc2";
+            file_fc2 = phon->job_title + ".scph+bubble(0)_dfc2";
         } else if (type == 2) {
-            file_fc2 = input->job_title + ".scph+bubble(w)_dfc2";
+            file_fc2 = phon->job_title + ".scph+bubble(w)_dfc2";
         } else if (type == 3) {
-            file_fc2 = input->job_title + ".scph+bubble(wQP)_dfc2";
+            file_fc2 = phon->job_title + ".scph+bubble(wQP)_dfc2";
         }
     }
 
@@ -148,7 +147,7 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
     delta_fc2.clear();
 
     ofs_fc2.close();
-    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_fc2;
+    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_fc2;
 
     if (is_qha) {
         std::cout << " : Anharmonic corrections to the second-order IFCs (QHA)\n";
@@ -364,7 +363,7 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     const ScphResultIOH5 io(filename);
     io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str);
 
-    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << filename;
+    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << filename;
     std::cout << " : Unified " << mode_name << " state (restart file + temperature-dependent FC2)\n";
 }
 
@@ -390,7 +389,7 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
         io.validate_settings(settings);
         // The restarted data feed the postprocess (DOS, bands, thermo, ...):
         // refuse unconverged temperatures unless the user opted in.
-        io.check_convergence(settings.temperatures, input->allow_unconverged);
+        io.check_convergence(settings.temperatures, phon->allow_unconverged);
         io.load_dymat("delta", settings.temperatures, ns, kmesh_coarse->nk, delta_main);
         if (delta_harm_renorm) {
             io.load_dymat("delta_harm_renorm", settings.temperatures, ns, kmesh_coarse->nk, delta_harm_renorm);
@@ -429,7 +428,7 @@ void ScphQhaCommon::load_V0_from_file()
         }
 
         std::ifstream ifs_v0;
-        const auto file_v0 = input->job_title + ".V0";
+        const auto file_v0 = phon->job_title + ".V0";
         ifs_v0.open(file_v0.c_str(), std::ios::in);
 
         if (!ifs_v0) {
@@ -463,7 +462,7 @@ void ScphQhaCommon::store_V0_to_file() const
     }
 
     std::ofstream ofs_v0;
-    const auto file_v0 = input->job_title + ".V0";
+    const auto file_v0 = phon->job_title + ".V0";
 
     ofs_v0.open(file_v0.c_str(), std::ios::out);
 
@@ -478,6 +477,6 @@ void ScphQhaCommon::store_V0_to_file() const
 
     ofs_v0.close();
 
-    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_v0;
+    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_v0;
     std::cout << " : Renormalized static potential V0 (restart file)\n";
 }

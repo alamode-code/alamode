@@ -10,6 +10,14 @@
 
 #pragma once
 
+#ifdef _WIN32
+#include <mpi.h>
+#else
+
+#include "mpi.h"
+
+#endif
+
 #include <cstdlib>
 #include <iostream>
 

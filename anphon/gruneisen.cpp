@@ -27,7 +27,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "parsephon.h"
 #include "phonon_dos.h"
 #include "pointers.h"
 #include "system.h"
@@ -328,17 +327,17 @@ void Gruneisen::write_new_fcsxml_all() const
     } else {
         std::cout << " NEWFCS = 1 : Following XML files are created. \n";
 
-        auto file_xml = input->job_title + "_+.xml";
+        auto file_xml = phon->job_title + "_+.xml";
         write_new_fcsxml(file_xml, delta_a);
 
-        std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_xml;
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
         std::cout << " : Force constants of the system expanded by " << std::fixed << std::setprecision(3)
                   << delta_a * 100 << " %\n";
 
-        file_xml = input->job_title + "_-.xml";
+        file_xml = phon->job_title + "_-.xml";
         write_new_fcsxml(file_xml, -delta_a);
 
-        std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_xml;
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
         std::cout << " : Force constants of the system compressed by " << std::fixed << std::setprecision(3)
                   << delta_a * 100 << " %\n";
     }

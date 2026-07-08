@@ -17,7 +17,6 @@
 #include "constants.h"
 #include "dielec.h"
 #include "interpolation.h"
-#include "parsephon.h"
 #include "phonon_dos.h"
 #include "relaxation.h"
 #include "thermodynamics.h"
@@ -328,7 +327,7 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
     std::ofstream ofs_dymat;
-    // auto file_dymat = input->job_title + ".scph_dymat";
+    // auto file_dymat = phon->job_title + ".scph_dymat";
     auto file_dymat = filename_dymat;
 
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
@@ -366,7 +365,7 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
         }
     }
     ofs_dymat.close();
-    std::cout << "  " << std::setw(input->job_title.length() + 12) << std::left << file_dymat;
+    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dymat;
     std::cout << " : Anharmonic dynamical matrix (restart file)\n";
 }
 
