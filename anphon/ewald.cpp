@@ -24,6 +24,7 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "system.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -93,7 +94,7 @@ void Ewald::init()
 
 void Ewald::prepare_Ewald(const Eigen::Matrix3d &dielectric)
 {
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << "  Preparing for the Ewald summation ...\n\n";
     }
@@ -144,7 +145,7 @@ void Ewald::prepare_Ewald(const Eigen::Matrix3d &dielectric)
 
     det_epsilon = epsilon_mat.determinant();
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "  Inverse dielectric tensor : \n";
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -355,7 +356,7 @@ void Ewald::compute_ewald_fcs()
     NDArray<double, 2> fc_ewald_reciprocal_space_sum;
     const std::string file_fcs_ewald = phon->job_title + ".fc2_ewald";
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " Calculating long-range (dipole-dipole) FCs in the supercell ...";
     }
 
@@ -479,7 +480,7 @@ void Ewald::compute_ewald_fcs()
         }
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done.\n";
         if (print_fc2_ewald) {
             std::cout << '\n';

@@ -50,7 +50,7 @@ void Isotope::deallocate_variables()
 }
 
 void Isotope::setup_isotope_scattering(const System &system_in, const unsigned int nk_irred_in,
-                                       const unsigned int ns_in, const int my_rank_in)
+                                       const unsigned int ns_in, const int my_rank_in, const unsigned int verbosity)
 {
     const int nkd = system_in.get_primcell().number_of_elems;
 
@@ -75,14 +75,16 @@ void Isotope::setup_isotope_scattering(const System &system_in, const unsigned i
         MPI_Bcast(&isotope_factor[0], nkd, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         if (my_rank_in == 0) {
-            std::cout << " ISOTOPE >= 1: Isotope scattering effects will be considered\n";
-            std::cout << "               with the following scattering factors.\n";
+            if (verbosity > 0) {
+                std::cout << " ISOTOPE >= 1: Isotope scattering effects will be considered\n";
+                std::cout << "               with the following scattering factors.\n";
 
-            for (int i = 0; i < nkd; ++i) {
-                std::cout << std::setw(5) << system_in.symbol_kd[i] << ":";
-                std::cout << std::scientific << std::setw(17) << isotope_factor[i] << '\n';
+                for (int i = 0; i < nkd; ++i) {
+                    std::cout << std::setw(5) << system_in.symbol_kd[i] << ":";
+                    std::cout << std::scientific << std::setw(17) << isotope_factor[i] << '\n';
+                }
+                std::cout << '\n';
             }
-            std::cout << '\n';
 
             gamma_isotope.resize(nk_irred_in, ns_in);
         }
@@ -213,7 +215,7 @@ void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsig
 void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
                                           const TetraNodes &tetra_nodes_dos_in, const System &system_in,
                                           Integration &integration_in, const unsigned int ns_in, const int my_rank_in,
-                                          const int nprocs_in)
+                                          const int nprocs_in, const unsigned int verbosity)
 {
     int i;
     const auto ns = static_cast<int>(ns_in);
@@ -224,7 +226,7 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
 
     if (include_isotope) {
 
-        if (my_rank_in == 0) {
+        if (my_rank_in == 0 && verbosity > 0) {
             if (integration_in.ismear == -1) {
                 std::cout << " Calculating self-energies from isotope scatterings (tetra)... ";
             } else if (integration_in.ismear == 0) {
@@ -337,7 +339,7 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
         gamma_tmp.clear();
         gamma_loc.clear();
 
-        if (my_rank_in == 0) {
+        if (my_rank_in == 0 && verbosity > 0) {
             std::cout << "done!\n";
         }
     }

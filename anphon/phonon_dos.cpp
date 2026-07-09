@@ -23,6 +23,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -283,7 +284,8 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     NDArray<double, 1> weight;
     NDArray<double, 2> proj;
 
-    if (mympi->my_rank == 0) std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0)
+        std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
 
     kmap_identity.resize(nk);
     proj.resize(neval, nk);
@@ -339,7 +341,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     proj.clear();
     kmap_identity.clear();
 
-    if (mympi->my_rank == 0) std::cout << " done!\n";
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) std::cout << " done!\n";
 }
 
 
@@ -361,7 +363,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     Eigen::Vector3d qvec;
     Eigen::Vector3cd evec_kappa;
 
-    if (mympi->my_rank == 0)
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0)
         std::cout << " LONGITUDE_DOS = 1 : Calculating longitudinal-mode projected phonon DOS ... ";
 
     kmap_identity.resize(nk);
@@ -444,7 +446,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     proj.clear();
     kmap_identity.clear();
 
-    if (mympi->my_rank == 0) std::cout << " done!\n";
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) std::cout << " done!\n";
 }
 
 
@@ -471,7 +473,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
     int loc;
     NDArray<int, 1> k_pair;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " TDOS = 1 : Calculating two-phonon DOS for all irreducible k points.\n";
         std::cout << "            This may take a while ... ";
     }
@@ -561,7 +563,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
     kmap_identity.clear();
     k_pair.clear();
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 }
@@ -577,7 +579,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
     NDArray<unsigned int, 1> kmap_identity;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " SPS = 1 : Calculating three-phonon scattering phase space ... ";
     }
 
@@ -676,7 +678,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
     ret = (sps_sum1 + 2.0 * sps_sum2) / (3.0 * static_cast<double>(std::pow(ns, 3.0)));
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 }
@@ -736,7 +738,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
 
     std::vector<int> ks_g, ks_l;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " SPS = 2 : Calculating three-phonon scattering phase space\n";
         std::cout << "           with the Bose distribution function ...";
     }
@@ -865,7 +867,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     recv_buf.clear();
     temperature.clear();
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done!\n";
     }
 }

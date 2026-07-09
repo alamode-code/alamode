@@ -127,7 +127,7 @@ void Iterativebte::setup_iterative()
     collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering, isotope->isotope_factor.data());
     collision_op->setup();
 
-    if (collision_op->has_isotope_channel() && mympi->my_rank == 0) {
+    if (collision_op->has_isotope_channel() && mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n'
                   << " ISOTOPE_INSCATTERING = 1: the elastic isotope-disorder channel enters\n"
                   << " the collision operator with its in-scattering term (its diagonal is the\n"
@@ -160,7 +160,7 @@ void Iterativebte::setup_iterative()
                 t_converged[i] = conv;
                 if (!conv) ++n_unconv;
             }
-            if (n_done > 0) {
+            if (n_done > 0 && writes->getVerbosity() > 0) {
                 std::cout << '\n'
                           << " RESTART: " << n_done << " of " << ntemp
                           << " temperature points were restored from the kappa.h5 file.\n";
@@ -177,7 +177,7 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(t_computed.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(t_converged.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         if (use_direct) {
             std::cout << " Direct solution (dense eigendecomposition of the collision kernel)" << '\n';
@@ -214,7 +214,7 @@ void Iterativebte::do_iterativebte()
     if (all_done) {
         // Every temperature was restored from the kappa.h5 file; the
         // expensive L matrices are not needed at all.
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n'
                       << " All temperature points were restored from the kappa.h5 file;\n"
                       << " skipping the calculation of the transition probabilities.\n";
@@ -223,7 +223,7 @@ void Iterativebte::do_iterativebte()
         return;
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " Calculate once for the transition probability L(absorb) and L(emitt)" << '\n';
         std::cout << " Size of L (MB) (approx.) = "
@@ -233,7 +233,7 @@ void Iterativebte::do_iterativebte()
 
     collision_op->build_L();
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "     DONE !" << '\n';
     }
 
@@ -340,7 +340,7 @@ void Iterativebte::iterative_solver()
         calc_damping4();
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Iteration starts ..." << '\n' << '\n';
     }
 
@@ -371,7 +371,7 @@ void Iterativebte::iterative_solver()
     for (auto itemp = 0; itemp < ntemp; ++itemp) {
 
         if (t_computed[itemp] && t_converged[itemp]) {
-            if (mympi->my_rank == 0) {
+            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed
                           << std::setprecision(2) << Temperature[itemp]
                           << " K    restored from the kappa.h5 file; skipped.\n";
@@ -396,7 +396,7 @@ void Iterativebte::iterative_solver()
             }
         }
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                       << Temperature[itemp] << " K" << "    -----------------------------\n";
             if (warm_start) {
@@ -495,7 +495,7 @@ void Iterativebte::iterative_solver()
             double local_difference = 0.0;
             double local_norm2 = 0.0;
 
-            if (mympi->my_rank == 0) {
+            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "   -> iter " << std::setw(3) << itr << ": " << std::flush;
             }
 
@@ -564,7 +564,7 @@ void Iterativebte::iterative_solver()
 
             calc_kappa(itemp, dFold, kappa_new);
             //print kappa
-            if (mympi->my_rank == 0) {
+            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
                         std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_new[ix][iy];
@@ -597,7 +597,7 @@ void Iterativebte::iterative_solver()
                         kappa[itemp][ix][iy] = kappa_old[ix][iy];
                     }
                 }
-                if (mympi->my_rank == 0) {
+                if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
                     std::cout << "   -> Converged is achieved                 "
                               << "                                            "
                               << "                                    " << std::setw(14) << std::scientific
@@ -659,7 +659,7 @@ void Iterativebte::iterative_solver()
     } // itemp
 
     // Per-temperature summary (computed this run only).
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Iterative BTE summary\n";
         std::cout << "     T [K]   iterations   |df'-df|/|df|   converged\n";
         for (auto itemp = 0; itemp < ntemp; ++itemp) {
@@ -846,7 +846,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         double maxdiff = 0.0, scale = 0.0;
         MPI_Allreduce(&maxdiff_loc, &maxdiff, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         MPI_Allreduce(&scale_loc, &scale, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "      (assembly cross-check vs the matrix-free operator: max rel diff = " << std::scientific
                       << std::setprecision(1) << (scale > 0.0 ? maxdiff / scale : 0.0) << ")\n";
         }
@@ -1041,12 +1041,14 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             }
         }
 
-        std::cout << "      dense collision kernel: dimension " << ndim << " (" << nrows3 - nact3 << " excluded rows, "
-                  << nact3 - nred3 << " folded into degenerate blocks, " << nred3 - ndim
-                  << " non-invariant components removed), memory " << std::fixed << std::setprecision(1)
-                  << static_cast<double>(ndim) * ndim * 8.0 / 1048576.0 << " MB\n";
-        std::cout << "      asymmetry |S - S^T|_F / |S|_F = " << std::scientific << std::setprecision(1) << asym
-                  << " (on the invariant subspace; symmetrized for the eigendecomposition)\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << "      dense collision kernel: dimension " << ndim << " (" << nrows3 - nact3
+                      << " excluded rows, " << nact3 - nred3 << " folded into degenerate blocks, " << nred3 - ndim
+                      << " non-invariant components removed), memory " << std::fixed << std::setprecision(1)
+                      << static_cast<double>(ndim) * ndim * 8.0 / 1048576.0 << " MB\n";
+            std::cout << "      asymmetry |S - S^T|_F / |S|_F = " << std::scientific << std::setprecision(1) << asym
+                      << " (on the invariant subspace; symmetrized for the eigendecomposition)\n";
+        }
 
         std::vector<double> evals;
         solve_dense_symmetric(ndim, A, evals);
@@ -1058,10 +1060,12 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             if (lam < -lam_tol) ++n_negative;
             if (std::abs(lam) < 1.0e-8 * lam_max) ++n_nearnull;
         }
-        std::cout << "      eigenvalues (Omega normalization; scattering rates 1/tau in cm^-1):\n";
-        std::cout << "        min = " << std::scientific << std::setprecision(2) << evals.front() * Ry_to_kayser
-                  << ", max = " << lam_max * Ry_to_kayser << "; negative (< -1e-12 max): " << n_negative
-                  << "; near-null (|lambda| < 1e-8 max): " << n_nearnull << '\n';
+        if (writes->getVerbosity() > 0) {
+            std::cout << "      eigenvalues (Omega normalization; scattering rates 1/tau in cm^-1):\n";
+            std::cout << "        min = " << std::scientific << std::setprecision(2) << evals.front() * Ry_to_kayser
+                      << ", max = " << lam_max * Ry_to_kayser << "; negative (< -1e-12 max): " << n_negative
+                      << "; near-null (|lambda| < 1e-8 max): " << n_nearnull << '\n';
+        }
         if (n_negative > 0) {
             std::cout << "      WARNING: the physical collision kernel is positive semidefinite;\n"
                       << "               negative eigenvalues indicate a too-coarse mesh or an\n"
@@ -1118,9 +1122,12 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                     for (int i = 0; i < ndim; ++i) pr += A[static_cast<size_t>(m) * ndim + i] * drift[kb][i];
                     ov2 += pow2(pr);
                 }
-                std::cout << "      softest mode " << m << ": 1/tau = " << std::scientific << std::setprecision(2)
-                          << evals[m] * Ry_to_kayser << " cm^-1, overlap with the momentum-drift space = " << std::fixed
-                          << std::setprecision(3) << std::sqrt(ov2) << '\n';
+                if (writes->getVerbosity() > 0) {
+                    std::cout << "      softest mode " << m << ": 1/tau = " << std::scientific << std::setprecision(2)
+                              << evals[m] * Ry_to_kayser
+                              << " cm^-1, overlap with the momentum-drift space = " << std::fixed
+                              << std::setprecision(3) << std::sqrt(ov2) << '\n';
+                }
             }
         }
 
@@ -1138,7 +1145,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             for (int j = 0; j < ndim; ++j) pr += A[static_cast<size_t>(i) * ndim + j] * btil[j];
             coef[i] = pr / evals[i];
         }
-        if (n_null > 0) {
+        if (n_null > 0 && writes->getVerbosity() > 0) {
             std::cout << "      " << n_null << " numerically null mode(s) (lambda <= 1e-12 max) excluded\n";
         }
 
@@ -1182,7 +1189,9 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             if (dF_keep) *dF_keep = dF;
         };
 
-        std::cout << "      kappa_xx/yy/zz vs dropping the m softest (non-null) modes:\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << "      kappa_xx/yy/zz vs dropping the m softest (non-null) modes:\n";
+        }
         double k9tmp[9];
         for (const auto mdrop: {0, 1, 2, 4, 8, 16}) {
             if (mdrop >= ndim - n_null) break;
@@ -1192,9 +1201,11 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             } else {
                 kappa_of_drop(mdrop, k9tmp, nullptr);
             }
-            std::cout << "        m = " << std::setw(3) << mdrop << ":" << std::scientific << std::setprecision(4)
-                      << std::setw(13) << k9tmp[0] << std::setw(13) << k9tmp[4] << std::setw(13) << k9tmp[8]
-                      << "  [W/mK]\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << "        m = " << std::setw(3) << mdrop << ":" << std::scientific << std::setprecision(4)
+                          << std::setw(13) << k9tmp[0] << std::setw(13) << k9tmp[4] << std::setw(13) << k9tmp[8]
+                          << "  [W/mK]\n";
+            }
         }
 
         // Fraction of the right-hand side living in the excluded null space
@@ -1208,9 +1219,11 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
                 if (evals[i] <= lam_null) r2 += pow2(pr);
             }
             residual = b2 > 0.0 ? std::sqrt(r2 / b2) : 0.0;
-            std::cout << "      |b| fraction in the excluded null space = " << std::scientific << std::setprecision(2)
-                      << residual << '\n'
-                      << std::flush;
+            if (writes->getVerbosity() > 0) {
+                std::cout << "      |b| fraction in the excluded null space = " << std::scientific
+                          << std::setprecision(2) << residual << '\n'
+                          << std::flush;
+            }
         }
     }
 
@@ -1331,8 +1344,10 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         const auto scale = std::max(std::abs(s1), std::abs(s2));
         const auto asym = scale > 0.0 ? std::abs(s1 - s2) / scale : 0.0;
         if (mympi->my_rank == 0) {
-            std::cout << "      (operator self-adjointness on the Krylov subspace: |<u,Av>-<Au,v>|/|<u,Av>| = "
-                      << std::scientific << std::setprecision(1) << asym << ")\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << "      (operator self-adjointness on the Krylov subspace: |<u,Av>-<Au,v>|/|<u,Av>| = "
+                          << std::scientific << std::setprecision(1) << asym << ")\n";
+            }
             if (asym > 1.0e-3) {
                 std::cout << "      Note: the discretized collision operator is not exactly symmetric\n"
                           << "      (tetrahedron/adaptive smearing weights); judge the run by the final\n"
@@ -1379,7 +1394,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
 
     for (auto itr = 0; itr < max_cycle; ++itr) {
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "   -> iter " << std::setw(3) << itr << ": " << std::flush;
         }
 
@@ -1411,7 +1426,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         NDArray<double, 2> kappa_now;
         kappa_now.resize(3, 3);
         calc_kappa(itemp, dFold, kappa_now);
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             for (auto i = 0; i < 3; ++i) {
                 for (auto j = 0; j < 3; ++j) {
                     std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_now[i][j];
@@ -1436,7 +1451,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
                 }
             }
             kappa_now.clear();
-            if (mympi->my_rank == 0) {
+            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "   -> Converged is achieved                 "
                           << "                                            "
                           << "                                    " << std::setw(14) << std::scientific
@@ -1500,7 +1515,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
                       << std::flush;
         }
     }
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "      final |r|/|b| (explicit) = " << std::scientific << std::setprecision(2) << rel_true << '\n'
                   << std::flush;
     }
@@ -1607,7 +1622,9 @@ void Iterativebte::write_result()
 
     // write Q and W for all phonon, only phonon in irreducible BZ is written
     if (mympi->my_rank == 0) {
-        std::cout << " Prepare result file ..." << '\n';
+        if (writes->getVerbosity() > 0) {
+            std::cout << " Prepare result file ..." << '\n';
+        }
 
         KappaResultIOText::write_header(fs_result,
                                         conductivity->get_filename_results(3),

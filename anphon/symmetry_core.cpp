@@ -20,6 +20,7 @@
 #include "relaxation.h"
 #include "scph.h"
 #include "system.h"
+#include "write_phonons.h"
 
 extern "C"
 {
@@ -55,31 +56,49 @@ void Symmetry::setup_symmetry()
     if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0)) {
 
         if (mympi->my_rank == 0) {
-            std::cout << " ==========\n";
-            std::cout << "  Symmetry \n";
-            std::cout << " ==========\n\n";
+            const auto verbosity = writes->getVerbosity();
+            if (verbosity > 0) {
+                std::cout << " ==========\n";
+                std::cout << "  Symmetry \n";
+                std::cout << " ==========\n\n";
+            }
 
             const auto cell_tmp = system->get_primcell(true);
             const auto cell_tmp_ref = system->get_primcell();
 
 
-            std::cout << "  Primitive cell ";
-            setup_symmetry_operation(cell_tmp_ref, system->get_spin_prim(), system->get_atomtype_group(), SymmList_ref);
+            if (verbosity > 0) std::cout << "  Primitive cell ";
+            setup_symmetry_operation(cell_tmp_ref,
+                                     system->get_spin_prim(),
+                                     system->get_atomtype_group(),
+                                     SymmList_ref,
+                                     verbosity);
 
-            std::cout << "  Distorted cell ";
-            setup_symmetry_operation(cell_tmp, system->get_spin_prim(), system->get_atomtype_group(true), SymmList);
+            if (verbosity > 0) std::cout << "  Distorted cell ";
+            setup_symmetry_operation(cell_tmp,
+                                     system->get_spin_prim(),
+                                     system->get_atomtype_group(true),
+                                     SymmList,
+                                     verbosity);
 
             nsym = SymmList.size();
             nsym_ref = SymmList_ref.size();
         }
     } else {
         if (mympi->my_rank == 0) {
-            std::cout << " ==========\n";
-            std::cout << "  Symmetry \n";
-            std::cout << " ==========\n\n";
+            const auto verbosity = writes->getVerbosity();
+            if (verbosity > 0) {
+                std::cout << " ==========\n";
+                std::cout << "  Symmetry \n";
+                std::cout << " ==========\n\n";
+            }
 
             const auto cell_tmp = system->get_primcell();
-            setup_symmetry_operation(cell_tmp, system->get_spin_prim(), system->get_atomtype_group(), SymmList);
+            setup_symmetry_operation(cell_tmp,
+                                     system->get_spin_prim(),
+                                     system->get_atomtype_group(),
+                                     SymmList,
+                                     verbosity);
 
             nsym = SymmList.size();
         }
@@ -93,13 +112,18 @@ void Symmetry::setup_symmetry()
 
     if (mympi->my_rank == 0) {
 
+        const auto verbosity = writes->getVerbosity();
         bool use_distorted_structure = false;
 
-        std::cout << '\n';
-        std::cout << "  Number of symmetry operations : " << nsym << '\n';
+        if (verbosity > 0) {
+            std::cout << '\n';
+            std::cout << "  Number of symmetry operations : " << nsym << '\n';
+        }
         if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0))
         {
-            std::cout << "  Number of symmetry operations in reference structure : " << nsym_ref << "\n\n";
+            if (verbosity > 0) {
+                std::cout << "  Number of symmetry operations in reference structure : " << nsym_ref << "\n\n";
+            }
             use_distorted_structure = true;
         }
 

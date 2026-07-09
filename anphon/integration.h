@@ -131,7 +131,7 @@ public:
 
     void setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
                            unsigned int ns_in, const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p,
-                           int quartic_mode_in, int my_rank_in);
+                           int quartic_mode_in, int my_rank_in, unsigned int verbosity = 1);
 
     // Allocate and initialize the adaptive smearing table for the 4ph
     // channel on its (possibly coarser) mesh. Called from

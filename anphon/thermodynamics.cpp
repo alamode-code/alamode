@@ -403,11 +403,12 @@ auto Thermodynamics::compute_free_energy_bubble(const System &system_in, const K
                                                 const DymatEigenValue &dymat_dos_in,
                                                 const std::vector<SymmetryOperation> &symmlist_in,
                                                 AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
-                                                const int my_rank_in, const int nprocs_in) -> void
+                                                const int my_rank_in, const int nprocs_in,
+                                                const unsigned int verbosity) -> void
 {
     const auto NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
 
-    if (my_rank_in == 0) {
+    if (my_rank_in == 0 && verbosity > 0) {
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n";
         std::cout << " Calculating the vibrational free energy from the Bubble diagram \n" << std::flush;
@@ -426,7 +427,7 @@ auto Thermodynamics::compute_free_energy_bubble(const System &system_in, const K
                       my_rank_in,
                       nprocs_in);
 
-    if (my_rank_in == 0) {
+    if (my_rank_in == 0 && verbosity > 0) {
         std::cout << " done!\n\n";
     }
 }

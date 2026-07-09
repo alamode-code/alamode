@@ -36,6 +36,7 @@
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
+#include "write_phonons.h"
 
 
 using namespace PHON_NS;
@@ -147,7 +148,7 @@ void Dynamical::setup_dynamical()
 {
     neval = 3 * system->get_primcell().number_of_atoms;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " ==================\n";
         std::cout << "  Dynamical matrix \n";
@@ -231,7 +232,7 @@ void Dynamical::setup_dynamical()
         prepare_mindist_list(mindist_list);
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
     }
 }
@@ -707,7 +708,7 @@ void Dynamical::diagonalize_dynamical_all()
 {
     unsigned int nk;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
     }
     NDArray<double, 2> eval_tmp;
@@ -832,7 +833,7 @@ void Dynamical::diagonalize_dynamical_all()
         connect_band_by_eigen_similarity(kpoint->kpoint_bs->nk, dymat_band->get_eigenvectors(), index_bconnect);
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 

@@ -24,6 +24,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "system.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -306,7 +307,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
 
     const auto factor = Bohr_in_Angstrom * 1.0e-10 / (time_ry * 2.0 * pi);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " Calculating group velocity matrix of phonons on uniform grid ... ";
     }
 
@@ -394,7 +395,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(std::complex<double> ****velmat_out
     recvcount.clear();
     displs.clear();
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 }

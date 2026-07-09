@@ -29,6 +29,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "phonon.h"
 #include "system.h"
 #include "thermodynamics.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -58,7 +59,7 @@ void Fcs_phonon::deallocate_variables()
 
 void Fcs_phonon::setup(const std::string &mode)
 {
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " =================\n";
         std::cout << "  Force Constants \n";
         std::cout << " =================\n\n";
@@ -111,21 +112,24 @@ void Fcs_phonon::setup(const std::string &mode)
 
         load_fcs_from_file(maxorder);
 
-        for (auto i = 0; i < maxorder; ++i) {
-            std::cout << "  Number of non-zero IFCs for " << i + 2 << " order: ";
-            std::cout << force_constant_with_cell[i].size() << '\n';
-        }
-        std::cout << '\n';
+        if (writes->getVerbosity() > 0) {
+            for (auto i = 0; i < maxorder; ++i) {
+                std::cout << "  Number of non-zero IFCs for " << i + 2 << " order: ";
+                std::cout << force_constant_with_cell[i].size() << '\n';
+            }
+            std::cout << '\n';
 
-        std::cout << "  Maximum deviation from the translational invariance: \n";
+            std::cout << "  Maximum deviation from the translational invariance: \n";
+        }
         for (auto i = 0; i < maxorder; ++i) {
             const auto maxdev = examine_translational_invariance(i,
                                                                  system->get_supercell(i).number_of_atoms,
                                                                  system->get_primcell().number_of_atoms,
                                                                  force_constant_with_cell[i]);
-            std::cout << "   Order " << i + 2 << " : " << std::setw(12) << std::scientific << maxdev << '\n';
+            if (writes->getVerbosity() > 0)
+                std::cout << "   Order " << i + 2 << " : " << std::setw(12) << std::scientific << maxdev << '\n';
         }
-        std::cout << '\n';
+        if (writes->getVerbosity() > 0) std::cout << '\n';
     }
 
     MPI_Bcast_fcs_array(maxorder);
@@ -273,7 +277,7 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
         }
     }
 
-    std::cout << "  Reading force constants from the FCSFILE ... ";
+    if (writes->getVerbosity() > 0) std::cout << "  Reading force constants from the FCSFILE ... ";
 
     for (auto i = 0; i < filename_list.size(); ++i) {
 
@@ -298,7 +302,7 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
         }
     }
 
-    std::cout << "done.\n\n";
+    if (writes->getVerbosity() > 0) std::cout << "done.\n\n";
 }
 
 void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs, const int order,
@@ -490,8 +494,9 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
             }
         }
 
-        std::cout << "\n  FC2_TEMPERATURE = " << fc2_temperature
-                  << " K : loading the renormalized FC2 at this temperature from " << fname_fcs << "\n  ";
+        if (writes->getVerbosity() > 0)
+            std::cout << "\n  FC2_TEMPERATURE = " << fc2_temperature
+                      << " K : loading the renormalized FC2 at this temperature from " << fname_fcs << "\n  ";
     }
 
     get_force_constants_from_h5(file,
@@ -509,8 +514,9 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
     // differs from the internal one to keep the common case quiet.
     const std::string unit_fc_internal = "Ry/bohr^" + std::to_string(order + 2);
     if (!unit_fc.empty() && unit_fc != unit_fc_internal) {
-        std::cout << "\n  " << fname_fcs << " [Order " << order + 2 << "]: stored unit " << unit_fc
-                  << " -> converted to " << unit_fc_internal << '\n';
+        if (writes->getVerbosity() > 0)
+            std::cout << "\n  " << fname_fcs << " [Order " << order + 2 << "]: stored unit " << unit_fc
+                      << " -> converted to " << unit_fc_internal << '\n';
     }
 
     const auto nentries = fcs_values.size();
@@ -700,8 +706,9 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
         ++nadded;
     }
 
-    std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at " << fc2_temperature
-              << " K from " << fname_dfc2 << "\n  ";
+    if (writes->getVerbosity() > 0)
+        std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at " << fc2_temperature
+                  << " K from " << fname_dfc2 << "\n  ";
 }
 
 

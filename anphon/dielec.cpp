@@ -89,7 +89,7 @@ void Dielec::init()
                 exitall("Dielec::init()", "BORNINFO must be set when NONANALYTIC>0.");
             }
         }
-        setup_dielectric(1);
+        setup_dielectric(writes->getVerbosity());
     }
 
     if (calc_dielectric_constant) {

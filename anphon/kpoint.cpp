@@ -27,6 +27,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -53,7 +54,7 @@ void Kpoint::kpoint_setups(const std::string mode)
 {
     MPI_Bcast(&kpoint_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " ==========\n";
         std::cout << "  K points \n";
@@ -63,13 +64,13 @@ void Kpoint::kpoint_setups(const std::string mode)
     switch (kpoint_mode) {
     case 0:
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  KPMODE = 0 : Calculation on given k points\n";
         }
 
         setup_kpoint_given(kpInp, system->get_primcell().reciprocal_lattice_vector);
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Number of k points : " << kpoint->kpoint_general->nk << "\n\n";
             std::cout << "  List of k points : " << '\n';
             for (auto i = 0; i < kpoint->kpoint_general->nk; ++i) {
@@ -86,12 +87,12 @@ void Kpoint::kpoint_setups(const std::string mode)
 
     case 1:
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  KPMODE = 1: Band structure calculation\n";
         }
 
         setup_kpoint_band(kpInp, system->get_primcell().reciprocal_lattice_vector);
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Number of paths : " << kpInp.size() << "\n\n";
             std::cout << "  List of k paths : " << '\n';
 
@@ -119,7 +120,7 @@ void Kpoint::kpoint_setups(const std::string mode)
 
     case 2:
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  KPMODE = 2: Uniform grid\n";
         }
 
@@ -142,7 +143,7 @@ void Kpoint::kpoint_setups(const std::string mode)
                               system->get_primcell().reciprocal_lattice_vector,
                               symmetry->time_reversal_sym);
 
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
             std::cout << "  nk1:" << std::setw(4) << dos->kmesh_dos->nk_i[0] << '\n';
             std::cout << "  nk2:" << std::setw(4) << dos->kmesh_dos->nk_i[1] << '\n';

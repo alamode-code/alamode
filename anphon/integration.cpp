@@ -49,52 +49,61 @@ void Integration::deallocate_variables()
 
 void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
                                     const unsigned int ns_in, const Eigen::Matrix3d &lavec_p,
-                                    const Eigen::Matrix3d &rlavec_p, const int quartic_mode_in, const int my_rank_in)
+                                    const Eigen::Matrix3d &rlavec_p, const int quartic_mode_in, const int my_rank_in,
+                                    const unsigned int verbosity)
 {
     MPI_Bcast(&ismear, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (my_rank_in == 0) {
-        std::cout << '\n';
+        if (verbosity > 0) {
+            std::cout << '\n';
 
-        std::cout << " ================\n";
-        std::cout << "  BZ integration \n";
-        std::cout << " ================\n\n";
+            std::cout << " ================\n";
+            std::cout << "  BZ integration \n";
+            std::cout << " ================\n\n";
 
-        std::cout << "  General settings for DOS and 3-phonon scattering rates:\n";
+            std::cout << "  General settings for DOS and 3-phonon scattering rates:\n";
+        }
 
         if (ismear == -1) {
-            std::cout << "   ISMEAR = -1: Tetrahedron method\n";
+            if (verbosity > 0) std::cout << "   ISMEAR = -1: Tetrahedron method\n";
         } else if (ismear == 0) {
-            std::cout << "   ISMEAR = 0: Lorentzian broadening with epsilon = " << std::fixed << std::setprecision(2)
-                      << epsilon << " (cm^-1)\n";
+            if (verbosity > 0)
+                std::cout << "   ISMEAR = 0: Lorentzian broadening with epsilon = " << std::fixed
+                          << std::setprecision(2) << epsilon << " (cm^-1)\n";
         } else if (ismear == 1) {
-            std::cout << "   ISMEAR = 1: Gaussian broadening with epsilon = " << std::fixed << std::setprecision(2)
-                      << epsilon << " (cm^-1)\n";
+            if (verbosity > 0)
+                std::cout << "   ISMEAR = 1: Gaussian broadening with epsilon = " << std::fixed << std::setprecision(2)
+                          << epsilon << " (cm^-1)\n";
         } else if (ismear == 2) {
-            std::cout << "   ISMEAR = 2: Adaptive Gaussian broadening\n";
+            if (verbosity > 0) std::cout << "   ISMEAR = 2: Adaptive Gaussian broadening\n";
         } else {
             exit("setup_integration", "Invalid ismear");
         }
-        std::cout << '\n';
+        if (verbosity > 0) std::cout << '\n';
 
         if (quartic_mode_in) {
-            std::cout << "  Additional settings for 4-phonon scattering rates:\n";
+            if (verbosity > 0) std::cout << "  Additional settings for 4-phonon scattering rates:\n";
             if (ismear_4ph == -1) {
-                std::cout << "   Tetrahedron method (ISMEAR_4PH) is not implemented. Switch to adaptive smearing !\n";
+                if (verbosity > 0)
+                    std::cout
+                        << "   Tetrahedron method (ISMEAR_4PH) is not implemented. Switch to adaptive smearing !\n";
                 ismear_4ph = 2;
             } else if (ismear_4ph == 0) {
-                std::cout << "   ISMEAR_4PH = 0: Lorentzian broadening with epsilon = " << std::fixed
-                          << std::setprecision(2) << epsilon_4ph << " (cm^-1)\n";
+                if (verbosity > 0)
+                    std::cout << "   ISMEAR_4PH = 0: Lorentzian broadening with epsilon = " << std::fixed
+                              << std::setprecision(2) << epsilon_4ph << " (cm^-1)\n";
             } else if (ismear_4ph == 1) {
-                std::cout << "   ISMEAR_4PH = 1: Gaussian broadening with epsilon = " << std::fixed
-                          << std::setprecision(2) << epsilon_4ph << " (cm^-1)\n";
+                if (verbosity > 0)
+                    std::cout << "   ISMEAR_4PH = 1: Gaussian broadening with epsilon = " << std::fixed
+                              << std::setprecision(2) << epsilon_4ph << " (cm^-1)\n";
             } else if (ismear_4ph == 2) {
-                std::cout << "   ISMEAR_4PH = 2: Adaptive Gaussian broadening\n";
+                if (verbosity > 0) std::cout << "   ISMEAR_4PH = 2: Adaptive Gaussian broadening\n";
             } else {
                 exit("setup_integration", "Invalid ismear_4ph");
             }
-            std::cout << '\n';
+            if (verbosity > 0) std::cout << '\n';
         }
     }
 

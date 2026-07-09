@@ -29,6 +29,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mpi_common.h"
 #include "relaxation.h"
 #include "symmetry_core.h"
+#include "write_phonons.h"
 #include "xml_parser.h"
 
 #include <highfive/H5Easy.hpp>
@@ -104,7 +105,7 @@ void System::setup()
     set_atomtype_group(primcell, spin_prim, atomtype_group_prim);
     set_atomtype_group(primcell_distort, spin_prim, atomtype_group_prim_distort);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         print_structure_information_stdout();
     }
 }
@@ -660,8 +661,9 @@ void System::get_structure_and_mapping_table_h5(const std::string &filename, Cel
         // The helper already converted the lattice; report only when the
         // stored unit differs from the internal one (bohr).
         if ((!unit_lavec_s.empty() && unit_lavec_s != "bohr") || (!unit_lavec_p.empty() && unit_lavec_p != "bohr")) {
-            std::cout << "  " << filename << ": lattice_vector stored in "
-                      << (unit_lavec_s.empty() ? unit_lavec_p : unit_lavec_s) << " -> converted to bohr\n\n";
+            if (writes->getVerbosity() > 0)
+                std::cout << "  " << filename << ": lattice_vector stored in "
+                          << (unit_lavec_s.empty() ? unit_lavec_p : unit_lavec_s) << " -> converted to bohr\n\n";
         }
 
         get_magnetism_from_h5(file,

@@ -24,6 +24,7 @@
 #include "relaxation.h"
 #include "scph.h"
 #include "timer.h"
+#include "write_phonons.h"
 using namespace PHON_NS;
 
 namespace
@@ -147,7 +148,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     NDArray<std::complex<double>, 2> v3_tmp2;
     NDArray<std::complex<double>, 2> v3_tmp3;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         if (self_offdiag) {
             std::cout << " SELF_OFFDIAG = 1: Calculating all components of v3_array ... ";
         } else {
@@ -337,7 +338,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 
     zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done !\n";
         timer->print_elapsed();
     }
@@ -620,12 +621,14 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     if (mympi->my_rank == 0) {
         const auto nsize_dble =
             static_cast<double>((nk2_prod * ns4 + 2 * ns4) * sizeof(std::complex<double>)) / 1000000000.0;
-        std::cout << " Estimated memory usage for the V4 arrays per MPI process: " << std::setw(10) << std::fixed
-                  << std::setprecision(4) << nsize_dble << " GByte.\n";
-        if (self_offdiag) {
-            std::cout << " SELF_OFFDIAG = 1: Calculating all components of v4_array ... " << std::flush;
-        } else {
-            std::cout << " SELF_OFFDIAG = 0: Calculating diagonal components of v4_array ... " << std::flush;
+        if (writes->getVerbosity() > 0) {
+            std::cout << " Estimated memory usage for the V4 arrays per MPI process: " << std::setw(10) << std::fixed
+                      << std::setprecision(4) << nsize_dble << " GByte.\n";
+            if (self_offdiag) {
+                std::cout << " SELF_OFFDIAG = 1: Calculating all components of v4_array ... " << std::flush;
+            } else {
+                std::cout << " SELF_OFFDIAG = 0: Calculating diagonal components of v4_array ... " << std::flush;
+            }
         }
     }
 
@@ -823,7 +826,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
 
     zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done !\n";
         timer->print_elapsed();
     }
@@ -866,12 +869,16 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
 
     if (mympi->my_rank == 0) {
         if (self_offdiag) {
-            std::cout << " IALGO = 1 : Use different algorithm efficient when nbands >> nk_3ph\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << " IALGO = 1 : Use different algorithm efficient when nbands >> nk_3ph\n";
+            }
             const auto nsize_dble =
                 static_cast<double>((nk2_prod * ns4 + 2 * ns * ns2) * sizeof(std::complex<double>)) / 1000000000.0;
-            std::cout << " Estimated memory usage for the V4 arrays per MPI process: " << std::setw(10) << std::fixed
-                      << std::setprecision(4) << nsize_dble << " GByte.\n";
-            std::cout << " SELF_OFFDIAG = 1: Calculating all components of v4_array ... \n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << " Estimated memory usage for the V4 arrays per MPI process: " << std::setw(10)
+                          << std::fixed << std::setprecision(4) << nsize_dble << " GByte.\n";
+                std::cout << " SELF_OFFDIAG = 1: Calculating all components of v4_array ... \n";
+            }
         } else {
             exit("compute_V4_elements_mpi_over_kpoint", "This function can be used only when SELF_OFFDIAG = 1");
         }
@@ -939,7 +946,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
     int ik_old = -1;
     int jk_old = -1;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " Total number of sets to compute : " << nset_each << '\n';
     }
 
@@ -1049,7 +1056,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
         if (mympi->my_rank == 0) {
             const long int nreport = std::max(nset_each / 20, static_cast<long int>(1));
             if ((ii + 1) % nreport == 0 || ii + 1 == nset_each) {
-                std::cout << " SET " << ii + 1 << " / " << nset_each << " done. \n";
+                if (writes->getVerbosity() > 0) std::cout << " SET " << ii + 1 << " / " << nset_each << " done. \n";
             }
         }
 
@@ -1066,7 +1073,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
     const size_t count = nk2_prod * ns4;
     const size_t count_sub = ns4;
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "Communicating v4_array over MPI ..." << std::flush;
     }
     if (count <= maxsize) {
@@ -1104,7 +1111,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
             }
         }
     }
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done.\n";
     }
 
@@ -1113,7 +1120,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
 
     zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done !\n";
         timer->print_elapsed();
     }

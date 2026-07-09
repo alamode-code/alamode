@@ -151,8 +151,6 @@ private:
 
     void writeDielectricFunction() const;
 
-    unsigned int verbosity;
-
     int anime_frames;
 
     bool print_xsf;

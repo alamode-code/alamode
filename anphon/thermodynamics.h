@@ -85,7 +85,7 @@ public:
                                     const DymatEigenValue &dymat_dos_in,
                                     const std::vector<SymmetryOperation> &symmlist_in,
                                     AnharmonicCore &anharmonic_core_in, unsigned int ns_in, int my_rank_in,
-                                    int nprocs_in);
+                                    int nprocs_in, unsigned int verbosity = 1);
 
     void compute_FE_bubble(const double *const *eval, const std::complex<double> *const *const *evec,
                            double *FE_bubble_out, const System &system_in, const KpointMeshUniform &kmesh_dos_in,

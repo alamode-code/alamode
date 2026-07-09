@@ -329,7 +329,8 @@ public:
                                              const std::complex<double> *del_v0_del_umn_atT) const;
 
     static void print_optimization_history(const std::vector<StructOptStepRecord> &step_history, const double temp,
-                                           const bool with_cell, const bool show_scp_column);
+                                           const bool with_cell, const bool show_scp_column,
+                                           const unsigned int verbosity = 1);
 
     void check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const;
 

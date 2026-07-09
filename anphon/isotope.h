@@ -38,12 +38,13 @@ public:
 
     // Broadcast the parsed configuration, fill missing ISOFACT entries from
     // the built-in database, and allocate gamma_isotope (rank 0).
-    void setup_isotope_scattering(const System &system_in, unsigned int nk_irred_in, unsigned int ns_in,
-                                  int my_rank_in);
+    void setup_isotope_scattering(const System &system_in, unsigned int nk_irred_in, unsigned int ns_in, int my_rank_in,
+                                  unsigned int verbosity = 1);
 
     void calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
                                      const TetraNodes &tetra_nodes_dos_in, const System &system_in,
-                                     Integration &integration_in, unsigned int ns_in, int my_rank_in, int nprocs_in);
+                                     Integration &integration_in, unsigned int ns_in, int my_rank_in, int nprocs_in,
+                                     unsigned int verbosity = 1);
 
 private:
     void set_default_variables();

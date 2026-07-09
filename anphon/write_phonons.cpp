@@ -63,14 +63,13 @@ Writes::Writes(PHON *phon) : Pointers(phon)
     anime_kpoint[2] = 0.0;
     anime_frames = 20;
     anime_format = "xyz";
-    verbosity = 1;
 };
 
 Writes::~Writes() {};
 
 void Writes::writeInputVars()
 {
-    if (verbosity == 0) return;
+    if (getVerbosity() == 0) return;
 
     unsigned int i;
 
@@ -330,6 +329,8 @@ std::array<int, 3> Writes::getShiftUcorr() const
 
 void Writes::printPhononEnergies() const
 {
+    if (getVerbosity() == 0) return;
+
     unsigned int i;
     unsigned int ik, is;
     const auto ns = dynamical->neval;
@@ -440,9 +441,11 @@ void Writes::writePhononInfo()
         writeNormalModeAnimation(anime_kpoint, anime_cellsize);
     }
 
-    std::cout << '\n';
-    std::cout << " -----------------------------------------------------------------\n\n";
-    std::cout << " The following files are created: \n";
+    if (getVerbosity() > 0) {
+        std::cout << '\n';
+        std::cout << " -----------------------------------------------------------------\n\n";
+        std::cout << " The following files are created: \n";
+    }
 
     if (kpoint->kpoint_mode == 1) {
         writePhononBands();
@@ -525,7 +528,7 @@ void Writes::writePhononInfo()
         writeDielectricFunction();
     }
 
-    if (print_anime) {
+    if (print_anime && getVerbosity() > 0) {
         if (anime_format == "XSF" || anime_format == "AXSF") {
             std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left
                       << phon->job_title + ".anime*.axsf";
@@ -606,8 +609,10 @@ void Writes::writePhononBands() const
 
     ofs_bands.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_bands;
-    std::cout << " : Phonon band structure\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_bands;
+        std::cout << " : Phonon band structure\n";
+    }
 
     if (dynamical->band_connection == 2) {
         std::ofstream ofs_connect;
@@ -628,8 +633,10 @@ void Writes::writePhononBands() const
             ofs_connect << '\n';
         }
         ofs_connect.close();
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_connect;
-        std::cout << " : Connectivity map information of band dispersion\n";
+        if (getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_connect;
+            std::cout << " : Connectivity map information of band dispersion\n";
+        }
     }
 }
 
@@ -678,8 +685,10 @@ void Writes::writePhononVel() const
 
     ofs_vel.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_vel;
-    std::cout << " : Phonon velocity along given k path\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_vel;
+        std::cout << " : Phonon velocity along given k path\n";
+    }
 
     phvel_bs.clear();
 }
@@ -756,8 +765,10 @@ void Writes::writePhononVelAll() const
 
     ofs_vel.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_vel;
-    std::cout << " : Phonon velocity at all k points\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_vel;
+        std::cout << " : Phonon velocity at all k points\n";
+    }
 
     phvel.clear();
     phvel_xyz.clear();
@@ -818,14 +829,16 @@ void Writes::writePhononDos() const
     }
     ofs_dos.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
 
-    if (dos->projected_dos & dos->compute_dos) {
-        std::cout << " : Phonon DOS and atom projected DOS\n";
-    } else if (dos->projected_dos) {
-        std::cout << " : Atom projected phonon DOS\n";
-    } else {
-        std::cout << " : Phonon DOS\n";
+        if (dos->projected_dos & dos->compute_dos) {
+            std::cout << " : Phonon DOS and atom projected DOS\n";
+        } else if (dos->projected_dos) {
+            std::cout << " : Atom projected phonon DOS\n";
+        } else {
+            std::cout << " : Phonon DOS\n";
+        }
     }
 }
 
@@ -854,8 +867,10 @@ void Writes::writeTwoPhononDos() const
 
     ofs_tdos.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_tdos;
-    std::cout << " : Two-phonon DOS\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_tdos;
+        std::cout << " : Two-phonon DOS\n";
+    }
 }
 
 void Writes::writeScatteringPhaseSpace() const
@@ -885,8 +900,10 @@ void Writes::writeScatteringPhaseSpace() const
 
     ofs_sps.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_sps;
-    std::cout << " : Three-phonon scattering phase space\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_sps;
+        std::cout << " : Three-phonon scattering phase space\n";
+    }
 }
 
 void Writes::writeLongitudinalProjDos() const
@@ -908,8 +925,10 @@ void Writes::writeLongitudinalProjDos() const
     }
     ofs_dos.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
-    std::cout << " : Longitudinal projected DOS" << '\n';
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
+        std::cout << " : Longitudinal projected DOS" << '\n';
+    }
 }
 
 void Writes::writeScatteringAmplitude() const
@@ -961,10 +980,12 @@ void Writes::writeScatteringAmplitude() const
     }
 
     ofs_w.close();
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_w;
-    std::cout << " : Three-phonon scattering phase space \n";
-    std::cout << " " << std::setw(phon->job_title.length() + 16) << " "
-              << "with the Bose distribution function\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_w;
+        std::cout << " : Three-phonon scattering phase space \n";
+        std::cout << " " << std::setw(phon->job_title.length() + 16) << " "
+                  << "with the Bose distribution function\n";
+    }
 }
 
 void Writes::writeNormalModeDirection() const
@@ -1071,8 +1092,10 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
     kd_tmp.clear();
 
     ofs_anime.close();
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_axsf;
-    std::cout << " : XcrysDen AXSF file to visualize phonon mode directions\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_axsf;
+        std::cout << " : XcrysDen AXSF file to visualize phonon mode directions\n";
+    }
 }
 
 void Writes::writeEigenvalues() const
@@ -1184,8 +1207,10 @@ void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned 
 
     index_bconnect_tmp.clear();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_eval;
-    std::cout << " : Eigenvalues of all k points\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_eval;
+        std::cout << " : Eigenvalues of all k points\n";
+    }
 }
 
 #ifdef _HDF5
@@ -1415,8 +1440,10 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
         stamp_h5_schema(fh, h5_schema_eigenvalues, h5_version_eigen);
     }
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_eval;
-    std::cout << " : Eigenvalues of all k points (HDF5)\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_eval;
+        std::cout << " : Eigenvalues of all k points (HDF5)\n";
+    }
 }
 
 #endif
@@ -1544,8 +1571,10 @@ void Writes::writeEigenvectorsEach(const std::string &fname_evec, const unsigned
 
     index_bconnect_tmp.clear();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_evec;
-    std::cout << " : Eigenvector of all k points\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_evec;
+        std::cout << " : Eigenvector of all k points\n";
+    }
 }
 
 #ifdef _HDF5
@@ -1873,8 +1902,10 @@ void Writes::writeThermodynamicFunc() const
 
     ofs_thermo.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
-    std::cout << " : Thermodynamic quantities\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
+        std::cout << " : Thermodynamic quantities\n";
+    }
 }
 
 void Writes::writeGruneisen()
@@ -1917,8 +1948,10 @@ void Writes::writeGruneisen()
 
         ofs_gruneisen.close();
 
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gru;
-        std::cout << " : Gruneisen parameters along given k-path\n";
+        if (getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gru;
+            std::cout << " : Gruneisen parameters along given k-path\n";
+        }
     }
 
     if (dos->kmesh_dos.get() && gruneisen->gruneisen_dos) {
@@ -1952,8 +1985,10 @@ void Writes::writeGruneisen()
         }
         ofs_gruall.close();
 
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gruall;
-        std::cout << " : Gruneisen parameters at all k points" << '\n';
+        if (getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gruall;
+            std::cout << " : Gruneisen parameters at all k points" << '\n';
+        }
     }
 }
 
@@ -1995,8 +2030,10 @@ void Writes::writeMSD() const
     }
     ofs_rmsd.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_rmsd;
-    std::cout << " : Mean-square-displacement (MSD)\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_rmsd;
+        std::cout << " : Mean-square-displacement (MSD)\n";
+    }
 }
 
 void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) const
@@ -2039,18 +2076,20 @@ void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) cons
     }
 
     ofs_msd.close();
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_msd;
-    if (is_qha) {
-        std::cout << " : Mean-square-displacement (QHA level)\n";
-    } else {
-        if (bubble == 0) {
-            std::cout << " : Mean-square-displacement (SCPH level)\n";
-        } else if (bubble == 1) {
-            std::cout << " : Mean-square-displacement (SCPH+Bubble(0) level)\n";
-        } else if (bubble == 2) {
-            std::cout << " : Mean-square-displacement (SCPH+Bubble(w) level)\n";
-        } else if (bubble == 3) {
-            std::cout << " : Mean-square-displacement (SCPH+Bubble(wQP) level)\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_msd;
+        if (is_qha) {
+            std::cout << " : Mean-square-displacement (QHA level)\n";
+        } else {
+            if (bubble == 0) {
+                std::cout << " : Mean-square-displacement (SCPH level)\n";
+            } else if (bubble == 1) {
+                std::cout << " : Mean-square-displacement (SCPH+Bubble(0) level)\n";
+            } else if (bubble == 2) {
+                std::cout << " : Mean-square-displacement (SCPH+Bubble(w) level)\n";
+            } else if (bubble == 3) {
+                std::cout << " : Mean-square-displacement (SCPH+Bubble(wQP) level)\n";
+            }
         }
     }
 }
@@ -2117,8 +2156,10 @@ void Writes::writeDispCorrelation() const
     ofs << std::flush;
     ofs.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_ucorr;
-    std::cout << " : displacement correlation functions\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_ucorr;
+        std::cout << " : displacement correlation functions\n";
+    }
 }
 
 void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const int bubble) const
@@ -2186,19 +2227,21 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
     ofs << std::flush;
     ofs.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_ucorr;
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_ucorr;
 
-    if (is_qha) {
-        std::cout << " : displacement correlation functions (QHA level)\n";
-    } else {
-        if (bubble == 0) {
-            std::cout << " : displacement correlation functions (SCPH level)\n";
-        } else if (bubble == 1) {
-            std::cout << " : displacement correlation functions (SCPH+Bubble(0) level)\n";
-        } else if (bubble == 2) {
-            std::cout << " : displacement correlation functions (SCPH+Bubble(w) level)\n";
-        } else if (bubble == 3) {
-            std::cout << " : displacement correlation functions (SCPH+Bubble(wQP) level)\n";
+        if (is_qha) {
+            std::cout << " : displacement correlation functions (QHA level)\n";
+        } else {
+            if (bubble == 0) {
+                std::cout << " : displacement correlation functions (SCPH level)\n";
+            } else if (bubble == 1) {
+                std::cout << " : displacement correlation functions (SCPH+Bubble(0) level)\n";
+            } else if (bubble == 2) {
+                std::cout << " : displacement correlation functions (SCPH+Bubble(w) level)\n";
+            } else if (bubble == 3) {
+                std::cout << " : displacement correlation functions (SCPH+Bubble(wQP) level)\n";
+            }
         }
     }
 }
@@ -2249,9 +2292,11 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
         ofs_kl << '\n';
     }
     ofs_kl.close();
-    std::cout << '\n';
-    std::cout << " -----------------------------------------------------------------" << '\n' << '\n';
-    std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
+    if (getVerbosity() > 0) {
+        std::cout << '\n';
+        std::cout << " -----------------------------------------------------------------" << '\n' << '\n';
+        std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
+    }
 }
 
 void Writes::writeKappa() const
@@ -2382,14 +2427,16 @@ void Writes::writeKappa() const
         }
 
 
-        std::cout << '\n';
-        std::cout << " -----------------------------------------------------------------\n\n";
-        std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
-        if (conductivity->calc_kappa_spec) {
-            std::cout << " Thermal conductivity spectra is stored in the file " << file_kappa2 << '\n';
-        }
-        if (conductivity->calc_coherent) {
-            std::cout << " Coherent part is stored in the file " << file_kappa_coherent << '\n';
+        if (getVerbosity() > 0) {
+            std::cout << '\n';
+            std::cout << " -----------------------------------------------------------------\n\n";
+            std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
+            if (conductivity->calc_kappa_spec) {
+                std::cout << " Thermal conductivity spectra is stored in the file " << file_kappa2 << '\n';
+            }
+            if (conductivity->calc_coherent) {
+                std::cout << " Coherent part is stored in the file " << file_kappa_coherent << '\n';
+            }
         }
     }
 }
@@ -2434,9 +2481,11 @@ void Writes::writeSelfenergyIsotope() const
                 ofs_iso << '\n';
             }
 
-            std::cout << '\n';
-            std::cout << " ISOTOPE = 2: Phonon selfenergy due to phonon-isotope \n";
-            std::cout << "              scatterings is stored in the file " << file_iso << '\n';
+            if (getVerbosity() > 0) {
+                std::cout << '\n';
+                std::cout << " ISOTOPE = 2: Phonon selfenergy due to phonon-isotope \n";
+                std::cout << "              scatterings is stored in the file " << file_iso << '\n';
+            }
 
             ofs_iso.close();
         }
@@ -2478,13 +2527,15 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
     for (i = 0; i < 3; ++i) {
         xk[i] = xk_in[i];
     }
-    std::cout << " -----------------------------------------------------------------\n\n";
-    std::cout << " ANIME-tag is given: Making animation files for the given\n";
-    std::cout << "                     k point ( ";
-    std::cout << std::setw(5) << xk[0] << ", " << std::setw(5) << xk[1] << ", " << std::setw(5) << xk[2] << ").\n";
-    std::cout << " ANIME_CELLSIZE = ";
-    std::cout << std::setw(3) << ncell[0] << std::setw(3) << ncell[1] << std::setw(3) << ncell[2] << '\n';
-    std::cout << " ANIME_FORMAT = " << anime_format << '\n';
+    if (getVerbosity() > 0) {
+        std::cout << " -----------------------------------------------------------------\n\n";
+        std::cout << " ANIME-tag is given: Making animation files for the given\n";
+        std::cout << "                     k point ( ";
+        std::cout << std::setw(5) << xk[0] << ", " << std::setw(5) << xk[1] << ", " << std::setw(5) << xk[2] << ").\n";
+        std::cout << " ANIME_CELLSIZE = ";
+        std::cout << std::setw(3) << ncell[0] << std::setw(3) << ncell[1] << std::setw(3) << ncell[2] << '\n';
+        std::cout << " ANIME_FORMAT = " << anime_format << '\n';
+    }
 
     for (i = 0; i < 3; ++i) dmod[i] = std::fmod(xk[i] * static_cast<double>(ncell[i]), 1.0);
 
@@ -2866,10 +2917,12 @@ void Writes::writeParticipationRatioEach(const std::string &fname_pr, const std:
     participation_ratio.clear();
     atomic_participation_ratio.clear();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_pr;
-    std::cout << " : Participation ratio for all k points\n";
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_apr;
-    std::cout << " : Atomic participation ratio for all k points\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_pr;
+        std::cout << " : Participation ratio for all k points\n";
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_apr;
+        std::cout << " : Atomic participation ratio for all k points\n";
+    }
 }
 
 void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std::string &fname_apr,
@@ -2951,10 +3004,12 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
     participation_ratio.clear();
     atomic_participation_ratio.clear();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_pr;
-    std::cout << " : Participation ratio for all k points\n";
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_apr;
-    std::cout << " : Atomic participation ratio for all k points\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_pr;
+        std::cout << " : Participation ratio for all k points\n";
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_apr;
+        std::cout << " : Atomic participation ratio for all k points\n";
+    }
 }
 
 void Writes::writeDielectricFunction() const
@@ -2987,8 +3042,10 @@ void Writes::writeDielectricFunction() const
     ofs_dielec << '\n';
     ofs_dielec.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dielec;
-    std::cout << " : Frequency-dependent dielectric function\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dielec;
+        std::cout << " : Frequency-dependent dielectric function\n";
+    }
 }
 
 void Writes::writePhononEnergies(const unsigned int nk_in, const double *const *const *eval_in, const bool is_qha,
@@ -3116,18 +3173,20 @@ void Writes::writePhononBands(const unsigned int nk_in, const double *kaxis_in, 
     }
 
     ofs_bands.close();
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_bands;
-    if (is_qha) {
-        std::cout << " : QHA band structure\n";
-    } else {
-        if (bubble == 0) {
-            std::cout << " : SCPH band structure\n";
-        } else if (bubble == 1) {
-            std::cout << " : SCPH+Bubble(0) band structure\n";
-        } else if (bubble == 2) {
-            std::cout << " : SCPH+Bubble(w) band structure\n";
-        } else if (bubble == 3) {
-            std::cout << " : SCPH+Bubble(wQP) band structure\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_bands;
+        if (is_qha) {
+            std::cout << " : QHA band structure\n";
+        } else {
+            if (bubble == 0) {
+                std::cout << " : SCPH band structure\n";
+            } else if (bubble == 1) {
+                std::cout << " : SCPH+Bubble(0) band structure\n";
+            } else if (bubble == 2) {
+                std::cout << " : SCPH+Bubble(w) band structure\n";
+            } else if (bubble == 3) {
+                std::cout << " : SCPH+Bubble(wQP) band structure\n";
+            }
         }
     }
 }
@@ -3178,18 +3237,20 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
 
     ofs_dos << '\n';
     ofs_dos.close();
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
-    if (is_qha) {
-        std::cout << " : QHA DOS\n";
-    } else {
-        if (bubble == 0) {
-            std::cout << " : SCPH DOS\n";
-        } else if (bubble == 1) {
-            std::cout << " : SCPH+Bubble(0) DOS\n";
-        } else if (bubble == 2) {
-            std::cout << " : SCPH+Bubble(w) DOS\n";
-        } else if (bubble == 3) {
-            std::cout << " : SCPH+Bubble(wQP) DOS\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
+        if (is_qha) {
+            std::cout << " : QHA DOS\n";
+        } else {
+            if (bubble == 0) {
+                std::cout << " : SCPH DOS\n";
+            } else if (bubble == 1) {
+                std::cout << " : SCPH+Bubble(0) DOS\n";
+            } else if (bubble == 2) {
+                std::cout << " : SCPH+Bubble(w) DOS\n";
+            } else if (bubble == 3) {
+                std::cout << " : SCPH+Bubble(wQP) DOS\n";
+            }
         }
     }
 }
@@ -3282,11 +3343,13 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     }
 
     ofs_thermo.close();
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
-    if (is_qha) {
-        std::cout << " : QHA heat capcaity, free energy, entropy\n";
-    } else {
-        std::cout << " : SCPH heat capcaity, free energy, entropy\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
+        if (is_qha) {
+            std::cout << " : QHA heat capcaity, free energy, entropy\n";
+        } else {
+            std::cout << " : SCPH heat capcaity, free energy, entropy\n";
+        }
     }
 }
 
@@ -3331,20 +3394,25 @@ void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
 
     ofs_dielec.close();
 
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dielec;
-    if (is_qha) {
-        std::cout << " : QHA frequency-dependent dielectric function\n";
-    } else {
-        std::cout << " : SCPH frequency-dependent dielectric function\n";
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dielec;
+        if (is_qha) {
+            std::cout << " : QHA frequency-dependent dielectric function\n";
+        } else {
+            std::cout << " : SCPH frequency-dependent dielectric function\n";
+        }
     }
 }
 
+// PHON is the canonical owner of the verbosity setting; these accessors
+// forward to it so the many existing writes->getVerbosity() call sites keep
+// working unchanged.
 unsigned int Writes::getVerbosity() const
 {
-    return verbosity;
+    return phon->get_verbosity();
 }
 
 void Writes::setVerbosity(unsigned int verbosity_in)
 {
-    verbosity = verbosity_in;
+    phon->set_verbosity(verbosity_in);
 }

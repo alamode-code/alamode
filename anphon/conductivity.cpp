@@ -171,7 +171,7 @@ void Conductivity::setup_kappa()
     }
 
     if (len_boundary > eps) {
-        if (mympi->my_rank == 0) {
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "\n    Bounday scattering effect will be considered with len_boundary = " << len_boundary
                       << "\n\n";
         }
@@ -235,7 +235,7 @@ void Conductivity::setup_kappa_4ph()
         for (auto i = 0; i < 3; i++) nkc_tmp[i] = dos->kmesh_dos->nk_i[i];
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "\n";
         std::cout << " Four-phonon scattering rate will be calculated additionally.\n";
         std::cout << " KMESH for 4-ph:\n";
@@ -516,9 +516,10 @@ void Conductivity::setup_result_io(const int mode)
         if (mympi->my_rank == 0) {
             if (mode == 1) {
                 if (fcs_phonon->fc2_temperature >= 0.0) {
-                    std::cout << "\n FC2_TEMPERATURE is active: " << file_kappa_h5
-                              << " uses the temperature-resolved layout;\n"
-                              << " runs at different basis temperatures accumulate into this file.\n";
+                    if (writes->getVerbosity() > 0)
+                        std::cout << "\n FC2_TEMPERATURE is active: " << file_kappa_h5
+                                  << " uses the temperature-resolved layout;\n"
+                                  << " runs at different basis temperatures accumulate into this file.\n";
                     if (ntemp != 1 || std::abs(temperature[0] - fcs_phonon->fc2_temperature) >= eps6) {
                         warn("setup_result_io",
                              "TMIN = TMAX = FC2_TEMPERATURE is recommended so that each kappa value\n"
@@ -557,10 +558,12 @@ void Conductivity::setup_result_io(const int mode)
         if (mode == 1) {
             // 3ph
             if (conductivity->restart_flag_3ph) {
-                std::cout << "\n";
-                std::cout << " RESTART = 1 : Restart from the interrupted run.\n";
-                std::cout << "               Phonon lifetimes will be load from file " << file_result3 << '\n';
-                std::cout << "               and check the consistency of the computational settings.\n";
+                if (writes->getVerbosity() > 0) {
+                    std::cout << "\n";
+                    std::cout << " RESTART = 1 : Restart from the interrupted run.\n";
+                    std::cout << "               Phonon lifetimes will be load from file " << file_result3 << '\n';
+                    std::cout << "               and check the consistency of the computational settings.\n";
+                }
 
                 KappaResultIOText::check_consistency(fs_result3,
                                                      file_result3,
@@ -593,10 +596,12 @@ void Conductivity::setup_result_io(const int mode)
         } else if (mode == -1) {
 
             if (conductivity->restart_flag_4ph) {
-                std::cout << "\n";
-                std::cout << " RESTART_4PH = 1 : Restart from the interrupted run.\n";
-                std::cout << "                   Phonon lifetimes will be load from file " << file_result4 << '\n';
-                std::cout << "                   and check the consistency of the computational settings.\n";
+                if (writes->getVerbosity() > 0) {
+                    std::cout << "\n";
+                    std::cout << " RESTART_4PH = 1 : Restart from the interrupted run.\n";
+                    std::cout << "                   Phonon lifetimes will be load from file " << file_result4 << '\n';
+                    std::cout << "                   and check the consistency of the computational settings.\n";
+                }
 
                 KappaResultIOText::check_consistency(fs_result4,
                                                      file_result4,
@@ -736,12 +741,14 @@ void Conductivity::load_computed_modes_h5(const std::string &tag, double **dampi
     vks_done_out.assign(rows_done.begin(), rows_done.begin() + nprefix);
 
     if (nprefix < rows_done.size()) {
-        std::cout << "\n " << rows_done.size() - nprefix << " " << tag
-                  << " modes recorded after an incomplete batch in " << file_kappa_h5 << " will be recomputed.\n";
+        if (writes->getVerbosity() > 0)
+            std::cout << "\n " << rows_done.size() - nprefix << " " << tag
+                      << " modes recorded after an incomplete batch in " << file_kappa_h5 << " will be recomputed.\n";
     }
     if (!vks_done_out.empty()) {
-        std::cout << "\n " << vks_done_out.size() << " previously computed " << tag << " modes were loaded from "
-                  << file_kappa_h5 << ".\n";
+        if (writes->getVerbosity() > 0)
+            std::cout << "\n " << vks_done_out.size() << " previously computed " << tag << " modes were loaded from "
+                      << file_kappa_h5 << ".\n";
     }
 }
 
@@ -769,9 +776,10 @@ void Conductivity::import_legacy_result_text(const int mode)
 
     const auto *kmesh_in = (mode == 1) ? dos->kmesh_dos.get() : kmesh_4ph.get();
 
-    std::cout << "\n Found a legacy text restart file " << file_legacy << ".\n"
-              << " Its contents will be imported into " << file_kappa_h5
-              << "; the text file itself is left untouched.\n";
+    if (writes->getVerbosity() > 0)
+        std::cout << "\n Found a legacy text restart file " << file_legacy << ".\n"
+                  << " Its contents will be imported into " << file_kappa_h5
+                  << "; the text file itself is left untouched.\n";
 
     std::fstream fs_legacy;
     KappaResultIOText::check_consistency(fs_legacy,
@@ -801,7 +809,7 @@ void Conductivity::import_legacy_result_text(const int mode)
 
     if (!rows_done.empty()) {
         result_io_h5->store_gamma_rows(tag, rows_done, damping);
-        std::cout << " Imported " << rows_done.size() << " modes.\n";
+        if (writes->getVerbosity() > 0) std::cout << " Imported " << rows_done.size() << " modes.\n";
     }
 }
 
@@ -837,11 +845,13 @@ void Conductivity::calc_anharmonic_imagself3()
     MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, nks_thread, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
-        std::cout << '\n';
-        std::cout << " Start computing 3-phonon (bubble) self-energies ... \n";
-        std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
-        std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
-        std::cout << '\n' << std::flush;
+        if (writes->getVerbosity() > 0) {
+            std::cout << '\n';
+            std::cout << " Start computing 3-phonon (bubble) self-energies ... \n";
+            std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
+            std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
+            std::cout << '\n' << std::flush;
+        }
         nks_thread.clear();
     }
 
@@ -918,9 +928,10 @@ void Conductivity::calc_anharmonic_imagself3()
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "3-phonon");
+            if (writes->getVerbosity() > 0)
+                displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "3-phonon");
             lastUpdate = currentTime;
-            if (i == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
+            if (i == nk_tmp - 1 && writes->getVerbosity() > 0) std::cout << "\n done. \n\n" << std::flush;
         }
     }
     damping3_loc.clear();
@@ -959,12 +970,14 @@ void Conductivity::calc_anharmonic_imagself4()
     MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, nks_thread, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0) {
-        std::cout << '\n';
-        std::cout << " Start computing 4-phonon self-energies ... \n";
-        std::cout << " WARNING: This is very very expensive!! Please be patient.\n";
-        std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
-        std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
-        std::cout << '\n' << std::flush;
+        if (writes->getVerbosity() > 0) {
+            std::cout << '\n';
+            std::cout << " Start computing 4-phonon self-energies ... \n";
+            std::cout << " WARNING: This is very very expensive!! Please be patient.\n";
+            std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
+            std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
+            std::cout << '\n' << std::flush;
+        }
         nks_thread.clear();
     }
 
@@ -1041,9 +1054,10 @@ void Conductivity::calc_anharmonic_imagself4()
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "4-phonon");
+            if (writes->getVerbosity() > 0)
+                displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "4-phonon");
             lastUpdate = currentTime;
-            if (i == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
+            if (i == nk_tmp - 1 && writes->getVerbosity() > 0) std::cout << "\n done. \n\n" << std::flush;
         }
     }
     damping4_loc.clear();
@@ -1527,17 +1541,19 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
         << velmat[max_herm_k][max_herm_j][max_herm_i][max_herm_mu].imag() << '\n';
     ofs.close();
 
-    const auto flags = std::cout.flags();
-    const auto precision = std::cout.precision();
-    std::cout << " Velocity-matrix diagnostic (ALAMODE_CHECK_VELMAT=1):\n"
-              << "   max |Re[v_ii] - group_velocity| = " << std::scientific << max_abs << " at k=" << max_k + 1
-              << ", mode=" << max_mode + 1 << ", component=" << max_mu + 1 << '\n'
-              << "   max relative difference          = " << max_rel << '\n'
-              << "   max |Im[v_ii]|                   = " << max_imag_diag << '\n'
-              << "   max |v_ij - conj(v_ji)|          = " << max_hermiticity << '\n'
-              << "   details are stored in the file " << filename << '\n';
-    std::cout.flags(flags);
-    std::cout.precision(precision);
+    if (writes->getVerbosity() > 0) {
+        const auto flags = std::cout.flags();
+        const auto precision = std::cout.precision();
+        std::cout << " Velocity-matrix diagnostic (ALAMODE_CHECK_VELMAT=1):\n"
+                  << "   max |Re[v_ii] - group_velocity| = " << std::scientific << max_abs << " at k=" << max_k + 1
+                  << ", mode=" << max_mode + 1 << ", component=" << max_mu + 1 << '\n'
+                  << "   max relative difference          = " << max_rel << '\n'
+                  << "   max |Im[v_ii]|                   = " << max_imag_diag << '\n'
+                  << "   max |v_ij - conj(v_ji)|          = " << max_hermiticity << '\n'
+                  << "   details are stored in the file " << filename << '\n';
+        std::cout.flags(flags);
+        std::cout.precision(precision);
+    }
 }
 
 void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int smearing_method,
@@ -1549,8 +1565,10 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
     NDArray<unsigned int, 1> kmap_identity;
     NDArray<double, 2> eval;
 
-    std::cout << '\n';
-    std::cout << " KAPPA_SPEC = 1 : Calculating thermal conductivity spectra ... ";
+    if (writes->getVerbosity() > 0) {
+        std::cout << '\n';
+        std::cout << " KAPPA_SPEC = 1 : Calculating thermal conductivity spectra ... ";
+    }
 
     kmap_identity.resize(nk_3ph);
     eval.resize(ns, nk_3ph);
@@ -1618,7 +1636,7 @@ void Conductivity::compute_frequency_resolved_kappa(const int ntemp, const int s
     kmap_identity.clear();
     eval.clear();
 
-    std::cout << " done!\n";
+    if (writes->getVerbosity() > 0) std::cout << " done!\n";
 }
 
 void Conductivity::set_kmesh_coarse(const unsigned int *nk_in)

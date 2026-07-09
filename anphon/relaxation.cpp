@@ -23,6 +23,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
+#include "write_phonons.h"
 
 extern "C"
 {
@@ -210,8 +211,10 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
     if (optimizer) optimizer->reset();
 
     if (str_diverged) {
-        std::cout << " The crystal structure at the previous temperature is divergent.\n";
-        std::cout << " read initial structure from input files.\n\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << " The crystal structure at the previous temperature is divergent.\n";
+            std::cout << " read initial structure from input files.\n\n";
+        }
 
         set_initial_q0(q0, evec_harmonic);
         calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
@@ -235,10 +238,14 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
         return;
     }
 
-    std::cout << " SET_INIT_STR = " << set_init_str << ":";
+    if (writes->getVerbosity() > 0) {
+        std::cout << " SET_INIT_STR = " << set_init_str << ":";
+    }
 
     if (set_init_str == 1) {
-        std::cout << " set initial structure from the input file.\n\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << " set initial structure from the input file.\n\n";
+        }
 
         set_initial_q0(q0, evec_harmonic);
         calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
@@ -256,7 +263,9 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
 
     } else if (set_init_str == 2) {
         if (i_temp_loop == 0) {
-            std::cout << " set initial structure from the input file.\n\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << " set initial structure from the input file.\n\n";
+            }
 
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
@@ -272,13 +281,17 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             converged_prev = false;
             if (optimizer) optimizer->reset();
         } else {
-            std::cout << " start from structure from the previous temperature.\n\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << " start from structure from the previous temperature.\n\n";
+            }
         }
 
     } else if (set_init_str == 3) {
         // read initial structure at initial temperature
         if (i_temp_loop == 0) {
-            std::cout << " read initial structure from input files.\n\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << " read initial structure from input files.\n\n";
+            }
 
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
@@ -297,18 +310,22 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
         // to the high-symmetry one.
         else if (std::fabs(u0[cooling_u0_index]) < cooling_u0_thr)
         {
-            std::cout << '\n';
-            std::cout << " u0[" << cooling_u0_index << "] < " << std::setw(15) << std::setprecision(6) << cooling_u0_thr
-                      << " is satisfied.\n";
-            std::cout << " the structure is back to the high-symmetry phase.\n";
-            std::cout << " set again initial displacement from input file.\n\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << '\n';
+                std::cout << " u0[" << cooling_u0_index << "] < " << std::setw(15) << std::setprecision(6)
+                          << cooling_u0_thr << " is satisfied.\n";
+                std::cout << " the structure is back to the high-symmetry phase.\n";
+                std::cout << " set again initial displacement from input file.\n\n";
+            }
 
             set_initial_q0(q0, evec_harmonic);
             calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
             converged_prev = false;
             if (optimizer) optimizer->reset();
         } else {
-            std::cout << " start from the structure at the previous temperature.\n\n";
+            if (writes->getVerbosity() > 0) {
+                std::cout << " start from the structure at the previous temperature.\n\n";
+            }
         }
     }
 }
@@ -677,7 +694,9 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
                 u_tensor[i2][i1] += delta_umn[is];
             }
         }
-        std::cout << " Moving back halfway along the last step and retrying.\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << " Moving back halfway along the last step and retrying.\n";
+        }
     } else {
         // No accepted step exists yet: use the unreliable force, but with a very
         // small weight.
@@ -692,8 +711,10 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
         for (is = 0; is < 6; is++) {
             delta_umn[is] = 0.0;
         }
-        std::cout << " No accepted step exists yet: taking a strongly damped steepest-descent\n"
-                     " step on the unreliable force (the cell shape is kept fixed).\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << " No accepted step exists yet: taking a strongly damped steepest-descent\n"
+                         " step on the unreliable force (the cell shape is kept fixed).\n";
+        }
     }
 
     calculate_u0(q0, u0, omega2_harmonic, evec_harmonic);
@@ -740,17 +761,21 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
     const Matrix3d lavec_new = Fmat * primcell.lattice_vector; // columns are a1, a2, a3
     const Matrix3d lavec_new_inv = lavec_new.inverse();
 
-    std::cout << "  Lattice vectors [Bohr]:\n";
-    for (auto j = 0; j < 3; ++j) {
-        std::cout << "   a" << j + 1 << " :";
-        for (auto i = 0; i < 3; ++i) {
-            std::cout << std::setw(15) << std::setprecision(8) << std::fixed << lavec_new(i, j);
+    if (writes->getVerbosity() > 0) {
+        std::cout << "  Lattice vectors [Bohr]:\n";
+        for (auto j = 0; j < 3; ++j) {
+            std::cout << "   a" << j + 1 << " :";
+            for (auto i = 0; i < 3; ++i) {
+                std::cout << std::setw(15) << std::setprecision(8) << std::fixed << lavec_new(i, j);
+            }
+            std::cout << '\n';
         }
-        std::cout << '\n';
     }
 
     std::vector<Vector3d> xf_new(natmin);
-    std::cout << "  Atomic positions (fractional):\n";
+    if (writes->getVerbosity() > 0) {
+        std::cout << "  Atomic positions (fractional):\n";
+    }
     for (size_t iat = 0; iat < natmin; ++iat) {
         const Vector3d x_ref = primcell.x_fractional.row(iat).transpose();
         Vector3d r_cart = Fmat * (primcell.lattice_vector * x_ref);
@@ -759,13 +784,18 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         }
         xf_new[iat] = lavec_new_inv * r_cart;
 
-        std::cout << "   " << std::setw(4) << std::left << system->symbol_kd[primcell.kind[iat]] << std::right << " :";
-        for (auto i = 0; i < 3; ++i) {
-            std::cout << std::setw(15) << std::setprecision(8) << std::fixed << xf_new[iat](i);
+        if (writes->getVerbosity() > 0) {
+            std::cout << "   " << std::setw(4) << std::left << system->symbol_kd[primcell.kind[iat]] << std::right
+                      << " :";
+            for (auto i = 0; i < 3; ++i) {
+                std::cout << std::setw(15) << std::setprecision(8) << std::fixed << xf_new[iat](i);
+            }
+            std::cout << '\n';
         }
-        std::cout << '\n';
     }
-    std::cout << std::scientific;
+    if (writes->getVerbosity() > 0) {
+        std::cout << std::scientific;
+    }
 
     if (del_v0_del_umn_atT) {
         // Cauchy stress sigma = (dE/dF) F^T / (V_ref det F). del_v0_del_umn_atT is the
@@ -789,15 +819,17 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
 
         const auto pressure_gpa = -stress.trace() / 3.0 / gpa_to_ry_bohr3;
 
-        std::cout << "  Stress tensor [GPa]:\n";
-        for (auto i = 0; i < 3; ++i) {
-            std::cout << "   ";
-            for (auto j = 0; j < 3; ++j) {
-                std::cout << std::setw(15) << std::setprecision(6) << stress(i, j) / gpa_to_ry_bohr3;
+        if (writes->getVerbosity() > 0) {
+            std::cout << "  Stress tensor [GPa]:\n";
+            for (auto i = 0; i < 3; ++i) {
+                std::cout << "   ";
+                for (auto j = 0; j < 3; ++j) {
+                    std::cout << std::setw(15) << std::setprecision(6) << stress(i, j) / gpa_to_ry_bohr3;
+                }
+                std::cout << '\n';
             }
-            std::cout << '\n';
+            std::cout << "  Pressure :" << std::setw(15) << std::setprecision(6) << pressure_gpa << " [GPa]\n";
         }
-        std::cout << "  Pressure :" << std::setw(15) << std::setprecision(6) << pressure_gpa << " [GPa]\n";
     }
 
     // space group detection by spglib
@@ -825,7 +857,9 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         spg_label =
             std::string(spgdataset->international_symbol) + " (#" + std::to_string(spgdataset->spacegroup_number) + ")";
     }
-    std::cout << "  Space group :  " << spg_label << '\n';
+    if (writes->getVerbosity() > 0) {
+        std::cout << "  Space group :  " << spg_label << '\n';
+    }
     if (spgdataset) spg_free_dataset(spgdataset);
 
     deallocate(position);
@@ -835,7 +869,8 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
 }
 
 void Relaxation::print_optimization_history(const std::vector<StructOptStepRecord> &step_history, const double temp,
-                                            const bool with_cell, const bool show_scp_column)
+                                            const bool with_cell, const bool show_scp_column,
+                                            const unsigned int verbosity)
 {
     // At-a-glance summary table of a structural optimization at one temperature.
     // show_scp_column controls the column marking whether the SCP equation
@@ -844,41 +879,43 @@ void Relaxation::print_optimization_history(const std::vector<StructOptStepRecor
 
     if (step_history.empty()) return;
 
-    auto print_rule = [&]() {
-        std::cout << " ------------------------------------------------------------";
-        if (with_cell) std::cout << "-------------";
-        std::cout << '\n';
-    };
+    if (verbosity > 0) {
+        auto print_rule = [&]() {
+            std::cout << " ------------------------------------------------------------";
+            if (with_cell) std::cout << "-------------";
+            std::cout << '\n';
+        };
 
-    std::cout << "\n Optimization history at " << temp << " K :\n";
-    print_rule();
-    std::cout << "   step  ";
-    if (show_scp_column) std::cout << " SCP    ";
-    std::cout << "  du0 [Bohr]    du_tensor      |force|   ";
-    if (with_cell) std::cout << "    |stress|  ";
-    std::cout << "  space group\n";
-    print_rule();
-    std::cout << std::scientific << std::setprecision(3);
-    for (std::size_t istep = 0; istep < step_history.size(); ++istep) {
-        const auto &rec = step_history[istep];
-        std::cout << std::setw(7) << istep + 1;
-        if (show_scp_column) std::cout << (rec.scp_ok ? "   conv " : "   FAIL ");
-        std::cout << std::setw(14) << rec.du0 << std::setw(13) << rec.du_tensor;
-        if (rec.grad_norm >= 0.0) {
-            std::cout << std::setw(13) << rec.grad_norm;
-        } else {
-            std::cout << std::setw(13) << "-";
-        }
-        if (with_cell) {
-            if (rec.cell_grad_norm >= 0.0) {
-                std::cout << std::setw(14) << rec.cell_grad_norm;
+        std::cout << "\n Optimization history at " << temp << " K :\n";
+        print_rule();
+        std::cout << "   step  ";
+        if (show_scp_column) std::cout << " SCP    ";
+        std::cout << "  du0 [Bohr]    du_tensor      |force|   ";
+        if (with_cell) std::cout << "    |stress|  ";
+        std::cout << "  space group\n";
+        print_rule();
+        std::cout << std::scientific << std::setprecision(3);
+        for (std::size_t istep = 0; istep < step_history.size(); ++istep) {
+            const auto &rec = step_history[istep];
+            std::cout << std::setw(7) << istep + 1;
+            if (show_scp_column) std::cout << (rec.scp_ok ? "   conv " : "   FAIL ");
+            std::cout << std::setw(14) << rec.du0 << std::setw(13) << rec.du_tensor;
+            if (rec.grad_norm >= 0.0) {
+                std::cout << std::setw(13) << rec.grad_norm;
             } else {
-                std::cout << std::setw(14) << "-";
+                std::cout << std::setw(13) << "-";
             }
+            if (with_cell) {
+                if (rec.cell_grad_norm >= 0.0) {
+                    std::cout << std::setw(14) << rec.cell_grad_norm;
+                } else {
+                    std::cout << std::setw(14) << "-";
+                }
+            }
+            std::cout << "    " << rec.spacegroup << '\n';
         }
-        std::cout << "    " << rec.spacegroup << '\n';
+        print_rule();
     }
-    print_rule();
 }
 
 void Relaxation::check_str_divergence(int &diverged, const RelaxationStructureState &structure_state) const

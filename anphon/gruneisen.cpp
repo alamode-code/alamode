@@ -31,6 +31,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "pointers.h"
 #include "system.h"
 #include "version.h"
+#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -85,7 +86,7 @@ void Gruneisen::setup()
         }
     }
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         if (print_newfcs) {
             std::cout << '\n';
             if (anharmonic_core->quartic_mode > 0) {
@@ -106,7 +107,7 @@ void Gruneisen::calc_gruneisen()
 
     NDArray<std::complex<double>, 2> dfc2_reciprocal(ns, ns);
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " GRUNEISEN = 1 : Calculating Gruneisen parameters ... ";
     }
@@ -179,7 +180,7 @@ void Gruneisen::calc_gruneisen()
     }
 
 
-    if (mympi->my_rank == 0) {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!" << '\n';
     }
 }
@@ -320,26 +321,30 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
 
 void Gruneisen::write_new_fcsxml_all() const
 {
-    std::cout << '\n';
+    if (writes->getVerbosity() > 0) std::cout << '\n';
 
     if (fcs_phonon->update_fc2) {
         warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with the FC2FILE.");
     } else {
-        std::cout << " NEWFCS = 1 : Following XML files are created. \n";
+        if (writes->getVerbosity() > 0) std::cout << " NEWFCS = 1 : Following XML files are created. \n";
 
         auto file_xml = phon->job_title + "_+.xml";
         write_new_fcsxml(file_xml, delta_a);
 
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
-        std::cout << " : Force constants of the system expanded by " << std::fixed << std::setprecision(3)
-                  << delta_a * 100 << " %\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
+            std::cout << " : Force constants of the system expanded by " << std::fixed << std::setprecision(3)
+                      << delta_a * 100 << " %\n";
+        }
 
         file_xml = phon->job_title + "_-.xml";
         write_new_fcsxml(file_xml, -delta_a);
 
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
-        std::cout << " : Force constants of the system compressed by " << std::fixed << std::setprecision(3)
-                  << delta_a * 100 << " %\n";
+        if (writes->getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
+            std::cout << " : Force constants of the system compressed by " << std::fixed << std::setprecision(3)
+                      << delta_a * 100 << " %\n";
+        }
     }
 }
 
