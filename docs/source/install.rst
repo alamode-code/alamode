@@ -273,6 +273,34 @@ after which the whole build becomes::
     Command Line Tools must be installed (``xcode-select --install``). This
     applies to the conda route as well.
 
+.. note::
+
+    **Recent macOS SDKs (macOS 26 "Tahoe" and newer).** If your Xcode Command
+    Line Tools provide a very new macOS SDK, the conda-forge linker
+    (``cctools``/``ld64``) bundled in the environment may not yet support it,
+    and ``cmake ..`` fails during MPI detection even though ``mpicc`` works::
+
+        -- Could NOT find MPI_C (missing: MPI_C_WORKS)
+        -- Could NOT find MPI_CXX (missing: MPI_CXX_WORKS)
+
+    This is not actually an MPI problem: FindMPI's test link fails on base
+    ``libSystem`` symbols (``_puts``, ``___stack_chk_fail``), so *any*
+    non-trivial link through the conda compiler would fail -- MPI is simply the
+    first library checked. Until conda-forge ships a ``cctools``/``ld64`` that
+    supports the new SDK, configure with Apple's system Clang while still
+    linking the conda libraries::
+
+        % env -u CC -u CXX -u FC cmake .. \
+              -DCMAKE_C_COMPILER=/usr/bin/clang \
+              -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+              -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
+              -DHDF5_ROOT=$CONDA_PREFIX
+
+    OpenMP still works this way (Apple Clang uses ``-Xclang -fopenmp`` with the
+    conda ``llvm-openmp`` runtime). For portable binaries, also set
+    ``-DCMAKE_OSX_DEPLOYMENT_TARGET=<your minimum>`` and verify the result with
+    ``otool -L`` so that only one copy of ``libc++`` / ``libomp`` is loaded.
+
 
 .. _install_native:
 
