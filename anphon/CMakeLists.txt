@@ -243,6 +243,25 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ../include/logger.h
             )
 
+# std::filesystem (used by kappa_result_io.cpp / scph_result_io.cpp) lives in a
+# separate library, libstdc++fs, on older libstdc++ toolchains (e.g. GCC 8 as
+# shipped by RHEL8); GCC 9+ folds it into libstdc++. icpx reports as IntelLLVM
+# but uses the system libstdc++, so probe whether the flag is actually needed
+# rather than keying on the compiler ID.
+include(CheckCXXSourceCompiles)
+set(_filesystem_test_code "#include <filesystem>\nint main() { return std::filesystem::exists(\".\") ? 0 : 1; }\n")
+check_cxx_source_compiles("${_filesystem_test_code}" FILESYSTEM_NO_EXTRA_LIB)
+if (NOT FILESYSTEM_NO_EXTRA_LIB)
+    set(CMAKE_REQUIRED_LIBRARIES stdc++fs)
+    check_cxx_source_compiles("${_filesystem_test_code}" FILESYSTEM_NEEDS_STDCXXFS)
+    unset(CMAKE_REQUIRED_LIBRARIES)
+    if (FILESYSTEM_NEEDS_STDCXXFS)
+        set(filesystem_library stdc++fs)
+    else()
+        message(FATAL_ERROR "std::filesystem could not be linked (tried default and -lstdc++fs).")
+    endif()
+endif()
+
 message("MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}")
 message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")
 # Executable
@@ -280,6 +299,7 @@ target_link_libraries(anphon
     ${openmplibrary}
     ${hdf5_target}
     ${hdf5library}
+    ${filesystem_library}
 )
 
 # Unit test for the RAII array owner (include/ndarray.h): layout identity
