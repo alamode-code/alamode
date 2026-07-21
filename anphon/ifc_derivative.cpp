@@ -385,8 +385,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     std::vector<std::complex<double> *> row_ptrs(static_cast<std::size_t>(nk_dense) * ns);
     std::vector<std::complex<double> **> kptr_view(nk_dense);
 
-    const auto is_acoustic_gamma =
-        dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_gamma = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
 
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {

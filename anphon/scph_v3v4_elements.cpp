@@ -117,8 +117,8 @@ auto build_phi4_skeleton(const int *const *evec_index, const long int ngroup, co
 }
 } // namespace
 void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
-    std::complex<double> ***v3_out, const std::complex<double> *const *const *evec_in,
-    const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
+    std::complex<double> ***v3_out, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
+    const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
     const PhaseFactorCache *phase_cache_in, std::complex<double> *phi3_reciprocal_inout)
 {
     // Calculate the matrix elements of quartic terms in reciprocal space.
@@ -588,9 +588,9 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
 }
 
 
-void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out,
-                                                        std::complex<double> ***evec_in, const bool self_offdiag,
-                                                        const bool relax, const KpointMeshUniform *kmesh_coarse_in,
+void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, std::complex<double> ***evec_in,
+                                                        const bool self_offdiag, const bool relax,
+                                                        const KpointMeshUniform *kmesh_coarse_in,
                                                         const KpointMeshUniform *kmesh_dense_in,
                                                         const std::vector<int> &kmap_coarse_to_dense,
                                                         const PhaseFactorCache *phase_storage_in,
@@ -832,9 +832,8 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     }
 }
 
-void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out,
-                                                      std::complex<double> ***evec_in, const bool self_offdiag,
-                                                      const KpointMeshUniform *kmesh_coarse_in,
+void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, std::complex<double> ***evec_in,
+                                                      const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in,
                                                       const KpointMeshUniform *kmesh_dense_in,
                                                       const std::vector<int> &kmap_coarse_to_dense,
                                                       const PhaseFactorCache *phase_storage_in,
@@ -1138,10 +1137,9 @@ void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(std::complex<double> ***
                                                  nk_irred_coarse_in);
 }
 
-void PHON_NS::zerofill_elements_acoustic_at_gamma(const std::vector<bool> &is_acoustic,
-                                                  std::complex<double> ***v_elems, const int fc_order,
-                                                  const unsigned int ns_in, const unsigned int nk_dense_in,
-                                                  const unsigned int nk_irred_coarse_in)
+void PHON_NS::zerofill_elements_acoustic_at_gamma(const std::vector<bool> &is_acoustic, std::complex<double> ***v_elems,
+                                                  const int fc_order, const unsigned int ns_in,
+                                                  const unsigned int nk_dense_in, const unsigned int nk_irred_coarse_in)
 {
     // Set V3 or V4 elements involving acoustic modes at Gamma point
     // exactly zero. The acoustic modes are assigned from the eigenvectors
@@ -1220,5 +1218,4 @@ void PHON_NS::zerofill_elements_acoustic_at_gamma(const std::vector<bool> &is_ac
             }
         }
     }
-
 }

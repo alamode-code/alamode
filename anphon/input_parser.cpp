@@ -428,8 +428,10 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
         }
 
         assign_val(analysis_vars.anime_format, "ANIME_FORMAT", analysis_var_dict);
-        std::transform(analysis_vars.anime_format.begin(), analysis_vars.anime_format.end(),
-                       analysis_vars.anime_format.begin(), toupper);
+        std::transform(analysis_vars.anime_format.begin(),
+                       analysis_vars.anime_format.end(),
+                       analysis_vars.anime_format.begin(),
+                       toupper);
 
         if (analysis_vars.anime_format != "XSF" && analysis_vars.anime_format != "AXSF" &&
             analysis_vars.anime_format != "XYZ")
@@ -1387,8 +1389,7 @@ int InputParser::locate_tag(const std::string &key)
     return ret;
 }
 
-void InputParser::get_var_dict(const std::vector<std::string> &input_list,
-                               std::map<std::string, std::string> &var_dict)
+void InputParser::get_var_dict(const std::vector<std::string> &input_list, std::map<std::string, std::string> &var_dict)
 {
     std::istream &is = from_stdin ? static_cast<std::istream &>(std::cin) : ifs_input;
 

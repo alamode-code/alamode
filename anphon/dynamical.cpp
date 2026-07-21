@@ -1227,8 +1227,7 @@ double Dynamical::freq(const double x) const
 }
 
 std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<double> *const *evec_gamma,
-                                                            const double projection_threshold,
-                                                            const bool verbose) const
+                                                            const double projection_threshold, const bool verbose) const
 {
     // Identify the three acoustic (translational) modes at the Gamma point from the
     // eigenvectors instead of the frequencies. A mode is acoustic if and only if it lies
@@ -1270,8 +1269,9 @@ std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<d
     // Select the three modes with the largest translational projection.
     std::vector<int> index(ns);
     std::iota(index.begin(), index.end(), 0);
-    std::partial_sort(index.begin(), index.begin() + 3, index.end(),
-                      [&projection](const int a, const int b) { return projection[a] > projection[b]; });
+    std::partial_sort(index.begin(), index.begin() + 3, index.end(), [&projection](const int a, const int b) {
+        return projection[a] > projection[b];
+    });
 
     std::vector<bool> is_acoustic(ns, false);
     for (auto i = 0; i < 3; ++i) {

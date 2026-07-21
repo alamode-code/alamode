@@ -236,7 +236,10 @@ void PHON::execute_kappa() const
         dynamical->diagonalize_dynamical_all();
     }
 
-    isotope->setup_isotope_scattering(*system, dos->kmesh_dos->nk_irred, dynamical->neval, mympi->my_rank,
+    isotope->setup_isotope_scattering(*system,
+                                      dos->kmesh_dos->nk_irred,
+                                      dynamical->neval,
+                                      mympi->my_rank,
                                       get_verbosity());
     isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos.get(),
                                          *dos->dymat_dos.get(),

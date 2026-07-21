@@ -35,7 +35,7 @@ struct GeneralInputVars
     bool restart = false;
     bool restart_4ph = false;
 
-    double tolerance = 1.0e-3; // TOLERANCE
+    double tolerance = 1.0e-3;  // TOLERANCE
     bool printsymmetry = false; // PRINTSYM
 
     double Tmin = 0.0;

@@ -12,9 +12,9 @@
 #include <algorithm>
 #include <complex>
 #include <fstream>
-#include <numeric>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <vector>
 #include "constants.h"
 #include "dielec.h"
@@ -51,8 +51,8 @@ void ScphQhaCommon::build_cmat_at_k(const unsigned int ns, const Eigen::MatrixXc
     }
 }
 
-std::vector<bool> ScphQhaCommon::classify_acoustic_modes_from_cmat(
-    const std::complex<double> *const *cmat_at_gamma) const
+std::vector<bool>
+ScphQhaCommon::classify_acoustic_modes_from_cmat(const std::complex<double> *const *cmat_at_gamma) const
 {
     const auto ns = dynamical->neval;
 

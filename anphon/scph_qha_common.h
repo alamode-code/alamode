@@ -193,17 +193,15 @@ protected:
     // the initial strain tensor) at the head of a temperature point.
     void print_initial_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode) const;
 
-    void compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out,
-                                             std::complex<double> ***evec_in, bool self_offdiag, bool relax,
-                                             const KpointMeshUniform *kmesh_coarse_in,
+    void compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, std::complex<double> ***evec_in,
+                                             bool self_offdiag, bool relax, const KpointMeshUniform *kmesh_coarse_in,
                                              const KpointMeshUniform *kmesh_dense_in,
                                              const std::vector<int> &kmap_coarse_to_dense,
                                              const PhaseFactorCache *phase_storage_in,
                                              std::complex<double> *phi4_reciprocal_inout);
 
-    void compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out,
-                                           std::complex<double> ***evec_in, bool self_offdiag,
-                                           const KpointMeshUniform *kmesh_coarse_in,
+    void compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, std::complex<double> ***evec_in,
+                                           bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in,
                                            const KpointMeshUniform *kmesh_dense_in,
                                            const std::vector<int> &kmap_coarse_to_scph,
                                            const PhaseFactorCache *phase_storage_in,
@@ -252,8 +250,8 @@ protected:
     // the acoustic modes during the SCPH iteration.
     std::vector<bool> classify_acoustic_modes_from_cmat(const std::complex<double> *const *cmat_at_gamma) const;
 
-    void zerofill_elements_acoustic_at_gamma(std::complex<double> ***v_elems, int fc_order,
-                                             unsigned int nk_dense_in, unsigned int nk_irred_coarse_in) const;
+    void zerofill_elements_acoustic_at_gamma(std::complex<double> ***v_elems, int fc_order, unsigned int nk_dense_in,
+                                             unsigned int nk_irred_coarse_in) const;
 
     bool use_band_parallel_v4() const;
 };
