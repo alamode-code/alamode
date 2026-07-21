@@ -63,6 +63,13 @@ protected:
 
     NDArray<double, 2> omega2_harmonic;
     NDArray<std::complex<double>, 3> evec_harmonic;
+
+    // Index of the Gamma point in kmesh_dense and the eigenvector-based assignment of the
+    // three acoustic (translational) modes there, in the harmonic mode order. Set by
+    // setup_eigvecs(); used instead of frequency-magnitude thresholds wherever acoustic
+    // modes at Gamma must be singled out.
+    int ik_gamma_dense = -1;
+    std::vector<bool> is_acoustic_gamma_harm;
     NDArray<MinimumDistList, 3> mindist_list;
     NDArray<std::complex<double>, 4> mat_transform_sym;
 
@@ -162,9 +169,9 @@ protected:
     // Allocate the workspace buffers common to both structural-optimization
     // drivers, compute the reference V3/V4 elements and the strain
     // derivatives of the IFCs, create the optimizer, and detect the optical
-    // modes at Gamma. Collective: every rank must call it. eps_optical
-    // reproduces each driver's historical acoustic-mode threshold.
-    void setup_structural_opt_buffers(StructuralOptWorkspace &ws, double eps_optical);
+    // modes at Gamma (the complement of the eigenvector-based acoustic
+    // assignment). Collective: every rank must call it.
+    void setup_structural_opt_buffers(StructuralOptWorkspace &ws);
 
     // Residual force/stress norms of one structural step, the per-step
     // du/residual report, and the history-table record.
@@ -186,7 +193,7 @@ protected:
     // the initial strain tensor) at the head of a temperature point.
     void print_initial_structure(const RelaxationStructureState &state, RelaxationStrMode relax_mode) const;
 
-    void compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
+    void compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out,
                                              std::complex<double> ***evec_in, bool self_offdiag, bool relax,
                                              const KpointMeshUniform *kmesh_coarse_in,
                                              const KpointMeshUniform *kmesh_dense_in,
@@ -194,7 +201,7 @@ protected:
                                              const PhaseFactorCache *phase_storage_in,
                                              std::complex<double> *phi4_reciprocal_inout);
 
-    void compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, double **omega2_harmonic_in,
+    void compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out,
                                            std::complex<double> ***evec_in, bool self_offdiag,
                                            const KpointMeshUniform *kmesh_coarse_in,
                                            const KpointMeshUniform *kmesh_dense_in,
@@ -202,7 +209,7 @@ protected:
                                            const PhaseFactorCache *phase_storage_in,
                                            std::complex<double> *phi4_reciprocal_inout);
 
-    void compute_V3_elements_mpi_over_kpoint(std::complex<double> ***v3_out, double **omega2_harmonic_in,
+    void compute_V3_elements_mpi_over_kpoint(std::complex<double> ***v3_out,
                                              const std::complex<double> *const *const *evec_in, bool self_offdiag,
                                              const KpointMeshUniform *kmesh_coarse_in,
                                              const KpointMeshUniform *kmesh_dense_in,
@@ -237,7 +244,15 @@ protected:
     static void build_cmat_at_k(unsigned int ns, const Eigen::MatrixXcd &evec_ref_mat,
                                 const std::complex<double> *const *evec_new_at_k, std::complex<double> **cmat_out);
 
-    void zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, int fc_order,
+    // Identify which modes of the CURRENT (renormalized) eigenbasis at Gamma are the three
+    // translational (acoustic) modes, given the unitary C(k=Gamma) connecting the harmonic
+    // basis to the current one: overlap(js) = sum_{is in acoustic_harm} |C[is][js]|^2, and the
+    // three modes with the largest overlap are flagged. Robust against the reshuffling of the
+    // sorted mode indices that occurs when a soft optical mode becomes nearly degenerate with
+    // the acoustic modes during the SCPH iteration.
+    std::vector<bool> classify_acoustic_modes_from_cmat(const std::complex<double> *const *cmat_at_gamma) const;
+
+    void zerofill_elements_acoustic_at_gamma(std::complex<double> ***v_elems, int fc_order,
                                              unsigned int nk_dense_in, unsigned int nk_irred_coarse_in) const;
 
     bool use_band_parallel_v4() const;

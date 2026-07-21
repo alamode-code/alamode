@@ -213,26 +213,32 @@ void ScphQhaCommon::compute_anharmonic_v1_array(std::complex<double> *v1_SCP, st
             }
             v3mat_tmp = Cmat * v3mat_original_mode * Cmat.adjoint();
 
+            // The acoustic modes at Gamma are excluded by their eigenvector character
+            // (overlap with the harmonic acoustic subspace), not by frequency magnitude,
+            // so that a soft optical mode with a nearly zero SCP frequency keeps its
+            // contribution.
+            std::vector<bool> is_acoustic_now;
+            if (ik == ik_gamma_dense) {
+                is_acoustic_now = classify_acoustic_modes_from_cmat(cmat_convert[ik]);
+            }
+
             // update v1_SCP
             int count_zero = 0;
             for (int js = 0; js < ns; js++) {
+                if (ik == ik_gamma_dense && is_acoustic_now[js]) continue;
                 double omega1_tmp = std::sqrt(std::fabs(omega2_anharm_T[ik][js]));
-                if (std::abs(omega1_tmp) < eps8) {
-                    Qtmp = 0.0;
+                if (omega1_tmp < eps8) {
+                    omega1_tmp = eps8;
                     count_zero++;
-                } else {
-                    const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
-                    Qtmp = std::complex<double>(factor, 0.0);
                 }
+                const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
+                Qtmp = std::complex<double>(factor, 0.0);
 
                 v1_SCP[is] += v3mat_tmp(js, js) * Qtmp;
             }
-            if (ik == 0 && count_zero != 3) {
+            if (count_zero != 0) {
                 std::cout << "Warning in compute_anharmonic_v1_array : ";
-                std::cout << count_zero << " acoustic modes are detected in Gamma point.\n\n";
-            } else if (ik != 0 && count_zero != 0) {
-                std::cout << "Warning in compute_anharmonic_v1_array : ";
-                std::cout << count_zero << " zero frequencies are detected in non-Gamma point (ik = " << ik << ").\n\n";
+                std::cout << count_zero << " non-acoustic zero frequencies are detected at ik = " << ik << ".\n\n";
             }
         }
     }
@@ -260,7 +266,6 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     int is1, is2, is3, js, js1, js2;
     double omega1_tmp;
     std::complex<double> Qtmp;
-    int count_zero;
 
     MatrixXcd Cmat(ns, ns);
     MatrixXcd del_v2_strain_mat_original_mode(ns, ns), del_v2_strain_mat(ns, ns);
@@ -303,22 +308,26 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
             }
             del_v2_strain_mat = Cmat.adjoint() * del_v2_strain_mat_original_mode * Cmat;
 
+            // Eigenvector-based exclusion of the Gamma acoustic modes (see
+            // compute_anharmonic_v1_array).
+            std::vector<bool> is_acoustic_now;
+            if (ik == ik_gamma_dense) {
+                is_acoustic_now = classify_acoustic_modes_from_cmat(cmat_convert[ik]);
+            }
+
             // update del_v0_del_umn_SCP
-            count_zero = 0;
             for (js = 0; js < ns; js++) {
+                if (ik == ik_gamma_dense && is_acoustic_now[js]) continue;
                 omega1_tmp = std::sqrt(std::fabs(omega2_anharm_T[ik][js]));
-                if (std::abs(omega1_tmp) < eps8) {
-                    Qtmp = 0.0;
-                    count_zero++;
-                } else {
-                    if (omega2_anharm_T[ik][js] < 0.0) {
-                        std::cout
-                            << "Warning in compute_anharmonic_del_v0_del_umn: squared SCP frequency is negative. ik = "
-                            << ik << '\n';
-                    }
-                    const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
-                    Qtmp = std::complex<double>(factor, 0.0);
+                if (omega1_tmp < eps8) {
+                    omega1_tmp = eps8;
+                } else if (omega2_anharm_T[ik][js] < 0.0) {
+                    std::cout
+                        << "Warning in compute_anharmonic_del_v0_del_umn: squared SCP frequency is negative. ik = "
+                        << ik << '\n';
                 }
+                const auto factor = thermodynamics->disp_corr_factor(omega1_tmp, T_in);
+                Qtmp = std::complex<double>(factor, 0.0);
 
                 del_v0_del_umn_SCP[i1] += factor2 * del_v2_strain_mat(js, js) * Qtmp;
             }

@@ -60,7 +60,7 @@ public:
                             const std::complex<double> *const *const *const evec_harmonic, unsigned int nk,
                             const double *const *xk_in) const;
 
-    void compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &dV3_dumn, double **omega2_harmonic,
+    void compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &dV3_dumn,
                           const std::complex<double> *const *const *const evec_harmonic,
                           const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                           const PhaseFactorCache *phase_cache_in) const;

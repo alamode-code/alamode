@@ -9,8 +9,10 @@
 */
 
 #include "scph_qha_common.h"
+#include <algorithm>
 #include <complex>
 #include <fstream>
+#include <numeric>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -47,6 +49,36 @@ void ScphQhaCommon::build_cmat_at_k(const unsigned int ns, const Eigen::MatrixXc
             cmat_out[is][js] = Cmat(is, js);
         }
     }
+}
+
+std::vector<bool> ScphQhaCommon::classify_acoustic_modes_from_cmat(
+    const std::complex<double> *const *cmat_at_gamma) const
+{
+    const auto ns = dynamical->neval;
+
+    std::vector<double> overlap(ns, 0.0);
+    for (auto is = 0; is < ns; ++is) {
+        if (!is_acoustic_gamma_harm[is]) continue;
+        for (auto js = 0; js < ns; ++js) {
+            overlap[js] += std::norm(cmat_at_gamma[is][js]);
+        }
+    }
+
+    // Majority overlap with the harmonic acoustic subspace marks a mode as acoustic.
+    // A threshold is used instead of picking the three largest overlaps on purpose:
+    // when a soft optical mode becomes numerically degenerate with the acoustic modes
+    // during the SCPH iteration, the eigensolver may return arbitrarily mixed columns,
+    // and a fixed count could then assign a mostly-translational column as "optical"
+    // (whose then huge 1/omega occupation factor would destabilize the iteration).
+    // With a threshold, every mostly-translational column is excluded, transiently
+    // mixed columns resolve themselves once the degeneracy is lifted, and in the
+    // clean (non-degenerate) case exactly the three translational modes are flagged.
+    std::vector<bool> is_acoustic(ns, false);
+    for (auto js = 0; js < ns; ++js) {
+        is_acoustic[js] = overlap[js] > 0.5;
+    }
+
+    return is_acoustic;
 }
 
 void ScphQhaCommon::initialize_variables()
@@ -141,6 +173,16 @@ void ScphQhaCommon::setup_eigvecs()
             }
         }
     }
+
+    // Assign the three acoustic modes at Gamma from the eigenvectors (projection onto the
+    // rigid-translation subspace). The result replaces the frequency-magnitude criteria that
+    // could misclassify a soft optical mode collapsing to zero frequency.
+    const double xk_gamma[3] = {0.0, 0.0, 0.0};
+    ik_gamma_dense = kmesh_dense->get_knum(xk_gamma);
+    if (ik_gamma_dense < 0) {
+        exit("setup_eigvecs", "Gamma point not found in the dense k mesh.");
+    }
+    is_acoustic_gamma_harm = dynamical->detect_acoustic_modes_at_gamma(evec_harmonic[ik_gamma_dense]);
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done !\n";
@@ -1074,7 +1116,7 @@ void ScphQhaCommon::print_initial_structure(const RelaxationStructureState &stat
     }
 }
 
-void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, const double eps_optical)
+void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
 {
     const auto nk = kmesh_dense->nk;
     const auto nk_interpolate = kmesh_coarse->nk;
@@ -1129,7 +1171,6 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
     // This operation is the most expensive part of the calculation.
     if (selfenergy_offdiagonal && use_band_parallel_v4()) {
         compute_V4_elements_mpi_over_band(ws.v4_ref,
-                                          omega2_harmonic,
                                           evec_harmonic,
                                           selfenergy_offdiagonal,
                                           kmesh_coarse.get(),
@@ -1139,7 +1180,6 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                           phi4_reciprocal);
     } else {
         compute_V4_elements_mpi_over_kpoint(ws.v4_ref,
-                                            omega2_harmonic,
                                             evec_harmonic,
                                             selfenergy_offdiagonal,
                                             ws.relax_mode != RelaxationStrMode::None,
@@ -1155,7 +1195,6 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
     ws.v3_with_umn.resize(nk, ns, ns * ns);
 
     compute_V3_elements_mpi_over_kpoint(ws.v3_ref,
-                                        omega2_harmonic,
                                         evec_harmonic,
                                         selfenergy_offdiagonal,
                                         kmesh_coarse.get(),
@@ -1163,11 +1202,12 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws, con
                                         phase_factor.get(),
                                         phi3_reciprocal);
 
-    // get indices of optical modes at the Gamma point
+    // get indices of optical modes at the Gamma point (the complement of the
+    // eigenvector-based acoustic assignment)
     ws.harm_optical_modes.resize(ns - 3);
     auto js = 0;
     for (auto is = 0; is < ns; is++) {
-        if (std::fabs(omega2_harmonic[0][is]) < eps_optical) {
+        if (is_acoustic_gamma_harm[is]) {
             continue;
         }
         ws.harm_optical_modes[js] = is;

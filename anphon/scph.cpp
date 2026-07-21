@@ -759,7 +759,6 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
     // This operation is the most expensive part of the calculation.
     if (selfenergy_offdiagonal & (ialgo == 1)) {
         compute_V4_elements_mpi_over_band(v4_array_all,
-                                          omega2_harmonic,
                                           evec_harmonic,
                                           selfenergy_offdiagonal,
                                           kmesh_coarse.get(),
@@ -769,7 +768,6 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                           phi4_reciprocal);
     } else {
         compute_V4_elements_mpi_over_kpoint(v4_array_all,
-                                            omega2_harmonic,
                                             evec_harmonic,
                                             selfenergy_offdiagonal,
                                             relax_mode != RelaxationStrMode::None,
@@ -784,7 +782,6 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
         v3_array_all.resize(nk, ns, ns * ns);
 
         compute_V3_elements_mpi_over_kpoint(v3_array_all,
-                                            omega2_harmonic,
                                             evec_harmonic,
                                             selfenergy_offdiagonal,
                                             kmesh_coarse.get(),
@@ -964,7 +961,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
     // Common buffers, reference V3/V4 elements, strain derivatives of the
     // IFCs, optimizer, and Gamma-point optical modes (collective).
-    setup_structural_opt_buffers(ws, eps10);
+    setup_structural_opt_buffers(ws);
 
     auto &structure_state = ws.structure_state;
 
@@ -1298,6 +1295,24 @@ void Scph::compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double 
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
 
+    // Frequency floor for the occupation factor of a collapsed non-acoustic mode at
+    // Gamma: the smallest harmonic optical frequency there. The sorted mode index of
+    // the collapsed mode is not a reliable branch label within the nearly degenerate
+    // subspace at Gamma, so a branch-resolved harmonic frequency cannot be used.
+    auto omega_floor_gamma = eps8;
+    if (ik_gamma_dense >= 0) {
+        auto omega2_min_optical = -1.0;
+        for (unsigned int is = 0; is < ns; ++is) {
+            const auto omega2_abs = std::abs(omega2_harmonic[ik_gamma_dense][is]);
+            if (!is_acoustic_gamma_harm[is] && (omega2_min_optical < 0.0 || omega2_abs < omega2_min_optical)) {
+                omega2_min_optical = omega2_abs;
+            }
+        }
+        if (omega2_min_optical > 0.0) {
+            omega_floor_gamma = std::max(std::sqrt(omega2_min_optical), eps8);
+        }
+    }
+
 #pragma omp parallel
     {
         MatrixXcd Qmat(ns, ns);
@@ -1305,15 +1320,41 @@ void Scph::compute_qmat_and_dmat(const Eigen::MatrixXd &omega_now, const double 
 
 #pragma omp for
         for (int ik = 0; ik < static_cast<int>(nk); ++ik) {
+
+            // At Gamma, the three translational (acoustic) modes must be excluded from Qmat.
+            // They are identified from the eigenvectors (via the overlap with the harmonic
+            // acoustic subspace encoded in cmat_convert), NOT from the frequency magnitude:
+            // a soft optical mode renormalized to nearly zero frequency would otherwise be
+            // silently treated as acoustic, which removes its own divergent (2n+1)/2omega
+            // self-interaction and thereby stabilizes a spurious omega = 0 solution.
+            std::vector<bool> is_acoustic_now;
+            if (ik == ik_gamma_dense) {
+                is_acoustic_now = classify_acoustic_modes_from_cmat(cmat_convert[ik]);
+            }
+
             Qmat.setZero();
             for (unsigned int is = 0; is < ns; ++is) {
-                const auto omega1 = omega_now(ik, is);
-                if (std::abs(omega1) > eps8) {
-                    // Note that the missing factor 2 in the denominator of Qmat is
-                    // already considered in the v4_array_all.
-                    const auto factor = thermodynamics->disp_corr_factor(omega1, temp);
-                    Qmat(is, is) = std::complex<double>(factor, 0.0);
+                if (ik == ik_gamma_dense && is_acoustic_now[is]) continue;
+                // Note that the missing factor 2 in the denominator of Qmat is
+                // already considered in the v4_array_all.
+                // disp_corr_factor is even in omega, so |omega1| gives the same value as
+                // omega1 for any finite frequency.
+                auto omega_for_q = std::abs(omega_now(ik, is));
+                if (omega_for_q < eps8) {
+                    // A non-acoustic mode has (transiently) collapsed to zero frequency.
+                    // Evaluating the 1/omega factor there would give a violent restoring
+                    // kick that destabilizes the fixed-point iteration; instead evaluate it
+                    // at a harmonic frequency scale (the value a cold-started iteration
+                    // would use), which pushes the mode back to a finite frequency at a
+                    // physically reasonable rate.
+                    if (ik == ik_gamma_dense) {
+                        omega_for_q = omega_floor_gamma;
+                    } else {
+                        omega_for_q = std::max(std::sqrt(std::abs(omega2_harmonic[ik][is])), eps8);
+                    }
                 }
+                const auto factor = thermodynamics->disp_corr_factor(omega_for_q, temp);
+                Qmat(is, is) = std::complex<double>(factor, 0.0);
             }
 
             for (unsigned int is = 0; is < ns; ++is) {
@@ -1430,7 +1471,14 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
                     std::cout << "  onsite V4 is positive\n\n";
                 }
 
-                if (flag_converged) {
+                // With a warm start, the previous temperature's converged omega2 at the
+                // same sorted index is used as the reset target -- but only when it is
+                // meaningfully positive. The sorted index is not a branch label: at Gamma
+                // an imaginary soft mode sorts below the acoustic zeros, so the stored
+                // value can be (exactly) zero, and resetting to it would pin the soft mode
+                // at zero frequency for the rest of the iteration. In that case, and on
+                // cold starts, flip the sign of the eigenvalue instead.
+                if (flag_converged && omega2_out[knum][is] > eps15) {
                     ++icount;
                     eval_tmp(is) = omega2_out[knum][is] * std::pow(0.99, icount);
                 } else {

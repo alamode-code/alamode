@@ -334,7 +334,6 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
 }
 
 void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>> &del_v3_del_umn,
-                                     double **omega2_harmonic,
                                      const std::complex<double> *const *const *const evec_harmonic,
                                      const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                                      const PhaseFactorCache *phase_cache_in) const
@@ -385,6 +384,9 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     // used to bridge with the legacy raw-pointer interface of compute_V3_elements_for_given_IFCs.
     std::vector<std::complex<double> *> row_ptrs(static_cast<std::size_t>(nk_dense) * ns);
     std::vector<std::complex<double> **> kptr_view(nk_dense);
+
+    const auto is_acoustic_gamma =
+        dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
 
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
@@ -439,7 +441,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
             }
 
             compute_V3_elements_for_given_IFCs(kptr_view.data(),
-                                               omega2_harmonic,
+                                               is_acoustic_gamma,
                                                ngroup_tmp,
                                                fcs_group_tmp,
                                                relvec_tmp,
@@ -772,7 +774,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         std::cout << "  - first-order derivatives of cubic IFCs (from quartic IFCs) ... " << std::flush;
     }
 
-    compute_dV3_dumn(del_v_strain.del_v3, omega2_harmonic, evec_harmonic, kmesh_coarse, kmesh_dense, phase_cache_in);
+    compute_dV3_dumn(del_v_strain.del_v3, evec_harmonic, kmesh_coarse, kmesh_dense, phase_cache_in);
 
     if (my_rank_ == 0) {
         std::cout << "  done!\n";

@@ -117,7 +117,7 @@ auto build_phi4_skeleton(const int *const *evec_index, const long int ngroup, co
 }
 } // namespace
 void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
-    std::complex<double> ***v3_out, double **omega2_harmonic_in, const std::complex<double> *const *const *evec_in,
+    std::complex<double> ***v3_out, const std::complex<double> *const *const *evec_in,
     const bool self_offdiag, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
     const PhaseFactorCache *phase_cache_in, std::complex<double> *phi3_reciprocal_inout)
 {
@@ -336,7 +336,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     v3_tmp3.clear();
 
 
-    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
+    zerofill_elements_acoustic_at_gamma(v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done !\n";
@@ -350,7 +350,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 // ScphQhaCommon::compute_V3_elements_mpi_over_kpoint; merging the two is a
 // possible future cleanup.
 void PHON_NS::compute_V3_elements_for_given_IFCs(
-    std::complex<double> ***v3_out, double **omega2_harmonic_in, const int ngroup_v3_in,
+    std::complex<double> ***v3_out, const std::vector<bool> &is_acoustic_gamma_in, const int ngroup_v3_in,
     std::vector<double> *fcs_group_v3_in, std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
     int **evec_index_v3_in, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
     const unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
@@ -388,7 +388,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
                 }
             }
         }
-        zerofill_elements_acoustic_at_gamma(omega2_harmonic_in,
+        zerofill_elements_acoustic_at_gamma(is_acoustic_gamma_in,
                                             v3_out,
                                             3,
                                             ns,
@@ -579,7 +579,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
     v3_tmp2.clear();
     v3_tmp3.clear();
 
-    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in,
+    zerofill_elements_acoustic_at_gamma(is_acoustic_gamma_in,
                                         v3_out,
                                         3,
                                         ns,
@@ -588,7 +588,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
 }
 
 
-void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out, double **omega2_harmonic_in,
+void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***v4_out,
                                                         std::complex<double> ***evec_in, const bool self_offdiag,
                                                         const bool relax, const KpointMeshUniform *kmesh_coarse_in,
                                                         const KpointMeshUniform *kmesh_dense_in,
@@ -824,7 +824,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
         }
     }
 
-    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
+    zerofill_elements_acoustic_at_gamma(v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done !\n";
@@ -832,7 +832,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(std::complex<double> ***
     }
 }
 
-void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out, double **omega2_harmonic_in,
+void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4_out,
                                                       std::complex<double> ***evec_in, const bool self_offdiag,
                                                       const KpointMeshUniform *kmesh_coarse_in,
                                                       const KpointMeshUniform *kmesh_dense_in,
@@ -1118,7 +1118,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
     v4_tmp1.clear();
     v4_tmp2.clear();
 
-    zerofill_elements_acoustic_at_gamma(omega2_harmonic_in, v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
+    zerofill_elements_acoustic_at_gamma(v4_out, 4, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done !\n";
@@ -1126,11 +1126,11 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(std::complex<double> ***v4
     }
 }
 
-void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems,
-                                                        const int fc_order, const unsigned int nk_dense_in,
+void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(std::complex<double> ***v_elems, const int fc_order,
+                                                        const unsigned int nk_dense_in,
                                                         const unsigned int nk_irred_coarse_in) const
 {
-    PHON_NS::zerofill_elements_acoustic_at_gamma(omega2,
+    PHON_NS::zerofill_elements_acoustic_at_gamma(is_acoustic_gamma_harm,
                                                  v_elems,
                                                  fc_order,
                                                  dynamical->neval,
@@ -1138,41 +1138,28 @@ void ScphQhaCommon::zerofill_elements_acoustic_at_gamma(double **omega2, std::co
                                                  nk_irred_coarse_in);
 }
 
-void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<double> ***v_elems, const int fc_order,
+void PHON_NS::zerofill_elements_acoustic_at_gamma(const std::vector<bool> &is_acoustic,
+                                                  std::complex<double> ***v_elems, const int fc_order,
                                                   const unsigned int ns_in, const unsigned int nk_dense_in,
                                                   const unsigned int nk_irred_coarse_in)
 {
     // Set V3 or V4 elements involving acoustic modes at Gamma point
-    // exactly zero.
+    // exactly zero. The acoustic modes are assigned from the eigenvectors
+    // (see Dynamical::detect_acoustic_modes_at_gamma), not from the
+    // magnitude of the harmonic frequencies.
 
     int jk;
     int is, js, ks, ls;
     const auto ns = ns_in;
-    NDArray<bool, 1> is_acoustic;
-    is_acoustic.resize(ns);
-    int nacoustic;
-    auto threshould = 1.0e-24;
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
 
     if (!(fc_order == 3 || fc_order == 4)) {
         exit("zerofill_elements_acoustic_at_gamma", "The fc_order must be either 3 or 4.");
     }
 
-    do {
-        nacoustic = 0;
-        for (is = 0; is < ns; ++is) {
-            if (std::abs(omega2[0][is]) < threshould) {
-                is_acoustic[is] = true;
-                ++nacoustic;
-            } else {
-                is_acoustic[is] = false;
-            }
-        }
-        if (nacoustic > 3) {
-            exit("zerofill_elements_acoustic_at_gamma", "Could not assign acoustic modes at Gamma.");
-        }
-        threshould *= 2.0;
-    } while (nacoustic < 3);
+    if (std::count(is_acoustic.begin(), is_acoustic.end(), true) != 3) {
+        exit("zerofill_elements_acoustic_at_gamma", "Could not assign acoustic modes at Gamma.");
+    }
 
 
     if (fc_order == 3) {
@@ -1234,5 +1221,4 @@ void PHON_NS::zerofill_elements_acoustic_at_gamma(double **omega2, std::complex<
         }
     }
 
-    is_acoustic.clear();
 }

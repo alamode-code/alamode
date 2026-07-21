@@ -116,6 +116,10 @@ public:
 
     double freq(const double) const;
 
+    std::vector<bool> detect_acoustic_modes_at_gamma(const std::complex<double> *const *evec_gamma,
+                                                     double projection_threshold = 0.9,
+                                                     bool verbose = true) const;
+
     void calc_participation_ratio_all(const unsigned int nk_in, const std::complex<double> *const *const *evec_in,
                                       double **ret, double ***ret_all) const;
 

@@ -1226,6 +1226,69 @@ double Dynamical::freq(const double x) const
     return -std::sqrt(-x);
 }
 
+std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<double> *const *evec_gamma,
+                                                            const double projection_threshold,
+                                                            const bool verbose) const
+{
+    // Identify the three acoustic (translational) modes at the Gamma point from the
+    // eigenvectors instead of the frequencies. A mode is acoustic if and only if it lies
+    // in the subspace spanned by the three rigid translations, whose mass-weighted,
+    // orthonormal basis vectors are t_alpha[3*j + beta] = delta_{alpha beta} sqrt(m_j / M).
+    // The projection P(is) = sum_alpha |<t_alpha|e_is>|^2 summed over the whole subspace is
+    // invariant under any rotation or mixing of the degenerate translational modes, so the
+    // detection works for arbitrary crystal systems and arbitrary orientations of the
+    // degenerate eigenvectors. The three modes with the largest P are returned; a frequency
+    // threshold is never consulted, so a soft optical mode collapsing to zero frequency can
+    // no longer be misclassified as acoustic.
+    //
+    // evec_gamma[is][3*j + alpha] : component (j, alpha) of the mass-weighted eigenvector of
+    //                               mode is at Gamma.
+
+    const auto ns = neval;
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto &mass_prim = system->get_mass_prim();
+
+    auto mass_total = 0.0;
+    for (auto j = 0; j < natmin; ++j) {
+        mass_total += mass_prim[j];
+    }
+
+    std::vector<double> projection(ns);
+
+    for (auto is = 0; is < ns; ++is) {
+        auto proj_sum = 0.0;
+        for (auto alpha = 0; alpha < 3; ++alpha) {
+            auto overlap = std::complex<double>(0.0, 0.0);
+            for (auto j = 0; j < natmin; ++j) {
+                overlap += std::sqrt(mass_prim[j]) * evec_gamma[is][3 * j + alpha];
+            }
+            proj_sum += std::norm(overlap);
+        }
+        projection[is] = proj_sum / mass_total;
+    }
+
+    // Select the three modes with the largest translational projection.
+    std::vector<int> index(ns);
+    std::iota(index.begin(), index.end(), 0);
+    std::partial_sort(index.begin(), index.begin() + 3, index.end(),
+                      [&projection](const int a, const int b) { return projection[a] > projection[b]; });
+
+    std::vector<bool> is_acoustic(ns, false);
+    for (auto i = 0; i < 3; ++i) {
+        is_acoustic[index[i]] = true;
+    }
+
+    if (verbose && mympi->my_rank == 0 && projection[index[2]] < projection_threshold) {
+        std::cout << " WARNING in detect_acoustic_modes_at_gamma:\n";
+        std::cout << "  The translational projection of an assigned acoustic mode at Gamma is only "
+                  << std::setprecision(4) << projection[index[2]] << " (< " << projection_threshold << ").\n";
+        std::cout << "  The acoustic sum rule may be broken, or the acoustic modes may be strongly\n";
+        std::cout << "  mixed with a (nearly) degenerate optical mode.\n";
+    }
+
+    return is_acoustic;
+}
+
 void Dynamical::calc_participation_ratio_all(const unsigned int nk_in,
                                              const std::complex<double> *const *const *evec_in, double **ret,
                                              double ***ret_all) const

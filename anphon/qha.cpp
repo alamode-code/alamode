@@ -510,7 +510,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
     // Common buffers, reference V3/V4 elements, strain derivatives of the
     // IFCs, optimizer, and Gamma-point optical modes (collective).
-    setup_structural_opt_buffers(ws, eps8);
+    setup_structural_opt_buffers(ws);
 
     auto &structure_state = ws.structure_state;
 
@@ -881,7 +881,6 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     v3_ref.resize(nk, ns, ns * ns);
 
     compute_V3_elements_mpi_over_kpoint(v3_ref,
-                                        omega2_harmonic,
                                         evec_harmonic,
                                         selfenergy_offdiagonal,
                                         kmesh_coarse.get(),
