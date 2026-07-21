@@ -1620,8 +1620,10 @@ bool Scph::check_convergence(const Eigen::MatrixXd &omega_now, const Eigen::Matr
                 }
             }
         }
+        // Whether the loop actually stops is the caller's decision (the DIIS driver
+        // additionally requires a small fixed-point residual), so the "break" message
+        // is printed by the callers, not here.
         if (!has_negative) {
-            if (verbosity > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
             return true;
         }
         if (verbosity > 0) std::cout << "  DIFF < SCPH_TOL but a negative frequency is detected.\n";
@@ -1779,6 +1781,7 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
 
         // Check convergence on the coarse k points
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity_iter, iloop, diff)) {
+            if (verbosity_iter > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
             break;
         }
 
@@ -1801,6 +1804,11 @@ void Scph::compute_anharmonic_frequency(std::complex<double> ***v4_array_all, do
         if (verbosity > 0) {
             std::cout << "Temp = " << T_in;
             std::cout << " : not converged.\n";
+            std::cout << "  The SCPH equation did not reach self-consistency within MAXITER = " << maxiter
+                      << " iterations.\n";
+            std::cout << "  This typically happens close to a lattice instability, where a soft mode\n";
+            std::cout << "  approaches zero frequency and the fixed-point iteration becomes stiff.\n";
+            std::cout << "  Consider increasing MAXITER, reducing MIXALPHA, or setting WARMSTART = 0.\n";
         }
         flag_converged = false;
     }
@@ -2068,11 +2076,12 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
         // fixed-point residual in D space is additionally required to be small.
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity_iter, iloop, diff)) {
             if (rnorm_rel < resid_rel_tol) {
+                if (verbosity_iter > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
                 scp_converged = true;
                 break;
             }
-            if (verbosity > 1) {
-                std::cout << "  DIIS: frequency criterion met but |r|/|x| = " << std::scientific << rnorm_rel
+            if (verbosity_iter > 0) {
+                std::cout << "  DIFF < SCPH_TOL but the DIIS residual |r|/|x| = " << std::scientific << rnorm_rel
                           << " is still large; continuing.\n";
             }
         }
@@ -2129,6 +2138,11 @@ void Scph::compute_anharmonic_frequency_diis(std::complex<double> ***v4_array_al
         if (verbosity > 0) {
             std::cout << "Temp = " << T_in;
             std::cout << " : not converged.\n";
+            std::cout << "  The SCPH equation did not reach self-consistency within MAXITER = " << maxiter
+                      << " iterations.\n";
+            std::cout << "  This typically happens close to a lattice instability, where a soft mode\n";
+            std::cout << "  approaches zero frequency and the fixed-point iteration becomes stiff.\n";
+            std::cout << "  Consider increasing MAXITER, reducing MIXALPHA, or setting WARMSTART = 0.\n";
         }
         flag_converged = false;
     }
