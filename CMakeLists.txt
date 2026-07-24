@@ -9,6 +9,11 @@ endif()
 
 project(ALAMODE)
 
+# Standard install locations (bin/, lib/, include/) under CMAKE_INSTALL_PREFIX,
+# used by the install() rules in the subdirectories.
+include(GNUInstallDirs)
+message(STATUS "Install prefix (make install): ${CMAKE_INSTALL_PREFIX}")
+
 if(DEFINED ENV{CONDA_PREFIX})
 	list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 	if(NOT CMAKE_BUILD_RPATH)

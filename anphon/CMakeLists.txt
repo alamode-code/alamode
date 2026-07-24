@@ -11,6 +11,8 @@ set(CMAKE_MACOSX_RPATH 1)
 
 project(anphon)
 
+include(GNUInstallDirs)
+
 # Version numbers
 file(READ ${PROJECT_SOURCE_DIR}/../include/version.h version_file)
 string(REGEX MATCH "ALAMODE_VERSION = \"([0-9]+\\.[0-9]+\\.[0-9]+)\"" alm_version ${version_file})
@@ -301,6 +303,8 @@ target_link_libraries(anphon
     ${hdf5library}
     ${filesystem_library}
 )
+
+install(TARGETS anphon RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Unit test for the RAII array owner (include/ndarray.h): layout identity
 # with the legacy memory.h allocate(), view-conversion semantics, and the

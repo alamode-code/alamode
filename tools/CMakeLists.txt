@@ -11,6 +11,8 @@ set(CMAKE_MACOSX_RPATH 1)
 
 project(tools)
 
+include(GNUInstallDirs)
+
 # Version numbers
 file(READ ${PROJECT_SOURCE_DIR}/../include/version.h version_file)
 string(REGEX MATCH "ALAMODE_VERSION = \"([0-9]+\\.[0-9]+\\.[0-9]+)\"" alm_version ${version_file})
@@ -205,3 +207,6 @@ target_link_libraries(parse_fcsxml ${boost_target} ${eigen_target} ${Boost_LIBRA
 if (openmplibrary)
     target_link_libraries(parse_fcsxml ${openmplibrary})
 endif()
+
+install(TARGETS analyze_phonons dfc2 qe2alm fc_virtual parse_fcsxml
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

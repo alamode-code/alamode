@@ -12,6 +12,8 @@ set(CMAKE_MACOSX_RPATH 1)
 
 project(alm)
 
+include(GNUInstallDirs)
+
 # Version numbers
 file(READ ${PROJECT_SOURCE_DIR}/../include/version.h version_file)
 string(REGEX MATCH "ALAMODE_VERSION = \"([0-9]+\\.[0-9]+\\.[0-9]+)\"" alm_version ${version_file})
@@ -291,6 +293,8 @@ target_link_libraries(alm
         ${hdf5library}
 )
 
+install(TARGETS alm RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 if (BUILD_LIBRARIES)
     set(serial "${alm_version}")
     set(soserial "1")
@@ -308,7 +312,7 @@ if (BUILD_LIBRARIES)
     target_link_libraries(almcxx ${boost_target} ${eigen_target} ${BACKEND_LIBS} ${spglib} ${openmplibrary} ${hdf5_target} ${hdf5library})
     set_property(TARGET almcxx PROPERTY VERSION ${serial})
     set_property(TARGET almcxx PROPERTY SOVERSION ${soserial})
-    install(TARGETS almcxx DESTINATION ${PROJECT_SOURCE_DIR}/lib)
+    install(TARGETS almcxx LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
     # Static link library
     add_library(almcxx_static STATIC ${SOURCES})
@@ -325,7 +329,7 @@ if (BUILD_LIBRARIES)
     set_property(TARGET almcxx_static PROPERTY VERSION ${serial})
     set_property(TARGET almcxx_static PROPERTY SOVERSION ${soserial})
     set_property(TARGET almcxx_static PROPERTY OUTPUT_NAME almcxx)
-    install(TARGETS almcxx_static ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib)
+    install(TARGETS almcxx_static ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
     # Header file
-    install(FILES ${PROJECT_SOURCE_DIR}/alm.h DESTINATION ${PROJECT_SOURCE_DIR}/include)
+    install(FILES ${PROJECT_SOURCE_DIR}/alm.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif ()
