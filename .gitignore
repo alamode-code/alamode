@@ -9,7 +9,6 @@ anphon/anphon
 alm/Makefile
 alm/*.o
 alm/alm
-tools/analyze_phonons
 .DS_Store
 tests/results/*
 # Created by https://www.toptal.com/developers/gitignore/api/c++,python

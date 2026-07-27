@@ -103,31 +103,6 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/alm.h
         ${PROJECT_SOURCE_DIR}/writer.h)
 
 # Executable
-add_executable(analyze_phonons
-        ${PROJECT_SOURCE_DIR}/analyze_phonons.cpp
-        ${PROJECT_SOURCE_DIR}/analyze_phonons.h)
-target_compile_options(analyze_phonons PRIVATE
-    $<$<CONFIG:Release>:-O2>
-    $<$<CONFIG:Debug>:-g -Wall -O0>
-)
-target_compile_definitions(analyze_phonons PRIVATE
-    $<$<CONFIG:Debug>:_DEBUG>
-)
-target_include_directories(analyze_phonons PRIVATE
-    ${PROJECT_SOURCE_DIR}/../include
-    ${boost_includes}
-    ${eigen_includes}
-)
-if (boost_target)
-    target_link_libraries(analyze_phonons ${boost_target})
-endif()
-if (eigen_target)
-    target_link_libraries(analyze_phonons ${eigen_target})
-endif()
-if (openmplibrary)
-    target_link_libraries(analyze_phonons ${openmplibrary})
-endif()
-
 add_executable(dfc2
         ${PROJECT_SOURCE_DIR}/dfc2.cpp
         ${PROJECT_SOURCE_DIR}/dfc2.h)
@@ -208,5 +183,5 @@ if (openmplibrary)
     target_link_libraries(parse_fcsxml ${openmplibrary})
 endif()
 
-install(TARGETS analyze_phonons dfc2 qe2alm fc_virtual parse_fcsxml
+install(TARGETS dfc2 qe2alm fc_virtual parse_fcsxml
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

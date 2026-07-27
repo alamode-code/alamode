@@ -133,18 +133,18 @@ Program anphon
 
     $ plotband.py -h
 
-  A similar script is provided for the phonon DOS. Another script, ``analyze_phonons.py``, is useful for analyzing the results of thermal conductivity calculations. For example, phonon lifetimes and mean free paths at 300 K can be extracted by
+  A similar script is provided for the phonon DOS. Another script, ``analyzer.py``, is useful for analyzing the results of thermal conductivity calculations. For example, phonon lifetimes and mean free paths at 300 K can be extracted by
 
-  :: 
+  ::
 
-    $ analyze_phonons.py --calc tau --temp 300 target.result
+    $ analyzer.py --calc tau --temp 300 --3ph target.result
 
 
   It can also estimate the cumulative thermal conductivity by
 
   ::
 
-    $ analyze_phonons.py --calc cumulative --temp 300 --direction 1 target.result
+    $ analyzer.py --calc cumulative --temp 300 --3ph target.result
 
 
   For details, see the tutorial.

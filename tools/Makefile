@@ -29,18 +29,15 @@ INCLUDE = -I../include -I$(HOME)/include
 .cpp.o:
 	${CXX} ${CXXFLAGS} ${INCLUDE} -c $<
 
-PROG = analyze_phonons qe2alm dfc2 fc_virtual
+PROG = qe2alm dfc2 fc_virtual
 
-CXXSRC = analyze_phonons.cpp qe2alm.cpp dfc2.cpp fc_virtual.cpp
+CXXSRC = qe2alm.cpp dfc2.cpp fc_virtual.cpp
 
 OBJS= ${CXXSRC:.cpp=.o}
 
 default: all
 
 all: ${PROG}
-
-analyze_phonons: analyze_phonons.o
-	${CXX} ${CXXFLAGS} -o $@ $<
 
 qe2alm: qe2alm.o
 	${CXX} ${CXXFLAGS} -o $@ $<

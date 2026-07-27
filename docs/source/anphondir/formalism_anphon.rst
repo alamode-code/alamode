@@ -405,7 +405,7 @@ The accumulative lattice thermal conductivity :math:`\kappa_{\mathrm{ph,acc}}^{\
   
   \kappa_{\mathrm{ph,acc}}^{\mu\mu}(L) = \frac{1}{V N_{q}} \sum_{\boldsymbol{q},j}c_{\boldsymbol{q}j}v_{\boldsymbol{q}j}^{\mu}v_{\boldsymbol{q}j}^{\mu}\tau_{\boldsymbol{q}j}\Theta (L-|\boldsymbol{v}_{\boldsymbol{q}j}|\tau_{\boldsymbol{q}j}),
 
-where :math:`\Theta(x)` is the step function. This quantity can be calculated by using the script ``analyze_phonons.py`` with ``--calc cumulative`` flag. 
+where :math:`\Theta(x)` is the step function. This quantity can be calculated by using the script ``analyzer.py`` with ``--calc cumulative`` flag.
 One can also use another definition for the accumulative thermal conductivity:
 
 .. math::

@@ -713,6 +713,7 @@ class Calculator:
         isotope=False,
         nsamples=200,
         gridtype="log",
+        directions=None,
     ):
         """
         Gets the cumulative thermal conductivity.
@@ -723,6 +724,11 @@ class Calculator:
             isotope (bool): If True, includes isotope scattering.
             nsamples (int): The number of sampling points for the mean-free-path.
             gridtype (str): The type of grid ('linear' or 'log') for sampling the mean-free-path.
+            directions (list of int): Cartesian axes (0, 1, 2) along which the phonon
+                mean-free-path is compared with the system size L. A phonon mode
+                contributes to the cumulative kappa only if tau*|v_d| <= L for every
+                direction d in the list. If None, the norm of the mean-free-path
+                vector is compared with L instead (isotropic criterion).
 
         Returns:
             tuple: The cumulative thermal conductivity and the mean-free-path.
@@ -734,21 +740,16 @@ class Calculator:
         cv = self.heat_capacity(self.omega, temperature)
 
         nk, nmode = self.omega.shape
-        vvprod = np.zeros((nk, nmode, 3, 3), dtype=float)
-        for i in range(nk):
-            for j in range(nmode):
-                for k in range(3):
-                    for m in range(3):
-                        vvprod[i, j, k, m] = np.dot(
-                            self.vel[i, j, :, k], self.vel[i, j, :, m]
-                        )
 
         velnorm = np.linalg.norm(self.vel[:, :, 0, :], axis=2)
 
         mfp = velnorm * tau * 0.001
 
+        # Ignore numerically-zero mean-free-paths (e.g. Gamma acoustic modes)
+        # when determining the sampling range; 1e-6 nm matches the eps6
+        # threshold used historically by the analyze_phonons C++ tool.
         max_mfp = np.max(mfp)
-        min_mfp = np.min(mfp[np.where(mfp > 0.0)])
+        min_mfp = np.min(mfp[np.where(mfp > 1.0e-6)])
 
         if gridtype == "linear":
             length_vec = np.linspace(min_mfp, max_mfp, nsamples)
@@ -761,12 +762,42 @@ class Calculator:
 
         kappa = np.zeros((nsamples, 3, 3), dtype=float)
 
-        for ilen, len_boundary in enumerate(length_vec):
-            tau_mod = np.where(mfp <= len_boundary, tau, 0.0)
-            for i in range(3):
-                for j in range(3):
-                    product = cv * tau_mod * vvprod[:, :, i, j]
-                    kappa[ilen, i, j] = np.sum(product)
+        if directions is None:
+            vvprod = np.zeros((nk, nmode, 3, 3), dtype=float)
+            for i in range(nk):
+                for j in range(nmode):
+                    for k in range(3):
+                        for m in range(3):
+                            vvprod[i, j, k, m] = np.dot(
+                                self.vel[i, j, :, k], self.vel[i, j, :, m]
+                            )
+
+            for ilen, len_boundary in enumerate(length_vec):
+                tau_mod = np.where(mfp <= len_boundary, tau, 0.0)
+                for i in range(3):
+                    for j in range(3):
+                        product = cv * tau_mod * vvprod[:, :, i, j]
+                        kappa[ilen, i, j] = np.sum(product)
+        else:
+            if not all(d in (0, 1, 2) for d in directions):
+                raise ValueError("directions must contain only 0, 1, or 2")
+
+            # The directional mean-free-path is evaluated per symmetry copy of each
+            # irreducible k point (third axis of self.vel); zero-padded copies have
+            # zero velocity and therefore never contribute.
+            mfp_dir = np.abs(self.vel) * tau[:, :, None, None] * 0.001
+            ctau = (cv * tau)[:, :, None]
+
+            for ilen, len_boundary in enumerate(length_vec):
+                mask = np.ones(self.vel.shape[:3], dtype=bool)
+                for d in directions:
+                    mask &= mfp_dir[:, :, :, d] <= len_boundary
+                for i in range(3):
+                    for j in range(3):
+                        product = (
+                            ctau * self.vel[:, :, :, i] * self.vel[:, :, :, j] * mask
+                        )
+                        kappa[ilen, i, j] = np.sum(product)
 
         factor_toSI = (
             1.0e18
@@ -785,6 +816,7 @@ class Calculator:
         isotope=False,
         nsamples=200,
         gridtype="log",
+        directions=None,
     ):
         """
         Prints the cumulative thermal conductivity.
@@ -795,9 +827,16 @@ class Calculator:
             isotope (bool): If True, includes isotope scattering.
             nsamples (int): The number of sampling points for the mean-free-path.
             gridtype (str): The type of grid ('linear' or 'log') for sampling the mean-free-path.
+            directions (list of int): Cartesian axes (0, 1, 2) used for the directional
+                mean-free-path criterion. See get_cumulative_kappa.
         """
         kappa, length_vec = self.get_cumulative_kappa(
-            temperature, four_phonon, isotope, nsamples=nsamples, gridtype=gridtype
+            temperature,
+            four_phonon,
+            isotope,
+            nsamples=nsamples,
+            gridtype=gridtype,
+            directions=directions,
         )
 
         print("# Cumulative thermal conductivity (W/mK)")
@@ -805,6 +844,12 @@ class Calculator:
             print("# Including 4-phonon scattering")
         if isotope:
             print("# Including isotope scattering")
+        if directions is not None:
+            print(
+                "# Phonon modes contribute only if tau*|v_{}| <= L".format(
+                    ",".join("xyz"[d] for d in directions)
+                )
+            )
         print("# Temperature = {:12.2f} K".format(temperature))
         print("# mfp (nm), xx, yy, zz")
         for ilen, len_boundary in enumerate(length_vec):

@@ -390,9 +390,9 @@ You can plot this file using gnuplot (or any other plotting softwares) as follow
 As you can see, the thermal conductivity diverges in :math:`T\rightarrow 0` limit. 
 This occurs because we only considered intrinsic phonon-phonon scatterings in the present calculation and
 neglected phonon-boundary scatterings which are dominant in the low-temperature range.
-The effect of the boundary scattering can be included using the python script ``analyze_phonons.py`` in the tools directory::
+The effect of the boundary scattering can be included using the python script ``analyzer.py`` in the tools directory::
 
-    $ analyze_phonons.py --calc kappa_boundary --size 1.0e+6 si222.result > si222_boundary_1mm.kl
+    $ analyzer.py --calc kappa --size 1.0e+6 --3ph si222.result > si222_boundary_1mm.kl
 
 In this script, the phonon lifetimes are altered using the Matthiessen's rule
 
@@ -424,13 +424,13 @@ Phonon lifetime
 The file :red:`si222.result` contains phonon linewidths at irreducible :math:`k` points. 
 You can extract phonon lifetime from this file as follows::
 
-    $ analyze_phonons.py --calc tau --temp 300 si222.result > tau300K_10.dat
+    $ analyzer.py --calc tau --temp 300 --3ph si222.result > tau300K_10.dat
     $ gnuplot
     gnuplot> set xrange [1:]
     gnuplot> set logscale y
     gnuplot> set xlabel "Phonon frequency (cm^{-1})"
     gnuplot> set ylabel "Phonon lifetime (ps)"
-    gnuplot> plot "tau300K_10.dat" using 3:4 w p
+    gnuplot> plot "tau300K_10.dat" using 4:6 w p
 
 .. figure:: ../../img/si_tau.png
    :scale: 40%
@@ -446,7 +446,7 @@ Cumulative thermal conductivity
 
 Following the procedure below, you can obtain the :ref:`cumulative thermal conductivity <cumulative_kappa>`::
 
-    $ analyze_phonons.py --calc cumulative --temp 300 --length 10000:5 si222.result > cumulative_300K_10.dat
+    $ analyzer.py --calc cumulative --temp 300 --3ph si222.result > cumulative_300K_10.dat
     $ gnuplot
     gnuplot> set logscale x
     gnuplot> set xlabel "L (nm)"

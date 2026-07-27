@@ -104,7 +104,9 @@ def get_optparse_options():
         help="specify which direction (xyz) to consider the size effect. "
         "When --direction=1 (2, 3), phonon mean-free-paths (ell) along x (y, z) are "
         "compared with the system size L. Then, the cumulative thermal conductivity is "
-        "calculated by considering phonon modes satisfying ell <= L.",
+        "calculated by considering phonon modes satisfying ell <= L. "
+        "Multiple directions can be given as a colon-separated list, e.g. "
+        "--direction=1:2.",
     )
 
     parser.add_option_group(group)
@@ -187,6 +189,31 @@ def main():
             isotope=(options.iso is not None),
             nsamples=options.nsample,
             gridtype=options.gridtype,
+        )
+
+    elif calc == "cumulative2":
+        if options.temp is None:
+            raise RuntimeError("Please specify the temperature by --temp option")
+        if options.direction is None:
+            raise RuntimeError(
+                "Please specify the --direction option when --calc=cumulative2"
+            )
+
+        entries = options.direction.split(":")
+        if not all(t in ("1", "2", "3") for t in entries):
+            raise RuntimeError(
+                "Invalid --direction option. Please give 1, 2, or 3, "
+                "or a colon-separated list of them (e.g. --direction=1:2)"
+            )
+        directions = sorted(set(int(t) - 1 for t in entries))
+
+        postproc.print_cumulative_kappa(
+            options.temp,
+            four_phonon=(options.file_4ph is not None),
+            isotope=(options.iso is not None),
+            nsamples=options.nsample,
+            gridtype=options.gridtype,
+            directions=directions,
         )
 
     elif calc is None:

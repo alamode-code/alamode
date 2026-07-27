@@ -379,8 +379,8 @@ Description of input variables
  .. Note::
 
   ``TRISYM = 1`` can reduce the computational cost, but phonon linewidth stored to the file
-  ``PREFIX``.result needs to be averaged at points of degeneracy. 
-  For that purpose, a subsidiary program ``analyze_phonons.py`` should be used.
+  ``PREFIX``.result needs to be averaged at points of degeneracy.
+  For that purpose, a subsidiary program ``analyzer.py`` should be used.
 
 ````
 
