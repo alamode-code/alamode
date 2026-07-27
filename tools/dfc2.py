@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Apply SCPH (or QHA) force-constant corrections to an ALAMODE HDF5 file.
 

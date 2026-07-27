@@ -185,3 +185,70 @@ endif()
 
 install(TARGETS dfc2 qe2alm fc_virtual parse_fcsxml
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# ---- Python post-processing scripts ----
+# The whole collection is installed under <prefix>/share/alamode/tools with the
+# same layout as the source tree, because several scripts import sibling
+# modules (GenDisplacement.py) and packages (analyzer/, fcsio/, interface/).
+# The scripts referenced by the tutorials are additionally symlinked into
+# <prefix>/bin; python resolves the symlink before setting sys.path[0], so the
+# sibling imports keep working from bin/. Python dependencies (numpy,
+# matplotlib, h5py, ase) are NOT handled here -- they must be available in the
+# user's python environment.
+set(pytools_destination ${CMAKE_INSTALL_DATADIR}/alamode/tools)
+
+install(PROGRAMS
+        ${PROJECT_SOURCE_DIR}/amplitude_Q.py
+        ${PROJECT_SOURCE_DIR}/analyzer.py
+        ${PROJECT_SOURCE_DIR}/calcpes.py
+        ${PROJECT_SOURCE_DIR}/convert_fc2.py
+        ${PROJECT_SOURCE_DIR}/dfc2.py
+        ${PROJECT_SOURCE_DIR}/displace.py
+        ${PROJECT_SOURCE_DIR}/extract.py
+        ${PROJECT_SOURCE_DIR}/interpolate_alamode.py
+        ${PROJECT_SOURCE_DIR}/makedisp_openmx.py
+        ${PROJECT_SOURCE_DIR}/makedisp_qe.py
+        ${PROJECT_SOURCE_DIR}/plotband.py
+        ${PROJECT_SOURCE_DIR}/plotdos.py
+        ${PROJECT_SOURCE_DIR}/scph_to_qefc.py
+        ${PROJECT_SOURCE_DIR}/taylor.py
+        DESTINATION ${pytools_destination})
+
+# GenDisplacement.py is an importable module, not a command; no exec bit.
+install(FILES ${PROJECT_SOURCE_DIR}/GenDisplacement.py
+        DESTINATION ${pytools_destination})
+
+install(DIRECTORY
+        ${PROJECT_SOURCE_DIR}/analyzer
+        ${PROJECT_SOURCE_DIR}/fcsio
+        ${PROJECT_SOURCE_DIR}/interface
+        DESTINATION ${pytools_destination}
+        FILES_MATCHING PATTERN "*.py"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN ".*" EXCLUDE)
+
+# Tutorial-facing commands, linked into bin/. Relative link targets keep the
+# installed tree relocatable.
+set(pytool_links
+    analyzer.py
+    dfc2.py
+    displace.py
+    extract.py
+    plotband.py
+    plotdos.py
+    scph_to_qefc.py)
+
+file(RELATIVE_PATH pytools_from_bindir
+     "${CMAKE_INSTALL_FULL_BINDIR}"
+     "${CMAKE_INSTALL_FULL_DATADIR}/alamode/tools")
+
+foreach(script IN LISTS pytool_links)
+    install(CODE "
+        file(MAKE_DIRECTORY \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
+        file(REMOVE \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${script}\")
+        file(CREATE_LINK \"${pytools_from_bindir}/${script}\"
+             \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${script}\"
+             SYMBOLIC)
+        message(STATUS \"Symlinking: \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${script} -> ${pytools_from_bindir}/${script}\")
+    ")
+endforeach()

@@ -156,6 +156,33 @@ You can specify the binary to build, for example, as
       % export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib64:$LD_LIBRARY_PATH
 
 
+Installing the binaries and scripts (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The binaries can be used directly from the build directory, so this step is optional.
+To install ALAMODE system-wide (or into any prefix of your choice), run
+::
+
+  % cmake --install . --prefix /desired/prefix
+
+or equivalently ``make install`` after configuring with ``-DCMAKE_INSTALL_PREFIX=/desired/prefix``
+(the default prefix is ``/usr/local``, which usually requires ``sudo``).
+
+This installs
+
+* the executables (``alm``, ``anphon``, ``dfc2``, ``qe2alm``, ``fc_virtual``, ``parse_fcsxml``) into ``<prefix>/bin``,
+* the python scripts of the tools directory into ``<prefix>/share/alamode/tools``, and
+* symbolic links in ``<prefix>/bin`` for the scripts used in the tutorials
+  (``analyzer.py``, ``dfc2.py``, ``displace.py``, ``extract.py``, ``plotband.py``, ``plotdos.py``, ``scph_to_qefc.py``),
+  so they can be invoked by name once ``<prefix>/bin`` is on your ``$PATH``.
+
+.. note::
+
+    The python scripts require NumPy and, depending on the script, matplotlib, h5py, or ASE.
+    These must be available in the python environment (``python3``) from which you run the
+    scripts; ``make install`` does not install any python dependencies.
+
+
 .. _install_pixi:
 
 Install using pixi (project-local, reproducible)
