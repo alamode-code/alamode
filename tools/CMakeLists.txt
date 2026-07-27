@@ -198,7 +198,6 @@ install(TARGETS dfc2 qe2alm fc_virtual parse_fcsxml
 set(pytools_destination ${CMAKE_INSTALL_DATADIR}/alamode/tools)
 
 install(PROGRAMS
-        ${PROJECT_SOURCE_DIR}/amplitude_Q.py
         ${PROJECT_SOURCE_DIR}/analyzer.py
         ${PROJECT_SOURCE_DIR}/calcpes.py
         ${PROJECT_SOURCE_DIR}/convert_fc2.py
@@ -206,8 +205,6 @@ install(PROGRAMS
         ${PROJECT_SOURCE_DIR}/displace.py
         ${PROJECT_SOURCE_DIR}/extract.py
         ${PROJECT_SOURCE_DIR}/interpolate_alamode.py
-        ${PROJECT_SOURCE_DIR}/makedisp_openmx.py
-        ${PROJECT_SOURCE_DIR}/makedisp_qe.py
         ${PROJECT_SOURCE_DIR}/plotband.py
         ${PROJECT_SOURCE_DIR}/plotdos.py
         ${PROJECT_SOURCE_DIR}/scph_to_qefc.py
