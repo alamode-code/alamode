@@ -2788,8 +2788,7 @@ void Writes::printNormalmodeBorncharge() const
     if (mympi->my_rank == 0) {
 
         if (!dielec->has_borncharge()) {
-            warn("printNormalmodeBorncharge",
-                 "ZMODE = 1 requires BORNINFO; the .zmode file is not created.");
+            warn("printNormalmodeBorncharge", "ZMODE = 1 requires BORNINFO; the .zmode file is not created.");
             return;
         }
 
@@ -2864,8 +2863,7 @@ void Writes::printModeIrrepsSummary() const
     }
 
     if (result.available) {
-        std::cout << "  Point group : " << result.pg_schoenflies
-                  << " (" << result.pg_international << ")";
+        std::cout << "  Point group : " << result.pg_schoenflies << " (" << result.pg_international << ")";
         if (!result.spg_symbol.empty()) {
             std::cout << "   [space group: " << result.spg_symbol << "]";
         }
@@ -2882,9 +2880,8 @@ void Writes::printModeIrrepsSummary() const
         std::cout << "  frequencies and projection-based activities are listed below.\n\n";
     }
 
-    std::cout << "  " << std::setw(9) << "multiplet" << std::setw(12) << "branches"
-              << std::setw(15) << "freq (cm^-1)" << std::setw(12) << "irrep"
-              << std::setw(5) << "deg" << std::setw(11) << "activity";
+    std::cout << "  " << std::setw(9) << "multiplet" << std::setw(12) << "branches" << std::setw(15) << "freq (cm^-1)"
+              << std::setw(12) << "irrep" << std::setw(5) << "deg" << std::setw(11) << "activity";
     if (result.has_borncharge) {
         std::cout << std::setw(22) << "IR strength (e^2/amu)";
     }
@@ -2895,16 +2892,13 @@ void Writes::printModeIrrepsSummary() const
         ++ig;
         const auto branch_first = grp.mode_indices.front() + 1;
         const auto branch_last = grp.mode_indices.back() + 1;
-        std::cout << "  " << std::setw(9) << ig
-                  << std::setw(5) << branch_first << " -" << std::setw(5) << branch_last
-                  << std::setw(15) << std::fixed << std::setprecision(4)
-                  << in_kayser(grp.omega)
-                  << std::setw(12) << (grp.irrep_label.empty() ? "-" : grp.irrep_label)
-                  << std::setw(5) << grp.mode_indices.size()
+        std::cout << "  " << std::setw(9) << ig << std::setw(5) << branch_first << " -" << std::setw(5) << branch_last
+                  << std::setw(15) << std::fixed << std::setprecision(4) << in_kayser(grp.omega) << std::setw(12)
+                  << (grp.irrep_label.empty() ? "-" : grp.irrep_label) << std::setw(5) << grp.mode_indices.size()
                   << std::setw(11) << irrep_activity_string(grp);
         if (grp.has_ir_strength) {
-            std::cout << std::setw(22) << std::scientific << std::setprecision(4)
-                      << grp.ir_strength.trace() << std::fixed;
+            std::cout << std::setw(22) << std::scientific << std::setprecision(4) << grp.ir_strength.trace()
+                      << std::fixed;
         } else if (result.has_borncharge) {
             std::cout << std::setw(22) << "-";
         }
@@ -2941,8 +2935,7 @@ void Writes::writeModeIrreps() const
     }
 
     if (result.available) {
-        ofs_irreps << "# Point group: " << result.pg_schoenflies
-                   << " (" << result.pg_international << ")";
+        ofs_irreps << "# Point group: " << result.pg_schoenflies << " (" << result.pg_international << ")";
         if (!result.spg_symbol.empty()) {
             ofs_irreps << "; space group: " << result.spg_symbol;
         }
@@ -2962,14 +2955,13 @@ void Writes::writeModeIrreps() const
         auto icl = 0;
         for (const auto &cl: result.classes) {
             ++icl;
-            ofs_irreps << "#  " << std::setw(3) << icl << ": " << std::setw(12) << std::left
-                       << cl.label << std::right << std::setw(4) << cl.nelem;
+            ofs_irreps << "#  " << std::setw(3) << icl << ": " << std::setw(12) << std::left << cl.label << std::right
+                       << std::setw(4) << cl.nelem;
             if (!cl.axes.empty()) {
                 ofs_irreps << "   axes:";
                 for (const auto &ax: cl.axes) {
-                    ofs_irreps << " [" << std::fixed << std::setprecision(3)
-                               << std::setw(7) << ax.x() << std::setw(7) << ax.y()
-                               << std::setw(7) << ax.z() << "]";
+                    ofs_irreps << " [" << std::fixed << std::setprecision(3) << std::setw(7) << ax.x() << std::setw(7)
+                               << ax.y() << std::setw(7) << ax.z() << "]";
                 }
             }
             ofs_irreps << '\n';
@@ -2991,21 +2983,15 @@ void Writes::writeModeIrreps() const
     auto ig = 0;
     for (const auto &grp: result.groups) {
         ++ig;
-        ofs_irreps << std::setw(5) << ig
-                   << std::setw(6) << grp.mode_indices.front() + 1
-                   << std::setw(6) << grp.mode_indices.back() + 1
-                   << std::setw(16) << std::fixed << std::setprecision(6)
-                   << in_kayser(grp.omega)
-                   << "  " << std::setw(12) << std::left
-                   << (grp.irrep_label.empty() ? "-" : grp.irrep_label) << std::right
-                   << std::setw(4) << grp.mode_indices.size()
-                   << "  " << std::setw(10) << std::left << irrep_activity_string(grp)
-                   << std::right
-                   << std::setw(8) << std::fixed << std::setprecision(3)
-                   << grp.acoustic_content;
+        ofs_irreps << std::setw(5) << ig << std::setw(6) << grp.mode_indices.front() + 1 << std::setw(6)
+                   << grp.mode_indices.back() + 1 << std::setw(16) << std::fixed << std::setprecision(6)
+                   << in_kayser(grp.omega) << "  " << std::setw(12) << std::left
+                   << (grp.irrep_label.empty() ? "-" : grp.irrep_label) << std::right << std::setw(4)
+                   << grp.mode_indices.size() << "  " << std::setw(10) << std::left << irrep_activity_string(grp)
+                   << std::right << std::setw(8) << std::fixed << std::setprecision(3) << grp.acoustic_content;
         if (grp.has_ir_strength) {
-            ofs_irreps << std::setw(15) << std::scientific << std::setprecision(6)
-                       << grp.ir_strength.trace() << std::fixed;
+            ofs_irreps << std::setw(15) << std::scientific << std::setprecision(6) << grp.ir_strength.trace()
+                       << std::fixed;
         } else if (result.has_borncharge) {
             ofs_irreps << std::setw(15) << "-";
         }
@@ -3020,17 +3006,15 @@ void Writes::writeModeIrreps() const
         if (grp.activity_known) {
             continue;
         }
-        ofs_irreps << "# multiplet " << ig << " approximate projections: n_IR = "
-                   << std::fixed << std::setprecision(3) << grp.n_ir_proj
-                   << ", n_Raman = " << grp.n_raman_proj << '\n';
+        ofs_irreps << "# multiplet " << ig << " approximate projections: n_IR = " << std::fixed << std::setprecision(3)
+                   << grp.n_ir_proj << ", n_Raman = " << grp.n_raman_proj << '\n';
     }
 
     if (result.has_borncharge) {
         ofs_irreps << "#\n# IR oscillator-strength tensors "
                       "S_ab = sum_{nu in multiplet} Z*_mode[nu][a] Z*_mode[nu][b] [e^2/amu]:\n";
-        ofs_irreps << "# multiplet" << std::setw(15) << "S_xx" << std::setw(15) << "S_yy"
-                   << std::setw(15) << "S_zz" << std::setw(15) << "S_xy"
-                   << std::setw(15) << "S_yz" << std::setw(15) << "S_zx" << '\n';
+        ofs_irreps << "# multiplet" << std::setw(15) << "S_xx" << std::setw(15) << "S_yy" << std::setw(15) << "S_zz"
+                   << std::setw(15) << "S_xy" << std::setw(15) << "S_yz" << std::setw(15) << "S_zx" << '\n';
         ig = 0;
         for (const auto &grp: result.groups) {
             ++ig;
@@ -3038,11 +3022,9 @@ void Writes::writeModeIrreps() const
                 continue;
             }
             const auto &s = grp.ir_strength;
-            ofs_irreps << std::setw(10) << ig << std::scientific << std::setprecision(6)
-                       << std::setw(15) << s(0, 0) << std::setw(15) << s(1, 1)
-                       << std::setw(15) << s(2, 2) << std::setw(15) << s(0, 1)
-                       << std::setw(15) << s(1, 2) << std::setw(15) << s(2, 0)
-                       << std::fixed << '\n';
+            ofs_irreps << std::setw(10) << ig << std::scientific << std::setprecision(6) << std::setw(15) << s(0, 0)
+                       << std::setw(15) << s(1, 1) << std::setw(15) << s(2, 2) << std::setw(15) << s(0, 1)
+                       << std::setw(15) << s(1, 2) << std::setw(15) << s(2, 0) << std::fixed << '\n';
         }
     }
 

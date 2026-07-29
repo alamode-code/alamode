@@ -79,14 +79,29 @@ namespace pointgroup
 
 enum class OpKind : int
 {
-    E = 0, C2, C3, C4, C6, I, Sigma, S6, S4, S3
+    E = 0,
+    C2,
+    C3,
+    C4,
+    C6,
+    I,
+    Sigma,
+    S6,
+    S4,
+    S3
 };
 
 constexpr int NKIND = 10;
 
 enum class AxisTag : int
 {
-    None = 0, Principal, PerpPrimary, PerpSecondary, AxisZ, AxisX, AxisY
+    None = 0,
+    Principal,
+    PerpPrimary,
+    PerpSecondary,
+    AxisZ,
+    AxisX,
+    AxisY
 };
 
 struct ClassDesc
@@ -100,22 +115,22 @@ struct ClassDesc
 struct IrrepDesc
 {
     const char *mulliken;
-    int dim;   // physical dimension
-    int norm;  // Frobenius-Schur merge count: 1, or 2 for a merged conjugate pair
+    int dim;  // physical dimension
+    int norm; // Frobenius-Schur merge count: 1, or 2 for a merged conjugate pair
     bool ir_active;
     bool raman_active;
 };
 
 struct PointGroup
 {
-    int number;                // spglib point-group number, 1..32
+    int number; // spglib point-group number, 1..32
     const char *schoenflies;
     const char *international;
     int order;
-    int nclass;                // == number of irreps (tables are square)
+    int nclass; // == number of irreps (tables are square)
     const ClassDesc *classes;
     const IrrepDesc *irreps;
-    const int8_t *chartab;     // [nclass * nclass], row-major, rows = irreps
+    const int8_t *chartab; // [nclass * nclass], row-major, rows = irreps
 };
 
 // ---------------------------------------------------------------------------
@@ -137,24 +152,18 @@ inline const int8_t chi_C1[] = {1};
 
 // 2: Ci (-1)
 inline const ClassDesc cls_Ci[] = {{"E", K::E, 1, T::None}, {"i", K::I, 1, T::None}};
-inline const IrrepDesc irr_Ci[] = {{"Ag", 1, 1, false, true},
-                                   {"Au", 1, 1, true, false}};
-inline const int8_t chi_Ci[] = {1, 1,
-                                1, -1};
+inline const IrrepDesc irr_Ci[] = {{"Ag", 1, 1, false, true}, {"Au", 1, 1, true, false}};
+inline const int8_t chi_Ci[] = {1, 1, 1, -1};
 
 // 3: C2 (2)
 inline const ClassDesc cls_C2[] = {{"E", K::E, 1, T::None}, {"C2", K::C2, 1, T::Principal}};
-inline const IrrepDesc irr_C2[] = {{"A", 1, 1, true, true},
-                                   {"B", 1, 1, true, true}};
-inline const int8_t chi_C2[] = {1, 1,
-                                1, -1};
+inline const IrrepDesc irr_C2[] = {{"A", 1, 1, true, true}, {"B", 1, 1, true, true}};
+inline const int8_t chi_C2[] = {1, 1, 1, -1};
 
 // 4: Cs (m)
 inline const ClassDesc cls_Cs[] = {{"E", K::E, 1, T::None}, {"sigma_h", K::Sigma, 1, T::Principal}};
-inline const IrrepDesc irr_Cs[] = {{"A'", 1, 1, true, true},
-                                   {"A''", 1, 1, true, true}};
-inline const int8_t chi_Cs[] = {1, 1,
-                                1, -1};
+inline const IrrepDesc irr_Cs[] = {{"A'", 1, 1, true, true}, {"A''", 1, 1, true, true}};
+inline const int8_t chi_Cs[] = {1, 1, 1, -1};
 
 // 5: C2h (2/m)
 inline const ClassDesc cls_C2h[] = {{"E", K::E, 1, T::None},
@@ -165,10 +174,7 @@ inline const IrrepDesc irr_C2h[] = {{"Ag", 1, 1, false, true},
                                     {"Bg", 1, 1, false, true},
                                     {"Au", 1, 1, true, false},
                                     {"Bu", 1, 1, true, false}};
-inline const int8_t chi_C2h[] = {1, 1, 1, 1,
-                                 1, -1, 1, -1,
-                                 1, 1, -1, -1,
-                                 1, -1, -1, 1};
+inline const int8_t chi_C2h[] = {1, 1, 1, 1, 1, -1, 1, -1, 1, 1, -1, -1, 1, -1, -1, 1};
 
 // 6: D2 (222)
 inline const ClassDesc cls_D2[] = {{"E", K::E, 1, T::None},
@@ -179,10 +185,7 @@ inline const IrrepDesc irr_D2[] = {{"A", 1, 1, false, true},
                                    {"B1", 1, 1, true, true},
                                    {"B2", 1, 1, true, true},
                                    {"B3", 1, 1, true, true}};
-inline const int8_t chi_D2[] = {1, 1, 1, 1,
-                                1, 1, -1, -1,
-                                1, -1, 1, -1,
-                                1, -1, -1, 1};
+inline const int8_t chi_D2[] = {1, 1, 1, 1, 1, 1, -1, -1, 1, -1, 1, -1, 1, -1, -1, 1};
 
 // 7: C2v (mm2).  sigma_v(xz) has normal y, sigma_v'(yz) has normal x.
 inline const ClassDesc cls_C2v[] = {{"E", K::E, 1, T::None},
@@ -193,10 +196,7 @@ inline const IrrepDesc irr_C2v[] = {{"A1", 1, 1, true, true},
                                     {"A2", 1, 1, false, true},
                                     {"B1", 1, 1, true, true},
                                     {"B2", 1, 1, true, true}};
-inline const int8_t chi_C2v[] = {1, 1, 1, 1,
-                                 1, 1, -1, -1,
-                                 1, -1, 1, -1,
-                                 1, -1, -1, 1};
+inline const int8_t chi_C2v[] = {1, 1, 1, 1, 1, 1, -1, -1, 1, -1, 1, -1, 1, -1, -1, 1};
 
 // 8: D2h (mmm).  Mirrors tagged by their normals.
 inline const ClassDesc cls_D2h[] = {{"E", K::E, 1, T::None},
@@ -215,36 +215,23 @@ inline const IrrepDesc irr_D2h[] = {{"Ag", 1, 1, false, true},
                                     {"B1u", 1, 1, true, false},
                                     {"B2u", 1, 1, true, false},
                                     {"B3u", 1, 1, true, false}};
-inline const int8_t chi_D2h[] = {1, 1, 1, 1, 1, 1, 1, 1,
-                                 1, 1, -1, -1, 1, 1, -1, -1,
-                                 1, -1, 1, -1, 1, -1, 1, -1,
-                                 1, -1, -1, 1, 1, -1, -1, 1,
-                                 1, 1, 1, 1, -1, -1, -1, -1,
-                                 1, 1, -1, -1, -1, -1, 1, 1,
-                                 1, -1, 1, -1, -1, 1, -1, 1,
-                                 1, -1, -1, 1, -1, 1, 1, -1};
+inline const int8_t chi_D2h[] = {1,  1,  1, 1,  1,  1,  1, 1,  1,  1, -1, -1, 1, 1,  -1, -1, 1,  -1, 1, -1, 1,  -1,
+                                 1,  -1, 1, -1, -1, 1,  1, -1, -1, 1, 1,  1,  1, 1,  -1, -1, -1, -1, 1, 1,  -1, -1,
+                                 -1, -1, 1, 1,  1,  -1, 1, -1, -1, 1, -1, 1,  1, -1, -1, 1,  -1, 1,  1, -1};
 
 // 9: C4 (4)
 inline const ClassDesc cls_C4[] = {{"E", K::E, 1, T::None},
                                    {"C2", K::C2, 1, T::Principal},
                                    {"2C4", K::C4, 2, T::Principal}};
-inline const IrrepDesc irr_C4[] = {{"A", 1, 1, true, true},
-                                   {"B", 1, 1, false, true},
-                                   {"E", 2, 2, true, true}};
-inline const int8_t chi_C4[] = {1, 1, 1,
-                                1, 1, -1,
-                                2, -2, 0};
+inline const IrrepDesc irr_C4[] = {{"A", 1, 1, true, true}, {"B", 1, 1, false, true}, {"E", 2, 2, true, true}};
+inline const int8_t chi_C4[] = {1, 1, 1, 1, 1, -1, 2, -2, 0};
 
 // 10: S4 (-4)
 inline const ClassDesc cls_S4[] = {{"E", K::E, 1, T::None},
                                    {"C2", K::C2, 1, T::Principal},
                                    {"2S4", K::S4, 2, T::Principal}};
-inline const IrrepDesc irr_S4[] = {{"A", 1, 1, false, true},
-                                   {"B", 1, 1, true, true},
-                                   {"E", 2, 2, true, true}};
-inline const int8_t chi_S4[] = {1, 1, 1,
-                                1, 1, -1,
-                                2, -2, 0};
+inline const IrrepDesc irr_S4[] = {{"A", 1, 1, false, true}, {"B", 1, 1, true, true}, {"E", 2, 2, true, true}};
+inline const int8_t chi_S4[] = {1, 1, 1, 1, 1, -1, 2, -2, 0};
 
 // 11: C4h (4/m)
 inline const ClassDesc cls_C4h[] = {{"E", K::E, 1, T::None},
@@ -259,12 +246,8 @@ inline const IrrepDesc irr_C4h[] = {{"Ag", 1, 1, false, true},
                                     {"Au", 1, 1, true, false},
                                     {"Bu", 1, 1, false, false},
                                     {"Eu", 2, 2, true, false}};
-inline const int8_t chi_C4h[] = {1, 1, 1, 1, 1, 1,
-                                 1, -1, 1, 1, -1, 1,
-                                 2, 0, -2, 2, 0, -2,
-                                 1, 1, 1, -1, -1, -1,
-                                 1, -1, 1, -1, 1, -1,
-                                 2, 0, -2, -2, 0, 2};
+inline const int8_t chi_C4h[] = {1, 1, 1, 1,  1,  1,  1, -1, 1, 1,  -1, 1,  2, 0, -2, 2,  0, -2,
+                                 1, 1, 1, -1, -1, -1, 1, -1, 1, -1, 1,  -1, 2, 0, -2, -2, 0, 2};
 
 // 12: D4 (422)
 inline const ClassDesc cls_D4[] = {{"E", K::E, 1, T::None},
@@ -277,11 +260,7 @@ inline const IrrepDesc irr_D4[] = {{"A1", 1, 1, false, true},
                                    {"B1", 1, 1, false, true},
                                    {"B2", 1, 1, false, true},
                                    {"E", 2, 1, true, true}};
-inline const int8_t chi_D4[] = {1, 1, 1, 1, 1,
-                                1, 1, 1, -1, -1,
-                                1, -1, 1, 1, -1,
-                                1, -1, 1, -1, 1,
-                                2, 0, -2, 0, 0};
+inline const int8_t chi_D4[] = {1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 2, 0, -2, 0, 0};
 
 // 13: C4v (4mm)
 inline const ClassDesc cls_C4v[] = {{"E", K::E, 1, T::None},
@@ -294,11 +273,7 @@ inline const IrrepDesc irr_C4v[] = {{"A1", 1, 1, true, true},
                                     {"B1", 1, 1, false, true},
                                     {"B2", 1, 1, false, true},
                                     {"E", 2, 1, true, true}};
-inline const int8_t chi_C4v[] = {1, 1, 1, 1, 1,
-                                 1, 1, 1, -1, -1,
-                                 1, -1, 1, 1, -1,
-                                 1, -1, 1, -1, 1,
-                                 2, 0, -2, 0, 0};
+inline const int8_t chi_C4v[] = {1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 2, 0, -2, 0, 0};
 
 // 14: D2d (-42m).  Standard setting: C2' along x,y; sigma_d diagonal.
 inline const ClassDesc cls_D2d[] = {{"E", K::E, 1, T::None},
@@ -311,11 +286,7 @@ inline const IrrepDesc irr_D2d[] = {{"A1", 1, 1, false, true},
                                     {"B1", 1, 1, false, true},
                                     {"B2", 1, 1, true, true},
                                     {"E", 2, 1, true, true}};
-inline const int8_t chi_D2d[] = {1, 1, 1, 1, 1,
-                                 1, 1, 1, -1, -1,
-                                 1, -1, 1, 1, -1,
-                                 1, -1, 1, -1, 1,
-                                 2, 0, -2, 0, 0};
+inline const int8_t chi_D2d[] = {1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 2, 0, -2, 0, 0};
 
 // 15: D4h (4/mmm)
 inline const ClassDesc cls_D4h[] = {{"E", K::E, 1, T::None},
@@ -338,24 +309,16 @@ inline const IrrepDesc irr_D4h[] = {{"A1g", 1, 1, false, true},
                                     {"B1u", 1, 1, false, false},
                                     {"B2u", 1, 1, false, false},
                                     {"Eu", 2, 1, true, false}};
-inline const int8_t chi_D4h[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                 1, 1, 1, -1, -1, 1, 1, 1, -1, -1,
-                                 1, -1, 1, 1, -1, 1, -1, 1, 1, -1,
-                                 1, -1, 1, -1, 1, 1, -1, 1, -1, 1,
-                                 2, 0, -2, 0, 0, 2, 0, -2, 0, 0,
-                                 1, 1, 1, 1, 1, -1, -1, -1, -1, -1,
-                                 1, 1, 1, -1, -1, -1, -1, -1, 1, 1,
-                                 1, -1, 1, 1, -1, -1, 1, -1, -1, 1,
-                                 1, -1, 1, -1, 1, -1, 1, -1, 1, -1,
-                                 2, 0, -2, 0, 0, -2, 0, 2, 0, 0};
+inline const int8_t chi_D4h[] = {1, 1,  1,  1,  1,  1,  1,  1,  1, 1,  1, 1,  1,  -1, -1, 1,  1,  1,  -1, -1,
+                                 1, -1, 1,  1,  -1, 1,  -1, 1,  1, -1, 1, -1, 1,  -1, 1,  1,  -1, 1,  -1, 1,
+                                 2, 0,  -2, 0,  0,  2,  0,  -2, 0, 0,  1, 1,  1,  1,  1,  -1, -1, -1, -1, -1,
+                                 1, 1,  1,  -1, -1, -1, -1, -1, 1, 1,  1, -1, 1,  1,  -1, -1, 1,  -1, -1, 1,
+                                 1, -1, 1,  -1, 1,  -1, 1,  -1, 1, -1, 2, 0,  -2, 0,  0,  -2, 0,  2,  0,  0};
 
 // 16: C3 (3)
-inline const ClassDesc cls_C3[] = {{"E", K::E, 1, T::None},
-                                   {"2C3", K::C3, 2, T::Principal}};
-inline const IrrepDesc irr_C3[] = {{"A", 1, 1, true, true},
-                                   {"E", 2, 2, true, true}};
-inline const int8_t chi_C3[] = {1, 1,
-                                2, -1};
+inline const ClassDesc cls_C3[] = {{"E", K::E, 1, T::None}, {"2C3", K::C3, 2, T::Principal}};
+inline const IrrepDesc irr_C3[] = {{"A", 1, 1, true, true}, {"E", 2, 2, true, true}};
+inline const int8_t chi_C3[] = {1, 1, 2, -1};
 
 // 17: C3i / S6 (-3)
 inline const ClassDesc cls_S6[] = {{"E", K::E, 1, T::None},
@@ -366,32 +329,21 @@ inline const IrrepDesc irr_S6[] = {{"Ag", 1, 1, false, true},
                                    {"Eg", 2, 2, false, true},
                                    {"Au", 1, 1, true, false},
                                    {"Eu", 2, 2, true, false}};
-inline const int8_t chi_S6[] = {1, 1, 1, 1,
-                                2, -1, 2, -1,
-                                1, 1, -1, -1,
-                                2, -1, -2, 1};
+inline const int8_t chi_S6[] = {1, 1, 1, 1, 2, -1, 2, -1, 1, 1, -1, -1, 2, -1, -2, 1};
 
 // 18: D3 (32)
 inline const ClassDesc cls_D3[] = {{"E", K::E, 1, T::None},
                                    {"2C3", K::C3, 2, T::Principal},
                                    {"3C2", K::C2, 3, T::PerpPrimary}};
-inline const IrrepDesc irr_D3[] = {{"A1", 1, 1, false, true},
-                                   {"A2", 1, 1, true, false},
-                                   {"E", 2, 1, true, true}};
-inline const int8_t chi_D3[] = {1, 1, 1,
-                                1, 1, -1,
-                                2, -1, 0};
+inline const IrrepDesc irr_D3[] = {{"A1", 1, 1, false, true}, {"A2", 1, 1, true, false}, {"E", 2, 1, true, true}};
+inline const int8_t chi_D3[] = {1, 1, 1, 1, 1, -1, 2, -1, 0};
 
 // 19: C3v (3m)
 inline const ClassDesc cls_C3v[] = {{"E", K::E, 1, T::None},
                                     {"2C3", K::C3, 2, T::Principal},
                                     {"3sigma_v", K::Sigma, 3, T::PerpPrimary}};
-inline const IrrepDesc irr_C3v[] = {{"A1", 1, 1, true, true},
-                                    {"A2", 1, 1, false, false},
-                                    {"E", 2, 1, true, true}};
-inline const int8_t chi_C3v[] = {1, 1, 1,
-                                 1, 1, -1,
-                                 2, -1, 0};
+inline const IrrepDesc irr_C3v[] = {{"A1", 1, 1, true, true}, {"A2", 1, 1, false, false}, {"E", 2, 1, true, true}};
+inline const int8_t chi_C3v[] = {1, 1, 1, 1, 1, -1, 2, -1, 0};
 
 // 20: D3d (-3m)
 inline const ClassDesc cls_D3d[] = {{"E", K::E, 1, T::None},
@@ -406,12 +358,8 @@ inline const IrrepDesc irr_D3d[] = {{"A1g", 1, 1, false, true},
                                     {"A1u", 1, 1, false, false},
                                     {"A2u", 1, 1, true, false},
                                     {"Eu", 2, 1, true, false}};
-inline const int8_t chi_D3d[] = {1, 1, 1, 1, 1, 1,
-                                 1, 1, -1, 1, 1, -1,
-                                 2, -1, 0, 2, -1, 0,
-                                 1, 1, 1, -1, -1, -1,
-                                 1, 1, -1, -1, -1, 1,
-                                 2, -1, 0, -2, 1, 0};
+inline const int8_t chi_D3d[] = {1, 1, 1, 1,  1,  1,  1, 1, -1, 1,  1,  -1, 2, -1, 0, 2,  -1, 0,
+                                 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1,  2, -1, 0, -2, 1,  0};
 
 // 21: C6 (6)
 inline const ClassDesc cls_C6[] = {{"E", K::E, 1, T::None},
@@ -422,10 +370,7 @@ inline const IrrepDesc irr_C6[] = {{"A", 1, 1, true, true},
                                    {"B", 1, 1, false, false},
                                    {"E1", 2, 2, true, true},
                                    {"E2", 2, 2, false, true}};
-inline const int8_t chi_C6[] = {1, 1, 1, 1,
-                                1, -1, 1, -1,
-                                2, 1, -1, -2,
-                                2, -1, -1, 2};
+inline const int8_t chi_C6[] = {1, 1, 1, 1, 1, -1, 1, -1, 2, 1, -1, -2, 2, -1, -1, 2};
 
 // 22: C3h (-6)
 inline const ClassDesc cls_C3h[] = {{"E", K::E, 1, T::None},
@@ -436,10 +381,7 @@ inline const IrrepDesc irr_C3h[] = {{"A'", 1, 1, false, true},
                                     {"A''", 1, 1, true, false},
                                     {"E'", 2, 2, true, true},
                                     {"E''", 2, 2, false, true}};
-inline const int8_t chi_C3h[] = {1, 1, 1, 1,
-                                 1, 1, -1, -1,
-                                 2, -1, 2, -1,
-                                 2, -1, -2, 1};
+inline const int8_t chi_C3h[] = {1, 1, 1, 1, 1, 1, -1, -1, 2, -1, 2, -1, 2, -1, -2, 1};
 
 // 23: C6h (6/m)
 inline const ClassDesc cls_C6h[] = {{"E", K::E, 1, T::None},
@@ -458,14 +400,9 @@ inline const IrrepDesc irr_C6h[] = {{"Ag", 1, 1, false, true},
                                     {"Bu", 1, 1, false, false},
                                     {"E1u", 2, 2, true, false},
                                     {"E2u", 2, 2, false, false}};
-inline const int8_t chi_C6h[] = {1, 1, 1, 1, 1, 1, 1, 1,
-                                 1, -1, 1, -1, 1, -1, 1, -1,
-                                 2, 1, -1, -2, 2, 1, -1, -2,
-                                 2, -1, -1, 2, 2, -1, -1, 2,
-                                 1, 1, 1, 1, -1, -1, -1, -1,
-                                 1, -1, 1, -1, -1, 1, -1, 1,
-                                 2, 1, -1, -2, -2, -1, 1, 2,
-                                 2, -1, -1, 2, -2, 1, 1, -2};
+inline const int8_t chi_C6h[] = {1,  1,  1,  1,  1,  1, 1,  1,  1,  -1, 1, -1, 1, -1, 1,  -1, 2,  1,  -1, -2, 2, 1,
+                                 -1, -2, 2,  -1, -1, 2, 2,  -1, -1, 2,  1, 1,  1, 1,  -1, -1, -1, -1, 1,  -1, 1, -1,
+                                 -1, 1,  -1, 1,  2,  1, -1, -2, -2, -1, 1, 2,  2, -1, -1, 2,  -2, 1,  1,  -2};
 
 // 24: D6 (622)
 inline const ClassDesc cls_D6[] = {{"E", K::E, 1, T::None},
@@ -480,12 +417,8 @@ inline const IrrepDesc irr_D6[] = {{"A1", 1, 1, false, true},
                                    {"B2", 1, 1, false, false},
                                    {"E1", 2, 1, true, true},
                                    {"E2", 2, 1, false, true}};
-inline const int8_t chi_D6[] = {1, 1, 1, 1, 1, 1,
-                                1, 1, 1, 1, -1, -1,
-                                1, -1, 1, -1, 1, -1,
-                                1, -1, 1, -1, -1, 1,
-                                2, 1, -1, -2, 0, 0,
-                                2, -1, -1, 2, 0, 0};
+inline const int8_t chi_D6[] = {1, 1,  1, 1,  1,  1, 1, 1, 1,  1,  -1, -1, 1, -1, 1,  -1, 1, -1,
+                                1, -1, 1, -1, -1, 1, 2, 1, -1, -2, 0,  0,  2, -1, -1, 2,  0, 0};
 
 // 25: C6v (6mm)
 inline const ClassDesc cls_C6v[] = {{"E", K::E, 1, T::None},
@@ -500,12 +433,8 @@ inline const IrrepDesc irr_C6v[] = {{"A1", 1, 1, true, true},
                                     {"B2", 1, 1, false, false},
                                     {"E1", 2, 1, true, true},
                                     {"E2", 2, 1, false, true}};
-inline const int8_t chi_C6v[] = {1, 1, 1, 1, 1, 1,
-                                 1, 1, 1, 1, -1, -1,
-                                 1, -1, 1, -1, 1, -1,
-                                 1, -1, 1, -1, -1, 1,
-                                 2, 1, -1, -2, 0, 0,
-                                 2, -1, -1, 2, 0, 0};
+inline const int8_t chi_C6v[] = {1, 1,  1, 1,  1,  1, 1, 1, 1,  1,  -1, -1, 1, -1, 1,  -1, 1, -1,
+                                 1, -1, 1, -1, -1, 1, 2, 1, -1, -2, 0,  0,  2, -1, -1, 2,  0, 0};
 
 // 26: D3h (-6m2)
 inline const ClassDesc cls_D3h[] = {{"E", K::E, 1, T::None},
@@ -520,12 +449,8 @@ inline const IrrepDesc irr_D3h[] = {{"A1'", 1, 1, false, true},
                                     {"A1''", 1, 1, false, false},
                                     {"A2''", 1, 1, true, false},
                                     {"E''", 2, 1, false, true}};
-inline const int8_t chi_D3h[] = {1, 1, 1, 1, 1, 1,
-                                 1, 1, -1, 1, 1, -1,
-                                 2, -1, 0, 2, -1, 0,
-                                 1, 1, 1, -1, -1, -1,
-                                 1, 1, -1, -1, -1, 1,
-                                 2, -1, 0, -2, 1, 0};
+inline const int8_t chi_D3h[] = {1, 1, 1, 1,  1,  1,  1, 1, -1, 1,  1,  -1, 2, -1, 0, 2,  -1, 0,
+                                 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1,  2, -1, 0, -2, 1,  0};
 
 // 27: D6h (6/mmm).  Following the International-Tables pairing, the
 // sigma_v class is i * C2' (mirror normals along the C2' axes, i.e. the
@@ -554,29 +479,17 @@ inline const IrrepDesc irr_D6h[] = {{"A1g", 1, 1, false, true},
                                     {"B2u", 1, 1, false, false},
                                     {"E1u", 2, 1, true, false},
                                     {"E2u", 2, 1, false, false}};
-inline const int8_t chi_D6h[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1,
-                                 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1,
-                                 1, -1, 1, -1, -1, 1, 1, -1, 1, -1, -1, 1,
-                                 2, 1, -1, -2, 0, 0, 2, 1, -1, -2, 0, 0,
-                                 2, -1, -1, 2, 0, 0, 2, -1, -1, 2, 0, 0,
-                                 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1,
-                                 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1,
-                                 1, -1, 1, -1, 1, -1, -1, 1, -1, 1, -1, 1,
-                                 1, -1, 1, -1, -1, 1, -1, 1, -1, 1, 1, -1,
-                                 2, 1, -1, -2, 0, 0, -2, -1, 1, 2, 0, 0,
-                                 2, -1, -1, 2, 0, 0, -2, 1, 1, -2, 0, 0};
+inline const int8_t chi_D6h[] = {
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1,  1,  -1, -1, 1,  1,  1,  1,  -1, -1, 1,  -1, 1, -1, 1,
+    -1, 1,  -1, 1,  -1, 1,  -1, 1,  -1, 1,  -1, -1, 1,  1, -1, 1,  -1, -1, 1,  2,  1,  -1, -2, 0,  0,  2,  1, -1, -2,
+    0,  0,  2,  -1, -1, 2,  0,  0,  2,  -1, -1, 2,  0,  0, 1,  1,  1,  1,  1,  1,  -1, -1, -1, -1, -1, -1, 1, 1,  1,
+    1,  -1, -1, -1, -1, -1, -1, 1,  1,  1,  -1, 1,  -1, 1, -1, -1, 1,  -1, 1,  -1, 1,  1,  -1, 1,  -1, -1, 1, -1, 1,
+    -1, 1,  1,  -1, 2,  1,  -1, -2, 0,  0,  -2, -1, 1,  2, 0,  0,  2,  -1, -1, 2,  0,  0,  -2, 1,  1,  -2, 0, 0};
 
 // 28: T (23)
-inline const ClassDesc cls_T[] = {{"E", K::E, 1, T::None},
-                                  {"8C3", K::C3, 8, T::None},
-                                  {"3C2", K::C2, 3, T::None}};
-inline const IrrepDesc irr_T[] = {{"A", 1, 1, false, true},
-                                  {"E", 2, 2, false, true},
-                                  {"T", 3, 1, true, true}};
-inline const int8_t chi_T[] = {1, 1, 1,
-                               2, -1, 2,
-                               3, 0, -1};
+inline const ClassDesc cls_T[] = {{"E", K::E, 1, T::None}, {"8C3", K::C3, 8, T::None}, {"3C2", K::C2, 3, T::None}};
+inline const IrrepDesc irr_T[] = {{"A", 1, 1, false, true}, {"E", 2, 2, false, true}, {"T", 3, 1, true, true}};
+inline const int8_t chi_T[] = {1, 1, 1, 2, -1, 2, 3, 0, -1};
 
 // 29: Th (m-3)
 inline const ClassDesc cls_Th[] = {{"E", K::E, 1, T::None},
@@ -591,12 +504,8 @@ inline const IrrepDesc irr_Th[] = {{"Ag", 1, 1, false, true},
                                    {"Au", 1, 1, false, false},
                                    {"Eu", 2, 2, false, false},
                                    {"Tu", 3, 1, true, false}};
-inline const int8_t chi_Th[] = {1, 1, 1, 1, 1, 1,
-                                2, -1, 2, 2, -1, 2,
-                                3, 0, -1, 3, 0, -1,
-                                1, 1, 1, -1, -1, -1,
-                                2, -1, 2, -2, 1, -2,
-                                3, 0, -1, -3, 0, 1};
+inline const int8_t chi_Th[] = {1, 1, 1, 1,  1,  1,  2, -1, 2, 2,  -1, 2,  3, 0, -1, 3,  0, -1,
+                                1, 1, 1, -1, -1, -1, 2, -1, 2, -2, 1,  -2, 3, 0, -1, -3, 0, 1};
 
 // 30: O (432)
 inline const ClassDesc cls_O[] = {{"E", K::E, 1, T::None},
@@ -609,11 +518,7 @@ inline const IrrepDesc irr_O[] = {{"A1", 1, 1, false, true},
                                   {"E", 2, 1, false, true},
                                   {"T1", 3, 1, true, false},
                                   {"T2", 3, 1, false, true}};
-inline const int8_t chi_O[] = {1, 1, 1, 1, 1,
-                               1, 1, -1, -1, 1,
-                               2, -1, 0, 0, 2,
-                               3, 0, -1, 1, -1,
-                               3, 0, 1, -1, -1};
+inline const int8_t chi_O[] = {1, 1, 1, 1, 1, 1, 1, -1, -1, 1, 2, -1, 0, 0, 2, 3, 0, -1, 1, -1, 3, 0, 1, -1, -1};
 
 // 31: Td (-43m)
 inline const ClassDesc cls_Td[] = {{"E", K::E, 1, T::None},
@@ -626,11 +531,7 @@ inline const IrrepDesc irr_Td[] = {{"A1", 1, 1, false, true},
                                    {"E", 2, 1, false, true},
                                    {"T1", 3, 1, false, false},
                                    {"T2", 3, 1, true, true}};
-inline const int8_t chi_Td[] = {1, 1, 1, 1, 1,
-                                1, 1, 1, -1, -1,
-                                2, -1, 2, 0, 0,
-                                3, 0, -1, 1, -1,
-                                3, 0, -1, -1, 1};
+inline const int8_t chi_Td[] = {1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 2, -1, 2, 0, 0, 3, 0, -1, 1, -1, 3, 0, -1, -1, 1};
 
 // 32: Oh (m-3m)
 inline const ClassDesc cls_Oh[] = {{"E", K::E, 1, T::None},
@@ -653,52 +554,46 @@ inline const IrrepDesc irr_Oh[] = {{"A1g", 1, 1, false, true},
                                    {"Eu", 2, 1, false, false},
                                    {"T1u", 3, 1, true, false},
                                    {"T2u", 3, 1, false, false}};
-inline const int8_t chi_Oh[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                1, 1, -1, -1, 1, 1, -1, 1, 1, -1,
-                                2, -1, 0, 0, 2, 2, 0, -1, 2, 0,
-                                3, 0, -1, 1, -1, 3, 1, 0, -1, -1,
-                                3, 0, 1, -1, -1, 3, -1, 0, -1, 1,
-                                1, 1, 1, 1, 1, -1, -1, -1, -1, -1,
-                                1, 1, -1, -1, 1, -1, 1, -1, -1, 1,
-                                2, -1, 0, 0, 2, -2, 0, 1, -2, 0,
-                                3, 0, -1, 1, -1, -3, -1, 0, 1, 1,
-                                3, 0, 1, -1, -1, -3, 1, 0, 1, -1};
+inline const int8_t chi_Oh[] = {1, 1,  1,  1,  1,  1,  1,  1,  1,  1, 1, 1,  -1, -1, 1,  1,  -1, 1,  1,  -1,
+                                2, -1, 0,  0,  2,  2,  0,  -1, 2,  0, 3, 0,  -1, 1,  -1, 3,  1,  0,  -1, -1,
+                                3, 0,  1,  -1, -1, 3,  -1, 0,  -1, 1, 1, 1,  1,  1,  1,  -1, -1, -1, -1, -1,
+                                1, 1,  -1, -1, 1,  -1, 1,  -1, -1, 1, 2, -1, 0,  0,  2,  -2, 0,  1,  -2, 0,
+                                3, 0,  -1, 1,  -1, -3, -1, 0,  1,  1, 3, 0,  1,  -1, -1, -3, 1,  0,  1,  -1};
 
 } // namespace detail
 
-inline const PointGroup pg_table[32] = {
-    {1, "C1", "1", 1, 1, detail::cls_C1, detail::irr_C1, detail::chi_C1},
-    {2, "Ci", "-1", 2, 2, detail::cls_Ci, detail::irr_Ci, detail::chi_Ci},
-    {3, "C2", "2", 2, 2, detail::cls_C2, detail::irr_C2, detail::chi_C2},
-    {4, "Cs", "m", 2, 2, detail::cls_Cs, detail::irr_Cs, detail::chi_Cs},
-    {5, "C2h", "2/m", 4, 4, detail::cls_C2h, detail::irr_C2h, detail::chi_C2h},
-    {6, "D2", "222", 4, 4, detail::cls_D2, detail::irr_D2, detail::chi_D2},
-    {7, "C2v", "mm2", 4, 4, detail::cls_C2v, detail::irr_C2v, detail::chi_C2v},
-    {8, "D2h", "mmm", 8, 8, detail::cls_D2h, detail::irr_D2h, detail::chi_D2h},
-    {9, "C4", "4", 4, 3, detail::cls_C4, detail::irr_C4, detail::chi_C4},
-    {10, "S4", "-4", 4, 3, detail::cls_S4, detail::irr_S4, detail::chi_S4},
-    {11, "C4h", "4/m", 8, 6, detail::cls_C4h, detail::irr_C4h, detail::chi_C4h},
-    {12, "D4", "422", 8, 5, detail::cls_D4, detail::irr_D4, detail::chi_D4},
-    {13, "C4v", "4mm", 8, 5, detail::cls_C4v, detail::irr_C4v, detail::chi_C4v},
-    {14, "D2d", "-42m", 8, 5, detail::cls_D2d, detail::irr_D2d, detail::chi_D2d},
-    {15, "D4h", "4/mmm", 16, 10, detail::cls_D4h, detail::irr_D4h, detail::chi_D4h},
-    {16, "C3", "3", 3, 2, detail::cls_C3, detail::irr_C3, detail::chi_C3},
-    {17, "C3i", "-3", 6, 4, detail::cls_S6, detail::irr_S6, detail::chi_S6},
-    {18, "D3", "32", 6, 3, detail::cls_D3, detail::irr_D3, detail::chi_D3},
-    {19, "C3v", "3m", 6, 3, detail::cls_C3v, detail::irr_C3v, detail::chi_C3v},
-    {20, "D3d", "-3m", 12, 6, detail::cls_D3d, detail::irr_D3d, detail::chi_D3d},
-    {21, "C6", "6", 6, 4, detail::cls_C6, detail::irr_C6, detail::chi_C6},
-    {22, "C3h", "-6", 6, 4, detail::cls_C3h, detail::irr_C3h, detail::chi_C3h},
-    {23, "C6h", "6/m", 12, 8, detail::cls_C6h, detail::irr_C6h, detail::chi_C6h},
-    {24, "D6", "622", 12, 6, detail::cls_D6, detail::irr_D6, detail::chi_D6},
-    {25, "C6v", "6mm", 12, 6, detail::cls_C6v, detail::irr_C6v, detail::chi_C6v},
-    {26, "D3h", "-6m2", 12, 6, detail::cls_D3h, detail::irr_D3h, detail::chi_D3h},
-    {27, "D6h", "6/mmm", 24, 12, detail::cls_D6h, detail::irr_D6h, detail::chi_D6h},
-    {28, "T", "23", 12, 3, detail::cls_T, detail::irr_T, detail::chi_T},
-    {29, "Th", "m-3", 24, 6, detail::cls_Th, detail::irr_Th, detail::chi_Th},
-    {30, "O", "432", 24, 5, detail::cls_O, detail::irr_O, detail::chi_O},
-    {31, "Td", "-43m", 24, 5, detail::cls_Td, detail::irr_Td, detail::chi_Td},
-    {32, "Oh", "m-3m", 48, 10, detail::cls_Oh, detail::irr_Oh, detail::chi_Oh}};
+inline const PointGroup pg_table[32] = {{1, "C1", "1", 1, 1, detail::cls_C1, detail::irr_C1, detail::chi_C1},
+                                        {2, "Ci", "-1", 2, 2, detail::cls_Ci, detail::irr_Ci, detail::chi_Ci},
+                                        {3, "C2", "2", 2, 2, detail::cls_C2, detail::irr_C2, detail::chi_C2},
+                                        {4, "Cs", "m", 2, 2, detail::cls_Cs, detail::irr_Cs, detail::chi_Cs},
+                                        {5, "C2h", "2/m", 4, 4, detail::cls_C2h, detail::irr_C2h, detail::chi_C2h},
+                                        {6, "D2", "222", 4, 4, detail::cls_D2, detail::irr_D2, detail::chi_D2},
+                                        {7, "C2v", "mm2", 4, 4, detail::cls_C2v, detail::irr_C2v, detail::chi_C2v},
+                                        {8, "D2h", "mmm", 8, 8, detail::cls_D2h, detail::irr_D2h, detail::chi_D2h},
+                                        {9, "C4", "4", 4, 3, detail::cls_C4, detail::irr_C4, detail::chi_C4},
+                                        {10, "S4", "-4", 4, 3, detail::cls_S4, detail::irr_S4, detail::chi_S4},
+                                        {11, "C4h", "4/m", 8, 6, detail::cls_C4h, detail::irr_C4h, detail::chi_C4h},
+                                        {12, "D4", "422", 8, 5, detail::cls_D4, detail::irr_D4, detail::chi_D4},
+                                        {13, "C4v", "4mm", 8, 5, detail::cls_C4v, detail::irr_C4v, detail::chi_C4v},
+                                        {14, "D2d", "-42m", 8, 5, detail::cls_D2d, detail::irr_D2d, detail::chi_D2d},
+                                        {15, "D4h", "4/mmm", 16, 10, detail::cls_D4h, detail::irr_D4h, detail::chi_D4h},
+                                        {16, "C3", "3", 3, 2, detail::cls_C3, detail::irr_C3, detail::chi_C3},
+                                        {17, "C3i", "-3", 6, 4, detail::cls_S6, detail::irr_S6, detail::chi_S6},
+                                        {18, "D3", "32", 6, 3, detail::cls_D3, detail::irr_D3, detail::chi_D3},
+                                        {19, "C3v", "3m", 6, 3, detail::cls_C3v, detail::irr_C3v, detail::chi_C3v},
+                                        {20, "D3d", "-3m", 12, 6, detail::cls_D3d, detail::irr_D3d, detail::chi_D3d},
+                                        {21, "C6", "6", 6, 4, detail::cls_C6, detail::irr_C6, detail::chi_C6},
+                                        {22, "C3h", "-6", 6, 4, detail::cls_C3h, detail::irr_C3h, detail::chi_C3h},
+                                        {23, "C6h", "6/m", 12, 8, detail::cls_C6h, detail::irr_C6h, detail::chi_C6h},
+                                        {24, "D6", "622", 12, 6, detail::cls_D6, detail::irr_D6, detail::chi_D6},
+                                        {25, "C6v", "6mm", 12, 6, detail::cls_C6v, detail::irr_C6v, detail::chi_C6v},
+                                        {26, "D3h", "-6m2", 12, 6, detail::cls_D3h, detail::irr_D3h, detail::chi_D3h},
+                                        {27, "D6h", "6/mmm", 24, 12, detail::cls_D6h, detail::irr_D6h, detail::chi_D6h},
+                                        {28, "T", "23", 12, 3, detail::cls_T, detail::irr_T, detail::chi_T},
+                                        {29, "Th", "m-3", 24, 6, detail::cls_Th, detail::irr_Th, detail::chi_Th},
+                                        {30, "O", "432", 24, 5, detail::cls_O, detail::irr_O, detail::chi_O},
+                                        {31, "Td", "-43m", 24, 5, detail::cls_Td, detail::irr_Td, detail::chi_Td},
+                                        {32, "Oh", "m-3m", 48, 10, detail::cls_Oh, detail::irr_Oh, detail::chi_Oh}};
 
 // ---------------------------------------------------------------------------
 // Operation classification
@@ -707,23 +602,33 @@ inline const PointGroup pg_table[32] = {
 struct OpInfo
 {
     OpKind kind = OpKind::E;
-    int order = 1;               // order of the group element
-    Eigen::Vector3d axis;        // rotation axis / mirror normal (unit); zero for E, i
+    int order = 1;        // order of the group element
+    Eigen::Vector3d axis; // rotation axis / mirror normal (unit); zero for E, i
 };
 
 inline int op_order(const OpKind kind)
 {
     switch (kind) {
-        case OpKind::E: return 1;
-        case OpKind::C2: return 2;
-        case OpKind::C3: return 3;
-        case OpKind::C4: return 4;
-        case OpKind::C6: return 6;
-        case OpKind::I: return 2;
-        case OpKind::Sigma: return 2;
-        case OpKind::S6: return 6;
-        case OpKind::S4: return 4;
-        case OpKind::S3: return 6;
+    case OpKind::E:
+        return 1;
+    case OpKind::C2:
+        return 2;
+    case OpKind::C3:
+        return 3;
+    case OpKind::C4:
+        return 4;
+    case OpKind::C6:
+        return 6;
+    case OpKind::I:
+        return 2;
+    case OpKind::Sigma:
+        return 2;
+    case OpKind::S6:
+        return 6;
+    case OpKind::S4:
+        return 4;
+    case OpKind::S3:
+        return 6;
     }
     return 0;
 }
@@ -747,31 +652,43 @@ inline bool classify_op(const Eigen::Matrix3d &rot, OpInfo &info, const double t
 
     if (proper) {
         switch (itr) {
-            case 3: info.kind = OpKind::E;
-                break;
-            case -1: info.kind = OpKind::C2;
-                break;
-            case 0: info.kind = OpKind::C3;
-                break;
-            case 1: info.kind = OpKind::C4;
-                break;
-            case 2: info.kind = OpKind::C6;
-                break;
-            default: return false;
+        case 3:
+            info.kind = OpKind::E;
+            break;
+        case -1:
+            info.kind = OpKind::C2;
+            break;
+        case 0:
+            info.kind = OpKind::C3;
+            break;
+        case 1:
+            info.kind = OpKind::C4;
+            break;
+        case 2:
+            info.kind = OpKind::C6;
+            break;
+        default:
+            return false;
         }
     } else {
         switch (itr) {
-            case -3: info.kind = OpKind::I;
-                break;
-            case 1: info.kind = OpKind::Sigma;
-                break;
-            case 0: info.kind = OpKind::S6;
-                break;
-            case -1: info.kind = OpKind::S4;
-                break;
-            case -2: info.kind = OpKind::S3;
-                break;
-            default: return false;
+        case -3:
+            info.kind = OpKind::I;
+            break;
+        case 1:
+            info.kind = OpKind::Sigma;
+            break;
+        case 0:
+            info.kind = OpKind::S6;
+            break;
+        case -1:
+            info.kind = OpKind::S4;
+            break;
+        case -2:
+            info.kind = OpKind::S3;
+            break;
+        default:
+            return false;
         }
     }
     info.order = op_order(info.kind);
@@ -794,9 +711,7 @@ inline bool classify_op(const Eigen::Matrix3d &rot, OpInfo &info, const double t
         info.axis = proj.col(imax).normalized();
     } else {
         // Generic angle: axial vector of the antisymmetric part.
-        Eigen::Vector3d v(prop(2, 1) - prop(1, 2),
-                          prop(0, 2) - prop(2, 0),
-                          prop(1, 0) - prop(0, 1));
+        Eigen::Vector3d v(prop(2, 1) - prop(1, 2), prop(0, 2) - prop(2, 0), prop(1, 0) - prop(0, 1));
         if (v.norm() < tol) {
             return false;
         }
@@ -844,9 +759,8 @@ inline int identify_point_group_fingerprint(const std::vector<Eigen::Matrix3d> &
 
 inline int int_det3(const Eigen::Matrix3i &m)
 {
-    return m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1))
-           - m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0))
-           + m(0, 2) * (m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0));
+    return m(0, 0) * (m(1, 1) * m(2, 2) - m(1, 2) * m(2, 1)) - m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) +
+           m(0, 2) * (m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0));
 }
 
 // Inverse of a unimodular integer matrix (|det| = 1), exact.
@@ -952,18 +866,16 @@ namespace detail
 // Multiplicities of all table irreps in the vector representation, from the
 // per-class traces of representative operations.  Non-negative integers for
 // a correct class->column assignment.
-inline bool vector_rep_decomposition_is_integral(const PointGroup &pg,
-                                                 const std::vector<int> &class_to_col,
+inline bool vector_rep_decomposition_is_integral(const PointGroup &pg, const std::vector<int> &class_to_col,
                                                  const std::vector<double> &trace_per_class,
-                                                 const std::vector<int> &nelem_per_class,
-                                                 const double tol = 1.0e-6)
+                                                 const std::vector<int> &nelem_per_class, const double tol = 1.0e-6)
 {
     const auto ncl = static_cast<int>(class_to_col.size());
     for (int mu = 0; mu < pg.nclass; ++mu) {
         double n = 0.0;
         for (int ic = 0; ic < ncl; ++ic) {
-            n += static_cast<double>(nelem_per_class[ic]) * trace_per_class[ic]
-                 * static_cast<double>(pg.chartab[mu * pg.nclass + class_to_col[ic]]);
+            n += static_cast<double>(nelem_per_class[ic]) * trace_per_class[ic] *
+                 static_cast<double>(pg.chartab[mu * pg.nclass + class_to_col[ic]]);
         }
         n /= static_cast<double>(pg.order * pg.irreps[mu].norm);
         if (n < -tol || std::abs(n - std::lround(n)) > tol) {
@@ -983,8 +895,7 @@ inline bool vector_rep_decomposition_is_integral(const PointGroup &pg,
 //  xhat_hint: reference in-plane direction, the conventional a axis projected
 //             perpendicular to the principal axis (zero => the convention-
 //             dependent distinctions are left unresolved and flagged).
-inline MatchResult match_classes_to_columns(const PointGroup &pg,
-                                            const std::vector<std::vector<int>> &classes,
+inline MatchResult match_classes_to_columns(const PointGroup &pg, const std::vector<std::vector<int>> &classes,
                                             const std::vector<OpInfo> &ops_info,
                                             const Eigen::Vector3d &zhat_hint = Eigen::Vector3d::Zero(),
                                             const Eigen::Vector3d &xhat_hint = Eigen::Vector3d::Zero())
@@ -1042,9 +953,7 @@ inline MatchResult match_classes_to_columns(const PointGroup &pg,
     }
     const bool has_x = xhat.norm() > 0.5;
 
-    auto axis_dot = [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-        return std::abs(a.dot(b));
-    };
+    auto axis_dot = [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return std::abs(a.dot(b)); };
 
     // Primary star: the orbit of x^ under the proper rotations about z^,
     // i.e. the conventional <100> in-plane directions.  A C2' axis and a
@@ -1054,8 +963,8 @@ inline MatchResult match_classes_to_columns(const PointGroup &pg,
     if (has_x && has_z) {
         auto nprin = 1;
         for (const auto &op: ops_info) {
-            const auto proper = op.kind == OpKind::C2 || op.kind == OpKind::C3
-                                || op.kind == OpKind::C4 || op.kind == OpKind::C6;
+            const auto proper =
+                op.kind == OpKind::C2 || op.kind == OpKind::C3 || op.kind == OpKind::C4 || op.kind == OpKind::C6;
             if (proper && axis_dot(op.axis, zhat) > 1.0 - 1.0e-6) {
                 nprin = std::max(nprin, op.order);
             }
@@ -1233,10 +1142,10 @@ inline MatchResult match_classes_to_columns(const PointGroup &pg,
     res.class_to_col = col_of_class;
 
     if (has_z && has_x) {
-        res.note = "principal axis z || (" + std::to_string(zhat.x()) + ", " + std::to_string(zhat.y())
-                   + ", " + std::to_string(zhat.z()) + "); reference in-plane axis x || ("
-                   + std::to_string(xhat.x()) + ", " + std::to_string(xhat.y()) + ", "
-                   + std::to_string(xhat.z()) + "). Primed/double-primed and B1/B2-type labels "
+        res.note = "principal axis z || (" + std::to_string(zhat.x()) + ", " + std::to_string(zhat.y()) + ", " +
+                   std::to_string(zhat.z()) + "); reference in-plane axis x || (" + std::to_string(xhat.x()) + ", " +
+                   std::to_string(xhat.y()) + ", " + std::to_string(xhat.z()) +
+                   "). Primed/double-primed and B1/B2-type labels "
                    "refer to this frame.";
     } else if (!res.ambiguous_cols.empty()) {
         res.note = "conventional reference frame unavailable; convention-dependent labels are "
@@ -1252,10 +1161,9 @@ inline MatchResult match_classes_to_columns(const PointGroup &pg,
 // validation (integral, non-negative decompositions of the vector, total,
 // and multiplet representations) selects among them.  Empty on bucket
 // mismatch.
-inline std::vector<std::vector<int>> enumerate_consistent_assignments(
-    const PointGroup &pg,
-    const std::vector<std::vector<int>> &classes,
-    const std::vector<OpInfo> &ops_info)
+inline std::vector<std::vector<int>> enumerate_consistent_assignments(const PointGroup &pg,
+                                                                      const std::vector<std::vector<int>> &classes,
+                                                                      const std::vector<OpInfo> &ops_info)
 {
     const auto ncl = static_cast<int>(classes.size());
     if (ncl != pg.nclass) {
@@ -1274,8 +1182,7 @@ inline std::vector<std::vector<int>> enumerate_consistent_assignments(
 
         std::vector<int> bucket_classes, bucket_cols;
         for (auto ic = 0; ic < ncl; ++ic) {
-            if (ops_info[classes[ic][0]].kind == kind
-                && static_cast<int>(classes[ic].size()) == nelem) {
+            if (ops_info[classes[ic][0]].kind == kind && static_cast<int>(classes[ic].size()) == nelem) {
                 bucket_classes.push_back(ic);
                 class_done[ic] = 1;
             }
@@ -1317,8 +1224,7 @@ inline std::vector<std::vector<int>> enumerate_consistent_assignments(
 
 // Multiplicity of every table irrep in a representation given by its
 // per-class characters:  n_mu = (1/(|G| norm_mu)) sum_c w_c chi(c) chi_mu(c).
-inline std::vector<double> decompose_representation(const PointGroup &pg,
-                                                    const std::vector<int> &class_to_col,
+inline std::vector<double> decompose_representation(const PointGroup &pg, const std::vector<int> &class_to_col,
                                                     const std::vector<int> &nelem_per_class,
                                                     const std::vector<double> &chi_per_class)
 {
@@ -1327,8 +1233,8 @@ inline std::vector<double> decompose_representation(const PointGroup &pg,
     for (int mu = 0; mu < pg.nclass; ++mu) {
         double n = 0.0;
         for (int ic = 0; ic < ncl; ++ic) {
-            n += static_cast<double>(nelem_per_class[ic]) * chi_per_class[ic]
-                 * static_cast<double>(pg.chartab[mu * pg.nclass + class_to_col[ic]]);
+            n += static_cast<double>(nelem_per_class[ic]) * chi_per_class[ic] *
+                 static_cast<double>(pg.chartab[mu * pg.nclass + class_to_col[ic]]);
         }
         n_mu[mu] = n / static_cast<double>(pg.order * pg.irreps[mu].norm);
     }
@@ -1338,13 +1244,11 @@ inline std::vector<double> decompose_representation(const PointGroup &pg,
 // Validate a class->column assignment against the integrality of the
 // vector-representation decomposition (cheap sanity filter; the outer
 // automorphisms that swap B1/B2-type labels pass this by construction).
-inline bool validate_assignment_by_vector_rep(const PointGroup &pg,
-                                              const std::vector<int> &class_to_col,
+inline bool validate_assignment_by_vector_rep(const PointGroup &pg, const std::vector<int> &class_to_col,
                                               const std::vector<int> &nelem_per_class,
                                               const std::vector<double> &trace_per_class)
 {
-    return detail::vector_rep_decomposition_is_integral(pg, class_to_col, trace_per_class,
-                                                        nelem_per_class);
+    return detail::vector_rep_decomposition_is_integral(pg, class_to_col, trace_per_class, nelem_per_class);
 }
 
 } // namespace pointgroup

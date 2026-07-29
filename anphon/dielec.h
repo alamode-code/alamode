@@ -50,8 +50,7 @@ public:
                                        const std::complex<double> *const *evec_in) const;
 
     void compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode,
-                                       const std::complex<double> *const *evec_in,
-                                       const bool do_normalize) const;
+                                       const std::complex<double> *const *evec_in, const bool do_normalize) const;
 
     bool has_borncharge() const
     {

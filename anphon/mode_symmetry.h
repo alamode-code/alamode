@@ -34,25 +34,25 @@ struct GammaModeGroup
     std::vector<double> characters; // chi_lambda per merged class (real part)
     double max_imag_char = 0.0;
     double max_class_spread = 0.0;
-    double acoustic_content = 0.0;  // tr(P_T P_lambda), in [0, 3]
+    double acoustic_content = 0.0; // tr(P_T P_lambda), in [0, 3]
     bool is_acoustic = false;
     bool ir_active = false;
     bool raman_active = false;
-    bool activity_known = false;    // false when subspace closure / integrality failed
-    double n_ir_proj = 0.0;         // raw projection weights onto Gamma_V and
-    double n_raman_proj = 0.0;      // [Gamma_V x Gamma_V]_sym (approximate when
-                                    // activity_known is false)
-    Eigen::Matrix3d ir_strength;    // oscillator-strength tensor S_ab; valid iff has_ir_strength
+    bool activity_known = false; // false when subspace closure / integrality failed
+    double n_ir_proj = 0.0;      // raw projection weights onto Gamma_V and
+    double n_raman_proj = 0.0;   // [Gamma_V x Gamma_V]_sym (approximate when
+                                 // activity_known is false)
+    Eigen::Matrix3d ir_strength; // oscillator-strength tensor S_ab; valid iff has_ir_strength
     bool has_ir_strength = false;
 };
 
 struct GammaIrrepResult
 {
-    bool available = false;         // false => analysis aborted (labels suppressed)
-    std::string pg_schoenflies;     // "Oh"
-    std::string pg_international;   // "m-3m"
-    int pg_number = 0;              // point-group number 1..32
-    std::string spg_symbol;         // international space-group symbol (when known)
+    bool available = false;       // false => analysis aborted (labels suppressed)
+    std::string pg_schoenflies;   // "Oh"
+    std::string pg_international; // "m-3m"
+    int pg_number = 0;            // point-group number 1..32
+    std::string spg_symbol;       // international space-group symbol (when known)
     std::vector<GammaClassInfo> classes;
     std::vector<GammaModeGroup> groups;
     std::string decomp_total, decomp_acoustic, decomp_optic;
@@ -61,7 +61,7 @@ struct GammaIrrepResult
     std::string axis_convention_note;
 };
 
-class ModeSymmetry : protected Pointers
+class ModeSymmetry: protected Pointers
 {
 public:
     ModeSymmetry(class PHON *phon);

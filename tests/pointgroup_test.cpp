@@ -58,9 +58,8 @@ void check(const bool cond, const std::string &msg)
 
 // --- generators (Cartesian) -------------------------------------------------
 
-Eigen::Matrix3d mat3(const double a00, const double a01, const double a02,
-                     const double a10, const double a11, const double a12,
-                     const double a20, const double a21, const double a22)
+Eigen::Matrix3d mat3(const double a00, const double a01, const double a02, const double a10, const double a11,
+                     const double a12, const double a20, const double a21, const double a22)
 {
     Eigen::Matrix3d m;
     m << a00, a01, a02, a10, a11, a12, a20, a21, a22;
@@ -173,9 +172,7 @@ Eigen::Matrix3d lattice_for(const bool hexagonal)
     if (!hexagonal) return Eigen::Matrix3d::Identity();
     Eigen::Matrix3d a;
     // Columns: a1, a2, c of a hexagonal cell.
-    a << 1.0, -0.5, 0.0,
-         0.0, S3 * 2.0 / 2.0, 0.0,
-         0.0, 0.0, 1.0;
+    a << 1.0, -0.5, 0.0, 0.0, S3 * 2.0 / 2.0, 0.0, 0.0, 0.0, 1.0;
     return a;
 }
 
@@ -263,8 +260,7 @@ void run_group_checks(const GroupSpec &spec, const Eigen::Matrix3d &orient, cons
     int dimsum = 0;
     for (int mu = 0; mu < ncl; ++mu) {
         check(pg.chartab[mu * ncl + e_col] == pg.irreps[mu].dim, tag + ": chi(E) = dim");
-        check(pg.irreps[mu].dim * pg.irreps[mu].dim % pg.irreps[mu].norm == 0,
-              tag + ": dim^2 divisible by norm");
+        check(pg.irreps[mu].dim * pg.irreps[mu].dim % pg.irreps[mu].norm == 0, tag + ": dim^2 divisible by norm");
         dimsum += pg.irreps[mu].dim * pg.irreps[mu].dim / pg.irreps[mu].norm;
     }
     check(dimsum == pg.order, tag + ": sum dim^2/norm = |G|");
@@ -276,8 +272,9 @@ void run_group_checks(const GroupSpec &spec, const Eigen::Matrix3d &orient, cons
                 s += pg.classes[ic].nelem * pg.chartab[mu * ncl + ic] * pg.chartab[nu * ncl + ic];
             }
             const int expected = (mu == nu) ? pg.order * pg.irreps[mu].norm : 0;
-            check(s == expected, tag + ": weighted row orthogonality (" + pg.irreps[mu].mulliken
-                  + ", " + pg.irreps[nu].mulliken + ")");
+            check(s == expected,
+                  tag + ": weighted row orthogonality (" + pg.irreps[mu].mulliken + ", " + pg.irreps[nu].mulliken +
+                      ")");
         }
     }
 
@@ -290,14 +287,13 @@ void run_group_checks(const GroupSpec &spec, const Eigen::Matrix3d &orient, cons
         const auto n_reg = decompose_representation(pg, match.class_to_col, nelem, chi_reg);
         for (int mu = 0; mu < ncl; ++mu) {
             const double expected = static_cast<double>(pg.irreps[mu].dim) / pg.irreps[mu].norm;
-            check(std::abs(n_reg[mu] - expected) < 1.0e-8, tag + ": regular-rep multiplicity of "
-                  + pg.irreps[mu].mulliken);
+            check(std::abs(n_reg[mu] - expected) < 1.0e-8,
+                  tag + ": regular-rep multiplicity of " + pg.irreps[mu].mulliken);
         }
     }
 
     // Vector rep decomposes integrally.
-    check(validate_assignment_by_vector_rep(pg, match.class_to_col, nelem, traces),
-          tag + ": vector rep integral");
+    check(validate_assignment_by_vector_rep(pg, match.class_to_col, nelem, traces), tag + ": vector rep integral");
 
     // 6. activity flags == projection formulas, evaluated on the matrices
     std::vector<int> class_of_op(ops.size(), -1);
@@ -307,8 +303,7 @@ void run_group_checks(const GroupSpec &spec, const Eigen::Matrix3d &orient, cons
     for (int mu = 0; mu < ncl; ++mu) {
         double n_ir = 0.0, n_raman = 0.0;
         for (std::size_t j = 0; j < ops.size(); ++j) {
-            const auto chi = static_cast<double>(
-                pg.chartab[mu * ncl + match.class_to_col[class_of_op[j]]]);
+            const auto chi = static_cast<double>(pg.chartab[mu * ncl + match.class_to_col[class_of_op[j]]]);
             const double tr = ops[j].trace();
             const double tr2 = (ops[j] * ops[j]).trace();
             n_ir += chi * tr;
@@ -318,14 +313,11 @@ void run_group_checks(const GroupSpec &spec, const Eigen::Matrix3d &orient, cons
         n_raman /= static_cast<double>(pg.order);
         check(n_ir > -1.0e-8, tag + ": n_IR non-negative for " + pg.irreps[mu].mulliken);
         check(n_raman > -1.0e-8, tag + ": n_Raman non-negative for " + pg.irreps[mu].mulliken);
-        check(std::abs(n_ir - std::lround(n_ir)) < 1.0e-8,
-              tag + ": n_IR integral for " + pg.irreps[mu].mulliken);
+        check(std::abs(n_ir - std::lround(n_ir)) < 1.0e-8, tag + ": n_IR integral for " + pg.irreps[mu].mulliken);
         check(std::abs(n_raman - std::lround(n_raman)) < 1.0e-8,
               tag + ": n_Raman integral for " + pg.irreps[mu].mulliken);
-        check((n_ir > 1.0e-8) == pg.irreps[mu].ir_active,
-              tag + ": IR flag of " + pg.irreps[mu].mulliken);
-        check((n_raman > 1.0e-8) == pg.irreps[mu].raman_active,
-              tag + ": Raman flag of " + pg.irreps[mu].mulliken);
+        check((n_ir > 1.0e-8) == pg.irreps[mu].ir_active, tag + ": IR flag of " + pg.irreps[mu].mulliken);
+        check((n_raman > 1.0e-8) == pg.irreps[mu].raman_active, tag + ": Raman flag of " + pg.irreps[mu].mulliken);
     }
 }
 
@@ -339,8 +331,7 @@ int main()
     for (int i = 0; i < 32; ++i) {
         for (int j = i + 1; j < 32; ++j) {
             check(fingerprint_of_table(pg_table[i]) != fingerprint_of_table(pg_table[j]),
-                  std::string("fingerprint uniqueness: ") + pg_table[i].schoenflies + " vs "
-                  + pg_table[j].schoenflies);
+                  std::string("fingerprint uniqueness: ") + pg_table[i].schoenflies + " vs " + pg_table[j].schoenflies);
         }
     }
 
@@ -351,26 +342,39 @@ int main()
 
     // Globally rotated settings for the convention-sensitive groups.
     const Eigen::Matrix3d rot =
-        (Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ())
-         * Eigen::AngleAxisd(0.7, Eigen::Vector3d::UnitY())
-         * Eigen::AngleAxisd(1.1, Eigen::Vector3d::UnitX())).toRotationMatrix();
+        (Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ()) * Eigen::AngleAxisd(0.7, Eigen::Vector3d::UnitY()) *
+         Eigen::AngleAxisd(1.1, Eigen::Vector3d::UnitX()))
+            .toRotationMatrix();
     for (const auto &spec: specs) {
         switch (spec.number) {
-            case 6: case 7: case 8: case 12: case 13: case 14: case 15:
-            case 18: case 19: case 20: case 24: case 25: case 26: case 27:
-            case 29: case 31: case 32:
-                run_group_checks(spec, rot, std::string(spec.name) + " (rotated)");
-                break;
-            default:
-                break;
+        case 6:
+        case 7:
+        case 8:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+        case 18:
+        case 19:
+        case 20:
+        case 24:
+        case 25:
+        case 26:
+        case 27:
+        case 29:
+        case 31:
+        case 32:
+            run_group_checks(spec, rot, std::string(spec.name) + " (rotated)");
+            break;
+        default:
+            break;
         }
     }
 
     // Axis-permuted D2 setting: principal axis along x.
     {
         GroupSpec d2_perm{6, "D2 (permuted)", {g_c2x, g_c2y}, false};
-        const Eigen::Matrix3d perm =
-            (Eigen::Matrix3d() << 0, 0, 1, 1, 0, 0, 0, 1, 0).finished(); // maps z->x
+        const Eigen::Matrix3d perm = (Eigen::Matrix3d() << 0, 0, 1, 1, 0, 0, 0, 1, 0).finished(); // maps z->x
         run_group_checks(d2_perm, perm, "D2 (axis-permuted)");
     }
 
@@ -390,28 +394,25 @@ int main()
         };
         const Eigen::Matrix3d g_mx = mat3(-1, 0, 0, 0, 1, 0, 0, 0, 1);
         const std::vector<Anchor> anchors = {
-            {25, {g_c6z, g_my}, g_mx, "3sigma_v", true},   // C6v
-            {25, {g_c6z, g_my}, g_my, "3sigma_d", true},   // C6v
+            {25, {g_c6z, g_my}, g_mx, "3sigma_v", true},          // C6v
+            {25, {g_c6z, g_my}, g_my, "3sigma_d", true},          // C6v
             {27, {g_c6z, g_c2x, g_inv}, g_mx, "3sigma_v", true},  // D6h
-            {13, {g_c4z, g_my}, g_my, "2sigma_v", false},  // C4v
+            {13, {g_c4z, g_my}, g_my, "2sigma_v", false},         // C4v
             {15, {g_c4z, g_c2x, g_inv}, g_my, "2sigma_v", false}, // D4h
         };
         for (const auto &anchor: anchors) {
             const auto &pg = pg_table[anchor.pg_index - 1];
             const auto ops = close_group(anchor.gens);
             std::vector<Eigen::Matrix3i> ops_latt;
-            check(to_lattice_basis(ops, lattice_for(anchor.hexagonal), ops_latt),
-                  "anchor lattice conversion");
+            check(to_lattice_basis(ops, lattice_for(anchor.hexagonal), ops_latt), "anchor lattice conversion");
             const auto classes = conjugacy_classes_merged(ops_latt);
             std::vector<OpInfo> info(ops.size());
             for (std::size_t i = 0; i < ops.size(); ++i) {
                 classify_op(ops[i], info[i]);
             }
-            const auto match = match_classes_to_columns(pg, classes, info,
-                                                        Eigen::Vector3d(0, 0, 1),
-                                                        Eigen::Vector3d(1, 0, 0));
-            check(match.ok && match.convention_resolved,
-                  std::string(pg.schoenflies) + " anchor: matcher resolved");
+            const auto match =
+                match_classes_to_columns(pg, classes, info, Eigen::Vector3d(0, 0, 1), Eigen::Vector3d(1, 0, 0));
+            check(match.ok && match.convention_resolved, std::string(pg.schoenflies) + " anchor: matcher resolved");
             int probe_op = -1;
             for (std::size_t i = 0; i < ops.size(); ++i) {
                 if ((ops[i] - anchor.probe).norm() < 1.0e-8) probe_op = static_cast<int>(i);
@@ -423,10 +424,8 @@ int main()
                     if (im == probe_op) probe_class = static_cast<int>(ic);
                 }
             }
-            check(probe_class >= 0 && std::string(pg.classes[match.class_to_col[probe_class]].label)
-                  == anchor.expected,
-                  std::string(pg.schoenflies) + " anchor: probe mirror lands in "
-                  + anchor.expected);
+            check(probe_class >= 0 && std::string(pg.classes[match.class_to_col[probe_class]].label) == anchor.expected,
+                  std::string(pg.schoenflies) + " anchor: probe mirror lands in " + anchor.expected);
         }
     }
 
@@ -440,9 +439,8 @@ int main()
         const auto classes = conjugacy_classes_merged(ops_latt);
         std::vector<OpInfo> info(ops.size());
         for (std::size_t i = 0; i < ops.size(); ++i) classify_op(ops[i], info[i]);
-        const auto match = match_classes_to_columns(pg, classes, info,
-                                                    Eigen::Vector3d(0, 0, 1),
-                                                    Eigen::Vector3d::Zero());
+        const auto match =
+            match_classes_to_columns(pg, classes, info, Eigen::Vector3d(0, 0, 1), Eigen::Vector3d::Zero());
         check(match.ok, "D4h no-xref: matcher ok");
         check(!match.convention_resolved, "D4h no-xref: convention flagged unresolved");
         check(!match.ambiguous_cols.empty(), "D4h no-xref: ambiguous columns reported");

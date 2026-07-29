@@ -118,8 +118,7 @@ public:
     // directional nonanalytic term).  Dispatches to eval_k_ewald with the
     // dipole-free force constants for NONANALYTIC = 3, where plain eval_k
     // must not be used.  eval_out receives omega^2, as with eval_k.
-    void diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out,
-                                    const bool require_evec) const;
+    void diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec) const;
 
     double freq(const double) const;
 

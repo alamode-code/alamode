@@ -507,24 +507,21 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<std::complex<
 
     std::vector<double> invsqrt_mass_amu(ns);
     for (auto j = 0; j < ns; ++j) {
-        invsqrt_mass_amu[j] =
-            1.0 / std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
+        invsqrt_mass_amu[j] = 1.0 / std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
     }
 
     for (auto is = 0; is < ns; ++is) {
         for (auto i = 0; i < 3; ++i) {
             zstar_mode[is][i] = std::complex<double>(0.0, 0.0);
             for (auto j = 0; j < ns; ++j) {
-                zstar_mode[is][i] += zstar_atom[j / 3][i][j % 3] * evec_in[is][j]
-                                     * invsqrt_mass_amu[j];
+                zstar_mode[is][i] += zstar_atom[j / 3][i][j % 3] * evec_in[is][j] * invsqrt_mass_amu[j];
             }
         }
     }
 }
 
 void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode,
-                                           const std::complex<double> *const *evec_in,
-                                           const bool do_normalize) const
+                                           const std::complex<double> *const *evec_in, const bool do_normalize) const
 {
     // Historical real-valued interface (ZMODE): the real part of the complex
     // mode effective charge, optionally normalized by the normal-coordinate
@@ -532,14 +529,12 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
 
     const auto ns = dynamical->neval;
 
-    std::vector<std::vector<std::complex<double>>> zstar_complex(
-        ns, std::vector<std::complex<double>>(3));
+    std::vector<std::vector<std::complex<double>>> zstar_complex(ns, std::vector<std::complex<double>>(3));
     compute_mode_effective_charge(zstar_complex, evec_in);
 
     std::vector<double> invsqrt_mass_amu(ns);
     for (auto j = 0; j < ns; ++j) {
-        invsqrt_mass_amu[j] =
-            1.0 / std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
+        invsqrt_mass_amu[j] = 1.0 / std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
     }
 
     for (auto is = 0; is < ns; ++is) {

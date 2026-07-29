@@ -39,10 +39,8 @@ namespace
 // a 3N vector: (T(S) v)_{3*mapping[j]+a} = sum_b S_ab v_{3j+b}.  At Gamma
 // all Bloch phases are unity, so T(S) is the real block permutation-rotation
 // matrix; fractional translations drop out entirely.
-void apply_symmetry_gamma(const std::vector<double> &rot9,
-                          const std::vector<unsigned int> &mapping,
-                          const std::complex<double> *v,
-                          std::complex<double> *w)
+void apply_symmetry_gamma(const std::vector<double> &rot9, const std::vector<unsigned int> &mapping,
+                          const std::complex<double> *v, std::complex<double> *w)
 {
     const auto natmin = mapping.size();
     for (std::size_t jat = 0; jat < natmin; ++jat) {
@@ -60,16 +58,26 @@ void apply_symmetry_gamma(const std::vector<double> &rot9,
 std::string kind_name(const pointgroup::OpKind kind)
 {
     switch (kind) {
-        case pointgroup::OpKind::E: return "E";
-        case pointgroup::OpKind::C2: return "C2";
-        case pointgroup::OpKind::C3: return "C3";
-        case pointgroup::OpKind::C4: return "C4";
-        case pointgroup::OpKind::C6: return "C6";
-        case pointgroup::OpKind::I: return "i";
-        case pointgroup::OpKind::Sigma: return "sigma";
-        case pointgroup::OpKind::S6: return "S6";
-        case pointgroup::OpKind::S4: return "S4";
-        case pointgroup::OpKind::S3: return "S3";
+    case pointgroup::OpKind::E:
+        return "E";
+    case pointgroup::OpKind::C2:
+        return "C2";
+    case pointgroup::OpKind::C3:
+        return "C3";
+    case pointgroup::OpKind::C4:
+        return "C4";
+    case pointgroup::OpKind::C6:
+        return "C6";
+    case pointgroup::OpKind::I:
+        return "i";
+    case pointgroup::OpKind::Sigma:
+        return "sigma";
+    case pointgroup::OpKind::S6:
+        return "S6";
+    case pointgroup::OpKind::S4:
+        return "S4";
+    case pointgroup::OpKind::S3:
+        return "S3";
     }
     return "?";
 }
@@ -125,8 +133,7 @@ std::string format_decomposition(const pointgroup::PointGroup &pg, const std::ve
 } // namespace
 
 ModeSymmetry::ModeSymmetry(PHON *phon) : Pointers(phon)
-{
-}
+{}
 
 ModeSymmetry::~ModeSymmetry() = default;
 
@@ -214,11 +221,9 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     {
         double xk[3] = {0.0, 0.0, 0.0};
         if (dynamical->nonanalytic == 3) {
-            dynamical->eval_k_ewald(xk, xk, ewald->fc2_without_dipole,
-                                    eval_raw.data(), evec, true);
+            dynamical->eval_k_ewald(xk, xk, ewald->fc2_without_dipole, eval_raw.data(), evec, true);
         } else {
-            dynamical->eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0],
-                              eval_raw.data(), evec, true);
+            dynamical->eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0], eval_raw.data(), evec, true);
         }
     }
     for (auto is = 0; is < ns; ++is) {
@@ -299,10 +304,9 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         } else if (bad == last) {
             partner = last - 1;
         } else {
-            const auto gap_prev = omega[clusters[bad].start] - omega[clusters[bad - 1].start
-                                                                    + clusters[bad - 1].size - 1];
-            const auto gap_next = omega[clusters[bad + 1].start] - omega[clusters[bad].start
-                                                                        + clusters[bad].size - 1];
+            const auto gap_prev =
+                omega[clusters[bad].start] - omega[clusters[bad - 1].start + clusters[bad - 1].size - 1];
+            const auto gap_next = omega[clusters[bad + 1].start] - omega[clusters[bad].start + clusters[bad].size - 1];
             partner = (gap_prev <= gap_next) ? bad - 1 : bad + 1;
         }
         const auto lo = std::min(bad, partner);
@@ -327,8 +331,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     // ------------------------------------------------------------------
     // Characters per multiplet and per operation.
     // ------------------------------------------------------------------
-    std::vector<std::vector<std::complex<double>>> chi_op(ngroup,
-                                                          std::vector<std::complex<double>>(nsym));
+    std::vector<std::vector<std::complex<double>>> chi_op(ngroup, std::vector<std::complex<double>>(nsym));
     for (auto isym = 0; isym < nsym; ++isym) {
         for (auto ig = 0; ig < ngroup; ++ig) {
             std::complex<double> chi(0.0, 0.0);
@@ -383,9 +386,8 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             const auto hm_spglib = normalize_hm(std::string(symbol));
             const auto hm_table = normalize_hm(pointgroup::pg_table[pg_number - 1].international);
             if (hm_spglib != hm_table) {
-                warnings.emplace_back("point-group identification mismatch (fingerprint: "
-                                      + hm_table + ", spglib: " + hm_spglib
-                                      + "); Mulliken labels are not assigned.");
+                warnings.emplace_back("point-group identification mismatch (fingerprint: " + hm_table +
+                                      ", spglib: " + hm_spglib + "); Mulliken labels are not assigned.");
                 labels_ok = false;
             }
         }
@@ -452,13 +454,12 @@ void ModeSymmetry::analyze_irreps_at_gamma()
                         best_order = op.order;
                         z_ops = op.axis;
                         unique_axis = true;
-                    } else if (op.order == best_order && best_order > 2
-                               && std::abs(op.axis.dot(z_ops)) < 1.0 - 1.0e-6) {
+                    } else if (op.order == best_order && best_order > 2 && std::abs(op.axis.dot(z_ops)) < 1.0 - 1.0e-6)
+                    {
                         unique_axis = false;
                     }
                 }
-                if (unique_axis && best_order > 2
-                    && std::abs(zhat.dot(z_ops)) < 1.0 - 1.0e-4) {
+                if (unique_axis && best_order > 2 && std::abs(zhat.dot(z_ops)) < 1.0 - 1.0e-4) {
                     warnings.emplace_back("the standardized-cell frame is inconsistent with "
                                           "the symmetry-operation axes; convention-dependent "
                                           "labels are not resolved.");
@@ -509,12 +510,13 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             chi_class[ig][ic] = avg;
         }
         if (max_imag[ig] > 1.0e-6) {
-            warnings.emplace_back("characters have a nonzero imaginary part (mode group "
-                                  + std::to_string(ig + 1) + "); results may be unreliable.");
+            warnings.emplace_back("characters have a nonzero imaginary part (mode group " + std::to_string(ig + 1) +
+                                  "); results may be unreliable.");
         }
         if (max_spread[ig] > 1.0e-4) {
-            warnings.emplace_back("characters are not constant on conjugacy classes (mode group "
-                                  + std::to_string(ig + 1) + "): the harmonic force constants "
+            warnings.emplace_back("characters are not constant on conjugacy classes (mode group " +
+                                  std::to_string(ig + 1) +
+                                  "): the harmonic force constants "
                                   "break the crystal symmetry. Labels are suppressed.");
             labels_ok = false;
         }
@@ -543,8 +545,8 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         }
         if (std::abs(chi_sum - chi_total_class[ic]) > 1.0e-3 * static_cast<double>(ns)) {
             warnings.emplace_back("the multiplet characters do not sum to the total "
-                                  "vibrational character (class "
-                                  + std::to_string(ic + 1) + "); results may be unreliable.");
+                                  "vibrational character (class " +
+                                  std::to_string(ic + 1) + "); results may be unreliable.");
         }
     }
 
@@ -558,15 +560,14 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     // ------------------------------------------------------------------
     if (labels_ok && pg) {
         auto assignment_ok = [&](const std::vector<int> &a2c) {
-            const auto n_vec = pointgroup::decompose_representation(*pg, a2c, nelem_of_class,
-                                                                    trace_class);
-            const auto n_tot = pointgroup::decompose_representation(*pg, a2c, nelem_of_class,
-                                                                    chi_total_class);
+            const auto n_vec = pointgroup::decompose_representation(*pg, a2c, nelem_of_class, trace_class);
+            const auto n_tot = pointgroup::decompose_representation(*pg, a2c, nelem_of_class, chi_total_class);
             for (auto mu = 0; mu < pg->nclass; ++mu) {
                 const auto iv = std::lround(n_vec[mu]);
                 const auto it = std::lround(n_tot[mu]);
-                if (std::abs(n_vec[mu] - iv) > 1.0e-3 || std::abs(n_tot[mu] - it) > 1.0e-3
-                    || iv < 0 || it < 0 || it < iv) {
+                if (std::abs(n_vec[mu] - iv) > 1.0e-3 || std::abs(n_tot[mu] - it) > 1.0e-3 || iv < 0 || it < 0 ||
+                    it < iv)
+                {
                     return false;
                 }
             }
@@ -575,8 +576,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
                 if (!closure_ok || max_spread[ig] > 1.0e-4) {
                     continue;
                 }
-                const auto n_mu = pointgroup::decompose_representation(*pg, a2c, nelem_of_class,
-                                                                       chi_class[ig]);
+                const auto n_mu = pointgroup::decompose_representation(*pg, a2c, nelem_of_class, chi_class[ig]);
                 auto dimsum = 0;
                 for (auto mu = 0; mu < pg->nclass; ++mu) {
                     const auto im = std::lround(n_mu[mu]);
@@ -592,8 +592,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             return true;
         };
 
-        const auto candidates = pointgroup::enumerate_consistent_assignments(*pg, classes,
-                                                                             ops_info);
+        const auto candidates = pointgroup::enumerate_consistent_assignments(*pg, classes, ops_info);
         std::vector<const std::vector<int> *> survivors;
         for (const auto &cand: candidates) {
             if (assignment_ok(cand)) {
@@ -636,8 +635,8 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             for (auto nu = mu + 1; nu < pg->nclass; ++nu) {
                 auto same_outside = true;
                 for (auto col = 0; col < pg->nclass; ++col) {
-                    if (!ambiguous_col[col]
-                        && pg->chartab[mu * pg->nclass + col] != pg->chartab[nu * pg->nclass + col]) {
+                    if (!ambiguous_col[col] && pg->chartab[mu * pg->nclass + col] != pg->chartab[nu * pg->nclass + col])
+                    {
                         same_outside = false;
                         break;
                     }
@@ -709,11 +708,9 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         grp.acoustic_content = acoustic_content(cl);
         grp.is_acoustic = grp.acoustic_content > static_cast<double>(cl.size) - 0.1;
         if (grp.acoustic_content > 0.1 && !grp.is_acoustic) {
-            warnings.emplace_back("acoustic and optical modes mix within mode group "
-                                  + std::to_string(ig + 1) + " (acoustic content "
-                                  + std::to_string(grp.acoustic_content)
-                                  + " of dimension " + std::to_string(cl.size)
-                                  + "); its acoustic assignment is ambiguous.");
+            warnings.emplace_back("acoustic and optical modes mix within mode group " + std::to_string(ig + 1) +
+                                  " (acoustic content " + std::to_string(grp.acoustic_content) + " of dimension " +
+                                  std::to_string(cl.size) + "); its acoustic assignment is ambiguous.");
         }
         auto n_flagged = 0;
         for (auto i = cl.start; i < cl.start + cl.size; ++i) {
@@ -722,42 +719,40 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             }
         }
         if (n_flagged != std::lround(grp.acoustic_content)) {
-            warnings.emplace_back("diagnostic: the per-branch acoustic detector ("
-                                  + std::to_string(n_flagged) + " branches) disagrees with "
-                                  "the translation-subspace content ("
-                                  + std::to_string(grp.acoustic_content) + ") for mode group "
-                                  + std::to_string(ig + 1) + ".");
+            warnings.emplace_back("diagnostic: the per-branch acoustic detector (" + std::to_string(n_flagged) +
+                                  " branches) disagrees with "
+                                  "the translation-subspace content (" +
+                                  std::to_string(grp.acoustic_content) + ") for mode group " + std::to_string(ig + 1) +
+                                  ".");
         }
 
         // Route (b): projection activity (table-free, authoritative).
         double n_ir = 0.0, n_raman = 0.0;
         for (auto isym = 0; isym < nsym; ++isym) {
             n_ir += chi_op[ig][isym].real() * trace_op[isym];
-            n_raman += chi_op[ig][isym].real() * 0.5
-                       * (trace_op[isym] * trace_op[isym] + trace_sq_op[isym]);
+            n_raman += chi_op[ig][isym].real() * 0.5 * (trace_op[isym] * trace_op[isym] + trace_sq_op[isym]);
         }
         n_ir /= static_cast<double>(order);
         n_raman /= static_cast<double>(order);
 
-        const auto integral_proj = std::abs(n_ir - std::lround(n_ir)) < 1.0e-3
-                                   && std::abs(n_raman - std::lround(n_raman)) < 1.0e-3
-                                   && n_ir > -1.0e-3 && n_raman > -1.0e-3;
+        const auto integral_proj = std::abs(n_ir - std::lround(n_ir)) < 1.0e-3 &&
+                                   std::abs(n_raman - std::lround(n_raman)) < 1.0e-3 && n_ir > -1.0e-3 &&
+                                   n_raman > -1.0e-3;
         grp.n_ir_proj = n_ir;
         grp.n_raman_proj = n_raman;
         grp.ir_active = n_ir > 0.5;
         grp.raman_active = n_raman > 0.5;
         grp.activity_known = closure_ok && integral_proj && max_spread[ig] <= 1.0e-4;
         if (!integral_proj) {
-            warnings.emplace_back("non-integral activity projection for mode group "
-                                  + std::to_string(ig + 1)
-                                  + "; activity flags are approximate.");
+            warnings.emplace_back("non-integral activity projection for mode group " + std::to_string(ig + 1) +
+                                  "; activity flags are approximate.");
         }
 
         // Irrep assignment (route (a)) when the table matching succeeded and
         // this multiplet is a symmetry-clean invariant subspace.
         if (labels_ok && pg && closure_ok && max_spread[ig] <= 1.0e-4) {
-            const auto n_mu = pointgroup::decompose_representation(*pg, match.class_to_col,
-                                                                   nelem_of_class, chi_class[ig]);
+            const auto n_mu =
+                pointgroup::decompose_representation(*pg, match.class_to_col, nelem_of_class, chi_class[ig]);
             std::vector<int> n_int(pg->nclass, 0);
             auto integral = true;
             auto dimsum = 0;
@@ -771,8 +766,8 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             if (!integral || dimsum != cl.size) {
                 grp.irrep_label = "??";
                 grp.activity_known = false;
-                warnings.emplace_back("mode group " + std::to_string(ig + 1)
-                                      + " does not decompose into integer irrep multiplicities.");
+                warnings.emplace_back("mode group " + std::to_string(ig + 1) +
+                                      " does not decompose into integer irrep multiplicities.");
             } else {
                 std::string label;
                 auto ir_table = false, raman_table = false;
@@ -792,11 +787,10 @@ void ModeSymmetry::analyze_irreps_at_gamma()
 
                 // Routes (a) and (b) must agree; disagreement indicates an
                 // internal inconsistency, so suppress the labels.
-                if (grp.activity_known
-                    && (ir_table != grp.ir_active || raman_table != grp.raman_active)) {
+                if (grp.activity_known && (ir_table != grp.ir_active || raman_table != grp.raman_active)) {
                     warnings.emplace_back("internal error: table-based and projection-based "
-                                          "activities disagree for mode group "
-                                          + std::to_string(ig + 1) + "; labels are suppressed.");
+                                          "activities disagree for mode group " +
+                                          std::to_string(ig + 1) + "; labels are suppressed.");
                     labels_ok = false;
                 }
             }
@@ -810,8 +804,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     // ------------------------------------------------------------------
     result_.has_borncharge = dielec->has_borncharge();
     if (result_.has_borncharge) {
-        std::vector<std::vector<std::complex<double>>> zstar_mode(
-            ns, std::vector<std::complex<double>>(3));
+        std::vector<std::vector<std::complex<double>>> zstar_mode(ns, std::vector<std::complex<double>>(3));
         dielec->compute_mode_effective_charge(zstar_mode, evec);
         for (auto ig = 0; ig < ngroup; ++ig) {
             auto &grp = result_.groups[ig];
@@ -827,10 +820,9 @@ void ModeSymmetry::analyze_irreps_at_gamma()
             }
             grp.ir_strength = s_tensor;
             grp.has_ir_strength = true;
-            if (grp.activity_known && !grp.is_acoustic && !grp.ir_active
-                && s_tensor.trace() > 1.0e-6) {
-                warnings.emplace_back("mode group " + std::to_string(ig + 1)
-                                      + " is IR-inactive by symmetry but has a nonzero "
+            if (grp.activity_known && !grp.is_acoustic && !grp.ir_active && s_tensor.trace() > 1.0e-6) {
+                warnings.emplace_back("mode group " + std::to_string(ig + 1) +
+                                      " is IR-inactive by symmetry but has a nonzero "
                                       "oscillator strength: the Born effective charges are "
                                       "inconsistent with the crystal symmetry (consider "
                                       "BORNSYM = 1).");
@@ -847,14 +839,15 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         ci.nelem = nelem_of_class[ic];
         if (labels_ok && pg) {
             ci.label = pg->classes[match.class_to_col[ic]].label;
-            if (!match.convention_resolved
-                && std::find(match.ambiguous_cols.begin(), match.ambiguous_cols.end(),
-                             match.class_to_col[ic]) != match.ambiguous_cols.end()) {
+            if (!match.convention_resolved &&
+                std::find(match.ambiguous_cols.begin(), match.ambiguous_cols.end(), match.class_to_col[ic]) !=
+                    match.ambiguous_cols.end())
+            {
                 ci.label += "?";
             }
         } else {
-            ci.label = (nelem_of_class[ic] > 1 ? std::to_string(nelem_of_class[ic]) : "")
-                       + kind_name(ops_info[classes[ic][0]].kind);
+            ci.label = (nelem_of_class[ic] > 1 ? std::to_string(nelem_of_class[ic]) : "") +
+                       kind_name(ops_info[classes[ic][0]].kind);
         }
         for (const auto im: classes[ic]) {
             const auto kind = ops_info[im].kind;
@@ -865,19 +858,18 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     }
 
     if (labels_ok && pg) {
-        const auto n_total = pointgroup::decompose_representation(*pg, match.class_to_col,
-                                                                  nelem_of_class, chi_total_class);
-        const auto n_vec = pointgroup::decompose_representation(*pg, match.class_to_col,
-                                                                nelem_of_class, trace_class);
+        const auto n_total =
+            pointgroup::decompose_representation(*pg, match.class_to_col, nelem_of_class, chi_total_class);
+        const auto n_vec = pointgroup::decompose_representation(*pg, match.class_to_col, nelem_of_class, trace_class);
         std::vector<int> n_total_int(pg->nclass), n_vec_int(pg->nclass), n_optic(pg->nclass);
         auto integral = true;
         for (auto mu = 0; mu < pg->nclass; ++mu) {
             n_total_int[mu] = static_cast<int>(std::lround(n_total[mu]));
             n_vec_int[mu] = static_cast<int>(std::lround(n_vec[mu]));
             n_optic[mu] = n_total_int[mu] - n_vec_int[mu];
-            if (std::abs(n_total[mu] - n_total_int[mu]) > 1.0e-3
-                || std::abs(n_vec[mu] - n_vec_int[mu]) > 1.0e-3
-                || n_total_int[mu] < 0 || n_optic[mu] < 0) {
+            if (std::abs(n_total[mu] - n_total_int[mu]) > 1.0e-3 || std::abs(n_vec[mu] - n_vec_int[mu]) > 1.0e-3 ||
+                n_total_int[mu] < 0 || n_optic[mu] < 0)
+            {
                 integral = false;
             }
         }
@@ -898,8 +890,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         result_.pg_schoenflies = pg->schoenflies;
         result_.pg_international = pg->international;
         if (symmetry->has_spg_dataset) {
-            result_.spg_symbol = symmetry->spg_symbol + " (#"
-                                 + std::to_string(symmetry->spg_number) + ")";
+            result_.spg_symbol = symmetry->spg_symbol + " (#" + std::to_string(symmetry->spg_number) + ")";
         }
     }
 
@@ -913,9 +904,8 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         result_.decomp_acoustic.clear();
         result_.decomp_optic.clear();
         for (auto ic = 0; ic < ncl; ++ic) {
-            result_.classes[ic].label =
-                (nelem_of_class[ic] > 1 ? std::to_string(nelem_of_class[ic]) : "")
-                + kind_name(ops_info[classes[ic][0]].kind);
+            result_.classes[ic].label = (nelem_of_class[ic] > 1 ? std::to_string(nelem_of_class[ic]) : "") +
+                                        kind_name(ops_info[classes[ic][0]].kind);
         }
     }
 

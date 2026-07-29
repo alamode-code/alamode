@@ -112,7 +112,8 @@ def run_case(anphonbin, prefix, fcsfile, expects, cell=None):
     for key in ("Gamma_total", "Gamma_acoustic", "Gamma_optic"):
         nfail += check(
             header.get(key) == expects[key],
-            "%s %s: expected '%s', got '%s'" % (prefix, key, expects[key], header.get(key)),
+            "%s %s: expected '%s', got '%s'"
+            % (prefix, key, expects[key], header.get(key)),
         )
     nfail += check(
         len(groups) == len(expects["groups"]),
@@ -133,8 +134,10 @@ def run_case(anphonbin, prefix, fcsfile, expects, cell=None):
                 % (prefix, irrep, freq_sign, got["freq"]),
             )
     if nfail == 0:
-        print("%s: OK (%s, Gamma_optic = %s)"
-              % (prefix, expects["point_group"], expects["Gamma_optic"]))
+        print(
+            "%s: OK (%s, Gamma_optic = %s)"
+            % (prefix, expects["point_group"], expects["Gamma_optic"])
+        )
     return nfail
 
 
