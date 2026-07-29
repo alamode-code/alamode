@@ -114,6 +114,7 @@ struct AnalysisInputVars
     bool print_fc2_ewald = false;     // FC2_EWALD
     int calc_dielectric_constant = 0; // DIELEC
     bool print_zmode = false;         // ZMODE
+    bool print_irreps = false;        // IRREPS
     bool calc_FE_bubble = false;      // FE_BUBBLE
 
     bool print_anime = false;

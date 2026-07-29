@@ -52,6 +52,8 @@ public:
 
     std::unique_ptr<class ModeAnalysis> mode_analysis;
 
+    std::unique_ptr<class ModeSymmetry> mode_symmetry;
+
     std::unique_ptr<class Selfenergy> selfenergy;
 
     std::unique_ptr<class Conductivity> conductivity;

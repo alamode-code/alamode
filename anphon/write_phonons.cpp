@@ -25,6 +25,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mode_symmetry.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "phonon_velocity.h"
@@ -239,6 +240,7 @@ void Writes::writeInputVars()
         std::cout << "  PRINTVEL = " << phonon_velocity->print_velocity << '\n';
         std::cout << "  PRINTVEC = " << dynamical->print_eigenvectors << '\n';
         std::cout << "  PRINTXSF = " << writes->print_xsf << '\n';
+        std::cout << "  IRREPS = " << mode_symmetry->print_irreps << '\n';
         std::cout << '\n';
 
         if (print_anime) {
@@ -542,6 +544,10 @@ void Writes::writePhononInfo()
 
     if (print_zmode) {
         printNormalmodeBorncharge();
+    }
+
+    if (mode_symmetry->print_irreps) {
+        writeModeIrreps();
     }
 }
 
@@ -2781,6 +2787,12 @@ void Writes::printNormalmodeBorncharge() const
 
     if (mympi->my_rank == 0) {
 
+        if (!dielec->has_borncharge()) {
+            warn("printNormalmodeBorncharge",
+                 "ZMODE = 1 requires BORNINFO; the .zmode file is not created.");
+            return;
+        }
+
         auto zstar_born = dielec->get_zstar_mode();
 
         const auto ns = dynamical->neval;
@@ -2804,6 +2816,261 @@ void Writes::printNormalmodeBorncharge() const
             ofs_zstar << "\n\n";
         }
         ofs_zstar.close();
+    }
+}
+
+namespace
+{
+
+std::string irrep_activity_string(const GammaModeGroup &grp)
+{
+    std::string str;
+    if (grp.is_acoustic) {
+        str = "acoustic";
+    } else if (grp.ir_active && grp.raman_active) {
+        str = "IR+Raman";
+    } else if (grp.ir_active) {
+        str = "IR";
+    } else if (grp.raman_active) {
+        str = "Raman";
+    } else {
+        str = "silent";
+    }
+    if (!grp.activity_known) {
+        str += " (?)";
+    }
+    return str;
+}
+
+} // namespace
+
+void Writes::printModeIrrepsSummary() const
+{
+    if (mympi->my_rank != 0 || getVerbosity() == 0) {
+        return;
+    }
+
+    const auto &result = mode_symmetry->get_result();
+
+    std::cout << '\n';
+    std::cout << " -----------------------------------------------------------------\n\n";
+    std::cout << " Irreducible representations of phonon modes at Gamma (IRREPS = 1)\n\n";
+
+    for (const auto &warning: result.warnings) {
+        std::cout << "  WARNING: " << warning << '\n';
+    }
+    if (!result.warnings.empty()) {
+        std::cout << '\n';
+    }
+
+    if (result.available) {
+        std::cout << "  Point group : " << result.pg_schoenflies
+                  << " (" << result.pg_international << ")";
+        if (!result.spg_symbol.empty()) {
+            std::cout << "   [space group: " << result.spg_symbol << "]";
+        }
+        std::cout << "\n";
+        if (!result.axis_convention_note.empty()) {
+            std::cout << "  Axis convention: " << result.axis_convention_note << '\n';
+        }
+        std::cout << '\n';
+        std::cout << "  Gamma_total    = " << result.decomp_total << '\n';
+        std::cout << "  Gamma_acoustic = " << result.decomp_acoustic << '\n';
+        std::cout << "  Gamma_optic    = " << result.decomp_optic << "\n\n";
+    } else {
+        std::cout << "  Mulliken labels could not be assigned for this run (see warnings);\n";
+        std::cout << "  frequencies and projection-based activities are listed below.\n\n";
+    }
+
+    std::cout << "  " << std::setw(9) << "multiplet" << std::setw(12) << "branches"
+              << std::setw(15) << "freq (cm^-1)" << std::setw(12) << "irrep"
+              << std::setw(5) << "deg" << std::setw(11) << "activity";
+    if (result.has_borncharge) {
+        std::cout << std::setw(22) << "IR strength (e^2/amu)";
+    }
+    std::cout << '\n';
+
+    auto ig = 0;
+    for (const auto &grp: result.groups) {
+        ++ig;
+        const auto branch_first = grp.mode_indices.front() + 1;
+        const auto branch_last = grp.mode_indices.back() + 1;
+        std::cout << "  " << std::setw(9) << ig
+                  << std::setw(5) << branch_first << " -" << std::setw(5) << branch_last
+                  << std::setw(15) << std::fixed << std::setprecision(4)
+                  << in_kayser(grp.omega)
+                  << std::setw(12) << (grp.irrep_label.empty() ? "-" : grp.irrep_label)
+                  << std::setw(5) << grp.mode_indices.size()
+                  << std::setw(11) << irrep_activity_string(grp);
+        if (grp.has_ir_strength) {
+            std::cout << std::setw(22) << std::scientific << std::setprecision(4)
+                      << grp.ir_strength.trace() << std::fixed;
+        } else if (result.has_borncharge) {
+            std::cout << std::setw(22) << "-";
+        }
+        std::cout << '\n';
+    }
+    std::cout << '\n';
+
+    if (dynamical->nonanalytic > 0) {
+        std::cout << "  Note: frequencies, labels, and strengths refer to the analytic (TO)\n";
+        std::cout << "        Gamma limit; the direction-dependent LO-TO splitting is not\n";
+        std::cout << "        reflected in this table.\n\n";
+    }
+}
+
+void Writes::writeModeIrreps() const
+{
+    if (mympi->my_rank != 0) {
+        return;
+    }
+
+    const auto &result = mode_symmetry->get_result();
+
+    const auto file_irreps = phon->job_title + ".irreps";
+    std::ofstream ofs_irreps;
+    ofs_irreps.open(file_irreps.c_str(), std::ios::out);
+    if (!ofs_irreps) {
+        exit("writeModeIrreps", "Cannot open file file_irreps");
+    }
+
+    ofs_irreps << "# Irreducible representations of phonon modes at q = (0, 0, 0)\n";
+
+    for (const auto &warning: result.warnings) {
+        ofs_irreps << "# WARNING: " << warning << '\n';
+    }
+
+    if (result.available) {
+        ofs_irreps << "# Point group: " << result.pg_schoenflies
+                   << " (" << result.pg_international << ")";
+        if (!result.spg_symbol.empty()) {
+            ofs_irreps << "; space group: " << result.spg_symbol;
+        }
+        ofs_irreps << '\n';
+        if (!result.axis_convention_note.empty()) {
+            ofs_irreps << "# Axis convention: " << result.axis_convention_note << '\n';
+        }
+        ofs_irreps << "# Gamma_total    = " << result.decomp_total << '\n';
+        ofs_irreps << "# Gamma_acoustic = " << result.decomp_acoustic << '\n';
+        ofs_irreps << "# Gamma_optic    = " << result.decomp_optic << '\n';
+    } else {
+        ofs_irreps << "# Mulliken labels could not be assigned for this run (see warnings).\n";
+    }
+
+    if (!result.classes.empty()) {
+        ofs_irreps << "# Classes (label, #elements, axes or mirror normals in Cartesian):\n";
+        auto icl = 0;
+        for (const auto &cl: result.classes) {
+            ++icl;
+            ofs_irreps << "#  " << std::setw(3) << icl << ": " << std::setw(12) << std::left
+                       << cl.label << std::right << std::setw(4) << cl.nelem;
+            if (!cl.axes.empty()) {
+                ofs_irreps << "   axes:";
+                for (const auto &ax: cl.axes) {
+                    ofs_irreps << " [" << std::fixed << std::setprecision(3)
+                               << std::setw(7) << ax.x() << std::setw(7) << ax.y()
+                               << std::setw(7) << ax.z() << "]";
+                }
+            }
+            ofs_irreps << '\n';
+        }
+    }
+
+    if (dynamical->nonanalytic > 0) {
+        ofs_irreps << "# Note: frequencies, labels, and strengths refer to the analytic (TO) "
+                      "Gamma limit.\n";
+    }
+
+    ofs_irreps << "#\n";
+    ofs_irreps << "# multiplet, first & last branch, frequency [cm^-1], irrep, degeneracy, "
+                  "activity, acoustic content tr(P_T P)";
+    if (result.has_borncharge) {
+        ofs_irreps << ", IR strength I_tot [e^2/amu]";
+    }
+    ofs_irreps << '\n';
+    auto ig = 0;
+    for (const auto &grp: result.groups) {
+        ++ig;
+        ofs_irreps << std::setw(5) << ig
+                   << std::setw(6) << grp.mode_indices.front() + 1
+                   << std::setw(6) << grp.mode_indices.back() + 1
+                   << std::setw(16) << std::fixed << std::setprecision(6)
+                   << in_kayser(grp.omega)
+                   << "  " << std::setw(12) << std::left
+                   << (grp.irrep_label.empty() ? "-" : grp.irrep_label) << std::right
+                   << std::setw(4) << grp.mode_indices.size()
+                   << "  " << std::setw(10) << std::left << irrep_activity_string(grp)
+                   << std::right
+                   << std::setw(8) << std::fixed << std::setprecision(3)
+                   << grp.acoustic_content;
+        if (grp.has_ir_strength) {
+            ofs_irreps << std::setw(15) << std::scientific << std::setprecision(6)
+                       << grp.ir_strength.trace() << std::fixed;
+        } else if (result.has_borncharge) {
+            ofs_irreps << std::setw(15) << "-";
+        }
+        ofs_irreps << '\n';
+    }
+
+    // Approximate projection weights for multiplets whose exact activity
+    // could not be certified.
+    ig = 0;
+    for (const auto &grp: result.groups) {
+        ++ig;
+        if (grp.activity_known) {
+            continue;
+        }
+        ofs_irreps << "# multiplet " << ig << " approximate projections: n_IR = "
+                   << std::fixed << std::setprecision(3) << grp.n_ir_proj
+                   << ", n_Raman = " << grp.n_raman_proj << '\n';
+    }
+
+    if (result.has_borncharge) {
+        ofs_irreps << "#\n# IR oscillator-strength tensors "
+                      "S_ab = sum_{nu in multiplet} Z*_mode[nu][a] Z*_mode[nu][b] [e^2/amu]:\n";
+        ofs_irreps << "# multiplet" << std::setw(15) << "S_xx" << std::setw(15) << "S_yy"
+                   << std::setw(15) << "S_zz" << std::setw(15) << "S_xy"
+                   << std::setw(15) << "S_yz" << std::setw(15) << "S_zx" << '\n';
+        ig = 0;
+        for (const auto &grp: result.groups) {
+            ++ig;
+            if (!grp.has_ir_strength) {
+                continue;
+            }
+            const auto &s = grp.ir_strength;
+            ofs_irreps << std::setw(10) << ig << std::scientific << std::setprecision(6)
+                       << std::setw(15) << s(0, 0) << std::setw(15) << s(1, 1)
+                       << std::setw(15) << s(2, 2) << std::setw(15) << s(0, 1)
+                       << std::setw(15) << s(1, 2) << std::setw(15) << s(2, 0)
+                       << std::fixed << '\n';
+        }
+    }
+
+    // Raw numerical characters: everything needed to re-derive labels under a
+    // different axis convention.
+    if (!result.classes.empty()) {
+        ofs_irreps << "#\n# Characters chi(class) per multiplet (real part, class-averaged):\n";
+        ofs_irreps << "# multiplet";
+        for (const auto &cl: result.classes) {
+            ofs_irreps << std::setw(10) << cl.label;
+        }
+        ofs_irreps << '\n';
+        ig = 0;
+        for (const auto &grp: result.groups) {
+            ++ig;
+            ofs_irreps << std::setw(10) << ig;
+            for (const auto chi: grp.characters) {
+                ofs_irreps << std::setw(10) << std::fixed << std::setprecision(3) << chi;
+            }
+            ofs_irreps << '\n';
+        }
+    }
+
+    ofs_irreps.close();
+
+    if (getVerbosity() > 0) {
+        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_irreps;
+        std::cout << " : Irreducible representations and IR/Raman activity at Gamma\n";
     }
 }
 

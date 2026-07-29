@@ -42,6 +42,22 @@ public:
 
     std::vector<std::vector<double>> get_zstar_mode() const;
 
+    // Mode effective charges from caller-supplied Gamma-point eigenvectors
+    // (mass-weighted, [ns][3*natmin]); the eigenvectors are not modified.
+    // The complex overload is invariant under eigenvector phase choices;
+    // the real overload keeps the historical ZMODE convention (real part).
+    void compute_mode_effective_charge(std::vector<std::vector<std::complex<double>>> &zstar_mode,
+                                       const std::complex<double> *const *evec_in) const;
+
+    void compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode,
+                                       const std::complex<double> *const *evec_in,
+                                       const bool do_normalize) const;
+
+    bool has_borncharge() const
+    {
+        return static_cast<bool>(borncharge);
+    }
+
     const double *const *const *get_borncharge() const;
 
     Eigen::Matrix3d get_dielec_tensor() const;

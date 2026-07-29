@@ -23,6 +23,7 @@
 #include "iterativebte.h"
 #include "kpoint.h"
 #include "mode_analysis.h"
+#include "mode_symmetry.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "phonon_velocity.h"
@@ -64,6 +65,7 @@ void PHON::create_pointers()
     thermodynamics = std::make_unique<Thermodynamics>();
     anharmonic_core = std::make_unique<AnharmonicCore>(this);
     mode_analysis = std::make_unique<ModeAnalysis>(this);
+    mode_symmetry = std::make_unique<ModeSymmetry>(this);
     selfenergy = std::make_unique<Selfenergy>();
     conductivity = std::make_unique<Conductivity>(this);
     writes = std::make_unique<Writes>(this);
@@ -91,6 +93,7 @@ void PHON::destroy_pointers()
     thermodynamics.reset();
     anharmonic_core.reset();
     mode_analysis.reset();
+    mode_symmetry.reset();
     selfenergy.reset();
     conductivity.reset();
     writes.reset();
@@ -142,6 +145,9 @@ void PHON::setup_base() const
     system->setup();
     symmetry->setup_symmetry();
     kpoint->kpoint_setups(mode);
+    // Broadcasts the IRREPS flag; must precede dielec->init(), which uses it
+    // to decide whether Born charges are loaded.
+    mode_symmetry->setup();
     dynamical->setup_dynamical();
     fcs_phonon->setup(mode);
     phonon_velocity->setup_velocity();
@@ -186,6 +192,10 @@ void PHON::execute_phonons() const
 
     dynamical->diagonalize_dynamical_all();
 
+    if (mode_symmetry->print_irreps && mympi->my_rank == 0) {
+        mode_symmetry->analyze_irreps_at_gamma();
+    }
+
     if (dos->flag_dos) {
         dos->calc_dos_all();
     }
@@ -212,6 +222,9 @@ void PHON::execute_phonons() const
 
     if (mympi->my_rank == 0) {
         writes->printPhononEnergies();
+        if (mode_symmetry->print_irreps) {
+            writes->printModeIrrepsSummary();
+        }
         writes->writePhononInfo();
         if (gruneisen->print_newfcs) {
             gruneisen->write_new_fcsxml_all();

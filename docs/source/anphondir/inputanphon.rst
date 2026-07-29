@@ -49,7 +49,7 @@ List of supported input variables
    **&analysis**
    :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
    :ref:`DIELEC <anphon_dielec>`, :ref:`DOS <anphon_dos>`, :ref:`FC2_EWALD <anphon_fc2_ewald>`, :ref:`GRUNEISEN <anphon_gruneisen>`
-   :ref:`KS_INPUT <anphon_ks_input>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVAL <anphon_printeval>`, :ref:`PRINTEVEC <anphon_printevec>`
+   :ref:`IRREPS <anphon_irreps>`, :ref:`KS_INPUT <anphon_ks_input>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVAL <anphon_printeval>`, :ref:`PRINTEVEC <anphon_printevec>`
    :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTV3 <anphon_printv3>`, :ref:`PRINTV4 <anphon_printv4>`
    :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`PROJECTION_AXES <anphon_projection_axes>`, :ref:`QUARTIC <anphon_quartic>`
    :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`SELF_W <anphon_self_w>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`
@@ -1401,6 +1401,24 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Default: [0, 0, 0]
  :Type: Array of integers
  :Description: This tag specifies the translation vector used for computing the displacement-displacement (uu) correlation function. For example, if one wants to compute the uu correlation function between an atom 1 in the cell at the center and atom 2 in the neighboring cell at :math:`\boldsymbol{r}(\ell')=(1,0,0)`, ``SHIFT_UCORR`` should be set as ``SHIFT_UCORR = 1 0 0``.
+
+````
+
+.. _anphon_irreps:
+
+* IRREPS-tag = 0 | 1
+
+ === =========================================================================
+  0   Do nothing
+  1   | Assign irreducible representations (Mulliken symbols) and IR/Raman
+      | activities to the phonon modes at the Gamma point.
+      | The result is stored in ``PREFIX``.irreps
+ === =========================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``MODE = phonons`` and ``IRREPS = 1``, each zone-center phonon multiplet is assigned an irreducible representation of the crystal point group by projecting the eigenvectors of the analytic (without the non-analytic correction) dynamical matrix onto the characters of the point-group operations. Each multiplet is labeled as IR-active, Raman-active, both, silent, or acoustic, and the decomposition of the total vibrational representation is printed. When ``BORNINFO`` is given, the IR oscillator-strength tensors :math:`S_{\alpha\beta} = \sum_{\nu} Z^{*}_{\nu,\alpha} Z^{*}_{\nu,\beta}` (unit: :math:`e^{2}\,\text{amu}^{-1}`) are also reported. Labels that depend on the axis convention (e.g. :math:`B_{1}` vs. :math:`B_{2}`) follow the standardized frame reported in the output; the raw characters are printed so that labels can be re-derived under any other convention. This tag is effective only when ``MODE = phonons`` and is not supported for noncollinear magnetic systems.
+
 
 ````
 

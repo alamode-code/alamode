@@ -156,6 +156,19 @@ public:
     std::vector<SymmetryOperation> SymmList_ref;
     std::vector<SymmetryOperationWithMapping> SymmListWithMap_ref;
 
+    // Space-group information retained from the spglib dataset of the cell
+    // whose operations populate SymmList (rank 0 only; stays false when the
+    // internal symmetry finder is used, e.g. for noncollinear magnetism).
+    bool has_spg_dataset = false;
+    int spg_number = 0;
+    std::string spg_symbol;
+    // Dataset transformation matrix P: the standardized (conventional) cell
+    // in the Cartesian frame of the calculation is  L_conv = L_input * P^-1
+    // (verified against spglib for fcc: L * P^-1 reproduces the conventional
+    // cubic cell).  Authoritative source of the axis convention for
+    // orientation-dependent Mulliken labels.
+    Eigen::Matrix3d spg_transformation_matrix = Eigen::Matrix3d::Identity();
+
     void setup_symmetry();
 
     void make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const;
@@ -169,7 +182,7 @@ private:
 
     void setup_symmetry_operation(const Cell &cell_in, const Spin &spin_in,
                                   const std::vector<std::vector<unsigned int>> &atomtype_in,
-                                  std::vector<SymmetryOperation> &symlist, const int verbosity = 1) const;
+                                  std::vector<SymmetryOperation> &symlist, const int verbosity = 1);
 
     void gensym_withmap(const Eigen::Matrix3d &aa, const Eigen::MatrixXd &x, const std::vector<int> &kd,
                         const std::vector<SymmetryOperation> &symmlist_in,
@@ -189,7 +202,7 @@ private:
                      std::vector<SymmetryOperation> &symm_out) const;
 
     int findsym_spglib(const Cell &, const std::vector<std::vector<unsigned int>> &, const Spin &, std::string &,
-                       std::vector<SymmetryOperation> &symm_out) const;
+                       std::vector<SymmetryOperation> &symm_out);
 
     static void symop_in_cart(Eigen::Matrix3d &rot_cart, const Eigen::Matrix3i &rot_lattice,
                               const Eigen::Matrix3d &lavec, const Eigen::Matrix3d &rlavec);

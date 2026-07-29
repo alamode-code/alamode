@@ -371,6 +371,19 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
     dymat_k.clear();
 }
 
+void Dynamical::diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out,
+                                           const bool require_evec) const
+{
+    double xk[3] = {0.0, 0.0, 0.0};
+    if (nonanalytic == 3) {
+        // eval_k adds an uninitialized nonanalytic matrix for method 3; the
+        // Ewald path with the dipole-free force constants is mandatory here.
+        eval_k_ewald(xk, xk, ewald->fc2_without_dipole, eval_out, evec_out, require_evec);
+    } else {
+        eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0], eval_out, evec_out, require_evec);
+    }
+}
+
 void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2_in,
                              double *eval_out, std::complex<double> **evec_out, const bool require_evec) const
 {

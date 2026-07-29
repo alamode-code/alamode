@@ -29,6 +29,8 @@ public:
 
     void printPhononEnergies() const;
 
+    void printModeIrrepsSummary() const;
+
     void writeGruneisen();
 
     void setupResultIo();
@@ -117,6 +119,8 @@ private:
                               const double *const *eval_in) const;
 
     void printNormalmodeBorncharge() const;
+
+    void writeModeIrreps() const;
 
 #ifdef _HDF5
 

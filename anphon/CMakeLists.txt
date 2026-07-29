@@ -179,6 +179,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/kpoint.cpp
             ${PROJECT_SOURCE_DIR}/main.cpp
             ${PROJECT_SOURCE_DIR}/mode_analysis.cpp
+            ${PROJECT_SOURCE_DIR}/mode_symmetry.cpp
             ${PROJECT_SOURCE_DIR}/mpi_common.cpp
             ${PROJECT_SOURCE_DIR}/phonon.cpp
             ${PROJECT_SOURCE_DIR}/phonon_cui.cpp
@@ -224,7 +225,9 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/iterativebte.h
             ${PROJECT_SOURCE_DIR}/kpoint.h
             ${PROJECT_SOURCE_DIR}/mode_analysis.h
+            ${PROJECT_SOURCE_DIR}/mode_symmetry.h
             ${PROJECT_SOURCE_DIR}/mpi_common.h
+            ${PROJECT_SOURCE_DIR}/pointgroup_data.h
             ${PROJECT_SOURCE_DIR}/phonon.h
             ${PROJECT_SOURCE_DIR}/phonon_cui.h
             ${PROJECT_SOURCE_DIR}/phonon_dos.h

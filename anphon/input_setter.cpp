@@ -22,6 +22,7 @@
 #include "iterativebte.h"
 #include "kpoint.h"
 #include "mode_analysis.h"
+#include "mode_symmetry.h"
 #include "phonon.h"
 #include "phonon_dos.h"
 #include "phonon_velocity.h"
@@ -119,6 +120,7 @@ void InputSetter::set_analysis_vars(PHON *phon, const AnalysisInputVars &vars) c
     phon->phonon_velocity->print_velocity = vars.print_vel;
     phon->dynamical->print_eigenvectors = vars.print_evec;
     phon->dynamical->participation_ratio = vars.participation_ratio;
+    phon->mode_symmetry->print_irreps = vars.print_irreps;
 
     if (vars.projection_directions.has_value()) {
         phon->dynamical->set_projection_directions(vars.projection_directions.value());

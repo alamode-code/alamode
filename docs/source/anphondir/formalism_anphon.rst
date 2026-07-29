@@ -102,6 +102,53 @@ The long\-range terms, :math:`\Phi_{\mu\nu}^{\mathrm{DD}}(\ell\kappa;\ell^{\prim
 To include the non-analytic correction with ``NONANALYTIC > 0``, one also need to give ``BORNINFO``.
 
 
+Irreducible representations and IR/Raman activity (``IRREPS = 1``)
+------------------------------------------------------------------
+
+At the zone center, every space-group operation :math:`\{S|\boldsymbol{v}\}` acts on the
+mass-weighted polarization vectors through the :math:`3N_{\kappa}\times 3N_{\kappa}` matrix
+
+.. math::
+   T_{\mu\nu}(S;\kappa^{\prime}\kappa) = S_{\mu\nu}\,\delta_{\kappa^{\prime},S(\kappa)},
+
+where :math:`S(\kappa)` is the atom onto which :math:`\kappa` is mapped; the fractional
+translation :math:`\boldsymbol{v}` contributes no phase at :math:`\boldsymbol{q}=0`, so the
+representation is an ordinary representation of the crystal point group.
+For each set :math:`\lambda` of degenerate modes, the character
+
+.. math::
+   \chi_{\lambda}(S) = \sum_{j\in\lambda}
+   \boldsymbol{e}_{j}^{\dagger}\, T(S)\, \boldsymbol{e}_{j}
+
+is a class function, and the multiplicity of the irreducible representation
+:math:`\mu` in :math:`\lambda` follows from the orthogonality relation
+
+.. math::
+   n_{\mu}(\lambda) = \frac{1}{g\,c_{\mu}} \sum_{S} \chi_{\lambda}(S)\,\chi_{\mu}(S)^{*},
+
+where :math:`g` is the order of the point group and :math:`c_{\mu}` accounts for the
+time-reversal pairing of complex-conjugate one-dimensional representations
+(:math:`c_{\mu}=2` for the paired :math:`E`-type representations of the groups
+:math:`C_{3}`, :math:`C_{4}`, :math:`C_{6}`, :math:`S_{4}`, :math:`S_{6}`, :math:`C_{3h}`,
+:math:`C_{4h}`, :math:`C_{6h}`, :math:`T`, :math:`T_{h}`, and :math:`c_{\mu}=1` otherwise).
+A multiplet is infrared active when its representation appears in the vector
+representation :math:`\Gamma_{V}` (characters :math:`\operatorname{tr}S`), and Raman
+active when it appears in the symmetric square :math:`[\Gamma_{V}\otimes\Gamma_{V}]_{s}`
+(characters :math:`(\operatorname{tr}^{2}S + \operatorname{tr}S^{2})/2`).
+The analysis uses the analytic dynamical matrix, i.e. the labels refer to the
+:math:`\boldsymbol{q}\rightarrow 0` limit without the direction-dependent non-analytic
+correction.
+
+When ``BORNINFO`` is given, the infrared oscillator-strength tensor of a multiplet is
+also computed from the mode effective charges
+:math:`Z^{*}_{\nu,\alpha} = \sum_{\kappa\beta} Z^{*}_{\kappa,\alpha\beta}\,
+e_{\beta}(\kappa;\nu)/\sqrt{M_{\kappa}}` as
+
+.. math::
+   S_{\alpha\beta}(\lambda) = \sum_{\nu\in\lambda} Z^{*}_{\nu,\alpha} Z^{*}_{\nu,\beta},
+
+which is invariant under rotations within the degenerate subspace.
+
 Group velocity
 --------------
 

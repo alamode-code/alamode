@@ -347,6 +347,7 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
                                         "SELF_ENERGY",
                                         "PRINTV4",
                                         "ZMODE",
+                                        "IRREPS",
                                         "PROJECTION_AXES",
                                         "LONGITUDINAL_DOS",
                                         "FE_BUBBLE"};
@@ -392,6 +393,7 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
         assign_val(analysis_vars.print_fc2_ewald, "FC2_EWALD", analysis_var_dict);
         assign_val(analysis_vars.calc_dielectric_constant, "DIELEC", analysis_var_dict);
         assign_val(analysis_vars.print_zmode, "ZMODE", analysis_var_dict);
+        assign_val(analysis_vars.print_irreps, "IRREPS", analysis_var_dict);
         assign_val(analysis_vars.calc_FE_bubble, "FE_BUBBLE", analysis_var_dict);
 
         analysis_vars.print_anime = analysis_var_dict.find("ANIME") != analysis_var_dict.end();
@@ -502,6 +504,14 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
     // only read the value. (A QUARTIC = 2 request is overridden for these
     // modes, matching the historical behavior.)
     if (run_mode == "SCPH" || run_mode == "QHA") analysis_vars.quartic_mode = 1;
+
+    // The irrep analysis is defined for the static structure at Gamma only;
+    // disabling it here keeps it from triggering Born-charge loading in the
+    // other modes.
+    if (analysis_vars.print_irreps && run_mode != "PHONONS") {
+        warn("parse_analysis_vars", "IRREPS = 1 is effective only when MODE = phonons. The tag is ignored.");
+        analysis_vars.print_irreps = false;
+    }
 
     // Keep the values the later blocks depend on.
 

@@ -81,6 +81,14 @@ ANPHON: Output files
  Mode effective charges of zone-center phonon modes.
  Created when ``MODE = phonons`` with ``ZMODE = 1``.
 
+* ``PREFIX``.irreps
+
+ Irreducible representations (Mulliken symbols), IR/Raman activities, and,
+ when ``BORNINFO`` is given, IR oscillator strengths of the zone-center
+ phonon modes, together with the conjugacy classes and the raw characters
+ of each phonon multiplet.
+ Created when ``MODE = phonons`` with ``IRREPS = 1``.
+
 * ``PREFIX``.axsf
 
  Zone-center phonon modes with directions indicated by arrows.

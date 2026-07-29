@@ -25,7 +25,7 @@ public:
         selfenergy(ptr->selfenergy), conductivity(ptr->conductivity), iterativebte(ptr->iterativebte),
         writes(ptr->writes), dos(ptr->dos), gruneisen(ptr->gruneisen), mympi(ptr->mympi), isotope(ptr->isotope),
         scph(ptr->scph), ewald(ptr->ewald), dielec(ptr->dielec), qha(ptr->qha), relaxation(ptr->relaxation),
-        timer(ptr->timer)
+        mode_symmetry(ptr->mode_symmetry), timer(ptr->timer)
     {}
 
     virtual ~Pointers()
@@ -56,6 +56,7 @@ protected:
     std::unique_ptr<Dielec> &dielec;
     std::unique_ptr<Qha> &qha;
     std::unique_ptr<Relaxation> &relaxation;
+    std::unique_ptr<ModeSymmetry> &mode_symmetry;
     std::unique_ptr<Timer> &timer;
 };
 } // namespace PHON_NS

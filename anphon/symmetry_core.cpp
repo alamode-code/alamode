@@ -274,7 +274,7 @@ void Symmetry::make_inverse_translation_mapping(int **inv_translation_mapping) c
 
 void Symmetry::setup_symmetry_operation(const Cell &cell_in, const Spin &spin_in,
                                         const std::vector<std::vector<unsigned int>> &atomtype_in,
-                                        std::vector<SymmetryOperation> &symlist, const int verbosity) const
+                                        std::vector<SymmetryOperation> &symlist, const int verbosity)
 {
     // input cell into a true primitive cell.
     if (spin_in.lspin && spin_in.noncollinear) {
@@ -608,7 +608,7 @@ void Symmetry::find_crystal_symmetry(const Cell &cell, const std::vector<std::ve
 }
 
 int Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<unsigned int>> &atomtype_group,
-                             const Spin &spin, std::string &spgsymbol, std::vector<SymmetryOperation> &symm_out) const
+                             const Spin &spin, std::string &spgsymbol, std::vector<SymmetryOperation> &symm_out)
 {
     int i, j;
     // spg_get_dataset takes double(*)[3] / int(*)[3][3] (spglib C ABI boundary),
@@ -665,6 +665,21 @@ int Symmetry::findsym_spglib(const Cell &cell, const std::vector<std::vector<uns
 
     const auto spgnum = spgdataset->spacegroup_number;
     spgsymbol = spgdataset->international_symbol;
+
+    // Retain the space-group identity and the transformation matrix to the
+    // standardized cell for consumers such as the Gamma-point irrep analysis.
+    // When this function runs more than once (SCPH/QHA with relaxation
+    // analyze both cells), the last call is the one that fills SymmList, so
+    // last-call-wins is the intended behavior.
+    has_spg_dataset = true;
+    spg_number = spgnum;
+    spg_symbol = spgsymbol;
+    for (i = 0; i < 3; ++i) {
+        for (j = 0; j < 3; ++j) {
+            spg_transformation_matrix(i, j) = spgdataset->transformation_matrix[i][j];
+        }
+    }
+
     spg_free_dataset(spgdataset);
 
     // Copy symmetry information

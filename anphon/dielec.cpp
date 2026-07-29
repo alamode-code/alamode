@@ -20,6 +20,7 @@
 #include "fcs_phonon.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mode_symmetry.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "system.h"
@@ -80,15 +81,29 @@ void Dielec::init()
     MPI_Bcast(&delta_e, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
-    if (dynamical->nonanalytic || calc_dielectric_constant) {
-        if (mympi->my_rank == 0) {
-            if (file_born.empty()) {
+    // Born-charge data is needed by the nonanalytic correction and DIELEC
+    // (BORNINFO required, hard error when absent) and by the ZMODE and
+    // IRREPS analyses (used only when BORNINFO is given).  file_born lives
+    // on rank 0 only, so the decision is made there and broadcast;
+    // setup_dielectric() is collective.
+    int need_born_data = 0;
+    if (mympi->my_rank == 0) {
+        const auto borninfo_given = !file_born.empty();
+        if (dynamical->nonanalytic || calc_dielectric_constant) {
+            if (!borninfo_given) {
                 if (calc_dielectric_constant) {
                     exitall("Dielec::init()", "BORNINFO must be set when DIELEC = 1.");
                 }
                 exitall("Dielec::init()", "BORNINFO must be set when NONANALYTIC>0.");
             }
+            need_born_data = 1;
+        } else if (borninfo_given && (writes->print_zmode || mode_symmetry->print_irreps)) {
+            need_born_data = 1;
         }
+    }
+    MPI_Bcast(&need_born_data, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (need_born_data) {
         setup_dielectric(writes->getVerbosity());
     }
 
@@ -321,7 +336,7 @@ void Dielec::run_dielec_calculation()
 
     for (auto i = 0; i < 3; ++i) xk[i] = 0.0;
 
-    dynamical->eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0], eval, evec, true);
+    dynamical->diagonalize_gamma_analytic(eval, evec, true);
 
     compute_dielectric_function(nomega, omega_grid, eval, evec, dielec);
 
@@ -451,7 +466,6 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
     NDArray<double, 1> eval;
     NDArray<std::complex<double>, 2> evec;
     const auto ns = dynamical->neval;
-    const auto &zstar_atom = borncharge;
 
     eval.resize(ns);
     evec.resize(ns, ns);
@@ -469,34 +483,77 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
                                                    dynamical->get_projection_directions(),
                                                    evec);
     } else {
-        dynamical->eval_k(&xk[0], &xk[0], fcs_phonon->force_constant_with_cell[0], eval, evec, true);
+        dynamical->diagonalize_gamma_analytic(eval, evec, true);
     }
 
-    // Divide by sqrt of atomic mass to get normal coordinate
-    for (auto i = 0; i < ns; ++i) {
-        for (auto j = 0; j < ns; ++j) {
-            evec[i][j] /= std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
-            //            evec[i][j] /= std::sqrt(system->mass[system->map_trueprim_to_super[j / 3][0]]);
-        }
-    }
-
-    // Compute the mode effective charges defined by Eq. (53) or its numerator of
-    // Gonze & Lee, PRB 55, 10355 (1997).
-    for (auto i = 0; i < 3; ++i) {
-        for (auto is = 0; is < ns; ++is) {
-            zstar_mode[is][i] = 0.0;
-            auto normalization_factor = 0.0;
-
-            for (auto j = 0; j < ns; ++j) {
-                zstar_mode[is][i] += zstar_atom[j / 3][i][j % 3] * evec[is][j].real();
-                normalization_factor += std::norm(evec[is][j]);
-            }
-            if (do_normalize) zstar_mode[is][i] /= std::sqrt(normalization_factor);
-        }
-    }
+    compute_mode_effective_charge(zstar_mode, evec, do_normalize);
 
     eval.clear();
     evec.clear();
+}
+
+void Dielec::compute_mode_effective_charge(std::vector<std::vector<std::complex<double>>> &zstar_mode,
+                                           const std::complex<double> *const *evec_in) const
+{
+    // Compute the mode effective charges defined by Eq. (53) or its numerator of
+    // Gonze & Lee, PRB 55, 10355 (1997), from mass-weighted Gamma-point
+    // eigenvectors supplied by the caller.  The mass division that converts to
+    // normal coordinates happens during accumulation; evec_in is not modified.
+    // The full complex amplitudes are kept so that downstream quantities can be
+    // made invariant under eigenvector phase choices.
+
+    const auto ns = dynamical->neval;
+    const auto &zstar_atom = borncharge;
+
+    std::vector<double> invsqrt_mass_amu(ns);
+    for (auto j = 0; j < ns; ++j) {
+        invsqrt_mass_amu[j] =
+            1.0 / std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
+    }
+
+    for (auto is = 0; is < ns; ++is) {
+        for (auto i = 0; i < 3; ++i) {
+            zstar_mode[is][i] = std::complex<double>(0.0, 0.0);
+            for (auto j = 0; j < ns; ++j) {
+                zstar_mode[is][i] += zstar_atom[j / 3][i][j % 3] * evec_in[is][j]
+                                     * invsqrt_mass_amu[j];
+            }
+        }
+    }
+}
+
+void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode,
+                                           const std::complex<double> *const *evec_in,
+                                           const bool do_normalize) const
+{
+    // Historical real-valued interface (ZMODE): the real part of the complex
+    // mode effective charge, optionally normalized by the normal-coordinate
+    // amplitude.
+
+    const auto ns = dynamical->neval;
+
+    std::vector<std::vector<std::complex<double>>> zstar_complex(
+        ns, std::vector<std::complex<double>>(3));
+    compute_mode_effective_charge(zstar_complex, evec_in);
+
+    std::vector<double> invsqrt_mass_amu(ns);
+    for (auto j = 0; j < ns; ++j) {
+        invsqrt_mass_amu[j] =
+            1.0 / std::sqrt(system->get_mass_super()[system->get_map_p2s(0)[j / 3][0]] / amu_ry);
+    }
+
+    for (auto is = 0; is < ns; ++is) {
+        auto normalization_factor = 0.0;
+        for (auto j = 0; j < ns; ++j) {
+            normalization_factor += std::norm(evec_in[is][j] * invsqrt_mass_amu[j]);
+        }
+        for (auto i = 0; i < 3; ++i) {
+            zstar_mode[is][i] = zstar_complex[is][i].real();
+            if (do_normalize) {
+                zstar_mode[is][i] /= std::sqrt(normalization_factor);
+            }
+        }
+    }
 }
 
 const double *const *const *Dielec::get_borncharge() const
