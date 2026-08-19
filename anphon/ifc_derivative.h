@@ -37,12 +37,6 @@ public:
                                     const std::vector<std::pair<int, int>> &strain_components,
                                     double emit_threshold) const;
 
-    void compute_dV_dumn_real_space_m1(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                       std::vector<FcsArrayWithCell> &delta_fcs, int m1, int n1) const;
-
-    void compute_dV_dumn_real_space_m2(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                       std::vector<FcsArrayWithCell> &delta_fcs, int m1, int n1, int m2, int n2) const;
-
     void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,
                           const std::complex<double> *const *const *const evec_harmonic) const;
 
