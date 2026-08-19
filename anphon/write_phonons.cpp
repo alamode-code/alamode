@@ -260,7 +260,7 @@ void Writes::writeInputVars()
             std::cout << "  SPS = " << dos->scattering_phase_space << '\n';
             std::cout << '\n';
         }
-        std::cout << "  GRUNEISEN = " << gruneisen->print_gruneisen << '\n';
+        std::cout << "  GRUNEISEN = " << gruneisen->gruneisen_mode << '\n';
         std::cout << "  NEWFCS = " << gruneisen->print_newfcs;
         if (gruneisen->print_newfcs) {
             std::cout << "; DELTA_A = " << gruneisen->delta_a << '\n';
@@ -522,7 +522,7 @@ void Writes::writePhononInfo()
         writeParticipationRatio();
     }
 
-    if (gruneisen->print_gruneisen) {
+    if (gruneisen->gruneisen_mode > 0) {
         writeGruneisen();
     }
 
@@ -1916,7 +1916,12 @@ void Writes::writeThermodynamicFunc() const
 
 void Writes::writeGruneisen()
 {
-    if (kpoint->kpoint_bs.get() && gruneisen->gruneisen_bs) {
+    const auto ncomp = gruneisen->number_of_strain_components();
+    const std::string components_header =
+        ncomp == 3 ? "gamma_xx, gamma_yy, gamma_zz"
+                   : "gamma_xx, gamma_yy, gamma_zz, gamma_yz, gamma_xz, gamma_xy";
+
+    if (kpoint->kpoint_bs.get() && (gruneisen->gruneisen_bs || gruneisen->gruneisen_tensor_bs)) {
         if (nbands < 0 || nbands > 3 * system->get_primcell().number_of_atoms) {
             nbands = 3 * system->get_primcell().number_of_atoms;
         }
@@ -1930,25 +1935,47 @@ void Writes::writeGruneisen()
         const auto nk = kpoint->kpoint_bs->nk;
         const auto &kaxis = kpoint->kpoint_bs->kaxis;
 
-        ofs_gruneisen << "# k-axis, gamma\n";
-        ofs_gruneisen.setf(std::ios::fixed);
+        if (gruneisen->gruneisen_mode == 1) {
+            ofs_gruneisen << "# Volumetric Gruneisen parameter: gamma = -dln(omega)/dln(V)\n";
+            ofs_gruneisen << "# k-axis, gamma\n";
+            ofs_gruneisen.setf(std::ios::fixed);
 
-        if (dynamical->band_connection == 0) {
-            for (unsigned int i = 0; i < nk; ++i) {
-                ofs_gruneisen << std::setw(8) << kaxis[i];
-                for (unsigned int j = 0; j < nbands; ++j) {
-                    ofs_gruneisen << std::setw(15) << gruneisen->gruneisen_bs[i][j].real();
+            if (dynamical->band_connection == 0) {
+                for (unsigned int i = 0; i < nk; ++i) {
+                    ofs_gruneisen << std::setw(8) << kaxis[i];
+                    for (unsigned int j = 0; j < nbands; ++j) {
+                        ofs_gruneisen << std::setw(15) << gruneisen->gruneisen_bs[i][j].real();
+                    }
+                    ofs_gruneisen << '\n';
                 }
-                ofs_gruneisen << '\n';
+            } else {
+                for (unsigned int i = 0; i < nk; ++i) {
+                    ofs_gruneisen << std::setw(8) << kaxis[i];
+                    for (unsigned int j = 0; j < nbands; ++j) {
+                        ofs_gruneisen << std::setw(15)
+                                      << gruneisen->gruneisen_bs[i][dynamical->index_bconnect[i][j]].real();
+                    }
+                    ofs_gruneisen << '\n';
+                }
             }
         } else {
+            const auto eval = dynamical->dymat_band->get_eigenvalues();
+
+            ofs_gruneisen << "# Generalized Gruneisen parameters: gamma_munu = -dln(omega)/d(eps_munu)\n";
+            ofs_gruneisen << "# k-axis, band, omega [cm^-1], " << components_header << '\n';
+            ofs_gruneisen.setf(std::ios::fixed);
+
             for (unsigned int i = 0; i < nk; ++i) {
-                ofs_gruneisen << std::setw(8) << kaxis[i];
                 for (unsigned int j = 0; j < nbands; ++j) {
-                    ofs_gruneisen << std::setw(15)
-                                  << gruneisen->gruneisen_bs[i][dynamical->index_bconnect[i][j]].real();
+                    const auto js = dynamical->band_connection == 0 ? j : dynamical->index_bconnect[i][j];
+                    ofs_gruneisen << std::setw(8) << kaxis[i];
+                    ofs_gruneisen << std::setw(5) << j;
+                    ofs_gruneisen << std::setw(15) << in_kayser(eval[i][js]);
+                    for (auto ic = 0; ic < ncomp; ++ic) {
+                        ofs_gruneisen << std::setw(15) << gruneisen->gruneisen_tensor_bs[i][js][ic].real();
+                    }
+                    ofs_gruneisen << '\n';
                 }
-                ofs_gruneisen << '\n';
             }
         }
 
@@ -1956,11 +1983,15 @@ void Writes::writeGruneisen()
 
         if (getVerbosity() > 0) {
             std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gru;
-            std::cout << " : Gruneisen parameters along given k-path\n";
+            if (gruneisen->gruneisen_mode == 1) {
+                std::cout << " : Volumetric Gruneisen parameters along given k-path\n";
+            } else {
+                std::cout << " : Generalized Gruneisen parameters along given k-path\n";
+            }
         }
     }
 
-    if (dos->kmesh_dos.get() && gruneisen->gruneisen_dos) {
+    if (dos->kmesh_dos.get() && (gruneisen->gruneisen_dos || gruneisen->gruneisen_tensor_dos)) {
 
         std::ofstream ofs_gruall;
         auto file_gruall = phon->job_title + ".gru_all";
@@ -1972,7 +2003,13 @@ void Writes::writeGruneisen()
         const auto &xk = dos->kmesh_dos->xk;
         const auto eval = dos->dymat_dos->get_eigenvalues();
 
-        ofs_gruall << "# knum, snum, omega [cm^-1], gruneisen parameter\n";
+        if (gruneisen->gruneisen_mode == 1) {
+            ofs_gruall << "# Volumetric Gruneisen parameter: gamma = -dln(omega)/dln(V)\n";
+            ofs_gruall << "# knum, snum, omega [cm^-1], gruneisen parameter\n";
+        } else {
+            ofs_gruall << "# Generalized Gruneisen parameters: gamma_munu = -dln(omega)/d(eps_munu)\n";
+            ofs_gruall << "# knum, snum, omega [cm^-1], " << components_header << '\n';
+        }
 
         for (unsigned int i = 0; i < nk; ++i) {
             ofs_gruall << "# knum = " << i;
@@ -1985,7 +2022,13 @@ void Writes::writeGruneisen()
                 ofs_gruall << std::setw(5) << i;
                 ofs_gruall << std::setw(5) << j;
                 ofs_gruall << std::setw(15) << in_kayser(eval[i][j]);
-                ofs_gruall << std::setw(15) << gruneisen->gruneisen_dos[i][j].real();
+                if (gruneisen->gruneisen_mode == 1) {
+                    ofs_gruall << std::setw(15) << gruneisen->gruneisen_dos[i][j].real();
+                } else {
+                    for (auto ic = 0; ic < ncomp; ++ic) {
+                        ofs_gruall << std::setw(15) << gruneisen->gruneisen_tensor_dos[i][j][ic].real();
+                    }
+                }
                 ofs_gruall << '\n';
             }
         }
@@ -1993,7 +2036,11 @@ void Writes::writeGruneisen()
 
         if (getVerbosity() > 0) {
             std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gruall;
-            std::cout << " : Gruneisen parameters at all k points" << '\n';
+            if (gruneisen->gruneisen_mode == 1) {
+                std::cout << " : Volumetric Gruneisen parameters at all k points" << '\n';
+            } else {
+                std::cout << " : Generalized Gruneisen parameters at all k points" << '\n';
+            }
         }
     }
 }

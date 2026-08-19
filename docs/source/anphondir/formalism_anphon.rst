@@ -322,17 +322,19 @@ When ``SPS = 2``, the three-phonon scattering phase space with the occupation fa
 
 Here, :math:`n_{1}=n(\omega_{\boldsymbol{q}_{1}j_{1}})` and :math:`n_{2}=n(\omega_{\boldsymbol{q}_{2}j_{2}})` where :math:`n(\omega) = \frac{1}{e^{\hbar\omega/k_B T}-1}` is the Bose-Einstein distribution function. Since :math:`n(\omega)` is temperature dependent, :math:`W_{3}^{(\pm)}` is also temperature dependent. The file ``PREFIX``.sps_Bose contains :math:`W_{3}^{(\pm)}` for all phonon modes at various temperatures specified with ``TMIN``, ``TMAX``, and ``DT`` tags.
 
+.. _formalism_gruneisen:
+
 Gr\ |umulaut_u|\ neisen parameter
 ---------------------------------
 
-The mode Gr\ |umulaut_u|\ neisen parameter, defined as :math:`\gamma_{\boldsymbol{q}j} = - \frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \log{V}}`, 
+The volumetric mode Gr\ |umulaut_u|\ neisen parameter, defined as :math:`\gamma_{\boldsymbol{q}j} = - \frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \log{V}}`,
 is calculated by
 
 .. math::
 
     \gamma_{\boldsymbol{q}j}= -\frac{(\boldsymbol{e}_{\boldsymbol{q}j}^{*})^{\mathrm{T}} \delta D(\boldsymbol{q})\boldsymbol{e}_{\boldsymbol{q}j}}{6\omega_{\boldsymbol{q}j}^{2}},
 
-where :math:`\delta D(\boldsymbol{q})` is a change in the dynamical matrix due to a volume change :math:`\delta V`, 
+where :math:`\delta D(\boldsymbol{q})` is a change in the dynamical matrix due to a volume change :math:`\delta V`,
 which is given by
 
 .. math::
@@ -341,11 +343,31 @@ which is given by
     \begin{align}
      \delta D_{\mu\nu}(\kappa\kappa^{\prime};\boldsymbol{q}) &= \frac{1}{\sqrt{M_{\kappa}M_{\kappa^{\prime}}}}
      \sum_{\ell^{\prime}}\delta\Phi_{\mu\nu}(\ell\kappa;\ell^{\prime}\kappa^{\prime})\exp{\left[i\boldsymbol{q}\cdot(\boldsymbol{r}(\ell^{\prime})-\boldsymbol{r}(\ell))\right]},\\
-     \delta\Phi_{\mu\nu}(\ell\kappa;\ell^{\prime}\kappa^{\prime}) 
+     \delta\Phi_{\mu\nu}(\ell\kappa;\ell^{\prime}\kappa^{\prime})
      &= \sum_{\ell^{\prime\prime},\kappa^{\prime\prime},\lambda}\Phi_{\mu\nu\lambda}(\ell\kappa;\ell^{\prime}\kappa^{\prime};\ell^{\prime\prime}\kappa^{\prime\prime})r_{\lambda}(\ell^{\prime\prime}\kappa^{\prime\prime}).
     \end{align}
 
-Please set ``GRUNEISEN = 1`` and give an appropriate ``FCSFILE`` file containing cubic IFCs to print Gr\ |umulaut_u|\ neisen parameters.
+Please set ``GRUNEISEN = 1`` and give an appropriate ``FCSFILE`` file containing cubic IFCs to print the volumetric Gr\ |umulaut_u|\ neisen parameters.
+
+The **generalized** Gr\ |umulaut_u|\ neisen parameters resolve the frequency change with respect to each component of the symmetric strain tensor :math:`\varepsilon_{\mu\nu}`:
+
+.. math::
+
+    \gamma_{\boldsymbol{q}j}^{\mu\nu} = - \frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \varepsilon_{\mu\nu}}
+    = -\frac{1}{2\omega_{\boldsymbol{q}j}^{2}} (\boldsymbol{e}_{\boldsymbol{q}j}^{*})^{\mathrm{T}} \frac{\partial D(\boldsymbol{q})}{\partial \varepsilon_{\mu\nu}}\boldsymbol{e}_{\boldsymbol{q}j},
+
+where the strain derivative of the harmonic IFCs is obtained from the cubic IFCs as
+
+.. math::
+
+    \frac{\partial \Phi_{\alpha\beta}(\ell\kappa;\ell^{\prime}\kappa^{\prime})}{\partial \varepsilon_{\mu\nu}}
+    = \sum_{\ell^{\prime\prime},\kappa^{\prime\prime}}\Phi_{\alpha\beta\mu}(\ell\kappa;\ell^{\prime}\kappa^{\prime};\ell^{\prime\prime}\kappa^{\prime\prime})r_{\nu}(\ell^{\prime\prime}\kappa^{\prime\prime}),
+
+and the off-diagonal components are symmetrized as :math:`(\gamma_{\boldsymbol{q}j}^{\mu\nu} + \gamma_{\boldsymbol{q}j}^{\nu\mu})/2`.
+The volumetric parameter is recovered as one third of the trace,
+:math:`\gamma_{\boldsymbol{q}j} = (\gamma_{\boldsymbol{q}j}^{xx} + \gamma_{\boldsymbol{q}j}^{yy} + \gamma_{\boldsymbol{q}j}^{zz})/3`.
+The generalized parameters are useful for studying anisotropic thermal expansion and thermal stress within the quasi-harmonic approximation.
+Please set ``GRUNEISEN = 2`` (diagonal components) or ``GRUNEISEN = 3`` (all 6 components in the Voigt order xx, yy, zz, yz, xz, xy) to print them.
 
 
 Anharmonic self-energy

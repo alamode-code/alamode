@@ -67,13 +67,22 @@ ANPHON: Output files
 * ``PREFIX``.gruneisen
 
  Gr\ |umulaut_u|\ neisen parameters along given :math:`k` paths.
- Created when ``MODE = phonons`` with **KPMODE** = 1 and ``GRUNEISEN = 1``.
+ Created when ``MODE = phonons`` with **KPMODE** = 1 and ``GRUNEISEN >= 1``.
+ ``GRUNEISEN = 1`` gives the volumetric parameters
+ :math:`\gamma_{\boldsymbol{q}j} = -\partial \log\omega_{\boldsymbol{q}j}/\partial \log V`.
+ With ``GRUNEISEN = 2`` or ``3``, the generalized (strain-component-resolved)
+ parameters :math:`\gamma_{\boldsymbol{q}j}^{\mu\nu} = -\partial \log\omega_{\boldsymbol{q}j}/\partial \varepsilon_{\mu\nu}`
+ are written in a long format with one line per (:math:`k` point, branch).
 
 
 * ``PREFIX``.gru_all
 
  Gr\ |umulaut_u|\ neisen parameters of all phonon modes at the uniform :math:`k` grid.
- Created when ``MODE = phonons`` with **KPMODE** = 2 and ``GRUNEISEN = 1``.
+ Created when ``MODE = phonons`` with **KPMODE** = 2 and ``GRUNEISEN >= 1``.
+ ``GRUNEISEN = 1`` gives the volumetric parameters
+ :math:`\gamma_{\boldsymbol{q}j} = -\partial \log\omega_{\boldsymbol{q}j}/\partial \log V`.
+ With ``GRUNEISEN = 2`` or ``3``, the generalized (strain-component-resolved)
+ parameters are written with one column per strain component.
 
 
 * ``PREFIX``.zmode

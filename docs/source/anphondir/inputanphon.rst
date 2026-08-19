@@ -49,11 +49,12 @@ List of supported input variables
    **&analysis**
    :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
    :ref:`DIELEC <anphon_dielec>`, :ref:`DOS <anphon_dos>`, :ref:`FC2_EWALD <anphon_fc2_ewald>`, :ref:`GRUNEISEN <anphon_gruneisen>`
-   :ref:`IRREPS <anphon_irreps>`, :ref:`KS_INPUT <anphon_ks_input>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVAL <anphon_printeval>`, :ref:`PRINTEVEC <anphon_printevec>`
-   :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTV3 <anphon_printv3>`, :ref:`PRINTV4 <anphon_printv4>`
-   :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`PROJECTION_AXES <anphon_projection_axes>`, :ref:`QUARTIC <anphon_quartic>`
-   :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`SELF_W <anphon_self_w>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`
-   :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
+   :ref:`IRREPS <anphon_irreps>`, :ref:`KS_INPUT <anphon_ks_input>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVAL <anphon_printeval>`
+   :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTV3 <anphon_printv3>`
+   :ref:`PRINTV4 <anphon_printv4>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`PROJECTION_AXES <anphon_projection_axes>`
+   :ref:`QUARTIC <anphon_quartic>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`SELF_W <anphon_self_w>`
+   :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`
+   :ref:`ZMODE <anphon_zmode>`
    **&kappa**
    :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
    :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
@@ -1188,16 +1189,22 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
 .. _anphon_gruneisen:
 
-* GRUNEISEN-tag = 0 | 1
+* GRUNEISEN-tag = 0 | 1 | 2 | 3
 
  === ===================================================================
   0   Gr\ |umulaut_u|\ neisen parameters will not be calculated
-  1   Gr\ |umulaut_u|\ neisen parameters will be stored
+  1   Volumetric Gr\ |umulaut_u|\ neisen parameters
+      :math:`\gamma_{\boldsymbol{q}j} = -\partial \log\omega_{\boldsymbol{q}j}/\partial \log V`
+      will be stored
+  2   Generalized Gr\ |umulaut_u|\ neisen parameters for the diagonal
+      strain components (xx, yy, zz) will be stored
+  3   Generalized Gr\ |umulaut_u|\ neisen parameters for all 6 strain
+      components (xx, yy, zz, yz, xz, xy) will be stored
  === ===================================================================
 
  :Default: 0
  :Type: Integer
- :Description:  When ``MODE = phonons`` and ``GRUNEISEN = 1``, Gr\ |umulaut_u|\ neisen parameters will be stored in ``PREFIX``.gruneisen (*KPMODE* = 1) or ``PREFIX``.gru_all (*KPMODE* = 2).
+ :Description:  When ``MODE = phonons`` and ``GRUNEISEN >= 1``, Gr\ |umulaut_u|\ neisen parameters will be stored in ``PREFIX``.gruneisen (*KPMODE* = 1) or ``PREFIX``.gru_all (*KPMODE* = 2). ``GRUNEISEN = 1`` computes the volumetric parameters :math:`\gamma_{\boldsymbol{q}j} = -\frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \log{V}}`. ``GRUNEISEN = 2`` and ``3`` compute the generalized parameters :math:`\gamma_{\boldsymbol{q}j}^{\mu\nu} = -\frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \varepsilon_{\mu\nu}}` for the diagonal or all 6 symmetric strain components, respectively, and the output files change to a long format with one line per (*k* point, branch) containing the phonon frequency and the strain components. The volumetric value equals one third of the trace, :math:`\gamma_{\boldsymbol{q}j} = (\gamma_{\boldsymbol{q}j}^{xx}+\gamma_{\boldsymbol{q}j}^{yy}+\gamma_{\boldsymbol{q}j}^{zz})/3`. See :ref:`this page <formalism_gruneisen>` for the formalism.
 
 .. Note::
 

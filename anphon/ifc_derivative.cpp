@@ -148,7 +148,7 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
     }
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1);
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1, system_.get_primcell().lattice_vector);
 
     for (const auto &group: strain_groups) {
         const int ind1 = group.pairs[0].index;
@@ -200,7 +200,7 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
     }
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 2);
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 2, system_.get_primcell().lattice_vector);
 
     for (const auto &group: strain_groups) {
         const int ind1 = group.pairs[0].index;
@@ -253,7 +253,7 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
     }
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 3);
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 3, system_.get_primcell().lattice_vector);
 
     for (const auto &group: strain_groups) {
         const int ind1 = group.pairs[0].index;
@@ -310,7 +310,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1);
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1, system_.get_primcell().lattice_vector);
 
     for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
@@ -360,7 +360,7 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 2);
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 2, system_.get_primcell().lattice_vector);
 
 #pragma omp parallel
     {
@@ -452,7 +452,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1);
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1, system_.get_primcell().lattice_vector);
 
     // Scratch pointer views over the row-major Eigen matrices of one strain index,
     // used to bridge with the legacy raw-pointer interface of compute_V3_elements_for_given_IFCs.
@@ -541,7 +541,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
 
 void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                    std::vector<DeltaFcsStrainComponents> &groups,
-                                                   const std::size_t m) const
+                                                   const std::size_t m, const Eigen::Matrix3d &convmat)
 {
     // Computes the m-th derivative of the force constants with respect to strain in real space,
     // for all 9^m strain-tensor components in a single scan over fcs_aligned. Each FC entry has
@@ -564,7 +564,6 @@ void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWit
         exit("compute_dV_dumn_all_real_space", "Derivative order m must be smaller than IFC order n.");
     }
 
-    const auto convmat = system_.get_primcell().lattice_vector;
     const auto nelems = norder - m;
 
     constexpr std::size_t pow3[4] = {1, 3, 9, 27};
@@ -621,24 +620,42 @@ void DerivativeIFC::extract_strain_component(const std::vector<DeltaFcsStrainCom
                                              const double emit_threshold,
                                              std::vector<FcsArrayWithCell> &delta_fcs)
 {
+    extract_strain_combination(groups, {{component, 1.0}}, m, emit_threshold, delta_fcs);
+}
+
+void DerivativeIFC::extract_strain_combination(const std::vector<DeltaFcsStrainComponents> &groups,
+                                               const std::vector<std::pair<std::size_t, double>> &terms,
+                                               const std::size_t m, const double emit_threshold,
+                                               std::vector<FcsArrayWithCell> &delta_fcs)
+{
     delta_fcs.clear();
 
     constexpr std::size_t pow9[4] = {1, 9, 81, 729};
 
-    if (m == 0 || m > 3 || component >= pow9[m]) {
-        exit("extract_strain_component", "Invalid strain component index.");
+    if (m == 0 || m > 3 || terms.empty()) {
+        exit("extract_strain_combination", "Invalid derivative order or empty term list.");
     }
 
-    // The mu-combination bit of this component, matching the touched_mu convention.
-    std::size_t p = 0;
-    for (std::size_t j = 0; j < m; ++j) {
-        p = p * 3 + ((component / pow9[m - 1 - j]) % 9) / 3;
+    // The mu-combination bits of the terms, matching the touched_mu convention.
+    uint32_t mu_mask = 0;
+    for (const auto &term: terms) {
+        if (term.first >= pow9[m]) {
+            exit("extract_strain_combination", "Invalid strain component index.");
+        }
+        std::size_t p = 0;
+        for (std::size_t j = 0; j < m; ++j) {
+            p = p * 3 + ((term.first / pow9[m - 1 - j]) % 9) / 3;
+        }
+        mu_mask |= 1u << p;
     }
 
     for (const auto &group: groups) {
-        if (!(group.touched_mu >> p & 1u)) continue;
+        if (!(group.touched_mu & mu_mask)) continue;
 
-        const auto val = group.values[component];
+        double val = 0.0;
+        for (const auto &term: terms) {
+            val += term.second * group.values[term.first];
+        }
         if (emit_threshold >= 0.0 && std::abs(val) <= emit_threshold) continue;
 
         delta_fcs.emplace_back(val, group.pairs, group.atoms_s, group.relvecs, group.relvecs_velocity);

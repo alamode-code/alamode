@@ -49,7 +49,7 @@ Gruneisen::~Gruneisen()
 void Gruneisen::set_default_variables()
 {
     delta_a = 0.01;
-    print_gruneisen = false;
+    gruneisen_mode = 0;
     print_newfcs = false;
 }
 
@@ -57,9 +57,12 @@ void Gruneisen::deallocate_variables()
 {
     gruneisen_bs.clear();
     gruneisen_dos.clear();
+    gruneisen_tensor_bs.clear();
+    gruneisen_tensor_dos.clear();
     xshift_s.clear();
     delta_fc2.clear();
     delta_fc3.clear();
+    delta_fc2_strain.clear();
 }
 
 void Gruneisen::setup()
@@ -69,21 +72,30 @@ void Gruneisen::setup()
 
     build_27cell_shift_table(xshift_s);
 
-    if (print_gruneisen || print_newfcs) {
+    if (gruneisen_mode == 1 || print_newfcs) {
         prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2);
-
-        // impose_ASR_on_harmonic_IFC(delta_fc2, 0);
+    }
+    if (gruneisen_mode >= 2) {
+        prepare_delta_fcs_strain(fcs_phonon->force_constant_with_cell[1], delta_fc2_strain);
     }
 
     if (print_newfcs && anharmonic_core->quartic_mode > 0) {
         prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3);
     }
-    if (print_gruneisen) {
+    if (gruneisen_mode == 1) {
         if (kpoint->kpoint_bs.get()) {
             gruneisen_bs.resize(kpoint->kpoint_bs->nk, dynamical->neval);
         }
         if (dos->kmesh_dos.get()) {
             gruneisen_dos.resize(dos->kmesh_dos->nk, dynamical->neval);
+        }
+    } else if (gruneisen_mode >= 2) {
+        const auto ncomp = number_of_strain_components();
+        if (kpoint->kpoint_bs.get()) {
+            gruneisen_tensor_bs.resize(kpoint->kpoint_bs->nk, dynamical->neval, ncomp);
+        }
+        if (dos->kmesh_dos.get()) {
+            gruneisen_tensor_dos.resize(dos->kmesh_dos->nk, dynamical->neval, ncomp);
         }
     }
 
@@ -104,85 +116,90 @@ void Gruneisen::setup()
 
 void Gruneisen::calc_gruneisen()
 {
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        std::cout << '\n';
+        if (gruneisen_mode == 1) {
+            std::cout << " GRUNEISEN = 1 : Calculating volumetric Gruneisen parameters ... ";
+        } else {
+            std::cout << " GRUNEISEN = " << gruneisen_mode
+                      << " : Calculating generalized Gruneisen parameters ... ";
+        }
+    }
+
+    if (kpoint->kpoint_bs.get()) {
+        calc_gruneisen_at_kpoints(kpoint->kpoint_bs->nk, kpoint->kpoint_bs->xk,
+                                  dynamical->dymat_band->get_eigenvalues(),
+                                  dynamical->dymat_band->get_eigenvectors(), gruneisen_bs, gruneisen_tensor_bs);
+    }
+
+    if (dos->kmesh_dos.get()) {
+        calc_gruneisen_at_kpoints(dos->kmesh_dos->nk, dos->kmesh_dos->xk, dos->dymat_dos->get_eigenvalues(),
+                                  dos->dymat_dos->get_eigenvectors(), gruneisen_dos, gruneisen_tensor_dos);
+    }
+
+    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        std::cout << "done!" << '\n';
+    }
+}
+
+void Gruneisen::calc_gruneisen_at_kpoints(const unsigned int nk, const NDArray<double, 2> &xk,
+                                          const double *const *eval,
+                                          const std::complex<double> *const *const *evec,
+                                          NDArray<std::complex<double>, 2> &gamma_iso,
+                                          NDArray<std::complex<double>, 3> &gamma_tensor) const
+{
+    // Mode-resolved strain derivative of the dynamical matrix projected onto the
+    // harmonic eigenvectors. gruneisen_mode == 1: isotropic parameters
+    // gamma = -<e|dD/deps_iso|e> / (6 omega^2) into gamma_iso. gruneisen_mode >= 2:
+    // generalized parameters gamma_{mu nu} = -<e|dD/deps_{mu nu}|e> / (2 omega^2)
+    // per strain component into gamma_tensor.
     const auto ns = dynamical->neval;
 
     NDArray<std::complex<double>, 2> dfc2_reciprocal(ns, ns);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
-        std::cout << '\n';
-        std::cout << " GRUNEISEN = 1 : Calculating Gruneisen parameters ... ";
-    }
+    auto project = [&](const unsigned int ik, const unsigned int is) {
+        auto gamma = std::complex<double>(0.0, 0.0);
+        for (unsigned int i = 0; i < ns; ++i) {
+            for (unsigned int j = 0; j < ns; ++j) {
+                gamma += std::conj(evec[ik][is][i]) * dfc2_reciprocal[i][j] * evec[ik][is][j];
+            }
+        }
+        if (std::abs(gamma.imag()) > eps10) {
+            warn("calc_gruneisen", "Gruneisen parameter is not real");
+        }
+        return gamma;
+    };
 
-    if (kpoint->kpoint_bs.get()) {
-        const auto nk = kpoint->kpoint_bs->nk;
-        const auto &xk = kpoint->kpoint_bs->xk;
-        const auto eval = dynamical->dymat_band->get_eigenvalues();
-        const auto evec = dynamical->dymat_band->get_eigenvectors();
-
-        for (auto ik = 0; ik < nk; ++ik) {
+    if (gruneisen_mode == 1) {
+        for (unsigned int ik = 0; ik < nk; ++ik) {
             dynamical->calc_analytic_k(xk[ik], delta_fc2, dfc2_reciprocal);
 
-            for (auto is = 0; is < ns; ++is) {
-
-                gruneisen_bs[ik][is] = std::complex<double>(0.0, 0.0);
-
-                for (unsigned int i = 0; i < ns; ++i) {
-                    for (unsigned int j = 0; j < ns; ++j) {
-                        gruneisen_bs[ik][is] += std::conj(evec[ik][is][i]) * dfc2_reciprocal[i][j] * evec[ik][is][j];
-                    }
-                }
-
-                const auto gamma_imag = gruneisen_bs[ik][is].imag();
-                if (std::abs(gamma_imag) > eps10) {
-                    warn("calc_gruneisen", "Gruneisen parameter is not real");
-                }
-
+            for (unsigned int is = 0; is < ns; ++is) {
+                const auto gamma = project(ik, is);
                 if (std::abs(eval[ik][is]) < eps8) {
-                    gruneisen_bs[ik][is] = 0.0;
+                    gamma_iso[ik][is] = 0.0;
                 } else {
-                    gruneisen_bs[ik][is] /= -6.0 * pow2(eval[ik][is]);
+                    gamma_iso[ik][is] = gamma / (-6.0 * pow2(eval[ik][is]));
                 }
             }
         }
-    }
+    } else {
+        const auto ncomp = delta_fc2_strain.size();
 
-    if (dos->kmesh_dos.get()) {
-        const auto nk = dos->kmesh_dos->nk;
-        const auto &xk = dos->kmesh_dos->xk;
-        const auto eval = dos->dymat_dos->get_eigenvalues();
-        const auto evec = dos->dymat_dos->get_eigenvectors();
+        for (std::size_t icomp = 0; icomp < ncomp; ++icomp) {
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                dynamical->calc_analytic_k(xk[ik], delta_fc2_strain[icomp], dfc2_reciprocal);
 
-        for (auto ik = 0; ik < nk; ++ik) {
-
-            dynamical->calc_analytic_k(xk[ik], delta_fc2, dfc2_reciprocal);
-
-            for (auto is = 0; is < ns; ++is) {
-
-                gruneisen_dos[ik][is] = std::complex<double>(0.0, 0.0);
-
-                for (unsigned int i = 0; i < ns; ++i) {
-                    for (unsigned int j = 0; j < ns; ++j) {
-                        gruneisen_dos[ik][is] += std::conj(evec[ik][is][i]) * dfc2_reciprocal[i][j] * evec[ik][is][j];
+                for (unsigned int is = 0; is < ns; ++is) {
+                    const auto gamma = project(ik, is);
+                    if (std::abs(eval[ik][is]) < eps8) {
+                        gamma_tensor[ik][is][icomp] = 0.0;
+                    } else {
+                        gamma_tensor[ik][is][icomp] = gamma / (-2.0 * pow2(eval[ik][is]));
                     }
-                }
-
-                const auto gamma_imag = gruneisen_dos[ik][is].imag();
-                if (std::abs(gamma_imag) > eps10) {
-                    warn("calc_gruneisen", "Gruneisen parameter is not real");
-                }
-
-                if (std::abs(eval[ik][is]) < eps8) {
-                    gruneisen_dos[ik][is] = 0.0;
-                } else {
-                    gruneisen_dos[ik][is] /= -6.0 * pow2(eval[ik][is]);
                 }
             }
         }
-    }
-
-
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
-        std::cout << "done!" << '\n';
     }
 }
 
@@ -201,6 +218,40 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
 
     DerivativeIFC::compute_dV_dstrain_real_space(fcs_aligned, delta_fcs, {Eigen::Matrix3d::Identity()},
                                                  system->get_primcell().lattice_vector, eps15);
+}
+
+void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fcs_in,
+                                         std::vector<std::vector<FcsArrayWithCell>> &delta_fcs_strain) const
+{
+    // Strain-derivative IFCs per component for the generalized Gruneisen
+    // parameters: diagonal components for gruneisen_mode = 2, the 6 Voigt
+    // components (off-diagonals symmetrized over (mu,nu)) for gruneisen_mode = 3.
+    // Component indices refer to the base-9 flattening mu*3+nu of
+    // compute_dV_dumn_all_real_space.
+    delta_fcs_strain.clear();
+
+    if (fcs_in.empty()) return;
+
+    auto fcs_aligned = fcs_in;
+    sort_by_heading_indices const operator1(1);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator1);
+
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    DerivativeIFC::compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1,
+                                                  system->get_primcell().lattice_vector);
+
+    std::vector<std::vector<std::pair<std::size_t, double>>> components = {{{0, 1.0}}, {{4, 1.0}}, {{8, 1.0}}};
+    if (gruneisen_mode == 3) {
+        components.push_back({{5, 0.5}, {7, 0.5}}); // yz
+        components.push_back({{2, 0.5}, {6, 0.5}}); // xz
+        components.push_back({{1, 0.5}, {3, 0.5}}); // xy
+    }
+
+    delta_fcs_strain.resize(components.size());
+    for (std::size_t icomp = 0; icomp < components.size(); ++icomp) {
+        DerivativeIFC::extract_strain_combination(strain_groups, components[icomp], 1, eps15,
+                                                  delta_fcs_strain[icomp]);
+    }
 }
 
 

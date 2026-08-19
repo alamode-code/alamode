@@ -4,6 +4,7 @@
 #include <complex>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 #include "fcs_phonon.h"
 
@@ -56,9 +57,9 @@ public:
     // extract_strain_component to materialize one component's delta IFCs.
     // fcs_aligned must be sorted by the first (n-m) indices
     // (sort_by_heading_indices(m)).
-    void compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                        std::vector<DeltaFcsStrainComponents> &groups,
-                                        std::size_t m) const;
+    static void compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                               std::vector<DeltaFcsStrainComponents> &groups,
+                                               std::size_t m, const Eigen::Matrix3d &convmat);
 
     // Materialize the delta IFCs of one flattened component (base-9 digits
     // mu_j*3+nu_j, most significant first). A group is emitted iff its
@@ -67,6 +68,15 @@ public:
     static void extract_strain_component(const std::vector<DeltaFcsStrainComponents> &groups,
                                          std::size_t component, std::size_t m, double emit_threshold,
                                          std::vector<FcsArrayWithCell> &delta_fcs);
+
+    // Materialize the delta IFCs of a linear combination of components,
+    // sum_i weight_i * values[component_i] (e.g. a symmetrized off-diagonal
+    // strain derivative). A group is emitted iff any term's mu-combination was
+    // touched and the combined value passes emit_threshold.
+    static void extract_strain_combination(const std::vector<DeltaFcsStrainComponents> &groups,
+                                           const std::vector<std::pair<std::size_t, double>> &terms,
+                                           std::size_t m, double emit_threshold,
+                                           std::vector<FcsArrayWithCell> &delta_fcs);
 
     // Directional derivative of the IFCs along the strain tensors strain_dirs[j]
     // (one 3x3 tensor per derivative order); Gruneisen passes the identity to

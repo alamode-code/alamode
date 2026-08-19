@@ -375,7 +375,10 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
         assign_val(analysis_vars.longitudinal_dos, "LONGITUDINAL_DOS", analysis_var_dict);
 
         assign_val(analysis_vars.scattering_phase_space, "SPS", analysis_var_dict);
-        assign_val(analysis_vars.print_gruneisen, "GRUNEISEN", analysis_var_dict);
+        assign_val(analysis_vars.gruneisen_mode, "GRUNEISEN", analysis_var_dict);
+        if (analysis_vars.gruneisen_mode < 0 || analysis_vars.gruneisen_mode > 3) {
+            exit("parse_analysis_vars", "GRUNEISEN must be 0, 1, 2, or 3.");
+        }
         assign_val(analysis_vars.print_newfcs, "NEWFCS", analysis_var_dict);
         assign_val(analysis_vars.delta_a, "DELTA_A", analysis_var_dict);
 

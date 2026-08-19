@@ -94,7 +94,7 @@ struct AnalysisInputVars
     bool longitudinal_dos = false;
     int scattering_phase_space = 0; // SPS
 
-    bool print_gruneisen = false;
+    int gruneisen_mode = 0;
     bool print_newfcs = false;
     double delta_a = 0.001;
 

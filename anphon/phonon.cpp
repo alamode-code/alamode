@@ -182,8 +182,9 @@ void PHON::execute_phonons() const
         std::cout << "      Phonon calculation within harmonic approximation       \n";
         std::cout << "      Harmonic force constants will be used.                 \n";
 
-        if (gruneisen->print_gruneisen) {
-            std::cout << "\n      GRUNEISEN = 1 : Cubic force constants are necessary.\n";
+        if (gruneisen->gruneisen_mode > 0) {
+            std::cout << "\n      GRUNEISEN = " << gruneisen->gruneisen_mode
+                      << " : Cubic force constants are necessary.\n";
         }
         std::cout << '\n';
     }
@@ -201,7 +202,7 @@ void PHON::execute_phonons() const
     }
 
     gruneisen->setup();
-    if (gruneisen->print_gruneisen) {
+    if (gruneisen->gruneisen_mode > 0) {
         gruneisen->calc_gruneisen();
     }
     if (dielec->calc_dielectric_constant) {
