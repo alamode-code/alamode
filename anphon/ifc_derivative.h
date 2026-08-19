@@ -2,8 +2,8 @@
 
 #include <Eigen/Core>
 #include <complex>
+#include <cstdint>
 #include <string>
-#include <utility>
 #include <vector>
 #include "fcs_phonon.h"
 
@@ -19,6 +19,24 @@ class Symmetry;
 class Dynamical;
 class AnharmonicCore;
 
+// Real-space strain derivatives of the IFCs for ALL strain-tensor components
+// at once: one entry per group of heading IFC indices, carrying the values of
+// every (mu_1 nu_1 ... mu_m nu_m) component, flattened in base 9 with digit
+// mu_j*3+nu_j (most significant first). Produced by
+// DerivativeIFC::compute_dV_dumn_all_real_space.
+struct DeltaFcsStrainComponents
+{
+    std::vector<AtomCellSuper> pairs;
+    std::vector<unsigned int> atoms_s;
+    std::vector<Eigen::Vector3d> relvecs;
+    std::vector<Eigen::Vector3d> relvecs_velocity;
+    std::vector<double> values; // size 9^m
+    // Bit p is set iff some FC entry of this group has tail Cartesian indices
+    // forming the mu-combination p (base 3, most significant first). Components
+    // whose mu-combination is untouched hold an exact 0.0 that no entry wrote.
+    uint32_t touched_mu;
+};
+
 // Computes strain derivatives of the IFCs for the SCPH/QHA structural
 // relaxation. All dependencies are explicit constructor arguments (no
 // Pointers base): it is constructed by Relaxation after setup_base(), when
@@ -32,10 +50,32 @@ public:
                   const Dynamical &dynamical_in, AnharmonicCore &anharmonic_core_in, int my_rank_in, int nprocs_in);
     ~DerivativeIFC() = default;
 
-    void compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                    std::vector<FcsArrayWithCell> &delta_fcs,
-                                    const std::vector<std::pair<int, int>> &strain_components,
-                                    double emit_threshold) const;
+    // Single-pass computation of the m-th strain derivative of the IFCs in real
+    // space for ALL 9^m strain-tensor components at once. One scan over
+    // fcs_aligned replaces the 9^m per-component scans; use
+    // extract_strain_component to materialize one component's delta IFCs.
+    // fcs_aligned must be sorted by the first (n-m) indices
+    // (sort_by_heading_indices(m)).
+    void compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                        std::vector<DeltaFcsStrainComponents> &groups,
+                                        std::size_t m) const;
+
+    // Materialize the delta IFCs of one flattened component (base-9 digits
+    // mu_j*3+nu_j, most significant first). A group is emitted iff its
+    // mu-combination was touched and, when emit_threshold >= 0, the value's
+    // magnitude exceeds the threshold.
+    static void extract_strain_component(const std::vector<DeltaFcsStrainComponents> &groups,
+                                         std::size_t component, std::size_t m, double emit_threshold,
+                                         std::vector<FcsArrayWithCell> &delta_fcs);
+
+    // Directional derivative of the IFCs along the strain tensors strain_dirs[j]
+    // (one 3x3 tensor per derivative order); Gruneisen passes the identity to
+    // get the isotropic-strain derivative in a single channel.
+    static void compute_dV_dstrain_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                              std::vector<FcsArrayWithCell> &delta_fcs,
+                                              const std::vector<Eigen::Matrix3d> &strain_dirs,
+                                              const Eigen::Matrix3d &convmat,
+                                              double emit_threshold);
 
     void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,
                           const std::complex<double> *const *const *const evec_harmonic) const;

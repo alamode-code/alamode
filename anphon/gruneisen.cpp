@@ -23,6 +23,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "dynamical.h"
 #include "error.h"
 #include "fcs_phonon.h"
+#include "ifc_derivative.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -188,134 +189,18 @@ void Gruneisen::calc_gruneisen()
 void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
                                   std::vector<FcsArrayWithCell> &delta_fcs) const
 {
-    unsigned int i, j;
-    Eigen::Vector3d vec;
-
-    std::vector<FcsArrayWithCell> fcs_aligned;
-    std::vector<AtomCellSuper> pairs_vec;
-    std::vector<int> index_old, index_now;
-    std::vector<int> relvecs_int_old, relvecs_int_now;
-
-    std::vector<int> index_with_cell, index_with_cell_old;
-    std::vector<unsigned int> atoms_s_now, atoms_s_old;
-
-    std::vector<Eigen::Vector3d> relvecs_tmp, relvecs_tmp2;
-    std::vector<Eigen::Vector3d> relvecs_now, relvecs_old;
-    std::vector<Eigen::Vector3d> relvecs_vel_now, relvecs_vel_old;
-
-    AtomCellSuper pairs_tmp{};
+    // Contract the last leg of the order-n IFCs with its own position vector,
+    // i.e., take the derivative along an isotropic strain (identity strain tensor).
+    delta_fcs.clear();
 
     if (fcs_in.empty()) return;
 
-    const auto norder = fcs_in[0].pairs.size();
-    const auto nelems = norder - 1;
-
-    delta_fcs.clear();
-    fcs_aligned.clear();
-
-    for (const auto &it: fcs_in) {
-        fcs_aligned.emplace_back(it);
-    }
+    auto fcs_aligned = fcs_in;
     sort_by_heading_indices const operator1(1);
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator1);
 
-    const auto cell_tmp = system->get_supercell(norder - 2);
-    const auto convmat = system->get_primcell().lattice_vector;
-
-    index_old.clear();
-    for (i = 0; i < nelems; ++i) {
-        index_old.push_back(-1);
-    }
-    for (i = 0; i < nelems - 1; ++i) {
-        for (j = 0; j < 3; ++j) {
-            relvecs_int_old.push_back(1000000);
-        }
-    }
-    index_with_cell.clear();
-
-    relvecs_tmp.resize(nelems - 1);
-    relvecs_tmp2.resize(nelems - 1);
-
-    relvecs_now.resize(nelems - 1);
-    relvecs_old.resize(nelems - 1);
-    relvecs_vel_now.resize(nelems - 1);
-    relvecs_vel_old.resize(nelems - 1);
-
-    double fcs_tmp = 0.0;
-
-    for (const auto &it: fcs_aligned) {
-
-        index_now.clear();
-        relvecs_int_now.clear();
-        index_with_cell.clear();
-        atoms_s_now.clear();
-
-        index_now.push_back(it.pairs[0].index);
-        index_with_cell.push_back(it.pairs[0].index);
-        atoms_s_now.emplace_back(it.atoms_s[0]);
-
-        for (i = 1; i < nelems; ++i) {
-            index_now.push_back(it.pairs[i].index);
-            for (j = 0; j < 3; ++j) {
-                relvecs_int_now.push_back(nint(it.relvecs[i - 1][j]));
-            }
-
-            index_with_cell.push_back(it.pairs[i].index);
-            index_with_cell.push_back(it.pairs[i].tran);
-            index_with_cell.push_back(it.pairs[i].cell_s);
-            atoms_s_now.emplace_back(it.atoms_s[i]);
-            relvecs_now[i - 1] = it.relvecs[i - 1];
-            relvecs_vel_now[i - 1] = it.relvecs_velocity[i - 1];
-        }
-
-        if ((index_now != index_old) || (relvecs_int_now != relvecs_int_old)) {
-
-            if (index_old[0] != -1) {
-
-                if (std::abs(fcs_tmp) > eps15) {
-
-                    pairs_vec.clear();
-                    pairs_tmp.index = index_with_cell_old[0];
-                    pairs_tmp.tran = 0;
-                    pairs_tmp.cell_s = 0;
-                    pairs_vec.push_back(pairs_tmp);
-                    for (i = 1; i < norder - 1; ++i) {
-                        pairs_tmp.index = index_with_cell_old[3 * i - 2];
-                        pairs_tmp.tran = index_with_cell_old[3 * i - 1];
-                        pairs_tmp.cell_s = index_with_cell_old[3 * i];
-                        pairs_vec.push_back(pairs_tmp);
-                    }
-                    delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_old, relvecs_old, relvecs_vel_old);
-                }
-            }
-
-            fcs_tmp = 0.0;
-            index_old = index_now;
-            relvecs_int_old = relvecs_int_now;
-            atoms_s_old = atoms_s_now;
-            relvecs_old = relvecs_now;
-            relvecs_vel_old = relvecs_vel_now;
-            index_with_cell_old = index_with_cell;
-        }
-
-        vec = convmat * it.relvecs_velocity[norder - 2];
-        fcs_tmp += it.fcs_val * vec[it.pairs[norder - 1].index % 3];
-    }
-
-    if (std::abs(fcs_tmp) > eps15) {
-        pairs_vec.clear();
-        pairs_tmp.index = index_with_cell[0];
-        pairs_tmp.tran = 0;
-        pairs_tmp.cell_s = 0;
-        pairs_vec.push_back(pairs_tmp);
-        for (i = 1; i < norder - 1; ++i) {
-            pairs_tmp.index = index_with_cell[3 * i - 2];
-            pairs_tmp.tran = index_with_cell[3 * i - 1];
-            pairs_tmp.cell_s = index_with_cell[3 * i];
-            pairs_vec.push_back(pairs_tmp);
-        }
-        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_now, relvecs_now, relvecs_vel_now);
-    }
+    DerivativeIFC::compute_dV_dstrain_real_space(fcs_aligned, delta_fcs, {Eigen::Matrix3d::Identity()},
+                                                 system->get_primcell().lattice_vector, eps15);
 }
 
 

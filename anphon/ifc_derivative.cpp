@@ -17,7 +17,102 @@
 using namespace PHON_NS;
 
 namespace
-{}
+{
+
+// Iterate over fcs_aligned (sorted by the first nelems indices), grouping
+// consecutive entries with identical heading indices and relative vectors.
+// accept(entry) filters entries; accumulate(entry) adds an accepted entry's
+// contribution; flush(index_with_cell, atoms_s, relvecs, relvecs_velocity) is
+// called once per closed group (and must reset the accumulator state).
+template <class Accept, class Accumulate, class Flush>
+void scan_fcs_groups(const std::vector<FcsArrayWithCell> &fcs_aligned, const std::size_t nelems, Accept &&accept,
+                     Accumulate &&accumulate, Flush &&flush)
+{
+    std::vector<int> index_prev(nelems, -1), index_curr;
+    std::vector<int> relvecs_int_prev(3 * (nelems - 1), 1000000), relvecs_int_curr;
+    std::vector<int> index_with_cell_prev(3 * (nelems - 1) + 1, -1), index_with_cell_curr;
+    std::vector<unsigned int> atoms_s_prev, atoms_s_curr;
+    std::vector<Eigen::Vector3d> relvecs_prev(nelems - 1), relvecs_curr(nelems - 1);
+    std::vector<Eigen::Vector3d> relvecs_vel_prev(nelems - 1), relvecs_vel_curr(nelems - 1);
+
+    bool has_group = false;
+
+    for (const auto &it: fcs_aligned) {
+
+        if (!accept(it)) {
+            continue;
+        }
+
+        index_curr.clear();
+        relvecs_int_curr.clear();
+        index_with_cell_curr.clear();
+        atoms_s_curr.clear();
+
+        index_curr.push_back(it.pairs[0].index);
+        index_with_cell_curr.push_back(it.pairs[0].index);
+        atoms_s_curr.emplace_back(it.atoms_s[0]);
+
+        for (std::size_t i = 1; i < nelems; ++i) {
+            index_curr.push_back(it.pairs[i].index);
+
+            for (int j = 0; j < 3; ++j) {
+                relvecs_int_curr.push_back(nint(it.relvecs[i - 1][j]));
+            }
+
+            index_with_cell_curr.push_back(it.pairs[i].index);
+            index_with_cell_curr.push_back(it.pairs[i].tran);
+            index_with_cell_curr.push_back(it.pairs[i].cell_s);
+
+            atoms_s_curr.emplace_back(it.atoms_s[i]);
+            relvecs_curr[i - 1] = it.relvecs[i - 1];
+            relvecs_vel_curr[i - 1] = it.relvecs_velocity[i - 1];
+        }
+
+        if (!has_group || index_curr != index_prev || relvecs_int_curr != relvecs_int_prev) {
+            if (has_group) {
+                flush(index_with_cell_prev, atoms_s_prev, relvecs_prev, relvecs_vel_prev);
+            }
+
+            index_prev = index_curr;
+            relvecs_int_prev = relvecs_int_curr;
+            atoms_s_prev = atoms_s_curr;
+            relvecs_prev = relvecs_curr;
+            relvecs_vel_prev = relvecs_vel_curr;
+            index_with_cell_prev = index_with_cell_curr;
+            has_group = true;
+        }
+
+        accumulate(it);
+    }
+
+    if (has_group) {
+        flush(index_with_cell_curr, atoms_s_curr, relvecs_curr, relvecs_vel_curr);
+    }
+}
+
+// Rebuild the emitted pairs array from the packed index_with_cell key: the
+// first atom is folded to the primitive cell (tran = cell_s = 0), the rest
+// keep their translation and cell indices.
+void build_pairs_vec(const std::vector<int> &index_with_cell, const std::size_t nelems,
+                     std::vector<AtomCellSuper> &pairs_vec)
+{
+    AtomCellSuper pairs_tmp{};
+
+    pairs_vec.clear();
+    pairs_tmp.index = index_with_cell[0];
+    pairs_tmp.tran = 0;
+    pairs_tmp.cell_s = 0;
+    pairs_vec.push_back(pairs_tmp);
+
+    for (std::size_t i = 1; i < nelems; ++i) {
+        pairs_tmp.index = index_with_cell[3 * i - 2];
+        pairs_tmp.tran = index_with_cell[3 * i - 1];
+        pairs_tmp.cell_s = index_with_cell[3 * i];
+        pairs_vec.push_back(pairs_tmp);
+    }
+}
+
+} // namespace
 
 DerivativeIFC::DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in,
                              const Dynamical &dynamical_in, AnharmonicCore &anharmonic_core_in, const int my_rank_in,
@@ -52,20 +147,13 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
         boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
     }
 
-#pragma omp parallel
-    {
-        std::vector<FcsArrayWithCell> delta_fcs;
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1);
 
-#pragma omp for collapse(2) schedule(dynamic)
-        for (int mu = 0; mu < 3; ++mu) {
-            for (int nu = 0; nu < 3; ++nu) {
-                compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{mu, nu}}, -1.0);
-                const int ixyz = mu * 3 + nu;
-                for (const auto &entry: delta_fcs) {
-                    const int ind1 = entry.pairs[0].index;
-                    del_v1_del_umn_in_real_space(ixyz, ind1) += entry.fcs_val;
-                }
-            }
+    for (const auto &group: strain_groups) {
+        const int ind1 = group.pairs[0].index;
+        for (int ixyz = 0; ixyz < 9; ++ixyz) {
+            del_v1_del_umn_in_real_space(ixyz, ind1) += group.values[ixyz];
         }
     }
 
@@ -111,23 +199,13 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
         boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
     }
 
-#pragma omp parallel
-    {
-        std::vector<FcsArrayWithCell> delta_fcs;
-#pragma omp for collapse(4) schedule(dynamic)
-        for (int mu1 = 0; mu1 < 3; ++mu1) {
-            for (int nu1 = 0; nu1 < 3; ++nu1) {
-                for (int mu2 = 0; mu2 < 3; ++mu2) {
-                    for (int nu2 = 0; nu2 < 3; ++nu2) {
-                        compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{mu1, nu1}, {mu2, nu2}}, -1.0);
-                        const int ixyz_comb = mu1 * 27 + nu1 * 9 + mu2 * 3 + nu2;
-                        for (const auto &entry: delta_fcs) {
-                            const int ind1 = entry.pairs[0].index;
-                            del2_v1_del_umn2_in_real_space(ixyz_comb, ind1) += entry.fcs_val;
-                        }
-                    }
-                }
-            }
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 2);
+
+    for (const auto &group: strain_groups) {
+        const int ind1 = group.pairs[0].index;
+        for (int ixyz_comb = 0; ixyz_comb < 81; ++ixyz_comb) {
+            del2_v1_del_umn2_in_real_space(ixyz_comb, ind1) += group.values[ixyz_comb];
         }
     }
 
@@ -174,30 +252,13 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
         boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
     }
 
-#pragma omp parallel
-    {
-        std::vector<FcsArrayWithCell> delta_fcs;
-#pragma omp for collapse(6) schedule(dynamic)
-        for (int mu1 = 0; mu1 < 3; ++mu1) {
-            for (int nu1 = 0; nu1 < 3; ++nu1) {
-                for (int mu2 = 0; mu2 < 3; ++mu2) {
-                    for (int nu2 = 0; nu2 < 3; ++nu2) {
-                        for (int mu3 = 0; mu3 < 3; ++mu3) {
-                            for (int nu3 = 0; nu3 < 3; ++nu3) {
-                                compute_dV_dumn_real_space(fcs_aligned,
-                                                           delta_fcs,
-                                                           {{mu1, nu1}, {mu2, nu2}, {mu3, nu3}},
-                                                           -1.0);
-                                const int ixyz_comb = mu1 * 243 + nu1 * 81 + mu2 * 27 + nu2 * 9 + mu3 * 3 + nu3;
-                                for (const auto &entry: delta_fcs) {
-                                    const int ind1 = entry.pairs[0].index;
-                                    del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) += entry.fcs_val;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 3);
+
+    for (const auto &group: strain_groups) {
+        const int ind1 = group.pairs[0].index;
+        for (int ixyz_comb = 0; ixyz_comb < 729; ++ixyz_comb) {
+            del3_v1_del_umn3_in_real_space(ixyz_comb, ind1) += group.values[ixyz_comb];
         }
     }
 
@@ -248,9 +309,12 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
     sort_by_heading_indices const operator_fcs(1);
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
 
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1);
+
     for (int ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (int ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-            compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz1, ixyz2}}, eps15);
+            extract_strain_component(strain_groups, ixyz1 * 3 + ixyz2, 1, eps15, delta_fcs);
 
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (int ik = 0; ik < nk; ik++) {
@@ -281,6 +345,8 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
                                        const std::complex<double> *const *const *const evec_harmonic,
                                        const unsigned int nk, const double *const *xk_in) const
 {
+    // Calculate the second-order derivative of IFC2 with respect to strain in real space and transform it to the reciprocal space representation.
+    // This term corresponds to Eq. (C5) of 10.1103/ PhysRevB.106.224104.
     using namespace Eigen;
 
     const auto ns = dynamical_.neval;
@@ -292,6 +358,9 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
     }
     sort_by_heading_indices const operator_fcs(2);
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
+
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 2);
 
 #pragma omp parallel
     {
@@ -307,15 +376,7 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
 
 #pragma omp for
         for (ixyz = 0; ixyz < 81; ixyz++) {
-            int itmp = ixyz;
-            const int ixyz22 = itmp % 3;
-            itmp /= 3;
-            const int ixyz21 = itmp % 3;
-            itmp /= 3;
-            const int ixyz12 = itmp % 3;
-            const int ixyz11 = itmp / 3;
-
-            compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz11, ixyz12}, {ixyz21, ixyz22}}, eps15);
+            extract_strain_component(strain_groups, ixyz, 2, eps15, delta_fcs);
 
             auto &per_strain = del2_v2_del_umn2[ixyz];
             for (int ik = 0; ik < nk; ik++) {
@@ -346,6 +407,8 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                      const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                                      const PhaseFactorCache *phase_cache_in) const
 {
+    // Calculate the first-order derivative of IFC3 with respect to strain in real space and transform it to the reciprocal space representation.
+    // This term corresponds to Eq. (C6) of 10.1103/PhysRevB.106.224104.
     const auto ns = dynamical_.neval;
     const auto ns2 = static_cast<std::size_t>(ns) * ns;
     const auto nk_dense = static_cast<int>(kmesh_dense_in->nk);
@@ -388,6 +451,9 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     const sort_by_heading_indices operator_fcs(1);
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator_fcs);
 
+    std::vector<DeltaFcsStrainComponents> strain_groups;
+    compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1);
+
     // Scratch pointer views over the row-major Eigen matrices of one strain index,
     // used to bridge with the legacy raw-pointer interface of compute_V3_elements_for_given_IFCs.
     std::vector<std::complex<double> *> row_ptrs(static_cast<std::size_t>(nk_dense) * ns);
@@ -398,7 +464,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
 
-            compute_dV_dumn_real_space(fcs_aligned, delta_fcs, {{ixyz1, ixyz2}}, eps15);
+            extract_strain_component(strain_groups, ixyz1 * 3 + ixyz2, 1, eps15, delta_fcs);
 
             auto &per_strain = del_v3_del_umn[ixyz1 * 3 + ixyz2];
 
@@ -473,50 +539,148 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     invsqrt_mass_p.clear();
 }
 
-void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                               std::vector<FcsArrayWithCell> &delta_fcs,
-                                               const std::vector<std::pair<int, int>> &strain_components,
-                                               const double emit_threshold) const
+void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                   std::vector<DeltaFcsStrainComponents> &groups,
+                                                   const std::size_t m) const
 {
+    // Computes the m-th derivative of the force constants with respect to strain in real space,
+    // for all 9^m strain-tensor components in a single scan over fcs_aligned. Each FC entry has
+    // its tail Cartesian indices mu_j fixed, so it contributes fcs_val * prod_j vec_j[nu_j] to
+    // the 3^m components sharing its mu-combination (one per nu-combination).
+    // The input array fcs_aligned is assumed to be sorted by the first (n-m) indices of the
+    // force constant pairs, where n is the order of the force constants.
+    groups.clear();
 
-    if (fcs_aligned.empty()) {
-        delta_fcs.clear();
-        return;
-    }
+    if (fcs_aligned.empty()) return;
 
-    const auto m = strain_components.size();
-
-    if (m == 0) {
-        exit("compute_dV_dumn_real_space", "Inconsistent derivative-order input.");
+    // touched_mu packs one bit per mu-combination, so 3^m must fit in 32 bits.
+    if (m == 0 || m > 3) {
+        exit("compute_dV_dumn_all_real_space", "Derivative order m must be 1, 2, or 3.");
     }
 
     const auto norder = fcs_aligned[0].pairs.size();
 
     if (m >= norder) {
-        exit("compute_dV_dumn_real_space", "Derivative order m must be smaller than IFC order n.");
-    }
-
-    for (const auto &comp: strain_components) {
-        if (comp.first < 0 || comp.first >= 3 || comp.second < 0 || comp.second >= 3) {
-            exit("compute_dV_dumn_real_space", "Strain tensor indices (mu,nu) must be 0, 1, or 2.");
-        }
+        exit("compute_dV_dumn_all_real_space", "Derivative order m must be smaller than IFC order n.");
     }
 
     const auto convmat = system_.get_primcell().lattice_vector;
     const auto nelems = norder - m;
 
+    constexpr std::size_t pow3[4] = {1, 3, 9, 27};
+    const auto ncomp = pow3[m] * pow3[m];
+
+    std::vector<double> acc(ncomp, 0.0);
+    uint32_t touched_mu = 0;
+    std::vector<AtomCellSuper> pairs_vec;
+
+    scan_fcs_groups(
+        fcs_aligned, nelems, [](const FcsArrayWithCell &) { return true; },
+        [&](const FcsArrayWithCell &it) {
+            Eigen::Vector3d vecs[3];
+            std::size_t mu[3];
+            std::size_t p = 0;
+            for (std::size_t j = 0; j < m; ++j) {
+                mu[j] = it.coords[nelems + j];
+                vecs[j] = convmat * it.relvecs_velocity[(nelems - 1) + j];
+                p = p * 3 + mu[j];
+            }
+            touched_mu |= 1u << p;
+
+            for (std::size_t q = 0; q < pow3[m]; ++q) {
+                auto term = it.fcs_val;
+                std::size_t c = 0;
+                for (std::size_t j = 0; j < m; ++j) {
+                    const auto nu = (q / pow3[m - 1 - j]) % 3;
+                    term *= vecs[j][nu];
+                    c = c * 9 + mu[j] * 3 + nu;
+                }
+                acc[c] += term;
+            }
+        },
+        [&](const std::vector<int> &index_with_cell, const std::vector<unsigned int> &atoms_s,
+            const std::vector<Eigen::Vector3d> &relvecs, const std::vector<Eigen::Vector3d> &relvecs_vel) {
+            build_pairs_vec(index_with_cell, nelems, pairs_vec);
+
+            groups.emplace_back();
+            auto &group = groups.back();
+            group.pairs = pairs_vec;
+            group.atoms_s = atoms_s;
+            group.relvecs = relvecs;
+            group.relvecs_velocity = relvecs_vel;
+            group.values = acc;
+            group.touched_mu = touched_mu;
+
+            std::fill(acc.begin(), acc.end(), 0.0);
+            touched_mu = 0;
+        });
+}
+
+void DerivativeIFC::extract_strain_component(const std::vector<DeltaFcsStrainComponents> &groups,
+                                             const std::size_t component, const std::size_t m,
+                                             const double emit_threshold,
+                                             std::vector<FcsArrayWithCell> &delta_fcs)
+{
     delta_fcs.clear();
 
-    std::vector<int> index_prev(nelems, -1), index_curr;
-    std::vector<int> relvecs_int_prev(3 * (nelems - 1), 1000000), relvecs_int_curr;
-    std::vector<int> index_with_cell_prev(3 * (nelems - 1) + 1, -1), index_with_cell_curr;
-    std::vector<unsigned int> atoms_s_prev, atoms_s_curr;
-    std::vector<Eigen::Vector3d> relvecs_prev(nelems - 1), relvecs_curr(nelems - 1);
-    std::vector<Eigen::Vector3d> relvecs_vel_prev(nelems - 1), relvecs_vel_curr(nelems - 1);
+    constexpr std::size_t pow9[4] = {1, 9, 81, 729};
+
+    if (m == 0 || m > 3 || component >= pow9[m]) {
+        exit("extract_strain_component", "Invalid strain component index.");
+    }
+
+    // The mu-combination bit of this component, matching the touched_mu convention.
+    std::size_t p = 0;
+    for (std::size_t j = 0; j < m; ++j) {
+        p = p * 3 + ((component / pow9[m - 1 - j]) % 9) / 3;
+    }
+
+    for (const auto &group: groups) {
+        if (!(group.touched_mu >> p & 1u)) continue;
+
+        const auto val = group.values[component];
+        if (emit_threshold >= 0.0 && std::abs(val) <= emit_threshold) continue;
+
+        delta_fcs.emplace_back(val, group.pairs, group.atoms_s, group.relvecs, group.relvecs_velocity);
+    }
+}
+
+void DerivativeIFC::compute_dV_dstrain_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                  std::vector<FcsArrayWithCell> &delta_fcs,
+                                                  const std::vector<Eigen::Matrix3d> &strain_dirs,
+                                                  const Eigen::Matrix3d &convmat,
+                                                  const double emit_threshold)
+{
+    // This is a helper function that computes the directional derivative of the force constants
+    // with respect to strain in real space, along the strain tensor strain_dirs[j] for the j-th derivative.
+    // The derivative order is determined by the size of the strain_dirs vector.
+    // The input array fcs_aligned is assumed to be sorted by the first (n-m) indices of the force constant pairs,
+    // where m is the derivative order and n is the order of the force constants (n=2: harmonic, n=3: cubic, etc.).
+    if (fcs_aligned.empty()) {
+        delta_fcs.clear();
+        return;
+    }
+
+    const auto m = strain_dirs.size();
+
+    if (m == 0) {
+        exit("compute_dV_dstrain_real_space", "Inconsistent derivative-order input.");
+    }
+
+    const auto norder = fcs_aligned[0].pairs.size();
+
+    if (m >= norder) {
+        exit("compute_dV_dstrain_real_space", "Derivative order m must be smaller than IFC order n.");
+    }
+
+    const auto nelems = norder - m;
+
+    delta_fcs.clear();
 
     auto tail_mu_matches = [&](const FcsArrayWithCell &it) {
         for (std::size_t j = 0; j < m; ++j) {
-            if (it.coords[nelems + j] != static_cast<unsigned int>(strain_components[j].first)) {
+            const auto mu = it.coords[nelems + j];
+            if (strain_dirs[j](mu, 0) == 0.0 && strain_dirs[j](mu, 1) == 0.0 && strain_dirs[j](mu, 2) == 0.0) {
                 return false;
             }
         }
@@ -526,98 +690,30 @@ void DerivativeIFC::compute_dV_dumn_real_space(const std::vector<FcsArrayWithCel
     auto compute_term = [&](const FcsArrayWithCell &it) {
         double term = it.fcs_val;
         for (std::size_t j = 0; j < m; ++j) {
-            const auto nu = strain_components[j].second;
+            const auto mu = it.coords[nelems + j];
             const Eigen::Vector3d vec = convmat * it.relvecs_velocity[(nelems - 1) + j];
-            term *= vec[nu];
+            double contracted = 0.0;
+            for (int nu = 0; nu < 3; ++nu) {
+                contracted += strain_dirs[j](mu, nu) * vec[nu];
+            }
+            term *= contracted;
         }
         return term;
     };
 
-    AtomCellSuper pairs_tmp{};
-    std::vector<AtomCellSuper> pairs_vec;
     double fcs_tmp = 0.0;
-    bool has_group = false;
+    std::vector<AtomCellSuper> pairs_vec;
 
-    auto emit_group = [&](const std::vector<int> &index_with_cell_ref,
-                          const std::vector<unsigned int> &atoms_s_ref,
-                          const std::vector<Eigen::Vector3d> &relvecs_ref,
-                          const std::vector<Eigen::Vector3d> &relvecs_vel_ref) {
-        if (((emit_threshold >= 0.0) && (std::abs(fcs_tmp) <= emit_threshold)) || index_with_cell_ref.empty() ||
-            index_with_cell_ref[0] < 0)
-        {
-            return;
-        }
-
-        pairs_vec.clear();
-        pairs_tmp.index = index_with_cell_ref[0];
-        pairs_tmp.tran = 0;
-        pairs_tmp.cell_s = 0;
-        pairs_vec.push_back(pairs_tmp);
-
-        for (std::size_t i = 1; i < nelems; ++i) {
-            pairs_tmp.index = index_with_cell_ref[3 * i - 2];
-            pairs_tmp.tran = index_with_cell_ref[3 * i - 1];
-            pairs_tmp.cell_s = index_with_cell_ref[3 * i];
-            pairs_vec.push_back(pairs_tmp);
-        }
-
-        delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s_ref, relvecs_ref, relvecs_vel_ref);
-    };
-
-    for (const auto &it: fcs_aligned) {
-
-        if (!tail_mu_matches(it)) {
-            continue;
-        }
-
-        index_curr.clear();
-        relvecs_int_curr.clear();
-        index_with_cell_curr.clear();
-        atoms_s_curr.clear();
-
-        index_curr.push_back(it.pairs[0].index);
-        index_with_cell_curr.push_back(it.pairs[0].index);
-        atoms_s_curr.emplace_back(it.atoms_s[0]);
-
-        for (std::size_t i = 1; i < nelems; ++i) {
-            index_curr.push_back(it.pairs[i].index);
-
-            for (int j = 0; j < 3; ++j) {
-                relvecs_int_curr.push_back(nint(it.relvecs[i - 1][j]));
+    scan_fcs_groups(
+        fcs_aligned, nelems, tail_mu_matches, [&](const FcsArrayWithCell &it) { fcs_tmp += compute_term(it); },
+        [&](const std::vector<int> &index_with_cell, const std::vector<unsigned int> &atoms_s,
+            const std::vector<Eigen::Vector3d> &relvecs, const std::vector<Eigen::Vector3d> &relvecs_vel) {
+            if (!(emit_threshold >= 0.0 && std::abs(fcs_tmp) <= emit_threshold)) {
+                build_pairs_vec(index_with_cell, nelems, pairs_vec);
+                delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s, relvecs, relvecs_vel);
             }
-
-            index_with_cell_curr.push_back(it.pairs[i].index);
-            index_with_cell_curr.push_back(it.pairs[i].tran);
-            index_with_cell_curr.push_back(it.pairs[i].cell_s);
-
-            atoms_s_curr.emplace_back(it.atoms_s[i]);
-            relvecs_curr[i - 1] = it.relvecs[i - 1];
-            relvecs_vel_curr[i - 1] = it.relvecs_velocity[i - 1];
-        }
-
-        if (!has_group || index_curr != index_prev || relvecs_int_curr != relvecs_int_prev) {
-            if (has_group) {
-                emit_group(index_with_cell_prev, atoms_s_prev, relvecs_prev, relvecs_vel_prev);
-            }
-
             fcs_tmp = 0.0;
-            index_prev = index_curr;
-            relvecs_int_prev = relvecs_int_curr;
-            atoms_s_prev = atoms_s_curr;
-            relvecs_prev = relvecs_curr;
-            relvecs_vel_prev = relvecs_vel_curr;
-            index_with_cell_prev = index_with_cell_curr;
-            has_group = true;
-        }
-
-        fcs_tmp += compute_term(it);
-    }
-
-    if (!has_group) {
-        return;
-    }
-
-    emit_group(index_with_cell_curr, atoms_s_curr, relvecs_curr, relvecs_vel_curr);
+        });
 }
 
 void DerivativeIFC::set_del_v_fixed_cell(const size_t nk, const size_t ns, DelVStrainData &del_v_strain) const
@@ -908,30 +1004,13 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
     }
     del_v2_del_umn_alphamu.clear();
 
-    std::vector<int> is_acoustic(ns, 0);
-
-    constexpr double threshold_acoustic = 1.0e-16;
-    int count_acoustic = 0;
+    const auto is_acoustic_gamma = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-
-    for (is = 0; is < ns; is++) {
-        if (std::fabs(omega2_harmonic[0][is]) < threshold_acoustic) {
-            is_acoustic[is] = 1;
-            count_acoustic++;
-        } else {
-            is_acoustic[is] = 0;
-        }
-    }
-
-    if (count_acoustic != 3) {
-        std::cout << "Warning in calculate_del_v2_strain_from_cubic_by_finite_difference: ";
-        std::cout << count_acoustic << " acoustic modes are detected in Gamma point.\n\n";
-    }
 
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         auto &per_strain = del_v2_del_umn[ixyz1];
         for (is = 0; is < ns; is++) {
-            if (is_acoustic[is] == 0) {
+            if (!is_acoustic_gamma[is]) {
                 continue;
             }
             for (js = 0; js < ns; js++) {
@@ -1482,31 +1561,13 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
         }
     }
 
-    constexpr double threshold_acoustic = 1.0e-16;
-    int count_acoustic = 0;
-
-    const auto complex_zero = std::complex<double>(0.0, 0.0);
-
-    NDArray<int, 1> is_acoustic;
-    is_acoustic.resize(ns);
-
-    for (is = 0; is < ns; is++) {
-        if (std::fabs(omega2_harmonic[0][is]) < threshold_acoustic) {
-            is_acoustic[is] = 1;
-            count_acoustic++;
-        } else {
-            is_acoustic[is] = 0;
-        }
-    }
-
-    if (count_acoustic != 3) {
-        exit("calculate_delv2_delumn_finite_difference", "the number of detected acoustic modes is not three.");
-    }
+    constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
+    const auto is_acoustic_gamma = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
 
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         auto &per_strain = del_v2_del_umn[ixyz1];
         for (is = 0; is < ns; is++) {
-            if (is_acoustic[is] == 0) {
+            if (!is_acoustic_gamma[is]) {
                 continue;
             }
             for (js = 0; js < ns; js++) {
@@ -1523,6 +1584,4 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     dymat_q.clear();
     dymat_tmp.clear();
     dymat_new.clear();
-
-    is_acoustic.clear();
 }
