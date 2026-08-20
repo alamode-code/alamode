@@ -49,12 +49,12 @@ List of supported input variables
    **&analysis**
    :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
    :ref:`DIELEC <anphon_dielec>`, :ref:`DOS <anphon_dos>`, :ref:`FC2_EWALD <anphon_fc2_ewald>`, :ref:`GRUNEISEN <anphon_gruneisen>`
-   :ref:`IRREPS <anphon_irreps>`, :ref:`KS_INPUT <anphon_ks_input>`, :ref:`PDOS <anphon_pdos>`, :ref:`PRINTEVAL <anphon_printeval>`
-   :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`, :ref:`PRINTV3 <anphon_printv3>`
-   :ref:`PRINTV4 <anphon_printv4>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`, :ref:`PROJECTION_AXES <anphon_projection_axes>`
-   :ref:`QUARTIC <anphon_quartic>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`SELF_W <anphon_self_w>`
-   :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`
-   :ref:`ZMODE <anphon_zmode>`
+   :ref:`IRREPS <anphon_irreps>`, :ref:`KS_INPUT <anphon_ks_input>`, :ref:`NEWFCS <anphon_newfcs>`, :ref:`PDOS <anphon_pdos>`
+   :ref:`PRINTEVAL <anphon_printeval>`, :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`
+   :ref:`PRINTV3 <anphon_printv3>`, :ref:`PRINTV4 <anphon_printv4>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`
+   :ref:`PROJECTION_AXES <anphon_projection_axes>`, :ref:`QUARTIC <anphon_quartic>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`
+   :ref:`SELF_W <anphon_self_w>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`
+   :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
    **&kappa**
    :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
    :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
@@ -1134,10 +1134,10 @@ The first entry **KPMODE** specifies the types of calculation which is followed 
 
 ````
 
-"&strain"-field (Read only when ``RELAX_STR = 2``)
-++++++++++++++++++++++++++++++++++++++++++++++++++
+"&strain"-field (Read when ``RELAX_STR = 2``; optional when ``MODE = phonons`` with ``NEWFCS = 1``)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Please specify the initial displacement gradient tensor :math:`u_{\mu \nu}` for structural optimization as ::
+Please specify the displacement gradient tensor :math:`u_{\mu \nu}` as ::
 
  &strain
  u_xx u_xy u_xz
@@ -1146,6 +1146,12 @@ Please specify the initial displacement gradient tensor :math:`u_{\mu \nu}` for 
  /
 
 Note that the user needs to give a symmetric matrix.
+
+When ``RELAX_STR = 2``, this field gives the initial strain for structural optimization.
+When ``MODE = phonons`` with :ref:`NEWFCS <anphon_newfcs>` = 1, this field is optional: if given,
+the force constants of the systems strained by :math:`+u` and :math:`-u` are estimated and saved
+to ``PREFIX``\_+.h5/``PREFIX``\_-.h5 (or the XML pair with ``FILE_FORMAT = text``). This is the
+recommended way to specify the deformation for ``NEWFCS = 1``.
 
 "&displace"-field (Read only when ``RELAX_STR = 1, 2``)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1210,6 +1216,22 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  To compute Gr\ |umulaut_u|\ neisen parameters, cubic force constants must be contained in the ``FCSFILE`` file.
 
+
+````
+
+.. _anphon_newfcs:
+
+* NEWFCS-tag = 0 | 1
+
+ === ===================================================================
+  0   Do not estimate force constants of deformed systems
+  1   Estimate force constants of deformed systems and save them
+      as ``PREFIX``\_+.h5 and ``PREFIX``\_-.h5 (XML with ``FILE_FORMAT = text``)
+ === ===================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: When ``MODE = phonons`` and ``NEWFCS = 1``, the harmonic (and, when ``QUARTIC = 1``, cubic) force constants of deformed systems are estimated from the cubic (and quartic) force constants in ``FCSFILE`` and saved as ``PREFIX``\_+.h5 and ``PREFIX``\_-.h5 (or ``PREFIX``\_+.xml and ``PREFIX``\_-.xml with ``FILE_FORMAT = text``, or in a build without HDF5 support). The strain tensor :math:`u` should be specified in the ``&strain`` field; it is applied as :math:`+u` and :math:`-u` in the two created files. When the ``&strain`` field is not given, a small isotropic strain of :math:`\pm 0.001` is applied. The created files contain the deformed lattice vectors and the corrected force constants, and can be used directly as ``FCSFILE`` of subsequent phonon calculations.
 
 ````
 

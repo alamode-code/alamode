@@ -295,6 +295,16 @@ void InputSetter::set_initial_strain(PHON *phon, const double u_tensor_in[3][3])
     phon->relaxation->setInitialDistortion(u_tensor_in);
 }
 
+void InputSetter::set_strain_newfcs(PHON *phon, const double u_tensor_in[3][3]) const
+{
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            phon->gruneisen->strain_newfcs(i, j) = u_tensor_in[i][j];
+        }
+    }
+    phon->gruneisen->strain_newfcs_given = true;
+}
+
 void InputSetter::set_initial_displacements(PHON *phon, const std::vector<std::vector<double>> &u_xyz) const
 {
     phon->relaxation->init_u0.clear();

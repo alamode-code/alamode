@@ -85,6 +85,15 @@ ANPHON: Output files
  parameters are written with one column per strain component.
 
 
+* ``PREFIX``\_+.h5, ``PREFIX``\_-.h5 (``PREFIX``\_+.xml, ``PREFIX``\_-.xml with ``FILE_FORMAT = text``)
+
+ Estimated force constants of deformed systems, usable as ``FCSFILE``
+ of subsequent calculations. Created when ``MODE = phonons`` with ``NEWFCS = 1``;
+ the format follows ``FILE_FORMAT`` (HDF5 by default, the legacy XML with ``FILE_FORMAT = text``).
+ The two files correspond to the strains :math:`+u` and :math:`-u` given in the ``&strain``
+ field (a small isotropic strain of :math:`\pm 0.001` when the field is absent).
+
+
 * ``PREFIX``.zmode
 
  Mode effective charges of zone-center phonon modes.

@@ -73,6 +73,17 @@ void InputParser::parse_input(PHON *phon)
     if (!locate_tag("&kpoint")) exit("parse_input", "&kpoint entry not found in the input file");
     parse_kpoints(phon);
 
+    if (run_mode == "PHONONS") {
+        // Optional strain tensor for NEWFCS = 1: when given, the force constants
+        // of the anisotropically strained system are estimated instead of the
+        // isotropic volume change by DELTA_A.
+        if (locate_tag("&strain")) {
+            double u_tensor_tmp[3][3];
+            parse_strain_tensor(u_tensor_tmp);
+            input_setter->set_strain_newfcs(phon, u_tensor_tmp);
+        }
+    }
+
     if (run_mode == "KAPPA") {
         const auto use_defaults_for_kappa = !locate_tag("&kappa");
         parse_kappa_vars(phon, use_defaults_for_kappa);
@@ -1070,18 +1081,17 @@ void InputParser::check_relax_vars() const
     }
 }
 
-void InputParser::parse_initial_strain(PHON *phon)
+void InputParser::parse_strain_tensor(double (&u_tensor)[3][3])
 {
     int i, j;
-    double u_tensor_tmp[3][3];
     std::string line;
     std::vector<std::string> line_split;
 
     const auto line_vec = read_block_lines();
 
     if (line_vec.size() != 3) {
-        exit("parse_initial_strain", "Too few or too much lines for the &strain field.\n \
-                                            The number of valid lines for the &cell field should be 3.");
+        exit("parse_strain_tensor", "Too few or too much lines for the &strain field.\n \
+                                            The number of valid lines for the &strain field should be 3.");
     }
 
     for (i = 0; i < 3; ++i) {
@@ -1092,13 +1102,18 @@ void InputParser::parse_initial_strain(PHON *phon)
         // u_tensor
         if (line_split.size() == 3) {
             for (j = 0; j < 3; ++j) {
-                u_tensor_tmp[i][j] = boost::lexical_cast<double>(line_split[j]);
+                u_tensor[i][j] = boost::lexical_cast<double>(line_split[j]);
             }
         } else {
-            exit("parse_initial_strain", "Unacceptable format for &strain field.");
+            exit("parse_strain_tensor", "Unacceptable format for &strain field.");
         }
     }
+}
 
+void InputParser::parse_initial_strain(PHON *phon)
+{
+    double u_tensor_tmp[3][3];
+    parse_strain_tensor(u_tensor_tmp);
     input_setter->set_initial_strain(phon, u_tensor_tmp);
 }
 

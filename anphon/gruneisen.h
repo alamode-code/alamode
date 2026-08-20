@@ -33,6 +33,12 @@ public:
     int gruneisen_mode;
     bool print_newfcs;
 
+    // Optional &strain field (MODE = phonons): when given, NEWFCS applies this
+    // anisotropic strain tensor instead of the default isotropic strain
+    // (+- delta_a, kept as an undocumented legacy tag).
+    bool strain_newfcs_given;
+    Eigen::Matrix3d strain_newfcs;
+
     void setup();
 
     NDArray<std::complex<double>, 2> gruneisen_bs;
@@ -58,12 +64,17 @@ private:
     void deallocate_variables();
 
     NDArray<double, 2> xshift_s;
-    std::vector<FcsArrayWithCell> delta_fc2, delta_fc3;
+    std::vector<FcsArrayWithCell> delta_fc2;
+
+    // Strain-derivative IFCs used by NEWFCS (along the isotropic direction, or
+    // along strain_newfcs when the &strain field is given)
+    std::vector<FcsArrayWithCell> delta_fc2_newfcs, delta_fc3_newfcs;
 
     // Strain-derivative IFCs per component (3 or 6 lists, see gruneisen_mode)
     std::vector<std::vector<FcsArrayWithCell>> delta_fc2_strain;
 
-    void prepare_delta_fcs(const std::vector<FcsArrayWithCell> &, std::vector<FcsArrayWithCell> &) const;
+    void prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in, std::vector<FcsArrayWithCell> &delta_fcs,
+                           const Eigen::Matrix3d &strain_dir) const;
 
     void prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fcs_in,
                                   std::vector<std::vector<FcsArrayWithCell>> &delta_fcs_strain) const;
@@ -75,10 +86,6 @@ private:
 
     // void impose_ASR_on_harmonic_IFC(std::vector<FcsArrayWithCell> &,
     //                    int);
-
-    void write_new_fcsxml(const std::string &, double) const;
-
-    static std::string double2string(double);
 
     //  double calc_stress_energy2(const std::vector<FcsArrayWithCell>);
     void calc_stress_energy3(std::vector<FcsArrayWithCell>, double ****);

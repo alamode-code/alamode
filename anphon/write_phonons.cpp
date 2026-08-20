@@ -19,6 +19,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "error.h"
 #include "ewald.h"
 #include "fcs_phonon.h"
+#include "fcs_xml_schema.h"
 #include "gruneisen.h"
 #include "integration.h"
 #include "isotope.h"
@@ -35,10 +36,12 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
+#include "version.h"
 
 #ifdef _HDF5
 
 #include "H5Cpp.h"
+#include "fcs_hdf5_schema.h"
 #include "hdf5_parser.h"
 
 #endif
@@ -263,7 +266,7 @@ void Writes::writeInputVars()
         std::cout << "  GRUNEISEN = " << gruneisen->gruneisen_mode << '\n';
         std::cout << "  NEWFCS = " << gruneisen->print_newfcs;
         if (gruneisen->print_newfcs) {
-            std::cout << "; DELTA_A = " << gruneisen->delta_a << '\n';
+            std::cout << '\n';
             std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode;
         }
         std::cout << '\n';
@@ -1918,8 +1921,7 @@ void Writes::writeGruneisen()
 {
     const auto ncomp = gruneisen->number_of_strain_components();
     const std::string components_header =
-        ncomp == 3 ? "gamma_xx, gamma_yy, gamma_zz"
-                   : "gamma_xx, gamma_yy, gamma_zz, gamma_yz, gamma_xz, gamma_xy";
+        ncomp == 3 ? "gamma_xx, gamma_yy, gamma_zz" : "gamma_xx, gamma_yy, gamma_zz, gamma_yz, gamma_xz, gamma_xy";
 
     if (kpoint->kpoint_bs.get() && (gruneisen->gruneisen_bs || gruneisen->gruneisen_tensor_bs)) {
         if (nbands < 0 || nbands > 3 * system->get_primcell().number_of_atoms) {
@@ -2044,6 +2046,247 @@ void Writes::writeGruneisen()
         }
     }
 }
+
+void Writes::writeNewFcsXml(const std::string &filename_xml, const std::vector<FcsArrayWithCell> &delta_fc2,
+                            const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
+                            const double fc_scale) const
+{
+    int i, j;
+
+    const Eigen::Matrix3d u_applied = fc_scale * strain_dir;
+    const Eigen::Matrix3d lattice_vector =
+        (Eigen::Matrix3d::Identity() + u_applied) * system->get_supercell(0).lattice_vector;
+
+    using boost::property_tree::ptree;
+
+    ptree pt;
+
+    pt.put("Data.ANPHON_version", ALAMODE_VERSION);
+    pt.put("Data.Description.OriginalFCS", fcs_phonon->file_fcs);
+    for (i = 0; i < 3; ++i) {
+        std::string str_strain;
+        for (j = 0; j < 3; ++j) {
+            str_strain += " " + fcsxml::double2string(u_applied(i, j));
+        }
+        pt.add("Data.Description.Strain.u" + std::to_string(i + 1), str_strain);
+    }
+
+    const auto &cell_tmp = system->get_supercell(0);
+    const auto &map_tmp = system->get_map_p2s(0);
+
+    std::vector<std::string> element_names(system->symbol_kd.begin(),
+                                           system->symbol_kd.begin() + system->get_primcell().number_of_elems);
+    const std::vector<int> atomic_kinds(cell_tmp.kind.begin(), cell_tmp.kind.end());
+
+    fcsxml::add_structure_group_xml(pt, lattice_vector, cell_tmp.x_fractional, atomic_kinds, element_names);
+    fcsxml::add_symmetry_group_xml(pt, map_tmp);
+
+    pt.put("Data.ForceConstants", "");
+
+    // Base force constants plus fc_scale times the strain-derivative corrections
+    // in one Cartesian block per order; entries with identical indices are summed
+    // by the loader.
+    //
+    // The loader regenerates the permutations of the trailing legs from each
+    // stored entry (next_permutation over the supercell-atom-based key
+    // 3*atom_super + coord), so only entries whose trailing legs are in
+    // ascending order of that key may be stored.
+    auto legs_ascending = [&](const FcsArrayWithCell &it, const int norder) {
+        for (auto k = 1; k < norder - 1; ++k) {
+            if (3 * it.atoms_s[k] + it.pairs[k].index % 3 > 3 * it.atoms_s[k + 1] + it.pairs[k + 1].index % 3) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    auto build_rows = [&](const std::vector<FcsArrayWithCell> &fcs_base,
+                          const std::vector<FcsArrayWithCell> &fcs_delta,
+                          const int norder) {
+        std::vector<fcsxml::FcCartesianRowXml> rows;
+        auto append = [&](const FcsArrayWithCell &it, const double value) {
+            fcsxml::FcCartesianRowXml row;
+            row.value = value;
+            row.atom1_prim = it.pairs[0].index / 3;
+            row.coords.push_back(it.pairs[0].index % 3);
+            for (auto k = 1; k < norder; ++k) {
+                row.atoms_super.push_back(static_cast<int>(map_tmp[it.pairs[k].index / 3][it.pairs[k].tran]));
+                row.coords.push_back(it.pairs[k].index % 3);
+                row.cells.push_back(static_cast<int>(it.pairs[k].cell_s));
+            }
+            rows.emplace_back(std::move(row));
+        };
+
+        for (const auto &it: fcs_base) {
+            if (!legs_ascending(it, norder)) continue;
+            append(it, it.fcs_val);
+        }
+        for (const auto &it: fcs_delta) {
+            if (std::abs(it.fcs_val) < eps12) continue;
+            if (!legs_ascending(it, norder)) continue;
+            append(it, fc_scale * it.fcs_val);
+        }
+        return rows;
+    };
+
+    fcsxml::add_fc_cartesian_group_xml(pt,
+                                       "HARMONIC",
+                                       2,
+                                       build_rows(fcs_phonon->force_constant_with_cell[0], delta_fc2, 2));
+
+    if (anharmonic_core->quartic_mode) {
+        fcsxml::add_fc_cartesian_group_xml(pt,
+                                           "ANHARM3",
+                                           3,
+                                           build_rows(fcs_phonon->force_constant_with_cell[1], delta_fc3, 3));
+    }
+
+    fcsxml::write_fcs_xml_file(filename_xml, pt);
+}
+
+#ifdef _HDF5
+
+void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<FcsArrayWithCell> &delta_fc2,
+                           const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
+                           const double fc_scale) const
+{
+    using namespace H5Easy;
+
+    const Eigen::Matrix3d u_applied = fc_scale * strain_dir;
+    const Eigen::Matrix3d deform = Eigen::Matrix3d::Identity() + u_applied;
+
+    File file(filename_h5, File::ReadWrite | File::Create | File::Truncate);
+
+    const auto &supercell = system->get_supercell(0);
+    const auto &primcell = system->get_primcell();
+    const auto &map_p2s = system->get_map_p2s(0);
+
+    const std::vector<std::string> element_names(system->symbol_kd.begin(),
+                                                 system->symbol_kd.begin() + primcell.number_of_elems);
+    const std::vector<std::vector<double>> no_magmom;
+
+    {
+        std::vector<std::vector<int>> mapping(map_p2s.size());
+        for (std::size_t i = 0; i < map_p2s.size(); ++i) {
+            mapping[i].assign(map_p2s[i].begin(), map_p2s[i].end());
+        }
+        write_cell_group_h5(file,
+                            "SuperCell",
+                            Eigen::Matrix3d(deform * supercell.lattice_vector),
+                            supercell.x_fractional,
+                            supercell.kind,
+                            element_names,
+                            0,
+                            no_magmom,
+                            0,
+                            1,
+                            map_p2s[0].size(),
+                            mapping,
+                            units::FcUnitSystem::ry_bohr);
+    }
+    {
+        std::vector<std::vector<int>> mapping(primcell.number_of_atoms, std::vector<int>(1));
+        for (std::size_t i = 0; i < primcell.number_of_atoms; ++i) {
+            mapping[i][0] = static_cast<int>(i);
+        }
+        write_cell_group_h5(file,
+                            "PrimitiveCell",
+                            Eigen::Matrix3d(deform * primcell.lattice_vector),
+                            primcell.x_fractional,
+                            primcell.kind,
+                            element_names,
+                            0,
+                            no_magmom,
+                            0,
+                            1,
+                            1,
+                            mapping,
+                            units::FcUnitSystem::ry_bohr);
+    }
+
+    // Shift vectors of the deformed geometry in Cartesian bohr:
+    // relvecs_velocity is stored in the primitive lattice basis.
+    const Eigen::Matrix3d lavec_prim_deformed = deform * primcell.lattice_vector;
+
+    auto dump_order = [&](const int order,
+                          const std::vector<FcsArrayWithCell> &fcs_base,
+                          const std::vector<FcsArrayWithCell> &fcs_delta) {
+        const auto norder = order + 2;
+
+        // The h5 loader stores one canonical row per permutation multiset of the
+        // trailing legs and regenerates the permutations on read (compared by
+        // 3*atom_super + coord), so keep only rows whose trailing legs are in
+        // ascending order of that key.
+        auto legs_ascending = [&](const FcsArrayWithCell &it) {
+            for (auto k = 1; k < norder - 1; ++k) {
+                if (3 * it.atoms_s[k] + it.pairs[k].index % 3 > 3 * it.atoms_s[k + 1] + it.pairs[k + 1].index % 3) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        std::vector<std::pair<const FcsArrayWithCell *, double>> selected;
+        for (const auto &it: fcs_base) {
+            if (!legs_ascending(it)) continue;
+            selected.emplace_back(&it, it.fcs_val);
+        }
+        for (const auto &it: fcs_delta) {
+            if (std::abs(it.fcs_val) < eps12) continue;
+            if (!legs_ascending(it)) continue;
+            selected.emplace_back(&it, fc_scale * it.fcs_val);
+        }
+
+        const auto nrows = static_cast<Eigen::Index>(selected.size());
+        Eigen::MatrixXi atom_indices(nrows, norder), atom_indices_super(nrows, norder), coord_indices(nrows, norder);
+        Eigen::MatrixXd shift_vectors(nrows, 3 * (norder - 1));
+        Eigen::ArrayXd fcs_values(nrows);
+
+        for (Eigen::Index i = 0; i < nrows; ++i) {
+            const auto &it = *selected[i].first;
+            for (auto k = 0; k < norder; ++k) {
+                atom_indices(i, k) = static_cast<int>(it.pairs[k].index / 3);
+                atom_indices_super(i, k) = static_cast<int>(it.atoms_s[k]);
+                coord_indices(i, k) = static_cast<int>(it.pairs[k].index % 3);
+            }
+            for (auto k = 0; k < norder - 1; ++k) {
+                const Eigen::Vector3d shift_cart = lavec_prim_deformed * it.relvecs_velocity[k];
+                for (auto j = 0; j < 3; ++j) {
+                    shift_vectors(i, 3 * k + j) = shift_cart[j];
+                }
+            }
+            fcs_values[i] = selected[i].second;
+        }
+
+        write_fc_order_group_h5(file,
+                                order,
+                                atom_indices,
+                                atom_indices_super,
+                                coord_indices,
+                                std::move(shift_vectors),
+                                std::move(fcs_values),
+                                units::FcUnitSystem::ry_bohr,
+                                9);
+    };
+
+    dump_order(0, fcs_phonon->force_constant_with_cell[0], delta_fc2);
+    if (anharmonic_core->quartic_mode) {
+        dump_order(1, fcs_phonon->force_constant_with_cell[1], delta_fc3);
+    }
+
+    stamp_h5_schema(file, h5_schema_force_constants, h5_version_force_constants);
+    dump(file, "/version", ALAMODE_VERSION);
+    dump(file, "/original_fcsfile", fcs_phonon->file_fcs);
+    dump(file, "/applied_strain", Eigen::Matrix3d(u_applied));
+
+    const std::time_t result = std::time(nullptr);
+    std::string time_str;
+    time_str.resize(100);
+    std::strftime(&time_str[0], time_str.size(), "%Y-%b-%d %T", std::localtime(&result));
+    dump(file, "/created date", time_str);
+}
+
+#endif
 
 void Writes::writeMSD() const
 {

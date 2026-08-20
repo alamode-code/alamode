@@ -540,8 +540,8 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
 }
 
 void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
-                                                   std::vector<DeltaFcsStrainComponents> &groups,
-                                                   const std::size_t m, const Eigen::Matrix3d &convmat)
+                                                   std::vector<DeltaFcsStrainComponents> &groups, const std::size_t m,
+                                                   const Eigen::Matrix3d &convmat)
 {
     // Computes the m-th derivative of the force constants with respect to strain in real space,
     // for all 9^m strain-tensor components in a single scan over fcs_aligned. Each FC entry has
@@ -574,7 +574,9 @@ void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWit
     std::vector<AtomCellSuper> pairs_vec;
 
     scan_fcs_groups(
-        fcs_aligned, nelems, [](const FcsArrayWithCell &) { return true; },
+        fcs_aligned,
+        nelems,
+        [](const FcsArrayWithCell &) { return true; },
         [&](const FcsArrayWithCell &it) {
             Eigen::Vector3d vecs[3];
             std::size_t mu[3];
@@ -597,8 +599,10 @@ void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWit
                 acc[c] += term;
             }
         },
-        [&](const std::vector<int> &index_with_cell, const std::vector<unsigned int> &atoms_s,
-            const std::vector<Eigen::Vector3d> &relvecs, const std::vector<Eigen::Vector3d> &relvecs_vel) {
+        [&](const std::vector<int> &index_with_cell,
+            const std::vector<unsigned int> &atoms_s,
+            const std::vector<Eigen::Vector3d> &relvecs,
+            const std::vector<Eigen::Vector3d> &relvecs_vel) {
             build_pairs_vec(index_with_cell, nelems, pairs_vec);
 
             groups.emplace_back();
@@ -617,8 +621,7 @@ void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWit
 
 void DerivativeIFC::extract_strain_component(const std::vector<DeltaFcsStrainComponents> &groups,
                                              const std::size_t component, const std::size_t m,
-                                             const double emit_threshold,
-                                             std::vector<FcsArrayWithCell> &delta_fcs)
+                                             const double emit_threshold, std::vector<FcsArrayWithCell> &delta_fcs)
 {
     extract_strain_combination(groups, {{component, 1.0}}, m, emit_threshold, delta_fcs);
 }
@@ -665,8 +668,7 @@ void DerivativeIFC::extract_strain_combination(const std::vector<DeltaFcsStrainC
 void DerivativeIFC::compute_dV_dstrain_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                   std::vector<FcsArrayWithCell> &delta_fcs,
                                                   const std::vector<Eigen::Matrix3d> &strain_dirs,
-                                                  const Eigen::Matrix3d &convmat,
-                                                  const double emit_threshold)
+                                                  const Eigen::Matrix3d &convmat, const double emit_threshold)
 {
     // This is a helper function that computes the directional derivative of the force constants
     // with respect to strain in real space, along the strain tensor strain_dirs[j] for the j-th derivative.
@@ -722,9 +724,14 @@ void DerivativeIFC::compute_dV_dstrain_real_space(const std::vector<FcsArrayWith
     std::vector<AtomCellSuper> pairs_vec;
 
     scan_fcs_groups(
-        fcs_aligned, nelems, tail_mu_matches, [&](const FcsArrayWithCell &it) { fcs_tmp += compute_term(it); },
-        [&](const std::vector<int> &index_with_cell, const std::vector<unsigned int> &atoms_s,
-            const std::vector<Eigen::Vector3d> &relvecs, const std::vector<Eigen::Vector3d> &relvecs_vel) {
+        fcs_aligned,
+        nelems,
+        tail_mu_matches,
+        [&](const FcsArrayWithCell &it) { fcs_tmp += compute_term(it); },
+        [&](const std::vector<int> &index_with_cell,
+            const std::vector<unsigned int> &atoms_s,
+            const std::vector<Eigen::Vector3d> &relvecs,
+            const std::vector<Eigen::Vector3d> &relvecs_vel) {
             if (!(emit_threshold >= 0.0 && std::abs(fcs_tmp) <= emit_threshold)) {
                 build_pairs_vec(index_with_cell, nelems, pairs_vec);
                 delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s, relvecs, relvecs_vel);

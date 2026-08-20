@@ -9,11 +9,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 */
 
 #include "gruneisen.h"
-#include <boost/lexical_cast.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
-#include <boost/version.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -31,7 +27,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "phonon_dos.h"
 #include "pointers.h"
 #include "system.h"
-#include "version.h"
 #include "write_phonons.h"
 
 using namespace PHON_NS;
@@ -51,6 +46,8 @@ void Gruneisen::set_default_variables()
     delta_a = 0.01;
     gruneisen_mode = 0;
     print_newfcs = false;
+    strain_newfcs_given = false;
+    strain_newfcs.setZero();
 }
 
 void Gruneisen::deallocate_variables()
@@ -61,7 +58,8 @@ void Gruneisen::deallocate_variables()
     gruneisen_tensor_dos.clear();
     xshift_s.clear();
     delta_fc2.clear();
-    delta_fc3.clear();
+    delta_fc2_newfcs.clear();
+    delta_fc3_newfcs.clear();
     delta_fc2_strain.clear();
 }
 
@@ -69,18 +67,25 @@ void Gruneisen::setup()
 {
     MPI_Bcast(&delta_a, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&strain_newfcs_given, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(strain_newfcs.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     build_27cell_shift_table(xshift_s);
 
-    if (gruneisen_mode == 1 || print_newfcs) {
-        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2);
+    if (gruneisen_mode == 1) {
+        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2, Eigen::Matrix3d::Identity());
     }
     if (gruneisen_mode >= 2) {
         prepare_delta_fcs_strain(fcs_phonon->force_constant_with_cell[1], delta_fc2_strain);
     }
 
-    if (print_newfcs && anharmonic_core->quartic_mode > 0) {
-        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3);
+    if (print_newfcs) {
+        const Eigen::Matrix3d strain_dir = strain_newfcs_given ? strain_newfcs : Eigen::Matrix3d::Identity();
+
+        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2_newfcs, strain_dir);
+        if (anharmonic_core->quartic_mode > 0) {
+            prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3_newfcs, strain_dir);
+        }
     }
     if (gruneisen_mode == 1) {
         if (kpoint->kpoint_bs.get()) {
@@ -107,8 +112,21 @@ void Gruneisen::setup()
             } else {
                 std::cout << " NEWFCS = 1 : Harmonic force constants of \n";
             }
-            std::cout << "              expanded/compressed systems will be estimated\n";
-            std::cout << "              with DELTA_A = " << std::setw(5) << delta_a << '\n';
+            if (strain_newfcs_given) {
+                std::cout << "              strained systems will be estimated\n";
+                std::cout << "              with the strain tensor given in the &strain field:\n";
+                for (auto i = 0; i < 3; ++i) {
+                    std::cout << "              ";
+                    for (auto j = 0; j < 3; ++j) {
+                        std::cout << std::setw(12) << std::defaultfloat << strain_newfcs(i, j);
+                    }
+                    std::cout << '\n';
+                }
+            } else {
+                std::cout << "              expanded/compressed systems will be estimated\n";
+                std::cout << "              with the isotropic strain +/- " << std::defaultfloat << delta_a << ".\n";
+                std::cout << "              An anisotropic strain tensor can be given in the &strain field.\n";
+            }
         }
     }
     //   print_stress_energy();
@@ -121,20 +139,26 @@ void Gruneisen::calc_gruneisen()
         if (gruneisen_mode == 1) {
             std::cout << " GRUNEISEN = 1 : Calculating volumetric Gruneisen parameters ... ";
         } else {
-            std::cout << " GRUNEISEN = " << gruneisen_mode
-                      << " : Calculating generalized Gruneisen parameters ... ";
+            std::cout << " GRUNEISEN = " << gruneisen_mode << " : Calculating generalized Gruneisen parameters ... ";
         }
     }
 
     if (kpoint->kpoint_bs.get()) {
-        calc_gruneisen_at_kpoints(kpoint->kpoint_bs->nk, kpoint->kpoint_bs->xk,
+        calc_gruneisen_at_kpoints(kpoint->kpoint_bs->nk,
+                                  kpoint->kpoint_bs->xk,
                                   dynamical->dymat_band->get_eigenvalues(),
-                                  dynamical->dymat_band->get_eigenvectors(), gruneisen_bs, gruneisen_tensor_bs);
+                                  dynamical->dymat_band->get_eigenvectors(),
+                                  gruneisen_bs,
+                                  gruneisen_tensor_bs);
     }
 
     if (dos->kmesh_dos.get()) {
-        calc_gruneisen_at_kpoints(dos->kmesh_dos->nk, dos->kmesh_dos->xk, dos->dymat_dos->get_eigenvalues(),
-                                  dos->dymat_dos->get_eigenvectors(), gruneisen_dos, gruneisen_tensor_dos);
+        calc_gruneisen_at_kpoints(dos->kmesh_dos->nk,
+                                  dos->kmesh_dos->xk,
+                                  dos->dymat_dos->get_eigenvalues(),
+                                  dos->dymat_dos->get_eigenvectors(),
+                                  gruneisen_dos,
+                                  gruneisen_tensor_dos);
     }
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
@@ -143,8 +167,7 @@ void Gruneisen::calc_gruneisen()
 }
 
 void Gruneisen::calc_gruneisen_at_kpoints(const unsigned int nk, const NDArray<double, 2> &xk,
-                                          const double *const *eval,
-                                          const std::complex<double> *const *const *evec,
+                                          const double *const *eval, const std::complex<double> *const *const *evec,
                                           NDArray<std::complex<double>, 2> &gamma_iso,
                                           NDArray<std::complex<double>, 3> &gamma_tensor) const
 {
@@ -203,11 +226,11 @@ void Gruneisen::calc_gruneisen_at_kpoints(const unsigned int nk, const NDArray<d
     }
 }
 
-void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
-                                  std::vector<FcsArrayWithCell> &delta_fcs) const
+void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in, std::vector<FcsArrayWithCell> &delta_fcs,
+                                  const Eigen::Matrix3d &strain_dir) const
 {
-    // Contract the last leg of the order-n IFCs with its own position vector,
-    // i.e., take the derivative along an isotropic strain (identity strain tensor).
+    // Directional derivative of the order-n IFCs along the strain tensor
+    // strain_dir: the identity gives the isotropic (volumetric) derivative.
     delta_fcs.clear();
 
     if (fcs_in.empty()) return;
@@ -216,8 +239,11 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in,
     sort_by_heading_indices const operator1(1);
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator1);
 
-    DerivativeIFC::compute_dV_dstrain_real_space(fcs_aligned, delta_fcs, {Eigen::Matrix3d::Identity()},
-                                                 system->get_primcell().lattice_vector, eps15);
+    DerivativeIFC::compute_dV_dstrain_real_space(fcs_aligned,
+                                                 delta_fcs,
+                                                 {strain_dir},
+                                                 system->get_primcell().lattice_vector,
+                                                 eps15);
 }
 
 void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fcs_in,
@@ -237,8 +263,7 @@ void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fc
     boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator1);
 
     std::vector<DeltaFcsStrainComponents> strain_groups;
-    DerivativeIFC::compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1,
-                                                  system->get_primcell().lattice_vector);
+    DerivativeIFC::compute_dV_dumn_all_real_space(fcs_aligned, strain_groups, 1, system->get_primcell().lattice_vector);
 
     std::vector<std::vector<std::pair<std::size_t, double>>> components = {{{0, 1.0}}, {{4, 1.0}}, {{8, 1.0}}};
     if (gruneisen_mode == 3) {
@@ -249,8 +274,7 @@ void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fc
 
     delta_fcs_strain.resize(components.size());
     for (std::size_t icomp = 0; icomp < components.size(); ++icomp) {
-        DerivativeIFC::extract_strain_combination(strain_groups, components[icomp], 1, eps15,
-                                                  delta_fcs_strain[icomp]);
+        DerivativeIFC::extract_strain_combination(strain_groups, components[icomp], 1, eps15, delta_fcs_strain[icomp]);
     }
 }
 
@@ -262,175 +286,64 @@ void Gruneisen::write_new_fcsxml_all() const
     if (fcs_phonon->update_fc2) {
         warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with the FC2FILE.");
     } else {
-        if (writes->getVerbosity() > 0) std::cout << " NEWFCS = 1 : Following XML files are created. \n";
-
-        auto file_xml = phon->job_title + "_+.xml";
-        write_new_fcsxml(file_xml, delta_a);
-
-        if (writes->getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
-            std::cout << " : Force constants of the system expanded by " << std::fixed << std::setprecision(3)
-                      << delta_a * 100 << " %\n";
-        }
-
-        file_xml = phon->job_title + "_-.xml";
-        write_new_fcsxml(file_xml, -delta_a);
-
-        if (writes->getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_xml;
-            std::cout << " : Force constants of the system compressed by " << std::fixed << std::setprecision(3)
-                      << delta_a * 100 << " %\n";
-        }
-    }
-}
-
-void Gruneisen::write_new_fcsxml(const std::string &filename_xml, const double change_ratio_of_a) const
-{
-    int i, j;
-    double lattice_vector[3][3];
-
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            lattice_vector[i][j] = (1.0 + change_ratio_of_a) * system->get_supercell(0).lattice_vector(i, j);
-        }
-    }
-
-    using boost::property_tree::ptree;
-
-    ptree pt;
-    std::string str_pos[3];
-
-    pt.put("Data.ANPHON_version", ALAMODE_VERSION);
-    pt.put("Data.Description.OriginalXML", fcs_phonon->file_fcs);
-    pt.put("Data.Description.Delta_A", double2string(change_ratio_of_a));
-
-    pt.put("Data.Structure.NumberOfAtoms", system->get_supercell(0).number_of_atoms);
-    pt.put("Data.Structure.NumberOfElements", system->get_primcell().number_of_elems);
-
-    for (i = 0; i < system->get_primcell().number_of_elems; ++i) {
-        ptree &child = pt.add("Data.Structure.AtomicElements.element", system->symbol_kd[i]);
-        child.put("<xmlattr>.number", i + 1);
-    }
-
-    for (i = 0; i < 3; ++i) {
-        str_pos[i].clear();
-        for (j = 0; j < 3; ++j) {
-            str_pos[i] += " " + double2string(lattice_vector[j][i]);
-        }
-    }
-    pt.put("Data.Structure.LatticeVector", "");
-    pt.put("Data.Structure.LatticeVector.a1", str_pos[0]);
-    pt.put("Data.Structure.LatticeVector.a2", str_pos[1]);
-    pt.put("Data.Structure.LatticeVector.a3", str_pos[2]);
-
-    pt.put("Data.Structure.Position", "");
-    std::string str_tmp;
-
-    const auto cell_tmp = system->get_supercell(0);
-    const auto map_tmp = system->get_map_p2s(0);
-    const auto nat_prim_tmp = system->get_primcell().number_of_atoms;
-
-    for (i = 0; i < cell_tmp.number_of_atoms; ++i) {
-        str_tmp.clear();
-        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(cell_tmp.x_fractional(i, j));
-        auto &child = pt.add("Data.Structure.Position.pos", str_tmp);
-        child.put("<xmlattr>.index", i + 1);
-        child.put("<xmlattr>.element", system->symbol_kd[cell_tmp.kind[i]]);
-    }
-
-    pt.put("Data.Symmetry.NumberOfTranslations", map_tmp[0].size());
-    for (i = 0; i < map_tmp[0].size(); ++i) {
-        for (j = 0; j < nat_prim_tmp; ++j) {
-            auto &child = pt.add("Data.Symmetry.Translations.map", map_tmp[j][i] + 1);
-            child.put("<xmlattr>.tran", i + 1);
-            child.put("<xmlattr>.atom", j + 1);
-        }
-    }
-
-    pt.put("Data.ForceConstants", "");
-    str_tmp.clear();
-
-    for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
-
-        auto &child = pt.add("Data.ForceConstants.HARMONIC.FC2", double2string(it.fcs_val));
-
-        child.put("<xmlattr>.pair1",
-                  std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
-        child.put("<xmlattr>.pair2",
-                  std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
-                      std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
-    }
-
-    for (const auto &it: delta_fc2) {
-
-        if (std::abs(it.fcs_val) < eps12) continue;
-
-        auto &child = pt.add("Data.ForceConstants.HARMONIC.FC2", double2string(change_ratio_of_a * it.fcs_val));
-
-        child.put("<xmlattr>.pair1",
-                  std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
-        child.put("<xmlattr>.pair2",
-                  std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
-                      std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
-    }
-
-    if (anharmonic_core->quartic_mode) {
-        for (const auto &it: fcs_phonon->force_constant_with_cell[1]) {
-
-            if (it.pairs[1].index > it.pairs[2].index) continue;
-
-            auto &child = pt.add("Data.ForceConstants.ANHARM3.FC3", double2string(it.fcs_val));
-
-            child.put("<xmlattr>.pair1",
-                      std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
-            child.put("<xmlattr>.pair2",
-                      std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
-                          std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
-            child.put("<xmlattr>.pair3",
-                      std::to_string(map_tmp[it.pairs[2].index / 3][it.pairs[2].tran] + 1) + " " +
-                          std::to_string(it.pairs[2].index % 3 + 1) + " " + std::to_string(it.pairs[2].cell_s + 1));
-        }
-
-        for (const auto &it: delta_fc3) {
-
-            if (std::abs(it.fcs_val) < eps12) continue;
-
-            if (it.pairs[1].index > it.pairs[2].index) continue;
-
-            auto &child = pt.add("Data.ForceConstants.ANHARM3.FC3", double2string(change_ratio_of_a * it.fcs_val));
-
-            child.put("<xmlattr>.pair1",
-                      std::to_string(it.pairs[0].index / 3 + 1) + " " + std::to_string(it.pairs[0].index % 3 + 1));
-            child.put("<xmlattr>.pair2",
-                      std::to_string(map_tmp[it.pairs[1].index / 3][it.pairs[1].tran] + 1) + " " +
-                          std::to_string(it.pairs[1].index % 3 + 1) + " " + std::to_string(it.pairs[1].cell_s + 1));
-            child.put("<xmlattr>.pair3",
-                      std::to_string(map_tmp[it.pairs[2].index / 3][it.pairs[2].tran] + 1) + " " +
-                          std::to_string(it.pairs[2].index % 3 + 1) + " " + std::to_string(it.pairs[2].cell_s + 1));
-        }
-    }
-
-    using namespace boost::property_tree::xml_parser;
-    constexpr auto indent = 2;
-
-#if BOOST_VERSION >= 105600
-    write_xml(filename_xml,
-              pt,
-              std::locale(),
-              xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
+        // FILE_FORMAT rule: h5 (default) writes the schema-stamped HDF5 pair,
+        // text the legacy XML pair. Builds without HDF5 always fall back to XML.
+#ifdef _HDF5
+        const bool write_h5 = writes->use_h5_io;
 #else
-    write_xml(filename_xml, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
+        const bool write_h5 = false;
 #endif
-}
 
-auto Gruneisen::double2string(const double d) -> std::string
-{
-    std::string rt;
-    std::stringstream ss;
+        if (writes->getVerbosity() > 0) {
+            if (write_h5) {
+                std::cout << " NEWFCS = 1 : Following HDF5 files are created. \n";
+            } else {
+                std::cout << " NEWFCS = 1 : Following XML files are created. \n";
+            }
+        }
 
-    ss << std::scientific << std::setprecision(15) << d;
-    ss >> rt;
-    return rt;
+        // Without the &strain field: isotropic strain of +-delta_a (default 0.001).
+        // With &strain: the user strain tensor is applied as +u and -u.
+        const Eigen::Matrix3d strain_dir = strain_newfcs_given ? strain_newfcs : Eigen::Matrix3d::Identity();
+        const auto scale = strain_newfcs_given ? 1.0 : delta_a;
+        const std::string extension = write_h5 ? ".h5" : ".xml";
+
+        auto write_one = [&](const std::string &filename, const double scale_signed) {
+#ifdef _HDF5
+            if (write_h5) {
+                writes->writeNewFcsH5(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed);
+                return;
+            }
+#endif
+            writes->writeNewFcsXml(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed);
+        };
+
+        auto file_out = phon->job_title + "_+" + extension;
+        write_one(file_out, scale);
+
+        if (writes->getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_out;
+            if (strain_newfcs_given) {
+                std::cout << " : Force constants of the system with the strain +u applied\n";
+            } else {
+                std::cout << " : Force constants of the system expanded by " << std::fixed << std::setprecision(3)
+                          << delta_a * 100 << " %\n";
+            }
+        }
+
+        file_out = phon->job_title + "_-" + extension;
+        write_one(file_out, -scale);
+
+        if (writes->getVerbosity() > 0) {
+            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_out;
+            if (strain_newfcs_given) {
+                std::cout << " : Force constants of the system with the strain -u applied\n";
+            } else {
+                std::cout << " : Force constants of the system compressed by " << std::fixed << std::setprecision(3)
+                          << delta_a * 100 << " %\n";
+            }
+        }
+    }
 }
 
 

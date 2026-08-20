@@ -73,6 +73,8 @@ private:
 
     void check_relax_vars() const;
 
+    void parse_strain_tensor(double (&u_tensor)[3][3]);
+
     void parse_initial_strain(PHON *phon);
 
     void parse_initial_displace(PHON *phon);

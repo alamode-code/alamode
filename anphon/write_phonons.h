@@ -10,14 +10,18 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <complex>
 #include <fstream>
 #include <string>
+#include <vector>
 #include "kpoint.h"
 #include "pointers.h"
 
 namespace PHON_NS
 {
+class FcsArrayWithCell;
+
 class Writes: protected Pointers
 {
 public:
@@ -32,6 +36,22 @@ public:
     void printModeIrrepsSummary() const;
 
     void writeGruneisen();
+
+    // Write an XML force-constant file of the deformed system (NEWFCS = 1):
+    // lattice vectors become (I + fc_scale * strain_dir) * A and the harmonic
+    // (and cubic) IFCs are corrected by fc_scale times the strain-derivative
+    // IFCs delta_fc2 (delta_fc3). The applied strain tensor is recorded in the
+    // Description section.
+    void writeNewFcsXml(const std::string &filename_xml, const std::vector<FcsArrayWithCell> &delta_fc2,
+                        const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
+                        double fc_scale) const;
+
+    // HDF5 variant of writeNewFcsXml: the deformed system and corrected force
+    // constants in the shared ALAMODE force-constant HDF5 schema
+    // (fcs_hdf5_schema.h), readable as FCSFILE. Defined only with HDF5 support.
+    void writeNewFcsH5(const std::string &filename_h5, const std::vector<FcsArrayWithCell> &delta_fc2,
+                       const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
+                       double fc_scale) const;
 
     void setupResultIo();
 

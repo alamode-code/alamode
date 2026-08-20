@@ -24,6 +24,7 @@
 #include "error.h"
 #include "fcs.h"
 #include "fcs_hdf5_schema.h"
+#include "fcs_xml_schema.h"
 #include "files.h"
 #include "hdf5_parser.h"
 #include "memory.h"
@@ -574,92 +575,49 @@ void Writer::save_fcs_alamode_oldformat(const std::unique_ptr<System> &system,
                                         const std::string &fname_dfset, const std::string fname_fcs,
                                         const int verbosity) const
 {
-    SystemInfo system_structure;
-
     size_t i, j;
 
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            system_structure.lattice_vector[i][j] = system->get_supercell().lattice_vector(i, j);
-        }
-    }
-
-    system_structure.nat = system->get_supercell().number_of_atoms;
-    system_structure.natmin = symmetry->get_nat_trueprim();
-    system_structure.ntran = symmetry->get_ntran();
-    system_structure.nspecies = system->get_supercell().number_of_elems;
-
-    AtomProperty prop_tmp{};
-
-    for (i = 0; i < system->get_supercell().number_of_atoms; ++i) {
-        prop_tmp.x = system->get_supercell().x_fractional(i, 0);
-        prop_tmp.y = system->get_supercell().x_fractional(i, 1);
-        prop_tmp.z = system->get_supercell().x_fractional(i, 2);
-        prop_tmp.kind = system->get_supercell().kind[i];
-        prop_tmp.atom = symmetry->get_map_super_to_trueprim()[i].atom_num + 1;
-        prop_tmp.tran = symmetry->get_map_super_to_trueprim()[i].tran_num + 1;
-
-        system_structure.atoms.emplace_back(AtomProperty(prop_tmp));
-    }
+    const auto nat = system->get_supercell().number_of_atoms;
+    const auto nspecies = system->get_supercell().number_of_elems;
 
     using boost::property_tree::ptree;
 
     ptree pt;
-    std::string str_pos[3];
 
     pt.put("Data.ALM_version", ALAMODE_VERSION);
     //    pt.put("Data.Optimize.DFSET", files->get_datfile_train().filename);
     pt.put("Data.Optimize.DFSET", fname_dfset);
     pt.put("Data.Optimize.Constraint", constraint->get_constraint_mode());
 
-    pt.put("Data.Structure.NumberOfAtoms", system_structure.nat);
-    pt.put("Data.Structure.NumberOfElements", system_structure.nspecies);
-
-    for (i = 0; i < system_structure.nspecies; ++i) {
-        auto &child = pt.add("Data.Structure.AtomicElements.element", system->get_kdname()[i]);
-        child.put("<xmlattr>.number", i + 1);
-    }
-
-    for (i = 0; i < 3; ++i) {
-        str_pos[i].clear();
-        for (j = 0; j < 3; ++j) {
-            str_pos[i] += " " + double2string(system_structure.lattice_vector[j][i]);
+    {
+        std::vector<std::string> element_names(system->get_kdname().begin(), system->get_kdname().begin() + nspecies);
+        std::vector<int> atomic_kinds;
+        atomic_kinds.reserve(nat);
+        for (i = 0; i < nat; ++i) {
+            atomic_kinds.push_back(system->get_supercell().kind[i] - 1);
         }
+
+        std::stringstream ss;
+        ss << system->get_periodicity()[0] << " " << system->get_periodicity()[1] << " "
+           << system->get_periodicity()[2];
+
+        fcsxml::add_structure_group_xml(pt,
+                                        system->get_supercell().lattice_vector,
+                                        system->get_supercell().x_fractional,
+                                        atomic_kinds,
+                                        element_names,
+                                        ss.str());
     }
-    pt.put("Data.Structure.LatticeVector", "");
-    pt.put("Data.Structure.LatticeVector.a1", str_pos[0]);
-    pt.put("Data.Structure.LatticeVector.a2", str_pos[1]);
-    pt.put("Data.Structure.LatticeVector.a3", str_pos[2]);
 
-    std::stringstream ss;
-    ss << system->get_periodicity()[0] << " " << system->get_periodicity()[1] << " " << system->get_periodicity()[2];
-    pt.put("Data.Structure.Periodicity", ss.str());
+    fcsxml::add_symmetry_group_xml(pt, symmetry->get_map_trueprim_to_super());
 
-    pt.put("Data.Structure.Position", "");
     std::string str_tmp;
-
-    for (i = 0; i < system_structure.nat; ++i) {
-        str_tmp.clear();
-        for (j = 0; j < 3; ++j) str_tmp += " " + double2string(system->get_supercell().x_fractional(i, j));
-        auto &child = pt.add("Data.Structure.Position.pos", str_tmp);
-        child.put("<xmlattr>.index", i + 1);
-        child.put("<xmlattr>.element", system->get_kdname()[system->get_supercell().kind[i] - 1]);
-    }
-
-    pt.put("Data.Symmetry.NumberOfTranslations", symmetry->get_ntran());
-    for (i = 0; i < system_structure.ntran; ++i) {
-        for (j = 0; j < system_structure.natmin; ++j) {
-            auto &child = pt.add("Data.Symmetry.Translations.map", symmetry->get_map_trueprim_to_super()[j][i] + 1);
-            child.put("<xmlattr>.tran", i + 1);
-            child.put("<xmlattr>.atom", j + 1);
-        }
-    }
 
     if (system->get_spin().lspin) {
         pt.put("Data.MagneticMoments", "");
         pt.put("Data.MagneticMoments.Noncollinear", system->get_spin().noncollinear);
         pt.put("Data.MagneticMoments.TimeReversalSymmetry", system->get_spin().time_reversal_symm);
-        for (i = 0; i < system_structure.nat; ++i) {
+        for (i = 0; i < nat; ++i) {
             str_tmp.clear();
             for (j = 0; j < 3; ++j) str_tmp += " " + double2string(system->get_spin().magmom[i][j], 5);
             auto &child = pt.add("Data.MagneticMoments.mag", str_tmp);
@@ -749,62 +707,25 @@ void Writer::save_fcs_alamode_oldformat(const std::unique_ptr<System> &system,
     }
 
     int imult;
-    std::string elementname = "Data.ForceConstants.HARMONIC.FC2";
 
-    auto fc_cart_harmonic = fcs->get_fc_cart()[0];
-
-    std::sort(fc_cart_harmonic.begin(), fc_cart_harmonic.end());
-
-    for (const auto &it: fc_cart_harmonic) {
-
-        for (k = 0; k < 2; ++k) {
-            pair_tmp[k] = it.atoms[k];
-        }
-
-        j = symmetry->get_map_super_to_trueprim()[pair_tmp[0]].atom_num;
-
-        atom_tmp.clear();
-        atom_tmp.push_back(pair_tmp[1]);
-
-        iter_cluster = cluster->get_interaction_cluster(0, j).find(InteractionCluster(atom_tmp));
-
-        if (iter_cluster != cluster->get_interaction_cluster(0, j).end()) {
-            multiplicity = iter_cluster->cell.size();
-
-            for (imult = 0; imult < multiplicity; ++imult) {
-                auto cell_now = iter_cluster->cell[imult];
-
-                auto &child = pt.add(elementname, double2string(it.fc_value / static_cast<double>(multiplicity)));
-
-                child.put("<xmlattr>.pair1", std::to_string(j + 1) + " " + std::to_string(it.coords[0] + 1));
-
-                for (k = 1; k < 2; ++k) {
-                    child.put("<xmlattr>.pair" + std::to_string(k + 1),
-                              std::to_string(pair_tmp[k] + 1) + " " + std::to_string(it.coords[k] + 1) + " " +
-                                  std::to_string(cell_now[k - 1] + 1));
-                }
-            }
-        } else {
-            exit("save_fcs_alamode_oldformat", "This cannot happen.");
-        }
-    }
-
-    // Print anharmonic force constants to the xml file.
-
-    for (auto order = 1; order < cluster->get_maxorder(); ++order) {
+    // Cartesian force constants per order, expanded over the cluster
+    // multiplicity, handed to the shared XML schema writer.
+    for (auto order = 0; order < cluster->get_maxorder(); ++order) {
 
         if (order >= get_output_maxorder()) break;
 
-        auto fc_cart_anharm = fcs->get_fc_cart()[order];
+        auto fc_cart = fcs->get_fc_cart()[order];
 
-        std::sort(fc_cart_anharm.begin(), fc_cart_anharm.end());
+        std::sort(fc_cart.begin(), fc_cart.end());
 
-        for (const auto &it: fc_cart_anharm) {
+        std::vector<fcsxml::FcCartesianRowXml> rows;
+
+        for (const auto &it: fc_cart) {
 
             // Print force constants only when the coefficient is nonzero
             // and the last (order + 1) elements are sorted in ascending order.
 
-            if (!it.is_ascending_order) continue;
+            if (order > 0 && !it.is_ascending_order) continue;
 
             for (k = 0; k < order + 2; ++k) {
                 pair_tmp[k] = it.atoms[k];
@@ -818,8 +739,6 @@ void Writer::save_fcs_alamode_oldformat(const std::unique_ptr<System> &system,
             }
             std::sort(atom_tmp.begin(), atom_tmp.end());
 
-            elementname = "Data.ForceConstants.ANHARM" + std::to_string(order + 2) + ".FC" + std::to_string(order + 2);
-
             iter_cluster = cluster->get_interaction_cluster(order, j).find(InteractionCluster(atom_tmp));
 
             if (iter_cluster != cluster->get_interaction_cluster(order, j).end()) {
@@ -828,35 +747,29 @@ void Writer::save_fcs_alamode_oldformat(const std::unique_ptr<System> &system,
                 for (imult = 0; imult < multiplicity; ++imult) {
                     auto cell_now = iter_cluster->cell[imult];
 
-                    auto &child = pt.add(elementname, double2string(it.fc_value / static_cast<double>(multiplicity)));
+                    fcsxml::FcCartesianRowXml row;
+                    row.value = it.fc_value / static_cast<double>(multiplicity);
+                    row.atom1_prim = static_cast<int>(j);
 
-                    child.put("<xmlattr>.pair1", std::to_string(j + 1) + " " + std::to_string(it.coords[0] + 1));
-
-                    for (k = 1; k < order + 2; ++k) {
-                        child.put("<xmlattr>.pair" + std::to_string(k + 1),
-                                  std::to_string(pair_tmp[k] + 1) + " " + std::to_string(it.coords[k] + 1) + " " +
-                                      std::to_string(cell_now[k - 1] + 1));
+                    for (k = 0; k < order + 2; ++k) {
+                        row.coords.push_back(it.coords[k]);
                     }
+                    for (k = 1; k < order + 2; ++k) {
+                        row.atoms_super.push_back(pair_tmp[k]);
+                        row.cells.push_back(cell_now[k - 1]);
+                    }
+                    rows.emplace_back(std::move(row));
                 }
             } else {
                 exit("save_fcs_alamode_oldformat", "This cannot happen.");
             }
         }
+
+        const auto blockname = order == 0 ? std::string("HARMONIC") : "ANHARM" + std::to_string(order + 2);
+        fcsxml::add_fc_cartesian_group_xml(pt, blockname, order + 2, rows);
     }
 
-    using namespace boost::property_tree::xml_parser;
-    const auto indent = 2;
-
-    //const auto file_xml = files->get_prefix() + ".xml";
-
-#if BOOST_VERSION >= 105600
-    write_xml(fname_fcs,
-              pt,
-              std::locale(),
-              xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
-#else
-    write_xml(fname_fcs, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));
-#endif
+    fcsxml::write_fcs_xml_file(fname_fcs, pt);
 
     deallocate(pair_tmp);
 
