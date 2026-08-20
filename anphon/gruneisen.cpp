@@ -14,7 +14,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <iomanip>
 #include <iostream>
 #include "anharmonic_core.h"
-#include "cell_shift_table.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -56,7 +55,6 @@ void Gruneisen::deallocate_variables()
     gruneisen_dos.clear();
     gruneisen_tensor_bs.clear();
     gruneisen_tensor_dos.clear();
-    xshift_s.clear();
     delta_fc2.clear();
     delta_fc2_newfcs.clear();
     delta_fc3_newfcs.clear();
@@ -69,8 +67,6 @@ void Gruneisen::setup()
     MPI_Bcast(&print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&strain_newfcs_given, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(strain_newfcs.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    build_27cell_shift_table(xshift_s);
 
     if (gruneisen_mode == 1) {
         prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2, Eigen::Matrix3d::Identity());
@@ -129,7 +125,6 @@ void Gruneisen::setup()
             }
         }
     }
-    //   print_stress_energy();
 }
 
 void Gruneisen::calc_gruneisen()
@@ -345,168 +340,3 @@ void Gruneisen::write_new_fcsxml_all() const
         }
     }
 }
-
-
-// double Gruneisen::calc_stress_energy2(const std::vector<FcsArrayWithCell> fcs_in)
-// {
-//     unsigned int i, j;
-//     double ret = 0.0;
-//     double **vec, **pos;
-//     double tmp, tmp2;
-//     double xshift[3];
-//     unsigned int itran;
-//     unsigned int norder = fcs_in[0].pairs.size();
-//
-//     allocate(vec, norder, 3);
-//     allocate(pos, norder, 3);
-//
-//     for (std::vector<FcsArrayWithCell>::const_iterator it = fcs_in.begin(); it != fcs_in.end(); ++it) {
-//
-//         for (i = 0; i < norder; ++i) {
-//             for (j = 0; j < 3; ++j) {
-//                 vec[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][(*it).pairs[i].tran]][j]
-//                 + xshift_s[(*it).pairs[i].cell_s][j];
-//
-//                 pos[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][0]][j];
-//             //    vec[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[0][(*it).pairs[i].tran]][j] + xshift_s[(*it).pairs[i].cell_s][j];
-//             }
-//             rotvec(vec[i], vec[i], system->lavec_s);
-//             rotvec(pos[i], pos[i], system->lavec_s);
-//         }
-//
-//
-//         ret += (*it).fcs_val
-//             * (vec[1][(*it).pairs[0].index % 3] - pos[0][(*it).pairs[0].index % 3])
-//             * (vec[1][(*it).pairs[1].index % 3] - pos[0][(*it).pairs[1].index % 3]);
-//     }
-//
-//     deallocate(vec);
-//     deallocate(pos);
-//     return ret;
-// }
-//
-// void Gruneisen::calc_stress_energy3(const std::vector<FcsArrayWithCell> fcs_in, double ****ret)
-// {
-//     unsigned int i, j, k, l;
-//     double **vec, **pos;
-//     double tmp, tmp2;
-//     double xshift[3];
-//     unsigned int itran;
-//     unsigned int norder = fcs_in[0].pairs.size();
-//     unsigned int crd[4];
-//
-//     allocate(vec, norder, 3);
-//     allocate(pos, norder, 3);
-//
-//     for (i = 0; i < 3; ++i) {
-//         for (j = 0; j < 3; ++j) {
-//             for (k = 0; k < 3; ++k) {
-//                 for (l = 0; l < 3; ++l) {
-//                     ret[i][j][k][l] = 0.0;
-//                 }
-//             }
-//         }
-//     }
-//
-//     for (std::vector<FcsArrayWithCell>::const_iterator it = fcs_in.begin(); it != fcs_in.end(); ++it) {
-//
-//         for (i = 0; i < norder; ++i) {
-//             for (j = 0; j < 3; ++j) {
-//                 vec[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][(*it).pairs[i].tran]][j]
-//                 + xshift_s[(*it).pairs[i].cell_s][j];
-//
-//                 pos[i][j] = system->get_supercell(0).x_fractional[system->map_trueprim_to_super[(*it).pairs[i].index / 3][0]][j];
-//             }
-//             rotvec(vec[i], vec[i], system->lavec_s);
-//             rotvec(pos[i], pos[i], system->lavec_s);
-//         }
-//
-//         crd[0] = (*it).pairs[0].index % 3;
-//         crd[1] = (*it).pairs[1].index % 3;
-//
-//         for (k = 0; k < 3; ++k) {
-//
-//             crd[2] = k;
-//
-//             for (l = 0; l < 3; ++l) {
-//
-//                 crd[3] = l;
-//
-//                 ret[crd[0]][crd[1]][k][l] += (*it).fcs_val * (vec[1][k] - pos[0][k]) * (vec[1][l] - pos[0][l]);
-//             }
-//         }
-//     }
-//
-//     deallocate(vec);
-//     deallocate(pos);
-//
-//     for (i = 0; i < 3; ++i) {
-//         for (j = 0; j < 3; ++j) {
-//             for (k = 0; k < 3; ++k) {
-//                 for (l = 0; l < 3; ++l) {
-//                     ret[i][j][k][l] *= -0.5;
-//                 }
-//             }
-//         }
-//     }
-// }
-//
-//
-// void Gruneisen::print_stress_energy()
-// {
-//
-//     double volume = system->get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30;
-//
-//
-//     double ****A, ****C;
-//
-//     allocate(A, 3, 3, 3, 3);
-//     allocate(C, 3, 3, 3, 3);
-//
-//     calc_stress_energy3(fcs_phonon->force_constant_with_cell[0], A);
-//
-//     unsigned int i, j, k, l;
-//
-//     std::cout << "# A [Ryd]" << '\n';
-//
-//     for (i = 0; i < 3; ++i) {
-//         for (j = 0; j < 3; ++j) {
-//             for (k = 0; k < 3; ++k) {
-//                 for (l = 0; l < 3; ++l) {
-//                     std::cout << std::setw(3) << i + 1;
-//                     std::cout << std::setw(3) << j + 1;
-//                     std::cout << std::setw(3) << k + 1;
-//                     std::cout << std::setw(3) << l + 1;
-//                     std::cout << std::setw(15) << std::fixed << A[i][j][k][l];
-//                     std::cout << '\n';
-//                 }
-//             }
-//         }
-//     }
-//
-//     std::cout << '\n';
-//     std::cout << "# C [GPa]" << '\n';
-//
-//     for (i = 0; i < 3; ++i) {
-//         for (j = 0; j < 3; ++j) {
-//             for (k = 0; k < 3; ++k) {
-//                 for (l = 0; l < 3; ++l) {
-//                     C[i][j][k][l] = A[i][k][j][l] + A[j][k][i][l] - A[i][j][k][l];
-//                     C[i][j][k][l] *= 1.0e-9 * Ryd / volume;
-//                     std::cout << std::setw(3) << i + 1;
-//                     std::cout << std::setw(3) << j + 1;
-//                     std::cout << std::setw(3) << k + 1;
-//                     std::cout << std::setw(3) << l + 1;
-//                     std::cout << std::setw(15) << std::fixed << C[i][j][k][l];
-//                     std::cout << '\n';
-//
-//                 }
-//             }
-//         }
-//     }
-//
-//     std::cout << "Bulk Modulus [GPa] = " << (C[0][0][0][0] + 2.0 * C[0][0][1][1]) / 3.0 << '\n';
-//
-//     deallocate(A);
-//     deallocate(C);
-// }

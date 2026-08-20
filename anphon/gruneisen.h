@@ -63,7 +63,6 @@ private:
 
     void deallocate_variables();
 
-    NDArray<double, 2> xshift_s;
     std::vector<FcsArrayWithCell> delta_fc2;
 
     // Strain-derivative IFCs used by NEWFCS (along the isotropic direction, or
@@ -87,9 +86,5 @@ private:
     // void impose_ASR_on_harmonic_IFC(std::vector<FcsArrayWithCell> &,
     //                    int);
 
-    //  double calc_stress_energy2(const std::vector<FcsArrayWithCell>);
-    void calc_stress_energy3(std::vector<FcsArrayWithCell>, double ****);
-
-    void print_stress_energy();
 };
 } // namespace PHON_NS

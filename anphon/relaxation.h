@@ -357,10 +357,6 @@ private:
 
     void deallocate_variables();
 
-    static void read_C1_array(double *const);
-
-    void read_elastic_constants(double *const *const, double *const *const *const) const;
-
     void set_initial_q0(std::vector<double> &q0, std::complex<double> ***evec_harmonic) const;
 
 

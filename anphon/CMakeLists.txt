@@ -163,6 +163,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/dense_symmetric_eigen.cpp
             ${PROJECT_SOURCE_DIR}/dielec.cpp
             ${PROJECT_SOURCE_DIR}/diis.cpp
+            ${PROJECT_SOURCE_DIR}/elastic_tensor.cpp
             ${PROJECT_SOURCE_DIR}/dynamical.cpp
             ${PROJECT_SOURCE_DIR}/ewald.cpp
             ${PROJECT_SOURCE_DIR}/fcs_phonon.cpp
@@ -210,6 +211,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/dense_hermitian_eigen.h
             ${PROJECT_SOURCE_DIR}/dielec.h
             ${PROJECT_SOURCE_DIR}/diis.h
+            ${PROJECT_SOURCE_DIR}/elastic_tensor.h
             ${PROJECT_SOURCE_DIR}/dynamical.h
             ${PROJECT_SOURCE_DIR}/error.h
             ${PROJECT_SOURCE_DIR}/ewald.h

@@ -14,6 +14,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <fstream>
 #include <iomanip>
 #include "dynamical.h"
+#include "elastic_tensor.h"
 #include "error.h"
 #include "ifc_derivative.h"
 #include "interpolation.h"
@@ -108,90 +109,14 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
     // if the shape of the unit cell is relaxed,
     // read elastic constants from file
     if (relax_mode == RelaxationStrMode::CoordinatesAndCell || relax_mode == RelaxationStrMode::PerturbativeQha) {
-        read_C1_array(C1_array);
-        read_elastic_constants(C2_array, C3_array);
+        ElasticTensor::read_C1_array(C1_array);
+        ElasticTensor::read_elastic_constants(C2_array, C3_array, strain_IFC_dir);
         return;
     }
     // if the unit cell is fixed,
     // dummy values are set in the elastic constants
     if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-        int i1, i2;
-        std::fill_n(C1_array, 9, 0.0);
-
-        // The elastic constant should be positive-definite
-        // except for the rotational degrees of freedom
-        for (i1 = 0; i1 < 3; i1++) {
-            for (i2 = 0; i2 < 3; i2++) {
-                for (int i3 = 0; i3 < 3; i3++) {
-                    for (int i4 = 0; i4 < 3; i4++) {
-                        if ((i1 == i3 && i2 == i4) || (i1 == i4 && i2 == i3)) {
-                            C2_array[i1 * 3 + i2][i3 * 3 + i4] = 10.0; // This dummy value can be any positiva value
-                        } else {
-                            C2_array[i1 * 3 + i2][i3 * 3 + i4] = 0.0;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (i1 = 0; i1 < 9; i1++) {
-            for (i2 = 0; i2 < 9; i2++) {
-                std::fill_n(C3_array[i1][i2], 9, 0.0);
-            }
-        }
-    }
-}
-
-void Relaxation::read_C1_array(double *const C1_array)
-{
-    std::fstream fin_C1_array;
-    std::string str_tmp;
-
-    // initialize elastic constants
-    for (auto i1 = 0; i1 < 9; i1++) {
-        C1_array[i1] = 0.0;
-    }
-
-    fin_C1_array.open("C1_array.in");
-
-    if (!fin_C1_array) {
-        std::cout << "  Warning: file C1_array.in could not be open.\n";
-        std::cout << "  The stress tensor at the reference structure is set zero.\n";
-        return;
-    }
-
-    fin_C1_array >> str_tmp;
-    for (auto i1 = 0; i1 < 9; i1++) {
-        fin_C1_array >> C1_array[i1];
-    }
-}
-
-void Relaxation::read_elastic_constants(double *const *const C2_array, double *const *const *const C3_array) const
-{
-    std::fstream fin_elastic_constants;
-    std::string str_tmp;
-    int i1, i2;
-
-    // read elastic_constants.in from strain_IFC_dir directory
-    fin_elastic_constants.open(strain_IFC_dir + "elastic_constants.in");
-
-    if (!fin_elastic_constants) {
-        exit("read_elastic_constants", "could not open file elastic_constants.in");
-    }
-
-    fin_elastic_constants >> str_tmp;
-    for (i1 = 0; i1 < 9; i1++) {
-        for (i2 = 0; i2 < 9; i2++) {
-            fin_elastic_constants >> C2_array[i1][i2];
-        }
-    }
-    fin_elastic_constants >> str_tmp;
-    for (i1 = 0; i1 < 9; i1++) {
-        for (i2 = 0; i2 < 9; i2++) {
-            for (int i3 = 0; i3 < 9; i3++) {
-                fin_elastic_constants >> C3_array[i1][i2][i3];
-            }
-        }
+        ElasticTensor::set_dummy_elastic_constants(C1_array, C2_array, C3_array);
     }
 }
 
