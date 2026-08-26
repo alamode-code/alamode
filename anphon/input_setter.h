@@ -95,6 +95,7 @@ struct AnalysisInputVars
     int scattering_phase_space = 0; // SPS
 
     int gruneisen_mode = 0;
+    int sublattice_relax = 0;
     bool print_newfcs = false;
     double delta_a = 0.001;
 

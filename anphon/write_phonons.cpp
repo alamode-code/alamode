@@ -2049,7 +2049,7 @@ void Writes::writeGruneisen()
 
 void Writes::writeNewFcsXml(const std::string &filename_xml, const std::vector<FcsArrayWithCell> &delta_fc2,
                             const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
-                            const double fc_scale) const
+                            const double fc_scale, const Eigen::MatrixXd &sublattice_disp) const
 {
     int i, j;
 
@@ -2078,7 +2078,19 @@ void Writes::writeNewFcsXml(const std::string &filename_xml, const std::vector<F
                                            system->symbol_kd.begin() + system->get_primcell().number_of_elems);
     const std::vector<int> atomic_kinds(cell_tmp.kind.begin(), cell_tmp.kind.end());
 
-    fcsxml::add_structure_group_xml(pt, lattice_vector, cell_tmp.x_fractional, atomic_kinds, element_names);
+    // Atomic positions: affine deformation keeps the fractional coordinates;
+    // the relaxed-ion path adds the strain-induced sublattice displacement.
+    Eigen::MatrixXd x_fractional = cell_tmp.x_fractional;
+    if (sublattice_disp.size() != 0) {
+        const Eigen::Matrix3d lattice_inv = lattice_vector.inverse();
+        const auto &map_s2p = system->get_map_s2p(0);
+        for (i = 0; i < cell_tmp.number_of_atoms; ++i) {
+            const auto kappa = map_s2p[i].atom_num;
+            x_fractional.row(i) += (lattice_inv * (fc_scale * sublattice_disp.row(kappa).transpose())).transpose();
+        }
+    }
+
+    fcsxml::add_structure_group_xml(pt, lattice_vector, x_fractional, atomic_kinds, element_names);
     fcsxml::add_symmetry_group_xml(pt, map_tmp);
 
     pt.put("Data.ForceConstants", "");
@@ -2148,7 +2160,7 @@ void Writes::writeNewFcsXml(const std::string &filename_xml, const std::vector<F
 
 void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<FcsArrayWithCell> &delta_fc2,
                            const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
-                           const double fc_scale) const
+                           const double fc_scale, const Eigen::MatrixXd &sublattice_disp) const
 {
     using namespace H5Easy;
 
@@ -2165,6 +2177,25 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
                                                  system->symbol_kd.begin() + primcell.number_of_elems);
     const std::vector<std::vector<double>> no_magmom;
 
+    // Atomic positions: affine deformation keeps the fractional coordinates;
+    // the relaxed-ion path adds the strain-induced sublattice displacement.
+    const bool with_sublattice = sublattice_disp.size() != 0;
+
+    Eigen::MatrixXd xf_super = supercell.x_fractional;
+    Eigen::MatrixXd xf_prim = primcell.x_fractional;
+    if (with_sublattice) {
+        const Eigen::Matrix3d lavec_super_inv = (deform * supercell.lattice_vector).inverse();
+        const Eigen::Matrix3d lavec_prim_inv = (deform * primcell.lattice_vector).inverse();
+        const auto &map_s2p = system->get_map_s2p(0);
+        for (auto i = 0; i < supercell.number_of_atoms; ++i) {
+            const auto kappa = map_s2p[i].atom_num;
+            xf_super.row(i) += (lavec_super_inv * (fc_scale * sublattice_disp.row(kappa).transpose())).transpose();
+        }
+        for (std::size_t kappa = 0; kappa < primcell.number_of_atoms; ++kappa) {
+            xf_prim.row(kappa) += (lavec_prim_inv * (fc_scale * sublattice_disp.row(kappa).transpose())).transpose();
+        }
+    }
+
     {
         std::vector<std::vector<int>> mapping(map_p2s.size());
         for (std::size_t i = 0; i < map_p2s.size(); ++i) {
@@ -2173,7 +2204,7 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
         write_cell_group_h5(file,
                             "SuperCell",
                             Eigen::Matrix3d(deform * supercell.lattice_vector),
-                            supercell.x_fractional,
+                            xf_super,
                             supercell.kind,
                             element_names,
                             0,
@@ -2192,7 +2223,7 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
         write_cell_group_h5(file,
                             "PrimitiveCell",
                             Eigen::Matrix3d(deform * primcell.lattice_vector),
-                            primcell.x_fractional,
+                            xf_prim,
                             primcell.kind,
                             element_names,
                             0,
@@ -2250,7 +2281,13 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
                 coord_indices(i, k) = static_cast<int>(it.pairs[k].index % 3);
             }
             for (auto k = 0; k < norder - 1; ++k) {
-                const Eigen::Vector3d shift_cart = lavec_prim_deformed * it.relvecs_velocity[k];
+                Eigen::Vector3d shift_cart = lavec_prim_deformed * it.relvecs_velocity[k];
+                if (with_sublattice) {
+                    const auto kappa_leg = it.pairs[k + 1].index / 3;
+                    const auto kappa_first = it.pairs[0].index / 3;
+                    shift_cart +=
+                        fc_scale * (sublattice_disp.row(kappa_leg) - sublattice_disp.row(kappa_first)).transpose();
+                }
                 for (auto j = 0; j < 3; ++j) {
                     shift_vectors(i, 3 * k + j) = shift_cart[j];
                 }

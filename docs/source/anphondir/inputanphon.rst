@@ -53,8 +53,8 @@ List of supported input variables
    :ref:`PRINTEVAL <anphon_printeval>`, :ref:`PRINTEVEC <anphon_printevec>`, :ref:`PRINTMSD <anphon_printmsd>`, :ref:`PRINTPR <anphon_printpr>`
    :ref:`PRINTV3 <anphon_printv3>`, :ref:`PRINTV4 <anphon_printv4>`, :ref:`PRINTVEL <anphon_printvel>`, :ref:`PRINTXSF <anphon_printxsf>`
    :ref:`PROJECTION_AXES <anphon_projection_axes>`, :ref:`QUARTIC <anphon_quartic>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`
-   :ref:`SELF_W <anphon_self_w>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`TDOS <anphon_tdos>`
-   :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
+   :ref:`SELF_W <anphon_self_w>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`SUBLATTICE_RELAX <anphon_sublattice_relax>`
+   :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
    **&kappa**
    :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
    :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
@@ -1232,6 +1232,23 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Default: 0
  :Type: Integer
  :Description: When ``MODE = phonons`` and ``NEWFCS = 1``, the harmonic (and, when ``QUARTIC = 1``, cubic) force constants of deformed systems are estimated from the cubic (and quartic) force constants in ``FCSFILE`` and saved as ``PREFIX``\_+.h5 and ``PREFIX``\_-.h5 (or ``PREFIX``\_+.xml and ``PREFIX``\_-.xml with ``FILE_FORMAT = text``, or in a build without HDF5 support). The strain tensor :math:`u` should be specified in the ``&strain`` field; it is applied as :math:`+u` and :math:`-u` in the two created files. When the ``&strain`` field is not given, a small isotropic strain of :math:`\pm 0.001` is applied. The created files contain the deformed lattice vectors and the corrected force constants, and can be used directly as ``FCSFILE`` of subsequent phonon calculations.
+
+````
+
+.. _anphon_sublattice_relax:
+
+* SUBLATTICE_RELAX-tag = 0 | 1
+
+ === ===================================================================
+  0   Clamped-ion strain derivatives: only the affine (homogeneous)
+      deformation of the atomic positions is considered
+  1   Relaxed-ion strain derivatives: the strain-induced internal
+      (sublattice) displacements are additionally included
+ === ===================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: Selects the clamped-ion or relaxed-ion path of the strain derivatives used by :ref:`GRUNEISEN <anphon_gruneisen>` and :ref:`NEWFCS <anphon_newfcs>`. With ``SUBLATTICE_RELAX = 1``, the internal coordinates are relaxed to first order in the strain: the sublattice displacement response :math:`X = -\mathsf{K}^{+}\Lambda` is computed from the harmonic force constants, the strain derivatives of the IFCs gain the internal-strain leg, and the structures written by ``NEWFCS`` carry the induced internal displacements. The relaxed-ion path is normally the relevant one for quasiharmonic properties of crystals with internal structural parameters; the two paths coincide when symmetry forbids strain-induced internal displacements (e.g. under hydrostatic strain in diamond-structure crystals).
 
 ````
 

@@ -39,6 +39,12 @@ public:
     bool strain_newfcs_given;
     Eigen::Matrix3d strain_newfcs;
 
+    // SUBLATTICE_RELAX = 0: clamped ion (affine strain leg only);
+    // 1: relaxed ion (the strain derivatives additionally contract the IFC
+    // tail with the strain-induced sublattice displacement X = -K^+ Lambda).
+    // Applies to the Gruneisen parameters and to NEWFCS.
+    int sublattice_relax;
+
     void setup();
 
     NDArray<std::complex<double>, 2> gruneisen_bs;
@@ -72,6 +78,12 @@ private:
     // Strain-derivative IFCs per component (3 or 6 lists, see gruneisen_mode)
     std::vector<std::vector<FcsArrayWithCell>> delta_fc2_strain;
 
+    // Sublattice displacement response X(3*kappa+lambda, mu*3+nu) in bohr per
+    // unit strain (SUBLATTICE_RELAX = 1 only)
+    Eigen::MatrixXd sublattice_response;
+
+    Eigen::VectorXd build_sublattice_field(const Eigen::Matrix3d &strain_dir) const;
+
     void prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in, std::vector<FcsArrayWithCell> &delta_fcs,
                            const Eigen::Matrix3d &strain_dir) const;
 
@@ -85,6 +97,5 @@ private:
 
     // void impose_ASR_on_harmonic_IFC(std::vector<FcsArrayWithCell> &,
     //                    int);
-
 };
 } // namespace PHON_NS

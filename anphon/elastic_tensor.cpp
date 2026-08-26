@@ -9,21 +9,21 @@
 */
 
 #include "elastic_tensor.h"
+#include <Eigen/Dense>
+#include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include "cell_shift_table.h"
 #include "constants.h"
 #include "error.h"
+#include "ifc_derivative.h"
 #include "system.h"
 
 using namespace PHON_NS;
 
 ElasticTensor::ElasticTensor(const System &system_in) : system_(system_in)
-{
-    build_27cell_shift_table(xshift_s_);
-}
+{}
 
 void ElasticTensor::read_C1_array(double *C1_array)
 {
@@ -110,8 +110,10 @@ void ElasticTensor::set_dummy_elastic_constants(double *C1_array, double *const 
 
 void ElasticTensor::calc_longwave_brackets(const std::vector<FcsArrayWithCell> &fcs_in, NDArray<double, 4> &ret) const
 {
-    const auto &cell = system_.get_supercell(0);
-    const auto &map_p2s = system_.get_map_p2s(0);
+    // The relative vector of each pair is taken from relvecs_velocity (stored
+    // in the primitive-lattice basis), the same geometric input used by the
+    // strain-derivative kernels of DerivativeIFC.
+    const auto convmat = system_.get_primcell().lattice_vector;
 
     ret.resize(3, 3, 3, 3);
     for (auto i = 0; i < 3; ++i) {
@@ -124,18 +126,9 @@ void ElasticTensor::calc_longwave_brackets(const std::vector<FcsArrayWithCell> &
         }
     }
 
-    Eigen::Vector3d xf_pair, xf_ref;
-
     for (const auto &it: fcs_in) {
 
-        const auto atom_pair = map_p2s[it.pairs[1].index / 3][it.pairs[1].tran];
-        const auto atom_ref = map_p2s[it.pairs[0].index / 3][0];
-
-        for (auto j = 0; j < 3; ++j) {
-            xf_pair[j] = cell.x_fractional(atom_pair, j) + xshift_s_[it.pairs[1].cell_s][j];
-            xf_ref[j] = cell.x_fractional(atom_ref, j);
-        }
-        const Eigen::Vector3d rel = cell.lattice_vector * (xf_pair - xf_ref);
+        const Eigen::Vector3d rel = convmat * it.relvecs_velocity[0];
 
         const auto crd0 = it.pairs[0].index % 3;
         const auto crd1 = it.pairs[1].index % 3;
@@ -168,11 +161,100 @@ void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs
     const auto factor = 1.0e-9 * Ryd / volume;
 
     C_gpa.resize(3, 3, 3, 3);
+
+    // This corresponds to Eq. (7.30) of Wallace's "Thermodynamics of Crystals" (1972)
+    // when the initial stress is zero. If initial stress is nonzero, the formula would be
+    // C_{abcd} = A_{acbd} + A_{bcad} - A_{abcd} - sigma_{bd} delta_{ac} - sigma_{ad} delta_{bc} + sigma_{cd} delta_{ab}
+    // where sigma is the initial stress tensor. The initial stress is not considered here.
     for (auto i = 0; i < 3; ++i) {
         for (auto j = 0; j < 3; ++j) {
             for (auto k = 0; k < 3; ++k) {
                 for (auto l = 0; l < 3; ++l) {
                     C_gpa[i][j][k][l] = (A[i][k][j][l] + A[j][k][i][l] - A[i][j][k][l]) * factor;
+                }
+            }
+        }
+    }
+}
+
+void ElasticTensor::calc_sublattice_response(const std::vector<FcsArrayWithCell> &fcs_harmonic,
+                                             Eigen::MatrixXd &X) const
+{
+    Eigen::MatrixXd Lambda;
+    calc_force_strain_coupling(fcs_harmonic, Lambda, X);
+}
+
+void ElasticTensor::calc_force_strain_coupling(const std::vector<FcsArrayWithCell> &fcs_harmonic,
+                                               Eigen::MatrixXd &Lambda, Eigen::MatrixXd &X) const
+{
+    const auto ns = 3 * static_cast<int>(system_.get_primcell().number_of_atoms);
+
+    // Force-strain coupling Lambda_{I, mu nu} = sum_{l kappa'} Phi_{lambda mu}(0 kappa; l kappa') R_nu
+    // from the single-pass strain-derivative kernel, then symmetrized over (mu, nu).
+    auto fcs_aligned = fcs_harmonic;
+    sort_by_heading_indices const operator1(1);
+    boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), operator1);
+
+    // Compute \sum_{l kappa'} Phi_{lambda mu}(0 kappa; l kappa') [R_nu(l kappa') - R_nu(0 kappa)] for all 9 strain components
+    // This is equivalent to \sum_{l kappa'} Phi_{lambda mu}(0 kappa; l kappa') R_nu(l kappa') because of ASR
+    std::vector<DeltaFcsStrainComponents> groups;
+    DerivativeIFC::compute_dV_dumn_all_real_space(fcs_aligned, groups, 1, system_.get_primcell().lattice_vector);
+
+    // Force symmetrize the strain components: Lambda_{I, (mu nu)} = (Lambda_{I, mu nu} + Lambda_{I, nu mu}) / 2
+    // This is not necessary if the input IFC2 satisfies the rotational invariance,
+    // but we usually do not impose the rotational invariance on the IFC2, so we need to symmetrize it here.
+    Lambda = Eigen::MatrixXd::Zero(ns, 9);
+    for (const auto &group: groups) {
+        const auto row = static_cast<int>(group.pairs[0].index);
+        for (auto mu = 0; mu < 3; ++mu) {
+            for (auto nu = 0; nu < 3; ++nu) {
+                Lambda(row, mu * 3 + nu) = 0.5 * (group.values[mu * 3 + nu] + group.values[nu * 3 + mu]);
+            }
+        }
+    }
+
+    // Zone-center harmonic matrix K_{I J} = sum_l Phi(0 kappa; l kappa').
+    Eigen::MatrixXd K = Eigen::MatrixXd::Zero(ns, ns);
+    for (const auto &it: fcs_harmonic) {
+        K(it.pairs[0].index, it.pairs[1].index) += it.fcs_val;
+    }
+
+    // Pseudoinverse excluding the acoustic translations.
+    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(0.5 * (K + K.transpose()));
+    const auto &eigs = solver.eigenvalues();
+    const auto eig_max = eigs.cwiseAbs().maxCoeff();
+    Eigen::VectorXd inv_eigs = Eigen::VectorXd::Zero(ns);
+    for (auto i = 0; i < ns; ++i) {
+        if (std::abs(eigs[i]) > eig_max * 1.0e-8) {
+            inv_eigs[i] = 1.0 / eigs[i];
+        }
+    }
+
+    // X = -K^+ Lambda, where K^+ is the pseudoinverse of K.
+    X = -solver.eigenvectors() * inv_eigs.asDiagonal() * solver.eigenvectors().transpose() * Lambda;
+}
+
+void ElasticTensor::calc_elastic_tensor_relaxed(const std::vector<FcsArrayWithCell> &fcs_harmonic,
+                                                NDArray<double, 4> &C_gpa) const
+{
+    // Clamped-ion part from the long-wave brackets.
+    calc_elastic_tensor(fcs_harmonic, C_gpa);
+
+    // Internal-strain correction, entirely in real space:
+    // dC_{ab} = (1/Vcell) Lambda_{I,a} X_{I,b} = -(1/Vcell) Lambda^T K^+ Lambda.
+    // The mass-weighted (mode-basis) form is mathematically identical; the
+    // masses cancel, so the static real-space form is used here.
+    Eigen::MatrixXd Lambda, X;
+    calc_force_strain_coupling(fcs_harmonic, Lambda, X);
+
+    const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
+    const auto factor = 1.0e-9 * Ryd / volume;
+
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    C_gpa[i][j][k][l] += factor * Lambda.col(i * 3 + j).dot(X.col(k * 3 + l));
                 }
             }
         }

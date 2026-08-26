@@ -42,16 +42,21 @@ public:
     // (and cubic) IFCs are corrected by fc_scale times the strain-derivative
     // IFCs delta_fc2 (delta_fc3). The applied strain tensor is recorded in the
     // Description section.
+    // sublattice_disp holds the strain-induced internal displacement of each
+    // primitive atom (natmin x 3, Cartesian bohr, per unit strain_dir; zero
+    // rows for the clamped-ion path). It is scaled by fc_scale and added to
+    // the written atomic positions (and, for the HDF5 format, to the stored
+    // shift vectors).
     void writeNewFcsXml(const std::string &filename_xml, const std::vector<FcsArrayWithCell> &delta_fc2,
                         const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
-                        double fc_scale) const;
+                        double fc_scale, const Eigen::MatrixXd &sublattice_disp) const;
 
     // HDF5 variant of writeNewFcsXml: the deformed system and corrected force
     // constants in the shared ALAMODE force-constant HDF5 schema
     // (fcs_hdf5_schema.h), readable as FCSFILE. Defined only with HDF5 support.
     void writeNewFcsH5(const std::string &filename_h5, const std::vector<FcsArrayWithCell> &delta_fc2,
                        const std::vector<FcsArrayWithCell> &delta_fc3, const Eigen::Matrix3d &strain_dir,
-                       double fc_scale) const;
+                       double fc_scale, const Eigen::MatrixXd &sublattice_disp) const;
 
     void setupResultIo();
 

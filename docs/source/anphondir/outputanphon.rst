@@ -92,6 +92,8 @@ ANPHON: Output files
  the format follows ``FILE_FORMAT`` (HDF5 by default, the legacy XML with ``FILE_FORMAT = text``).
  The two files correspond to the strains :math:`+u` and :math:`-u` given in the ``&strain``
  field (a small isotropic strain of :math:`\pm 0.001` when the field is absent).
+ With ``SUBLATTICE_RELAX = 1``, the written structures and force constants include the
+ strain-induced internal (sublattice) displacements.
 
 
 * ``PREFIX``.zmode

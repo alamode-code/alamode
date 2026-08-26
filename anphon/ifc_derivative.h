@@ -85,6 +85,16 @@ public:
                                               const std::vector<Eigen::Matrix3d> &strain_dirs,
                                               const Eigen::Matrix3d &convmat, double emit_threshold);
 
+    // Contraction of the last IFC leg with a constant per-atom displacement
+    // field: the internal-strain (sublattice relaxation) leg of the
+    // relaxed-ion strain derivative. S_field(3*kappa+lambda) is the lambda-th
+    // Cartesian displacement (bohr) of primitive atom kappa; each entry
+    // contributes fcs_val * S_field(tail index). fcs_aligned must be sorted
+    // by the first (n-1) indices (sort_by_heading_indices(1)).
+    static void compute_dV_dsublattice_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                  std::vector<FcsArrayWithCell> &delta_fcs,
+                                                  const Eigen::VectorXd &S_field, double emit_threshold);
+
     void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,
                           const std::complex<double> *const *const *const evec_harmonic) const;
 

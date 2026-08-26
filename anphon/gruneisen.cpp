@@ -16,6 +16,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
+#include "elastic_tensor.h"
 #include "error.h"
 #include "fcs_phonon.h"
 #include "ifc_derivative.h"
@@ -47,6 +48,7 @@ void Gruneisen::set_default_variables()
     print_newfcs = false;
     strain_newfcs_given = false;
     strain_newfcs.setZero();
+    sublattice_relax = 0;
 }
 
 void Gruneisen::deallocate_variables()
@@ -67,6 +69,12 @@ void Gruneisen::setup()
     MPI_Bcast(&print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&strain_newfcs_given, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(strain_newfcs.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&sublattice_relax, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (sublattice_relax && (gruneisen_mode > 0 || print_newfcs)) {
+        const ElasticTensor elastic_tensor(*system);
+        elastic_tensor.calc_sublattice_response(fcs_phonon->force_constant_with_cell[0], sublattice_response);
+    }
 
     if (gruneisen_mode == 1) {
         prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2, Eigen::Matrix3d::Identity());
@@ -123,6 +131,10 @@ void Gruneisen::setup()
                 std::cout << "              with the isotropic strain +/- " << std::defaultfloat << delta_a << ".\n";
                 std::cout << "              An anisotropic strain tensor can be given in the &strain field.\n";
             }
+            if (sublattice_relax) {
+                std::cout << "              SUBLATTICE_RELAX = 1 : the strain-induced internal displacements\n";
+                std::cout << "              are relaxed (relaxed-ion path).\n";
+            }
         }
     }
 }
@@ -131,10 +143,12 @@ void Gruneisen::calc_gruneisen()
 {
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
+        const std::string ion_path = sublattice_relax ? "relaxed-ion " : "";
         if (gruneisen_mode == 1) {
-            std::cout << " GRUNEISEN = 1 : Calculating volumetric Gruneisen parameters ... ";
+            std::cout << " GRUNEISEN = 1 : Calculating " << ion_path << "volumetric Gruneisen parameters ... ";
         } else {
-            std::cout << " GRUNEISEN = " << gruneisen_mode << " : Calculating generalized Gruneisen parameters ... ";
+            std::cout << " GRUNEISEN = " << gruneisen_mode << " : Calculating " << ion_path
+                      << "generalized Gruneisen parameters ... ";
         }
     }
 
@@ -239,6 +253,30 @@ void Gruneisen::prepare_delta_fcs(const std::vector<FcsArrayWithCell> &fcs_in, s
                                                  {strain_dir},
                                                  system->get_primcell().lattice_vector,
                                                  eps15);
+
+    // With SUBLATTICE_RELAX = 1, append the internal-strain leg (contraction
+    // of the tail with the strain-induced sublattice displacement), giving
+    // the relaxed-ion derivative.
+    if (sublattice_relax) {
+        std::vector<FcsArrayWithCell> delta_sub;
+        DerivativeIFC::compute_dV_dsublattice_real_space(fcs_aligned,
+                                                         delta_sub,
+                                                         build_sublattice_field(strain_dir),
+                                                         eps15);
+        delta_fcs.insert(delta_fcs.end(), delta_sub.begin(), delta_sub.end());
+    }
+}
+
+Eigen::VectorXd Gruneisen::build_sublattice_field(const Eigen::Matrix3d &strain_dir) const
+{
+    // S_I = sum_{mu nu} X(I, mu nu) eta_{mu nu}
+    Eigen::VectorXd S_field = Eigen::VectorXd::Zero(sublattice_response.rows());
+    for (auto mu = 0; mu < 3; ++mu) {
+        for (auto nu = 0; nu < 3; ++nu) {
+            S_field += sublattice_response.col(mu * 3 + nu) * strain_dir(mu, nu);
+        }
+    }
+    return S_field;
 }
 
 void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fcs_in,
@@ -270,6 +308,23 @@ void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fc
     delta_fcs_strain.resize(components.size());
     for (std::size_t icomp = 0; icomp < components.size(); ++icomp) {
         DerivativeIFC::extract_strain_combination(strain_groups, components[icomp], 1, eps15, delta_fcs_strain[icomp]);
+    }
+
+    // With SUBLATTICE_RELAX = 1, append the internal-strain leg per component.
+    if (sublattice_relax) {
+        for (std::size_t icomp = 0; icomp < components.size(); ++icomp) {
+            Eigen::Matrix3d eta = Eigen::Matrix3d::Zero();
+            for (const auto &term: components[icomp]) {
+                eta(term.first / 3, term.first % 3) += term.second;
+            }
+
+            std::vector<FcsArrayWithCell> delta_sub;
+            DerivativeIFC::compute_dV_dsublattice_real_space(fcs_aligned,
+                                                             delta_sub,
+                                                             build_sublattice_field(eta),
+                                                             eps15);
+            delta_fcs_strain[icomp].insert(delta_fcs_strain[icomp].end(), delta_sub.begin(), delta_sub.end());
+        }
     }
 }
 
@@ -303,14 +358,27 @@ void Gruneisen::write_new_fcsxml_all() const
         const auto scale = strain_newfcs_given ? 1.0 : delta_a;
         const std::string extension = write_h5 ? ".h5" : ".xml";
 
+        // Relaxed-ion path: internal displacement per primitive atom under a
+        // unit application of strain_dir (Cartesian bohr); zero when clamped.
+        const auto natmin = system->get_primcell().number_of_atoms;
+        Eigen::MatrixXd sub_disp = Eigen::MatrixXd::Zero(natmin, 3);
+        if (sublattice_relax) {
+            const Eigen::VectorXd S_field = build_sublattice_field(strain_dir);
+            for (std::size_t kappa = 0; kappa < natmin; ++kappa) {
+                for (auto i = 0; i < 3; ++i) {
+                    sub_disp(kappa, i) = S_field(3 * kappa + i);
+                }
+            }
+        }
+
         auto write_one = [&](const std::string &filename, const double scale_signed) {
 #ifdef _HDF5
             if (write_h5) {
-                writes->writeNewFcsH5(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed);
+                writes->writeNewFcsH5(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
                 return;
             }
 #endif
-            writes->writeNewFcsXml(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed);
+            writes->writeNewFcsXml(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
         };
 
         auto file_out = phon->job_title + "_+" + extension;

@@ -156,6 +156,7 @@ void InputSetter::set_analysis_vars(PHON *phon, const AnalysisInputVars &vars) c
     phon->mode_analysis->calc_selfenergy = vars.calc_selfenergy;
 
     phon->gruneisen->gruneisen_mode = vars.gruneisen_mode;
+    phon->gruneisen->sublattice_relax = vars.sublattice_relax;
     phon->gruneisen->print_newfcs = vars.print_newfcs;
     phon->gruneisen->delta_a = vars.delta_a;
     phon->thermodynamics->calc_FE_bubble = vars.calc_FE_bubble;

@@ -665,6 +665,42 @@ void DerivativeIFC::extract_strain_combination(const std::vector<DeltaFcsStrainC
     }
 }
 
+void DerivativeIFC::compute_dV_dsublattice_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                      std::vector<FcsArrayWithCell> &delta_fcs,
+                                                      const Eigen::VectorXd &S_field, const double emit_threshold)
+{
+    delta_fcs.clear();
+
+    if (fcs_aligned.empty()) return;
+
+    const auto norder = fcs_aligned[0].pairs.size();
+
+    if (norder < 2) {
+        exit("compute_dV_dsublattice_real_space", "IFC order must be at least 2.");
+    }
+
+    const auto nelems = norder - 1;
+
+    double fcs_tmp = 0.0;
+    std::vector<AtomCellSuper> pairs_vec;
+
+    scan_fcs_groups(
+        fcs_aligned,
+        nelems,
+        [](const FcsArrayWithCell &) { return true; },
+        [&](const FcsArrayWithCell &it) { fcs_tmp += it.fcs_val * S_field(it.pairs[norder - 1].index); },
+        [&](const std::vector<int> &index_with_cell,
+            const std::vector<unsigned int> &atoms_s,
+            const std::vector<Eigen::Vector3d> &relvecs,
+            const std::vector<Eigen::Vector3d> &relvecs_vel) {
+            if (!(emit_threshold >= 0.0 && std::abs(fcs_tmp) <= emit_threshold)) {
+                build_pairs_vec(index_with_cell, nelems, pairs_vec);
+                delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s, relvecs, relvecs_vel);
+            }
+            fcs_tmp = 0.0;
+        });
+}
+
 void DerivativeIFC::compute_dV_dstrain_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                   std::vector<FcsArrayWithCell> &delta_fcs,
                                                   const std::vector<Eigen::Matrix3d> &strain_dirs,

@@ -112,7 +112,7 @@ inline auto add_symmetry_group_xml(boost::property_tree::ptree &pt, const Mappin
 struct FcCartesianRowXml
 {
     double value;
-    int atom1_prim;              // 0-based primitive-cell atom of the first leg
+    int atom1_prim;               // 0-based primitive-cell atom of the first leg
     std::vector<int> atoms_super; // n-1 entries, 0-based supercell atoms
     std::vector<int> coords;      // n entries, 0-based Cartesian components
     std::vector<int> cells;       // n-1 entries, 0-based multiplicity cell indices
@@ -121,16 +121,15 @@ struct FcCartesianRowXml
 // Data.ForceConstants.<blockname>.FC<n> entries (blockname = "HARMONIC",
 // "ANHARM3", ...). The caller is responsible for the initial
 // pt.put("Data.ForceConstants", "") and for the order of block additions.
-inline auto add_fc_cartesian_group_xml(boost::property_tree::ptree &pt, const std::string &blockname,
-                                       const int order_n, const std::vector<FcCartesianRowXml> &rows) -> void
+inline auto add_fc_cartesian_group_xml(boost::property_tree::ptree &pt, const std::string &blockname, const int order_n,
+                                       const std::vector<FcCartesianRowXml> &rows) -> void
 {
     const auto elementname = "Data.ForceConstants." + blockname + ".FC" + std::to_string(order_n);
 
     for (const auto &row: rows) {
         auto &child = pt.add(elementname, double2string(row.value));
 
-        child.put("<xmlattr>.pair1",
-                  std::to_string(row.atom1_prim + 1) + " " + std::to_string(row.coords[0] + 1));
+        child.put("<xmlattr>.pair1", std::to_string(row.atom1_prim + 1) + " " + std::to_string(row.coords[0] + 1));
 
         for (auto k = 1; k < order_n; ++k) {
             child.put("<xmlattr>.pair" + std::to_string(k + 1),
@@ -147,7 +146,9 @@ inline auto write_fcs_xml_file(const std::string &filename, const boost::propert
     using boost::property_tree::ptree;
 
 #if BOOST_VERSION >= 105600
-    write_xml(filename, pt, std::locale(),
+    write_xml(filename,
+              pt,
+              std::locale(),
               xml_writer_make_settings<ptree::key_type>(' ', indent, widen<std::string>("utf-8")));
 #else
     write_xml(filename, pt, std::locale(), xml_writer_make_settings(' ', indent, widen<char>("utf-8")));

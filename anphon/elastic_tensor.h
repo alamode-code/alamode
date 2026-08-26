@@ -46,8 +46,7 @@ public:
 
     // Positive-definite dummy elastic constants for fixed-cell relaxation
     // (only the coordinates are optimized, so C never enters physically).
-    static void set_dummy_elastic_constants(double *C1_array, double *const *C2_array,
-                                            double *const *const *C3_array);
+    static void set_dummy_elastic_constants(double *C1_array, double *const *C2_array, double *const *const *C3_array);
 
     // ---- Clamped-ion elastic tensor from harmonic IFCs ----
 
@@ -61,12 +60,32 @@ public:
     // (internal-strain) relaxation is NOT included.
     void calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic, NDArray<double, 4> &C_gpa) const;
 
+    // Internal-strain (sublattice displacement) response in real space:
+    // X(I, mu*3+nu) is the Cartesian displacement (bohr) of primitive
+    // atom-coordinate I = 3*kappa+lambda per unit strain eta_{mu nu},
+    // X = -K^+ Lambda with K the zone-center harmonic matrix and Lambda the
+    // force-strain coupling (symmetrized over the strain indices). The
+    // pseudoinverse removes the acoustic translations.
+    void calc_sublattice_response(const std::vector<FcsArrayWithCell> &fcs_harmonic, Eigen::MatrixXd &X) const;
+
+    // Relaxed-ion elastic tensor: the clamped-ion tensor plus the
+    // internal-strain (sublattice relaxation) correction
+    //   C^rel_ab = C^cl_ab - (1/Vcell) Lambda^T K^+ Lambda,
+    // evaluated entirely in real space from the harmonic IFCs (the masses of
+    // the equivalent mode-basis form cancel; no eigenvectors are needed).
+    void calc_elastic_tensor_relaxed(const std::vector<FcsArrayWithCell> &fcs_harmonic,
+                                     NDArray<double, 4> &C_gpa) const;
+
     // Print the brackets A [Ry], the clamped-ion C [GPa], and the Voigt bulk modulus.
     void print_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic) const;
 
 private:
+    // Force-strain coupling Lambda(I, mu*3+nu) (symmetrized over the strain
+    // indices) and the sublattice response X = -K^+ Lambda, both in real space.
+    void calc_force_strain_coupling(const std::vector<FcsArrayWithCell> &fcs_harmonic, Eigen::MatrixXd &Lambda,
+                                    Eigen::MatrixXd &X) const;
+
     const System &system_;
-    NDArray<double, 2> xshift_s_; // 27-cell shift table
 };
 
 } // namespace PHON_NS

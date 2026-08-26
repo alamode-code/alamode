@@ -328,40 +328,14 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
     // Read input parameters in the &analysis field.
     int i;
 
-    std::vector<std::string> input_list{"PRINTEVAL",
-                                        "PRINTEVEC",
-                                        "PRINTXSF",
-                                        "PRINTVEL",
-                                        "QUARTIC",
-                                        "KS_INPUT",
-                                        "REALPART",
-                                        "FSTATE_W",
-                                        "PRINTMSD",
-                                        "DOS",
-                                        "PDOS",
-                                        "TDOS",
-                                        "GRUNEISEN",
-                                        "NEWFCS",
-                                        "DELTA_A",
-                                        "ANIME",
-                                        "ANIME_CELLSIZE",
-                                        "ANIME_FORMAT",
-                                        "ANIME_FRAMES",
-                                        "SPS",
-                                        "PRINTV3",
-                                        "PRINTPR",
-                                        "FC2_EWALD",
-                                        "SELF_W",
-                                        "UCORR",
-                                        "SHIFT_UCORR",
-                                        "DIELEC",
-                                        "SELF_ENERGY",
-                                        "PRINTV4",
-                                        "ZMODE",
-                                        "IRREPS",
-                                        "PROJECTION_AXES",
-                                        "LONGITUDINAL_DOS",
-                                        "FE_BUBBLE"};
+    std::vector<std::string> input_list{
+        "PRINTEVAL", "PRINTEVEC",   "PRINTXSF",        "PRINTVEL",         "QUARTIC",
+        "KS_INPUT",  "REALPART",    "FSTATE_W",        "PRINTMSD",         "DOS",
+        "PDOS",      "TDOS",        "GRUNEISEN",       "NEWFCS",           "SUBLATTICE_RELAX",
+        "DELTA_A",   "ANIME",       "ANIME_CELLSIZE",  "ANIME_FORMAT",     "ANIME_FRAMES",
+        "SPS",       "PRINTV3",     "PRINTPR",         "FC2_EWALD",        "SELF_W",
+        "UCORR",     "SHIFT_UCORR", "DIELEC",          "SELF_ENERGY",      "PRINTV4",
+        "ZMODE",     "IRREPS",      "PROJECTION_AXES", "LONGITUDINAL_DOS", "FE_BUBBLE"};
 
     std::map<std::string, std::string> analysis_var_dict;
     std::vector<std::string> anime_kpoint, anime_cellsize;
@@ -389,6 +363,10 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
         assign_val(analysis_vars.gruneisen_mode, "GRUNEISEN", analysis_var_dict);
         if (analysis_vars.gruneisen_mode < 0 || analysis_vars.gruneisen_mode > 3) {
             exit("parse_analysis_vars", "GRUNEISEN must be 0, 1, 2, or 3.");
+        }
+        assign_val(analysis_vars.sublattice_relax, "SUBLATTICE_RELAX", analysis_var_dict);
+        if (analysis_vars.sublattice_relax < 0 || analysis_vars.sublattice_relax > 1) {
+            exit("parse_analysis_vars", "SUBLATTICE_RELAX must be 0 or 1.");
         }
         assign_val(analysis_vars.print_newfcs, "NEWFCS", analysis_var_dict);
         assign_val(analysis_vars.delta_a, "DELTA_A", analysis_var_dict);
