@@ -111,6 +111,35 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
     if (relax_mode == RelaxationStrMode::CoordinatesAndCell || relax_mode == RelaxationStrMode::PerturbativeQha) {
         ElasticTensor::read_C1_array(C1_array);
         ElasticTensor::read_elastic_constants(C2_array, C3_array, strain_IFC_dir);
+
+        // Detect unexpected symmetry breaking in the user-supplied arrays:
+        // the stress tensor must be symmetric, and C2/C3 must satisfy the
+        // minor and pair-permutation symmetries of the elastic tensors.
+        // The arrays are used as given; only a warning is issued.
+        auto scale = 0.0;
+        for (auto i = 0; i < 9; ++i) scale = std::max(scale, std::abs(C1_array[i]));
+        if (const auto dev = ElasticTensor::stress_tensor_asymmetry(C1_array); dev > 1.0e-6 * std::max(scale, 1.0)) {
+            warn("set_elastic_constants",
+                 "The stress tensor in C1_array.in is not symmetric.\n"
+                 " Please check the file for input errors.");
+        }
+        scale = 0.0;
+        for (auto i = 0; i < 9; ++i)
+            for (auto j = 0; j < 9; ++j) scale = std::max(scale, std::abs(C2_array[i][j]));
+        if (ElasticTensor::elastic_tensor2_asymmetry(C2_array) > 1.0e-6 * std::max(scale, 1.0)) {
+            warn("set_elastic_constants",
+                 "The second-order elastic constants in elastic_constants.in violate\n"
+                 " the minor or pair-permutation symmetry. Please check the file for input errors.");
+        }
+        scale = 0.0;
+        for (auto i = 0; i < 9; ++i)
+            for (auto j = 0; j < 9; ++j)
+                for (auto k = 0; k < 9; ++k) scale = std::max(scale, std::abs(C3_array[i][j][k]));
+        if (ElasticTensor::elastic_tensor3_asymmetry(C3_array) > 1.0e-6 * std::max(scale, 1.0)) {
+            warn("set_elastic_constants",
+                 "The third-order elastic constants in elastic_constants.in violate\n"
+                 " the minor or pair-permutation symmetry. Please check the file for input errors.");
+        }
         return;
     }
     // if the unit cell is fixed,

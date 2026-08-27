@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <array>
 #include <string>
 #include <vector>
 #include "fcs_phonon.h"
@@ -19,6 +20,24 @@ namespace PHON_NS
 {
 
 class System;
+
+// Fixed-size 3^6 tensor for the third-order elastic quantities.
+struct Tensor6
+{
+    std::array<double, 729> data{};
+
+    double &operator()(const int i1, const int i2, const int i3, const int i4, const int i5, const int i6)
+    {
+        return data[((((i1 * 3 + i2) * 3 + i3) * 3 + i4) * 3 + i5) * 3 + i6];
+    }
+
+    double operator()(const int i1, const int i2, const int i3, const int i4, const int i5, const int i6) const
+    {
+        return data[((((i1 * 3 + i2) * 3 + i3) * 3 + i4) * 3 + i5) * 3 + i6];
+    }
+
+    void setZero() { data.fill(0.0); }
+};
 
 // Elastic-constant utilities: parsers of the user-provided elastic constants
 // used by the SCPH/QHA structural relaxation, and the clamped-ion (Born
@@ -57,8 +76,11 @@ public:
 
     // Clamped-ion (Born) elastic tensor C_{abcd} = A_{acbd} + A_{bcad} - A_{abcd},
     // converted to GPa with the primitive-cell volume. The inner-displacement
-    // (internal-strain) relaxation is NOT included.
-    void calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic, NDArray<double, 4> &C_gpa) const;
+    // (internal-strain) relaxation is NOT included. symmetrize applies the
+    // intrinsic index-symmetry projection (minor + pair exchange); it is a
+    // no-op when the IFCs satisfy the rotational invariance.
+    void calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic, NDArray<double, 4> &C_gpa,
+                             bool symmetrize = true) const;
 
     // Internal-strain (sublattice displacement) response in real space:
     // X(I, mu*3+nu) is the Cartesian displacement (bohr) of primitive
@@ -78,6 +100,50 @@ public:
 
     // Print the brackets A [Ry], the clamped-ion C [GPa], and the Voigt bulk modulus.
     void print_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic) const;
+
+    // ---- Third-order elastic tensor from cubic IFCs (Wallace, Ch. 8) ----
+
+    // Wallace's restricted surface-free third-order coefficient
+    // A_hat(mu1, mu2, nu1, nu2, mu3, nu3) = A^hat_{mu1 mu2, nu1 nu2; mu3 nu3}
+    // [Eq. (8.42) plus the XRR/XXR/XXX internal-strain groups of Eq. (8.41)],
+    // in Ry per primitive cell. (mu1, mu2) are the force components of the
+    // first two IFC legs, (nu1, nu2) their symmetrized position indices, and
+    // (mu3, nu3) the untouched third displacement-gradient pair. Pass an
+    // empty X for the clamped-ion path.
+    void calc_longwave_brackets3(const std::vector<FcsArrayWithCell> &fcs_cubic, const Eigen::MatrixXd &X,
+                                 Tensor6 &A_hat) const;
+
+    // Third-order (finite-strain) elastic tensor C3_{ij kl mn} in GPa via
+    // Wallace's Eq. (8.14), combining the restricted brackets with the
+    // second-order elastic tensor of the same (clamped or relaxed) path.
+    // symmetrize selects the final projection onto the exact elastic index
+    // symmetries (minor symmetry within each pair and permutations of the
+    // three pairs; 48 operations). With rotationally invariant IFCs the
+    // projection is a no-op; for fitted IFCs (which generally violate the
+    // cubic rotational invariance) it returns the nearest (least-squares)
+    // tensor with the exact symmetries. Note that the violated invariance
+    // relations are NOT index permutations of A_hat itself (A_hat comes out
+    // exactly symmetric in its own index space), so the projection can only
+    // be applied at the C3 level.
+    void calc_elastic_tensor3(const std::vector<FcsArrayWithCell> &fcs_harmonic,
+                              const std::vector<FcsArrayWithCell> &fcs_cubic, bool relax_ions,
+                              Tensor6 &C3_gpa, bool symmetrize = true) const;
+
+    // The 48-element index-symmetry projection described above; returns the
+    // largest change applied to any component.
+    static double symmetrize_elastic_tensor3(Tensor6 &C3);
+
+    // Intrinsic index-symmetry projection of a second-order elastic tensor
+    // (minor symmetry within each pair and pair exchange, 8 operations);
+    // returns the largest change applied.
+    static double symmetrize_elastic_tensor2(NDArray<double, 4> &C2);
+
+    // ---- Symmetry diagnostics for the user-supplied C1/C2/C3 arrays ----
+    // Maximum violation of the intrinsic index symmetries, without modifying
+    // the arrays (layouts as in read_C1_array / read_elastic_constants).
+    static double stress_tensor_asymmetry(const double *C1_array);
+    static double elastic_tensor2_asymmetry(const double *const *C2_array);
+    static double elastic_tensor3_asymmetry(const double *const *const *C3_array);
 
 private:
     // Force-strain coupling Lambda(I, mu*3+nu) (symmetrized over the strain

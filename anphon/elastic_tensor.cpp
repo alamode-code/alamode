@@ -152,7 +152,7 @@ void ElasticTensor::calc_longwave_brackets(const std::vector<FcsArrayWithCell> &
 }
 
 void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic,
-                                        NDArray<double, 4> &C_gpa) const
+                                        NDArray<double, 4> &C_gpa, const bool symmetrize) const
 {
     NDArray<double, 4> A;
     calc_longwave_brackets(fcs_harmonic, A);
@@ -174,6 +174,10 @@ void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs
                 }
             }
         }
+    }
+
+    if (symmetrize) {
+        symmetrize_elastic_tensor2(C_gpa);
     }
 }
 
@@ -258,6 +262,278 @@ void ElasticTensor::calc_elastic_tensor_relaxed(const std::vector<FcsArrayWithCe
                 }
             }
         }
+    }
+}
+
+
+void ElasticTensor::calc_longwave_brackets3(const std::vector<FcsArrayWithCell> &fcs_cubic, const Eigen::MatrixXd &X,
+                                            Tensor6 &A_hat) const
+{
+    // Wallace's restricted surface-free coefficient, stored as
+    // A_hat(mu1, mu2, nu1, nu2, mu3, nu3):
+    //   A^[0] (RRR)      = -1/2 sum Phi_{mu1 mu2 mu3} R12_nu1 R12_nu2 R13_nu3
+    //   K^[1..3] (X groups) contracted with the sublattice response and
+    //   projected with P12 (nu1 <-> nu2).
+    // Volume normalization and unit conversion are applied by the caller.
+    const auto convmat = system_.get_primcell().lattice_vector;
+    const bool with_x = X.size() != 0;
+
+    A_hat.setZero();
+    Tensor6 K_sum; // unprojected, index order (mu1, nu1, mu2, nu2, mu3, nu3)
+
+    for (const auto &it: fcs_cubic) {
+
+        const auto phi = it.fcs_val;
+        const auto index1 = it.pairs[0].index;
+        const auto index2 = it.pairs[1].index;
+        const auto index3 = it.pairs[2].index;
+        const auto c1 = index1 % 3;
+        const auto c2 = index2 % 3;
+        const auto c3 = index3 % 3;
+
+        const Eigen::Vector3d R12 = convmat * it.relvecs_velocity[0];
+        const Eigen::Vector3d R13 = convmat * it.relvecs_velocity[1];
+
+        // RRR group [Wallace Eq. (8.42)], already symmetric in (nu1, nu2)
+        for (auto nu1 = 0; nu1 < 3; ++nu1) {
+            for (auto nu2 = 0; nu2 < 3; ++nu2) {
+                for (auto nu3 = 0; nu3 < 3; ++nu3) {
+                    A_hat(c1, c2, nu1, nu2, c3, nu3) += -0.5 * phi * R12[nu1] * R12[nu2] * R13[nu3];
+                }
+            }
+        }
+
+        if (!with_x) continue;
+
+        const Eigen::Vector3d R21 = -R12;
+        const Eigen::Vector3d R23 = R13 - R12;
+        const Eigen::Vector3d R31 = -R13;
+        const Eigen::Vector3d R32 = R12 - R13;
+
+        // X rows of the three legs (strain label a = mu*3+nu)
+        const auto X1 = X.row(index1);
+        const auto X2 = X.row(index2);
+        const auto X3 = X.row(index3);
+
+        for (auto mu = 0; mu < 3; ++mu) {
+            for (auto nu = 0; nu < 3; ++nu) {
+                const auto a = mu * 3 + nu;
+
+                // K^[1]: one X leg, two relative vectors from that leg
+                for (auto p = 0; p < 3; ++p) {
+                    for (auto q = 0; q < 3; ++q) {
+                        K_sum(mu, nu, c2, p, c3, q) += phi * X1(a) * R12[p] * R13[q];
+                        K_sum(c1, p, mu, nu, c3, q) += phi * X2(a) * R21[p] * R23[q];
+                        K_sum(c1, p, c2, q, mu, nu) += phi * X3(a) * R31[p] * R32[q];
+                    }
+                }
+
+                // K^[2]: two X legs, one relative vector
+                for (auto mu2 = 0; mu2 < 3; ++mu2) {
+                    for (auto nu2 = 0; nu2 < 3; ++nu2) {
+                        const auto b = mu2 * 3 + nu2;
+                        for (auto p = 0; p < 3; ++p) {
+                            K_sum(mu, nu, mu2, nu2, c3, p) += phi * X1(a) * X2(b) * R13[p];
+                            K_sum(mu, nu, c2, p, mu2, nu2) += phi * X1(a) * X3(b) * R12[p];
+                            K_sum(c1, p, mu, nu, mu2, nu2) += phi * X2(a) * X3(b) * R21[p];
+                        }
+
+                        // K^[3]: three X legs
+                        for (auto mu3 = 0; mu3 < 3; ++mu3) {
+                            for (auto nu3 = 0; nu3 < 3; ++nu3) {
+                                K_sum(mu, nu, mu2, nu2, mu3, nu3) +=
+                                    phi * X1(a) * X2(b) * X3(mu3 * 3 + nu3);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (with_x) {
+        // Restricted projection P12 (nu1 <-> nu2) of the X groups
+        for (auto mu1 = 0; mu1 < 3; ++mu1)
+            for (auto mu2 = 0; mu2 < 3; ++mu2)
+                for (auto nu1 = 0; nu1 < 3; ++nu1)
+                    for (auto nu2 = 0; nu2 < 3; ++nu2)
+                        for (auto mu3 = 0; mu3 < 3; ++mu3)
+                            for (auto nu3 = 0; nu3 < 3; ++nu3) {
+                                A_hat(mu1, mu2, nu1, nu2, mu3, nu3) +=
+                                    0.5 * (K_sum(mu1, nu1, mu2, nu2, mu3, nu3) +
+                                           K_sum(mu1, nu2, mu2, nu1, mu3, nu3));
+                            }
+    }
+}
+
+double ElasticTensor::symmetrize_elastic_tensor3(Tensor6 &C3)
+{
+    // Average over the 6 permutations of the three index pairs and the 2^3
+    // transpositions within each pair (48 operations in total).
+    static constexpr int pair_perms[6][3] = {{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}};
+
+    Tensor6 sym;
+    sym.setZero();
+
+    int idx[3][2];
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    for (auto m = 0; m < 3; ++m) {
+                        for (auto n = 0; n < 3; ++n) {
+                            idx[0][0] = i; idx[0][1] = j;
+                            idx[1][0] = k; idx[1][1] = l;
+                            idx[2][0] = m; idx[2][1] = n;
+                            auto avg = 0.0;
+                            for (const auto &perm: pair_perms) {
+                                for (auto flip = 0; flip < 8; ++flip) {
+                                    int a[6];
+                                    for (auto p = 0; p < 3; ++p) {
+                                        const auto swap = (flip >> p) & 1;
+                                        a[2 * p] = idx[perm[p]][swap];
+                                        a[2 * p + 1] = idx[perm[p]][1 - swap];
+                                    }
+                                    avg += C3(a[0], a[1], a[2], a[3], a[4], a[5]);
+                                }
+                            }
+                            sym(i, j, k, l, m, n) = avg / 48.0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    auto max_change = 0.0;
+    for (auto i = 0; i < 729; ++i) {
+        max_change = std::max(max_change, std::abs(sym.data[i] - C3.data[i]));
+    }
+    C3 = sym;
+    return max_change;
+}
+
+double ElasticTensor::symmetrize_elastic_tensor2(NDArray<double, 4> &C2)
+{
+    // Average over the pair exchange and the transpositions within each pair
+    // (8 operations).
+    NDArray<double, 4> sym(3, 3, 3, 3);
+    auto max_change = 0.0;
+
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    const auto avg = 0.125 * (C2[i][j][k][l] + C2[j][i][k][l] + C2[i][j][l][k] + C2[j][i][l][k] +
+                                              C2[k][l][i][j] + C2[l][k][i][j] + C2[k][l][j][i] + C2[l][k][j][i]);
+                    sym[i][j][k][l] = avg;
+                    max_change = std::max(max_change, std::abs(avg - C2[i][j][k][l]));
+                }
+            }
+        }
+    }
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    C2[i][j][k][l] = sym[i][j][k][l];
+                }
+            }
+        }
+    }
+    return max_change;
+}
+
+double ElasticTensor::stress_tensor_asymmetry(const double *C1_array)
+{
+    auto dev = 0.0;
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            dev = std::max(dev, std::abs(C1_array[i * 3 + j] - C1_array[j * 3 + i]));
+        }
+    }
+    return dev;
+}
+
+double ElasticTensor::elastic_tensor2_asymmetry(const double *const *C2_array)
+{
+    auto dev = 0.0;
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    const auto ref = C2_array[i * 3 + j][k * 3 + l];
+                    dev = std::max(dev, std::abs(ref - C2_array[j * 3 + i][k * 3 + l]));
+                    dev = std::max(dev, std::abs(ref - C2_array[i * 3 + j][l * 3 + k]));
+                    dev = std::max(dev, std::abs(ref - C2_array[k * 3 + l][i * 3 + j]));
+                }
+            }
+        }
+    }
+    return dev;
+}
+
+double ElasticTensor::elastic_tensor3_asymmetry(const double *const *const *C3_array)
+{
+    Tensor6 tmp;
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j)
+            for (auto k = 0; k < 3; ++k)
+                for (auto l = 0; l < 3; ++l)
+                    for (auto m = 0; m < 3; ++m)
+                        for (auto n = 0; n < 3; ++n)
+                            tmp(i, j, k, l, m, n) = C3_array[i * 3 + j][k * 3 + l][m * 3 + n];
+    return symmetrize_elastic_tensor3(tmp);
+}
+
+void ElasticTensor::calc_elastic_tensor3(const std::vector<FcsArrayWithCell> &fcs_harmonic,
+                                         const std::vector<FcsArrayWithCell> &fcs_cubic, const bool relax_ions,
+                                         Tensor6 &C3_gpa, const bool symmetrize) const
+{
+    Eigen::MatrixXd Lambda, X;
+    if (relax_ions) {
+        calc_force_strain_coupling(fcs_harmonic, Lambda, X);
+    }
+
+    Tensor6 A_hat;
+    calc_longwave_brackets3(fcs_cubic, X, A_hat);
+
+    NDArray<double, 4> C2;
+    if (relax_ions) {
+        calc_elastic_tensor_relaxed(fcs_harmonic, C2);
+    } else {
+        calc_elastic_tensor(fcs_harmonic, C2);
+    }
+
+    const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
+    const auto factor = 1.0e-9 * Ryd / volume;
+
+    // Wallace Eq. (8.14): C3_{ij kl mn} from the restricted brackets and the
+    // second-order tensor of the same path.
+    const auto d = [](const int a, const int b) { return a == b ? 1.0 : 0.0; };
+
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    for (auto m = 0; m < 3; ++m) {
+                        for (auto n = 0; n < 3; ++n) {
+                            C3_gpa(i, j, k, l, m, n) =
+                                factor * (A_hat(i, k, j, l, m, n) + A_hat(j, k, i, l, m, n) -
+                                          A_hat(i, j, k, l, m, n)) +
+                                C2[k][l][m][n] * d(i, j) - C2[j][l][m][n] * d(i, k) - C2[i][l][m][n] * d(j, k) -
+                                0.5 * (2.0 * C2[i][j][l][n] + C2[i][l][j][n] + C2[j][l][i][n]) * d(k, m) +
+                                0.5 * (C2[j][l][k][n] - C2[k][l][j][n]) * d(i, m) +
+                                0.5 * (C2[i][l][k][n] - C2[k][l][i][n]) * d(j, m);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (symmetrize) {
+        symmetrize_elastic_tensor3(C3_gpa);
     }
 }
 
