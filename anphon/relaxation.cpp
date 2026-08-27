@@ -965,6 +965,9 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
                                          double **C2_array, double ***C3_array,
                                          const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell)
 {
+    // This function computes the total enthalpy change induced by the strain.
+    // The inputs are the eta_tensor (the symmetric strain tensor) and u_tensor.
+    // The elastic constants C1, C2, and C3 will be used to compute the enthalpy change up to the third order in strain.
     int ixyz1;
 
     constexpr double factor1 = 0.5;
@@ -1052,6 +1055,8 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
                                          std::complex<double> **delta_v2_renorm, const DelVStrainData &del_v_strain,
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
+    // This computes the renormalization of the 2nd-order IFCs due to strain, using the 3rd- and 4th-order IFCs.
+    // The result is stored in delta_v2_renorm, which is a 2D array of size nk_interpolate x (ns*ns), where nk_interpolate is the number of k-points in the coarse mesh and ns is the number of phonon modes.
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
     unsigned int ik, knum;
@@ -1103,7 +1108,6 @@ void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, 
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
     const auto nk_scph = kmesh_dense->nk;
-    //    const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
     unsigned int ik;
     unsigned int is1, is2, is3;
@@ -1311,9 +1315,7 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic, const KpointMe
     const auto nk_scph = kmesh_dense->nk;
     constexpr double factor2 = 1.0 / 2.0;
     const double factor3 = 1.0 / 6.0 * 4.0 * nk_scph;
-    ;
     const double factor4 = 1.0 / 24.0 * 4.0 * nk_scph;
-    ;
 
     std::complex<double> v0_renorm_tmp = v0_ref;
     // renormalize from the 1st order, harmonic IFC
