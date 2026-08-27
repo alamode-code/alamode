@@ -36,7 +36,10 @@ struct Tensor6
         return data[((((i1 * 3 + i2) * 3 + i3) * 3 + i4) * 3 + i5) * 3 + i6];
     }
 
-    void setZero() { data.fill(0.0); }
+    void setZero()
+    {
+        data.fill(0.0);
+    }
 };
 
 // Elastic-constant utilities: parsers of the user-provided elastic constants
@@ -126,8 +129,8 @@ public:
     // exactly symmetric in its own index space), so the projection can only
     // be applied at the C3 level.
     void calc_elastic_tensor3(const std::vector<FcsArrayWithCell> &fcs_harmonic,
-                              const std::vector<FcsArrayWithCell> &fcs_cubic, bool relax_ions,
-                              Tensor6 &C3_gpa, bool symmetrize = true) const;
+                              const std::vector<FcsArrayWithCell> &fcs_cubic, bool relax_ions, Tensor6 &C3_gpa,
+                              bool symmetrize = true) const;
 
     // The 48-element index-symmetry projection described above; returns the
     // largest change applied to any component.

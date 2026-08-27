@@ -93,7 +93,76 @@ public:
     // by the first (n-1) indices (sort_by_heading_indices(1)).
     static void compute_dV_dsublattice_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                   std::vector<FcsArrayWithCell> &delta_fcs,
-                                                  const Eigen::VectorXd &S_field, double emit_threshold);
+                                                  const Eigen::VectorXd &sublattice_displacement,
+                                                  double emit_threshold);
+
+    // Displacement field of a homogeneous deformation u plus sublattice
+    // displacements S: atom (l kappa) moves by
+    // d_lambda = sum_nu u(lambda, nu) R_nu + S(3*kappa + lambda),
+    // with R the same relative vector used by the strain kernels (valid by
+    // the acoustic sum rule). S may be empty (purely affine deformation).
+    //
+    // Conventions: u is the dimensionless displacement-gradient tensor
+    // dX_mu/dx_nu - delta_{mu nu} (a homogeneous deformation of all space,
+    // independent of any cell choice); S is in Cartesian bohr and is indexed
+    // by the atoms of the USER-defined primitive cell of the run (the &cell
+    // input), i.e. the same numbering as pairs[].index/3 after
+    // replicate_force_constant. A non-primitive &cell is fully supported:
+    // S is then periodic with that larger cell, which is exactly what is
+    // needed for SCPH/QHA distortion patterns that break the true primitive
+    // periodicity.
+    struct DeformationField
+    {
+        // Dimensionless displacement-gradient tensor (the u_tensor of the
+        // SCPH/QHA structural relaxation).
+        Eigen::Matrix3d displacement_gradient = Eigen::Matrix3d::Zero();
+        // Cartesian sublattice displacements in bohr, indexed by
+        // 3*kappa+lambda over the atoms of the user-defined primitive cell
+        // (the u0 of the relaxation). May be empty (purely affine).
+        Eigen::VectorXd sublattice_displacement;
+    };
+
+    // Contraction of the last fields.size() legs of the IFCs with the given
+    // displacement fields (one per contracted leg). Subsumes the strain and
+    // sublattice kernels above. fcs_aligned must be sorted by the first
+    // (n-m) indices (sort_by_heading_indices(m)).
+    static void compute_dV_ddeform_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                              std::vector<FcsArrayWithCell> &delta_fcs,
+                                              const std::vector<DeformationField> &fields,
+                                              const Eigen::Matrix3d &convmat, double emit_threshold);
+
+    // IFCs of the deformed structure [Taylor renormalization, fully in real
+    // space]: for the order held in fcs_by_order[target_order_index],
+    //   Phi^def(n) = Phi(n) + sum_{m>=1} (1/m!) Phi(n+m) contracted with the
+    //   displacement field on its m tail legs,
+    // truncated at the highest order available in fcs_by_order (the usual
+    // force_constant_with_cell layout: index 0 = harmonic, 1 = cubic, ...).
+    // The corrections are appended to the copied base list; entries with
+    // identical index groups are summed by all downstream consumers.
+    static void compute_deformed_ifcs(const std::vector<const std::vector<FcsArrayWithCell> *> &fcs_by_order,
+                                      std::size_t target_order_index, const Eigen::Matrix3d &displacement_gradient,
+                                      const Eigen::VectorXd &sublattice_displacement, const Eigen::Matrix3d &convmat,
+                                      std::vector<FcsArrayWithCell> &fcs_deformed);
+
+    // Convenience overload for any indexable container of per-order IFC lists
+    // (e.g. Fcs_phonon::force_constant_with_cell).
+    template <class FcsByOrder>
+    static void compute_deformed_ifcs(const FcsByOrder &fcs_by_order, const std::size_t target_order_index,
+                                      const Eigen::Matrix3d &displacement_gradient,
+                                      const Eigen::VectorXd &sublattice_displacement, const Eigen::Matrix3d &convmat,
+                                      std::vector<FcsArrayWithCell> &fcs_deformed)
+    {
+        std::vector<const std::vector<FcsArrayWithCell> *> ptrs;
+        for (std::size_t i = 0; i < fcs_by_order.size(); ++i) {
+            ptrs.push_back(&fcs_by_order[i]);
+        }
+        compute_deformed_ifcs(ptrs,
+                              target_order_index,
+                              displacement_gradient,
+                              sublattice_displacement,
+                              convmat,
+                              fcs_deformed);
+    }
 
     void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,
                           const std::complex<double> *const *const *const evec_harmonic) const;

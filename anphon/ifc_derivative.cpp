@@ -667,7 +667,8 @@ void DerivativeIFC::extract_strain_combination(const std::vector<DeltaFcsStrainC
 
 void DerivativeIFC::compute_dV_dsublattice_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                       std::vector<FcsArrayWithCell> &delta_fcs,
-                                                      const Eigen::VectorXd &S_field, const double emit_threshold)
+                                                      const Eigen::VectorXd &sublattice_displacement,
+                                                      const double emit_threshold)
 {
     delta_fcs.clear();
 
@@ -688,7 +689,9 @@ void DerivativeIFC::compute_dV_dsublattice_real_space(const std::vector<FcsArray
         fcs_aligned,
         nelems,
         [](const FcsArrayWithCell &) { return true; },
-        [&](const FcsArrayWithCell &it) { fcs_tmp += it.fcs_val * S_field(it.pairs[norder - 1].index); },
+        [&](const FcsArrayWithCell &it) {
+            fcs_tmp += it.fcs_val * sublattice_displacement(it.pairs[norder - 1].index);
+        },
         [&](const std::vector<int> &index_with_cell,
             const std::vector<unsigned int> &atoms_s,
             const std::vector<Eigen::Vector3d> &relvecs,
@@ -699,6 +702,110 @@ void DerivativeIFC::compute_dV_dsublattice_real_space(const std::vector<FcsArray
             }
             fcs_tmp = 0.0;
         });
+}
+
+void DerivativeIFC::compute_dV_ddeform_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
+                                                  std::vector<FcsArrayWithCell> &delta_fcs,
+                                                  const std::vector<DeformationField> &fields,
+                                                  const Eigen::Matrix3d &convmat, const double emit_threshold)
+{
+    // Contraction of the last m legs with the displacement fields
+    // d_lambda(l kappa) = sum_nu u(lambda, nu) R_nu + S(3*kappa + lambda),
+    // one field per contracted leg. The relative-vector form of the affine
+    // part is exact under the acoustic sum rule at every order m.
+    delta_fcs.clear();
+
+    if (fcs_aligned.empty()) return;
+
+    const auto m = fields.size();
+
+    if (m == 0) {
+        exit("compute_dV_ddeform_real_space", "Inconsistent contraction-order input.");
+    }
+
+    const auto norder = fcs_aligned[0].pairs.size();
+
+    if (m >= norder) {
+        exit("compute_dV_ddeform_real_space", "Contraction order m must be smaller than IFC order n.");
+    }
+
+    const auto nelems = norder - m;
+
+    auto compute_term = [&](const FcsArrayWithCell &it) {
+        double term = it.fcs_val;
+        for (std::size_t j = 0; j < m; ++j) {
+            const auto index_tail = it.pairs[nelems + j].index;
+            const auto mu = index_tail % 3;
+            const Eigen::Vector3d vec = convmat * it.relvecs_velocity[(nelems - 1) + j];
+            double disp = 0.0;
+            for (auto nu = 0; nu < 3; ++nu) {
+                disp += fields[j].displacement_gradient(mu, nu) * vec[nu];
+            }
+            if (fields[j].sublattice_displacement.size() != 0) {
+                disp += fields[j].sublattice_displacement(index_tail);
+            }
+            term *= disp;
+        }
+        return term;
+    };
+
+    double fcs_tmp = 0.0;
+    std::vector<AtomCellSuper> pairs_vec;
+
+    scan_fcs_groups(
+        fcs_aligned,
+        nelems,
+        [](const FcsArrayWithCell &) { return true; },
+        [&](const FcsArrayWithCell &it) { fcs_tmp += compute_term(it); },
+        [&](const std::vector<int> &index_with_cell,
+            const std::vector<unsigned int> &atoms_s,
+            const std::vector<Eigen::Vector3d> &relvecs,
+            const std::vector<Eigen::Vector3d> &relvecs_vel) {
+            if (!(emit_threshold >= 0.0 && std::abs(fcs_tmp) <= emit_threshold)) {
+                build_pairs_vec(index_with_cell, nelems, pairs_vec);
+                delta_fcs.emplace_back(fcs_tmp, pairs_vec, atoms_s, relvecs, relvecs_vel);
+            }
+            fcs_tmp = 0.0;
+        });
+}
+
+void DerivativeIFC::compute_deformed_ifcs(const std::vector<const std::vector<FcsArrayWithCell> *> &fcs_by_order,
+                                          const std::size_t target_order_index,
+                                          const Eigen::Matrix3d &displacement_gradient,
+                                          const Eigen::VectorXd &sublattice_displacement,
+                                          const Eigen::Matrix3d &convmat, std::vector<FcsArrayWithCell> &fcs_deformed)
+{
+    if (target_order_index >= fcs_by_order.size()) {
+        exit("compute_deformed_ifcs", "The requested IFC order is not available.");
+    }
+
+    fcs_deformed = *fcs_by_order[target_order_index];
+
+    DeformationField field;
+    field.displacement_gradient = displacement_gradient;
+    field.sublattice_displacement = sublattice_displacement;
+
+    auto inv_factorial = 1.0;
+    for (std::size_t mth = 1; target_order_index + mth < fcs_by_order.size(); ++mth) {
+
+        inv_factorial /= static_cast<double>(mth);
+
+        const auto &fcs_higher = *fcs_by_order[target_order_index + mth];
+        if (fcs_higher.empty()) continue;
+
+        auto fcs_aligned = fcs_higher;
+        sort_by_heading_indices const sorter(static_cast<unsigned int>(mth));
+        boost::sort::block_indirect_sort(fcs_aligned.begin(), fcs_aligned.end(), sorter);
+
+        std::vector<FcsArrayWithCell> delta;
+        const std::vector<DeformationField> fields(mth, field);
+        compute_dV_ddeform_real_space(fcs_aligned, delta, fields, convmat, eps15);
+
+        for (auto &it: delta) {
+            it.fcs_val *= inv_factorial;
+        }
+        fcs_deformed.insert(fcs_deformed.end(), delta.begin(), delta.end());
+    }
 }
 
 void DerivativeIFC::compute_dV_dstrain_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,

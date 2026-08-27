@@ -151,8 +151,8 @@ void ElasticTensor::calc_longwave_brackets(const std::vector<FcsArrayWithCell> &
     }
 }
 
-void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic,
-                                        NDArray<double, 4> &C_gpa, const bool symmetrize) const
+void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic, NDArray<double, 4> &C_gpa,
+                                        const bool symmetrize) const
 {
     NDArray<double, 4> A;
     calc_longwave_brackets(fcs_harmonic, A);
@@ -341,8 +341,7 @@ void ElasticTensor::calc_longwave_brackets3(const std::vector<FcsArrayWithCell> 
                         // K^[3]: three X legs
                         for (auto mu3 = 0; mu3 < 3; ++mu3) {
                             for (auto nu3 = 0; nu3 < 3; ++nu3) {
-                                K_sum(mu, nu, mu2, nu2, mu3, nu3) +=
-                                    phi * X1(a) * X2(b) * X3(mu3 * 3 + nu3);
+                                K_sum(mu, nu, mu2, nu2, mu3, nu3) += phi * X1(a) * X2(b) * X3(mu3 * 3 + nu3);
                             }
                         }
                     }
@@ -360,8 +359,7 @@ void ElasticTensor::calc_longwave_brackets3(const std::vector<FcsArrayWithCell> 
                         for (auto mu3 = 0; mu3 < 3; ++mu3)
                             for (auto nu3 = 0; nu3 < 3; ++nu3) {
                                 A_hat(mu1, mu2, nu1, nu2, mu3, nu3) +=
-                                    0.5 * (K_sum(mu1, nu1, mu2, nu2, mu3, nu3) +
-                                           K_sum(mu1, nu2, mu2, nu1, mu3, nu3));
+                                    0.5 * (K_sum(mu1, nu1, mu2, nu2, mu3, nu3) + K_sum(mu1, nu2, mu2, nu1, mu3, nu3));
                             }
     }
 }
@@ -382,9 +380,12 @@ double ElasticTensor::symmetrize_elastic_tensor3(Tensor6 &C3)
                 for (auto l = 0; l < 3; ++l) {
                     for (auto m = 0; m < 3; ++m) {
                         for (auto n = 0; n < 3; ++n) {
-                            idx[0][0] = i; idx[0][1] = j;
-                            idx[1][0] = k; idx[1][1] = l;
-                            idx[2][0] = m; idx[2][1] = n;
+                            idx[0][0] = i;
+                            idx[0][1] = j;
+                            idx[1][0] = k;
+                            idx[1][1] = l;
+                            idx[2][0] = m;
+                            idx[2][1] = n;
                             auto avg = 0.0;
                             for (const auto &perm: pair_perms) {
                                 for (auto flip = 0; flip < 8; ++flip) {
@@ -481,8 +482,7 @@ double ElasticTensor::elastic_tensor3_asymmetry(const double *const *const *C3_a
             for (auto k = 0; k < 3; ++k)
                 for (auto l = 0; l < 3; ++l)
                     for (auto m = 0; m < 3; ++m)
-                        for (auto n = 0; n < 3; ++n)
-                            tmp(i, j, k, l, m, n) = C3_array[i * 3 + j][k * 3 + l][m * 3 + n];
+                        for (auto n = 0; n < 3; ++n) tmp(i, j, k, l, m, n) = C3_array[i * 3 + j][k * 3 + l][m * 3 + n];
     return symmetrize_elastic_tensor3(tmp);
 }
 
@@ -519,8 +519,7 @@ void ElasticTensor::calc_elastic_tensor3(const std::vector<FcsArrayWithCell> &fc
                     for (auto m = 0; m < 3; ++m) {
                         for (auto n = 0; n < 3; ++n) {
                             C3_gpa(i, j, k, l, m, n) =
-                                factor * (A_hat(i, k, j, l, m, n) + A_hat(j, k, i, l, m, n) -
-                                          A_hat(i, j, k, l, m, n)) +
+                                factor * (A_hat(i, k, j, l, m, n) + A_hat(j, k, i, l, m, n) - A_hat(i, j, k, l, m, n)) +
                                 C2[k][l][m][n] * d(i, j) - C2[j][l][m][n] * d(i, k) - C2[i][l][m][n] * d(j, k) -
                                 0.5 * (2.0 * C2[i][j][l][n] + C2[i][l][j][n] + C2[j][l][i][n]) * d(k, m) +
                                 0.5 * (C2[j][l][k][n] - C2[k][l][j][n]) * d(i, m) +
