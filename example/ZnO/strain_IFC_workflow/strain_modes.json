@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "mode": "xx",
+    "weight": 1.0,
+    "strain_mag": 0.005
+  },
+  {
+    "id": 2,
+    "mode": "yy",
+    "weight": 1.0,
+    "strain_mag": 0.005
+  },
+  {
+    "id": 3,
+    "mode": "zz",
+    "weight": 1.0,
+    "strain_mag": 0.005
+  },
+  {
+    "id": 4,
+    "mode": "yz",
+    "weight": 1.0,
+    "strain_mag": 0.005
+  },
+  {
+    "id": 5,
+    "mode": "zx",
+    "weight": 1.0,
+    "strain_mag": 0.005
+  },
+  {
+    "id": 6,
+    "mode": "xy",
+    "weight": 1.0,
+    "strain_mag": 0.005
+  }
+]

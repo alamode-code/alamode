@@ -1087,6 +1087,8 @@ Description of input variables
   recommended for polar materials. The third-order elastic constants remain short-range because
   the strain derivatives of the Born charges are not contained in the force constants.
   This option is used only when ``RELAX_STR = 2, 3``.
+  With ``ELASTIC_CONST = 2``, ``elastic_constants.in`` (and ``C1_array.in``) can be generated from DFT
+  calculations of strained cells with the ``tools/elastic.py`` script, see :ref:`this page <label_strain_tools>`.
 
 ````
 
@@ -1097,8 +1099,12 @@ Description of input variables
  :Default: None
  :Type: String
 
- :Description: When ``RENORM_2TO1ST = 2`` or ``RENORM_3TO2ND = 3``,
-   the input files of the strain-IFC couplings must be given properly in this directory.
+ :Description: When ``RENORM_2TO1ST = 2`` or ``RENORM_3TO2ND = 2, 3``,
+   the input files of the strain-IFC couplings (``strain_force.in``, ``strain_harmonic.in`` and the
+   force-constant files it lists) must be given in this directory, as well as ``elastic_constants.in``
+   when ``ELASTIC_CONST = 2``. Note that ``C1_array.in`` is read from the working directory of anphon,
+   not from this directory. See :ref:`this page <label_strain_tools>` for the file formats and the
+   tools that generate them.
 
 
 ````

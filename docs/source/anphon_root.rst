@@ -5,5 +5,6 @@ ANPHON: Anharmonic phonon calculator
    :maxdepth: 2
 
    anphondir/inputanphon
+   anphondir/strain_tools
    anphondir/outputanphon
    anphondir/formalism_anphon

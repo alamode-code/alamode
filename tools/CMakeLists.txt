@@ -203,11 +203,13 @@ install(PROGRAMS
         ${PROJECT_SOURCE_DIR}/convert_fc2.py
         ${PROJECT_SOURCE_DIR}/dfc2.py
         ${PROJECT_SOURCE_DIR}/displace.py
+        ${PROJECT_SOURCE_DIR}/elastic.py
         ${PROJECT_SOURCE_DIR}/extract.py
         ${PROJECT_SOURCE_DIR}/interpolate_alamode.py
         ${PROJECT_SOURCE_DIR}/plotband.py
         ${PROJECT_SOURCE_DIR}/plotdos.py
         ${PROJECT_SOURCE_DIR}/scph_to_qefc.py
+        ${PROJECT_SOURCE_DIR}/strainifc.py
         ${PROJECT_SOURCE_DIR}/taylor.py
         DESTINATION ${pytools_destination})
 
@@ -219,6 +221,7 @@ install(DIRECTORY
         ${PROJECT_SOURCE_DIR}/analyzer
         ${PROJECT_SOURCE_DIR}/fcsio
         ${PROJECT_SOURCE_DIR}/interface
+        ${PROJECT_SOURCE_DIR}/strainkit
         DESTINATION ${pytools_destination}
         FILES_MATCHING PATTERN "*.py"
         PATTERN "__pycache__" EXCLUDE
@@ -230,10 +233,12 @@ set(pytool_links
     analyzer.py
     dfc2.py
     displace.py
+    elastic.py
     extract.py
     plotband.py
     plotdos.py
-    scph_to_qefc.py)
+    scph_to_qefc.py
+    strainifc.py)
 
 file(RELATIVE_PATH pytools_from_bindir
      "${CMAKE_INSTALL_FULL_BINDIR}"

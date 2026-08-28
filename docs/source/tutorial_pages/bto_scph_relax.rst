@@ -192,4 +192,5 @@ of the crystal structure.
   We will need to prepare additional inputs, the elastic constants, and the strain-harmonic-IFC coupling if we relax the unit cell as well.
   The strain-force coupling is not necessary for BaTiO\ :sub:`3` because they are zero from symmetry.
 
-  Please see the :ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` for the details of the preparation of these inputs.
+  Please see the :ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` for the details of the preparation of these inputs;
+  the ``tools/elastic.py`` and ``tools/strainifc.py`` scripts generate them from DFT calculations of strained cells.

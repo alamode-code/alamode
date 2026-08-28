@@ -1,0 +1,46 @@
+name: Python tools (strainkit)
+
+on:
+  push:
+    branches:
+      - develop
+      - 2.0dev
+  pull_request:
+    branches:
+      - develop
+      - 2.0dev
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    name: strainkit tests (Python ${{ matrix.python-version }})
+    strategy:
+      matrix:
+        python-version: ['3.11']
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: alamode
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          conda env update -n alamode -f etc/alamode-environment.yml
+          conda install -y -c conda-forge ase pytest nanobind scikit-build-core lxml
+      - name: Build and install the alm Python package
+        run: |
+          pip install ./python --no-build-isolation -v
+          python -c "import alm; print(alm.__version__)"
+      - name: Run the strainkit tests
+        working-directory: ./tools
+        run: |
+          python -m pytest tests -v -rs
+          # the suite must actually run: fail if the ALM/ase dependent tests were skipped
+          python -m pytest tests -q -rs 2>&1 | tee pytest.log
+          if grep -q "SKIPPED" pytest.log; then echo "some tests were skipped"; exit 1; fi

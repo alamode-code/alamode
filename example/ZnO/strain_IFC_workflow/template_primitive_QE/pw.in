@@ -1,0 +1,44 @@
+&control
+ calculation = 'scf'
+ prefix='wurtziteZnO',
+ tstress = .true.
+ tprnfor = .true.
+ pseudo_dir = '/path/to/pseudopotentials/',
+ outdir='./work/'
+ disk_io='low'
+/
+&system
+ ibrav = 0,
+ nat = 4,
+ ntyp = 2,
+ ecutwfc = 80.0,
+ ecutrho = 400.0,
+ occupations = 'smearing'
+ smearing = gaussian
+ degauss = 0.01
+/
+&electrons
+ mixing_beta = 0.7
+ conv_thr = 1.0d-8
+/
+&ions
+/
+&cell
+/
+ATOMIC_SPECIES
+Zn 65.38  Zn.pbe-dnl-kjpaw_psl.1.0.0.UPF  ! suggested min cutoff : 44.0, 276.0
+O  15.999 O.pbe-n-kjpaw_psl.1.0.0.UPF     ! suggested min cutoff : 47.0, 323.0 
+
+CELL_PARAMETERS angstrom
+      3.23585932647972     0.00000000000000     0.00000000000000
+     -1.61792966323986     2.80233637980425     0.00000000000000
+      0.00000000000000     0.00000000000000     5.22471202610520
+
+ATOMIC_POSITIONS crystal
+Zn         0.33333333333333     0.66666666666667     0.00073296000000
+Zn         0.66666666666667     0.33333333333333     0.50073296000000
+O          0.33333333333333     0.66666666666667     0.37957704000000
+O          0.66666666666667     0.33333333333333     0.87957704000000
+
+K_POINTS {automatic}
+8 8 8 0 0 0

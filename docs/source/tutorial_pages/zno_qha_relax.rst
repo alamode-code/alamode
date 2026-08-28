@@ -43,12 +43,16 @@ Here, please unzip all the XML files in **example/ZnO/qha_relax** and **example/
 
 We need to calculate the elastic constants, the strain-force coupling, and the strain-harmonic-IFC coupling
 to calculate the :math:`T`-dependence of the shape of the unit cell.
-These input files must be placed in the directory named as the value of ``STRAIN_IFC_DIR``-tag, 
-specified in ``&relax``-field in the input file of :red:`anphon`.
+These input files must be placed in the directory named as the value of ``STRAIN_IFC_DIR``-tag,
+specified in ``&relax``-field in the input file of :red:`anphon` (except :red:`C1_array.in`, which is read
+from the working directory of :red:`anphon`).
+The Python tools :red:`elastic.py` and :red:`strainifc.py` in the ``tools`` directory generate these files
+from DFT calculations of strained cells; see :ref:`this page <label_strain_tools>` for the full description
+and ``example/ZnO/strain_IFC_workflow`` for template inputs. All quantities are the clamped-ion ones
+(fixed fractional coordinates), because the internal coordinates are optimized explicitly by :red:`anphon`.
 
-* The second-order elastic constants (SOEC) and the third-order elastic constants (TOEC) need to be calculated by yourself.
-  The name of the input file must be :red:`elastic_constants.in`.
-  The format of :red:`elastic_constants.in` is as follows.
+* The second-order elastic constants (SOEC) and the third-order elastic constants (TOEC) are read from
+  :red:`elastic_constants.in`, whose format is as follows.
   ::
 
     SOEC
@@ -63,30 +67,39 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
     ...
     V_cell * C_zz,zz,zz
 
-  :math:`V_{cell}` is the volume of the unit cell and
-  :math:`C_{\mu_1 \nu_1, \mu_2 \nu_2} = \frac{1}{V}\frac{\partial U}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2}}`,
-  :math:`C_{\mu_1 \nu_1, \mu_2 \nu_2, \mu_3 \nu_3} = \frac{1}{V}\frac{\partial U}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2} \partial u_{\mu_3 \nu_3}}`
-  are the second-order and third-order elastic constants.
-  The values in :red:`elastic_constants.in` should be in Rydberg unit.
+  :math:`V_{cell}` is the volume of the unit cell given in the ``&cell`` field and
+  :math:`C_{\mu_1 \nu_1, \mu_2 \nu_2} = \frac{1}{V}\frac{\partial^2 U}{\partial \eta_{\mu_1 \nu_1} \partial \eta_{\mu_2 \nu_2}}`,
+  :math:`C_{\mu_1 \nu_1, \mu_2 \nu_2, \mu_3 \nu_3} = \frac{1}{V}\frac{\partial^3 U}{\partial \eta_{\mu_1 \nu_1} \partial \eta_{\mu_2 \nu_2} \partial \eta_{\mu_3 \nu_3}}`
+  are the second-order and third-order (Brugger) elastic constants, i.e., the derivatives with respect to the
+  Green-Lagrange strain :math:`\eta = \mathrm{sym}(u) + \frac{1}{2}u u^{T}` of the deformation gradient :math:`F = I + u`.
+  The values in :red:`elastic_constants.in` should be in Rydberg unit. The residual stress of the reference
+  structure, :math:`V_{cell}\sigma_{\mu\nu}` in Rydberg unit, can be given in :red:`C1_array.in` (a label followed by
+  nine values) placed in the working directory of :red:`anphon`.
+
+  These files can be generated with :red:`elastic.py`: ``elastic.py generate`` writes strained primitive cells,
+  and after the DFT calculations ``elastic.py fit --fcs ZnO442_harmonic.xml --anphon-cell ZnO_qha_thermo.in``
+  fits the constants to the DFT stresses and writes both files (``elastic.py show`` prints any
+  :red:`elastic_constants.in` in GPa).
 
   Alternatively, setting ``ELASTIC_CONST = 1`` in the ``&relax``-field computes the clamped-ion
   SOEC and TOEC directly from the harmonic and cubic force constants, in which case
   :red:`elastic_constants.in` is not needed. The accuracy is limited by the range and the
   rotational invariance of the fitted force constants, so comparing the values printed in the
-  log against DFT elastic constants is recommended.
+  log against DFT elastic constants (``elastic.py fit --compare anphon.log``) is recommended.
 
-* The strain-force coupling can be calculated using the `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code.
+* The strain-force coupling is obtained from the forces in strained primitive cells
+  (``strainifc.py generate --coupling force`` / ``strainifc.py collect``).
 
-  Suppose the strain-force coupling is zero, i.e., the atomic force is zero when we apply finite strain with fixed fractional atomic coordinates. 
+  Suppose the strain-force coupling is zero, i.e., the atomic force is zero when we apply finite strain with fixed fractional atomic coordinates.
   In that case you can set ``RENORM_2TO1ST=0`` and omit the corresponding input file.
-  To use ``RENORM_2TO1ST=1``, we need to impose rotational invariance on the IFCs 
+  To use ``RENORM_2TO1ST=1``, we need to impose rotational invariance on the IFCs
   (See Appendix C of the `original paper <https://arxiv.org/abs/2302.04537>`_ for the proof), which is not recommended because it usually worsens the fitting error.
 
   The name of the input file of the strain-force coupling must be :red:`strain_force.in`.
 
-  In this tutorial, the following block of the input file means that  
-  if we apply the strain :math:`u_{xx}= 0.005`, the atomic force that acts on the first atom is 
-  :math:`(f_x, f_y, f_z) = (0.000000,  -0.034812,  -0.022224)` [Ry/Bohr], e.t.c.
+  In this tutorial, the following block of the input file means that
+  if we apply the strain :math:`u_{xx}= 0.005`, the atomic force that acts on the first atom is
+  :math:`(f_x, f_y, f_z) = (0.000000,  -0.034812,  -0.022224)` [eV/Å], e.t.c.
   ::
 
     xx 0.005 1.0
@@ -95,24 +108,25 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
     0.000000  -0.039854  0.022224
     0.000000  0.039854  0.022224
 
-  The meaning of the weight ``1.0`` is similar to that in the next paragraph.
+  The rows follow the atom order of the primitive cell of :red:`anphon` (the ``&cell`` field); the meaning of
+  the weight ``1.0`` is similar to that in the next paragraph.
 
-  Note that if we use the `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code, we can obtain a set of input files that follows this format.
+* The strain-harmonic-IFC coupling is obtained from the harmonic IFCs of strained supercells
+  (``strainifc.py generate --coupling harmonic`` with the same supercell as :red:`ZnO442_harmonic.xml`,
+  then ``strainifc.py collect --fcs ZnO442_harmonic.xml``).
+  The input files are :red:`strain_harmonic.in` and the related XML (or HDF5) files.
 
-* The strain-harmonic-IFC coupling can be calculated using the `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code.
-  The input files are :red:`strain_harmonic.in` and the related XML files.
-  
   For example,
   ::
 
     xx 0.005 1.0 ZnO442_harmonic_xx_0005.xml
 
-  in :red:`strain_harmonic.in` means that :red:`ZnO442_harmonic_xx_0005.xml` is the XML file of the harmonic IFCs with the strain :math:`u_{xx} = 0.005`. 
-  The weight is ``1.0`` in this case because we use the one-sided difference to calculate 
+  in :red:`strain_harmonic.in` means that :red:`ZnO442_harmonic_xx_0005.xml` is the XML file of the harmonic IFCs with the strain :math:`u_{xx} = 0.005`.
+  The weight is ``1.0`` in this case because we use the one-sided difference to calculate
 
   :math:`\frac{\partial \widetilde{\Phi}_{\mu\mu'}(0\alpha,R'\alpha')}{\partial u_{xx}} \simeq \frac{\widetilde{\Phi}(u_{xx} = 0.005) - \widetilde{\Phi}(u_{\mu \nu} = 0.0)}{0.005}`.
-  
-  If you use the central difference method 
+
+  If you use the central difference method (``--central``)
 
   :math:`\frac{\partial \widetilde{\Phi}_{\mu\mu'}(0\alpha,R'\alpha')}{\partial u_{xx}} \simeq \frac{\widetilde{\Phi}(u_{xx} = 0.005) - \widetilde{\Phi}(u_{xx} = -0.005)}{0.005\times2}`
 
@@ -122,19 +136,21 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
   ::
 
     xx 0.005 0.5 ZnO442_harmonic_xx_0005.xml
-    xx 0.005 0.5 ZnO442_harmonic_xx_minus_0005.xml
+    xx -0.005 0.5 ZnO442_harmonic_xx_minus_0005.xml
 
-  with respective weights of ``0.5`` (:red:`ZnO442_harmonic_xx_minus_0005.xml` is not provided in this tutorial).
+  with respective weights of ``0.5`` and the signed strain magnitudes (:red:`ZnO442_harmonic_xx_minus_0005.xml` is not provided in this tutorial).
 
   For the off-diagonal strain,
   ::
 
     yz 0.005 1.0 ZnO442_harmonic_yz_00025.xml
-  
+
   means that :red:`ZnO442_harmonic_yz_00025.xml` is the set of harmonic IFCs with :math:`u_{yz} = u_{zy} = 0.005/2 = 0.0025`.
 
-  Note that if you use the `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code, 
-  you can obtain a set of input files that follows this format.
+  The supercell of these IFC files must be identical (including the atom order) to that of the harmonic IFC file
+  given to :red:`anphon` (``FC2FILE``), which :red:`strainifc.py collect` verifies. The original
+  `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code by R. Masuki, on which
+  :red:`strainifc.py` is based, produces the same file format.
 
 .. _tutorial_ZnO_QHA_step3:
 
