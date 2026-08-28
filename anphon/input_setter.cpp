@@ -267,6 +267,7 @@ void InputSetter::set_relax_vars(PHON *phon, const RelaxInputVars &vars) const
     phon->relaxation->renorm_3to2nd = vars.renorm_3to2nd;
     phon->relaxation->renorm_2to1st = vars.renorm_2to1st;
     phon->relaxation->renorm_34to1st = vars.renorm_34to1st;
+    phon->relaxation->elastic_const = vars.elastic_const;
 
     phon->relaxation->strain_IFC_dir = vars.strain_IFC_dir;
 }

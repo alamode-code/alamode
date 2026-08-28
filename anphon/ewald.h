@@ -80,6 +80,17 @@ public:
 
     void add_longrange_matrix(const double *, const double *, std::complex<double> **);
 
+    // Mass-free Fourier map of the dipole-dipole force constants at the
+    // Cartesian wavevector xk_cart (1/bohr), with the macroscopic (G = 0)
+    // term EXCLUDED:
+    //   phi_out(3*kappa+a, 3*kappa'+b)
+    //     = sum_R Phi^DD_ab(0 kappa; R kappa') e^{i q.(r(R kappa') - r(0 kappa))} - (G=0 term).
+    // Dropping G = 0 separates the macroscopic electric field, so the q^2
+    // coefficient of this object yields the fixed-E (clamped-ion) elastic
+    // response of the dipole lattice (Born & Huang, Sec. 26-27). Used by
+    // ElasticTensor for the long-range-corrected elastic constants.
+    void calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &phi_out);
+
 private:
     std::vector<Gvecs> G_vectors_fcs;
     double lambda_fcs;

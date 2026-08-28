@@ -171,14 +171,25 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
         }
     }
 
-    // Without the rotational sum rules linking successive IFC orders, the
-    // strain-modulated first-order IFCs violate the total-force acoustic sum
-    // rule (the reference-IFC ASR is not sufficient; see the derivation of
-    // the strain-modulated force ASR). Project out the component conjugate to
-    // rigid translations: in the mode basis with the mass-weighted metric
-    // this is the removal of the Gamma-point acoustic components
-    // (c_kappa = M_kappa / sum M), which leaves every optical generalized
-    // force unchanged.
+    // Ad hoc remedy for IFCs that do not satisfy the rotational sum rules
+    // linking successive orders (symmetrization + offset removal):
+    // (1) retain only the response to symmetric strains by symmetrizing each
+    //     strain index pair, removing the spurious rigid-rotation response;
+    // (2) the strain-modulated first-order IFCs still violate the total-force
+    //     acoustic sum rule (the reference-IFC ASR is not sufficient), so
+    //     project out the component conjugate to rigid translations: in the
+    //     mode basis with the mass-weighted metric this is the removal of the
+    //     Gamma-point acoustic components (c_kappa = M_kappa / sum M), which
+    //     leaves every optical generalized force unchanged.
+    for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
+        for (auto mu = 0; mu < 3; ++mu) {
+            for (auto nu = mu + 1; nu < 3; ++nu) {
+                const auto avg = 0.5 * (del_v1_del_umn(mu * 3 + nu, is) + del_v1_del_umn(nu * 3 + mu, is));
+                del_v1_del_umn(mu * 3 + nu, is) = avg;
+                del_v1_del_umn(nu * 3 + mu, is) = avg;
+            }
+        }
+    }
     const auto is_acoustic_proj = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
     for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
         if (!is_acoustic_proj[is]) continue;
@@ -240,14 +251,29 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
         }
     }
 
-    // Without the rotational sum rules linking successive IFC orders, the
-    // strain-modulated first-order IFCs violate the total-force acoustic sum
-    // rule (the reference-IFC ASR is not sufficient; see the derivation of
-    // the strain-modulated force ASR). Project out the component conjugate to
-    // rigid translations: in the mode basis with the mass-weighted metric
-    // this is the removal of the Gamma-point acoustic components
-    // (c_kappa = M_kappa / sum M), which leaves every optical generalized
-    // force unchanged.
+    // Ad hoc remedy for IFCs that do not satisfy the rotational sum rules
+    // linking successive orders (symmetrization + offset removal):
+    // (1) retain only the response to symmetric strains by symmetrizing each
+    //     strain index pair, removing the spurious rigid-rotation response;
+    // (2) the strain-modulated first-order IFCs still violate the total-force
+    //     acoustic sum rule (the reference-IFC ASR is not sufficient), so
+    //     project out the component conjugate to rigid translations: in the
+    //     mode basis with the mass-weighted metric this is the removal of the
+    //     Gamma-point acoustic components (c_kappa = M_kappa / sum M), which
+    //     leaves every optical generalized force unchanged.
+    for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
+        std::array<std::complex<double>, 81> sym_tmp{};
+        for (auto a1 = 0; a1 < 3; ++a1)
+            for (auto b1 = 0; b1 < 3; ++b1)
+                for (auto a2 = 0; a2 < 3; ++a2)
+                    for (auto b2 = 0; b2 < 3; ++b2)
+                        sym_tmp[a1 * 27 + b1 * 9 + a2 * 3 + b2] =
+                            0.25 * (del2_v1_del_umn2(a1 * 27 + b1 * 9 + a2 * 3 + b2, is) +
+                                    del2_v1_del_umn2(b1 * 27 + a1 * 9 + a2 * 3 + b2, is) +
+                                    del2_v1_del_umn2(a1 * 27 + b1 * 9 + b2 * 3 + a2, is) +
+                                    del2_v1_del_umn2(b1 * 27 + a1 * 9 + b2 * 3 + a2, is));
+        for (auto ixyz = 0; ixyz < 81; ++ixyz) del2_v1_del_umn2(ixyz, is) = sym_tmp[ixyz];
+    }
     const auto is_acoustic_proj = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
     for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
         if (!is_acoustic_proj[is]) continue;
@@ -309,14 +335,35 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
         }
     }
 
-    // Without the rotational sum rules linking successive IFC orders, the
-    // strain-modulated first-order IFCs violate the total-force acoustic sum
-    // rule (the reference-IFC ASR is not sufficient; see the derivation of
-    // the strain-modulated force ASR). Project out the component conjugate to
-    // rigid translations: in the mode basis with the mass-weighted metric
-    // this is the removal of the Gamma-point acoustic components
-    // (c_kappa = M_kappa / sum M), which leaves every optical generalized
-    // force unchanged.
+    // Ad hoc remedy for IFCs that do not satisfy the rotational sum rules
+    // linking successive orders (symmetrization + offset removal):
+    // (1) retain only the response to symmetric strains by symmetrizing each
+    //     strain index pair, removing the spurious rigid-rotation response;
+    // (2) the strain-modulated first-order IFCs still violate the total-force
+    //     acoustic sum rule (the reference-IFC ASR is not sufficient), so
+    //     project out the component conjugate to rigid translations: in the
+    //     mode basis with the mass-weighted metric this is the removal of the
+    //     Gamma-point acoustic components (c_kappa = M_kappa / sum M), which
+    //     leaves every optical generalized force unchanged.
+    for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
+        std::array<std::complex<double>, 729> sym_tmp{};
+        for (auto a1 = 0; a1 < 3; ++a1)
+            for (auto b1 = 0; b1 < 3; ++b1)
+                for (auto a2 = 0; a2 < 3; ++a2)
+                    for (auto b2 = 0; b2 < 3; ++b2)
+                        for (auto a3 = 0; a3 < 3; ++a3)
+                            for (auto b3 = 0; b3 < 3; ++b3) {
+                                auto acc = std::complex<double>(0.0, 0.0);
+                                for (auto f = 0; f < 8; ++f) {
+                                    const auto p1 = (f & 1) ? b1 * 243 + a1 * 81 : a1 * 243 + b1 * 81;
+                                    const auto p2 = (f & 2) ? b2 * 27 + a2 * 9 : a2 * 27 + b2 * 9;
+                                    const auto p3 = (f & 4) ? b3 * 3 + a3 : a3 * 3 + b3;
+                                    acc += del3_v1_del_umn3(p1 + p2 + p3, is);
+                                }
+                                sym_tmp[a1 * 243 + b1 * 81 + a2 * 27 + b2 * 9 + a3 * 3 + b3] = 0.125 * acc;
+                            }
+        for (auto ixyz = 0; ixyz < 729; ++ixyz) del3_v1_del_umn3(ixyz, is) = sym_tmp[ixyz];
+    }
     const auto is_acoustic_proj = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
     for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
         if (!is_acoustic_proj[is]) continue;

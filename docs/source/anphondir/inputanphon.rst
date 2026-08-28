@@ -42,7 +42,8 @@ List of supported input variables
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
-   :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_CONTROL <anphon_gdiis_control>`
+   :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`ELASTIC_CONST <anphon_elastic_const>`
+   :ref:`GDIIS_CONTROL <anphon_gdiis_control>`
    :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
    :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`RENORM_2TO1ST <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST <anphon_renorm_34to1st>`
    :ref:`RENORM_3TO2ND <anphon_renorm_3to2nd>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
@@ -1048,6 +1049,44 @@ Description of input variables
 
   This option is used only when ``RELAX_STR = 2, 3``.
   To use ``RENORM_3TO2ND = 3``, the entries of the rotation matrices of ALL the space-group operations must be either 0 or :math:`\pm` 1 in Cartesian representation.
+
+````
+
+.. _anphon_elastic_const:
+
+* ELASTIC_CONST-tag = 1 | 2
+
+ === ==============================================================
+  1   Computed from the force constants.
+  2   Read from the file ``elastic_constants.in``.
+ === ==============================================================
+
+ :Default: 2
+ :Type: Integer
+
+ :Description: This option specifies how to obtain the elastic constants
+  :math:`C^{(2)}_{\mu_1 \nu_1, \mu_2 \nu_2}` and :math:`C^{(3)}_{\mu_1 \nu_1, \mu_2 \nu_2, \mu_3 \nu_3}`
+  entering the strain dependence of the static potential energy :math:`V_0(u)`.
+
+  With ``ELASTIC_CONST = 1``, the clamped-ion second-order elastic constants are computed from the
+  harmonic force constants via the Born long-wave method, and the third-order ones from the cubic
+  force constants following Wallace's formulation; the file ``elastic_constants.in`` is not needed.
+  The clamped-ion (not relaxed-ion) constants are used because the internal coordinates are
+  optimized explicitly. The first-order coefficients (the residual stress of the reference
+  structure) are not contained in the force constants and are still read from ``C1_array.in``
+  when the file exists (set to zero otherwise).
+
+  Note that the accuracy of ``ELASTIC_CONST = 1`` is limited by the range and the rotational
+  invariance of the fitted force constants; comparing the values printed in the log against
+  DFT elastic constants is recommended. In polar crystals, the real-space sums entering the
+  second-order elastic constants converge slowly with the supercell size because of the
+  long-range dipole-dipole interaction. When ``NONANALYTIC = 3`` is set (with ``BORNINFO``),
+  the dipole-dipole contribution is separated and resummed analytically (with the macroscopic
+  term excluded, giving the fixed-field response), which largely removes this supercell-size
+  error; using ``NONANALYTIC = 3`` together with ``ELASTIC_CONST = 1`` is therefore strongly
+  recommended for polar materials. The third-order elastic constants remain short-range because
+  the strain derivatives of the Born charges are not contained in the force constants.
+  This option is used only when ``RELAX_STR = 2, 3``.
 
 ````
 

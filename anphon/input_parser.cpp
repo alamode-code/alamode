@@ -945,7 +945,8 @@ void InputParser::parse_relax_vars(PHON *phon)
         "RELAX_ALGO",    "MAX_STR_ITER",  "COORD_CONV_TOL",   "GRADIENT_CONV_TOL", "CELL_GRADIENT_CONV_TOL",
         "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",    "ALPHA_STDECENT",    "CELL_CONV_TOL",
         "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX", "COOLING_U0_THR",    "ADD_HESS_DIAG",
-        "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR"};
+        "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR",
+        "ELASTIC_CONST"};
 
     std::map<std::string, std::string> stropt_var_dict;
 
@@ -1004,6 +1005,13 @@ void InputParser::parse_relax_vars(PHON *phon)
     assign_val(relax_vars.renorm_3to2nd, "RENORM_3TO2ND", stropt_var_dict);
     assign_val(relax_vars.renorm_2to1st, "RENORM_2TO1ST", stropt_var_dict);
     assign_val(relax_vars.renorm_34to1st, "RENORM_34TO1ST", stropt_var_dict);
+
+    assign_val(relax_vars.elastic_const, "ELASTIC_CONST", stropt_var_dict);
+    if (relax_vars.elastic_const < 1 || relax_vars.elastic_const > 2) {
+        exit("parse_relax_vars",
+             "ELASTIC_CONST must be 1 (analytic, computed from the force constants)\n"
+             " or 2 (read from elastic_constants.in).");
+    }
 
     assign_val(relax_vars.strain_IFC_dir, "STRAIN_IFC_DIR", stropt_var_dict);
     if (!relax_vars.strain_IFC_dir.empty() &&

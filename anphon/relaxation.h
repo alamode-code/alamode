@@ -251,6 +251,10 @@ public:
     int renorm_3to2nd;
     int renorm_2to1st;
     int renorm_34to1st;
+    // Source of the elastic constants entering V0(u): 1 computes the
+    // clamped-ion C2 (and C3) analytically from the loaded IFCs, 2 reads
+    // them from elastic_constants.in (default).
+    int elastic_const;
     std::string strain_IFC_dir;
 
     std::unique_ptr<Optimizer> optimizer;
@@ -273,6 +277,12 @@ public:
 
 
     void set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const;
+
+    // ELASTIC_CONST = 1: clamped-ion C2 and C3 computed from the loaded
+    // harmonic and cubic IFCs (ElasticTensor), converted to Ry per primitive
+    // cell. C1 (reference stress) is not contained in the IFC model and is
+    // still taken from C1_array.in when present (zero otherwise).
+    void set_elastic_constants_from_ifcs(double *C1_array, double **C2_array, double ***C3_array) const;
 
     static void renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
                                         std::array<std::array<double, 3>, 3> &eta_tensor, double *C1_array,

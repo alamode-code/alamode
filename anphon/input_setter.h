@@ -222,6 +222,7 @@ struct RelaxInputVars
     int renorm_3to2nd = 2;
     int renorm_2to1st = 2;
     int renorm_34to1st = 0;
+    int elastic_const = 2;
 
     std::string strain_IFC_dir;
 };

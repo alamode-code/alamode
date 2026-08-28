@@ -16,6 +16,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "dynamical.h"
 #include "elastic_tensor.h"
 #include "error.h"
+#include "ewald.h"
 #include "ifc_derivative.h"
 #include "interpolation.h"
 #include "memory.h"
@@ -107,8 +108,12 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
     const auto relax_mode = to_relaxation_str_mode(relax_str);
 
     // if the shape of the unit cell is relaxed,
-    // read elastic constants from file
+    // compute the elastic constants from the IFCs or read them from file
     if (relax_mode == RelaxationStrMode::CoordinatesAndCell || relax_mode == RelaxationStrMode::PerturbativeQha) {
+        if (elastic_const == 1) {
+            set_elastic_constants_from_ifcs(C1_array, C2_array, C3_array);
+            return;
+        }
         ElasticTensor::read_C1_array(C1_array);
         ElasticTensor::read_elastic_constants(C2_array, C3_array, strain_IFC_dir);
 
@@ -147,6 +152,78 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
     if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
         ElasticTensor::set_dummy_elastic_constants(C1_array, C2_array, C3_array);
     }
+}
+
+void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_array, double ***C3_array) const
+{
+    if (fcs_phonon->force_constant_with_cell.size() < 2) {
+        exit("set_elastic_constants_from_ifcs",
+             "ELASTIC_CONST = 1 requires the harmonic and cubic force constants in FCSXML.");
+    }
+    const auto &fc2 = fcs_phonon->force_constant_with_cell[0];
+    const auto &fc3 = fcs_phonon->force_constant_with_cell[1];
+
+    // The reference stress is not contained in the IFC model; it is still
+    // taken from C1_array.in when the file exists (zero otherwise).
+    ElasticTensor::read_C1_array(C1_array);
+
+    const ElasticTensor elastic(*system);
+
+    // Clamped-ion tensors: the sublattice relaxation is treated explicitly by
+    // the internal coordinates (q0) of the structural optimization, so the
+    // internal-strain correction must NOT be folded into C2/C3 here.
+    // With NONANALYTIC = 3 the dipole-dipole long-range correction is applied
+    // to C2 (short-range brackets from fc2_without_dipole plus the analytic
+    // dipole brackets at fixed E field); C3 remains short-range because the
+    // strain derivatives of Z* and epsilon are not contained in the IFCs.
+    NDArray<double, 4> C2_gpa;
+    const bool longrange = ewald->is_longrange;
+    if (longrange) {
+        elastic.calc_elastic_tensor_longrange(ewald->fc2_without_dipole, *ewald, C2_gpa, true);
+    } else {
+        elastic.calc_elastic_tensor(fc2, C2_gpa, true);
+    }
+
+    Tensor6 C3_gpa;
+    elastic.calc_elastic_tensor3(fc2, fc3, false, C3_gpa, true);
+
+    // V0(u) stores V0 * C in Ry per primitive cell.
+    const auto volume = system->get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
+    const auto gpa2ry = 1.0e9 * volume / Ryd;
+
+    for (auto i = 0; i < 9; ++i) {
+        for (auto j = 0; j < 9; ++j) {
+            C2_array[i][j] = C2_gpa[i / 3][i % 3][j / 3][j % 3] * gpa2ry;
+            for (auto k = 0; k < 9; ++k) {
+                C3_array[i][j][k] = C3_gpa(i / 3, i % 3, j / 3, j % 3, k / 3, k % 3) * gpa2ry;
+            }
+        }
+    }
+
+    const auto flags = std::cout.flags();
+    const auto prec = std::cout.precision();
+    std::cout << "  ELASTIC_CONST = 1: elastic constants are computed from the force constants.\n";
+    std::cout << "  Harmonic force constants from  : "
+              << (fcs_phonon->file_fc2.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc2) << '\n';
+    std::cout << "  Cubic force constants from     : "
+              << (fcs_phonon->file_fc3.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc3) << '\n';
+    if (longrange) {
+        std::cout << "  NONANALYTIC = 3: the dipole-dipole long-range correction is applied\n";
+        std::cout << "  to the second-order elastic constants (fixed-E, macroscopic term excluded).\n";
+    }
+    std::cout << "  Clamped-ion second-order elastic constants (GPa, Voigt notation):\n";
+    constexpr int voigt[6][2] = {{0, 0}, {1, 1}, {2, 2}, {1, 2}, {2, 0}, {0, 1}};
+    std::cout << std::fixed << std::setprecision(3);
+    for (const auto &vi: voigt) {
+        std::cout << "   ";
+        for (const auto &vj: voigt) {
+            std::cout << std::setw(11) << C2_gpa[vi[0]][vi[1]][vj[0]][vj[1]];
+        }
+        std::cout << '\n';
+    }
+    std::cout << "  The third-order elastic constants are computed from the cubic force constants.\n\n";
+    std::cout.flags(flags);
+    std::cout.precision(prec);
 }
 
 

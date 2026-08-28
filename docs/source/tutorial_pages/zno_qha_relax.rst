@@ -69,6 +69,12 @@ specified in ``&relax``-field in the input file of :red:`anphon`.
   are the second-order and third-order elastic constants.
   The values in :red:`elastic_constants.in` should be in Rydberg unit.
 
+  Alternatively, setting ``ELASTIC_CONST = 1`` in the ``&relax``-field computes the clamped-ion
+  SOEC and TOEC directly from the harmonic and cubic force constants, in which case
+  :red:`elastic_constants.in` is not needed. The accuracy is limited by the range and the
+  rotational invariance of the fitted force constants, so comparing the values printed in the
+  log against DFT elastic constants is recommended.
+
 * The strain-force coupling can be calculated using the `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code.
 
   Suppose the strain-force coupling is zero, i.e., the atomic force is zero when we apply finite strain with fixed fractional atomic coordinates. 

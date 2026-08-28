@@ -17,6 +17,7 @@
 #include <iostream>
 #include "constants.h"
 #include "error.h"
+#include "ewald.h"
 #include "ifc_derivative.h"
 #include "system.h"
 
@@ -151,12 +152,9 @@ void ElasticTensor::calc_longwave_brackets(const std::vector<FcsArrayWithCell> &
     }
 }
 
-void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic, NDArray<double, 4> &C_gpa,
+void ElasticTensor::brackets_to_elastic(const NDArray<double, 4> &A, NDArray<double, 4> &C_gpa,
                                         const bool symmetrize) const
 {
-    NDArray<double, 4> A;
-    calc_longwave_brackets(fcs_harmonic, A);
-
     const auto volume = system_.get_primcell().volume * std::pow(Bohr_in_Angstrom, 3) * 1.0e-30; // in m^3
     const auto factor = 1.0e-9 * Ryd / volume;
 
@@ -179,6 +177,97 @@ void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs
     if (symmetrize) {
         symmetrize_elastic_tensor2(C_gpa);
     }
+}
+
+void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic, NDArray<double, 4> &C_gpa,
+                                        const bool symmetrize) const
+{
+    NDArray<double, 4> A;
+    calc_longwave_brackets(fcs_harmonic, A);
+    brackets_to_elastic(A, C_gpa, symmetrize);
+}
+
+void ElasticTensor::calc_longwave_brackets_dipole(Ewald &ewald_in, NDArray<double, 4> &ret) const
+{
+    // A^DD_{ab,cd} = 1/2 d^2/dq_c dq_d [sum_{kappa kappa'} Phi^DD(q)]_{ab} at
+    // q -> 0, with the macroscopic (G = 0) term excluded so that the result is
+    // the fixed-E (clamped-ion) dipole contribution (Born & Huang, Sec. 26-27).
+    // Phi^DD(q) without G = 0 is analytic around q = 0, so central finite
+    // differences with Richardson extrapolation converge rapidly.
+    const auto natmin = static_cast<int>(system_.get_primcell().number_of_atoms);
+
+    auto eval = [&](const Eigen::Vector3d &q) {
+        Eigen::MatrixXcd phi;
+        ewald_in.calc_dipole_fcs_q(q, phi);
+        Eigen::Matrix3cd M = Eigen::Matrix3cd::Zero();
+        for (int iat = 0; iat < natmin; ++iat) {
+            for (int jat = 0; jat < natmin; ++jat) {
+                for (auto a = 0; a < 3; ++a) {
+                    for (auto b = 0; b < 3; ++b) {
+                        M(a, b) += phi(3 * iat + a, 3 * jat + b);
+                    }
+                }
+            }
+        }
+        return M;
+    };
+
+    auto second_derivs = [&](const double delta) {
+        std::array<std::array<Eigen::Matrix3cd, 3>, 3> d2;
+        const Eigen::Matrix3cd f0 = eval(Eigen::Vector3d::Zero());
+        const auto id = Eigen::Matrix3d::Identity();
+
+        for (auto c = 0; c < 3; ++c) {
+            const Eigen::Matrix3cd fp = eval(delta * id.col(c));
+            const Eigen::Matrix3cd fm = eval(-delta * id.col(c));
+            d2[c][c] = (fp + fm - 2.0 * f0) / (delta * delta);
+        }
+        for (auto c = 0; c < 3; ++c) {
+            for (auto d = c + 1; d < 3; ++d) {
+                const Eigen::Vector3d ep = delta * (id.col(c) + id.col(d));
+                const Eigen::Vector3d em = delta * (id.col(c) - id.col(d));
+                d2[c][d] = (eval(ep) + eval(-ep) - eval(em) - eval(-em)) / (4.0 * delta * delta);
+                d2[d][c] = d2[c][d];
+            }
+        }
+        return d2;
+    };
+
+    constexpr double delta_q = 2.0e-2; // 1/bohr
+    const auto d2_full = second_derivs(delta_q);
+    const auto d2_half = second_derivs(0.5 * delta_q);
+
+    ret.resize(3, 3, 3, 3);
+    for (auto a = 0; a < 3; ++a) {
+        for (auto b = 0; b < 3; ++b) {
+            for (auto c = 0; c < 3; ++c) {
+                for (auto d = 0; d < 3; ++d) {
+                    const auto richardson = (4.0 * d2_half[c][d](a, b) - d2_full[c][d](a, b)) / 3.0;
+                    ret[a][b][c][d] = 0.5 * richardson.real();
+                }
+            }
+        }
+    }
+}
+
+void ElasticTensor::calc_elastic_tensor_longrange(const std::vector<FcsArrayWithCell> &fcs_short, Ewald &ewald_in,
+                                                  NDArray<double, 4> &C_gpa, const bool symmetrize) const
+{
+    NDArray<double, 4> A, A_dd;
+    calc_longwave_brackets(fcs_short, A);
+    calc_longwave_brackets_dipole(ewald_in, A_dd);
+
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            for (auto k = 0; k < 3; ++k) {
+                for (auto l = 0; l < 3; ++l) {
+                    A[i][j][k][l] += A_dd[i][j][k][l];
+                }
+            }
+        }
+    }
+
+    brackets_to_elastic(A, C_gpa, symmetrize);
 }
 
 void ElasticTensor::calc_sublattice_response(const std::vector<FcsArrayWithCell> &fcs_harmonic,

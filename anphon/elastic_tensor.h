@@ -20,6 +20,7 @@ namespace PHON_NS
 {
 
 class System;
+class Ewald;
 
 // Fixed-size 3^6 tensor for the third-order elastic quantities.
 struct Tensor6
@@ -101,6 +102,22 @@ public:
     void calc_elastic_tensor_relaxed(const std::vector<FcsArrayWithCell> &fcs_harmonic,
                                      NDArray<double, 4> &C_gpa) const;
 
+    // ---- Long-range (dipole-dipole) correction for polar crystals ----
+
+    // Dipole contribution to the long-wave brackets, computed as the second
+    // q-derivative of the Ewald dipole force-constant map with the
+    // macroscopic (G = 0) term excluded (fixed-E response; Born & Huang,
+    // Sec. 26-27). Requires the Ewald machinery (NONANALYTIC = 3).
+    void calc_longwave_brackets_dipole(Ewald &ewald_in, NDArray<double, 4> &ret) const;
+
+    // Clamped-ion elastic tensor with the dipole long-range correction:
+    // brackets of the short-range IFCs (Ewald::fc2_without_dipole, i.e. the
+    // fitted IFCs minus the supercell-folded dipole part) plus the analytic
+    // dipole brackets of the infinite lattice. Cures the slow supercell-size
+    // convergence of the plain bracket sums in polar crystals.
+    void calc_elastic_tensor_longrange(const std::vector<FcsArrayWithCell> &fcs_short, Ewald &ewald_in,
+                                       NDArray<double, 4> &C_gpa, bool symmetrize = true) const;
+
     // Print the brackets A [Ry], the clamped-ion C [GPa], and the Voigt bulk modulus.
     void print_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs_harmonic) const;
 
@@ -153,6 +170,10 @@ private:
     // indices) and the sublattice response X = -K^+ Lambda, both in real space.
     void calc_force_strain_coupling(const std::vector<FcsArrayWithCell> &fcs_harmonic, Eigen::MatrixXd &Lambda,
                                     Eigen::MatrixXd &X) const;
+
+    // Wallace Eq. (7.30) at zero initial stress: brackets A [Ry] to the
+    // elastic tensor [GPa], with the optional intrinsic-symmetry projection.
+    void brackets_to_elastic(const NDArray<double, 4> &A, NDArray<double, 4> &C_gpa, bool symmetrize) const;
 
     const System &system_;
 };

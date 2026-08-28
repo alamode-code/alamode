@@ -749,6 +749,75 @@ void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std
     }
 }
 
+void Ewald::calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &phi_out)
+{
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto map_p2s = system->get_map_p2s(0);
+    const auto x_frac_super = system->get_supercell(0).x_fractional.transpose();
+    const auto lavec_s = system->get_supercell(0).lattice_vector;
+    const double vol_p = system->get_primcell().volume;
+
+    phi_out.resize(3 * natmin, 3 * natmin);
+
+    NDArray<std::complex<double>, 2> mat_l(3, 3);
+    NDArray<std::complex<double>, 2> mat_g(3, 3);
+
+    Eigen::Vector3d xk = xk_cart;
+    const Eigen::Vector3d kvec_zero = Eigen::Vector3d::Zero();
+
+    // At q = 0 calc_long_term_dynamical_matrix skips the macroscopic term by
+    // itself (kvec = 0); at finite q the term is subtracted in closed form.
+    const double kd = xk.dot(epsilon_mat * xk);
+
+    for (int iat = 0; iat < natmin; ++iat) {
+        const auto atm_s1 = map_p2s[iat][0];
+        const double mi = system->get_mass_super()[atm_s1];
+
+        for (int jat = 0; jat < natmin; ++jat) {
+            const auto atm_s2 = map_p2s[jat][0];
+            const double mj = system->get_mass_super()[atm_s2];
+            const double mass_factor = std::sqrt(mi * mj);
+
+            calc_short_term_dynamical_matrix(iat, jat, xk.data(), mat_l);
+            calc_long_term_dynamical_matrix(iat, jat, xk, kvec_zero, mat_g);
+
+            // The Ewald matrix is assembled in the CELL phase convention
+            // (phases e^{iq.L}, matching calc_analytic_k on relvecs[0]).
+            // Multiply by e^{iq.(tau' - tau)} to switch to the atomic
+            // (velocity) convention, whose q-expansion carries the full
+            // separation vectors r(R kappa') - r(0 kappa) that the long-wave
+            // brackets are built on.
+            const Eigen::Vector3d vec = lavec_s * (x_frac_super.col(atm_s1) - x_frac_super.col(atm_s2));
+            const auto gauge = std::exp(-im * xk.dot(vec));
+
+            for (int icrd = 0; icrd < 3; ++icrd) {
+                for (int jcrd = 0; jcrd < 3; ++jcrd) {
+                    phi_out(3 * iat + icrd, 3 * jat + jcrd) =
+                        (mat_l[icrd][jcrd] + mat_g[icrd][jcrd]) * mass_factor * gauge;
+                }
+            }
+
+            // Macroscopic (G = 0) term: phase-free in the atomic convention.
+            if (std::sqrt(kd) > eps10) {
+                const auto damp = std::exp(-0.25 * kd / pow2(lambda_dymat));
+
+                for (int icrd = 0; icrd < 3; ++icrd) {
+                    for (int jcrd = 0; jcrd < 3; ++jcrd) {
+                        double tmp = 0.0;
+                        for (int acrd = 0; acrd < 3; ++acrd) {
+                            for (int bcrd = 0; bcrd < 3; ++bcrd) {
+                                tmp +=
+                                    xk[acrd] * xk[bcrd] * Born_charge[iat][acrd][icrd] * Born_charge[jat][bcrd][jcrd];
+                            }
+                        }
+                        phi_out(3 * iat + icrd, 3 * jat + jcrd) -= 4.0 * pi / vol_p * 2.0 * tmp / kd * damp;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void Ewald::calc_short_term_dynamical_matrix(const int iat, const int jat, double *xk_in,
                                              std::complex<double> **mat_out)
 {
