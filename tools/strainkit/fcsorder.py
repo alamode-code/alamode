@@ -440,3 +440,60 @@ def describe_ordering(prim, mapping=None, atoms_dft=None):
                 f"  the DFT cell contains {len(atoms_dft) // n} anphon cells (one image per anphon atom is used)"
             )
     return "\n".join(lines)
+
+
+# ------------------------------------------------------------ FC2 comparison
+def read_fc2_table(path):
+    """Harmonic force constants of an ALM file as {key: value (Ry/bohr^2)}.
+
+    XML keys are the (pair1, pair2) attribute strings as stored; h5 keys are
+    (atom_indices_supercell, coord_indices, shift) tuples.  Keys are only
+    comparable between files of the same format and the same cell.
+    """
+    ext = os.path.splitext(path)[1].lower()
+    table = {}
+    if ext == ".xml":
+        from lxml import etree
+
+        try:
+            root = etree.parse(path).getroot()
+        except etree.XMLSyntaxError:
+            root = etree.parse(path, parser=etree.XMLParser(recover=True)).getroot()
+        for fc in root.findall("ForceConstants/HARMONIC/FC2"):
+            table[(fc.get("pair1"), fc.get("pair2"))] = float(fc.text)
+        return table, "xml"
+    if ext in (".h5", ".hdf5"):
+        import h5py
+
+        with h5py.File(path, "r") as f:
+            g = f["/ForceConstants/Order2"]
+            n = len(g["force_constant_values"])
+            at = g["atom_indices_supercell"][:].reshape(n, -1)
+            cd = g["coord_indices"][:].reshape(n, -1)
+            sh = np.round(g["shift_vectors"][:].reshape(n, -1) * 1.0e4).astype(int)
+            val = g["force_constant_values"][:]
+        for k in range(n):
+            table[(tuple(at[k]), tuple(cd[k]), tuple(sh[k]))] = float(val[k])
+        return table, "h5"
+    raise ValueError(f"{path}: unknown force-constant file extension")
+
+
+def fc2_difference(path_a, path_b):
+    """Statistics of Phi2(a) - Phi2(b) over the common entries of two FC files."""
+    ta, fa = read_fc2_table(path_a)
+    tb, fb = read_fc2_table(path_b)
+    if fa != fb:
+        raise ValueError(f"cannot compare {fa} with {fb} force-constant files")
+    common = [k for k in ta if k in tb]
+    if not common:
+        raise ValueError("no common force-constant entries (different supercell or indexing)")
+    d = np.array([ta[k] - tb[k] for k in common])
+    ref = np.array([tb[k] for k in common])
+    return {
+        "n_common": len(common),
+        "n_only_a": len(ta) - len(common),
+        "n_only_b": len(tb) - len(common),
+        "max_abs": float(np.abs(d).max()),
+        "rms": float(np.sqrt(np.mean(d**2))),
+        "rms_ref": float(np.sqrt(np.mean(ref**2))),
+    }

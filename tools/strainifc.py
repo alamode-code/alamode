@@ -107,6 +107,12 @@ def main(argv=None):
     g.add_argument(
         "--force", action="store_true", help="overwrite existing strain_* directories"
     )
+    g.add_argument(
+        "--with-reference",
+        action="store_true",
+        help="harmonic: also generate the undeformed supercell (strain_000); collect fits it "
+        "to results/strain_000.* and compares it with --fcs (check of the FC2FILE)",
+    )
 
     c = sub.add_parser(
         "collect", help="build the anphon input files from the DFT outputs"
@@ -196,6 +202,7 @@ def main(argv=None):
                 args.dft_command,
                 args.copy_potcar,
                 args.force,
+                args.with_reference,
             )
         elif args.cmd == "collect":
             wi.collect(

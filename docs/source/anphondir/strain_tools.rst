@@ -117,7 +117,7 @@ strainifc.py
 ::
 
     strainifc.py generate --coupling {harmonic,force} --code {VASP,QE} --template DIR
-                          [--smag 0.005] [--dmag 0.01] [--central] [--no-offset]
+                          [--smag 0.005] [--dmag 0.01] [--central] [--no-offset] [--with-reference]
                           [--modes strain_modes.json | --modes xx,yy,...] [--outdir DIR]
                           [--nbody 2] [--cutoff R] [--job-template job.sh] [--dft-command FILE]
     strainifc.py collect  [--outdir DIR] [--fcs REF [--anphon-cell FILE]] [--fcs-format {xml,h5}]
@@ -141,7 +141,10 @@ XML force-constant files).
   (``strain_NNN/nodisp``) whose residual forces are subtracted unless ``--no-offset`` is given.
   ``collect`` fits the harmonic force constants of every strained supercell with the ``alm``
   package (translational invariance imposed), writes them as ``results/strain_NNN.xml`` (or
-  ``.h5``) and ``results/strain_harmonic.in``.
+  ``.h5``) and ``results/strain_harmonic.in``. With ``--with-reference`` the undeformed supercell
+  is generated as well (``strain_000``); ``collect`` fits it to ``results/strain_000.*`` (not
+  listed in ``strain_harmonic.in``) and prints its difference to ``--fcs`` — a direct check that
+  the DFT setup reproduces the harmonic force constants given to anphon.
 
 A job-script template containing the line ``RUN_DFT_CALCULATION`` (``--job-template``) and a
 file with the shell lines that run the DFT code in one directory (``--dft-command``) produce

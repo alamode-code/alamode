@@ -22,6 +22,7 @@ from .fcsorder import (
     anphon_primitive_cell,
     check_supercell_equivalence,
     describe_ordering,
+    fc2_difference,
     match_primitive_atoms,
     read_anphon_cell,
     read_fcs_structure,
@@ -64,6 +65,7 @@ def _points_from_manifest(manifest):
             np.array(e["u"]),
         )
         for e in manifest["entries"]
+        if not e.get("reference")
     ]
 
 
@@ -85,6 +87,7 @@ def generate(
     dft_command=None,
     copy_potcar=False,
     force=False,
+    with_reference=False,
     log=print,
 ):
     if coupling not in COUPLINGS:
@@ -113,8 +116,14 @@ def generate(
 
     outdir = os.path.abspath(outdir)
     os.makedirs(outdir, exist_ok=True)
-    n_dirs = len(points) + (1 if coupling == "force" else 0)
-    first = 0 if coupling == "force" else 1
+    if with_reference and coupling != "harmonic":
+        raise ValueError(
+            "--with-reference applies to --coupling harmonic only "
+            "(the force coupling always has strain_000)"
+        )
+    has_ref = coupling == "force" or with_reference
+    n_dirs = len(points) + (1 if has_ref else 0)
+    first = 0 if has_ref else 1
     existing = [
         os.path.join(outdir, _dirname(k))
         for k in range(first, first + n_dirs)
@@ -137,7 +146,11 @@ def generate(
     if coupling == "harmonic":
         from .almfit import displaced_structures, suggest_harmonic_patterns
 
-        for k, p in enumerate(points, start=1):
+        todo = list(enumerate(points, start=1))
+        if with_reference:
+            # undeformed supercell -> strain_000, fitted by collect as a check of the FC2FILE
+            todo.insert(0, (0, StrainPoint("reference", None, 0.0, 0.0, np.zeros((3, 3)))))
+        for k, p in todo:
             dname = _dirname(k)
             d = os.path.join(outdir, dname)
             strained = deform(template.atoms, p.F)
@@ -175,15 +188,20 @@ def generate(
                     "n_disp": len(structs),
                     "disp_dirs": disp_dirs,
                     "nodisp_dir": None if no_offset else "nodisp",
+                    "reference": p.mode is None,
                     "patterns": [
                         [[int(i), np.asarray(v).tolist()] for i, v, _ in pat]
                         for pat in patterns
                     ],
                 }
             )
+            what = (
+                "undeformed reference"
+                if p.mode is None
+                else f"mode {p.mode:>3s} smag {p.smag:+.5f} weight {p.weight:g}"
+            )
             log(
-                f"  {dname}: mode {p.mode:>3s} smag {p.smag:+.5f} weight {p.weight:g}  "
-                f"-> {len(structs)} displacement patterns"
+                f"  {dname}: {what}  -> {len(structs)} displacement patterns"
                 + ("" if no_offset else " + nodisp")
             )
     else:
@@ -240,6 +258,7 @@ def generate(
         "cutoff": None if cutoff is None else float(cutoff),
         "nat": len(template.atoms),
         "numbers": np.asarray(template.atoms.numbers).tolist(),
+        "with_reference": bool(with_reference),
         "entries": entries,
     }
     save_manifest(manifest, os.path.join(outdir, IFC_MANIFEST))
@@ -339,6 +358,22 @@ def collect_harmonic(
         )
         if fcs_struct is not None:
             verify_generated_fcs(out, fcs_struct, F)
+        if e.get("reference"):
+            log(
+                f"  {e['dir']}: undeformed reference, {info['nsnap']} snapshots -> {out_name} "
+                "(not listed in strain_harmonic.in)"
+            )
+            if fcs is not None:
+                try:
+                    st = fc2_difference(out, fcs)
+                    log(
+                        f"    FC2 vs {os.path.basename(fcs)}: max|dPhi2| = {st['max_abs']:.3e} Ry/bohr^2, "
+                        f"RMS = {st['rms']:.3e} (RMS|Phi2| = {st['rms_ref']:.3e}), "
+                        f"{st['n_common']} common / {st['n_only_a']}+{st['n_only_b']} unmatched entries"
+                    )
+                except ValueError as exc:
+                    log(f"    FC2 comparison skipped: {exc}")
+            continue
         rows.append((e["mode"], e["smag"], e["weight"], out_name))
         log(
             f"  {e['dir']}: {info['nsnap']} snapshots, {info['n_free_parameters']} free parameters -> {out_name}"

@@ -40,19 +40,26 @@ def test_harmonic_coupling(cu_supercell):
         smag=0.005,
         central=True,
         mode_names=["xx", "yz"],
+        with_reference=True,
         log=QUIET,
     )
-    assert len(m["entries"]) == 4 and all(
+    assert len(m["entries"]) == 5 and all(
         e["nodisp_dir"] == "nodisp" for e in m["entries"]
     )
+    assert m["entries"][0]["reference"] and m["entries"][0]["dir"] == "strain_000"
     assert run_emt(work) == sum(e["n_disp"] + 1 for e in m["entries"])
     with pytest.raises(ValueError, match="--fcs"):
         wi.collect(work, log=QUIET)
+    logs = []
     fname = wi.collect(
-        work, fcs=ref_xml, fcs_format="xml", write_dfset_files=True, log=QUIET
+        work, fcs=ref_xml, fcs_format="xml", write_dfset_files=True, log=logs.append
     )
     rows = read_strain_harmonic_in(fname)
-    assert [r[0] for r in rows] == ["xx", "xx", "yz", "yz"]
+    assert [r[0] for r in rows] == ["xx", "xx", "yz", "yz"]  # strain_000 not listed
+    assert os.path.exists(os.path.join(work, "results", "strain_000.xml"))
+    assert any("FC2 vs" in l and "max|dPhi2|" in l for l in logs)
+    st = fcsorder.fc2_difference(os.path.join(work, "results", "strain_000.xml"), ref_xml)
+    assert st["n_only_a"] == 0 and st["max_abs"] < 1e-6  # same data and fit settings
     assert rows[0][1] == 0.005 and rows[1][1] == -0.005 and rows[0][2] == 0.5
     ref = fcsorder.read_fcs_structure(ref_xml)
     for r in rows:
