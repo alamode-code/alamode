@@ -18,7 +18,7 @@ import numpy as np
 
 from .units import BOHR_IN_ANGSTROM
 
-TOL_COORD = 1.0e-5  # anphon: tolerance_for_coordinates (fractional)
+TOL_COORD = 1.0e-4  # anphon: System::tolerance_for_coordinates (fractional), system.cpp
 
 
 @dataclass
@@ -142,22 +142,29 @@ def read_anphon_cell(path):
 
 
 def lattice_relation(a_target, a_dft, tol=1.0e-5):
-    """Integer matrix M with a_target = M @ a_dft (rows = lattice vectors).
+    """Integer relation between two commensurate lattices (rows = vectors).
 
-    Raises ValueError if the two lattices are not related by an integer matrix
-    (e.g. rotated with respect to each other or incommensurate).
+    Returns ``(M, ratio)`` with either ``a_target = M @ a_dft`` (target cell is
+    a supercell of the DFT cell, ``ratio = |det M| >= 1``) or
+    ``a_dft = M @ a_target`` (DFT cell is a supercell of the target cell,
+    ``ratio = 1/|det M| < 1``); ``ratio`` is always V_target / V_dft.
+    Raises ValueError if the lattices are not related by an integer matrix in
+    either direction (rotated with respect to each other, or incommensurate).
     """
-    m = np.asarray(a_target, dtype=float) @ np.linalg.inv(np.asarray(a_dft, dtype=float))
-    mi = np.round(m).astype(int)
-    if np.abs(m - mi).max() > tol * max(1.0, np.abs(m).max()):
-        raise ValueError(
-            "the target (anphon) cell is not an integer combination of the DFT cell vectors:\n"
-            f"M = a_target inv(a_dft) =\n{np.array2string(m, precision=6)}\n"
-            "Both cells must be given in the same Cartesian frame (same orientation); "
-            "rotated settings are not supported.")
-    if abs(round(np.linalg.det(mi))) < 1:
-        raise ValueError("singular lattice relation")
-    return mi
+    at = np.asarray(a_target, dtype=float)
+    ad = np.asarray(a_dft, dtype=float)
+    for first, second, forward in ((at, ad, True), (ad, at, False)):
+        m = first @ np.linalg.inv(second)
+        mi = np.round(m).astype(int)
+        if np.abs(m - mi).max() <= tol * max(1.0, np.abs(m).max()) and abs(round(np.linalg.det(mi))) >= 1:
+            det = abs(int(round(np.linalg.det(mi))))
+            return mi, (float(det) if forward else 1.0 / det)
+    m = at @ np.linalg.inv(ad)
+    raise ValueError(
+        "the target (anphon) cell and the DFT cell are not integer combinations of each other:\n"
+        f"M = a_target inv(a_dft) =\n{np.array2string(m, precision=6)}\n"
+        "Both cells must describe the same lattice in the same Cartesian frame (same orientation "
+        "and lattice constants); rotated settings are not supported.")
 
 
 @dataclass
@@ -217,32 +224,40 @@ def anphon_primitive_cell(fcs, anphon_cell=None):
 
 
 def match_primitive_atoms(atoms_dft, prim, tol=1.0e-3):
-    """Map every anphon primitive atom to the DFT-cell atom it is a translation
-    image of.  Returns an integer array of DFT atom indices.
+    """Map every anphon primitive atom to a DFT-cell atom that is a translation
+    image of it.  Returns an integer array of DFT atom indices.
 
-    Requires the anphon cell to be an integer combination of the DFT cell.
+    The two cells must be commensurate (integer relation in either direction).
+    When the DFT cell is a supercell of the anphon cell, several DFT atoms are
+    translation images of the same anphon atom and carry identical forces under
+    homogeneous strain; the first one (lowest index) is used.
     """
     a_dft = np.asarray(atoms_dft.cell[:], dtype=float)
-    lattice_relation(prim.lavec, a_dft)  # raises if rotated/incommensurate
-    xf_dft = np.asarray(atoms_dft.get_scaled_positions(wrap=False), dtype=float)
+    _, ratio = lattice_relation(prim.lavec, a_dft)  # raises if rotated/incommensurate
     z_dft = np.asarray(atoms_dft.numbers)
-    r = prim.xf @ prim.lavec
-    y = r @ np.linalg.inv(a_dft)
+    # Two atoms are the same crystallographic site if their difference is a
+    # translation of the crystal, i.e. of the SMALLER of the two (commensurate)
+    # cells: compare fractional coordinates of that cell modulo 1.
+    small = a_dft if ratio >= 1.0 else np.asarray(prim.lavec, dtype=float)
+    inv_small = np.linalg.inv(small)
+    y = (prim.xf @ prim.lavec) @ inv_small
+    x_dft = np.asarray(atoms_dft.get_positions(), dtype=float) @ inv_small
+    n_images = max(1, int(round(1.0 / ratio)))  # DFT atoms per anphon atom
     mapping = np.full(len(prim.xf), -1, dtype=int)
     for i in range(len(prim.xf)):
         cand = []
-        for j in range(len(xf_dft)):
+        for j in range(len(x_dft)):
             if z_dft[j] != prim.numbers[i]:
                 continue
-            d = y[i] - xf_dft[j]
+            d = y[i] - x_dft[j]
             d -= np.round(d)
             if np.linalg.norm(d) < tol:
                 cand.append(j)
-        if len(cand) != 1:
+        if len(cand) != n_images:
             raise ValueError(
                 f"anphon primitive atom {i} ({prim.elements[i]}, fractional {np.array2string(prim.xf[i], precision=6)}) "
-                f"matches {len(cand)} atoms of the DFT cell; the DFT cell and the anphon cell must "
-                "describe the same crystal in the same Cartesian frame")
+                f"matches {len(cand)} atoms of the DFT cell (expected {n_images}); the DFT cell and the "
+                "anphon cell must describe the same crystal in the same Cartesian frame")
         mapping[i] = cand[0]
     return mapping
 
@@ -286,13 +301,23 @@ def verify_generated_fcs(path, fcs_ref, F=None, tol_cell=1.0e-4, tol_frac=1.0e-5
             problems.append(f"fractional positions differ by up to {np.abs(d).max():.3e}")
         if g.map_p2s.shape != fcs_ref.map_p2s.shape or not np.array_equal(g.map_p2s, fcs_ref.map_p2s):
             problems.append("translation mapping table (map_p2s) differs")
+        if not np.array_equal(g.map_s2p, fcs_ref.map_s2p):
+            problems.append("supercell-to-primitive mapping (map_s2p) differs")
     if F is not None:
         expected = fcs_ref.lavec @ np.asarray(F, dtype=float).T
         if np.abs(g.lavec - expected).max() > tol_cell:
             problems.append(f"lattice differs from F applied to the reference by {np.abs(g.lavec - expected).max():.3e} A")
     if g.fmt == "h5" and fcs_ref.fmt == "h5":
         if g.prim_xf.shape != fcs_ref.prim_xf.shape or not np.array_equal(g.prim_numbers, fcs_ref.prim_numbers):
-            problems.append("/PrimitiveCell differs")
+            problems.append("/PrimitiveCell (atoms/species) differs")
+        else:
+            dp = g.prim_xf - fcs_ref.prim_xf
+            dp -= np.round(dp)
+            if np.abs(dp).max() > tol_frac:
+                problems.append(f"/PrimitiveCell fractional coordinates differ by up to {np.abs(dp).max():.3e}")
+            expected_p = fcs_ref.prim_lavec if F is None else fcs_ref.prim_lavec @ np.asarray(F, dtype=float).T
+            if np.abs(g.prim_lavec - expected_p).max() > tol_cell:
+                problems.append("/PrimitiveCell lattice differs from the (deformed) reference")
     if problems:
         raise ValueError(f"{path}: generated force-constant file is not index-compatible with "
                          f"{fcs_ref.path}: " + "; ".join(problems))
@@ -315,6 +340,8 @@ def describe_ordering(prim, mapping=None, atoms_dft=None):
             ident = np.array_equal(mapping, np.arange(n))
             lines.append("  mapping is the identity" if ident else
                          "  WARNING: mapping is a permutation of the DFT cell (not the identity)")
-        elif atoms_dft is not None:
+        elif atoms_dft is not None and n > len(atoms_dft):
             lines.append(f"  anphon cell contains {n // len(atoms_dft)} DFT cells (rows will be tiled)")
+        elif atoms_dft is not None:
+            lines.append(f"  the DFT cell contains {len(atoms_dft) // n} anphon cells (one image per anphon atom is used)")
     return "\n".join(lines)

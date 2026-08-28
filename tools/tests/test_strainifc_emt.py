@@ -119,3 +119,37 @@ def test_force_coupling_permuted_template(hcp_setup):
     assert np.allclose(rows[0][3], ref_rows[0][3])  # rows are in anphon order after --reorder
     # check() reports the ordering without failing
     wi.check(work, fcs=ref, anphon_cell=cell, log=QUIET)
+
+
+def test_force_coupling_requires_all_modes(hcp_setup):
+    hcp, tmpl, ptmpl, ref, root = hcp_setup
+    with pytest.raises(ValueError, match="all six strain modes"):
+        wi.generate("force", "ase", tmpl, os.path.join(root, "force_partial"), smag=0.005,
+                    mode_names=["xx", "yy"], log=QUIET)
+
+
+def test_verify_generated_fcs_detects_corruption(cu_supercell, tmp_path):
+    """A generated FC file with a different translation table is rejected."""
+    import shutil
+    sc, tmpl, ref_xml, ref_h5, root = cu_supercell
+    ref = fcsorder.read_fcs_structure(ref_xml)
+    bad = str(tmp_path / "bad.xml")
+    text = open(ref_xml).read()
+    # swap the supercell indices of two translation entries -> map_p2s/map_s2p change
+    import re
+    maps = re.findall(r'<map tran="(\d+)" atom="(\d+)">(\d+)</map>', text)
+    (t1, a1, v1), (t2, a2, v2) = maps[0], maps[1]
+    text = text.replace(f'<map tran="{t1}" atom="{a1}">{v1}</map>', f'<map tran="{t1}" atom="{a1}">{v2}</map>', 1)
+    text = text.replace(f'<map tran="{t2}" atom="{a2}">{v2}</map>', f'<map tran="{t2}" atom="{a2}">{v1}</map>', 1)
+    open(bad, "w").write(text)
+    with pytest.raises(ValueError, match="map_p2s|map_s2p"):
+        fcsorder.verify_generated_fcs(bad, ref)
+    # h5: the primitive cell is compared as well
+    import h5py
+    bad5 = str(tmp_path / "bad.h5")
+    shutil.copy(ref_h5, bad5)
+    with h5py.File(bad5, "r+") as h:
+        xf = h["/PrimitiveCell/fractional_coordinate"]
+        xf[0, 0] = xf[0, 0] + 0.01
+    with pytest.raises(ValueError, match="PrimitiveCell"):
+        fcsorder.verify_generated_fcs(bad5, fcsorder.read_fcs_structure(ref_h5))

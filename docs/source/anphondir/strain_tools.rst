@@ -105,8 +105,11 @@ stress and solves the linear least-squares problem
 expansion) for the 83 independent Voigt components, symmetrizes the tensors over the point
 group of the reference structure, prints the constants in GPa and writes the files with
 :math:`V` of the anphon cell (``--fcs``/``--anphon-cell``; without them the volume of the DFT
-cell is used and a note is printed). ``--compare`` prints the difference to the clamped-ion
-constants that anphon prints with ``ELASTIC_CONST = 1``.
+cell is used and a note is printed). The anphon cell and the DFT cell must be commensurate in
+the same Cartesian frame: one must be an integer combination of the lattice vectors of the
+other (a conventional anphon cell and a primitive DFT cell, or the reverse); rotated settings are
+rejected. ``--compare`` prints the difference to the clamped-ion constants that anphon prints
+with ``ELASTIC_CONST = 1``.
 
 strainifc.py
 ------------
@@ -117,13 +120,21 @@ strainifc.py
                           [--smag 0.005] [--dmag 0.01] [--central] [--no-offset]
                           [--modes strain_modes.json | --modes xx,yy,...] [--outdir DIR]
                           [--nbody 2] [--cutoff R] [--job-template job.sh] [--dft-command FILE]
-    strainifc.py collect  [--outdir DIR] --fcs REF [--anphon-cell FILE] [--fcs-format {xml,h5}]
+    strainifc.py collect  [--outdir DIR] [--fcs REF [--anphon-cell FILE]] [--fcs-format {xml,h5}]
                           [--prefix strain] [--reorder] [--write-dfset] [--unchecked]
     strainifc.py check    [--outdir DIR] --fcs REF [--anphon-cell FILE]
 
+``--fcs`` is mandatory for ``--coupling harmonic`` (unless ``--unchecked``); for
+``--coupling force`` it is optional but recommended: without it the rows are
+written in the order of the template, which must then be anphon's order.
+``--anphon-cell`` is required with an XML ``--fcs`` (anphon needs ``&cell`` for
+XML force-constant files).
+
 * ``--coupling force``: the template is the primitive cell. ``strain_000/primitive`` (reference)
   and ``strain_NNN/primitive`` (strained cells) are generated; ``collect`` subtracts the reference
-  forces and writes ``strain_force.in`` in anphon's atom order.
+  forces and writes ``strain_force.in`` in anphon's atom order. All six strain modes are required
+  (anphon demands that the weights of every component sum to 1); ``--modes`` subsets are only
+  meaningful for ``--coupling harmonic`` with ``RENORM_3TO2ND = 3``.
 * ``--coupling harmonic``: the template is the **same supercell** as the one used to fit the
   harmonic force constants given to anphon. For every strained supercell the ALM displacement
   patterns are generated (``strain_NNN/disp_MM``), plus the undisplaced strained cell

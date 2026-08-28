@@ -40,7 +40,6 @@ jobs:
       - name: Run the strainkit tests
         working-directory: ./tools
         run: |
-          python -m pytest tests -v -rs
-          # the suite must actually run: fail if the ALM/ase dependent tests were skipped
-          python -m pytest tests -q -rs 2>&1 | tee pytest.log
+          # the suite must actually run: fail if any (ALM/ase dependent) test was skipped
+          python -m pytest tests -v -rs 2>&1 | tee pytest.log
           if grep -q "SKIPPED" pytest.log; then echo "some tests were skipped"; exit 1; fi

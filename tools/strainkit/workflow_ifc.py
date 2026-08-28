@@ -59,7 +59,8 @@ def generate(coupling, code, template_dir, outdir=".", structure_file=None, smag
         check_weight_sums(points, require_all=(coupling == "force"))
     except ValueError as exc:
         if coupling == "force":
-            raise
+            raise ValueError("strain_force.in needs all six strain modes (anphon requires every component "
+                             "to be covered): " + str(exc)) from None
         warnings.warn(str(exc) + " -- strain_harmonic.in will be usable only with RENORM_3TO2ND = 3")
 
     outdir = os.path.abspath(outdir)
@@ -161,6 +162,7 @@ def _read(path, code, last):
     if r.nimages != 1 and not last:
         raise ValueError(f"{path}: contains {r.nimages} ionic steps; a single-point calculation is "
                          "expected (use --last to take the last step at your own risk)")
+    r.require("forces")
     return r
 
 
@@ -239,8 +241,12 @@ def _anphon_mapping(ref_atoms, fcs, anphon_cell, reorder, log):
             if not reorder:
                 raise ValueError(msg + " or pass --reorder to let the tool permute the force rows")
             log("  WARNING: " + msg + " -- rows are permuted (--reorder)")
+    elif n > len(ref_atoms):
+        log(f"  anphon cell contains {n // len(ref_atoms)} copies of the DFT cell; force rows are tiled "
+            "(requires full translational symmetry of the DFT setup, e.g. no magnetic order enlarging the cell)")
     else:
-        log(f"  anphon cell contains {n // len(ref_atoms)} copies of the DFT cell; force rows are tiled")
+        log(f"  the DFT cell contains {len(ref_atoms) // n} copies of the anphon cell; one translation image "
+            "per anphon atom is used")
     return mapping
 
 
@@ -273,11 +279,12 @@ def collect_force(outdir, manifest, fcs=None, anphon_cell=None, results_dir=RESU
             forces = forces[mapping]
         blocks.append((e["mode"], e["smag"], e["weight"], forces))
         log(f"  {e['dir']}: mode {e['mode']:>3s} smag {e['smag']:+.5f}  max |F - F0| = {np.abs(forces).max():.3e} eV/A")
+    # anphon requires every strain component to be covered with weights summing to 1
+    check_weight_sums(_points_from_manifest(manifest), require_all=True)
     rdir = os.path.join(outdir, results_dir)
     os.makedirs(rdir, exist_ok=True)
     fname = os.path.join(rdir, "strain_force.in")
     write_strain_force_in(fname, blocks)
-    check_weight_sums(_points_from_manifest(manifest), require_all=True)
     log(f"  written: {fname} ({len(blocks)} blocks x {blocks[0][3].shape[0]} atoms, eV/A)")
     log(anphon_file_locations())
     return fname

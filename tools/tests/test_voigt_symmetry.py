@@ -86,3 +86,21 @@ def test_cubic_symmetrization(ase_mod, spglib_mod):
                         scaled_positions=[[0, 0, 0], [0.3, 0.6, 0.2]], pbc=True)
     r = symmetry.cartesian_rotations(tri)
     assert len(r) == 1 and np.allclose(r[0], np.eye(3))
+
+
+def test_hcp_symmetrization_nontrivial_rotations(ase_mod, spglib_mod):
+    """Non-orthogonal cell: 24 point-group operations incl. 60-degree rotations."""
+    from ase.build import bulk
+    a = bulk("Cu", "hcp", a=2.55, c=4.2)
+    rots = symmetry.cartesian_rotations(a)
+    assert rots.shape == (24, 3, 3)
+    assert any(np.abs(r - np.diag([1, 1, 1])).max() > 1e-8 and abs(np.trace(r) - 2.0) < 1e-8 for r in rots)
+    rng = np.random.default_rng(11)
+    c4 = symmetry.enforce_intrinsic_symmetry2(rng.normal(size=(3, 3, 3, 3)))
+    cs = symmetry.symmetrize_rank4(c4, rots)
+    m = ef.voigt66(cs)
+    # hexagonal: C11 = C22, C13 = C23, C44 = C55, C66 = (C11 - C12)/2, no couplings to shears
+    assert np.allclose(m[0, 0], m[1, 1]) and np.allclose(m[0, 2], m[1, 2]) and np.allclose(m[3, 3], m[4, 4])
+    assert np.allclose(m[5, 5], 0.5 * (m[0, 0] - m[0, 1]))
+    assert abs(m[0, 3]) < 1e-12 and abs(m[0, 5]) < 1e-12
+    assert np.allclose(symmetry.symmetrize_rank4(cs, rots), cs)

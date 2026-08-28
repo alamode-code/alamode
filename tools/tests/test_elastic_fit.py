@@ -63,3 +63,22 @@ def test_direction_set_sizes():
     assert len(ef.strain_points(ef.direction_set("minimal"), 0.01, 2)) == 85
     with pytest.raises(ValueError):
         ef.direction_set("foo")
+
+
+def test_both_mode_weights_are_residual_based():
+    """'both' mode: each block is weighted by its own single-block residual RMS
+    (the stress block has no dE0 column and must not be treated as rank deficient)."""
+    s0, c2, c3 = _model(6)
+    V = 40.0
+    data = _data("minimal", s0, c2, c3, V, True, True, noise=1e-5, seed=3)
+    fit = ef.fit_elastic(data, V, "both")
+    assert fit.block_rms is not None and set(fit.block_rms) == {"energy", "stress"}
+    assert all(0 < v < 1e-2 for v in fit.block_rms.values())  # neither block got the neutral weight 1.0
+    assert fit.rank == 84
+    assert np.abs(fit.c2 - c2).max() * ef.EV_PER_ANG3_TO_GPA < 0.5
+
+
+def test_fit_requires_data_for_mode():
+    s0, c2, c3 = _model(7)
+    with pytest.raises(ValueError, match="no data"):
+        ef.fit_elastic(_data("minimal", s0, c2, c3, 30.0, True, False), 30.0, "stress")

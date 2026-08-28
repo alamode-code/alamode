@@ -99,10 +99,13 @@ def target_cell_scale(ref_atoms, fcs=None, anphon_cell=None, log=print):
         lav = prim.lavec
     else:
         lav = read_anphon_cell(anphon_cell)
-    m = lattice_relation(lav, a_dft)
-    scale = abs(int(round(np.linalg.det(m))))
-    log(f"  anphon cell = M x DFT cell with det(M) = {scale}; V*C values are scaled accordingly")
-    return float(scale), lav
+    m, ratio = lattice_relation(lav, a_dft)
+    if ratio >= 1.0:
+        log(f"  anphon cell = M x DFT cell with det(M) = {int(round(ratio))}; V*C values are scaled accordingly")
+    else:
+        log(f"  DFT cell = M x anphon cell with det(M) = {int(round(1.0 / ratio))}; V*C values are scaled by "
+            f"1/{int(round(1.0 / ratio))}")
+    return float(ratio), lav
 
 
 def fit(outdir=".", mode="stress", fcs=None, anphon_cell=None, allow_relaxed=False,
@@ -127,6 +130,11 @@ def fit(outdir=".", mode="stress", fcs=None, anphon_cell=None, allow_relaxed=Fal
             continue
         F = deformation_gradient(np.array(e["u"]))
         r = read_dft_output(out, code, image=-1)
+        # the observables needed by the fit mode must be present (no silent skipping)
+        if mode in ("stress", "both"):
+            r.require("stress")
+        if mode in ("energy", "both"):
+            r.require("energy")
         try:
             check_geometry(r, deform(ref_atoms, F), strict=True)
         except ValueError as exc:
@@ -149,6 +157,9 @@ def fit(outdir=".", mode="stress", fcs=None, anphon_cell=None, allow_relaxed=Fal
         raise RuntimeError(f"rank-deficient fit: rank {fit_res.rank} < {fit_res.expected_rank}{hint}")
     if fit_res.cond > 1.0e8:
         warnings.warn(f"ill-conditioned design matrix (condition number {fit_res.cond:.2e})")
+    if fit_res.block_rms:
+        log("  'both' mode: rows weighted by the inverse residual RMS of the single-block fits: "
+            + ", ".join(f"{k} {v * EV_PER_ANG3_TO_GPA:.3e} GPa" for k, v in fit_res.block_rms.items()))
 
     s0 = fit_res.sigma0_full
     c2 = fit_res.c2_full
@@ -169,7 +180,7 @@ def fit(outdir=".", mode="stress", fcs=None, anphon_cell=None, allow_relaxed=Fal
 
     scale, lav = target_cell_scale(ref_atoms, fcs, anphon_cell, log)
     v_target = v_dft * scale
-    if scale == 1.0 and fcs is None and anphon_cell is None:
+    if fcs is None and anphon_cell is None:
         log("  NOTE: no anphon cell given (--fcs/--anphon-cell); the files assume the anphon "
             f"primitive cell has the volume of the DFT cell ({v_dft:.4f} A^3)")
 

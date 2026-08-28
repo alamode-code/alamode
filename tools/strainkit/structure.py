@@ -128,14 +128,27 @@ def replace_qe_blocks(text, atoms):
     cell = np.asarray(atoms.cell[:], dtype=float)
     xf = np.asarray(atoms.get_scaled_positions(wrap=False), dtype=float)
 
-    # namelist part: drop celldm(1) / A entries
+    # namelist part: drop celldm(1) / A entries (QE rejects a lattice parameter
+    # given twice once CELL_PARAMETERS is in angstrom); several assignments may
+    # share one line, e.g. "ibrav = 0, A = 3.2".
     head = []
+    lat_re = re.compile(r"^\s*(celldm\(1\)|a)\s*=", flags=re.IGNORECASE)
     for l in lines[:first_card]:
-        s = _strip_comment(l)
-        if re.match(r"^(celldm\(1\)|a)\s*=", s, flags=re.IGNORECASE):
-            warnings.warn(f"removed {s!r} from the QE namelist (CELL_PARAMETERS angstrom is written)")
+        body = _strip_comment(l)
+        if not body or body.startswith("&") or body == "/":
+            head.append(l)
             continue
-        head.append(l)
+        parts = [x for x in body.split(",")]
+        keep = [x for x in parts if x.strip() and not lat_re.match(x)]
+        dropped = [x.strip() for x in parts if x.strip() and lat_re.match(x)]
+        if not dropped:
+            head.append(l)
+            continue
+        warnings.warn(f"removed {', '.join(dropped)!r} from the QE namelist (CELL_PARAMETERS angstrom is written)")
+        if keep:
+            indent = l[:len(l) - len(l.lstrip())]
+            head.append(indent + ", ".join(x.strip() for x in keep) + ("," if body.rstrip().endswith(",") else ""))
+        # else: the whole line was the lattice parameter -> dropped
 
     def card_body(name):
         i, end = bounds[name]

@@ -18,6 +18,14 @@ class DftResult:
     cell: np.ndarray  # (3, 3) A, rows = lattice vectors
     scaled_positions: np.ndarray
     numbers: np.ndarray
+    missing: dict = None  # property -> reason, for energy/forces/stress that could not be read
+
+    def require(self, *names):
+        """Raise ValueError if any of the named observables is unavailable."""
+        for name in names:
+            if getattr(self, name) is None:
+                reason = (self.missing or {}).get(name, "not present in the file")
+                raise ValueError(f"{self.path}: no {name} could be read ({reason})")
 
 
 def read_dft_output(path, code, image=-1):
@@ -32,15 +40,18 @@ def read_dft_output(path, code, image=-1):
         raise ValueError(f"{path}: no structure found")
     atoms = images[image]
 
-    def _try(getter):
+    missing = {}
+
+    def _try(name, getter):
         try:
             return getter()
-        except Exception:
+        except Exception as exc:  # noqa: BLE001  (ase raises PropertyNotImplementedError etc.)
+            missing[name] = f"{type(exc).__name__}: {exc}"
             return None
 
-    energy = _try(atoms.get_potential_energy)
-    forces = _try(atoms.get_forces)
-    stress = _try(lambda: atoms.get_stress(voigt=False))
+    energy = _try("energy", atoms.get_potential_energy)
+    forces = _try("forces", atoms.get_forces)
+    stress = _try("stress", lambda: atoms.get_stress(voigt=False))
     return DftResult(
         path=path, code=code, nimages=len(images),
         energy=None if energy is None else float(energy),
@@ -49,6 +60,7 @@ def read_dft_output(path, code, image=-1):
         cell=np.asarray(atoms.cell[:], dtype=float),
         scaled_positions=np.asarray(atoms.get_scaled_positions(wrap=False), dtype=float),
         numbers=np.asarray(atoms.numbers, dtype=int),
+        missing=missing,
     )
 
 

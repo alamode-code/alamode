@@ -268,6 +268,7 @@ class FitResult:
     n_energy: int
     n_stress: int
     residuals: list  # (label, kind, max abs residual) per configuration
+    block_rms: dict = None  # 'both' mode: residual RMS of the single-block fits used as weights
 
     @property
     def c2_full(self):
@@ -345,19 +346,21 @@ def fit_elastic(data, volume, mode="stress", e_ref=None, weight_floor=1.0e-8):
     A, b, tags, ncol = _assemble(data, volume, mode, e_ref)
     kinds = np.array([t[1] for t in tags])
     wrow = np.ones(len(b))
+    block_rms = {}
     if mode == "both":
-        # weight each block by the inverse residual RMS of its single-block fit
-        for kind, m in (("energy", "energy"), ("stress", "stress")):
+        # One reweighting step: fit all rows unweighted first, take the residual
+        # RMS of every block from that common solution, and weight the rows by
+        # its inverse (floored).  This is symmetric in the two blocks and does
+        # not depend on the single-block fits being full rank (an energy-only
+        # block is rank deficient on the minimal direction set).
+        x0, _, _, _ = _lstsq(A, b)
+        res0 = A @ x0 - b
+        for kind in ("energy", "stress"):
             sel = kinds == kind
             if sel.sum() == 0:
                 continue
-            Ak, bk = A[sel], b[sel]
-            xk, rank_k, _, _ = _lstsq(Ak, bk)
-            if rank_k < min(Ak.shape):
-                rms = 1.0  # rank deficient single-block fit: neutral weight
-            else:
-                res = Ak @ xk - bk
-                rms = float(np.sqrt(np.mean(res ** 2)))
+            rms = float(np.sqrt(np.mean(res0[sel] ** 2)))
+            block_rms[kind] = rms
             wrow[sel] = 1.0 / max(rms, weight_floor)
     x, rank, sv, cond = _lstsq(A * wrow[:, None], b * wrow)
     expected = ncol
@@ -378,6 +381,7 @@ def fit_elastic(data, volume, mode="stress", e_ref=None, weight_floor=1.0e-8):
         de0=de0, e_ref=float(e_ref), rank=int(rank), expected_rank=int(expected),
         cond=cond, singular_values=sv, rms_energy=rms_e, rms_stress=rms_s,
         n_energy=int(sel_e.sum()), n_stress=int(sel_s.sum()), residuals=residuals,
+        block_rms=block_rms or None,
     )
 
 
