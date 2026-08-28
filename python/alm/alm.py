@@ -71,6 +71,11 @@ class ALM:
     force_unit : str
         Unit of the forces passed to this object: 'Ry/bohr' (default),
         'eV/angstrom' or 'Ha/bohr'.  Converted to Ry/Bohr internally.
+    symmetry_tolerance : float
+        Tolerance (in ``length_unit``-independent fractional/Cartesian bohr
+        units as in the CLI TOLERANCE tag) used by the symmetry finder
+        (spglib), default 1e-3.  Can be changed later through
+        :attr:`symmetry_tolerance`.
 
     Notes
     -----
@@ -123,6 +128,7 @@ class ALM:
         verbosity: int = 0,
         length_unit: str = "bohr",
         force_unit: str = "Ry/bohr",
+        symmetry_tolerance: float = 1.0e-3,
     ):
         self._core = None
         self._maxorder = 1
@@ -134,6 +140,7 @@ class ALM:
         self._kind_names = OrderedDict()
         self._output_filename_prefix = None
         self._verbosity = verbosity
+        self._symmetry_tolerance = float(symmetry_tolerance)
         self._length_unit = self._canonical_unit(
             length_unit, self._LENGTH_UNITS, "length_unit"
         )
@@ -184,6 +191,9 @@ class ALM:
             return
         self._core = _alm.ALMCore()
         self._core.set_verbosity(self._verbosity)
+        # Always initialize the symmetry tolerance (the CLI does the same);
+        # the core's System class has no usable default otherwise.
+        self._core.set_symmetry_tolerance(self._symmetry_tolerance)
         # Must precede the transfers below: set_cell/set_u_train/set_f_train/
         # define convert their input from these units to Bohr / Ry/Bohr.
         self._core.set_input_units(self._length_unit, self._force_unit)
@@ -294,7 +304,11 @@ class ALM:
             self._kind_names.setdefault(int(z), element_symbol(z))
         z_list = list(self._kind_names.keys())
         kind = np.array([z_list.index(int(z)) + 1 for z in self._numbers], dtype="intc")
-        self._core.set_cell(self._lavec, self._xcoord, kind)
+        # The Python API takes the lattice vectors as ROWS (row i = i-th
+        # vector); the C++ core stores them as COLUMNS (as the CLI &cell /
+        # POSCAR parsers do), so transpose at the boundary.
+        lavec_columns = np.ascontiguousarray(self._lavec.T, dtype="double")
+        self._core.set_cell(lavec_columns, self._xcoord, kind)
         self._core.set_element_names(list(self._kind_names.values()))
         # Non-magnetic defaults (the CLI always sets these; required for correct symmetry).
         self._core.set_magnetic_params(
@@ -313,6 +327,19 @@ class ALM:
         """Unit of the forces passed to this object ('Ry/bohr', 'eV/angstrom'
         or 'Ha/bohr'; read-only, set at construction)."""
         return self._force_unit
+
+    # ---- symmetry tolerance ---------------------------------------------
+    @property
+    def symmetry_tolerance(self) -> float:
+        """Tolerance of the symmetry finder (CLI TOLERANCE tag), default 1e-3."""
+        return self._symmetry_tolerance
+
+    @symmetry_tolerance.setter
+    def symmetry_tolerance(self, tol):
+        self._symmetry_tolerance = float(tol)
+        if self._core is not None:
+            self._core.set_symmetry_tolerance(self._symmetry_tolerance)
+            self._patterns_ready = False
 
     # ---- verbosity / output ---------------------------------------------
     @property

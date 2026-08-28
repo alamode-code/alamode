@@ -479,6 +479,12 @@ auto System::set_default_variables() -> void
     spin_input.lspin = false;
     spin_input.noncollinear = 0;
     spin_input.time_reversal_symm = 1;
+    // Same default as Symmetry::set_default_variables and the CLI TOLERANCE tag.
+    // Without it, library users (e.g. the Python interface) that never call
+    // set_tolerance passed an uninitialized value to spglib, whose failure
+    // path then crashed (NULL free in det_determine_all).
+    symmetry_tolerance = 1.0e-3;
+    autoset_primcell = 0;
     transmat_to_super = Eigen::Matrix3d::Identity();
     transmat_to_prim = Eigen::Matrix3d::Identity();
 }

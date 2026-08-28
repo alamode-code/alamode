@@ -3,7 +3,10 @@
 # Copyright (c) 2026 Terumasa Tadano
 # MIT license.  See LICENCE.txt of the ALAMODE package.
 """Harmonic force-constant models on (strained) supercells with the in-repo
-nanobind ``alm`` package (python/ of the ALAMODE distribution)."""
+nanobind ``alm`` package (python/ of the ALAMODE distribution).
+
+The ALM objects are used directly in this process (one instance per
+strained cell)."""
 
 import os
 
@@ -37,9 +40,10 @@ def model_kwargs(nbody, cutoff, nkd):
 
 def make_alm(atoms, verbosity=0):
     ALM = require_alm()
-    # ALM stores the lattice vectors as COLUMNS (as the CLI &cell / POSCAR
-    # parsers do), while ase stores them as rows -> transpose.
-    return ALM(np.asarray(atoms.cell[:], dtype=float).T.copy(),
+    # The alm Python API takes the lattice vectors as rows (row i = i-th
+    # vector), i.e. the ase convention; the transposition to the column
+    # convention of the C++ core happens inside the wrapper.
+    return ALM(np.asarray(atoms.cell[:], dtype=float),
                np.asarray(atoms.get_scaled_positions(wrap=False), dtype=float),
                np.asarray(atoms.numbers, dtype=int),
                verbosity=verbosity, length_unit="angstrom", force_unit="eV/angstrom")
@@ -52,73 +56,12 @@ def _define_harmonic(alm, atoms, nbody, cutoff):
                symmetrization_basis="Lattice")
 
 
-# ---------------------------------------------------------------------------
-# Every ALM job runs in a fresh interpreter: creating several ALM objects in
-# one process crashes the current nanobind module (segmentation fault in
-# define() around the 3rd-4th instance).  Set STRAINKIT_ALM_INPROCESS=1 to
-# run in-process (debugging only).  The worker is a plain subprocess (not
-# multiprocessing.spawn) so that it does not depend on how the parent was
-# started; ALM's console output is captured and shown only on failure or
-# when verbosity > 0.
-import pickle
-import subprocess
-import sys
-import tempfile
-
-_TOOLS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-def _subprocess_main(fin, fout):
-    with open(fin, "rb") as f:
-        name, args, kwargs = pickle.load(f)
-    try:
-        result = ("ok", globals()[name](*args, **kwargs))
-    except BaseException as exc:  # noqa: BLE001
-        result = ("err", f"{type(exc).__name__}: {exc}")
-    with open(fout, "wb") as f:
-        pickle.dump(result, f)
-
-
-def _isolated(name, *args, **kwargs):
-    if os.environ.get("STRAINKIT_ALM_INPROCESS") == "1":
-        return globals()[name](*args, **kwargs)
-    verbosity = kwargs.get("verbosity", 0)
-    with tempfile.TemporaryDirectory(prefix="strainkit_alm_") as td:
-        fin = os.path.join(td, "in.pkl")
-        fout = os.path.join(td, "out.pkl")
-        with open(fin, "wb") as f:
-            pickle.dump((name, args, kwargs), f)
-        env = dict(os.environ)
-        env["PYTHONPATH"] = _TOOLS_DIR + os.pathsep + env.get("PYTHONPATH", "")
-        code = "import sys; from strainkit import almfit; almfit._subprocess_main(sys.argv[1], sys.argv[2])"
-        proc = subprocess.run([sys.executable, "-c", code, fin, fout], env=env,
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        if verbosity > 0 and proc.stdout:
-            print(proc.stdout)
-        tail = "\n".join(proc.stdout.strip().splitlines()[-15:]) if proc.stdout else ""
-        if not os.path.exists(fout):
-            raise RuntimeError(
-                f"ALM worker process for {name} died without a result (exit code "
-                f"{proc.returncode}; a negative value is a signal, e.g. -11 = segmentation fault)."
-                + (f"\nLast output:\n{tail}" if tail else ""))
-        with open(fout, "rb") as f:
-            status, payload = pickle.load(f)
-    if status != "ok":
-        raise RuntimeError(f"ALM step {name} failed: {payload}" + (f"\nLast output:\n{tail}" if tail else ""))
-    return payload
-
-
 def suggest_harmonic_patterns(atoms, nbody=2, cutoff=None, verbosity=0):
     """ALM displacement patterns of the harmonic model of ``atoms``.
 
     Returns a list of patterns; each pattern is a list of (atom_index,
     direction (3,), "Cartesian").
     """
-    require_alm()
-    return _isolated("_suggest_impl", atoms, nbody, cutoff, verbosity)
-
-
-def _suggest_impl(atoms, nbody, cutoff, verbosity):
     with make_alm(atoms, verbosity) as alm:
         _define_harmonic(alm, atoms, nbody, cutoff)
         alm.suggest()
@@ -156,11 +99,6 @@ def fit_harmonic(atoms, u_ang, f_ev_ang, out_file, fmt="xml", nbody=2, cutoff=No
     f = np.asarray(f_ev_ang, dtype=float)
     if u.ndim != 3 or u.shape != f.shape or u.shape[1] != len(atoms) or u.shape[2] != 3:
         raise ValueError(f"training data must have shape (nsnap, {len(atoms)}, 3)")
-    require_alm()
-    return _isolated("_fit_impl", atoms, u, f, out_file, fmt, nbody, cutoff, solver, verbosity)
-
-
-def _fit_impl(atoms, u, f, out_file, fmt, nbody, cutoff, solver, verbosity):
     with make_alm(atoms, verbosity) as alm:
         _define_harmonic(alm, atoms, nbody, cutoff)
         alm.set_constraint(translation=True)

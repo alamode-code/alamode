@@ -144,6 +144,14 @@ These follow the ALM command-line interface (CLI) and are easy to get wrong:
 * ``ALM(lavec, xcoord, numbers)`` takes the **primitive** cell: ``lavec`` (3x3,
   in ``length_unit``), ``xcoord`` (fractional, ``(nat, 3)``), ``numbers``
   (atomic numbers :math:`Z`).  Map it to the supercell with ``set_supercell``.
+* ``lavec`` holds the lattice vectors as **rows** (``lavec[i]`` is the i-th
+  vector, the convention of ase / phonopy / spglib).  The C++ core stores them
+  as columns; the transposition is done inside the wrapper, so an
+  ``ase.Atoms`` cell can be passed as ``atoms.cell[:]`` directly.
+* ``symmetry_tolerance`` (constructor keyword or attribute, default ``1e-3``)
+  is the tolerance of the symmetry finder, i.e. the CLI ``TOLERANCE`` tag.
+  Increase it for slightly distorted (e.g. strained) cells whose symmetry
+  spglib does not recognize at the default value.
 * ``cutoff_radii`` has shape ``(maxorder, nkd, nkd)`` where ``nkd`` is the number
   of atomic species.  Values are in ``length_unit`` (bohr by default, same
   convention as the CLI ``&cutoff`` field).  Use a **negative** value for "no
