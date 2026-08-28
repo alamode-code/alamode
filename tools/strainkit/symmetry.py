@@ -14,14 +14,18 @@ def cartesian_rotations(atoms, symprec=1.0e-5):
     """
     import spglib
 
-    cell = (np.asarray(atoms.cell[:], dtype=float),
-            np.asarray(atoms.get_scaled_positions(), dtype=float),
-            np.asarray(atoms.numbers, dtype=int))
+    cell = (
+        np.asarray(atoms.cell[:], dtype=float),
+        np.asarray(atoms.get_scaled_positions(), dtype=float),
+        np.asarray(atoms.numbers, dtype=int),
+    )
     dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
     if dataset is None:
         raise RuntimeError("spglib could not determine the symmetry of the structure")
-    rots_frac = np.asarray(dataset.rotations if hasattr(dataset, "rotations")
-                           else dataset["rotations"], dtype=float)
+    rots_frac = np.asarray(
+        dataset.rotations if hasattr(dataset, "rotations") else dataset["rotations"],
+        dtype=float,
+    )
     at = np.asarray(atoms.cell[:], dtype=float).T
     at_inv = np.linalg.inv(at)
     seen = []
@@ -62,8 +66,16 @@ def enforce_intrinsic_symmetry2(c):
     ElasticTensor::symmetrize_elastic_tensor2 in anphon.
     """
     out = np.zeros_like(c, dtype=float)
-    for perm in ((0, 1, 2, 3), (1, 0, 2, 3), (0, 1, 3, 2), (1, 0, 3, 2),
-                 (2, 3, 0, 1), (3, 2, 0, 1), (2, 3, 1, 0), (3, 2, 1, 0)):
+    for perm in (
+        (0, 1, 2, 3),
+        (1, 0, 2, 3),
+        (0, 1, 3, 2),
+        (1, 0, 3, 2),
+        (2, 3, 0, 1),
+        (3, 2, 0, 1),
+        (2, 3, 1, 0),
+        (3, 2, 1, 0),
+    ):
         out += np.transpose(c, perm)
     return out / 8.0
 

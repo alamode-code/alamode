@@ -43,17 +43,25 @@ def make_alm(atoms, verbosity=0):
     # The alm Python API takes the lattice vectors as rows (row i = i-th
     # vector), i.e. the ase convention; the transposition to the column
     # convention of the C++ core happens inside the wrapper.
-    return ALM(np.asarray(atoms.cell[:], dtype=float),
-               np.asarray(atoms.get_scaled_positions(wrap=False), dtype=float),
-               np.asarray(atoms.numbers, dtype=int),
-               verbosity=verbosity, length_unit="angstrom", force_unit="eV/angstrom")
+    return ALM(
+        np.asarray(atoms.cell[:], dtype=float),
+        np.asarray(atoms.get_scaled_positions(wrap=False), dtype=float),
+        np.asarray(atoms.numbers, dtype=int),
+        verbosity=verbosity,
+        length_unit="angstrom",
+        force_unit="eV/angstrom",
+    )
 
 
 def _define_harmonic(alm, atoms, nbody, cutoff):
     nkd = len(np.unique(np.asarray(atoms.numbers)))
     kw = model_kwargs(nbody, cutoff, nkd)
-    alm.define(1, cutoff_radii=kw["cutoff_radii"], nbody=kw["nbody"],
-               symmetrization_basis="Lattice")
+    alm.define(
+        1,
+        cutoff_radii=kw["cutoff_radii"],
+        nbody=kw["nbody"],
+        symmetrization_basis="Lattice",
+    )
 
 
 def suggest_harmonic_patterns(atoms, nbody=2, cutoff=None, verbosity=0):
@@ -86,8 +94,17 @@ def displaced_structures(atoms, patterns, dmag):
     return out
 
 
-def fit_harmonic(atoms, u_ang, f_ev_ang, out_file, fmt="xml", nbody=2, cutoff=None,
-                 solver="dense", verbosity=0):
+def fit_harmonic(
+    atoms,
+    u_ang,
+    f_ev_ang,
+    out_file,
+    fmt="xml",
+    nbody=2,
+    cutoff=None,
+    solver="dense",
+    verbosity=0,
+):
     """Fit harmonic force constants and write them (Ry/bohr^2) to ``out_file``.
 
     Returns a dict with fit information.
@@ -109,6 +126,13 @@ def fit_harmonic(atoms, u_ang, f_ev_ang, out_file, fmt="xml", nbody=2, cutoff=No
             raise RuntimeError(f"ALM optimize() failed with status {info}")
         nparam = alm.get_number_of_free_parameters()
         os.makedirs(os.path.dirname(os.path.abspath(out_file)), exist_ok=True)
-        alm.save_fc(out_file, format="alamode" if fmt == "xml" else "alamode_h5",
-                    fc_unit="Ry/bohr")
-    return {"nsnap": int(u.shape[0]), "n_free_parameters": int(nparam), "info": int(info)}
+        alm.save_fc(
+            out_file,
+            format="alamode" if fmt == "xml" else "alamode_h5",
+            fc_unit="Ry/bohr",
+        )
+    return {
+        "nsnap": int(u.shape[0]),
+        "n_free_parameters": int(nparam),
+        "info": int(info),
+    }

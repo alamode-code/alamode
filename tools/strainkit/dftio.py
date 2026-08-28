@@ -18,7 +18,9 @@ class DftResult:
     cell: np.ndarray  # (3, 3) A, rows = lattice vectors
     scaled_positions: np.ndarray
     numbers: np.ndarray
-    missing: dict = None  # property -> reason, for energy/forces/stress that could not be read
+    missing: dict = (
+        None  # property -> reason, for energy/forces/stress that could not be read
+    )
 
     def require(self, *names):
         """Raise ValueError if any of the named observables is unavailable."""
@@ -53,12 +55,16 @@ def read_dft_output(path, code, image=-1):
     forces = _try("forces", atoms.get_forces)
     stress = _try("stress", lambda: atoms.get_stress(voigt=False))
     return DftResult(
-        path=path, code=code, nimages=len(images),
+        path=path,
+        code=code,
+        nimages=len(images),
         energy=None if energy is None else float(energy),
         forces=None if forces is None else np.asarray(forces, dtype=float),
         stress=None if stress is None else np.asarray(stress, dtype=float),
         cell=np.asarray(atoms.cell[:], dtype=float),
-        scaled_positions=np.asarray(atoms.get_scaled_positions(wrap=False), dtype=float),
+        scaled_positions=np.asarray(
+            atoms.get_scaled_positions(wrap=False), dtype=float
+        ),
         numbers=np.asarray(atoms.numbers, dtype=int),
         missing=missing,
     )
@@ -66,15 +72,20 @@ def read_dft_output(path, code, image=-1):
 
 def check_same_species(result, ref_atoms):
     if len(result.numbers) != len(ref_atoms):
-        raise ValueError(f"{result.path}: {len(result.numbers)} atoms, expected {len(ref_atoms)}")
+        raise ValueError(
+            f"{result.path}: {len(result.numbers)} atoms, expected {len(ref_atoms)}"
+        )
     if not np.array_equal(result.numbers, np.asarray(ref_atoms.numbers)):
         bad = np.nonzero(result.numbers != np.asarray(ref_atoms.numbers))[0]
         raise ValueError(
             f"{result.path}: atomic species differ from the generated structure at atom index "
-            f"{bad[:10].tolist()} (0-based); the atom order must be preserved")
+            f"{bad[:10].tolist()} (0-based); the atom order must be preserved"
+        )
 
 
-def check_geometry(result, expected_atoms, tol_cell=1.0e-4, tol_frac=1.0e-5, strict=True):
+def check_geometry(
+    result, expected_atoms, tol_cell=1.0e-4, tol_frac=1.0e-5, strict=True
+):
     """Verify that the output geometry equals the generated structure.
 
     Returns (max cell deviation [A], max fractional deviation).  Raises (or
@@ -94,9 +105,11 @@ def check_geometry(result, expected_atoms, tol_cell=1.0e-4, tol_frac=1.0e-5, str
     if dfrac > tol_frac:
         problems.append(f"fractional coordinates differ by up to {dfrac:.3e}")
     if problems:
-        msg = (f"{result.path}: geometry does not match the generated structure "
-               f"({'; '.join(problems)}). The DFT run must not relax the cell or the ions "
-               "(clamped-ion, fixed-cell calculation expected).")
+        msg = (
+            f"{result.path}: geometry does not match the generated structure "
+            f"({'; '.join(problems)}). The DFT run must not relax the cell or the ions "
+            "(clamped-ion, fixed-cell calculation expected)."
+        )
         if strict:
             raise ValueError(msg)
         warnings.warn(msg)

@@ -17,16 +17,27 @@ def _data(kind, s0, c2, c3, volume, use_e, use_s, smag=0.01, nmag=2, noise=0.0, 
         if noise:
             e += noise * volume * rng.normal()
             s = s + noise * rng.normal(size=6)
-        out.append(ef.FitData(p.label, p.eta6, e if use_e else None, s if use_s else None))
+        out.append(
+            ef.FitData(p.label, p.eta6, e if use_e else None, s if use_s else None)
+        )
     return out
 
 
-@pytest.mark.parametrize("kind,mode,expected_rank", [
-    ("minimal", "stress", 83), ("minimal", "both", 84), ("full", "energy", 84), ("full", "both", 84)])
+@pytest.mark.parametrize(
+    "kind,mode,expected_rank",
+    [
+        ("minimal", "stress", 83),
+        ("minimal", "both", 84),
+        ("full", "energy", 84),
+        ("full", "both", 84),
+    ],
+)
 def test_exact_recovery(kind, mode, expected_rank):
     s0, c2, c3 = _model(1)
     V = 45.0
-    fit = ef.fit_elastic(_data(kind, s0, c2, c3, V, mode != "stress", mode != "energy"), V, mode)
+    fit = ef.fit_elastic(
+        _data(kind, s0, c2, c3, V, mode != "stress", mode != "energy"), V, mode
+    )
     assert fit.rank == expected_rank == fit.expected_rank
     assert np.abs(fit.sigma0 - s0).max() < 1e-9
     assert np.abs(fit.c2 - c2).max() < 1e-9
@@ -36,14 +47,18 @@ def test_exact_recovery(kind, mode, expected_rank):
 
 def test_energy_minimal_rank_deficient():
     s0, c2, c3 = _model(2)
-    fit = ef.fit_elastic(_data("minimal", s0, c2, c3, 30.0, True, False), 30.0, "energy")
+    fit = ef.fit_elastic(
+        _data("minimal", s0, c2, c3, 30.0, True, False), 30.0, "energy"
+    )
     assert fit.rank < fit.expected_rank
 
 
 def test_noise_robustness():
     s0, c2, c3 = _model(3)
     V = 40.0
-    fit = ef.fit_elastic(_data("minimal", s0, c2, c3, V, True, True, noise=1e-6), V, "both")
+    fit = ef.fit_elastic(
+        _data("minimal", s0, c2, c3, V, True, True, noise=1e-6), V, "both"
+    )
     assert np.abs(fit.c2 - c2).max() * ef.EV_PER_ANG3_TO_GPA < 0.2
 
 
@@ -73,7 +88,9 @@ def test_both_mode_weights_are_residual_based():
     data = _data("minimal", s0, c2, c3, V, True, True, noise=1e-5, seed=3)
     fit = ef.fit_elastic(data, V, "both")
     assert fit.block_rms is not None and set(fit.block_rms) == {"energy", "stress"}
-    assert all(0 < v < 1e-2 for v in fit.block_rms.values())  # neither block got the neutral weight 1.0
+    assert all(
+        0 < v < 1e-2 for v in fit.block_rms.values()
+    )  # neither block got the neutral weight 1.0
     assert fit.rank == 84
     assert np.abs(fit.c2 - c2).max() * ef.EV_PER_ANG3_TO_GPA < 0.5
 

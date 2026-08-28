@@ -1,4 +1,5 @@
 """Helpers shared by the EMT end-to-end tests (ase EMT as a fake DFT engine)."""
+
 import glob
 import os
 
@@ -8,8 +9,11 @@ import numpy as np
 def run_emt(root):
     import ase.io
     from ase.calculators.emt import EMT
+
     n = 0
-    for f in sorted(glob.glob(os.path.join(root, "strain_*", "**", "input.extxyz"), recursive=True)):
+    for f in sorted(
+        glob.glob(os.path.join(root, "strain_*", "**", "input.extxyz"), recursive=True)
+    ):
         a = ase.io.read(f)
         a.calc = EMT()
         a.get_potential_energy()
@@ -26,6 +30,7 @@ def relaxed_cu_fcc():
     from ase.calculators.emt import EMT
     from ase.filters import FrechetCellFilter
     from ase.optimize import BFGS
+
     a = bulk("Cu", "fcc", a=3.6)
     a.calc = EMT()
     BFGS(FrechetCellFilter(a), logfile=None).run(fmax=1e-5)
@@ -36,6 +41,7 @@ def relaxed_cu_fcc():
 def fit_reference_fc2(cell, out_file, fmt="xml"):
     from strainkit import almfit
     from ase.calculators.emt import EMT
+
     pats = almfit.suggest_harmonic_patterns(cell)
     u, f = [], []
     for s in almfit.displaced_structures(cell, pats, 0.01):

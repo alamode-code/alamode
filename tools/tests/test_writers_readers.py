@@ -17,7 +17,9 @@ def test_elastic_constants_round_trip(tmp_path):
     assert np.allclose(a, ef.full2_to_9x9(c4)) and np.allclose(b, ef.full3_to_9x9x9(c6))
     assert writers.asymmetry_rank4(a) == 0.0 and writers.asymmetry_rank6(b) == 0.0
     with pytest.raises(ValueError):
-        writers.write_elastic_constants_in(p, np.full((9, 9), np.nan), np.zeros((9, 9, 9)))
+        writers.write_elastic_constants_in(
+            p, np.full((9, 9), np.nan), np.zeros((9, 9, 9))
+        )
     with pytest.raises(ValueError):
         writers.write_elastic_constants_in(p, np.zeros((6, 6)), np.zeros((9, 9, 9)))
 
@@ -28,15 +30,27 @@ def test_c1_round_trip(tmp_path):
     writers.write_C1_array_in(p, s)
     assert len(p.read_text().split()) == 10
     r = writers.read_C1_array_in(p)
-    assert np.allclose(r, s) and r[1, 2] == r[2, 1] == 4 and writers.asymmetry_rank2(r) == 0
+    assert (
+        np.allclose(r, s)
+        and r[1, 2] == r[2, 1] == 4
+        and writers.asymmetry_rank2(r) == 0
+    )
 
 
 def test_strain_harmonic_in(tmp_path):
-    rows = [("xx", 0.005, 0.5, "a.xml"), ("xx", -0.005, 0.5, "b.xml"), ("yz", 0.005, 1.0, "c.h5")]
+    rows = [
+        ("xx", 0.005, 0.5, "a.xml"),
+        ("xx", -0.005, 0.5, "b.xml"),
+        ("yz", 0.005, 1.0, "c.h5"),
+    ]
     p = tmp_path / "strain_harmonic.in"
     writers.write_strain_harmonic_in(p, rows)
     back = writers.read_strain_harmonic_in(p)
-    assert [r[0] for r in back] == ["xx", "xx", "yz"] and back[1][1] == -0.005 and back[2][3] == "c.h5"
+    assert (
+        [r[0] for r in back] == ["xx", "xx", "yz"]
+        and back[1][1] == -0.005
+        and back[2][3] == "c.h5"
+    )
     with pytest.raises(ValueError):
         writers.write_strain_harmonic_in(p, [("xz", 0.005, 1.0, "x.xml")])
 

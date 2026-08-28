@@ -19,7 +19,6 @@ Conventions (identical to strainIFCcoupling and to anphon):
 """
 
 import json
-import os
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -37,8 +36,14 @@ for _a, (_i, _j) in enumerate(VOIGT_PAIRS):
 # Multiplicity of a Voigt component in a full 3x3 contraction.
 VOIGT_WEIGHT = np.array([1.0, 1.0, 1.0, 2.0, 2.0, 2.0])
 
-_MODE_PAIR = {"xx": (0, 0), "yy": (1, 1), "zz": (2, 2),
-              "yz": (1, 2), "zx": (2, 0), "xy": (0, 1)}
+_MODE_PAIR = {
+    "xx": (0, 0),
+    "yy": (1, 1),
+    "zz": (2, 2),
+    "yz": (1, 2),
+    "zx": (2, 0),
+    "xy": (0, 1),
+}
 
 DEFAULT_SMAG = 0.005
 
@@ -150,8 +155,10 @@ class StrainPoint:
 
 def default_modes(smag=DEFAULT_SMAG):
     """The six default strain modes, weight 1 (one-sided finite difference)."""
-    return [{"id": i + 1, "mode": m, "weight": 1.0, "strain_mag": smag}
-            for i, m in enumerate(MODE_NAMES)]
+    return [
+        {"id": i + 1, "mode": m, "weight": 1.0, "strain_mag": smag}
+        for i, m in enumerate(MODE_NAMES)
+    ]
 
 
 def load_modes_json(path):
@@ -171,12 +178,14 @@ def load_modes_json(path):
         if "mode" not in item:
             raise ValueError(f"{path}: entry {k} has no 'mode' key")
         mode_pair(item["mode"])  # validates the name
-        modes.append({
-            "id": int(item.get("id", k + 1)),
-            "mode": str(item["mode"]),
-            "weight": float(item.get("weight", 1.0)),
-            "strain_mag": float(item.get("strain_mag", DEFAULT_SMAG)),
-        })
+        modes.append(
+            {
+                "id": int(item.get("id", k + 1)),
+                "mode": str(item["mode"]),
+                "weight": float(item.get("weight", 1.0)),
+                "strain_mag": float(item.get("strain_mag", DEFAULT_SMAG)),
+            }
+        )
     return modes
 
 
@@ -211,8 +220,12 @@ def ifc_strain_set(modes, smag=None, central=False):
             raise ValueError(f"strain magnitude of mode {mode!r} is zero")
         w = float(item.get("weight", 1.0))
         if central:
-            points.append(StrainPoint(mode + "+", mode, s, 0.5 * w, s * mode_tensor(mode)))
-            points.append(StrainPoint(mode + "-", mode, -s, 0.5 * w, -s * mode_tensor(mode)))
+            points.append(
+                StrainPoint(mode + "+", mode, s, 0.5 * w, s * mode_tensor(mode))
+            )
+            points.append(
+                StrainPoint(mode + "-", mode, -s, 0.5 * w, -s * mode_tensor(mode))
+            )
         else:
             points.append(StrainPoint(mode, mode, s, w, s * mode_tensor(mode)))
     return points

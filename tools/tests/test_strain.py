@@ -30,6 +30,7 @@ def test_green_lagrange():
 
 def test_deform_keeps_fractional(ase_mod):
     from ase.build import bulk
+
     a = bulk("Cu", "hcp", a=2.5, c=4.1)
     u = strain.u_from_voigt([0.01, 0, 0, 0.004, 0, 0])
     F = strain.deformation_gradient(u)
@@ -55,9 +56,16 @@ def test_strain_set_and_weights():
 
 def test_modes_json(tmp_path):
     import json
+
     p = tmp_path / "strain_modes.json"
-    p.write_text(json.dumps([{"id": 1, "mode": "xx", "weight": 1.0, "strain_mag": 0.003},
-                             {"id": 2, "mode": "xy"}]))
+    p.write_text(
+        json.dumps(
+            [
+                {"id": 1, "mode": "xx", "weight": 1.0, "strain_mag": 0.003},
+                {"id": 2, "mode": "xy"},
+            ]
+        )
+    )
     modes = strain.load_modes_json(p)
     assert modes[0]["strain_mag"] == 0.003 and modes[1]["weight"] == 1.0
     p.write_text(json.dumps([{"mode": "xz"}]))

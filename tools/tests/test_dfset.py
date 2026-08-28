@@ -9,11 +9,14 @@ def _result(atoms, forces, shift=None):
     xf = atoms.get_scaled_positions()
     if shift is not None:
         xf = xf + shift
-    return DftResult("x", "ase", 1, None, forces, None, atoms.cell[:], xf, atoms.numbers)
+    return DftResult(
+        "x", "ase", 1, None, forces, None, atoms.cell[:], xf, atoms.numbers
+    )
 
 
 def test_refold_and_offset(ase_mod):
     from ase.build import bulk
+
     a = bulk("Cu", "fcc", a=3.6, cubic=True)
     d = np.zeros((4, 3))
     d[0] = [0.002, 0, 0]
@@ -29,6 +32,7 @@ def test_refold_and_offset(ase_mod):
 
 def test_species_and_geometry_checks(ase_mod):
     from ase.build import bulk
+
     a = bulk("Cu", "fcc", a=3.6, cubic=True)
     b = a.copy()
     b.numbers[0] = 30
@@ -49,6 +53,7 @@ def test_missing_observables_are_reported(ase_mod, tmp_path):
     from ase.calculators.singlepoint import SinglePointCalculator
     from strainkit.dftio import read_dft_output
     from ase.build import bulk
+
     a = bulk("Cu", "fcc", a=3.6)
     a.calc = SinglePointCalculator(a, forces=np.zeros((1, 3)))
     p = tmp_path / "output.extxyz"

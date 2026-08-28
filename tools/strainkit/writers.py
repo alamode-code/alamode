@@ -43,9 +43,14 @@ def write_strain_harmonic_in(path, rows):
         if not np.isfinite(smag) or not np.isfinite(weight) or smag == 0.0:
             raise ValueError(f"strain_harmonic.in: invalid smag/weight for mode {mode}")
         if any(c.isspace() for c in str(filename)):
-            raise ValueError("strain_harmonic.in: filenames must not contain whitespace")
-        lines.append("{0:4s} {1:25.15f} {2:25.15f} {3:25s}\n".format(
-            mode, float(smag), float(weight), str(filename)))
+            raise ValueError(
+                "strain_harmonic.in: filenames must not contain whitespace"
+            )
+        lines.append(
+            "{0:4s} {1:25.15f} {2:25.15f} {3:25s}\n".format(
+                mode, float(smag), float(weight), str(filename)
+            )
+        )
     with open(path, "w") as f:
         f.writelines(lines)
 
@@ -76,10 +81,14 @@ def write_strain_force_in(path, blocks):
         if natmin is None:
             natmin = forces.shape[0]
         elif forces.shape[0] != natmin:
-            raise ValueError("strain_force.in: inconsistent number of atoms between blocks")
+            raise ValueError(
+                "strain_force.in: inconsistent number of atoms between blocks"
+            )
         if not np.isfinite(smag) or smag == 0.0 or not np.isfinite(weight):
             raise ValueError(f"strain_force.in: invalid smag/weight for mode {mode}")
-        lines.append("{0:4s} {1:25.15f} {2:25.15f}\n".format(mode, float(smag), float(weight)))
+        lines.append(
+            "{0:4s} {1:25.15f} {2:25.15f}\n".format(mode, float(smag), float(weight))
+        )
         for fx, fy, fz in forces:
             lines.append("{0:25.15f} {1:25.15f} {2:25.15f}\n".format(fx, fy, fz))
     with open(path, "w") as f:
@@ -93,13 +102,15 @@ def read_strain_force_in(path, natmin):
     k = 0
     per = 3 + 3 * natmin
     if len(tok) % per != 0:
-        raise ValueError(f"{path}: token count {len(tok)} is not a multiple of {per} (natmin={natmin})")
+        raise ValueError(
+            f"{path}: token count {len(tok)} is not a multiple of {per} (natmin={natmin})"
+        )
     while k < len(tok):
         mode = tok[k]
         if mode not in _VALID_MODES:
             raise ValueError(f"{path}: invalid mode name {mode!r}")
         smag, weight = float(tok[k + 1]), float(tok[k + 2])
-        vals = np.array([float(t) for t in tok[k + 3:k + per]]).reshape(natmin, 3)
+        vals = np.array([float(t) for t in tok[k + 3 : k + per]]).reshape(natmin, 3)
         blocks.append((mode, smag, weight, vals))
         k += per
     return blocks
@@ -124,7 +135,9 @@ def write_elastic_constants_in(path, c2_99_ry, c3_999_ry):
 def read_elastic_constants_in(path):
     tok = _tokens(path)
     if len(tok) != 1 + 81 + 1 + 729:
-        raise ValueError(f"{path}: expected {1 + 81 + 1 + 729} tokens, found {len(tok)}")
+        raise ValueError(
+            f"{path}: expected {1 + 81 + 1 + 729} tokens, found {len(tok)}"
+        )
     c2 = np.array([float(t) for t in tok[1:82]]).reshape(9, 9)
     c3 = np.array([float(t) for t in tok[83:]]).reshape(9, 9, 9)
     return c2, c3
@@ -167,8 +180,13 @@ def asymmetry_rank4(c99):
 def asymmetry_rank6(c999):
     c = np.asarray(c999, dtype=float).reshape((3,) * 6)
     dev = 0.0
-    for perm in ((1, 0, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5), (0, 1, 2, 3, 5, 4),
-                 (2, 3, 0, 1, 4, 5), (0, 1, 4, 5, 2, 3)):
+    for perm in (
+        (1, 0, 2, 3, 4, 5),
+        (0, 1, 3, 2, 4, 5),
+        (0, 1, 2, 3, 5, 4),
+        (2, 3, 0, 1, 4, 5),
+        (0, 1, 4, 5, 2, 3),
+    ):
         dev = max(dev, float(np.abs(c - np.transpose(c, perm)).max()))
     return dev
 

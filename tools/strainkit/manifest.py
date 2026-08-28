@@ -42,11 +42,14 @@ def save_manifest(data, path):
 def load_manifest(path, expect_tool=None):
     if not os.path.exists(path):
         raise FileNotFoundError(
-            f"manifest {path} not found; run the 'generate' step first (in the same --outdir)")
+            f"manifest {path} not found; run the 'generate' step first (in the same --outdir)"
+        )
     with open(path) as f:
         data = json.load(f)
     if data.get("version") != VERSION:
         raise ValueError(f"{path}: unsupported manifest version {data.get('version')}")
     if expect_tool is not None and data.get("tool") != expect_tool:
-        raise ValueError(f"{path}: manifest was written by {data.get('tool')!r}, expected {expect_tool!r}")
+        raise ValueError(
+            f"{path}: manifest was written by {data.get('tool')!r}, expected {expect_tool!r}"
+        )
     return data

@@ -19,8 +19,15 @@ import numpy as np
 CODES = ("VASP", "QE", "ase")
 STRUCTURE_FILENAME = {"VASP": "POSCAR", "QE": "pw.in", "ase": "input.extxyz"}
 OUTPUT_FILENAME = {"VASP": "vasprun.xml", "QE": "pw.out", "ase": "output.extxyz"}
-_ALIASES = {"vasp": "VASP", "qe": "QE", "espresso": "QE", "quantum-espresso": "QE",
-            "quantumespresso": "QE", "ase": "ase", "extxyz": "ase"}
+_ALIASES = {
+    "vasp": "VASP",
+    "qe": "QE",
+    "espresso": "QE",
+    "quantum-espresso": "QE",
+    "quantumespresso": "QE",
+    "ase": "ase",
+    "extxyz": "ase",
+}
 
 
 def normalize_code(code):
@@ -46,6 +53,7 @@ class Template:
 
 def _ase_read(path, fmt):
     import ase.io
+
     return ase.io.read(path, format=fmt)
 
 
@@ -64,23 +72,33 @@ def read_template(code, template_dir, structure_file=None):
         atoms = _ase_read(sfile, "vasp")
         for name in sorted(os.listdir(template_dir)):
             p = os.path.join(template_dir, name)
-            if os.path.isfile(p) and os.path.abspath(p) != os.path.abspath(sfile) \
-                    and not name.startswith("."):
+            if (
+                os.path.isfile(p)
+                and os.path.abspath(p) != os.path.abspath(sfile)
+                and not name.startswith(".")
+            ):
                 extra.append(p)
     elif code == "QE":
         with open(sfile) as f:
             raw = f.read()
         m = re.search(r"ibrav\s*=\s*([-+]?\d+)", raw, flags=re.IGNORECASE)
         if m is None or int(m.group(1)) != 0:
-            raise ValueError(f"{sfile}: ibrav must be 0 (CELL_PARAMETERS card required)")
-        if not re.search(r"^\s*CELL_PARAMETERS", raw, flags=re.IGNORECASE | re.MULTILINE):
+            raise ValueError(
+                f"{sfile}: ibrav must be 0 (CELL_PARAMETERS card required)"
+            )
+        if not re.search(
+            r"^\s*CELL_PARAMETERS", raw, flags=re.IGNORECASE | re.MULTILINE
+        ):
             raise ValueError(f"{sfile}: CELL_PARAMETERS card not found")
         atoms = _ase_read(sfile, "espresso-in")
-        pd = re.search(r"pseudo_dir\s*=\s*['\"]([^'\"]+)['\"]", raw, flags=re.IGNORECASE)
+        pd = re.search(
+            r"pseudo_dir\s*=\s*['\"]([^'\"]+)['\"]", raw, flags=re.IGNORECASE
+        )
         if pd and not os.path.isabs(pd.group(1)):
             warnings.warn(
                 f"pseudo_dir = {pd.group(1)!r} is a relative path; it is copied verbatim "
-                "into every generated pw.in and must be valid from those directories")
+                "into every generated pw.in and must be valid from those directories"
+            )
     else:
         atoms = _ase_read(sfile, None)
     if len(atoms) == 0:
@@ -92,7 +110,8 @@ def read_template(code, template_dir, structure_file=None):
 _CARD_RE = re.compile(
     r"^\s*(ATOMIC_SPECIES|ATOMIC_POSITIONS|K_POINTS|CELL_PARAMETERS|CONSTRAINTS|"
     r"OCCUPATIONS|ATOMIC_VELOCITIES|ATOMIC_FORCES|ADDITIONAL_K_POINTS|SOLVENTS|HUBBARD)\b",
-    re.IGNORECASE)
+    re.IGNORECASE,
+)
 
 
 def _strip_comment(line):
@@ -144,19 +163,27 @@ def replace_qe_blocks(text, atoms):
         if not dropped:
             head.append(l)
             continue
-        warnings.warn(f"removed {', '.join(dropped)!r} from the QE namelist (CELL_PARAMETERS angstrom is written)")
+        warnings.warn(
+            f"removed {', '.join(dropped)!r} from the QE namelist (CELL_PARAMETERS angstrom is written)"
+        )
         if keep:
-            indent = l[:len(l) - len(l.lstrip())]
-            head.append(indent + ", ".join(x.strip() for x in keep) + ("," if body.rstrip().endswith(",") else ""))
+            indent = l[: len(l) - len(l.lstrip())]
+            head.append(
+                indent
+                + ", ".join(x.strip() for x in keep)
+                + ("," if body.rstrip().endswith(",") else "")
+            )
         # else: the whole line was the lattice parameter -> dropped
 
     def card_body(name):
         i, end = bounds[name]
-        return [l for l in lines[i + 1:end] if _strip_comment(l)]
+        return [l for l in lines[i + 1 : end] if _strip_comment(l)]
 
     pos_lines = card_body("ATOMIC_POSITIONS")
     if len(pos_lines) != nat:
-        raise ValueError(f"ATOMIC_POSITIONS has {len(pos_lines)} entries but the structure has {nat} atoms")
+        raise ValueError(
+            f"ATOMIC_POSITIONS has {len(pos_lines)} entries but the structure has {nat} atoms"
+        )
     new_pos = ["ATOMIC_POSITIONS crystal"]
     symbols = atoms.get_chemical_symbols()
     for k, l in enumerate(pos_lines):
@@ -164,10 +191,19 @@ def replace_qe_blocks(text, atoms):
         label = tok[0]
         base = re.sub(r"[^A-Za-z].*$", "", label)
         if base.lower() != symbols[k].lower():
-            raise ValueError(f"ATOMIC_POSITIONS line {k + 1}: species {label!r} does not match {symbols[k]!r}")
+            raise ValueError(
+                f"ATOMIC_POSITIONS line {k + 1}: species {label!r} does not match {symbols[k]!r}"
+            )
         flags = tok[4:7] if len(tok) >= 7 else []
-        new_pos.append("{:6s} {:20.14f} {:20.14f} {:20.14f}{}".format(
-            label, xf[k, 0], xf[k, 1], xf[k, 2], (" " + " ".join(flags)) if flags else ""))
+        new_pos.append(
+            "{:6s} {:20.14f} {:20.14f} {:20.14f}{}".format(
+                label,
+                xf[k, 0],
+                xf[k, 1],
+                xf[k, 2],
+                (" " + " ".join(flags)) if flags else "",
+            )
+        )
     new_cell = ["CELL_PARAMETERS angstrom"]
     for i in range(3):
         new_cell.append("  {:20.14f} {:20.14f} {:20.14f}".format(*cell[i]))

@@ -22,8 +22,15 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .strain import (MODE_NAMES, VOIGT_PAIRS, VOIGT_WEIGHT, deformation_gradient,
-                     green_lagrange, u_from_voigt, voigt_from_sym)
+from .strain import (
+    MODE_NAMES,
+    VOIGT_PAIRS,
+    VOIGT_WEIGHT,
+    deformation_gradient,
+    green_lagrange,
+    u_from_voigt,
+    voigt_from_sym,
+)
 from .units import EV_PER_ANG3_TO_GPA
 
 N_VOIGT = 6
@@ -110,8 +117,14 @@ def cauchy_from_second_pk(S, F):
 def voigt_to_full2(c21):
     c = np.zeros((3, 3, 3, 3))
     for k, (a, b) in enumerate(IDX2):
-        for (i, j) in ((VOIGT_PAIRS[a][0], VOIGT_PAIRS[a][1]), (VOIGT_PAIRS[a][1], VOIGT_PAIRS[a][0])):
-            for (kk, ll) in ((VOIGT_PAIRS[b][0], VOIGT_PAIRS[b][1]), (VOIGT_PAIRS[b][1], VOIGT_PAIRS[b][0])):
+        for i, j in (
+            (VOIGT_PAIRS[a][0], VOIGT_PAIRS[a][1]),
+            (VOIGT_PAIRS[a][1], VOIGT_PAIRS[a][0]),
+        ):
+            for kk, ll in (
+                (VOIGT_PAIRS[b][0], VOIGT_PAIRS[b][1]),
+                (VOIGT_PAIRS[b][1], VOIGT_PAIRS[b][0]),
+            ):
                 c[i, j, kk, ll] = c21[k]
                 c[kk, ll, i, j] = c21[k]
     return c
@@ -134,7 +147,7 @@ def voigt_to_full3(c56):
             for a in perm:
                 i, j = VOIGT_PAIRS[a]
                 slots.append(((i, j), (j, i)))
-            for (p0, p1, p2) in itertools.product(*slots):
+            for p0, p1, p2 in itertools.product(*slots):
                 c[p0[0], p0[1], p1[0], p1[1], p2[0], p2[1]] = c56[k]
     return c
 
@@ -193,8 +206,12 @@ def direction_set(kind="minimal"):
         for a, b in itertools.combinations(range(N_VOIGT), 2):
             dirs.append((f"{MODE_NAMES[a]}-{MODE_NAMES[b]}", eye[a] - eye[b]))
         for a, b, c in itertools.combinations(range(N_VOIGT), 3):
-            dirs.append((f"{MODE_NAMES[a]}+{MODE_NAMES[b]}+{MODE_NAMES[c]}",
-                         eye[a] + eye[b] + eye[c]))
+            dirs.append(
+                (
+                    f"{MODE_NAMES[a]}+{MODE_NAMES[b]}+{MODE_NAMES[c]}",
+                    eye[a] + eye[b] + eye[c],
+                )
+            )
     elif kind != "minimal":
         raise ValueError(f"unknown direction set {kind!r} (minimal|full)")
     return dirs
@@ -268,7 +285,9 @@ class FitResult:
     n_energy: int
     n_stress: int
     residuals: list  # (label, kind, max abs residual) per configuration
-    block_rms: dict = None  # 'both' mode: residual RMS of the single-block fits used as weights
+    block_rms: dict = (
+        None  # 'both' mode: residual RMS of the single-block fits used as weights
+    )
 
     @property
     def c2_full(self):
@@ -281,6 +300,7 @@ class FitResult:
     @property
     def sigma0_full(self):
         from .strain import sym_from_voigt
+
         return sym_from_voigt(self.sigma0)
 
 
@@ -332,8 +352,11 @@ def fit_elastic(data, volume, mode="stress", e_ref=None, weight_floor=1.0e-8):
         raise ValueError("mode must be stress, energy or both")
     energies = [d.energy for d in data if d.energy is not None]
     if e_ref is None:
-        ref = [d.energy for d in data
-               if d.energy is not None and np.abs(d.eta6).max() < 1.0e-14]
+        ref = [
+            d.energy
+            for d in data
+            if d.energy is not None and np.abs(d.eta6).max() < 1.0e-14
+        ]
         e_ref = ref[0] if ref else (min(energies) if energies else 0.0)
     for d in data:
         if not np.all(np.isfinite(d.eta6)):
@@ -376,11 +399,22 @@ def fit_elastic(data, volume, mode="stress", e_ref=None, weight_floor=1.0e-8):
     rms_s = float(np.sqrt(np.mean(res[sel_s] ** 2))) if sel_s.any() else float("nan")
     de0 = float(x[N_PARAM]) if ncol > N_PARAM else 0.0
     return FitResult(
-        mode=mode, volume=float(volume),
-        sigma0=x[:6].copy(), c2=x[6:27].copy(), c3=x[27:83].copy(),
-        de0=de0, e_ref=float(e_ref), rank=int(rank), expected_rank=int(expected),
-        cond=cond, singular_values=sv, rms_energy=rms_e, rms_stress=rms_s,
-        n_energy=int(sel_e.sum()), n_stress=int(sel_s.sum()), residuals=residuals,
+        mode=mode,
+        volume=float(volume),
+        sigma0=x[:6].copy(),
+        c2=x[6:27].copy(),
+        c3=x[27:83].copy(),
+        de0=de0,
+        e_ref=float(e_ref),
+        rank=int(rank),
+        expected_rank=int(expected),
+        cond=cond,
+        singular_values=sv,
+        rms_energy=rms_e,
+        rms_stress=rms_s,
+        n_energy=int(sel_e.sum()),
+        n_stress=int(sel_s.sum()),
+        residuals=residuals,
         block_rms=block_rms or None,
     )
 
@@ -400,7 +434,9 @@ def voigt_table_gpa(c4_ev, title=None):
     lines = []
     if title:
         lines.append(title)
-    lines.append("        " + "".join(f"{n:>11s}" for n in ("xx", "yy", "zz", "yz", "zx", "xy")))
+    lines.append(
+        "        " + "".join(f"{n:>11s}" for n in ("xx", "yy", "zz", "yz", "zx", "xy"))
+    )
     for a, name in enumerate(("xx", "yy", "zz", "yz", "zx", "xy")):
         lines.append(f"  {name:>4s}  " + "".join(f"{m[a, b]:11.3f}" for b in range(6)))
     return "\n".join(lines)
@@ -426,23 +462,35 @@ def format_report(fit, sigma0_full, c2_full, c3_full, sym_change=None, min_c3=0.
     """Human-readable summary.  Tensors are the (symmetrized) ones to report."""
     g = EV_PER_ANG3_TO_GPA
     out = []
-    out.append(f"Fit mode: {fit.mode}   configurations: {fit.n_energy} energies, "
-               f"{fit.n_stress // 6} stress tensors")
-    out.append(f"Rank: {fit.rank} / {fit.expected_rank}   condition number: {fit.cond:.3e}")
+    out.append(
+        f"Fit mode: {fit.mode}   configurations: {fit.n_energy} energies, "
+        f"{fit.n_stress // 6} stress tensors"
+    )
+    out.append(
+        f"Rank: {fit.rank} / {fit.expected_rank}   condition number: {fit.cond:.3e}"
+    )
     if fit.n_energy:
-        out.append(f"Residual RMS (energy rows): {fit.rms_energy * g:.4e} GPa-equivalent"
-                   f"  (E0 - E_ref = {fit.de0:.3e} eV)")
+        out.append(
+            f"Residual RMS (energy rows): {fit.rms_energy * g:.4e} GPa-equivalent"
+            f"  (E0 - E_ref = {fit.de0:.3e} eV)"
+        )
     if fit.n_stress:
         out.append(f"Residual RMS (stress rows): {fit.rms_stress * g:.4e} GPa")
     if sym_change is not None:
-        out.append("Point-group symmetrization changed the tensors by at most "
-                   + ", ".join(f"{k}: {v * g:.3e} GPa" for k, v in sym_change.items()))
+        out.append(
+            "Point-group symmetrization changed the tensors by at most "
+            + ", ".join(f"{k}: {v * g:.3e} GPa" for k, v in sym_change.items())
+        )
     out.append("")
     out.append("Reference stress sigma0 (GPa, tensile positive):")
     for i in range(3):
         out.append("   " + "".join(f"{sigma0_full[i, j] * g:11.4f}" for j in range(3)))
     out.append("")
-    out.append(voigt_table_gpa(c2_full, "Second-order elastic constants (GPa, Voigt notation):"))
+    out.append(
+        voigt_table_gpa(
+            c2_full, "Second-order elastic constants (GPa, Voigt notation):"
+        )
+    )
     out.append("")
     out.append(f"Third-order elastic constants (GPa, |C| >= {min_c3}):")
     out.append(format_c3_gpa(full3_to_voigt(c3_full), min_c3))

@@ -51,6 +51,7 @@ class FcsStructure:
 
 def _numbers_from_symbols(symbols):
     from ase.data import atomic_numbers
+
     return np.array([atomic_numbers[s] for s in symbols], dtype=int)
 
 
@@ -66,6 +67,7 @@ def read_fcs_structure(path):
 
 def _read_xml(path):
     from lxml import etree
+
     try:
         root = etree.parse(path).getroot()
     except etree.XMLSyntaxError:
@@ -73,8 +75,18 @@ def _read_xml(path):
     nat = int(root.find("Structure/NumberOfAtoms").text)
     ntran = int(root.find("Symmetry/NumberOfTranslations").text)
     natmin = nat // ntran
-    lavec = np.array([[float(t) for t in root.find(f"Structure/LatticeVector/a{i}").text.split()]
-                      for i in (1, 2, 3)]) * BOHR_IN_ANGSTROM
+    lavec = (
+        np.array(
+            [
+                [
+                    float(t)
+                    for t in root.find(f"Structure/LatticeVector/a{i}").text.split()
+                ]
+                for i in (1, 2, 3)
+            ]
+        )
+        * BOHR_IN_ANGSTROM
+    )
     xf = np.zeros((nat, 3))
     elements = [None] * nat
     for elem in root.findall("Structure/Position/pos"):
@@ -88,8 +100,16 @@ def _read_xml(path):
     for itran in range(ntran):
         for iat in range(natmin):
             map_s2p[map_p2s[itran, iat]] = iat
-    return FcsStructure(path, "xml", lavec, xf, _numbers_from_symbols(elements), elements,
-                        map_p2s, map_s2p)
+    return FcsStructure(
+        path,
+        "xml",
+        lavec,
+        xf,
+        _numbers_from_symbols(elements),
+        elements,
+        map_p2s,
+        map_s2p,
+    )
 
 
 def _read_h5(path):
@@ -104,7 +124,10 @@ def _read_h5(path):
             lv = lv * BOHR_IN_ANGSTROM
         xf = f[f"/{group}/fractional_coordinate"][:].astype(float)
         kinds = f[f"/{group}/atomic_kinds"][:].astype(int)
-        elems = [e.decode() if isinstance(e, bytes) else str(e) for e in f[f"/{group}/elements"][:]]
+        elems = [
+            e.decode() if isinstance(e, bytes) else str(e)
+            for e in f[f"/{group}/elements"][:]
+        ]
         elements = [elems[k] for k in kinds]
         return lv, xf, elements
 
@@ -117,8 +140,20 @@ def _read_h5(path):
     for itran in range(map_p2s.shape[0]):
         for iat in range(map_p2s.shape[1]):
             map_s2p[map_p2s[itran, iat]] = iat
-    return FcsStructure(path, "h5", lavec, xf, _numbers_from_symbols(elements), elements,
-                        map_p2s, map_s2p, plavec, pxf, _numbers_from_symbols(pelements), pelements)
+    return FcsStructure(
+        path,
+        "h5",
+        lavec,
+        xf,
+        _numbers_from_symbols(elements),
+        elements,
+        map_p2s,
+        map_s2p,
+        plavec,
+        pxf,
+        _numbers_from_symbols(pelements),
+        pelements,
+    )
 
 
 # --------------------------------------------------------------- cell files
@@ -135,9 +170,12 @@ def read_anphon_cell(path):
             if line:
                 vals.append([float(t) for t in line.split()])
         if len(vals) != 4 or len(vals[0]) != 1 or any(len(v) != 3 for v in vals[1:]):
-            raise ValueError(f"{path}: could not parse the &cell field (scale + 3 vectors expected)")
+            raise ValueError(
+                f"{path}: could not parse the &cell field (scale + 3 vectors expected)"
+            )
         return np.array(vals[1:]) * vals[0][0] * BOHR_IN_ANGSTROM
     import ase.io
+
     return np.asarray(ase.io.read(path).cell[:], dtype=float)
 
 
@@ -156,7 +194,10 @@ def lattice_relation(a_target, a_dft, tol=1.0e-5):
     for first, second, forward in ((at, ad, True), (ad, at, False)):
         m = first @ np.linalg.inv(second)
         mi = np.round(m).astype(int)
-        if np.abs(m - mi).max() <= tol * max(1.0, np.abs(m).max()) and abs(round(np.linalg.det(mi))) >= 1:
+        if (
+            np.abs(m - mi).max() <= tol * max(1.0, np.abs(m).max())
+            and abs(round(np.linalg.det(mi))) >= 1
+        ):
             det = abs(int(round(np.linalg.det(mi))))
             return mi, (float(det) if forward else 1.0 / det)
     m = at @ np.linalg.inv(ad)
@@ -164,7 +205,8 @@ def lattice_relation(a_target, a_dft, tol=1.0e-5):
         "the target (anphon) cell and the DFT cell are not integer combinations of each other:\n"
         f"M = a_target inv(a_dft) =\n{np.array2string(m, precision=6)}\n"
         "Both cells must describe the same lattice in the same Cartesian frame (same orientation "
-        "and lattice constants); rotated settings are not supported.")
+        "and lattice constants); rotated settings are not supported."
+    )
 
 
 @dataclass
@@ -173,7 +215,9 @@ class AnphonPrimitive:
     xf: np.ndarray  # (natmin, 3)
     numbers: np.ndarray
     elements: list
-    super_indices: np.ndarray  # first-occurrence supercell atom per primitive atom (or None)
+    super_indices: (
+        np.ndarray
+    )  # first-occurrence supercell atom per primitive atom (or None)
     source: str
 
 
@@ -197,18 +241,27 @@ def fold_supercell(fcs, lavec_cell, tol=TOL_COORD):
             if np.linalg.norm(d) < tol:
                 dup = True
                 if kinds[k] != fcs.numbers[i]:
-                    raise ValueError("different elements occupy the same site after folding")
+                    raise ValueError(
+                        "different elements occupy the same site after folding"
+                    )
                 break
         if not dup:
             xf_unique.append(x)
             kinds.append(int(fcs.numbers[i]))
             idx.append(i)
     if len(xf_unique) != natmin:
-        raise ValueError(f"folding into the given cell yielded {len(xf_unique)} atoms, expected {natmin}")
+        raise ValueError(
+            f"folding into the given cell yielded {len(xf_unique)} atoms, expected {natmin}"
+        )
     idx = np.array(idx, dtype=int)
-    return AnphonPrimitive(np.asarray(lavec_cell, dtype=float), np.array(xf_unique),
-                           np.array(kinds), [fcs.elements[i] for i in idx], idx,
-                           "FCS supercell folded into the given cell (anphon &cell rule)")
+    return AnphonPrimitive(
+        np.asarray(lavec_cell, dtype=float),
+        np.array(xf_unique),
+        np.array(kinds),
+        [fcs.elements[i] for i in idx],
+        idx,
+        "FCS supercell folded into the given cell (anphon &cell rule)",
+    )
 
 
 def anphon_primitive_cell(fcs, anphon_cell=None):
@@ -216,11 +269,18 @@ def anphon_primitive_cell(fcs, anphon_cell=None):
     if anphon_cell is not None:
         return fold_supercell(fcs, np.asarray(anphon_cell, dtype=float))
     if fcs.fmt == "h5":
-        return AnphonPrimitive(fcs.prim_lavec, fcs.prim_xf, fcs.prim_numbers, fcs.prim_elements,
-                               None, f"/PrimitiveCell of {os.path.basename(fcs.path)}")
+        return AnphonPrimitive(
+            fcs.prim_lavec,
+            fcs.prim_xf,
+            fcs.prim_numbers,
+            fcs.prim_elements,
+            None,
+            f"/PrimitiveCell of {os.path.basename(fcs.path)}",
+        )
     raise ValueError(
         f"{fcs.path} is an XML force-constant file: anphon requires the &cell field for it, "
-        "so the anphon cell must be given (--anphon-cell FILE with the anphon input or a structure file)")
+        "so the anphon cell must be given (--anphon-cell FILE with the anphon input or a structure file)"
+    )
 
 
 def match_primitive_atoms(atoms_dft, prim, tol=1.0e-3):
@@ -257,7 +317,8 @@ def match_primitive_atoms(atoms_dft, prim, tol=1.0e-3):
             raise ValueError(
                 f"anphon primitive atom {i} ({prim.elements[i]}, fractional {np.array2string(prim.xf[i], precision=6)}) "
                 f"matches {len(cand)} atoms of the DFT cell (expected {n_images}); the DFT cell and the "
-                "anphon cell must describe the same crystal in the same Cartesian frame")
+                "anphon cell must describe the same crystal in the same Cartesian frame"
+            )
         mapping[i] = cand[0]
     return mapping
 
@@ -267,22 +328,29 @@ def check_supercell_equivalence(atoms, fcs, tol_cell=1.0e-4, tol_frac=1.0e-5):
     problems = []
     a = np.asarray(atoms.cell[:], dtype=float)
     if np.abs(a - fcs.lavec).max() > tol_cell:
-        problems.append(f"lattice vectors differ by up to {np.abs(a - fcs.lavec).max():.3e} A")
+        problems.append(
+            f"lattice vectors differ by up to {np.abs(a - fcs.lavec).max():.3e} A"
+        )
     if len(atoms) != fcs.nat:
         problems.append(f"{len(atoms)} atoms vs {fcs.nat} in the FCS file")
     else:
         if not np.array_equal(np.asarray(atoms.numbers), fcs.numbers):
             bad = np.nonzero(np.asarray(atoms.numbers) != fcs.numbers)[0]
-            problems.append(f"species differ at atom index {bad[:10].tolist()} (0-based)")
+            problems.append(
+                f"species differ at atom index {bad[:10].tolist()} (0-based)"
+            )
         d = np.asarray(atoms.get_scaled_positions(wrap=False)) - fcs.xf
         d -= np.round(d)
         if np.abs(d).max() > tol_frac:
             bad = np.nonzero(np.abs(d).max(axis=1) > tol_frac)[0]
-            problems.append(f"fractional positions differ (max {np.abs(d).max():.3e}) at atom index {bad[:10].tolist()}")
+            problems.append(
+                f"fractional positions differ (max {np.abs(d).max():.3e}) at atom index {bad[:10].tolist()}"
+            )
     if problems:
         raise ValueError(
             f"the template structure is not the supercell of {fcs.path} (same atom order required): "
-            + "; ".join(problems))
+            + "; ".join(problems)
+        )
 
 
 def verify_generated_fcs(path, fcs_ref, F=None, tol_cell=1.0e-4, tol_frac=1.0e-5):
@@ -298,29 +366,47 @@ def verify_generated_fcs(path, fcs_ref, F=None, tol_cell=1.0e-4, tol_frac=1.0e-5
         d = g.xf - fcs_ref.xf
         d -= np.round(d)
         if np.abs(d).max() > tol_frac:
-            problems.append(f"fractional positions differ by up to {np.abs(d).max():.3e}")
-        if g.map_p2s.shape != fcs_ref.map_p2s.shape or not np.array_equal(g.map_p2s, fcs_ref.map_p2s):
+            problems.append(
+                f"fractional positions differ by up to {np.abs(d).max():.3e}"
+            )
+        if g.map_p2s.shape != fcs_ref.map_p2s.shape or not np.array_equal(
+            g.map_p2s, fcs_ref.map_p2s
+        ):
             problems.append("translation mapping table (map_p2s) differs")
         if not np.array_equal(g.map_s2p, fcs_ref.map_s2p):
             problems.append("supercell-to-primitive mapping (map_s2p) differs")
     if F is not None:
         expected = fcs_ref.lavec @ np.asarray(F, dtype=float).T
         if np.abs(g.lavec - expected).max() > tol_cell:
-            problems.append(f"lattice differs from F applied to the reference by {np.abs(g.lavec - expected).max():.3e} A")
+            problems.append(
+                f"lattice differs from F applied to the reference by {np.abs(g.lavec - expected).max():.3e} A"
+            )
     if g.fmt == "h5" and fcs_ref.fmt == "h5":
-        if g.prim_xf.shape != fcs_ref.prim_xf.shape or not np.array_equal(g.prim_numbers, fcs_ref.prim_numbers):
+        if g.prim_xf.shape != fcs_ref.prim_xf.shape or not np.array_equal(
+            g.prim_numbers, fcs_ref.prim_numbers
+        ):
             problems.append("/PrimitiveCell (atoms/species) differs")
         else:
             dp = g.prim_xf - fcs_ref.prim_xf
             dp -= np.round(dp)
             if np.abs(dp).max() > tol_frac:
-                problems.append(f"/PrimitiveCell fractional coordinates differ by up to {np.abs(dp).max():.3e}")
-            expected_p = fcs_ref.prim_lavec if F is None else fcs_ref.prim_lavec @ np.asarray(F, dtype=float).T
+                problems.append(
+                    f"/PrimitiveCell fractional coordinates differ by up to {np.abs(dp).max():.3e}"
+                )
+            expected_p = (
+                fcs_ref.prim_lavec
+                if F is None
+                else fcs_ref.prim_lavec @ np.asarray(F, dtype=float).T
+            )
             if np.abs(g.prim_lavec - expected_p).max() > tol_cell:
-                problems.append("/PrimitiveCell lattice differs from the (deformed) reference")
+                problems.append(
+                    "/PrimitiveCell lattice differs from the (deformed) reference"
+                )
     if problems:
-        raise ValueError(f"{path}: generated force-constant file is not index-compatible with "
-                         f"{fcs_ref.path}: " + "; ".join(problems))
+        raise ValueError(
+            f"{path}: generated force-constant file is not index-compatible with "
+            f"{fcs_ref.path}: " + "; ".join(problems)
+        )
     return g
 
 
@@ -328,7 +414,9 @@ def describe_ordering(prim, mapping=None, atoms_dft=None):
     """Text table of anphon's primitive order and the DFT-cell mapping."""
     lines = [f"anphon primitive cell ({prim.source}): {len(prim.xf)} atoms"]
     for i in range(len(prim.xf)):
-        s = f"  {i + 1:4d} {prim.elements[i]:>3s}  " + " ".join(f"{x:12.8f}" for x in prim.xf[i])
+        s = f"  {i + 1:4d} {prim.elements[i]:>3s}  " + " ".join(
+            f"{x:12.8f}" for x in prim.xf[i]
+        )
         if prim.super_indices is not None:
             s += f"   <- FCS supercell atom {prim.super_indices[i] + 1}"
         if mapping is not None:
@@ -338,10 +426,17 @@ def describe_ordering(prim, mapping=None, atoms_dft=None):
         n = len(mapping)
         if atoms_dft is not None and n == len(atoms_dft):
             ident = np.array_equal(mapping, np.arange(n))
-            lines.append("  mapping is the identity" if ident else
-                         "  WARNING: mapping is a permutation of the DFT cell (not the identity)")
+            lines.append(
+                "  mapping is the identity"
+                if ident
+                else "  WARNING: mapping is a permutation of the DFT cell (not the identity)"
+            )
         elif atoms_dft is not None and n > len(atoms_dft):
-            lines.append(f"  anphon cell contains {n // len(atoms_dft)} DFT cells (rows will be tiled)")
+            lines.append(
+                f"  anphon cell contains {n // len(atoms_dft)} DFT cells (rows will be tiled)"
+            )
         elif atoms_dft is not None:
-            lines.append(f"  the DFT cell contains {len(atoms_dft) // n} anphon cells (one image per anphon atom is used)")
+            lines.append(
+                f"  the DFT cell contains {len(atoms_dft) // n} anphon cells (one image per anphon atom is used)"
+            )
     return "\n".join(lines)
