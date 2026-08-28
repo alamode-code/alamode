@@ -1043,8 +1043,10 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
                                          const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell)
 {
     // This function computes the total enthalpy change induced by the strain.
-    // The inputs are the eta_tensor (the symmetric strain tensor) and u_tensor.
-    // The elastic constants C1, C2, and C3 will be used to compute the enthalpy change up to the third order in strain.
+    // The inputs are the eta_tensor (the Green-Lagrange strain tensor
+    // eta = sym(u) + 1/2 u u^T, see calculate_eta_tensor) and u_tensor.
+    // The elastic constants C1, C2, and C3 are the Brugger constants (derivatives w.r.t. eta)
+    // multiplied by the cell volume; they give the enthalpy change up to the third order in strain.
     int ixyz1;
 
     constexpr double factor1 = 0.5;
@@ -1592,11 +1594,16 @@ int Relaxation::get_xyz_string(const int ixyz, std::string &xyz_str)
 void Relaxation::calculate_eta_tensor(std::array<std::array<double, 3>, 3> &eta_tensor,
                                       const std::array<std::array<double, 3>, 3> &u_tensor)
 {
+    // Green-Lagrange strain for the deformation gradient F = I + u:
+    //   eta = 1/2 (F^T F - I) = sym(u) + 1/2 u^T u.
+    // The deformation variables used in the relaxation are symmetric, so u u^T = u^T u.
+    // The factor 1/2 of the quadratic term is consistent with the chain rule
+    // d(eta)/d(u) used in ScphQhaCommon::calculate_del_v0_del_umn_renorm and Qha.
     for (auto i1 = 0; i1 < 3; i1++) {
         for (auto i2 = 0; i2 < 3; i2++) {
             eta_tensor[i1][i2] = 0.5 * (u_tensor[i1][i2] + u_tensor[i2][i1]);
             for (auto j = 0; j < 3; j++) {
-                eta_tensor[i1][i2] += u_tensor[i1][j] * u_tensor[i2][j];
+                eta_tensor[i1][i2] += 0.5 * u_tensor[i1][j] * u_tensor[i2][j];
             }
         }
     }

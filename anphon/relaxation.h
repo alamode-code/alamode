@@ -359,6 +359,8 @@ public:
 
     static int get_xyz_string(const int, std::string &);
 
+    // Green-Lagrange strain eta = sym(u) + 1/2 u u^T of the deformation gradient F = I + u
+    // (u is the symmetric displacement-gradient tensor used as the cell variable).
     static void calculate_eta_tensor(std::array<std::array<double, 3>, 3> &,
                                      const std::array<std::array<double, 3>, 3> &);
 
