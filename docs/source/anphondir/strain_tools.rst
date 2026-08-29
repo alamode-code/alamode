@@ -175,6 +175,10 @@ with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the t
 * ``C1_array.in`` from the residual stress of the reference (−0.04 GPa for ZnO) shifts the 0 K cell
   by −C\ :sup:`-1` σ\ :sub:`0` as expected (up to 4 % of the thermal strain); ``ELASTIC_CONST = 1``
   overestimates u\ :sub:`zz` of ZnO by 33 % at 1000 K because of its C13/C33 error (see above).
+  With the dipole correction (``NONANALYTIC = 3`` and the ``BORNINFO`` of ``example/ZnO/qha_relax``,
+  PBEsol DFPT: ε∞ = 6.61/5.95, Z*(Zn) = 2.14/2.17) the IFC-derived C13/C33 move from 25/374 to 52/323 GPa
+  (DFT 68/303) and the u\ :sub:`zz` error drops to 25 % — the DFT route (``elastic.py``) remains the
+  recommended source of the elastic constants for polar materials.
 
 .. [Masuki2022] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 (2022).
 .. [Masuki2023] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 (2023).
