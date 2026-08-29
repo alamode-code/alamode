@@ -152,5 +152,29 @@ file with the shell lines that run the DFT code in one directory (``--dft-comman
 ``run_all.sh`` loop is written. Template inputs for wurtzite ZnO are provided in
 ``example/ZnO/strain_IFC_workflow``.
 
+Validation
+----------
+
+The tools were validated against the data of the ZnO (QHA) and BaTiO\ :sub:`3` (SCPH) tutorials
+with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the tutorial cells):
+
+* ``strain_force.in`` (ZnO, one-sided, smag 0.005) reproduces the tutorial file to 1e-6 eV/Å; the
+  harmonic force constants of the undeformed 4×4×2 (ZnO) and 2×2×2 (BaTiO\ :sub:`3`) supercells
+  (``--with-reference``) agree with the tutorial ``FC2FILE`` to ≤ 7e-5 Ry/bohr\ :sup:`2` (0.05 %), and
+  the strain derivatives of the harmonic force constants to 0.2–1 % (RMS).
+* Clamped-ion SOEC from ``elastic.py fit --fit stress`` (85 primitive-cell runs, smag 0.01): ZnO
+  C11/C12/C13/C33/C44 = 276.6/95.7/67.8/302.6/55.2 GPa vs 277.8/96.3/68.0/303.9/56.1 in the tutorial
+  file; BaTiO\ :sub:`3` 316.8/110.5/127.3 vs 320.2/113.2/130.3 GPa; dominant TOEC within 1–2 %.
+  ``--fit both`` agrees with ``--fit stress`` to 0.01 GPa; a step of 0.005 gives a 4× worse condition
+  number, so ``--smag 0.01`` is recommended.
+* End to end, the regenerated inputs give thermal strains within 1 % (ZnO QHA, 0–1000 K) and 2 %
+  (BaTiO\ :sub:`3` SCPH, 280–300 K, including the tetragonal phase) of the tutorial results.
+* The one-sided finite difference of the strain–force coupling (the scheme of the original data)
+  biases the c-axis expansion of ZnO at 1000 K by about +12 % relative to central differences
+  (``--central``, 13 instead of 7 primitive-cell runs) — use ``--central`` for this coupling.
+* ``C1_array.in`` from the residual stress of the reference (−0.04 GPa for ZnO) shifts the 0 K cell
+  by −C\ :sup:`-1` σ\ :sub:`0` as expected (up to 4 % of the thermal strain); ``ELASTIC_CONST = 1``
+  overestimates u\ :sub:`zz` of ZnO by 33 % at 1000 K because of its C13/C33 error (see above).
+
 .. [Masuki2022] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 (2022).
 .. [Masuki2023] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 (2023).

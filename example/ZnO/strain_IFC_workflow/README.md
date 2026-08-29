@@ -6,8 +6,12 @@ Pseudopotentials are not included: edit `pseudo_dir` in the `pw.in` files.
 
 * `template_primitive_QE/pw.in` : 4-atom primitive cell (PBEsol structure of the tutorial)
 * `template_supercell_QE/pw.in` : 4x4x2 supercell (the cell of `ZnO442_harmonic.xml`)
+* `template_primitive_VASP/`, `template_supercell_VASP/` : the same cells as POSCAR + INCAR + KPOINTS
+  (PBEsol `GGA = PS`, ENCUT 600 eV, EDIFF 1e-8, `ISIF = 2` so that the stress tensor is written;
+  Γ 8x8x8 / 2x2x4 meshes). Add a POTCAR (PAW_PBE Zn, O) to each directory; `--code VASP`.
 * `strain_modes.json`           : the six strain modes (xx, yy, zz, yz, zx, xy), weight 1, smag 0.005
-* `job.sh`, `DFT_command.sh`    : optional job-script template (`--job-template`, `--dft-command`)
+* `job.sh`, `DFT_command.sh`    : optional PBS job-script template for QE (`--job-template`, `--dft-command`)
+* `job_slurm.sh`, `DFT_command_vasp.sh` : the same for VASP on a Slurm cluster (edit modules/paths)
 
 ## 1. Elastic constants (elastic_constants.in, C1_array.in)
 
@@ -28,6 +32,10 @@ Pseudopotentials are not included: edit `pseudo_dir` in the `pw.in` files.
     strainifc.py generate --coupling harmonic --code QE --template template_supercell_QE --outdir harmonic
     (run pw.x in harmonic/strain_*/nodisp/ and harmonic/strain_*/disp_*/)
     strainifc.py collect --outdir harmonic --fcs ../qha_relax/ZnO442_harmonic.xml
+
+For the strain–force coupling, `--central` (13 instead of 7 primitive-cell runs) is recommended:
+the one-sided difference at smag = 0.005 was found to change the c-axis thermal expansion of ZnO
+by ~10 % (see the validation notes in the anphon documentation).
 
 Copy `elastic/results/elastic_constants.in`, `force/results/strain_force.in`,
 `harmonic/results/strain_harmonic.in` and the `strain_00N.xml` files into
