@@ -51,6 +51,19 @@ class Template:
         return os.path.basename(self.structure_file)
 
 
+def _check_species_grouped(atoms, path):
+    """VASP needs one contiguous POSCAR block per POTCAR entry: interleaved species
+    (e.g. an ase-repeated primitive cell) would be written as many blocks and VASP
+    refuses to run ('type information is not consistent with the number of types')."""
+    numbers = list(atoms.numbers)
+    groups = [numbers[0]] + [z for a, z in zip(numbers, numbers[1:]) if z != a]
+    if len(groups) != len(set(numbers)):
+        raise ValueError(
+            f"{path}: atoms of the same species are not contiguous ({len(groups)} species blocks for "
+            f"{len(set(numbers))} species); VASP requires one block per species -- reorder the template "
+            "(e.g. atoms[np.argsort(atoms.numbers, kind='stable')]) and use the same order for anphon")
+
+
 def _ase_read(path, fmt):
     import ase.io
 
@@ -70,6 +83,7 @@ def read_template(code, template_dir, structure_file=None):
     extra = []
     if code == "VASP":
         atoms = _ase_read(sfile, "vasp")
+        _check_species_grouped(atoms, sfile)
         for name in sorted(os.listdir(template_dir)):
             p = os.path.join(template_dir, name)
             if (
