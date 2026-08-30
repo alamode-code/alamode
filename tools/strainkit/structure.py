@@ -64,6 +64,25 @@ def _check_species_grouped(atoms, path):
             "(e.g. atoms[np.argsort(atoms.numbers, kind='stable')]) and use the same order for anphon")
 
 
+def _check_potcar_order(atoms, potcar_path):
+    """The species blocks of POSCAR are assigned to the POTCAR entries *in order*;
+    a POTCAR in a different order runs silently with the wrong potentials."""
+    from ase.data import chemical_symbols
+
+    with open(potcar_path) as f:
+        pot = [m.group(1) for m in re.finditer(r"VRHFIN\s*=\s*([A-Za-z]+)", f.read())]
+    if not pot:
+        return  # not a real POTCAR (e.g. a placeholder)
+    numbers = list(atoms.numbers)
+    blocks = [chemical_symbols[z] for z in dict.fromkeys(numbers)]
+    if pot != blocks:
+        raise ValueError(
+            f"{potcar_path}: POTCAR species order {pot} does not match the POSCAR species blocks "
+            f"{blocks}; VASP would apply the wrong potentials -- reorder the atoms of the template "
+            "to the POTCAR order (and use that order for anphon) or rebuild the POTCAR"
+        )
+
+
 def _ase_read(path, fmt):
     import ase.io
 
@@ -92,6 +111,8 @@ def read_template(code, template_dir, structure_file=None):
                 and not name.startswith(".")
             ):
                 extra.append(p)
+                if name.upper() == "POTCAR":
+                    _check_potcar_order(atoms, p)
     elif code == "QE":
         with open(sfile) as f:
             raw = f.read()
