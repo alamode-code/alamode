@@ -180,8 +180,13 @@ with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the t
   (DFT 68/303) and the u\ :sub:`zz` error drops to 25 %. For cubic BaTiO\ :sub:`3` (``BORNINFO`` of
   ``example/BaTiO3/scph_relax``: ε∞ = 6.79, Z*(Ti) = 7.40, Z*(O∥) = −5.86) the IFC route gives
   C11/C12/C44 = 391/216/123 GPa uncorrected and 346/71/125 GPa with the dipole correction, vs 317/110/127 GPa
-  from ``elastic.py`` — the DFT route (``elastic.py``) remains the recommended source of the elastic
-  constants for polar materials.
+  from ``elastic.py`` when the tutorial 2×2×2 harmonic cell is used. The IFC route does converge with the
+  size of the harmonic supercell given as ``FC2FILE``: with the dipole correction, 3×3×3 gives
+  295/117/125 GPa and 4×4×4 gives 318/117/127 GPa (without it the values oscillate: 254/130/125 and
+  359/140/127), because the minimum-image reach of the 2×2×2 cell (a = 3.99 Å) aliases every shell from the
+  second Ti–O neighbour outward. Hence use ``ELASTIC_CONST = 1`` only with a harmonic supercell of at least
+  3×3×3 *and* ``NONANALYTIC = 3`` for such polar perovskites; otherwise the DFT route (``elastic.py``, a few
+  minutes for the 5-atom cell) is the recommended source of the elastic constants for polar materials.
 
 .. [Masuki2022] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 (2022).
 .. [Masuki2023] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 (2023).
