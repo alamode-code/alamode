@@ -177,8 +177,11 @@ with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the t
   overestimates u\ :sub:`zz` of ZnO by 33 % at 1000 K because of its C13/C33 error (see above).
   With the dipole correction (``NONANALYTIC = 3`` and the ``BORNINFO`` of ``example/ZnO/qha_relax``,
   PBEsol DFPT: ε∞ = 6.61/5.95, Z*(Zn) = 2.14/2.17) the IFC-derived C13/C33 move from 25/374 to 52/323 GPa
-  (DFT 68/303) and the u\ :sub:`zz` error drops to 25 % — the DFT route (``elastic.py``) remains the
-  recommended source of the elastic constants for polar materials.
+  (DFT 68/303) and the u\ :sub:`zz` error drops to 25 %. For cubic BaTiO\ :sub:`3` (``BORNINFO`` of
+  ``example/BaTiO3/scph_relax``: ε∞ = 6.79, Z*(Ti) = 7.40, Z*(O∥) = −5.86) the IFC route gives
+  C11/C12/C44 = 391/216/123 GPa uncorrected and 346/71/125 GPa with the dipole correction, vs 317/110/127 GPa
+  from ``elastic.py`` — the DFT route (``elastic.py``) remains the recommended source of the elastic
+  constants for polar materials.
 
 .. [Masuki2022] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 (2022).
 .. [Masuki2023] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 (2023).
