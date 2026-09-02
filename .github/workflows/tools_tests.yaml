@@ -37,6 +37,14 @@ jobs:
         run: |
           pip install ./python --no-build-isolation -v
           python -c "import alm; print(alm.__version__)"
+      - name: Build the alm CLI
+        # tests/test_alm_api.py compares the Python API with _build/alm/alm and
+        # is skipped (which fails the job below) when the binary is missing.
+        run: |
+          mkdir -p _build
+          cd _build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make alm -j4
       - name: Run the strainkit tests
         working-directory: ./tools
         run: |
