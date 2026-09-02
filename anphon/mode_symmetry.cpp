@@ -26,9 +26,13 @@
 #include "mpi_common.h"
 #include "ndarray.h"
 #include "pointgroup_data.h"
-#include "spglib.h"
 #include "symmetry_core.h"
 #include "system.h"
+
+extern "C"
+{
+#include "spglib.h"
+}
 
 using namespace PHON_NS;
 
