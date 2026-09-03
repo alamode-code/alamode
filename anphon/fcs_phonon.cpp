@@ -277,22 +277,20 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
         }
     }
 
-    if (writes->getVerbosity() > 0) std::cout << "  Reading force constants from the FCSFILE ... ";
+    if (writes->getVerbosity() > 0) {
+        std::cout << "  Reading force constants from the following file(s):\n";
+        for (auto i = 0; i < filename_list.size(); ++i) {
+            if (!load_flags[i]) continue;
+            std::cout << "   Order " << i + 2 << " : " << filename_list[i] << '\n';
+        }
+        std::cout << "  ... ";
+    }
 
     for (auto i = 0; i < filename_list.size(); ++i) {
 
         if (!load_flags[i]) continue;
 
-        const auto &filename = filename_list[i];
-        const auto file_extension = filename.substr(filename.find_last_of('.') + 1);
-        if (file_extension == "xml" || file_extension == "XML") {
-
-            load_fcs_xml(filename, i, force_constant_with_cell[i]);
-
-        } else if (file_extension == "h5" || file_extension == "hdf5") {
-
-            parse_fcs_from_h5(filename, i, force_constant_with_cell[i]);
-        }
+        get_fcs_from_file(filename_list[i], i, force_constant_with_cell[i]);
 
         // Legacy dfc2.py workflow, native: add the (short-ranged) anharmonic
         // FC2 correction of an SCPH/QHA state file onto the harmonic FC2 of
@@ -313,6 +311,10 @@ void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs, const int order
         load_fcs_xml(fname_fcs, order, fcs_out);
     } else if (file_extension == "h5" || file_extension == "hdf5") {
         parse_fcs_from_h5(fname_fcs, order, fcs_out);
+    } else {
+        const auto str_error = "Unsupported file extension of " + fname_fcs +
+                               " (only .xml, .h5, and .hdf5 are accepted).";
+        exit("get_fcs_from_file", str_error.c_str());
     }
 }
 

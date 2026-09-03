@@ -17,6 +17,12 @@ Silicon ANPHON --> pass
 - `test_qha.py` covers MODE = QHA structural optimization (fresh run, h5
   restart, legacy-text restart, band-parallel V4 with IALGO = 1 on 2 MPI
   ranks, and perturbative QHA with RELAX_STR = 3).
+- `test_fc3file.py` covers the `FC3FILE` tag: harmonic FC2 from XML with
+  cubic FC3 from HDF5 (Si, same supercell, checked against the FCSFILE
+  reference), a 4x4x2 harmonic / 3x3x2 cubic combination (ZnO, checked
+  against the `FC2FILE` + `FCSFILE` route), and rejection of an unsupported
+  file extension. It reuses the Si fixtures of `test_si.py` and generates
+  them with alm when absent.
 - `test_kpmode0.py` covers SCPH postprocess on a general k-point list
   (KPMODE = 0) with the non-analytic correction enabled — the only fixture
   exercising the kpoint_general branch.

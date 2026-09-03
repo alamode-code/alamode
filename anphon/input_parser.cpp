@@ -206,6 +206,8 @@ void InputParser::parse_general_vars(PHON *phon)
 
     general_vars.fcsfile = general_var_dict["FCSFILE"];
     general_vars.fc2file = general_var_dict["FC2FILE"];
+    general_vars.fc3file = general_var_dict["FC3FILE"];
+    general_vars.fc4file = general_var_dict["FC4FILE"];
 
     if (general_vars.fcsfile.empty() && general_vars.fc2file.empty()) {
         exit("parse_general_vars", "Either FCSFILE or FC2FILE must be given to start a phonon calculation.");

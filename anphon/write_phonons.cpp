@@ -87,6 +87,12 @@ void Writes::writeInputVars()
     if (fcs_phonon->update_fc2) {
         std::cout << "  FC2FILE = " << fcs_phonon->file_fc2 << '\n';
     }
+    if (!fcs_phonon->file_fc3.empty()) {
+        std::cout << "  FC3FILE = " << fcs_phonon->file_fc3 << '\n';
+    }
+    if (!fcs_phonon->file_fc4.empty()) {
+        std::cout << "  FC4FILE = " << fcs_phonon->file_fc4 << '\n';
+    }
     std::cout << '\n';
 
     std::cout << "  MASS = ";

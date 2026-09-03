@@ -65,6 +65,8 @@ struct GeneralInputVars
 
     std::string fcsfile;  // FCSFILE
     std::string fc2file;  // FC2FILE
+    std::string fc3file;  // FC3FILE
+    std::string fc4file;  // FC4FILE
     std::string dfc2file; // DFC2FILE
 
     // FC2_TEMPERATURE selects one temperature row of the temperature-

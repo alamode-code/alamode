@@ -333,8 +333,10 @@ void Gruneisen::write_new_fcsxml_all() const
 {
     if (writes->getVerbosity() > 0) std::cout << '\n';
 
-    if (fcs_phonon->update_fc2) {
-        warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with the FC2FILE.");
+    if (fcs_phonon->update_fc2 || !fcs_phonon->file_fc3.empty()) {
+        // The new force-constant files carry a single supercell structure, so
+        // the harmonic and cubic terms must come from the same FCSFILE.
+        warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with FC2FILE or FC3FILE.");
     } else {
         // FILE_FORMAT rule: h5 (default) writes the schema-stamped HDF5 pair,
         // text the legacy XML pair. Builds without HDF5 always fall back to XML.
