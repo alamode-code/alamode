@@ -58,7 +58,9 @@ def test_harmonic_coupling(cu_supercell):
     assert [r[0] for r in rows] == ["xx", "xx", "yz", "yz"]  # strain_000 not listed
     assert os.path.exists(os.path.join(work, "results", "strain_000.xml"))
     assert any("FC2 vs" in l and "max|dPhi2|" in l for l in logs)
-    st = fcsorder.fc2_difference(os.path.join(work, "results", "strain_000.xml"), ref_xml)
+    st = fcsorder.fc2_difference(
+        os.path.join(work, "results", "strain_000.xml"), ref_xml
+    )
     assert st["n_only_a"] == 0 and st["max_abs"] < 1e-6  # same data and fit settings
     assert rows[0][1] == 0.005 and rows[1][1] == -0.005 and rows[0][2] == 0.5
     ref = fcsorder.read_fcs_structure(ref_xml)

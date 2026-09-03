@@ -312,8 +312,8 @@ void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs, const int order
     } else if (file_extension == "h5" || file_extension == "hdf5") {
         parse_fcs_from_h5(fname_fcs, order, fcs_out);
     } else {
-        const auto str_error = "Unsupported file extension of " + fname_fcs +
-                               " (only .xml, .h5, and .hdf5 are accepted).";
+        const auto str_error =
+            "Unsupported file extension of " + fname_fcs + " (only .xml, .h5, and .hdf5 are accepted).";
         exit("get_fcs_from_file", str_error.c_str());
     }
 }

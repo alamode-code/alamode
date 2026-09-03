@@ -560,6 +560,9 @@ void InputParser::parse_kappa_vars(PHON *phon, const bool use_default_values)
         assign_val(kappa_vars.calc_kappa_spec, "KAPPA_SPEC", kappa_var_dict);
         str_tmp = kappa_var_dict["KMESH_COARSE"];
         assign_val(kappa_vars.adaptive_factor, "ADAPTIVE_FACTOR", kappa_var_dict);
+        if (kappa_vars.adaptive_factor <= 0.0) {
+            exit("parse_kappa_vars", "ADAPTIVE_FACTOR must be positive.");
+        }
         iterative_given = !kappa_var_dict["ITERATIVE"].empty();
         assign_val(iterative, "ITERATIVE", kappa_var_dict);
         assign_val(kappa_vars.isotope_inscattering, "ISOTOPE_INSCATTERING", kappa_var_dict);

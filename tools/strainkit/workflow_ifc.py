@@ -149,7 +149,9 @@ def generate(
         todo = list(enumerate(points, start=1))
         if with_reference:
             # undeformed supercell -> strain_000, fitted by collect as a check of the FC2FILE
-            todo.insert(0, (0, StrainPoint("reference", None, 0.0, 0.0, np.zeros((3, 3)))))
+            todo.insert(
+                0, (0, StrainPoint("reference", None, 0.0, 0.0, np.zeros((3, 3))))
+            )
         for k, p in todo:
             dname = _dirname(k)
             d = os.path.join(outdir, dname)

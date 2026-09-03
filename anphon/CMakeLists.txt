@@ -157,6 +157,8 @@ endif()
 
 # Source code
 set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
+        ${PROJECT_SOURCE_DIR}/four_phonon.cpp
+        ${PROJECT_SOURCE_DIR}/three_phonon.cpp
             ${PROJECT_SOURCE_DIR}/collision_operator.cpp
             ${PROJECT_SOURCE_DIR}/conductivity.cpp
             ${PROJECT_SOURCE_DIR}/dense_hermitian_eigen.cpp

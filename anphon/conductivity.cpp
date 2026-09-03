@@ -62,7 +62,6 @@ void Conductivity::set_default_variables()
     fph_rta = 0;
     solver_ibte = false;
     dymat_4ph = nullptr;
-    phase_cache_4ph = nullptr;
     restart_flag_3ph = false;
     restart_flag_4ph = false;
     file_result3 = "";
@@ -108,7 +107,6 @@ void Conductivity::deallocate_variables()
     }
     kmesh_4ph.reset();
     dymat_4ph.reset();
-    phase_cache_4ph.reset();
 }
 
 void Conductivity::run_kappa()
@@ -222,10 +220,6 @@ void Conductivity::setup_kappa_4ph()
     MPI_Bcast(&nk_coarse[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&restart_flag_4ph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    const auto nks_total = dos->kmesh_dos->nk_irred * ns;
-    const auto nks_each_thread = nks_total / mympi->nprocs;
-    const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
-
     // Set KMESH_COARSE for 4-ph calculation.
     // If nk_coarse is not set, use the same k-mesh as the 3-ph calculation.
     unsigned int nkc_tmp[3] = {};
@@ -244,12 +238,6 @@ void Conductivity::setup_kappa_4ph()
         std::cout << "   nk3 : " << std::setw(5) << nkc_tmp[2] << '\n';
     }
 
-    if (nrem > 0) {
-        damping4.resize((nks_each_thread + 1) * mympi->nprocs, ntemp);
-    } else {
-        damping4.resize(nks_total, ntemp);
-    }
-
     NDArray<double, 2> eval_tmp;
     NDArray<std::complex<double>, 3> evec_tmp;
 
@@ -258,6 +246,19 @@ void Conductivity::setup_kappa_4ph()
     kmesh_4ph = std::make_unique<KpointMeshUniform>(nkc_tmp);
     kmesh_4ph->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector);
     auto nk_4ph = kmesh_4ph->nk;
+
+    // Rows of damping4 follow the 4ph mesh (KMESH_COARSE may have more
+    // irreducible points than the 3ph mesh).
+    {
+        const auto nks_total = kmesh_4ph->nk_irred * ns;
+        const auto nks_each_thread = nks_total / mympi->nprocs;
+        const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
+        if (nrem > 0) {
+            damping4.resize((nks_each_thread + 1) * mympi->nprocs, ntemp);
+        } else {
+            damping4.resize(nks_total, ntemp);
+        }
+    }
     dymat_4ph = std::make_unique<DymatEigenValue>(true, false, nk_4ph, neval);
 
     eval_tmp.resize(nk_4ph, neval);
@@ -289,9 +290,6 @@ void Conductivity::setup_kappa_4ph()
     dymat_4ph->set_eigenvals_and_eigenvecs(nk_4ph, eval_tmp, evec_tmp);
     eval_tmp.clear();
     evec_tmp.clear();
-
-    phase_cache_4ph = std::make_unique<PhaseFactorCache>(kmesh_4ph->nk_i);
-    phase_cache_4ph->create(true);
 
     // Velocities in m/s on rank 0, matching the 3ph channel.
     phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph.get(),
@@ -973,7 +971,8 @@ void Conductivity::calc_anharmonic_imagself4()
         if (writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Start computing 4-phonon self-energies ... \n";
-            std::cout << " WARNING: This is very very expensive!! Please be patient.\n";
+            std::cout << " Four-phonon calculations are much more expensive than three-phonon ones;\n";
+            std::cout << " set VERBOSITY = 2 for a per-mode timing breakdown.\n";
             std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
             std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
             std::cout << '\n' << std::flush;
@@ -1015,17 +1014,15 @@ void Conductivity::calc_anharmonic_imagself4()
             const auto omega = dymat_4ph->get_eigenvalues()[knum][snum];
 
             if (integration->ismear_4ph == 0 || integration->ismear_4ph == 1 || integration->ismear_4ph == 2) {
-                anharmonic_core->calc_damping4_smearing_batch(ntemp,
-                                                              temperature,
-                                                              omega,
-                                                              iks / ns,
-                                                              snum,
-                                                              kmesh_4ph.get(),
-                                                              dymat_4ph->get_eigenvalues(),
-                                                              dymat_4ph->get_eigenvectors(),
-                                                              phase_cache_4ph.get(),
-                                                              damping4_loc);
-
+                anharmonic_core->calc_damping4_smearing(ntemp,
+                                                        temperature,
+                                                        omega,
+                                                        iks / ns,
+                                                        snum,
+                                                        kmesh_4ph.get(),
+                                                        dymat_4ph->get_eigenvalues(),
+                                                        dymat_4ph->get_eigenvectors(),
+                                                        damping4_loc);
             } else if (integration->ismear_4ph == -1) {
                 // TODO: Implement tetrahedron method for 4ph scattering
                 //                anharmonic_core->calc_damping_tetrahedron(ntemp,

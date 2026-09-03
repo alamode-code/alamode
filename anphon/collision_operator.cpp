@@ -384,23 +384,27 @@ void CollisionOperator::setup_L_smear()
     const auto omega_tmp = dymat_dos_.get_eigenvalues();
     const auto evec_tmp = dymat_dos_.get_eigenvectors();
 
+    anharmonic_core_.prepare_fc3_compressed();
+
     // The loops run over the flattened triplet index (pairs_emitt/absorb,
-    // built in get_triplets) and parallelize over triplets with the
-    // thread-safe serial V3 (per-thread reciprocal-FC3 workspace).
+    // built in get_triplets). The factorized V3 kernel gives |V3|^2 of all
+    // ns^3 band combinations of a triplet at once; the static schedule mostly
+    // keeps the triplets of one k point on one thread so that its psi_K is
+    // reused (a group may straddle a chunk boundary, which only costs one
+    // extra fold).
 
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
     {
-        std::vector<std::complex<double>> phi3_work(anharmonic_core_.get_ngroup_fcs(3));
-        int kindex_work[2] = {-1, -1};
-        unsigned int arr_loc[3];
+        AnharmonicCore::V3Workspace ws;
+        std::vector<double> v3sq(static_cast<size_t>(ns) * ns2);
         std::array<double, 2> epsilon2;
 
         // emitt k1 -> k2 + k3
         // V(-q1, q2, q3) delta(w1 - w2 - w3)
 #ifdef _OPENMP
-#pragma omp for nowait
+#pragma omp for schedule(static) nowait
 #endif
         for (int idx = 0; idx < static_cast<int>(pairs_emitt.size()); ++idx) {
 
@@ -411,16 +415,21 @@ void CollisionOperator::setup_L_smear()
             const int kk2 = pair.group[0].ks[0];
             const int kk3 = pair.group[0].ks[1];
 
+            anharmonic_core_.v3sq_triples(ws,
+                                          &kmesh_dos_,
+                                          kmesh_dos_.kindex_minus_xk[kk1],
+                                          kk2,
+                                          kk3,
+                                          omega_tmp,
+                                          evec_tmp,
+                                          v3sq.data());
+
             for (int is1 = 0; is1 < ns; ++is1) {
-                arr_loc[0] = kmesh_dos_.kindex_minus_xk[kk1] * ns + is1;
                 const auto w1 = omega_tmp[kk1][is1];
 
                 for (int ib = 0; ib < ns2; ++ib) {
                     const int is2 = ib / ns;
                     const int is3 = ib % ns;
-
-                    arr_loc[1] = kk2 * ns + is2;
-                    arr_loc[2] = kk3 * ns + is3;
                     const auto w2 = omega_tmp[kk2][is2];
                     const auto w3 = omega_tmp[kk3][is3];
 
@@ -434,11 +443,8 @@ void CollisionOperator::setup_L_smear()
                         delta_loc = delta_gauss(w1 - w2 - w3, epsilon2[0]);
                     }
 
-                    const auto v3_tmp2 =
-                        std::norm(anharmonic_core_
-                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
-
-                    L_emitt[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
+                    L_emitt[idx][is1][ib] = (pi / 4.0) * v3sq[static_cast<size_t>(is1) * ns2 + ib] * delta_loc /
+                                            static_cast<double>(nk_3ph);
                 }
             }
         }
@@ -446,7 +452,7 @@ void CollisionOperator::setup_L_smear()
         // absorption k1 + k2 -> -k3
         // V(q1, q2, q3) since k3 = - (k1 + k2)
 #ifdef _OPENMP
-#pragma omp for
+#pragma omp for schedule(static)
 #endif
         for (int idx = 0; idx < static_cast<int>(pairs_absorb.size()); ++idx) {
 
@@ -457,16 +463,14 @@ void CollisionOperator::setup_L_smear()
             const int kk2 = pair.group[0].ks[0];
             const int kk3 = pair.group[0].ks[1];
 
+            anharmonic_core_.v3sq_triples(ws, &kmesh_dos_, kk1, kk2, kk3, omega_tmp, evec_tmp, v3sq.data());
+
             for (int is1 = 0; is1 < ns; ++is1) {
-                arr_loc[0] = kk1 * ns + is1;
                 const auto w1 = omega_tmp[kk1][is1];
 
                 for (int ib = 0; ib < ns2; ++ib) {
                     const int is2 = ib / ns;
                     const int is3 = ib % ns;
-
-                    arr_loc[1] = kk2 * ns + is2;
-                    arr_loc[2] = kk3 * ns + is3;
                     const auto w2 = omega_tmp[kk2][is2];
                     const auto w3 = omega_tmp[kk3][is3];
 
@@ -483,11 +487,8 @@ void CollisionOperator::setup_L_smear()
                         delta_loc = delta_gauss(w1 + w2 - w3, epsilon2[1]);
                     }
 
-                    const auto v3_tmp2 =
-                        std::norm(anharmonic_core_
-                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
-
-                    L_absorb[idx][is1][ib] = (pi / 4.0) * v3_tmp2 * delta_loc / static_cast<double>(nk_3ph);
+                    L_absorb[idx][is1][ib] = (pi / 4.0) * v3sq[static_cast<size_t>(is1) * ns2 + ib] * delta_loc /
+                                             static_cast<double>(nk_3ph);
                 }
             }
         }
@@ -580,20 +581,19 @@ void CollisionOperator::setup_L_tetra()
         weight_tetra.clear();
     }
 
-    // Pass 2: multiply |V3|^2, parallel over triplets so the per-triplet
-    // reciprocal-FC3 cache in the per-thread workspace is reused across the
-    // ns^3 band combinations (the previous single-pass loop recomputed it
-    // ns^2 times per triplet). V3 is skipped where the weight vanished.
+    // Pass 2: multiply |V3|^2. The factorized kernel gives all ns^3 band
+    // combinations of a triplet at once; the static schedule mostly keeps the
+    // triplets of one k point on one thread so that its psi_K is reused.
+    anharmonic_core_.prepare_fc3_compressed();
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
     {
-        std::vector<std::complex<double>> phi3_work(anharmonic_core_.get_ngroup_fcs(3));
-        int kindex_work[2] = {-1, -1};
-        unsigned int arr_loc[3];
+        AnharmonicCore::V3Workspace ws;
+        std::vector<double> v3sq(static_cast<size_t>(ns) * ns2);
 
 #ifdef _OPENMP
-#pragma omp for nowait
+#pragma omp for schedule(static) nowait
 #endif
         for (int idx = 0; idx < static_cast<int>(pairs_emitt.size()); ++idx) {
 
@@ -605,21 +605,23 @@ void CollisionOperator::setup_L_tetra()
             const int kk3 = pair.group[0].ks[1];
 
             // emitt k1 -> k2 + k3 : V(-q1, q2, q3)
+            anharmonic_core_.v3sq_triples(ws,
+                                          &kmesh_dos_,
+                                          kmesh_dos_.kindex_minus_xk[kk1],
+                                          kk2,
+                                          kk3,
+                                          omega_tmp,
+                                          evec_tmp,
+                                          v3sq.data());
             for (int is1 = 0; is1 < ns; ++is1) {
-                arr_loc[0] = kmesh_dos_.kindex_minus_xk[kk1] * ns + is1;
                 for (int ib = 0; ib < ns2; ++ib) {
-                    if (L_emitt[idx][is1][ib] == 0.0) continue;
-                    arr_loc[1] = kk2 * ns + ib / ns;
-                    arr_loc[2] = kk3 * ns + ib % ns;
-                    L_emitt[idx][is1][ib] *=
-                        std::norm(anharmonic_core_
-                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
+                    L_emitt[idx][is1][ib] *= v3sq[static_cast<size_t>(is1) * ns2 + ib];
                 }
             }
         }
 
 #ifdef _OPENMP
-#pragma omp for
+#pragma omp for schedule(static)
 #endif
         for (int idx = 0; idx < static_cast<int>(pairs_absorb.size()); ++idx) {
 
@@ -631,15 +633,10 @@ void CollisionOperator::setup_L_tetra()
             const int kk3 = pair.group[0].ks[1];
 
             // absorption k1 + k2 -> -k3 : V(q1, q2, q3)
+            anharmonic_core_.v3sq_triples(ws, &kmesh_dos_, kk1, kk2, kk3, omega_tmp, evec_tmp, v3sq.data());
             for (int is1 = 0; is1 < ns; ++is1) {
-                arr_loc[0] = kk1 * ns + is1;
                 for (int ib = 0; ib < ns2; ++ib) {
-                    if (L_absorb[idx][is1][ib] == 0.0) continue;
-                    arr_loc[1] = kk2 * ns + ib / ns;
-                    arr_loc[2] = kk3 * ns + ib % ns;
-                    L_absorb[idx][is1][ib] *=
-                        std::norm(anharmonic_core_
-                                      .V3(arr_loc, kmesh_dos_.xk, omega_tmp, evec_tmp, phi3_work.data(), kindex_work));
+                    L_absorb[idx][is1][ib] *= v3sq[static_cast<size_t>(is1) * ns2 + ib];
                 }
             }
         }

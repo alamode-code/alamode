@@ -104,6 +104,26 @@ public:
     void get_sigma(const unsigned int k1, const unsigned int s1, const unsigned int k2, const unsigned int s2,
                    const unsigned int k3, const unsigned int s3, std::array<double, 4> &sigma_out);
 
+    // Lower bound of the adaptive width (Ry, about 3 cm^-1).
+    static constexpr double sigma_min = 2.0e-5;
+
+    // Projections of the group velocity of mode (k, s) on the three mesh
+    // spacings; the adaptive widths are quadratic forms of these, which lets
+    // the four-phonon kernel tabulate them per band pair instead of calling
+    // get_sigma for every band triple.
+    void get_projected_velocity(const unsigned int k, const unsigned int s, double proj_out[3]) const
+    {
+        for (auto u = 0; u < 3; ++u) {
+            proj_out[u] = 0.0;
+            for (auto a = 0; a < 3; ++a) proj_out[u] += vel[k][s][a] * dq[u][a];
+        }
+    }
+
+    double get_adaptive_factor() const
+    {
+        return adaptive_factor;
+    }
+
 private:
     double adaptive_factor;
     NDArray<double, 3> vel;

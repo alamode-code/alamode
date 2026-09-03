@@ -1807,6 +1807,22 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                ``&analysis`` tag) still implies ``INCLUDE_4PH = 1`` when the tag is
                absent, with a deprecation warning.
 
+               The quartic matrix elements of all band triples of a momentum-conserving
+               quartet are evaluated by successive eigenvector contractions of the
+               Fourier-transformed quartic force constants, so the cost per quartet grows
+               as :math:`(3N_{\mathrm{atom}})^4` and is independent of the number of
+               force-constant terms once they have been Fourier transformed. Band triples
+               outside the smearing window are discarded before any matrix element is
+               formed. ``VERBOSITY = 2`` prints a per-mode timing breakdown of the kernel.
+               The three-phonon matrix elements of the RTA and IBTE solvers are evaluated
+               by the same factorization (cost :math:`(3N_{\mathrm{atom}})^3` per
+               triplet for a fixed mode, :math:`(3N_{\mathrm{atom}})^4` for the
+               collision matrix), which matters for cells with more than a few atoms.
+               The dense contractions use Eigen; building with ``-DUSE_EIGEN_BLAS=ON``
+               routes them through the BLAS library, which is faster for large cells
+               (pin the BLAS thread count to 1, e.g. ``OPENBLAS_NUM_THREADS=1``, when
+               OpenMP threads are used).
+
 ````
 
 .. _anphon_kmesh_coarse:

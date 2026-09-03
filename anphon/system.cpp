@@ -244,8 +244,8 @@ void System::load_system_info_from_file()
                 } else if (file_extension == "h5" || file_extension == "hdf5") {
                     filetype[i] = 1;
                 } else {
-                    const auto str_error = "Unsupported file extension of " + filename +
-                                           " (only .xml, .h5, and .hdf5 are accepted).";
+                    const auto str_error =
+                        "Unsupported file extension of " + filename + " (only .xml, .h5, and .hdf5 are accepted).";
                     exit("load_system_info_from_file", str_error.c_str());
                 }
             } else {

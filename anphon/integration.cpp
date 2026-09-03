@@ -470,7 +470,7 @@ void AdaptiveSmearingSigma::get_sigma(const unsigned int k1, const unsigned int 
     }
 
     sigma_out[0] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[0] / 12)); // for (w1 - w2 - w3)
-    sigma_out[1] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[1] / 12)); // for (w1 + w3 - w3)
+    sigma_out[1] = std::max(2.0e-5, adaptive_factor * std::sqrt(parts[1] / 12)); // for (w1 + w2 - w3)
     // 2.0e-5 ry ~ 3 cm^-1
 }
 

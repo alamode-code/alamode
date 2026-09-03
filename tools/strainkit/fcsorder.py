@@ -486,7 +486,9 @@ def fc2_difference(path_a, path_b):
         raise ValueError(f"cannot compare {fa} with {fb} force-constant files")
     common = [k for k in ta if k in tb]
     if not common:
-        raise ValueError("no common force-constant entries (different supercell or indexing)")
+        raise ValueError(
+            "no common force-constant entries (different supercell or indexing)"
+        )
     d = np.array([ta[k] - tb[k] for k in common])
     ref = np.array([tb[k] for k in common])
     return {

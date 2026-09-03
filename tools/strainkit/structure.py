@@ -61,7 +61,8 @@ def _check_species_grouped(atoms, path):
         raise ValueError(
             f"{path}: atoms of the same species are not contiguous ({len(groups)} species blocks for "
             f"{len(set(numbers))} species); VASP requires one block per species -- reorder the template "
-            "(e.g. atoms[np.argsort(atoms.numbers, kind='stable')]) and use the same order for anphon")
+            "(e.g. atoms[np.argsort(atoms.numbers, kind='stable')]) and use the same order for anphon"
+        )
 
 
 def _check_potcar_order(atoms, potcar_path):
