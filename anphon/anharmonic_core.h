@@ -265,6 +265,29 @@ private:
 
     std::unique_ptr<PhaseFactorCache> phase_storage_dos;
 
+    // Cubic force constants regrouped for the factorized V3 evaluation
+    // (three_phonon.cpp): terms sorted by (b c, Rb - Rc, a, Rc) so that the
+    // phase of the first leg can be folded in once per K, the first-leg
+    // eigenvector once per mode, and a triplet costs one sparse sum over the
+    // (b c, Rb - Rc) terms plus two dense products.
+    struct FC3Compressed
+    {
+        int n = 0;                     // 3 * natmin
+        int ndr = 0, nrc = 0;          // unique (Rb - Rc) / Rc vectors
+        std::vector<int> dr_vec;       // ndr x 3
+        std::vector<int> rc_vec;       // nrc x 3
+        std::vector<long long> row_bc; // flattened (b, c) of each non-empty row
+        std::vector<int> row_ptr;      // row -> range in grp_dr (size nrow + 1)
+        std::vector<int> grp_dr;       // (Rb - Rc) index of each (b c, dR) group
+        std::vector<int> grp_ptr;      // group -> range in sub_a (size ngrp + 1)
+        std::vector<int> sub_a;        // first-leg index of each (a, b c, dR) subgroup
+        std::vector<int> sub_ptr;      // subgroup -> range in entry_rc / entry_val (size nsub + 1)
+        std::vector<int> entry_rc;     // Rc index of each force-constant term
+        std::vector<double> entry_val; // force constant of each term
+    };
+
+    std::unique_ptr<FC3Compressed> fc3_compressed;
+
     // Quartic force constants regrouped for the factorized V4 evaluation
     // (four_phonon.cpp): terms sorted by (b c d, R2 - R3, R1, R3, a). With
     // k3 = k - k1 - k2 the phase of a quartet is
@@ -294,28 +317,6 @@ private:
 
     void prepare_fc4_compressed();
 
-    // Cubic force constants regrouped for the factorized V3 evaluation
-    // (three_phonon.cpp): terms sorted by (b c, Rb - Rc, a, Rc) so that the
-    // phase of the first leg can be folded in once per K, the first-leg
-    // eigenvector once per mode, and a triplet costs one sparse sum over the
-    // (b c, Rb - Rc) terms plus two dense products.
-    struct FC3Compressed
-    {
-        int n = 0;                     // 3 * natmin
-        int ndr = 0, nrc = 0;          // unique (Rb - Rc) / Rc vectors
-        std::vector<int> dr_vec;       // ndr x 3
-        std::vector<int> rc_vec;       // nrc x 3
-        std::vector<long long> row_bc; // flattened (b, c) of each non-empty row
-        std::vector<int> row_ptr;      // row -> range in grp_dr (size nrow + 1)
-        std::vector<int> grp_dr;       // (Rb - Rc) index of each (b c, dR) group
-        std::vector<int> grp_ptr;      // group -> range in sub_a (size ngrp + 1)
-        std::vector<int> sub_a;        // first-leg index of each (a, b c, dR) subgroup
-        std::vector<int> sub_ptr;      // subgroup -> range in entry_rc / entry_val (size nsub + 1)
-        std::vector<int> entry_rc;     // Rc index of each force-constant term
-        std::vector<double> entry_val; // force constant of each term
-    };
-
-    std::unique_ptr<FC3Compressed> fc3_compressed;
 
     // First-leg eigenvector folded into psi_K (prepare_v3_mode).
     std::vector<std::complex<double>> psi_mode;

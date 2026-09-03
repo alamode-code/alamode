@@ -50,18 +50,21 @@ using namespace PHON_NS;
 //   V4 = sum_{a b c d} e0[a] e1[b] e2[c] e3[d] Phi(k1,k2,k3)[a,b,c,d],
 //   Phi(k1,k2,k3)[a,b,c,d] = sum_{R1 R2 R3} phi(a b c d; R1 R2 R3) exp(i(k1 R1 + k2 R2 + k3 R3)),
 //
-// where e_m are the mass-scaled eigenvectors. Evaluating the four-fold sum
-// separately for each band triple costs O(N_FC + ns^3 * N_grp) per quartet
-// (N_FC force-constant terms for the Fourier transform, N_grp index groups
-// per band triple). Instead the legs are contracted one at a time:
+// where e_m are the mass-scaled eigenvectors. 
+// The summation over sum_{R1 R2 R3} is performed by scanning non-zero 
+// quartic IFCs phi(a b c d; R1 R2 R3), which costs O(N_FC) per quartet, 
+// yielding Phi(k1,k2,k3)[a,b,c,d] (dimension is N_grp per (k1, k2, k3)).
+// 
+// Evaluating the four-fold sum separately for each band triple costs O(N_FC + ns^3 * N_grp) per quartet.
+// Instead the legs are contracted one at a time:
 //
 //   A[b,c,d]      = sum_a e0[a] Phi[a,b,c,d]        (sparse; e0 fixed per mode)
 //   B[s1,c,d]     = sum_b e1[s1,b] A[b,c,d]         (dense, ns x n x n^2)
 //   C[s1,s2,d]    = sum_c e2[s2,c] B[s1,c,d]        (dense, ns x (ns x n x n))
 //   D[s1,s2,s3]   = sum_d e3[s3,d] C[s1,s2,d]       (only where energy conservation allows)
 //
-// which costs O(n^4) per quartet independent of the number of force-constant
-// terms, plus the Fourier sum for A. That sum is split in two stages. With
+// which costs O(n^4) per quartet independent of the number of IFCs, 
+// plus the Fourier sum for A. That sum is split in two stages. With
 // k3 = k - k1 - k2 the phase of a quartet is
 //   k1.R1 + k2.R2 + k3.R3 = k1.R1 + (k - k1).R3 + k2.(R2 - R3),
 // so the e0 contraction is folded into the real-space force constants once
@@ -429,7 +432,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     // forms of the projections of the group velocities on the mesh spacings.
     const int ismear = integration->ismear_4ph;
     const double epsilon = integration->epsilon_4ph;
-    const bool adaptive = ismear == 2;
+    const bool adaptive = (ismear == 2);
     std::vector<double> proj;
     double adaptive_factor2 = 0.0;
     double sigma_min2 = 0.0;
