@@ -46,7 +46,10 @@ void KappaResultIOText::write_header(std::fstream &fs_result, const std::string 
             }
             fs_result << '\n';
         }
+        // atomic kind (1-based) followed by the fractional coordinates; the kind column is
+        // needed by analyzer.py for the symmetry detection used in the 4ph interpolation
         for (auto i = 0; i < primcell.number_of_atoms; ++i) {
+            fs_result << std::setw(6) << primcell.kind[i] + 1;
             for (auto j = 0; j < 3; ++j) {
                 fs_result << std::setw(20) << std::scientific << primcell.x_fractional(i, j);
             }
