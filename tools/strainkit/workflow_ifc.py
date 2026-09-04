@@ -26,6 +26,7 @@ from .fcsorder import (
     match_primitive_atoms,
     read_anphon_cell,
     read_fcs_structure,
+    transmat_to_primitive,
     verify_generated_fcs,
 )
 from .jobscript import render_job_script, write_run_all
@@ -298,6 +299,7 @@ def collect_harmonic(
     outdir,
     manifest,
     fcs=None,
+    anphon_cell=None,
     unchecked=False,
     fcs_format="xml",
     prefix="strain",
@@ -312,14 +314,38 @@ def collect_harmonic(
     code = manifest["code"]
     ref_atoms = _reference_atoms(manifest, outdir)
     fcs_struct = None
+    transmat_to_prim = None
     if fcs:
         fcs_struct = read_fcs_structure(fcs)
         check_supercell_equivalence(ref_atoms, fcs_struct)
         log(f"  template supercell is index-compatible with {fcs}")
+        # anphon's primitive cell: /PrimitiveCell for an h5 reference, the
+        # &cell field for an xml one.  ALM is given the supercell, so without
+        # this the written /PrimitiveCell would be the whole supercell.
+        cell = None
+        if fcs_struct.fmt != "h5" and anphon_cell:
+            cell = read_anphon_cell(anphon_cell)
+        try:
+            prim = anphon_primitive_cell(fcs_struct, cell)
+            transmat_to_prim = transmat_to_primitive(fcs_struct.lavec, prim.lavec)
+        except ValueError as exc:
+            if fcs_format == "h5":
+                log(
+                    f"  NOTE: the primitive cell could not be taken from the reference ({exc}); "
+                    "/PrimitiveCell of the written files will be the supercell, so anphon needs "
+                    "the &cell field to read them"
+                )
+        else:
+            log(f"  primitive cell ({len(prim.xf)} atoms) taken from {prim.source}")
     elif not unchecked:
         raise ValueError(
             "give the reference force-constant file used by anphon (--fcs REF.xml|.h5) "
             "or --unchecked to skip the index-compatibility checks"
+        )
+    elif fcs_format == "h5":
+        log(
+            "  NOTE: without --fcs the primitive cell is unknown; /PrimitiveCell of the written "
+            "files will be the supercell, so anphon needs the &cell field to read them"
         )
     rdir = os.path.join(outdir, results_dir)
     os.makedirs(rdir, exist_ok=True)
@@ -357,6 +383,7 @@ def collect_harmonic(
             manifest["nbody"],
             manifest["cutoff"],
             solver,
+            transmat_to_prim,
         )
         if fcs_struct is not None:
             verify_generated_fcs(out, fcs_struct, F)
@@ -526,6 +553,7 @@ def collect(
             outdir,
             manifest,
             fcs,
+            anphon_cell,
             unchecked,
             fcs_format,
             prefix,

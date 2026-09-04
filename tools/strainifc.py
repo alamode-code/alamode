@@ -132,7 +132,8 @@ def main(argv=None):
     c.add_argument(
         "--anphon-cell",
         default=None,
-        help="anphon input with the &cell field (or a structure file); required with an XML --fcs for the force coupling",
+        help="anphon input with the &cell field (or a structure file); required with an XML --fcs "
+        "(force coupling, and harmonic coupling with --fcs-format h5)",
     )
     c.add_argument(
         "--unchecked",

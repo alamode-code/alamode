@@ -283,6 +283,40 @@ def anphon_primitive_cell(fcs, anphon_cell=None):
     )
 
 
+def transmat_to_primitive(lavec_super, lavec_prim, tol=1.0e-4):
+    """ALM's PRIMCELL matrix of a supercell: the (3, 3) matrix ``T`` with
+
+        (a_p, b_p, c_p) = (a_s, b_s, c_s) T          (columns = vectors)
+
+    i.e. what ``System::build_primcell`` calls ``transmat_to_prim`` when the
+    input cell is the supercell (``SUPERCELL`` = identity).  Both arguments are
+    row-wise (ase convention).  ``T`` is invariant under a homogeneous strain,
+    because both lattices are multiplied by the same deformation gradient.
+    """
+    a_s = np.asarray(lavec_super, dtype=float)
+    a_p = np.asarray(lavec_prim, dtype=float)
+    t = np.linalg.inv(a_s.T) @ a_p.T
+    det = np.linalg.det(t)
+    if det <= 0.0:
+        raise ValueError(
+            "the primitive cell is not a right-handed sublattice of the supercell "
+            f"(det = {det:.6f})"
+        )
+    ndiv = 1.0 / det
+    if abs(ndiv - round(ndiv)) > tol or round(ndiv) < 1:
+        raise ValueError(
+            f"the supercell volume is not an integer multiple of the primitive one "
+            f"(ratio {ndiv:.6f})"
+        )
+    ti = np.linalg.inv(t)  # (a_s, b_s, c_s) = (a_p, b_p, c_p) T^-1: integer
+    if np.abs(ti - np.round(ti)).max() > tol:
+        raise ValueError(
+            "the supercell is not an integer multiple of the primitive cell:\n"
+            + np.array2string(ti, precision=6)
+        )
+    return t
+
+
 def match_primitive_atoms(atoms_dft, prim, tol=1.0e-3):
     """Map every anphon primitive atom to a DFT-cell atom that is a translation
     image of it.  Returns an integer array of DFT atom indices.

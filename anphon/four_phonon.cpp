@@ -50,11 +50,11 @@ using namespace PHON_NS;
 //   V4 = sum_{a b c d} e0[a] e1[b] e2[c] e3[d] Phi(k1,k2,k3)[a,b,c,d],
 //   Phi(k1,k2,k3)[a,b,c,d] = sum_{R1 R2 R3} phi(a b c d; R1 R2 R3) exp(i(k1 R1 + k2 R2 + k3 R3)),
 //
-// where e_m are the mass-scaled eigenvectors. 
-// The summation over sum_{R1 R2 R3} is performed by scanning non-zero 
-// quartic IFCs phi(a b c d; R1 R2 R3), which costs O(N_FC) per quartet, 
+// where e_m are the mass-scaled eigenvectors.
+// The summation over sum_{R1 R2 R3} is performed by scanning non-zero
+// quartic IFCs phi(a b c d; R1 R2 R3), which costs O(N_FC) per quartet,
 // yielding Phi(k1,k2,k3)[a,b,c,d] (dimension is N_grp per (k1, k2, k3)).
-// 
+//
 // Evaluating the four-fold sum separately for each band triple costs O(N_FC + ns^3 * N_grp) per quartet.
 // Instead the legs are contracted one at a time:
 //
@@ -63,7 +63,7 @@ using namespace PHON_NS;
 //   C[s1,s2,d]    = sum_c e2[s2,c] B[s1,c,d]        (dense, ns x (ns x n x n))
 //   D[s1,s2,s3]   = sum_d e3[s3,d] C[s1,s2,d]       (only where energy conservation allows)
 //
-// which costs O(n^4) per quartet independent of the number of IFCs, 
+// which costs O(n^4) per quartet independent of the number of IFCs,
 // plus the Fourier sum for A. That sum is split in two stages. With
 // k3 = k - k1 - k2 the phase of a quartet is
 //   k1.R1 + k2.R2 + k3.R3 = k1.R1 + (k - k1).R3 + k2.(R2 - R3),

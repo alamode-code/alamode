@@ -103,9 +103,16 @@ def fit_harmonic(
     nbody=2,
     cutoff=None,
     solver="dense",
+    transmat_to_prim=None,
     verbosity=0,
 ):
     """Fit harmonic force constants and write them (Ry/bohr^2) to ``out_file``.
+
+    ``transmat_to_prim`` is the PRIMCELL matrix of ``atoms`` (see
+    ``fcsorder.transmat_to_primitive``).  It does not change the force-constant
+    model, only the ``/PrimitiveCell`` group of an h5 file -- which anphon reads
+    when no ``&cell`` field is given.  Without it ALM takes the whole
+    (super)cell as the primitive cell.
 
     Returns a dict with fit information.
     """
@@ -117,6 +124,11 @@ def fit_harmonic(
     if u.ndim != 3 or u.shape != f.shape or u.shape[1] != len(atoms) or u.shape[2] != 3:
         raise ValueError(f"training data must have shape (nsnap, {len(atoms)}, 3)")
     with make_alm(atoms, verbosity) as alm:
+        if transmat_to_prim is not None:
+            # ``atoms`` is already the (strained) supercell, so the cell given
+            # to ALM is the supercell itself (SUPERCELL = identity) and only
+            # PRIMCELL has to be declared.  Must precede define().
+            alm.set_supercell(np.eye(3), transmat_to_prim)
         _define_harmonic(alm, atoms, nbody, cutoff)
         alm.set_constraint(translation=True)
         alm.set_training_data(u, f)
