@@ -14,6 +14,9 @@ This python script is a post-processing tool for anphon.
 
 import optparse
 
+import numpy as np
+
+from analyzer.anphonio import probe_kappa_h5
 from analyzer.calculator import Calculator
 
 
@@ -48,6 +51,27 @@ def get_optparse_options():
         "The PREFIX.self_isotope can be generated using 'anphon' with ISOTOPE=2 option.",
     )
 
+    parser.add_option(
+        "--h5",
+        "--hdf5",
+        metavar="PREFIX.kappa.h5",
+        dest="file_kappa",
+        help="specify the unified HDF5 result file PREFIX.kappa.h5 written by anphon "
+        "(FILE_FORMAT = h5, the default; --hdf5 is an alias). It replaces the --3ph/--4ph pair: "
+        "the three-phonon linewidths are read from it unless --3ph is also given, and the "
+        "four-phonon channel is used automatically when the run had INCLUDE_4PH = 1 (unless "
+        "--4ph is also given; an explicit text file takes precedence for its channel). Isotope "
+        "linewidths stored in the file (ISOTOPE > 0) are included unless --noiso or --iso is given. "
+        "For temperature-resolved files (FC2_TEMPERATURE runs) the phonon basis at --temp is used; "
+        "with --calc kappa and no --temp, all temperatures of the file are processed in turn.",
+    )
+    parser.add_option(
+        "--noiso",
+        action="store_true",
+        dest="noiso",
+        default=False,
+        help="do not include the isotope linewidths stored in the kappa.h5 file",
+    )
     parser.add_option(
         "--3ph",
         metavar="PREFIX.result",
@@ -120,19 +144,56 @@ def main():
 
     calc = options.calc
 
+    if options.file_3ph is None and options.file_kappa is None:
+        raise RuntimeError("Please specify --h5 PREFIX.kappa.h5 or --3ph PREFIX.result")
+
+    # Temperature-resolved kappa.h5 files (FC2_TEMPERATURE runs) hold one phonon basis per
+    # temperature; the Calculator works with one basis at a time.
+    if options.file_kappa is not None and options.file_3ph is None and options.temp is None:
+        info = probe_kappa_h5(options.file_kappa)
+        if info["temperature_resolved"] and len(info["temperatures"]) > 1:
+            if calc != "kappa":
+                raise RuntimeError(
+                    "{} holds temperature-dependent phonons at {} temperatures; please "
+                    "specify --temp".format(options.file_kappa, len(info["temperatures"]))
+                )
+            print("# Thermal conductivity (W/mK), temperature-resolved phonon basis")
+            print("# temperature, xx, xy, xz, yx, yy, yz, zx, zy, zz")
+            for temp in info["temperatures"]:
+                calc_t = Calculator(
+                    file_kappa_h5=options.file_kappa,
+                    temperature=float(temp),
+                    file_result_4ph=options.file_4ph,
+                    file_isotope=options.iso,
+                    average_gamma=options.average_gamma,
+                    use_isotope_from_h5=not options.noiso,
+                )
+                kappa = np.asarray(
+                    calc_t.get_thermal_conductivity(
+                        four_phonon=calc_t.has_4ph, isotope=calc_t.has_isotope, len_boundary=options.size
+                    )
+                ).reshape((-1, 3, 3))[0]
+                print("{:12.2f}".format(temp) + "".join("{:15.3f}".format(kappa[i, j]) for i in range(3) for j in range(3)))
+            return
+
     postproc = Calculator(
         options.file_3ph,
         file_result_4ph=options.file_4ph,
         file_isotope=options.iso,
         average_gamma=options.average_gamma,
+        file_kappa_h5=options.file_kappa,
+        temperature=options.temp,
+        use_isotope_from_h5=not options.noiso,
     )
+    four_phonon = postproc.has_4ph
+    isotope = postproc.has_isotope
 
     if calc == "gamma":
         if options.temp is not None:
             postproc.print_linewidth(
                 options.temp,
-                four_phonon=(options.file_4ph is not None),
-                isotope=(options.iso is not None),
+                four_phonon=four_phonon,
+                isotope=isotope,
             )
         else:
             # When --temp option is not specified, print temperature dependence
@@ -146,16 +207,16 @@ def main():
             postproc.print_linewidth_mode(
                 options.kpoint - 1,
                 options.mode - 1,
-                four_phonon=(options.file_4ph is not None),
-                isotope=(options.iso is not None),
+                four_phonon=four_phonon,
+                isotope=isotope,
             )
 
     elif calc == "tau":
         if options.temp is not None:
             postproc.print_lifetime(
                 options.temp,
-                four_phonon=(options.file_4ph is not None),
-                isotope=(options.iso is not None),
+                four_phonon=four_phonon,
+                isotope=isotope,
             )
         else:
             # When --temp option is not specified, print temperature dependence
@@ -169,14 +230,14 @@ def main():
             postproc.print_lifetime_mode(
                 options.kpoint - 1,
                 options.mode - 1,
-                four_phonon=(options.file_4ph is not None),
-                isotope=(options.iso is not None),
+                four_phonon=four_phonon,
+                isotope=isotope,
             )
 
     elif calc == "kappa":
         postproc.print_thermal_conductivity(
-            four_phonon=(options.file_4ph is not None),
-            isotope=(options.iso is not None),
+            four_phonon=four_phonon,
+            isotope=isotope,
             len_boundary=options.size,
         )
 
@@ -185,8 +246,8 @@ def main():
             raise RuntimeError("Please specify the temperature by --temp option")
         postproc.print_cumulative_kappa(
             options.temp,
-            four_phonon=(options.file_4ph is not None),
-            isotope=(options.iso is not None),
+            four_phonon=four_phonon,
+            isotope=isotope,
             nsamples=options.nsample,
             gridtype=options.gridtype,
         )
@@ -209,8 +270,8 @@ def main():
 
         postproc.print_cumulative_kappa(
             options.temp,
-            four_phonon=(options.file_4ph is not None),
-            isotope=(options.iso is not None),
+            four_phonon=four_phonon,
+            isotope=isotope,
             nsamples=options.nsample,
             gridtype=options.gridtype,
             directions=directions,

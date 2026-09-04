@@ -392,7 +392,9 @@ This occurs because we only considered intrinsic phonon-phonon scatterings in th
 neglected phonon-boundary scatterings which are dominant in the low-temperature range.
 The effect of the boundary scattering can be included using the python script ``analyzer.py`` in the tools directory::
 
-    $ analyzer.py --calc kappa --size 1.0e+6 --3ph si222.result > si222_boundary_1mm.kl
+    $ analyzer.py --calc kappa --size 1.0e+6 --h5 si222.kappa.h5 > si222_boundary_1mm.kl
+
+(``--3ph si222.result`` can be used instead of ``--h5 si222.kappa.h5`` when the calculation was run with ``FILE_FORMAT = text``.)
 
 In this script, the phonon lifetimes are altered using the Matthiessen's rule
 
@@ -424,7 +426,7 @@ Phonon lifetime
 The file :red:`si222.result` contains phonon linewidths at irreducible :math:`k` points. 
 You can extract phonon lifetime from this file as follows::
 
-    $ analyzer.py --calc tau --temp 300 --3ph si222.result > tau300K_10.dat
+    $ analyzer.py --calc tau --temp 300 --h5 si222.kappa.h5 > tau300K_10.dat
     $ gnuplot
     gnuplot> set xrange [1:]
     gnuplot> set logscale y
@@ -446,7 +448,7 @@ Cumulative thermal conductivity
 
 Following the procedure below, you can obtain the :ref:`cumulative thermal conductivity <cumulative_kappa>`::
 
-    $ analyzer.py --calc cumulative --temp 300 --3ph si222.result > cumulative_300K_10.dat
+    $ analyzer.py --calc cumulative --temp 300 --h5 si222.kappa.h5 > cumulative_300K_10.dat
     $ gnuplot
     gnuplot> set logscale x
     gnuplot> set xlabel "L (nm)"

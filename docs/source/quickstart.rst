@@ -133,18 +133,21 @@ Program anphon
 
     $ plotband.py -h
 
-  A similar script is provided for the phonon DOS. Another script, ``analyzer.py``, is useful for analyzing the results of thermal conductivity calculations. For example, phonon lifetimes and mean free paths at 300 K can be extracted by
+  A similar script is provided for the phonon DOS. Another script, ``analyzer.py``, is useful for analyzing the results of thermal conductivity calculations. It reads the unified ``target.kappa.h5`` file written by ``anphon`` (``FILE_FORMAT = h5``, the default); the four-phonon and isotope linewidths stored in that file are picked up automatically. For example, phonon lifetimes and mean free paths at 300 K can be extracted by
 
   ::
 
-    $ analyzer.py --calc tau --temp 300 --3ph target.result
+    $ analyzer.py --calc tau --temp 300 --h5 target.kappa.h5
 
 
   It can also estimate the cumulative thermal conductivity by
 
   ::
 
-    $ analyzer.py --calc cumulative --temp 300 --3ph target.result
+    $ analyzer.py --calc cumulative --temp 300 --h5 target.kappa.h5
+
+  The legacy text files are still accepted through ``--3ph target.result`` (and ``--4ph target.4ph.result``, ``--iso target.self_isotope``).
+  For temperature-resolved files (``FC2_TEMPERATURE`` runs) the phonon basis at ``--temp`` is used; ``--calc kappa`` without ``--temp`` processes every temperature stored in the file.
 
 
   For details, see the tutorial.

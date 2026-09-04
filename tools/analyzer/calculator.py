@@ -3,32 +3,55 @@ import warnings
 import numpy as np
 import spglib
 
-from analyzer.anphonio import ParseResult
+from analyzer.anphonio import ParseKappaH5, ParseResult, probe_kappa_h5
 from analyzer.interpolate import Interpolator
 
 
 class Calculator:
     def __init__(
         self,
-        file_result_3ph,
+        file_result_3ph=None,
         file_result_4ph=None,
         file_isotope=None,
         average_gamma=True,
         tolerance=1.0e-3,
+        file_kappa_h5=None,
+        temperature=None,
+        use_isotope_from_h5=True,
     ):
         """
         The constructor of the Calculator class.
 
         Parameters:
-            file_result_3ph (str): File path to the 3-phonon results.
-            file_result_4ph (str): File path to the 4-phonon results.
-            file_isotope (str): File path to the isotope self-energy.
+            file_result_3ph (str): File path to the 3-phonon results (PREFIX.result).
+            file_result_4ph (str): File path to the 4-phonon results (PREFIX.4ph.result).
+            file_isotope (str): File path to the isotope self-energy (PREFIX.self_isotope).
             average_gamma (bool): If True, averages the gamma values at degenerate phonon modes (default: True).
             tolerance (float): Tolerance for symmetry detection (default: 1.0e-3).
+            file_kappa_h5 (str): File path to the unified PREFIX.kappa.h5 file (FILE_FORMAT = h5).
+                It replaces file_result_3ph and, when the file contains the four-phonon channel,
+                file_result_4ph. Explicitly given text files take precedence for their channel.
+            temperature (float): For temperature-resolved kappa.h5 files (FC2_TEMPERATURE runs),
+                the temperature whose phonon frequencies/velocities are used.
+            use_isotope_from_h5 (bool): If True and file_isotope is None, the isotope linewidths
+                stored in the kappa.h5 file (ISOTOPE > 0 runs) are loaded (default: True).
         """
         self.file_result_3ph = file_result_3ph
         self.file_result_4ph = file_result_4ph
         self.file_isotope = file_isotope
+        self.file_kappa_h5 = file_kappa_h5
+        self.temperature_h5 = temperature
+        self.use_isotope_from_h5 = use_isotope_from_h5
+        self.has_4ph_h5 = False
+        self.has_isotope_h5 = False
+        if file_kappa_h5 is None and file_result_3ph is None:
+            raise RuntimeError("Either file_result_3ph or file_kappa_h5 must be given")
+        if file_kappa_h5 is not None:
+            info = probe_kappa_h5(file_kappa_h5)
+            self.has_4ph_h5 = info["has_4ph"]
+            self.has_isotope_h5 = info["has_isotope"]  # refined after loading (validity flag)
+            self.temperature_resolved_h5 = info["temperature_resolved"]
+            self.temperatures_h5 = info["temperatures"]
         self.omega = None  # Frequency array
         self.omega4 = None
         self.gamma3 = None  # linewidth due to 3-phonon scattering
@@ -61,21 +84,65 @@ class Calculator:
         self._kayser_to_Ryd = self._time_ry / self._Hz_to_kayser
         self._T_to_Ryd = self._k_Boltzmann / self._Ryd
 
-        if self.file_result_3ph is not None:
+        if self.file_result_3ph is not None or self.file_kappa_h5 is not None:
             self.set_variables_3ph()
 
-        if self.file_result_4ph is not None:
+        if self.file_result_4ph is not None or self.has_4ph_h5:
             self.set_variables_4ph()
             self.interpol_gamma4()
 
-        if self.file_isotope is not None:
+        if self.file_isotope is not None or (self.has_isotope_h5 and self.use_isotope_from_h5):
             self.set_variables_iso()
+
+    @property
+    def has_4ph(self):
+        """True when four-phonon linewidths are available (text file or kappa.h5 channel)."""
+        return self.file_result_4ph is not None or self.has_4ph_h5
+
+    @property
+    def has_isotope(self):
+        """True when isotope linewidths are available (text file or kappa.h5 group)."""
+        return self.file_isotope is not None or (self.has_isotope_h5 and self.use_isotope_from_h5)
+
+    def _load_h5(self, channel):
+        """Reads one scattering channel of the kappa.h5 file."""
+        result = ParseKappaH5(self.file_kappa_h5, channel=channel, temperature=self.temperature_h5)
+        self.has_4ph_h5 = result.has_4ph
+        self.has_isotope_h5 = result.has_isotope
+        return result
+
+    def _check_consistency(self, result, what):
+        """Checks that a second data source (text or HDF5) matches the loaded 3ph data."""
+        if self.omega is None:
+            return
+        if result.omega.shape[1] != self.omega.shape[1]:
+            raise RuntimeError(
+                "{}: number of branches ({}) differs from the 3ph data ({})".format(
+                    what, result.omega.shape[1], self.omega.shape[1]
+                )
+            )
+        if self.temperatures is not None and result.temperatures is not None:
+            if len(result.temperatures) != len(self.temperatures) or np.any(
+                np.abs(np.asarray(result.temperatures) - np.asarray(self.temperatures)) > 1.0e-6
+            ):
+                warnings.warn(
+                    "{}: temperature grid {} differs from the 3ph data {}; the nearest "
+                    "temperature is used for each request".format(
+                        what, np.asarray(result.temperatures).tolist(), np.asarray(self.temperatures).tolist()
+                    )
+                )
+        if abs(result.volume - self.volume) > 1.0e-6 * max(1.0, abs(self.volume)):
+            warnings.warn("{}: cell volume differs from the 3ph data".format(what))
 
     def set_variables_3ph(self):
         """
         Sets the variables related to 3-phonon scattering amplitudes.
         """
-        result = ParseResult(self.file_result_3ph)
+        if self.file_result_3ph is not None:
+            result = ParseResult(self.file_result_3ph)
+        else:
+            result = self._load_h5("3ph")
+            self._gamma_iso_h5 = result.gamma_isotope
         self.omega = result.omega
         if self.average_gamma:
             self.gamma3 = self.average_gamma_at_degenerate_point(
@@ -95,7 +162,13 @@ class Calculator:
         """
         Sets the variables related to 4-phonon scattering.
         """
-        result = ParseResult(self.file_result_4ph)
+        if self.file_result_4ph is not None:
+            result = ParseResult(self.file_result_4ph)
+            self._check_consistency(result, self.file_result_4ph)
+        else:
+            result = self._load_h5("4ph")
+            if self.file_result_3ph is not None:
+                self._check_consistency(result, self.file_kappa_h5 + " (4ph channel)")
         self.omega4 = result.omega
         if self.average_gamma:
             self.gamma4 = self.average_gamma_at_degenerate_point(
@@ -111,15 +184,55 @@ class Calculator:
         self.temperatures4 = result.temperatures
 
         if result.lattice_vector is not None:
-            cell = (result.lattice_vector.T, result.x_fractional, result.atomic_kinds)
-            self.rotations = spglib.get_symmetry_dataset(cell, symprec=self.tolerance)[
-                "rotations"
-            ]
+            kinds = result.atomic_kinds
+            if kinds is None:
+                # the text .result files store the fractional coordinates only; without the
+                # atomic kinds the symmetry is detected treating all atoms as one species,
+                # which can only over-count operations; the star-size check in the
+                # interpolator catches an inconsistent result.
+                warnings.warn(
+                    "{} does not store the atomic kinds; detecting the symmetry with all "
+                    "atoms treated as one species (use the kappa.h5 file for exact kinds)".format(
+                        self.file_result_4ph if self.file_result_4ph is not None else self.file_kappa_h5
+                    )
+                )
+                kinds = np.ones(len(result.x_fractional), dtype=int)
+            cell = (result.lattice_vector.T, result.x_fractional, kinds)
+            dataset = spglib.get_symmetry_dataset(cell, symprec=self.tolerance)
+            if dataset is None:
+                raise RuntimeError("spglib could not determine the symmetry of the cell stored in the 4ph data")
+            self.rotations = np.asarray(
+                dataset.rotations if hasattr(dataset, "rotations") else dataset["rotations"]
+            )
 
     def set_variables_iso(self):
         """
         Sets the variables related to isotope scattering.
         """
+        if self.file_isotope is None:
+            # isotope linewidths stored in the kappa.h5 file (already on the 3ph mesh)
+            if getattr(self, "_gamma_iso_h5", None) is None:
+                result = self._load_h5("3ph")
+                self._gamma_iso_h5 = result.gamma_isotope
+                if result.omega.shape != self.omega.shape:
+                    raise RuntimeError(
+                        "The isotope linewidths of {} are defined on a different mesh than the "
+                        "3ph data".format(self.file_kappa_h5)
+                    )
+            if self._gamma_iso_h5 is None:
+                warnings.warn(
+                    "{} has no usable isotope linewidths (missing or not finalized); isotope "
+                    "scattering is ignored".format(self.file_kappa_h5)
+                )
+                self.has_isotope_h5 = False
+                self.gamma_iso = np.zeros(self.omega.shape, dtype=float)
+                return
+            gamma = self._gamma_iso_h5[:, :, None]
+            if self.average_gamma:
+                self.gamma_iso = self.average_gamma_at_degenerate_point(self.omega, gamma)[:, :, 0]
+            else:
+                self.gamma_iso = gamma[:, :, 0]
+            return
         result = np.atleast_2d(np.loadtxt(self.file_isotope))
         nk = round(np.max(result[:, 0]))
         ns = round(np.max(result[:, 1]))
@@ -142,9 +255,20 @@ class Calculator:
             weight_q=self.qpoint_weight4,
             rotations=self.rotations,
         )
+        # map the temperature grid of the 4ph data onto that of the 3ph data (nearest entry)
+        t3 = np.asarray(self.temperatures, dtype=float)
+        t4 = np.asarray(self.temperatures4, dtype=float)
+        col_map = np.array([int(np.argmin(np.abs(t4 - t))) for t in t3])
+        if len(t4) != len(t3) or np.any(np.abs(t4[col_map] - t3) > 1.0e-6):
+            warnings.warn(
+                "The temperature grid of the 4ph data {} differs from that of the 3ph data {}; "
+                "for each 3ph temperature the nearest 4ph temperature is used".format(
+                    t4.tolist(), t3.tolist()
+                )
+            )
         self.gamma4_interpolated = np.zeros(self.gamma3.shape, dtype=float)
         for i, xq in enumerate(self.qpoints):
-            self.gamma4_interpolated[i, :, :] = interpol.run2(self.gamma4, xq)
+            self.gamma4_interpolated[i, :, :] = interpol.run2(self.gamma4, xq)[:, col_map]
 
     def check_data_load(self, four_phonon, isotope):
         """
@@ -158,18 +282,20 @@ class Calculator:
             self.set_variables_3ph()
 
         if four_phonon and (self.gamma4 is None):
-            if self.file_result_4ph is None:
+            if not self.has_4ph:
                 raise RuntimeError(
-                    "file_result_4ph must be given when initializing the class"
+                    "file_result_4ph (or a kappa.h5 file with the 4ph channel) must be given "
+                    "when initializing the class"
                 )
             else:
                 self.set_variables_4ph()
                 self.interpol_gamma4()
 
         if isotope and (self.gamma_iso is None):
-            if self.file_isotope is None:
+            if not self.has_isotope:
                 raise RuntimeError(
-                    "file_isotope must be given when initializing the class"
+                    "file_isotope (or a kappa.h5 file with isotope linewidths) must be given "
+                    "when initializing the class"
                 )
             else:
                 self.set_variables_iso()
@@ -406,11 +532,26 @@ class Calculator:
         gamma = self.get_linewidth(temperature, four_phonon, isotope)
 
         with np.errstate(divide="ignore"):
-            tau = self._factor_gamma_to_tau / gamma
+            tau = self._safe_lifetime(gamma)
         for i in range(self.omega.shape[0]):
             for j in range(self.omega.shape[1]):
                 if self.omega[i, j] <= 1.0e-8 or gamma[i, j] <= 1.0e-8:
                     tau[i, j] = 0.0
+        return tau
+
+    def _safe_lifetime(self, gamma):
+        """tau = hbar/(2 Gamma) in ps; modes with NaN (not computed) or zero linewidth get tau = 0
+        so that they drop out of the transport sums (a warning is issued once per instance)."""
+        with np.errstate(divide="ignore", invalid="ignore"):
+            tau = self._factor_gamma_to_tau / gamma
+        bad = ~np.isfinite(tau)
+        if np.any(bad & np.isnan(gamma)) and not getattr(self, "_warned_missing", False):
+            warnings.warn(
+                "{} phonon modes have no computed linewidth (incomplete run); they are "
+                "excluded from the transport sums".format(int(np.sum(np.isnan(gamma))))
+            )
+            self._warned_missing = True
+        tau[bad] = 0.0
         return tau
 
     def get_group_velocity_norm(self):
@@ -540,7 +681,7 @@ class Calculator:
             if isotope:
                 total += gamma_iso
 
-            if omega_q <= 1.0e-8 or gamma3[itemp] <= 1.0e-12:
+            if omega_q <= 1.0e-8 or not np.isfinite(gamma3[itemp]) or gamma3[itemp] <= 1.0e-12:
                 tau_3ph = 0.0
             else:
                 tau_3ph = self._factor_gamma_to_tau / gamma3[itemp]
@@ -552,7 +693,7 @@ class Calculator:
             )
 
             if four_phonon or isotope:
-                if omega_q <= 1.0e-8 or total <= 1.0e-12:
+                if omega_q <= 1.0e-8 or not np.isfinite(total) or total <= 1.0e-12:
                     tau_total = 0.0
                 else:
                     tau_total = self._factor_gamma_to_tau / total
@@ -748,8 +889,18 @@ class Calculator:
         # Ignore numerically-zero mean-free-paths (e.g. Gamma acoustic modes)
         # when determining the sampling range; 1e-6 nm matches the eps6
         # threshold used historically by the analyze_phonons C++ tool.
-        max_mfp = np.max(mfp)
-        min_mfp = np.min(mfp[np.where(mfp > 1.0e-6)])
+        # modes whose linewidth was not computed (NaN) are excluded from the length grid
+        # and, through the comparisons below (False for NaN), from the sums
+        if np.any(np.isnan(mfp)):
+            warnings.warn(
+                "{} modes have no linewidth (incomplete run) and are excluded from the "
+                "cumulative thermal conductivity".format(int(np.sum(np.isnan(mfp))))
+            )
+        finite = np.isfinite(mfp) & (mfp > 1.0e-6)
+        if not np.any(finite):
+            raise RuntimeError("No phonon mode with a finite, non-zero mean free path; cannot build the length grid")
+        max_mfp = np.max(mfp[finite])
+        min_mfp = np.min(mfp[finite])
 
         if gridtype == "linear":
             length_vec = np.linspace(min_mfp, max_mfp, nsamples)

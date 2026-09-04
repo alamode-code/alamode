@@ -383,6 +383,9 @@ Description of input variables
   ``TRISYM = 1`` can reduce the computational cost, but phonon linewidth stored to the file
   ``PREFIX``.result needs to be averaged at points of degeneracy.
   For that purpose, a subsidiary program ``analyzer.py`` should be used.
+  ``analyzer.py --h5 PREFIX.kappa.h5`` reads the HDF5 file directly (three-phonon, four-phonon and isotope
+  linewidths, and the temperature-resolved layout); ``--3ph PREFIX.result`` / ``--4ph PREFIX.4ph.result`` remain
+  available for ``FILE_FORMAT = text``.
 
 ````
 
