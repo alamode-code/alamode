@@ -222,8 +222,12 @@ struct KappaResultIOH5::Impl
         const auto nt = nt_file();
 
         if (tdep) {
-            h5_create_dataset_prealloc<double>(fh, path + "/frequencies", {nt, cmeta.nk_irred, cmeta.ns})
-                .createAttribute("unit", std::string("cm^-1"));
+            auto dset_freq = h5_create_dataset_prealloc<double>(fh, path + "/frequencies", {nt, cmeta.nk_irred, cmeta.ns});
+            dset_freq.createAttribute("unit", std::string("cm^-1"));
+            // Marks files whose temperature slices are written in the row-major
+            // (nk_irred, ns) order; files without this attribute were written by
+            // versions that stored the column-major Eigen buffer raw (transposed).
+            dset_freq.createAttribute("layout", std::string("row-major"));
             h5_create_dataset_prealloc<double>(fh, path + "/velocities", {nt, nequiv_total, cmeta.ns, 3})
                 .createAttribute("unit", std::string("m/s"));
             auto dset_gamma = h5_create_dataset_prealloc<double>(fh, path + "/gamma", {nrows, nt});
@@ -263,8 +267,40 @@ struct KappaResultIOH5::Impl
         auto dset_freq = file->getDataSet(path + "/frequencies");
         auto dset_vel = file->getDataSet(path + "/velocities");
         const size_t nequiv_total = cmeta.velocities.size() / (static_cast<size_t>(cmeta.ns) * 3);
+        // Files written before the row-major fix hold every frequency slice as the raw
+        // column-major Eigen buffer and carry no "layout" attribute. Convert all of their
+        // slices in place before adding new row-major ones, so that a restarted legacy file
+        // ends up uniformly row-major and stamped.
+        if (!dset_freq.hasAttribute("layout")) {
+            const auto dims = dset_freq.getDimensions();
+            if (dims.size() != 3 || dims[1] != cmeta.nk_irred || dims[2] != cmeta.ns) {
+                exit("write_basis_slices", "Unexpected dimensions of the frequency dataset in the restart file.");
+            }
+            const size_t nfreq = static_cast<size_t>(cmeta.nk_irred) * cmeta.ns;
+            std::vector<double> slice(nfreq), slice_rowmajor(nfreq);
+            for (size_t j = 0; j < dims[0]; ++j) {
+                dset_freq.select({j, 0, 0}, {1, cmeta.nk_irred, cmeta.ns}).read(slice.data());
+                for (size_t ik = 0; ik < cmeta.nk_irred; ++ik) {
+                    for (size_t is = 0; is < cmeta.ns; ++is) {
+                        slice_rowmajor[ik * cmeta.ns + is] = slice[is * cmeta.nk_irred + ik];
+                    }
+                }
+                dset_freq.select({j, 0, 0}, {1, cmeta.nk_irred, cmeta.ns}).write_raw(slice_rowmajor.data());
+            }
+            dset_freq.createAttribute("layout", std::string("row-major"));
+            int rank = 0;
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            if (rank == 0) {
+                std::cout << " Note: the frequency slices of " << path
+                          << " in the restart file were converted to the row-major layout.\n";
+            }
+        }
+        // cmeta.frequencies is a column-major Eigen matrix; the raw HDF5 write expects the
+        // row-major (nk_irred, ns) layout of the dataset, so write a row-major copy.
+        const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> freq_rowmajor =
+            cmeta.frequencies;
         for (const auto col: run_cols) {
-            dset_freq.select({col, 0, 0}, {1, cmeta.nk_irred, cmeta.ns}).write_raw(cmeta.frequencies.data());
+            dset_freq.select({col, 0, 0}, {1, cmeta.nk_irred, cmeta.ns}).write_raw(freq_rowmajor.data());
             dset_vel.select({col, 0, 0, 0}, {1, nequiv_total, cmeta.ns, 3}).write_raw(cmeta.velocities.data());
         }
         h5_flush_and_fsync(*file);
@@ -563,6 +599,24 @@ struct KappaResultIOH5::Impl
                         cmeta.weights = H5Easy::load<std::vector<double>>(oldfile, opath + "/weights");
                         const auto offsets = H5Easy::load<std::vector<int>>(oldfile, opath + "/equiv_offsets");
                         const auto knum = H5Easy::load<std::vector<int>>(oldfile, opath + "/equiv_knum");
+                        {
+                            bool ok = offsets.size() == static_cast<size_t>(cmeta.nk_irred) + 1 && offsets.front() == 0 &&
+                                      offsets.back() == static_cast<int>(knum.size());
+                            for (size_t i = 0; ok && i + 1 < offsets.size(); ++i) {
+                                if (offsets[i + 1] <= offsets[i]) ok = false;
+                            }
+                            const auto fdims = oldfile.getDataSet(opath + "/frequencies").getDimensions();
+                            if (fdims.size() != 3 || fdims[0] != nt_old || fdims[1] != cmeta.nk_irred ||
+                                fdims[2] != cmeta.ns) {
+                                ok = false;
+                            }
+                            if (!ok) {
+                                exit("rebuild_temperature_grid",
+                                     ("Inconsistent equiv_offsets/equiv_knum or dataset dimensions in " + opath +
+                                      " of the existing kappa.h5 file; remove the file to start from scratch.")
+                                         .c_str());
+                            }
+                        }
                         cmeta.equiv_knum.resize(cmeta.nk_irred);
                         for (unsigned int i = 0; i < cmeta.nk_irred; ++i) {
                             cmeta.equiv_knum[i].assign(knum.begin() + offsets[i], knum.begin() + offsets[i + 1]);
@@ -596,9 +650,21 @@ struct KappaResultIOH5::Impl
                         auto dset_freq_new = newfile.getDataSet(opath + "/frequencies");
                         auto dset_vel_old = oldfile.getDataSet(opath + "/velocities");
                         auto dset_vel_new = newfile.getDataSet(opath + "/velocities");
-                        std::vector<double> vbuf(nvel);
+                        std::vector<double> vbuf(nvel), buf_rowmajor(nfreq);
+                        // Slices written before the row-major fix hold the column-major
+                        // Eigen buffer; transpose them while copying so that the rebuilt
+                        // file is uniformly row-major (it carries the "layout" attribute).
+                        const bool legacy_layout = !dset_freq_old.hasAttribute("layout");
                         for (size_t j = 0; j < nt_old; ++j) {
                             dset_freq_old.select({j, 0, 0}, {1, cmeta.nk_irred, cmeta.ns}).read(buf.data());
+                            if (legacy_layout) {
+                                for (size_t ik = 0; ik < cmeta.nk_irred; ++ik) {
+                                    for (size_t is = 0; is < cmeta.ns; ++is) {
+                                        buf_rowmajor[ik * cmeta.ns + is] = buf[is * cmeta.nk_irred + ik];
+                                    }
+                                }
+                                buf.swap(buf_rowmajor);
+                            }
                             dset_freq_new.select({col_map[j], 0, 0}, {1, cmeta.nk_irred, cmeta.ns})
                                 .write_raw(buf.data());
                             dset_vel_old.select({j, 0, 0, 0}, {1, nequiv, cmeta.ns, 3}).read(vbuf.data());
