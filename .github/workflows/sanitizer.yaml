@@ -32,7 +32,14 @@ jobs:
       # Disable the patcher and the UCX PML that pulls it in; neither is needed for
       # a single-node CI run over TCP/shared memory.
       OMPI_MCA_memory: "^patcher"
-      OMPI_MCA_pml: "^ucx"
+      # Open MPI 5's cm/ofi path opens a libfabric domain whose MR-cache monitor
+      # binary-patches mprotect the same way the patcher does (ofi_memhooks_start ->
+      # ofi_write_patch -> mprotect) and traps in libasan. Keep MPI on ob1 and turn
+      # the libfabric monitor off; neither is needed for a single-node CI run.
+      OMPI_MCA_pml: "ob1"
+      OMPI_MCA_mtl: "^ofi"
+      OMPI_MCA_btl: "^ofi"
+      FI_MR_CACHE_MONITOR: "disabled"
     steps:
       - uses: actions/checkout@v4
 
