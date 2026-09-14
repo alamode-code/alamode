@@ -938,7 +938,7 @@ void System::initialize_distorted_primitive_cell()
     xdisp.setZero();
 
     if (mympi->my_rank == 0) {
-        if (relaxation->relax_str != 0 && relaxation->init_u0.size() != primcell.number_of_atoms * 3)
+        if (!relaxation->init_u0.empty() && relaxation->init_u0.size() != primcell.number_of_atoms * 3)
             exit("initialize_distorted_primitive_cell",
                  "The number of atoms in the primitive cell"
                  " \n is not consistent with the &displace field in the input file.");

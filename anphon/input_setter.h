@@ -13,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "relaxation_types.h"
 
 namespace PHON_NS
 {
@@ -263,5 +264,7 @@ public:
     void set_strain_newfcs(PHON *phon, const double u_tensor_in[3][3]) const;
 
     void set_initial_displacements(PHON *phon, const std::vector<std::vector<double>> &u_xyz) const;
+
+    void set_initial_displacement_modes(PHON *phon, const std::vector<InitialDisplacementMode> &modes) const;
 };
 } // namespace PHON_NS

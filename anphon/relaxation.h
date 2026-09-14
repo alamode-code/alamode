@@ -217,6 +217,11 @@ public:
     // initial strain and displacement
     double init_u_tensor[3][3]{{0.0}};
     std::vector<double> init_u0;
+    std::vector<InitialDisplacementMode> init_disp_modes;
+
+    // Resolve init_disp_modes into init_u0 with the analytic Gamma-point dynamical matrix.
+    // Needs Fcs_phonon::setup; must precede the symmetry analysis of the distorted cell.
+    void set_init_u0_from_modes();
 
     // variables related to structural optimization
     int relax_algo;

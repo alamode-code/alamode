@@ -10,14 +10,17 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include "relaxation.h"
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include "dynamical.h"
 #include "elastic_tensor.h"
 #include "error.h"
 #include "ewald.h"
+#include "fcs_phonon.h"
 #include "hdf5_parser.h"
 #include "ifc_derivative.h"
 #include "interpolation.h"
@@ -524,14 +527,222 @@ void Relaxation::set_initial_q0(std::vector<double> &q0, std::complex<double> **
         q0.resize(ns);
     }
 
+    std::fill(q0.begin(), q0.end(), 0.0);
+    if (init_u0.empty()) return; // no &displace: start from the undistorted structure
+
     for (int is = 0; is < ns; is++) {
-        q0[is] = 0.0;
         for (int i_atm = 0; i_atm < natmin; i_atm++) {
             for (int ixyz = 0; ixyz < 3; ixyz++) {
                 q0[is] += evec_harmonic[0][is][i_atm * 3 + ixyz].real() * std::sqrt(system->get_mass_prim()[i_atm]) *
                           init_u0[i_atm * 3 + ixyz];
             }
         }
+    }
+}
+
+void Relaxation::set_init_u0_from_modes()
+{
+    // &displace DISPMODE = 2. The eigenvectors of a degenerate subspace S are gauge
+    // dependent, so the pattern is defined by the symmetry it keeps instead: the member
+    // of S invariant under a proper rotation of the reference cell about `axis`. A polar
+    // mode transforms as a vector and an octahedral tilt as an axial vector, so for both
+    // the axis component survives while the other components are mixed away. Only the
+    // projector E E^T and the restrictions A(g) = E^T T(g) E enter, never a single eigenvector.
+    // Runs on rank 0 (init_u0 lives there); needs Fcs_phonon::setup and SymmListWithMap_ref.
+    if (mympi->my_rank != 0) return;
+
+    const int natmin = system->get_primcell().number_of_atoms;
+    const int ns = 3 * natmin;
+    const auto &invsqrt_mass = system->get_invsqrt_mass();
+    const double tol_omega = 1.0e-7; // ~0.01 cm^-1, same as degeneracy_utils.h
+
+    Eigen::MatrixXd dymat = Eigen::MatrixXd::Zero(ns, ns);
+    for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
+        const int i = it.pairs[0].index, j = it.pairs[1].index;
+        dymat(i, j) += it.fcs_val * invsqrt_mass[i / 3] * invsqrt_mass[j / 3];
+    }
+    dymat = 0.5 * (dymat + dymat.transpose()).eval();
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes(dymat);
+    const auto &evec = saes.eigenvectors();
+    std::vector<double> omega(ns);
+    for (int is = 0; is < ns; ++is) omega[is] = dynamical->freq(saes.eigenvalues()[is]);
+
+    // T(g) at Gamma on a set of column vectors: (T v)_{map[j], a} = sum_b R_ab v_{j, b}.
+    // The translation part acts through the atom mapping; Bloch phases are unity at Gamma.
+    const auto apply_op = [natmin](const SymmetryOperationWithMapping &op, const Eigen::MatrixXd &in) {
+        Eigen::Matrix3d rot;
+        for (int i = 0; i < 3; ++i)
+            for (int j = 0; j < 3; ++j) rot(i, j) = op.rot[3 * i + j];
+        Eigen::MatrixXd out(in.rows(), in.cols());
+        for (int jat = 0; jat < natmin; ++jat) {
+            out.middleRows(3 * op.mapping[jat], 3) = rot * in.middleRows(3 * jat, 3);
+        }
+        return out;
+    };
+    // Mass-weighted pattern -> Cartesian, scaled to a largest atomic displacement of one.
+    const auto to_cartesian = [&](const Eigen::VectorXd &e) {
+        Eigen::VectorXd u(ns);
+        double umax = 0.0;
+        for (int iat = 0; iat < natmin; ++iat) {
+            u.segment<3>(3 * iat) = e.segment<3>(3 * iat) * invsqrt_mass[iat];
+            umax = std::max(umax, u.segment<3>(3 * iat).norm());
+        }
+        return Eigen::VectorXd(u / umax);
+    };
+
+    const auto verbosity = writes->getVerbosity();
+    if (verbosity > 0) {
+        std::cout << " Initial displacements from normal modes (&displace, DISPMODE = 2):\n";
+    }
+
+    init_u0.assign(ns, 0.0);
+
+    for (const auto &m: init_disp_modes) {
+        if (m.branch >= ns) exit("set_init_u0_from_modes", "Branch index in &displace exceeds 3 * natmin.");
+
+        int lo = m.branch, hi = m.branch;
+        while (lo > 0 && std::abs(omega[lo - 1] - omega[lo]) < tol_omega) --lo;
+        while (hi < ns - 1 && std::abs(omega[hi + 1] - omega[hi]) < tol_omega) ++hi;
+        const int ndeg = hi - lo + 1;
+        const Eigen::MatrixXd sub = evec.middleCols(lo, ndeg);
+
+        Eigen::Vector3d axis(m.axis[0], m.axis[1], m.axis[2]);
+        Eigen::VectorXd coef;
+        std::string axis_info;
+
+        if (ndeg == 1) {
+            coef = Eigen::VectorXd::Ones(1); // the axis only matters inside a degenerate set
+        } else {
+            if (axis.norm() < eps) {
+                exit("set_init_u0_from_modes",
+                     "The branch given in &displace is degenerate; add the symmetry axis (nx ny nz) kept by the"
+                     " distortion.");
+            }
+            axis.normalize();
+
+            // Candidates: proper rotations g about the axis. In a supercell the same rotation
+            // exists with several translation parts (axes through different points), and the ones
+            // shifted by a lattice vector of the parent cell flip a folded mode, so invariance is
+            // required under one rotation only. Every candidate that pins a unique vector is kept;
+            // distinct results are accepted when they are symmetry-equivalent domains.
+            std::vector<Eigen::VectorXd> found;
+            std::vector<std::string> found_info;
+            int nrot = 0;
+            bool any_higher = false;
+            for (const auto &op: symmetry->SymmListWithMap_ref) {
+                Eigen::Matrix3d rot;
+                for (int i = 0; i < 3; ++i)
+                    for (int j = 0; j < 3; ++j) rot(i, j) = op.rot[3 * i + j];
+                if (rot.determinant() < 0.0 || (rot * axis - axis).norm() > 1.0e-6 ||
+                    (rot - Eigen::Matrix3d::Identity()).norm() < 1.0e-6)
+                    continue;
+                ++nrot;
+                const Eigen::MatrixXd tsub = apply_op(op, sub);
+                const Eigen::MatrixXd M = sub.transpose() * tsub; // A(g) restricted to S
+                const double leak = (tsub - sub * M).norm() / sub.norm();
+                if (leak > 1.0e-5) {
+                    exit("set_init_u0_from_modes",
+                         "The degenerate set of the branch given in &displace is not closed under a symmetry"
+                         " operation of the reference cell: the set is incomplete (check the harmonic"
+                         " frequencies at Gamma) or the force constants break the symmetry.");
+                }
+                const Eigen::MatrixXd D = Eigen::MatrixXd::Identity(ndeg, ndeg) - M;
+                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> inv(D.transpose() * D);
+                int ninv = 0;
+                while (ninv < ndeg && inv.eigenvalues()[ninv] < 1.0e-8) ++ninv;
+                if (ninv > 1) any_higher = true;
+                if (ninv != 1) continue;
+                const Eigen::VectorXd c = inv.eigenvectors().col(0);
+                bool is_new = true;
+                for (const auto &f: found) {
+                    if (std::abs(f.dot(c)) > 1.0 - 1.0e-6) is_new = false;
+                }
+                if (!is_new) continue;
+                found.push_back(c);
+                const auto angle = std::acos(std::clamp(0.5 * (rot.trace() - 1.0), -1.0, 1.0)) * 180.0 / pi;
+                std::ostringstream info;
+                info << "rotation by " << std::lround(angle) << " deg, translation " << std::fixed
+                     << std::setprecision(4) << op.shift[0] << " " << op.shift[1] << " " << op.shift[2];
+                found_info.push_back(info.str());
+            }
+            if (nrot == 0) {
+                exit("set_init_u0_from_modes",
+                     "The reference structure has no proper rotation about the axis given in &displace.");
+            }
+            if (found.empty()) {
+                exit("set_init_u0_from_modes",
+                     any_higher ? "The rotations about the axis given in &displace leave more than one member of the"
+                                  " degenerate set invariant; give a higher-order axis."
+                                : "No member of the degenerate set is invariant under the rotations about the axis"
+                                  " given in &displace; the axis is incompatible with the mode.");
+            }
+            // Several distinct patterns: fine when they are domains of one phase (an operation of
+            // the reference cell maps the first onto each other one); otherwise the user must choose.
+            for (std::size_t k = 1; k < found.size(); ++k) {
+                const Eigen::VectorXd e0 = sub * found[0], ek = sub * found[k];
+                bool equivalent = false;
+                for (const auto &op: symmetry->SymmListWithMap_ref) {
+                    if (std::abs(apply_op(op, e0).col(0).dot(ek)) > 1.0 - 1.0e-6) {
+                        equivalent = true;
+                        break;
+                    }
+                }
+                if (equivalent) continue;
+                std::cout << "\n Rotations about the axis given in &displace through different points select"
+                             " physically distinct patterns.\n Choose one and give it explicitly with"
+                             " DISPMODE = 1 (largest displacement scaled to 1 Bohr):\n";
+                for (std::size_t l = 0; l < found.size(); ++l) {
+                    const Eigen::VectorXd u = to_cartesian(sub * found[l]);
+                    std::cout << "  candidate " << l + 1 << " (" << found_info[l] << ")\n";
+                    for (int iat = 0; iat < natmin; ++iat) {
+                        std::cout << "   ";
+                        for (int kk = 0; kk < 3; ++kk) {
+                            std::cout << std::setw(15) << std::scientific << std::setprecision(6) << u[3 * iat + kk];
+                        }
+                        std::cout << '\n';
+                    }
+                }
+                std::cout << std::defaultfloat << std::flush;
+                exit("set_init_u0_from_modes", "Ambiguous axis position; see the candidate patterns above.");
+            }
+            coef = found[0];
+            axis_info = " (" + found_info[0] + ")";
+            if (found.size() > 1) {
+                axis_info += ", " + std::to_string(found.size()) + " equivalent domains found, the first is used";
+            }
+        }
+
+        // Largest component positive, largest atomic displacement equal to |amplitude|.
+        const Eigen::VectorXd u = to_cartesian(sub * coef);
+        int imax = 0;
+        for (int i = 1; i < ns; ++i) {
+            if (std::abs(u[i]) > std::abs(u[imax])) imax = i;
+        }
+        const double sign = u[imax] < 0.0 ? -1.0 : 1.0;
+        for (int i = 0; i < ns; ++i) init_u0[i] += sign * m.amplitude * u[i];
+
+        if (verbosity > 0) {
+            std::cout << "  branch " << std::setw(3) << m.branch + 1 << " (" << std::fixed << std::setprecision(2)
+                      << omega[m.branch] * Ry_to_kayser << " cm^-1, degenerate set " << lo + 1 << "-" << hi + 1
+                      << "), amplitude " << std::setprecision(6) << m.amplitude << " Bohr";
+            if (ndeg > 1) {
+                std::cout << ", invariant under a rotation about (" << std::setprecision(4) << axis[0] << ", "
+                          << axis[1] << ", " << axis[2] << ")" << axis_info;
+            }
+            std::cout << '\n';
+        }
+    }
+
+    if (verbosity > 0) {
+        std::cout << "  Resulting Cartesian displacements [Bohr]:\n";
+        for (int iat = 0; iat < natmin; ++iat) {
+            std::cout << "   " << std::setw(4) << iat + 1;
+            for (int k = 0; k < 3; ++k) {
+                std::cout << std::setw(15) << std::scientific << std::setprecision(6) << init_u0[3 * iat + k];
+            }
+            std::cout << '\n';
+        }
+        std::cout << std::defaultfloat << '\n';
     }
 }
 
@@ -758,11 +969,6 @@ void Relaxation::update_cell_coordinate(
                     C2_mat_tmp(itmp1 + 3, itmp2 + 3) = 2.0 * C2_array[itmp3 * 3 + itmp4][itmp5 * 3 + itmp6];
                 }
             }
-
-            // std::cout << "del_v0_strain_vec\n";
-            // std::cout << del_v0_strain_vec << '\n';
-            // std::cout << "C2_mat_tmp = \n";
-            // std::cout << C2_mat_tmp << '\n';
 
             // write C2mat to hessian matrix
             for (itmp1 = 0; itmp1 < 6; itmp1++) {

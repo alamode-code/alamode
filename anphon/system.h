@@ -123,6 +123,10 @@ public:
 
     const Cell &get_primcell(const bool distorted = false) const;
 
+    // (Re)build primcell_distort from init_u_tensor and init_u0; also called from
+    // PHON::setup_base once &displace DISPMODE = 2 entries are resolved.
+    void initialize_distorted_primitive_cell();
+
     const Spin &get_spin_super() const;
 
     const Spin &get_spin_prim() const;
@@ -217,8 +221,6 @@ private:
     void update_primitive_lattice();
 
     void generate_mapping_tables();
-
-    void initialize_distorted_primitive_cell();
 
     void generate_mapping_primitive_super(const Cell &pcell, const Cell &scell,
                                           std::vector<std::vector<unsigned int>> &map_p2s_out,

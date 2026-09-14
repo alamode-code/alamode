@@ -54,6 +54,7 @@ Dynamical::~Dynamical()
 void Dynamical::set_default_variables()
 {
     neval = 0;
+    build_27cell_shift_table(xshift_s); // Fcs_phonon::setup may run before setup_dynamical
     require_eigenvectors = true;
     print_eigenvectors = false;
     nonanalytic = 0;

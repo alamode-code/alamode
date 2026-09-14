@@ -47,7 +47,7 @@ void Symmetry::set_default_variables()
     tolerance = 1.0e-3;
 }
 
-void Symmetry::setup_symmetry()
+void Symmetry::setup_symmetry(const bool verbose)
 {
     time_reversal_sym = system->get_spin_prim().time_reversal_symm;
     SymmList.clear();
@@ -56,7 +56,7 @@ void Symmetry::setup_symmetry()
     if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0)) {
 
         if (mympi->my_rank == 0) {
-            const auto verbosity = writes->getVerbosity();
+            const auto verbosity = verbose ? writes->getVerbosity() : 0;
             if (verbosity > 0) {
                 std::cout << " ==========\n";
                 std::cout << "  Symmetry \n";
@@ -86,7 +86,7 @@ void Symmetry::setup_symmetry()
         }
     } else {
         if (mympi->my_rank == 0) {
-            const auto verbosity = writes->getVerbosity();
+            const auto verbosity = verbose ? writes->getVerbosity() : 0;
             if (verbosity > 0) {
                 std::cout << " ==========\n";
                 std::cout << "  Symmetry \n";
@@ -112,7 +112,7 @@ void Symmetry::setup_symmetry()
 
     if (mympi->my_rank == 0) {
 
-        const auto verbosity = writes->getVerbosity();
+        const auto verbosity = verbose ? writes->getVerbosity() : 0;
         bool use_distorted_structure = false;
 
         if (verbosity > 0) {

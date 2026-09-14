@@ -169,7 +169,7 @@ public:
     // orientation-dependent Mulliken labels.
     Eigen::Matrix3d spg_transformation_matrix = Eigen::Matrix3d::Identity();
 
-    void setup_symmetry();
+    void setup_symmetry(const bool verbose = true);
 
     void make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const;
 

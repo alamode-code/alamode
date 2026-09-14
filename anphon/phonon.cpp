@@ -144,13 +144,26 @@ void PHON::run() const
 void PHON::setup_base() const
 {
     system->setup();
+
+    // &displace DISPMODE = 2 resolves the initial displacements from the harmonic IFCs and
+    // the symmetry of the reference cell, so both are prepared before the distorted cell
+    // (and its symmetry, which drives the k-point reduction) is set up.
+    int init_u0_from_modes = relaxation->init_disp_modes.empty() ? 0 : 1; // set on rank 0 by the parser
+    MPI_Bcast(&init_u0_from_modes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (init_u0_from_modes) {
+        fcs_phonon->setup(mode);
+        symmetry->setup_symmetry(false); // reference-cell operations only (init_u0 is still empty)
+        relaxation->set_init_u0_from_modes();
+        system->initialize_distorted_primitive_cell();
+    }
+
     symmetry->setup_symmetry();
     kpoint->kpoint_setups(mode);
     // Broadcasts the IRREPS flag; must precede dielec->init(), which uses it
     // to decide whether Born charges are loaded.
     mode_symmetry->setup();
     dynamical->setup_dynamical();
-    fcs_phonon->setup(mode);
+    if (!init_u0_from_modes) fcs_phonon->setup(mode);
     phonon_velocity->setup_velocity();
     integration->setup_integration(dos->kmesh_dos.get(),
                                    phonon_velocity.get(),

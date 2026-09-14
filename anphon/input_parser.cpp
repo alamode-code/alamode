@@ -107,9 +107,8 @@ void InputParser::parse_input(PHON *phon)
             if (!locate_tag("&strain")) exit("parse_input", "&strain entry not found in the input file");
             parse_initial_strain(phon);
         }
-        if (!locate_tag("&displace")) exit("parse_input", "&displace entry not found in the input file");
-
-        parse_initial_displace(phon);
+        // &displace is optional: without it the relaxation starts from the undistorted positions.
+        if (locate_tag("&displace")) parse_initial_displace(phon);
     }
 }
 
@@ -1214,9 +1213,7 @@ void InputParser::parse_initial_displace(PHON *phon)
 
     const auto line_vec = read_block_lines();
 
-    if (line_vec.empty()) {
-        exit("parse_initial_displace", "Too few lines for the &displace field.");
-    }
+    if (line_vec.empty()) return; // empty field: zero initial displacements
 
     line = line_vec[0];
     split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
@@ -1227,8 +1224,32 @@ void InputParser::parse_initial_displace(PHON *phon)
         exit("parse_initial_displace", "Unacceptable format for &displace field.");
     }
 
-    if (input_mode < 0 || input_mode >= 2) {
+    if (input_mode < 0 || input_mode > 2) {
         exit("parse_initial_displace", "Invalid value of input_mode");
+    }
+
+    if (input_mode == 2) {
+        // Normal-mode representation: "branch amplitude [nx ny nz]" per line.
+        std::vector<InitialDisplacementMode> modes;
+        for (i = 1; i < line_vec.size(); ++i) {
+            line = line_vec[i];
+            split(line_split, line, boost::is_any_of("\t "), boost::token_compress_on);
+            if (line_split.size() != 2 && line_split.size() != 5) {
+                exit("parse_initial_displace",
+                     "DISPMODE = 2 expects \"branch amplitude [nx ny nz]\" on each line of &displace.");
+            }
+            InitialDisplacementMode m{};
+            m.branch = boost::lexical_cast<int>(line_split[0]) - 1;
+            m.amplitude = boost::lexical_cast<double>(line_split[1]);
+            if (line_split.size() == 5) {
+                for (j = 0; j < 3; ++j) m.axis[j] = boost::lexical_cast<double>(line_split[2 + j]);
+            }
+            if (m.branch < 0) exit("parse_initial_displace", "Branch indices in &displace start from 1.");
+            modes.push_back(m);
+        }
+        if (modes.empty()) exit("parse_initial_displace", "No mode entry follows DISPMODE = 2 in &displace.");
+        input_setter->set_initial_displacement_modes(phon, modes);
+        return;
     }
 
     // read displacements

@@ -19,6 +19,17 @@
 
 namespace PHON_NS
 {
+// One line of the &displace field with DISPMODE = 2: displace along a Gamma-point
+// normal mode. `axis` (Cartesian) fixes the gauge inside a degenerate subspace: the
+// pattern is the member invariant under the proper rotations of the reference cell
+// about that axis, see Relaxation::set_init_u0_from_modes.
+struct InitialDisplacementMode
+{
+    int branch;       // 0-based branch index at Gamma (1-based in the input)
+    double amplitude; // largest atomic displacement of the pattern [Bohr], sign included
+    double axis[3];   // symmetry axis kept by the distortion; all zero when not given
+};
+
 enum class RelaxationStrMode : int
 {
     None = 0,

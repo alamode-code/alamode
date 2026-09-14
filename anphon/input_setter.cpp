@@ -320,3 +320,8 @@ void InputSetter::set_initial_displacements(PHON *phon, const std::vector<std::v
         }
     }
 }
+
+void InputSetter::set_initial_displacement_modes(PHON *phon, const std::vector<InitialDisplacementMode> &modes) const
+{
+    phon->relaxation->init_disp_modes = modes;
+}

@@ -1289,6 +1289,8 @@ recommended way to specify the deformation for ``NEWFCS = 1``.
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bohr].
+This field is optional: when it is absent (or empty), the structural optimization starts from the undistorted positions.
+Note that a zero initial displacement keeps the full symmetry of the reference structure, so a symmetry-breaking distortion never appears spontaneously; give a small displacement along the soft mode (most conveniently with ``DISPMODE = 2``) to allow it.
 
 * **DISPMODE = 0** : Fractional coordinate representation
 
@@ -1321,6 +1323,28 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
    ...
   /
 
+* **DISPMODE = 2** : Normal-mode representation
+
+ Each line after DISPMODE (= 2) displaces the atoms along one :math:`\Gamma`-point normal mode of the harmonic force constants. The lines are added up, so a linear combination of modes can be given.
+ ::
+
+  &displace
+   2
+   branch  amplitude  [nx ny nz]
+   ...
+  /
+
+ * ``branch`` is the 1-based branch index at :math:`\Gamma` in ascending order of the harmonic frequency (unstable modes come first), as printed in the anphon outputs. Any member of a degenerate set selects the whole set.
+ * ``amplitude`` [Bohr] is the largest atomic displacement of the pattern. The pattern is oriented so that its largest Cartesian component is positive; a negative amplitude reverses it.
+ * ``nx ny nz`` is required for a degenerate branch and ignored otherwise. It is a symmetry axis of the reference structure (Cartesian coordinates) that the distortion keeps: the pattern is the member of the degenerate set that is invariant under a proper rotation about this axis. The eigenvectors of a degenerate subspace returned by the diagonalization are arbitrary, but this member is not. A polar mode transforms as a vector and an octahedral tilt as an axial vector, so the same axes select the analogous patterns for both.
+
+ Examples. For cubic BaTiO\ :sub:`3`, the soft polar triplet with axis ``0 0 1``, ``1 1 0``, and ``1 1 1`` gives the tetragonal, orthorhombic, and rhombohedral distortions; for the folded tilt triplet of SrTiO\ :sub:`3` in a 2x2x2 cell, the same axes give the a\ :sup:`0`\ a\ :sup:`0`\ c\ :sup:`-`, a\ :sup:`0`\ b\ :sup:`-`\ b\ :sup:`-`, and a\ :sup:`-`\ a\ :sup:`-`\ a\ :sup:`-` tilt patterns::
+
+   1  0.03  0 0 1
+   1  0.03  1 1 0
+   1  0.03  1 1 1
+
+ The resolved Cartesian displacements, the degenerate set, and the rotation used are printed at the beginning of the log. anphon stops with an error when the reference structure has no rotation about the axis, when no member of the set is invariant (the axis is incompatible with the mode), or when several members are (choose a higher-order axis). When rotations about the same axis through different points select distinct patterns that are not symmetry-equivalent domains, the candidates are printed as ``DISPMODE = 1`` lines and the run stops so that one of them can be given explicitly.
 
 "&analysis"-field
 +++++++++++++++++
