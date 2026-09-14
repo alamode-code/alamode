@@ -43,7 +43,6 @@ List of supported input variables
    **&relax**
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
    :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`ELASTIC_CONST <anphon_elastic_const>`
-   :ref:`GDIIS_CONTROL <anphon_gdiis_control>`
    :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
    :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`RENORM_2TO1ST <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST <anphon_renorm_34to1st>`
    :ref:`RENORM_3TO2ND <anphon_renorm_3to2nd>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAINFILE <anphon_strainfile>`
@@ -60,7 +59,7 @@ List of supported input variables
    **&kappa**
    :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
    :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
-   :ref:`ISOTOPE_INSCATTERING <anphon_isotope_inscattering>`, :ref:`ITERATIVE <anphon_iterative>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`
+   :ref:`ISOTOPE_INSCATTERING <anphon_isotope_inscattering>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`
    :ref:`KAPPA_SPEC <anphon_kappa_spec>`
    :ref:`KMESH_COARSE <anphon_kmesh_coarse>`, :ref:`LEN_BOUNDARY <anphon_len_boundary>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`MIN_CYCLE <anphon_min_cycle>`
    :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`SOLVER <anphon_solver>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
@@ -826,17 +825,6 @@ Description of input variables
  :Type: Integer
 
  :Description: This option is used only when ``RELAX_ALGO = 3``. By default, each GDIIS step is subjected to the step-acceptance criteria of the controlled GDIIS method by Farkas and Schlegel (step-length cap, coefficient/extrapolation cap, and near-singularity rejection with error-vector rescaling), which makes the optimization more robust. Set ``GDIIS_PLAIN = 1`` to switch back to the regular GDIIS update.
-
-````
-
-.. _anphon_gdiis_control:
-
-* GDIIS_CONTROL-tag = 0 | 1
-
- :Default: 1
- :Type: Integer
-
- :Description: Deprecated. This tag was formerly used to enable the controlled GDIIS, which is now the default; a warning is printed when the tag is given. Use :ref:`GDIIS_PLAIN <anphon_gdiis_plain>` = 1 to disable the controlled GDIIS instead. When both tags are given, ``GDIIS_PLAIN`` takes precedence.
 
 ````
 
@@ -1784,8 +1772,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Type: String
  :Description: Case insensitive. For the theoretical background of the three
                non-RTA solvers, please see :ref:`this page <kappa_beyond_rta>`.
-               ``SOLVER = IBTE`` replaces the deprecated
-               ``ITERATIVE = 1`` tag; the iteration is controlled by
+               The ``IBTE`` iteration is controlled by
                :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`,
                :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and
                :ref:`IBTE_MIXING <anphon_ibte_mixing>`. With the default
@@ -1849,9 +1836,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
                force constants (``FCSFILE`` containing Order4, or ``FC4FILE``) and
                activates the FC4 machinery automatically; the related settings are
                ``KMESH_COARSE``, ``ISMEAR_4PH``, ``EPSILON_4PH``, and
-               ``INTERPOLATOR``. For backward compatibility, ``QUARTIC > 0`` (an
-               ``&analysis`` tag) still implies ``INCLUDE_4PH = 1`` when the tag is
-               absent, with a deprecation warning.
+               ``INTERPOLATOR``.
 
                The quartic matrix elements of all band triples of a momentum-conserving
                quartet are evaluated by successive eigenvector contractions of the
@@ -2005,8 +1990,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Description: Controls the four-phonon channel independently of :ref:`RESTART <anphon_restart>`
                (the two channels are stored side by side in ``PREFIX``.kappa.h5 but restart
                separately). ``RESTART_4PH = 0`` discards only the previously computed
-               four-phonon scattering rates; the three-phonon data are kept. Also accepted
-               in ``&general`` for backward compatibility (deprecated).
+               four-phonon scattering rates; the three-phonon data are kept.
 
 ````
 
@@ -2121,21 +2105,6 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
  :Default: 0.0 (no boundary scattering)
  :Type: Double
  :Description: When ``LEN_BOUNDARY > 0``, a boundary scattering rate :math:`|\boldsymbol{v}_{qj}|/L` with :math:`L` = ``LEN_BOUNDARY`` is added to the phonon linewidths used for the thermal conductivity, where :math:`\boldsymbol{v}_{qj}` is the group velocity of each phonon mode.
-
-````
-
-.. _anphon_iterative:
-
-* ITERATIVE-tag = 0 | 1
-
- === ====================================================================================
-  0   Solve the BTE within the relaxation-time approximation (RTA)
-  1   Solve the linearized BTE iteratively (beyond the RTA)
- === ====================================================================================
-
- :Default: 0
- :Type: Integer
- :Description: Deprecated alias of :ref:`SOLVER <anphon_solver>` = IBTE (a warning is printed; ``SOLVER`` wins when both are given). When enabled, the linearized phonon Boltzmann transport equation is solved self-consistently by iteration instead of the RTA, and the resulting lattice thermal conductivity is written to ``PREFIX``.kl_iter. The iteration is controlled by :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and :ref:`IBTE_MIXING <anphon_ibte_mixing>`.
 
 ````
 
