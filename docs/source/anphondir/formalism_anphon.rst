@@ -496,12 +496,55 @@ The average mass :math:`M_{\kappa}` is substituted by the value specified in the
 
 .. _kappa:
 
+Lattice thermal conductivity
+----------------------------
+
+The lattice thermal conductivity computed by *anphon* is the sum of a particle-like (Peierls) term, in which heat is carried
+by the populations of the individual phonon modes, and, when requested, a wave-like (coherent) term arising from the
+interband elements of the heat-flux operator [11]_. The Peierls term can be evaluated at several levels of approximation to
+the phonon Boltzmann transport equation, selected by the ``SOLVER`` tag of the ``&kappa`` field.
+
 .. _kappa_peierls:
 
-Lattice thermal conductivity (Peierls term)
--------------------------------------------
+Peierls term
+~~~~~~~~~~~~
 
-The lattice thermal conductivity tensor :math:`\kappa_{\mathrm{ph}}^{\mu\nu}(T)` is estimated within the relaxation-time approximation as
+Under a small temperature gradient the steady-state phonon distribution is written as
+
+.. math::
+
+    n_{\lambda} = n^{0}_{\lambda} - \frac{\partial n^{0}_{\lambda}}{\partial T}\,\boldsymbol{F}_{\lambda}\cdot\nabla T,
+
+where :math:`\lambda=\boldsymbol{q}j`, :math:`n^{0}` is the Bose--Einstein distribution and :math:`\boldsymbol{F}_{\lambda}` is the
+*deviation function*, a vector with the dimension of length (the mean free displacement of mode :math:`\lambda`). Linearizing
+the collision term of the Boltzmann transport equation (BTE) [12]_ [13]_ [14]_ turns it into a linear system for :math:`\boldsymbol{F}`:
+
+.. math::
+    :label: lbte
+
+    \sum_{\lambda'}\Omega_{\lambda\lambda'}\,\boldsymbol{F}_{\lambda'} = \boldsymbol{v}_{\lambda}.
+
+The collision operator :math:`\Omega` has the dimension of a scattering rate. Its diagonal is the out-scattering rate
+:math:`\Omega_{\lambda\lambda}=\tau_{\lambda}^{-1}`, and its off-diagonal elements :math:`\Omega_{\lambda\lambda'}`
+(:math:`\lambda\neq\lambda'`) are the in-scattering terms, built from the same three-phonon matrix elements
+:math:`|V^{(3)}|^{2}` and energy-conserving :math:`\delta` functions as :math:`\Gamma^{\mathrm{anh}}` in equation :eq:`selfmod`.
+Once :math:`\boldsymbol{F}` is known, the Peierls term of the thermal conductivity is
+
+.. math::
+    :label: kappa_lbte
+
+    \kappa_{\mathrm{ph}}^{\mu\nu}(T) = \frac{1}{VN_{q}}\sum_{\lambda} c_{\lambda}\,v^{\mu}_{\lambda}F^{\nu}_{\lambda},
+
+where :math:`V` is the unit cell volume and :math:`c_{\lambda} = \hbar\omega_{\lambda}\partial n^{0}_{\lambda}/\partial T`.
+Isotope scattering enters :math:`\Omega` with its own in-scattering term when ``ISOTOPE_INSCATTERING = 1`` (default);
+boundary scattering (``LEN_BOUNDARY``) and four-phonon scattering (``INCLUDE_4PH = 1``) are added to the diagonal only.
+The four solvers below differ in how equation :eq:`lbte` is solved.
+
+Relaxation-time approximation (``SOLVER = RTA``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Dropping the in-scattering part of :math:`\Omega` gives :math:`\boldsymbol{F}_{\lambda}=\boldsymbol{v}_{\lambda}\tau_{\lambda}`, and equation :eq:`kappa_lbte` becomes
 
 .. math::
   
@@ -573,52 +616,19 @@ The spectra of the lattice thermal conductivity :math:`\kappa_{\mathrm{ph}}^{\mu
 
 If we integrate this quantity over :math:`\omega`, we then obtain the bulk thermal conductivity, namely :math:`\kappa_{\mathrm{ph}}^{\mu\mu} = \int_{0}^{\infty} \kappa_{\mathrm{ph}}^{\mu\mu}(\omega) \; \mathrm{d}\omega`.
 
+The RTA treats every scattering event as if it simply destroyed the excess of phonons in mode :math:`\lambda`. In reality a
+collision also *creates* excess phonons in the partner modes, and for momentum-conserving (Normal) processes this in-scattering
+keeps the heat current flowing. Neglecting it makes the RTA underestimate :math:`\kappa`, sometimes by a large factor in
+materials with weak Umklapp scattering (diamond, BAs, graphene, or any crystal at low temperature). The three solvers below keep
+the in-scattering term of :math:`\Omega`; for the same mesh and smearing they converge to the same :math:`\kappa`, which is
+written to ``PREFIX``.kl_iter.
+
 .. _kappa_beyond_rta:
 
-Beyond the RTA: iterative, variational, and direct solvers (``SOLVER = IBTE | VBTE | DBTE``)
----------------------------------------------------------------------------------------------
+Iterative solution (``SOLVER = IBTE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The relaxation-time approximation (RTA) treats every scattering event as if it simply destroyed the excess of
-phonons in mode :math:`\lambda=\boldsymbol{q}j`. In reality a collision also *creates* excess phonons in the partner modes,
-and for momentum-conserving (Normal) processes this in-scattering keeps the heat current flowing. Neglecting it makes the RTA
-underestimate :math:`\kappa`, sometimes by a large factor in materials with weak Umklapp scattering (diamond, BAs, graphene,
-or any crystal at low temperature). The non-RTA solvers of *anphon* keep this term by solving the linearized phonon Boltzmann
-transport equation (BTE) [12]_ [13]_ [14]_ on the full :math:`\boldsymbol{q}` mesh.
-
-**Linearized BTE.** Under a small temperature gradient the steady-state distribution is written as
-
-.. math::
-
-    n_{\lambda} = n^{0}_{\lambda} - \frac{\partial n^{0}_{\lambda}}{\partial T}\,\boldsymbol{F}_{\lambda}\cdot\nabla T,
-
-where :math:`n^{0}` is the Bose--Einstein distribution and :math:`\boldsymbol{F}_{\lambda}` is the *deviation function*,
-a vector with the dimension of length (the mean free displacement of mode :math:`\lambda`). Linearizing the collision term
-turns the BTE into a linear system for :math:`\boldsymbol{F}`:
-
-.. math::
-    :label: lbte
-
-    \sum_{\lambda'}\Omega_{\lambda\lambda'}\,\boldsymbol{F}_{\lambda'} = \boldsymbol{v}_{\lambda}.
-
-The collision operator :math:`\Omega` has the dimension of a scattering rate. Its diagonal is exactly the RTA rate,
-:math:`\Omega_{\lambda\lambda}=\tau_{\lambda}^{-1}` (out-scattering), and its off-diagonal elements
-:math:`\Omega_{\lambda\lambda'}` (:math:`\lambda\neq\lambda'`) are the in-scattering terms, built from the same three-phonon
-matrix elements :math:`|V^{(3)}|^{2}` and energy-conserving :math:`\delta` functions as :math:`\Gamma^{\mathrm{anh}}` in
-equation :eq:`selfmod`. Dropping the off-diagonal part gives :math:`\boldsymbol{F}_{\lambda}=\boldsymbol{v}_{\lambda}\tau_{\lambda}`,
-i.e. the RTA. Once :math:`\boldsymbol{F}` is known the thermal conductivity is
-
-.. math::
-    :label: kappa_lbte
-
-    \kappa^{\mu\nu}(T) = \frac{1}{VN_{q}}\sum_{\lambda} c_{\lambda}\,v^{\mu}_{\lambda}F^{\nu}_{\lambda},
-
-which reduces to the :ref:`Peierls expression <kappa_peierls>` for the RTA solution. Isotope scattering enters
-:math:`\Omega` with its own in-scattering term when ``ISOTOPE_INSCATTERING = 1`` (default); boundary scattering
-(``LEN_BOUNDARY``) and four-phonon scattering (``INCLUDE_4PH = 1``) are added to the diagonal only, i.e. at the RTA level.
-The three solvers below differ only in how equation :eq:`lbte` is solved; for the same mesh and smearing they converge to the same
-:math:`\kappa`, which is written to ``PREFIX``.kl_iter.
-
-**IBTE (iterative solution).** Starting from the RTA, :math:`\boldsymbol{F}^{(0)}_{\lambda}=\boldsymbol{v}_{\lambda}\tau_{\lambda}`,
+Starting from the RTA, :math:`\boldsymbol{F}^{(0)}_{\lambda}=\boldsymbol{v}_{\lambda}\tau_{\lambda}`,
 the in-scattering term is evaluated with the previous iterate and the diagonal is inverted:
 
 .. math::
@@ -631,7 +641,10 @@ with :math:`\alpha` = ``IBTE_MIXING``, and the iteration stops when the relative
 This scheme is simple and each iteration costs one application of :math:`\Omega`, but it converges slowly, or oscillates,
 when in-scattering is strong (low temperature, very high :math:`\kappa`). A mixing factor below 1 damps the oscillation.
 
-**VBTE (variational solution).** Because :math:`\Omega` is symmetric and positive semidefinite (a consequence of detailed
+Variational solution (``SOLVER = VBTE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Because :math:`\Omega` is symmetric and positive semidefinite (a consequence of detailed
 balance), the solution of equation :eq:`lbte` is also the extremum of the quadratic functional
 :math:`\mathcal{F}[\boldsymbol{F}]=\tfrac{1}{2}\boldsymbol{F}\cdot\Omega\boldsymbol{F}-\boldsymbol{F}\cdot\boldsymbol{v}`, and :math:`\kappa` is
 its value at the extremum [13]_. *anphon* finds it with the preconditioned conjugate-gradient method. Two practical
@@ -641,7 +654,10 @@ For ``VBTE``, ``ITER_THRESHOLD`` is therefore the tolerance on this relative res
 are ignored. ``VBTE`` usually needs far fewer iterations than ``IBTE`` and is the recommended choice when ``IBTE`` converges
 slowly.
 
-**DBTE (direct solution).** The collision operator restricted to the irreducible wedge is assembled as an explicit dense matrix
+Direct solution (``SOLVER = DBTE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The collision operator restricted to the irreducible wedge is assembled as an explicit dense matrix
 and fully diagonalized, :math:`\Omega=\sum_{n}\lambda_{n}\boldsymbol{u}_{n}\boldsymbol{u}_{n}^{\mathsf{T}}`, so that
 equation :eq:`lbte` is solved exactly as :math:`\boldsymbol{F}=\sum_{n}\lambda_{n}^{-1}(\boldsymbol{u}_{n}\cdot\boldsymbol{v})\boldsymbol{u}_{n}`
 [14]_. The eigenvalues :math:`\lambda_{n}` are the scattering rates of collective relaxation modes (printed in
@@ -653,14 +669,39 @@ where it also provides an exact reference for the two iterative solvers.
 
 .. note::
 
-   All three solvers currently use finite-difference group velocities and are therefore cell dependent at the level
+   The three non-RTA solvers currently use finite-difference group velocities and are therefore cell dependent at the level
    discussed in the :ref:`velocity section <group_velocity>`. They are pilot implementations; please check the convergence
    of :math:`\kappa` with respect to the :math:`\boldsymbol{q}` mesh and the smearing width carefully.
+
+.. _kappa_coherent:
+
+Coherent term
+~~~~~~~~~~~~~
+
+The coherent components of lattice thermal conductivity (see Ref. [8]_), which are associated with the band off-diagonal components of the harmonic heat-flux operator, is calculated as 
+
+.. math::
+  
+  \kappa_{\mathrm{c}}^{\mu\nu}(T) = \frac{1}{V N_{q}} \sum_{\substack{\boldsymbol{q},jj'\\ j\neq j'}}\frac{c_{\boldsymbol{q}j}\omega_{\boldsymbol{q}j'} + c_{\boldsymbol{q}j'}\omega_{\boldsymbol{q}j}}{\omega_{\boldsymbol{q}j}+ \omega_{\boldsymbol{q}j'}}  v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu} \frac{\Gamma_{\boldsymbol{q}j}+\Gamma_{\boldsymbol{q}j'}}{(\omega_{\boldsymbol{q}j}-\omega_{\boldsymbol{q}j'})^{2}+(\Gamma_{\boldsymbol{q}j}+\Gamma_{\boldsymbol{q}j'})^2},
+
+where :math:`c_{\boldsymbol{q}j} = \hbar\omega_{\boldsymbol{q}j}\partial n_{\boldsymbol{q}j}/\partial T` and :math:`\Gamma_{\boldsymbol{q}j}` is the total phonon linewidth (half width) of phonon mode :math:`\boldsymbol{q}j`. 
+
+:math:`\boldsymbol{v}_{\boldsymbol{q}jj'}` is the band off-diagonal velocity matrix :eq:`velmat`, built from
+:math:`\tilde{D}` [9]_ [11]_. The sum runs over pairs belonging to *different* degenerate multiplets;
+pairs inside one multiplet are already contained in the :ref:`Peierls term <kappa_peierls>`. For such a pair
+:math:`\omega_{\boldsymbol{q}j}=\omega_{\boldsymbol{q}j'}`, the prefactor reduces to :math:`c_{\boldsymbol{q}j}` and the Lorentzian
+factor to :math:`1/(\Gamma_{\boldsymbol{q}j}+\Gamma_{\boldsymbol{q}j'})`; since the lifetime is constant within a multiplet
+this equals :math:`1/(2\Gamma_{\boldsymbol{q}j})=\tau_{\boldsymbol{q}j}`, i.e. exactly the Peierls weight
+:math:`c_{\boldsymbol{q}j}v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu}\tau_{\boldsymbol{q}j}`, so the two terms together
+form the basis-invariant block trace. The particle-like/wave-like *split* is therefore basis dependent while their sum is not; only the total
+should be compared between calculations. When ``KAPPA_COHERENT = 1 | 2`` the coherent component is calculated and saved in ``PREFIX``.kl_coherent.
+When ``KAPPA_COHERENT = 2``, all components of the coherent term before summation are saved in ``PREFIX``.kc_elem. Requesting the coherent
+term stores the full velocity matrix, :math:`N_{q}(3N_{\kappa})^{2}\times3` complex numbers on the root process.
 
 .. _cumulative_kappa:
 
 Cumulative thermal conductivity
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The accumulative lattice thermal conductivity :math:`\kappa_{\mathrm{ph,acc}}^{\mu\nu}(L)` is defined as
 
@@ -683,61 +724,68 @@ One can also use another definition for the accumulative thermal conductivity:
 In this case, the contribution to the total thermal conductivity is limited only from phonon modes whose mean-free-path along the :math:`\mu`\ -direction is smaller than :math:`L`.
 To calculate this, please use the ``--calc cumulative2`` flag and specify the direction :math:`\mu` by the ``--direction`` option.
 
-.. _kappa_coherent:
-
-Coherent component of lattice thermal conductivity
---------------------------------------------------
-
-The coherent components of lattice thermal conductivity (see Ref. [8]_), which are associated with the band off-diagonal components of the harmonic heat-flux operator, is calculated as 
-
-.. math::
-  
-  \kappa_{\mathrm{c}}^{\mu\nu}(T) = \frac{1}{V N_{q}} \sum_{\substack{\boldsymbol{q},jj'\\ j\neq j'}}\frac{c_{\boldsymbol{q}j}\omega_{\boldsymbol{q}j'} + c_{\boldsymbol{q}j'}\omega_{\boldsymbol{q}j}}{\omega_{\boldsymbol{q}j}+ \omega_{\boldsymbol{q}j'}}  v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu} \frac{\Gamma_{\boldsymbol{q}j}+\Gamma_{\boldsymbol{q}j'}}{(\omega_{\boldsymbol{q}j}-\omega_{\boldsymbol{q}j'})^{2}+(\Gamma_{\boldsymbol{q}j}+\Gamma_{\boldsymbol{q}j'})^2},
-
-where :math:`c_{\boldsymbol{q}j} = \hbar\omega_{\boldsymbol{q}j}\partial n_{\boldsymbol{q}j}/\partial T` and :math:`\Gamma_{\boldsymbol{q}j}` is the total phonon linewidth (half width) of phonon mode :math:`\boldsymbol{q}j`. 
-
-:math:`\boldsymbol{v}_{\boldsymbol{q}jj'}` is the band off-diagonal velocity matrix :eq:`velmat`, built from
-:math:`\tilde{D}` [9]_ [11]_. The sum runs over pairs belonging to *different* degenerate multiplets;
-pairs inside one multiplet are already contained in the :ref:`Peierls term <kappa_peierls>`. For such a pair
-:math:`\omega_{\boldsymbol{q}j}=\omega_{\boldsymbol{q}j'}`, the prefactor reduces to :math:`c_{\boldsymbol{q}j}` and the Lorentzian
-factor to :math:`1/(\Gamma_{\boldsymbol{q}j}+\Gamma_{\boldsymbol{q}j'})`; since the lifetime is constant within a multiplet
-this equals :math:`1/(2\Gamma_{\boldsymbol{q}j})=\tau_{\boldsymbol{q}j}`, i.e. exactly the Peierls weight
-:math:`c_{\boldsymbol{q}j}v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu}\tau_{\boldsymbol{q}j}`, so the two terms together
-form the basis-invariant block trace. The particle-like/wave-like *split* is therefore basis dependent while their sum is not; only the total
-should be compared between calculations. When ``KAPPA_COHERENT = 1 | 2`` the coherent component is calculated and saved in ``PREFIX``.kl_coherent.
-When ``KAPPA_COHERENT = 2``, all components of the coherent term before summation are saved in ``PREFIX``.kc_elem. Requesting the coherent
-term stores the full velocity matrix, :math:`N_{q}(3N_{\kappa})^{2}\times3` complex numbers on the root process.
-
 Delta function
 --------------
 
 To compute the phonon DOSs and the imaginary part of phonon self-energies,
 it is necessary to evaluate the Brillouin-zone integration containing Dirac's delta function.
-For that purpose, we provide 3 options through the ``ISMEAR``-tag.
+For that purpose, we provide four options through the ``ISMEAR``-tag. The four-phonon scattering rates use the
+separate ``ISMEAR_4PH`` and ``EPSILON_4PH`` tags with the same meaning.
 
-When ``ISMEAR = 0``, the delta function is replaced by the Lorentzian function as
+Lorentzian smearing (``ISMEAR = 0``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The delta function is replaced by the Lorentzian function as
 
 .. math::
-    
+
     \delta(\omega) \approx \frac{1}{\pi}\frac{\epsilon^{2}}{\omega^{2}+\epsilon^{2}}.
 
-When ``ISMEAR = 1``, the delta function is replaced by the Gaussian function as
+Gaussian smearing (``ISMEAR = 1``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The delta function is replaced by the Gaussian function as
 
 .. math::
-    
+
     \delta(\omega) \approx \frac{1}{\sqrt{\pi}\epsilon}\exp{(-\omega^{2}/\epsilon^{2})},
 
-which decays faster than the Lorentzian function. 
-For both cases, :math:`\epsilon` should be given by the ``EPSILON``-tag, which must be chosen carefully
-to avoid any unscientific results. :math:`\epsilon` should be small enough to capture detailed phonon structures 
+which decays faster than the Lorentzian function.
+For both smearing methods, :math:`\epsilon` should be given by the ``EPSILON``-tag, which must be chosen carefully
+to avoid any unscientific results. :math:`\epsilon` should be small enough to capture detailed phonon structures
 such as phonon DOS or energy conservation surface related to three-phonon processes, but it should be large
 enough to avoid unscientific oscillations. Choosing an appropriate value for :math:`\epsilon` is not a trivial task
 since it may depend on the phonon structure and the density of :math:`\boldsymbol{q}` points.
 
-To avoid such issues, the program *anphon* employs the tetrahedron method [5]_ by default (``ISMEAR = -1``)
+Adaptive smearing (``ISMEAR = 2``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Gaussian form above is used, but the width is chosen automatically for every term of the sum from the group
+velocities and the mesh spacing, following the adaptive-broadening scheme of Yates *et al.* [15]_. For a three-phonon process
+in which the energy-conservation condition involves :math:`\omega_{\boldsymbol{q}_1 j_1}\pm\omega_{\boldsymbol{q}_2 j_2}`,
+the width is
+
+.. math::
+
+    \sigma = \alpha \sqrt{\frac{1}{12}\sum_{u=1}^{3}\left[\left(\boldsymbol{v}_{\boldsymbol{q}_1 j_1}\mp\boldsymbol{v}_{\boldsymbol{q}_2 j_2}\right)\cdot\frac{\boldsymbol{b}_{u}}{N_{u}}\right]^{2}},
+
+where :math:`\boldsymbol{b}_{u}/N_{u}` are the steps of the :math:`\boldsymbol{q}` mesh along the three reciprocal lattice
+vectors, i.e. the width is the spread of the argument of the delta function over one mesh cell. For the phonon DOS
+only :math:`\boldsymbol{v}_{\boldsymbol{q}j}` enters, and for four-phonon processes (``ISMEAR_4PH = 2``) the velocity difference
+is generalized to the three modes of the quartet. The prefactor :math:`\alpha` is set by the ``ADAPTIVE_FACTOR``-tag
+(default 1), and a lower bound of :math:`2\times10^{-5}` Ry (about 3 cm\ :sup:`-1`) is imposed on :math:`\sigma`.
+``EPSILON`` is not used, so no manual convergence test of the width is needed; the result converges with the
+:math:`\boldsymbol{q}` mesh alone. The widths are built from finite-difference velocities, so the result retains a weak
+dependence on the choice of unit cell (see the :ref:`velocity section <group_velocity>`).
+
+Tetrahedron method (``ISMEAR = -1``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The program *anphon* employs the tetrahedron method [5]_ by default
 for numerical evaluations of Brillouin zone integration containing :math:`\delta(\omega)`.
 When the tetrahedron method is used, the ``EPSILON``-tag is neglected.
-We recommend using the tetrahedron method whenever possible.
+We recommend using the tetrahedron method whenever possible. It is not available for the four-phonon scattering rates,
+for which ``ISMEAR_4PH = -1`` is automatically switched to the adaptive smearing.
 
 .. _formalism_SCPH:
 
@@ -824,5 +872,7 @@ When ``SELF_OFFDIAG = 1``, the off-diagonal elements are also calculated, and th
 .. [13] G\. Fugallo, M. Lazzeri, L. Paulatto, and F. Mauri, Phys. Rev. B **88**, 045430 (2013).
 
 .. [14] L\. Chaput, Phys. Rev. Lett. **110**, 265506 (2013).
+
+.. [15] J\. R. Yates, X. Wang, D. Vanderbilt, and I. Souza, Phys. Rev. B **75**, 195121 (2007).
   
 
