@@ -149,6 +149,8 @@ e_{\beta}(\kappa;\nu)/\sqrt{M_{\kappa}}` as
 
 which is invariant under rotations within the degenerate subspace.
 
+.. _group_velocity:
+
 Group velocity
 --------------
 
@@ -571,6 +573,90 @@ The spectra of the lattice thermal conductivity :math:`\kappa_{\mathrm{ph}}^{\mu
 
 If we integrate this quantity over :math:`\omega`, we then obtain the bulk thermal conductivity, namely :math:`\kappa_{\mathrm{ph}}^{\mu\mu} = \int_{0}^{\infty} \kappa_{\mathrm{ph}}^{\mu\mu}(\omega) \; \mathrm{d}\omega`.
 
+.. _kappa_beyond_rta:
+
+Beyond the RTA: iterative, variational, and direct solvers (``SOLVER = IBTE | VBTE | DBTE``)
+---------------------------------------------------------------------------------------------
+
+The relaxation-time approximation (RTA) treats every scattering event as if it simply destroyed the excess of
+phonons in mode :math:`\lambda=\boldsymbol{q}j`. In reality a collision also *creates* excess phonons in the partner modes,
+and for momentum-conserving (Normal) processes this in-scattering keeps the heat current flowing. Neglecting it makes the RTA
+underestimate :math:`\kappa`, sometimes by a large factor in materials with weak Umklapp scattering (diamond, BAs, graphene,
+or any crystal at low temperature). The non-RTA solvers of *anphon* keep this term by solving the linearized phonon Boltzmann
+transport equation (BTE) [12]_ [13]_ [14]_ on the full :math:`\boldsymbol{q}` mesh.
+
+**Linearized BTE.** Under a small temperature gradient the steady-state distribution is written as
+
+.. math::
+
+    n_{\lambda} = n^{0}_{\lambda} - \frac{\partial n^{0}_{\lambda}}{\partial T}\,\boldsymbol{F}_{\lambda}\cdot\nabla T,
+
+where :math:`n^{0}` is the Bose--Einstein distribution and :math:`\boldsymbol{F}_{\lambda}` is the *deviation function*,
+a vector with the dimension of length (the mean free displacement of mode :math:`\lambda`). Linearizing the collision term
+turns the BTE into a linear system for :math:`\boldsymbol{F}`:
+
+.. math::
+    :label: lbte
+
+    \sum_{\lambda'}\Omega_{\lambda\lambda'}\,\boldsymbol{F}_{\lambda'} = \boldsymbol{v}_{\lambda}.
+
+The collision operator :math:`\Omega` has the dimension of a scattering rate. Its diagonal is exactly the RTA rate,
+:math:`\Omega_{\lambda\lambda}=\tau_{\lambda}^{-1}` (out-scattering), and its off-diagonal elements
+:math:`\Omega_{\lambda\lambda'}` (:math:`\lambda\neq\lambda'`) are the in-scattering terms, built from the same three-phonon
+matrix elements :math:`|V^{(3)}|^{2}` and energy-conserving :math:`\delta` functions as :math:`\Gamma^{\mathrm{anh}}` in
+equation :eq:`selfmod`. Dropping the off-diagonal part gives :math:`\boldsymbol{F}_{\lambda}=\boldsymbol{v}_{\lambda}\tau_{\lambda}`,
+i.e. the RTA. Once :math:`\boldsymbol{F}` is known the thermal conductivity is
+
+.. math::
+    :label: kappa_lbte
+
+    \kappa^{\mu\nu}(T) = \frac{1}{VN_{q}}\sum_{\lambda} c_{\lambda}\,v^{\mu}_{\lambda}F^{\nu}_{\lambda},
+
+which reduces to the :ref:`Peierls expression <kappa_peierls>` for the RTA solution. Isotope scattering enters
+:math:`\Omega` with its own in-scattering term when ``ISOTOPE_INSCATTERING = 1`` (default); boundary scattering
+(``LEN_BOUNDARY``) and four-phonon scattering (``INCLUDE_4PH = 1``) are added to the diagonal only, i.e. at the RTA level.
+The three solvers below differ only in how equation :eq:`lbte` is solved; for the same mesh and smearing they converge to the same
+:math:`\kappa`, which is written to ``PREFIX``.kl_iter.
+
+**IBTE (iterative solution).** Starting from the RTA, :math:`\boldsymbol{F}^{(0)}_{\lambda}=\boldsymbol{v}_{\lambda}\tau_{\lambda}`,
+the in-scattering term is evaluated with the previous iterate and the diagonal is inverted:
+
+.. math::
+
+    \boldsymbol{F}^{(i+1)}_{\lambda} = \tau_{\lambda}\Big[\boldsymbol{v}_{\lambda} - \sum_{\lambda'\neq\lambda}\Omega_{\lambda\lambda'}\boldsymbol{F}^{(i)}_{\lambda'}\Big].
+
+The new iterate is mixed with the old one, :math:`\boldsymbol{F}\leftarrow\alpha\boldsymbol{F}^{(i+1)}+(1-\alpha)\boldsymbol{F}^{(i)}`
+with :math:`\alpha` = ``IBTE_MIXING``, and the iteration stops when the relative change of the diagonal components of
+:math:`\kappa` falls below ``ITER_THRESHOLD`` (after at least ``MIN_CYCLE`` and at most ``MAX_CYCLE`` iterations).
+This scheme is simple and each iteration costs one application of :math:`\Omega`, but it converges slowly, or oscillates,
+when in-scattering is strong (low temperature, very high :math:`\kappa`). A mixing factor below 1 damps the oscillation.
+
+**VBTE (variational solution).** Because :math:`\Omega` is symmetric and positive semidefinite (a consequence of detailed
+balance), the solution of equation :eq:`lbte` is also the extremum of the quadratic functional
+:math:`\mathcal{F}[\boldsymbol{F}]=\tfrac{1}{2}\boldsymbol{F}\cdot\Omega\boldsymbol{F}-\boldsymbol{F}\cdot\boldsymbol{v}`, and :math:`\kappa` is
+its value at the extremum [13]_. *anphon* finds it with the preconditioned conjugate-gradient method. Two practical
+consequences follow: the iteration cannot oscillate, and an approximate :math:`\boldsymbol{F}` with residual
+:math:`\epsilon=\|\Omega\boldsymbol{F}-\boldsymbol{v}\|/\|\boldsymbol{v}\|` gives :math:`\kappa` with an error of order :math:`\epsilon^{2}`.
+For ``VBTE``, ``ITER_THRESHOLD`` is therefore the tolerance on this relative residual, and ``MIN_CYCLE`` and ``IBTE_MIXING``
+are ignored. ``VBTE`` usually needs far fewer iterations than ``IBTE`` and is the recommended choice when ``IBTE`` converges
+slowly.
+
+**DBTE (direct solution).** The collision operator restricted to the irreducible wedge is assembled as an explicit dense matrix
+and fully diagonalized, :math:`\Omega=\sum_{n}\lambda_{n}\boldsymbol{u}_{n}\boldsymbol{u}_{n}^{\mathsf{T}}`, so that
+equation :eq:`lbte` is solved exactly as :math:`\boldsymbol{F}=\sum_{n}\lambda_{n}^{-1}(\boldsymbol{u}_{n}\cdot\boldsymbol{v})\boldsymbol{u}_{n}`
+[14]_. The eigenvalues :math:`\lambda_{n}` are the scattering rates of collective relaxation modes (printed in
+cm\ :sup:`-1`). Energy conservation makes one eigenvalue exactly zero, and near-zero eigenvalues with a large overlap onto the
+momentum-drift directions signal that Normal processes dominate, the regime where the RTA fails most. Negative eigenvalues
+or a strongly asymmetric matrix indicate that the :math:`\boldsymbol{q}` mesh or the smearing width is not adequate. ``DBTE`` is thus
+a diagnostic tool: its memory grows with the square of the number of irreducible modes, so it is intended for small meshes,
+where it also provides an exact reference for the two iterative solvers.
+
+.. note::
+
+   All three solvers currently use finite-difference group velocities and are therefore cell dependent at the level
+   discussed in the :ref:`velocity section <group_velocity>`. They are pilot implementations; please check the convergence
+   of :math:`\kappa` with respect to the :math:`\boldsymbol{q}` mesh and the smearing width carefully.
+
 .. _cumulative_kappa:
 
 Cumulative thermal conductivity
@@ -732,5 +818,11 @@ When ``SELF_OFFDIAG = 1``, the off-diagonal elements are also calculated, and th
 .. [10] X\. Gonze and C. Lee, Phys. Rev. B **55**, 10355 (1997).
 
 .. [11] M\. Simoncelli, N. Marzari, and F. Mauri, Phys. Rev. X **12**, 041011 (2022).
+
+.. [12] M\. Omini and A. Sparavigna, Phys. Rev. B **53**, 9064 (1996).
+
+.. [13] G\. Fugallo, M. Lazzeri, L. Paulatto, and F. Mauri, Phys. Rev. B **88**, 045430 (2013).
+
+.. [14] L\. Chaput, Phys. Rev. Lett. **110**, 265506 (2013).
   
 

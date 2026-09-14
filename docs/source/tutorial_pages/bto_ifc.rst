@@ -128,7 +128,7 @@ You can run the CV calculation with the following commands.
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/3_cv
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_cv.in > BTO_alm_cv.log
 
-In :red:`BTO_alm_cv.in`, ``FC2FIX = ../cBTO222_harmonic.xml`` means that we fix the harmonic IFCs with the values in the given file.
+In :red:`BTO_alm_cv.in`, ``FC2FIX = ../cBTO222_harmonic.xml`` means that we fix the harmonic IFCs with the values in the given file (both the HDF5 and the legacy XML formats are accepted).
 This is because we would like to capture the stability or the curvature of the potential energy surface at the reference structure accurately.
 
 .. note::
@@ -190,7 +190,7 @@ With the input file prepared, run the calculation with
 
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_opt.in > BTO_alm_opt.log
 
-The calculated IFCs are written out in :red:`cBTO222.fcs` and :red:`cBTO222.xml`.
+The calculated IFCs are written out in :red:`cBTO222.h5` (add ``FCS_ALAMODE = 1`` to the **&general** field if you also want the :red:`cBTO222.fcs` listing).
 
 Checking :red:`BTO_alm_opt.log`, we can see that the fitting is successful with a small residual error.
 ::

@@ -167,9 +167,12 @@ Then, execute **alm** again
 
 This time **alm** extract harmonic IFCs from the given displacement-force data set (``DFSET_harmonic``).
 
-You can find files :red:`si222.fcs` and :red:`si222.xml` in the working directory.
-The file :red:`si222.fcs` contains all IFCs in Rydberg atomic units.
-You can find symmetrically irreducible sets of IFCs in the first part as:
+You can find the file :red:`si222.h5` in the working directory, which contains crystal structure, symmetry, IFCs,
+and all other information necessary for subsequent phonon calculations.
+If you also want to inspect the IFCs, add ``FCS_ALAMODE = 1`` to the **&general** field: **alm** then writes the
+human-readable listing :red:`si222.fcs` (and the legacy :red:`si222.xml`) as well.
+The file :red:`si222.fcs` contains all IFCs in Rydberg atomic units, and
+you can find symmetrically irreducible sets of IFCs in the first part as:
 
 .. literalinclude:: ../../../example/Si/reference/si222.fcs
    :lines: 1-40
@@ -186,7 +189,7 @@ Try
   $ grep "Fitting error" si_alm.log2
   Fitting error (%) : 0.567187
 
-The other file :red:`si222.xml` contains crystal structure, symmetry, IFCs, and all other information necessary for subsequent phonon calculations.
+The file :red:`si222.h5` is the one that **anphon** reads in the following steps.
 
 
 .. _tutorial_Si_step4:
@@ -318,16 +321,16 @@ In :red:`si_alm2.in`, change ``MODE = suggest`` to ``MODE = optimize`` and add t
 
     &optimize
       DFSET = DFSET_cubic
-      FC2FIX = si222.xml # Fix harmonic IFCs
+      FC2FIX = si222.h5 # Fix harmonic IFCs
     /
 
-By the ``FC2FIX`` tag, harmonic IFCs are fixed to the values in :red:`si222.xml`.
+By the ``FC2FIX`` tag, harmonic IFCs are fixed to the values in :red:`si222.h5`.
 Then, execute **alm** again
 ::
 
     $ alm si_alm2.in > si_alm2.log2
 
-which creates files :red:`si222_cubic.fcs` and :red:`si222_cubic.xml`. This time cubic IFCs are also included in these files.
+which creates the file :red:`si222_cubic.h5`. This time cubic IFCs are also included in the file.
 
 .. Note::
     In the above example, we obtained cubic IFCs by least square fitting with harmonic IFCs being fixed to the value of the previous harmonic calculation. You can also estimate both harmonic and cubic IFCs simultaneously instead. To do this, merge :red:`DFSET_harmonic` and :red:`DFSET_cubic` as
@@ -352,8 +355,8 @@ Copy file :red:`si_phdos.in` to :red:`si_RTA.in` and edit the ``MODE`` and ``FCS
 
     &general
       PREFIX = si222
-      MODE = RTA
-      FCSFILE = si222_cubic.xml
+      MODE = kappa
+      FCSFILE = si222_cubic.h5
 
       KD = Si
       MASS = 28.0855
@@ -423,7 +426,8 @@ Some selected features are introduced below:
 Phonon lifetime
 ^^^^^^^^^^^^^^^
 
-The file :red:`si222.result` contains phonon linewidths at irreducible :math:`k` points. 
+The file :red:`si222.kappa.h5` contains phonon frequencies, group velocities, and linewidths at irreducible :math:`k` points
+(with ``FILE_FORMAT = text`` the same data are written to the text file :red:`si222.result`).
 You can extract phonon lifetime from this file as follows::
 
     $ analyzer.py --calc tau --temp 300 --h5 si222.kappa.h5 > tau300K_10.dat
@@ -464,6 +468,29 @@ Following the procedure below, you can obtain the :ref:`cumulative thermal condu
 To draw a smooth line, you have to use a denser :math:`q` grid as shown in the figure by the orange line,
 which are obtained with :math:`20\times 20\times 20\ q` points.
 
+Beyond the relaxation-time approximation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The RTA neglects the in-scattering term of the collision operator and therefore underestimates :math:`\kappa`
+of crystals in which Normal processes are important (see :ref:`this page <kappa_beyond_rta>`).
+To solve the linearized Boltzmann transport equation instead, add a ``SOLVER`` tag to the ``&kappa`` field of
+:red:`si_RTA.in`::
+
+    &kappa
+     SOLVER = VBTE  # RTA (default), IBTE, VBTE, or DBTE
+    /
+
+and run anphon again. The converged result is saved in :red:`si222.kl_iter` with the same layout as
+:red:`si222.kl`, so both can be plotted together::
+
+    $ gnuplot
+    gnuplot> set logscale xy
+    gnuplot> plot "si222.kl" usi 1:2 w lp title "RTA", "si222.kl_iter" usi 1:2 w lp title "VBTE"
+
+For silicon on this :math:`10\times 10\times 10` grid the correction is below 1% at room temperature but exceeds
+20% below 30 K, where Normal processes dominate. It is much larger in materials with very high thermal conductivity
+such as diamond or BAs.
+
 Thermal conductivity spectrum
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -471,8 +498,8 @@ To calculate the :ref:`spectrum of thermal conductivity <kappa>`, modify the :re
 
     &general
       PREFIX = si222
-      MODE = RTA
-      FCSFILE = si222_cubic.xml
+      MODE = kappa
+      FCSFILE = si222_cubic.h5
 
       KD = Si
       MASS = 28.0855

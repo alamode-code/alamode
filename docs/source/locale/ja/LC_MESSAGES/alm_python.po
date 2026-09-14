@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-05 21:53+0900\n"
+"POT-Creation-Date: 2026-09-14 10:11+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -19,15 +19,15 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:4
+#: ../../source/alm_python.rst:4
 msgid "ALM Python interface (external regressors)"
 msgstr "ALM Python インターフェース (外部回帰器)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:7
+#: ../../source/alm_python.rst:7
 msgid "Overview"
 msgstr "概要"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:9
+#: ../../source/alm_python.rst:9
 msgid ""
 "ALAMODE 2.0dev ships a `nanobind <https://nanobind.readthedocs.io>`_ Python "
 "interface to the ALM force-constant library (package name ``alm``).  Besides"
@@ -44,11 +44,11 @@ msgstr ""
 "b)` を公開します。これにより、\\ *任意の*\\ 外部回帰器を用いて非調和原子間力定数 (anharmonic interatomic force"
 " constants, IFCs) を決定し、その結果を anphon が読み取れるファイルに書き戻すことができます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:16
+#: ../../source/alm_python.rst:16
 msgid "The intended workflow is::"
 msgstr "想定しているワークフローは次のとおりです::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:21
+#: ../../source/alm_python.rst:21
 msgid ""
 "This page documents the installation, the conventions you must respect, and "
 "a complete worked example using the scikit-learn regressors **ARD**, "
@@ -59,7 +59,7 @@ msgstr ""
 "**ARD**、**BayesianRidge**、**RFECV**、および小規模な **Bayesian LASSO** (Gibbs) "
 "サンプラーを用いた完全な実例を解説します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:27
+#: ../../source/alm_python.rst:27
 msgid ""
 "This interface targets the ``2.0dev`` branch.  It replaces the legacy "
 "C/cython wrapper and keeps the same high-level API (``define`` / "
@@ -70,7 +70,7 @@ msgstr ""
 "(``define`` / ``set_training_data`` / ``get_matrix_elements`` / ``get_fc`` /"
 " ``set_fc`` / ``save_fc`` / ``optimizer_control``) を維持しています。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:34
+#: ../../source/alm_python.rst:34
 msgid ""
 "**Object lifetime.**  The C++ instance is created in ``ALM.__init__``, so "
 "``a = ALM(lavec, xcoord, numbers)`` is ready to use immediately and is freed"
@@ -84,11 +84,11 @@ msgstr ""
 " RAII です)。``with`` ブロック (または明示的な ``alm_delete()``) "
 "は**任意**です。多数の大きなセンシング行列を構築するループの中など、即時かつ確定的な解放が必要な場合にのみ使用してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:45
+#: ../../source/alm_python.rst:45
 msgid "Installation"
 msgstr "インストール"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:47
+#: ../../source/alm_python.rst:47
 msgid ""
 "The Python interface compiles the ALM C++ sources together with the binding,"
 " so it needs the same dependencies as ALM itself (spglib, Boost, Eigen, "
@@ -99,7 +99,7 @@ msgstr ""
 "(spglib、Boost、Eigen、HDF5、BLAS/LAPACK バックエンド、OpenMP) に加えて、ビルドフロントエンド "
 "(``nanobind``、``scikit-build-core``)、そして外部回帰器のための ``scikit-learn`` を必要とします。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:54
+#: ../../source/alm_python.rst:54
 msgid ""
 "The :ref:`pixi route <install_pixi>` sets up an equivalent project-local "
 "environment from the same environment file and builds the wrapper with a "
@@ -108,25 +108,25 @@ msgstr ""
 ":ref:`pixiを使う方法 <install_pixi>` では、同じ環境ファイルから同等のプロジェクトローカル環境を構築し、コマンド一つ "
 "(``pixi run 'cd python && pip install .'``) でラッパーをビルドできます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:59
+#: ../../source/alm_python.rst:59
 msgid "Step 1. Create an environment"
 msgstr "ステップ 1. 環境を作成する"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:61
+#: ../../source/alm_python.rst:61
 msgid ""
 "The easiest route is conda-forge, reusing the project environment file and "
 "adding the wrapper-specific packages::"
 msgstr "最も簡単な方法は conda-forge を使うことです。プロジェクトの環境ファイルを再利用し、ラッパー固有のパッケージを追加します::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:71
+#: ../../source/alm_python.rst:71
 msgid "Step 2. Build and install the wrapper"
 msgstr "ステップ 2. ラッパーをビルドしてインストールする"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:73
+#: ../../source/alm_python.rst:73
 msgid "From the top of the source tree::"
 msgstr "ソースツリーの最上位ディレクトリから次を実行します::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:78
+#: ../../source/alm_python.rst:78
 msgid ""
 "Inside an activated conda environment (or a pixi environment, see "
 ":ref:`install_pixi`), the wrapper's CMake setup automatically searches the "
@@ -138,26 +138,26 @@ msgstr ""
 "の中では、ラッパーのCMake設定が環境のプレフィックス (``$CONDA_PREFIX``) からspglib, Boost, Eigen, "
 "HDF5を自動的に検索するため、追加のオプションは不要です。依存ライブラリが別の場所にある場合は、明示的に指定してください::"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:90
+#: ../../source/alm_python.rst:90
 msgid ""
 "If CMake selects the wrong BLAS, add ``-C "
 "cmake.define.BLA_VENDOR=OpenBLAS``."
 msgstr ""
 "CMake が誤った BLAS を選択する場合は、``-C cmake.define.BLA_VENDOR=OpenBLAS`` を追加してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:93
+#: ../../source/alm_python.rst:93
 msgid "Step 3. Verify"
 msgstr "ステップ 3. 確認する"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:104
+#: ../../source/alm_python.rst:104
 msgid "A note on the BLAS backend and performance"
 msgstr "BLAS バックエンドと性能に関する注意"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:106
+#: ../../source/alm_python.rst:106
 msgid "On **Linux**, conda's NumPy links a threaded **OpenBLAS**."
 msgstr "**Linux** では、conda の NumPy はマルチスレッドの **OpenBLAS** にリンクされます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:107
+#: ../../source/alm_python.rst:107
 msgid ""
 "On **macOS**, the pip/conda NumPy may link **Apple Accelerate**, whose "
 "eigensolver runs single-threaded and ignores ``OMP_NUM_THREADS`` / "
@@ -167,7 +167,7 @@ msgstr ""
 "にリンクされることがあります。その固有値ソルバーはシングルスレッドで動作し、``OMP_NUM_THREADS`` / "
 "``OPENBLAS_NUM_THREADS`` を無視します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:111
+#: ../../source/alm_python.rst:111
 msgid ""
 "Several external regressors (notably ``ARDRegression``) spend most of their "
 "time in a symmetric eigendecomposition that **parallelizes poorly** "
@@ -183,20 +183,20 @@ msgstr ""
 "スレッドではなく、**独立したフィット間でのプロセスレベルの並列化** (異なる ``ndata`` / 汎関数 / 次数) "
 "です。:ref:`alm_python_performance` を参照してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:122
+#: ../../source/alm_python.rst:122
 msgid "Conventions you must respect"
 msgstr "守るべき規約"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:124
+#: ../../source/alm_python.rst:124
 msgid ""
 "These follow the ALM command-line interface (CLI) and are easy to get wrong:"
 msgstr "これらは ALM のコマンドラインインターフェース (CLI) に従っており、間違えやすい点です:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:128
+#: ../../source/alm_python.rst:128
 msgid "**Units.**"
 msgstr "**単位。**"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:130
+#: ../../source/alm_python.rst:130
 msgid ""
 "By default (as in the ALM CLI), the lattice vectors passed to ``ALM(...)`` "
 "must be in **Bohr**, and the displacements ``u`` and forces ``f`` in "
@@ -212,7 +212,7 @@ msgstr ""
 "force_unit='eV/angstrom')`` — 配列は内部で変換されます。``length_unit`` "
 "は格子ベクトル・変位・カットオフ半径に、``force_unit`` は力に適用されます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:137
+#: ../../source/alm_python.rst:137
 msgid ""
 "The force constants returned by ``get_fc`` / ``set_fc`` / ``fix_fc`` are "
 "**always** in Ry/Bohr\\ :sup:`n`, regardless of the units above. "
@@ -226,7 +226,7 @@ msgstr ""
 "eV/Å に変換した ``.h5`` を書き出します (*anphon* が読み戻す ``unit`` メタデータ付き)。``.xml`` 出力は常に "
 "Ry/Bohr\\ :sup:`n` です。``shengbte``/``qefc`` エクスポータはそれぞれの形式で固定された単位を使用します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:144
+#: ../../source/alm_python.rst:144
 msgid ""
 "``ALM(lavec, xcoord, numbers)`` takes the **primitive** cell: ``lavec`` "
 "(3x3, in ``length_unit``), ``xcoord`` (fractional, ``(nat, 3)``), "
@@ -238,7 +238,29 @@ msgstr ""
 "3)``)、``numbers`` (原子番号 :math:`Z`)。``set_supercell`` でスーパーセル (supercell) "
 "へ対応付けます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:147
+#: ../../source/alm_python.rst:147
+msgid ""
+"``lavec`` holds the lattice vectors as **rows** (``lavec[i]`` is the i-th "
+"vector, the convention of ase / phonopy / spglib).  The C++ core stores them"
+" as columns; the transposition is done inside the wrapper, so an "
+"``ase.Atoms`` cell can be passed as ``atoms.cell[:]`` directly."
+msgstr ""
+"``lavec`` は格子ベクトルを**行**として保持します (``lavec[i]`` が i 番目のベクトル。ase / phonopy / "
+"spglib の慣例)。C++ コアは格子ベクトルを列として保持しますが、転置はラッパー内部で行われるため、``ase.Atoms`` のセルを "
+"``atoms.cell[:]`` としてそのまま渡せます。"
+
+#: ../../source/alm_python.rst:151
+msgid ""
+"``symmetry_tolerance`` (constructor keyword or attribute, default ``1e-3``) "
+"is the tolerance of the symmetry finder, i.e. the CLI ``TOLERANCE`` tag. "
+"Increase it for slightly distorted (e.g. strained) cells whose symmetry "
+"spglib does not recognize at the default value."
+msgstr ""
+"``symmetry_tolerance`` (コンストラクタのキーワード引数または属性、既定値 ``1e-3``) は対称性探索の許容誤差で、CLI "
+"の ``TOLERANCE`` タグに相当します。既定値では spglib が対称性を認識できない、わずかに歪んだ (例えばひずみを加えた) "
+"セルに対しては、この値を大きくしてください。"
+
+#: ../../source/alm_python.rst:155
 msgid ""
 "``cutoff_radii`` has shape ``(maxorder, nkd, nkd)`` where ``nkd`` is the "
 "number of atomic species.  Values are in ``length_unit`` (bohr by default, "
@@ -250,7 +272,7 @@ msgstr ""
 "フィールドと同じ規約)。「カットオフなし」には**負**の値を使います。インデックス 0 は調和 (harmonic) 項、インデックス 1 は 3 次"
 " (cubic) 項、などとなります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:151
+#: ../../source/alm_python.rst:159
 msgid ""
 "``set_constraint(translation=True)`` applies the algebraic translational "
 "invariance (acoustic sum rule, ``ICONST=11``).  ``get_matrix_elements`` then"
@@ -261,11 +283,11 @@ msgstr ""
 "を適用します。これにより ``get_matrix_elements`` は、列数が "
 "``get_number_of_free_parameters()`` に等しい**制約により縮約された**行列を返します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:160
+#: ../../source/alm_python.rst:168
 msgid "Example inputs"
 msgstr "入力例"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:162
+#: ../../source/alm_python.rst:170
 msgid ""
 "We use the cubic **BaTiO3** example shipped with ALAMODE "
 "(``example/BaTiO3/anharm_IFCs/``).  It determines cubic and quartic IFCs of "
@@ -276,27 +298,27 @@ msgstr ""
 "を使用します。これは、調和力定数を固定したまま :math:`2\\times2\\times2` (40 原子) スーパーセルの 3 次および 4 次"
 " IFCs を決定します。これは CLI 入力 ``4_optimize/BTO_alm_opt.in`` とまったく同じ設定です:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:171
+#: ../../source/alm_python.rst:179
 msgid "Input"
 msgstr "入力"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:172
+#: ../../source/alm_python.rst:180
 msgid "Role"
 msgstr "役割"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:173
+#: ../../source/alm_python.rst:181
 msgid "``cBTO222_harmonic.xml``"
 msgstr "``cBTO222_harmonic.xml``"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:174
+#: ../../source/alm_python.rst:182
 msgid "harmonic (FC2) force constants, fixed during the fit (``FC2FIX``)"
 msgstr "調和 (FC2) 力定数。フィット中は固定されます (``FC2FIX``)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:175
+#: ../../source/alm_python.rst:183
 msgid "``3_cv/reference/DFSET_AIMD_random``"
 msgstr "``3_cv/reference/DFSET_AIMD_random``"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:176
+#: ../../source/alm_python.rst:184
 msgid ""
 "80 displacement-force snapshots of the 40-atom supercell (atomic units; "
 "produced by the example's MD -> DFSET workflow in steps 1-2, with a "
@@ -305,16 +327,16 @@ msgstr ""
 "40 原子スーパーセルの変位-力スナップショット 80 個 (原子単位。この例のステップ 1-2 の MD -> DFSET "
 "ワークフローで生成され、参照用コピーが ``3_cv/reference/`` 以下に付属しています)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:179
+#: ../../source/alm_python.rst:187
 msgid "5-atom cubic primitive cell"
 msgstr "5 原子の立方晶基本セル"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:180
+#: ../../source/alm_python.rst:188
 msgid ""
 "Ba/Ti/O, lattice constant :math:`a_0 = 7.5316` bohr (defined inline below)"
 msgstr "Ba/Ti/O、格子定数 :math:`a_0 = 7.5316` bohr (以下にインラインで定義)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:182
+#: ../../source/alm_python.rst:190
 msgid ""
 "Model (from the example input): ``NORDER = 3``, ``NBODY = 2 3 3``, cutoff "
 "radii **15.0 bohr (cubic)** and **9.0 bohr (quartic)**, harmonic term fixed."
@@ -322,18 +344,18 @@ msgstr ""
 "モデル (この例の入力より): ``NORDER = 3``、``NBODY = 2 3 3``、カットオフ半径 **15.0 bohr (3 次)**"
 " および **9.0 bohr (4 次)**、調和項は固定。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:187
+#: ../../source/alm_python.rst:195
 msgid ""
-"The CLI input supplies the **supercell** plus ``PRIMCELL`` (super→prim).  "
-"The Python wrapper instead takes the **primitive** cell and maps it to the "
-"supercell with ``set_supercell`` (``transmat_to_super = diag(2, 2, 2)``). "
+"The CLI input supplies the **supercell** plus ``PRIMCELL`` (super to prim)."
+"  The Python wrapper instead takes the **primitive** cell and maps it to the"
+" supercell with ``set_supercell`` (``transmat_to_super = diag(2, 2, 2)``). "
 "Both describe the same 40-atom system."
 msgstr ""
 "CLI 入力は**スーパーセル**と ``PRIMCELL`` (スーパー→基本) を与えます。一方、Python "
 "ラッパーは**基本セル**を受け取り、``set_supercell`` (``transmat_to_super = diag(2, 2, 2)``)"
 " でスーパーセルへ対応付けます。どちらも同じ 40 原子系を記述します。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:192
+#: ../../source/alm_python.rst:200
 msgid ""
 "A ``DFSET`` lists, for each of the ``nat_super`` atoms, one line ``ux uy uz"
 "  fx fy fz`` (Bohr, Ry/Bohr), concatenated over all snapshots.  It is read "
@@ -343,11 +365,11 @@ msgstr ""
 "(Bohr、Ry/Bohr) を列挙し、それを全スナップショットにわたって連結したものです。これは、依存関係のない次のヘルパー (または ``ase``"
 " / 独自のリーダー) で読み込めます:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:212
+#: ../../source/alm_python.rst:220
 msgid "Complete example: fitting with an external regressor"
 msgstr "完全な例: 外部回帰器によるフィッティング"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:214
+#: ../../source/alm_python.rst:222
 msgid ""
 "The function below defines the BaTiO3 primitive cell, extracts ALM's exact "
 ":math:`(A, b)`, **column-normalizes** it (so the regularization treats every"
@@ -361,20 +383,20 @@ msgstr ""
 "を保存します。また、ALM の**相対誤差** (residual を**全体の力**で正規化したもので、非調和残差で正規化したものではない) "
 "も報告します。これは ALM の ``.cvscore`` ファイルが報告する値です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:277
+#: ../../source/alm_python.rst:285
 msgid "Run it from ``example/BaTiO3/anharm_IFCs/`` with ARD:"
 msgstr "``example/BaTiO3/anharm_IFCs/`` から ARD で実行します:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:288
+#: ../../source/alm_python.rst:296
 msgid ""
-"The resulting ``cBTO222_ard.h5`` can be used directly by anphon (``FCSXML``)"
-" for the thermal-conductivity and Grüneisen calculations in "
+"The resulting ``cBTO222_ard.h5`` can be used directly by anphon "
+"(``FCSFILE``) for the thermal-conductivity and Grüneisen calculations in "
 "``example/BaTiO3``."
 msgstr ""
 "生成された ``cBTO222_ard.h5`` は、``example/BaTiO3`` の熱伝導率 (thermal conductivity) "
-"および Grüneisen 計算において anphon (``FCSXML``) で直接利用できます。"
+"および Grüneisen 計算において anphon (``FCSFILE``) で直接利用できます。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:293
+#: ../../source/alm_python.rst:301
 msgid ""
 "For a structure stored as a VASP POSCAR (Å), read the cell and convert to "
 "bohr (``lavec_bohr = lavec_angstrom * 1.8897259886``, e.g. via "
@@ -385,11 +407,11 @@ msgstr ""
 "lavec_angstrom * 1.8897259886``、例えば ``ase.io.read`` を介して)。``DFSET`` "
 "内の変位と力はすでに原子単位であり、変換**してはいけません**。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:302
+#: ../../source/alm_python.rst:310
 msgid "The external regressors"
 msgstr "外部回帰器"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:304
+#: ../../source/alm_python.rst:312
 msgid ""
 "Any estimator exposing a ``.coef_`` after ``.fit(X, y)`` works.  The four "
 "below cover the common compressive-sensing alternatives to elastic-net / "
@@ -398,11 +420,11 @@ msgstr ""
 "``.fit(X, y)`` の後に ``.coef_`` を公開する推定器であれば何でも動作します。以下の 4 つは、elastic-net / "
 "adaptive LASSO に代わる一般的な圧縮センシングの選択肢を網羅しています。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:309
+#: ../../source/alm_python.rst:317
 msgid "ARD (Automatic Relevance Determination)"
 msgstr "ARD (Automatic Relevance Determination)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:311
+#: ../../source/alm_python.rst:319
 msgid ""
 "Sparse Bayesian linear regression (the regression form of the relevance "
 "vector machine).  Each coefficient gets its own precision (inverse variance)"
@@ -414,12 +436,11 @@ msgstr ""
 "を持ち、これがエビデンス最大化によって最適化されます。無関係な係数はゼロへと駆動されます。**自己調整型** (交差検証 (cross-"
 "validation) は不要) であり、通常は**最もスパースな**解となります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:323
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:406
+#: ../../source/alm_python.rst:331 ../../source/alm_python.rst:414
 msgid "BayesianRidge"
 msgstr "BayesianRidge"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:325
+#: ../../source/alm_python.rst:333
 msgid ""
 "Bayesian linear regression with a single shared Gaussian prior precision "
 "(ridge- like).  Self-tuning and fast, but the solution is **dense** (no "
@@ -427,11 +448,11 @@ msgid ""
 msgstr ""
 "単一の共有ガウス事前精度を持つベイズ線形回帰 (ridge 風) です。自己調整型で高速ですが、解は**密** (厳密なゼロはなし) になります。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:334
+#: ../../source/alm_python.rst:342
 msgid "RFECV (recursive feature elimination with CV)"
 msgstr "RFECV (交差検証付き再帰的特徴量除去)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:336
+#: ../../source/alm_python.rst:344
 msgid ""
 "Wraps a base estimator and recursively prunes the least important features, "
 "choosing the number of features by cross-validation.  It is the most "
@@ -441,11 +462,11 @@ msgstr ""
 "ベース推定器をラップし、最も重要度の低い特徴量を再帰的に刈り込み、特徴量の数を交差検証によって選択します。最も計算コストの高い選択肢であり、データが少ない領域では刈り込みすぎることがあるため、``p``"
 " が小さい場合に最適です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:350
+#: ../../source/alm_python.rst:358
 msgid "Bayesian LASSO (Park & Casella 2008)"
 msgstr "Bayesian LASSO (Park & Casella 2008)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:352
+#: ../../source/alm_python.rst:360
 msgid ""
 "A Laplace prior implemented as a scale-mixture of normals, sampled with a "
 "Gibbs sampler.  scikit-learn has no Bayesian LASSO, so a compact "
@@ -457,92 +478,92 @@ msgstr ""
 "Bayesian LASSO がないため、以下にコンパクトな実装を示します。点推定には**事後平均**を使用します "
 "(これは縮約はするものの厳密なゼロは生成しないため、「ソフト LASSO」のように振る舞う点に注意してください)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:392
+#: ../../source/alm_python.rst:400
 msgid "At a glance:"
 msgstr "一覧:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:398
+#: ../../source/alm_python.rst:406
 msgid "Regressor"
 msgstr "回帰器"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:399
+#: ../../source/alm_python.rst:407
 msgid "Prior / mechanism"
 msgstr "事前分布 / 仕組み"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:400
+#: ../../source/alm_python.rst:408
 msgid "Sparse?"
 msgstr "スパース?"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:401
-#: alm.alm.ALM:21 alm.alm.ALM.get_fc:16 alm.alm.ALM.optimize:12 of
+#: ../../source/alm_python.rst:409 alm.alm.ALM:26 alm.alm.ALM.get_fc:16
+#: alm.alm.ALM.optimize:12 of
 msgid "Notes"
 msgstr "備考"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:402
+#: ../../source/alm_python.rst:410
 msgid "ARD"
 msgstr "ARD"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:403
+#: ../../source/alm_python.rst:411
 msgid "per-coefficient Gaussian precision (evidence max.)"
 msgstr "係数ごとのガウス精度 (エビデンス最大化)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:404
+#: ../../source/alm_python.rst:412
 msgid "yes (strong)"
 msgstr "はい (強い)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:405
+#: ../../source/alm_python.rst:413
 msgid "self-tuning; sparsest; eigendecomposition cost ~ :math:`O(p^3)`"
 msgstr "自己調整型; 最もスパース; 固有値分解のコストは ~ :math:`O(p^3)`"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:407
+#: ../../source/alm_python.rst:415
 msgid "single shared Gaussian precision"
 msgstr "単一の共有ガウス精度"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:408
+#: ../../source/alm_python.rst:416
 msgid "no (dense)"
 msgstr "いいえ (密)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:409
+#: ../../source/alm_python.rst:417
 msgid "self-tuning; fast; good when :math:`n \\gg p`"
 msgstr "自己調整型; 高速; :math:`n \\gg p` のとき良好"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:410
+#: ../../source/alm_python.rst:418
 msgid "Bayesian LASSO"
 msgstr "Bayesian LASSO"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:411
+#: ../../source/alm_python.rst:419
 msgid "Laplace (scale-mixture), Gibbs"
 msgstr "Laplace (スケール混合)、Gibbs"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:412
+#: ../../source/alm_python.rst:420
 msgid "no (soft)"
 msgstr "いいえ (ソフト)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:413
+#: ../../source/alm_python.rst:421
 msgid "posterior mean shrinks small terms; MCMC cost"
 msgstr "事後平均は小さい項を縮約する; MCMC のコスト"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:414
+#: ../../source/alm_python.rst:422
 msgid "RFECV"
 msgstr "RFECV"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:415
+#: ../../source/alm_python.rst:423
 msgid "recursive elimination + CV"
 msgstr "再帰的除去 + 交差検証"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:416
+#: ../../source/alm_python.rst:424
 msgid "yes (hard)"
 msgstr "はい (ハード)"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:417
+#: ../../source/alm_python.rst:425
 msgid "expensive; best for small :math:`p`"
 msgstr "計算コストが高い; :math:`p` が小さい場合に最適"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:423
+#: ../../source/alm_python.rst:431
 msgid "Performance: scaling and parallelism"
 msgstr "性能: スケーリングと並列化"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:425
+#: ../../source/alm_python.rst:433
 msgid ""
 "``get_matrix_elements`` returns the **constraint-reduced** matrix, so its "
 "column count is ``get_number_of_free_parameters()`` (much smaller than the "
@@ -552,7 +573,7 @@ msgstr ""
 "``get_number_of_free_parameters()`` です (素の既約な数よりもはるかに小さい)。同じ ``(A, b)`` "
 "を複数の回帰器で再利用してください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:428
+#: ../../source/alm_python.rst:436
 msgid ""
 "ARD / RFECV scale roughly as :math:`O(p^3)` per iteration; for large cutoffs"
 " (:math:`p \\gtrsim 10^4`) a single fit can take tens of minutes.  LASSO and"
@@ -562,7 +583,7 @@ msgstr ""
 " 10^4`)、1 回のフィットに数十分かかることがあります。LASSO と BayesianRidge は大きな :math:`p` "
 "に対してよりよくスケールします。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:431
+#: ../../source/alm_python.rst:439
 msgid ""
 "Threads do **not** help much (the bottleneck eigendecomposition is "
 "essentially serial).  To use many cores, run independent fits as **separate "
@@ -571,7 +592,7 @@ msgstr ""
 "スレッドはあまり**役に立ちません** "
 "(ボトルネックとなる固有値分解は本質的に逐次的です)。多数のコアを使うには、独立したフィットを**別々のプロセス**として実行します:"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:446
+#: ../../source/alm_python.rst:454
 msgid ""
 "Budget memory accordingly (a large fit at :math:`p\\approx1.7\\times10^4` "
 "needs ~20 GB); reduce ``max_workers`` if a worker is killed "
@@ -580,7 +601,7 @@ msgstr ""
 "それに応じてメモリを見積もってください (:math:`p\\approx1.7\\times10^4` の大きなフィットには約 20 GB "
 "が必要です)。ワーカーが強制終了される場合 (``BrokenProcessPool``) は ``max_workers`` を減らしてください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:449
+#: ../../source/alm_python.rst:457
 msgid ""
 "To speed up a single large fit, pre-screen the columns with a cheap LASSO "
 "and run the expensive regressor on the surviving support, or lower "
@@ -590,11 +611,11 @@ msgstr ""
 "で列を事前スクリーニングし、残ったサポート上で高コストの回帰器を実行するか、``ARDRegression(max_iter=...)`` "
 "を小さくしてください。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:457
+#: ../../source/alm_python.rst:465
 msgid "API reference"
 msgstr "API リファレンス"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:459
+#: ../../source/alm_python.rst:467
 msgid ""
 "The public interface is the high-level :class:`alm.ALM` class, a context "
 "manager wrapping the compiled core.  The members below are generated from "
@@ -608,8 +629,7 @@ msgid ""
 "Pythonic wrapper around the nanobind ALMCore object (legacy-compatible API)."
 msgstr "nanobind の ALMCore オブジェクトを包む Python 的なラッパー (従来互換の API) です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst
-#: alm.alm.ALM.get_fc alm.alm.ALM.optimize of
+#: ../../source/alm_python.rst alm.alm.ALM.get_fc alm.alm.ALM.optimize of
 msgid "Parameters"
 msgstr "パラメータ"
 
@@ -647,7 +667,17 @@ msgstr ""
 "このオブジェクトに渡す力の単位: 'Ry/bohr' (既定)、'eV/angstrom' または 'Ha/bohr'。内部で Ry/Bohr "
 "に変換されます。"
 
-#: alm.alm.ALM:22 of
+#: alm.alm.ALM:19 of
+msgid ""
+"Tolerance (in ``length_unit``-independent fractional/Cartesian bohr units as"
+" in the CLI TOLERANCE tag) used by the symmetry finder (spglib), default "
+"1e-3.  Can be changed later through :attr:`symmetry_tolerance`."
+msgstr ""
+"対称性探索 (spglib) で用いる許容誤差 (CLI の TOLERANCE タグと同様、``length_unit`` "
+"に依存しない分率座標/Cartesian bohr 単位)。既定値は 1e-3 です。後から :attr:`symmetry_tolerance` "
+"を通じて変更できます。"
+
+#: alm.alm.ALM:27 of
 msgid ""
 "Assigning to :attr:`lavec`, :attr:`xcoord` or :attr:`numbers` re-sends the "
 "cell to the C++ core on the next :meth:`define` call; call :meth:`define` "
@@ -731,6 +761,10 @@ msgid ""
 msgstr ""
 "このオブジェクトに渡す力の単位 ('Ry/bohr'、'eV/angstrom' または "
 "'Ha/bohr'。読み取り専用で、コンストラクタで設定します)。"
+
+#: alm.ALM.symmetry_tolerance:1 of
+msgid "Tolerance of the symmetry finder (CLI TOLERANCE tag), default 1e-3."
+msgstr "対称性探索の許容誤差 (CLI の TOLERANCE タグ)。既定値は 1e-3 です。"
 
 #: alm.ALM.verbosity:1 of
 msgid "Verbosity level (0 = silent, 1 = print progress to stdout)."
@@ -1071,7 +1105,7 @@ msgstr ""
 "でのみサポートされます。このファイルには anphon が読み戻す単位メタデータが含まれます。他の形式は固定の単位を持ちます (.xml は常に "
 "Ry/bohr^n)。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:469
+#: ../../source/alm_python.rst:477
 msgid ""
 "The ``optimizer_control`` property is a ``dict`` mirroring ALM's "
 "``&optimize`` tags; the keys most relevant for comparison with the external "
@@ -1083,15 +1117,15 @@ msgstr ""
 "です。外部回帰器との比較に最も関連するキーは、``linear_model`` (1 = 通常最小二乗法、2 = elastic-net、3 = "
 "adaptive LASSO)、``cross_validation``、``l1_alpha``、``l1_ratio`` です。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:476
+#: ../../source/alm_python.rst:484
 msgid "See also"
 msgstr "関連項目"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:478
+#: ../../source/alm_python.rst:486
 msgid ":doc:`alm_root` — the ALM command-line program and its input tags."
 msgstr ":doc:`alm_root` — ALM コマンドラインプログラムとその入力タグ。"
 
-#: ../../../../../../../Users/tadano/src/alamode/docs/source/alm_python.rst:479
+#: ../../source/alm_python.rst:487
 msgid ""
 "The ``optimizer_control`` property exposes ALM's native solvers "
 "(``linear_model`` = 1 OLS, 2 elastic-net, 3 adaptive LASSO) with cross-"

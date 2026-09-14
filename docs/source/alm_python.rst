@@ -293,7 +293,7 @@ Run it from ``example/BaTiO3/anharm_IFCs/`` with ARD:
        regressor=ARDRegression(copy_X=False),
        save_to="cBTO222_ard.h5")
 
-The resulting ``cBTO222_ard.h5`` can be used directly by anphon (``FCSXML``) for
+The resulting ``cBTO222_ard.h5`` can be used directly by anphon (``FCSFILE``) for
 the thermal-conductivity and Grüneisen calculations in ``example/BaTiO3``.
 
 .. note::

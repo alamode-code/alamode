@@ -75,7 +75,7 @@ The information on the :math:`q`-points are written out in :red:`si_anphon.in` a
   &general
     PREFIX = si222_harmonic
     MODE   = phonons
-    FCSFILE = si222_harmonic.xml
+    FCSFILE = si222_harmonic.h5
 
     KD = Si
   /
@@ -237,7 +237,7 @@ Run the calculation with
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/4_optimize
   $ ${ALAMODE_ROOT}/alm/alm si_alm_opt.in > si_alm_opt.log
 
-The calculated IFCs are written out in :red:`si222.xml` and :red:`si222.fcs`.
+The calculated IFCs are written out in :red:`si222.h5`.
 The fitting error is 
 
 .. code-block::

@@ -34,8 +34,7 @@ Please copy the file of IFCs calculated in :ref:`Tutorial 7.5 <label_tutorial_bt
 
 .. code-block:: bash 
 
-  $ cp ../anharm_IFCs/4_optimize/reference/cBTO222.xml.zip ./
-  $ unzip cBTO222.xml.zip
+  $ cp ../anharm_IFCs/4_optimize/reference/cBTO222.h5 ./
 
 .. note::
 

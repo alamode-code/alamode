@@ -1,0 +1,768 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-13 15:51+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/anphondir/strain_tools.rst:4
+msgid ""
+"Tools for the cell-relaxation inputs (strainifc.py, elastic.py, "
+"strainfile.py)"
+msgstr "セル緩和の入力を準備するツール (strainifc.py, elastic.py, strainfile.py)"
+
+#: ../../source/anphondir/strain_tools.rst:6
+msgid ""
+"The structural optimization with cell relaxation (``RELAX_STR = 2, 3`` in "
+"the SCPH/QHA modes) needs a few quantities that anphon cannot compute from "
+"the force constants alone: the reference stress and the second- and third-"
+"order elastic constants, the strain–force coupling, and the strain–harmonic-"
+"IFC coupling. They are prepared from DFT calculations of strained cells by "
+"the Python scripts described below, and handed to anphon in one of two ways:"
+msgstr ""
+"セル緩和を伴う構造最適化 (SCPH/QHA モードの ``RELAX_STR = 2, 3``) には、anphon "
+"が力定数だけからは計算できないいくつかの量が必要です。すなわち、参照応力と 2 次および 3 次の弾性定数 (elastic "
+"constants)、ひずみ-力結合 (strain–force coupling)、およびひずみ-調和 IFC 結合 "
+"(strain–harmonic-IFC coupling) です。これらは、以下で説明する Python スクリプトによってひずませたセルの DFT "
+"計算から準備され、次の 2 つの方法のいずれかで anphon に渡されます。"
+
+#: ../../source/anphondir/strain_tools.rst:13
+msgid ""
+"**the strain-coupling container** (recommended): one HDF5 file given as "
+"``STRAINFILE`` in the ``&relax`` field, see :ref:`label_strain_container`;"
+msgstr ""
+"**ひずみ結合コンテナ** (推奨): ``&relax`` フィールドの ``STRAINFILE`` として与える 1 つの HDF5 "
+"ファイル。:ref:`label_strain_container` を参照してください。"
+
+#: ../../source/anphondir/strain_tools.rst:15
+msgid ""
+"**the legacy text files** in the directory given by ``STRAIN_IFC_DIR`` (plus"
+" ``C1_array.in`` in the working directory of anphon), see "
+":ref:`label_strain_legacy_files`. anphon prints a note when this route is "
+"used; it will be removed in a later release."
+msgstr ""
+"**従来のテキストファイル**: ``STRAIN_IFC_DIR`` で与えるディレクトリ内のファイル (および anphon の作業ディレクトリ内の"
+" ``C1_array.in``)。:ref:`label_strain_legacy_files` "
+"を参照してください。この経路が使用された場合、anphon は注記を出力します。この経路は将来のリリースで削除される予定です。"
+
+#: ../../source/anphondir/strain_tools.rst:23
+msgid ""
+"One file for all inputs: the strain-coupling container (``STRAINFILE``)"
+msgstr "すべての入力を 1 つのファイルに: ひずみ結合コンテナ (``STRAINFILE``)"
+
+#: ../../source/anphondir/strain_tools.rst:25
+msgid ""
+"The container is an HDF5 file with the schema ``alamode:strain_coupling``. "
+"Every ingredient lives in its own group, the units are stored as attributes,"
+" and the reference structure is stored once, so that anphon can verify that "
+"the pieces belong together and to the cell of the run:"
+msgstr ""
+"コンテナは、スキーマ ``alamode:strain_coupling`` を持つ HDF5 "
+"ファイルです。各要素はそれぞれ専用のグループに格納され、単位は属性として保存され、参照構造は 1 回だけ保存されます。これにより、anphon "
+"は各要素が互いに整合し、実行のセルに対応していることを検証できます。"
+
+#: ../../source/anphondir/strain_tools.rst:34
+msgid "Group"
+msgstr "グループ"
+
+#: ../../source/anphondir/strain_tools.rst:35
+msgid "Needed by"
+msgstr "必要とする設定"
+
+#: ../../source/anphondir/strain_tools.rst:36
+#: ../../source/anphondir/strain_tools.rst:115
+msgid "Content"
+msgstr "内容"
+
+#: ../../source/anphondir/strain_tools.rst:37
+msgid "``/ReferenceCell``"
+msgstr "``/ReferenceCell``"
+
+#: ../../source/anphondir/strain_tools.rst:38
+msgid "always"
+msgstr "常に"
+
+#: ../../source/anphondir/strain_tools.rst:39
+msgid ""
+"The reference structure (lattice, fractional coordinates, elements) in "
+"anphon's primitive-cell atom order. anphon checks that its own primitive "
+"cell (the ``&cell`` field) describes the same crystal; a nested super- or "
+"sub-cell is accepted."
+msgstr ""
+"anphon の基本セルの原子順序での参照構造 (格子、分数座標、元素)。anphon は自身の基本セル (``&cell`` フィールド) "
+"が同じ結晶を記述していることを確認します。ネストされたスーパーセルまたはサブセルは受け入れられます。"
+
+#: ../../source/anphondir/strain_tools.rst:43
+msgid "``/Elastic``"
+msgstr "``/Elastic``"
+
+#: ../../source/anphondir/strain_tools.rst:44
+msgid ""
+"``ELASTIC_CONST = 2`` (``soec``, ``toec``); the reference stress is used "
+"with ``ELASTIC_CONST = 1`` as well"
+msgstr ""
+"``ELASTIC_CONST = 2`` (``soec``、``toec``)。参照応力は ``ELASTIC_CONST = 1`` "
+"でも使用されます"
+
+#: ../../source/anphondir/strain_tools.rst:46
+msgid ""
+"``stress`` (3×3), ``soec`` (9×9) and ``toec`` (9×9×9) in GPa, the layout of "
+"the text files (:math:`i = 3\\mu + \\nu`). The stress may be absent (zero is"
+" used, with a note); ``soec`` and ``toec`` come together."
+msgstr ""
+"``stress`` (3×3)、``soec`` (9×9)、``toec`` (9×9×9)。単位は GPa "
+"で、レイアウトはテキストファイルと同じです (:math:`i = 3\\mu + \\nu`)。応力は省略可能です "
+"(その場合ゼロが使用され、注記が出力されます)。``soec`` と ``toec`` は必ず対で格納されます。"
+
+#: ../../source/anphondir/strain_tools.rst:49
+msgid "``/StrainForce``"
+msgstr "``/StrainForce``"
+
+#: ../../source/anphondir/strain_tools.rst:50
+#: ../../source/anphondir/strain_tools.rst:133
+msgid "``RENORM_2TO1ST = 2``"
+msgstr "``RENORM_2TO1ST = 2``"
+
+#: ../../source/anphondir/strain_tools.rst:51
+msgid ""
+"The strain-mode table (``modes``, ``smag``, ``weight``), the forces "
+"``[n_modes, n_atoms, 3]`` in eV/Å, and ``Cell``, the cell the rows belong to"
+" (the role of the ``&reference_cell`` header of the text file)."
+msgstr ""
+"ひずみモードの表 (``modes``、``smag``、``weight``)、eV/Å 単位の力 ``[n_modes, n_atoms, "
+"3]``、および行が対応するセル ``Cell`` (テキストファイルの ``&reference_cell`` ヘッダーに相当します)。"
+
+#: ../../source/anphondir/strain_tools.rst:54
+msgid "``/StrainHarmonic``"
+msgstr "``/StrainHarmonic``"
+
+#: ../../source/anphondir/strain_tools.rst:55
+#: ../../source/anphondir/strain_tools.rst:139
+msgid "``RENORM_3TO2ND = 2, 3``"
+msgstr "``RENORM_3TO2ND = 2, 3``"
+
+#: ../../source/anphondir/strain_tools.rst:56
+msgid ""
+"The strain-mode table and one sub-group ``entry_NNN`` per strained supercell"
+" holding its harmonic force constants in the layout of the alm ``.h5`` files"
+" (``SuperCell``, ``ForceConstants/Order2``). anphon checks every entry "
+"against the supercell of ``FC2FILE``/``FCSFILE`` deformed by the entry's own"
+" strain, atom by atom."
+msgstr ""
+"ひずみモードの表と、ひずませたスーパーセルごとに 1 つのサブグループ ``entry_NNN``。各サブグループはそのスーパーセルの調和力定数を "
+"alm の ``.h5`` ファイルのレイアウト (``SuperCell``、``ForceConstants/Order2``) "
+"で保持します。anphon は各エントリを、``FC2FILE``/``FCSFILE`` "
+"のスーパーセルにそのエントリ自身のひずみを加えたものと原子ごとに照合します。"
+
+#: ../../source/anphondir/strain_tools.rst:62
+msgid ""
+"The producing commands write into the container directly; the same file can "
+"be updated by each, replacing only its own groups and refusing a reference "
+"structure that is not the crystal already stored::"
+msgstr ""
+"生成コマンドはコンテナに直接書き込みます。同じファイルを各コマンドで更新することができ、その際には自身のグループのみが置き換えられ、既に保存されている結晶と異なる参照構造は拒否されます::"
+
+#: ../../source/anphondir/strain_tools.rst:69
+msgid ""
+"``elastic.py fit`` writes ``/Elastic`` **and** ``/StrainForce``: its single-"
+"mode runs at :math:`\\pm s` are exactly the strained primitive cells of the "
+"strain–force coupling, so no separate ``strainifc.py --coupling force`` "
+"calculations are needed. That route remains for ``ELASTIC_CONST = 1`` runs "
+"(no ``elastic.py``)::"
+msgstr ""
+"``elastic.py fit`` は ``/Elastic`` **と** ``/StrainForce`` "
+"の両方を書き込みます。:math:`\\pm s` での単一モード計算は、ひずみ-力結合のためのひずませた基本セルそのものであるため、別途 "
+"``strainifc.py --coupling force`` の計算を行う必要はありません。この経路は ``ELASTIC_CONST = 1``"
+" の実行 (``elastic.py`` を使わない場合) のために残されています::"
+
+#: ../../source/anphondir/strain_tools.rst:76
+msgid "and the anphon input needs a single line::"
+msgstr "そして、anphon の入力には 1 行だけが必要です::"
+
+#: ../../source/anphondir/strain_tools.rst:83
+msgid "``strainfile.py`` inspects, checks, and converts containers::"
+msgstr "``strainfile.py`` はコンテナの内容の表示、検査、変換を行います::"
+
+#: ../../source/anphondir/strain_tools.rst:90
+msgid ""
+"``show`` prints the contents (cells, units, the elastic constants in GPa, "
+"the strain modes and their weight sums) and which anphon settings the file "
+"supports; ``check`` repeats anphon's consistency checks against a planned "
+"run before it is submitted; ``pack`` converts an existing ``STRAIN_IFC_DIR``"
+" (any subset of the text files; legacy ``Ry`` files are converted to GPa "
+"with the volume of ``--legacy-cell``, the ``&cell`` of the run they were "
+"made for, and that assumption is recorded in the file). Every write records "
+"its command line in the ``provenance`` attribute. The container is read on "
+"every MPI rank and must not be modified while anphon runs. Non-magnetic "
+"reference structures only."
+msgstr ""
+"``show`` は内容 (セル、単位、GPa 単位の弾性定数、ひずみモードとその重みの和) と、このファイルがサポートする anphon "
+"の設定を出力します。``check`` は、計画している実行に対する anphon の整合性チェックをジョブ投入前に再現します。``pack`` "
+"は既存の ``STRAIN_IFC_DIR`` を変換します (テキストファイルの任意の部分集合で構いません。従来の ``Ry`` "
+"単位のファイルは、それらが作成された実行の ``&cell`` である ``--legacy-cell`` の体積を用いて GPa "
+"に変換され、その仮定はファイルに記録されます)。すべての書き込みは、そのコマンドラインを ``provenance`` "
+"属性に記録します。コンテナはすべての MPI ランクで読み込まれ、anphon の実行中に変更してはいけません。非磁性の参照構造のみに対応しています。"
+
+#: ../../source/anphondir/strain_tools.rst:104
+msgid "Legacy text layout (``STRAIN_IFC_DIR``)"
+msgstr "従来のテキストレイアウト (``STRAIN_IFC_DIR``)"
+
+#: ../../source/anphondir/strain_tools.rst:106
+msgid ""
+"The text files are read from the directory given by ``STRAIN_IFC_DIR`` "
+"(except ``C1_array.in``, which is read from the working directory of "
+"anphon):"
+msgstr ""
+"テキストファイルは ``STRAIN_IFC_DIR`` で与えるディレクトリから読み込まれます (ただし ``C1_array.in`` は "
+"anphon の作業ディレクトリから読み込まれます)。"
+
+#: ../../source/anphondir/strain_tools.rst:113
+msgid "File"
+msgstr "ファイル"
+
+#: ../../source/anphondir/strain_tools.rst:114
+msgid "Tag"
+msgstr "タグ"
+
+#: ../../source/anphondir/strain_tools.rst:116
+msgid "``elastic_constants.in``"
+msgstr "``elastic_constants.in``"
+
+#: ../../source/anphondir/strain_tools.rst:117
+msgid "``ELASTIC_CONST = 2``"
+msgstr "``ELASTIC_CONST = 2``"
+
+#: ../../source/anphondir/strain_tools.rst:118
+#, python-brace-format
+msgid ""
+"Second- and third-order elastic constants in GPa: a label with the unit "
+"token (``SOEC GPa``), 81 values :math:`C_{\\mu_1\\nu_1,\\mu_2\\nu_2}` in the"
+" full-index layout (:math:`i = 3\\mu + \\nu`, row-major), a label (``TOEC "
+"GPa``) and 729 values. anphon multiplies them by the volume of its primitive"
+" cell, so the file does not depend on the cell size (any nested ``&cell`` of"
+" the same reference crystal, in the same Cartesian frame and strain "
+"convention). Files without the unit token (the legacy layout) or with an "
+"explicit ``Ry`` token hold :math:`V C^{(2)}`, :math:`V C^{(3)}` in Ry for "
+"one specific cell; anphon cannot check that cell and warns when such a file "
+"is used together with a user-defined ``&cell``."
+msgstr ""
+"GPa 単位の 2 次および 3 次弾性定数。単位トークン付きのラベル (``SOEC GPa``)、フルインデックスレイアウト (:math:`i ="
+" 3\\mu + \\nu`、行優先) の 81 個の値 :math:`C_{\\mu_1\\nu_1,\\mu_2\\nu_2}`、ラベル "
+"(``TOEC GPa``)、729 個の値の順に並びます。anphon はこれらに基本セルの体積を乗じるため、ファイルはセルサイズに依存しません "
+"(同じ参照結晶、同じデカルト座標系、同じひずみ規約であれば、ネストされた任意の ``&cell`` で使用できます)。単位トークンのないファイル "
+"(従来のレイアウト) や明示的に ``Ry`` トークンを持つファイルは、ある特定のセルに対する :math:`V C^{(2)}`、:math:`V "
+"C^{(3)}` を Ry 単位で保持しています。anphon はそのセルを検証できないため、このようなファイルをユーザー定義の ``&cell`` "
+"とともに使用した場合には警告が出力されます。"
+
+#: ../../source/anphondir/strain_tools.rst:127
+msgid "``C1_array.in`` (working directory)"
+msgstr "``C1_array.in`` (作業ディレクトリ)"
+
+#: ../../source/anphondir/strain_tools.rst:128
+msgid "``ELASTIC_CONST = 1, 2``"
+msgstr "``ELASTIC_CONST = 1, 2``"
+
+#: ../../source/anphondir/strain_tools.rst:129
+#, python-brace-format
+msgid ""
+"Reference stress :math:`\\sigma_{\\mu\\nu}` in GPa: ``C1 GPa`` followed by 9"
+" values (row-major); files without the unit token (or with ``Ry``) hold "
+":math:`V\\sigma` in Ry for one specific cell. Zero when the file is absent."
+msgstr ""
+"GPa 単位の参照応力 :math:`\\sigma_{\\mu\\nu}`。``C1 GPa`` の後に 9 個の値 (行優先) "
+"が続きます。単位トークンのないファイル (または ``Ry`` トークンを持つファイル) は、ある特定のセルに対する :math:`V\\sigma` "
+"を Ry 単位で保持しています。ファイルがない場合はゼロになります。"
+
+#: ../../source/anphondir/strain_tools.rst:132
+msgid "``strain_force.in``"
+msgstr "``strain_force.in``"
+
+#: ../../source/anphondir/strain_tools.rst:134
+msgid ""
+"Forces (eV/Å) in strained cells, one block per strain mode: a header ``mode "
+"smag weight`` followed by one line ``fx fy fz`` per atom. An optional "
+"``&reference_cell ... /`` header (see below) records the cell the rows "
+"belong to; without it the rows must follow the atom order of the anphon "
+"primitive cell."
+msgstr ""
+"ひずませたセルにおける力 (eV/Å)。ひずみモードごとに 1 ブロックで、ヘッダー ``mode smag weight`` の後に原子ごとに 1 行"
+" ``fx fy fz`` が続きます。省略可能な ``&reference_cell ... /`` ヘッダー (後述) "
+"は、行が対応するセルを記録します。ヘッダーがない場合、行は anphon の基本セルの原子順序に従わなければなりません。"
+
+#: ../../source/anphondir/strain_tools.rst:138
+msgid "``strain_harmonic.in`` + force-constant files"
+msgstr "``strain_harmonic.in`` + 力定数ファイル"
+
+#: ../../source/anphondir/strain_tools.rst:140
+msgid ""
+"One line ``mode smag weight filename`` per strained supercell; ``filename`` "
+"(relative to ``STRAIN_IFC_DIR``, ``.xml`` or ``.h5``) holds the harmonic "
+"force constants of the strained supercell in Ry/bohr\\ :sup:`2`."
+msgstr ""
+"ひずませたスーパーセルごとに 1 行 ``mode smag weight filename``。``filename`` "
+"(``STRAIN_IFC_DIR`` からの相対パス、``.xml`` または ``.h5``) は、ひずませたスーパーセルの調和力定数を "
+"Ry/bohr\\ :sup:`2` 単位で保持します。"
+
+#: ../../source/anphondir/strain_tools.rst:144
+#, python-brace-format
+msgid ""
+"The elastic constants are the Brugger constants, i.e. derivatives of the "
+"static energy with respect to the Green–Lagrange strain :math:`\\eta = "
+"\\mathrm{sym}(u) + \\frac{1}{2} u u^{T}` of the deformation gradient "
+":math:`F = I + u` (:math:`u` symmetric), and they must be the **clamped-"
+"ion** constants because anphon relaxes the internal coordinates explicitly. "
+"Strain modes are named ``xx, yy, zz, yz, zx, xy``; a mode ``yz`` with "
+"magnitude ``smag`` means :math:`u_{yz} = u_{zy} = \\mathrm{smag}/2`. Weights"
+" of a mode must sum to 1 (one-sided differences: one line with weight 1; "
+"central differences: ``+smag`` and ``-smag`` with weight 0.5 each)."
+msgstr ""
+"弾性定数は Brugger の定数、すなわち変形勾配 :math:`F = I + u` (:math:`u` は対称) の "
+"Green–Lagrange ひずみ :math:`\\eta = \\mathrm{sym}(u) + \\frac{1}{2} u u^{T}` "
+"に関する静的エネルギーの微分です。anphon は内部座標を明示的に緩和するため、**クランプトイオン** (clamped-ion) "
+"の定数でなければなりません。ひずみモードは ``xx, yy, zz, yz, zx, xy`` と名付けられ、大きさ ``smag`` のモード "
+"``yz`` は :math:`u_{yz} = u_{zy} = \\mathrm{smag}/2` を意味します。各モードの重みの和は 1 "
+"でなければなりません (片側差分: 重み 1 の行を 1 つ。中心差分: ``+smag`` と ``-smag`` をそれぞれ重み 0.5 で)。"
+
+#: ../../source/anphondir/strain_tools.rst:153
+msgid ""
+"Two Python scripts in the ``tools/`` directory prepare these files from DFT "
+"calculations (they need ``numpy``, ``ase`` and ``spglib``; ``strainifc.py "
+"--coupling harmonic`` additionally needs the ``alm`` Python package built "
+"from the ``python/`` directory):"
+msgstr ""
+"``tools/`` ディレクトリにある 2 つの Python スクリプトが、DFT 計算からこれらのファイルを準備します "
+"(``numpy``、``ase``、``spglib`` が必要です。``strainifc.py --coupling harmonic`` "
+"にはさらに、``python/`` ディレクトリからビルドした ``alm`` Python パッケージが必要です)。"
+
+#: ../../source/anphondir/strain_tools.rst:157
+#, python-brace-format
+msgid ""
+"``elastic.py`` — finite-strain workflow for :math:`\\sigma`, :math:`C^{(2)}`"
+" and :math:`C^{(3)}` (``elastic_constants.in``, ``C1_array.in``); the same "
+"runs also give the strain–force coupling (``strain_force.in``)."
+msgstr ""
+"``elastic.py`` — :math:`\\sigma`、:math:`C^{(2)}`、:math:`C^{(3)}` "
+"を求める有限ひずみワークフロー (``elastic_constants.in``、``C1_array.in``)。同じ計算からひずみ-力結合 "
+"(``strain_force.in``) も得られます。"
+
+#: ../../source/anphondir/strain_tools.rst:160
+msgid ""
+"``strainifc.py`` — strain–harmonic-IFC coupling (``strain_harmonic.in``) "
+"and, for runs without ``elastic.py``, the strain–force coupling "
+"(``strain_force.in``). This is a port of the `strainIFCcoupling "
+"<https://github.com/r-masuki/strainIFCcoupling>`_ scripts by Ryota Masuki "
+"[Masuki2022]_ [Masuki2023]_ onto the in-tree ``alm`` package."
+msgstr ""
+"``strainifc.py`` — ひずみ-調和 IFC 結合 (``strain_harmonic.in``) と、``elastic.py`` "
+"を使わない実行のためのひずみ-力結合 (``strain_force.in``)。これは、Ryota Masuki による "
+"`strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ スクリプト "
+"[Masuki2022]_ [Masuki2023]_ を、ソースツリー内の ``alm`` パッケージ上に移植したものです。"
+
+#: ../../source/anphondir/strain_tools.rst:165
+msgid ""
+"Both follow the same pattern: ``generate`` writes the strained input "
+"structures (VASP ``POSCAR`` or Quantum-ESPRESSO ``pw.in``, taken from a "
+"template directory whose other files are copied), the user runs the DFT code"
+" in every directory (single-point calculations: fixed cell **and** fixed "
+"ions), and ``fit`` / ``collect`` read the outputs (``vasprun.xml`` / "
+"``pw.out``) and write the anphon files into ``results/``. A JSON manifest "
+"written by ``generate`` carries all parameters, so nothing has to be re-"
+"typed. Every DFT output is checked against the generated structure (cell, "
+"species and fractional coordinates at the same index); relaxed geometries "
+"are rejected."
+msgstr ""
+"どちらも同じパターンに従います。``generate`` がひずませた入力構造を書き出し (VASP の ``POSCAR`` または Quantum-"
+"ESPRESSO の ``pw.in``。テンプレートディレクトリから取得され、その他のファイルはコピーされます)、ユーザーが各ディレクトリで DFT "
+"コードを実行し (一点計算: セル **および** イオンを固定)、``fit`` / ``collect`` が出力 (``vasprun.xml``"
+" / ``pw.out``) を読み込んで anphon 用のファイルを ``results/`` に書き出します。``generate`` が書き出す"
+" JSON マニフェストにすべてのパラメータが記録されるため、再入力の必要はありません。すべての DFT 出力は生成された構造と照合されます "
+"(セル、元素種、同じインデックスの分数座標)。緩和された構造は拒否されます。"
+
+#: ../../source/anphondir/strain_tools.rst:175
+msgid "Atom ordering"
+msgstr "原子の順序"
+
+#: ../../source/anphondir/strain_tools.rst:177
+msgid ""
+"The generated inputs and the force-constant files keep the order of the "
+"template structure. For ``--coupling harmonic`` the template must be the "
+"supercell of the force-constant file given to anphon: ``collect`` checks it "
+"index-wise against ``--fcs`` and checks every generated force-constant file "
+"for identical translation tables. The rows of ``strain_force.in``, on the "
+"other hand, refer to the atoms of anphon's primitive cell, i.e. the order "
+"obtained by folding the supercell of the force-constant file into the "
+"``&cell`` lattice, keeping the first occurrence of every site (for ``.h5`` "
+"files without ``&cell``, the stored primitive cell). Give the reference "
+"force-constant file (``--fcs``, the ``FC2FILE``/``FCSFILE`` of the anphon "
+"run) and the anphon input (``--anphon-cell``) to ``collect``: the atoms of "
+"the DFT cell are matched by position to that cell, and the rows are written "
+"in anphon's order and preceded by an ``&reference_cell`` header that records"
+" that cell (a permuted template is reported as an error unless ``--reorder``"
+" is given; for a conventional anphon cell the rows of the translation-"
+"equivalent atoms are duplicated, which requires the DFT setup to have the "
+"full translational symmetry — e.g. no magnetic order enlarging the cell; for"
+" a DFT supercell of the anphon cell one translation image per atom is used)."
+" ``strainifc.py check`` prints the full picture before any DFT calculation "
+"is run."
+msgstr ""
+"生成される入力と力定数ファイルは、テンプレート構造の順序を保持します。``--coupling harmonic`` では、テンプレートは anphon"
+" に与える力定数ファイルのスーパーセルでなければなりません。``collect`` はこれを ``--fcs`` "
+"とインデックスごとに照合し、生成されたすべての力定数ファイルの並進テーブルが同一であることを確認します。一方、``strain_force.in`` "
+"の行は anphon の基本セルの原子、すなわち力定数ファイルのスーパーセルを ``&cell`` "
+"格子に折り畳み、各サイトの最初の出現を残して得られる順序を指します (``&cell`` のない ``.h5`` "
+"ファイルの場合は、保存されている基本セル)。参照力定数ファイル (``--fcs``、anphon 実行の "
+"``FC2FILE``/``FCSFILE``) と anphon の入力 (``--anphon-cell``) を ``collect`` "
+"に与えてください。DFT セルの原子は位置によってそのセルに対応付けられ、行は anphon の順序で書き出され、その前にそのセルを記録する "
+"``&reference_cell`` ヘッダーが付加されます (テンプレートの原子が並べ替えられている場合、``--reorder`` "
+"が指定されていなければエラーとして報告されます。anphon のセルが慣用セルの場合、並進で等価な原子の行が複製されるため、DFT "
+"のセットアップが完全な並進対称性を持っている必要があります。例えば、磁気秩序によってセルが拡大されていてはいけません。DFT セルが anphon "
+"セルのスーパーセルである場合、原子ごとに 1 つの並進イメージが使用されます)。``strainifc.py check`` は、DFT "
+"計算を実行する前に全体像を出力します。"
+
+#: ../../source/anphondir/strain_tools.rst:195
+msgid "The ``&reference_cell`` header of strain_force.in"
+msgstr "strain_force.in の ``&reference_cell`` ヘッダー"
+
+#: ../../source/anphondir/strain_tools.rst:197
+msgid ""
+"``strain_force.in`` holds one force row per atom, so by itself it is tied to"
+" the atom list of the cell the strained calculations were done for. "
+"``strainifc.py collect --fcs ...`` therefore records that cell at the top of"
+" the file::"
+msgstr ""
+"``strain_force.in`` は原子ごとに 1 行の力を保持するため、それ自体はひずみ計算を行ったセルの原子リストに結び付いています。そのため"
+" ``strainifc.py collect --fcs ...`` はそのセルをファイルの先頭に記録します::"
+
+#: ../../source/anphondir/strain_tools.rst:215
+msgid ""
+"i.e. a scale factor and three lattice vectors (one per line) as in the "
+"``&cell`` field (here Å converted to bohr), the number of atoms, one line "
+"``symbol x y z`` per atom in fractional coordinates, and a closing ``/``. No"
+" comments are allowed anywhere in the file: anphon reads it as a plain "
+"stream of tokens."
+msgstr ""
+"すなわち、``&cell`` フィールドと同様のスケール因子と 3 つの格子ベクトル (1 行に 1 つ。ここでは Å を bohr "
+"に変換したもの)、原子数、原子ごとに 1 行の ``symbol x y z`` (分数座標)、そして閉じる ``/`` "
+"です。ファイル内のどこにもコメントを書くことはできません。anphon はこのファイルを単純なトークンの並びとして読み込みます。"
+
+#: ../../source/anphondir/strain_tools.rst:220
+msgid ""
+"With the header, anphon compares this cell with its own primitive cell (the "
+"``&cell`` field) and matches the atoms by position, so the row order in the "
+"file no longer matters. If the anphon cell is an integer supercell of the "
+"reference cell — for instance an enlarged ``&cell`` chosen to condense a "
+"zone-boundary instability — every row is copied onto the translation images "
+"of its atom; if it is a sub-cell, the images are averaged (a warning reports"
+" their spread when it exceeds 1e-8 eV/Å). The two cells must describe the "
+"same crystal in the same Cartesian frame, and one must be an integer "
+"supercell of the other: rotated settings and commensurate but non-nested "
+"cells, inconsistent atom counts and atoms without a counterpart are rejected"
+" with an explicit message. anphon logs the atom counts and the volume ratio "
+"of the mapping it applied. Without the header the rows must follow the atom "
+"order of the anphon primitive cell, as before."
+msgstr ""
+"ヘッダーがある場合、anphon はこのセルを自身の基本セル (``&cell`` フィールド) "
+"と比較し、原子を位置によって対応付けるため、ファイル内の行の順序は問題になりません。anphon のセルが参照セルの整数倍のスーパーセルである場合 "
+"(例えば、ゾーン境界の不安定性を凝縮させるために拡大した ``&cell`` "
+"を選んだ場合)、各行はその原子の並進イメージにコピーされます。サブセルである場合、イメージは平均化されます (それらのばらつきが 1e-8 eV/Å "
+"を超えると警告が出力されます)。2 "
+"つのセルは同じデカルト座標系で同じ結晶を記述し、一方が他方の整数倍のスーパーセルでなければなりません。回転した設定、整合するがネストしていないセル、原子数の不一致、対応する原子のない原子は、明示的なメッセージとともに拒否されます。anphon"
+" は適用した対応付けの原子数と体積比をログに出力します。ヘッダーがない場合、行は従来どおり anphon の基本セルの原子順序に従わなければなりません。"
+
+#: ../../source/anphondir/strain_tools.rst:232
+msgid ""
+"``elastic_constants.in`` and ``C1_array.in`` need no such header: written in"
+" GPa they do not depend on the cell size (the reference structure and the "
+"Cartesian frame must of course be the same), and anphon multiplies them by "
+"the volume of its own primitive cell."
+msgstr ""
+"``elastic_constants.in`` と ``C1_array.in`` にはこのようなヘッダーは不要です。GPa "
+"単位で書かれていればセルサイズに依存せず (もちろん参照構造とデカルト座標系は同じでなければなりません)、anphon "
+"はそれらに自身の基本セルの体積を乗じます。"
+
+#: ../../source/anphondir/strain_tools.rst:237
+msgid "elastic.py"
+msgstr "elastic.py"
+
+#: ../../source/anphondir/strain_tools.rst:249
+#, python-brace-format
+msgid ""
+"``generate`` creates the unstrained reference ``strain_000`` and strained "
+"cells :math:`u = k\\,s\\,d` for :math:`k = \\pm 1, \\ldots, \\pm "
+"n_\\mathrm{mag}` along a set of directions :math:`d` in the six-dimensional "
+"strain space: ``minimal`` (6 single + 15 pair directions, 85 calculations "
+"with the defaults) determines all constants from the stresses; ``full`` (56 "
+"directions, 225 calculations) is required when only energies are fitted. "
+"``fit`` builds the second Piola–Kirchhoff stress :math:`S = \\det(F) "
+"F^{-1}\\sigma F^{-T}` from the DFT (Cauchy) stress and solves the linear "
+"least-squares problem :math:`S(\\eta) = \\sigma_0 + C^{(2)}\\eta + "
+"\\frac{1}{2}C^{(3)}\\eta\\eta` (and/or the energy expansion) for the 83 "
+"independent Voigt components, symmetrizes the tensors over the point group "
+"of the reference structure, prints the constants in GPa and writes the files"
+" in GPa (unit token ``GPa`` after each label), which makes them independent "
+"of the size of the cell anphon uses (they still refer to the DFT reference "
+"structure and its Cartesian frame). ``--fcs``/``--anphon-cell`` are optional"
+" and only report how the anphon cell relates to the DFT cell; when given, "
+"the two cells must be commensurate in the same Cartesian frame: one must be "
+"an integer combination of the lattice vectors of the other (a conventional "
+"anphon cell and a primitive DFT cell, or the reverse); rotated settings are "
+"rejected. ``--compare`` prints the difference to the clamped-ion constants "
+"that anphon prints with ``ELASTIC_CONST = 1``. The forces of the reference "
+"and of the single-mode runs at :math:`k = \\pm 1` are the central-difference"
+" strain–force coupling (weights 1/2), written as ``strain_force.in`` next to"
+" the elastic files (rows in anphon's order with the ``&reference_cell`` "
+"header when ``--fcs`` is given, as ``strainifc.py collect --coupling force``"
+" does). ``--strain-file`` additionally writes the reference stress and the "
+"constants (``/Elastic``) and the strain–force coupling (``/StrainForce``) "
+"into the strain-coupling container; with ``--fcs``/``--anphon-cell`` the "
+"container is labeled with the anphon primitive cell after the DFT reference "
+"structure has been verified to be that crystal. ``show`` prints any "
+"``elastic_constants.in`` in GPa; ``--structure``/``--volume`` are needed "
+"only for legacy files holding :math:`V C` in Ry."
+msgstr ""
+"``generate`` は、ひずみのない参照構造 ``strain_000`` と、6 次元ひずみ空間の一連の方向 :math:`d` に沿った "
+":math:`k = \\pm 1, \\ldots, \\pm n_\\mathrm{mag}` に対するひずませたセル :math:`u = "
+"k\\,s\\,d` を生成します。``minimal`` (6 つの単一方向 + 15 の対方向。既定の設定で 85 計算) "
+"は応力からすべての定数を決定します。``full`` (56 方向、225 計算) はエネルギーのみをフィッティングする場合に必要です。``fit`` "
+"は DFT の (Cauchy) 応力から第 2 Piola–Kirchhoff 応力 :math:`S = \\det(F) "
+"F^{-1}\\sigma F^{-T}` を構成し、線形最小二乗問題 :math:`S(\\eta) = \\sigma_0 + "
+"C^{(2)}\\eta + \\frac{1}{2}C^{(3)}\\eta\\eta` (および/またはエネルギー展開) を 83 個の独立な "
+"Voigt 成分について解き、テンソルを参照構造の点群について対称化し、定数を GPa 単位で出力し、ファイルを GPa 単位で書き出します "
+"(各ラベルの後に単位トークン ``GPa``)。これにより、ファイルは anphon が使用するセルのサイズに依存しなくなります (ただし、DFT "
+"の参照構造とそのデカルト座標系には依然として結び付いています)。``--fcs``/``--anphon-cell`` は省略可能で、anphon "
+"のセルと DFT セルの関係を報告するためだけに使われます。指定した場合、2 "
+"つのセルは同じデカルト座標系で整合していなければなりません。すなわち、一方が他方の格子ベクトルの整数結合でなければなりません (慣用的な anphon "
+"セルと基本 DFT セル、またはその逆)。回転した設定は拒否されます。``--compare`` は、anphon が ``ELASTIC_CONST "
+"= 1`` で出力するクランプトイオンの定数との差を出力します。参照構造と :math:`k = \\pm 1` "
+"の単一モード計算の力は中心差分のひずみ-力結合 (重み 1/2) であり、弾性定数のファイルと並べて ``strain_force.in`` "
+"として書き出されます (``--fcs`` が指定された場合、``strainifc.py collect --coupling force`` "
+"と同様に、行は anphon の順序で ``&reference_cell`` ヘッダー付きで書き出されます)。``--strain-file`` "
+"を指定すると、さらに参照応力と定数 (``/Elastic``) およびひずみ-力結合 (``/StrainForce``) "
+"がひずみ結合コンテナに書き込まれます。``--fcs``/``--anphon-cell`` を指定した場合、DFT "
+"の参照構造がその結晶であることを検証した上で、コンテナには anphon の基本セルがラベルとして記録されます。``show`` は任意の "
+"``elastic_constants.in`` を GPa 単位で出力します。``--structure``/``--volume`` "
+"は、:math:`V C` を Ry 単位で保持する従来のファイルに対してのみ必要です。"
+
+#: ../../source/anphondir/strain_tools.rst:277
+msgid "strainifc.py"
+msgstr "strainifc.py"
+
+#: ../../source/anphondir/strain_tools.rst:290
+msgid ""
+"``--fcs`` is mandatory for ``--coupling harmonic`` (unless ``--unchecked``);"
+" for ``--coupling force`` it is optional but recommended: without it the "
+"rows are written in the order of the template, which must then be anphon's "
+"order. ``--anphon-cell`` is required with an XML ``--fcs`` (anphon needs "
+"``&cell`` for XML force-constant files)."
+msgstr ""
+"``--fcs`` は ``--coupling harmonic`` では必須です (``--unchecked`` "
+"を指定した場合を除く)。``--coupling force`` "
+"では省略可能ですが推奨されます。指定しない場合、行はテンプレートの順序で書き出されるため、その順序が anphon の順序でなければなりません。XML "
+"形式の ``--fcs`` を用いる場合は ``--anphon-cell`` が必要です (anphon は XML 力定数ファイルに対して "
+"``&cell`` を必要とします)。"
+
+#: ../../source/anphondir/strain_tools.rst:296
+msgid ""
+"``--coupling force`` (only needed when ``elastic.py fit`` is not run, e.g. "
+"with ``ELASTIC_CONST = 1``): the template is the primitive cell. "
+"``strain_000/primitive`` (reference) and ``strain_NNN/primitive`` (strained "
+"cells) are generated; ``collect`` subtracts the reference forces and writes "
+"``strain_force.in`` in anphon's atom order, with the ``&reference_cell`` "
+"header when ``--fcs`` is given (and ``/StrainForce`` of the container with "
+"``--strain-file``). All six strain modes are required (anphon demands that "
+"the weights of every component sum to 1); ``--modes`` subsets are only "
+"meaningful for ``--coupling harmonic`` with ``RENORM_3TO2ND = 3``."
+msgstr ""
+"``--coupling force`` (``elastic.py fit`` を実行しない場合、例えば ``ELASTIC_CONST = 1`` "
+"の場合にのみ必要): テンプレートは基本セルです。``strain_000/primitive`` (参照) と "
+"``strain_NNN/primitive`` (ひずませたセル) が生成されます。``collect`` "
+"は参照の力を差し引き、``strain_force.in`` を anphon の原子順序で書き出します。``--fcs`` が指定された場合は "
+"``&reference_cell`` ヘッダー付きで書き出されます (``--strain-file`` を指定した場合はコンテナの "
+"``/StrainForce`` にも書き込まれます)。6 つのひずみモードがすべて必要です (anphon はすべての成分について重みの和が 1 "
+"であることを要求します)。``--modes`` による部分集合の指定は、``RENORM_3TO2ND = 3`` を用いる ``--coupling"
+" harmonic`` でのみ意味を持ちます。"
+
+#: ../../source/anphondir/strain_tools.rst:303
+msgid ""
+"``--coupling harmonic``: the template is the **same supercell** as the one "
+"used to fit the harmonic force constants given to anphon. For every strained"
+" supercell the ALM displacement patterns are generated "
+"(``strain_NNN/disp_MM``), plus the undisplaced strained cell "
+"(``strain_NNN/nodisp``) whose residual forces are subtracted unless ``--no-"
+"offset`` is given. ``collect`` fits the harmonic force constants of every "
+"strained supercell with the ``alm`` package (translational invariance "
+"imposed), writes them as ``results/strain_NNN.xml`` (or ``.h5``) and "
+"``results/strain_harmonic.in``; with ``--strain-file`` (which requires "
+"``--fcs-format h5``) the fitted force constants are embedded in "
+"``/StrainHarmonic`` of the container. With ``--with-reference`` the "
+"undeformed supercell is generated as well (``strain_000``); ``collect`` fits"
+" it to ``results/strain_000.*`` (not listed in ``strain_harmonic.in``) and "
+"prints its difference to ``--fcs`` — a direct check that the DFT setup "
+"reproduces the harmonic force constants given to anphon."
+msgstr ""
+"``--coupling harmonic``: テンプレートは、anphon に与える調和力定数のフィッティングに用いたものと "
+"**同じスーパーセル** です。ひずませた各スーパーセルに対して ALM の変位パターンが生成され "
+"(``strain_NNN/disp_MM``)、加えて変位のないひずませたセル (``strain_NNN/nodisp``) "
+"が生成されます。``--no-offset`` が指定されない限り、後者の残留力が差し引かれます。``collect`` は ``alm`` "
+"パッケージを用いてひずませた各スーパーセルの調和力定数をフィッティングし (並進不変性を課します)、``results/strain_NNN.xml``"
+" (または ``.h5``) と ``results/strain_harmonic.in`` として書き出します。``--strain-file`` "
+"を指定した場合 (``--fcs-format h5`` が必要です)、フィッティングされた力定数はコンテナの ``/StrainHarmonic`` "
+"に埋め込まれます。``--with-reference`` を指定すると、変形していないスーパーセルも生成されます "
+"(``strain_000``)。``collect`` はこれを ``results/strain_000.*`` にフィッティングし "
+"(``strain_harmonic.in`` には記載されません)、``--fcs`` との差を出力します。これは、DFT のセットアップが "
+"anphon に与える調和力定数を再現しているかどうかの直接的な確認になります。"
+
+#: ../../source/anphondir/strain_tools.rst:315
+msgid ""
+"A job-script template containing the line ``RUN_DFT_CALCULATION`` (``--job-"
+"template``) and a file with the shell lines that run the DFT code in one "
+"directory (``--dft-command``) produce ``job.sh`` files in the same way as "
+"the original strainIFCcoupling scripts; without them a plain ``run_all.sh`` "
+"loop is written. Template inputs for wurtzite ZnO are provided in "
+"``example/ZnO/strain_IFC_workflow``."
+msgstr ""
+"``RUN_DFT_CALCULATION`` という行を含むジョブスクリプトのテンプレート (``--job-template``) と、1 "
+"つのディレクトリで DFT コードを実行するシェル行を記したファイル (``--dft-command``) を与えると、オリジナルの "
+"strainIFCcoupling スクリプトと同じ方法で ``job.sh`` ファイルが生成されます。これらがない場合は、単純な "
+"``run_all.sh`` ループが書き出されます。ウルツ鉱型 ZnO のテンプレート入力は "
+"``example/ZnO/strain_IFC_workflow`` にあります。"
+
+#: ../../source/anphondir/strain_tools.rst:322
+msgid "Validation"
+msgstr "検証"
+
+#: ../../source/anphondir/strain_tools.rst:324
+msgid ""
+"The tools were validated against the data of the ZnO (QHA) and BaTiO\\ "
+":sub:`3` (SCPH) tutorials with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and "
+"Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the tutorial cells):"
+msgstr ""
+"これらのツールは、ZnO (QHA) および BaTiO\\ :sub:`3` (SCPH) のチュートリアルのデータに対して、VASP 6.5.1 "
+"(PBEsol、PAW_PBE Zn/O および Ba_sv/Ti_sv/O、ENCUT 600/550 eV、チュートリアルのセル) "
+"を用いて検証されました。"
+
+#: ../../source/anphondir/strain_tools.rst:327
+msgid ""
+"``strain_force.in`` (ZnO, one-sided, smag 0.005) reproduces the tutorial "
+"file to 1e-6 eV/Å; the harmonic force constants of the undeformed 4×4×2 "
+"(ZnO) and 2×2×2 (BaTiO\\ :sub:`3`) supercells (``--with-reference``) agree "
+"with the tutorial ``FC2FILE`` to at most 7e-5 Ry/bohr\\ :sup:`2` (0.05 %), "
+"and the strain derivatives of the harmonic force constants to 0.2–1 % (RMS)."
+msgstr ""
+"``strain_force.in`` (ZnO、片側差分、smag 0.005) はチュートリアルのファイルを 1e-6 eV/Å "
+"の精度で再現します。変形していない 4×4×2 (ZnO) および 2×2×2 (BaTiO\\ :sub:`3`) スーパーセルの調和力定数 "
+"(``--with-reference``) はチュートリアルの ``FC2FILE`` と最大 7e-5 Ry/bohr\\ :sup:`2` "
+"(0.05 %) の範囲で一致し、調和力定数のひずみ微分は 0.2–1 % (RMS) の範囲で一致します。"
+
+#: ../../source/anphondir/strain_tools.rst:331
+msgid ""
+"Clamped-ion SOEC from ``elastic.py fit --fit stress`` (85 primitive-cell "
+"runs, smag 0.01): ZnO C11/C12/C13/C33/C44 = 276.6/95.7/67.8/302.6/55.2 GPa "
+"vs 277.8/96.3/68.0/303.9/56.1 in the tutorial file; BaTiO\\ :sub:`3` "
+"316.8/110.5/127.3 vs 320.2/113.2/130.3 GPa; dominant TOEC within 1–2 %. "
+"``--fit both`` agrees with ``--fit stress`` to 0.01 GPa; a step of 0.005 "
+"gives a 4× worse condition number, so ``--smag 0.01`` is recommended."
+msgstr ""
+"``elastic.py fit --fit stress`` によるクランプトイオン SOEC (85 回の基本セル計算、smag 0.01): "
+"ZnO の C11/C12/C13/C33/C44 = 276.6/95.7/67.8/302.6/55.2 GPa "
+"に対し、チュートリアルのファイルでは 277.8/96.3/68.0/303.9/56.1。BaTiO\\ :sub:`3` では "
+"316.8/110.5/127.3 に対し 320.2/113.2/130.3 GPa。主要な TOEC は 1–2 % "
+"の範囲で一致します。``--fit both`` は ``--fit stress`` と 0.01 GPa の範囲で一致します。ステップ 0.005 "
+"では条件数が 4 倍悪化するため、``--smag 0.01`` を推奨します。"
+
+#: ../../source/anphondir/strain_tools.rst:336
+msgid ""
+"End to end, the regenerated inputs give thermal strains within 1 % (ZnO QHA,"
+" 0–1000 K) and 2 % (BaTiO\\ :sub:`3` SCPH, 280–300 K, including the "
+"tetragonal phase) of the tutorial results."
+msgstr ""
+"全体として、再生成した入力から得られる熱ひずみは、チュートリアルの結果に対して 1 % (ZnO QHA、0–1000 K) および 2 % "
+"(BaTiO\\ :sub:`3` SCPH、280–300 K、正方晶相を含む) の範囲で一致します。"
+
+#: ../../source/anphondir/strain_tools.rst:338
+#, python-format
+msgid ""
+"The one-sided finite difference of the strain–force coupling (the scheme of "
+"the original data) biases the c-axis expansion of ZnO at 1000 K by about +12"
+" % relative to central differences (``--central``, 13 instead of 7 "
+"primitive-cell runs) — use ``--central`` for this coupling."
+msgstr ""
+"ひずみ-力結合の片側有限差分 (オリジナルのデータのスキーム) は、中心差分 (``--central``、基本セル計算が 7 回ではなく 13 回) "
+"に比べて、1000 K における ZnO の c 軸の膨張に約 +12 % のバイアスを与えます。この結合には ``--central`` "
+"を使用してください。"
+
+#: ../../source/anphondir/strain_tools.rst:341
+#, python-brace-format, python-format
+msgid ""
+"``C1_array.in`` from the residual stress of the reference (-0.04 GPa for "
+"ZnO) shifts the 0 K cell by :math:`-C^{-1}\\sigma_0` as expected (up to 4 % "
+"of the thermal strain); ``ELASTIC_CONST = 1`` overestimates u\\ :sub:`zz` of"
+" ZnO by 33 % at 1000 K because of its C13/C33 error (see above). With the "
+"dipole correction (``NONANALYTIC = 3`` and the ``BORNINFO`` of "
+"``example/ZnO/qha_relax``, PBEsol DFPT: :math:`\\varepsilon_\\infty` = "
+"6.61/5.95, Z*(Zn) = 2.14/2.17) the IFC-derived C13/C33 move from 25/374 to "
+"52/323 GPa (DFT 68/303) and the u\\ :sub:`zz` error drops to 25 %. For cubic"
+" BaTiO\\ :sub:`3` (``BORNINFO`` of ``example/BaTiO3/scph_relax``: "
+":math:`\\varepsilon_\\infty` = 6.79, Z*(Ti) = 7.40, "
+":math:`Z^{*}(\\mathrm{O}_{\\parallel})` = -5.86) the IFC route gives "
+"C11/C12/C44 = 391/216/123 GPa uncorrected and 346/71/125 GPa with the dipole"
+" correction, vs 317/110/127 GPa from ``elastic.py`` when the tutorial 2×2×2 "
+"harmonic cell is used. The IFC route does converge with the size of the "
+"harmonic supercell given as ``FC2FILE``: with the dipole correction, 3×3×3 "
+"gives 295/117/125 GPa and 4×4×4 gives 318/117/127 GPa (without it the values"
+" oscillate: 254/130/125 and 359/140/127), because the minimum-image reach of"
+" the 2×2×2 cell (a = 3.99 Å) aliases every shell from the second Ti–O "
+"neighbour outward. Hence use ``ELASTIC_CONST = 1`` only with a harmonic "
+"supercell of at least 3×3×3 *and* ``NONANALYTIC = 3`` for such polar "
+"perovskites; otherwise the DFT route (``elastic.py``, a few minutes for the "
+"5-atom cell) is the recommended source of the elastic constants for polar "
+"materials."
+msgstr ""
+"参照構造の残留応力 (ZnO では -0.04 GPa) から得た ``C1_array.in`` は、期待どおり 0 K のセルを "
+":math:`-C^{-1}\\sigma_0` だけシフトさせます (熱ひずみの最大 4 %)。``ELASTIC_CONST = 1`` は、その "
+"C13/C33 の誤差 (上記参照) のために、1000 K における ZnO の u\\ :sub:`zz` を 33 % 過大評価します。双極子補正"
+" (``NONANALYTIC = 3`` と ``example/ZnO/qha_relax`` の ``BORNINFO``。PBEsol "
+"DFPT: :math:`\\varepsilon_\\infty` = 6.61/5.95、Z*(Zn) = 2.14/2.17) を用いると、IFC"
+" から求めた C13/C33 は 25/374 から 52/323 GPa (DFT では 68/303) に移り、u\\ :sub:`zz` の誤差は"
+" 25 % まで減少します。立方晶 BaTiO\\ :sub:`3` (``example/BaTiO3/scph_relax`` の "
+"``BORNINFO``: :math:`\\varepsilon_\\infty` = 6.79、Z*(Ti) = "
+"7.40、:math:`Z^{*}(\\mathrm{O}_{\\parallel})` = -5.86) では、チュートリアルの 2×2×2 "
+"調和セルを用いた場合、IFC 経路は C11/C12/C44 = 391/216/123 GPa (補正なし) および 346/71/125 GPa "
+"(双極子補正あり) を与えるのに対し、``elastic.py`` からは 317/110/127 GPa が得られます。IFC "
+"経路は、``FC2FILE`` として与える調和スーパーセルのサイズに関して確かに収束します。双極子補正ありで、3×3×3 では 295/117/125"
+" GPa、4×4×4 では 318/117/127 GPa が得られます (補正なしでは値が振動します: 254/130/125 および "
+"359/140/127)。これは、2×2×2 セル (a = 3.99 Å) の最小イメージの到達範囲では、第 2 近接 Ti–O "
+"より外側のすべてのシェルがエイリアシングされるためです。したがって、このような極性ペロブスカイトでは、``ELASTIC_CONST = 1`` "
+"は少なくとも 3×3×3 の調和スーパーセル *かつ* ``NONANALYTIC = 3`` "
+"と組み合わせた場合にのみ使用してください。それ以外の場合、極性物質の弾性定数の情報源としては DFT 経路 (``elastic.py``、5 "
+"原子セルでは数分) を推奨します。"
+
+#: ../../source/anphondir/strain_tools.rst:357
+msgid ""
+"Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 "
+"(2022)."
+msgstr ""
+"Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 "
+"(2022)."
+
+#: ../../source/anphondir/strain_tools.rst:358
+msgid ""
+"Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 "
+"(2023)."
+msgstr ""
+"Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 "
+"(2023)."

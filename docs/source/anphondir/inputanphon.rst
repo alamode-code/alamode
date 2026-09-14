@@ -1782,7 +1782,9 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: RTA
  :Type: String
- :Description: Case insensitive. ``SOLVER = IBTE`` replaces the deprecated
+ :Description: Case insensitive. For the theoretical background of the three
+               non-RTA solvers, please see :ref:`this page <kappa_beyond_rta>`.
+               ``SOLVER = IBTE`` replaces the deprecated
                ``ITERATIVE = 1`` tag; the iteration is controlled by
                :ref:`MIN_CYCLE <anphon_min_cycle>`, :ref:`MAX_CYCLE <anphon_max_cycle>`,
                :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, and
@@ -2143,7 +2145,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 5
  :Type: Integer
- :Description: Used when ``ITERATIVE = 1``. The convergence test starts only after ``MIN_CYCLE`` iterations have been performed.
+ :Description: Used when ``SOLVER = IBTE``. The convergence test starts only after ``MIN_CYCLE`` iterations have been performed.
 
 ````
 
@@ -2153,7 +2155,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 20
  :Type: Integer
- :Description: Used when ``ITERATIVE = 1``. If the iteration does not converge within ``MAX_CYCLE`` cycles, the last value of the thermal conductivity is kept and the calculation proceeds to the next temperature.
+ :Description: Used when ``SOLVER = IBTE`` or ``VBTE``. If the iteration does not converge within ``MAX_CYCLE`` cycles, the last value of the thermal conductivity is kept and the calculation proceeds to the next temperature.
 
 ````
 
@@ -2163,7 +2165,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0.02
  :Type: Double
- :Description: Used when ``ITERATIVE = 1``. The iteration at each temperature stops when the relative change of every diagonal component of the thermal conductivity tensor between two successive iterations becomes smaller than ``ITER_THRESHOLD``.
+ :Description: Used when ``SOLVER = IBTE`` or ``VBTE``. With ``IBTE``, the iteration at each temperature stops when the relative change of every diagonal component of the thermal conductivity tensor between two successive iterations becomes smaller than ``ITER_THRESHOLD``; with ``VBTE`` it is the tolerance on the relative residual of the linear system (see :ref:`SOLVER <anphon_solver>`).
 
 ````
 
@@ -2173,7 +2175,7 @@ Please specify the initial atomic displacements :math:`u^{(0)}_{\alpha \mu}` [Bo
 
  :Default: 0.9
  :Type: Double
- :Description: Used when ``ITERATIVE = 1``. In each iteration, the updated nonequilibrium distribution is mixed with the previous one as :math:`f_{\mathrm{new}} \leftarrow \alpha f_{\mathrm{new}} + (1-\alpha) f_{\mathrm{old}}` with :math:`\alpha` = ``IBTE_MIXING``. Values smaller than 1 damp oscillations of slowly converging iterations.
+ :Description: Used when ``SOLVER = IBTE``. In each iteration, the updated nonequilibrium distribution is mixed with the previous one as :math:`f_{\mathrm{new}} \leftarrow \alpha f_{\mathrm{new}} + (1-\alpha) f_{\mathrm{old}}` with :math:`\alpha` = ``IBTE_MIXING``. Values smaller than 1 damp oscillations of slowly converging iterations.
 
 ````
 

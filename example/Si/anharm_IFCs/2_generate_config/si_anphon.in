@@ -1,7 +1,7 @@
 &general
   PREFIX = si222_harmonic
   MODE   = phonons
-  FCSFILE = si222_harmonic.xml
+  FCSFILE = si222_harmonic.h5
 
   KD = Si
 /

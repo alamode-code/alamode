@@ -133,7 +133,7 @@ ANPHON: Output files
  :math:`W^{\mu\nu}_{\boldsymbol{q}j}` of :ref:`kappa_peierls` as
  ``/scattering/3ph/velocity_diad``, which ``analyzer.py`` uses so that its
  cumulative and boundary-limited kappa reproduce ``kappa_peierls``), the
- three-phonon (and, when ``QUARTIC = 1``, four-phonon)
+ three-phonon (and, when ``INCLUDE_4PH = 1``, four-phonon)
  linewidths with per-mode completion flags, the isotope-scattering linewidths
  and factors (``/scattering/isotope/gamma``, ``/metadata/isotope_factors``,
  when ``ISOTOPE > 0``), and the final thermal-conductivity
@@ -189,9 +189,11 @@ ANPHON: Output files
 
 * ``PREFIX``.kl_iter
 
- Lattice thermal conductivity tensor obtained with ``SOLVER = IBTE``
- (full 3x3 tensor per temperature). Created when ``MODE = kappa`` and
- ``SOLVER = IBTE``.
+ Lattice thermal conductivity tensor obtained by solving the linearized
+ Boltzmann transport equation beyond the RTA (full 3x3 tensor per
+ temperature). Created when ``MODE = kappa`` and ``SOLVER = IBTE``, ``VBTE``,
+ or ``DBTE``. Temperatures whose iteration did not converge are flagged in a
+ comment line.
 
 * ``PREFIX``.kl_spec
 
