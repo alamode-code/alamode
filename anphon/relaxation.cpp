@@ -82,6 +82,7 @@ void Relaxation::set_default_variables()
     // sets these on rank 0 only; the defaults must match RelaxInputVars so
     // that the other ranks hold defined values until setup_relaxation
     // broadcasts the parsed ones.
+    strain_coupling = 7;
     renorm_3to2nd = 2;
     renorm_2to1st = 2;
     renorm_34to1st = 0;
@@ -135,10 +136,18 @@ void Relaxation::validate_strain_file() const
             throw std::runtime_error(tag + " needs the " + group + " data, but " + strain_file +
                                      " does not contain it.\n " + StrainCouplingFile::missing_group_hint(group));
         };
-        if (elastic_const == 2) need(summary.has_c2c3, "/Elastic", "ELASTIC_CONST = 2");
-        if (renorm_2to1st == 2) need(summary.has_strain_force, "/StrainForce", "RENORM_2TO1ST = 2");
+        if (elastic_const == 2) {
+            need(summary.has_c2c3, "/Elastic", "Reading the elastic constants from file (STRAIN_COUPLING bit 1)");
+        }
+        if (renorm_2to1st == 2) {
+            need(summary.has_strain_force,
+                 "/StrainForce",
+                 "Reading the strain-force coupling from file (STRAIN_COUPLING bit 2)");
+        }
         if (renorm_3to2nd == 2 || renorm_3to2nd == 3) {
-            need(summary.has_strain_harmonic, "/StrainHarmonic", "RENORM_3TO2ND = " + std::to_string(renorm_3to2nd));
+            need(summary.has_strain_harmonic,
+                 "/StrainHarmonic",
+                 "Reading the strain-harmonic-IFC coupling from file (STRAIN_COUPLING bit 4)");
         }
 
         // The reference structure must describe the crystal of this run; the
@@ -242,7 +251,8 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
                 exit("set_elastic_constants", e.what());
             }
             if (!es.has_c2c3) {
-                const auto msg = "ELASTIC_CONST = 2 needs the second- and third-order elastic constants, but " +
+                const auto msg = "Reading the elastic constants from file (STRAIN_COUPLING bit 1) needs the\n"
+                                 " second- and third-order elastic constants, but " +
                                  strain_file + " has no /Elastic/soec and /Elastic/toec datasets.\n " +
                                  strain_coupling::StrainCouplingFile::missing_group_hint("/Elastic");
                 exit("set_elastic_constants", msg.c_str());
@@ -302,7 +312,8 @@ void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_a
 {
     if (fcs_phonon->force_constant_with_cell.size() < 2) {
         exit("set_elastic_constants_from_ifcs",
-             "ELASTIC_CONST = 1 requires the harmonic and cubic force constants in FCSXML.");
+             "Computing the elastic constants from the IFCs (STRAIN_COUPLING bit 1 clear) requires\n"
+             " the harmonic and cubic force constants (FCSFILE, or FC2FILE + FC3FILE).");
     }
     const auto &fc2 = fcs_phonon->force_constant_with_cell[0];
     const auto &fc3 = fcs_phonon->force_constant_with_cell[1];
@@ -346,7 +357,7 @@ void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_a
 
     const auto flags = std::cout.flags();
     const auto prec = std::cout.precision();
-    std::cout << "  ELASTIC_CONST = 1: elastic constants are computed from the force constants.\n";
+    std::cout << "  STRAIN_COUPLING bit 1 clear: elastic constants are computed from the force constants.\n";
     std::cout << "  Harmonic force constants from  : "
               << (fcs_phonon->file_fc2.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc2) << '\n';
     std::cout << "  Cubic force constants from     : "

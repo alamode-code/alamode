@@ -128,9 +128,14 @@ def test_container_round_trip(tmp_path):
         prov = json.loads(sf._decode(f.attrs["provenance"]))
         assert [r["group"] for r in prov] == ["Elastic", "StrainForce"]
     lines = sf.supported_settings(sf.summary(p))
-    assert any("ELASTIC_CONST = 2 : yes" in ln for ln in lines)
-    assert any("RENORM_2TO1ST = 2 : yes" in ln for ln in lines)
-    assert any("RENORM_3TO2ND = 2, 3 : no" in ln for ln in lines)
+    assert any("bit 1 (elastic constants)" in ln and ": yes" in ln for ln in lines)
+    assert any("bit 2 (strain-force coupling)" in ln and ": yes" in ln for ln in lines)
+    assert any(
+        "bit 4 (strain-harmonic-IFC coupling)" in ln and ": no" in ln for ln in lines
+    )
+    assert any(
+        "supported STRAIN_COUPLING values" in ln and ": 0 1 2 3" in ln for ln in lines
+    )
 
 
 def test_update_is_transactional_and_checks_the_crystal(tmp_path):

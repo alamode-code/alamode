@@ -249,8 +249,8 @@ def weight_sum_matrix(points):
 def check_weight_sums(points, require_all=True, tol=1.0e-6):
     """Raise ValueError unless the weight sums satisfy anphon's requirement.
 
-    ``require_all=True`` (strain_force.in, RENORM_3TO2ND = 2): every one of the
-    nine components must sum to 1.  ``require_all=False`` (RENORM_3TO2ND = 3):
+    ``require_all=True`` (strain_force.in, or all strain patterns): every one of the
+    nine components must sum to 1.  ``require_all=False`` (a subset, completed by symmetry):
     each component must sum to 1 or 0.
     Returns the 3x3 weight-sum matrix.
     """

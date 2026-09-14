@@ -111,7 +111,8 @@ def test_harmonic_coupling(cu_supercell):
     assert sf.check(cont, None, ref_h5, log=QUIET) == []
     lines = sf.supported_settings(sf.summary(cont))
     assert any(
-        "RENORM_3TO2ND = 2 : no; = 3 : yes" in ln for ln in lines
+        "bit 4 (strain-harmonic-IFC coupling)" in ln and ": yes (subset" in ln
+        for ln in lines
     )  # xx and yz only
     # a DFT output with displaced atoms is rejected
     import ase.io
@@ -345,6 +346,7 @@ def test_elastic_fit_writes_the_same_strain_force(hcp_setup):
         assert bool(f["StrainForce"].attrs["central"])
         assert "Elastic" in f
     assert sf.check(cont, anphon_cell=cell_prim, fcs=ref, log=QUIET) == []
-    assert "RENORM_2TO1ST = 2 : yes" in "\n".join(
-        sf.supported_settings(sf.summary(cont))
+    assert any(
+        "bit 2 (strain-force coupling)" in ln and ": yes" in ln
+        for ln in sf.supported_settings(sf.summary(cont))
     )

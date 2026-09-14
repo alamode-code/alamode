@@ -5,9 +5,9 @@
 """Strain-IFC coupling workflow (generate / collect / check).
 
 * coupling = "harmonic": harmonic force constants of strained supercells
-  -> strain_harmonic.in + one force-constant file per strain (RENORM_3TO2ND = 2/3)
+  -> strain_harmonic.in + one force-constant file per strain (STRAIN_COUPLING bit 4)
 * coupling = "force": forces in strained primitive cells
-  -> strain_force.in (RENORM_2TO1ST = 2)
+  -> strain_force.in (STRAIN_COUPLING bit 2)
 """
 
 import os
@@ -111,8 +111,7 @@ def generate(
                 "to be covered): " + str(exc)
             ) from None
         warnings.warn(
-            str(exc)
-            + " -- strain_harmonic.in will be usable only with RENORM_3TO2ND = 3",
+            str(exc) + " -- anphon completes the missing strain components by symmetry",
             stacklevel=2,
         )
 
@@ -419,11 +418,11 @@ def collect_harmonic(
     write_strain_harmonic_in(fname, rows)
     try:
         check_weight_sums(_points_from_manifest(manifest), require_all=True)
-        log("  weight sums are 1 for all components (RENORM_3TO2ND = 2 or 3)")
+        log("  weight sums are 1 for all components (all strain components covered)")
     except ValueError:
         check_weight_sums(_points_from_manifest(manifest), require_all=False)
         log(
-            "  NOTE: not all strain components are covered; use RENORM_3TO2ND = 3 (symmetry completion)"
+            "  NOTE: not all strain components are covered; anphon completes the missing ones by symmetry"
         )
     log(f"  written: {fname} (+ {len(rows)} force-constant files in {rdir})")
     if strain_file:

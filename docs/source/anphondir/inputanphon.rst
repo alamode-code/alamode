@@ -42,11 +42,11 @@ List of supported input variables
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
-   :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`ELASTIC_CONST <anphon_elastic_const>`
+   :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`
    :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
-   :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`RENORM_2TO1ST <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST <anphon_renorm_34to1st>`
-   :ref:`RENORM_3TO2ND <anphon_renorm_3to2nd>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAINFILE <anphon_strainfile>`
-   :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`
+   :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   (deprecated: :ref:`ELASTIC_CONST, RENORM_2TO1ST, RENORM_34TO1ST, RENORM_3TO2ND <anphon_elastic_const>`)
    **&analysis**
    :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
    :ref:`DIELEC <anphon_dielec>`, :ref:`DOS <anphon_dos>`, :ref:`FC2_EWALD <anphon_fc2_ewald>`, :ref:`GRUNEISEN <anphon_gruneisen>`
@@ -977,118 +977,173 @@ Description of input variables
 
 ````
 
-.. _anphon_renorm_2to1st:
+.. _anphon_strain_coupling:
 
-* RENORM_2TO1ST-tag = 0 | 1 | 2
+* STRAIN_COUPLING-tag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 10 | 11 | 14 | 15 | 20 | 21 | 24 | 25
 
- === ==============================================================
-  0   Set zero.
-  1   Real-space IFC renormalization. (not recommended)
-  2   Finite difference method with respect to strain.
- === ==============================================================
-
- :Default: 2
+ :Default: 7
  :Type: Integer
 
- :Description: This option specifies the method to calculate first-order derivatives of first-order IFCs with respect to strain
- 
-  :math:`\frac{\partial \Phi_{\mu}(0\alpha)}{\partial u_{\mu_1 \nu_1} }`.
+ :Description: This option selects where the elastic constants and the strain couplings of the
+  cell relaxation come from. It is used only when ``RELAX_STR = 2, 3`` and replaces the four
+  tags ``ELASTIC_CONST``, ``RENORM_2TO1ST``, ``RENORM_34TO1ST`` and ``RENORM_3TO2ND`` of earlier
+  versions (still accepted, see below). Three ingredients are involved; each is either read from
+  the strain-coupling file (``STRAINFILE``, or the legacy text files in ``STRAIN_IFC_DIR``) or
+  obtained without DFT input. The **units digit** is the sum of the values of the ingredients
+  read from the file:
 
-  This option is used only when ``RELAX_STR = 2, 3``.
-  Note that ``RENORM_2TO1ST = 1`` requires rotational invariance on IFCs, which is not checked in the program ANPHON.
-  ``RENORM_2TO1ST = 0`` can be used for high-symmetry materials in which strain-force coupling is zero, which the user needs to confirm.
+  .. list-table::
+     :header-rows: 1
+     :widths: 6 40 22 32
 
-````
+     * - Value
+       - Ingredient
+       - Read from the file
+       - Not read from the file (bit clear)
+     * - 1
+       - Elastic constants :math:`C^{(2)}_{\mu_1 \nu_1, \mu_2 \nu_2}`, :math:`C^{(3)}_{\mu_1 \nu_1, \mu_2 \nu_2, \mu_3 \nu_3}`
+       - ``/Elastic`` (``elastic_constants.in``)
+       - computed from the harmonic and cubic IFCs (see the notes below)
+     * - 2
+       - Strain–force coupling :math:`\partial \Phi_{\mu}(0\alpha) / \partial u_{\mu_1 \nu_1}`
+       - ``/StrainForce`` (``strain_force.in``)
+       - set to zero (valid only when it vanishes by symmetry)
+     * - 4
+       - Strain–harmonic-IFC coupling :math:`\partial \Phi_{\mu_1 \mu_2}(0\alpha_1, R \alpha_2) / \partial u_{\mu \nu}`
+       - ``/StrainHarmonic`` (``strain_harmonic.in``)
+       - computed from the cubic IFCs
 
-.. _anphon_renorm_34to1st:
+  Every combination therefore has a value:
 
-* RENORM_34TO1ST-tag = 0 | 1 
+  .. list-table::
+     :header-rows: 1
+     :widths: 12 14 16 16 42
 
- === ==============================================================
-  0   Set zero.
-  1   Real-space IFC renormalization.
- === ==============================================================
+     * - ``STRAIN_COUPLING``
+       - :math:`C^{(2)}, C^{(3)}`
+       - strain–force
+       - strain–harmonic
+       - typical situation
+     * - 0
+       - IFCs
+       - zero
+       - IFCs
+       - high-symmetry crystal, no strained-cell DFT at all
+     * - 1
+       - file
+       - zero
+       - IFCs
+       - high-symmetry crystal, elastic constants from elsewhere
+     * - 2
+       - IFCs
+       - file
+       - IFCs
+       - ``strainifc.py collect --coupling force`` only
+     * - 3
+       - file
+       - file
+       - IFCs
+       - ``elastic.py fit`` only (it writes both groups)
+     * - 4
+       - IFCs
+       - zero
+       - file
+       - high-symmetry crystal, ``strainifc.py --coupling harmonic`` only
+     * - 5
+       - file
+       - zero
+       - file
+       - high-symmetry crystal, ``/Elastic`` and ``/StrainHarmonic`` only
+     * - 6
+       - IFCs
+       - file
+       - file
+       - ``strainifc.py`` force + harmonic, elastic constants from the IFCs
+     * - 7 (default)
+       - file
+       - file
+       - file
+       - ``elastic.py fit`` + ``strainifc.py collect``
+     * - 10, 11, 14, 15
+       - as 0, 1, 4, 5
+       - **harmonic IFCs**
+       - as 0, 1, 4, 5
+       - expert, see the note on the tens digit
+     * - 20, 21, 24, 25
+       - as 0, 1, 4, 5
+       - **harmonic IFCs**, plus :math:`\partial^2 \Phi_{\mu}(0\alpha)/\partial u^2`, :math:`\partial^3 \Phi_{\mu}(0\alpha)/\partial u^3` from the cubic and quartic IFCs
+       - as 0, 1, 4, 5
+       - expert, see the note on the tens digit
 
- :Default: 0
- :Type: Integer
+  The second strain derivative of the harmonic IFCs and the first strain derivative of the cubic
+  IFCs are always taken from the quartic IFCs. The log echoes the resolved source of every
+  ingredient. ``strainfile.py show`` prints the values a container supports.
 
- :Description: This option specifies the method to calculate second and higher-order derivatives of first-order IFCs with respect to strain. 
+  **Strain–force coupling set to zero** (bit 2 clear, one-digit values). This is exact only in
+  crystals whose site symmetries forbid a strain–force coupling (every atom on a site without free
+  Wyckoff parameters, e.g. diamond, rock salt, cubic perovskites). anphon checks this with the
+  harmonic IFCs, which carry the site symmetry, and prints a warning when the symmetry allows a
+  nonzero coupling.
 
-  :math:`\frac{\partial^2 \Phi_{\mu}(0\alpha)}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2}}`,
-  :math:`\frac{\partial^3 \Phi_{\mu}(0\alpha)}{\partial u_{\mu_1 \nu_1} \partial u_{\mu_2 \nu_2} \partial u_{\mu_3 \nu_3}}`  
+  **Tens digit** (values 10–25). The strain–force coupling is computed from the harmonic IFCs
+  (Appendix C of the `original paper <https://arxiv.org/abs/2302.04537>`_); with a tens digit of
+  2 its second and third strain derivatives are also computed, from the cubic and quartic IFCs.
+  These relations hold only for rotationally invariant IFCs (``ICONST >= 2`` in alm) and are
+  limited by the cutoff of the fitted model, so this route is not recommended; anphon prints a
+  warning, and the result should be validated against a run with the coupling read from the file.
+  The units digit must not contain 2 (the coupling cannot come from both sources).
 
-  This option is used only when ``RELAX_STR = 2, 3``.
-  Note that ``RENORM_34TO1ST = 1`` requires rotational invariance on IFCs, which the user needs to confirm.
+  **Strain–harmonic-IFC coupling from the file** (bit 4). When the file covers only a subset of the
+  strain components (weight sums 1 for the given components, 0 for the rest), the missing ones are
+  generated from the given ones by the space-group operations; this requires that the entries of
+  the rotation matrices of all operations are 0 or :math:`\pm 1` in Cartesian coordinates, and the
+  log says which completion is used.
 
-````
+  **Elastic constants from the IFCs** (bit 1 clear). The clamped-ion second-order elastic
+  constants are computed from the harmonic force constants via the Born long-wave method, and the
+  third-order ones from the cubic force constants following Wallace's formulation. The clamped-ion
+  (not relaxed-ion) constants are used because the internal coordinates are optimized explicitly.
+  The first-order coefficients (the residual stress of the reference structure) are not contained
+  in the force constants and are still taken from ``/Elastic/stress`` of ``STRAINFILE`` or from
+  ``C1_array.in`` when present (set to zero otherwise). The accuracy is limited by the range and
+  the rotational invariance of the fitted force constants; comparing the values printed in the
+  log against DFT elastic constants (``elastic.py fit --compare``) is recommended. In polar
+  crystals, the real-space sums entering the second-order elastic constants converge slowly with
+  the supercell size because of the long-range dipole-dipole interaction. When ``NONANALYTIC = 3``
+  is set (with ``BORNINFO``), the dipole-dipole contribution is separated and resummed analytically
+  (with the macroscopic term excluded, giving the fixed-field response), which largely removes this
+  supercell-size error; using ``NONANALYTIC = 3`` together with the IFC route is therefore strongly
+  recommended for polar materials. The third-order elastic constants remain short-range because
+  the strain derivatives of the Born charges are not contained in the force constants.
 
-.. _anphon_renorm_3to2nd:
-
-* RENORM_3TO2ND-tag = 1 | 2 | 3
-
- === ==============================================================
-  1   Real-space IFC renormalization.
-  2   Finite difference method (Read input from all six strain patterns).
-  3   Finite difference method (Read input from specified strain patterns).
- === ==============================================================
-
- :Default: 2
- :Type: Integer
-
- :Description: This option specifies the method to calculate first-order derivatives of harmonic IFCs with respect to strain.
- 
-  :math:`\frac{\partial \Phi_{\mu_1 \mu_2}(0\alpha_1, R \alpha_2)}{\partial u_{\mu \nu}}`
-
-  This option is used only when ``RELAX_STR = 2, 3``.
-  To use ``RENORM_3TO2ND = 3``, the entries of the rotation matrices of ALL the space-group operations must be either 0 or :math:`\pm` 1 in Cartesian representation.
+  **Elastic constants from the file** (bit 1). The constants are generated from DFT calculations of
+  strained cells with the ``tools/elastic.py`` script (see :ref:`this page <label_strain_tools>`)
+  and read from the ``/Elastic`` group of the ``STRAINFILE`` container or, on the legacy route,
+  from ``elastic_constants.in`` (and ``C1_array.in``). The text files hold the constants in GPa when
+  their section labels carry the unit token (``SOEC GPa``, ``TOEC GPa``, ``C1 GPa``); anphon
+  multiplies them by the volume of its primitive cell, so the same files serve any nested ``&cell``
+  of the same reference structure (the values are not transformed between Cartesian frames). Files
+  without the unit token (the legacy layout) or with an explicit ``Ry`` token hold :math:`V C` and
+  :math:`V \sigma` in Ry for one specific cell, which anphon cannot check: a warning is printed
+  when such a file is used together with a user-defined ``&cell``.
 
 ````
 
 .. _anphon_elastic_const:
+.. _anphon_renorm_2to1st:
+.. _anphon_renorm_34to1st:
+.. _anphon_renorm_3to2nd:
 
-* ELASTIC_CONST-tag = 1 | 2
+* ELASTIC_CONST, RENORM_2TO1ST, RENORM_34TO1ST, RENORM_3TO2ND-tags (deprecated)
 
- === ==============================================================
-  1   Computed from the force constants.
-  2   Read from ``/Elastic`` of ``STRAINFILE`` (or the file ``elastic_constants.in``).
- === ==============================================================
-
- :Default: 2
- :Type: Integer
-
- :Description: This option specifies how to obtain the elastic constants
-  :math:`C^{(2)}_{\mu_1 \nu_1, \mu_2 \nu_2}` and :math:`C^{(3)}_{\mu_1 \nu_1, \mu_2 \nu_2, \mu_3 \nu_3}`
-  entering the strain dependence of the static potential energy :math:`V_0(u)`.
-
-  With ``ELASTIC_CONST = 1``, the clamped-ion second-order elastic constants are computed from the
-  harmonic force constants via the Born long-wave method, and the third-order ones from the cubic
-  force constants following Wallace's formulation; the file ``elastic_constants.in`` is not needed.
-  The clamped-ion (not relaxed-ion) constants are used because the internal coordinates are
-  optimized explicitly. The first-order coefficients (the residual stress of the reference
-  structure) are not contained in the force constants and are still taken from
-  ``/Elastic/stress`` of ``STRAINFILE`` or from ``C1_array.in`` when present (set to zero otherwise).
-
-  Note that the accuracy of ``ELASTIC_CONST = 1`` is limited by the range and the rotational
-  invariance of the fitted force constants; comparing the values printed in the log against
-  DFT elastic constants is recommended. In polar crystals, the real-space sums entering the
-  second-order elastic constants converge slowly with the supercell size because of the
-  long-range dipole-dipole interaction. When ``NONANALYTIC = 3`` is set (with ``BORNINFO``),
-  the dipole-dipole contribution is separated and resummed analytically (with the macroscopic
-  term excluded, giving the fixed-field response), which largely removes this supercell-size
-  error; using ``NONANALYTIC = 3`` together with ``ELASTIC_CONST = 1`` is therefore strongly
-  recommended for polar materials. The third-order elastic constants remain short-range because
-  the strain derivatives of the Born charges are not contained in the force constants.
-  This option is used only when ``RELAX_STR = 2, 3``.
-  With ``ELASTIC_CONST = 2``, the constants are generated from DFT calculations of strained cells
-  with the ``tools/elastic.py`` script (see :ref:`this page <label_strain_tools>`) and read from the
-  ``/Elastic`` group of the ``STRAINFILE`` container or, on the legacy route, from
-  ``elastic_constants.in`` (and ``C1_array.in``). The text files hold the constants in GPa when their section labels carry the unit token
-  (``SOEC GPa``, ``TOEC GPa``, ``C1 GPa``); anphon multiplies them by the volume of its
-  primitive cell, so the same files serve any nested ``&cell`` of the same reference structure
-  (the values are not transformed between Cartesian frames). Files without the unit token (the
-  legacy layout) or with an explicit ``Ry`` token hold :math:`V C` and :math:`V \sigma` in Ry
-  for one specific cell, which anphon cannot check: a warning is printed when such a file is
-  used together with a user-defined ``&cell``.
+ :Description: The four tags replaced by ``STRAIN_COUPLING``. They are still accepted and override
+  the individual switches (a warning names the equivalent ``STRAIN_COUPLING`` value); they will be
+  removed in a later release. ``ELASTIC_CONST = 1, 2``: elastic constants from the IFCs / the file
+  (bit 1). ``RENORM_2TO1ST = 0, 1, 2``: strain–force coupling zero / from the harmonic IFCs (tens
+  digit) / from the file (bit 2). ``RENORM_34TO1ST = 0, 1``: its higher strain derivatives zero /
+  from the cubic and quartic IFCs (tens digit 2). ``RENORM_3TO2ND = 1, 2, 3``: strain–harmonic-IFC
+  coupling from the cubic IFCs / from the file (bit 4; the former distinction between all and a
+  subset of the strain patterns is now detected from the file).
 
 ````
 
@@ -1101,11 +1156,11 @@ Description of input variables
 
  :Description: The HDF5 container (schema ``alamode:strain_coupling``) holding every
    input of the cell relaxation that anphon cannot compute from the force constants:
-   the reference stress and the elastic constants (``/Elastic``, used with
-   ``ELASTIC_CONST = 2``; the stress also with ``ELASTIC_CONST = 1``), the strain–force
-   coupling (``/StrainForce``, ``RENORM_2TO1ST = 2``) and the strain–harmonic-IFC
+   the reference stress and the elastic constants (``/Elastic``, used with bit 1 of
+   ``STRAIN_COUPLING``; the stress also with bit 1 clear), the strain–force
+   coupling (``/StrainForce``, bit 2) and the strain–harmonic-IFC
    coupling with the force constants of the strained supercells embedded
-   (``/StrainHarmonic``, ``RENORM_3TO2ND = 2, 3``). It is produced with ``--strain-file`` by
+   (``/StrainHarmonic``, bit 4). It is produced with ``--strain-file`` by
    ``elastic.py fit`` (``/Elastic`` and ``/StrainForce``, the latter from the same strained
    primitive cells) and ``strainifc.py collect`` (``/StrainHarmonic``; ``--coupling force``
    for runs without ``elastic.py``), or from existing text files with ``strainfile.py pack``; see :ref:`this page <label_strain_container>`. anphon verifies the
@@ -1126,10 +1181,10 @@ Description of input variables
  :Type: String
 
  :Description: The legacy alternative to ``STRAINFILE`` (anphon prints a note when it is used;
-   ``strainfile.py pack`` converts the directory into a container). When ``RENORM_2TO1ST = 2`` or ``RENORM_3TO2ND = 2, 3``,
-   the input files of the strain-IFC couplings (``strain_force.in``, ``strain_harmonic.in`` and the
-   force-constant files it lists) must be given in this directory, as well as ``elastic_constants.in``
-   when ``ELASTIC_CONST = 2``. Note that ``C1_array.in`` is read from the working directory of anphon,
+   ``strainfile.py pack`` converts the directory into a container). The input files of the
+   strain-IFC couplings (``strain_force.in`` for bit 2 of ``STRAIN_COUPLING``, ``strain_harmonic.in``
+   and the force-constant files it lists for bit 4) must be given in this directory, as well as
+   ``elastic_constants.in`` for bit 1. Note that ``C1_array.in`` is read from the working directory of anphon,
    not from this directory. See :ref:`this page <label_strain_tools>` for the file formats and the
    tools that generate them. When the ``&cell`` field selects a cell different from the one the
    strain-force calculations were done for (for instance an enlarged cell chosen to condense a

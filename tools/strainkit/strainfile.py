@@ -615,33 +615,37 @@ def summary(path):
 
 
 def supported_settings(info):
-    """Which anphon settings the container supports, as text lines."""
+    """Which anphon settings the container supports, as text lines: one per
+    bit of STRAIN_COUPLING and the list of values the file can serve."""
 
     lines = []
+    bits = 0
     el = info["elastic"]
+    ok = bool(el and el[1] is not None)
+    bits |= 1 if ok else 0
     lines.append(
-        "ELASTIC_CONST = 2 : "
-        + (
-            "yes (C2, C3 present)"
-            if el and el[1] is not None
-            else "no (no /Elastic/soec,toec)"
-        )
+        "STRAIN_COUPLING bit 1 (elastic constants)            : "
+        + ("yes (C2, C3 present)" if ok else "no (no /Elastic/soec,toec)")
     )
     lines.append(
-        "reference stress  : "
+        "reference stress                                     : "
         + ("present" if el and el[0] is not None else "absent (sigma0 = 0)")
     )
     sf = info["strain_force"]
     if sf:
         w = weight_sum_matrix([b[0] for b in sf[0]], [b[2] for b in sf[0]])
         ok = np.allclose(w, 1.0, atol=1.0e-6)
+        bits |= 2 if ok else 0
         lines.append(
-            "RENORM_2TO1ST = 2 : "
+            "STRAIN_COUPLING bit 2 (strain-force coupling)        : "
             + ("yes" if ok else f"no (weight sums are not 1 for every component:\n{w})")
         )
     else:
-        lines.append("RENORM_2TO1ST = 2 : no (no /StrainForce)")
+        lines.append(
+            "STRAIN_COUPLING bit 2 (strain-force coupling)        : no (no /StrainForce)"
+        )
     sh = info["strain_harmonic"]
+    label = "STRAIN_COUPLING bit 4 (strain-harmonic-IFC coupling) : "
     if sh:
         w = weight_sum_matrix([r[0] for r in sh[0]], [r[2] for r in sh[0]])
         full = np.allclose(w, 1.0, atol=1.0e-6)
@@ -649,8 +653,10 @@ def supported_settings(info):
             np.isclose(w, 1.0, atol=1.0e-6) | np.isclose(w, 0.0, atol=1.0e-6)
         )
         if full:
-            lines.append("RENORM_3TO2ND = 2 : yes (all components covered); = 3 : yes")
+            bits |= 4
+            lines.append(label + "yes (all components covered)")
         elif partial:
+            bits |= 4
             covered = [
                 f"{'xyz'[i]}{'xyz'[j]}"
                 for i in range(3)
@@ -658,16 +664,21 @@ def supported_settings(info):
                 if abs(w[i, j] - 1.0) < 1.0e-6
             ]
             lines.append(
-                "RENORM_3TO2ND = 2 : no; = 3 : yes (covered components: "
+                label
+                + "yes (subset; anphon completes the rest by symmetry; covered components: "
                 + ", ".join(covered)
                 + ")"
             )
         else:
-            lines.append(
-                f"RENORM_3TO2ND = 2, 3 : no (weight sums must be 1 or 0 per component):\n{w}"
-            )
+            lines.append(label + f"no (weight sums must be 1 or 0 per component):\n{w}")
     else:
-        lines.append("RENORM_3TO2ND = 2, 3 : no (no /StrainHarmonic)")
+        lines.append(label + "no (no /StrainHarmonic)")
+    values = [v for v in range(8) if v & ~bits == 0]
+    lines.append(
+        "supported STRAIN_COUPLING values                     : "
+        + " ".join(str(v) for v in values)
+        + (" (default 7)" if 7 in values else " (the default 7 needs all three groups)")
+    )
     return lines
 
 

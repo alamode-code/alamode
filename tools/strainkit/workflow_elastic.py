@@ -498,7 +498,8 @@ def _write_container(
 
 
 def parse_anphon_elastic_log(path):
-    """6x6 Voigt table (GPa) printed by anphon for ELASTIC_CONST = 1."""
+    """6x6 Voigt table (GPa) printed by anphon when the elastic constants are
+    computed from the IFCs (STRAIN_COUPLING bit 1 clear)."""
     with open(path, errors="replace") as f:
         lines = f.readlines()
     for i, line in enumerate(lines):
@@ -507,14 +508,16 @@ def parse_anphon_elastic_log(path):
             for k in range(1, 7):
                 rows.append([float(t) for t in lines[i + k].split()[:6]])
             return np.array(rows)
-    raise ValueError(f"{path}: no ELASTIC_CONST = 1 table found")
+    raise ValueError(
+        f"{path}: no elastic-constant table found (STRAIN_COUPLING bit 1 clear)"
+    )
 
 
 def compare_with_anphon_log(path, c2_full):
     ref = parse_anphon_elastic_log(path)
     mine = ef.voigt66(c2_full) * EV_PER_ANG3_TO_GPA
     out = [
-        f"Comparison with the ELASTIC_CONST = 1 table in {path} (GPa, this fit - anphon):"
+        f"Comparison with the IFC-derived elastic constants in {path} (GPa, this fit - anphon):"
     ]
     names = ["xx", "yy", "zz", "yz", "zx", "xy"]
     out.append("        " + "".join(f"{n:>11s}" for n in names))

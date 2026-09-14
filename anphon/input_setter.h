@@ -221,6 +221,9 @@ struct RelaxInputVars
     double add_hess_diag = 100.0; // [cm^{-1}]
     double stat_pressure = 0.0;   // [GPa]
 
+    // STRAIN_COUPLING as given (-1 when the deprecated tags below set a
+    // combination it cannot express); the four switches are derived from it.
+    int strain_coupling = 7;
     int renorm_3to2nd = 2;
     int renorm_2to1st = 2;
     int renorm_34to1st = 0;

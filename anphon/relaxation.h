@@ -245,12 +245,16 @@ public:
     double add_hess_diag;
     double stat_pressure;
 
-    int renorm_3to2nd;
-    int renorm_2to1st;
-    int renorm_34to1st;
+    // STRAIN_COUPLING as given (-1: the deprecated RENORM_*/ELASTIC_CONST
+    // tags set a combination it cannot express). The four switches below
+    // are derived from it in the input parser and are the runtime state.
+    int strain_coupling;
+    int renorm_3to2nd;  // dV2/du: 1 cubic IFCs, 2 file (3 accepted as 2), 4 k-space file (undocumented)
+    int renorm_2to1st;  // dV1/du: 0 zero, 1 harmonic IFCs, 2 file
+    int renorm_34to1st; // d2V1/du2, d3V1/du3: 0 zero, 1 cubic and quartic IFCs
     // Source of the elastic constants entering V0(u): 1 computes the
     // clamped-ion C2 (and C3) analytically from the loaded IFCs, 2 reads
-    // them from elastic_constants.in (default).
+    // them from the file (default).
     int elastic_const;
     std::string strain_IFC_dir;
     std::string strain_file; // STRAINFILE: the HDF5 container replacing the text files
@@ -283,7 +287,7 @@ public:
 
     void set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const;
 
-    // ELASTIC_CONST = 1: clamped-ion C2 and C3 computed from the loaded
+    // STRAIN_COUPLING bit 1 clear: clamped-ion C2 and C3 computed from the loaded
     // harmonic and cubic IFCs (ElasticTensor), converted to Ry per primitive
     // cell. C1 (reference stress) is not contained in the IFC model and is
     // still taken from C1_array.in when present (zero otherwise).

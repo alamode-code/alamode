@@ -92,20 +92,21 @@ same quantities, with the units as attributes and the reference structure once.
   in GPa (``--fcs ZnO442_harmonic.xml --anphon-cell ZnO_qha_thermo.in`` only report how the :red:`anphon` cell
   relates to the DFT cell; ``elastic.py show`` prints any :red:`elastic_constants.in` in GPa).
 
-  Alternatively, setting ``ELASTIC_CONST = 1`` in the ``&relax``-field computes the clamped-ion
-  SOEC and TOEC directly from the harmonic and cubic force constants, in which case
+  Alternatively, clearing bit 1 of ``STRAIN_COUPLING`` in the ``&relax``-field (e.g. ``STRAIN_COUPLING = 6``)
+  computes the clamped-ion SOEC and TOEC directly from the harmonic and cubic force constants, in which case
   :red:`elastic_constants.in` is not needed. The accuracy is limited by the range and the
   rotational invariance of the fitted force constants, so comparing the values printed in the
   log against DFT elastic constants (``elastic.py fit --compare anphon.log``) is recommended.
 
 * The strain-force coupling is obtained from the forces in strained primitive cells.
-  ``elastic.py fit`` writes it from the runs it already has (``ELASTIC_CONST = 2``); with
-  ``ELASTIC_CONST = 1`` use ``strainifc.py generate --coupling force`` / ``strainifc.py collect``.
+  ``elastic.py fit`` writes it from the runs it already has; without ``elastic.py`` (``STRAIN_COUPLING = 6``)
+  use ``strainifc.py generate --coupling force`` / ``strainifc.py collect``.
 
-  Suppose the strain-force coupling is zero, i.e., the atomic force is zero when we apply finite strain with fixed fractional atomic coordinates.
-  In that case you can set ``RENORM_2TO1ST=0`` and omit the corresponding input file.
-  To use ``RENORM_2TO1ST=1``, we need to impose rotational invariance on the IFCs
-  (See Appendix C of the `original paper <https://arxiv.org/abs/2302.04537>`_ for the proof), which is not recommended because it usually worsens the fitting error.
+  Suppose the strain-force coupling is zero by symmetry, i.e., the atomic force is zero when we apply finite strain with fixed fractional atomic coordinates.
+  In that case you can clear bit 2 of ``STRAIN_COUPLING`` (e.g. ``STRAIN_COUPLING = 5``) and omit the corresponding input file
+  (:red:`anphon` warns when the site symmetries allow a nonzero coupling; in wurtzite ZnO they do).
+  The two-digit values (``STRAIN_COUPLING = 15`` etc.) compute the coupling from the harmonic IFCs instead, which requires rotational invariance of the IFCs
+  (See Appendix C of the `original paper <https://arxiv.org/abs/2302.04537>`_ for the proof) and is not recommended because it usually worsens the fitting error.
 
   The name of the input file of the strain-force coupling must be :red:`strain_force.in`.
 

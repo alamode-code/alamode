@@ -951,7 +951,7 @@ void InputParser::parse_relax_vars(PHON *phon)
         "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",    "ALPHA_STDECENT",    "CELL_CONV_TOL",
         "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX", "COOLING_U0_THR",    "ADD_HESS_DIAG",
         "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR",
-        "ELASTIC_CONST", "STRAINFILE"};
+        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING"};
 
     std::map<std::string, std::string> stropt_var_dict;
 
@@ -1007,15 +1007,79 @@ void InputParser::parse_relax_vars(PHON *phon)
     assign_val(relax_vars.add_hess_diag, "ADD_HESS_DIAG", stropt_var_dict);
     assign_val(relax_vars.stat_pressure, "STAT_PRESSURE", stropt_var_dict);
 
-    assign_val(relax_vars.renorm_3to2nd, "RENORM_3TO2ND", stropt_var_dict);
-    assign_val(relax_vars.renorm_2to1st, "RENORM_2TO1ST", stropt_var_dict);
-    assign_val(relax_vars.renorm_34to1st, "RENORM_34TO1ST", stropt_var_dict);
+    // STRAIN_COUPLING selects where the elastic constants and the strain
+    // couplings of the cell relaxation come from. Units digit: the sum of
+    // 1 (elastic constants), 2 (strain-force coupling) and 4 (strain-harmonic-
+    // IFC coupling) for the ingredients read from STRAINFILE / STRAIN_IFC_DIR;
+    // a clear bit means from the IFCs (bit 2: set to zero). Tens digit 1: the
+    // strain-force coupling from the harmonic IFCs, 2: also its second and
+    // third strain derivatives from the cubic and quartic IFCs; both are
+    // exact only for rotationally invariant IFCs.
+    assign_val(relax_vars.strain_coupling, "STRAIN_COUPLING", stropt_var_dict);
+    {
+        const auto v = relax_vars.strain_coupling;
+        const auto tens = v / 10;
+        const auto units = v % 10;
+        if (v < 0 || tens > 2 || units > 7 || (tens > 0 && (units & 2))) {
+            exit("parse_relax_vars",
+                 "STRAIN_COUPLING must be 0-7 (the sum of 1, 2, 4 for the elastic constants, the strain-force\n"
+                 " coupling and the strain-harmonic-IFC coupling read from STRAINFILE) or 10, 11, 14, 15,\n"
+                 " 20, 21, 24, 25 (strain-force coupling from the IFCs; the units digit must not contain 2).");
+        }
+        relax_vars.elastic_const = (units & 1) ? 2 : 1;
+        relax_vars.renorm_2to1st = (units & 2) ? 2 : (tens > 0 ? 1 : 0);
+        relax_vars.renorm_3to2nd = (units & 4) ? 2 : 1;
+        relax_vars.renorm_34to1st = (tens == 2) ? 1 : 0;
+        if (tens > 0 && (relax_str == 2 || relax_str == 3)) {
+            warn("parse_relax_vars",
+                 "STRAIN_COUPLING >= 10: the strain-force coupling is computed from the IFCs, which is exact\n"
+                 " only for rotationally invariant IFCs (ICONST >= 2 in alm). Validate the result against a run\n"
+                 " with the coupling read from STRAINFILE (STRAIN_COUPLING bit 2).");
+        }
+    }
 
-    assign_val(relax_vars.elastic_const, "ELASTIC_CONST", stropt_var_dict);
-    if (relax_vars.elastic_const < 1 || relax_vars.elastic_const > 2) {
-        exit("parse_relax_vars",
-             "ELASTIC_CONST must be 1 (analytic, computed from the force constants)\n"
-             " or 2 (read from elastic_constants.in or /Elastic of STRAINFILE).");
+    // The four tags that STRAIN_COUPLING replaces are still accepted as
+    // overrides of the individual switches (deprecated).
+    {
+        std::string given;
+        for (const auto &tag: {"RENORM_3TO2ND", "RENORM_2TO1ST", "RENORM_34TO1ST", "ELASTIC_CONST"}) {
+            const auto it = stropt_var_dict.find(tag);
+            if (it != stropt_var_dict.end() && !it->second.empty())
+                given += (given.empty() ? "" : ", ") + std::string(tag);
+        }
+        if (!given.empty()) {
+            assign_val(relax_vars.renorm_3to2nd, "RENORM_3TO2ND", stropt_var_dict);
+            assign_val(relax_vars.renorm_2to1st, "RENORM_2TO1ST", stropt_var_dict);
+            assign_val(relax_vars.renorm_34to1st, "RENORM_34TO1ST", stropt_var_dict);
+            assign_val(relax_vars.elastic_const, "ELASTIC_CONST", stropt_var_dict);
+            if (relax_vars.elastic_const < 1 || relax_vars.elastic_const > 2 || relax_vars.renorm_2to1st < 0 ||
+                relax_vars.renorm_2to1st > 2 || relax_vars.renorm_34to1st < 0 || relax_vars.renorm_34to1st > 1 ||
+                relax_vars.renorm_3to2nd < 1 || relax_vars.renorm_3to2nd > 4)
+            {
+                exit("parse_relax_vars",
+                     "Invalid value of a deprecated tag: ELASTIC_CONST = 1, 2; RENORM_2TO1ST = 0, 1, 2;\n"
+                     " RENORM_34TO1ST = 0, 1; RENORM_3TO2ND = 1, 2, 3. Please use STRAIN_COUPLING instead.");
+            }
+            // Name the STRAIN_COUPLING value that reproduces the combination.
+            int equiv = -1;
+            if (relax_vars.renorm_3to2nd != 4) {
+                const int units = (relax_vars.elastic_const == 2 ? 1 : 0) + (relax_vars.renorm_2to1st == 2 ? 2 : 0) +
+                                  (relax_vars.renorm_3to2nd >= 2 ? 4 : 0);
+                if (relax_vars.renorm_2to1st == 1) {
+                    equiv = 10 * (1 + relax_vars.renorm_34to1st) + units;
+                } else if (relax_vars.renorm_34to1st == 0) {
+                    equiv = units;
+                }
+            }
+            relax_vars.strain_coupling = equiv;
+            auto msg = given + ": deprecated, to be removed in a later release. Use STRAIN_COUPLING";
+            if (equiv >= 0) {
+                msg += " = " + std::to_string(equiv) + " for this combination.";
+            } else {
+                msg += " (this combination has no STRAIN_COUPLING value).";
+            }
+            warn("parse_relax_vars", msg.c_str());
+        }
     }
 
     assign_val(relax_vars.strain_IFC_dir, "STRAIN_IFC_DIR", stropt_var_dict);
@@ -1070,9 +1134,10 @@ void InputParser::check_relax_vars() const
                     fin_test.open(relax_vars.strain_IFC_dir + "strain_force.in");
 
                     if (!fin_test) {
-                        exit("check_relax_vars",
-                             "strain_force.in is required in STRAIN_IFC_DIR when RENORM_2TO1ST = 2\n"
-                             " (or give the strain-coupling container as STRAINFILE).");
+                        exit(
+                            "check_relax_vars",
+                            "strain_force.in is required in STRAIN_IFC_DIR when the strain-force coupling is read\n"
+                            " from file (STRAIN_COUPLING bit 2); or give the strain-coupling container as STRAINFILE.");
                     }
                     fin_test.close();
                 }
@@ -1083,8 +1148,9 @@ void InputParser::check_relax_vars() const
 
                     if (!fin_test) {
                         exit("check_relax_vars",
-                             "strain_harmonic.in is required in STRAIN_IFC_DIR when RENORM_3TO2ND >= 2\n"
-                             " (or give the strain-coupling container as STRAINFILE).");
+                             "strain_harmonic.in is required in STRAIN_IFC_DIR when the strain-harmonic-IFC coupling\n"
+                             " is read from file (STRAIN_COUPLING bit 4); or give the strain-coupling container as\n"
+                             " STRAINFILE.");
                     }
 
                     fin_test.close();

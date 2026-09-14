@@ -41,18 +41,18 @@ the pieces belong together and to the cell of the run:
        primitive cell (the ``&cell`` field) describes the same crystal; a nested
        super- or sub-cell is accepted.
    * - ``/Elastic``
-     - ``ELASTIC_CONST = 2`` (``soec``, ``toec``); the reference stress is used
-       with ``ELASTIC_CONST = 1`` as well
+     - ``STRAIN_COUPLING`` bit 1 (``soec``, ``toec``); the reference stress is
+       used with bit 1 clear as well
      - ``stress`` (3×3), ``soec`` (9×9) and ``toec`` (9×9×9) in GPa, the layout
        of the text files (:math:`i = 3\mu + \nu`). The stress may be absent
        (zero is used, with a note); ``soec`` and ``toec`` come together.
    * - ``/StrainForce``
-     - ``RENORM_2TO1ST = 2``
+     - ``STRAIN_COUPLING`` bit 2
      - The strain-mode table (``modes``, ``smag``, ``weight``), the forces
        ``[n_modes, n_atoms, 3]`` in eV/Å, and ``Cell``, the cell the rows
        belong to (the role of the ``&reference_cell`` header of the text file).
    * - ``/StrainHarmonic``
-     - ``RENORM_3TO2ND = 2, 3``
+     - ``STRAIN_COUPLING`` bit 4
      - The strain-mode table and one sub-group ``entry_NNN`` per strained
        supercell holding its harmonic force constants in the layout of the
        alm ``.h5`` files (``SuperCell``, ``ForceConstants/Order2``). anphon
@@ -69,7 +69,7 @@ structure that is not the crystal already stored::
 ``elastic.py fit`` writes ``/Elastic`` **and** ``/StrainForce``: its single-mode runs at
 :math:`\pm s` are exactly the strained primitive cells of the strain–force coupling, so no
 separate ``strainifc.py --coupling force`` calculations are needed. That route remains for
-``ELASTIC_CONST = 1`` runs (no ``elastic.py``)::
+runs that compute the elastic constants from the IFCs (``STRAIN_COUPLING = 6``, no ``elastic.py``)::
 
     strainifc.py collect --coupling force    ... --fcs FC2FILE --anphon-cell anphon.in --strain-file ZnO.strain.h5
 
@@ -114,7 +114,7 @@ The text files are read from the directory given by ``STRAIN_IFC_DIR``
      - Tag
      - Content
    * - ``elastic_constants.in``
-     - ``ELASTIC_CONST = 2``
+     - ``STRAIN_COUPLING`` bit 1
      - Second- and third-order elastic constants in GPa: a label with the unit token
        (``SOEC GPa``), 81 values :math:`C_{\mu_1\nu_1,\mu_2\nu_2}` in the full-index layout
        (:math:`i = 3\mu + \nu`, row-major), a label (``TOEC GPa``) and 729 values. anphon
@@ -125,18 +125,18 @@ The text files are read from the directory given by ``STRAIN_IFC_DIR``
        specific cell; anphon cannot check that cell and warns when such a file is used
        together with a user-defined ``&cell``.
    * - ``C1_array.in`` (working directory)
-     - ``ELASTIC_CONST = 1, 2``
+     - always
      - Reference stress :math:`\sigma_{\mu\nu}` in GPa: ``C1 GPa`` followed by 9 values
        (row-major); files without the unit token (or with ``Ry``) hold :math:`V\sigma` in Ry
        for one specific cell. Zero when the file is absent.
    * - ``strain_force.in``
-     - ``RENORM_2TO1ST = 2``
+     - ``STRAIN_COUPLING`` bit 2
      - Forces (eV/Å) in strained cells, one block per strain mode: a header ``mode smag weight``
        followed by one line ``fx fy fz`` per atom. An optional ``&reference_cell ... /`` header
        (see below) records the cell the rows belong to; without it the rows must follow the
        atom order of the anphon primitive cell.
    * - ``strain_harmonic.in`` + force-constant files
-     - ``RENORM_3TO2ND = 2, 3``
+     - ``STRAIN_COUPLING`` bit 4
      - One line ``mode smag weight filename`` per strained supercell; ``filename`` (relative to
        ``STRAIN_IFC_DIR``, ``.xml`` or ``.h5``) holds the harmonic force constants of the strained
        supercell in Ry/bohr\ :sup:`2`.
@@ -262,7 +262,8 @@ anphon uses (they still refer to the DFT reference structure and its Cartesian f
 cell; when given, the two cells must be commensurate in the same Cartesian frame: one must be
 an integer combination of the lattice vectors of the other (a conventional anphon cell and a
 primitive DFT cell, or the reverse); rotated settings are rejected. ``--compare`` prints the
-difference to the clamped-ion constants that anphon prints with ``ELASTIC_CONST = 1``.
+difference to the clamped-ion constants that anphon prints when it computes them from the IFCs
+(``STRAIN_COUPLING`` bit 1 clear).
 The forces of the reference and of the single-mode runs at :math:`k = \pm 1` are the
 central-difference strain–force coupling (weights 1/2), written as ``strain_force.in`` next to
 the elastic files (rows in anphon's order with the ``&reference_cell`` header when ``--fcs`` is
@@ -294,12 +295,12 @@ written in the order of the template, which must then be anphon's order.
 XML force-constant files).
 
 * ``--coupling force`` (only needed when ``elastic.py fit`` is not run, e.g. with
-  ``ELASTIC_CONST = 1``): the template is the primitive cell. ``strain_000/primitive`` (reference)
+  ``STRAIN_COUPLING = 6``): the template is the primitive cell. ``strain_000/primitive`` (reference)
   and ``strain_NNN/primitive`` (strained cells) are generated; ``collect`` subtracts the reference
   forces and writes ``strain_force.in`` in anphon's atom order, with the ``&reference_cell``
   header when ``--fcs`` is given (and ``/StrainForce`` of the container with ``--strain-file``). All six strain modes are required
   (anphon demands that the weights of every component sum to 1); ``--modes`` subsets are only
-  meaningful for ``--coupling harmonic`` with ``RENORM_3TO2ND = 3``.
+  meaningful for ``--coupling harmonic`` (anphon completes the missing components by symmetry).
 * ``--coupling harmonic``: the template is the **same supercell** as the one used to fit the
   harmonic force constants given to anphon. For every strained supercell the ALM displacement
   patterns are generated (``strain_NNN/disp_MM``), plus the undisplaced strained cell
@@ -339,8 +340,8 @@ with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the t
   biases the c-axis expansion of ZnO at 1000 K by about +12 % relative to central differences
   (``--central``, 13 instead of 7 primitive-cell runs) — use ``--central`` for this coupling.
 * ``C1_array.in`` from the residual stress of the reference (-0.04 GPa for ZnO) shifts the 0 K cell
-  by :math:`-C^{-1}\sigma_0` as expected (up to 4 % of the thermal strain); ``ELASTIC_CONST = 1``
-  overestimates u\ :sub:`zz` of ZnO by 33 % at 1000 K because of its C13/C33 error (see above).
+  by :math:`-C^{-1}\sigma_0` as expected (up to 4 % of the thermal strain); the IFC route for the
+  elastic constants (``STRAIN_COUPLING`` bit 1 clear) overestimates u\ :sub:`zz` of ZnO by 33 % at 1000 K because of its C13/C33 error (see above).
   With the dipole correction (``NONANALYTIC = 3`` and the ``BORNINFO`` of ``example/ZnO/qha_relax``,
   PBEsol DFPT: :math:`\varepsilon_\infty` = 6.61/5.95, Z*(Zn) = 2.14/2.17) the IFC-derived C13/C33 move from 25/374 to 52/323 GPa
   (DFT 68/303) and the u\ :sub:`zz` error drops to 25 %. For cubic BaTiO\ :sub:`3` (``BORNINFO`` of
@@ -350,7 +351,7 @@ with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the t
   size of the harmonic supercell given as ``FC2FILE``: with the dipole correction, 3×3×3 gives
   295/117/125 GPa and 4×4×4 gives 318/117/127 GPa (without it the values oscillate: 254/130/125 and
   359/140/127), because the minimum-image reach of the 2×2×2 cell (a = 3.99 Å) aliases every shell from the
-  second Ti–O neighbour outward. Hence use ``ELASTIC_CONST = 1`` only with a harmonic supercell of at least
+  second Ti–O neighbour outward. Hence use the IFC route only with a harmonic supercell of at least
   3×3×3 *and* ``NONANALYTIC = 3`` for such polar perovskites; otherwise the DFT route (``elastic.py``, a few
   minutes for the 5-atom cell) is the recommended source of the elastic constants for polar materials.
 

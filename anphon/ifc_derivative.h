@@ -211,7 +211,12 @@ private:
                                        const std::complex<double> *const *const *const evec_harmonic,
                                        std::vector<MatrixXcdRowMajor> &del_v2_del_umn, unsigned int nk) const;
 
-    // Strain-force coupling (RENORM_2TO1ST = 2): load the blocks from the
+    // Warn when the zero strain-force coupling (STRAIN_COUPLING bit 2 clear)
+    // is used in a crystal whose symmetry allows a nonzero one.
+    void warn_if_strain_force_coupling_allowed(MatrixXcdRowMajor &work,
+                                               const std::complex<double> *const *const *const evec_harmonic) const;
+
+    // Strain-force coupling (STRAIN_COUPLING bit 2): load the blocks from the
     // configured source, then turn them into del_v1. The two steps are kept
     // apart so that the text files and the HDF5 container feed the same code.
     void calculate_delv1_delumn_finite_difference(MatrixXcdRowMajor &del_v1_del_umn,
@@ -223,13 +228,13 @@ private:
     void process_strain_force_set(const strain_coupling::StrainForceSet &set, MatrixXcdRowMajor &del_v1_del_umn,
                                   const std::complex<double> *const *const *const evec_harmonic) const;
 
-    // Strain-harmonic-IFC coupling (RENORM_3TO2ND = 2, 3), same split. The
+    // Strain-harmonic-IFC coupling (STRAIN_COUPLING bit 4), same split. The
     // loader also reads the force constants of every strained supercell.
     void calculate_delv2_delumn_finite_difference(double **omega2_harmonic,
                                                   const std::complex<double> *const *const *const evec_harmonic,
                                                   std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
                                                   const KpointMeshUniform *kmesh_coarse,
-                                                  const KpointMeshUniform *kmesh_dense, int renorm_3to2nd,
+                                                  const KpointMeshUniform *kmesh_dense,
                                                   const strain_coupling::StrainSource &strain_source,
                                                   MinimumDistList ***mindist_list) const;
 
@@ -243,7 +248,7 @@ private:
                                      const std::complex<double> *const *const *const evec_harmonic,
                                      std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
                                      const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                     int renorm_3to2nd, MinimumDistList ***mindist_list) const;
+                                     MinimumDistList ***mindist_list) const;
 };
 
 } // namespace PHON_NS

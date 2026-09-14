@@ -207,6 +207,25 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
     }
 }
 
+void DerivativeIFC::warn_if_strain_force_coupling_allowed(
+    MatrixXcdRowMajor &work, const std::complex<double> *const *const *const evec_harmonic) const
+{
+    // Setting the strain-force coupling to zero (STRAIN_COUPLING bit 2 clear,
+    // one-digit values) is valid only when the site symmetries forbid it. alm
+    // imposes the crystal symmetry on the harmonic IFCs, so the fc2 estimate
+    // is exactly zero in that case; a nonzero estimate proves that the
+    // symmetry allows a coupling. The estimate itself is not used.
+    compute_dV1_dumn(work, evec_harmonic);
+    const auto norm = work.norm();
+    if (my_rank_ == 0 && norm > 1.0e-8) {
+        std::ostringstream msg;
+        msg << "The strain-force coupling is set to zero, but the site symmetries of this crystal allow a\n"
+            << " nonzero one (estimate from the harmonic IFCs: " << std::scientific << std::setprecision(2) << norm
+            << "). Read it from file (STRAIN_COUPLING bit 2) unless you know it vanishes.";
+        warn("set_del_v_relax_cell", msg.str().c_str());
+    }
+}
+
 void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
                                        const std::complex<double> *const *const *const evec_harmonic) const
 {
@@ -1014,6 +1033,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
     switch (renorm_2to1st) {
     case 0:
         if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
+        warn_if_strain_force_coupling_allowed(del_v_strain.del_v1, evec_harmonic);
         del_v_strain.del_v1.setZero();
         if (my_rank_ == 0) std::cout << "  done!\n";
         break;
@@ -1073,25 +1093,10 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk_interpolate, kmesh_coarse->xk);
         break;
     case 2:
-        if (my_rank_ == 0) {
-            std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
-            std::cout << "    use inputs with all strain patterns ... " << std::flush;
-        }
-
-        calculate_delv2_delumn_finite_difference(omega2_harmonic,
-                                                 evec_harmonic,
-                                                 del_v_strain.del_v2,
-                                                 kmesh_coarse,
-                                                 kmesh_dense,
-                                                 renorm_3to2nd,
-                                                 strain_source,
-                                                 mindist_list);
-        break;
-
     case 3:
         if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
-            std::cout << "    use inputs with specified strain patterns ... " << std::flush;
+            std::cout << "    from the harmonic IFCs of the strained supercells ... " << std::flush;
         }
 
         calculate_delv2_delumn_finite_difference(omega2_harmonic,
@@ -1099,7 +1104,6 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
                                                  del_v_strain.del_v2,
                                                  kmesh_coarse,
                                                  kmesh_dense,
-                                                 renorm_3to2nd,
                                                  strain_source,
                                                  mindist_list);
         break;
@@ -1157,6 +1161,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
 
     if (renorm_2to1st == 0) {
         if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (set as zero) ... ";
+        warn_if_strain_force_coupling_allowed(del_v_strain.del_v1, evec_harmonic);
         del_v_strain.del_v1.setZero();
     } else if (renorm_2to1st == 1) {
         if (my_rank_ == 0) std::cout << "  - first-order derivatives of first-order IFCs (from harmonic IFCs) ... ";
@@ -1190,11 +1195,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
     } else if (renorm_3to2nd == 2 || renorm_3to2nd == 3) {
         if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
-            if (renorm_3to2nd == 2) {
-                std::cout << "   use inputs with all strain patterns ...\n";
-            } else if (renorm_3to2nd == 3) {
-                std::cout << "   use inputs with specified strain patterns ...\n";
-            }
+            std::cout << "    from the harmonic IFCs of the strained supercells ...\n";
         }
 
         calculate_delv2_delumn_finite_difference(omega2_harmonic,
@@ -1202,7 +1203,6 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
                                                  del_v_strain.del_v2,
                                                  kmesh_coarse,
                                                  kmesh_dense,
-                                                 renorm_3to2nd,
                                                  strain_source,
                                                  mindist_list);
     } else if (renorm_3to2nd == 4) {
@@ -1530,7 +1530,7 @@ void DerivativeIFC::process_strain_force_set(const strain_coupling::StrainForceS
 void DerivativeIFC::calculate_delv2_delumn_finite_difference(
     double **omega2_harmonic, const std::complex<double> *const *const *const evec_harmonic,
     std::vector<MatrixXcdRowMajor> &del_v2_del_umn, const KpointMeshUniform *kmesh_coarse,
-    const KpointMeshUniform *kmesh_dense, const int renorm_3to2nd, const strain_coupling::StrainSource &strain_source,
+    const KpointMeshUniform *kmesh_dense, const strain_coupling::StrainSource &strain_source,
     MinimumDistList ***mindist_list) const
 {
     std::vector<std::vector<FcsArrayWithCell>> fc2_deformed;
@@ -1542,7 +1542,6 @@ void DerivativeIFC::calculate_delv2_delumn_finite_difference(
                                 del_v2_del_umn,
                                 kmesh_coarse,
                                 kmesh_dense,
-                                renorm_3to2nd,
                                 mindist_list);
 }
 
@@ -1614,14 +1613,11 @@ DerivativeIFC::load_strain_harmonic_set(const strain_coupling::StrainSource &str
     return set;
 }
 
-void DerivativeIFC::process_strain_harmonic_set(const std::vector<strain_coupling::StrainHarmonicEntry> &entries,
-                                                const std::vector<std::vector<FcsArrayWithCell>> &fc2_deformed,
-                                                double **omega2_harmonic,
-                                                const std::complex<double> *const *const *const evec_harmonic,
-                                                std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
-                                                const KpointMeshUniform *kmesh_coarse,
-                                                const KpointMeshUniform *kmesh_dense, const int renorm_3to2nd,
-                                                MinimumDistList ***mindist_list) const
+void DerivativeIFC::process_strain_harmonic_set(
+    const std::vector<strain_coupling::StrainHarmonicEntry> &entries,
+    const std::vector<std::vector<FcsArrayWithCell>> &fc2_deformed, double **omega2_harmonic,
+    const std::complex<double> *const *const *const evec_harmonic, std::vector<MatrixXcdRowMajor> &del_v2_del_umn,
+    const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense, MinimumDistList ***mindist_list) const
 {
     using namespace Eigen;
 
@@ -1746,28 +1742,28 @@ void DerivativeIFC::process_strain_harmonic_set(const std::vector<strain_couplin
         }
     }
 
-    if (renorm_3to2nd == 2) {
-        for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-            for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                if (std::fabs(weight_sum(ixyz1, ixyz2) - 1.0) < eps6) {
-                    exist_in(ixyz1, ixyz2) = 1;
-                } else {
-                    exit("calculate_delv2_delumn_finite_difference", "Sum of weights must be 1.");
-                }
+    // The set of strain patterns in the file decides the completion: when
+    // every component is covered (all weight sums 1) the derivative is
+    // averaged over the full point group; when only a subset is given (sums
+    // 1 or 0) the missing components are generated from the given ones by
+    // the operations whose rotation matrices are signed permutations.
+    bool all_patterns = true;
+    for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
+        for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
+            if (std::fabs(weight_sum(ixyz1, ixyz2) - 1.0) < eps6) {
+                exist_in(ixyz1, ixyz2) = 1;
+            } else if (std::fabs(weight_sum(ixyz1, ixyz2)) < eps6) {
+                exist_in(ixyz1, ixyz2) = 0;
+                all_patterns = false;
+            } else {
+                exit("calculate_delv2_delumn_finite_difference",
+                     "The weights of the strain patterns must sum to 1 (or 0) for each strain component.");
             }
         }
-    } else if (renorm_3to2nd == 3) {
-        for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
-            for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
-                if (std::fabs(weight_sum(ixyz1, ixyz2) - 1.0) < eps6) {
-                    exist_in(ixyz1, ixyz2) = 1;
-                } else if (std::fabs(weight_sum(ixyz1, ixyz2)) < eps6) {
-                    exist_in(ixyz1, ixyz2) = 0;
-                } else {
-                    exit("calculate_delv2_delumn_finite_difference", "Sum of weights must be 1 or 0 for each mode.");
-                }
-            }
-        }
+    }
+    if (my_rank_ == 0) {
+        std::cout << (all_patterns ? "    all strain components are covered: averaging over the point group\n"
+                                   : "    a subset of the strain components is covered: completing by symmetry\n");
     }
 
     const auto t_symm = stage_clock();
@@ -1779,7 +1775,7 @@ void DerivativeIFC::process_strain_harmonic_set(const std::vector<strain_couplin
     inv_translation_mapping.resize(ntran, ntran);
     symmetry_.make_inverse_translation_mapping(inv_translation_mapping);
 
-    if (renorm_3to2nd == 2) {
+    if (all_patterns) {
         // Symmetrize over reference operations sequentially, parallelizing iat1:
         // each atom writes disjoint output rows. Preserve contribution order
         // within each element and skip exactly zero factors.
@@ -1837,7 +1833,7 @@ void DerivativeIFC::process_strain_harmonic_set(const std::vector<strain_couplin
                 }
             }
         }
-    } else if (renorm_3to2nd == 3) {
+    } else {
         int mapping_xyz[3];
         for (isymm = 0; isymm < symmetry_.SymmListWithMap_ref.size(); isymm++) {
             for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
@@ -1856,7 +1852,9 @@ void DerivativeIFC::process_strain_harmonic_set(const std::vector<strain_couplin
             for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
                 if (mapping_xyz[ixyz1] == -1) {
                     exit("calculate_delv2_delumn_finite_difference",
-                         "RENORM_3TO2ND == 3 cannot be used for this material.");
+                         "The strain-harmonic-IFC coupling covers only a subset of the strain components, and\n"
+                         " the missing ones cannot be completed by symmetry for this crystal (a rotation matrix\n"
+                         " is not a signed permutation in Cartesian coordinates): give all six strain patterns.");
                 }
             }
 

@@ -216,9 +216,27 @@ void Writes::writeInputVars()
             std::cout << "  QHA_SCHEME = " << to_int(qha->qha_scheme) << '\n';
         }
         if (relaxation->relax_str == 2 || relaxation->relax_str == 3) {
-            std::cout << "  RENORM_3TO2ND = " << relaxation->renorm_3to2nd << '\n';
-            std::cout << "  RENORM_2TO1ST = " << relaxation->renorm_2to1st << '\n';
-            std::cout << "  RENORM_34TO1ST = " << relaxation->renorm_34to1st << '\n';
+            if (relaxation->strain_coupling >= 0) {
+                std::cout << "  STRAIN_COUPLING = " << relaxation->strain_coupling << '\n';
+            } else {
+                std::cout << "  STRAIN_COUPLING = (set by the deprecated RENORM_*/ELASTIC_CONST tags)\n";
+            }
+            std::cout << "    elastic constants C2, C3        : "
+                      << (relaxation->elastic_const == 2 ? "file" : "harmonic and cubic IFCs") << '\n';
+            std::cout << "    strain-force coupling dV1/du    : "
+                      << (relaxation->renorm_2to1st == 2   ? "file"
+                          : relaxation->renorm_2to1st == 1 ? "harmonic IFCs (needs rotational invariance)"
+                                                           : "zero")
+                      << '\n';
+            std::cout << "    d2V1/du2, d3V1/du3              : "
+                      << (relaxation->renorm_34to1st == 1 ? "cubic and quartic IFCs (needs rotational invariance)"
+                                                          : "zero")
+                      << '\n';
+            std::cout << "    strain-harmonic coupling dV2/du : "
+                      << (relaxation->renorm_3to2nd == 1   ? "cubic IFCs"
+                          : relaxation->renorm_3to2nd == 4 ? "k-space file (B_array_kspace.txt)"
+                                                           : "file")
+                      << '\n';
             if (!relaxation->strain_file.empty()) {
                 std::cout << "  STRAINFILE = " << relaxation->strain_file << '\n';
             } else {

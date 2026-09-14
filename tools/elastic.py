@@ -118,7 +118,7 @@ def main(argv=None):
     f.add_argument(
         "--compare",
         default=None,
-        help="anphon log with an ELASTIC_CONST = 1 table to compare with",
+        help="anphon log with the elastic-constant table printed when they are computed from the IFCs (STRAIN_COUPLING bit 1 clear)",
     )
     f.add_argument(
         "--min-c3",
