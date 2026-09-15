@@ -1425,8 +1425,17 @@ void InputParser::parse_cell_parameter(PHON *phon)
 void InputParser::parse_selfenergy_vars(PHON *phon)
 {
     // KMESH controls integration; &kpoint and BRANCHES select targets.
-    const std::vector<std::string> input_list{"KMESH",    "BRANCHES", "LINEWIDTH", "SHIFT",       "SELF_W",      "FSTATE_W",
-                                              "PRINTV3", "PRINTV4",  "INTERPOLATE", "KMESH_COARSE", "OMEGA_RANGE"};
+    const std::vector<std::string> input_list{"KMESH",
+                                              "BRANCHES",
+                                              "LINEWIDTH",
+                                              "SHIFT",
+                                              "SELF_W",
+                                              "FSTATE_W",
+                                              "PRINTV3",
+                                              "PRINTV4",
+                                              "INTERPOLATE",
+                                              "KMESH_COARSE",
+                                              "OMEGA_RANGE"};
     std::map<std::string, std::string> var_dict;
     if (from_stdin) {
         std::cin.ignore();
@@ -1457,7 +1466,9 @@ void InputParser::parse_selfenergy_vars(PHON *phon)
         if (kc.size() != 3) exit("parse_selfenergy_vars", "The number of entries for KMESH_COARSE has to be 3.");
         for (auto i = 0; i < 3; ++i) kmesh_coarse[i] = boost::lexical_cast<unsigned int>(kc[i]);
     }
-    double omega_range[3] = {-1.0, -1.0, -1.0}; // min max step (cm^-1); default: the DOS grid (0 .. 2 omega_max, DELTA_E)
+    double omega_range[3] = {-1.0,
+                             -1.0,
+                             -1.0}; // min max step (cm^-1); default: the DOS grid (0 .. 2 omega_max, DELTA_E)
     if (var_dict.find("OMEGA_RANGE") != var_dict.end()) {
         std::vector<std::string> ov;
         split_str_by_space(var_dict["OMEGA_RANGE"], ov);
@@ -1475,8 +1486,18 @@ void InputParser::parse_selfenergy_vars(PHON *phon)
     assign_val(print_v3, "PRINTV3", var_dict);
     assign_val(print_v4, "PRINTV4", var_dict);
 
-    input_setter->set_selfenergy_vars(phon, kmesh, branches, linewidth, shift, self_w, fstate_w, print_v3, print_v4,
-                                      interpolate, kmesh_coarse, omega_range);
+    input_setter->set_selfenergy_vars(phon,
+                                      kmesh,
+                                      branches,
+                                      linewidth,
+                                      shift,
+                                      self_w,
+                                      fstate_w,
+                                      print_v3,
+                                      print_v4,
+                                      interpolate,
+                                      kmesh_coarse,
+                                      omega_range);
 }
 
 void InputParser::parse_kpoints(PHON *phon)

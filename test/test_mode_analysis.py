@@ -25,13 +25,27 @@ import numpy as np
 
 CASES = {
     "si": {
-        "inputs": ["si_v3_1.in", "si_v3_2.in", "si_tetra.in", "si_off.in", "si_offt.in", "si_se_list.in", "si_se_path.in", "si_se_h5.in", "si_se_int.in"],
-        "files": ["../../../example/Si/reference/si222_cubic.xml.bz2"],  # relative to test/mode_analysis/si
+        "inputs": [
+            "si_v3_1.in",
+            "si_v3_2.in",
+            "si_tetra.in",
+            "si_off.in",
+            "si_offt.in",
+            "si_se_list.in",
+            "si_se_path.in",
+            "si_se_h5.in",
+            "si_se_int.in",
+        ],
+        "files": [
+            "../../../example/Si/reference/si222_cubic.xml.bz2"
+        ],  # relative to test/mode_analysis/si
         "nk": 1000,
     },
     "bto": {
         "inputs": ["bto_v4_1.in", "bto_v4_2.in", "bto_off_1.in", "bto_off_2.in"],
-        "files": ["../../../example/BaTiO3/anharm_IFCs/4_optimize/reference/cBTO222.h5"],
+        "files": [
+            "../../../example/BaTiO3/anharm_IFCs/4_optimize/reference/cBTO222.h5"
+        ],
         "nk": 8,
     },
 }
@@ -42,7 +56,11 @@ def read_rows(path):
     with opener(path, "rt") as f:
         lines = f.readlines()
     header = [l for l in lines if l.startswith("#")]
-    rows = [[float(x) for x in l.split()] for l in lines if l.strip() and not l.startswith("#")]
+    rows = [
+        [float(x) for x in l.split()]
+        for l in lines
+        if l.strip() and not l.startswith("#")
+    ]
     return header, np.array(rows)
 
 
@@ -123,8 +141,11 @@ def check_offmesh(workdir):
     off-mesh path); the reference files guard that."""
     nfail = 0
     g = lambda n: np.loadtxt(os.path.join(workdir, f"si_off.Gamma.{n}"))[:, 1]
-    for a, b, tol, what in ((1, 3, 1e-4, "mesh vs 1e-7 off mesh"), (3, 4, 1e-8, "q vs q+G"),
-                            (2, 6, 1e-4, "X on vs off mesh")):
+    for a, b, tol, what in (
+        (1, 3, 1e-4, "mesh vs 1e-7 off mesh"),
+        (3, 4, 1e-8, "q vs q+G"),
+        (2, 6, 1e-4, "X on vs off mesh"),
+    ):
         rel = np.abs(g(a) - g(b)).max() / np.abs(g(a)).max()
         if rel > tol:
             print(f"  si/si_off: {what}: relative difference {rel:.2e} > {tol:.0e}")
@@ -132,31 +153,43 @@ def check_offmesh(workdir):
     gt = lambda n: np.loadtxt(os.path.join(workdir, f"si_offt.Gamma.{n}"))[:, 1]
     rel = np.abs(gt(2) - gt(4)).max() / np.abs(gt(2)).max()
     if rel > 1e-2:
-        print(f"  si/si_offt: tetrahedron mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-2")
+        print(
+            f"  si/si_offt: tetrahedron mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-2"
+        )
         nfail += 1
     # REALPART (smearing): tadpole and bubble shifts, generic point (1 vs 3) and X (2 vs 6)
     sh = lambda n: np.loadtxt(os.path.join(workdir, f"si_off.Shift.{n}"))[:, 1:3]
     for a, b, what in ((1, 3, "generic point"), (2, 6, "X")):
         rel = np.abs(sh(a) - sh(b)).max() / np.abs(sh(a)).max()
         if rel > 1e-4:
-            print(f"  si/si_off: shift {what} mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-4")
+            print(
+                f"  si/si_off: shift {what} mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-4"
+            )
             nfail += 1
     # FSTATE_W (smearing): generic point on mesh (1) vs 1e-7 off mesh (3), both channels
     fw = lambda n: np.loadtxt(os.path.join(workdir, f"si_off.fw.{n}"))[:, 1:]
     rel = np.abs(fw(1) - fw(3)).max() / np.abs(fw(1)).max()
     if rel > 1e-4:
-        print(f"  si/si_off: FSTATE_W mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-4")
+        print(
+            f"  si/si_off: FSTATE_W mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-4"
+        )
         nfail += 1
     fwt = lambda n: np.loadtxt(os.path.join(workdir, f"si_offt.fw.{n}"))[:, 1:]
     rel = np.abs(fwt(2) - fwt(4)).max() / np.abs(fwt(2)).max()
-    if rel > 1e-1:  # omega-resolved, hence more sensitive to the tetrahedron discontinuity than Gamma(T)
-        print(f"  si/si_offt: FSTATE_W (tetrahedron) mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-1")
+    if (
+        rel > 1e-1
+    ):  # omega-resolved, hence more sensitive to the tetrahedron discontinuity than Gamma(T)
+        print(
+            f"  si/si_offt: FSTATE_W (tetrahedron) mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-1"
+        )
         nfail += 1
     # SELF_W: Im Sigma(omega) at the generic point, on mesh (2) vs 1e-7 off mesh (4)
     st = lambda n: np.loadtxt(os.path.join(workdir, f"si_offt.Self.{n}"))[:, 4]
     rel = np.abs(st(2) - st(4)).max() / np.abs(st(2)).max()
     if rel > 1e-2:
-        print(f"  si/si_offt: Im Sigma(omega) mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-2")
+        print(
+            f"  si/si_offt: Im Sigma(omega) mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-2"
+        )
         nfail += 1
     return nfail
 
@@ -166,8 +199,12 @@ def check_offmesh_bto(workdir):
     by coordinates). Their gauge-invariant totals sum(mult * |V|^2) must equal those of the
     on-mesh listings of X (entry 2 of bto_v4_*): same physics, different row layout."""
     nfail = 0
-    for off, on, cplx in (("bto_off_1.V3.1", "bto_v4_1.V3.2", False), ("bto_off_1.V4.1", "bto_v4_1.V4.2", False),
-                          ("bto_off_2.Phi3.1", "bto_v4_2.Phi3.2", True), ("bto_off_2.Phi4.1", "bto_v4_2.Phi4.2", True)):
+    for off, on, cplx in (
+        ("bto_off_1.V3.1", "bto_v4_1.V3.2", False),
+        ("bto_off_1.V4.1", "bto_v4_1.V4.2", False),
+        ("bto_off_2.Phi3.1", "bto_v4_2.Phi3.2", True),
+        ("bto_off_2.Phi4.1", "bto_v4_2.Phi4.2", True),
+    ):
         _, a = read_rows(os.path.join(workdir, off))
         _, b = read_rows(os.path.join(workdir, on))
         ta = value_total("." + ("Phi" if cplx else "V") + ".", a)
@@ -197,13 +234,18 @@ def check_selfenergy_h5(workdir):
     # which the text run numbers as Gamma.7 (the only off-mesh point, listed after the six
     # on-mesh targets); target 00007 is X, branch 4 = Gamma.4 of the text run.
     for target, text in (("00004", 7), ("00007", 4)):
-        out = subprocess.run(["h5dump", "-d", f"/targets/{target}/linewidth", "-y", "-w", "400", h5],
-                             capture_output=True, text=True).stdout
+        out = subprocess.run(
+            ["h5dump", "-d", f"/targets/{target}/linewidth", "-y", "-w", "400", h5],
+            capture_output=True,
+            text=True,
+        ).stdout
         data = out.split("DATA {")[1].split("}")[0]
         vals = np.array([float(x) for x in data.replace(",", " ").split()])
         ref = np.loadtxt(os.path.join(workdir, f"si_se_path.Gamma.{text}"))[:, 1]
         if not np.allclose(vals, ref, rtol=1e-5):
-            print(f"  si/si_se_h5: target {target} linewidth {vals} differs from si_se_path.Gamma.{text} {ref}")
+            print(
+                f"  si/si_se_h5: target {target} linewidth {vals} differs from si_se_path.Gamma.{text} {ref}"
+            )
             nfail += 1
     return nfail
 
@@ -218,10 +260,22 @@ def check_interpolate(workdir):
     nfail = 0
     sp = np.loadtxt(os.path.join(workdir, "si_se_int.spectrum"))
     T = sp[:, 0].max()
-    mapping = {(1, 4): 1, (1, 5): 2, (1, 6): 3, (3, 4): 4, (3, 5): 5, (3, 6): 6, (2, 4): 7, (2, 5): 8, (2, 6): 9}
+    mapping = {
+        (1, 4): 1,
+        (1, 5): 2,
+        (1, 6): 3,
+        (3, 4): 4,
+        (3, 5): 5,
+        (3, 6): 6,
+        (2, 4): 7,
+        (2, 5): 8,
+        (2, 6): 9,
+    }
     for (iq, b), n in mapping.items():
         gfile = os.path.join(workdir, f"si_se_int.Gamma.{n}")
-        omega_j = float([l for l in open(gfile) if l.startswith("# Frequency")][0].split()[-1])
+        omega_j = float(
+            [l for l in open(gfile) if l.startswith("# Frequency")][0].split()[-1]
+        )
         shift = np.loadtxt(os.path.join(workdir, f"si_se_int.Shift.{n}"))[-1]
         delta = shift[1] + shift[2]
         rows = sp[(sp[:, 0] == T) & (sp[:, 1] == iq)]
@@ -229,7 +283,9 @@ def check_interpolate(workdir):
         peak = w[np.argmax(a)]
         weight = np.trapezoid(a, w) if hasattr(np, "trapezoid") else np.trapz(a, w)
         if abs(peak - (omega_j + delta)) > 1.5 or abs(weight - 1.0) > 0.05:
-            print(f"  si/si_se_int: q{iq} branch {b}: peak {peak:.2f} vs omega+Delta {omega_j + delta:.2f}, weight {weight:.3f}")
+            print(
+                f"  si/si_se_int: q{iq} branch {b}: peak {peak:.2f} vs omega+Delta {omega_j + delta:.2f}, weight {weight:.3f}"
+            )
             nfail += 1
     return nfail
 
@@ -256,7 +312,9 @@ def main():
             if ret.returncode != 0:
                 print(f"  {case}/{inp}: anphon failed")
                 nfail += 1
-        nfail += compare_case(case, workdir, os.path.join(base, "reference", case), spec["nk"])
+        nfail += compare_case(
+            case, workdir, os.path.join(base, "reference", case), spec["nk"]
+        )
         if case == "si":
             nfail += check_offmesh(workdir)
             nfail += check_selfenergy_h5(workdir)

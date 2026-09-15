@@ -339,8 +339,8 @@ void InputSetter::set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], c
     kp.target_mode = kp.kpoint_mode;
     kp.kpInp_targets = kp.kpInp;
     kp.kpInp.clear();
-    kp.kpInp.emplace_back(std::vector<std::string>{std::to_string(kmesh[0]), std::to_string(kmesh[1]),
-                                                   std::to_string(kmesh[2])});
+    kp.kpInp.emplace_back(
+        std::vector<std::string>{std::to_string(kmesh[0]), std::to_string(kmesh[1]), std::to_string(kmesh[2])});
     kp.kpoint_mode = 2;
 
     auto &ma = *phon->mode_analysis;

@@ -9,21 +9,21 @@ or http://opensource.org/licenses/mit-license.php for information.
 */
 
 #include "mode_analysis.h"
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <Eigen/Dense>
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dielec.h"
 #include "dynamical.h"
 #include "error.h"
-#include "hdf5_parser.h"
-#include "fcs_phonon.h"
 #include "ewald.h"
+#include "fcs_phonon.h"
+#include "hdf5_parser.h"
 #include "integration.h"
 #include "interpolation.h"
 #include "kpoint.h"
@@ -108,14 +108,15 @@ void ModeAnalysis::setup_mode_analysis()
             const auto id = static_cast<unsigned int>(results.size());
             results.push_back(r);
             if (knum_tmp == -1) {
-                const bool supported = (calc_selfenergy || spectral_func || print_V3 || print_V4 || calc_fstate_omega ||
-                                        interpolate) &&
-                                       integration->ismear != 2 && anharmonic_core->quartic_mode != 2;
+                const bool supported =
+                    (calc_selfenergy || spectral_func || print_V3 || print_V4 || calc_fstate_omega || interpolate) &&
+                    integration->ismear != 2 && anharmonic_core->quartic_mode != 2;
                 if (!supported) {
-                    exit("setup_mode_analysis",
-                         "A target k point is not on the k-point grid. Points off the grid are supported only for"
-                         " SELF_ENERGY/LINEWIDTH (with REALPART/SHIFT), SELF_W, FSTATE_W, PRINTV3/4 and INTERPOLATE with"
-                         " ISMEAR = -1, 0, 1 (no QUARTIC = 2).");
+                    exit(
+                        "setup_mode_analysis",
+                        "A target k point is not on the k-point grid. Points off the grid are supported only for"
+                        " SELF_ENERGY/LINEWIDTH (with REALPART/SHIFT), SELF_W, FSTATE_W, PRINTV3/4 and INTERPOLATE with"
+                        " ISMEAR = -1, 0, 1 (no QUARTIC = 2).");
                 }
                 kslist_offmesh.push_back({{ktmp[0], ktmp[1], ktmp[2]}, snum_tmp - 1, id});
             } else {
@@ -148,7 +149,8 @@ void ModeAnalysis::setup_mode_analysis()
                         if (item.empty()) continue;
                         const auto dash = item.find('-');
                         const auto lo = boost::lexical_cast<unsigned int>(item.substr(0, dash));
-                        const auto hi = dash == std::string::npos ? lo : boost::lexical_cast<unsigned int>(item.substr(dash + 1));
+                        const auto hi =
+                            dash == std::string::npos ? lo : boost::lexical_cast<unsigned int>(item.substr(dash + 1));
                         if (lo < 1 || hi > ns || lo > hi) exit("setup_mode_analysis", "BRANCHES out of range.");
                         for (auto b = lo; b <= hi; ++b) branches.push_back(b);
                     }
@@ -346,7 +348,8 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
         const unsigned int i1 = ic / (kmesh_coarse[1] * kmesh_coarse[2]);
         const unsigned int i2 = (ic / kmesh_coarse[2]) % kmesh_coarse[1];
         const unsigned int i3 = ic % kmesh_coarse[2];
-        double xk[3] = {static_cast<double>(i1) / kmesh_coarse[0], static_cast<double>(i2) / kmesh_coarse[1],
+        double xk[3] = {static_cast<double>(i1) / kmesh_coarse[0],
+                        static_cast<double>(i2) / kmesh_coarse[1],
                         static_cast<double>(i3) / kmesh_coarse[2]};
         knum_c[ic] = kmesh->get_knum(xk);
         if (knum_c[ic] < 0) exit("run_interpolated_spectrum", "A coarse-mesh point is not on KMESH.");
@@ -365,7 +368,9 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
         double emax_now = 0.0;
         for (auto ik = 0; ik < kmesh->nk_irred; ++ik)
             for (unsigned int is = 0; is < ns; ++is)
-                emax_now = std::max(emax_now, in_kayser(dos->dymat_dos->get_eigenvalues()[kmesh->kpoint_irred_all[ik][0].knum][is]));
+                emax_now =
+                    std::max(emax_now,
+                             in_kayser(dos->dymat_dos->get_eigenvalues()[kmesh->kpoint_irred_all[ik][0].knum][is]));
         nomega = static_cast<unsigned int>((emax_now + delta_omega) * 2.0 / delta_omega) + 1;
     }
     std::vector<double> omega_ry(nomega);
@@ -399,8 +404,9 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
     for (unsigned int iq = 0; iq < nq; ++iq) MPI_Bcast(spectrum_xk[iq].data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
-        std::cout << "\n INTERPOLATE = 1: bubble self-energy matrix on the " << kmesh_coarse[0] << "x" << kmesh_coarse[1]
-                  << "x" << kmesh_coarse[2] << " coarse mesh, spectral function on " << nq << " target q points.\n";
+        std::cout << "\n INTERPOLATE = 1: bubble self-energy matrix on the " << kmesh_coarse[0] << "x"
+                  << kmesh_coarse[1] << "x" << kmesh_coarse[2] << " coarse mesh, spectral function on " << nq
+                  << " target q points.\n";
     }
 
     // Harmonic D(q) and eigenpairs at the targets (rank 0).
@@ -423,8 +429,10 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
     }
 
     spectrum_total.assign(NT, std::vector<std::vector<double>>(nq, std::vector<double>(nomega, 0.0)));
-    spectrum_branch.assign(NT, std::vector<std::vector<std::vector<double>>>(
-                                   nq, std::vector<std::vector<double>>(ns, std::vector<double>(nomega, 0.0))));
+    spectrum_branch.assign(NT,
+                           std::vector<std::vector<std::vector<double>>>(
+                               nq,
+                               std::vector<std::vector<double>>(ns, std::vector<double>(nomega, 0.0))));
 
     NDArray<std::complex<double>, 3> sig(nomega, ns, ns);
     std::vector<NDArray<std::complex<double>, 3>> pi_k(nomega), pi_r(nomega);
@@ -469,8 +477,14 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
         for (unsigned int iq = 0; iq < nq; ++iq) {
             Eigen::MatrixXcd P(ns, ns), G(ns, ns);
             for (unsigned int io = 0; io < nomega; ++io) {
-                r2q(spectrum_xk[iq].data(), kmesh_coarse[0], kmesh_coarse[1], kmesh_coarse[2], ns, mindist_list,
-                    pi_r[io], pi_q);
+                r2q(spectrum_xk[iq].data(),
+                    kmesh_coarse[0],
+                    kmesh_coarse[1],
+                    kmesh_coarse[2],
+                    ns,
+                    mindist_list,
+                    pi_r[io],
+                    pi_q);
                 for (unsigned int a = 0; a < ns; ++a)
                     for (unsigned int b = 0; b < ns; ++b) P(a, b) = pi_q[a][b];
                 const double w = omega_ry[io];
@@ -555,7 +569,10 @@ void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr
             for (auto j = 0; j < 3; ++j) xk[ik][j] = bs.xk[ik][j];
         }
         dump(fh, "/path/kaxis", kaxis);
-        dumpAttribute(fh, "/path/kaxis", "description", std::string("path coordinate, same convention as PREFIX.bands"));
+        dumpAttribute(fh,
+                      "/path/kaxis",
+                      "description",
+                      std::string("path coordinate, same convention as PREFIX.bands"));
         dump(fh, "/path/xk", xk);
     }
 
@@ -574,7 +591,10 @@ void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr
         if (!r.linewidth.empty()) {
             dump(fh, g + "/linewidth", r.linewidth);
             dumpAttribute(fh, g + "/linewidth", "unit", std::string("cm^-1"));
-            dumpAttribute(fh, g + "/linewidth", "description", std::string("2*Gamma (FWHM) of the bubble diagram per temperature"));
+            dumpAttribute(fh,
+                          g + "/linewidth",
+                          "description",
+                          std::string("2*Gamma (FWHM) of the bubble diagram per temperature"));
         }
         if (!r.shift_bubble.empty()) {
             dump(fh, g + "/shift_tadpole", r.shift_tadpole);
@@ -1024,21 +1044,41 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
         for (auto s = block.first; s < block.second; ++s) {
             if (calc_realpart) {
                 // Bubble with the complex frequency (real and imaginary parts), tadpole, loop.
-                selfenergy->selfenergy_a_at(NT, T_arr, eval_q[0][s], xq[0], eval_q[0][s], evec_q[0][s],
-                                            dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(),
-                                            dos->dymat_dos->get_eigenvectors(), sg, self_tmp);
+                selfenergy->selfenergy_a_at(NT,
+                                            T_arr,
+                                            eval_q[0][s],
+                                            xq[0],
+                                            eval_q[0][s],
+                                            evec_q[0][s],
+                                            dos->kmesh_dos.get(),
+                                            dos->dymat_dos->get_eigenvalues(),
+                                            dos->dymat_dos->get_eigenvectors(),
+                                            sg,
+                                            self_tmp);
                 for (unsigned int j = 0; j < NT; ++j) {
                     self_a[j] += self_tmp[j] / nblock;
                     damping_tmp[j] = self_tmp[j].imag();
                 }
-                selfenergy->selfenergy_tadpole_at(NT, T_arr, xq[0], eval_q[0][s], evec_q[0][s], dos->kmesh_dos.get(),
+                selfenergy->selfenergy_tadpole_at(NT,
+                                                  T_arr,
+                                                  xq[0],
+                                                  eval_q[0][s],
+                                                  evec_q[0][s],
+                                                  dos->kmesh_dos.get(),
                                                   dos->dymat_dos->get_eigenvalues(),
-                                                  dos->dymat_dos->get_eigenvectors(), self_tmp);
+                                                  dos->dymat_dos->get_eigenvectors(),
+                                                  self_tmp);
                 for (unsigned int j = 0; j < NT; ++j) self_tadpole[j] += self_tmp[j] / nblock;
                 if (anharmonic_core->quartic_mode == 1) {
-                    selfenergy->selfenergy_b_at(NT, T_arr, xq[0], eval_q[0][s], evec_q[0][s], dos->kmesh_dos.get(),
+                    selfenergy->selfenergy_b_at(NT,
+                                                T_arr,
+                                                xq[0],
+                                                eval_q[0][s],
+                                                evec_q[0][s],
+                                                dos->kmesh_dos.get(),
                                                 dos->dymat_dos->get_eigenvalues(),
-                                                dos->dymat_dos->get_eigenvectors(), self_tmp);
+                                                dos->dymat_dos->get_eigenvectors(),
+                                                self_tmp);
                     for (unsigned int j = 0; j < NT; ++j) self_b[j] += self_tmp[j] / nblock;
                 }
             } else if (integration->ismear == -1) {
@@ -1126,7 +1166,8 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                     }
                     ofs << std::setw(15) << in_kayser(omega_shift) << '\n';
                 }
-                if (writes->getVerbosity() > 0) std::cout << "  Phonon frequency shift is printed in " << file_shift << '\n';
+                if (writes->getVerbosity() > 0)
+                    std::cout << "  Phonon frequency shift is printed in " << file_shift << '\n';
             }
         }
     }
@@ -1219,9 +1260,11 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
                     for (auto is = 0; is < ns; ++is) {
                         for (auto js = 0; js < ns; ++js) {
                             const auto w1 = eval[k1][is], w2 = sg.eval[k1][js];
-                            auto v = anharmonic_core->contract_phi3(e0.data(), evec[k1][is], sg.evec[k1][js], work.data());
+                            auto v =
+                                anharmonic_core->contract_phi3(e0.data(), evec[k1][is], sg.evec[k1][js], work.data());
                             if (squared) {
-                                v = (omega_q < eps8 || w1 < eps8 || w2 < eps8) ? 0.0 : std::norm(v) / (omega_q * w1 * w2);
+                                v = (omega_q < eps8 || w1 < eps8 || w2 < eps8) ? 0.0
+                                                                               : std::norm(v) / (omega_q * w1 * w2);
                             }
                             val_loc[ip][is * ns + js] = v * factor;
                         }
@@ -1238,8 +1281,11 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
                         for (auto js = 0; js < ns; ++js) {
                             for (auto ks = 0; ks < ns; ++ks) {
                                 const auto w1 = eval[k1][is], w2 = eval[k2][js], w3 = sg.eval[k3][ks];
-                                auto v = anharmonic_core->contract_phi4(e0.data(), evec[k1][is], evec[k2][js],
-                                                                        sg.evec[k3][ks], work.data());
+                                auto v = anharmonic_core->contract_phi4(e0.data(),
+                                                                        evec[k1][is],
+                                                                        evec[k2][js],
+                                                                        sg.evec[k3][ks],
+                                                                        work.data());
                                 if (squared) {
                                     v = (omega_q < eps8 || w1 < eps8 || w2 < eps8 || w3 < eps8)
                                             ? 0.0
@@ -1263,7 +1309,11 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
             ofs << '\n';
             ofs << "# mode = " << snum + 1 << '\n';
             ofs << "# Frequency = " << in_kayser(omega_q) << '\n';
-            ofs << "## Matrix elements " << (kind == 0 ? "|V3|^2" : kind == 1 ? "Phi3" : kind == 2 ? "|V4|^2" : "Phi4")
+            ofs << "## Matrix elements "
+                << (kind == 0   ? "|V3|^2"
+                    : kind == 1 ? "Phi3"
+                    : kind == 2 ? "|V4|^2"
+                                : "Phi4")
                 << " for given mode (k point off the mesh: partners keyed by fractional coordinates, "
                    "every partner listed once)\n";
             if (!quartic) {
@@ -1282,7 +1332,8 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
             auto put_val = [&](const std::complex<double> &v) {
                 ofs << std::scientific << std::setprecision(6);
                 if (squared) ofs << std::setw(15) << v.real();
-                else ofs << std::setw(15) << v.real() << std::setw(15) << v.imag();
+                else
+                    ofs << std::setw(15) << v.real() << std::setw(15) << v.imag();
                 ofs << std::setw(5) << 1 << '\n';
             };
             for (int ip = 0; ip < npair; ++ip) {
@@ -1506,8 +1557,16 @@ void ModeAnalysis::calc_frequency_resolved_final_state_offmesh(const unsigned in
         }
     } else {
         for (auto k = 0; k < nk; ++k) {
-            AnharmonicCore::bubble_delta_smearing(ns, omega_q, eval_in[k], sg.eval[k], ismear, epsilon, nullptr,
-                                                  nullptr, 0.0, &delta_arr[k][0][0]);
+            AnharmonicCore::bubble_delta_smearing(ns,
+                                                  omega_q,
+                                                  eval_in[k],
+                                                  sg.eval[k],
+                                                  ismear,
+                                                  epsilon,
+                                                  nullptr,
+                                                  nullptr,
+                                                  0.0,
+                                                  &delta_arr[k][0][0]);
         }
     }
 
@@ -1525,8 +1584,8 @@ void ModeAnalysis::calc_frequency_resolved_final_state_offmesh(const unsigned in
                 v3sq[is * ns + js] =
                     (omega_q < eps8 || w1 < eps8 || w2 < eps8)
                         ? 0.0
-                        : std::norm(anharmonic_core->contract_phi3(e0.data(), evec_in[k][is], sg.evec[k][js],
-                                                                   work.data(), true)) /
+                        : std::norm(anharmonic_core
+                                        ->contract_phi3(e0.data(), evec_in[k][is], sg.evec[k][js], work.data(), true)) /
                               (omega_q * w1 * w2);
             }
         }
@@ -1541,15 +1600,18 @@ void ModeAnalysis::calc_frequency_resolved_final_state_offmesh(const unsigned in
 #pragma omp parallel for
 #endif
                 for (int i = 0; i < static_cast<int>(ntemp); ++i) {
-                    const auto f1 = classical ? Thermodynamics::fC(w1, temperature[i]) : Thermodynamics::fB(w1, temperature[i]);
-                    const auto f2 = classical ? Thermodynamics::fC(w2, temperature[i]) : Thermodynamics::fB(w2, temperature[i]);
+                    const auto f1 =
+                        classical ? Thermodynamics::fC(w1, temperature[i]) : Thermodynamics::fB(w1, temperature[i]);
+                    const auto f2 =
+                        classical ? Thermodynamics::fC(w2, temperature[i]) : Thermodynamics::fB(w2, temperature[i]);
                     const auto n1 = classical ? f1 + f2 : f1 + f2 + 1.0;
                     const auto n2 = f1 - f2;
                     const auto p0 = v * n1 * d0;
                     const auto p1 = -v * n2 * d1;
                     for (unsigned int j = 0; j < nomegas; ++j) {
                         // Frequency resolution: Lorentzian/Gaussian for ISMEAR 0/1, Gaussian with the tetrahedron.
-                        const auto r = ismear == 0 ? delta_lorentz(omega[j] - w1, epsilon) : delta_gauss(omega[j] - w1, epsilon);
+                        const auto r =
+                            ismear == 0 ? delta_lorentz(omega[j] - w1, epsilon) : delta_gauss(omega[j] - w1, epsilon);
                         ret_loc[i][j][0] += p0 * r;
                         ret_loc[i][j][1] += p1 * r;
                     }
@@ -1596,8 +1658,15 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
             std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
             std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega0) << '\n';
         }
-        calc_frequency_resolved_final_state_offmesh(NT, T_arr, dos->n_energy, freq_array, xq[0], omega0,
-                                                    evec_q[0][snum], sg, gamma_final);
+        calc_frequency_resolved_final_state_offmesh(NT,
+                                                    T_arr,
+                                                    dos->n_energy,
+                                                    freq_array,
+                                                    xq[0],
+                                                    omega0,
+                                                    evec_q[0][snum],
+                                                    sg,
+                                                    gamma_final);
         if (mympi->my_rank == 0) {
             auto &r = results[target.id];
             r.omega = in_kayser(omega0);
@@ -2672,8 +2741,8 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
     self3_real.clear();
 }
 
-void ModeAnalysis::kramers_kronig_real(const unsigned int nomega, const double *omega_array,
-                                       const double delta_omega, const double *imag, double *real)
+void ModeAnalysis::kramers_kronig_real(const unsigned int nomega, const double *omega_array, const double delta_omega,
+                                       const double *imag, double *real)
 {
     // Re Sigma(omega) from Im Sigma on the finite uniform grid (principal value by
     // skipping the diagonal); delta_omega in cm^-1, omega_array and imag in Ry.
@@ -2756,7 +2825,8 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                                                                     nomega,
                                                                     omega_array,
                                                                     imag_tmp);
-                    for (unsigned int iomega = 0; iomega < nomega; ++iomega) self_imag[iomega] += imag_tmp[iomega] / nblock;
+                    for (unsigned int iomega = 0; iomega < nomega; ++iomega)
+                        self_imag[iomega] += imag_tmp[iomega] / nblock;
                 }
             }
             kramers_kronig_real(nomega, omega_array, delta_omega, self_imag, self_real);
@@ -2765,7 +2835,8 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                 if (iT == 0) {
                     r.omega = in_kayser(omega);
                     r.self_omega.resize(nomega);
-                    for (unsigned int iomega = 0; iomega < nomega; ++iomega) r.self_omega[iomega] = in_kayser(omega_array[iomega]);
+                    for (unsigned int iomega = 0; iomega < nomega; ++iomega)
+                        r.self_omega[iomega] = in_kayser(omega_array[iomega]);
                     r.self_real.assign(NT, std::vector<double>(nomega));
                     r.self_imag.assign(NT, std::vector<double>(nomega));
                 }

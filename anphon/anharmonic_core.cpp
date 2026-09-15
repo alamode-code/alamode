@@ -367,8 +367,8 @@ std::complex<double> AnharmonicCore::contract_phi3(const std::complex<double> *e
 #pragma omp parallel for reduction(+ : ret_re, ret_im) if (use_openmp)
 #endif
     for (int i = 0; i < ngroup_v3; ++i) {
-        const auto ret = e0[evec_index_v3[i][0]] * e1[evec_index_v3[i][1]] * e2[evec_index_v3[i][2]] * invmass_v3[i] *
-                         phi3[i];
+        const auto ret =
+            e0[evec_index_v3[i][0]] * e1[evec_index_v3[i][1]] * e2[evec_index_v3[i][2]] * invmass_v3[i] * phi3[i];
         ret_re += ret.real();
         ret_im += ret.imag();
     }
@@ -536,7 +536,10 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
         kindex_work[2] = static_cast<int>(kn[3]);
     }
 
-    return contract_phi4(evec_in[kn[0]][sn[0]], evec_in[kn[1]][sn[1]], evec_in[kn[2]][sn[2]], evec_in[kn[3]][sn[3]],
+    return contract_phi4(evec_in[kn[0]][sn[0]],
+                         evec_in[kn[1]][sn[1]],
+                         evec_in[kn[2]][sn[2]],
+                         evec_in[kn[3]][sn[3]],
                          phi4_work) /
            std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
 }

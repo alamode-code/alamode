@@ -95,9 +95,9 @@ public:
     // Eigenpairs on {q - k}; unfolded fractional coordinates preserve exact vertex phases.
     struct ShiftedGrid
     {
-        NDArray<double, 2> xk;                   // (nk, 3)
-        NDArray<double, 2> eval;                 // (nk, ns) frequencies
-        NDArray<std::complex<double>, 3> evec;   // (nk, ns, ns)
+        NDArray<double, 2> xk;                 // (nk, 3)
+        NDArray<double, 2> eval;               // (nk, ns) frequencies
+        NDArray<std::complex<double>, 3> evec; // (nk, ns, ns)
     };
 
     void build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, ShiftedGrid &sg) const;
@@ -122,9 +122,9 @@ public:
     // Computed on every rank with OpenMP.
     void calc_self3omega_tetrahedron_at(const double Temp, const double *xq, const double omega_q,
                                         const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
-                                        const double *const *eval_in,
-                                        const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
-                                        const unsigned int nomega, const double *omega, double *ret);
+                                        const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                                        const ShiftedGrid &sg, const unsigned int nomega, const double *omega,
+                                        double *ret);
 
     // Average delta[2*(is*ns+js)+c] over degenerate internal blocks for gauge invariance.
     static void bubble_average_degenerate(const int ns, const double *w1_arr, const double *w2_arr, double *delta);
@@ -287,8 +287,7 @@ public:
                                        const std::complex<double> *e2, const std::complex<double> *phi3,
                                        const bool use_openmp = false) const;
 
-    void phi4_reciprocal_at(const double *xk1, const double *xk2, const double *xk3,
-                            std::complex<double> *work);
+    void phi4_reciprocal_at(const double *xk1, const double *xk2, const double *xk3, std::complex<double> *work);
 
     std::complex<double> contract_phi4(const std::complex<double> *e0, const std::complex<double> *e1,
                                        const std::complex<double> *e2, const std::complex<double> *e3,

@@ -268,9 +268,9 @@ public:
     void set_initial_displacement_modes(PHON *phon, const std::vector<InitialDisplacementMode> &modes) const;
 
     // Preserve &kpoint as targets and install KMESH as the integration mesh.
-    void set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], const std::string &branches,
-                             const int linewidth, const int shift, const int self_w, const int fstate_w,
-                             const int print_v3, const int print_v4, const int interpolate,
-                             const unsigned int kmesh_coarse[3], const double omega_range[3]) const;
+    void set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], const std::string &branches, const int linewidth,
+                             const int shift, const int self_w, const int fstate_w, const int print_v3,
+                             const int print_v4, const int interpolate, const unsigned int kmesh_coarse[3],
+                             const double omega_range[3]) const;
 };
 } // namespace PHON_NS

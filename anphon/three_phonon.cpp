@@ -24,10 +24,10 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
-#include "integration.h"
-#include "kpoint.h"
 #include "ewald.h"
 #include "fcs_phonon.h"
+#include "integration.h"
+#include "kpoint.h"
 #include "mathfunctions.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
@@ -605,8 +605,8 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
                                               const double *xq, const double omega_q,
                                               const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
                                               const double *const *eval_in,
-                                              const std::complex<double> *const *const *evec_in,
-                                              const ShiftedGrid &sg, double *ret)
+                                              const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
+                                              double *ret)
 {
     const int nk = kmesh_in->nk;
     const int ns = dynamical->neval;
@@ -655,7 +655,15 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
                     }
                 }
             }
-            bubble_delta_smearing(ns, omega_in, eval_in[ik], sg.eval[ik], ismear, epsilon, nullptr, nullptr, 0.0,
+            bubble_delta_smearing(ns,
+                                  omega_in,
+                                  eval_in[ik],
+                                  sg.eval[ik],
+                                  ismear,
+                                  epsilon,
+                                  nullptr,
+                                  nullptr,
+                                  0.0,
                                   delta.data());
             for (unsigned int it = 0; it < ntemp; ++it) {
                 ret_loc[it] += bubble_accumulate(ns,
@@ -676,8 +684,7 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
     for (unsigned int i = 0; i < ntemp; ++i) ret[i] *= pi * std::pow(0.5, 4) / static_cast<double>(nk);
 }
 
-void AnharmonicCore::bubble_average_degenerate(const int ns, const double *w1_arr, const double *w2_arr,
-                                               double *delta)
+void AnharmonicCore::bubble_average_degenerate(const int ns, const double *w1_arr, const double *w2_arr, double *delta)
 {
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
     auto get_degenerate_blocks = [&](const double *w) {
@@ -720,10 +727,10 @@ void AnharmonicCore::bubble_average_degenerate(const int ns, const double *w1_ar
     }
 }
 
-void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const double *temp_in,
-                                                 const double omega_in, const double *xq, const double omega_q,
-                                                 const std::complex<double> *evec_q,
-                                                 const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const double *temp_in, const double omega_in,
+                                                 const double *xq, const double omega_q,
+                                                 const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                                                 const double *const *eval_in,
                                                  const std::complex<double> *const *const *evec_in,
                                                  const ShiftedGrid &sg, double *ret)
 {
@@ -908,7 +915,8 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
                     const double f2 = occ_s[ik * ns + js];
                     const double n1 = classical ? f1 + f2 : f1 + f2 + 1.0;
                     const double n2 = f1 - f2;
-                    sum += v3_arr[ik][ib] * (n1 * weight_tetra[0][ik] - n2 * (weight_tetra[1][ik] - weight_tetra[2][ik]));
+                    sum +=
+                        v3_arr[ik][ib] * (n1 * weight_tetra[0][ik] - n2 * (weight_tetra[1][ik] - weight_tetra[2][ik]));
                 }
                 ret_loc[iomega] += sum;
             }

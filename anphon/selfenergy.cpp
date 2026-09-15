@@ -183,8 +183,8 @@ void Selfenergy::selfenergy_a_at(const unsigned int N, const double *T, const do
                 const double omega2 = sg.eval[ik1][is2];
                 if (omega_q < eps8 || omega1 < eps8 || omega2 < eps8) continue;
                 const double v3_tmp =
-                    std::norm(anharmonic_core->contract_phi3(e0.data(), evec_in[ik1][is1], sg.evec[ik1][is2],
-                                                             phi3.data())) /
+                    std::norm(
+                        anharmonic_core->contract_phi3(e0.data(), evec_in[ik1][is1], sg.evec[ik1][is2], phi3.data())) /
                     (omega_q * omega1 * omega2);
                 const std::complex<double> omega_sum[2] = {
                     1.0 / (omega_shift + omega1 + omega2) - 1.0 / (omega_shift - omega1 - omega2),
@@ -206,8 +206,7 @@ void Selfenergy::selfenergy_a_at(const unsigned int N, const double *T, const do
 
 void Selfenergy::selfenergy_tadpole_at(const unsigned int N, const double *T, const double *xq, const double omega_q,
                                        const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
-                                       const double *const *eval_in,
-                                       const std::complex<double> *const *const *evec_in,
+                                       const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                        std::complex<double> *ret) const
 {
     // Tadpole: V3(-q j, q j, Gamma s1) x sum_k V3(Gamma s1, k s2, -k s2) (2n+1) / omega1.
@@ -226,9 +225,8 @@ void Selfenergy::selfenergy_tadpole_at(const unsigned int N, const double *T, co
     for (unsigned int is1 = 0; is1 < ns; ++is1) {
         const auto omega1 = eval_in[0][is1];
         if (omega1 < eps8 || omega_q < eps8) continue;
-        const auto v3_tmp1 =
-            anharmonic_core->contract_phi3(e0.data(), evec_q, evec_in[0][is1], phi3.data()) /
-            std::sqrt(omega_q * omega_q * omega1);
+        const auto v3_tmp1 = anharmonic_core->contract_phi3(e0.data(), evec_q, evec_in[0][is1], phi3.data()) /
+                             std::sqrt(omega_q * omega_q * omega1);
         for (unsigned int i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
         arr_cubic2[0] = is1;
         for (unsigned int ik2 = my_rank; ik2 < nk; ik2 += nprocs) {
@@ -336,8 +334,10 @@ void Selfenergy::bubble_matrix(const double Temp, const unsigned int knum, const
                     for (unsigned int j = 0; j < ns; ++j) {
                         const double omega_j = eval_in[knum][j];
                         v3[j] = omega_j < eps8 ? 0.0
-                                               : anharmonic_core->contract_phi3(e0[j].data(), evec_in[ik1][is1],
-                                                                                evec_in[ik2][is2], phi3.data()) /
+                                               : anharmonic_core->contract_phi3(e0[j].data(),
+                                                                                evec_in[ik1][is1],
+                                                                                evec_in[ik2][is2],
+                                                                                phi3.data()) /
                                                      std::sqrt(omega_j * omega1 * omega2);
                         any |= omega_j >= eps8;
                     }

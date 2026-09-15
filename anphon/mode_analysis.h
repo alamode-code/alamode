@@ -34,15 +34,15 @@ public:
     bool ks_analyze_mode;
     bool selfenergy_mode = false; // MODE = selfenergy: targets from &kpoint, mesh from KMESH
     std::string branches_spec = "all";
-    bool interpolate = false;                  // INTERPOLATE: spectral function from the interpolated Sigma matrix
-    unsigned int kmesh_coarse[3] = {0, 0, 0};  // KMESH_COARSE
+    bool interpolate = false;                   // INTERPOLATE: spectral function from the interpolated Sigma matrix
+    unsigned int kmesh_coarse[3] = {0, 0, 0};   // KMESH_COARSE
     double omega_range[3] = {-1.0, -1.0, -1.0}; // OMEGA_RANGE min max step (cm^-1); negative: DOS grid
 
     // Interpolated spectral function A(q, omega) on the distinct target q (rank 0).
-    std::vector<double> spectrum_omega;                          // cm^-1
-    std::vector<std::vector<double>> spectrum_xk;                // [q][3]
-    std::vector<double> spectrum_kaxis;                          // [q], -1 without a path
-    std::vector<std::vector<std::vector<double>>> spectrum_total;  // [T][q][omega]
+    std::vector<double> spectrum_omega;                                         // cm^-1
+    std::vector<std::vector<double>> spectrum_xk;                               // [q][3]
+    std::vector<double> spectrum_kaxis;                                         // [q], -1 without a path
+    std::vector<std::vector<std::vector<double>>> spectrum_total;               // [T][q][omega]
     std::vector<std::vector<std::vector<std::vector<double>>>> spectrum_branch; // [T][q][branch][omega]
 
     void run_interpolated_spectrum(const unsigned int NT, const double *T_arr);
@@ -73,13 +73,13 @@ public:
         double xk[3]{};
         unsigned int branch{}; // 1-based
         bool on_mesh{};
-        double kaxis{-1.0}; // path coordinate for KPMODE 1 targets, -1 otherwise
-        double omega{};     // harmonic frequency, cm^-1
-        std::vector<double> linewidth;                              // 2*Gamma (FWHM), cm^-1, per T
-        std::vector<double> shift_tadpole, shift_bubble, shift_loop; // cm^-1, per T
-        std::vector<double> self_omega;                             // cm^-1
-        std::vector<std::vector<double>> self_real, self_imag;      // [T][omega], cm^-1
-        std::vector<double> fstate_energy;                          // cm^-1
+        double kaxis{-1.0};            // path coordinate for KPMODE 1 targets, -1 otherwise
+        double omega{};                // harmonic frequency, cm^-1
+        std::vector<double> linewidth; // 2*Gamma (FWHM), cm^-1, per T
+        std::vector<double> shift_tadpole, shift_bubble, shift_loop;         // cm^-1, per T
+        std::vector<double> self_omega;                                      // cm^-1
+        std::vector<std::vector<double>> self_real, self_imag;               // [T][omega], cm^-1
+        std::vector<double> fstate_energy;                                   // cm^-1
         std::vector<std::vector<double>> fstate_absorption, fstate_emission; // [T][energy]
     };
     mutable std::vector<TargetResult> results; // filled by the (const) printers
@@ -147,13 +147,12 @@ private:
 
     // Off-mesh FSTATE_W: distribute k over ranks and reduce to rank 0.
     void calc_frequency_resolved_final_state_offmesh(const unsigned int ntemp, const double *temperature,
-                                                     const unsigned int nomegas, const double *omega,
-                                                     const double *xq, const double omega_q,
-                                                     const std::complex<double> *evec_q,
+                                                     const unsigned int nomegas, const double *omega, const double *xq,
+                                                     const double omega_q, const std::complex<double> *evec_q,
                                                      const AnharmonicCore::ShiftedGrid &sg, double ***ret) const;
 
-    void print_frequency_resolved_final_state_offmesh(const unsigned int NT, double *T_arr,
-                                                      const size_t number_offset, const double *freq_array);
+    void print_frequency_resolved_final_state_offmesh(const unsigned int NT, double *T_arr, const size_t number_offset,
+                                                      const double *freq_array);
 
     void print_spectral_function(const unsigned int, const double *);
 };

@@ -119,8 +119,7 @@ void Relaxation::setup_relaxation()
         spacegroup_number_ref = detect_spacegroup(primcell.lattice_vector, xf, label);
         if (mympi->my_rank == 0 && writes->getVerbosity() > 0 && set_init_str == 3) {
             std::cout << "  SET_INIT_STR = 3: the high-symmetry phase is " << label << " (spglib, tolerance "
-                      << std::scientific << std::setprecision(2) << symmetry->tolerance << std::defaultfloat
-                      << ")\n\n";
+                      << std::scientific << std::setprecision(2) << symmetry->tolerance << std::defaultfloat << ")\n\n";
         }
     }
     if (relax_mode != RelaxationStrMode::CoordinatesAndCell && relax_mode != RelaxationStrMode::PerturbativeQha) {
