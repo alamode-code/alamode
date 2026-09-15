@@ -1090,7 +1090,7 @@ void DerivativeIFC::set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, 
         if (my_rank_ == 0)
             std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... " << std::flush;
 
-        compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk_interpolate, kmesh_coarse->xk);
+        compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk, kmesh_dense->xk);
         break;
     case 2:
     case 3:
@@ -1191,7 +1191,7 @@ void DerivativeIFC::set_del_v_relax_cell_linearQHA(const KpointMeshUniform *kmes
     if (renorm_3to2nd == 1) {
         if (my_rank_ == 0) std::cout << "  - first-order derivatives of harmonic IFCs (from cubic IFCs) ... ";
 
-        compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk, kmesh_coarse->xk);
+        compute_dV2_dumn(del_v_strain.del_v2, evec_harmonic, nk, kmesh_dense->xk);
     } else if (renorm_3to2nd == 2 || renorm_3to2nd == 3) {
         if (my_rank_ == 0) {
             std::cout << "  - first-order derivatives of harmonic IFCs (finite displacement method)\n";
