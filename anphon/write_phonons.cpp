@@ -204,10 +204,6 @@ void Writes::writeInputVars()
         }
 
         std::cout << "  SET_INIT_STR = " << relaxation->set_init_str << '\n';
-        if (relaxation->set_init_str == 3) {
-            std::cout << "  COOLING_U0_INDEX = " << relaxation->cooling_u0_index << '\n';
-            std::cout << "  COOLING_U0_THR = " << relaxation->cooling_u0_thr << '\n';
-        }
 
         std::cout << "  ADD_HESS_DIAG = " << relaxation->add_hess_diag << '\n';
         std::cout << "  STAT_PRESSURE = " << relaxation->stat_pressure << '\n';

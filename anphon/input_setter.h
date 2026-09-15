@@ -216,8 +216,6 @@ struct RelaxInputVars
     double mixbeta_cell = 0.5;
 
     int set_init_str = 1;
-    int cooling_u0_index = 0;
-    double cooling_u0_thr = 0.001;
 
     double add_hess_diag = 100.0; // [cm^{-1}]
     double stat_pressure = 0.0;   // [GPa]

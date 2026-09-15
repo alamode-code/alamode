@@ -260,8 +260,6 @@ void InputSetter::set_relax_vars(PHON *phon, const RelaxInputVars &vars) const
     phon->relaxation->mixbeta_cell = vars.mixbeta_cell;
 
     phon->relaxation->set_init_str = vars.set_init_str;
-    phon->relaxation->cooling_u0_index = vars.cooling_u0_index;
-    phon->relaxation->cooling_u0_thr = vars.cooling_u0_thr;
 
     phon->relaxation->add_hess_diag = vars.add_hess_diag;
     phon->relaxation->stat_pressure = vars.stat_pressure;

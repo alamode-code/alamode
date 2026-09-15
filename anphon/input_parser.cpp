@@ -1001,8 +1001,14 @@ void InputParser::parse_relax_vars(PHON *phon)
     }
 
     assign_val(relax_vars.set_init_str, "SET_INIT_STR", stropt_var_dict);
-    assign_val(relax_vars.cooling_u0_index, "COOLING_U0_INDEX", stropt_var_dict);
-    assign_val(relax_vars.cooling_u0_thr, "COOLING_U0_THR", stropt_var_dict);
+    for (const auto *tag: {"COOLING_U0_INDEX", "COOLING_U0_THR"}) {
+        if (stropt_var_dict.find(tag) != stropt_var_dict.end()) {
+            warn("parse_relax_vars",
+                 (std::string(tag) + " is deprecated and ignored: with SET_INIT_STR = 3 the high-symmetry"
+                                     " phase is now detected by spglib (space group of the reference cell).")
+                     .c_str());
+        }
+    }
     assign_val(relax_vars.add_hess_diag, "ADD_HESS_DIAG", stropt_var_dict);
     assign_val(relax_vars.stat_pressure, "STAT_PRESSURE", stropt_var_dict);
 

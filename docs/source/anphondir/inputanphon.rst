@@ -42,7 +42,7 @@ List of supported input variables
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
-   :ref:`COOLING_U0_INDEX <anphon_cooling_u0_index>`, :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`
+   :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`
    :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
    :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`
    :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
@@ -937,35 +937,8 @@ Description of input variables
                This option is used when ``RELAX_STR = 1, 2``.
                In all options, the initial structure at the initial temperature is set from the input file.
                The initial structure of the input file is read from the ``&strain`` and ``&displace`` field.
-               When ``SET_INIT_STR = 3``, the initial displacement from the input file is used if the crystal structure converges to the high-symmetry phase at the previous temperature. The criterion to distinguish low-symmetry and high-symmetry phases is explained in :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>`.
+               When ``SET_INIT_STR = 3``, the initial displacement from the input file is used again whenever the crystal structure relaxed back to the high-symmetry phase at the previous temperature. The structure is judged to be in the high-symmetry phase when spglib finds the space group of the undistorted reference cell for it, with the symmetry tolerance of the :ref:`TOLERANCE <anphon_tolerance>` tag. This is useful in cooling calculations because a small displacement from the high-symmetry structure is required to induce spontaneous symmetry breaking. (The former ``COOLING_U0_INDEX`` and ``COOLING_U0_THR`` tags are deprecated and ignored.)
 
-````
-
-.. _anphon_cooling_u0_index:
-
-* COOLING_U0_INDEX-tag = 0 | 1 | ... | 3N-1 (N : the number of atoms in the unit cell)
-
- :Default: 0
- :Type: Integer
-
- :Description: Specify as :math:`3\times\alpha + \mu`. Here, :math:`\alpha` denotes the atom index in the primitive cell and :math:`\mu` is the xyz index, where both indices are zero-indexed.
-  See the description of :ref:`COOLING_U0_THR <anphon_cooling_u0_thr>` for details.
-  This option is used only when ``SET_INIT_STR = 3``.
-
-````
-
-.. _anphon_cooling_u0_thr:
-
-* COOLING_U0_THR-tag: Threshold to judge high-symmetry phase in structural optimization [Bohr].
-
- :Default: 0.001
- :Type: Double
-
- :Description: The crystal structure is judged to be back to the high-symmetry phase if 
-               :math:`u^{(0)}` [``COOLING_U0_INDEX``] < ``COOLING_U0_THR``. 
-               This option is useful in cooling calculations because small displacements from the high-symmetry structure are required to induce spontaneous symmetry breaking.
-               This option is used only when ``SET_INIT_STR = 3``.
- 
 ````
 
 .. _anphon_stat_pressure:

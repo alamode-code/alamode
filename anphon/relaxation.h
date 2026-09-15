@@ -245,8 +245,8 @@ public:
     int gdiis_control;
 
     int set_init_str;
-    int cooling_u0_index;  // used if set_init_str is 3
-    double cooling_u0_thr; // used if set_init_str is 3
+    // Reference space group; SET_INIT_STR = 3 re-seeds displacements when it is restored.
+    int spacegroup_number_ref{0};
     double add_hess_diag;
     double stat_pressure;
 
@@ -358,6 +358,15 @@ public:
                                        const std::complex<double> *const v1_array_atT,
                                        const std::vector<int> &harm_optical_modes, double **omega2_harmonic,
                                        std::complex<double> ***evec_harmonic) const;
+
+    int detect_spacegroup(const Eigen::Matrix3d &lavec, const std::vector<Eigen::Vector3d> &xf,
+                          std::string &label) const;
+
+    void distorted_cell_of(const RelaxationStructureState &state, Eigen::Matrix3d &lavec,
+                           std::vector<Eigen::Vector3d> &xf) const;
+
+    // spglib number of the structure of a state (SET_INIT_STR = 3).
+    int spacegroup_of(const RelaxationStructureState &state) const;
 
     std::string print_structure_and_symmetry(const RelaxationStructureState &structure_state,
                                              const std::complex<double> *del_v0_del_umn_atT) const;

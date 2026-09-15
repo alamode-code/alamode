@@ -75,8 +75,6 @@ void Relaxation::set_default_variables()
     gdiis_control = 1;            // controlled GDIIS by default; GDIIS_PLAIN = 1 disables it
 
     set_init_str = 1;
-    cooling_u0_index = 0;
-    cooling_u0_thr = 0.001;
 
     add_hess_diag = 100.0; // [cm^{-1}]
     stat_pressure = 0.0;   // [GPa]
@@ -112,6 +110,19 @@ void Relaxation::setup_relaxation()
     mympi->MPI_Bcast_string(strain_file, 0, MPI_COMM_WORLD);
 
     const auto relax_mode = to_relaxation_str_mode(relax_str);
+    if (relax_mode != RelaxationStrMode::None) {
+        // Use the per-step symmetry tolerance for the reference cell on every rank.
+        const auto &primcell = system->get_primcell();
+        std::vector<Eigen::Vector3d> xf(primcell.number_of_atoms);
+        for (auto iat = 0; iat < primcell.number_of_atoms; ++iat) xf[iat] = primcell.x_fractional.row(iat);
+        std::string label;
+        spacegroup_number_ref = detect_spacegroup(primcell.lattice_vector, xf, label);
+        if (mympi->my_rank == 0 && writes->getVerbosity() > 0 && set_init_str == 3) {
+            std::cout << "  SET_INIT_STR = 3: the high-symmetry phase is " << label << " (spglib, tolerance "
+                      << std::scientific << std::setprecision(2) << symmetry->tolerance << std::defaultfloat
+                      << ")\n\n";
+        }
+    }
     if (relax_mode != RelaxationStrMode::CoordinatesAndCell && relax_mode != RelaxationStrMode::PerturbativeQha) {
         return;
     }
@@ -495,15 +506,14 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             }
             if (optimizer) optimizer->reset();
         }
-        // read initial DISPLACEMENT if the structure converges
-        // to the high-symmetry one.
-        else if (std::fabs(u0[cooling_u0_index]) < cooling_u0_thr)
+        // Re-seed symmetry breaking when the reference space group is restored.
+        else if (spacegroup_of(structure_state) == spacegroup_number_ref)
         {
             if (writes->getVerbosity() > 0) {
                 std::cout << '\n';
-                std::cout << " u0[" << cooling_u0_index << "] < " << std::setw(15) << std::setprecision(6)
-                          << cooling_u0_thr << " is satisfied.\n";
-                std::cout << " the structure is back to the high-symmetry phase.\n";
+                std::cout << " the structure at the previous temperature has the space group of the"
+                             " reference cell (#"
+                          << spacegroup_number_ref << "):\n";
                 std::cout << " set again initial displacement from input file.\n\n";
             }
 
@@ -1121,6 +1131,67 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
     du_tensor = std::sqrt(du_tensor);
 }
 
+void Relaxation::distorted_cell_of(const RelaxationStructureState &state, Eigen::Matrix3d &lavec,
+                                   std::vector<Eigen::Vector3d> &xf) const
+{
+    // Lattice vectors (columns) and fractional positions of the structure given by
+    // the strain u_tensor and the displacements u0 of the state.
+    const auto &primcell = system->get_primcell();
+    const auto natmin = primcell.number_of_atoms;
+    Eigen::Matrix3d Fmat = Eigen::Matrix3d::Identity();
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j) Fmat(i, j) += state.u_tensor[i][j];
+    lavec = Fmat * primcell.lattice_vector;
+    const Eigen::Matrix3d lavec_inv = lavec.inverse();
+    xf.resize(natmin);
+    for (size_t iat = 0; iat < natmin; ++iat) {
+        const Eigen::Vector3d x_ref = primcell.x_fractional.row(iat).transpose();
+        Eigen::Vector3d r_cart = Fmat * (primcell.lattice_vector * x_ref);
+        for (auto i = 0; i < 3; ++i) r_cart(i) += state.u0[3 * iat + i];
+        xf[iat] = lavec_inv * r_cart;
+    }
+}
+
+int Relaxation::spacegroup_of(const RelaxationStructureState &state) const
+{
+    Eigen::Matrix3d lavec;
+    std::vector<Eigen::Vector3d> xf;
+    distorted_cell_of(state, lavec, xf);
+    std::string label;
+    return detect_spacegroup(lavec, xf, label);
+}
+
+int Relaxation::detect_spacegroup(const Eigen::Matrix3d &lavec, const std::vector<Eigen::Vector3d> &xf,
+                                  std::string &label) const
+{
+    // Lattice vectors are columns; positions are fractional, species from the phonon cell.
+    // Returns 0 on failure; label includes the symbol and number, e.g. "P4mm (#99)".
+    const auto &primcell = system->get_primcell();
+    const int natmin = primcell.number_of_atoms;
+    double aa[3][3];
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j) aa[i][j] = lavec(i, j);
+    // Kept raw: spg_get_dataset takes double(*)[3] (spglib C ABI boundary).
+    double(*position)[3];
+    NDArray<int, 1> types;
+    allocate(position, natmin);
+    types.resize(natmin);
+    for (auto iat = 0; iat < natmin; ++iat) {
+        for (auto i = 0; i < 3; ++i) position[iat][i] = xf[iat](i);
+        types[iat] = primcell.kind[iat];
+    }
+    int number = 0;
+    label = "detection failed";
+    const auto spgdataset = spg_get_dataset(aa, position, types, natmin, symmetry->tolerance);
+    if (spgdataset && spgdataset->spacegroup_number > 0) {
+        number = spgdataset->spacegroup_number;
+        label = std::string(spgdataset->international_symbol) + " (#" + std::to_string(number) + ")";
+    }
+    if (spgdataset) spg_free_dataset(spgdataset);
+    deallocate(position);
+    return number;
+}
+
 std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureState &structure_state,
                                                      const std::complex<double> *del_v0_del_umn_atT) const
 {
@@ -1143,8 +1214,9 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         }
     }
 
-    const Matrix3d lavec_new = Fmat * primcell.lattice_vector; // columns are a1, a2, a3
-    const Matrix3d lavec_new_inv = lavec_new.inverse();
+    Matrix3d lavec_new;
+    std::vector<Vector3d> xf_new;
+    distorted_cell_of(structure_state, lavec_new, xf_new);
 
     if (writes->getVerbosity() > 0) {
         std::cout << "  Lattice vectors [Bohr]:\n";
@@ -1157,17 +1229,10 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         }
     }
 
-    std::vector<Vector3d> xf_new(natmin);
     if (writes->getVerbosity() > 0) {
         std::cout << "  Atomic positions (fractional):\n";
     }
     for (size_t iat = 0; iat < natmin; ++iat) {
-        const Vector3d x_ref = primcell.x_fractional.row(iat).transpose();
-        Vector3d r_cart = Fmat * (primcell.lattice_vector * x_ref);
-        for (auto i = 0; i < 3; ++i) {
-            r_cart(i) += structure_state.u0[3 * iat + i];
-        }
-        xf_new[iat] = lavec_new_inv * r_cart;
 
         if (writes->getVerbosity() > 0) {
             std::cout << "   " << std::setw(4) << std::left << system->symbol_kd[primcell.kind[iat]] << std::right
@@ -1218,38 +1283,11 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
     }
 
     // space group detection by spglib
-    double aa[3][3];
-    for (auto i = 0; i < 3; ++i) {
-        for (auto j = 0; j < 3; ++j) {
-            aa[i][j] = lavec_new(i, j);
-        }
-    }
-    // Kept raw: spg_get_dataset takes double(*)[3] (spglib C ABI boundary).
-    double(*position)[3];
-    NDArray<int, 1> types;
-    allocate(position, natmin);
-    types.resize(natmin);
-    for (size_t iat = 0; iat < natmin; ++iat) {
-        for (auto i = 0; i < 3; ++i) {
-            position[iat][i] = xf_new[iat](i);
-        }
-        types[iat] = primcell.kind[iat];
-    }
-
-    std::string spg_label = "detection failed";
-    const auto spgdataset = spg_get_dataset(aa, position, types, static_cast<int>(natmin), symmetry->tolerance);
-    if (spgdataset && spgdataset->spacegroup_number > 0) {
-        spg_label =
-            std::string(spgdataset->international_symbol) + " (#" + std::to_string(spgdataset->spacegroup_number) + ")";
-    }
+    std::string spg_label;
+    detect_spacegroup(lavec_new, xf_new, spg_label);
     if (writes->getVerbosity() > 0) {
         std::cout << "  Space group :  " << spg_label << '\n';
     }
-    if (spgdataset) spg_free_dataset(spgdataset);
-
-    deallocate(position);
-    types.clear();
-
     return spg_label;
 }
 
