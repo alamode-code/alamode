@@ -1319,6 +1319,40 @@ Note that a zero initial displacement keeps the full symmetry of the reference s
 
  The resolved Cartesian displacements, the degenerate set, and the rotation used are printed at the beginning of the log. anphon stops with an error when the reference structure has no rotation about the axis, when no member of the set is invariant (the axis is incompatible with the mode), or when several members are (choose a higher-order axis). When rotations about the same axis through different points select distinct patterns that are not symmetry-equivalent domains, the candidates are printed as ``DISPMODE = 1`` lines and the run stops so that one of them can be given explicitly.
 
+"&selfenergy"-field (``MODE = selfenergy``)
+++++++++++++++++++++++++++++++++++++++++++++
+
+``MODE = selfenergy`` analyzes the anharmonic self-energy of selected phonon modes at arbitrary wave vectors. It shares the setup of ``MODE = kappa`` (harmonic and cubic force constants, smearing or tetrahedron integration, temperatures), but the ``&kpoint`` field lists the *target* wave vectors and the integration mesh is given here::
+
+  &general
+    MODE = selfenergy
+  /
+  &kpoint
+    0                      # KPMODE 0: list of target q points
+    0.0 0.0 0.0
+    0.15 0.2 0.3
+  /                        # or KPMODE 1: a band path, every point of the path is a target
+  &selfenergy
+    KMESH = 20 20 20       # integration mesh
+    BRANCHES = all         # or a list such as 1,4-6 (1-based), applied to every target
+    LINEWIDTH = 1          # Gamma(T), files PREFIX.Gamma.[n]     (as SELF_ENERGY)
+    SHIFT = 0              # frequency shift, PREFIX.Shift.[n]    (as REALPART)
+    SELF_W = 0             # Sigma(omega, T), PREFIX.Self.[n]      (tetrahedron only)
+    FSTATE_W = 0           # frequency-resolved final state, PREFIX.fw.[n]
+    PRINTV3 = 0; PRINTV4 = 0
+    INTERPOLATE = 0        # 1: spectral function from the Fourier-interpolated self-energy matrix
+    KMESH_COARSE = 5 5 5   # coarse mesh for INTERPOLATE (must divide KMESH)
+    OMEGA_RANGE = 300 600 0.5   # frequency window and step for INTERPOLATE [cm^-1]
+  /
+
+With ``INTERPOLATE = 1`` the full bubble self-energy matrix :math:`\Sigma_{jj'}(\mathbf{q},\omega)` (Lorentzian broadening ``EPSILON``) is computed on the coarse mesh, transformed to the displacement basis where it does not depend on the eigenvector gauge, Fourier-interpolated to every target wave vector, and the spectral function :math:`A(\mathbf{q},\omega) = -\frac{2\omega}{\pi}\,\mathrm{Im}\,\mathrm{Tr}\,[\omega^2 - D(\mathbf{q}) - \Pi(\mathbf{q},\omega)]^{-1}` and its branch projections are written (``PREFIX.spectrum`` or the ``spectrum/`` group of the HDF5 file). The interpolation is exact on the coarse-mesh points; between them the accuracy is set by the coarse mesh, so compare with the direct linewidths of a few targets. The cost grows with the number of coarse points and frequencies; ``OMEGA_RANGE`` restricts the window (default: 0 to twice the highest frequency in steps of ``DELTA_E``).
+
+With the default ``FILE_FORMAT = h5`` the results of all targets are collected in one file ``PREFIX.selfenergy.h5`` (group ``targets/NNNNN`` per target in the order of the ``&kpoint`` field and ``BRANCHES``, with ``xk``, ``branch``, ``frequency``, ``kaxis`` for a path, ``linewidth``, ``shift_*``, ``self_omega``/``self_real``/``self_imag``, ``fstate_*``, and units as attributes; the path coordinates are repeated under ``path/``). With ``FILE_FORMAT = text`` the per-target text files of the ``KS_INPUT`` analysis are written instead. The matrix-element listings (``PRINTV3``/``PRINTV4``) are always text files.
+
+Targets that fall on the integration mesh are evaluated as in the ``KS_INPUT`` analysis. Targets off the mesh are evaluated exactly on the same mesh by diagonalizing the dynamical matrix on the shifted grid :math:`\{\mathbf{q}-\mathbf{k}\}`; every mesh point then contributes once and, for the matrix-element listings, the partners are keyed by their fractional coordinates. ``QUARTIC = 2`` is not available off the mesh, and ``ISMEAR = 2`` cannot be used off the mesh. For a degenerate target branch the linewidth, the shifts, and :math:`\Sigma(\omega)` are averaged over the degenerate block, which makes them independent of the eigenvector gauge; ``FSTATE_W`` and the matrix-element listings remain per branch. Output files are numbered with the on-mesh targets first, then the off-mesh ones, in the order of the ``&kpoint`` field and ``BRANCHES``; the header of each file gives the wave vector and branch. ``KS_INPUT`` in ``&analysis`` remains available with ``MODE = kappa`` and accepts off-mesh points under the same restrictions.
+
+````
+
 "&analysis"-field
 +++++++++++++++++
 
@@ -1649,11 +1683,11 @@ Note that a zero initial displacement keeps the full symmetry of the reference s
 
 .. _anphon_ks_input:
 
-* KS_INPUT-tag : File containing a list of phonon modes to be analyzed
+* KS_INPUT-tag : File containing a list of phonon modes to be analyzed (deprecated)
 
  :Default: None
  :Type: String
- :Description: When ``MODE = kappa`` and ``KS_INPUT`` is given, the mode analysis of the phonon modes listed in the specified file is performed *instead of* the thermal conductivity calculation. The first line of the file gives the number of entries, and each of the following lines contains the fractional coordinates of a :math:`k` point and a branch index (1-based) as ``k1 k2 k3 s``. Each :math:`k` point must be a point of the grid given in the ``&kpoint`` field (*KPMODE* = 2). The quantities to be computed are selected by :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_W <anphon_self_w>`, :ref:`PRINTV3 <anphon_printv3>`, and :ref:`PRINTV4 <anphon_printv4>`.
+ :Description: Deprecated in favor of ``MODE = selfenergy`` (targets in ``&kpoint``, integration mesh and switches in ``&selfenergy``), which also accepts wave vectors off the mesh and band paths. When ``MODE = kappa`` and ``KS_INPUT`` is given, the mode analysis of the phonon modes listed in the specified file is performed *instead of* the thermal conductivity calculation. The first line of the file gives the number of entries, and each of the following lines contains the fractional coordinates of a :math:`k` point and a branch index (1-based) as ``k1 k2 k3 s``. Each :math:`k` point must be a point of the grid given in the ``&kpoint`` field (*KPMODE* = 2). The quantities to be computed are selected by :ref:`SELF_ENERGY <anphon_self_energy>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_W <anphon_self_w>`, :ref:`PRINTV3 <anphon_printv3>`, and :ref:`PRINTV4 <anphon_printv4>`.
 
 ````
 

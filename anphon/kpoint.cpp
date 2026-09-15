@@ -1110,6 +1110,69 @@ void KpointMeshUniform::get_unique_triplet_k(const int ik, const std::vector<Sym
     flag_found.clear();
 }
 
+void KpointMeshUniform::get_triplets_at_k(const int knum, const bool use_permutation_symmetry,
+                                          std::vector<KsListGroup> &triplet, const int sign) const
+{
+    double xk2[3];
+    int ks_in[2];
+    std::vector<KsList> kslist;
+
+    triplet.clear();
+    for (int ik1 = 0; ik1 < nk; ++ik1) {
+        for (int i = 0; i < 3; ++i) xk2[i] = -sign * xk[knum][i] - xk[ik1][i]; // sign = -1: k2 = k1_target - k1
+        const auto ik2 = get_knum(xk2);
+        if (ik2 < 0) exit("get_triplets_at_k", "Cannot find the momentum-conserving partner on the mesh.");
+        if (use_permutation_symmetry && ik1 > ik2) continue;
+        kslist.clear();
+        ks_in[0] = ik1;
+        ks_in[1] = ik2;
+        kslist.emplace_back(2, ks_in, 0);
+        if (use_permutation_symmetry && ik1 != ik2) {
+            ks_in[0] = ik2;
+            ks_in[1] = ik1;
+            kslist.emplace_back(2, ks_in, 0);
+        }
+        triplet.emplace_back(kslist);
+    }
+}
+
+void KpointMeshUniform::get_quartets_at_k(const int knum, const bool use_permutation_symmetry,
+                                          std::vector<KsListGroup> &quartet, const int sign) const
+{
+    double xk3[3];
+    std::vector<int> ks_in(3);
+    std::vector<KsList> kslist;
+    NDArray<bool, 2> flag_found;
+    flag_found.resize(nk, nk);
+    for (int i = 0; i < nk; ++i)
+        for (int j = 0; j < nk; ++j) flag_found[i][j] = false;
+
+    quartet.clear();
+    for (int ik1 = 0; ik1 < nk; ++ik1) {
+        for (int ik2 = use_permutation_symmetry ? ik1 : 0; ik2 < nk; ++ik2) {
+            for (int i = 0; i < 3; ++i) xk3[i] = -sign * xk[knum][i] - xk[ik1][i] - xk[ik2][i];
+            const auto ik3 = get_knum(xk3);
+            if (ik3 < 0) exit("get_quartets_at_k", "Cannot find the momentum-conserving partner on the mesh.");
+            if (use_permutation_symmetry && ik3 > ik2) continue;
+            if (flag_found[ik1][ik2]) continue;
+            kslist.clear();
+            ks_in = {ik1, ik2, ik3};
+            kslist.emplace_back(3, &ks_in[0], 0);
+            flag_found[ik1][ik2] = true;
+            if (use_permutation_symmetry) {
+                std::sort(ks_in.begin(), ks_in.end());
+                do {
+                    if (!flag_found[ks_in[0]][ks_in[1]]) {
+                        kslist.emplace_back(3, &ks_in[0], 0);
+                        flag_found[ks_in[0]][ks_in[1]] = true;
+                    }
+                } while (std::next_permutation(ks_in.begin(), ks_in.end()));
+            }
+            quartet.emplace_back(kslist);
+        }
+    }
+}
+
 void KpointMeshUniform::get_unique_quartet_k(const int ik, const std::vector<SymmetryOperation> &symmlist,
                                              const bool use_quartet_symmetry, const bool use_permutation_symmetry,
                                              std::vector<KsListGroup> &quartet, const int sign) const

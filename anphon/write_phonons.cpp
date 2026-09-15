@@ -315,7 +315,6 @@ void Writes::writeInputVars()
         // std::cout << "  REALPART = " << anharmonic_core->calc_realpart << '\n';
         // std::cout << "  ATOMPROJ = " << anharmonic_core->atom_project_mode << '\n';
         // std::cout << "  FSTATE_W = " << anharmonic_core->calc_fstate_omega << '\n';
-        //  std::cout << "  FSTATE_K = " << anharmonic_core->calc_fstate_k << '\n';
 
     } else if (phon->mode == "SCPH") {
         // Do nothing

@@ -219,6 +219,15 @@ public:
                               const bool use_triplet_symmetry, const bool use_permutation_symmetry,
                               std::vector<KsListGroup> &triplet, const int sign = -1) const;
 
+    // Partners of knum, without crystal-symmetry reduction: sign*k1 + k2 + k3 = G.
+    // sign = -1 for squared vertices, +1 for Phi. Permutations share a group when enabled.
+    // Matches get_unique_triplet_k at star representatives with crystal symmetry disabled.
+    void get_triplets_at_k(const int knum, const bool use_permutation_symmetry, std::vector<KsListGroup> &triplet,
+                           const int sign = -1) const;
+
+    void get_quartets_at_k(const int knum, const bool use_permutation_symmetry, std::vector<KsListGroup> &quartet,
+                           const int sign = -1) const;
+
     void get_unique_quartet_k(const int ik, const std::vector<SymmetryOperation> &symmlist,
                               const bool use_quartet_symmetry, const bool use_permutation_symmetry,
                               std::vector<KsListGroup> &quartet, const int sign = -1) const;
@@ -290,6 +299,10 @@ public:
 
     std::vector<KpointInp> kpInp;
 
+    // Self-energy targets: KPMODE 0 list or 1 path. kpInp/kpoint_mode hold KMESH.
+    int target_mode = -1;
+    std::vector<KpointInp> kpInp_targets;
+
     std::unique_ptr<KpointBandStructure> kpoint_bs;
     std::unique_ptr<KpointGeneral> kpoint_general;
 
@@ -300,6 +313,8 @@ public:
     void get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const Eigen::Matrix3d &lavec_prim,
                                   std::vector<std::vector<double>> &klist) const;
 
+    void setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
+
     static int get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
                                         std::vector<int> &kmap);
 
@@ -309,8 +324,6 @@ private:
     void deallocate_variables();
 
     void setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
-
-    void setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
     void mpi_broadcast_kplane_vector(unsigned int, std::vector<KpointPlane> *&) const;
 };

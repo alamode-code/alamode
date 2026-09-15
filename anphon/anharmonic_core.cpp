@@ -112,7 +112,7 @@ void AnharmonicCore::setup()
         std::cout << '\n';
     }
 
-    if (!mode_analysis->calc_fstate_k && dos->kmesh_dos.get()) {
+    if (dos->kmesh_dos.get()) {
         phase_storage_dos = std::make_unique<PhaseFactorCache>(dos->kmesh_dos->nk_i);
         phase_storage_dos->create(use_tuned_ver);
     }
@@ -248,9 +248,6 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
     const int ns = dynamical->neval;
 
     double omega[3];
-    auto ret = std::complex<double>(0.0, 0.0);
-    auto ret_re = 0.0;
-    auto ret_im = 0.0;
 
     for (i = 0; i < 3; ++i) {
         kn[i] = ks[i] / ns;
@@ -272,17 +269,8 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
         kindex_phi3_stored[0] = kn[1];
         kindex_phi3_stored[1] = kn[2];
     }
-#ifdef _OPENMP
-#pragma omp parallel for private(ret), reduction(+ : ret_re, ret_im)
-#endif
-    for (i = 0; i < ngroup_v3; ++i) {
-        ret = evec_in[kn[0]][sn[0]][evec_index_v3[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v3[i][1]] *
-              evec_in[kn[2]][sn[2]][evec_index_v3[i][2]] * invmass_v3[i] * phi3_reciprocal[i];
-        ret_re += ret.real();
-        ret_im += ret.imag();
-    }
-
-    return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2]);
+    return contract_phi3(evec_in[kn[0]][sn[0]], evec_in[kn[1]][sn[1]], evec_in[kn[2]][sn[2]], phi3_reciprocal, true) /
+           std::sqrt(omega[0] * omega[1] * omega[2]);
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
@@ -329,16 +317,8 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
         kindex_work[1] = static_cast<int>(kn[2]);
     }
 
-    auto ret_re = 0.0;
-    auto ret_im = 0.0;
-    for (i = 0; i < ngroup_v3; ++i) {
-        const auto ret = evec_in[kn[0]][sn[0]][evec_index_v3[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v3[i][1]] *
-                         evec_in[kn[2]][sn[2]][evec_index_v3[i][2]] * invmass_v3[i] * phi3_work[i];
-        ret_re += ret.real();
-        ret_im += ret.imag();
-    }
-
-    return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2]);
+    return contract_phi3(evec_in[kn[0]][sn[0]], evec_in[kn[1]][sn[1]], evec_in[kn[2]][sn[2]], phi3_work) /
+           std::sqrt(omega[0] * omega[1] * omega[2]);
 }
 
 std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double *const *xk_in,
@@ -351,9 +331,6 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double
     const auto ns = dynamical->neval;
 
     double omega[3];
-    std::complex<double> ret = std::complex<double>(0.0, 0.0);
-    double ret_re = 0.0;
-    double ret_im = 0.0;
 
     for (i = 0; i < 3; ++i) {
         kn[i] = ks[i] / ns;
@@ -373,16 +350,51 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double
         kindex_phi3_stored[0] = kn[1];
         kindex_phi3_stored[1] = kn[2];
     }
+    return contract_phi3(evec_in[kn[0]][sn[0]], evec_in[kn[1]][sn[1]], evec_in[kn[2]][sn[2]], phi3_reciprocal, true);
+}
+
+void AnharmonicCore::phi3_reciprocal_at(const double *xk1, const double *xk2, std::complex<double> *work)
+{
+    calc_phi3_reciprocal(xk1, xk2, ngroup_v3, fcs_group_v3, relvec_v3, nullptr, work, false);
+}
+
+std::complex<double> AnharmonicCore::contract_phi3(const std::complex<double> *e0, const std::complex<double> *e1,
+                                                   const std::complex<double> *e2, const std::complex<double> *phi3,
+                                                   const bool use_openmp) const
+{
+    double ret_re = 0.0, ret_im = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for private(ret), reduction(+ : ret_re, ret_im)
+#pragma omp parallel for reduction(+ : ret_re, ret_im) if (use_openmp)
 #endif
-    for (i = 0; i < ngroup_v3; ++i) {
-        ret = evec_in[kn[0]][sn[0]][evec_index_v3[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v3[i][1]] *
-              evec_in[kn[2]][sn[2]][evec_index_v3[i][2]] * invmass_v3[i] * phi3_reciprocal[i];
+    for (int i = 0; i < ngroup_v3; ++i) {
+        const auto ret = e0[evec_index_v3[i][0]] * e1[evec_index_v3[i][1]] * e2[evec_index_v3[i][2]] * invmass_v3[i] *
+                         phi3[i];
         ret_re += ret.real();
         ret_im += ret.imag();
     }
+    return std::complex<double>(ret_re, ret_im);
+}
 
+void AnharmonicCore::phi4_reciprocal_at(const double *xk1, const double *xk2, const double *xk3,
+                                        std::complex<double> *work)
+{
+    calc_phi4_reciprocal(xk1, xk2, xk3, nullptr, work, false);
+}
+
+std::complex<double> AnharmonicCore::contract_phi4(const std::complex<double> *e0, const std::complex<double> *e1,
+                                                   const std::complex<double> *e2, const std::complex<double> *e3,
+                                                   const std::complex<double> *phi4, const bool use_openmp) const
+{
+    double ret_re = 0.0, ret_im = 0.0;
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+ : ret_re, ret_im) if (use_openmp)
+#endif
+    for (int i = 0; i < ngroup_v4; ++i) {
+        const auto ret = e0[evec_index_v4[i][0]] * e1[evec_index_v4[i][1]] * e2[evec_index_v4[i][2]] *
+                         e3[evec_index_v4[i][3]] * invmass_v4[i] * phi4[i];
+        ret_re += ret.real();
+        ret_im += ret.imag();
+    }
     return std::complex<double>(ret_re, ret_im);
 }
 
@@ -397,7 +409,8 @@ void AnharmonicCore::calc_phi3_reciprocal(const double *xk1, const double *xk2, 
     std::complex<double> ret_in;
     unsigned int nsize_group;
 
-    const auto tune_type_now = phase_storage_in->get_tune_type();
+    // Off-mesh points require exact phases; a null cache selects exp(i*phase).
+    const auto tune_type_now = phase_storage_in ? phase_storage_in->get_tune_type() : 0;
 
     if (tune_type_now == 1) {
 
@@ -464,9 +477,6 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
     const int ns = dynamical->neval;
     unsigned int kn[4], sn[4];
     double omega[4];
-    auto ret_re = 0.0;
-    auto ret_im = 0.0;
-    auto ret = std::complex<double>(0.0, 0.0);
 
     for (i = 0; i < 4; ++i) {
         kn[i] = ks[i] / ns;
@@ -485,18 +495,13 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
         kindex_phi4_stored[2] = kn[3];
     }
 
-#ifdef _OPENMP
-#pragma omp parallel for private(ret), reduction(+ : ret_re, ret_im)
-#endif
-    for (i = 0; i < ngroup_v4; ++i) {
-        ret = evec_in[kn[0]][sn[0]][evec_index_v4[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v4[i][1]] *
-              evec_in[kn[2]][sn[2]][evec_index_v4[i][2]] * evec_in[kn[3]][sn[3]][evec_index_v4[i][3]] * invmass_v4[i] *
-              phi4_reciprocal[i];
-        ret_re += ret.real();
-        ret_im += ret.imag();
-    }
-
-    return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
+    return contract_phi4(evec_in[kn[0]][sn[0]],
+                         evec_in[kn[1]][sn[1]],
+                         evec_in[kn[2]][sn[2]],
+                         evec_in[kn[3]][sn[3]],
+                         phi4_reciprocal,
+                         true) /
+           std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
 }
 
 std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *const *xk_in,
@@ -531,17 +536,9 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
         kindex_work[2] = static_cast<int>(kn[3]);
     }
 
-    auto ret_re = 0.0;
-    auto ret_im = 0.0;
-    for (i = 0; i < ngroup_v4; ++i) {
-        const auto ret = evec_in[kn[0]][sn[0]][evec_index_v4[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v4[i][1]] *
-                         evec_in[kn[2]][sn[2]][evec_index_v4[i][2]] * evec_in[kn[3]][sn[3]][evec_index_v4[i][3]] *
-                         invmass_v4[i] * phi4_work[i];
-        ret_re += ret.real();
-        ret_im += ret.imag();
-    }
-
-    return std::complex<double>(ret_re, ret_im) / std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
+    return contract_phi4(evec_in[kn[0]][sn[0]], evec_in[kn[1]][sn[1]], evec_in[kn[2]][sn[2]], evec_in[kn[3]][sn[3]],
+                         phi4_work) /
+           std::sqrt(omega[0] * omega[1] * omega[2] * omega[3]);
 }
 
 std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double *const *xk_in,
@@ -553,9 +550,6 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double
     int ns = dynamical->neval;
     unsigned int kn[4], sn[4];
     double omega[4];
-    double ret_re = 0.0;
-    double ret_im = 0.0;
-    auto ret = std::complex<double>(0.0, 0.0);
 
     for (i = 0; i < 4; ++i) {
         kn[i] = ks[i] / ns;
@@ -572,18 +566,12 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double
         kindex_phi4_stored[2] = kn[3];
     }
 
-#ifdef _OPENMP
-#pragma omp parallel for private(ret), reduction(+ : ret_re, ret_im)
-#endif
-    for (i = 0; i < ngroup_v4; ++i) {
-        ret = evec_in[kn[0]][sn[0]][evec_index_v4[i][0]] * evec_in[kn[1]][sn[1]][evec_index_v4[i][1]] *
-              evec_in[kn[2]][sn[2]][evec_index_v4[i][2]] * evec_in[kn[3]][sn[3]][evec_index_v4[i][3]] * invmass_v4[i] *
-              phi4_reciprocal[i];
-        ret_re += ret.real();
-        ret_im += ret.imag();
-    }
-
-    return std::complex<double>(ret_re, ret_im);
+    return contract_phi4(evec_in[kn[0]][sn[0]],
+                         evec_in[kn[1]][sn[1]],
+                         evec_in[kn[2]][sn[2]],
+                         evec_in[kn[3]][sn[3]],
+                         phi4_reciprocal,
+                         true);
 }
 
 void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
@@ -595,7 +583,8 @@ void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, 
     std::complex<double> ret_in;
     unsigned int nsize_group;
 
-    const auto tune_type_now = phase_storage_in->get_tune_type();
+    // Off-mesh points require exact phases; a null cache selects exp(i*phase).
+    const auto tune_type_now = phase_storage_in ? phase_storage_in->get_tune_type() : 0;
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
 
     if (tune_type_now == 1) {

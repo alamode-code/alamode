@@ -45,6 +45,7 @@ void InputSetter::set_general_vars(PHON *phon, const GeneralInputVars &vars) con
 {
     phon->job_title = vars.prefix;
     phon->mode = vars.mode;
+    phon->mode_analysis->selfenergy_mode = vars.selfenergy_mode;
     phon->use_hdf5_io = vars.use_hdf5_io;
     phon->allow_unconverged = vars.allow_unconverged;
 
@@ -322,4 +323,38 @@ void InputSetter::set_initial_displacements(PHON *phon, const std::vector<std::v
 void InputSetter::set_initial_displacement_modes(PHON *phon, const std::vector<InitialDisplacementMode> &modes) const
 {
     phon->relaxation->init_disp_modes = modes;
+}
+
+void InputSetter::set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], const std::string &branches,
+                                      const int linewidth, const int shift, const int self_w, const int fstate_w,
+                                      const int print_v3, const int print_v4, const int interpolate,
+                                      const unsigned int kmesh_coarse[3], const double omega_range[3]) const
+{
+    auto &kp = *phon->kpoint;
+    if (kp.kpoint_mode == 2) {
+        exit("set_selfenergy_vars",
+             "With MODE = selfenergy the &kpoint field lists the targets (KPMODE = 0) or gives a path"
+             " (KPMODE = 1); the integration mesh is KMESH in &selfenergy.");
+    }
+    kp.target_mode = kp.kpoint_mode;
+    kp.kpInp_targets = kp.kpInp;
+    kp.kpInp.clear();
+    kp.kpInp.emplace_back(std::vector<std::string>{std::to_string(kmesh[0]), std::to_string(kmesh[1]),
+                                                   std::to_string(kmesh[2])});
+    kp.kpoint_mode = 2;
+
+    auto &ma = *phon->mode_analysis;
+    ma.selfenergy_mode = true;
+    ma.branches_spec = branches;
+    ma.calc_selfenergy = linewidth || shift; // the shift is computed in the linewidth pass
+    ma.calc_realpart = shift != 0;
+    ma.spectral_func = self_w != 0;
+    ma.calc_fstate_omega = fstate_w != 0;
+    ma.print_V3 = print_v3;
+    ma.print_V4 = print_v4;
+    ma.interpolate = interpolate != 0;
+    for (auto i = 0; i < 3; ++i) {
+        ma.kmesh_coarse[i] = kmesh_coarse[i];
+        ma.omega_range[i] = omega_range[i];
+    }
 }

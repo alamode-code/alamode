@@ -31,6 +31,8 @@ struct GeneralInputVars
 
     bool use_hdf5_io = true; // FILE_FORMAT = h5 (default) or text
 
+    bool selfenergy_mode = false; // MODE = selfenergy (runs through the kappa driver)
+
     // Resolved restart flags (file auto-detection merged with the
     // deprecated &general RESTART/RESTART_4PH tags).
     bool restart = false;
@@ -264,5 +266,11 @@ public:
     void set_initial_displacements(PHON *phon, const std::vector<std::vector<double>> &u_xyz) const;
 
     void set_initial_displacement_modes(PHON *phon, const std::vector<InitialDisplacementMode> &modes) const;
+
+    // Preserve &kpoint as targets and install KMESH as the integration mesh.
+    void set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], const std::string &branches,
+                             const int linewidth, const int shift, const int self_w, const int fstate_w,
+                             const int print_v3, const int print_v4, const int interpolate,
+                             const unsigned int kmesh_coarse[3], const double omega_range[3]) const;
 };
 } // namespace PHON_NS

@@ -44,6 +44,7 @@ private:
     // checked against the &analysis / &scph values).
     std::string job_title;
     std::string run_mode;
+    bool selfenergy_mode = false; // MODE = selfenergy: run_mode is KAPPA with the &selfenergy field
     bool use_hdf5_io = true;
     int quartic_mode = 0;
     int relax_str = 0;
@@ -78,6 +79,8 @@ private:
     void parse_initial_strain(PHON *phon);
 
     void parse_initial_displace(PHON *phon);
+
+    void parse_selfenergy_vars(PHON *phon);
 
     int locate_tag(const std::string &key);
 

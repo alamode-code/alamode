@@ -9,6 +9,7 @@
 */
 
 #include "selfenergy.h"
+#include <Eigen/Dense>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
@@ -157,6 +158,217 @@ Selfenergy::get_bubble_selfenergy(const KpointMeshUniform *kmesh_in, const unsig
     ret_sum.clear();
 
     return se_bubble;
+}
+
+void Selfenergy::selfenergy_a_at(const unsigned int N, const double *T, const double omega, const double *xq,
+                                 const double omega_q, const std::complex<double> *evec_q,
+                                 const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                 const std::complex<double> *const *const *evec_in,
+                                 const AnharmonicCore::ShiftedGrid &sg, std::complex<double> *ret) const
+{
+    // Diagram (a) with the complex frequency omega + i epsilon, partner q - k from sg.
+    const auto nk = kmesh_in->nk;
+    const std::complex<double> omega_shift = omega + im * epsilon;
+    NDArray<std::complex<double>, 1> ret_mpi(N);
+    for (unsigned int i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+
+    std::vector<std::complex<double>> e0(ns), phi3(anharmonic_core->get_ngroup_fcs(3));
+    for (unsigned int a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]); // e(-q) = e(q)^*
+
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
+        anharmonic_core->phi3_reciprocal_at(kmesh_in->xk[ik1], sg.xk[ik1], phi3.data());
+        for (unsigned int is1 = 0; is1 < ns; ++is1) {
+            const double omega1 = eval_in[ik1][is1];
+            for (unsigned int is2 = 0; is2 < ns; ++is2) {
+                const double omega2 = sg.eval[ik1][is2];
+                if (omega_q < eps8 || omega1 < eps8 || omega2 < eps8) continue;
+                const double v3_tmp =
+                    std::norm(anharmonic_core->contract_phi3(e0.data(), evec_in[ik1][is1], sg.evec[ik1][is2],
+                                                             phi3.data())) /
+                    (omega_q * omega1 * omega2);
+                const std::complex<double> omega_sum[2] = {
+                    1.0 / (omega_shift + omega1 + omega2) - 1.0 / (omega_shift - omega1 - omega2),
+                    1.0 / (omega_shift + omega1 - omega2) - 1.0 / (omega_shift - omega1 + omega2)};
+                for (unsigned int i = 0; i < N; ++i) {
+                    const double n1 = classical ? Thermodynamics::fC(omega1, T[i]) : Thermodynamics::fB(omega1, T[i]);
+                    const double n2 = classical ? Thermodynamics::fC(omega2, T[i]) : Thermodynamics::fB(omega2, T[i]);
+                    const double f1 = classical ? n1 + n2 : n1 + n2 + 1.0;
+                    const double f2 = n2 - n1;
+                    ret_mpi[i] += v3_tmp * (f1 * omega_sum[0] + f2 * omega_sum[1]);
+                }
+            }
+        }
+    }
+    const double factor = 1.0 / (static_cast<double>(nk) * std::pow(2.0, 4));
+    for (unsigned int i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    mpi_reduce_complex(N, ret_mpi, ret);
+}
+
+void Selfenergy::selfenergy_tadpole_at(const unsigned int N, const double *T, const double *xq, const double omega_q,
+                                       const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                                       const double *const *eval_in,
+                                       const std::complex<double> *const *const *evec_in,
+                                       std::complex<double> *ret) const
+{
+    // Tadpole: V3(-q j, q j, Gamma s1) x sum_k V3(Gamma s1, k s2, -k s2) (2n+1) / omega1.
+    // The inner sum is the mesh quantity of selfenergy_tadpole; only the outer vertex
+    // carries the off-mesh legs (Gamma is mesh index 0).
+    const auto nk = kmesh_in->nk;
+    const double xk_gamma[3] = {0.0, 0.0, 0.0};
+    unsigned int arr_cubic2[3];
+    NDArray<std::complex<double>, 1> ret_mpi(N), ret_tmp(N);
+    for (unsigned int i = 0; i < N; ++i) ret[i] = std::complex<double>(0.0, 0.0);
+
+    std::vector<std::complex<double>> e0(ns), phi3(anharmonic_core->get_ngroup_fcs(3));
+    for (unsigned int a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
+    anharmonic_core->phi3_reciprocal_at(xq, xk_gamma, phi3.data()); // legs (q, Gamma) after -q
+
+    for (unsigned int is1 = 0; is1 < ns; ++is1) {
+        const auto omega1 = eval_in[0][is1];
+        if (omega1 < eps8 || omega_q < eps8) continue;
+        const auto v3_tmp1 =
+            anharmonic_core->contract_phi3(e0.data(), evec_q, evec_in[0][is1], phi3.data()) /
+            std::sqrt(omega_q * omega_q * omega1);
+        for (unsigned int i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+        arr_cubic2[0] = is1;
+        for (unsigned int ik2 = my_rank; ik2 < nk; ik2 += nprocs) {
+            for (unsigned int is2 = 0; is2 < ns; ++is2) {
+                arr_cubic2[1] = ns * ik2 + is2;
+                arr_cubic2[2] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
+                const auto omega2 = eval_in[ik2][is2];
+                if (omega2 < eps8) continue;
+                const auto v3_tmp2 = anharmonic_core->V3(arr_cubic2);
+                for (unsigned int i = 0; i < N; ++i) {
+                    const auto n2 = classical ? Thermodynamics::fC(omega2, T[i]) : Thermodynamics::fB(omega2, T[i]);
+                    ret_mpi[i] += v3_tmp2 * (classical ? 2.0 * n2 : 2.0 * n2 + 1.0);
+                }
+            }
+        }
+        mpi_reduce_complex(N, ret_mpi, ret_tmp);
+        for (unsigned int i = 0; i < N; ++i) ret[i] += ret_tmp[i] * v3_tmp1 / omega1;
+    }
+    const auto factor = -1.0 / (static_cast<double>(nk) * std::pow(2.0, 3));
+    for (unsigned int i = 0; i < N; ++i) ret[i] *= factor;
+}
+
+void Selfenergy::selfenergy_b_at(const unsigned int N, const double *T, const double *xq, const double omega_q,
+                                 const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                                 const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                                 std::complex<double> *ret) const
+{
+    // Quartic loop: V4(-q j, k s1, -k s1, q j); internal legs are mesh points.
+    const auto nk = kmesh_in->nk;
+    NDArray<std::complex<double>, 1> ret_mpi(N);
+    for (unsigned int i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
+
+    std::vector<std::complex<double>> e0(ns), phi4(anharmonic_core->get_ngroup_fcs(4));
+    for (unsigned int a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
+
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
+        const auto ik1m = kmesh_in->kindex_minus_xk[ik1];
+        anharmonic_core->phi4_reciprocal_at(kmesh_in->xk[ik1], kmesh_in->xk[ik1m], xq, phi4.data());
+        for (unsigned int is1 = 0; is1 < ns; ++is1) {
+            const double omega1 = eval_in[ik1][is1];
+            if (omega1 < eps8 || omega_q < eps8) continue;
+            const auto v4_tmp =
+                anharmonic_core->contract_phi4(e0.data(), evec_in[ik1][is1], evec_in[ik1m][is1], evec_q, phi4.data()) /
+                (omega_q * omega1);
+            for (unsigned int i = 0; i < N; ++i) {
+                const auto n1 = classical ? Thermodynamics::fC(omega1, T[i]) : Thermodynamics::fB(omega1, T[i]);
+                ret_mpi[i] += v4_tmp * (classical ? 2.0 * n1 : 2.0 * n1 + 1.0);
+            }
+        }
+    }
+    const double factor = -1.0 / (static_cast<double>(nk) * std::pow(2.0, 3));
+    for (unsigned int i = 0; i < N; ++i) ret_mpi[i] *= factor;
+    mpi_reduce_complex(N, ret_mpi, ret);
+}
+
+void Selfenergy::bubble_matrix(const double Temp, const unsigned int knum, const KpointMeshUniform *kmesh_in,
+                               const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                               const unsigned int nomega, const double *omega,
+                               NDArray<std::complex<double>, 3> &sig) const
+{
+    // sig(omega)_{jj'} = sum_terms VV_{jj', term} * OS_{term}(omega), accumulated as chunked
+    // matrix products (ns^2 x nterm) x (nterm x nomega); k distributed over ranks and threads.
+    using namespace Eigen;
+    const auto nk = kmesh_in->nk;
+    const auto &xk = kmesh_in->xk;
+    const int ns2 = ns * ns;
+    const int chunk = 256;
+    MatrixXcd sig_flat = MatrixXcd::Zero(ns2, nomega);
+
+    std::vector<std::vector<std::complex<double>>> e0(ns, std::vector<std::complex<double>>(ns));
+    for (unsigned int j = 0; j < ns; ++j)
+        for (unsigned int a = 0; a < ns; ++a) e0[j][a] = std::conj(evec_in[knum][j][a]); // e(-q) = e(q)^*
+    std::vector<int> k_local;
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) k_local.push_back(ik1);
+    const int nlocal = k_local.size();
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        MatrixXcd sig_loc = MatrixXcd::Zero(ns2, nomega);
+        MatrixXcd VV(ns2, chunk), OS(chunk, nomega);
+        int nterm = 0;
+        auto flush = [&]() {
+            if (nterm == 0) return;
+            sig_loc.noalias() += VV.leftCols(nterm) * OS.topRows(nterm);
+            nterm = 0;
+        };
+        std::vector<std::complex<double>> phi3(anharmonic_core->get_ngroup_fcs(3)), v3(ns);
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 2)
+#endif
+        for (int il = 0; il < nlocal; ++il) {
+            const auto ik1 = k_local[il];
+            double xk_tmp[3];
+            for (auto i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] - xk[ik1][i];
+            const auto ik2 = kmesh_in->get_knum(xk_tmp);
+            anharmonic_core->phi3_reciprocal_at(xk[ik1], xk[ik2], phi3.data());
+            for (unsigned int is1 = 0; is1 < ns; ++is1) {
+                const double omega1 = eval_in[ik1][is1];
+                for (unsigned int is2 = 0; is2 < ns; ++is2) {
+                    const double omega2 = eval_in[ik2][is2];
+                    if (omega1 < eps8 || omega2 < eps8) continue;
+                    bool any = false;
+                    for (unsigned int j = 0; j < ns; ++j) {
+                        const double omega_j = eval_in[knum][j];
+                        v3[j] = omega_j < eps8 ? 0.0
+                                               : anharmonic_core->contract_phi3(e0[j].data(), evec_in[ik1][is1],
+                                                                                evec_in[ik2][is2], phi3.data()) /
+                                                     std::sqrt(omega_j * omega1 * omega2);
+                        any |= omega_j >= eps8;
+                    }
+                    if (!any) continue;
+                    const double n1 = classical ? Thermodynamics::fC(omega1, Temp) : Thermodynamics::fB(omega1, Temp);
+                    const double n2 = classical ? Thermodynamics::fC(omega2, Temp) : Thermodynamics::fB(omega2, Temp);
+                    const double f1 = classical ? n1 + n2 : n1 + n2 + 1.0;
+                    const double f2 = n2 - n1;
+                    for (unsigned int j = 0; j < ns; ++j)
+                        for (unsigned int jp = 0; jp < ns; ++jp) VV(j * ns + jp, nterm) = v3[j] * std::conj(v3[jp]);
+                    for (unsigned int io = 0; io < nomega; ++io) {
+                        const std::complex<double> w = omega[io] + im * epsilon;
+                        OS(nterm, io) = f1 * (1.0 / (w + omega1 + omega2) - 1.0 / (w - omega1 - omega2)) +
+                                        f2 * (1.0 / (w + omega1 - omega2) - 1.0 / (w - omega1 + omega2));
+                    }
+                    if (++nterm == chunk) flush();
+                }
+            }
+        }
+        flush();
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        sig_flat += sig_loc;
+    }
+    const double factor = 1.0 / (static_cast<double>(nk) * std::pow(2.0, 4));
+    NDArray<std::complex<double>, 3> sig_mpi(nomega, ns, ns);
+    for (unsigned int io = 0; io < nomega; ++io)
+        for (unsigned int j = 0; j < ns; ++j)
+            for (unsigned int jp = 0; jp < ns; ++jp) sig_mpi[io][j][jp] = sig_flat(j * ns + jp, io) * factor;
+    mpi_reduce_complex(nomega * ns * ns, &sig_mpi[0][0][0], &sig[0][0][0]);
 }
 
 void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const double omega, const unsigned int knum,

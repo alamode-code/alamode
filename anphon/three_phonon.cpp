@@ -26,6 +26,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "error.h"
 #include "integration.h"
 #include "kpoint.h"
+#include "ewald.h"
+#include "fcs_phonon.h"
 #include "mathfunctions.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
@@ -505,6 +507,422 @@ void tabulate_occupations(const unsigned int ntemp, const double *temp_in, const
 
 } // namespace
 
+void AnharmonicCore::bubble_delta_smearing(const int ns, const double omega_in, const double *w1_arr,
+                                           const double *w2_arr, const int ismear, const double epsilon,
+                                           const double *proj1, const double *proj2, const double adaptive_factor,
+                                           double *delta)
+{
+    // delta[2*(is*ns+js)]   = d(w - w1 - w2) - d(w + w1 + w2)   (sum channel)
+    // delta[2*(is*ns+js)+1] = d(w - w1 + w2) - d(w + w1 - w2)   (difference channel)
+    // proj1/proj2 are projected velocities, used only for adaptive smearing (ismear = 2).
+    for (auto is = 0; is < ns; ++is) {
+        const double w1 = w1_arr[is];
+        for (auto js = 0; js < ns; ++js) {
+            const double w2 = w2_arr[js];
+            const size_t ib = static_cast<size_t>(is) * ns + js;
+            double d0, d1;
+            if (ismear == 0) {
+                d0 = delta_lorentz(omega_in - w1 - w2, epsilon) - delta_lorentz(omega_in + w1 + w2, epsilon);
+                d1 = delta_lorentz(omega_in - w1 + w2, epsilon) - delta_lorentz(omega_in + w1 - w2, epsilon);
+            } else if (ismear == 1) {
+                d0 = delta_gauss(omega_in - w1 - w2, epsilon) - delta_gauss(omega_in + w1 + w2, epsilon);
+                d1 = delta_gauss(omega_in - w1 + w2, epsilon) - delta_gauss(omega_in + w1 - w2, epsilon);
+            } else {
+                const double *p1 = &proj1[3 * is];
+                const double *p2 = &proj2[3 * js];
+                double pm = 0.0, pp = 0.0;
+                for (auto u = 0; u < 3; ++u) {
+                    pm += (p1[u] - p2[u]) * (p1[u] - p2[u]);
+                    pp += (p1[u] + p2[u]) * (p1[u] + p2[u]);
+                }
+                const double sig0 = std::max(AdaptiveSmearingSigma::sigma_min, adaptive_factor * std::sqrt(pm / 12.0));
+                const double sig1 = std::max(AdaptiveSmearingSigma::sigma_min, adaptive_factor * std::sqrt(pp / 12.0));
+                d0 = delta_gauss(omega_in - w1 - w2, sig0) - delta_gauss(omega_in + w1 + w2, sig0);
+                d1 = delta_gauss(omega_in - w1 + w2, sig1) - delta_gauss(omega_in + w1 - w2, sig1);
+            }
+            delta[2 * ib] = d0;
+            delta[2 * ib + 1] = d1;
+        }
+    }
+}
+
+double AnharmonicCore::bubble_accumulate(const int ns, const double *occ1, const double *occ2, const bool classical,
+                                         const double *v3sq, const double *delta)
+{
+    // Sum |V3|^2 [(n1 + n2 + 1) delta_sum - (n1 - n2) delta_diff] at one temperature.
+    // Smearing and tetrahedron kernels share the bubble_delta_smearing layout.
+    double sum = 0.0;
+    for (auto is = 0; is < ns; ++is) {
+        const double f1 = occ1[is];
+        for (auto js = 0; js < ns; ++js) {
+            const double f2 = occ2[js];
+            const size_t ib = static_cast<size_t>(is) * ns + js;
+            const double n1 = classical ? f1 + f2 : f1 + f2 + 1.0;
+            const double n2 = f1 - f2;
+            sum += v3sq[ib] * (n1 * delta[2 * ib] - n2 * delta[2 * ib + 1]);
+        }
+    }
+    return sum;
+}
+
+void AnharmonicCore::build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, ShiftedGrid &sg) const
+{
+    const int nk = kmesh_in->nk;
+    const int ns = dynamical->neval;
+    sg.xk.resize(nk, 3);
+    sg.eval.resize(nk, ns);
+    sg.evec.resize(nk, ns, ns);
+
+    // Non-analytic direction as for the mesh points (kpoint.cpp): folded coordinate
+    // rotated to Cartesian and normalized, zero at Gamma.
+    NDArray<double, 2> kvec(nk, 3);
+    const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
+    for (auto ik = 0; ik < nk; ++ik) {
+        double xf[3];
+        for (auto i = 0; i < 3; ++i) {
+            sg.xk[ik][i] = xq[i] - kmesh_in->xk[ik][i];
+            xf[i] = sg.xk[ik][i] - std::floor(sg.xk[ik][i] + 0.5);
+        }
+        rotvec(kvec[ik], xf, rlavec, 'T');
+        const auto norm = kvec[ik][0] * kvec[ik][0] + kvec[ik][1] * kvec[ik][1] + kvec[ik][2] * kvec[ik][2];
+        if (norm > eps) {
+            for (auto i = 0; i < 3; ++i) kvec[ik][i] /= std::sqrt(norm);
+        } else {
+            for (auto i = 0; i < 3; ++i) kvec[ik][i] = 0.0;
+        }
+    }
+    dynamical->get_eigenvalues_dymat(nk,
+                                     sg.xk,
+                                     kvec,
+                                     fcs_phonon->force_constant_with_cell[0],
+                                     ewald->fc2_without_dipole,
+                                     true,
+                                     sg.eval,
+                                     sg.evec);
+}
+
+void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const double *temp_in, const double omega_in,
+                                              const double *xq, const double omega_q,
+                                              const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                                              const double *const *eval_in,
+                                              const std::complex<double> *const *const *evec_in,
+                                              const ShiftedGrid &sg, double *ret)
+{
+    const int nk = kmesh_in->nk;
+    const int ns = dynamical->neval;
+    const size_t ns2 = static_cast<size_t>(ns) * ns;
+    const size_t nks = static_cast<size_t>(nk) * ns;
+
+    for (unsigned int i = 0; i < ntemp; ++i) ret[i] = 0.0;
+    if (ngroup_v3 == 0) return;
+    if (integration->ismear == 2) {
+        exit("calc_damping_smearing_at", "Adaptive smearing (ISMEAR = 2) is not available for k points off the mesh.");
+    }
+
+    // First leg -q: e(-q) = e(q)^*; only |V3|^2 enters, so the gauge is irrelevant.
+    std::vector<std::complex<double>> e0(ns);
+    for (auto a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
+
+    const bool classical = thermodynamics->classical;
+    std::vector<double> occ, occ_s;
+    tabulate_occupations(ntemp, temp_in, nk, ns, eval_in, classical, occ);
+    tabulate_occupations(ntemp, temp_in, nk, ns, sg.eval, classical, occ_s);
+    const int ismear = integration->ismear;
+    const double epsilon = integration->epsilon;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        std::vector<std::complex<double>> phi3(ngroup_v3);
+        std::vector<double> v3sq(ns2), delta(2 * ns2);
+        std::vector<double> ret_loc(ntemp, 0.0);
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 4)
+#endif
+        for (int ik = 0; ik < nk; ++ik) {
+            phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3.data());
+            for (auto is = 0; is < ns; ++is) {
+                const double w1 = eval_in[ik][is];
+                for (auto js = 0; js < ns; ++js) {
+                    const double w2 = sg.eval[ik][js];
+                    const size_t ib = static_cast<size_t>(is) * ns + js;
+                    if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
+                        v3sq[ib] = 0.0;
+                    } else {
+                        v3sq[ib] = std::norm(contract_phi3(e0.data(), evec_in[ik][is], sg.evec[ik][js], phi3.data())) /
+                                   (omega_q * w1 * w2);
+                    }
+                }
+            }
+            bubble_delta_smearing(ns, omega_in, eval_in[ik], sg.eval[ik], ismear, epsilon, nullptr, nullptr, 0.0,
+                                  delta.data());
+            for (unsigned int it = 0; it < ntemp; ++it) {
+                ret_loc[it] += bubble_accumulate(ns,
+                                                 &occ[it * nks + ik * ns],
+                                                 &occ_s[it * nks + ik * ns],
+                                                 classical,
+                                                 v3sq.data(),
+                                                 delta.data());
+            }
+        }
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        {
+            for (unsigned int it = 0; it < ntemp; ++it) ret[it] += ret_loc[it];
+        }
+    }
+    for (unsigned int i = 0; i < ntemp; ++i) ret[i] *= pi * std::pow(0.5, 4) / static_cast<double>(nk);
+}
+
+void AnharmonicCore::bubble_average_degenerate(const int ns, const double *w1_arr, const double *w2_arr,
+                                               double *delta)
+{
+    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
+    auto get_degenerate_blocks = [&](const double *w) {
+        std::vector<std::pair<unsigned int, unsigned int>> blocks;
+        auto begin = 0U;
+        auto omega_ref = w[0];
+        for (auto s = 1U; s < static_cast<unsigned int>(ns); ++s) {
+            const auto omega_now = w[s];
+            if (std::abs(omega_now - omega_ref) >= tol_degenerate) {
+                blocks.emplace_back(begin, s);
+                begin = s;
+                omega_ref = omega_now;
+            }
+        }
+        blocks.emplace_back(begin, ns);
+        return blocks;
+    };
+    const auto blocks1 = get_degenerate_blocks(w1_arr);
+    const auto blocks2 = get_degenerate_blocks(w2_arr);
+    for (const auto &block1: blocks1) {
+        for (const auto &block2: blocks2) {
+            const auto nblock = static_cast<double>((block1.second - block1.first) * (block2.second - block2.first));
+            if (nblock <= 1.0) continue;
+            std::array<double, 2> delta_sum{};
+            for (auto is = block1.first; is < block1.second; ++is) {
+                for (auto js = block2.first; js < block2.second; ++js) {
+                    delta_sum[0] += delta[2 * (ns * is + js)];
+                    delta_sum[1] += delta[2 * (ns * is + js) + 1];
+                }
+            }
+            delta_sum[0] /= nblock;
+            delta_sum[1] /= nblock;
+            for (auto is = block1.first; is < block1.second; ++is) {
+                for (auto js = block2.first; js < block2.second; ++js) {
+                    delta[2 * (ns * is + js)] = delta_sum[0];
+                    delta[2 * (ns * is + js) + 1] = delta_sum[1];
+                }
+            }
+        }
+    }
+}
+
+void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const double *temp_in,
+                                                 const double omega_in, const double *xq, const double omega_q,
+                                                 const std::complex<double> *evec_q,
+                                                 const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                                 const std::complex<double> *const *const *evec_in,
+                                                 const ShiftedGrid &sg, double *ret)
+{
+    const int nk = kmesh_in->nk;
+    const int ns = dynamical->neval;
+    const size_t ns2 = static_cast<size_t>(ns) * ns;
+    const size_t nks = static_cast<size_t>(nk) * ns;
+
+    for (unsigned int i = 0; i < ntemp; ++i) ret[i] = 0.0;
+    if (ngroup_v3 == 0) return;
+
+    // Energies omega_k +- omega_{q-k} use the mesh nodes and tetrahedron connectivity.
+    NDArray<double, 3> delta_arr(nk, ns2, 2);
+    NDArray<unsigned int, 1> kmap_identity(nk);
+    for (auto i = 0; i < nk; ++i) kmap_identity[i] = i;
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        NDArray<double, 2> energy_tmp(3, nk), weight_tetra(3, nk);
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int ib = 0; ib < static_cast<int>(ns2); ++ib) {
+            const int is = ib / ns;
+            const int js = ib % ns;
+            for (auto k = 0; k < nk; ++k) {
+                energy_tmp[0][k] = eval_in[k][is] + sg.eval[k][js];
+                energy_tmp[1][k] = eval_in[k][is] - sg.eval[k][js];
+                energy_tmp[2][k] = -energy_tmp[1][k];
+            }
+            for (auto i = 0; i < 3; ++i) {
+                integration->calc_weight_tetrahedron(nk,
+                                                     kmap_identity,
+                                                     energy_tmp[i],
+                                                     omega_in,
+                                                     dos->tetra_nodes_dos->get_ntetra(),
+                                                     dos->tetra_nodes_dos->get_tetras(),
+                                                     weight_tetra[i]);
+            }
+            for (auto k = 0; k < nk; ++k) {
+                delta_arr[k][ib][0] = weight_tetra[0][k];
+                delta_arr[k][ib][1] = weight_tetra[1][k] - weight_tetra[2][k];
+            }
+        }
+    }
+    for (auto k = 0; k < nk; ++k) bubble_average_degenerate(ns, eval_in[k], sg.eval[k], &delta_arr[k][0][0]);
+
+    std::vector<std::complex<double>> e0(ns);
+    for (auto a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
+    const bool classical = thermodynamics->classical;
+    std::vector<double> occ, occ_s;
+    tabulate_occupations(ntemp, temp_in, nk, ns, eval_in, classical, occ);
+    tabulate_occupations(ntemp, temp_in, nk, ns, sg.eval, classical, occ_s);
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        std::vector<std::complex<double>> phi3(ngroup_v3);
+        std::vector<double> v3sq(ns2);
+        std::vector<double> ret_loc(ntemp, 0.0);
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 4)
+#endif
+        for (int ik = 0; ik < nk; ++ik) {
+            phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3.data());
+            for (auto is = 0; is < ns; ++is) {
+                const double w1 = eval_in[ik][is];
+                for (auto js = 0; js < ns; ++js) {
+                    const double w2 = sg.eval[ik][js];
+                    const size_t ib = static_cast<size_t>(is) * ns + js;
+                    if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
+                        v3sq[ib] = 0.0;
+                    } else {
+                        v3sq[ib] = std::norm(contract_phi3(e0.data(), evec_in[ik][is], sg.evec[ik][js], phi3.data())) /
+                                   (omega_q * w1 * w2);
+                    }
+                }
+            }
+            for (unsigned int it = 0; it < ntemp; ++it) {
+                ret_loc[it] += bubble_accumulate(ns,
+                                                 &occ[it * nks + ik * ns],
+                                                 &occ_s[it * nks + ik * ns],
+                                                 classical,
+                                                 v3sq.data(),
+                                                 &delta_arr[ik][0][0]);
+            }
+        }
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        {
+            for (unsigned int it = 0; it < ntemp; ++it) ret[it] += ret_loc[it];
+        }
+    }
+    for (unsigned int i = 0; i < ntemp; ++i) ret[i] *= pi * std::pow(0.5, 4);
+}
+
+void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const double *xq, const double omega_q,
+                                                    const std::complex<double> *evec_q,
+                                                    const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                                    const std::complex<double> *const *const *evec_in,
+                                                    const ShiftedGrid &sg, const unsigned int nomega,
+                                                    const double *omega, double *ret)
+{
+    const int nk = kmesh_in->nk;
+    const int ns = dynamical->neval;
+    const size_t ns2 = static_cast<size_t>(ns) * ns;
+
+    for (unsigned int iomega = 0; iomega < nomega; ++iomega) ret[iomega] = 0.0;
+    if (ngroup_v3 == 0) return;
+
+    // |V3(-q j; k is; q-k js)|^2 for every k and branch pair.
+    NDArray<double, 2> v3_arr(nk, ns2);
+    std::vector<std::complex<double>> e0(ns);
+    for (auto a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        std::vector<std::complex<double>> phi3(ngroup_v3);
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 4)
+#endif
+        for (int ik = 0; ik < nk; ++ik) {
+            phi3_reciprocal_at(kmesh_in->xk[ik], sg.xk[ik], phi3.data());
+            for (auto is = 0; is < ns; ++is) {
+                const double w1 = eval_in[ik][is];
+                for (auto js = 0; js < ns; ++js) {
+                    const double w2 = sg.eval[ik][js];
+                    const size_t ib = static_cast<size_t>(is) * ns + js;
+                    if (omega_q < eps8 || w1 < eps8 || w2 < eps8) {
+                        v3_arr[ik][ib] = 0.0;
+                    } else {
+                        v3_arr[ik][ib] =
+                            std::norm(contract_phi3(e0.data(), evec_in[ik][is], sg.evec[ik][js], phi3.data())) /
+                            (omega_q * w1 * w2);
+                    }
+                }
+            }
+        }
+    }
+
+    NDArray<unsigned int, 1> kmap_identity(nk);
+    for (auto i = 0; i < nk; ++i) kmap_identity[i] = i;
+    const bool classical = thermodynamics->classical;
+    std::vector<double> occ, occ_s;
+    tabulate_occupations(1, &Temp, nk, ns, eval_in, classical, occ);
+    tabulate_occupations(1, &Temp, nk, ns, sg.eval, classical, occ_s);
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        NDArray<double, 2> energy_tmp(3, nk), weight_tetra(3, nk);
+        std::vector<double> ret_loc(nomega, 0.0);
+#ifdef _OPENMP
+#pragma omp for
+#endif
+        for (int ib = 0; ib < static_cast<int>(ns2); ++ib) {
+            const int is = ib / ns;
+            const int js = ib % ns;
+            for (auto ik = 0; ik < nk; ++ik) {
+                energy_tmp[0][ik] = eval_in[ik][is] + sg.eval[ik][js];
+                energy_tmp[1][ik] = eval_in[ik][is] - sg.eval[ik][js];
+                energy_tmp[2][ik] = -energy_tmp[1][ik];
+            }
+            for (unsigned int iomega = 0; iomega < nomega; ++iomega) {
+                for (auto i = 0; i < 3; ++i) {
+                    integration->calc_weight_tetrahedron(nk,
+                                                         kmap_identity,
+                                                         energy_tmp[i],
+                                                         omega[iomega],
+                                                         dos->tetra_nodes_dos->get_ntetra(),
+                                                         dos->tetra_nodes_dos->get_tetras(),
+                                                         weight_tetra[i]);
+                }
+                double sum = 0.0;
+                for (auto ik = 0; ik < nk; ++ik) {
+                    const double f1 = occ[ik * ns + is];
+                    const double f2 = occ_s[ik * ns + js];
+                    const double n1 = classical ? f1 + f2 : f1 + f2 + 1.0;
+                    const double n2 = f1 - f2;
+                    sum += v3_arr[ik][ib] * (n1 * weight_tetra[0][ik] - n2 * (weight_tetra[1][ik] - weight_tetra[2][ik]));
+                }
+                ret_loc[iomega] += sum;
+            }
+        }
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        {
+            for (unsigned int iomega = 0; iomega < nomega; ++iomega) ret[iomega] += ret_loc[iomega];
+        }
+    }
+    for (unsigned int iomega = 0; iomega < nomega; ++iomega) ret[iomega] *= pi * std::pow(0.5, 4);
+}
+
 void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                            const unsigned int ik_in, const unsigned int is_in,
                                            const KpointMeshUniform *kmesh_in, const double *const *eval_in,
@@ -568,54 +986,23 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
             const double multi = static_cast<double>(triplet[ik].group.size());
 
             v3sq_pairs(ws, kmesh_in, k1, k2, eval_in, evec_in, v3sq.data());
-
-            for (auto is = 0; is < ns; ++is) {
-                const double w1 = eval_in[k1][is];
-                for (auto js = 0; js < ns; ++js) {
-                    const double w2 = eval_in[k2][js];
-                    const size_t ib = static_cast<size_t>(is) * ns + js;
-                    double d0, d1;
-                    if (ismear == 0) {
-                        d0 = delta_lorentz(omega_in - w1 - w2, epsilon) - delta_lorentz(omega_in + w1 + w2, epsilon);
-                        d1 = delta_lorentz(omega_in - w1 + w2, epsilon) - delta_lorentz(omega_in + w1 - w2, epsilon);
-                    } else if (ismear == 1) {
-                        d0 = delta_gauss(omega_in - w1 - w2, epsilon) - delta_gauss(omega_in + w1 + w2, epsilon);
-                        d1 = delta_gauss(omega_in - w1 + w2, epsilon) - delta_gauss(omega_in + w1 - w2, epsilon);
-                    } else {
-                        const double *p1 = &proj[3 * (k1 * ns + is)];
-                        const double *p2 = &proj[3 * (k2 * ns + js)];
-                        double pm = 0.0, pp = 0.0;
-                        for (auto u = 0; u < 3; ++u) {
-                            pm += (p1[u] - p2[u]) * (p1[u] - p2[u]);
-                            pp += (p1[u] + p2[u]) * (p1[u] + p2[u]);
-                        }
-                        const double sig0 =
-                            std::max(AdaptiveSmearingSigma::sigma_min, adaptive_factor * std::sqrt(pm / 12.0));
-                        const double sig1 =
-                            std::max(AdaptiveSmearingSigma::sigma_min, adaptive_factor * std::sqrt(pp / 12.0));
-                        d0 = delta_gauss(omega_in - w1 - w2, sig0) - delta_gauss(omega_in + w1 + w2, sig0);
-                        d1 = delta_gauss(omega_in - w1 + w2, sig1) - delta_gauss(omega_in + w1 - w2, sig1);
-                    }
-                    delta[2 * ib] = d0;
-                    delta[2 * ib + 1] = d1;
-                }
-            }
-
+            bubble_delta_smearing(ns,
+                                  omega_in,
+                                  eval_in[k1],
+                                  eval_in[k2],
+                                  ismear,
+                                  epsilon,
+                                  adaptive ? &proj[3 * (k1 * ns)] : nullptr,
+                                  adaptive ? &proj[3 * (k2 * ns)] : nullptr,
+                                  adaptive_factor,
+                                  delta.data());
             for (unsigned int it = 0; it < ntemp; ++it) {
-                const double *occ1 = &occ[it * nks + k1 * ns];
-                const double *occ2 = &occ[it * nks + k2 * ns];
-                double sum = 0.0;
-                for (auto is = 0; is < ns; ++is) {
-                    const double f1 = occ1[is];
-                    for (auto js = 0; js < ns; ++js) {
-                        const double f2 = occ2[js];
-                        const size_t ib = static_cast<size_t>(is) * ns + js;
-                        const double n1 = classical ? f1 + f2 : f1 + f2 + 1.0;
-                        const double n2 = f1 - f2;
-                        sum += v3sq[ib] * (n1 * delta[2 * ib] - n2 * delta[2 * ib + 1]);
-                    }
-                }
-                ret_loc[it] += multi * sum;
+                ret_loc[it] += multi * bubble_accumulate(ns,
+                                                         &occ[it * nks + k1 * ns],
+                                                         &occ[it * nks + k2 * ns],
+                                                         classical,
+                                                         v3sq.data(),
+                                                         delta.data());
             }
         }
 
@@ -706,50 +1093,10 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     // Average the weights over degenerate branches so that the result does
     // not depend on the gauge of degenerate eigenvectors.
-    const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
-    auto get_degenerate_blocks = [&](const unsigned int knum_in) {
-        std::vector<std::pair<unsigned int, unsigned int>> blocks;
-        auto begin = 0U;
-        auto omega_ref = eval_in[knum_in][0];
-        for (auto s = 1U; s < static_cast<unsigned int>(ns); ++s) {
-            const auto omega_now = eval_in[knum_in][s];
-            if (std::abs(omega_now - omega_ref) >= tol_degenerate) {
-                blocks.emplace_back(begin, s);
-                begin = s;
-                omega_ref = omega_now;
-            }
-        }
-        blocks.emplace_back(begin, ns);
-        return blocks;
-    };
-
     for (auto ik = 0; ik < npair_uniq; ++ik) {
         const auto k1 = triplet[ik].group[0].ks[0];
         const auto k2 = triplet[ik].group[0].ks[1];
-        const auto blocks1 = get_degenerate_blocks(k1);
-        const auto blocks2 = get_degenerate_blocks(k2);
-        for (const auto &block1: blocks1) {
-            for (const auto &block2: blocks2) {
-                const auto nblock =
-                    static_cast<double>((block1.second - block1.first) * (block2.second - block2.first));
-                if (nblock <= 1.0) continue;
-                std::array<double, 2> delta_sum{};
-                for (auto is = block1.first; is < block1.second; ++is) {
-                    for (auto js = block2.first; js < block2.second; ++js) {
-                        delta_sum[0] += delta_arr[ik][ns * is + js][0];
-                        delta_sum[1] += delta_arr[ik][ns * is + js][1];
-                    }
-                }
-                delta_sum[0] /= nblock;
-                delta_sum[1] /= nblock;
-                for (auto is = block1.first; is < block1.second; ++is) {
-                    for (auto js = block2.first; js < block2.second; ++js) {
-                        delta_arr[ik][ns * is + js][0] = delta_sum[0];
-                        delta_arr[ik][ns * is + js][1] = delta_sum[1];
-                    }
-                }
-            }
-        }
+        bubble_average_degenerate(ns, eval_in[k1], eval_in[k2], &delta_arr[ik][0][0]);
     }
 
     prepare_v3_mode(kmesh_in, knum_minus, static_cast<int>(is_in), evec_in);
@@ -777,22 +1124,13 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
             const double multi = static_cast<double>(triplet[ik].group.size());
 
             v3sq_pairs(ws, kmesh_in, k1, k2, eval_in, evec_in, v3sq.data());
-
             for (unsigned int it = 0; it < ntemp; ++it) {
-                const double *occ1 = &occ[it * nks + k1 * ns];
-                const double *occ2 = &occ[it * nks + k2 * ns];
-                double sum = 0.0;
-                for (auto is = 0; is < ns; ++is) {
-                    const double f1 = occ1[is];
-                    for (auto js = 0; js < ns; ++js) {
-                        const double f2 = occ2[js];
-                        const size_t ib = static_cast<size_t>(is) * ns + js;
-                        const double n1 = classical ? f1 + f2 : f1 + f2 + 1.0;
-                        const double n2 = f1 - f2;
-                        sum += v3sq[ib] * (n1 * delta_arr[ik][ib][0] - n2 * delta_arr[ik][ib][1]);
-                    }
-                }
-                ret_loc[it] += multi * sum;
+                ret_loc[it] += multi * bubble_accumulate(ns,
+                                                         &occ[it * nks + k1 * ns],
+                                                         &occ[it * nks + k2 * ns],
+                                                         classical,
+                                                         v3sq.data(),
+                                                         &delta_arr[ik][0][0]);
             }
         }
 

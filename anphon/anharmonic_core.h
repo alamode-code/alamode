@@ -92,6 +92,51 @@ public:
 
     void setup();
 
+    // Eigenpairs on {q - k}; unfolded fractional coordinates preserve exact vertex phases.
+    struct ShiftedGrid
+    {
+        NDArray<double, 2> xk;                   // (nk, 3)
+        NDArray<double, 2> eval;                 // (nk, ns) frequencies
+        NDArray<std::complex<double>, 3> evec;   // (nk, ns, ns)
+    };
+
+    void build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, ShiftedGrid &sg) const;
+
+    // Im bubble self-energy at omega_in: full-mesh k, shifted-grid q - k, exact vertex phases.
+    void calc_damping_smearing_at(const unsigned int ntemp, const double *temp_in, const double omega_in,
+                                  const double *xq, const double omega_q, const std::complex<double> *evec_q,
+                                  const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                  const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
+                                  double *ret);
+
+    // Tetrahedron weights use mesh connectivity and average degenerate internal branches.
+    // Both difference channels are explicit.
+    void calc_damping_tetrahedron_at(const unsigned int ntemp, const double *temp_in, const double omega_in,
+                                     const double *xq, const double omega_q, const std::complex<double> *evec_q,
+                                     const KpointMeshUniform *kmesh_in, const double *const *eval_in,
+                                     const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
+                                     double *ret);
+
+    // Im Sigma(omega), without degenerate-block averaging (as in the mesh kernel).
+    // Keep both difference channels: off-mesh k lists lack k <-> q - k symmetry.
+    // Computed on every rank with OpenMP.
+    void calc_self3omega_tetrahedron_at(const double Temp, const double *xq, const double omega_q,
+                                        const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                                        const double *const *eval_in,
+                                        const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
+                                        const unsigned int nomega, const double *omega, double *ret);
+
+    // Average delta[2*(is*ns+js)+c] over degenerate internal blocks for gauge invariance.
+    static void bubble_average_degenerate(const int ns, const double *w1_arr, const double *w2_arr, double *delta);
+
+    // Per-pair bubble helpers shared by mesh and shifted-grid kernels.
+    static void bubble_delta_smearing(const int ns, const double omega_in, const double *w1_arr, const double *w2_arr,
+                                      const int ismear, const double epsilon, const double *proj1, const double *proj2,
+                                      const double adaptive_factor, double *delta);
+
+    static double bubble_accumulate(const int ns, const double *occ1, const double *occ2, const bool classical,
+                                    const double *v3sq, const double *delta);
+
     void calc_damping_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
                                const double *const *eval_in, const std::complex<double> *const *const *evec_in,
@@ -232,6 +277,22 @@ public:
     void calc_phi4_reciprocal(const double *xk1, const double *xk2, const double *xk3,
                               const PhaseFactorCache *phase_storage_in, std::complex<double> *ret,
                               const bool use_openmp = true);
+
+    // Explicit legs, exact phases, caller-owned work[ngroup_v3] (ngroup_v4 for quartic).
+    // Reciprocal FCs take the internal legs; contractions use mass-weighted eigenvectors.
+    // Phi3 = sum_i e0 e1 e2 invmass phi; V3 = Phi3 / sqrt(w0 w1 w2).
+    void phi3_reciprocal_at(const double *xk1, const double *xk2, std::complex<double> *work);
+
+    std::complex<double> contract_phi3(const std::complex<double> *e0, const std::complex<double> *e1,
+                                       const std::complex<double> *e2, const std::complex<double> *phi3,
+                                       const bool use_openmp = false) const;
+
+    void phi4_reciprocal_at(const double *xk1, const double *xk2, const double *xk3,
+                            std::complex<double> *work);
+
+    std::complex<double> contract_phi4(const std::complex<double> *e0, const std::complex<double> *e1,
+                                       const std::complex<double> *e2, const std::complex<double> *e3,
+                                       const std::complex<double> *phi4, const bool use_openmp = false) const;
 
     int get_ngroup_fcs(const unsigned int order) const;
 

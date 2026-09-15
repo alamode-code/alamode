@@ -13,6 +13,7 @@
 #include <complex>
 #include <string>
 #include <vector>
+#include "anharmonic_core.h"
 #include "kpoint.h"
 
 namespace PHON_NS
@@ -34,6 +35,30 @@ public:
     void setup_selfenergy(unsigned int ns_in, double epsilon_in, bool classical_in,
                           const std::vector<SymmetryOperation> &symmlist_in, AnharmonicCore &anharmonic_core_in,
                           int my_rank_in, int nprocs_in);
+
+    // Off-mesh targets: external legs from (xq, omega_q, evec_q), the bubble partner
+    // q - k from the shifted grid; same formulas and prefactors as the mesh kernels.
+    void selfenergy_a_at(const unsigned int N, const double *T, const double omega, const double *xq,
+                         const double omega_q, const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                         const AnharmonicCore::ShiftedGrid &sg, std::complex<double> *ret) const;
+
+    void selfenergy_tadpole_at(const unsigned int N, const double *T, const double *xq, const double omega_q,
+                               const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                               const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                               std::complex<double> *ret) const;
+
+    void selfenergy_b_at(const unsigned int N, const double *T, const double *xq, const double omega_q,
+                         const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
+                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                         std::complex<double> *ret) const;
+
+    // Full bubble matrix in the mode basis at the mesh point knum (INTERPOLATE):
+    // sig[iomega][j][j'] = (1/16 N_k) sum V3(-q j; k s1; q-k s2) V3(-q j'; k s1; q-k s2)^*
+    // [f1 Omega0 + f2 Omega1] at omega + i epsilon. Reduced to rank 0.
+    void bubble_matrix(const double Temp, const unsigned int knum, const KpointMeshUniform *kmesh_in,
+                       const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                       const unsigned int nomega, const double *omega, NDArray<std::complex<double>, 3> &sig) const;
 
     void selfenergy_tadpole(const unsigned int N, const double *T, const double omega, const unsigned int knum,
                             const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
