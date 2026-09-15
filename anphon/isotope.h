@@ -56,11 +56,11 @@ private:
                                  const std::complex<double> *const *const *evec_in, const System &system_in,
                                  Integration &integration_in, const unsigned int ns_in, double &ret) const;
 
-    void calc_isotope_selfenergy_tetra(const unsigned int knum, const unsigned int snum, const double omega,
-                                       const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                       const std::complex<double> *const *const *evec_in, const System &system_in,
-                                       Integration &integration_in, const TetraNodes &tetra_nodes_in,
-                                       const unsigned int ns_in, double &ret) const;
+    // Tetrahedron-method counterpart for all modes of this rank; writes gamma_loc[i]
+    // for i = my_rank, my_rank + nprocs, ... (other entries untouched).
+    void calc_isotope_selfenergy_tetra_all(const KpointMeshUniform &kmesh_in, const DymatEigenValue &dymat_in,
+                                           const TetraNodes &tetra_nodes_in, const System &system_in,
+                                           unsigned int ns_in, int my_rank_in, int nprocs_in, double *gamma_loc) const;
 
     void set_isotope_factor_from_database(const System &system_in, const int, const std::string *,
                                           std::vector<double> &);

@@ -164,6 +164,12 @@ public:
     double do_tetrahedron(const double *energy, const double *f, const unsigned int ntetra,
                           const unsigned int *const *tetras, const double e_ref);
 
+    // Adds the unnormalized (not divided by ntetra) tetrahedron weights of one
+    // tetrahedron at e_ref into weight[map_to_irreducible_k[corner]].
+    // Returns false (adds nothing) when e_ref lies outside the tetrahedron.
+    static bool add_tetrahedron_weight(const unsigned int *map_to_irreducible_k, const double *energy,
+                                       const double e_ref, const unsigned int *tetra, double *weight);
+
     void calc_weight_tetrahedron(const unsigned int nk_irreducible, const unsigned int *map_to_irreducible_k,
                                  const double *energy, const double e_ref, const unsigned int ntetra,
                                  const unsigned int *const *tetras, double *weight) const;

@@ -9,6 +9,7 @@
 */
 
 #include "isotope.h"
+#include <algorithm>
 #include <complex>
 #include <iomanip>
 #include <utility>
@@ -136,80 +137,181 @@ void Isotope::calc_isotope_selfenergy(const unsigned int knum, const unsigned in
     ret *= pi * omega * 0.25 / static_cast<double>(nk);
 }
 
-void Isotope::calc_isotope_selfenergy_tetra(const unsigned int knum, const unsigned int snum, const double omega,
-                                            const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                            const std::complex<double> *const *const *evec_in, const System &system_in,
-                                            Integration &integration_in, const TetraNodes &tetra_nodes_in,
-                                            const unsigned int ns_in, double &ret) const
+namespace
 {
-    // Compute phonon selfenergy of phonon (knum, snum)
-    // due to phonon-isotope scatterings.
-    // This version employs the tetrahedron method.
+// Tetrahedra of band `is` whose frequency range [min corner, max corner) can
+// contain a given omega, stored as CSR lists per frequency bin. Built once per
+// calc_isotope_selfenergy_all; lets each mode touch only O(ntetra/nbin)
+// tetrahedra instead of all of them.
+struct TetraBins
+{
+    double emin = 0.0;
+    double de_inv = 0.0;
+    int nbin = 0;
+    std::vector<std::vector<unsigned int>> start; // [ns][nbin+1]
+    std::vector<std::vector<unsigned int>> list;  // [ns]
 
-    int ik, is;
-    const auto nk = kmesh_in->nk;
+    int bin(const double e) const
+    {
+        return std::min(std::max(static_cast<int>((e - emin) * de_inv), 0), nbin - 1);
+    }
+};
+
+TetraBins build_tetra_bins(const int nk, const int ns, const double *const *eval_tetra, const unsigned int ntetra,
+                           const unsigned int *const *tetras)
+{
+    TetraBins bins;
+    auto emin = eval_tetra[0][0];
+    auto emax = eval_tetra[0][0];
+    for (int is = 0; is < ns; ++is) {
+        for (int ik = 0; ik < nk; ++ik) {
+            emin = std::min(emin, eval_tetra[is][ik]);
+            emax = std::max(emax, eval_tetra[is][ik]);
+        }
+    }
+    // ponytail: bin width ~ 1/4 of the mesh spacing in frequency; ~3 bins per tetrahedron on average.
+    bins.nbin = std::max(1, static_cast<int>(4.0 * std::cbrt(static_cast<double>(nk))));
+    bins.emin = emin;
+    bins.de_inv = emax > emin ? bins.nbin / (emax - emin) : 0.0;
+    bins.start.assign(ns, std::vector<unsigned int>(bins.nbin + 1, 0));
+    bins.list.resize(ns);
+
+    std::vector<int> lo(ntetra), hi(ntetra);
+    for (int is = 0; is < ns; ++is) {
+        auto &start = bins.start[is];
+        for (unsigned int t = 0; t < ntetra; ++t) {
+            auto e_lo = eval_tetra[is][tetras[t][0]];
+            auto e_hi = e_lo;
+            for (int j = 1; j < 4; ++j) {
+                const auto e = eval_tetra[is][tetras[t][j]];
+                e_lo = std::min(e_lo, e);
+                e_hi = std::max(e_hi, e);
+            }
+            lo[t] = bins.bin(e_lo);
+            hi[t] = bins.bin(e_hi);
+            for (auto ib = lo[t]; ib <= hi[t]; ++ib) ++start[ib + 1];
+        }
+        for (int ib = 0; ib < bins.nbin; ++ib) start[ib + 1] += start[ib];
+        auto &list = bins.list[is];
+        list.resize(start[bins.nbin]);
+        std::vector<unsigned int> fill(start.begin(), start.end() - 1);
+        for (unsigned int t = 0; t < ntetra; ++t) {
+            for (auto ib = lo[t]; ib <= hi[t]; ++ib) list[fill[ib]++] = t; // keeps ascending t within a bin
+        }
+    }
+    return bins;
+}
+
+double averaged_omega(const double *const *eval, const int ns, const double tol_degenerate, const unsigned int knum,
+                      const unsigned int snum)
+{
+    auto begin = snum;
+    while (begin > 0 && std::abs(eval[knum][begin] - eval[knum][begin - 1]) < tol_degenerate) {
+        --begin;
+    }
+    auto end = snum + 1;
+    while (end < ns && std::abs(eval[knum][end] - eval[knum][end - 1]) < tol_degenerate) {
+        ++end;
+    }
+    auto omega_sum = 0.0;
+    for (auto is = begin; is < end; ++is) {
+        omega_sum += eval[knum][is];
+    }
+    return omega_sum / static_cast<double>(end - begin);
+}
+} // namespace
+
+void Isotope::calc_isotope_selfenergy_tetra_all(const KpointMeshUniform &kmesh_in, const DymatEigenValue &dymat_in,
+                                                const TetraNodes &tetra_nodes_in, const System &system_in,
+                                                const unsigned int ns_in, const int my_rank_in, const int nprocs_in,
+                                                double *gamma_loc) const
+{
+    // Phonon selfenergy due to phonon-isotope scatterings, tetrahedron method.
+    // Same arithmetic (and summation order) as summing over every tetrahedron
+    // and every k point, but only the tetrahedra that can contain omega and
+    // the k points they touch are visited.
+
+    const auto nk = static_cast<int>(kmesh_in.nk);
     const auto ns = static_cast<int>(ns_in);
+    const auto nks = kmesh_in.nk_irred * ns;
     const auto natmin = system_in.get_primcell().number_of_atoms;
+    const int *kind = &system_in.get_primcell().kind[0];
     const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
+    const auto eval_in = dymat_in.get_eigenvalues();
+    const auto evec_in = dymat_in.get_eigenvectors();
+    const auto ntetra = tetra_nodes_in.get_ntetra();
+    const auto tetras = tetra_nodes_in.get_tetras();
+    const auto tetra_factor = 1.0 / static_cast<double>(ntetra);
 
-    ret = 0.0;
-
-    NDArray<double, 1> eval;
-    NDArray<double, 2> eval_tetra;
-    NDArray<double, 2> prod_omega;
-    NDArray<double, 2> weight_tetra;
-    NDArray<unsigned int, 1> kmap_identity;
-
-    eval.resize(nk);
-    eval_tetra.resize(ns, nk);
-    prod_omega.resize(ns, nk);
-    weight_tetra.resize(ns, nk);
-    kmap_identity.resize(nk);
-
-    for (ik = 0; ik < nk; ++ik) {
-        kmap_identity[ik] = ik;
-    }
+    NDArray<double, 2> eval_tetra(ns, nk);
     average_degenerate_frequencies_transposed(nk, ns, eval_in, tol_degenerate, eval_tetra);
+    const auto bins = build_tetra_bins(nk, ns, eval_tetra, ntetra, tetras);
 
-    for (is = 0; is < ns; ++is) {
-#pragma omp parallel for
-        for (ik = 0; ik < nk; ++ik) {
+    std::vector<unsigned int> kmap_identity(nk);
+    for (int ik = 0; ik < nk; ++ik) kmap_identity[ik] = ik;
 
-            const auto prod = tamura_overlap(natmin,
-                                             evec_in[ik][is],
-                                             evec_in[knum][snum],
-                                             &isotope_factor[0],
-                                             &system_in.get_primcell().kind[0]);
+    std::vector<int> my_modes;
+    for (int i = my_rank_in; i < nks; i += nprocs_in) my_modes.push_back(i);
 
-            prod_omega[is][ik] = prod * eval_tetra[is][ik];
-            eval[ik] = eval_tetra[is][ik];
+#pragma omp parallel
+    {
+        // ponytail: ns*nk doubles per thread; switch to a sparse map if this ever matters.
+        NDArray<double, 2> weight(ns, nk);
+        for (int i = 0; i < ns * nk; ++i) weight.ptr()[0][i] = 0.0;
+        std::vector<char> flag(nk, 0);
+        std::vector<unsigned int> touched;
+
+#pragma omp for schedule(dynamic, 4)
+        for (int im = 0; im < static_cast<int>(my_modes.size()); ++im) {
+            const auto i = my_modes[im];
+            const auto knum = kmesh_in.kpoint_irred_all[i / ns][0].knum;
+            const auto snum = i % ns;
+            const auto omega = averaged_omega(eval_in, ns, tol_degenerate, knum, snum);
+            const auto ib = bins.bin(omega);
+
+            touched.clear();
+            for (int is = 0; is < ns; ++is) {
+                const auto &list = bins.list[is];
+                for (auto it = bins.start[is][ib]; it < bins.start[is][ib + 1]; ++it) {
+                    const auto *tetra = tetras[list[it]];
+                    if (Integration::add_tetrahedron_weight(&kmap_identity[0],
+                                                            eval_tetra[is],
+                                                            omega,
+                                                            tetra,
+                                                            weight[is]))
+                    {
+                        for (int j = 0; j < 4; ++j) {
+                            if (!flag[tetra[j]]) {
+                                flag[tetra[j]] = 1;
+                                touched.push_back(tetra[j]);
+                            }
+                        }
+                    }
+                }
+            }
+            std::sort(touched.begin(), touched.end());
+
+            for (const auto ik: touched) {
+                for (int is = 0; is < ns; ++is) weight[is][ik] *= tetra_factor;
+                average_tetra_weights_over_degenerate_modes(ns, ik, eval_tetra, weight, tol_degenerate);
+            }
+
+            auto ret = 0.0;
+            for (int is = 0; is < ns; ++is) {
+                for (const auto ik: touched) {
+                    const auto prod =
+                        tamura_overlap(natmin, evec_in[ik][is], evec_in[knum][snum], &isotope_factor[0], kind);
+                    ret += weight[is][ik] * (prod * eval_tetra[is][ik]);
+                }
+            }
+            gamma_loc[i] = ret * pi * omega * 0.25;
+
+            for (const auto ik: touched) {
+                flag[ik] = 0;
+                for (int is = 0; is < ns; ++is) weight[is][ik] = 0.0;
+            }
         }
-        integration_in.calc_weight_tetrahedron(nk,
-                                               kmap_identity,
-                                               eval,
-                                               omega,
-                                               tetra_nodes_in.get_ntetra(),
-                                               tetra_nodes_in.get_tetras(),
-                                               weight_tetra[is]);
     }
-
-    for (ik = 0; ik < nk; ++ik) {
-        average_tetra_weights_over_degenerate_modes(ns, ik, eval_tetra, weight_tetra, tol_degenerate);
-    }
-
-    for (is = 0; is < ns; ++is) {
-        for (ik = 0; ik < nk; ++ik) {
-            ret += weight_tetra[is][ik] * prod_omega[is][ik];
-        }
-    }
-
-    ret *= pi * omega * 0.25;
-
-    eval.clear();
-    eval_tetra.clear();
-    prod_omega.clear();
-    weight_tetra.clear();
-    kmap_identity.clear();
 }
 
 void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in, const DymatEigenValue &dymat_dos_in,
@@ -249,41 +351,21 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
 
         const auto tol_degenerate = 1.0e-7 * time_ry / Hz_to_kayser;
         const auto eval_dos = dymat_dos_in.get_eigenvalues();
-        auto get_averaged_omega = [&](const unsigned int knum, const unsigned int snum) {
-            auto begin = snum;
-            while (begin > 0 && std::abs(eval_dos[knum][begin] - eval_dos[knum][begin - 1]) < tol_degenerate) {
-                --begin;
-            }
 
-            auto end = snum + 1;
-            while (end < ns && std::abs(eval_dos[knum][end] - eval_dos[knum][end - 1]) < tol_degenerate) {
-                ++end;
-            }
-
-            auto omega_sum = 0.0;
-            for (auto is = begin; is < end; ++is) {
-                omega_sum += eval_dos[knum][is];
-            }
-            return omega_sum / static_cast<double>(end - begin);
-        };
-
-        for (i = my_rank_in; i < nks; i += nprocs_in) {
-            const auto knum = kmesh_dos_in.kpoint_irred_all[i / ns][0].knum;
-            const auto snum = i % ns;
-            const auto omega = get_averaged_omega(knum, snum);
-            if (integration_in.ismear == -1) {
-                calc_isotope_selfenergy_tetra(knum,
-                                              snum,
-                                              omega,
-                                              &kmesh_dos_in,
-                                              eval_dos,
-                                              dymat_dos_in.get_eigenvectors(),
-                                              system_in,
-                                              integration_in,
+        if (integration_in.ismear == -1) {
+            calc_isotope_selfenergy_tetra_all(kmesh_dos_in,
+                                              dymat_dos_in,
                                               tetra_nodes_dos_in,
+                                              system_in,
                                               ns_in,
-                                              tmp);
-            } else {
+                                              my_rank_in,
+                                              nprocs_in,
+                                              gamma_loc);
+        } else {
+            for (i = my_rank_in; i < nks; i += nprocs_in) {
+                const auto knum = kmesh_dos_in.kpoint_irred_all[i / ns][0].knum;
+                const auto snum = i % ns;
+                const auto omega = averaged_omega(eval_dos, ns, tol_degenerate, knum, snum);
                 calc_isotope_selfenergy(knum,
                                         snum,
                                         omega,
@@ -294,8 +376,8 @@ void Isotope::calc_isotope_selfenergy_all(const KpointMeshUniform &kmesh_dos_in,
                                         integration_in,
                                         ns_in,
                                         tmp);
+                gamma_loc[i] = tmp;
             }
-            gamma_loc[i] = tmp;
         }
 
         MPI_Reduce(&gamma_loc[0], &gamma_tmp[0], nks, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
