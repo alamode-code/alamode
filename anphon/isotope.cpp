@@ -299,6 +299,7 @@ void Isotope::calc_isotope_selfenergy_tetra_all(const KpointMeshUniform &kmesh_i
             auto ret = 0.0;
             for (int is = 0; is < ns; ++is) {
                 for (const auto ik: touched) {
+                    if (weight[is][ik] == 0.0) continue; // overlap only where this band has weight
                     const auto prod =
                         tamura_overlap(natmin, evec_in[ik][is], evec_in[knum][snum], &isotope_factor[0], kind);
                     ret += weight[is][ik] * (prod * eval_tetra[is][ik]);

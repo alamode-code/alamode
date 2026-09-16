@@ -52,10 +52,7 @@ struct ScphResultIOH5::Impl
                                     const std::complex<double> *const *const *const *dymat, const size_t nt,
                                     const size_t ns, const size_t ncell) -> void
     {
-        HighFive::DataSetCreateProps props;
-        props.add(HighFive::Chunking({1, ns, ns, ncell}));
-        props.add(HighFive::Deflate(1));
-        auto dset = fh.createDataSet<std::complex<double>>(path, HighFive::DataSpace({nt, ns, ns, ncell}), props);
+        auto dset = h5_create_dataset_compressed<std::complex<double>>(fh, path, {nt, ns, ns, ncell}, 1);
         dset.write_raw(&dymat[0][0][0][0]);
     }
 };
@@ -269,10 +266,7 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
             // same rows, selected downstream via FC2_TEMPERATURE.
             const auto nrows = static_cast<size_t>(fc2->atom_indices.rows());
             const std::string path_tdep = "/ForceConstants/Order2_temperature_dependent/force_constant_values";
-            HighFive::DataSetCreateProps props;
-            props.add(HighFive::Chunking({1, nrows}));
-            props.add(HighFive::Deflate(1));
-            auto dset = fh.createDataSet<double>(path_tdep, HighFive::DataSpace({nt, nrows}), props);
+            auto dset = h5_create_dataset_compressed<double>(fh, path_tdep, {nt, nrows}, 1);
             dset.write_raw(fc2->values_per_temperature.data());
             dset.createAttribute("unit", std::string("Ry/bohr^2"));
             dset.createAttribute("index_datasets", std::string("/ForceConstants/Order2"));

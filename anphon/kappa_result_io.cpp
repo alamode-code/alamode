@@ -224,13 +224,13 @@ struct KappaResultIOH5::Impl
 
         if (tdep) {
             auto dset_freq =
-                h5_create_dataset_prealloc<double>(fh, path + "/frequencies", {nt, cmeta.nk_irred, cmeta.ns});
+                h5_create_dataset_compressed<double>(fh, path + "/frequencies", {nt, cmeta.nk_irred, cmeta.ns}, 1);
             dset_freq.createAttribute("unit", std::string("cm^-1"));
             // Marks files whose temperature slices are written in the row-major
             // (nk_irred, ns) order; files without this attribute were written by
             // versions that stored the column-major Eigen buffer raw (transposed).
             dset_freq.createAttribute("layout", std::string("row-major"));
-            h5_create_dataset_prealloc<double>(fh, path + "/velocities", {nt, nequiv_total, cmeta.ns, 3})
+            h5_create_dataset_compressed<double>(fh, path + "/velocities", {nt, nequiv_total, cmeta.ns, 3}, 1)
                 .createAttribute("unit", std::string("m/s"));
             auto dset_gamma = h5_create_dataset_prealloc<double>(fh, path + "/gamma", {nrows, nt});
             dset_gamma.createAttribute("unit", std::string("cm^-1"));
@@ -238,8 +238,7 @@ struct KappaResultIOH5::Impl
         } else {
             dump(fh, path + "/frequencies", cmeta.frequencies);
             dumpAttribute(fh, path + "/frequencies", "unit", std::string("cm^-1"));
-            auto dset_vel =
-                fh.createDataSet<double>(path + "/velocities", HighFive::DataSpace({nequiv_total, cmeta.ns, 3}));
+            auto dset_vel = h5_create_dataset_compressed<double>(fh, path + "/velocities", {nequiv_total, cmeta.ns, 3});
             dset_vel.write_raw(cmeta.velocities.data());
             dset_vel.createAttribute("unit", std::string("m/s"));
 
@@ -272,10 +271,10 @@ struct KappaResultIOH5::Impl
 
         if (!file->exist(name)) {
             if (tdep) {
-                h5_create_dataset_prealloc<double>(*file, name, {nt, nequiv_total, cmeta.ns, 3, 3})
+                h5_create_dataset_compressed<double>(*file, name, {nt, nequiv_total, cmeta.ns, 3, 3}, 1)
                     .createAttribute("unit", std::string("(m/s)^2"));
             } else {
-                file->createDataSet<double>(name, HighFive::DataSpace({nequiv_total, cmeta.ns, 3, 3}))
+                h5_create_dataset_compressed<double>(*file, name, {nequiv_total, cmeta.ns, 3, 3})
                     .createAttribute("unit", std::string("(m/s)^2"));
             }
         }

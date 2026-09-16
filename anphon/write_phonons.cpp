@@ -1275,6 +1275,17 @@ void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned 
 
 #ifdef _HDF5
 
+// Chunked + shuffle + deflate property list for the large per-k arrays.
+static auto compressed_plist(const std::vector<size_t> &dims) -> H5::DSetCreatPropList
+{
+    const auto chunk = h5_chunk_dims(dims, sizeof(double));
+    H5::DSetCreatPropList plist;
+    plist.setChunk(static_cast<int>(chunk.size()), chunk.data());
+    plist.setShuffle();
+    plist.setDeflate(1);
+    return plist;
+}
+
 void Writes::writeEigenvaluesHdf5() const
 {
     std::string fname_eval;
@@ -1442,7 +1453,10 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     }
 
     dataspace = DataSpace(2, dims);
-    dataset = DataSet(group_band.createDataSet("frequencies", PredType::NATIVE_DOUBLE, dataspace));
+    dataset = DataSet(group_band.createDataSet("frequencies",
+                                               PredType::NATIVE_DOUBLE,
+                                               dataspace,
+                                               compressed_plist({nk_in, static_cast<size_t>(nbands)})));
     IntType int_type(PredType::NATIVE_INT);
     DataSpace attr_dataspace_int(H5S_SCALAR);
     myatt_in = dataset.createAttribute("band_index_reordered", int_type, attr_dataspace_int);
@@ -1825,7 +1839,10 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     }
 
     dataspace = DataSpace(2, dims);
-    dataset = DataSet(group_band.createDataSet("frequencies", PredType::NATIVE_DOUBLE, dataspace));
+    dataset = DataSet(group_band.createDataSet("frequencies",
+                                               PredType::NATIVE_DOUBLE,
+                                               dataspace,
+                                               compressed_plist({nk_in, static_cast<size_t>(nbands)})));
     IntType int_type(PredType::NATIVE_INT);
     DataSpace attr_dataspace_int(H5S_SCALAR);
     myatt_in = dataset.createAttribute("band_index_reordered", int_type, attr_dataspace_int);
@@ -1840,7 +1857,10 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     freq_kayser.clear();
 
     dataspace = DataSpace(4, dims_evec);
-    dataset = DataSet(group_band.createDataSet("polarization_vectors", PredType::NATIVE_DOUBLE, dataspace));
+    dataset = DataSet(group_band.createDataSet("polarization_vectors",
+                                               PredType::NATIVE_DOUBLE,
+                                               dataspace,
+                                               compressed_plist({nk_in, static_cast<size_t>(nbands), neval, 2})));
     dataset.write(&evec_tmp[0][0][0][0], PredType::NATIVE_DOUBLE);
     dataset.close();
     dataspace.close();

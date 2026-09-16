@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
@@ -175,6 +176,45 @@ inline auto h5_create_dataset_prealloc(HighFive::File &file, const std::string &
     props.add(H5Pset_fill_value, dtype.getId(), &fill_value);
     props.add(H5Pset_fill_time, H5D_FILL_TIME_ALLOC);
     return file.createDataSet<T>(path, HighFive::DataSpace(dims), props);
+}
+
+// Chunk shape for a compressed dataset: the leading `nfixed` axes get chunk
+// extent 1 (one chunk row per temperature slice, so slice writes never touch a
+// partial chunk), the next axis is shrunk so a chunk stays around 4 MB, and the
+// trailing axes span the dataset.
+inline auto h5_chunk_dims(const std::vector<size_t> &dims, const size_t elem_bytes,
+                          const size_t nfixed = 0) -> std::vector<hsize_t>
+{
+    std::vector<hsize_t> chunk(dims.begin(), dims.end());
+    for (size_t i = 0; i < nfixed && i < dims.size(); ++i) chunk[i] = 1;
+    if (nfixed < dims.size()) {
+        size_t tail = elem_bytes;
+        for (size_t i = nfixed + 1; i < dims.size(); ++i) tail *= std::max<size_t>(dims[i], 1);
+        constexpr size_t target = size_t{4} << 20;
+        chunk[nfixed] = std::max<size_t>(1, std::min<size_t>(dims[nfixed], target / tail));
+    }
+    return chunk;
+}
+
+// Chunked + shuffle + deflate creation properties for large floating-point
+// arrays that are written once (basis data, eigenvectors, dynamical matrices).
+// Not for the in-place restart datasets (gamma, /kappa, /iterativebte), which
+// rely on the contiguous layout of h5_create_dataset_prealloc.
+inline auto h5_compressed_props(const std::vector<size_t> &dims, const size_t elem_bytes,
+                                const size_t nfixed = 0) -> HighFive::DataSetCreateProps
+{
+    HighFive::DataSetCreateProps props;
+    props.add(HighFive::Chunking(h5_chunk_dims(dims, elem_bytes, nfixed)));
+    props.add(HighFive::Shuffle());
+    props.add(HighFive::Deflate(1));
+    return props;
+}
+
+template <typename T>
+inline auto h5_create_dataset_compressed(HighFive::File &file, const std::string &path, const std::vector<size_t> &dims,
+                                         const size_t nfixed = 0) -> HighFive::DataSet
+{
+    return file.createDataSet<T>(path, HighFive::DataSpace(dims), h5_compressed_props(dims, sizeof(T), nfixed));
 }
 
 // Resolve a physical temperature to a row index of a temperature-grid
