@@ -170,15 +170,11 @@ void Conductivity::setup_kappa()
 
     init_temperature_grid();
 
-    const auto nks_total = dos->kmesh_dos->nk_irred * ns;
-    const auto nks_each_thread = nks_total / mympi->nprocs;
-    const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
-
-    if (nrem > 0) {
-        damping3.resize((nks_each_thread + 1) * mympi->nprocs, ntemp);
-    } else {
-        damping3.resize(nks_total, ntemp);
-    }
+    // The gather loop of calc_anharmonic_imagself3 fills nprocs rows per
+    // step starting at the restart offset, so a restart whose number of
+    // finished modes is not a multiple of nprocs reaches up to nprocs - 1
+    // rows beyond nk_irred * ns.
+    damping3.resize(dos->kmesh_dos->nk_irred * ns + mympi->nprocs, ntemp);
 
     if (len_boundary > eps) {
         if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
@@ -270,17 +266,9 @@ void Conductivity::setup_kappa_4ph()
     auto nk_4ph = kmesh_4ph->nk;
 
     // Rows of damping4 follow the 4ph mesh (KMESH_COARSE may have more
-    // irreducible points than the 3ph mesh).
-    {
-        const auto nks_total = kmesh_4ph->nk_irred * ns;
-        const auto nks_each_thread = nks_total / mympi->nprocs;
-        const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
-        if (nrem > 0) {
-            damping4.resize((nks_each_thread + 1) * mympi->nprocs, ntemp);
-        } else {
-            damping4.resize(nks_total, ntemp);
-        }
-    }
+    // irreducible points than the 3ph mesh); the nprocs slack rows are
+    // needed for the same reason as in setup_kappa.
+    damping4.resize(kmesh_4ph->nk_irred * ns + mympi->nprocs, ntemp);
     dymat_4ph = std::make_unique<DymatEigenValue>(true, false, nk_4ph, neval);
 
     eval_tmp.resize(nk_4ph, neval);
