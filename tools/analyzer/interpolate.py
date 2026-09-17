@@ -1,5 +1,19 @@
 import numpy as np
 
+# Clamp applied to the linewidths before taking the log, identical to anphon's
+# (eps = DBL_EPSILON in Ry, converted to the cm^-1 unit of the stored data), so
+# that the interpolated values reproduce PREFIX.interpolated_gamma.
+_RY_TO_KAYSER = (
+    1.0e-2
+    / (2.0 * np.pi * 299792458)
+    / (6.62606896e-34 / (2.0 * np.pi * 4.35974394e-18 / 2.0))
+)
+EPS_LOG_CLAMP = np.finfo(float).eps * _RY_TO_KAYSER
+
+# log-space value assigned to the acoustic branches at Gamma by modified-log-linear:
+# anphon uses -100 on the Ry-valued linewidths, shifted here to the cm^-1 data
+_LOG_LIMIT_GAMMA = -100.0 + np.log(_RY_TO_KAYSER)
+
 
 class Interpolator:
     def __init__(self, qgrid_coarse, q_coords_irred, weight_q=None, rotations=None):
@@ -65,7 +79,7 @@ class Interpolator:
         xk,
         interpolation_method="log-linear",
         rotations=None,
-        eps=1.0e-12,
+        eps=EPS_LOG_CLAMP,
     ):
         if self.bz2irb is None:
             if rotations is None:
@@ -206,19 +220,47 @@ class Interpolator:
         xk,
         interpolation_method="log-linear",
         rotations=None,
-        eps=1.0e-12,
+        eps=EPS_LOG_CLAMP,
     ):
+        """Interpolate data_coarse[nk_irred, nmodes, ntemps] to the point xk.
+
+        interpolation_method follows the INTERPOLATOR tag of anphon:
+        linear, log-linear (trilinear in log space) and modified-log-linear
+        (same, but the acoustic branches of a cell that has Gamma as a corner
+        are extrapolated from the neighboring cells instead, see
+        TriLinearInterpolator::interpolate_avoidgamma in anphon).
+        """
         if self.bz2irb is None:
             if rotations is None:
                 raise RuntimeError("need to give rotations to run interpolation")
             else:
                 self.unfold(rotations)
 
+        if interpolation_method not in ("linear", "log-linear", "modified-log-linear"):
+            raise ValueError(
+                "unknown interpolation_method: {}".format(interpolation_method)
+            )
+        use_log = interpolation_method != "linear"
+
+        data = np.log(np.maximum(data_coarse, eps)) if use_log else data_coarse
         corners = self.find_corner_fractional(xk)
-        x000 = corners[0]
-        x111 = corners[6]
-        delta = (xk - x000) / (x111 - x000)
-        delta_reshaped = np.array(
+        v = self._trilinear(data, corners, xk)
+
+        if interpolation_method == "modified-log-linear":
+            nac = min(3, v.shape[0])
+            if np.all(np.abs(xk - np.round(xk)) < 1.0e-8):
+                v[:nac] = _LOG_LIMIT_GAMMA
+            elif self._contains_gamma(corners):
+                v[:nac] = self._avoid_gamma(data[:, :nac], corners, xk)
+
+        return np.exp(v) if use_log else v
+
+    def _trilinear(self, data, corners, xk):
+        # Trilinear polynomial of the cell spanned by corners, evaluated at xk
+        # (xk may lie outside the cell: that is the extrapolation used by
+        # modified-log-linear).
+        delta = (xk - corners[0]) / (corners[6] - corners[0])
+        w = np.array(
             [
                 1.0,
                 delta[2],
@@ -229,39 +271,44 @@ class Interpolator:
                 delta[1] * delta[2],
                 delta[0] * delta[1] * delta[2],
             ]
-        ).reshape(8, 1, 1)
+        ).reshape((8,) + (1,) * (data.ndim - 1))
+        cv = data[self.bz2irb[[self.get_knum(c) for c in corners]]]
+        c = np.empty_like(cv)
+        c[0] = cv[0]
+        c[1] = cv[4] - cv[0]
+        c[2] = cv[1] - cv[0]
+        c[3] = cv[3] - cv[0]
+        c[4] = cv[5] - cv[4] - cv[1] + cv[0]
+        c[5] = cv[2] - cv[3] - cv[1] + cv[0]
+        c[6] = cv[7] - cv[3] - cv[4] + cv[0]
+        c[7] = cv[6] - cv[2] - cv[7] - cv[5] + cv[1] + cv[3] + cv[4] - cv[0]
+        return np.sum(c * w, axis=0)
 
-        corner_indices = np.array([self.get_knum(corner) for corner in corners])
-        corner_values = data_coarse[self.bz2irb[corner_indices]]
-        c = np.zeros(corner_values.shape)
+    def _contains_gamma(self, corners):
+        return any(self.get_knum(c) == 0 for c in corners)
 
-        if interpolation_method == "log-linear":
-            corner_values = np.log(np.maximum(corner_values, eps))
-
-        c[0] = corner_values[0]
-        c[1] = corner_values[4] - corner_values[0]
-        c[2] = corner_values[1] - corner_values[0]
-        c[3] = corner_values[3] - corner_values[0]
-        c[4] = corner_values[5] - corner_values[4] - corner_values[1] + corner_values[0]
-        c[5] = corner_values[2] - corner_values[3] - corner_values[1] + corner_values[0]
-        c[6] = corner_values[7] - corner_values[3] - corner_values[4] + corner_values[0]
-        c[7] = (
-            corner_values[6]
-            - corner_values[2]
-            - corner_values[7]
-            - corner_values[5]
-            + corner_values[1]
-            + corner_values[3]
-            + corner_values[4]
-            - corner_values[0]
-        )
-
-        v = np.sum(c * delta_reshaped, axis=0)
-
-        if interpolation_method == "log-linear":
-            v = np.exp(v)
-
-        return v
+    def _avoid_gamma(self, data, corners, xk):
+        # Average of the trilinear extrapolations from the mirrored neighbor
+        # cells that do not contain Gamma, mirrored about the corner closest to xk.
+        others = [c for c in corners if self.get_knum(c) != 0]
+        closest = min(others, key=lambda c: np.sum((xk - c) ** 2))
+        total = None
+        count = 0
+        for sx in (-1.0, 1.0):
+            for sy in (-1.0, 1.0):
+                for sz in (-1.0, 1.0):
+                    center = closest + np.array([sx, sy, sz]) * (xk - closest)
+                    corners_n = self.find_corner_fractional(center)
+                    if self._contains_gamma(corners_n):
+                        continue
+                    val = self._trilinear(data, corners_n, xk)
+                    total = val if total is None else total + val
+                    count += 1
+        if count == 0:
+            # every neighbor cell touches Gamma (coarse mesh of 2 or less along
+            # some direction): nothing to extrapolate from, keep the plain value
+            return self._trilinear(data, corners, xk)
+        return total / count
 
     def find_corner_fractional(self, xk):
         #

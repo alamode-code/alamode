@@ -2645,6 +2645,12 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
     }
 }
 
+void Writes::printOutputFile(const std::string &file, const std::string &description) const
+{
+    if (mympi->my_rank != 0 || getVerbosity() == 0) return;
+    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file << " : " << description << '\n';
+}
+
 void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temperature_in,
                                  const double *const *const *kappa_in,
                                  const std::vector<unsigned char> &converged_in) const
@@ -2693,8 +2699,12 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
     ofs_kl.close();
     if (getVerbosity() > 0) {
         std::cout << '\n';
-        std::cout << " -----------------------------------------------------------------" << '\n' << '\n';
-        std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
+        std::cout << " -----------------------------------------------------------------\n\n";
+        std::cout << " The following files are created: \n";
+    }
+    printOutputFile(file_kappa, "Lattice thermal conductivity (iterative BTE)");
+    if (conductivity->get_use_h5_io()) {
+        printOutputFile(phon->job_title + ".kappa.h5", "Self-energies and thermal conductivity (restart file)");
     }
 }
 
@@ -2726,7 +2736,7 @@ void Writes::writeKappa() const
 
             ofs_kl << "# Temperature [K], Thermal Conductivity (xx, xy, xz, yx, yy, yz, zx, zy, zz) [W/mK]"
                    << std::endl;
-            ofs_kl << "# three phonon part";
+            ofs_kl << "# three phonon part\n";
 
             if (isotope->include_isotope) {
                 ofs_kl << "# Isotope effects are included." << std::endl;
@@ -2838,13 +2848,22 @@ void Writes::writeKappa() const
         if (getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " -----------------------------------------------------------------\n\n";
-            std::cout << " Lattice thermal conductivity is stored in the file " << file_kappa << '\n';
-            if (conductivity->calc_kappa_spec) {
-                std::cout << " Thermal conductivity spectra is stored in the file " << file_kappa2 << '\n';
+            std::cout << " The following files are created: \n";
+        }
+        if (conductivity->fph_rta > 0) {
+            printOutputFile(file_kappa_3only, "Lattice thermal conductivity (3-phonon only)");
+            printOutputFile(file_kappa, "Lattice thermal conductivity (3-phonon + 4-phonon)");
+            if (conductivity->write_interpolation > 0) {
+                printOutputFile(phon->job_title + ".interpolated_gamma",
+                                "Four-phonon linewidths interpolated onto the 3-phonon mesh");
             }
-            if (conductivity->calc_coherent) {
-                std::cout << " Coherent part is stored in the file " << file_kappa_coherent << '\n';
-            }
+        } else {
+            printOutputFile(file_kappa, "Lattice thermal conductivity");
+        }
+        if (conductivity->calc_kappa_spec) printOutputFile(file_kappa2, "Spectral thermal conductivity");
+        if (conductivity->calc_coherent) printOutputFile(file_kappa_coherent, "Coherent (interband) part of kappa");
+        if (conductivity->get_use_h5_io()) {
+            printOutputFile(phon->job_title + ".kappa.h5", "Self-energies and thermal conductivity (restart file)");
         }
     }
 }
@@ -2889,13 +2908,8 @@ void Writes::writeSelfenergyIsotope() const
                 ofs_iso << '\n';
             }
 
-            if (getVerbosity() > 0) {
-                std::cout << '\n';
-                std::cout << " ISOTOPE = 2: Phonon selfenergy due to phonon-isotope \n";
-                std::cout << "              scatterings is stored in the file " << file_iso << '\n';
-            }
-
             ofs_iso.close();
+            printOutputFile(file_iso, "Phonon self-energy due to phonon-isotope scattering (ISOTOPE = 2)");
         }
     }
 }
@@ -3997,9 +4011,9 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     if (getVerbosity() > 0) {
         std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
         if (is_qha) {
-            std::cout << " : QHA heat capcaity, free energy, entropy\n";
+            std::cout << " : QHA heat capacity, free energy, entropy\n";
         } else {
-            std::cout << " : SCPH heat capcaity, free energy, entropy\n";
+            std::cout << " : SCPH heat capacity, free energy, entropy\n";
         }
     }
 }

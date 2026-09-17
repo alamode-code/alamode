@@ -18,6 +18,7 @@ class Calculator:
         file_kappa_h5=None,
         temperature=None,
         use_isotope_from_h5=True,
+        interpolator="log-linear",
     ):
         """
         The constructor of the Calculator class.
@@ -35,6 +36,9 @@ class Calculator:
                 the temperature whose phonon frequencies/velocities are used.
             use_isotope_from_h5 (bool): If True and file_isotope is None, the isotope linewidths
                 stored in the kappa.h5 file (ISOTOPE > 0 runs) are loaded (default: True).
+            interpolator (str): Scheme used to interpolate the 4-phonon linewidths from
+                KMESH_COARSE onto the 3-phonon mesh: linear, log-linear or
+                modified-log-linear, as the INTERPOLATOR tag of anphon (default: log-linear).
         """
         self.file_result_3ph = file_result_3ph
         self.file_result_4ph = file_result_4ph
@@ -42,6 +46,7 @@ class Calculator:
         self.file_kappa_h5 = file_kappa_h5
         self.temperature_h5 = temperature
         self.use_isotope_from_h5 = use_isotope_from_h5
+        self.interpolator = interpolator
         self.has_4ph_h5 = False
         self.has_isotope_h5 = False
         if file_kappa_h5 is None and file_result_3ph is None:
@@ -298,9 +303,9 @@ class Calculator:
             )
         self.gamma4_interpolated = np.zeros(self.gamma3.shape, dtype=float)
         for i, xq in enumerate(self.qpoints):
-            self.gamma4_interpolated[i, :, :] = interpol.run2(self.gamma4, xq)[
-                :, col_map
-            ]
+            self.gamma4_interpolated[i, :, :] = interpol.run2(
+                self.gamma4, xq, interpolation_method=self.interpolator
+            )[:, col_map]
 
     def check_data_load(self, four_phonon, isotope):
         """
@@ -332,7 +337,13 @@ class Calculator:
             else:
                 self.set_variables_iso()
 
-    def average_gamma_at_degenerate_point(self, frequencies, gamma, tol_omega=1e-3):
+    # anphon groups degenerate modes with a tolerance of 1e-7 Ry (find_degenerate_groups);
+    # the same value in cm^-1 keeps the averaging identical to the anphon run.
+    _TOL_DEGENERATE = 1.0e-7 * 109737.31568
+
+    def average_gamma_at_degenerate_point(
+        self, frequencies, gamma, tol_omega=_TOL_DEGENERATE
+    ):
         """
         Averages the gamma values at degenerate points across the phonon band structure.
 

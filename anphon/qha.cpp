@@ -605,6 +605,11 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             fout_step_u_tensor.close();
             fout_u_tensor.close();
         }
+        writes->printOutputFile(phon->job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
+        writes->printOutputFile(phon->job_title + ".atom_disp", "Relaxed atomic displacements");
+        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+            writes->printOutputFile(phon->job_title + ".umn_tensor", "Relaxed strain tensor");
+        }
 
         cmat_convert.clear();
 
@@ -1122,6 +1127,9 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         fout_q0.close();
         fout_u0.close();
         fout_u_tensor.close();
+        writes->printOutputFile(phon->job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
+        writes->printOutputFile(phon->job_title + ".atom_disp", "Relaxed atomic displacements");
+        writes->printOutputFile(phon->job_title + ".umn_tensor", "Relaxed strain tensor");
     }
 
     del_v0_del_umn_vib.clear();

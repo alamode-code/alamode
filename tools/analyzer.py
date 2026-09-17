@@ -88,6 +88,15 @@ def get_optparse_options():
     )
 
     parser.add_option(
+        "--interpolator",
+        metavar="linear | log-linear | modified-log-linear",
+        default="log-linear",
+        help="scheme used to interpolate the four-phonon linewidths from KMESH_COARSE "
+        "onto the three-phonon mesh; use the same value as the INTERPOLATOR tag of the "
+        "anphon run to reproduce its kappa (default: log-linear).",
+    )
+
+    parser.add_option(
         "--noavg",
         action="store_false",
         dest="average_gamma",
@@ -173,6 +182,7 @@ def main():
                     file_isotope=options.iso,
                     average_gamma=options.average_gamma,
                     use_isotope_from_h5=not options.noiso,
+                    interpolator=options.interpolator,
                 )
                 kappa = np.asarray(
                     calc_t.get_thermal_conductivity(
@@ -199,6 +209,7 @@ def main():
         file_kappa_h5=options.file_kappa,
         temperature=options.temp,
         use_isotope_from_h5=not options.noiso,
+        interpolator=options.interpolator,
     )
     four_phonon = postproc.has_4ph
     isotope = postproc.has_isotope
