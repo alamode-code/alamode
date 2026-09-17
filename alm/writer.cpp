@@ -19,6 +19,7 @@
 #include <highfive/H5File.hpp>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <unordered_map>
 #include "cluster.h"
 #include "constraint.h"
@@ -63,8 +64,10 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
                               const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Displace> &displace,
                               const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
                               const std::unique_ptr<Optimize> &optimize, const std::unique_ptr<Files> &files,
-                              const std::string &run_mode) const -> void
+                              const std::string &run_mode, const bool print) -> void
 {
+    // Share the echo between the log and HDF5 metadata.
+    std::ostringstream os;
     // write docstrings
 
     size_t i;
@@ -74,119 +77,126 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
 
     //alm->timer->start_clock("writer");
 
-    std::cout << '\n';
-    std::cout << " Input variables:\n";
-    std::cout << " -------------------------------------------------------------------" << '\n';
-    std::cout << " General:\n";
-    std::cout << "  PREFIX = " << input_variables.at("PREFIX") << '\n';
-    std::cout << "  MODE = " << input_variables.at("MODE") << '\n';
-    std::cout << "  NAT = " << nat << "; NKD = " << nkd << '\n';
-    std::cout << "  PRINTSYM = " << symmetry->get_print_symmetry() << "; TOLERANCE = " << symmetry->get_tolerance()
-              << '\n';
-    std::cout << "  KD = ";
-    for (i = 0; i < nkd; ++i) std::cout << std::setw(4) << system->get_kdname()[i];
-    std::cout << '\n';
-    std::cout << "  FCSYM_BASIS = " << fcs->get_forceconstant_basis() << '\n';
-    std::cout << "  PERIODIC = ";
-    for (i = 0; i < 3; ++i) std::cout << std::setw(3) << system->get_periodicity()[i];
-    std::cout << '\n';
-    std::cout << "  MAGMOM = " << input_variables.at("MAGMOM") << '\n';
-    if (system->get_spin().lspin) {
-        std::cout << "  NONCOLLINEAR = " << system->get_spin().noncollinear
-                  << "; TREVSYM = " << system->get_spin().time_reversal_symm << '\n';
+    os << '\n';
+    os << " Input variables:\n";
+    os << " -------------------------------------------------------------------" << '\n';
+    os << " General:\n";
+    // API callers have no input dictionary.
+    const auto prefix_in = get_input_var("PREFIX");
+    const auto mode_in = get_input_var("MODE");
+    os << "  PREFIX = " << (prefix_in.empty() ? files->get_prefix() : prefix_in) << '\n';
+    os << "  MODE = " << (mode_in.empty() ? run_mode : mode_in) << '\n';
+    // The structure may not be initialized yet.
+    if (nat > 0) os << "  NAT = " << nat << "; NKD = " << nkd << '\n';
+    os << "  PRINTSYM = " << symmetry->get_print_symmetry() << "; TOLERANCE = " << symmetry->get_tolerance() << '\n';
+    if (nkd > 0) {
+        os << "  KD = ";
+        for (i = 0; i < nkd; ++i) os << std::setw(4) << system->get_kdname()[i];
+        os << '\n';
     }
-    std::cout << "  FCS_ALAMODE = " << save_format_flags.at("alamode") << ';';
-    std::cout << "  NMAXSAVE = " << get_output_maxorder() << '\n';
-    std::cout << "  FC3_SHENGBTE = " << save_format_flags.at("shengbte") << '\n';
-    std::cout << "  FC4_SHENGBTE = " << save_format_flags.at("shengbte4") << '\n';
-    std::cout << "  FC2_QEFC = " << save_format_flags.at("qefc") << '\n';
-    std::cout << "  HESSIAN = " << save_format_flags.at("hessian") << '\n';
-    std::cout << "  FC_ZERO_THR = " << fcs->get_fc_zero_threshold() << '\n';
+    os << "  FCSYM_BASIS = " << fcs->get_forceconstant_basis() << '\n';
+    os << "  PERIODIC = ";
+    for (i = 0; i < 3; ++i) os << std::setw(3) << system->get_periodicity()[i];
+    os << '\n';
+    // Skip input-file tags for API callers; CLI defaults may not apply.
+    const auto from_input_file = !input_variables.empty();
+    if (from_input_file) os << "  MAGMOM = " << get_input_var("MAGMOM") << '\n';
+    if (system->get_spin().lspin) {
+        os << "  NONCOLLINEAR = " << system->get_spin().noncollinear
+           << "; TREVSYM = " << system->get_spin().time_reversal_symm << '\n';
+    }
+    os << "  FCS_ALAMODE = " << save_format_flags.at("alamode") << ';';
+    os << "  NMAXSAVE = " << get_output_maxorder() << '\n';
+    os << "  FC3_SHENGBTE = " << save_format_flags.at("shengbte") << '\n';
+    os << "  FC4_SHENGBTE = " << save_format_flags.at("shengbte4") << '\n';
+    os << "  FC2_QEFC = " << save_format_flags.at("qefc") << '\n';
+    os << "  HESSIAN = " << save_format_flags.at("hessian") << '\n';
+    os << "  FC_ZERO_THR = " << fcs->get_fc_zero_threshold() << '\n';
     const auto var_or_default = [this](const std::string &key, const char *defval) {
         const auto val = get_input_var(key);
         return val.empty() ? std::string(defval) : val;
     };
-    std::cout << "  LENGTH_UNIT = " << var_or_default("LENGTH_UNIT", "bohr")
-              << "; FORCE_UNIT = " << var_or_default("FORCE_UNIT", "Ry/bohr") << '\n';
-    std::cout << "  FCS_UNIT_OUTPUT = " << units::canonical_name(fcs_unit_output) << '\n';
-    std::cout << "  TOL_CONST = " << constraint->get_tolerance_constraint() << '\n';
-    std::cout << "  COMPRESSION = " << get_compression_level() << "; FORMAT_PATTERN = " << get_format_patternfile()
-              << '\n';
-    std::cout << "  VERBOSITY = " << var_or_default("VERBOSITY", "1") << '\n';
+    if (from_input_file) {
+        os << "  LENGTH_UNIT = " << var_or_default("LENGTH_UNIT", "bohr")
+           << "; FORCE_UNIT = " << var_or_default("FORCE_UNIT", "Ry/bohr") << '\n';
+    }
+    os << "  FCS_UNIT_OUTPUT = " << units::canonical_name(fcs_unit_output) << '\n';
+    os << "  TOL_CONST = " << constraint->get_tolerance_constraint() << '\n';
+    os << "  COMPRESSION = " << get_compression_level() << "; FORMAT_PATTERN = " << get_format_patternfile() << '\n';
+    if (from_input_file) os << "  VERBOSITY = " << var_or_default("VERBOSITY", "1") << '\n';
     // Structure tags are echoed as given (multi-line matrices on one line).
     for (const auto *tag: {"STRUCTURE_FILE", "SUPERCELL", "PRIMCELL"}) {
         auto val = get_input_var(tag);
         if (val.empty()) continue;
         std::replace(val.begin(), val.end(), '\n', ' ');
-        std::cout << "  " << tag << " = " << val << '\n';
+        os << "  " << tag << " = " << val << '\n';
     }
-    std::cout << '\n';
+    os << '\n';
 
-    std::cout << " Interaction:\n";
-    std::cout << "  NORDER = " << cluster->get_maxorder() << '\n';
-    std::cout << "  NBODY = ";
+    os << " Interaction:\n";
+    os << "  NORDER = " << cluster->get_maxorder() << '\n';
+    os << "  NBODY = ";
     for (auto m = 0; m < cluster->get_maxorder(); ++m) {
-        std::cout << std::setw(3) << cluster->get_nbody_include()[m];
+        os << std::setw(3) << cluster->get_nbody_include()[m];
     }
-    std::cout << "\n\n";
+    os << "\n\n";
 
     if (run_mode == "suggest") {
-        std::cout << "  DBASIS = " << displace->get_disp_basis()
-                  << "; TRIMEVEN = " << displace->get_trim_dispsign_for_evenfunc() << "\n\n";
+        os << "  DBASIS = " << displace->get_disp_basis()
+           << "; TRIMEVEN = " << displace->get_trim_dispsign_for_evenfunc() << "\n\n";
 
     } else if (run_mode == "optimize") {
         const auto optctrl = optimize->get_optimizer_control();
         std::vector<std::string> str_linearmodel{"least-squares", "elastic-net", "adaptive-lasso"};
-        std::cout << " Optimize:\n";
-        std::cout << "  LMODEL = " << str_linearmodel[optctrl.linear_model - 1] << '\n';
-        std::cout << "  DFSET = " << files->get_datfile_train().filename << '\n';
-        std::cout << "  NDATA = " << files->get_datfile_train().ndata
-                  << "; NSTART = " << files->get_datfile_train().nstart
-                  << "; NEND = " << files->get_datfile_train().nend;
+        os << " Optimize:\n";
+        os << "  LMODEL = " << str_linearmodel[optctrl.linear_model - 1] << '\n';
+        os << "  DFSET = " << files->get_datfile_train().filename << '\n';
+        os << "  NDATA = " << files->get_datfile_train().ndata << "; NSTART = " << files->get_datfile_train().nstart
+           << "; NEND = " << files->get_datfile_train().nend;
         if (files->get_datfile_train().skip_s < files->get_datfile_train().skip_e) {
-            std::cout << "   SKIP = " << files->get_datfile_train().skip_s << "-"
-                      << files->get_datfile_train().skip_e - 1 << "\n\n";
+            os << "; SKIP = " << files->get_datfile_train().skip_s << "-" << files->get_datfile_train().skip_e - 1
+               << "\n\n";
         } else {
-            std::cout << "   SKIP = \n\n";
+            os << "; SKIP = \n\n";
         }
 
-        std::cout << "  ICONST = " << constraint->get_constraint_mode() << '\n';
-        std::cout << "  ROTAXIS = " << constraint->get_rotation_axis() << '\n';
-        std::cout << "  FC2FIX = " << constraint->get_fc_file(2) << '\n';
-        std::cout << "  FC3FIX = " << constraint->get_fc_file(3) << "\n\n";
-        std::cout << "  ALGO_REDUCTION = " << static_cast<int>(constraint->get_reduction_algorithm()) << '\n';
-        std::cout << "  SPARSE = " << optctrl.use_sparse_solver << "; SPARSESOLVER = " << optctrl.sparsesolver << '\n';
-        std::cout << "  USE_CHOLESKY = " << optctrl.use_cholesky << "; CHUNKSIZE = " << optctrl.chunk_size << '\n';
-        std::cout << "  CONV_TOL = " << optctrl.tolerance_iteration << "; MAXITER = " << optctrl.maxnum_iteration
-                  << '\n';
-        std::cout << "  PERIODIC_IMAGE_CONV = " << optctrl.periodic_image_conv << '\n';
-        std::cout << "  EFIT_WEIGHT = " << optctrl.efit_weight << "; EFIT_ESCALE = " << optctrl.efit_escale
-                  << "; EFIT_CV = " << optctrl.efit_cv << "\n\n";
+        os << "  ICONST = " << constraint->get_constraint_mode() << '\n';
+        os << "  ROTAXIS = " << constraint->get_rotation_axis() << '\n';
+        os << "  FC2FIX = " << constraint->get_fc_file(2) << '\n';
+        os << "  FC3FIX = " << constraint->get_fc_file(3) << "\n\n";
+        os << "  ALGO_REDUCTION = " << static_cast<int>(constraint->get_reduction_algorithm()) << '\n';
+        os << "  SPARSE = " << optctrl.use_sparse_solver << "; SPARSESOLVER = " << optctrl.sparsesolver << '\n';
+        os << "  USE_CHOLESKY = " << optctrl.use_cholesky << "; CHUNKSIZE = " << optctrl.chunk_size << '\n';
+        os << "  CONV_TOL = " << optctrl.tolerance_iteration << "; MAXITER = " << optctrl.maxnum_iteration << '\n';
+        os << "  PERIODIC_IMAGE_CONV = " << optctrl.periodic_image_conv << '\n';
+        os << "  EFIT_WEIGHT = " << optctrl.efit_weight << "; EFIT_ESCALE = " << optctrl.efit_escale
+           << "; EFIT_CV = " << optctrl.efit_cv << "\n\n";
         if (optctrl.linear_model == 2) {
             const auto str_l1_solver = optctrl.l1_solver == 0 ? "cd" : (optctrl.l1_solver == 1 ? "fista" : "admm");
-            std::cout << " Elastic-net related variables:\n";
-            std::cout << "  CV = " << std::setw(5) << optctrl.cross_validation << '\n';
-            std::cout << "  DFSET_CV = " << files->get_datfile_validation().filename << '\n';
-            std::cout << "  NDATA_CV = " << files->get_datfile_validation().ndata
-                      << "; NSTART_CV = " << files->get_datfile_validation().nstart
-                      << "; NEND_CV = " << files->get_datfile_validation().nend << "\n\n";
-            std::cout << "  L1_RATIO = " << optctrl.l1_ratio << '\n';
-            std::cout << "  L1_SOLVER = " << str_l1_solver << '\n';
-            std::cout << "  L1_ALPHA = " << optctrl.l1_alpha << '\n';
-            std::cout << "  CV_MINALPHA = " << optctrl.l1_alpha_min << "; CV_MAXALPHA = " << optctrl.l1_alpha_max
-                      << "; CV_NALPHA = " << optctrl.num_l1_alpha << '\n';
-            std::cout << "  CV_MINALPHA_RATIO = " << optctrl.l1_alpha_min_ratio << '\n';
-            std::cout << "  STANDARDIZE = " << optctrl.standardize << '\n';
-            std::cout << "  ENET_DNORM = " << optctrl.displacement_normalization_factor << '\n';
-            std::cout << "  NWRITE = " << std::setw(5) << optctrl.output_frequency << '\n';
-            std::cout << "  DEBIAS_OLS = " << optctrl.debiase_after_l1opt << '\n';
-            std::cout << "  SOLUTION_PATH = " << optctrl.save_solution_path
-                      << "; STOP_CRITERION = " << optctrl.stop_criterion << '\n';
-            std::cout << '\n';
+            os << " Elastic-net related variables:\n";
+            os << "  CV = " << std::setw(5) << optctrl.cross_validation << '\n';
+            os << "  DFSET_CV = " << files->get_datfile_validation().filename << '\n';
+            os << "  NDATA_CV = " << files->get_datfile_validation().ndata
+               << "; NSTART_CV = " << files->get_datfile_validation().nstart
+               << "; NEND_CV = " << files->get_datfile_validation().nend << "\n\n";
+            os << "  L1_RATIO = " << optctrl.l1_ratio << '\n';
+            os << "  L1_SOLVER = " << str_l1_solver << '\n';
+            os << "  L1_ALPHA = " << optctrl.l1_alpha << '\n';
+            os << "  CV_MINALPHA = " << optctrl.l1_alpha_min << "; CV_MAXALPHA = " << optctrl.l1_alpha_max
+               << "; CV_NALPHA = " << optctrl.num_l1_alpha << '\n';
+            os << "  CV_MINALPHA_RATIO = " << optctrl.l1_alpha_min_ratio << '\n';
+            os << "  STANDARDIZE = " << optctrl.standardize << '\n';
+            os << "  ENET_DNORM = " << optctrl.displacement_normalization_factor << '\n';
+            os << "  NWRITE = " << std::setw(5) << optctrl.output_frequency << '\n';
+            os << "  DEBIAS_OLS = " << optctrl.debiase_after_l1opt << '\n';
+            os << "  SOLUTION_PATH = " << optctrl.save_solution_path << "; STOP_CRITERION = " << optctrl.stop_criterion
+               << '\n';
+            os << '\n';
         }
     }
-    std::cout << " -------------------------------------------------------------------\n\n";
-    std::cout << std::flush;
+    os << " -------------------------------------------------------------------\n\n";
+    input_variables_echo = parse_input_echo(os.str());
+    if (print) std::cout << os.str() << std::flush;
     //alm->timer->stop_clock("writer");
 }
 
@@ -808,6 +818,7 @@ auto Writer::save_fcs_alamode(const std::unique_ptr<System> &system, const std::
     using namespace H5Easy;
 
     File file(fname_fcs, File::ReadWrite | File::Create | File::Truncate);
+    write_input_variables_h5(file, input_variables_echo);
 
     // SuperCell
     write_structures_h5(file,
@@ -1551,6 +1562,11 @@ auto Writer::set_input_vars(const std::map<std::string, std::string> &input_var_
     for (const auto &it: input_var_dict) {
         input_variables.insert(it);
     }
+}
+
+auto Writer::has_input_echo() const -> bool
+{
+    return !input_variables_echo.empty();
 }
 
 auto Writer::get_input_var(const std::string &key) const -> std::string

@@ -153,6 +153,16 @@ ANPHON: Output files
  restart mode is on (``RESTART = 1`` / ``RESTART_4PH = 1``). Written with the
  default ``FILE_FORMAT = h5``; readable with h5py.
 
+ Like every HDF5 file written by ``anphon`` (and the force-constant file of
+ ``alm``), it records the input variables echoed in the header of the log file
+ as string attributes of the group ``/metadata/input_variables``, one attribute
+ per tag (``dict(h5py.File(...)["metadata/input_variables"].attrs)``). The
+ group always describes the *latest* run that wrote to the file, so after a
+ restart it shows the restart's settings. A temperature-resolved file
+ (``FC2_TEMPERATURE``), which accumulates runs at different basis temperatures,
+ additionally keeps one record per run under
+ ``/metadata/input_variables_runs/<FC2_TEMPERATURE>``.
+
  With ``SOLVER = IBTE``, the file additionally carries an
  ``/iterativebte`` group holding the per-temperature results of the
  iterative solver: the diagonal (out-scattering) part ``Q``, the deviation

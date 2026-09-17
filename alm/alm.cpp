@@ -873,6 +873,19 @@ auto ALM::save_fc(const std::string &filename, const std::string fcs_format, con
 {
     writer->set_output_maxorder(maxorder_to_save);
     writer->set_filename_fcs(filename);
+    // API callers skip the CLI echo; build it here for HDF5 metadata.
+    if (!writer->has_input_echo()) {
+        writer->write_input_vars(system,
+                                 symmetry,
+                                 cluster,
+                                 displace,
+                                 fcs,
+                                 constraint,
+                                 optimize,
+                                 files,
+                                 "optimize",
+                                 false);
+    }
     writer->save_fcs_with_specific_format(fcs_format,
                                           system,
                                           symmetry,

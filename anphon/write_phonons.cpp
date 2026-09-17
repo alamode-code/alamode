@@ -21,6 +21,7 @@ bool use_velmat_velocities()
 }
 } // namespace
 #include <iomanip>
+#include <sstream>
 #include <sys/stat.h>
 #include "anharmonic_core.h"
 #include "conductivity.h"
@@ -86,217 +87,214 @@ Writes::~Writes() {};
 
 void Writes::writeInputVars()
 {
-    if (getVerbosity() == 0) return;
-
+    // Share the echo between the log and HDF5 metadata, even when quiet.
+    std::ostringstream os;
     unsigned int i;
 
     // Every tag accepted by the input parser is echoed here, grouped by
     // input field, so that a log file documents the run completely.
-    const auto print_mesh = [](const char *tag, const unsigned int mesh[3]) {
-        std::cout << "  " << tag << " = ";
-        for (auto k = 0; k < 3; ++k) std::cout << std::setw(5) << mesh[k];
-        std::cout << '\n';
+    const auto print_mesh = [&os](const char *tag, const unsigned int mesh[3]) {
+        os << "  " << tag << " = ";
+        for (auto k = 0; k < 3; ++k) os << std::setw(5) << mesh[k];
+        os << '\n';
     };
 
-    std::cout << '\n';
-    std::cout << " Input variables:\n";
-    std::cout << " -----------------------------------------------------------------\n";
-    std::cout << " General:\n";
-    std::cout << "  PREFIX = " << phon->job_title << '\n';
-    std::cout << "  MODE = " << phon->mode;
-    if (mode_analysis->selfenergy_mode) std::cout << " (selfenergy)";
-    std::cout << '\n';
-    std::cout << "  FCSFILE = " << fcs_phonon->file_fcs << '\n';
+    os << '\n';
+    os << " Input variables:\n";
+    os << " -----------------------------------------------------------------\n";
+    os << " General:\n";
+    os << "  PREFIX = " << phon->job_title << '\n';
+    os << "  MODE = " << phon->mode;
+    if (mode_analysis->selfenergy_mode) os << " (selfenergy)";
+    os << '\n';
+    os << "  FCSFILE = " << fcs_phonon->file_fcs << '\n';
     if (fcs_phonon->update_fc2) {
-        std::cout << "  FC2FILE = " << fcs_phonon->file_fc2 << '\n';
+        os << "  FC2FILE = " << fcs_phonon->file_fc2 << '\n';
     }
     if (!fcs_phonon->file_fc3.empty()) {
-        std::cout << "  FC3FILE = " << fcs_phonon->file_fc3 << '\n';
+        os << "  FC3FILE = " << fcs_phonon->file_fc3 << '\n';
     }
     if (!fcs_phonon->file_fc4.empty()) {
-        std::cout << "  FC4FILE = " << fcs_phonon->file_fc4 << '\n';
+        os << "  FC4FILE = " << fcs_phonon->file_fc4 << '\n';
     }
     if (!fcs_phonon->file_dfc2.empty()) {
-        std::cout << "  DFC2FILE = " << fcs_phonon->file_dfc2 << '\n';
+        os << "  DFC2FILE = " << fcs_phonon->file_dfc2 << '\n';
     }
     if (fcs_phonon->fc2_temperature >= 0.0) {
-        std::cout << "  FC2_TEMPERATURE = " << fcs_phonon->fc2_temperature << '\n';
+        os << "  FC2_TEMPERATURE = " << fcs_phonon->fc2_temperature << '\n';
     }
-    std::cout << "  FILE_FORMAT = " << (use_h5_io ? "h5" : "text") << "; VERBOSITY = " << getVerbosity() << '\n';
-    std::cout << '\n';
+    os << "  FILE_FORMAT = " << (use_h5_io ? "h5" : "text") << "; VERBOSITY = " << getVerbosity() << '\n';
+    os << '\n';
 
     // KD and MASS are echoed only when given in the input; otherwise they
     // are taken from the force constant file, which is read later.
     if (!system->symbol_kd.empty()) {
-        std::cout << "  KD = ";
-        for (i = 0; i < system->symbol_kd.size(); ++i) std::cout << std::setw(5) << system->symbol_kd[i];
-        std::cout << '\n';
+        os << "  KD = ";
+        for (i = 0; i < system->symbol_kd.size(); ++i) os << std::setw(5) << system->symbol_kd[i];
+        os << '\n';
     }
     if (!system->mass_kd.empty()) {
-        std::cout << "  MASS = ";
-        for (i = 0; i < system->mass_kd.size(); ++i) std::cout << std::setw(10) << system->mass_kd[i];
-        std::cout << '\n';
+        os << "  MASS = ";
+        for (i = 0; i < system->mass_kd.size(); ++i) os << std::setw(10) << system->mass_kd[i];
+        os << '\n';
     }
-    std::cout << "  NSYM = " << symmetry->nsym << "; TOLERANCE = " << symmetry->tolerance;
-    std::cout << "; PRINTSYM = " << symmetry->printsymmetry << '\n';
-    // std::cout << "  TREVSYM = " << symmetry->time_reversal_sym << '\n';
-    std::cout << '\n';
+    os << "  TOLERANCE = " << symmetry->tolerance << "; PRINTSYM = " << symmetry->printsymmetry << '\n';
+    os << '\n';
 
-    std::cout << "  NONANALYTIC = " << dynamical->nonanalytic << '\n';
+    os << "  NONANALYTIC = " << dynamical->nonanalytic << '\n';
     if (dynamical->nonanalytic) {
-        std::cout << "  BORNINFO = " << dielec->file_born << "; NA_SIGMA = " << dynamical->na_sigma
-                  << "; BORNSYM = " << dielec->symmetrize_borncharge << '\n';
+        os << "  BORNINFO = " << dielec->file_born << "; NA_SIGMA = " << dynamical->na_sigma
+           << "; BORNSYM = " << dielec->symmetrize_borncharge << '\n';
         if (dynamical->nonanalytic == 3) {
-            std::cout << "  PREC_EWALD = " << ewald->prec_ewald << '\n';
+            os << "  PREC_EWALD = " << ewald->prec_ewald << '\n';
         }
     }
-    std::cout << '\n';
+    os << '\n';
     if (writes->nbands >= 0) {
-        std::cout << "  NBANDS = " << writes->nbands << '\n';
+        os << "  NBANDS = " << writes->nbands << '\n';
     }
 
-    std::cout << "  TMIN = " << system->Tmin << "; TMAX = " << system->Tmax << "; DT = " << system->dT << '\n';
-    std::cout << "  EMIN = " << dos->emin << "; EMAX = " << dos->emax << "; DELTA_E = " << dos->delta_e << '\n';
-    std::cout << '\n';
+    os << "  TMIN = " << system->Tmin << "; TMAX = " << system->Tmax << "; DT = " << system->dT << '\n';
+    os << "  EMIN = " << dos->emin << "; EMAX = " << dos->emax << "; DELTA_E = " << dos->delta_e << '\n';
+    os << '\n';
 
-    std::cout << "  ISMEAR = " << integration->ismear << "; EPSILON = " << integration->epsilon << '\n';
-    std::cout << '\n';
-    std::cout << "  CLASSICAL = " << thermodynamics->classical << '\n';
-    std::cout << "  BCONNECT = " << dynamical->band_connection << '\n';
+    os << "  ISMEAR = " << integration->ismear << "; EPSILON = " << integration->epsilon << '\n';
+    os << '\n';
+    os << "  CLASSICAL = " << thermodynamics->classical << '\n';
+    os << "  BCONNECT = " << dynamical->band_connection << '\n';
     if (phon->mode == "SCPH" || phon->mode == "QHA" || fcs_phonon->fc2_temperature >= 0.0) {
-        std::cout << "  ALLOW_UNCONVERGED = " << phon->allow_unconverged << '\n';
+        os << "  ALLOW_UNCONVERGED = " << phon->allow_unconverged << '\n';
     }
-    std::cout << '\n';
+    os << '\n';
 
     if (phon->mode == "KAPPA") {
-        std::cout << "  RESTART = " << conductivity->get_restart_conductivity(3) << '\n';
-        std::cout << "  TRISYM = " << anharmonic_core->use_triplet_symmetry << "\n\n";
+        os << "  RESTART = " << conductivity->get_restart_conductivity(3) << '\n';
+        os << "  TRISYM = " << anharmonic_core->use_triplet_symmetry << "\n\n";
     } else if (phon->mode == "SCPH") {
-        std::cout << " Scph:" << '\n';
+        os << " Scph:" << '\n';
         print_mesh("KMESH_INTERPOLATE", scph->kmesh_interpolate);
         print_mesh("KMESH_SCPH       ", scph->kmesh_scph);
-        std::cout << "  SELF_OFFDIAG = " << scph->selfenergy_offdiagonal << '\n';
-        std::cout << "  IALGO = " << scph->ialgo << '\n';
-        std::cout << "  BUBBLE = " << scph->bubble << '\n' << '\n';
-        std::cout << "  RESTART_SCPH = " << scph->restart_scph << '\n';
-        std::cout << "  LOWER_TEMP = " << scph->lower_temp << '\n';
-        std::cout << "  WARMSTART = " << scph->warmstart_scph << '\n' << '\n';
-        std::cout << "  TOL_SCPH = " << scph->tolerance_scph << '\n';
-        std::cout << "  MAXITER = " << scph->maxiter << '\n';
-        std::cout << "  MIXALPHA = " << scph->mixalpha << '\n';
-        std::cout << "  IMIX = " << scph->imix_scph << '\n';
+        os << "  SELF_OFFDIAG = " << scph->selfenergy_offdiagonal << '\n';
+        os << "  IALGO = " << scph->ialgo << '\n';
+        os << "  BUBBLE = " << scph->bubble << '\n' << '\n';
+        os << "  RESTART_SCPH = " << scph->restart_scph << '\n';
+        os << "  LOWER_TEMP = " << scph->lower_temp << '\n';
+        os << "  WARMSTART = " << scph->warmstart_scph << '\n' << '\n';
+        os << "  TOL_SCPH = " << scph->tolerance_scph << '\n';
+        os << "  MAXITER = " << scph->maxiter << '\n';
+        os << "  MIXALPHA = " << scph->mixalpha << '\n';
+        os << "  IMIX = " << scph->imix_scph << '\n';
 
         // variables related to structural optimization
-        std::cout << '\n';
-        std::cout << "  RELAX_STR = " << relaxation->relax_str << '\n';
+        os << '\n';
+        os << "  RELAX_STR = " << relaxation->relax_str << '\n';
     } else if (phon->mode == "QHA") {
-        std::cout << " QHA:" << '\n';
+        os << " QHA:" << '\n';
         print_mesh("KMESH_INTERPOLATE", qha->kmesh_interpolate);
         print_mesh("KMESH_QHA        ", qha->kmesh_qha);
-        std::cout << "  SELF_OFFDIAG = " << qha->selfenergy_offdiagonal << '\n';
-        std::cout << "  IALGO = " << qha->ialgo << '\n';
-        std::cout << "  RESTART_QHA = " << qha->restart_qha << '\n';
-        std::cout << "  LOWER_TEMP = " << qha->lower_temp << '\n';
+        os << "  SELF_OFFDIAG = " << qha->selfenergy_offdiagonal << '\n';
+        os << "  IALGO = " << qha->ialgo << '\n';
+        os << "  RESTART_QHA = " << qha->restart_qha << '\n';
+        os << "  LOWER_TEMP = " << qha->lower_temp << '\n';
         // variables related to structural optimization
-        std::cout << "  RELAX_STR = " << relaxation->relax_str << '\n';
+        os << "  RELAX_STR = " << relaxation->relax_str << '\n';
     }
-    std::cout << '\n';
+    os << '\n';
 
     if ((phon->mode == "SCPH" || phon->mode == "QHA") && relaxation->relax_str != 0) {
-        std::cout << " Structure_opt:" << '\n';
+        os << " Structure_opt:" << '\n';
 
-        std::cout << "  RELAX_ALGO = " << relaxation->relax_algo << '\n';
-        std::cout << "  MAX_STR_ITER = " << relaxation->max_str_iter << '\n';
-        std::cout << "  COORD_CONV_TOL = " << relaxation->coord_conv_tol << '\n';
+        os << "  RELAX_ALGO = " << relaxation->relax_algo << '\n';
+        os << "  MAX_STR_ITER = " << relaxation->max_str_iter << '\n';
+        os << "  COORD_CONV_TOL = " << relaxation->coord_conv_tol << '\n';
         if (relaxation->gradient_conv_tol > 0.0) {
-            std::cout << "  GRADIENT_CONV_TOL = " << relaxation->gradient_conv_tol << '\n';
+            os << "  GRADIENT_CONV_TOL = " << relaxation->gradient_conv_tol << '\n';
         }
         if (relaxation->relax_str == 2) {
-            std::cout << "  CELL_CONV_TOL = " << relaxation->cell_conv_tol << '\n';
+            os << "  CELL_CONV_TOL = " << relaxation->cell_conv_tol << '\n';
             if (relaxation->cell_gradient_conv_tol > 0.0) {
-                std::cout << "  CELL_GRADIENT_CONV_TOL = " << relaxation->cell_gradient_conv_tol << '\n';
+                os << "  CELL_GRADIENT_CONV_TOL = " << relaxation->cell_gradient_conv_tol << '\n';
             }
         }
         if (relaxation->relax_algo == 1) {
-            std::cout << "  ALPHA_STDECENT = " << relaxation->alpha_steepest_decent << '\n';
+            os << "  ALPHA_STDECENT = " << relaxation->alpha_steepest_decent << '\n';
         } else if (relaxation->relax_algo == 2) {
-            std::cout << "  MIXBETA_COORD = " << relaxation->mixbeta_coord << '\n';
+            os << "  MIXBETA_COORD = " << relaxation->mixbeta_coord << '\n';
             if (relaxation->relax_str == 2) {
-                std::cout << "  MIXBETA_CELL = " << relaxation->mixbeta_cell << '\n';
+                os << "  MIXBETA_CELL = " << relaxation->mixbeta_cell << '\n';
             }
         } else if (relaxation->relax_algo == 3) {
-            std::cout << "  GDIIS_PLAIN = " << (relaxation->gdiis_control ? 0 : 1) << '\n';
+            os << "  GDIIS_PLAIN = " << (relaxation->gdiis_control ? 0 : 1) << '\n';
         }
 
-        std::cout << "  SET_INIT_STR = " << relaxation->set_init_str << '\n';
+        os << "  SET_INIT_STR = " << relaxation->set_init_str << '\n';
 
-        std::cout << "  ADD_HESS_DIAG = " << relaxation->add_hess_diag << '\n';
-        std::cout << "  STAT_PRESSURE = " << relaxation->stat_pressure << '\n';
+        os << "  ADD_HESS_DIAG = " << relaxation->add_hess_diag << '\n';
+        os << "  STAT_PRESSURE = " << relaxation->stat_pressure << '\n';
 
         if (phon->mode == "QHA" && relaxation->relax_str == 2) {
-            std::cout << "  QHA_SCHEME = " << to_int(qha->qha_scheme) << '\n';
+            os << "  QHA_SCHEME = " << to_int(qha->qha_scheme) << '\n';
         }
         if (relaxation->relax_str == 2 || relaxation->relax_str == 3) {
             if (relaxation->strain_coupling >= 0) {
-                std::cout << "  STRAIN_COUPLING = " << relaxation->strain_coupling << '\n';
+                os << "  STRAIN_COUPLING = " << relaxation->strain_coupling << '\n';
             } else {
-                std::cout << "  STRAIN_COUPLING = (set by the deprecated RENORM_*/ELASTIC_CONST tags)\n";
+                os << "  STRAIN_COUPLING = (set by the deprecated RENORM_*/ELASTIC_CONST tags)\n";
             }
-            std::cout << "    elastic constants C2, C3        : "
-                      << (relaxation->elastic_const == 2 ? "file" : "harmonic and cubic IFCs") << '\n';
-            std::cout << "    strain-force coupling dV1/du    : "
-                      << (relaxation->renorm_2to1st == 2   ? "file"
-                          : relaxation->renorm_2to1st == 1 ? "harmonic IFCs (needs rotational invariance)"
-                                                           : "zero")
-                      << '\n';
-            std::cout << "    d2V1/du2, d3V1/du3              : "
-                      << (relaxation->renorm_34to1st == 1 ? "cubic and quartic IFCs (needs rotational invariance)"
-                                                          : "zero")
-                      << '\n';
-            std::cout << "    strain-harmonic coupling dV2/du : "
-                      << (relaxation->renorm_3to2nd == 1   ? "cubic IFCs"
-                          : relaxation->renorm_3to2nd == 4 ? "k-space file (B_array_kspace.txt)"
-                                                           : "file")
-                      << '\n';
+            os << "    elastic constants C2, C3        : "
+               << (relaxation->elastic_const == 2 ? "file" : "harmonic and cubic IFCs") << '\n';
+            os << "    strain-force coupling dV1/du    : "
+               << (relaxation->renorm_2to1st == 2   ? "file"
+                   : relaxation->renorm_2to1st == 1 ? "harmonic IFCs (needs rotational invariance)"
+                                                    : "zero")
+               << '\n';
+            os << "    d2V1/du2, d3V1/du3              : "
+               << (relaxation->renorm_34to1st == 1 ? "cubic and quartic IFCs (needs rotational invariance)" : "zero")
+               << '\n';
+            os << "    strain-harmonic coupling dV2/du : "
+               << (relaxation->renorm_3to2nd == 1   ? "cubic IFCs"
+                   : relaxation->renorm_3to2nd == 4 ? "k-space file (B_array_kspace.txt)"
+                                                    : "file")
+               << '\n';
             if (!relaxation->strain_file.empty()) {
-                std::cout << "  STRAINFILE = " << relaxation->strain_file << '\n';
+                os << "  STRAINFILE = " << relaxation->strain_file << '\n';
             } else {
-                std::cout << "  STRAIN_IFC_DIR = " << relaxation->strain_IFC_dir << '\n';
+                os << "  STRAIN_IFC_DIR = " << relaxation->strain_IFC_dir << '\n';
             }
         }
-        std::cout << '\n';
+        os << '\n';
     }
 
 
-    std::cout << " Kpoint:" << '\n';
+    os << " Kpoint:" << '\n';
     if (mode_analysis->selfenergy_mode) {
-        std::cout << "  KPMODE (1st entry for &kpoint) = " << kpoint->target_mode << '\n';
+        os << "  KPMODE (1st entry for &kpoint) = " << kpoint->target_mode << '\n';
     } else {
-        std::cout << "  KPMODE (1st entry for &kpoint) = " << kpoint->kpoint_mode << '\n';
+        os << "  KPMODE (1st entry for &kpoint) = " << kpoint->kpoint_mode << '\n';
     }
-    std::cout << '\n';
-    std::cout << '\n';
+    os << '\n';
+    os << '\n';
 
     if (mode_analysis->selfenergy_mode) {
         const auto &ma = *mode_analysis;
-        std::cout << " Selfenergy:" << '\n';
-        std::cout << "  KMESH = ";
+        os << " Selfenergy:" << '\n';
+        os << "  KMESH = ";
         if (!kpoint->kpInp.empty()) {
-            for (const auto &str: kpoint->kpInp[0].kpelem) std::cout << std::setw(5) << str;
+            for (const auto &str: kpoint->kpInp[0].kpelem) os << std::setw(5) << str;
         }
-        std::cout << '\n';
-        std::cout << "  BRANCHES = " << ma.branches_spec << '\n';
-        std::cout << "  LINEWIDTH = " << ma.calc_selfenergy << "; SHIFT = " << ma.calc_realpart
-                  << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
-        std::cout << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
-        std::cout << "  INTERPOLATE = " << ma.interpolate << '\n';
+        os << '\n';
+        os << "  BRANCHES = " << ma.branches_spec << '\n';
+        os << "  LINEWIDTH = " << ma.linewidth_requested << "; SHIFT = " << ma.calc_realpart
+           << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
+        os << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
+        os << "  INTERPOLATE = " << ma.interpolate << '\n';
         if (ma.interpolate) {
             print_mesh("KMESH_COARSE", ma.kmesh_coarse);
-            std::cout << "  OMEGA_RANGE = ";
-            for (i = 0; i < 3; ++i) std::cout << std::setw(10) << ma.omega_range[i];
-            std::cout << '\n';
+            os << "  OMEGA_RANGE = ";
+            for (i = 0; i < 3; ++i) os << std::setw(10) << ma.omega_range[i];
+            os << '\n';
         }
-        std::cout << '\n';
+        os << '\n';
     }
 
     if (phon->mode == "KAPPA" && !mode_analysis->selfenergy_mode) {
@@ -304,99 +302,99 @@ void Writes::writeInputVars()
         if (conductivity->solver_ibte) {
             solver = iterativebte->use_direct ? "DBTE" : iterativebte->use_variational ? "VBTE" : "IBTE";
         }
-        std::cout << " Kappa:" << '\n';
-        std::cout << "  SOLVER = " << solver << '\n';
+        os << " Kappa:" << '\n';
+        os << "  SOLVER = " << solver << '\n';
         if (conductivity->solver_ibte) {
-            std::cout << "  MAX_CYCLE = " << iterativebte->max_cycle << "; MIN_CYCLE = " << iterativebte->min_cycle
-                      << "; ITER_THRESHOLD = " << iterativebte->convergence_criteria
-                      << "; IBTE_MIXING = " << iterativebte->mixing_factor << '\n';
+            os << "  MAX_CYCLE = " << iterativebte->max_cycle << "; MIN_CYCLE = " << iterativebte->min_cycle
+               << "; ITER_THRESHOLD = " << iterativebte->convergence_criteria
+               << "; IBTE_MIXING = " << iterativebte->mixing_factor << '\n';
         }
-        std::cout << '\n';
-        std::cout << "  ISOTOPE = " << isotope->include_isotope << '\n';
+        os << '\n';
+        os << "  ISOTOPE = " << isotope->include_isotope << '\n';
         if (isotope->include_isotope) {
             // Without ISOFACT the natural-abundance factors are set up later.
             if (!isotope->isotope_factor.empty()) {
-                std::cout << "  ISOFACT = ";
+                os << "  ISOFACT = ";
                 for (i = 0; i < isotope->isotope_factor.size(); ++i) {
-                    std::cout << std::scientific << std::setw(13) << isotope->isotope_factor[i];
+                    os << std::scientific << std::setw(13) << isotope->isotope_factor[i];
                 }
-                std::cout << std::defaultfloat << '\n';
+                os << std::defaultfloat << '\n';
             }
             if (conductivity->solver_ibte) {
-                std::cout << "  ISOTOPE_INSCATTERING = " << iterativebte->isotope_inscattering << '\n';
+                os << "  ISOTOPE_INSCATTERING = " << iterativebte->isotope_inscattering << '\n';
             }
         }
-        std::cout << "  LEN_BOUNDARY = " << conductivity->len_boundary << '\n';
-        std::cout << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec
-                  << "; KAPPA_COHERENT = " << conductivity->calc_coherent << '\n';
+        os << "  LEN_BOUNDARY = " << conductivity->len_boundary << '\n';
+        os << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec << "; KAPPA_COHERENT = " << conductivity->calc_coherent
+           << '\n';
         if (integration->ismear == 2 || (conductivity->fph_rta > 0 && integration->ismear_4ph == 2)) {
-            std::cout << "  ADAPTIVE_FACTOR = " << integration->adaptive_factor << '\n';
+            os << "  ADAPTIVE_FACTOR = " << integration->adaptive_factor << '\n';
         }
-        std::cout << '\n';
-        std::cout << "  INCLUDE_4PH = " << conductivity->fph_rta << '\n';
+        os << '\n';
+        os << "  INCLUDE_4PH = " << conductivity->fph_rta << '\n';
         if (conductivity->fph_rta > 0) {
             print_mesh("KMESH_COARSE", conductivity->get_nk_coarse());
-            std::cout << "  ISMEAR_4PH = " << integration->ismear_4ph << "; EPSILON_4PH = " << integration->epsilon_4ph
-                      << '\n';
-            std::cout << "  INTERPOLATOR = " << conductivity->get_interpolator()
-                      << "; WRITE_INTERPOL = " << conductivity->write_interpolation << '\n';
-            std::cout << "  RESTART_4PH = " << conductivity->get_restart_conductivity(4) << '\n';
+            os << "  ISMEAR_4PH = " << integration->ismear_4ph << "; EPSILON_4PH = " << integration->epsilon_4ph
+               << '\n';
+            os << "  INTERPOLATOR = " << conductivity->get_interpolator()
+               << "; WRITE_INTERPOL = " << conductivity->write_interpolation << '\n';
+            os << "  RESTART_4PH = " << conductivity->get_restart_conductivity(4) << '\n';
         }
-        std::cout << '\n';
+        os << '\n';
     }
 
     if (phon->mode == "PHONONS" || (phon->mode == "KAPPA" && !mode_analysis->ks_input.empty())) {
-        std::cout << " Analysis:" << '\n';
+        os << " Analysis:" << '\n';
     }
     if (phon->mode == "PHONONS") {
-        std::cout << "  PRINTEVAL = " << print_eval << "; PRINTEVEC = " << dynamical->print_eigenvectors
-                  << "; PRINTVEL = " << phonon_velocity->print_velocity << '\n';
-        std::cout << "  PRINTPR = " << dynamical->participation_ratio << "; PRINTXSF = " << print_xsf
-                  << "; ZMODE = " << print_zmode << '\n';
-        std::cout << "  IRREPS = " << mode_symmetry->print_irreps << "; DIELEC = " << dielec->calc_dielectric_constant
-                  << "; FC2_EWALD = " << ewald->print_fc2_ewald << '\n';
+        os << "  PRINTEVAL = " << print_eval << "; PRINTEVEC = " << dynamical->print_eigenvectors
+           << "; PRINTVEL = " << phonon_velocity->print_velocity << '\n';
+        os << "  PRINTPR = " << dynamical->participation_ratio << "; PRINTXSF = " << print_xsf
+           << "; ZMODE = " << print_zmode << '\n';
+        os << "  IRREPS = " << mode_symmetry->print_irreps << "; DIELEC = " << dielec->calc_dielectric_constant
+           << "; FC2_EWALD = " << ewald->print_fc2_ewald << '\n';
         const auto &proj = dynamical->get_projection_directions();
         if (!proj.empty()) {
-            std::cout << "  PROJECTION_AXES = ";
+            os << "  PROJECTION_AXES = ";
             for (const auto &axis: proj) {
-                std::cout << " [";
-                for (const auto &x: axis) std::cout << std::setw(8) << x;
-                std::cout << " ]";
+                os << " [";
+                for (const auto &x: axis) os << std::setw(8) << x;
+                os << " ]";
             }
-            std::cout << '\n';
+            os << '\n';
         }
-        std::cout << '\n';
+        os << '\n';
 
         if (print_anime) {
-            std::cout << "  ANIME = ";
-            for (i = 0; i < 3; ++i) std::cout << std::setw(5) << anime_kpoint[i];
-            std::cout << '\n';
+            os << "  ANIME = ";
+            for (i = 0; i < 3; ++i) os << std::setw(5) << anime_kpoint[i];
+            os << '\n';
             print_mesh("ANIME_CELLSIZE", anime_cellsize);
-            std::cout << "  ANIME_FORMAT = " << anime_format << "; ANIME_FRAMES = " << anime_frames << '\n';
-            std::cout << '\n';
+            os << "  ANIME_FORMAT = " << anime_format << "; ANIME_FRAMES = " << anime_frames << '\n';
+            os << '\n';
         }
 
         if (kpoint->kpoint_mode == 2) {
-            std::cout << "  DOS = " << dos->compute_dos << "; PDOS = " << dos->projected_dos
-                      << "; TDOS = " << dos->two_phonon_dos
-                      << "; LONGITUDINAL_DOS = " << dos->longitudinal_projected_dos << '\n';
-            std::cout << "  SPS = " << dos->scattering_phase_space << "; FE_BUBBLE = " << thermodynamics->calc_FE_bubble
-                      << '\n';
-            std::cout << "  PRINTMSD = " << print_msd << "; UCORR = " << print_ucorr;
+            os << "  DOS = " << dos->compute_dos << "; PDOS = " << dos->projected_dos
+               << "; TDOS = " << dos->two_phonon_dos << "; LONGITUDINAL_DOS = " << dos->longitudinal_projected_dos
+               << '\n';
+            os << "  SPS = " << dos->scattering_phase_space << "; FE_BUBBLE = " << thermodynamics->calc_FE_bubble
+               << '\n';
+            os << "  PRINTMSD = " << print_msd << "; UCORR = " << print_ucorr;
             if (print_ucorr) {
-                std::cout << "; SHIFT_UCORR =";
-                for (i = 0; i < 3; ++i) std::cout << std::setw(4) << shift_ucorr[i];
+                os << "; SHIFT_UCORR =";
+                for (i = 0; i < 3; ++i) os << std::setw(4) << shift_ucorr[i];
             }
-            std::cout << '\n';
-            std::cout << '\n';
+            os << '\n';
+            os << '\n';
         }
-        std::cout << "  GRUNEISEN = " << gruneisen->gruneisen_mode << "; NEWFCS = " << gruneisen->print_newfcs << '\n';
+        os << "  GRUNEISEN = " << gruneisen->gruneisen_mode << "; NEWFCS = " << gruneisen->print_newfcs << '\n';
         if (gruneisen->gruneisen_mode > 0 || gruneisen->print_newfcs) {
-            std::cout << "  SUBLATTICE_RELAX = " << gruneisen->sublattice_relax << "; DELTA_A = " << gruneisen->delta_a
-                      << '\n';
+            os << "  SUBLATTICE_RELAX = " << gruneisen->sublattice_relax << "; DELTA_A = " << gruneisen->delta_a
+               << '\n';
         }
         if (gruneisen->print_newfcs) {
-            std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode << '\n';
+            os << "  QUARTIC = " << anharmonic_core->quartic_mode << '\n';
         }
 
     } else if (phon->mode == "KAPPA") {
@@ -404,10 +402,10 @@ void Writes::writeInputVars()
         // (MODE = selfenergy lists its own tags above).
         if (!mode_analysis->ks_input.empty()) {
             const auto &ma = *mode_analysis;
-            std::cout << "  KS_INPUT = " << ma.ks_input << '\n';
-            std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode << "; REALPART = " << ma.calc_realpart
-                      << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
-            std::cout << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
+            os << "  KS_INPUT = " << ma.ks_input << '\n';
+            os << "  QUARTIC = " << anharmonic_core->quartic_mode << "; REALPART = " << ma.calc_realpart
+               << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
+            os << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
         }
     } else if (phon->mode == "SCPH") {
         // Do nothing
@@ -417,8 +415,13 @@ void Writes::writeInputVars()
         exit("writeInputVars", "This cannot happen");
     }
 
-    std::cout << "\n\n";
-    std::cout << " -----------------------------------------------------------------\n\n";
+    os << "\n\n";
+    os << " -----------------------------------------------------------------\n\n";
+
+#ifdef _HDF5
+    input_variables_echo = parse_input_echo(os.str());
+#endif
+    if (getVerbosity() > 0) std::cout << os.str();
 }
 
 
@@ -1203,7 +1206,7 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
         for (j = 0; j < 3; ++j) {
             xmod[i][j] *= Bohr_in_Angstrom;
         }
-        kd_tmp[i] = system->symbol_kd[system->get_primcell().kind[k]];
+        kd_tmp[i] = system->symbol_kd[system->get_primcell().kind[i]];
     }
 
     i = 0;
@@ -1605,6 +1608,7 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     {
         HighFive::File fh(fname_eval, HighFive::File::ReadWrite);
         stamp_h5_schema(fh, h5_schema_eigenvalues, h5_version_eigen);
+        write_input_variables_h5(fh, input_variables_echo);
     }
 
     if (getVerbosity() > 0) {
@@ -2000,6 +2004,7 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     {
         HighFive::File fh(fname_evec, HighFive::File::ReadWrite);
         stamp_h5_schema(fh, h5_schema_eigenvectors, h5_version_eigen);
+        write_input_variables_h5(fh, input_variables_echo);
     }
 }
 
@@ -2471,6 +2476,7 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
     }
 
     stamp_h5_schema(file, h5_schema_force_constants, h5_version_force_constants);
+    write_input_variables_h5(file, input_variables_echo);
     dump(file, "/version", ALAMODE_VERSION);
     dump(file, "/original_fcsfile", fcs_phonon->file_fcs);
     dump(file, "/applied_strain", Eigen::Matrix3d(u_applied));
@@ -3124,7 +3130,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 
     for (i = 0; i < natmin; ++i) {
         k = system->get_map_p2s(0)[i][0];
-        kd_tmp[i] = system->symbol_kd[system->get_primcell().kind[k]];
+        kd_tmp[i] = system->symbol_kd[system->get_primcell().kind[i]];
         mass[i] = system->get_mass_super()[k];
     }
 

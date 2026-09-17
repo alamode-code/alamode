@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <complex>
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
 #include "kpoint.h"
@@ -65,6 +66,11 @@ public:
     void writeKappa() const;
     // One line of the "file : description" listing printed at the end of a run.
     void printOutputFile(const std::string &file, const std::string &description) const;
+    // HDF5 input metadata, filled by writeInputVars on rank 0.
+    const std::map<std::string, std::string> &getInputVariables() const
+    {
+        return input_variables_echo;
+    }
 
     // .kl_iter written by the SOLVER = IBTE path (kappa owned by
     // Iterativebte); header lines record the non-iterative extra channels
@@ -183,6 +189,7 @@ private:
     void writeDielectricFunction() const;
 
     int anime_frames;
+    std::map<std::string, std::string> input_variables_echo;
 
     bool print_xsf;
     bool print_msd;

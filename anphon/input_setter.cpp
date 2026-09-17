@@ -346,6 +346,7 @@ void InputSetter::set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], c
     auto &ma = *phon->mode_analysis;
     ma.selfenergy_mode = true;
     ma.branches_spec = branches;
+    ma.linewidth_requested = linewidth != 0;
     ma.calc_selfenergy = linewidth || shift; // the shift is computed in the linewidth pass
     ma.calc_realpart = shift != 0;
     ma.spectral_func = self_w != 0;

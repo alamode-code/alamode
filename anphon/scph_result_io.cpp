@@ -151,6 +151,7 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
 
     {
         File fh(part, File::ReadWrite | File::Create | File::Excl);
+        write_input_variables_h5(fh, settings.input_variables);
 
         stamp_h5_schema(fh, h5_schema_scph_state, h5_version_scph_state);
         fh.createAttribute("mode", settings.mode);

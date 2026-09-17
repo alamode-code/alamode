@@ -115,11 +115,12 @@ public:
                   const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Optimize> &optimize,
                   const std::unique_ptr<Files> &files, const int verbosity) const -> void;
 
+    // Keep the echo for HDF5 metadata even when print is false.
     auto write_input_vars(const std::unique_ptr<System> &system, const std::unique_ptr<Symmetry> &symmetry,
                           const std::unique_ptr<Cluster> &cluster, const std::unique_ptr<Displace> &displace,
                           const std::unique_ptr<Fcs> &fcs, const std::unique_ptr<Constraint> &constraint,
                           const std::unique_ptr<Optimize> &optimize, const std::unique_ptr<Files> &files,
-                          const std::string &run_mode) const -> void;
+                          const std::string &run_mode, const bool print = true) -> void;
 
     auto write_displacement_pattern(const std::unique_ptr<System> &system, const std::unique_ptr<Cluster> &cluster,
                                     const std::unique_ptr<Displace> &displace, const std::string &prefix,
@@ -147,6 +148,8 @@ public:
     auto set_compression_level(const int level) -> void;
 
     [[nodiscard]] auto get_compression_level() const -> int;
+
+    [[nodiscard]] auto has_input_echo() const -> bool;
 
     auto set_input_vars(const std::map<std::string, std::string> &input_var_dict) -> void;
 
@@ -221,6 +224,7 @@ private:
     units::FcUnitSystem fcs_unit_output{units::FcUnitSystem::ry_bohr};
 
     std::map<std::string, std::string> input_variables;
+    std::map<std::string, std::string> input_variables_echo; // log header values
 };
 } // namespace ALM_NS
 

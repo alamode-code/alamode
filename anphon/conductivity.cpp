@@ -651,6 +651,7 @@ void Conductivity::setup_result_io(const int mode)
 KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
 {
     KappaFileMetaH5 meta;
+    meta.input_variables = writes->getInputVariables();
     meta.temperatures.assign(temperature.data(), temperature.data() + ntemp);
     meta.classical = thermodynamics->classical ? 1 : 0;
     meta.ismear = integration->ismear;

@@ -11,6 +11,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,7 +23,8 @@ namespace PHON_NS
 // no HDF5 types appear here so the physics code never depends on HighFive.
 struct KappaFileMetaH5
 {
-    std::vector<double> temperatures; // K
+    std::map<std::string, std::string> input_variables; // log header values
+    std::vector<double> temperatures;                   // K
     int classical = 0;
     int ismear = -1;
     double smearing_width = 0.0; // cm^-1

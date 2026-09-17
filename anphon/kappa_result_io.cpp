@@ -12,7 +12,9 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <iomanip>
 #include <mpi.h>
+#include <sstream>
 #include <utility>
 #include "constants.h"
 #include "error.h"
@@ -111,6 +113,32 @@ struct KappaResultIOH5::Impl
         dump(fh, cell + "/elements", fmeta.elements);
         dump(fh, cell + "/volume", fmeta.volume);
         dumpAttribute(fh, cell + "/volume", "unit", std::string("bohr^3"));
+
+        // Stamp metadata inside the .part transaction before publication.
+        stamp_input_variables(fh, true);
+    }
+
+    // /metadata/input_variables describes the latest invocation.
+    // Temperature-resolved files also keep inputs in /metadata/input_variables_runs/<FC2_TEMPERATURE>.
+    // carry_old_runs copies prior run records into the replacement file.
+    auto stamp_input_variables(HighFive::File &fh, const bool carry_old_runs) const -> void
+    {
+        write_input_variables_h5(fh, fmeta.input_variables);
+        if (!tdep || fmeta.input_variables.empty()) return;
+
+        const std::string runs = "/metadata/input_variables_runs";
+        if (carry_old_runs && std::filesystem::exists(filename)) {
+            const HighFive::File oldfile(filename, HighFive::File::ReadOnly);
+            if (oldfile.exist(runs)) {
+                const auto group = oldfile.getGroup(runs);
+                for (const auto &name: group.listObjectNames()) {
+                    write_input_variables_h5(fh, read_input_variables_h5(group.getGroup(name)), runs + "/" + name);
+                }
+            }
+        }
+        std::ostringstream key;
+        key << std::fixed << std::setprecision(2) << fmeta.fc2_temperature;
+        write_input_variables_h5(fh, fmeta.input_variables, runs + "/" + key.str());
     }
 
     // Mirror of the legacy check_consistency_restart: hard exits for
@@ -958,6 +986,7 @@ void KappaResultIOH5::open_or_create(const KappaFileMetaH5 &fmeta, const KappaCh
         }
     } else {
         impl->file = std::make_unique<HighFive::File>(impl->filename, HighFive::File::ReadWrite);
+        impl->stamp_input_variables(*impl->file, false);
     }
     impl->write_basis_slices(channel);
     impl->write_velocity_diad(channel);
@@ -1044,6 +1073,7 @@ bool KappaResultIOH5::open_or_create_for_ibte(const KappaFileMetaH5 &fmeta, cons
         impl->rebuild({}, {}, drop_ibte);
     } else {
         impl->file = std::make_unique<HighFive::File>(impl->filename, HighFive::File::ReadWrite);
+        impl->stamp_input_variables(*impl->file, false);
     }
     return true;
 }

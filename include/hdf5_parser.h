@@ -12,10 +12,13 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <iostream>
+#include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -108,6 +111,74 @@ inline auto check_h5_schema(const HighFive::File &file, const std::string &expec
         exit(1);
     }
     return version;
+}
+
+// Parse "  TAG = value; TAG2 = value2" for HDF5 metadata.
+// Skip non-tag text and strip parenthesized notes from tag names.
+inline auto parse_input_echo(const std::string &text) -> std::map<std::string, std::string>
+{
+    std::map<std::string, std::string> vars;
+    const auto trim = [](const std::string &str) {
+        const auto first = str.find_first_not_of(" \t");
+        if (first == std::string::npos) return std::string();
+        return str.substr(first, str.find_last_not_of(" \t") - first + 1);
+    };
+    std::istringstream iss(text);
+    std::string line;
+    while (std::getline(iss, line)) {
+        size_t pos = 0;
+        while (pos <= line.size()) {
+            auto end = line.find(';', pos);
+            if (end == std::string::npos) end = line.size();
+            const auto piece = line.substr(pos, end - pos);
+            pos = end + 1;
+            const auto eq = piece.find(" =");
+            if (eq == std::string::npos) continue;
+            auto key = trim(piece.substr(0, eq));
+            key = key.substr(0, key.find(' '));
+            const auto is_tag = !key.empty() && std::all_of(key.begin(), key.end(), [](const unsigned char c) {
+                return std::isupper(c) || std::isdigit(c) || c == '_';
+            });
+            if (!is_tag) continue;
+            // Collapse padding only in numeric lists; otherwise trim outer whitespace only.
+            const auto raw = trim(piece.substr(eq + 2));
+            std::istringstream words(raw);
+            std::string word, packed;
+            auto numeric = true;
+            while (words >> word) {
+                if (word != "[" && word != "]") {
+                    char *endp = nullptr;
+                    std::strtod(word.c_str(), &endp);
+                    if (endp == word.c_str() || *endp != '\0') numeric = false;
+                }
+                packed += (packed.empty() ? "" : " ") + word;
+            }
+            vars[key] = numeric ? packed : raw;
+        }
+    }
+    return vars;
+}
+
+inline auto read_input_variables_h5(const HighFive::Group &group) -> std::map<std::string, std::string>
+{
+    std::map<std::string, std::string> vars;
+    for (const auto &name: group.listAttributeNames()) {
+        std::string value;
+        group.getAttribute(name).read(value);
+        vars[name] = value;
+    }
+    return vars;
+}
+
+// Store echoed values as string attributes in /metadata/input_variables for the latest invocation.
+// Files accumulating runs also keep records under /metadata/input_variables_runs.
+inline auto write_input_variables_h5(HighFive::File &file, const std::map<std::string, std::string> &vars,
+                                     const std::string &path = "/metadata/input_variables") -> void
+{
+    if (vars.empty()) return;
+    auto group = file.exist(path) ? file.getGroup(path) : file.createGroup(path);
+    for (const auto &name: group.listAttributeNames()) group.deleteAttribute(name);
+    for (const auto &[key, value]: vars) group.createAttribute(key, value);
 }
 
 // Flush HDF5 buffers and force the data down to the storage device.

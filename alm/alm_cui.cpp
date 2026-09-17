@@ -56,17 +56,17 @@ auto ALMCUI::run(const int narg, char **arg) const -> void
         std::cout << " Job started at " << alm->timer->DateAndTime() << '\n';
     }
 
-    if (alm->get_verbosity() > 0) {
-        alm->writer->write_input_vars(alm->system,
-                                      alm->symmetry,
-                                      alm->cluster,
-                                      alm->displace,
-                                      alm->fcs,
-                                      alm->constraint,
-                                      alm->optimize,
-                                      alm->files,
-                                      run_mode);
-    }
+    // Build the echo for HDF5 metadata even when quiet.
+    alm->writer->write_input_vars(alm->system,
+                                  alm->symmetry,
+                                  alm->cluster,
+                                  alm->displace,
+                                  alm->fcs,
+                                  alm->constraint,
+                                  alm->optimize,
+                                  alm->files,
+                                  run_mode,
+                                  alm->get_verbosity() > 0);
 
     alm->init_fc_table();
 

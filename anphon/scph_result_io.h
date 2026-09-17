@@ -12,6 +12,7 @@
 
 #include <Eigen/Core>
 #include <complex>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,7 +24,8 @@ namespace PHON_NS
 // appear here.
 struct ScphSettingsH5
 {
-    std::string mode; // "SCPH" or "QHA"
+    std::string mode;                                   // "SCPH" or "QHA"
+    std::map<std::string, std::string> input_variables; // log header values
     unsigned int kmesh_interpolate[3] = {0, 0, 0};
     unsigned int kmesh_dense[3] = {0, 0, 0};
     std::vector<double> temperatures; // K
