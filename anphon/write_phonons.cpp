@@ -34,9 +34,11 @@ bool use_velmat_velocities()
 #include "gruneisen.h"
 #include "integration.h"
 #include "isotope.h"
+#include "iterativebte.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
+#include "mode_analysis.h"
 #include "mode_symmetry.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
@@ -88,12 +90,22 @@ void Writes::writeInputVars()
 
     unsigned int i;
 
+    // Every tag accepted by the input parser is echoed here, grouped by
+    // input field, so that a log file documents the run completely.
+    const auto print_mesh = [](const char *tag, const unsigned int mesh[3]) {
+        std::cout << "  " << tag << " = ";
+        for (auto k = 0; k < 3; ++k) std::cout << std::setw(5) << mesh[k];
+        std::cout << '\n';
+    };
+
     std::cout << '\n';
     std::cout << " Input variables:\n";
     std::cout << " -----------------------------------------------------------------\n";
     std::cout << " General:\n";
     std::cout << "  PREFIX = " << phon->job_title << '\n';
-    std::cout << "  MODE = " << phon->mode << '\n';
+    std::cout << "  MODE = " << phon->mode;
+    if (mode_analysis->selfenergy_mode) std::cout << " (selfenergy)";
+    std::cout << '\n';
     std::cout << "  FCSFILE = " << fcs_phonon->file_fcs << '\n';
     if (fcs_phonon->update_fc2) {
         std::cout << "  FC2FILE = " << fcs_phonon->file_fc2 << '\n';
@@ -104,15 +116,27 @@ void Writes::writeInputVars()
     if (!fcs_phonon->file_fc4.empty()) {
         std::cout << "  FC4FILE = " << fcs_phonon->file_fc4 << '\n';
     }
+    if (!fcs_phonon->file_dfc2.empty()) {
+        std::cout << "  DFC2FILE = " << fcs_phonon->file_dfc2 << '\n';
+    }
+    if (fcs_phonon->fc2_temperature >= 0.0) {
+        std::cout << "  FC2_TEMPERATURE = " << fcs_phonon->fc2_temperature << '\n';
+    }
+    std::cout << "  FILE_FORMAT = " << (use_h5_io ? "h5" : "text") << "; VERBOSITY = " << getVerbosity() << '\n';
     std::cout << '\n';
 
-    std::cout << "  MASS = ";
-    if (!system->mass_kd.empty()) {
-        for (i = 0; i < system->mass_kd.size(); ++i) {
-            std::cout << std::setw(10) << system->mass_kd[i];
-        }
+    // KD and MASS are echoed only when given in the input; otherwise they
+    // are taken from the force constant file, which is read later.
+    if (!system->symbol_kd.empty()) {
+        std::cout << "  KD = ";
+        for (i = 0; i < system->symbol_kd.size(); ++i) std::cout << std::setw(5) << system->symbol_kd[i];
+        std::cout << '\n';
     }
-    std::cout << '\n';
+    if (!system->mass_kd.empty()) {
+        std::cout << "  MASS = ";
+        for (i = 0; i < system->mass_kd.size(); ++i) std::cout << std::setw(10) << system->mass_kd[i];
+        std::cout << '\n';
+    }
     std::cout << "  NSYM = " << symmetry->nsym << "; TOLERANCE = " << symmetry->tolerance;
     std::cout << "; PRINTSYM = " << symmetry->printsymmetry << '\n';
     // std::cout << "  TREVSYM = " << symmetry->time_reversal_sym << '\n';
@@ -120,7 +144,11 @@ void Writes::writeInputVars()
 
     std::cout << "  NONANALYTIC = " << dynamical->nonanalytic << '\n';
     if (dynamical->nonanalytic) {
-        std::cout << "  BORNINFO = " << dielec->file_born << "; NA_SIGMA = " << dynamical->na_sigma << '\n';
+        std::cout << "  BORNINFO = " << dielec->file_born << "; NA_SIGMA = " << dynamical->na_sigma
+                  << "; BORNSYM = " << dielec->symmetrize_borncharge << '\n';
+        if (dynamical->nonanalytic == 3) {
+            std::cout << "  PREC_EWALD = " << ewald->prec_ewald << '\n';
+        }
     }
     std::cout << '\n';
     if (writes->nbands >= 0) {
@@ -135,6 +163,9 @@ void Writes::writeInputVars()
     std::cout << '\n';
     std::cout << "  CLASSICAL = " << thermodynamics->classical << '\n';
     std::cout << "  BCONNECT = " << dynamical->band_connection << '\n';
+    if (phon->mode == "SCPH" || phon->mode == "QHA" || fcs_phonon->fc2_temperature >= 0.0) {
+        std::cout << "  ALLOW_UNCONVERGED = " << phon->allow_unconverged << '\n';
+    }
     std::cout << '\n';
 
     if (phon->mode == "KAPPA") {
@@ -142,14 +173,11 @@ void Writes::writeInputVars()
         std::cout << "  TRISYM = " << anharmonic_core->use_triplet_symmetry << "\n\n";
     } else if (phon->mode == "SCPH") {
         std::cout << " Scph:" << '\n';
-        std::cout << "  KMESH_INTERPOLATE = ";
-        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << scph->kmesh_interpolate[i];
-        std::cout << '\n';
-        std::cout << "  KMESH_SCPH        = ";
-        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << scph->kmesh_scph[i];
-        std::cout << '\n';
+        print_mesh("KMESH_INTERPOLATE", scph->kmesh_interpolate);
+        print_mesh("KMESH_SCPH       ", scph->kmesh_scph);
         std::cout << "  SELF_OFFDIAG = " << scph->selfenergy_offdiagonal << '\n';
-        std::cout << "  IALGO = " << scph->ialgo << '\n' << '\n';
+        std::cout << "  IALGO = " << scph->ialgo << '\n';
+        std::cout << "  BUBBLE = " << scph->bubble << '\n' << '\n';
         std::cout << "  RESTART_SCPH = " << scph->restart_scph << '\n';
         std::cout << "  LOWER_TEMP = " << scph->lower_temp << '\n';
         std::cout << "  WARMSTART = " << scph->warmstart_scph << '\n' << '\n';
@@ -163,14 +191,11 @@ void Writes::writeInputVars()
         std::cout << "  RELAX_STR = " << relaxation->relax_str << '\n';
     } else if (phon->mode == "QHA") {
         std::cout << " QHA:" << '\n';
-        std::cout << "  KMESH_INTERPOLATE = ";
-        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << qha->kmesh_interpolate[i];
-        std::cout << '\n';
-        std::cout << "  KMESH_QHA         = ";
-        for (i = 0; i < 3; ++i) std::cout << std::setw(5) << qha->kmesh_qha[i];
-        std::cout << '\n';
+        print_mesh("KMESH_INTERPOLATE", qha->kmesh_interpolate);
+        print_mesh("KMESH_QHA        ", qha->kmesh_qha);
         std::cout << "  SELF_OFFDIAG = " << qha->selfenergy_offdiagonal << '\n';
         std::cout << "  IALGO = " << qha->ialgo << '\n';
+        std::cout << "  RESTART_QHA = " << qha->restart_qha << '\n';
         std::cout << "  LOWER_TEMP = " << qha->lower_temp << '\n';
         // variables related to structural optimization
         std::cout << "  RELAX_STR = " << relaxation->relax_str << '\n';
@@ -193,7 +218,7 @@ void Writes::writeInputVars()
             }
         }
         if (relaxation->relax_algo == 1) {
-            std::cout << "  ALPHA_STEEPEST_DECENT = " << relaxation->alpha_steepest_decent << '\n';
+            std::cout << "  ALPHA_STDECENT = " << relaxation->alpha_steepest_decent << '\n';
         } else if (relaxation->relax_algo == 2) {
             std::cout << "  MIXBETA_COORD = " << relaxation->mixbeta_coord << '\n';
             if (relaxation->relax_str == 2) {
@@ -244,78 +269,146 @@ void Writes::writeInputVars()
 
 
     std::cout << " Kpoint:" << '\n';
-    std::cout << "  KPMODE (1st entry for &kpoint) = " << kpoint->kpoint_mode << '\n';
+    if (mode_analysis->selfenergy_mode) {
+        std::cout << "  KPMODE (1st entry for &kpoint) = " << kpoint->target_mode << '\n';
+    } else {
+        std::cout << "  KPMODE (1st entry for &kpoint) = " << kpoint->kpoint_mode << '\n';
+    }
     std::cout << '\n';
     std::cout << '\n';
 
-    if (phon->mode == "KAPPA") {
-        std::cout << " Kappa:" << std::endl;
+    if (mode_analysis->selfenergy_mode) {
+        const auto &ma = *mode_analysis;
+        std::cout << " Selfenergy:" << '\n';
+        std::cout << "  KMESH = ";
+        if (!kpoint->kpInp.empty()) {
+            for (const auto &str: kpoint->kpInp[0].kpelem) std::cout << std::setw(5) << str;
+        }
+        std::cout << '\n';
+        std::cout << "  BRANCHES = " << ma.branches_spec << '\n';
+        std::cout << "  LINEWIDTH = " << ma.calc_selfenergy << "; SHIFT = " << ma.calc_realpart
+                  << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
+        std::cout << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
+        std::cout << "  INTERPOLATE = " << ma.interpolate << '\n';
+        if (ma.interpolate) {
+            print_mesh("KMESH_COARSE", ma.kmesh_coarse);
+            std::cout << "  OMEGA_RANGE = ";
+            for (i = 0; i < 3; ++i) std::cout << std::setw(10) << ma.omega_range[i];
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+
+    if (phon->mode == "KAPPA" && !mode_analysis->selfenergy_mode) {
+        std::string solver = "RTA";
+        if (conductivity->solver_ibte) {
+            solver = iterativebte->use_direct ? "DBTE" : iterativebte->use_variational ? "VBTE" : "IBTE";
+        }
+        std::cout << " Kappa:" << '\n';
+        std::cout << "  SOLVER = " << solver << '\n';
+        if (conductivity->solver_ibte) {
+            std::cout << "  MAX_CYCLE = " << iterativebte->max_cycle << "; MIN_CYCLE = " << iterativebte->min_cycle
+                      << "; ITER_THRESHOLD = " << iterativebte->convergence_criteria
+                      << "; IBTE_MIXING = " << iterativebte->mixing_factor << '\n';
+        }
+        std::cout << '\n';
         std::cout << "  ISOTOPE = " << isotope->include_isotope << '\n';
         if (isotope->include_isotope) {
-            std::cout << "  ISOFACT = ";
+            // Without ISOFACT the natural-abundance factors are set up later.
             if (!isotope->isotope_factor.empty()) {
+                std::cout << "  ISOFACT = ";
                 for (i = 0; i < isotope->isotope_factor.size(); ++i) {
                     std::cout << std::scientific << std::setw(13) << isotope->isotope_factor[i];
                 }
+                std::cout << std::defaultfloat << '\n';
+            }
+            if (conductivity->solver_ibte) {
+                std::cout << "  ISOTOPE_INSCATTERING = " << iterativebte->isotope_inscattering << '\n';
+            }
+        }
+        std::cout << "  LEN_BOUNDARY = " << conductivity->len_boundary << '\n';
+        std::cout << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec
+                  << "; KAPPA_COHERENT = " << conductivity->calc_coherent << '\n';
+        if (integration->ismear == 2 || (conductivity->fph_rta > 0 && integration->ismear_4ph == 2)) {
+            std::cout << "  ADAPTIVE_FACTOR = " << integration->adaptive_factor << '\n';
+        }
+        std::cout << '\n';
+        std::cout << "  INCLUDE_4PH = " << conductivity->fph_rta << '\n';
+        if (conductivity->fph_rta > 0) {
+            print_mesh("KMESH_COARSE", conductivity->get_nk_coarse());
+            std::cout << "  ISMEAR_4PH = " << integration->ismear_4ph << "; EPSILON_4PH = " << integration->epsilon_4ph
+                      << '\n';
+            std::cout << "  INTERPOLATOR = " << conductivity->get_interpolator()
+                      << "; WRITE_INTERPOL = " << conductivity->write_interpolation << '\n';
+            std::cout << "  RESTART_4PH = " << conductivity->get_restart_conductivity(4) << '\n';
+        }
+        std::cout << '\n';
+    }
+
+    if (phon->mode == "PHONONS" || (phon->mode == "KAPPA" && !mode_analysis->ks_input.empty())) {
+        std::cout << " Analysis:" << '\n';
+    }
+    if (phon->mode == "PHONONS") {
+        std::cout << "  PRINTEVAL = " << print_eval << "; PRINTEVEC = " << dynamical->print_eigenvectors
+                  << "; PRINTVEL = " << phonon_velocity->print_velocity << '\n';
+        std::cout << "  PRINTPR = " << dynamical->participation_ratio << "; PRINTXSF = " << print_xsf
+                  << "; ZMODE = " << print_zmode << '\n';
+        std::cout << "  IRREPS = " << mode_symmetry->print_irreps << "; DIELEC = " << dielec->calc_dielectric_constant
+                  << "; FC2_EWALD = " << ewald->print_fc2_ewald << '\n';
+        const auto &proj = dynamical->get_projection_directions();
+        if (!proj.empty()) {
+            std::cout << "  PROJECTION_AXES = ";
+            for (const auto &axis: proj) {
+                std::cout << " [";
+                for (const auto &x: axis) std::cout << std::setw(8) << x;
+                std::cout << " ]";
             }
             std::cout << '\n';
         }
-
-        std::cout << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec << std::endl;
-        std::cout << "  KAPPA_COHERENT = " << conductivity->calc_coherent << std::endl;
-        std::cout << "  LEN_BOUNDARY = " << conductivity->len_boundary << std::endl;
-        std::cout << "  ISMEAR_4PH = " << integration->ismear_4ph << std::endl;
-        std::cout << "  EPSILON_4PH = " << integration->epsilon_4ph << std::endl;
-        //std::cout << "  KMESH_COARSE = " ;
-        //for (i = 0; i < 3; ++i) std::cout << conductivity->nk_coarse[i] << " ";
-        //std::cout << std::endl;
-        //std::cout << "  INTERPOLATION = " << conductivity->interpolator << std::endl;
-        std::cout << std::endl;
-    }
-
-    std::cout << " Analysis:" << '\n';
-    if (phon->mode == "PHONONS") {
-        std::cout << "  PRINTVEL = " << phonon_velocity->print_velocity << '\n';
-        std::cout << "  PRINTVEC = " << dynamical->print_eigenvectors << '\n';
-        std::cout << "  PRINTXSF = " << writes->print_xsf << '\n';
-        std::cout << "  IRREPS = " << mode_symmetry->print_irreps << '\n';
         std::cout << '\n';
 
         if (print_anime) {
             std::cout << "  ANIME = ";
             for (i = 0; i < 3; ++i) std::cout << std::setw(5) << anime_kpoint[i];
             std::cout << '\n';
-            std::cout << "  ANIME_CELL = ";
-            for (i = 0; i < 3; ++i) std::cout << std::setw(5) << anime_cellsize[i];
-            std::cout << '\n';
-            std::cout << "  ANIME_FORMAT = " << anime_format << '\n';
+            print_mesh("ANIME_CELLSIZE", anime_cellsize);
+            std::cout << "  ANIME_FORMAT = " << anime_format << "; ANIME_FRAMES = " << anime_frames << '\n';
             std::cout << '\n';
         }
 
         if (kpoint->kpoint_mode == 2) {
-            std::cout << "  PDOS = " << dos->projected_dos << "; TDOS = " << dos->two_phonon_dos << '\n';
-            std::cout << "  PRINTMSD = " << print_msd << '\n';
-            std::cout << "  SPS = " << dos->scattering_phase_space << '\n';
+            std::cout << "  DOS = " << dos->compute_dos << "; PDOS = " << dos->projected_dos
+                      << "; TDOS = " << dos->two_phonon_dos
+                      << "; LONGITUDINAL_DOS = " << dos->longitudinal_projected_dos << '\n';
+            std::cout << "  SPS = " << dos->scattering_phase_space << "; FE_BUBBLE = " << thermodynamics->calc_FE_bubble
+                      << '\n';
+            std::cout << "  PRINTMSD = " << print_msd << "; UCORR = " << print_ucorr;
+            if (print_ucorr) {
+                std::cout << "; SHIFT_UCORR =";
+                for (i = 0; i < 3; ++i) std::cout << std::setw(4) << shift_ucorr[i];
+            }
+            std::cout << '\n';
             std::cout << '\n';
         }
-        std::cout << "  GRUNEISEN = " << gruneisen->gruneisen_mode << '\n';
-        std::cout << "  NEWFCS = " << gruneisen->print_newfcs;
+        std::cout << "  GRUNEISEN = " << gruneisen->gruneisen_mode << "; NEWFCS = " << gruneisen->print_newfcs << '\n';
+        if (gruneisen->gruneisen_mode > 0 || gruneisen->print_newfcs) {
+            std::cout << "  SUBLATTICE_RELAX = " << gruneisen->sublattice_relax << "; DELTA_A = " << gruneisen->delta_a
+                      << '\n';
+        }
         if (gruneisen->print_newfcs) {
-            std::cout << '\n';
-            std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode;
+            std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode << '\n';
         }
-        std::cout << '\n';
 
     } else if (phon->mode == "KAPPA") {
-
-        //    std::cout << "  KAPPA_SPEC = " << conductivity->calc_kappa_spec << std::endl;
-
-        //        std::cout << "  KS_INPUT = " << anharmonic_core->ks_input << '\n';
-        //        std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode << '\n';
-        // std::cout << "  REALPART = " << anharmonic_core->calc_realpart << '\n';
-        // std::cout << "  ATOMPROJ = " << anharmonic_core->atom_project_mode << '\n';
-        // std::cout << "  FSTATE_W = " << anharmonic_core->calc_fstate_omega << '\n';
-
+        // Legacy mode analysis driven by KS_INPUT in the &analysis field
+        // (MODE = selfenergy lists its own tags above).
+        if (!mode_analysis->ks_input.empty()) {
+            const auto &ma = *mode_analysis;
+            std::cout << "  KS_INPUT = " << ma.ks_input << '\n';
+            std::cout << "  QUARTIC = " << anharmonic_core->quartic_mode << "; REALPART = " << ma.calc_realpart
+                      << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
+            std::cout << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
+        }
     } else if (phon->mode == "SCPH") {
         // Do nothing
     } else if (phon->mode == "QHA") {

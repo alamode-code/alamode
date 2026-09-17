@@ -86,6 +86,16 @@ public:
 
     std::string get_filename_results(const int order) const;
 
+    const unsigned int *get_nk_coarse() const
+    {
+        return nk_coarse;
+    }
+
+    const std::string &get_interpolator() const
+    {
+        return interpolator;
+    }
+
     void set_interpolator(const std::string interpolator_in)
     {
         interpolator = interpolator_in;

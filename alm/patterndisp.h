@@ -125,6 +125,8 @@ public:
 
     auto set_trim_dispsign_for_evenfunc(const bool) -> void;
 
+    [[nodiscard]] auto get_trim_dispsign_for_evenfunc() const -> bool;
+
     [[nodiscard]] auto get_disp_basis() const -> std::string;
 
     auto set_disp_basis(const std::string &) -> void;

@@ -9,6 +9,7 @@
 */
 
 #include "writer.h"
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -90,6 +91,10 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
     for (i = 0; i < 3; ++i) std::cout << std::setw(3) << system->get_periodicity()[i];
     std::cout << '\n';
     std::cout << "  MAGMOM = " << input_variables.at("MAGMOM") << '\n';
+    if (system->get_spin().lspin) {
+        std::cout << "  NONCOLLINEAR = " << system->get_spin().noncollinear
+                  << "; TREVSYM = " << system->get_spin().time_reversal_symm << '\n';
+    }
     std::cout << "  FCS_ALAMODE = " << save_format_flags.at("alamode") << ';';
     std::cout << "  NMAXSAVE = " << get_output_maxorder() << '\n';
     std::cout << "  FC3_SHENGBTE = " << save_format_flags.at("shengbte") << '\n';
@@ -104,6 +109,17 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
     std::cout << "  LENGTH_UNIT = " << var_or_default("LENGTH_UNIT", "bohr")
               << "; FORCE_UNIT = " << var_or_default("FORCE_UNIT", "Ry/bohr") << '\n';
     std::cout << "  FCS_UNIT_OUTPUT = " << units::canonical_name(fcs_unit_output) << '\n';
+    std::cout << "  TOL_CONST = " << constraint->get_tolerance_constraint() << '\n';
+    std::cout << "  COMPRESSION = " << get_compression_level() << "; FORMAT_PATTERN = " << get_format_patternfile()
+              << '\n';
+    std::cout << "  VERBOSITY = " << var_or_default("VERBOSITY", "1") << '\n';
+    // Structure tags are echoed as given (multi-line matrices on one line).
+    for (const auto *tag: {"STRUCTURE_FILE", "SUPERCELL", "PRIMCELL"}) {
+        auto val = get_input_var(tag);
+        if (val.empty()) continue;
+        std::replace(val.begin(), val.end(), '\n', ' ');
+        std::cout << "  " << tag << " = " << val << '\n';
+    }
     std::cout << '\n';
 
     std::cout << " Interaction:\n";
@@ -115,7 +131,8 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
     std::cout << "\n\n";
 
     if (run_mode == "suggest") {
-        std::cout << "  DBASIS = " << displace->get_disp_basis() << "\n\n";
+        std::cout << "  DBASIS = " << displace->get_disp_basis()
+                  << "; TRIMEVEN = " << displace->get_trim_dispsign_for_evenfunc() << "\n\n";
 
     } else if (run_mode == "optimize") {
         const auto optctrl = optimize->get_optimizer_control();
@@ -137,11 +154,14 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
         std::cout << "  ROTAXIS = " << constraint->get_rotation_axis() << '\n';
         std::cout << "  FC2FIX = " << constraint->get_fc_file(2) << '\n';
         std::cout << "  FC3FIX = " << constraint->get_fc_file(3) << "\n\n";
-        std::cout << "  SPARSE = " << optctrl.use_sparse_solver << '\n';
-        std::cout << "  SPARSESOLVER = " << optctrl.sparsesolver << '\n';
-        std::cout << "  CONV_TOL = " << optctrl.tolerance_iteration << '\n';
-        std::cout << "  MAXITER = " << optctrl.maxnum_iteration << "\n";
-        std::cout << "  PERIODIC_IMAGE_CONV = " << optctrl.periodic_image_conv << "\n\n";
+        std::cout << "  ALGO_REDUCTION = " << static_cast<int>(constraint->get_reduction_algorithm()) << '\n';
+        std::cout << "  SPARSE = " << optctrl.use_sparse_solver << "; SPARSESOLVER = " << optctrl.sparsesolver << '\n';
+        std::cout << "  USE_CHOLESKY = " << optctrl.use_cholesky << "; CHUNKSIZE = " << optctrl.chunk_size << '\n';
+        std::cout << "  CONV_TOL = " << optctrl.tolerance_iteration << "; MAXITER = " << optctrl.maxnum_iteration
+                  << '\n';
+        std::cout << "  PERIODIC_IMAGE_CONV = " << optctrl.periodic_image_conv << '\n';
+        std::cout << "  EFIT_WEIGHT = " << optctrl.efit_weight << "; EFIT_ESCALE = " << optctrl.efit_escale
+                  << "; EFIT_CV = " << optctrl.efit_cv << "\n\n";
         if (optctrl.linear_model == 2) {
             const auto str_l1_solver = optctrl.l1_solver == 0 ? "cd" : (optctrl.l1_solver == 1 ? "fista" : "admm");
             std::cout << " Elastic-net related variables:\n";
@@ -154,11 +174,14 @@ auto Writer::write_input_vars(const std::unique_ptr<System> &system, const std::
             std::cout << "  L1_SOLVER = " << str_l1_solver << '\n';
             std::cout << "  L1_ALPHA = " << optctrl.l1_alpha << '\n';
             std::cout << "  CV_MINALPHA = " << optctrl.l1_alpha_min << "; CV_MAXALPHA = " << optctrl.l1_alpha_max
-                      << ";  CV_NALPHA = " << optctrl.num_l1_alpha << '\n';
+                      << "; CV_NALPHA = " << optctrl.num_l1_alpha << '\n';
+            std::cout << "  CV_MINALPHA_RATIO = " << optctrl.l1_alpha_min_ratio << '\n';
             std::cout << "  STANDARDIZE = " << optctrl.standardize << '\n';
             std::cout << "  ENET_DNORM = " << optctrl.displacement_normalization_factor << '\n';
             std::cout << "  NWRITE = " << std::setw(5) << optctrl.output_frequency << '\n';
             std::cout << "  DEBIAS_OLS = " << optctrl.debiase_after_l1opt << '\n';
+            std::cout << "  SOLUTION_PATH = " << optctrl.save_solution_path
+                      << "; STOP_CRITERION = " << optctrl.stop_criterion << '\n';
             std::cout << '\n';
         }
     }

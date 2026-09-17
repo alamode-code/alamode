@@ -210,6 +210,11 @@ auto Displace::set_trim_dispsign_for_evenfunc(const bool trim_dispsign_for_evenf
     trim_dispsign_for_evenfunc = trim_dispsign_for_evenfunc_in;
 }
 
+auto Displace::get_trim_dispsign_for_evenfunc() const -> bool
+{
+    return trim_dispsign_for_evenfunc;
+}
+
 auto Displace::get_disp_basis() const -> std::string
 {
     return disp_basis;
