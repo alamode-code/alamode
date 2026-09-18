@@ -111,35 +111,30 @@ void Symmetry::setup_symmetry(const bool verbose)
     broadcast_symmlist(SymmList);
     broadcast_symmlist(SymmList_ref);
 
+    const auto with_relaxation =
+        (phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0);
+
     if (mympi->my_rank == 0) {
-
         const auto verbosity = verbose ? writes->getVerbosity() : 0;
-        bool use_distorted_structure = false;
-
         if (verbosity > 0) {
             std::cout << '\n';
             std::cout << "  Number of symmetry operations : " << nsym << '\n';
-        }
-        if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0))
-        {
-            if (verbosity > 0) {
+            if (with_relaxation) {
                 std::cout << "  Number of symmetry operations in reference structure : " << nsym_ref << "\n\n";
             }
-            use_distorted_structure = true;
         }
+    }
 
-        const auto cell_tmp = system->get_primcell(use_distorted_structure);
+    // Built on every rank: the k-point symmetry map derived from it is read on all ranks.
+    const auto cell_tmp = system->get_primcell(with_relaxation);
+    gensym_withmap(cell_tmp.lattice_vector, cell_tmp.x_fractional, cell_tmp.kind, SymmList, SymmListWithMap);
 
-        gensym_withmap(cell_tmp.lattice_vector, cell_tmp.x_fractional, cell_tmp.kind, SymmList, SymmListWithMap);
-
-        if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0))
-        {
-            gensym_withmap(system->get_primcell().lattice_vector,
-                           system->get_primcell().x_fractional,
-                           system->get_primcell().kind,
-                           SymmList_ref,
-                           SymmListWithMap_ref);
-        }
+    if (with_relaxation) {
+        gensym_withmap(system->get_primcell().lattice_vector,
+                       system->get_primcell().x_fractional,
+                       system->get_primcell().kind,
+                       SymmList_ref,
+                       SymmListWithMap_ref);
     }
 }
 
