@@ -681,16 +681,54 @@ Description of input variables
 
 .. _anphon_bubble:
 
-* BUBBLE-tag = 0 | 1
+* BUBBLE-tag = 0 | 1 | 2 | 3
 
- === ==============================================================
+ === ================================================================================================
   0   No bubble correction to the dynamical matrix
-  1   Calculate bubble correction on top of the SCPH dynamical matrix
- === ==============================================================
+  1   Static correction: the real part of the bubble self-energy at :math:`\omega = 0`
+  2   On-shell correction: the real part of the bubble self-energy at the SCPH frequency
+      :math:`\omega = \Omega_{\boldsymbol{q}j}`
+  3   Quasiparticle correction: the real part of the bubble self-energy at the solution of
+      :math:`\omega^{2} = \Omega_{\boldsymbol{q}j}^{2} - 2\Omega_{\boldsymbol{q}j}\,\mathrm{Re}\,\Sigma^{\mathrm{B}}_{\boldsymbol{q}j}(\omega)`
+ === ================================================================================================
 
  :Default: 0
  :Type: Integer
+ :Description: Adds the bubble (three-phonon) self-energy correction on top of the converged SCPH
+               dynamical matrix. For every irreducible point of ``KMESH_INTERPOLATE`` and branch
+               :math:`j` the real part of the bubble self-energy is evaluated with the SCPH phonons
+               (frequencies :math:`\Omega_{\boldsymbol{q}j}` and eigenvectors) and summed over the
+               :math:`q` mesh given by ``KMESH_BUBBLE``; ``EPSILON`` is the imaginary part added to
+               the frequency. The corrected frequencies
+               :math:`\omega^{2}_{\boldsymbol{q}j} = \Omega_{\boldsymbol{q}j}^{2} - 2\Omega_{\boldsymbol{q}j}\,\mathrm{Re}\,\Sigma^{\mathrm{B}}_{\boldsymbol{q}j}`
+               (averaged over degenerate branches) define a new dynamical matrix, which is Fourier
+               interpolated like the SCPH one and written as ``PREFIX.scph+bubble(0)_dfc2``,
+               ``PREFIX.scph+bubble(w)_dfc2`` or ``PREFIX.scph+bubble(wQP)_dfc2`` for
+               ``BUBBLE = 1, 2, 3``; the DOS, MSD and thermodynamic outputs get the same suffix.
 
+               With ``BUBBLE = 3`` the equation above is solved on a frequency grid of 0.1 cm\ :sup:`-1`
+               within :math:`\pm 50` cm\ :sup:`-1` of :math:`\Omega_{\boldsymbol{q}j}` by locating a sign
+               change and interpolating the self-energy linearly between the two grid points. If no
+               root is found in that window, the self-energy at the lowest grid frequency is used and
+               a warning is printed; if several roots are found, the lowest-frequency one is used.
+               ``BUBBLE = 3`` therefore costs about one thousand self-energy evaluations per mode
+               instead of one.
+
+               The bubble correction cannot be combined with ``RELAX_STR > 0``.
+
+````
+
+.. _anphon_kmesh_bubble:
+
+* KMESH_BUBBLE-tag = k1, k2, k3
+
+ :Default: ``KMESH_SCPH``
+ :Type: Array of integers
+ :Description: :math:`q` mesh over which the bubble self-energy of ``BUBBLE > 0`` is summed.
+               The SCPH phonons are interpolated onto this mesh, so it can be denser than
+               ``KMESH_SCPH`` to converge the bubble correction without changing the SCPH
+               iteration. Each value must be equal to or a multiple of the number of
+               ``KMESH_INTERPOLATE`` in the same direction.
 
 ````
 

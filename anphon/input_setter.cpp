@@ -216,6 +216,7 @@ void InputSetter::set_scph_vars(PHON *phon, const ScphInputVars &vars) const
     for (auto i = 0; i < 3; ++i) {
         phon->scph->kmesh_scph[i] = vars.kmesh_scph[i];
         phon->scph->kmesh_interpolate[i] = vars.kmesh_interpolate[i];
+        phon->scph->kmesh_bubble[i] = vars.kmesh_bubble[i];
     }
     phon->scph->mixalpha = vars.mixalpha;
     phon->scph->imix_scph = vars.imix_scph;

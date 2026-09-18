@@ -703,6 +703,7 @@ void InputParser::parse_scph_vars(PHON *phon)
     {};
     const std::vector<std::string> input_list{"KMESH_SCPH",
                                               "KMESH_INTERPOLATE",
+                                              "KMESH_BUBBLE",
                                               "MIXALPHA",
                                               "MAXITER",
                                               "RESTART_SCPH",
@@ -826,6 +827,27 @@ void InputParser::parse_scph_vars(PHON *phon)
     for (auto i = 0; i < 3; ++i) {
         scph_vars.kmesh_scph[i] = kmesh_v[i];
         scph_vars.kmesh_interpolate[i] = kmesh_interpolate_v[i];
+        scph_vars.kmesh_bubble[i] = kmesh_v[i];
+    }
+
+    // KMESH_BUBBLE: q mesh of the bubble self-energy (BUBBLE > 0), default KMESH_SCPH.
+    str_tmp = scph_var_dict["KMESH_BUBBLE"];
+    if (!str_tmp.empty()) {
+        std::vector<unsigned int> kmesh_bubble_v;
+        std::istringstream is(str_tmp);
+        while (true) {
+            str_tmp.clear();
+            is >> str_tmp;
+            if (str_tmp.empty()) break;
+            kmesh_bubble_v.push_back(my_cast<unsigned int>(str_tmp));
+        }
+        if (kmesh_bubble_v.size() != 3) {
+            exit("parse_scph_vars", "The number of entries for KMESH_BUBBLE has to be 3.");
+        }
+        for (auto i = 0; i < 3; ++i) {
+            if (kmesh_bubble_v[i] == 0) exit("parse_scph_vars", "KMESH_BUBBLE must be positive integers.");
+            scph_vars.kmesh_bubble[i] = kmesh_bubble_v[i];
+        }
     }
 
     // Keep the values the later blocks depend on.

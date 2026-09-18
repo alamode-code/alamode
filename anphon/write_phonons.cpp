@@ -177,7 +177,9 @@ void Writes::writeInputVars()
         print_mesh("KMESH_SCPH       ", scph->kmesh_scph);
         os << "  SELF_OFFDIAG = " << scph->selfenergy_offdiagonal << '\n';
         os << "  IALGO = " << scph->ialgo << '\n';
-        os << "  BUBBLE = " << scph->bubble << '\n' << '\n';
+        os << "  BUBBLE = " << scph->bubble << '\n';
+        if (scph->bubble > 0) print_mesh("KMESH_BUBBLE     ", scph->kmesh_bubble);
+        os << '\n';
         os << "  RESTART_SCPH = " << scph->restart_scph << '\n';
         os << "  LOWER_TEMP = " << scph->lower_temp << '\n';
         os << "  WARMSTART = " << scph->warmstart_scph << '\n' << '\n';

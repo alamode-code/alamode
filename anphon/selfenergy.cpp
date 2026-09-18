@@ -82,81 +82,86 @@ Selfenergy::get_bubble_selfenergy(const KpointMeshUniform *kmesh_in, const unsig
                                   const std::vector<std::complex<double>> &omegalist,
                                   const PhaseFactorCache *phase_cache_in) const
 {
-    unsigned int arr_cubic[3];
-    double xk_tmp[3];
-    std::complex<double> omega_sum[2];
-
-    double factor = 1.0 / (static_cast<double>(kmesh_in->nk) * std::pow(2.0, 4));
-    const auto ns2 = ns_in * ns_in;
-    const auto nks = kmesh_in->nk * ns2;
-
-    double n1, n2;
-    double f1, f2;
-
-    auto knum_minus = kmesh_in->kindex_minus_xk[knum];
-    arr_cubic[0] = ns_in * knum_minus + snum;
-
-    std::vector<std::complex<double>> se_bubble(omegalist.size());
-
+    // Bubble self-energy of (k, s) at the complex frequencies of omegalist, summed
+    // over q on the mesh with the factorized V3 kernel (first leg -k, k1 + k2 = k).
+    (void)phase_cache_in; // kept for API compatibility; the kernel has its own phase tables
+    const int nk = kmesh_in->nk;
+    const int ns = static_cast<int>(ns_in);
+    const size_t ns2 = static_cast<size_t>(ns) * ns;
     const auto nomega = omegalist.size();
+    const double factor = 1.0 / (static_cast<double>(nk) * std::pow(2.0, 4));
 
-    NDArray<std::complex<double>, 1> ret_sum;
-    NDArray<std::complex<double>, 1> ret_mpi;
-    ret_sum.resize(nomega);
-    ret_mpi.resize(nomega);
-
-    for (auto iomega = 0; iomega < nomega; ++iomega) {
-        ret_sum[iomega] = std::complex<double>(0.0, 0.0);
+    std::vector<std::complex<double>> se_bubble(nomega, std::complex<double>(0.0, 0.0));
+    NDArray<std::complex<double>, 1> ret_mpi(nomega), ret_sum(nomega);
+    for (size_t iomega = 0; iomega < nomega; ++iomega) {
         ret_mpi[iomega] = std::complex<double>(0.0, 0.0);
+        ret_sum[iomega] = std::complex<double>(0.0, 0.0);
     }
 
-    for (auto iks = my_rank; iks < nks; iks += nprocs) {
-
-        auto ik1 = iks / ns2;
-        auto is1 = (iks % ns2) / ns_in;
-        auto is2 = iks % ns_in;
-
-        for (auto m = 0; m < 3; ++m) xk_tmp[m] = kmesh_in->xk[knum][m] - kmesh_in->xk[ik1][m];
-        auto ik2 = kmesh_in->get_knum(xk_tmp);
-
-        double omega1 = eval_in[ik1][is1];
-        double omega2 = eval_in[ik2][is2];
-
-        arr_cubic[1] = ns_in * ik1 + is1;
-        arr_cubic[2] = ns_in * ik2 + is2;
-
-        double v3_tmp = std::norm(anharmonic_core->V3(arr_cubic, kmesh_in->xk, eval_in, evec_in, phase_cache_in));
-
-        if (classical) {
-            n1 = Thermodynamics::fC(omega1, temp_in);
-            n2 = Thermodynamics::fC(omega2, temp_in);
-            f1 = n1 + n2;
-            f2 = n2 - n1;
-        } else {
-            n1 = Thermodynamics::fB(omega1, temp_in);
-            n2 = Thermodynamics::fB(omega2, temp_in);
-            f1 = n1 + n2 + 1.0;
-            f2 = n2 - n1;
+    if (eval_in[knum][snum] >= eps8) {
+        // This rank's share of the q points; k2 = k - k1 as in the original loop.
+        std::vector<int> k1_local, k2_local;
+        double xk_tmp[3];
+        for (int ik1 = my_rank; ik1 < nk; ik1 += nprocs) {
+            for (auto m = 0; m < 3; ++m) xk_tmp[m] = kmesh_in->xk[knum][m] - kmesh_in->xk[ik1][m];
+            k1_local.push_back(ik1);
+            k2_local.push_back(kmesh_in->get_knum(xk_tmp));
         }
-        for (auto iomega = 0; iomega < nomega; ++iomega) {
-            omega_sum[0] = 1.0 / (omegalist[iomega] + omega1 + omega2) - 1.0 / (omegalist[iomega] - omega1 - omega2);
-            omega_sum[1] = 1.0 / (omegalist[iomega] + omega1 - omega2) - 1.0 / (omegalist[iomega] - omega1 + omega2);
-            ret_mpi[iomega] += v3_tmp * (f1 * omega_sum[0] + f2 * omega_sum[1]);
+        const int npair_local = static_cast<int>(k1_local.size());
+
+        anharmonic_core->prepare_v3_mode(kmesh_in, kmesh_in->kindex_minus_xk[knum], static_cast<int>(snum), evec_in);
+        std::vector<double> occ;
+        AnharmonicCore::tabulate_occupations(1, &temp_in, nk, ns, eval_in, classical, occ);
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        {
+            AnharmonicCore::V3Workspace ws;
+            std::vector<double> v3sq(ns2);
+            std::vector<std::complex<double>> ret_loc(nomega, std::complex<double>(0.0, 0.0));
+            anharmonic_core->v3_setup_workspace(ws, kmesh_in);
+
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 4)
+#endif
+            for (int ip = 0; ip < npair_local; ++ip) {
+                const int ik1 = k1_local[ip];
+                const int ik2 = k2_local[ip];
+                anharmonic_core->v3sq_pairs(ws, kmesh_in, ik1, ik2, eval_in, evec_in, v3sq.data());
+
+                for (int is1 = 0; is1 < ns; ++is1) {
+                    const double omega1 = eval_in[ik1][is1];
+                    const double n1 = occ[ik1 * ns + is1];
+                    for (int is2 = 0; is2 < ns; ++is2) {
+                        const double v3_tmp = v3sq[is1 * ns + is2];
+                        if (v3_tmp == 0.0) continue;
+                        const double omega2 = eval_in[ik2][is2];
+                        const double n2 = occ[ik2 * ns + is2];
+                        const double f1 = classical ? n1 + n2 : n1 + n2 + 1.0;
+                        const double f2 = n2 - n1;
+                        for (size_t iomega = 0; iomega < nomega; ++iomega) {
+                            const auto &w = omegalist[iomega];
+                            const auto omega_sum0 = 1.0 / (w + omega1 + omega2) - 1.0 / (w - omega1 - omega2);
+                            const auto omega_sum1 = 1.0 / (w + omega1 - omega2) - 1.0 / (w - omega1 + omega2);
+                            ret_loc[iomega] += v3_tmp * (f1 * omega_sum0 + f2 * omega_sum1);
+                        }
+                    }
+                }
+            }
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+            {
+                for (size_t iomega = 0; iomega < nomega; ++iomega) ret_mpi[iomega] += ret_loc[iomega];
+            }
         }
     }
-    for (auto iomega = 0; iomega < nomega; ++iomega) {
-        ret_mpi[iomega] *= factor;
-    }
 
+    for (size_t iomega = 0; iomega < nomega; ++iomega) ret_mpi[iomega] *= factor;
     mpi_reduce_complex(static_cast<unsigned int>(nomega), ret_mpi, ret_sum);
-
-    for (auto iomega = 0; iomega < nomega; ++iomega) {
-        se_bubble[iomega] = ret_sum[iomega];
-    }
-
-    ret_mpi.clear();
-    ret_sum.clear();
-
+    for (size_t iomega = 0; iomega < nomega; ++iomega) se_bubble[iomega] = ret_sum[iomega];
     return se_bubble;
 }
 

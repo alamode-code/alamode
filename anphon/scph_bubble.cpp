@@ -108,7 +108,35 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
     auto epsilon = integration->epsilon;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
-    const auto nk_scph = kmesh_dense->nk;
+
+    // The bubble self-energy is summed on KMESH_BUBBLE; the SCPH mesh and its
+    // phase cache are reused when the two meshes coincide.
+    MPI_Bcast(&kmesh_bubble[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    std::unique_ptr<KpointMeshUniform> kmesh_bubble_own;
+    std::unique_ptr<PhaseFactorCache> phase_factor_own;
+    std::vector<int> kmap_coarse_to_bubble_own;
+    const KpointMeshUniform *kmesh_b = kmesh_dense.get();
+    const PhaseFactorCache *phase_b = phase_factor.get();
+    const std::vector<int> *kmap_b = &kmap_coarse_to_dense;
+    if (kmesh_bubble[0] != kmesh_dense->nk_i[0] || kmesh_bubble[1] != kmesh_dense->nk_i[1] ||
+        kmesh_bubble[2] != kmesh_dense->nk_i[2])
+    {
+        kmesh_bubble_own = std::make_unique<KpointMeshUniform>(kmesh_bubble);
+        kmesh_bubble_own->setup(symmetry->SymmList,
+                                system->get_primcell().reciprocal_lattice_vector,
+                                symmetry->use_time_reversal && symmetry->time_reversal_sym);
+        if (kpoint->get_kmap_coarse_to_dense(kmesh_coarse.get(), kmesh_bubble_own.get(), kmap_coarse_to_bubble_own) ==
+            1)
+        {
+            exit("bubble_correction", "KMESH_BUBBLE should be an integral multiple of KMESH_INTERPOLATE");
+        }
+        phase_factor_own = std::make_unique<PhaseFactorCache>(kmesh_bubble_own->nk_i);
+        phase_factor_own->create(true);
+        kmesh_b = kmesh_bubble_own.get();
+        phase_b = phase_factor_own.get();
+        kmap_b = &kmap_coarse_to_bubble_own;
+    }
+    const auto nk_scph = kmesh_b->nk;
 
     NDArray<double, 2> eval;
     NDArray<double, 3> eval_bubble;
@@ -120,7 +148,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n";
         std::cout << " Calculating the bubble self-energy \n";
-        std::cout << " on top of the SCPH calculation.\n\n";
+        std::cout << " on top of the SCPH calculation.\n";
+        std::cout << "  KMESH_BUBBLE: " << kmesh_b->nk_i[0] << " " << kmesh_b->nk_i[1] << " " << kmesh_b->nk_i[2]
+                  << " (" << kmesh_b->nk << " points)\n\n";
     }
 
     eval.resize(nk_scph, ns);
@@ -154,8 +184,8 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
         dynamical->exec_interpolation(kmesh_interpolate,
                                       delta_dymat_scph[iT],
                                       nk_scph,
-                                      kmesh_dense->xk,
-                                      kmesh_dense->kvec_na,
+                                      kmesh_b->xk,
+                                      kmesh_b->kvec_na,
                                       eval,
                                       evec,
                                       dymat_harm_short,
@@ -169,11 +199,11 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
         for (auto ik = 0; ik < nk_irred_interpolate; ++ik) {
 
             auto knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
-            auto knum = kmap_coarse_to_dense[knum_interpolate];
+            auto knum = (*kmap_b)[knum_interpolate];
 
             if (mympi->my_rank == 0) {
                 std::cout << "  Irred. k: " << std::setw(5) << ik + 1 << " (";
-                for (auto m = 0; m < 3; ++m) std::cout << std::setw(15) << kmesh_dense->xk[knum][m];
+                for (auto m = 0; m < 3; ++m) std::cout << std::setw(15) << kmesh_b->xk[knum][m];
                 std::cout << ")\n";
             }
 
@@ -188,15 +218,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
                         omegalist.push_back(im * epsilon);
 
-                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_dense.get(),
-                                                                           ns,
-                                                                           eval,
-                                                                           evec,
-                                                                           knum,
-                                                                           snum,
-                                                                           temp,
-                                                                           omegalist,
-                                                                           phase_factor.get());
+                        auto se_bubble =
+                            selfenergy
+                                ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -204,15 +228,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
                         omegalist.push_back(eval[knum][snum] + im * epsilon);
 
-                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_dense.get(),
-                                                                           ns,
-                                                                           eval,
-                                                                           evec,
-                                                                           knum,
-                                                                           snum,
-                                                                           temp,
-                                                                           omegalist,
-                                                                           phase_factor.get());
+                        auto se_bubble =
+                            selfenergy
+                                ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
 
                         if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -230,15 +248,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                             omegalist.push_back(minfreq + static_cast<double>(iomega) * domega + im * epsilon);
                         }
 
-                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_dense.get(),
-                                                                           ns,
-                                                                           eval,
-                                                                           evec,
-                                                                           knum,
-                                                                           snum,
-                                                                           temp,
-                                                                           omegalist,
-                                                                           phase_factor.get());
+                        auto se_bubble =
+                            selfenergy
+                                ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
 
                         if (mympi->my_rank == 0) {
 
@@ -325,7 +337,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                     eval_bubble[iT][knum][snum] =
                         eval[knum][snum] * eval[knum][snum] - 2.0 * eval[knum][snum] * real_self[snum];
                     for (auto jk = 1; jk < kmesh_coarse->kpoint_irred_all[ik].size(); ++jk) {
-                        auto knum2 = kmap_coarse_to_dense[kmesh_coarse->kpoint_irred_all[ik][jk].knum];
+                        auto knum2 = (*kmap_b)[kmesh_coarse->kpoint_irred_all[ik][jk].knum];
                         eval_bubble[iT][knum2][snum] = eval_bubble[iT][knum][snum];
                     }
                 }
@@ -339,7 +351,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                                 eval_bubble[iT],
                                                 evec,
                                                 kmesh_coarse.get(),
-                                                kmap_coarse_to_dense);
+                                                *kmap_b);
         }
     }
 

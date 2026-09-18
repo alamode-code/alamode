@@ -176,6 +176,7 @@ struct ScphInputVars
 {
     unsigned int kmesh_scph[3] = {0, 0, 0};
     unsigned int kmesh_interpolate[3] = {0, 0, 0};
+    unsigned int kmesh_bubble[3] = {0, 0, 0}; // KMESH_BUBBLE (default KMESH_SCPH)
 
     double mixalpha = 0.1;
     unsigned int imix_scph = 1; // DIIS mixing by default; IMIX = 0 restores simple mixing

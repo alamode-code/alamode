@@ -33,6 +33,7 @@ public:
 
     unsigned int kmesh_scph[3];
     unsigned int kmesh_interpolate[3];
+    unsigned int kmesh_bubble[3]; // q mesh of the bubble self-energy (KMESH_BUBBLE)
     unsigned int bubble;
 
     using ScphQhaCommon::use_h5_io;
