@@ -174,8 +174,7 @@ public:
         std::cout << " :\n";
         const auto spg_label = scph_.relaxation->print_structure_and_symmetry(
             structure_state,
-            (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell && scp_converged_step) ? del_v0_del_umn_SCP_
-                                                                                            : nullptr);
+            (uses_full_strain_derivatives(ws_.relax_mode) && scp_converged_step) ? del_v0_del_umn_SCP_ : nullptr);
         std::cout << '\n';
         scph_.print_stage_time("structure print + symmetry", time_stage);
         time_stage = scph_.timer->elapsed();
@@ -1017,8 +1016,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         fout_q0.open(phon->job_title + ".normal_disp");
         fout_u0.open(phon->job_title + ".atom_disp");
 
-        // if the unit cell is relaxed
-        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        // if the unit cell is relaxed, or held at a prescribed strain
+        if (uses_full_strain_derivatives(relax_mode)) {
             fout_step_u_tensor.open("step_u_tensor.txt");
             fout_u_tensor.open(phon->job_title + ".umn_tensor");
         }
@@ -1032,6 +1031,9 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             std::cout << "  Shape of the unit cell is fixed.\n\n";
         } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             std::cout << "  Internal coordinates and shape of the unit cell are relaxed.\n\n";
+        } else if (relax_mode == RelaxationStrMode::CoordinatesAtFixedStrain) {
+            std::cout << "  Internal coordinates are relaxed.\n";
+            std::cout << "  Shape of the unit cell is held at the strain given in &strain.\n\n";
         }
 
         ScphRelaxationModel model(*this,
@@ -1073,13 +1075,13 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         fout_q0.close();
         fout_u0.close();
 
-        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        if (uses_full_strain_derivatives(relax_mode)) {
             fout_step_u_tensor.close();
             fout_u_tensor.close();
         }
         writes->printOutputFile(phon->job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
         writes->printOutputFile(phon->job_title + ".atom_disp", "Relaxed atomic displacements");
-        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        if (uses_full_strain_derivatives(relax_mode)) {
             writes->printOutputFile(phon->job_title + ".umn_tensor", "Relaxed strain tensor");
         }
 
@@ -1180,7 +1182,9 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
         for (auto i1 = 0; i1 < 9; i1++) {
             del_v0_del_umn_SCP[i1] = 0.0;
         }
-    } else if (ws.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+    } else if (uses_full_strain_derivatives(ws.relax_mode)) {
+        // CoordinatesAtFixedStrain does not step the cell, but the stress at the
+        // prescribed strain is a useful output and a check on dFbar/deps.
         compute_anharmonic_del_v0_del_umn(del_v0_del_umn_SCP,
                                           ws.del_v0_del_umn_renorm,
                                           *ws.del_v_strain,

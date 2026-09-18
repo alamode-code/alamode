@@ -35,7 +35,8 @@ enum class RelaxationStrMode : int
     None = 0,
     CoordinatesOnly = 1,
     CoordinatesAndCell = 2,
-    PerturbativeQha = 3
+    PerturbativeQha = 3,
+    CoordinatesAtFixedStrain = 4
 };
 
 enum class QhaScheme : int
@@ -58,7 +59,9 @@ inline constexpr int to_int(const QhaScheme scheme)
 inline constexpr bool is_valid_relaxation_str_mode(const int mode)
 {
     return mode == to_int(RelaxationStrMode::None) || mode == to_int(RelaxationStrMode::CoordinatesOnly) ||
-           mode == to_int(RelaxationStrMode::CoordinatesAndCell) || mode == to_int(RelaxationStrMode::PerturbativeQha);
+           mode == to_int(RelaxationStrMode::CoordinatesAndCell) ||
+           mode == to_int(RelaxationStrMode::PerturbativeQha) ||
+           mode == to_int(RelaxationStrMode::CoordinatesAtFixedStrain);
 }
 
 inline constexpr bool is_valid_qha_scheme(const int scheme)
@@ -72,7 +75,35 @@ inline constexpr RelaxationStrMode to_relaxation_str_mode(const int mode)
     if (mode == to_int(RelaxationStrMode::CoordinatesOnly)) return RelaxationStrMode::CoordinatesOnly;
     if (mode == to_int(RelaxationStrMode::CoordinatesAndCell)) return RelaxationStrMode::CoordinatesAndCell;
     if (mode == to_int(RelaxationStrMode::PerturbativeQha)) return RelaxationStrMode::PerturbativeQha;
+    if (mode == to_int(RelaxationStrMode::CoordinatesAtFixedStrain)) return RelaxationStrMode::CoordinatesAtFixedStrain;
     return RelaxationStrMode::None;
+}
+
+// Modes whose only optimization variables are the internal coordinates: the cell
+// is held fixed, either undeformed (CoordinatesOnly) or at the strain given in
+// &strain (CoordinatesAtFixedStrain). Everything else about the two differs --
+// CoordinatesAtFixedStrain still needs the real elastic constants and the full
+// strain-IFC coupling, so the tests that select those keep checking for
+// CoordinatesOnly alone.
+inline constexpr bool optimizes_coordinates_only(const RelaxationStrMode mode)
+{
+    return mode == RelaxationStrMode::CoordinatesOnly || mode == RelaxationStrMode::CoordinatesAtFixedStrain;
+}
+
+// Modes that use the full SCPH strain-derivative construction
+// (DerivativeIFC::set_del_v_relax_cell). PerturbativeQha is deliberately excluded:
+// it has its own linear-QHA variant.
+inline constexpr bool uses_full_strain_derivatives(const RelaxationStrMode mode)
+{
+    return mode == RelaxationStrMode::CoordinatesAndCell || mode == RelaxationStrMode::CoordinatesAtFixedStrain;
+}
+
+// Modes that evaluate the energy at a (generally nonzero) strain: they need the
+// real elastic constants, the strain file and the strain-IFC coupling.
+inline constexpr bool uses_strain_coupling(const RelaxationStrMode mode)
+{
+    return mode == RelaxationStrMode::CoordinatesAndCell || mode == RelaxationStrMode::PerturbativeQha ||
+           mode == RelaxationStrMode::CoordinatesAtFixedStrain;
 }
 
 inline constexpr QhaScheme to_qha_scheme(const int scheme)

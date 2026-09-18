@@ -122,7 +122,7 @@ void Relaxation::setup_relaxation()
                       << std::scientific << std::setprecision(2) << symmetry->tolerance << std::defaultfloat << ")\n\n";
         }
     }
-    if (relax_mode != RelaxationStrMode::CoordinatesAndCell && relax_mode != RelaxationStrMode::PerturbativeQha) {
+    if (!uses_strain_coupling(relax_mode)) {
         return;
     }
     if (!strain_file.empty()) {
@@ -225,11 +225,11 @@ void Relaxation::create_optimizer(const size_t num_modes)
     if (relax_algo == 1) {
         // Steepest descent is independent of the relaxation mode and dimension.
         optimizer = std::make_unique<SteepestDescent_Optimizer>(alpha_steepest_decent);
-    } else if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 2) {
+    } else if (optimizes_coordinates_only(relax_mode) && relax_algo == 2) {
         optimizer = std::make_unique<Newton_Optimizer>(mixbeta_coord);
     } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relax_algo == 2) {
         optimizer = std::make_unique<CellCoord_Newton_Optimizer>(mixbeta_cell, mixbeta_coord);
-    } else if (relax_mode == RelaxationStrMode::CoordinatesOnly && relax_algo == 3) {
+    } else if (optimizes_coordinates_only(relax_mode) && relax_algo == 3) {
         const Eigen::MatrixXd H_init = Eigen::MatrixXd::Identity(num_modes - 3, num_modes - 3);
         optimizer = std::make_unique<FarkasIII_Optimizer>(6, H_init, gdiis_control != 0);
     } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell && relax_algo == 3) {
@@ -242,9 +242,10 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
 {
     const auto relax_mode = to_relaxation_str_mode(relax_str);
 
-    // if the shape of the unit cell is relaxed,
-    // compute the elastic constants from the IFCs or read them from file
-    if (relax_mode == RelaxationStrMode::CoordinatesAndCell || relax_mode == RelaxationStrMode::PerturbativeQha) {
+    // if the energy is evaluated at a nonzero strain (the cell is relaxed, or held
+    // at the strain given in &strain), compute the elastic constants from the IFCs
+    // or read them from file
+    if (uses_strain_coupling(relax_mode)) {
         if (elastic_const == 1) {
             set_elastic_constants_from_ifcs(C1_array, C2_array, C3_array);
             return;
@@ -525,6 +526,13 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
                 std::cout << " start from the structure at the previous temperature.\n\n";
             }
         }
+    }
+
+    // CoordinatesAtFixedStrain: the cell is an input, not an optimization variable.
+    // Re-assert the prescribed strain at every temperature so that it can neither be
+    // inherited from the previous temperature (SET_INIT_STR = 2, 3) nor drift.
+    if (relax_mode == RelaxationStrMode::CoordinatesAtFixedStrain) {
+        set_initial_strain(u_tensor);
     }
 }
 
@@ -843,7 +851,7 @@ void Relaxation::update_cell_coordinate(
 
     const double add_hess_diag_omega2 = pow2(add_hess_diag / Ry_to_kayser);
 
-    if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
+    if (optimizes_coordinates_only(relax_mode)) {
         delta_vec.assign(ns - 3, 0.0);
         state_vec.assign(ns - 3, 0.0);
         grad_vec.assign(ns - 3, 0.0);
@@ -907,7 +915,7 @@ void Relaxation::update_cell_coordinate(
         }
 
 
-        if (relax_mode == RelaxationStrMode::CoordinatesOnly || relax_algo == 1) {
+        if (optimizes_coordinates_only(relax_mode) || relax_algo == 1) {
             int i1, i2;
             // Relax the internal coordinates only. This covers CoordinatesOnly mode (any
             // algorithm) and steepest descent (relax_algo == 1), which keeps the cell shape
@@ -1391,7 +1399,9 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
     }
 
     // CoordinatesAndCell: relax both the cell shape and the internal coordinates.
-    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+    // CoordinatesAtFixedStrain: the cell is held at a nonzero strain, so it needs the
+    // same strain derivatives even though the cell is not a variable of the optimization.
+    if (uses_full_strain_derivatives(relax_mode)) {
 
         derivative_ifc->set_del_v_relax_cell(kmesh_coarse,
                                              kmesh_dense,

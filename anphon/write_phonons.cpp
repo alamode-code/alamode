@@ -238,7 +238,7 @@ void Writes::writeInputVars()
         if (phon->mode == "QHA" && relaxation->relax_str == 2) {
             os << "  QHA_SCHEME = " << to_int(qha->qha_scheme) << '\n';
         }
-        if (relaxation->relax_str == 2 || relaxation->relax_str == 3) {
+        if (uses_strain_coupling(to_relaxation_str_mode(relaxation->relax_str))) {
             if (relaxation->strain_coupling >= 0) {
                 os << "  STRAIN_COUPLING = " << relaxation->strain_coupling << '\n';
             } else {

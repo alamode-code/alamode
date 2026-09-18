@@ -758,7 +758,7 @@ void InputParser::parse_scph_vars(PHON *phon)
     assign_val(scph_vars.bubble, "BUBBLE", scph_var_dict);
     assign_val(scph_vars.relax_str, "RELAX_STR", scph_var_dict);
     if (!is_valid_relaxation_str_mode(scph_vars.relax_str)) {
-        exit("parse_scph_vars", "RELAX_STR must be 0, 1, 2, or 3.");
+        exit("parse_scph_vars", "RELAX_STR must be 0, 1, 2, 3, or 4.");
     }
     if (scph_vars.relax_str != to_int(RelaxationStrMode::None) && !scph_vars.selfenergy_offdiagonal) {
         exit("parse_scph_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
@@ -896,13 +896,20 @@ void InputParser::parse_qha_vars(PHON *phon)
     assign_val(qha_vars.ialgo, "IALGO", qha_var_dict);
 
     if (!is_valid_relaxation_str_mode(qha_vars.relax_str)) {
-        exit("parse_qha_vars", "RELAX_STR must be 1, 2, or 3 when mode = QHA.");
+        exit("parse_qha_vars", "RELAX_STR must be 1, 2, 3, or 4 when mode = QHA.");
     }
     if (qha_vars.relax_str == to_int(RelaxationStrMode::None)) {
         exit("parse_qha_vars", "RELAX_STR = 0 is not supported when mode = QHA.");
     }
     if (!is_valid_qha_scheme(qha_vars.qha_scheme)) {
         exit("parse_qha_vars", "QHA_SCHEME must be 0, 1, or 2.");
+    }
+    if (qha_vars.relax_str == to_int(RelaxationStrMode::CoordinatesAtFixedStrain) &&
+        qha_vars.qha_scheme != to_int(QhaScheme::Standard))
+    {
+        exit("parse_qha_vars",
+             "QHA_SCHEME must be 0 when RELAX_STR = 4: ZSISA/v-ZSISA replace the "
+             "finite-temperature coordinate forces, so F(q,eps,T) would not be minimized.");
     }
     if (qha_vars.relax_str != to_int(RelaxationStrMode::None) && !qha_vars.selfenergy_offdiagonal) {
         exit("parse_qha_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
@@ -1072,7 +1079,7 @@ void InputParser::parse_relax_vars(PHON *phon)
         relax_vars.renorm_2to1st = (units & 2) ? 2 : (tens > 0 ? 1 : 0);
         relax_vars.renorm_3to2nd = (units & 4) ? 2 : 1;
         relax_vars.renorm_34to1st = (tens == 2) ? 1 : 0;
-        if (tens > 0 && (relax_str == 2 || relax_str == 3)) {
+        if (tens > 0 && uses_strain_coupling(to_relaxation_str_mode(relax_str))) {
             warn("parse_relax_vars",
                  "STRAIN_COUPLING >= 10: the strain-force coupling is computed from the IFCs, which is exact\n"
                  " only for rotationally invariant IFCs (ICONST >= 2 in alm). Validate the result against a run\n"
@@ -1158,8 +1165,9 @@ void InputParser::check_relax_vars() const
                  "Sorry, RELAX_STR!=0 can't be used with bubble self-energy on top of the SCPH calculation.");
         }
 
-        // relax the shape of the unit cell
-        if (relax_str == 2 || relax_str == 3) {
+        // the energy is evaluated at a nonzero strain: the elastic constants and the
+        // strain couplings are required
+        if (uses_strain_coupling(to_relaxation_str_mode(relax_str))) {
             if (!relax_vars.strain_file.empty()) {
                 // The container is validated (schema, required groups, reference
                 // cell) on every rank in Relaxation::setup_relaxation; here only
@@ -1235,6 +1243,24 @@ void InputParser::parse_initial_strain(PHON *phon)
 {
     double u_tensor_tmp[3][3];
     parse_strain_tensor(u_tensor_tmp);
+    // The elastic energy is a function of the Green-Lagrange strain built as
+    // eta = sym(u) + 1/2 u u^T, which is only the strain of the given deformation
+    // gradient only when u is symmetric. An asymmetric u is silently reinterpreted by
+    // that construction, so reject it rather than let it through unnoticed.
+    if (relax_str == to_int(RelaxationStrMode::CoordinatesAtFixedStrain)) {
+        constexpr double asym_tol = 1.0e-12;
+        double asym = 0.0;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = i + 1; j < 3; ++j) {
+                asym = std::max(asym, std::abs(u_tensor_tmp[i][j] - u_tensor_tmp[j][i]));
+            }
+        }
+        if (asym > asym_tol) {
+            exit("parse_initial_strain",
+                 "&strain must be symmetric when RELAX_STR = 4: the elastic energy is built from\n"
+                 " eta = sym(u) + 1/2 u u^T, which represents the intended strain only for symmetric u.");
+        }
+    }
     input_setter->set_initial_strain(phon, u_tensor_tmp);
 }
 

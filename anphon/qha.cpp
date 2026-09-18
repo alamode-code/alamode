@@ -90,7 +90,7 @@ public:
                     del_v1_del_umn_renorm_[i1][is1] = complex_zero;
                 }
             }
-        } else if (ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        } else if (uses_full_strain_derivatives(ws_.relax_mode)) {
             qha_.calculate_del_v1_del_umn_renorm(del_v1_del_umn_renorm_, u_tensor, del_v_strain_, q0);
         }
 
@@ -120,7 +120,7 @@ public:
         std::cout << "\n Structure at this step :\n";
         const auto spg_label = qha_.relaxation->print_structure_and_symmetry(
             structure_state,
-            ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell ? del_v0_del_umn_QHA_ : nullptr);
+            uses_full_strain_derivatives(ws_.relax_mode) ? del_v0_del_umn_QHA_ : nullptr);
         std::cout << '\n';
         qha_.print_stage_time("structure print + symmetry", time_stage);
         time_stage = qha_.timer->elapsed();
@@ -361,7 +361,9 @@ void Qha::exec_qha_optimization()
     } else {
 
         // QHA + structural optimization
-        if (relax_mode == RelaxationStrMode::CoordinatesOnly || relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        if (relax_mode == RelaxationStrMode::CoordinatesOnly || relax_mode == RelaxationStrMode::CoordinatesAndCell ||
+            relax_mode == RelaxationStrMode::CoordinatesAtFixedStrain)
+        {
             exec_QHA_relax_main(delta_dymat_qha, delta_harmonic_dymat_renormalize);
         }
         // lowest-order QHA
@@ -541,8 +543,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         fout_step_u0.open("step_u0.txt");
         fout_q0.open(phon->job_title + ".normal_disp");
         fout_u0.open(phon->job_title + ".atom_disp");
-        // if the unit cell is relaxed
-        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        // if the unit cell is relaxed, or held at a prescribed strain
+        if (uses_full_strain_derivatives(relax_mode)) {
             fout_step_u_tensor.open("step_u_tensor.txt");
             fout_u_tensor.open(phon->job_title + ".umn_tensor");
         }
@@ -555,6 +557,9 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
             std::cout << "  Shape of the unit cell is fixed.\n\n";
         } else if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             std::cout << "  Internal coordinates and shape of the unit cell are relaxed.\n\n";
+        } else if (relax_mode == RelaxationStrMode::CoordinatesAtFixedStrain) {
+            std::cout << "  Internal coordinates are relaxed.\n";
+            std::cout << "  Shape of the unit cell is held at the strain given in &strain.\n\n";
         }
 
 
@@ -601,13 +606,13 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         fout_step_u0.close();
         fout_q0.close();
         fout_u0.close();
-        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        if (uses_full_strain_derivatives(relax_mode)) {
             fout_step_u_tensor.close();
             fout_u_tensor.close();
         }
         writes->printOutputFile(phon->job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
         writes->printOutputFile(phon->job_title + ".atom_disp", "Relaxed atomic displacements");
-        if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+        if (uses_full_strain_derivatives(relax_mode)) {
             writes->printOutputFile(phon->job_title + ".umn_tensor", "Relaxed strain tensor");
         }
 
@@ -709,7 +714,9 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
         for (auto i1 = 0; i1 < 9; i1++) {
             del_v0_del_umn_QHA[i1] = complex_zero;
         }
-    } else if (ws.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+    } else if (uses_full_strain_derivatives(ws.relax_mode)) {
+        // CoordinatesAtFixedStrain does not step the cell, but the stress at the
+        // prescribed strain is a useful output and a check on dFbar/deps.
         compute_anharmonic_del_v0_del_umn(del_v0_del_umn_QHA,
                                           ws.del_v0_del_umn_renorm,
                                           *ws.del_v_strain,

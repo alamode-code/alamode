@@ -1124,7 +1124,9 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
         for (auto i1 = 0; i1 < 9; i1++) {
             ws.del_v0_del_umn_renorm[i1] = 0.0;
         }
-    } else if (ws.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+    } else if (uses_full_strain_derivatives(ws.relax_mode)) {
+        // CoordinatesAtFixedStrain needs this too: it is the input to the SCP stress,
+        // which is the strain gradient of Fbar at the prescribed strain.
         calculate_del_v0_del_umn_renorm(ws.del_v0_del_umn_renorm,
                                         ws.C1_array,
                                         ws.C2_array,
@@ -1161,7 +1163,7 @@ void ScphQhaCommon::print_initial_structure(const RelaxationStructureState &stat
     }
     std::cout << '\n';
 
-    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+    if (uses_full_strain_derivatives(relax_mode)) {
         std::cout << " Initial strain (displacement gradient tensor u_{mu nu}) : \n";
         for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             std::cout << " ";
@@ -1272,6 +1274,9 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
         }
         if (ws.relax_mode == RelaxationStrMode::CoordinatesAndCell) {
             std::cout << "Calculating derivatives of k-space IFCs by strain.\n\n";
+        }
+        if (ws.relax_mode == RelaxationStrMode::CoordinatesAtFixedStrain) {
+            std::cout << "Calculating derivatives of k-space IFCs by strain (cell held at &strain).\n\n";
         }
     }
 
@@ -1399,7 +1404,7 @@ void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state,
     }
     std::cout << '\n';
 
-    if (relax_mode == RelaxationStrMode::CoordinatesAndCell) {
+    if (uses_full_strain_derivatives(relax_mode)) {
         std::cout << " Final strain (displacement gradient tensor u_{mu nu}) : \n";
         for (auto ixyz1 = 0; ixyz1 < 3; ixyz1++) {
             std::cout << " ";

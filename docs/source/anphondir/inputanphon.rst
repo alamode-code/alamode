@@ -734,14 +734,40 @@ Description of input variables
 
 .. _anphon_relax_str:
 
-* RELAX_STR-tag = 0 | 1 | 2 | 3
+* RELAX_STR-tag = 0 | 1 | 2 | 3 | 4
 
  === ==============================================================
   0   Don't relax the crystal structure (not supported when ``MODE = QHA``).
   1   Relax atomic positions.
   2   Relax both atomic positions and the shape of the unit cell.
   3   Lowest-order perturbation theory (not supported when ``MODE = SCPH``).
+  4   Relax atomic positions with the unit cell held at the strain given in the
+      ``&strain`` field.
  === ==============================================================
+
+ ``RELAX_STR = 4`` differs from ``RELAX_STR = 1`` only in where the cell sits:
+ both optimize the internal coordinates alone, but ``RELAX_STR = 1`` works at
+ the undeformed reference cell, whereas ``RELAX_STR = 4`` holds the cell at the
+ prescribed strain and therefore requires the elastic constants and the
+ strain-IFC coupling (``STRAINFILE`` or ``STRAIN_IFC_DIR``), exactly as
+ ``RELAX_STR = 2`` does. The strain given in ``&strain`` must be symmetric.
+
+ This mode gives the internally relaxed free energy at a prescribed strain,
+ :math:`\bar{F}(\epsilon, T) = \min_{q} F(\epsilon, q, T)`, which is written
+ to the ``.scph_thermo`` / ``.qha_thermo`` file (the ``Phi0`` column is already
+ included in ``F_total``). Finite differences of :math:`\bar{F}` with respect to
+ the strain give the isothermal elastic constants at finite temperature,
+ :math:`C_{ij}(T) = V^{-1} \partial^2 \bar{F} / \partial \epsilon_i \partial \epsilon_j`.
+ Set ``STAT_PRESSURE = 0`` for this purpose: a nonzero value adds a :math:`pV`
+ term, so the quantity being differentiated is then no longer :math:`\bar{F}`.
+
+ The energy is a function of the Green-Lagrange strain
+ :math:`\eta = \mathrm{sym}\,u + \tfrac{1}{2} u u^{T}`, which is built assuming
+ that the displacement gradient :math:`u` given in ``&strain`` is symmetric; an
+ asymmetric :math:`u` is rejected. Note that a symmetric :math:`u` need not
+ preserve the crystal symmetry, and that ``SET_INIT_STR = 3`` compares against the
+ space group of the undeformed reference cell, so it will not trigger under a
+ symmetry-lowering strain. ``QHA_SCHEME`` must be 0 in this mode.
 
  :Default: 0
  :Type: Integer
@@ -818,6 +844,7 @@ Description of input variables
  :Type: Integer
 
  :Description: This option is used only when ``mode = QHA`` and ``RELAX_STR = 2``.
+ It must be 0 when ``RELAX_STR = 4``.
 
 ````
 
@@ -1302,7 +1329,7 @@ The first entry **KPMODE** specifies the types of calculation which is followed 
 
 ````
 
-"&strain"-field (Read when ``RELAX_STR = 2``; optional when ``MODE = phonons`` with ``NEWFCS = 1``)
+"&strain"-field (Read when ``RELAX_STR = 2, 4``; optional when ``MODE = phonons`` with ``NEWFCS = 1``)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Please specify the displacement gradient tensor :math:`u_{\mu \nu}` as ::
