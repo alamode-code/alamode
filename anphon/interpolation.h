@@ -127,7 +127,9 @@ public:
                     for (auto k = 0; k < 3; ++k) {
                         tmp += std::pow(xf[i][k] - corner_coord[j][k], 2);
                     }
-                    if (tmp < dist) {
+                    // tolerance: equidistant corners are common on commensurate grids;
+                    // take the first one rather than let the rounding error decide
+                    if (tmp < dist - 1.0e-10) {
                         dist = tmp;
                         for (auto k = 0; k < 3; ++k) closest[k] = corner_coord[j][k];
                     }
@@ -172,16 +174,19 @@ public:
                     } // tmpj
                 } // tmpi
 
-                val_f[i] = val_sum / static_cast<T>(counter);
-
-            } else {
-
-                for (auto j = 0; j < 8; ++j) {
-                    v_cubes[j] = val_c[corner_index[j]];
+                if (counter > 0) {
+                    val_f[i] = val_sum / static_cast<T>(counter);
+                    continue;
                 }
-
-                val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
+                // Every mirrored cell still touches Gamma (e.g. xf is a coarse grid
+                // point): nothing to extrapolate from, use the plain value below.
             }
+
+            for (auto j = 0; j < 8; ++j) {
+                v_cubes[j] = val_c[corner_index[j]];
+            }
+
+            val_f[i] = TriLinearInterpolation(xf[i], corner_coord, v_cubes);
         }
     }
 

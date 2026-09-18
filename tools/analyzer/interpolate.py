@@ -253,6 +253,10 @@ class Interpolator:
             )
         use_log = interpolation_method != "linear"
 
+        # anphon interpolates on a grid in [0, 1); fold xk likewise so that the
+        # closest-corner ties of modified-log-linear resolve the same way.
+        xk = np.round(xk, 10) % 1.0
+
         data = np.log(np.maximum(data_coarse, eps)) if use_log else data_coarse
         corners = self.find_corner_fractional(xk)
         v = self._trilinear(data, corners, xk)
@@ -301,8 +305,14 @@ class Interpolator:
     def _avoid_gamma(self, data, corners, xk):
         # Average of the trilinear extrapolations from the mirrored neighbor
         # cells that do not contain Gamma, mirrored about the corner closest to xk.
-        others = [c for c in corners if self.get_knum(c) != 0]
-        closest = min(others, key=lambda c: np.sum((xk - c) ** 2))
+        # corner order of anphon (c000, c100, c010, c110, c001, ...) so that ties break alike
+        others = [c for c in corners[[0, 1, 3, 2, 4, 5, 7, 6]] if self.get_knum(c) != 0]
+        # first corner wins among equidistant ones (same tolerance as anphon)
+        closest, dist = None, 1.0e10
+        for c in others:
+            d = np.sum((xk - c) ** 2)
+            if d < dist - 1.0e-10:
+                closest, dist = c, d
         total = None
         count = 0
         for sx in (-1.0, 1.0):

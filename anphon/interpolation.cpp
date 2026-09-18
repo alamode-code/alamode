@@ -121,12 +121,14 @@ void TriLinearInterpolator::get_corners_regular(double *xk_i, int *corner_index,
     corner_coord[7][1] = static_cast<double>(jloc[1]) / dn_c[1];
     corner_coord[7][2] = static_cast<double>(kloc[1]) / dn_c[2];
 
-    iloc[0] = iloc[0] % igrid[0];
-    iloc[1] = iloc[1] % igrid[0];
-    jloc[0] = jloc[0] % igrid[1];
-    jloc[1] = jloc[1] % igrid[1];
-    kloc[0] = kloc[0] % igrid[2];
-    kloc[1] = kloc[1] % igrid[2];
+    // The mirrored points of interpolate_avoidgamma can have negative coordinates,
+    // and % keeps the sign of the dividend in C++.
+    iloc[0] = ((iloc[0] % igrid[0]) + igrid[0]) % igrid[0];
+    iloc[1] = ((iloc[1] % igrid[0]) + igrid[0]) % igrid[0];
+    jloc[0] = ((jloc[0] % igrid[1]) + igrid[1]) % igrid[1];
+    jloc[1] = ((jloc[1] % igrid[1]) + igrid[1]) % igrid[1];
+    kloc[0] = ((kloc[0] % igrid[2]) + igrid[2]) % igrid[2];
+    kloc[1] = ((kloc[1] % igrid[2]) + igrid[2]) % igrid[2];
 
     corner_index[0] = kloc[0] + jloc[0] * igrid[2] + iloc[0] * n23; // index of c000
     corner_index[1] = kloc[0] + jloc[0] * igrid[2] + iloc[1] * n23; // index of c100
