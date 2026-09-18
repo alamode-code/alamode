@@ -1091,10 +1091,22 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
                                                      weight_tetra[i]);
             }
 
+            // Tetrahedron weights are not invariant under the small group of k, so average them
+            // over the group members; the result equals the unreduced full-mesh sum.
             for (auto ik = 0; ik < npair_uniq; ++ik) {
-                const auto jk = triplet[ik].group[0].ks[0];
-                delta_arr[ik][ib][0] = weight_tetra[0][jk];
-                delta_arr[ik][ib][1] = weight_tetra[1][jk] - weight_tetra[2][jk];
+                const auto &group = triplet[ik].group;
+                const auto k1_rep = group[0].ks[0];
+                auto w0 = 0.0, w12 = 0.0;
+                for (const auto &member: group) {
+                    // A permutation-swapped member (S q2, S q1) carries its weight at S q1.
+                    const auto direct =
+                        kmesh_in->knum_sym(k1_rep, symmetry->SymmList[member.symnum].rotation) == member.ks[0];
+                    const auto jk = direct ? member.ks[0] : member.ks[1];
+                    w0 += weight_tetra[0][jk];
+                    w12 += weight_tetra[1][jk] - weight_tetra[2][jk];
+                }
+                delta_arr[ik][ib][0] = w0 / static_cast<double>(group.size());
+                delta_arr[ik][ib][1] = w12 / static_cast<double>(group.size());
             }
         }
     }
