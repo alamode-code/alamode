@@ -11,6 +11,7 @@
 #include "thermodynamics.h"
 #include <complex>
 #include <iostream>
+#include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
@@ -432,6 +433,103 @@ auto Thermodynamics::compute_free_energy_bubble(const System &system_in, const K
     }
 }
 
+namespace
+{
+
+// Bubble free energy of one first-leg mode (k0, s0), summed over its triplets
+// k0 + k1 + k2 = G and all (s1, s2), for ntemp temperatures sharing eval/evec:
+// fe_out[it] = sum multi |V3|^2 [ N0 / (w0 + w1 + w2) + 3 N1 / (w1 + w2 - w0) ].
+// occ[it * nk * ns + k * ns + s] holds the occupations on the full mesh.
+void fe_bubble_mode(AnharmonicCore &ac, const KpointMeshUniform &kmesh, const std::vector<SymmetryOperation> &symmlist,
+                    const int ns, const int ik_irred, const int is0, const double *const *eval,
+                    const std::complex<double> *const *const *evec, const unsigned int ntemp, const double *occ,
+                    const bool classical, double *fe_out)
+{
+    const int nk = kmesh.nk;
+    const size_t nks = static_cast<size_t>(nk) * ns;
+    const size_t ns2 = static_cast<size_t>(ns) * ns;
+    for (unsigned int it = 0; it < ntemp; ++it) fe_out[it] = 0.0;
+
+    const int knum0 = kmesh.kpoint_irred_all[ik_irred][0].knum;
+    const double omega0 = eval[knum0][is0];
+    if (omega0 < eps8) return;
+
+    std::vector<KsListGroup> triplet;
+    kmesh.get_unique_triplet_k(ik_irred, symmlist, ac.use_triplet_symmetry, true, triplet, 1);
+    const int npair_uniq = static_cast<int>(triplet.size());
+
+    ac.prepare_v3_mode(&kmesh, knum0, is0, evec);
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        AnharmonicCore::V3Workspace ws;
+        std::vector<double> v3sq(ns2);
+        std::vector<double> fe_loc(ntemp, 0.0);
+        ac.v3_setup_workspace(ws, &kmesh);
+
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 4)
+#endif
+        for (int ik = 0; ik < npair_uniq; ++ik) {
+            const int k1 = triplet[ik].group[0].ks[0];
+            const int k2 = triplet[ik].group[0].ks[1];
+            const double multi = static_cast<double>(triplet[ik].group.size());
+
+            ac.v3sq_pairs(ws, &kmesh, k1, k2, eval, evec, v3sq.data());
+
+            for (int is1 = 0; is1 < ns; ++is1) {
+                const double omega1 = eval[k1][is1];
+                if (omega1 < eps8) continue;
+                for (int is2 = 0; is2 < ns; ++is2) {
+                    const double omega2 = eval[k2][is2];
+                    if (omega2 < eps8) continue;
+
+                    const double v3_tmp = multi * v3sq[is1 * ns + is2];
+                    const double d0 = 1.0 / (omega0 + omega1 + omega2);
+                    const double d1 = 1.0 / (-omega0 + omega1 + omega2);
+
+                    for (unsigned int it = 0; it < ntemp; ++it) {
+                        const double *o = occ + it * nks;
+                        const double n0 = o[knum0 * ns + is0];
+                        const double n1 = o[k1 * ns + is1];
+                        const double n2 = o[k2 * ns + is2];
+                        double nsum0, nsum1;
+                        if (classical) {
+                            nsum0 = n0 * (n1 + n2) + n1 * n2;
+                            nsum1 = n0 * (n1 + n2) - n1 * n2;
+                        } else {
+                            nsum0 = (1.0 + n0) * (1.0 + n1 + n2) + n1 * n2;
+                            nsum1 = n0 * n1 - n1 * n2 + n2 * n0 + n0;
+                        }
+                        fe_loc[it] += v3_tmp * (nsum0 * d0 + 3.0 * nsum1 * d1);
+                    }
+                }
+            }
+        }
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        {
+            for (unsigned int it = 0; it < ntemp; ++it) fe_out[it] += fe_loc[it];
+        }
+    }
+}
+
+// Round-robin distribution of the irreducible modes over the MPI ranks.
+std::vector<int> modes_of_rank(const int nks0, const int my_rank, const int nprocs)
+{
+    std::vector<int> vks_l;
+    for (int i0 = 0; i0 < nks0; ++i0) {
+        if (i0 % nprocs == my_rank) vks_l.push_back(i0);
+    }
+    return vks_l;
+}
+
+} // namespace
+
 auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::complex<double> *const *const *evec,
                                        double *FE_bubble_out, const System &system_in,
                                        const KpointMeshUniform &kmesh_dos_in,
@@ -439,130 +537,38 @@ auto Thermodynamics::compute_FE_bubble(const double *const *eval, const std::com
                                        AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
                                        const int my_rank_in, const int nprocs_in) const -> void
 {
-    // This function calculates the free energy of the bubble diagram
-    double omega_sum[2];
-    double nsum[2];
+    // Free energy of the bubble diagram with temperature-independent phonons.
     const auto nk = kmesh_dos_in.nk;
-    const auto nk_irred = kmesh_dos_in.nk_irred;
-    const auto ns = ns_in;
-    unsigned int i0, iT;
-    unsigned int arr_cubic[3];
-    const auto nks0 = nk_irred * ns;
+    const int ns = static_cast<int>(ns_in);
     const auto NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
     const auto factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
-    double n0, n1, n2;
-    NDArray<double, 1> FE_local;
-    NDArray<double, 1> FE_tmp;
+    std::vector<double> temps(NT);
+    for (unsigned int iT = 0; iT < NT; ++iT) temps[iT] = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
+    std::vector<double> occ;
+    AnharmonicCore::tabulate_occupations(NT, temps.data(), nk, ns, eval, classical, occ);
 
-    FE_local.resize(NT);
-    FE_tmp.resize(NT);
-    std::vector<KsListGroup> triplet;
-
-    std::vector<int> vks_l;
-    vks_l.clear();
-
-    for (i0 = 0; i0 < nks0; ++i0) {
-        if (i0 % nprocs_in == my_rank_in) {
-            vks_l.push_back(i0);
-        }
+    std::vector<double> FE_local(NT, 0.0), FE_tmp(NT);
+    for (const auto iks: modes_of_rank(kmesh_dos_in.nk_irred * ns, my_rank_in, nprocs_in)) {
+        const int ik_irred = iks / ns;
+        fe_bubble_mode(anharmonic_core_in,
+                       kmesh_dos_in,
+                       symmlist_in,
+                       ns,
+                       ik_irred,
+                       iks % ns,
+                       eval,
+                       evec,
+                       NT,
+                       occ.data(),
+                       classical,
+                       FE_tmp.data());
+        const auto weight = static_cast<double>(kmesh_dos_in.kpoint_irred_all[ik_irred].size());
+        for (unsigned int iT = 0; iT < NT; ++iT) FE_local[iT] += FE_tmp[iT] * weight;
     }
 
-    unsigned int nk_tmp;
-
-    if (nks0 % nprocs_in != 0) {
-        nk_tmp = nks0 / nprocs_in + 1;
-    } else {
-        nk_tmp = nks0 / nprocs_in;
-    }
-    if (vks_l.size() < nk_tmp) {
-        vks_l.push_back(-1);
-    }
-
-    for (iT = 0; iT < NT; ++iT) FE_local[iT] = 0.0;
-
-    for (i0 = 0; i0 < nk_tmp; ++i0) {
-
-        if (vks_l[i0] != -1) {
-
-            const auto ik0 = kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns][0].knum;
-            const auto is0 = vks_l[i0] % ns;
-
-            kmesh_dos_in.get_unique_triplet_k(vks_l[i0] / ns,
-                                              symmlist_in,
-                                              anharmonic_core_in.use_triplet_symmetry,
-                                              true,
-                                              triplet,
-                                              1);
-
-            const size_t npair_uniq = triplet.size();
-
-            arr_cubic[0] = ns * ik0 + is0;
-
-            for (iT = 0; iT < NT; ++iT) FE_tmp[iT] = 0.0;
-
-            for (auto ik = 0; ik < npair_uniq; ++ik) {
-                const int multi = triplet[ik].group.size();
-
-                arr_cubic[0] = ns * ik0 + is0;
-
-                const unsigned int ik1 = triplet[ik].group[0].ks[0];
-                const unsigned int ik2 = triplet[ik].group[0].ks[1];
-
-                for (unsigned int is1 = 0; is1 < ns; ++is1) {
-                    arr_cubic[1] = ns * ik1 + is1;
-
-                    for (unsigned int is2 = 0; is2 < ns; ++is2) {
-                        arr_cubic[2] = ns * ik2 + is2;
-
-                        const auto omega0 = eval[ik0][is0];
-                        const auto omega1 = eval[ik1][is1];
-                        const auto omega2 = eval[ik2][is2];
-
-                        if (omega0 < eps8 || omega1 < eps8 || omega2 < eps8) continue;
-
-                        omega_sum[0] = 1.0 / (omega0 + omega1 + omega2);
-                        omega_sum[1] = 1.0 / (-omega0 + omega1 + omega2);
-
-                        const auto v3_tmp = std::norm(anharmonic_core_in.V3(arr_cubic)) * static_cast<double>(multi);
-
-                        for (iT = 0; iT < NT; ++iT) {
-                            const auto temp = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
-
-                            if (classical) {
-                                n0 = fC(omega0, temp);
-                                n1 = fC(omega1, temp);
-                                n2 = fC(omega2, temp);
-
-                                nsum[0] = n0 * (n1 + n2) + n1 * n2;
-                                nsum[1] = n0 * (n1 + n2) - n1 * n2;
-                            } else {
-                                n0 = fB(omega0, temp);
-                                n1 = fB(omega1, temp);
-                                n2 = fB(omega2, temp);
-
-                                nsum[0] = (1.0 + n0) * (1.0 + n1 + n2) + n1 * n2;
-                                nsum[1] = n0 * n1 - n1 * n2 + n2 * n0 + n0;
-                            }
-
-                            FE_tmp[iT] += v3_tmp * (nsum[0] * omega_sum[0] + 3.0 * nsum[1] * omega_sum[1]);
-                        }
-                    }
-                }
-            }
-            const auto weight = static_cast<double>(kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns].size());
-            for (iT = 0; iT < NT; ++iT) FE_local[iT] += FE_tmp[iT] * weight;
-        }
-    }
-
-    MPI_Allreduce(&FE_local[0], &FE_bubble_out[0], NT, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-    for (iT = 0; iT < NT; ++iT) {
-        FE_bubble_out[iT] *= factor;
-    }
-
-    FE_local.clear();
-    FE_tmp.clear();
+    MPI_Allreduce(FE_local.data(), FE_bubble_out, NT, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for (unsigned int iT = 0; iT < NT; ++iT) FE_bubble_out[iT] *= factor;
 }
 
 auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<double> ****evec_in, double *FE_bubble,
@@ -571,157 +577,38 @@ auto Thermodynamics::compute_FE_bubble_SCPH(double ***eval_in, std::complex<doub
                                             AnharmonicCore &anharmonic_core_in, const unsigned int ns_in,
                                             const int my_rank_in, const int nprocs_in) const -> void
 {
-    // This function calculates the free energy from the bubble diagram
-    // at the given temperature and lattice dynamics wavefunction
-    double omega_sum[2];
-    double n0, n1, n2, nsum[2];
+    // Same as compute_FE_bubble with the SCPH phonons of each temperature.
     const auto nk = kmesh_dos_in.nk;
-    const auto nk_reduced = kmesh_dos_in.nk_irred;
-    const auto ns = ns_in;
-    unsigned int i0, iT;
-    unsigned int arr_cubic[3];
-    const auto nks0 = nk_reduced * ns;
-    const unsigned int NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
-    const double factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
+    const int ns = static_cast<int>(ns_in);
+    const auto NT = static_cast<unsigned int>((system_in.Tmax - system_in.Tmin) / system_in.dT) + 1;
+    const auto factor = -1.0 / (static_cast<double>(nk * nk) * 48.0);
 
-    NDArray<double, 1> FE_local;
-    NDArray<double, 1> FE_tmp;
-
-    FE_local.resize(NT);
-    FE_tmp.resize(NT);
-    std::vector<KsListGroup> triplet;
-
-    std::vector<int> vks_l;
-    vks_l.clear();
-
-    for (i0 = 0; i0 < nks0; ++i0) {
-        if (i0 % nprocs_in == my_rank_in) {
-            vks_l.push_back(i0);
+    std::vector<double> FE_local(NT, 0.0), occ;
+    const auto modes = modes_of_rank(kmesh_dos_in.nk_irred * ns, my_rank_in, nprocs_in);
+    for (unsigned int iT = 0; iT < NT; ++iT) {
+        const double temp = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
+        AnharmonicCore::tabulate_occupations(1, &temp, nk, ns, eval_in[iT], classical, occ);
+        for (const auto iks: modes) {
+            const int ik_irred = iks / ns;
+            double fe_tmp = 0.0;
+            fe_bubble_mode(anharmonic_core_in,
+                           kmesh_dos_in,
+                           symmlist_in,
+                           ns,
+                           ik_irred,
+                           iks % ns,
+                           eval_in[iT],
+                           evec_in[iT],
+                           1,
+                           occ.data(),
+                           classical,
+                           &fe_tmp);
+            FE_local[iT] += fe_tmp * static_cast<double>(kmesh_dos_in.kpoint_irred_all[ik_irred].size());
         }
     }
 
-    const auto startTime = std::chrono::system_clock::now();
-    auto lastUpdate = startTime;
-    const bool isConsole = isOutputToConsole();
-
-    unsigned int nk_tmp;
-
-    if (nks0 % nprocs_in != 0) {
-        nk_tmp = nks0 / nprocs_in + 1;
-    } else {
-        nk_tmp = nks0 / nprocs_in;
-    }
-    if (vks_l.size() < nk_tmp) {
-        vks_l.push_back(-1);
-    }
-
-    const auto nks_tmp = vks_l.size();
-
-    for (iT = 0; iT < NT; ++iT) {
-        FE_local[iT] = 0.0;
-    }
-
-    if (my_rank_in == 0) {
-        std::cout << " Total number of modes per MPI process: " << nk_tmp << '\n';
-    }
-
-    for (i0 = 0; i0 < nk_tmp; ++i0) {
-
-        if (vks_l[i0] != -1) {
-
-            unsigned int const ik0 = kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns][0].knum;
-            unsigned int const is0 = vks_l[i0] % ns;
-
-            kmesh_dos_in.get_unique_triplet_k(vks_l[i0] / ns,
-                                              symmlist_in,
-                                              anharmonic_core_in.use_triplet_symmetry,
-                                              true,
-                                              triplet,
-                                              1);
-
-            const size_t npair_uniq = triplet.size();
-
-            arr_cubic[0] = ns * ik0 + is0;
-
-            for (iT = 0; iT < NT; ++iT) FE_tmp[iT] = 0.0;
-
-            for (size_t ik = 0; ik < npair_uniq; ++ik) {
-                const auto multi = static_cast<double>(triplet[ik].group.size());
-
-                arr_cubic[0] = ns * ik0 + is0;
-
-                const unsigned int ik1 = triplet[ik].group[0].ks[0];
-                const unsigned int ik2 = triplet[ik].group[0].ks[1];
-
-                for (unsigned int is1 = 0; is1 < ns; ++is1) {
-                    arr_cubic[1] = ns * ik1 + is1;
-
-                    for (unsigned int is2 = 0; is2 < ns; ++is2) {
-                        arr_cubic[2] = ns * ik2 + is2;
-
-                        for (iT = 0; iT < NT; ++iT) {
-
-                            const double temp = system_in.Tmin + static_cast<double>(iT) * system_in.dT;
-
-                            const double omega0 = eval_in[iT][ik0][is0];
-                            const double omega1 = eval_in[iT][ik1][is1];
-                            const double omega2 = eval_in[iT][ik2][is2];
-
-                            if (omega0 < eps8 || omega1 < eps8 || omega2 < eps8) continue;
-
-                            omega_sum[0] = 1.0 / (omega0 + omega1 + omega2);
-                            omega_sum[1] = 1.0 / (-omega0 + omega1 + omega2);
-
-                            const double v3_tmp =
-                                std::norm(anharmonic_core_in.V3(arr_cubic, kmesh_dos_in.xk, eval_in[iT], evec_in[iT])) *
-                                multi;
-
-                            if (classical) {
-                                n0 = fC(omega0, temp);
-                                n1 = fC(omega1, temp);
-                                n2 = fC(omega2, temp);
-
-                                nsum[0] = n0 * (n1 + n2) + n1 * n2;
-                                nsum[1] = n0 * (n1 + n2) - n1 * n2;
-                            } else {
-                                n0 = fB(omega0, temp);
-                                n1 = fB(omega1, temp);
-                                n2 = fB(omega2, temp);
-
-                                nsum[0] = (1.0 + n0) * (1.0 + n1 + n2) + n1 * n2;
-                                nsum[1] = n0 * n1 - n1 * n2 + n2 * n0 + n0;
-                            }
-
-                            FE_tmp[iT] += v3_tmp * (nsum[0] * omega_sum[0] + 3.0 * nsum[1] * omega_sum[1]);
-                        }
-                    }
-                }
-            }
-            const double weight = static_cast<double>(kmesh_dos_in.kpoint_irred_all[vks_l[i0] / ns].size());
-            for (iT = 0; iT < NT; ++iT) {
-                FE_local[iT] += FE_tmp[iT] * weight;
-            }
-        }
-        if (my_rank_in == 0) {
-            auto currentTime = std::chrono::system_clock::now();
-            const long long totalElapsedTime =
-                std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
-            const long long avgTimePerStep = (i0 == 0) ? 0 : totalElapsedTime / i0;
-            const long long timeRemaining = (i0 == 0) ? 0 : avgTimePerStep * (nks_tmp - i0 - 1);
-            displayProgressBar(i0, nks_tmp - 1, std::cout, timeRemaining, isConsole, "Fe-bubble");
-            lastUpdate = currentTime;
-            if (i0 == nk_tmp - 1) std::cout << "\n done. \n\n" << std::flush;
-        }
-    }
-
-    MPI_Allreduce(&FE_local[0], &FE_bubble[0], NT, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-    for (iT = 0; iT < NT; ++iT) {
-        FE_bubble[iT] *= factor;
-    }
-
-    FE_local.clear();
-    FE_tmp.clear();
+    MPI_Allreduce(FE_local.data(), FE_bubble, NT, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for (unsigned int iT = 0; iT < NT; ++iT) FE_bubble[iT] *= factor;
 }
 
 auto Thermodynamics::FE_scph_correction(unsigned int iT, double **eval, std::complex<double> ***evec,

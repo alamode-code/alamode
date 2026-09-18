@@ -268,6 +268,13 @@ public:
     void v3sq_pairs(V3Workspace &ws, const KpointMeshUniform *kmesh_in, const int k1, const int k2,
                     const double *const *eval_in, const std::complex<double> *const *const *evec_in, double *out) const;
 
+    // Per-thread workspace of v3sq_pairs / v3sq_triples.
+    void v3_setup_workspace(V3Workspace &ws, const KpointMeshUniform *kmesh_in) const;
+
+    // Occupation numbers occ[itemp][k * ns + s] on a mesh (0 for omega < eps8).
+    static void tabulate_occupations(const unsigned int ntemp, const double *temp_in, const int nk, const int ns,
+                                     const double *const *eval_in, const bool classical, std::vector<double> &occ);
+
     // |V3(K s0; k1 s1; k2 s2)|^2 for all (s0, s1, s2), K + k1 + k2 = G.
     // out[(s0 * ns + s1) * ns + s2]. Thread-safe; psi_K cached in ws.
     void v3sq_triples(V3Workspace &ws, const KpointMeshUniform *kmesh_in, const int kfirst, const int k1, const int k2,
@@ -397,8 +404,6 @@ private:
     void setup_quartic();
 
     V3Workspace v3_ws_mode;
-
-    void v3_setup_workspace(V3Workspace &ws, const KpointMeshUniform *kmesh_in) const;
 
     void v3_fold_first_k(V3Workspace &ws, const int kfirst, std::vector<std::complex<double>> &psi_out) const;
 };

@@ -477,12 +477,8 @@ void AnharmonicCore::v3sq_triples(V3Workspace &ws, const KpointMeshUniform *kmes
 // Three-phonon linewidth kernels (relaxation time approximation)
 // ----------------------------------------------------------------------------
 
-namespace
-{
-
-// Occupation numbers occ[itemp][k * ns + s] on a mesh.
-void tabulate_occupations(const unsigned int ntemp, const double *temp_in, const int nk, const int ns,
-                          const double *const *eval_in, const bool classical, std::vector<double> &occ)
+void AnharmonicCore::tabulate_occupations(const unsigned int ntemp, const double *temp_in, const int nk, const int ns,
+                                          const double *const *eval_in, const bool classical, std::vector<double> &occ)
 {
     const size_t nks = static_cast<size_t>(nk) * ns;
     occ.resize(static_cast<size_t>(ntemp) * nks);
@@ -504,8 +500,6 @@ void tabulate_occupations(const unsigned int ntemp, const double *temp_in, const
         }
     }
 }
-
-} // namespace
 
 void AnharmonicCore::bubble_delta_smearing(const int ns, const double omega_in, const double *w1_arr,
                                            const double *w2_arr, const int ismear, const double epsilon,
