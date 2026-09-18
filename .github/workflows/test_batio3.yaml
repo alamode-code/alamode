@@ -46,7 +46,9 @@ jobs:
           mkdir -p _build
           cd _build
           cmake -DCMAKE_BUILD_TYPE=Release ..
-          make alm anphon -j
+          # Bounded parallelism: unbounded "make -j" OOM-kills the 16 GB runner and the
+          # job ends as "canceled" with no compiler diagnostics (see test_si.yaml).
+          make alm anphon -j4
 
       - name: Prepare BaTiO3 test files
         working-directory: ./test
