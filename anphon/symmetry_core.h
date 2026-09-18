@@ -148,6 +148,7 @@ public:
 
     unsigned int nsym, nsym_ref;
     bool time_reversal_sym;
+    bool use_time_reversal = false;
     bool printsymmetry;
     double tolerance;
     std::vector<SymmetryOperation> SymmList;

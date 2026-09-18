@@ -302,24 +302,12 @@ void PHON_NS::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coa
                 }
             }
             dymat_tmp = gamma * dymat * gamma.transpose().conjugate();
+            if (kmesh_coarse->kpoint_map_symmetry[i].time_reversal) {
+                dymat_tmp = dymat_tmp.conjugate().eval();
+            }
             for (is = 0; is < ns; ++is) {
                 for (js = 0; js < ns; ++js) {
                     dymat_all[is][js][i] = dymat_tmp(is, js);
-                }
-            }
-        }
-    }
-
-    // When the point group operation S_ which transforms k into -k, i.e., (S_)k = -k,
-    // does not exist for k, we simply set D(k)=D(-k)^{*}.
-    // (This should hold even when the time-reversal symmetry breaks.)
-    for (i = 0; i < kmesh_coarse->nk; ++i) {
-        const auto ik_orig = kmesh_coarse->kpoint_map_symmetry[i].knum_orig;
-        const auto isym = kmesh_coarse->kpoint_map_symmetry[i].symmetry_op;
-        if (isym == -1) {
-            for (is = 0; is < ns; ++is) {
-                for (js = 0; js < ns; ++js) {
-                    dymat_all[is][js][i] = std::conj(dymat_all[is][js][ik_orig]);
                 }
             }
         }
@@ -371,19 +359,9 @@ void PHON_NS::replicate_dymat_for_all_kpoints(const KpointMeshUniform *kmesh_coa
 
             // Apply symmetry transformation: D'(k) = Γ D(k) Γ^†
             dymat_all[i] = gamma * dymat_inout[ik_orig] * gamma.adjoint();
-            ;
-        }
-    }
-
-    // Handle time-reversal symmetry: D(k) = D(-k)^*
-    // When point group operation S_ which transforms k into -k doesn't exist,
-    // we set D(k) = D(-k)^* (holds even when time-reversal symmetry breaks)
-    for (unsigned int i = 0; i < nk; ++i) {
-        const auto ik_orig = kmesh_coarse->kpoint_map_symmetry[i].knum_orig;
-        const auto isym = kmesh_coarse->kpoint_map_symmetry[i].symmetry_op;
-
-        if (isym == -1) {
-            dymat_all[i] = dymat_all[ik_orig].conjugate();
+            if (kmesh_coarse->kpoint_map_symmetry[i].time_reversal) {
+                dymat_all[i] = dymat_all[i].conjugate().eval();
+            }
         }
     }
 

@@ -141,7 +141,7 @@ void InputParser::parse_general_vars(PHON *phon)
                                               "EMAX",
                                               "DELTA_E",
                                               "RESTART",
-                                              // "TREVSYM",
+                                              "TREVSYM",
                                               "KD",
                                               "MASS",
                                               "TRISYM",
@@ -298,6 +298,10 @@ void InputParser::parse_general_vars(PHON *phon)
     assign_val(general_vars.classical, "CLASSICAL", general_var_dict);
     assign_val(general_vars.band_connection, "BCONNECT", general_var_dict);
     assign_val(general_vars.use_triplet_symmetry, "TRISYM", general_var_dict);
+    assign_val(general_vars.trevsym, "TREVSYM", general_var_dict);
+    if (general_vars.trevsym > 1) {
+        exit("parse_general_vars", "TREVSYM-tag can take 0 or 1.");
+    }
     assign_val(general_vars.bornsym, "BORNSYM", general_var_dict);
     assign_val(general_vars.verbosity, "VERBOSITY", general_var_dict);
 

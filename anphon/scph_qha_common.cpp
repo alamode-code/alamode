@@ -113,8 +113,12 @@ void ScphQhaCommon::setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int 
 
     kmesh_coarse = std::make_unique<KpointMeshUniform>(kmesh_coarse_input);
     kmesh_dense = std::make_unique<KpointMeshUniform>(kmesh_dense_input);
-    kmesh_coarse->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector, true);
-    kmesh_dense->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector, true);
+    kmesh_coarse->setup(symmetry->SymmList,
+                        system->get_primcell().reciprocal_lattice_vector,
+                        symmetry->use_time_reversal && symmetry->time_reversal_sym);
+    kmesh_dense->setup(symmetry->SymmList,
+                       system->get_primcell().reciprocal_lattice_vector,
+                       symmetry->use_time_reversal && symmetry->time_reversal_sym);
 
     if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " Setting up the " << mode_name << " calculations ...\n\n";

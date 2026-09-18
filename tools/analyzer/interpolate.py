@@ -66,6 +66,17 @@ class Interpolator:
                     count += 1
                     cl += 1
             if self.weight_xqc is not None:
+                if cl < int(self.weight_xqc[i]):
+                    # Time-reversal-reduced stars also contain the images -R*k.
+                    for rot in qsym:
+                        k2 = -rot.dot(k)
+                        k2 = k2 - np.round(k2)
+                        k2_index = self.get_knum(k2)
+                        if found[k2_index] == 0:
+                            found[k2_index] = 1
+                            self.bz2irb[k2_index] = i
+                            count += 1
+                            cl += 1
                 if cl != int(self.weight_xqc[i]):
                     raise RuntimeError(
                         "Symmetry unfolding failed for irreducible q-point {}: "

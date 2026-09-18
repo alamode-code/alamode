@@ -262,7 +262,9 @@ void Conductivity::setup_kappa_4ph()
     const auto neval = dynamical->neval;
 
     kmesh_4ph = std::make_unique<KpointMeshUniform>(nkc_tmp);
-    kmesh_4ph->setup(symmetry->SymmList, system->get_primcell().reciprocal_lattice_vector);
+    kmesh_4ph->setup(symmetry->SymmList,
+                     system->get_primcell().reciprocal_lattice_vector,
+                     symmetry->use_time_reversal && symmetry->time_reversal_sym);
     auto nk_4ph = kmesh_4ph->nk;
 
     // Rows of damping4 follow the 4ph mesh (KMESH_COARSE may have more

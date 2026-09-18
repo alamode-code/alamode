@@ -138,6 +138,7 @@ void Writes::writeInputVars()
         for (i = 0; i < system->mass_kd.size(); ++i) os << std::setw(10) << system->mass_kd[i];
         os << '\n';
     }
+    os << "  TREVSYM = " << symmetry->use_time_reversal << '\n';
     os << "  TOLERANCE = " << symmetry->tolerance << "; PRINTSYM = " << symmetry->printsymmetry << '\n';
     os << '\n';
 

@@ -32,6 +32,7 @@ List of supported input variables
    :ref:`MODE <anphon_mode>`, :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NBANDS <anphon_nbands>`, :ref:`NONANALYTIC <anphon_nonanalytic>`
    :ref:`PREC_EWALD <anphon_prec_ewald>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`, :ref:`TMAX <anphon_tmin>`
    :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`, :ref:`VERBOSITY <anphon_verbosity>`
+   :ref:`TREVSYM <anphon_trevsym>`
    **&scph**
    :ref:`BUBBLE <anphon_bubble>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`
    :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`
@@ -362,6 +363,30 @@ Description of input variables
       - :math:`\displaystyle \frac{1}{\beta\omega_{q}^{2}}`
 
 
+
+````
+
+.. _anphon_trevsym:
+
+* TREVSYM-tag = 0 | 1
+
+ :Default: 1
+
+ :Description: Uses time-reversal symmetry (k and -k are equivalent) in addition to the spatial
+               symmetry when reducing the uniform k-point meshes (DOS/transport, four-phonon and
+               SCPH/QHA meshes). It reduces the irreducible k-point count only in
+               non-centrosymmetric crystals, by up to a factor of two. It is ignored for magnetic
+               systems whose force-constant file was generated without time-reversal symmetry
+               (``TREVSYM = 0`` in alm). ``TREVSYM = 0`` restores the behavior of versions 1.5 to
+               1.x, which used the spatial symmetry only.
+
+               Changing ``TREVSYM`` changes the irreducible k-point set, so restart files written
+               with the other setting are rejected; use a new ``PREFIX`` or set ``TREVSYM = 0`` to
+               continue an old run. For non-centrosymmetric crystals the computed linewidths at k
+               and -k are not numerically identical with the adaptive (``ISMEAR = 2``) and
+               tetrahedron (``ISMEAR = -1``) methods, so the thermal conductivity can shift
+               slightly (within the k-mesh convergence error); fixed Gaussian smearing
+               (``ISMEAR = 1``) gives identical results.
 
 ````
 

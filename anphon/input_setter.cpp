@@ -60,6 +60,7 @@ void InputSetter::set_general_vars(PHON *phon, const GeneralInputVars &vars) con
                                                 vars.restart_4ph,
                                                 vars.use_hdf5_io);
 
+    phon->symmetry->use_time_reversal = vars.trevsym != 0;
     phon->symmetry->tolerance = vars.tolerance;
     phon->symmetry->printsymmetry = vars.printsymmetry;
 

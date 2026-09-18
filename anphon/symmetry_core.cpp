@@ -49,6 +49,7 @@ void Symmetry::set_default_variables()
 
 void Symmetry::setup_symmetry(const bool verbose)
 {
+    MPI_Bcast(&use_time_reversal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     time_reversal_sym = system->get_spin_prim().time_reversal_symm;
     SymmList.clear();
     SymmList_ref.clear();

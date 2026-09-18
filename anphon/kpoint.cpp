@@ -141,7 +141,7 @@ void Kpoint::kpoint_setups(const std::string mode)
         dos->create_kmesh_dos(nk_tmp,
                               symmetry->SymmList,
                               system->get_primcell().reciprocal_lattice_vector,
-                              symmetry->time_reversal_sym);
+                              symmetry->use_time_reversal && symmetry->time_reversal_sym);
 
         if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
@@ -676,7 +676,7 @@ void KpointMeshUniform::reduce_kpoints(const unsigned int nsym, const std::vecto
 
             // Time-reversal symmetry
 
-            if (0) {
+            if (time_reversal_symmetry) {
 
                 for (i = 0; i < 3; ++i) xk_sym[i] *= -1.0;
 
@@ -1308,6 +1308,7 @@ void KpointMeshUniform::setup_kpoint_symmetry(const std::vector<SymmetryOperatio
             if (knum_sym == knum_minus) symop_minus_at_k[ik].emplace_back(isym);
 
             if (!flag[knum_sym]) {
+                kpoint_map_symmetry[knum_sym].time_reversal = false;
                 kpoint_map_symmetry[knum_sym].symmetry_op = isym;
                 kpoint_map_symmetry[knum_sym].knum_irred_orig = ik;
                 kpoint_map_symmetry[knum_sym].knum_orig = knum;
@@ -1317,22 +1318,16 @@ void KpointMeshUniform::setup_kpoint_symmetry(const std::vector<SymmetryOperatio
         }
     }
 
-    for (auto ik = 0; ik < nk_irred; ++ik) {
-
-        const auto knum = kpoint_irred_all[ik][0].knum;
-        for (auto icrd = 0; icrd < 3; ++icrd) {
-            k[icrd] = xk[knum][icrd];
-            k_minus[icrd] = -k[icrd];
-        }
-
-        const auto knum_minus = get_knum(k_minus);
-
+    // Fill antiunitary images only after preserving all spatial mappings.
+    for (auto knum = 0; knum < nk; ++knum) {
+        if (flag[knum]) continue;
+        const auto knum_minus = kindex_minus_xk[knum];
         if (!flag[knum_minus]) {
-            kpoint_map_symmetry[knum_minus].symmetry_op = -1;
-            kpoint_map_symmetry[knum_minus].knum_irred_orig = ik;
-            kpoint_map_symmetry[knum_minus].knum_orig = knum;
-            flag[knum_minus] = 1;
+            exit("setup_kpoint_symmetry", "Cannot map the kpoint by spatial or time-reversal symmetry");
         }
+        kpoint_map_symmetry[knum] = kpoint_map_symmetry[knum_minus];
+        kpoint_map_symmetry[knum].time_reversal = true;
+        flag[knum] = 1;
     }
 }
 

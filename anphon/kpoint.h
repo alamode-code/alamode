@@ -170,7 +170,9 @@ public:
 struct KpointSymmetry
 {
 public:
-    int symmetry_op;
+    // k = (-1)^time_reversal S(symmetry_op) k_orig, modulo reciprocal lattice vectors.
+    int symmetry_op = -1;
+    bool time_reversal = false;
     unsigned int knum_irred_orig;
     unsigned int knum_orig;
 };
@@ -209,7 +211,7 @@ public:
     bool niggli_reduced = false;
 
     void setup(const std::vector<SymmetryOperation> &symmlist, const Eigen::Matrix3d &rlavec_p,
-               const bool time_reversal_symmetry = true, const bool niggli_reduce_in = false);
+               const bool time_reversal_symmetry = false, const bool niggli_reduce_in = false);
 
     int get_knum(const double xk[3]) const;
 

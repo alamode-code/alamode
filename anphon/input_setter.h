@@ -56,6 +56,7 @@ struct GeneralInputVars
     unsigned int nonanalytic = 0;
     double na_sigma = 0.1;            // NA_SIGMA
     unsigned int band_connection = 0; // BCONNECT
+    unsigned int trevsym = 1;         // TREVSYM
     unsigned int bornsym = 0;         // BORNSYM
     std::string borninfo;             // BORNINFO
     double prec_ewald = 1.0e-12;      // PREC_EWALD (used when NONANALYTIC = 3)
