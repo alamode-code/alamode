@@ -67,7 +67,12 @@ void PHON::create_pointers()
     fcs_phonon = std::make_unique<Fcs_phonon>(this);
     dielec = std::make_unique<Dielec>(this);
     ewald = std::make_unique<Ewald>(this);
-    dynamical = std::make_unique<Dynamical>(this);
+    dynamical = std::make_unique<Dynamical>(run_info,
+                                            system.get(),
+                                            kpoint.get(),
+                                            fcs_phonon.get(),
+                                            dielec.get(),
+                                            ewald.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(run_info, system.get(), dynamical.get(), integration.get(), thermodynamics.get());

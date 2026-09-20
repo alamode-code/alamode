@@ -20,7 +20,7 @@
 #include "kpoint.h"
 #include "memory.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
@@ -81,10 +81,15 @@ private:
 };
 
 
-class Dynamical: protected Pointers
+class Dynamical
 {
 public:
-    Dynamical(class PHON *);
+    Dynamical(const RunInfo &run,
+              const System *system,
+              const Kpoint *kpoint,
+              const Fcs_phonon *fcs_phonon,
+              const Dielec *dielec,
+              Ewald *ewald);
 
     ~Dynamical();
 
@@ -205,6 +210,15 @@ private:
     NDArray<double, 2> xshift_s;
     char UPLO{};
     NDArray<std::vector<int>, 2> mindist_list;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Kpoint *kpoint;
+    const Fcs_phonon *fcs_phonon;
+    const Dielec *dielec;
+    Ewald *ewald;
 };
 
 } // namespace PHON_NS
