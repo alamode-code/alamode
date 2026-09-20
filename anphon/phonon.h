@@ -80,10 +80,6 @@ public:
 
     std::unique_ptr<class Relaxation> relaxation;
 
-    void create_pointers();
-
-    void destroy_pointers();
-
     std::string mode;
 
     std::string job_title;
@@ -119,5 +115,10 @@ public:
     void execute_self_consistent_phonon() const;
 
     void setup_base() const;
+
+private:
+    void create_pointers();
+
+    void destroy_pointers();
 };
 } // namespace PHON_NS
