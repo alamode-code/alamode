@@ -148,6 +148,20 @@ void PHON::setup_base() const
                   relaxation->init_u_tensor,
                   relaxation->init_u0);
 
+    // Analysis flags that decide the required IFC orders (set on rank 0 by the
+    // parser). print_newfcs must be synchronized here: Gruneisen::setup()
+    // broadcasts it only after the IFCs are loaded.
+    MPI_Bcast(&anharmonic_core->quartic_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&gruneisen->gruneisen_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&gruneisen->print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&thermodynamics->calc_FE_bubble, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    const auto setup_fcs = [this]() {
+        fcs_phonon->setup(run_info.mode,
+                          anharmonic_core->quartic_mode,
+                          gruneisen->gruneisen_mode > 0 || thermodynamics->calc_FE_bubble,
+                          gruneisen->print_newfcs);
+    };
+
     const auto relaxing_structure =
         (run_info.mode == "SCPH" || run_info.mode == "QHA") && relaxation->relax_str != 0;
 
@@ -157,7 +171,7 @@ void PHON::setup_base() const
     int init_u0_from_modes = relaxation->init_disp_modes.empty() ? 0 : 1; // set on rank 0 by the parser
     MPI_Bcast(&init_u0_from_modes, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (init_u0_from_modes) {
-        fcs_phonon->setup(run_info.mode);
+        setup_fcs();
         symmetry->setup_symmetry(relaxing_structure, false); // reference-cell operations only (init_u0 is still empty)
         relaxation->set_init_u0_from_modes();
         system->initialize_distorted_primitive_cell(relaxation->init_u_tensor, relaxation->init_u0);
@@ -169,7 +183,7 @@ void PHON::setup_base() const
     // to decide whether Born charges are loaded.
     mode_symmetry->setup();
     dynamical->setup_dynamical();
-    if (!init_u0_from_modes) fcs_phonon->setup(run_info.mode);
+    if (!init_u0_from_modes) setup_fcs();
     phonon_velocity->setup_velocity();
     integration->setup_integration(dos->kmesh_dos.get(),
                                    phonon_velocity.get(),

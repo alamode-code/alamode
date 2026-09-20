@@ -19,11 +19,9 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <map>
 #include <string>
 #include <tuple>
-#include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
-#include "gruneisen.h"
 #include "hdf5_parser.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -31,7 +29,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "phonon.h"
 #include "stage_timer.h"
 #include "system.h"
-#include "thermodynamics.h"
 #include "timer.h"
 #include "write_phonons.h"
 
@@ -61,7 +58,8 @@ void Fcs_phonon::set_default_variables()
 void Fcs_phonon::deallocate_variables()
 {}
 
-void Fcs_phonon::setup(const std::string &mode)
+void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bool cubic_for_phonons,
+                       const bool print_newfcs)
 {
     if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " =================\n";
@@ -69,27 +67,20 @@ void Fcs_phonon::setup(const std::string &mode)
         std::cout << " =================\n\n";
     }
 
-    MPI_Bcast(&anharmonic_core->quartic_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&gruneisen->gruneisen_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    // Read below to decide the required IFC order; Gruneisen::setup() broadcasts
-    // it too late, which left maxorder rank-dependent for NEWFCS = 1.
-    MPI_Bcast(&gruneisen->print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&thermodynamics->calc_FE_bubble, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-
     if (mode == "PHONONS") {
         require_cubic = false;
         require_quartic = false;
         maxorder = 1;
 
-        if (gruneisen->gruneisen_mode > 0 || thermodynamics->calc_FE_bubble) {
+        if (cubic_for_phonons) {
             require_cubic = true;
             maxorder = 2;
         }
-        if (gruneisen->print_newfcs) {
+        if (print_newfcs) {
             require_cubic = true;
             maxorder = 2;
 
-            if (anharmonic_core->quartic_mode > 0) {
+            if (quartic_mode > 0) {
                 require_quartic = true;
                 maxorder = 3;
             }
@@ -98,7 +89,7 @@ void Fcs_phonon::setup(const std::string &mode)
     } else if (mode == "KAPPA") {
         require_cubic = true;
 
-        if (anharmonic_core->quartic_mode > 0) {
+        if (quartic_mode > 0) {
             maxorder = 3;
             require_quartic = true;
         } else {

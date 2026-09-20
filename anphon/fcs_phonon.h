@@ -200,7 +200,9 @@ public:
 
     ~Fcs_phonon();
 
-    void setup(const std::string &);
+    // The flags decide which IFC orders are loaded; they must be identical on all ranks.
+    // cubic_for_phonons: MODE = phonons needs FC3 (GRUNEISEN > 0 or FE_BUBBLE).
+    void setup(const std::string &mode, int quartic_mode, bool cubic_for_phonons, bool print_newfcs);
 
     unsigned int maxorder;
     std::string file_fcs, file_fc2, file_fc3, file_fc4;
