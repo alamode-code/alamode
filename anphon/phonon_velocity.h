@@ -16,14 +16,20 @@
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
-class PhononVelocity: protected Pointers
+class PhononVelocity
 {
 public:
-    PhononVelocity(class PHON *);
+    PhononVelocity(const RunInfo &run,
+                   const System *system,
+                   const Kpoint *kpoint,
+                   const Fcs_phonon *fcs_phonon,
+                   Ewald *ewald,
+                   const Dynamical *dynamical,
+                   const Dos *dos);
 
     ~PhononVelocity();
 
@@ -86,5 +92,15 @@ private:
 
     void calc_derivative_dynmat_k(const double *, const std::vector<FcsArrayWithCell> &,
                                   std::complex<double> ***) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Kpoint *kpoint;
+    const Fcs_phonon *fcs_phonon;
+    Ewald *ewald;
+    const Dynamical *dynamical;
+    const Dos *dos;
 };
 } // namespace PHON_NS
