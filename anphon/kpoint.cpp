@@ -30,7 +30,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Kpoint::Kpoint(PHON *phon) : Pointers(phon)
+Kpoint::Kpoint(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in) :
+    run(run_in), system(system_in), symmetry(symmetry_in)
 {
     set_default_variables();
 }

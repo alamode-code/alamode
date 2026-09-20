@@ -63,7 +63,7 @@ void PHON::create_pointers()
     writes = std::make_unique<Writes>(this);
     system = std::make_unique<System>(this);
     symmetry = std::make_unique<Symmetry>(this);
-    kpoint = std::make_unique<Kpoint>(this);
+    kpoint = std::make_unique<Kpoint>(run_info, system.get(), symmetry.get());
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, timer.get(), system.get());
     dielec = std::make_unique<Dielec>(run_info, system.get(), symmetry.get(), fcs_phonon.get());
     ewald = std::make_unique<Ewald>(run_info, system.get(), fcs_phonon.get(), dielec.get());

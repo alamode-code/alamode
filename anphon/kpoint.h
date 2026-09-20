@@ -17,7 +17,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <vector>
 #include "memory.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 #include "symmetry_core.h"
 
 namespace PHON_NS
@@ -288,10 +288,10 @@ public:
     NDArray<double, 1> kaxis;
 };
 
-class Kpoint: protected Pointers
+class Kpoint
 {
 public:
-    Kpoint(class PHON *);
+    Kpoint(const RunInfo &run, const System *system, const Symmetry *symmetry);
 
     ~Kpoint();
 
@@ -333,5 +333,11 @@ private:
     void setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
     void mpi_broadcast_kplane_vector(unsigned int, std::vector<KpointPlane> *&) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Symmetry *symmetry;
 };
 } // namespace PHON_NS
