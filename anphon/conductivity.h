@@ -20,15 +20,26 @@
 #include "kappa_result_io.h"
 #include "kpoint.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
-class Conductivity: protected Pointers
+class Conductivity
 {
 
 public:
-    Conductivity(class PHON *);
+    Conductivity(const RunInfo &run,
+                 const System *system,
+                 const Symmetry *symmetry,
+                 const Fcs_phonon *fcs_phonon,
+                 const Ewald *ewald,
+                 Dynamical *dynamical,
+                 Integration *integration,
+                 const Thermodynamics *thermodynamics,
+                 const Dos *dos,
+                 const PhononVelocity *phonon_velocity,
+                 AnharmonicCore *anharmonic_core,
+                 const Isotope *isotope);
 
     ~Conductivity();
 
@@ -177,5 +188,20 @@ private:
 
     void interpolate_data(const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                           const double *const *val_coarse_in, double **val_dense_out) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Symmetry *symmetry;
+    const Fcs_phonon *fcs_phonon;
+    const Ewald *ewald;
+    Dynamical *dynamical;
+    Integration *integration;
+    const Thermodynamics *thermodynamics;
+    const Dos *dos;
+    const PhononVelocity *phonon_velocity;
+    AnharmonicCore *anharmonic_core;
+    const Isotope *isotope;
 };
 } // namespace PHON_NS

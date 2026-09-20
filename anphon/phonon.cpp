@@ -77,7 +77,18 @@ void PHON::create_pointers()
     gruneisen = std::make_unique<Gruneisen>(this);
     relaxation = std::make_unique<Relaxation>(this);
     writes = std::make_unique<Writes>(this);
-    conductivity = std::make_unique<Conductivity>(this);
+    conductivity = std::make_unique<Conductivity>(run_info,
+                                                  system.get(),
+                                                  symmetry.get(),
+                                                  fcs_phonon.get(),
+                                                  ewald.get(),
+                                                  dynamical.get(),
+                                                  integration.get(),
+                                                  thermodynamics.get(),
+                                                  dos.get(),
+                                                  phonon_velocity.get(),
+                                                  anharmonic_core.get(),
+                                                  isotope.get());
     iterativebte = std::make_unique<Iterativebte>(run_info,
                                                   system.get(),
                                                   symmetry.get(),

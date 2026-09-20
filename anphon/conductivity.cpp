@@ -47,7 +47,30 @@ static void build_block_table(const KpointMeshUniform *kmesh_in, const double *c
                               std::vector<std::vector<int>> &lo_out, std::vector<std::vector<int>> &hi_out);
 
 
-Conductivity::Conductivity(PHON *phon) : Pointers(phon)
+Conductivity::Conductivity(const RunInfo &run_in,
+                           const System *system_in,
+                           const Symmetry *symmetry_in,
+                           const Fcs_phonon *fcs_phonon_in,
+                           const Ewald *ewald_in,
+                           Dynamical *dynamical_in,
+                           Integration *integration_in,
+                           const Thermodynamics *thermodynamics_in,
+                           const Dos *dos_in,
+                           const PhononVelocity *phonon_velocity_in,
+                           AnharmonicCore *anharmonic_core_in,
+                           const Isotope *isotope_in) :
+    run(run_in),
+    system(system_in),
+    symmetry(symmetry_in),
+    fcs_phonon(fcs_phonon_in),
+    ewald(ewald_in),
+    dynamical(dynamical_in),
+    integration(integration_in),
+    thermodynamics(thermodynamics_in),
+    dos(dos_in),
+    phonon_velocity(phonon_velocity_in),
+    anharmonic_core(anharmonic_core_in),
+    isotope(isotope_in)
 {
     set_default_variables();
 }
@@ -315,7 +338,7 @@ void Conductivity::setup_kappa_4ph()
     integration->create_adaptive_sigma4(kmesh_4ph->nk,
                                         ns,
                                         kmesh_4ph.get(),
-                                        phonon_velocity.get(),
+                                        phonon_velocity,
                                         system->get_primcell().lattice_vector,
                                         system->get_primcell().reciprocal_lattice_vector);
 
@@ -564,7 +587,7 @@ void Conductivity::setup_result_io(const int mode)
 
         if (mode == 1) {
             // 3ph
-            if (conductivity->restart_flag_3ph) {
+            if (restart_flag_3ph) {
                 if (run.verbosity > 0) {
                     std::cout << "\n";
                     std::cout << " RESTART = 1 : Restart from the interrupted run.\n";
@@ -602,7 +625,7 @@ void Conductivity::setup_result_io(const int mode)
             }
         } else if (mode == -1) {
 
-            if (conductivity->restart_flag_4ph) {
+            if (restart_flag_4ph) {
                 if (run.verbosity > 0) {
                     std::cout << "\n";
                     std::cout << " RESTART_4PH = 1 : Restart from the interrupted run.\n";
@@ -1376,7 +1399,9 @@ void Conductivity::compute_kappa()
                                       fph_rta > 0 ? kappa_3only.ptr() : nullptr,
                                       calc_coherent ? kappa_coherent.ptr() : nullptr,
                                       calc_kappa_spec ? kappa_spec.ptr() : nullptr,
-                                      isotope->include_isotope ? isotope->gamma_isotope.ptr() : nullptr);
+                                      isotope->include_isotope
+                                          ? static_cast<const double *const *>(isotope->gamma_isotope)
+                                          : nullptr);
         }
 
         gamma_total.clear();
