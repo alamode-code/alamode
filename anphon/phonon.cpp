@@ -329,6 +329,9 @@ void PHON::execute_kappa() const
         if (conductivity->solver_ibte) {
             iterativebte->setup_iterative();
             iterativebte->do_iterativebte();
+        } else {
+            writes->writeKappa();
+            writes->writeSelfenergyIsotope();
         }
     }
 }

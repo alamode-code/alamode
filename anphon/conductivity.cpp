@@ -37,7 +37,6 @@
 #include "progress_bar.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -135,8 +134,6 @@ void Conductivity::run_kappa()
     setup_kappa();
     calc_anharmonic_imagself();
     compute_kappa();
-    writes->writeKappa();
-    writes->writeSelfenergyIsotope();
 }
 
 void Conductivity::init_temperature_grid()
