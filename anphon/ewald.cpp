@@ -28,7 +28,8 @@
 
 using namespace PHON_NS;
 
-Ewald::Ewald(PHON *phon) : Pointers(phon)
+Ewald::Ewald(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in) :
+    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in)
 {
     set_default_variables();
 }

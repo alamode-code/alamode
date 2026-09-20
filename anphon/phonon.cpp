@@ -66,7 +66,7 @@ void PHON::create_pointers()
     kpoint = std::make_unique<Kpoint>(this);
     fcs_phonon = std::make_unique<Fcs_phonon>(this);
     dielec = std::make_unique<Dielec>(this);
-    ewald = std::make_unique<Ewald>(this);
+    ewald = std::make_unique<Ewald>(run_info, system.get(), fcs_phonon.get(), dielec.get());
     dynamical = std::make_unique<Dynamical>(run_info,
                                             system.get(),
                                             kpoint.get(),

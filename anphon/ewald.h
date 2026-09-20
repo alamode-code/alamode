@@ -15,7 +15,7 @@
 #include <vector>
 #include "fcs_phonon.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 #include "system.h"
 
 namespace PHON_NS
@@ -57,10 +57,10 @@ public:
     }
 };
 
-class Ewald: protected Pointers
+class Ewald
 {
 public:
-    Ewald(class PHON *);
+    Ewald(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon, const Dielec *dielec);
 
     ~Ewald();
 
@@ -141,5 +141,12 @@ private:
                               const Eigen::Matrix3d &epsilon, const Eigen::Matrix3d &epsilon_inv, const double &p,
                               double &lambda_out, double &Lmax_out, double &Gmax_out, Eigen::Vector3i &lsize,
                               Eigen::Vector3i &gsize);
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Fcs_phonon *fcs_phonon;
+    const Dielec *dielec;
 };
 } // namespace PHON_NS
