@@ -175,7 +175,7 @@ public:
 
     const std::vector<std::vector<unsigned int>> &get_atomtype_group(const bool distort = false) const;
 
-    void get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumDistList, 3> &mindist_list_out);
+    void get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumDistList, 3> &mindist_list_out) const;
 
 private:
     enum LatticeType

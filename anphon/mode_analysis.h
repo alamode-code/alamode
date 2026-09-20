@@ -15,15 +15,26 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <vector>
 #include "anharmonic_core.h"
 #include "kpoint.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
 
-class ModeAnalysis: protected Pointers
+class ModeAnalysis
 {
 public:
-    ModeAnalysis(class PHON *);
+    ModeAnalysis(const RunInfo &run,
+                 const System *system,
+                 const Symmetry *symmetry,
+                 Kpoint *kpoint,
+                 const Fcs_phonon *fcs_phonon,
+                 const Ewald *ewald,
+                 Dynamical *dynamical,
+                 const Integration *integration,
+                 const Thermodynamics *thermodynamics,
+                 const Dos *dos,
+                 AnharmonicCore *anharmonic_core,
+                 const Selfenergy *selfenergy);
 
     ~ModeAnalysis();
 
@@ -156,5 +167,20 @@ private:
                                                       const double *freq_array);
 
     void print_spectral_function(const unsigned int, const double *);
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Symmetry *symmetry;
+    Kpoint *kpoint;
+    const Fcs_phonon *fcs_phonon;
+    const Ewald *ewald;
+    Dynamical *dynamical;
+    const Integration *integration;
+    const Thermodynamics *thermodynamics;
+    const Dos *dos;
+    AnharmonicCore *anharmonic_core;
+    const Selfenergy *selfenergy;
 };
 } // namespace PHON_NS

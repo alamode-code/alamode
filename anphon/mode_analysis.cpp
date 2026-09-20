@@ -53,7 +53,30 @@ std::pair<int, int> degenerate_block(const double *w, const int ns, const int s)
 
 } // namespace
 
-ModeAnalysis::ModeAnalysis(PHON *phon) : Pointers(phon)
+ModeAnalysis::ModeAnalysis(const RunInfo &run_in,
+                           const System *system_in,
+                           const Symmetry *symmetry_in,
+                           Kpoint *kpoint_in,
+                           const Fcs_phonon *fcs_phonon_in,
+                           const Ewald *ewald_in,
+                           Dynamical *dynamical_in,
+                           const Integration *integration_in,
+                           const Thermodynamics *thermodynamics_in,
+                           const Dos *dos_in,
+                           AnharmonicCore *anharmonic_core_in,
+                           const Selfenergy *selfenergy_in) :
+    run(run_in),
+    system(system_in),
+    symmetry(symmetry_in),
+    kpoint(kpoint_in),
+    fcs_phonon(fcs_phonon_in),
+    ewald(ewald_in),
+    dynamical(dynamical_in),
+    integration(integration_in),
+    thermodynamics(thermodynamics_in),
+    dos(dos_in),
+    anharmonic_core(anharmonic_core_in),
+    selfenergy(selfenergy_in)
 {
     set_default_variables();
 }

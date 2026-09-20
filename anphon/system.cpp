@@ -1337,7 +1337,7 @@ auto System::get_spin_super() const -> const Spin &
     return spin_super;
 }
 
-void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumDistList, 3> &mindist_list_out)
+void System::get_minimum_distances(const unsigned int nsize[3], NDArray<MinimumDistList, 3> &mindist_list_out) const
 {
     // Compute mindist_list necessary to calculate dynamical matrix
     // from the real-space force constants
