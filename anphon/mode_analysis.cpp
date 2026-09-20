@@ -286,7 +286,7 @@ void ModeAnalysis::setup_mode_analysis()
                  "Sorry. SELF_W = 1 can be used only with the tetrahedron method (ISMEAR = -1).");
         }
 
-        dynamical->modify_eigenvectors();
+        dynamical->modify_eigenvectors(*dos->kmesh_dos, *dos->dymat_dos);
     }
 }
 

@@ -32,7 +32,6 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "ndarray.h"
-#include "phonon_dos.h"
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
@@ -729,7 +728,7 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
     }
 }
 
-void Dynamical::diagonalize_dynamical_all()
+void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos)
 {
     unsigned int nk;
 
@@ -817,8 +816,8 @@ void Dynamical::diagonalize_dynamical_all()
     }
 
     // k points for dos
-    if (dos->kmesh_dos.get()) {
-        nk = dos->kmesh_dos->nk;
+    if (kmesh_dos) {
+        nk = kmesh_dos->nk;
         eval_tmp.resize(nk, neval);
         if (require_eigenvectors) {
             evec_tmp.resize(nk, neval, neval);
@@ -826,8 +825,8 @@ void Dynamical::diagonalize_dynamical_all()
             evec_tmp.resize(nk, 1, 1);
         }
         get_eigenvalues_dymat(nk,
-                              dos->kmesh_dos->xk,
-                              dos->kmesh_dos->kvec_na,
+                              kmesh_dos->xk,
+                              kmesh_dos->kvec_na,
                               fcs_phonon->force_constant_with_cell[0],
                               ewald->fc2_without_dipole,
                               require_eigenvectors,
@@ -839,7 +838,7 @@ void Dynamical::diagonalize_dynamical_all()
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                     fcs_phonon->force_constant_with_cell[0],
-                                                    dos->kmesh_dos->xk[ik],
+                                                    kmesh_dos->xk[ik],
                                                     projection_directions,
                                                     evec_tmp[ik]);
                 }
@@ -848,7 +847,7 @@ void Dynamical::diagonalize_dynamical_all()
             MPI_Bcast(&evec_tmp[0][0][0], nk * neval * neval, MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
         }
 
-        dos->dymat_dos->set_eigenvals_and_eigenvecs(nk, eval_tmp, evec_tmp);
+        dymat_dos->set_eigenvals_and_eigenvecs(nk, eval_tmp, evec_tmp);
         eval_tmp.clear();
         evec_tmp.clear();
     }
@@ -862,8 +861,8 @@ void Dynamical::diagonalize_dynamical_all()
         std::cout << "done!\n";
     }
 
-    if (dos->kmesh_dos.get() && run.mode == "KAPPA") {
-        detect_imaginary_branches(*dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
+    if (kmesh_dos && run.mode == "KAPPA") {
+        detect_imaginary_branches(*kmesh_dos, dymat_dos->get_eigenvalues());
     }
 }
 
@@ -910,14 +909,14 @@ void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *co
     }
 }
 
-void Dynamical::modify_eigenvectors() const
+void Dynamical::modify_eigenvectors(const KpointMeshUniform &kmesh_dos, DymatEigenValue &dymat_dos) const
 {
     NDArray<bool, 1> flag_done;
     unsigned int ik;
     unsigned int is, js;
     NDArray<std::complex<double>, 3> evec_tmp;
 
-    const auto nk = dos->kmesh_dos->nk;
+    const auto nk = kmesh_dos.nk;
     const auto ns = neval;
 
     /*   if (run.my_rank == 0) {
@@ -933,7 +932,7 @@ void Dynamical::modify_eigenvectors() const
     for (ik = 0; ik < nk; ++ik) {
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {
-                evec_tmp[ik][is][js] = dos->dymat_dos->get_eigenvectors()[ik][is][js];
+                evec_tmp[ik][is][js] = dymat_dos.get_eigenvectors()[ik][is][js];
             }
         }
     }
@@ -944,7 +943,7 @@ void Dynamical::modify_eigenvectors() const
 
         if (!flag_done[ik]) {
 
-            const auto nk_inv = dos->kmesh_dos->kindex_minus_xk[ik];
+            const auto nk_inv = kmesh_dos.kindex_minus_xk[ik];
 
             for (is = 0; is < ns; ++is) {
                 for (js = 0; js < ns; ++js) {
@@ -958,7 +957,7 @@ void Dynamical::modify_eigenvectors() const
     }
 
     flag_done.clear();
-    dos->dymat_dos->set_eigenvectors(nk, evec_tmp);
+    dymat_dos.set_eigenvectors(nk, evec_tmp);
 
     evec_tmp.clear();
 
@@ -966,7 +965,7 @@ void Dynamical::modify_eigenvectors() const
 }
 
 void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
-                                                const std::vector<FcsArrayWithCell> &fc2_in, double *xk_in,
+                                                const std::vector<FcsArrayWithCell> &fc2_in, const double *xk_in,
                                                 const std::vector<std::vector<double>> &project_directions,
                                                 std::complex<double> **evec_out) const
 {
@@ -1165,7 +1164,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
     }
 }
 
-int Dynamical::transform_eigenvectors(double *xk_in, std::vector<double> perturb_direction, const double dk,
+int Dynamical::transform_eigenvectors(const double *xk_in, std::vector<double> perturb_direction, const double dk,
                                       Eigen::MatrixXcd &evec_sub) const
 {
     int i;

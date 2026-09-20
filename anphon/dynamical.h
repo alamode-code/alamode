@@ -102,7 +102,9 @@ public:
 
     std::unique_ptr<DymatEigenValue> dymat_band, dymat_general;
 
-    void diagonalize_dynamical_all();
+    // kmesh_dos / dymat_dos: the uniform mesh owned by Dos and the container that receives its
+    // eigenpairs; both null when the run has no uniform mesh (KPMODE != 2).
+    void diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos);
 
     void setup_dynamical();
 
@@ -111,7 +113,7 @@ public:
     void eval_k(const double *, const double *, const std::vector<FcsArrayWithCell> &, double *,
                 std::complex<double> **, const bool, int *info_out = nullptr) const;
 
-    void modify_eigenvectors() const;
+    void modify_eigenvectors(const KpointMeshUniform &kmesh_dos, DymatEigenValue &dymat_dos) const;
 
     void eval_k_ewald(const double *, const double *, const std::vector<FcsArrayWithCell> &, double *,
                       std::complex<double> **, const bool, int *info_out = nullptr) const;
@@ -139,7 +141,7 @@ public:
     void calc_nonanalytic_k_mixedspace(const double *, const double *, std::complex<double> **) const;
 
     void project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p, const std::vector<FcsArrayWithCell> &fc2_in,
-                                         double *xk_in, const std::vector<std::vector<double>> &project_directions,
+                                         const double *xk_in, const std::vector<std::vector<double>> &project_directions,
                                          std::complex<double> **evec_out) const;
 
     std::vector<std::vector<double>> get_projection_directions() const;
@@ -193,7 +195,7 @@ private:
 
     std::vector<std::vector<double>> projection_directions;
 
-    int transform_eigenvectors(double *xk_in, std::vector<double> perturb_direction, const double dk,
+    int transform_eigenvectors(const double *xk_in, std::vector<double> perturb_direction, const double dk,
                                Eigen::MatrixXcd &evec_sub) const;
 
 

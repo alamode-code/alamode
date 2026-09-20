@@ -232,7 +232,7 @@ void PHON::execute_phonons() const
 
     setup_base();
 
-    dynamical->diagonalize_dynamical_all();
+    dynamical->diagonalize_dynamical_all(dos->kmesh_dos.get(), dos->dymat_dos.get());
 
     if (mode_symmetry->print_irreps && run_info.my_rank == 0) {
         mode_symmetry->analyze_irreps_at_gamma();
@@ -288,7 +288,7 @@ void PHON::execute_kappa() const
     setup_base();
 
     if (kpoint->kpoint_mode < 3) {
-        dynamical->diagonalize_dynamical_all();
+        dynamical->diagonalize_dynamical_all(dos->kmesh_dos.get(), dos->dymat_dos.get());
     }
 
     isotope->setup_isotope_scattering(*system,
@@ -355,7 +355,7 @@ void PHON::execute_self_consistent_phonon() const
                      get_verbosity());
 
     t_stage = timer->elapsed();
-    dynamical->diagonalize_dynamical_all();
+    dynamical->diagonalize_dynamical_all(dos->kmesh_dos.get(), dos->dymat_dos.get());
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
     relaxation->setup_relaxation();
 
