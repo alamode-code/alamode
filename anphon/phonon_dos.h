@@ -17,14 +17,18 @@
 #include "integration.h"
 #include "kpoint.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
-class Dos: protected Pointers
+class Dos
 {
 public:
-    Dos(class PHON *);
+    Dos(const RunInfo &run,
+        const System *system,
+        const Dynamical *dynamical,
+        const Integration *integration,
+        const Thermodynamics *thermodynamics);
 
     ~Dos();
 
@@ -100,5 +104,13 @@ private:
                                          const std::vector<double> &energy, double *ret, const unsigned int neval,
                                          const unsigned int natmin, const int smearing_method,
                                          std::complex<double> ***evec) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Dynamical *dynamical;
+    const Integration *integration;
+    const Thermodynamics *thermodynamics;
 };
 } // namespace PHON_NS

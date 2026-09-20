@@ -70,7 +70,7 @@ void PHON::create_pointers()
     dynamical = std::make_unique<Dynamical>(this);
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
-    dos = std::make_unique<Dos>(this);
+    dos = std::make_unique<Dos>(run_info, system.get(), dynamical.get(), integration.get(), thermodynamics.get());
     phonon_velocity = std::make_unique<PhononVelocity>(run_info,
                                                        system.get(),
                                                        kpoint.get(),
