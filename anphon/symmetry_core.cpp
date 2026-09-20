@@ -17,9 +17,7 @@
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "scph.h"
 #include "system.h"
-#include "write_phonons.h"
 
 extern "C"
 {

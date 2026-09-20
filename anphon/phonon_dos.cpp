@@ -23,7 +23,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 

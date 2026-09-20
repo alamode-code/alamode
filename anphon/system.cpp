@@ -27,7 +27,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "memory.h"
 #include "mpi_common.h"
 #include "symmetry_core.h"
-#include "write_phonons.h"
 #include "xml_parser.h"
 
 #include <highfive/H5Easy.hpp>

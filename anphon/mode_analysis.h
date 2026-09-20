@@ -32,7 +32,7 @@ public:
                  Dynamical *dynamical,
                  const Integration *integration,
                  const Thermodynamics *thermodynamics,
-                 const Dos *dos,
+                 Dos *dos,
                  AnharmonicCore *anharmonic_core,
                  const Selfenergy *selfenergy);
 
@@ -179,7 +179,7 @@ private:
     Dynamical *dynamical;
     const Integration *integration;
     const Thermodynamics *thermodynamics;
-    const Dos *dos;
+    Dos *dos; // non-const: modify_eigenvectors rewrites dos->dymat_dos
     AnharmonicCore *anharmonic_core;
     const Selfenergy *selfenergy;
 };

@@ -62,7 +62,7 @@ ModeAnalysis::ModeAnalysis(const RunInfo &run_in,
                            Dynamical *dynamical_in,
                            const Integration *integration_in,
                            const Thermodynamics *thermodynamics_in,
-                           const Dos *dos_in,
+                           Dos *dos_in,
                            AnharmonicCore *anharmonic_core_in,
                            const Selfenergy *selfenergy_in) :
     run(run_in),
