@@ -208,14 +208,8 @@ private:
 class Relaxation
 {
 public:
-    Relaxation(const RunInfo &run,
-               const Timer *timer,
-               const System *system,
-               const Symmetry *symmetry,
-               const Fcs_phonon *fcs_phonon,
-               Ewald *ewald,
-               const Dynamical *dynamical,
-               AnharmonicCore *anharmonic_core);
+    Relaxation(const RunInfo &run, const Timer *timer, const System *system, const Symmetry *symmetry,
+               const Fcs_phonon *fcs_phonon, Ewald *ewald, const Dynamical *dynamical, AnharmonicCore *anharmonic_core);
 
     ~Relaxation();
 

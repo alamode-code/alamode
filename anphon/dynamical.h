@@ -84,12 +84,8 @@ private:
 class Dynamical
 {
 public:
-    Dynamical(const RunInfo &run,
-              const System *system,
-              const Kpoint *kpoint,
-              const Fcs_phonon *fcs_phonon,
-              const Dielec *dielec,
-              Ewald *ewald);
+    Dynamical(const RunInfo &run, const System *system, const Kpoint *kpoint, const Fcs_phonon *fcs_phonon,
+              const Dielec *dielec, Ewald *ewald);
 
     ~Dynamical();
 
@@ -146,7 +142,8 @@ public:
     void calc_nonanalytic_k_mixedspace(const double *, const double *, std::complex<double> **) const;
 
     void project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p, const std::vector<FcsArrayWithCell> &fc2_in,
-                                         const double *xk_in, const std::vector<std::vector<double>> &project_directions,
+                                         const double *xk_in,
+                                         const std::vector<std::vector<double>> &project_directions,
                                          std::complex<double> **evec_out) const;
 
     std::vector<std::vector<double>> get_projection_directions() const;

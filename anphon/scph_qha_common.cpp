@@ -30,20 +30,9 @@
 using namespace PHON_NS;
 
 ScphQhaCommon::ScphQhaCommon(const ScphQhaCollaborators &c) :
-    run(c.run),
-    timer(c.timer),
-    writes(c.writes),
-    system(c.system),
-    symmetry(c.symmetry),
-    kpoint(c.kpoint),
-    fcs_phonon(c.fcs_phonon),
-    dielec(c.dielec),
-    dynamical(c.dynamical),
-    integration(c.integration),
-    thermodynamics(c.thermodynamics),
-    dos(c.dos),
-    anharmonic_core(c.anharmonic_core),
-    selfenergy(c.selfenergy),
+    run(c.run), timer(c.timer), writes(c.writes), system(c.system), symmetry(c.symmetry), kpoint(c.kpoint),
+    fcs_phonon(c.fcs_phonon), dielec(c.dielec), dynamical(c.dynamical), integration(c.integration),
+    thermodynamics(c.thermodynamics), dos(c.dos), anharmonic_core(c.anharmonic_core), selfenergy(c.selfenergy),
     relaxation(c.relaxation)
 {}
 

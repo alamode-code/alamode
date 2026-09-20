@@ -32,20 +32,11 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-PhononVelocity::PhononVelocity(const RunInfo &run_in,
-                               const System *system_in,
-                               const Kpoint *kpoint_in,
-                               const Fcs_phonon *fcs_phonon_in,
-                               Ewald *ewald_in,
-                               const Dynamical *dynamical_in,
+PhononVelocity::PhononVelocity(const RunInfo &run_in, const System *system_in, const Kpoint *kpoint_in,
+                               const Fcs_phonon *fcs_phonon_in, Ewald *ewald_in, const Dynamical *dynamical_in,
                                const Dos *dos_in) :
-    run(run_in),
-    system(system_in),
-    kpoint(kpoint_in),
-    fcs_phonon(fcs_phonon_in),
-    ewald(ewald_in),
-    dynamical(dynamical_in),
-    dos(dos_in)
+    run(run_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
+    dynamical(dynamical_in), dos(dos_in)
 {
     set_default_variables();
 }

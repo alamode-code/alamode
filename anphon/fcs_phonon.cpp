@@ -141,10 +141,7 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
     print_stage_line("IFCs: MPI broadcast", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
     t_stage = timer->elapsed();
     replicate_force_constants(maxorder);
-    print_stage_line("IFCs: replicate to the unit cell",
-                     timer->elapsed() - t_stage,
-                     run.my_rank,
-                     run.verbosity);
+    print_stage_line("IFCs: replicate to the unit cell", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
 }
 
 void Fcs_phonon::replicate_force_constants(const int maxorder_in)

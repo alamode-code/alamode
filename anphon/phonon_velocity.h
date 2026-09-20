@@ -23,13 +23,8 @@ namespace PHON_NS
 class PhononVelocity
 {
 public:
-    PhononVelocity(const RunInfo &run,
-                   const System *system,
-                   const Kpoint *kpoint,
-                   const Fcs_phonon *fcs_phonon,
-                   Ewald *ewald,
-                   const Dynamical *dynamical,
-                   const Dos *dos);
+    PhononVelocity(const RunInfo &run, const System *system, const Kpoint *kpoint, const Fcs_phonon *fcs_phonon,
+                   Ewald *ewald, const Dynamical *dynamical, const Dos *dos);
 
     ~PhononVelocity();
 

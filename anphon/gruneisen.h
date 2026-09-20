@@ -23,13 +23,8 @@ namespace PHON_NS
 class Gruneisen
 {
 public:
-    Gruneisen(const RunInfo &run,
-              const Writes *writes,
-              const System *system,
-              const Kpoint *kpoint,
-              const Fcs_phonon *fcs_phonon,
-              const Dynamical *dynamical,
-              const Dos *dos,
+    Gruneisen(const RunInfo &run, const Writes *writes, const System *system, const Kpoint *kpoint,
+              const Fcs_phonon *fcs_phonon, const Dynamical *dynamical, const Dos *dos,
               const AnharmonicCore *anharmonic_core);
 
     ~Gruneisen();

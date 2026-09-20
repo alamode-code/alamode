@@ -33,8 +33,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-System::System(const RunInfo &run_in) :
-    run(run_in)
+System::System(const RunInfo &run_in) : run(run_in)
 {
     set_default_variables();
 }

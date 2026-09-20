@@ -25,9 +25,7 @@
 
 using namespace PHON_NS;
 
-Dielec::Dielec(const RunInfo &run_in,
-               const System *system_in,
-               const Symmetry *symmetry_in,
+Dielec::Dielec(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
                const Fcs_phonon *fcs_phonon_in) :
     run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in)
 {
@@ -64,8 +62,8 @@ void Dielec::deallocate_variables()
     }
 }
 
-void Dielec::init(const double emin_dos, const double emax_dos, const double delta_e_dos, const unsigned int nonanalytic,
-                  const bool print_zmode, const bool print_irreps)
+void Dielec::init(const double emin_dos, const double emax_dos, const double delta_e_dos,
+                  const unsigned int nonanalytic, const bool print_zmode, const bool print_irreps)
 {
     // This should be called after Dos::setup(). The arguments are read on rank 0 only.
 
@@ -481,10 +479,10 @@ void Dielec::compute_mode_effective_charge(const Dynamical &dynamical, std::vect
 
     if (!dynamical.get_projection_directions().empty()) {
         dynamical.project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
-                                                   fcs_phonon->force_constant_with_cell[0],
-                                                   &xk[0],
-                                                   dynamical.get_projection_directions(),
-                                                   evec);
+                                                  fcs_phonon->force_constant_with_cell[0],
+                                                  &xk[0],
+                                                  dynamical.get_projection_directions(),
+                                                  evec);
     } else {
         dynamical.diagonalize_gamma_analytic(eval, evec, true);
     }

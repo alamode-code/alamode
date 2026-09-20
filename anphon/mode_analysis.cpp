@@ -53,30 +53,14 @@ std::pair<int, int> degenerate_block(const double *w, const int ns, const int s)
 
 } // namespace
 
-ModeAnalysis::ModeAnalysis(const RunInfo &run_in,
-                           const System *system_in,
-                           const Symmetry *symmetry_in,
-                           Kpoint *kpoint_in,
-                           const Fcs_phonon *fcs_phonon_in,
-                           const Ewald *ewald_in,
-                           Dynamical *dynamical_in,
-                           const Integration *integration_in,
-                           const Thermodynamics *thermodynamics_in,
-                           Dos *dos_in,
-                           AnharmonicCore *anharmonic_core_in,
+ModeAnalysis::ModeAnalysis(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
+                           Kpoint *kpoint_in, const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
+                           Dynamical *dynamical_in, const Integration *integration_in,
+                           const Thermodynamics *thermodynamics_in, Dos *dos_in, AnharmonicCore *anharmonic_core_in,
                            const Selfenergy *selfenergy_in) :
-    run(run_in),
-    system(system_in),
-    symmetry(symmetry_in),
-    kpoint(kpoint_in),
-    fcs_phonon(fcs_phonon_in),
-    ewald(ewald_in),
-    dynamical(dynamical_in),
-    integration(integration_in),
-    thermodynamics(thermodynamics_in),
-    dos(dos_in),
-    anharmonic_core(anharmonic_core_in),
-    selfenergy(selfenergy_in)
+    run(run_in), system(system_in), symmetry(symmetry_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in),
+    ewald(ewald_in), dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in),
+    dos(dos_in), anharmonic_core(anharmonic_core_in), selfenergy(selfenergy_in)
 {
     set_default_variables();
 }
@@ -1190,8 +1174,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                     }
                     ofs << std::setw(15) << in_kayser(omega_shift) << '\n';
                 }
-                if (run.verbosity > 0)
-                    std::cout << "  Phonon frequency shift is printed in " << file_shift << '\n';
+                if (run.verbosity > 0) std::cout << "  Phonon frequency shift is printed in " << file_shift << '\n';
             }
         }
     }

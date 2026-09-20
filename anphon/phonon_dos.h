@@ -24,10 +24,7 @@ namespace PHON_NS
 class Dos
 {
 public:
-    Dos(const RunInfo &run,
-        const System *system,
-        const Dynamical *dynamical,
-        const Integration *integration,
+    Dos(const RunInfo &run, const System *system, const Dynamical *dynamical, const Integration *integration,
         const Thermodynamics *thermodynamics);
 
     ~Dos();

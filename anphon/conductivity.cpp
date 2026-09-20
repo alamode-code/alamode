@@ -47,30 +47,14 @@ static void build_block_table(const KpointMeshUniform *kmesh_in, const double *c
                               std::vector<std::vector<int>> &lo_out, std::vector<std::vector<int>> &hi_out);
 
 
-Conductivity::Conductivity(const RunInfo &run_in,
-                           const System *system_in,
-                           const Symmetry *symmetry_in,
-                           const Fcs_phonon *fcs_phonon_in,
-                           const Ewald *ewald_in,
-                           Dynamical *dynamical_in,
-                           Integration *integration_in,
-                           const Thermodynamics *thermodynamics_in,
-                           const Dos *dos_in,
-                           const PhononVelocity *phonon_velocity_in,
-                           AnharmonicCore *anharmonic_core_in,
+Conductivity::Conductivity(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
+                           const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, Dynamical *dynamical_in,
+                           Integration *integration_in, const Thermodynamics *thermodynamics_in, const Dos *dos_in,
+                           const PhononVelocity *phonon_velocity_in, AnharmonicCore *anharmonic_core_in,
                            const Isotope *isotope_in) :
-    run(run_in),
-    system(system_in),
-    symmetry(symmetry_in),
-    fcs_phonon(fcs_phonon_in),
-    ewald(ewald_in),
-    dynamical(dynamical_in),
-    integration(integration_in),
-    thermodynamics(thermodynamics_in),
-    dos(dos_in),
-    phonon_velocity(phonon_velocity_in),
-    anharmonic_core(anharmonic_core_in),
-    isotope(isotope_in)
+    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
+    dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in), dos(dos_in),
+    phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in)
 {
     set_default_variables();
 }
@@ -972,8 +956,7 @@ void Conductivity::calc_anharmonic_imagself3()
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            if (run.verbosity > 0)
-                displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "3-phonon");
+            if (run.verbosity > 0) displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "3-phonon");
             lastUpdate = currentTime;
             if (i == nk_tmp - 1 && run.verbosity > 0) std::cout << "\n done. \n\n" << std::flush;
         }
@@ -1097,8 +1080,7 @@ void Conductivity::calc_anharmonic_imagself4()
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            if (run.verbosity > 0)
-                displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "4-phonon");
+            if (run.verbosity > 0) displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "4-phonon");
             lastUpdate = currentTime;
             if (i == nk_tmp - 1 && run.verbosity > 0) std::cout << "\n done. \n\n" << std::flush;
         }
@@ -1395,13 +1377,12 @@ void Conductivity::compute_kappa()
 
         if (use_h5_io) {
             result_io_h5->transport_formulation = active_transport_formulation(dynamical->nonanalytic != 0);
-            result_io_h5->store_kappa(kappa,
-                                      fph_rta > 0 ? kappa_3only.ptr() : nullptr,
-                                      calc_coherent ? kappa_coherent.ptr() : nullptr,
-                                      calc_kappa_spec ? kappa_spec.ptr() : nullptr,
-                                      isotope->include_isotope
-                                          ? static_cast<const double *const *>(isotope->gamma_isotope)
-                                          : nullptr);
+            result_io_h5->store_kappa(
+                kappa,
+                fph_rta > 0 ? kappa_3only.ptr() : nullptr,
+                calc_coherent ? kappa_coherent.ptr() : nullptr,
+                calc_kappa_spec ? kappa_spec.ptr() : nullptr,
+                isotope->include_isotope ? static_cast<const double *const *>(isotope->gamma_isotope) : nullptr);
         }
 
         gamma_total.clear();

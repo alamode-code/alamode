@@ -40,12 +40,8 @@
 
 using namespace PHON_NS;
 
-Dynamical::Dynamical(const RunInfo &run_in,
-                     const System *system_in,
-                     const Kpoint *kpoint_in,
-                     const Fcs_phonon *fcs_phonon_in,
-                     const Dielec *dielec_in,
-                     Ewald *ewald_in) :
+Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Kpoint *kpoint_in,
+                     const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, Ewald *ewald_in) :
     run(run_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in), ewald(ewald_in)
 {
     set_default_variables();

@@ -26,15 +26,9 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Dos::Dos(const RunInfo &run_in,
-         const System *system_in,
-         const Dynamical *dynamical_in,
-         const Integration *integration_in,
-         const Thermodynamics *thermodynamics_in) :
-    run(run_in),
-    system(system_in),
-    dynamical(dynamical_in),
-    integration(integration_in),
+Dos::Dos(const RunInfo &run_in, const System *system_in, const Dynamical *dynamical_in,
+         const Integration *integration_in, const Thermodynamics *thermodynamics_in) :
+    run(run_in), system(system_in), dynamical(dynamical_in), integration(integration_in),
     thermodynamics(thermodynamics_in)
 {
     set_default_variables();
@@ -292,8 +286,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     NDArray<double, 1> weight;
     NDArray<double, 2> proj;
 
-    if (run.my_rank == 0 && run.verbosity > 0)
-        std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
+    if (run.my_rank == 0 && run.verbosity > 0) std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
 
     kmap_identity.resize(nk);
     proj.resize(neval, nk);

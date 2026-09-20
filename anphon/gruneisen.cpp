@@ -30,22 +30,11 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Gruneisen::Gruneisen(const RunInfo &run_in,
-                     const Writes *writes_in,
-                     const System *system_in,
-                     const Kpoint *kpoint_in,
-                     const Fcs_phonon *fcs_phonon_in,
-                     const Dynamical *dynamical_in,
-                     const Dos *dos_in,
+Gruneisen::Gruneisen(const RunInfo &run_in, const Writes *writes_in, const System *system_in, const Kpoint *kpoint_in,
+                     const Fcs_phonon *fcs_phonon_in, const Dynamical *dynamical_in, const Dos *dos_in,
                      const AnharmonicCore *anharmonic_core_in) :
-    run(run_in),
-    writes(writes_in),
-    system(system_in),
-    kpoint(kpoint_in),
-    fcs_phonon(fcs_phonon_in),
-    dynamical(dynamical_in),
-    dos(dos_in),
-    anharmonic_core(anharmonic_core_in)
+    run(run_in), writes(writes_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in),
+    dynamical(dynamical_in), dos(dos_in), anharmonic_core(anharmonic_core_in)
 {
     set_default_variables();
 };

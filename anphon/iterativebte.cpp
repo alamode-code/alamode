@@ -35,32 +35,14 @@
 
 using namespace PHON_NS;
 
-Iterativebte::Iterativebte(const RunInfo &run_in,
-                           const System *system_in,
-                           const Symmetry *symmetry_in,
-                           const Fcs_phonon *fcs_phonon_in,
-                           const Dynamical *dynamical_in,
-                           Integration *integration_in,
-                           const Thermodynamics *thermodynamics_in,
-                           const Dos *dos_in,
-                           const PhononVelocity *phonon_velocity_in,
-                           AnharmonicCore *anharmonic_core_in,
-                           const Isotope *isotope_in,
-                           const Writes *writes_in,
-                           Conductivity *conductivity_in) :
-    run(run_in),
-    system(system_in),
-    symmetry(symmetry_in),
-    fcs_phonon(fcs_phonon_in),
-    dynamical(dynamical_in),
-    integration(integration_in),
-    thermodynamics(thermodynamics_in),
-    dos(dos_in),
-    phonon_velocity(phonon_velocity_in),
-    anharmonic_core(anharmonic_core_in),
-    isotope(isotope_in),
-    writes(writes_in),
-    conductivity(conductivity_in)
+Iterativebte::Iterativebte(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
+                           const Fcs_phonon *fcs_phonon_in, const Dynamical *dynamical_in, Integration *integration_in,
+                           const Thermodynamics *thermodynamics_in, const Dos *dos_in,
+                           const PhononVelocity *phonon_velocity_in, AnharmonicCore *anharmonic_core_in,
+                           const Isotope *isotope_in, const Writes *writes_in, Conductivity *conductivity_in) :
+    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), dynamical(dynamical_in),
+    integration(integration_in), thermodynamics(thermodynamics_in), dos(dos_in), phonon_velocity(phonon_velocity_in),
+    anharmonic_core(anharmonic_core_in), isotope(isotope_in), writes(writes_in), conductivity(conductivity_in)
 {
     set_default_variables();
 }

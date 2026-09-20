@@ -67,12 +67,8 @@ void PHON::create_pointers()
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, timer.get(), system.get());
     dielec = std::make_unique<Dielec>(run_info, system.get(), symmetry.get(), fcs_phonon.get());
     ewald = std::make_unique<Ewald>(run_info, system.get(), fcs_phonon.get(), dielec.get());
-    dynamical = std::make_unique<Dynamical>(run_info,
-                                            system.get(),
-                                            kpoint.get(),
-                                            fcs_phonon.get(),
-                                            dielec.get(),
-                                            ewald.get());
+    dynamical =
+        std::make_unique<Dynamical>(run_info, system.get(), kpoint.get(), fcs_phonon.get(), dielec.get(), ewald.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(run_info, system.get(), dynamical.get(), integration.get(), thermodynamics.get());
@@ -156,20 +152,20 @@ void PHON::create_pointers()
                                                    anharmonic_core.get(),
                                                    selfenergy.get());
     const ScphQhaCollaborators scph_qha_collaborators{run_info,
-                                                          timer.get(),
-                                                          writes.get(),
-                                                          system.get(),
-                                                          symmetry.get(),
-                                                          kpoint.get(),
-                                                          fcs_phonon.get(),
-                                                          dielec.get(),
-                                                          dynamical.get(),
-                                                          integration.get(),
-                                                          thermodynamics.get(),
-                                                          dos.get(),
-                                                          anharmonic_core.get(),
-                                                          selfenergy.get(),
-                                                          relaxation.get()};
+                                                      timer.get(),
+                                                      writes.get(),
+                                                      system.get(),
+                                                      symmetry.get(),
+                                                      kpoint.get(),
+                                                      fcs_phonon.get(),
+                                                      dielec.get(),
+                                                      dynamical.get(),
+                                                      integration.get(),
+                                                      thermodynamics.get(),
+                                                      dos.get(),
+                                                      anharmonic_core.get(),
+                                                      selfenergy.get(),
+                                                      relaxation.get()};
     scph = std::make_unique<Scph>(scph_qha_collaborators);
     qha = std::make_unique<Qha>(scph_qha_collaborators);
 }
@@ -255,8 +251,7 @@ void PHON::setup_base() const
                           gruneisen->print_newfcs);
     };
 
-    const auto relaxing_structure =
-        (run_info.mode == "SCPH" || run_info.mode == "QHA") && relaxation->relax_str != 0;
+    const auto relaxing_structure = (run_info.mode == "SCPH" || run_info.mode == "QHA") && relaxation->relax_str != 0;
 
     // &displace DISPMODE = 2 resolves the initial displacements from the harmonic IFCs and
     // the symmetry of the reference cell, so both are prepared before the distorted cell

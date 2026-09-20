@@ -42,22 +42,11 @@ extern "C"
 
 using namespace PHON_NS;
 
-Relaxation::Relaxation(const RunInfo &run_in,
-                       const Timer *timer_in,
-                       const System *system_in,
-                       const Symmetry *symmetry_in,
-                       const Fcs_phonon *fcs_phonon_in,
-                       Ewald *ewald_in,
-                       const Dynamical *dynamical_in,
-                       AnharmonicCore *anharmonic_core_in) :
-    run(run_in),
-    timer(timer_in),
-    system(system_in),
-    symmetry(symmetry_in),
-    fcs_phonon(fcs_phonon_in),
-    ewald(ewald_in),
-    dynamical(dynamical_in),
-    anharmonic_core(anharmonic_core_in)
+Relaxation::Relaxation(const RunInfo &run_in, const Timer *timer_in, const System *system_in,
+                       const Symmetry *symmetry_in, const Fcs_phonon *fcs_phonon_in, Ewald *ewald_in,
+                       const Dynamical *dynamical_in, AnharmonicCore *anharmonic_core_in) :
+    run(run_in), timer(timer_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
+    dynamical(dynamical_in), anharmonic_core(anharmonic_core_in)
 {
     set_default_variables();
     derivative_ifc = std::make_unique<DerivativeIFC>(*system,
