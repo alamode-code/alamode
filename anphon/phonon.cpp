@@ -176,30 +176,31 @@ void PHON::create_pointers()
 
 void PHON::destroy_pointers()
 {
-    timer.reset();
-    system.reset();
-    symmetry.reset();
-    kpoint.reset();
-    fcs_phonon.reset();
-    dynamical.reset();
-    integration.reset();
-    phonon_velocity.reset();
-    thermodynamics.reset();
-    anharmonic_core.reset();
-    mode_analysis.reset();
-    mode_symmetry.reset();
-    selfenergy.reset();
-    conductivity.reset();
-    writes.reset();
-    dos.reset();
-    gruneisen.reset();
-    isotope.reset();
+    // Reverse of create_pointers(): an object never outlives the collaborators it observes.
+    qha.reset();
     scph.reset();
+    mode_analysis.reset();
+    iterativebte.reset();
+    conductivity.reset();
+    relaxation.reset();
+    gruneisen.reset();
+    mode_symmetry.reset();
+    isotope.reset();
+    selfenergy.reset();
+    anharmonic_core.reset();
+    phonon_velocity.reset();
+    dos.reset();
+    thermodynamics.reset();
+    integration.reset();
+    dynamical.reset();
     ewald.reset();
     dielec.reset();
-    iterativebte.reset();
-    qha.reset();
-    relaxation.reset();
+    fcs_phonon.reset();
+    kpoint.reset();
+    symmetry.reset();
+    system.reset();
+    writes.reset();
+    timer.reset();
 }
 
 void PHON::set_verbosity(const unsigned int verbosity_in)
