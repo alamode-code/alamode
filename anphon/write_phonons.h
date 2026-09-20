@@ -107,8 +107,6 @@ public:
 
     unsigned int getVerbosity() const;
 
-    void setVerbosity(unsigned int verbosity_in);
-
     bool getPrintMSD() const;
 
     bool getPrintUcorr() const;

@@ -862,7 +862,7 @@ void Dynamical::diagonalize_dynamical_all()
         std::cout << "done!\n";
     }
 
-    if (dos->kmesh_dos.get() && phon->mode == "KAPPA") {
+    if (dos->kmesh_dos.get() && run.mode == "KAPPA") {
         detect_imaginary_branches(*dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
     }
 }

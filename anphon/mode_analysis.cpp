@@ -322,7 +322,7 @@ void ModeAnalysis::run_mode_analysis()
 
         if (selfenergy_mode && interpolate) run_interpolated_spectrum(NT, T_arr);
 
-        if (mympi->my_rank == 0 && selfenergy_mode && phon->use_hdf5_io) write_results_hdf5(NT, T_arr);
+        if (mympi->my_rank == 0 && selfenergy_mode && run.use_hdf5_io) write_results_hdf5(NT, T_arr);
     }
 
     T_arr.clear();
@@ -517,7 +517,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
                 for (auto &v: c) v *= to_kayser_inv;
 
     if (mympi->my_rank == 0 && write_text()) {
-        const auto file = phon->job_title + ".spectrum";
+        const auto file = run.job_title + ".spectrum";
         std::ofstream ofs(file);
         if (!ofs) exit("run_interpolated_spectrum", "Cannot open the spectrum file");
         ofs << "## Interpolated spectral function A(q, omega) [1/cm^-1] from the bubble self-energy matrix\n";
@@ -541,13 +541,13 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
 
 bool ModeAnalysis::write_text() const
 {
-    return !(selfenergy_mode && phon->use_hdf5_io);
+    return !(selfenergy_mode && run.use_hdf5_io);
 }
 
 void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr) const
 {
     using namespace H5Easy;
-    const auto filename = phon->job_title + ".selfenergy.h5";
+    const auto filename = run.job_title + ".selfenergy.h5";
     HighFive::File fh(filename, HighFive::File::Overwrite);
     write_input_variables_h5(fh, writes->getInputVariables());
 
@@ -827,7 +827,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
             for (j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping_a[j]);
         }
         if (mympi->my_rank == 0 && write_text()) {
-            auto file_linewidth = phon->job_title + ".Gamma." + std::to_string(i + 1);
+            auto file_linewidth = run.job_title + ".Gamma." + std::to_string(i + 1);
             ofs_linewidth.open(file_linewidth.c_str(), std::ios::out);
             if (!ofs_linewidth) exit("print_selfenergy", "Cannot open file file_linewidth");
 
@@ -910,7 +910,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                 }
             }
             if (mympi->my_rank == 0 && write_text()) {
-                auto file_shift = phon->job_title + ".Shift." + std::to_string(i + 1);
+                auto file_shift = run.job_title + ".Shift." + std::to_string(i + 1);
                 ofs_shift.open(file_shift.c_str(), std::ios::out);
                 if (!ofs_shift) exit("print_selfenergy", "Cannot open file file_shift");
 
@@ -1117,7 +1117,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
             for (unsigned int j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping[j]);
         }
         if (mympi->my_rank == 0 && write_text()) {
-            const auto file_linewidth = phon->job_title + ".Gamma." + std::to_string(number_offset + i + 1);
+            const auto file_linewidth = run.job_title + ".Gamma." + std::to_string(number_offset + i + 1);
             std::ofstream ofs(file_linewidth);
             if (!ofs) exit("print_selfenergy_offmesh", "Cannot open file file_linewidth");
             ofs << "# xk = ";
@@ -1145,7 +1145,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                 if (anharmonic_core->quartic_mode == 1) r.shift_loop[j] = in_kayser(-self_b[j].real());
             }
             if (write_text()) {
-                const auto file_shift = phon->job_title + ".Shift." + std::to_string(number_offset + i + 1);
+                const auto file_shift = run.job_title + ".Shift." + std::to_string(number_offset + i + 1);
                 std::ofstream ofs(file_shift);
                 if (!ofs) exit("print_selfenergy_offmesh", "Cannot open file file_shift");
                 ofs << "# xk = ";
@@ -1302,7 +1302,7 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
         MPI_Reduce(&val_loc[0][0], &val[0][0], npair * nb, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD);
 
         if (mympi->my_rank == 0) {
-            const auto file = phon->job_title + "." + tag + "." + std::to_string(number_offset + i + 1);
+            const auto file = run.job_title + "." + tag + "." + std::to_string(number_offset + i + 1);
             std::ofstream ofs(file);
             if (!ofs) exit("print_vertex_offmesh", "Cannot open the output file");
             ofs << "# xk = ";
@@ -1455,7 +1455,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
             }
         }
         if (mympi->my_rank == 0 && write_text()) {
-            std::string file_omega = phon->job_title + ".fw." + std::to_string(i + 1);
+            std::string file_omega = run.job_title + ".fw." + std::to_string(i + 1);
             ofs_omega.open(file_omega.c_str(), std::ios::out);
             if (!ofs_omega) exit("print_frequency_resolved_final_state", "Cannot open file file_omega");
 
@@ -1682,7 +1682,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
             }
         }
         if (mympi->my_rank == 0 && write_text()) {
-            const auto file_omega = phon->job_title + ".fw." + std::to_string(number_offset + i + 1);
+            const auto file_omega = run.job_title + ".fw." + std::to_string(number_offset + i + 1);
             std::ofstream ofs_omega(file_omega);
             if (!ofs_omega) exit("print_frequency_resolved_final_state_offmesh", "Cannot open file file_omega");
             ofs_omega << "# xk = ";
@@ -2047,7 +2047,7 @@ void ModeAnalysis::print_V3_elements() const
         calc_V3norm2(knum, snum, triplet, v3norm);
 
         if (mympi->my_rank == 0) {
-            auto file_V3 = phon->job_title + ".V3." + std::to_string(i + 1);
+            auto file_V3 = run.job_title + ".V3." + std::to_string(i + 1);
             ofs_V3.open(file_V3.c_str(), std::ios::out);
             if (!ofs_V3) exit("run_mode_analysis", "Cannot open file file_V3");
 
@@ -2131,7 +2131,7 @@ void ModeAnalysis::print_V4_elements() const
         calc_V4norm2(knum, snum, quartet, v4norm);
 
         if (mympi->my_rank == 0) {
-            std::string file_V4 = phon->job_title + ".V4." + std::to_string(i + 1);
+            std::string file_V4 = run.job_title + ".V4." + std::to_string(i + 1);
             ofs_V4.open(file_V4.c_str(), std::ios::out);
             if (!ofs_V4) exit("run_mode_analysis", "Cannot open file file_V4");
 
@@ -2339,7 +2339,7 @@ void ModeAnalysis::print_Phi3_elements() const
         calc_Phi3(knum, snum, triplet, phi3);
 
         if (mympi->my_rank == 0) {
-            auto file_V3 = phon->job_title + ".Phi3." + std::to_string(i + 1);
+            auto file_V3 = run.job_title + ".Phi3." + std::to_string(i + 1);
             ofs_V3.open(file_V3.c_str(), std::ios::out);
             if (!ofs_V3) exit("print_phi3_element", "Cannot open file file_V3");
 
@@ -2421,7 +2421,7 @@ void ModeAnalysis::print_Phi4_elements() const
         calc_Phi4(knum, snum, quartet, phi4);
 
         if (mympi->my_rank == 0) {
-            std::string file_V4 = phon->job_title + ".Phi4." + std::to_string(i + 1);
+            std::string file_V4 = run.job_title + ".Phi4." + std::to_string(i + 1);
             ofs_V4.open(file_V4.c_str(), std::ios::out);
             if (!ofs_V4) exit("print_phi4_element", "Cannot open file file_V3");
 
@@ -2664,7 +2664,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
             }
 
             if (write_text()) {
-                std::string file_self = phon->job_title + ".Self." + std::to_string(i + 1);
+                std::string file_self = run.job_title + ".Self." + std::to_string(i + 1);
                 ofs_self.open(file_self.c_str(), std::ios::out);
                 if (!ofs_self) exit("run_mode_analysis", "Cannot open file file_shift");
                 ofs_self << "# xk = ";
@@ -2793,7 +2793,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                 std::cout << "  Mode index = " << std::setw(5) << snum + 1 << '\n';
             }
             if (write_text()) {
-                const auto file_self = phon->job_title + ".Self." + std::to_string(number_offset + i + 1);
+                const auto file_self = run.job_title + ".Self." + std::to_string(number_offset + i + 1);
                 ofs_self.open(file_self);
                 if (!ofs_self) exit("print_spectral_function_offmesh", "Cannot open file file_self");
                 ofs_self << "# xk = ";

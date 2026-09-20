@@ -103,8 +103,8 @@ void Writes::writeInputVars()
     os << " Input variables:\n";
     os << " -----------------------------------------------------------------\n";
     os << " General:\n";
-    os << "  PREFIX = " << phon->job_title << '\n';
-    os << "  MODE = " << phon->mode;
+    os << "  PREFIX = " << run.job_title << '\n';
+    os << "  MODE = " << run.mode;
     if (mode_analysis->selfenergy_mode) os << " (selfenergy)";
     os << '\n';
     os << "  FCSFILE = " << fcs_phonon->file_fcs << '\n';
@@ -163,15 +163,15 @@ void Writes::writeInputVars()
     os << '\n';
     os << "  CLASSICAL = " << thermodynamics->classical << '\n';
     os << "  BCONNECT = " << dynamical->band_connection << '\n';
-    if (phon->mode == "SCPH" || phon->mode == "QHA" || fcs_phonon->fc2_temperature >= 0.0) {
-        os << "  ALLOW_UNCONVERGED = " << phon->allow_unconverged << '\n';
+    if (run.mode == "SCPH" || run.mode == "QHA" || fcs_phonon->fc2_temperature >= 0.0) {
+        os << "  ALLOW_UNCONVERGED = " << run.allow_unconverged << '\n';
     }
     os << '\n';
 
-    if (phon->mode == "KAPPA") {
+    if (run.mode == "KAPPA") {
         os << "  RESTART = " << conductivity->get_restart_conductivity(3) << '\n';
         os << "  TRISYM = " << anharmonic_core->use_triplet_symmetry << "\n\n";
-    } else if (phon->mode == "SCPH") {
+    } else if (run.mode == "SCPH") {
         os << " Scph:" << '\n';
         print_mesh("KMESH_INTERPOLATE", scph->kmesh_interpolate);
         print_mesh("KMESH_SCPH       ", scph->kmesh_scph);
@@ -191,7 +191,7 @@ void Writes::writeInputVars()
         // variables related to structural optimization
         os << '\n';
         os << "  RELAX_STR = " << relaxation->relax_str << '\n';
-    } else if (phon->mode == "QHA") {
+    } else if (run.mode == "QHA") {
         os << " QHA:" << '\n';
         print_mesh("KMESH_INTERPOLATE", qha->kmesh_interpolate);
         print_mesh("KMESH_QHA        ", qha->kmesh_qha);
@@ -204,7 +204,7 @@ void Writes::writeInputVars()
     }
     os << '\n';
 
-    if ((phon->mode == "SCPH" || phon->mode == "QHA") && relaxation->relax_str != 0) {
+    if ((run.mode == "SCPH" || run.mode == "QHA") && relaxation->relax_str != 0) {
         os << " Structure_opt:" << '\n';
 
         os << "  RELAX_ALGO = " << relaxation->relax_algo << '\n';
@@ -235,7 +235,7 @@ void Writes::writeInputVars()
         os << "  ADD_HESS_DIAG = " << relaxation->add_hess_diag << '\n';
         os << "  STAT_PRESSURE = " << relaxation->stat_pressure << '\n';
 
-        if (phon->mode == "QHA" && relaxation->relax_str == 2) {
+        if (run.mode == "QHA" && relaxation->relax_str == 2) {
             os << "  QHA_SCHEME = " << to_int(qha->qha_scheme) << '\n';
         }
         if (uses_strain_coupling(to_relaxation_str_mode(relaxation->relax_str))) {
@@ -300,7 +300,7 @@ void Writes::writeInputVars()
         os << '\n';
     }
 
-    if (phon->mode == "KAPPA" && !mode_analysis->selfenergy_mode) {
+    if (run.mode == "KAPPA" && !mode_analysis->selfenergy_mode) {
         std::string solver = "RTA";
         if (conductivity->solver_ibte) {
             solver = iterativebte->use_direct ? "DBTE" : iterativebte->use_variational ? "VBTE" : "IBTE";
@@ -346,10 +346,10 @@ void Writes::writeInputVars()
         os << '\n';
     }
 
-    if (phon->mode == "PHONONS" || (phon->mode == "KAPPA" && !mode_analysis->ks_input.empty())) {
+    if (run.mode == "PHONONS" || (run.mode == "KAPPA" && !mode_analysis->ks_input.empty())) {
         os << " Analysis:" << '\n';
     }
-    if (phon->mode == "PHONONS") {
+    if (run.mode == "PHONONS") {
         os << "  PRINTEVAL = " << print_eval << "; PRINTEVEC = " << dynamical->print_eigenvectors
            << "; PRINTVEL = " << phonon_velocity->print_velocity << '\n';
         os << "  PRINTPR = " << dynamical->participation_ratio << "; PRINTXSF = " << print_xsf
@@ -400,7 +400,7 @@ void Writes::writeInputVars()
             os << "  QUARTIC = " << anharmonic_core->quartic_mode << '\n';
         }
 
-    } else if (phon->mode == "KAPPA") {
+    } else if (run.mode == "KAPPA") {
         // Legacy mode analysis driven by KS_INPUT in the &analysis field
         // (MODE = selfenergy lists its own tags above).
         if (!mode_analysis->ks_input.empty()) {
@@ -410,9 +410,9 @@ void Writes::writeInputVars()
                << "; SELF_W = " << ma.spectral_func << "; FSTATE_W = " << ma.calc_fstate_omega << '\n';
             os << "  PRINTV3 = " << ma.print_V3 << "; PRINTV4 = " << ma.print_V4 << '\n';
         }
-    } else if (phon->mode == "SCPH") {
+    } else if (run.mode == "SCPH") {
         // Do nothing
-    } else if (phon->mode == "QHA") {
+    } else if (run.mode == "QHA") {
         // Do nothing
     } else {
         exit("writeInputVars", "This cannot happen");
@@ -668,12 +668,12 @@ void Writes::writePhononInfo()
 
     if (print_anime && getVerbosity() > 0) {
         if (anime_format == "XSF" || anime_format == "AXSF") {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left
-                      << phon->job_title + ".anime*.axsf";
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left
+                      << run.job_title + ".anime*.axsf";
             std::cout << " : AXSF files for animate phonon modes\n";
         } else if (anime_format == "XYZ") {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left
-                      << phon->job_title + ".anime*.xyz";
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left
+                      << run.job_title + ".anime*.xyz";
             std::cout << " : XYZ files for animate phonon modes\n";
         }
     }
@@ -690,7 +690,7 @@ void Writes::writePhononInfo()
 void Writes::writePhononBands() const
 {
     std::ofstream ofs_bands;
-    auto file_bands = phon->job_title + ".bands";
+    auto file_bands = run.job_title + ".bands";
 
     ofs_bands.open(file_bands.c_str(), std::ios::out);
     if (!ofs_bands) exit("writePhononBands", "cannot open file_bands");
@@ -752,13 +752,13 @@ void Writes::writePhononBands() const
     ofs_bands.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_bands;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_bands;
         std::cout << " : Phonon band structure\n";
     }
 
     if (dynamical->band_connection == 2) {
         std::ofstream ofs_connect;
-        auto file_connect = phon->job_title + ".connection";
+        auto file_connect = run.job_title + ".connection";
 
         ofs_connect.open(file_connect.c_str(), std::ios::out);
         if (!ofs_connect) exit("writePhononBands", "cannot open file_connect");
@@ -776,7 +776,7 @@ void Writes::writePhononBands() const
         }
         ofs_connect.close();
         if (getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_connect;
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_connect;
             std::cout << " : Connectivity map information of band dispersion\n";
         }
     }
@@ -785,7 +785,7 @@ void Writes::writePhononBands() const
 void Writes::writePhononVel() const
 {
     std::ofstream ofs_vel;
-    auto file_vel = phon->job_title + ".phvel";
+    auto file_vel = run.job_title + ".phvel";
 
     ofs_vel.open(file_vel.c_str(), std::ios::out);
     if (!ofs_vel) exit("writePhononVel", "cannot open file_vel");
@@ -839,7 +839,7 @@ void Writes::writePhononVel() const
     ofs_vel.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_vel;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_vel;
         std::cout << " : Phonon velocity along given k path\n";
     }
 
@@ -849,7 +849,7 @@ void Writes::writePhononVel() const
 void Writes::writePhononVelAll() const
 {
     std::ofstream ofs_vel;
-    auto file_vel = phon->job_title + ".phvel_all";
+    auto file_vel = run.job_title + ".phvel_all";
 
     ofs_vel.open(file_vel.c_str(), std::ios::out);
     if (!ofs_vel) exit("writePhononVelAll", "cannot open file_vel_all");
@@ -925,7 +925,7 @@ void Writes::writePhononVelAll() const
     ofs_vel.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_vel;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_vel;
         std::cout << " : Phonon velocity at all k points\n";
     }
 
@@ -938,7 +938,7 @@ void Writes::writePhononDos() const
 {
     int i;
     std::ofstream ofs_dos;
-    auto file_dos = phon->job_title + ".dos";
+    auto file_dos = run.job_title + ".dos";
 
     ofs_dos.open(file_dos.c_str(), std::ios::out);
     if (!ofs_dos) exit("writePhononDos", "cannot open file_dos");
@@ -989,7 +989,7 @@ void Writes::writePhononDos() const
     ofs_dos.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dos;
 
         if (dos->projected_dos & dos->compute_dos) {
             std::cout << " : Phonon DOS and atom projected DOS\n";
@@ -1004,7 +1004,7 @@ void Writes::writePhononDos() const
 void Writes::writeTwoPhononDos() const
 {
     std::ofstream ofs_tdos;
-    auto file_tdos = phon->job_title + ".tdos";
+    auto file_tdos = run.job_title + ".tdos";
     ofs_tdos.open(file_tdos.c_str(), std::ios::out);
 
     ofs_tdos << "# Two-phonon DOS (TDOS) for all irreducible k points. \n";
@@ -1027,7 +1027,7 @@ void Writes::writeTwoPhononDos() const
     ofs_tdos.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_tdos;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_tdos;
         std::cout << " : Two-phonon DOS\n";
     }
 }
@@ -1036,7 +1036,7 @@ void Writes::writeScatteringPhaseSpace() const
 {
     std::ofstream ofs_sps;
 
-    auto file_sps = phon->job_title + ".sps";
+    auto file_sps = run.job_title + ".sps";
     ofs_sps.open(file_sps.c_str(), std::ios::out);
 
     ofs_sps << "# Total scattering phase space (cm): " << std::scientific << dos->total_sps3 << '\n';
@@ -1060,7 +1060,7 @@ void Writes::writeScatteringPhaseSpace() const
     ofs_sps.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_sps;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_sps;
         std::cout << " : Three-phonon scattering phase space\n";
     }
 }
@@ -1069,7 +1069,7 @@ void Writes::writeLongitudinalProjDos() const
 {
     int i;
     std::ofstream ofs_dos;
-    auto file_dos = phon->job_title + ".longitudinal_dos";
+    auto file_dos = run.job_title + ".longitudinal_dos";
 
     ofs_dos.open(file_dos.c_str(), std::ios::out);
     if (!ofs_dos) exit("writeLongitudinalProjDos", "cannot open file_dos");
@@ -1085,7 +1085,7 @@ void Writes::writeLongitudinalProjDos() const
     ofs_dos.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dos;
         std::cout << " : Longitudinal projected DOS" << '\n';
     }
 }
@@ -1096,7 +1096,7 @@ void Writes::writeScatteringAmplitude() const
     unsigned int knum;
     const auto ns = dynamical->neval;
 
-    auto file_w = phon->job_title + ".sps_Bose";
+    auto file_w = run.job_title + ".sps_Bose";
     std::ofstream ofs_w;
 
     const auto Tmin = system->Tmin;
@@ -1140,9 +1140,9 @@ void Writes::writeScatteringAmplitude() const
 
     ofs_w.close();
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_w;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_w;
         std::cout << " : Three-phonon scattering phase space \n";
-        std::cout << " " << std::setw(phon->job_title.length() + 16) << " "
+        std::cout << " " << std::setw(run.job_title.length() + 16) << " "
                   << "with the Bose distribution function\n";
     }
 }
@@ -1152,19 +1152,19 @@ void Writes::writeNormalModeDirection() const
     std::string fname_axsf;
 
     if (kpoint->kpoint_general.get() && dynamical->dymat_general) {
-        fname_axsf = phon->job_title + ".axsf";
+        fname_axsf = run.job_title + ".axsf";
         writeNormalModeDirectionEach(fname_axsf,
                                      kpoint->kpoint_general->nk,
                                      dynamical->dymat_general->get_eigenvectors());
     }
 
     if (kpoint->kpoint_bs.get() && dynamical->dymat_band) {
-        fname_axsf = phon->job_title + ".band.axsf";
+        fname_axsf = run.job_title + ".band.axsf";
         writeNormalModeDirectionEach(fname_axsf, kpoint->kpoint_bs->nk, dynamical->dymat_band->get_eigenvectors());
     }
 
     if (dos->kmesh_dos.get() && dos->dymat_dos.get()) {
-        fname_axsf = phon->job_title + ".mesh.axsf";
+        fname_axsf = run.job_title + ".mesh.axsf";
         writeNormalModeDirectionEach(fname_axsf, dos->kmesh_dos->nk, dos->dymat_dos->get_eigenvectors());
     }
 }
@@ -1252,7 +1252,7 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
 
     ofs_anime.close();
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_axsf;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_axsf;
         std::cout << " : XcrysDen AXSF file to visualize phonon mode directions\n";
     }
 }
@@ -1262,7 +1262,7 @@ void Writes::writeEigenvalues() const
     std::string fname_eval;
 
     if (kpoint->kpoint_general.get() && dynamical->dymat_general) {
-        fname_eval = phon->job_title + ".eval";
+        fname_eval = run.job_title + ".eval";
         writeEigenvaluesEach(fname_eval,
                              kpoint->kpoint_general->nk,
                              kpoint->kpoint_general->xk,
@@ -1270,7 +1270,7 @@ void Writes::writeEigenvalues() const
     }
 
     if (kpoint->kpoint_bs.get() && dynamical->dymat_band) {
-        fname_eval = phon->job_title + ".band.eval";
+        fname_eval = run.job_title + ".band.eval";
         writeEigenvaluesEach(fname_eval,
                              kpoint->kpoint_bs->nk,
                              kpoint->kpoint_bs->xk,
@@ -1278,7 +1278,7 @@ void Writes::writeEigenvalues() const
     }
 
     if (dos->kmesh_dos.get() && dos->dymat_dos.get()) {
-        fname_eval = phon->job_title + ".mesh.eval";
+        fname_eval = run.job_title + ".mesh.eval";
         writeEigenvaluesEach(fname_eval, dos->kmesh_dos->nk, dos->kmesh_dos->xk, dos->dymat_dos->get_eigenvalues());
     }
 }
@@ -1367,7 +1367,7 @@ void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned 
     index_bconnect_tmp.clear();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_eval;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_eval;
         std::cout << " : Eigenvalues of all k points\n";
     }
 }
@@ -1390,7 +1390,7 @@ void Writes::writeEigenvaluesHdf5() const
     std::string fname_eval;
 
     if (kpoint->kpoint_general.get() && dynamical->dymat_general) {
-        fname_eval = phon->job_title + ".eval.hdf5";
+        fname_eval = run.job_title + ".eval.hdf5";
         writeEigenvaluesEachHdf5(fname_eval,
                                  kpoint->kpoint_general->nk,
                                  kpoint->kpoint_general->xk,
@@ -1399,7 +1399,7 @@ void Writes::writeEigenvaluesHdf5() const
     }
 
     if (kpoint->kpoint_bs.get() && dynamical->dymat_band) {
-        fname_eval = phon->job_title + ".band.eval.hdf5";
+        fname_eval = run.job_title + ".band.eval.hdf5";
         writeEigenvaluesEachHdf5(fname_eval,
                                  kpoint->kpoint_bs->nk,
                                  kpoint->kpoint_bs->xk,
@@ -1408,7 +1408,7 @@ void Writes::writeEigenvaluesHdf5() const
     }
 
     if (dos->kmesh_dos.get() && dos->dymat_dos.get()) {
-        fname_eval = phon->job_title + ".mesh.eval.hdf5";
+        fname_eval = run.job_title + ".mesh.eval.hdf5";
         writeEigenvaluesEachHdf5(fname_eval,
                                  dos->kmesh_dos->nk,
                                  dos->kmesh_dos->xk,
@@ -1615,7 +1615,7 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     }
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_eval;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_eval;
         std::cout << " : Eigenvalues of all k points (HDF5)\n";
     }
 }
@@ -1627,7 +1627,7 @@ void Writes::writeEigenvectors() const
     std::string fname_evec;
 
     if (kpoint->kpoint_general.get() && dynamical->dymat_general) {
-        fname_evec = phon->job_title + ".evec";
+        fname_evec = run.job_title + ".evec";
         writeEigenvectorsEach(fname_evec,
                               kpoint->kpoint_general->nk,
                               kpoint->kpoint_general->xk,
@@ -1636,7 +1636,7 @@ void Writes::writeEigenvectors() const
     }
 
     if (kpoint->kpoint_bs.get() && dynamical->dymat_band) {
-        fname_evec = phon->job_title + ".band.evec";
+        fname_evec = run.job_title + ".band.evec";
         writeEigenvectorsEach(fname_evec,
                               kpoint->kpoint_bs->nk,
                               kpoint->kpoint_bs->xk,
@@ -1645,7 +1645,7 @@ void Writes::writeEigenvectors() const
     }
 
     if (dos->kmesh_dos.get() && dos->dymat_dos.get()) {
-        fname_evec = phon->job_title + ".mesh.evec";
+        fname_evec = run.job_title + ".mesh.evec";
         writeEigenvectorsEach(fname_evec,
                               dos->kmesh_dos->nk,
                               dos->kmesh_dos->xk,
@@ -1746,7 +1746,7 @@ void Writes::writeEigenvectorsEach(const std::string &fname_evec, const unsigned
     index_bconnect_tmp.clear();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_evec;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_evec;
         std::cout << " : Eigenvector of all k points\n";
     }
 }
@@ -1758,7 +1758,7 @@ void Writes::writeEigenvectorsHdf5() const
     std::string fname_evec;
 
     if (kpoint->kpoint_general.get() && dynamical->dymat_general) {
-        fname_evec = phon->job_title + ".evec.hdf5";
+        fname_evec = run.job_title + ".evec.hdf5";
         writeEigenvectorsEachHdf5(fname_evec,
                                   kpoint->kpoint_general->nk,
                                   kpoint->kpoint_general->xk,
@@ -1768,7 +1768,7 @@ void Writes::writeEigenvectorsHdf5() const
     }
 
     if (kpoint->kpoint_bs.get() && dynamical->dymat_band) {
-        fname_evec = phon->job_title + ".band.evec.hdf5";
+        fname_evec = run.job_title + ".band.evec.hdf5";
         writeEigenvectorsEachHdf5(fname_evec,
                                   kpoint->kpoint_bs->nk,
                                   kpoint->kpoint_bs->xk,
@@ -1778,7 +1778,7 @@ void Writes::writeEigenvectorsHdf5() const
     }
 
     if (dos->kmesh_dos.get() && dos->dymat_dos.get()) {
-        fname_evec = phon->job_title + ".mesh.evec.hdf5";
+        fname_evec = run.job_title + ".mesh.evec.hdf5";
         writeEigenvectorsEachHdf5(fname_evec,
                                   dos->kmesh_dos->nk,
                                   dos->kmesh_dos->xk,
@@ -2022,7 +2022,7 @@ void Writes::writeThermodynamicFunc() const
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
     std::ofstream ofs_thermo;
-    auto file_thermo = phon->job_title + ".thermo";
+    auto file_thermo = run.job_title + ".thermo";
     ofs_thermo.open(file_thermo.c_str(), std::ios::out);
     if (!ofs_thermo) exit("writeThermodynamicFunc", "cannot open file_thermo");
     if (thermodynamics->calc_FE_bubble) {
@@ -2084,7 +2084,7 @@ void Writes::writeThermodynamicFunc() const
     ofs_thermo.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_thermo;
         std::cout << " : Thermodynamic quantities\n";
     }
 }
@@ -2102,7 +2102,7 @@ void Writes::writeGruneisen()
 
         std::ofstream ofs_gruneisen;
 
-        auto file_gru = phon->job_title + ".gruneisen";
+        auto file_gru = run.job_title + ".gruneisen";
         ofs_gruneisen.open(file_gru.c_str(), std::ios::out);
         if (!ofs_gruneisen) exit("writeGruneisen", "cannot open file_vel");
 
@@ -2156,7 +2156,7 @@ void Writes::writeGruneisen()
         ofs_gruneisen.close();
 
         if (getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gru;
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_gru;
             if (gruneisen->gruneisen_mode == 1) {
                 std::cout << " : Volumetric Gruneisen parameters along given k-path\n";
             } else {
@@ -2168,7 +2168,7 @@ void Writes::writeGruneisen()
     if (dos->kmesh_dos.get() && (gruneisen->gruneisen_dos || gruneisen->gruneisen_tensor_dos)) {
 
         std::ofstream ofs_gruall;
-        auto file_gruall = phon->job_title + ".gru_all";
+        auto file_gruall = run.job_title + ".gru_all";
         ofs_gruall.open(file_gruall.c_str(), std::ios::out);
         if (!ofs_gruall) exit("writeGruneisen", "cannot open file_gruall");
 
@@ -2209,7 +2209,7 @@ void Writes::writeGruneisen()
         ofs_gruall.close();
 
         if (getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_gruall;
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_gruall;
             if (gruneisen->gruneisen_mode == 1) {
                 std::cout << " : Volumetric Gruneisen parameters at all k points" << '\n';
             } else {
@@ -2497,7 +2497,7 @@ void Writes::writeMSD() const
 {
     // Write room mean square displacement of atoms
 
-    auto file_rmsd = phon->job_title + ".msd";
+    auto file_rmsd = run.job_title + ".msd";
     std::ofstream ofs_rmsd;
 
     const auto ns = dynamical->neval;
@@ -2532,7 +2532,7 @@ void Writes::writeMSD() const
     ofs_rmsd.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_rmsd;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_rmsd;
         std::cout << " : Mean-square-displacement (MSD)\n";
     }
 }
@@ -2548,16 +2548,16 @@ void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) cons
     std::ofstream ofs_msd;
     std::string file_msd;
     if (is_qha) {
-        file_msd = phon->job_title + ".qha_msd";
+        file_msd = run.job_title + ".qha_msd";
     } else {
         if (bubble == 0) {
-            file_msd = phon->job_title + ".scph_msd";
+            file_msd = run.job_title + ".scph_msd";
         } else if (bubble == 1) {
-            file_msd = phon->job_title + ".scph+bubble(0)_msd";
+            file_msd = run.job_title + ".scph+bubble(0)_msd";
         } else if (bubble == 2) {
-            file_msd = phon->job_title + ".scph+bubble(w)_msd";
+            file_msd = run.job_title + ".scph+bubble(w)_msd";
         } else if (bubble == 3) {
-            file_msd = phon->job_title + ".scph+bubble(wQP)_msd";
+            file_msd = run.job_title + ".scph+bubble(wQP)_msd";
         }
     }
 
@@ -2578,7 +2578,7 @@ void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) cons
 
     ofs_msd.close();
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_msd;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_msd;
         if (is_qha) {
             std::cout << " : Mean-square-displacement (QHA level)\n";
         } else {
@@ -2599,7 +2599,7 @@ void Writes::writeDispCorrelation() const
 {
     if (!dos->kmesh_dos.get()) return;
 
-    auto file_ucorr = phon->job_title + ".ucorr";
+    auto file_ucorr = run.job_title + ".ucorr";
     std::ofstream ofs;
 
     const auto ns = dynamical->neval;
@@ -2658,7 +2658,7 @@ void Writes::writeDispCorrelation() const
     ofs.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_ucorr;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_ucorr;
         std::cout << " : displacement correlation functions\n";
     }
 }
@@ -2675,16 +2675,16 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
     if (is_qha) {
-        file_ucorr = phon->job_title + ".qha_ucorr";
+        file_ucorr = run.job_title + ".qha_ucorr";
     } else {
         if (bubble == 0) {
-            file_ucorr = phon->job_title + ".scph_ucorr";
+            file_ucorr = run.job_title + ".scph_ucorr";
         } else if (bubble == 1) {
-            file_ucorr = phon->job_title + ".scph+bubble(0)_ucorr";
+            file_ucorr = run.job_title + ".scph+bubble(0)_ucorr";
         } else if (bubble == 2) {
-            file_ucorr = phon->job_title + ".scph+bubble(w)_ucorr";
+            file_ucorr = run.job_title + ".scph+bubble(w)_ucorr";
         } else if (bubble == 3) {
-            file_ucorr = phon->job_title + ".scph+bubble(wQP)_ucorr";
+            file_ucorr = run.job_title + ".scph+bubble(wQP)_ucorr";
         }
     }
 
@@ -2729,7 +2729,7 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
     ofs.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_ucorr;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_ucorr;
 
         if (is_qha) {
             std::cout << " : displacement correlation functions (QHA level)\n";
@@ -2750,7 +2750,7 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
 void Writes::printOutputFile(const std::string &file, const std::string &description) const
 {
     if (mympi->my_rank != 0 || getVerbosity() == 0) return;
-    std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file << " : " << description << '\n';
+    std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file << " : " << description << '\n';
 }
 
 void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temperature_in,
@@ -2759,7 +2759,7 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
 {
     if (mympi->my_rank != 0) return;
 
-    const auto file_kappa = phon->job_title + ".kl_iter";
+    const auto file_kappa = run.job_title + ".kl_iter";
 
     std::ofstream ofs_kl;
 
@@ -2806,7 +2806,7 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
     }
     printOutputFile(file_kappa, "Lattice thermal conductivity (iterative BTE)");
     if (conductivity->get_use_h5_io()) {
-        printOutputFile(phon->job_title + ".kappa.h5", "Self-energies and thermal conductivity (restart file)");
+        printOutputFile(run.job_title + ".kappa.h5", "Self-energies and thermal conductivity (restart file)");
     }
 }
 
@@ -2821,14 +2821,14 @@ void Writes::writeKappa() const
         std::string file_kappa_3only;
 
         if (conductivity->fph_rta > 0) {
-            file_kappa_3only = phon->job_title + ".kl3";
-            file_kappa = phon->job_title + ".kl4";
+            file_kappa_3only = run.job_title + ".kl3";
+            file_kappa = run.job_title + ".kl4";
         } else {
-            file_kappa = phon->job_title + ".kl";
+            file_kappa = run.job_title + ".kl";
         }
 
-        auto file_kappa2 = phon->job_title + ".kl_spec";
-        auto file_kappa_coherent = phon->job_title + ".kl_coherent";
+        auto file_kappa2 = run.job_title + ".kl_spec";
+        auto file_kappa_coherent = run.job_title + ".kl_coherent";
 
         std::ofstream ofs_kl;
 
@@ -2956,7 +2956,7 @@ void Writes::writeKappa() const
             printOutputFile(file_kappa_3only, "Lattice thermal conductivity (3-phonon only)");
             printOutputFile(file_kappa, "Lattice thermal conductivity (3-phonon + 4-phonon)");
             if (conductivity->write_interpolation > 0) {
-                printOutputFile(phon->job_title + ".interpolated_gamma",
+                printOutputFile(run.job_title + ".interpolated_gamma",
                                 "Four-phonon linewidths interpolated onto the 3-phonon mesh");
             }
         } else {
@@ -2965,7 +2965,7 @@ void Writes::writeKappa() const
         if (conductivity->calc_kappa_spec) printOutputFile(file_kappa2, "Spectral thermal conductivity");
         if (conductivity->calc_coherent) printOutputFile(file_kappa_coherent, "Coherent (interband) part of kappa");
         if (conductivity->get_use_h5_io()) {
-            printOutputFile(phon->job_title + ".kappa.h5", "Self-energies and thermal conductivity (restart file)");
+            printOutputFile(run.job_title + ".kappa.h5", "Self-energies and thermal conductivity (restart file)");
         }
     }
 }
@@ -2980,7 +2980,7 @@ void Writes::writeSelfenergyIsotope() const
     if (mympi->my_rank == 0) {
         if (isotope->include_isotope == 2) {
 
-            auto file_iso = phon->job_title + ".self_isotope";
+            auto file_iso = run.job_title + ".self_isotope";
             std::ofstream ofs_iso;
 
             ofs_iso.open(file_iso.c_str(), std::ios::out);
@@ -3193,7 +3193,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
             ss << std::setw(ndigits) << std::setfill('0') << iband + 1;
             const auto result = ss.str();
 
-            file_anime = phon->job_title + ".anime" + result + ".axsf";
+            file_anime = run.job_title + ".anime" + result + ".axsf";
 
             ofs_anime.open(file_anime.c_str(), std::ios::out);
             if (!ofs_anime) exit("writeNormalModeAnimation", "cannot open file_anime");
@@ -3249,7 +3249,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
             ss << std::setw(ndigits) << std::setfill('0') << iband + 1;
             const auto result = ss.str();
 
-            file_anime = phon->job_title + ".anime" + result + ".xyz";
+            file_anime = run.job_title + ".anime" + result + ".xyz";
 
             ofs_anime.open(file_anime.c_str(), std::ios::out);
             if (!ofs_anime) exit("writeNormalModeAnimation", "cannot open file_anime");
@@ -3314,7 +3314,7 @@ void Writes::printNormalmodeBorncharge() const
 
         const auto ns = dynamical->neval;
 
-        std::string file_zstar = phon->job_title + ".zmode";
+        std::string file_zstar = run.job_title + ".zmode";
         std::ofstream ofs_zstar;
         ofs_zstar.open(file_zstar.c_str(), std::ios::out);
         if (!ofs_zstar) exit("printNormalmodeBorncharge", "Cannot open file file_zstar");
@@ -3439,7 +3439,7 @@ void Writes::writeModeIrreps() const
 
     const auto &result = mode_symmetry->get_result();
 
-    const auto file_irreps = phon->job_title + ".irreps";
+    const auto file_irreps = run.job_title + ".irreps";
     std::ofstream ofs_irreps;
     ofs_irreps.open(file_irreps.c_str(), std::ios::out);
     if (!ofs_irreps) {
@@ -3569,7 +3569,7 @@ void Writes::writeModeIrreps() const
     ofs_irreps.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_irreps;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_irreps;
         std::cout << " : Irreducible representations and IR/Raman activity at Gamma\n";
     }
 }
@@ -3579,8 +3579,8 @@ void Writes::writeParticipationRatio() const
     std::string fname_pr, fname_apr;
 
     if (kpoint->kpoint_general.get() && dynamical->dymat_general) {
-        fname_pr = phon->job_title + ".pr";
-        fname_apr = phon->job_title + ".apr";
+        fname_pr = run.job_title + ".pr";
+        fname_apr = run.job_title + ".apr";
         writeParticipationRatioEach(fname_pr,
                                     fname_apr,
                                     kpoint->kpoint_general->nk,
@@ -3590,8 +3590,8 @@ void Writes::writeParticipationRatio() const
     }
 
     if (kpoint->kpoint_bs.get() && dynamical->dymat_band) {
-        fname_pr = phon->job_title + ".band.pr";
-        fname_apr = phon->job_title + ".band.apr";
+        fname_pr = run.job_title + ".band.pr";
+        fname_apr = run.job_title + ".band.apr";
         writeParticipationRatioEach(fname_pr,
                                     fname_apr,
                                     kpoint->kpoint_bs->nk,
@@ -3601,8 +3601,8 @@ void Writes::writeParticipationRatio() const
     }
 
     if (dos->kmesh_dos.get() && dos->dymat_dos.get()) {
-        fname_pr = phon->job_title + ".mesh.pr";
-        fname_apr = phon->job_title + ".mesh.apr";
+        fname_pr = run.job_title + ".mesh.pr";
+        fname_apr = run.job_title + ".mesh.apr";
         writeParticipationRatioMesh(fname_pr,
                                     fname_apr,
                                     dos->kmesh_dos.get(),
@@ -3685,9 +3685,9 @@ void Writes::writeParticipationRatioEach(const std::string &fname_pr, const std:
     atomic_participation_ratio.clear();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_pr;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_pr;
         std::cout << " : Participation ratio for all k points\n";
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_apr;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_apr;
         std::cout << " : Atomic participation ratio for all k points\n";
     }
 }
@@ -3772,9 +3772,9 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
     atomic_participation_ratio.clear();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_pr;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_pr;
         std::cout << " : Participation ratio for all k points\n";
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << fname_apr;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_apr;
         std::cout << " : Atomic participation ratio for all k points\n";
     }
 }
@@ -3782,7 +3782,7 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
 void Writes::writeDielectricFunction() const
 {
     std::ofstream ofs_dielec;
-    auto file_dielec = phon->job_title + ".dielec";
+    auto file_dielec = run.job_title + ".dielec";
 
     ofs_dielec.open(file_dielec.c_str(), std::ios::out);
     if (!ofs_dielec) exit("writePhononVel", "cannot open file_vel");
@@ -3810,7 +3810,7 @@ void Writes::writeDielectricFunction() const
     ofs_dielec.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dielec;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dielec;
         std::cout << " : Frequency-dependent dielectric function\n";
     }
 }
@@ -3828,16 +3828,16 @@ void Writes::writePhononEnergies(const unsigned int nk_in, const double *const *
     std::string file_energy;
 
     if (is_qha) {
-        file_energy = phon->job_title + ".qha_eval";
+        file_energy = run.job_title + ".qha_eval";
     } else {
         if (bubble == 0) {
-            file_energy = phon->job_title + ".scph_eval";
+            file_energy = run.job_title + ".scph_eval";
         } else if (bubble == 1) {
-            file_energy = phon->job_title + ".scph+bubble(0)_eval";
+            file_energy = run.job_title + ".scph+bubble(0)_eval";
         } else if (bubble == 2) {
-            file_energy = phon->job_title + ".scph+bubble(w)_eval";
+            file_energy = run.job_title + ".scph+bubble(w)_eval";
         } else if (bubble == 3) {
-            file_energy = phon->job_title + ".scph+bubble(wQP)_eval";
+            file_energy = run.job_title + ".scph+bubble(wQP)_eval";
         }
     }
 
@@ -3872,16 +3872,16 @@ void Writes::writePhononBands(const unsigned int nk_in, const double *kaxis_in, 
     std::string file_bands;
 
     if (is_qha) {
-        file_bands = phon->job_title + ".qha_bands";
+        file_bands = run.job_title + ".qha_bands";
     } else {
         if (bubble == 0) {
-            file_bands = phon->job_title + ".scph_bands";
+            file_bands = run.job_title + ".scph_bands";
         } else if (bubble == 1) {
-            file_bands = phon->job_title + ".scph+bubble(0)_bands";
+            file_bands = run.job_title + ".scph+bubble(0)_bands";
         } else if (bubble == 2) {
-            file_bands = phon->job_title + ".scph+bubble(w)_bands";
+            file_bands = run.job_title + ".scph+bubble(w)_bands";
         } else if (bubble == 3) {
-            file_bands = phon->job_title + ".scph+bubble(wQP)_bands";
+            file_bands = run.job_title + ".scph+bubble(wQP)_bands";
         }
     }
 
@@ -3941,7 +3941,7 @@ void Writes::writePhononBands(const unsigned int nk_in, const double *kaxis_in, 
 
     ofs_bands.close();
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_bands;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_bands;
         if (is_qha) {
             std::cout << " : QHA band structure\n";
         } else {
@@ -3970,16 +3970,16 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
     std::string file_dos;
 
     if (is_qha) {
-        file_dos = phon->job_title + ".qha_dos";
+        file_dos = run.job_title + ".qha_dos";
     } else {
         if (bubble == 0) {
-            file_dos = phon->job_title + ".scph_dos";
+            file_dos = run.job_title + ".scph_dos";
         } else if (bubble == 1) {
-            file_dos = phon->job_title + ".scph+bubble(0)_dos";
+            file_dos = run.job_title + ".scph+bubble(0)_dos";
         } else if (bubble == 2) {
-            file_dos = phon->job_title + ".scph+bubble(w)_dos";
+            file_dos = run.job_title + ".scph+bubble(w)_dos";
         } else if (bubble == 3) {
-            file_dos = phon->job_title + ".scph+bubble(wQP)_dos";
+            file_dos = run.job_title + ".scph+bubble(wQP)_dos";
         }
     }
 
@@ -4005,7 +4005,7 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
     ofs_dos << '\n';
     ofs_dos.close();
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dos;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dos;
         if (is_qha) {
             std::cout << " : QHA DOS\n";
         } else {
@@ -4041,9 +4041,9 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     std::string file_thermo;
 
     if (is_qha) {
-        file_thermo = phon->job_title + ".qha_thermo";
+        file_thermo = run.job_title + ".qha_thermo";
     } else {
-        file_thermo = phon->job_title + ".scph_thermo";
+        file_thermo = run.job_title + ".scph_thermo";
     }
     ofs_thermo.open(file_thermo.c_str(), std::ios::out);
     if (!ofs_thermo) exit("writeThermodynamicFunc", "cannot open file_thermo");
@@ -4068,7 +4068,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     }
     ofs_thermo << ", F_{vib} (QHA term) [Ry]";
     // do not write scph correction in QHA + structural optimization
-    if (phon->mode == "SCPH") {
+    if (run.mode == "SCPH") {
         ofs_thermo << ", F_{vib} (SCPH correction) [Ry]";
     }
     if (thermodynamics->calc_FE_bubble) {
@@ -4095,7 +4095,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
         }
         ofs_thermo << std::setw(18) << FE_QHA[iT];
         // skip scph correction for QHA + structural optimization
-        if (phon->mode == "SCPH") {
+        if (run.mode == "SCPH") {
             ofs_thermo << std::setw(18) << dFE_scph[iT];
         }
         if (thermodynamics->calc_FE_bubble) {
@@ -4111,7 +4111,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
 
     ofs_thermo.close();
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_thermo;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_thermo;
         if (is_qha) {
             std::cout << " : QHA heat capacity, free energy, entropy\n";
         } else {
@@ -4130,9 +4130,9 @@ void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
     std::ofstream ofs_dielec;
     std::string file_dielec;
     if (is_qha) {
-        file_dielec = phon->job_title + ".qha_dielec";
+        file_dielec = run.job_title + ".qha_dielec";
     } else {
-        file_dielec = phon->job_title + ".scph_dielec";
+        file_dielec = run.job_title + ".scph_dielec";
     }
 
     ofs_dielec.open(file_dielec.c_str(), std::ios::out);
@@ -4162,7 +4162,7 @@ void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
     ofs_dielec.close();
 
     if (getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dielec;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dielec;
         if (is_qha) {
             std::cout << " : QHA frequency-dependent dielectric function\n";
         } else {
@@ -4177,9 +4177,4 @@ void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
 unsigned int Writes::getVerbosity() const
 {
     return phon->get_verbosity();
-}
-
-void Writes::setVerbosity(unsigned int verbosity_in)
-{
-    phon->set_verbosity(verbosity_in);
 }

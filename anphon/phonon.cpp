@@ -43,6 +43,9 @@ using namespace PHON_NS;
 PHON::PHON(MPI_Comm comm)
 {
     mympi = std::make_unique<MyMPI>(comm);
+    run_info.comm = comm;
+    run_info.my_rank = mympi->my_rank;
+    run_info.nprocs = mympi->nprocs;
 
     create_pointers();
 }
@@ -114,30 +117,30 @@ void PHON::set_verbosity(const unsigned int verbosity_in)
     // Clamp to the supported range [0, 2] so an out-of-range value (e.g. a
     // negative Python int wrapping to a huge unsigned via a future nanobind
     // binding) can never reach the output guards.
-    verbosity = verbosity_in > 2 ? 2 : verbosity_in;
+    run_info.verbosity = verbosity_in > 2 ? 2 : verbosity_in;
 }
 
 unsigned int PHON::get_verbosity() const
 {
-    return verbosity;
+    return run_info.verbosity;
 }
 
 void PHON::run() const
 {
-    if (mode == "PHONONS") {
+    if (run_info.mode == "PHONONS") {
 
         execute_phonons();
 
-    } else if (mode == "KAPPA") {
+    } else if (run_info.mode == "KAPPA") {
 
         execute_kappa();
 
-    } else if (mode == "SCPH" || mode == "QHA") {
+    } else if (run_info.mode == "SCPH" || run_info.mode == "QHA") {
 
         execute_self_consistent_phonon();
 
     } else {
-        exit("run", "invalid mode: ", mode.c_str());
+        exit("run", "invalid mode: ", run_info.mode.c_str());
     }
 }
 
@@ -151,19 +154,19 @@ void PHON::setup_base() const
     int init_u0_from_modes = relaxation->init_disp_modes.empty() ? 0 : 1; // set on rank 0 by the parser
     MPI_Bcast(&init_u0_from_modes, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (init_u0_from_modes) {
-        fcs_phonon->setup(mode);
+        fcs_phonon->setup(run_info.mode);
         symmetry->setup_symmetry(false); // reference-cell operations only (init_u0 is still empty)
         relaxation->set_init_u0_from_modes();
         system->initialize_distorted_primitive_cell();
     }
 
     symmetry->setup_symmetry();
-    kpoint->kpoint_setups(mode);
+    kpoint->kpoint_setups(run_info.mode);
     // Broadcasts the IRREPS flag; must precede dielec->init(), which uses it
     // to decide whether Born charges are loaded.
     mode_symmetry->setup();
     dynamical->setup_dynamical();
-    if (!init_u0_from_modes) fcs_phonon->setup(mode);
+    if (!init_u0_from_modes) fcs_phonon->setup(run_info.mode);
     phonon_velocity->setup_velocity();
     integration->setup_integration(dos->kmesh_dos.get(),
                                    phonon_velocity.get(),
@@ -298,20 +301,20 @@ void PHON::execute_kappa() const
 void PHON::execute_self_consistent_phonon() const
 {
     if (mympi->my_rank == 0 && get_verbosity() > 0) {
-        if (mode == "SCPH" && relaxation->relax_str == 0) {
+        if (run_info.mode == "SCPH" && relaxation->relax_str == 0) {
             std::cout << "                        MODE = SCPH                          \n";
             std::cout << "                                                             \n";
             std::cout << "      Self-consistent phonon calculation to estimate         \n";
             std::cout << "      anharmonic phonon frequencies.                         \n";
             std::cout << "      Harmonic and quartic force constants will be used.     \n\n";
-        } else if (mode == "SCPH" && relaxation->relax_str != 0) {
+        } else if (run_info.mode == "SCPH" && relaxation->relax_str != 0) {
             std::cout << "                        MODE = SCPH                          \n";
             std::cout << "                                                             \n";
             std::cout << "      Self-consistent phonon calculation to compute          \n";
             std::cout << "      anharmonic phonon frequencies and crystal structure    \n";
             std::cout << "      at finite temperatures.                                \n";
             std::cout << "      Harmonic to quartic force constants will be used.      \n\n";
-        } else if (mode == "QHA") {
+        } else if (run_info.mode == "QHA") {
             std::cout << "                        MODE = QHA                           \n";
             std::cout << "                                                             \n";
             std::cout << "      QHA calculation to compute crystal structure           \n";
@@ -332,10 +335,10 @@ void PHON::execute_self_consistent_phonon() const
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, mympi->my_rank, get_verbosity());
     relaxation->setup_relaxation();
 
-    if (mode == "SCPH") {
+    if (run_info.mode == "SCPH") {
         scph->setup_scph();
         scph->exec_scph();
-    } else if (mode == "QHA") {
+    } else if (run_info.mode == "QHA") {
         qha->setup_qha();
         qha->exec_qha_optimization();
     }

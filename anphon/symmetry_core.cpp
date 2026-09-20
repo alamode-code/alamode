@@ -54,7 +54,7 @@ void Symmetry::setup_symmetry(const bool verbose)
     SymmList.clear();
     SymmList_ref.clear();
 
-    if ((phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0)) {
+    if ((run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0)) {
 
         if (mympi->my_rank == 0) {
             const auto verbosity = verbose ? writes->getVerbosity() : 0;
@@ -112,7 +112,7 @@ void Symmetry::setup_symmetry(const bool verbose)
     broadcast_symmlist(SymmList_ref);
 
     const auto with_relaxation =
-        (phon->mode == "SCPH" && relaxation->relax_str != 0) || (phon->mode == "QHA" && relaxation->relax_str != 0);
+        (run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0);
 
     if (mympi->my_rank == 0) {
         const auto verbosity = verbose ? writes->getVerbosity() : 0;

@@ -209,7 +209,7 @@ void Conductivity::setup_kappa()
         phonon_velocity->calc_phonon_velmat_mesh(calc_coherent ? &velmat : nullptr, corrected ? &velblock : nullptr);
         if (calc_coherent) check_velocity_matrix_consistency(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
         if (calc_coherent == 2) {
-            file_coherent_elems = phon->job_title + ".kc_elem";
+            file_coherent_elems = run.job_title + ".kc_elem";
         }
     }
 
@@ -1688,7 +1688,7 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
         }
     }
 
-    const auto filename = phon->job_title + ".velmat_check";
+    const auto filename = run.job_title + ".velmat_check";
     std::ofstream ofs(filename.c_str(), std::ios::out);
     if (!ofs) exit("check_velocity_matrix_consistency", "Could not open velmat_check file");
 
@@ -1720,7 +1720,7 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
             gap_max = std::atof(gap_env);
         }
 
-        const auto dumpname = phon->job_title + ".velmat_dump";
+        const auto dumpname = run.job_title + ".velmat_dump";
         std::ofstream ofs_dump(dumpname.c_str(), std::ios::out);
         if (!ofs_dump) exit("check_velocity_matrix_consistency", "Could not open velmat_dump file");
 
@@ -1983,7 +1983,7 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
 
     if (write_interpolation > 0) {
 
-        auto file_interpolate = phon->job_title + ".interpolated_gamma";
+        auto file_interpolate = run.job_title + ".interpolated_gamma";
 
         std::ofstream ofs_itp;
 

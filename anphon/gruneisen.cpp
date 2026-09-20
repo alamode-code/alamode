@@ -383,11 +383,11 @@ void Gruneisen::write_new_fcsxml_all() const
             writes->writeNewFcsXml(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
         };
 
-        auto file_out = phon->job_title + "_+" + extension;
+        auto file_out = run.job_title + "_+" + extension;
         write_one(file_out, scale);
 
         if (writes->getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_out;
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_out;
             if (strain_newfcs_given) {
                 std::cout << " : Force constants of the system with the strain +u applied\n";
             } else {
@@ -396,11 +396,11 @@ void Gruneisen::write_new_fcsxml_all() const
             }
         }
 
-        file_out = phon->job_title + "_-" + extension;
+        file_out = run.job_title + "_-" + extension;
         write_one(file_out, -scale);
 
         if (writes->getVerbosity() > 0) {
-            std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_out;
+            std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_out;
             if (strain_newfcs_given) {
                 std::cout << " : Force constants of the system with the strain -u applied\n";
             } else {

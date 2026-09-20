@@ -598,7 +598,7 @@ void Scph::exec_scph()
         // Preferred restart source: the unified state file.
         auto loaded_h5 = false;
         if (use_h5_io) {
-            loaded_h5 = load_scph_state_h5(phon->job_title + ".scph.h5",
+            loaded_h5 = load_scph_state_h5(run.job_title + ".scph.h5",
                                            "SCPH",
                                            NT,
                                            dynamical->nonanalytic,
@@ -617,7 +617,7 @@ void Scph::exec_scph()
             // Read anharmonic correction to the dynamical matrix from the legacy text files.
             // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
             load_scph_dymat_from_file(delta_dymat_scph,
-                                      phon->job_title + ".scph_dymat",
+                                      run.job_title + ".scph_dymat",
                                       kmesh_dense.get(),
                                       kmesh_coarse.get(),
                                       dynamical->nonanalytic,
@@ -626,7 +626,7 @@ void Scph::exec_scph()
             if (with_relax) {
                 // Resume harmonic-dynamical-matrix renormalization used in structural relaxation.
                 load_scph_dymat_from_file(delta_harmonic_dymat_renormalize,
-                                          phon->job_title + ".renorm_harm_dymat",
+                                          run.job_title + ".renorm_harm_dymat",
                                           kmesh_dense.get(),
                                           kmesh_coarse.get(),
                                           dynamical->nonanalytic,
@@ -638,7 +638,7 @@ void Scph::exec_scph()
             // One-way migration of the legacy state into the unified file;
             // the text files themselves are left untouched.
             if (use_h5_io && mympi->my_rank == 0) {
-                write_scph_state_h5(phon->job_title + ".scph.h5",
+                write_scph_state_h5(run.job_title + ".scph.h5",
                                     "SCPH",
                                     NT,
                                     dynamical->nonanalytic,
@@ -670,7 +670,7 @@ void Scph::exec_scph()
             if (use_h5_io) {
                 // Persist the complete SCPH state (restart data + renormalized
                 // FC2 per temperature) in one atomically-published file.
-                write_scph_state_h5(phon->job_title + ".scph.h5",
+                write_scph_state_h5(run.job_title + ".scph.h5",
                                     "SCPH",
                                     NT,
                                     dynamical->nonanalytic,
@@ -690,7 +690,7 @@ void Scph::exec_scph()
                 // write scph dynamical matrix when scph calculation is performed
                 // Persist converged SCPH dynamical-matrix corrections for restart/reuse.
                 store_renormalized_dymat_to_file(delta_dymat_scph,
-                                                 phon->job_title + ".scph_dymat",
+                                                 run.job_title + ".scph_dymat",
                                                  kmesh_dense.get(),
                                                  kmesh_coarse.get(),
                                                  dynamical->nonanalytic,
@@ -699,7 +699,7 @@ void Scph::exec_scph()
                 if (with_relax) {
                     // Persist renormalized harmonic dynamical matrix and relaxation offset.
                     store_renormalized_dymat_to_file(delta_harmonic_dymat_renormalize,
-                                                     phon->job_title + ".renorm_harm_dymat",
+                                                     run.job_title + ".renorm_harm_dymat",
                                                      kmesh_dense.get(),
                                                      kmesh_coarse.get(),
                                                      dynamical->nonanalytic,
@@ -1013,13 +1013,13 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
         fout_step_q0.open("step_q0.txt");
         fout_step_u0.open("step_u0.txt");
-        fout_q0.open(phon->job_title + ".normal_disp");
-        fout_u0.open(phon->job_title + ".atom_disp");
+        fout_q0.open(run.job_title + ".normal_disp");
+        fout_u0.open(run.job_title + ".atom_disp");
 
         // if the unit cell is relaxed, or held at a prescribed strain
         if (uses_full_strain_derivatives(relax_mode)) {
             fout_step_u_tensor.open("step_u_tensor.txt");
-            fout_u_tensor.open(phon->job_title + ".umn_tensor");
+            fout_u_tensor.open(run.job_title + ".umn_tensor");
         }
 
         relaxation->write_resfile_header(fout_q0, fout_u0, fout_u_tensor);
@@ -1079,10 +1079,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             fout_step_u_tensor.close();
             fout_u_tensor.close();
         }
-        writes->printOutputFile(phon->job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
-        writes->printOutputFile(phon->job_title + ".atom_disp", "Relaxed atomic displacements");
+        writes->printOutputFile(run.job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
+        writes->printOutputFile(run.job_title + ".atom_disp", "Relaxed atomic displacements");
         if (uses_full_strain_derivatives(relax_mode)) {
-            writes->printOutputFile(phon->job_title + ".umn_tensor", "Relaxed strain tensor");
+            writes->printOutputFile(run.job_title + ".umn_tensor", "Relaxed strain tensor");
         }
 
         cmat_convert.clear();

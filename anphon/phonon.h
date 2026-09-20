@@ -23,12 +23,43 @@
 
 namespace PHON_NS
 {
+// Plain run-wide data shared by all classes (no object pointers on purpose).
+// Owned by PHON; rank/nprocs/comm are fixed at construction, the rest is set
+// on rank 0 by InputSetter and broadcast in PhononCUI::run unless noted.
+struct RunInfo
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int my_rank = 0;
+    int nprocs = 1;
+
+    std::string mode;
+    std::string job_title;
+
+    // FILE_FORMAT tag: true (default) routes restart/state files through
+    // the unified HDF5 formats; false forces the legacy text files.
+    // Not broadcast: only rank 0 sees the user's value.
+    bool use_hdf5_io = true;
+
+    // ALLOW_UNCONVERGED tag: accept renormalized IFC/structure data from an
+    // SCPH/QHA state file even when its iterations did not converge
+    // (FC2_TEMPERATURE reads and RESTART_SCPH/RESTART_QHA refuse them by
+    // default). Not broadcast: only rank 0 sees the user's value.
+    bool allow_unconverged = false;
+
+    // VERBOSITY tag: controls how much progress output is printed.
+    // 0 = silent, 1 = normal progress/banners (default), 2 = extra detail.
+    // Written only through PHON::set_verbosity (clamps the range).
+    unsigned int verbosity = 1;
+};
+
 class PHON
 {
 public:
     PHON(MPI_Comm comm);
 
     virtual ~PHON();
+
+    RunInfo run_info;
 
     std::unique_ptr<class Timer> timer;
 
@@ -79,27 +110,6 @@ public:
     std::unique_ptr<class Qha> qha;
 
     std::unique_ptr<class Relaxation> relaxation;
-
-    std::string mode;
-
-    std::string job_title;
-
-    // FILE_FORMAT tag: true (default) routes restart/state files through
-    // the unified HDF5 formats; false forces the legacy text files.
-    bool use_hdf5_io = true;
-
-    // ALLOW_UNCONVERGED tag: accept renormalized IFC/structure data from an
-    // SCPH/QHA state file even when its iterations did not converge
-    // (FC2_TEMPERATURE reads and RESTART_SCPH/RESTART_QHA refuse them by
-    // default).
-    bool allow_unconverged = false;
-
-    // VERBOSITY tag: controls how much progress output is printed.
-    // 0 = silent, 1 = normal progress/banners (default), 2 = extra detail.
-    // Canonical owner of the setting (mirrors ALM::verbosity); the Writes
-    // accessors forward here. Set on rank 0 during input parsing and
-    // broadcast to all ranks in PhononCUI::run.
-    unsigned int verbosity = 1;
 
     void set_verbosity(unsigned int verbosity_in);
 

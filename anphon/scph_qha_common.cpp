@@ -370,7 +370,7 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
     const auto Tmax = system->Tmax;
     const auto dT = system->dT;
     std::ofstream ofs_dymat;
-    // auto file_dymat = phon->job_title + ".scph_dymat";
+    // auto file_dymat = run.job_title + ".scph_dymat";
     auto file_dymat = filename_dymat;
 
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
@@ -409,7 +409,7 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
     }
     ofs_dymat.close();
     if (writes->getVerbosity() > 0) {
-        std::cout << "  " << std::setw(phon->job_title.length() + 12) << std::left << file_dymat;
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dymat;
         std::cout << " : Anharmonic dynamical matrix (restart file)\n";
     }
 }

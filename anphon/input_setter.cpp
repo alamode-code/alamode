@@ -43,11 +43,11 @@ InputSetter::~InputSetter() = default;
 
 void InputSetter::set_general_vars(PHON *phon, const GeneralInputVars &vars) const
 {
-    phon->job_title = vars.prefix;
-    phon->mode = vars.mode;
+    phon->run_info.job_title = vars.prefix;
+    phon->run_info.mode = vars.mode;
     phon->mode_analysis->selfenergy_mode = vars.selfenergy_mode;
-    phon->use_hdf5_io = vars.use_hdf5_io;
-    phon->allow_unconverged = vars.allow_unconverged;
+    phon->run_info.use_hdf5_io = vars.use_hdf5_io;
+    phon->run_info.allow_unconverged = vars.allow_unconverged;
 
     const auto file_result = vars.prefix + ".result";
     const auto file_result4 = vars.prefix + ".4ph.result";
@@ -167,7 +167,7 @@ void InputSetter::set_analysis_vars(PHON *phon, const AnalysisInputVars &vars) c
 
     phon->ewald->print_fc2_ewald = vars.print_fc2_ewald;
 
-    if (phon->mode == "SCPH") {
+    if (phon->run_info.mode == "SCPH") {
         phon->scph->print_self_consistent_fc2 = vars.print_self_consistent_fc2;
     }
 }
@@ -222,7 +222,7 @@ void InputSetter::set_scph_vars(PHON *phon, const ScphInputVars &vars) const
     phon->scph->imix_scph = vars.imix_scph;
     phon->scph->maxiter = vars.maxiter;
     phon->scph->restart_scph = vars.restart_scph;
-    phon->scph->use_h5_io = phon->use_hdf5_io;
+    phon->scph->use_h5_io = phon->run_info.use_hdf5_io;
     phon->scph->selfenergy_offdiagonal = vars.selfenergy_offdiagonal;
     phon->scph->ialgo = vars.ialgo;
     phon->scph->tolerance_scph = vars.tolerance_scph;
@@ -243,7 +243,7 @@ void InputSetter::set_qha_vars(PHON *phon, const QhaInputVars &vars) const
     phon->qha->selfenergy_offdiagonal = vars.selfenergy_offdiagonal;
     phon->qha->ialgo = vars.ialgo;
     phon->qha->restart_qha = vars.restart_qha;
-    phon->qha->use_h5_io = phon->use_hdf5_io;
+    phon->qha->use_h5_io = phon->run_info.use_hdf5_io;
     phon->relaxation->relax_str = vars.relax_str;
 }
 

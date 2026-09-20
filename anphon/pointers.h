@@ -19,7 +19,7 @@ class Pointers
 {
 public:
     Pointers(PHON *ptr) :
-        phon(ptr), system(ptr->system), symmetry(ptr->symmetry), kpoint(ptr->kpoint), integration(ptr->integration),
+        phon(ptr), run(ptr->run_info), system(ptr->system), symmetry(ptr->symmetry), kpoint(ptr->kpoint), integration(ptr->integration),
         fcs_phonon(ptr->fcs_phonon), dynamical(ptr->dynamical), phonon_velocity(ptr->phonon_velocity),
         thermodynamics(ptr->thermodynamics), anharmonic_core(ptr->anharmonic_core), mode_analysis(ptr->mode_analysis),
         selfenergy(ptr->selfenergy), conductivity(ptr->conductivity), iterativebte(ptr->iterativebte),
@@ -33,6 +33,8 @@ public:
 
 protected:
     PHON *phon;
+    // Temporary bridge (POINTERS_REMOVAL_PLAN.md, Phase 1); becomes a ctor argument in Phase 4.
+    const RunInfo &run;
     std::unique_ptr<System> &system;
     std::unique_ptr<Symmetry> &symmetry;
     std::unique_ptr<Kpoint> &kpoint;
