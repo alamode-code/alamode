@@ -588,7 +588,7 @@ void Scph::exec_scph()
 
     if (restart_scph) {
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             std::cout << " RESTART_SCPH is true.\n";
             std::cout << " Dynamical matrix is read from file ...";
         }
@@ -612,7 +612,7 @@ void Scph::exec_scph()
         if (loaded_h5) {
             // Regenerate the human-readable V0-vs-T output, which may be
             // absent when restarting from the unified file alone.
-            if (with_relax && mympi->my_rank == 0) store_V0_to_file();
+            if (with_relax && run.my_rank == 0) store_V0_to_file();
         } else {
             // Read anharmonic correction to the dynamical matrix from the legacy text files.
             // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
@@ -637,7 +637,7 @@ void Scph::exec_scph()
 
             // One-way migration of the legacy state into the unified file;
             // the text files themselves are left untouched.
-            if (use_h5_io && mympi->my_rank == 0) {
+            if (use_h5_io && run.my_rank == 0) {
                 write_scph_state_h5(run.job_title + ".scph.h5",
                                     "SCPH",
                                     NT,
@@ -665,7 +665,7 @@ void Scph::exec_scph()
             exec_scph_relax_cell_coordinate_main(delta_dymat_scph, delta_harmonic_dymat_renormalize);
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             const auto with_relax = relax_mode != RelaxationStrMode::None;
             if (use_h5_io) {
                 // Persist the complete SCPH state (restart data + renormalized
@@ -725,7 +725,7 @@ void Scph::exec_scph()
         delta_dymat_scph_plus_bubble.resize(NT, ns, ns, kmesh_coarse->nk);
         // Add bubble self-energy to SCPH dynamical-matrix correction.
         bubble_correction(delta_dymat_scph, delta_dymat_scph_plus_bubble);
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             // Output FC2 after including bubble self-energy contribution.
             write_anharmonic_correction_fc2(delta_dymat_scph_plus_bubble,
                                             NT,
@@ -794,7 +794,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                             phi3_reciprocal);
     }
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         std::vector<double> vec_temp;
         NDArray<std::complex<double>, 3> cmat_convert;
         cmat_convert.resize(nk, ns, ns);
@@ -972,7 +972,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     v1_SCP.resize(ns);
     del_v0_del_umn_SCP.resize(9);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,

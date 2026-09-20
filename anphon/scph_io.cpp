@@ -376,13 +376,13 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
     const auto ns = dynamical->neval;
 
     int usable = 0;
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         usable = ScphResultIOH5(filename).is_restartable() ? 1 : 0;
     }
     MPI_Bcast(&usable, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (!usable) return false;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         const ScphResultIOH5 io(filename);
         const auto settings =
             build_scph_settings_h5(mode_name, NT, nonanalytic_in, selfenergy_offdiagonal_in, relax_str_in);
@@ -418,7 +418,7 @@ void ScphQhaCommon::load_V0_from_file()
 
     const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         std::vector<double> Temp_array(NT);
         double temp;

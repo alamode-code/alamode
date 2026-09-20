@@ -47,7 +47,7 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
     NDArray<double, 3> eval;
     NDArray<std::complex<double>, 4> evec;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n";
         std::cout << " Calculating the vibrational free energy from the Bubble diagram \n";
@@ -89,13 +89,13 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                            symmetry->SymmList,
                                            *anharmonic_core,
                                            dynamical->neval,
-                                           mympi->my_rank,
-                                           mympi->nprocs);
+                                           run.my_rank,
+                                           run.nprocs);
 
     eval.clear();
     evec.clear();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         std::cout << " done!\n\n";
     }
 }
@@ -144,7 +144,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
     NDArray<double, 1> real_self;
     std::vector<std::complex<double>> omegalist;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n";
         std::cout << " Calculating the bubble self-energy \n";
@@ -160,10 +160,10 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                  thermodynamics->classical,
                                  symmetry->SymmList,
                                  *anharmonic_core,
-                                 mympi->my_rank,
-                                 mympi->nprocs);
+                                 run.my_rank,
+                                 run.nprocs);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         eval_bubble.resize(NT, nk_scph, ns);
         for (auto iT = 0; iT < NT; ++iT) {
             for (auto ik = 0; ik < nk_scph; ++ik) {
@@ -194,14 +194,14 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
         for (unsigned int ik = 0; ik < nk_scph; ++ik) find_degenerate_groups(ns, eval[ik], degeneracy_at_k[ik]);
 
-        if (mympi->my_rank == 0) std::cout << " Temperature (K) : " << std::setw(6) << temp << '\n';
+        if (run.my_rank == 0) std::cout << " Temperature (K) : " << std::setw(6) << temp << '\n';
 
         for (auto ik = 0; ik < nk_irred_interpolate; ++ik) {
 
             auto knum_interpolate = kmesh_coarse->kpoint_irred_all[ik][0].knum;
             auto knum = (*kmap_b)[knum_interpolate];
 
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 std::cout << "  Irred. k: " << std::setw(5) << ik + 1 << " (";
                 for (auto m = 0; m < 3; ++m) std::cout << std::setw(15) << kmesh_b->xk[knum][m];
                 std::cout << ")\n";
@@ -210,7 +210,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
             for (unsigned int snum = 0; snum < ns; ++snum) {
 
                 if (eval[knum][snum] < eps8) {
-                    if (mympi->my_rank == 0) real_self[snum] = 0.0;
+                    if (run.my_rank == 0) real_self[snum] = 0.0;
                 } else {
                     omegalist.clear();
 
@@ -222,7 +222,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                             selfenergy
                                 ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
 
-                        if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
+                        if (run.my_rank == 0) real_self[snum] = se_bubble[0].real();
 
                     } else if (bubble == 2) {
 
@@ -232,7 +232,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                             selfenergy
                                 ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
 
-                        if (mympi->my_rank == 0) real_self[snum] = se_bubble[0].real();
+                        if (run.my_rank == 0) real_self[snum] = se_bubble[0].real();
 
                     } else if (bubble == 3) {
 
@@ -252,7 +252,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                             selfenergy
                                 ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
 
-                        if (mympi->my_rank == 0) {
+                        if (run.my_rank == 0) {
 
                             std::vector<double> nonlinear_func(nomega);
                             for (auto iomega = 0; iomega < nomega; ++iomega) {
@@ -308,14 +308,14 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                         }
                     }
                 }
-                if (mympi->my_rank == 0) {
+                if (run.my_rank == 0) {
                     std::cout << "   branch : " << std::setw(5) << snum + 1;
                     std::cout << " omega (SC1) = " << std::setw(15) << in_kayser(eval[knum][snum]) << " (cm^-1); ";
                     std::cout << " Re[Self] = " << std::setw(15) << in_kayser(real_self[snum]) << " (cm^-1)\n";
                 }
             }
 
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 // average self energy of degenerate modes
                 int ishift = 0;
                 double real_self_avg = 0.0;
@@ -346,7 +346,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
             }
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             dynamical->calc_new_dymat_with_evec(delta_dymat_scph_plus_bubble[iT],
                                                 eval_bubble[iT],
                                                 evec,
@@ -361,7 +361,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
     eval_bubble.clear();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         std::cout << " done!\n\n";
     }
 }

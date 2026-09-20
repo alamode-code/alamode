@@ -37,7 +37,7 @@ void PhononCUI::run(const int narg, char **arg, MPI_Comm comm) const
 {
     auto phon = std::make_unique<PHON>(comm);
 
-    if (phon->mympi->my_rank == 0) {
+    if (phon->run_info.my_rank == 0) {
         std::cout << " +-----------------------------------------------------------------+\n";
         std::cout << " +                         Program ANPHON                          +\n";
         std::cout << " +                             Ver.";
@@ -48,7 +48,7 @@ void PhononCUI::run(const int narg, char **arg, MPI_Comm comm) const
         std::cout << " +" << std::string(npad / 2, ' ') << commit << std::string(npad - npad / 2, ' ') << "+\n";
         std::cout << " +-----------------------------------------------------------------+\n\n";
         std::cout << " Job started at " << phon->timer->DateAndTime() << '\n';
-        std::cout << " The number of MPI processes: " << phon->mympi->nprocs << '\n';
+        std::cout << " The number of MPI processes: " << phon->run_info.nprocs << '\n';
 #ifdef _OPENMP
         std::cout << " The number of OpenMP threads: " << omp_get_max_threads() << '\n';
 #endif
@@ -70,7 +70,7 @@ void PhononCUI::run(const int narg, char **arg, MPI_Comm comm) const
 
     phon->run();
 
-    if (phon->mympi->my_rank == 0) {
+    if (phon->run_info.my_rank == 0) {
         std::cout << "\n Job finished at " << phon->timer->DateAndTime() << '\n';
     }
 }

@@ -50,8 +50,8 @@ Relaxation::Relaxation(PHON *phon) : Pointers(phon)
                                                      *fcs_phonon,
                                                      *dynamical,
                                                      *anharmonic_core,
-                                                     mympi->my_rank,
-                                                     mympi->nprocs);
+                                                     run.my_rank,
+                                                     run.nprocs);
 }
 
 Relaxation::~Relaxation()
@@ -117,7 +117,7 @@ void Relaxation::setup_relaxation()
         for (auto iat = 0; iat < primcell.number_of_atoms; ++iat) xf[iat] = primcell.x_fractional.row(iat);
         std::string label;
         spacegroup_number_ref = detect_spacegroup(primcell.lattice_vector, xf, label);
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0 && set_init_str == 3) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0 && set_init_str == 3) {
             std::cout << "  SET_INIT_STR = 3: the high-symmetry phase is " << label << " (spglib, tolerance "
                       << std::scientific << std::setprecision(2) << symmetry->tolerance << std::defaultfloat << ")\n\n";
         }
@@ -127,7 +127,7 @@ void Relaxation::setup_relaxation()
     }
     if (!strain_file.empty()) {
         validate_strain_file();
-    } else if (mympi->my_rank == 0 &&
+    } else if (run.my_rank == 0 &&
                (renorm_2to1st == 2 || renorm_3to2nd == 2 || renorm_3to2nd == 3 || elastic_const == 2))
     {
         std::cout << "  NOTE: the strain couplings and elastic constants are read from the text files in\n"
@@ -173,7 +173,7 @@ void Relaxation::validate_strain_file() const
         const auto match =
             strain_parsers::match_atoms(ref, pcell.lattice_vector, pcell.x_cartesian, symbols, what.c_str());
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             const auto flags = std::cout.flags();
             const auto prec = std::cout.precision();
             std::cout << "  STRAINFILE = " << strain_file << "\n"
@@ -566,7 +566,7 @@ void Relaxation::set_init_u0_from_modes()
     // the axis component survives while the other components are mixed away. Only the
     // projector E E^T and the restrictions A(g) = E^T T(g) E enter, never a single eigenvector.
     // Runs on rank 0 (init_u0 lives there); needs Fcs_phonon::setup and SymmListWithMap_ref.
-    if (mympi->my_rank != 0) return;
+    if (run.my_rank != 0) return;
 
     const int natmin = system->get_primcell().number_of_atoms;
     const int ns = 3 * natmin;
@@ -1393,7 +1393,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
     // set renormalization from strain as zero
     if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
         derivative_ifc->set_del_v_fixed_cell(nk, ns, del_v_strain);
-        if (mympi->my_rank == 0) timer->print_elapsed();
+        if (run.my_rank == 0) timer->print_elapsed();
 
         return;
     }
@@ -1416,7 +1416,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
                                              mindist_list,
                                              phase_cache_in);
 
-        if (mympi->my_rank == 0) timer->print_elapsed();
+        if (run.my_rank == 0) timer->print_elapsed();
 
         return;
     }
@@ -1436,7 +1436,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
                                                        strain_source(),
                                                        mindist_list);
 
-        if (mympi->my_rank == 0) timer->print_elapsed();
+        if (run.my_rank == 0) timer->print_elapsed();
     }
 }
 

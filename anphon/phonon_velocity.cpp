@@ -250,39 +250,39 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     std::vector<int> nk_proc;
     std::vector<int> ik_begin_proc, ik_end_proc;
 
-    sendcount.resize(mympi->nprocs);
-    recvcount.resize(mympi->nprocs);
-    nk_proc.resize(mympi->nprocs);
+    sendcount.resize(run.nprocs);
+    recvcount.resize(run.nprocs);
+    nk_proc.resize(run.nprocs);
 
-    auto nk_loc = nk / mympi->nprocs;
-    auto nk_res = nk - nk_loc * mympi->nprocs;
+    auto nk_loc = nk / run.nprocs;
+    auto nk_res = nk - nk_loc * run.nprocs;
 
-    for (auto i = 0; i < mympi->nprocs; ++i) {
+    for (auto i = 0; i < run.nprocs; ++i) {
         nk_proc[i] = nk_loc;
         if (i < nk_res) ++nk_proc[i];
         sendcount[i] = 3 * ns * nk_proc[i];
         recvcount[i] = sendcount[i];
     }
 
-    if (mympi->my_rank == 0) {
-        displs.resize(mympi->nprocs);
+    if (run.my_rank == 0) {
+        displs.resize(run.nprocs);
         displs[0] = 0;
-        for (auto i = 1; i < mympi->nprocs; ++i) {
+        for (auto i = 1; i < run.nprocs; ++i) {
             displs[i] = displs[i - 1] + recvcount[i - 1];
         }
     }
 
-    ik_begin_proc.resize(mympi->nprocs);
-    ik_end_proc.resize(mympi->nprocs);
+    ik_begin_proc.resize(run.nprocs);
+    ik_end_proc.resize(run.nprocs);
     ik_begin_proc[0] = 0;
     ik_end_proc[0] = nk_proc[0];
-    for (auto i = 1; i < mympi->nprocs; ++i) {
+    for (auto i = 1; i < run.nprocs; ++i) {
         ik_begin_proc[i] = ik_end_proc[i - 1];
         ik_end_proc[i] = ik_begin_proc[i] + nk_proc[i];
     }
 
     std::vector<int> klist_proc;
-    for (auto ik = ik_begin_proc[mympi->my_rank]; ik < ik_end_proc[mympi->my_rank]; ++ik) {
+    for (auto ik = ik_begin_proc[run.my_rank]; ik < ik_end_proc[run.my_rank]; ++ik) {
         klist_proc.push_back(ik);
     }
 
@@ -306,11 +306,11 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     vel.clear();
 
     MPI_Gatherv(nk_loc > 0 ? &phvel3_loc[0][0][0] : nullptr,
-                sendcount[mympi->my_rank],
+                sendcount[run.my_rank],
                 MPI_DOUBLE,
-                mympi->my_rank == 0 ? &phvel3_out[0][0][0] : nullptr,
-                mympi->my_rank == 0 ? &recvcount[0] : nullptr,
-                mympi->my_rank == 0 ? &displs[0] : nullptr,
+                run.my_rank == 0 ? &phvel3_out[0][0][0] : nullptr,
+                run.my_rank == 0 ? &recvcount[0] : nullptr,
+                run.my_rank == 0 ? &displs[0] : nullptr,
                 MPI_DOUBLE,
                 0,
                 MPI_COMM_WORLD);
@@ -332,7 +332,7 @@ void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh
     const auto nk = kmesh_in.nk;
     const auto neval = dynamical->neval;
 
-    if (mympi->my_rank == 0 || bcast_full) {
+    if (run.my_rank == 0 || bcast_full) {
         vel_out.resize(nk, neval, 3);
     } else {
         vel_out.resize(1, 1, 1);
@@ -340,7 +340,7 @@ void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh
 
     get_phonon_group_velocity_mesh_mpi(kmesh_in, lavec_p, vel_out);
 
-    if (mympi->my_rank == 0 && unit_factor != 1.0) {
+    if (run.my_rank == 0 && unit_factor != 1.0) {
         for (unsigned int i = 0; i < nk; ++i) {
             for (unsigned int j = 0; j < neval; ++j) {
                 for (auto k = 0; k < 3; ++k) {
@@ -467,22 +467,22 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
     const auto factor = Bohr_in_Angstrom * 1.0e-10 / (time_ry * 2.0 * pi);
     const auto legacy = legacy_velocity();
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " Calculating group velocity matrix of phonons on uniform grid ... ";
     }
 
     // k distribution
-    std::vector<int> nk_proc(mympi->nprocs);
+    std::vector<int> nk_proc(run.nprocs);
     if (nk > static_cast<unsigned int>(std::numeric_limits<int>::max())) {
         exit("calc_phonon_velmat_mesh", "Number of k points exceeds the supported range.");
     }
     const auto nk_int = static_cast<int>(nk);
-    auto nk_loc = nk_int / mympi->nprocs;
-    const auto nk_res = nk_int - nk_loc * mympi->nprocs;
-    for (auto i = 0; i < mympi->nprocs; ++i) nk_proc[i] = nk_loc + (i < nk_res ? 1 : 0);
+    auto nk_loc = nk_int / run.nprocs;
+    const auto nk_res = nk_int - nk_loc * run.nprocs;
+    for (auto i = 0; i < run.nprocs; ++i) nk_proc[i] = nk_loc + (i < nk_res ? 1 : 0);
     auto ik_begin = 0;
-    for (auto i = 0; i < mympi->my_rank; ++i) ik_begin += nk_proc[i];
-    nk_loc = nk_proc[mympi->my_rank];
+    for (auto i = 0; i < run.my_rank; ++i) ik_begin += nk_proc[i];
+    nk_loc = nk_proc[run.my_rank];
 
     NDArray<std::complex<double>, 3> vk;         // one k point, discarded after use
     NDArray<std::complex<double>, 4> velmat_loc; // only if the full matrix is wanted
@@ -565,25 +565,25 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
     if (velmat_out) {
         gather_k_records<std::complex<double>>(nk_loc > 0 ? &velmat_loc[0][0][0][0] : nullptr,
                                                nk_proc,
-                                               mympi->my_rank,
-                                               mympi->nprocs,
+                                               run.my_rank,
+                                               run.nprocs,
                                                static_cast<size_t>(ns) * ns * 3,
                                                mpi_complex_type,
-                                               mympi->my_rank == 0 ? &(*velmat_out)[0][0][0][0] : nullptr);
+                                               run.my_rank == 0 ? &(*velmat_out)[0][0][0][0] : nullptr);
         velmat_loc.clear();
     }
     if (velblock_out) {
         gather_k_records<double>(nk_loc > 0 ? &velblock_loc[0][0][0][0] : nullptr,
                                  nk_proc,
-                                 mympi->my_rank,
-                                 mympi->nprocs,
+                                 run.my_rank,
+                                 run.nprocs,
                                  static_cast<size_t>(ns) * 9,
                                  MPI_DOUBLE,
-                                 mympi->my_rank == 0 ? &(*velblock_out)[0][0][0][0] : nullptr);
+                                 run.my_rank == 0 ? &(*velblock_out)[0][0][0][0] : nullptr);
         velblock_loc.clear();
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 }
@@ -907,7 +907,7 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
     // gradient exists. A central difference can be nonzero there;
     // a directional limit is not implemented.
     if (std::abs(xk_in[0]) < eps && std::abs(xk_in[1]) < eps && std::abs(xk_in[2]) < eps) {
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             static auto warned_gamma = false;
             if (!warned_gamma) {
                 warned_gamma = true;

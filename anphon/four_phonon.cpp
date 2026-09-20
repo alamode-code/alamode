@@ -279,7 +279,7 @@ void AnharmonicCore::prepare_fc4_compressed()
     cfc->q_ptr.push_back(static_cast<int>(cfc->pair_r1.size()));
     cfc->row_ptr.push_back(static_cast<int>(cfc->q_diff.size()));
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "\n";
         std::cout << " Four-phonon matrix elements: factorized evaluation\n";
         std::cout << "  Cartesian indices per cell (n)        : " << n << '\n';
@@ -467,7 +467,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     const int s1_chunk =
         static_cast<int>(std::max<size_t>(1, std::min<size_t>(ns, budget_bytes / (3 * n2 * sizeof(Cplx)))));
 
-    if (!fourph_memory_reported && mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (!fourph_memory_reported && run.my_rank == 0 && writes->getVerbosity() > 0) {
         int nthreads = 1;
 #ifdef _OPENMP
         nthreads = omp_get_max_threads();
@@ -932,7 +932,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
         ret[i] *= pi * std::pow(0.5, 5) / (3.0 * static_cast<double>(nk) * static_cast<double>(nk));
     }
 
-    if (profile && mympi->my_rank == 0) {
+    if (profile && run.my_rank == 0) {
         const double t_total = wall_seconds() - t_start;
         std::cout << std::fixed << std::setprecision(3) << "\n [4ph profile] ik=" << ik_in << " is=" << is_in
                   << " quartets=" << prof.n_quartet << " (skipped " << prof.n_quartet_skipped << ", k1 runs " << nrun

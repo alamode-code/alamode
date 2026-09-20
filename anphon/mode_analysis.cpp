@@ -94,7 +94,7 @@ void ModeAnalysis::setup_mode_analysis()
         kpoint->setup_kpoint_band(kpoint->kpInp_targets, system->get_primcell().reciprocal_lattice_vector);
     }
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         const auto ns = dynamical->neval;
         // Off-mesh targets require shifted-grid support for every requested quantity.
         auto add_target = [&](const double *ktmp, const unsigned int snum_tmp, const double kaxis) {
@@ -231,12 +231,12 @@ void ModeAnalysis::setup_mode_analysis()
         MPI_Bcast(&nlist, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
         kslist_arr.resize(nlist);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (i = 0; i < nlist; ++i) kslist_arr[i] = kslist[i];
         }
         MPI_Bcast(&kslist_arr[0], nlist, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-        if (mympi->my_rank > 0) {
+        if (run.my_rank > 0) {
             kslist.clear();
             for (i = 0; i < nlist; ++i) kslist.push_back(kslist_arr[i]);
         }
@@ -244,7 +244,7 @@ void ModeAnalysis::setup_mode_analysis()
 
         unsigned int noff = kslist_offmesh.size();
         MPI_Bcast(&noff, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        if (mympi->my_rank > 0) kslist_offmesh.resize(noff);
+        if (run.my_rank > 0) kslist_offmesh.resize(noff);
         for (i = 0; i < noff; ++i) {
             MPI_Bcast(kslist_offmesh[i].xk, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
             MPI_Bcast(&kslist_offmesh[i].snum, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -254,7 +254,7 @@ void ModeAnalysis::setup_mode_analysis()
     if (ks_analyze_mode) {
         if (kpoint->kpoint_mode == 2 && anharmonic_core->use_triplet_symmetry) {
             anharmonic_core->disable_triplet_symmetry();
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "\n TRISYM was automatically set to 0.\n\n";
             }
         }
@@ -262,7 +262,7 @@ void ModeAnalysis::setup_mode_analysis()
         if (anharmonic_core->quartic_mode > 0) {
             // This is for quartic vertexes.
 
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << " QUARTIC = 1 : Frequency shift due to the loop diagram associated with\n";
                 std::cout << "               quartic anharmonicity will be calculated.\n";
                 std::cout << "               Please check the accuracy of the quartic IFCs \n";
@@ -271,7 +271,7 @@ void ModeAnalysis::setup_mode_analysis()
 
             if (kpoint->kpoint_mode == 2 && anharmonic_core->use_quartet_symmetry) {
                 anharmonic_core->disable_quartet_symmetry();
-                if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+                if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                     std::cout << "\n QUADRISYM was automatically set to 0.\n\n";
                 }
             }
@@ -322,7 +322,7 @@ void ModeAnalysis::run_mode_analysis()
 
         if (selfenergy_mode && interpolate) run_interpolated_spectrum(NT, T_arr);
 
-        if (mympi->my_rank == 0 && selfenergy_mode && run.use_hdf5_io) write_results_hdf5(NT, T_arr);
+        if (run.my_rank == 0 && selfenergy_mode && run.use_hdf5_io) write_results_hdf5(NT, T_arr);
     }
 
     T_arr.clear();
@@ -397,13 +397,13 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
     }
     unsigned int nq = spectrum_xk.size();
     MPI_Bcast(&nq, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-    if (mympi->my_rank > 0) {
+    if (run.my_rank > 0) {
         spectrum_xk.assign(nq, std::vector<double>(3, 0.0));
         spectrum_kaxis.assign(nq, -1.0);
     }
     for (unsigned int iq = 0; iq < nq; ++iq) MPI_Bcast(spectrum_xk[iq].data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "\n INTERPOLATE = 1: bubble self-energy matrix on the " << kmesh_coarse[0] << "x"
                   << kmesh_coarse[1] << "x" << kmesh_coarse[2] << " coarse mesh, spectral function on " << nq
                   << " target q points.\n";
@@ -412,7 +412,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
     // Harmonic D(q) and eigenpairs at the targets (rank 0).
     std::vector<Eigen::MatrixXcd> dmat_q(nq), evec_q(nq);
     std::vector<Eigen::VectorXd> omega_q(nq);
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         NDArray<double, 2> eval_tmp(1, ns);
         NDArray<std::complex<double>, 3> evec_tmp(1, ns, ns);
         for (unsigned int iq = 0; iq < nq; ++iq) {
@@ -452,7 +452,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
                                       nomega,
                                       omega_ry.data(),
                                       sig);
-            if (mympi->my_rank != 0) continue;
+            if (run.my_rank != 0) continue;
             // Pi = -2 E W Sigma W E^+
             Eigen::MatrixXcd E(ns, ns);
             Eigen::VectorXd W(ns);
@@ -470,7 +470,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
                     for (unsigned int b = 0; b < ns; ++b) pi_k[io][a][b][ic] = P(a, b);
             }
         }
-        if (mympi->my_rank != 0) continue;
+        if (run.my_rank != 0) continue;
         for (unsigned int io = 0; io < nomega; ++io) {
             fourier_dymat_k_to_r(kmesh_coarse[0], kmesh_coarse[1], kmesh_coarse[2], ns, pi_k[io], pi_r[io]);
         }
@@ -516,7 +516,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
             for (auto &c: b)
                 for (auto &v: c) v *= to_kayser_inv;
 
-    if (mympi->my_rank == 0 && write_text()) {
+    if (run.my_rank == 0 && write_text()) {
         const auto file = run.job_title + ".spectrum";
         std::ofstream ofs(file);
         if (!ofs) exit("run_interpolated_spectrum", "Cannot open the spectrum file");
@@ -665,7 +665,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
     NDArray<std::complex<double>, 1> self_i;
     NDArray<std::complex<double>, 1> self_j;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "\n Calculate the line width (FWHM) of phonons\n";
         std::cout << " due to 3-phonon interactions for given " << kslist.size() << " modes.\n";
 
@@ -710,7 +710,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
 
         const auto omega = dos->dymat_dos->get_eigenvalues()[knum][snum];
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "\n Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
             for (j = 0; j < 3; ++j) {
@@ -820,13 +820,13 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
             //                                     self_j);
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             auto &r = results[kslist_id[i]];
             r.omega = in_kayser(omega);
             r.linewidth.resize(NT);
             for (j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping_a[j]);
         }
-        if (mympi->my_rank == 0 && write_text()) {
+        if (run.my_rank == 0 && write_text()) {
             auto file_linewidth = run.job_title + ".Gamma." + std::to_string(i + 1);
             ofs_linewidth.open(file_linewidth.c_str(), std::ios::out);
             if (!ofs_linewidth) exit("print_selfenergy", "Cannot open file file_linewidth");
@@ -898,7 +898,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
             }
             //                selfenergy->selfenergy_a(NT, T_arr, omega, knum, snum, self_a);
 
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 auto &r = results[kslist_id[i]];
                 r.shift_tadpole.resize(NT);
                 r.shift_bubble.resize(NT);
@@ -909,7 +909,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                     if (anharmonic_core->quartic_mode == 1) r.shift_loop[j] = in_kayser(-self_b[j].real());
                 }
             }
-            if (mympi->my_rank == 0 && write_text()) {
+            if (run.my_rank == 0 && write_text()) {
                 auto file_shift = run.job_title + ".Shift." + std::to_string(i + 1);
                 ofs_shift.open(file_shift.c_str(), std::ios::out);
                 if (!ofs_shift) exit("print_selfenergy", "Cannot open file file_shift");
@@ -1021,7 +1021,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
         }
         const auto omega = eval_q[0][snum];
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "\n Number : " << std::setw(5) << number_offset + i + 1 << " (off the k-point grid)\n";
             std::cout << "  Phonon at k = (";
             for (auto j = 0; j < 3; ++j) {
@@ -1110,13 +1110,13 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
             for (unsigned int j = 0; j < NT; ++j) damping[j] += damping_tmp[j] / nblock;
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             auto &r = results[target.id];
             r.omega = in_kayser(omega);
             r.linewidth.resize(NT);
             for (unsigned int j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping[j]);
         }
-        if (mympi->my_rank == 0 && write_text()) {
+        if (run.my_rank == 0 && write_text()) {
             const auto file_linewidth = run.job_title + ".Gamma." + std::to_string(number_offset + i + 1);
             std::ofstream ofs(file_linewidth);
             if (!ofs) exit("print_selfenergy_offmesh", "Cannot open file file_linewidth");
@@ -1134,7 +1134,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                 std::cout << "  Phonon line-width is printed in " << file_linewidth << '\n';
             }
         }
-        if (calc_realpart && mympi->my_rank == 0) {
+        if (calc_realpart && run.my_rank == 0) {
             auto &r = results[target.id];
             r.shift_tadpole.resize(NT);
             r.shift_bubble.resize(NT);
@@ -1232,7 +1232,7 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
             anharmonic_core->build_shifted_grid(xs, dos->kmesh_dos.get(), sg);
         }
         const auto omega_q = eval_q[0][snum];
-        if (mympi->my_rank == 0) results[target.id].omega = in_kayser(omega_q);
+        if (run.my_rank == 0) results[target.id].omega = in_kayser(omega_q);
         // External leg: e(-q) = e(q)^* for the squared listings, e(q) for Phi.
         std::vector<std::complex<double>> e0(ns);
         for (auto a = 0; a < ns; ++a) e0[a] = squared ? std::conj(evec_q[0][snum][a]) : evec_q[0][snum][a];
@@ -1253,7 +1253,7 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
 #pragma omp for schedule(dynamic, 4)
 #endif
             for (int ip = 0; ip < npair; ++ip) {
-                if (ip % mympi->nprocs != mympi->my_rank) continue;
+                if (ip % run.nprocs != run.my_rank) continue;
                 const int k1 = quartic ? ip / nk : ip;
                 const int k2 = quartic ? ip % nk : -1;
                 if (!quartic) {
@@ -1301,7 +1301,7 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
         }
         MPI_Reduce(&val_loc[0][0], &val[0][0], npair * nb, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             const auto file = run.job_title + "." + tag + "." + std::to_string(number_offset + i + 1);
             std::ofstream ofs(file);
             if (!ofs) exit("print_vertex_offmesh", "Cannot open the output file");
@@ -1390,7 +1390,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
         freq_array[i] = dos->energy_dos[i] * time_ry / Hz_to_kayser;
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " FSTATE_W = 1 : Calculate the frequency-resolved final state amplitude\n";
         std::cout << "                due to 3-phonon interactions.\n";
@@ -1402,7 +1402,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
 
         const auto omega0 = dos->dymat_dos->get_eigenvalues()[knum][snum];
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -1441,7 +1441,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
                                                 gamma_final);
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             auto &r = results[kslist_id[i]];
             r.omega = in_kayser(omega0);
             r.fstate_energy = dos->energy_dos;
@@ -1454,7 +1454,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
                 }
             }
         }
-        if (mympi->my_rank == 0 && write_text()) {
+        if (run.my_rank == 0 && write_text()) {
             std::string file_omega = run.job_title + ".fw." + std::to_string(i + 1);
             ofs_omega.open(file_omega.c_str(), std::ios::out);
             if (!ofs_omega) exit("print_frequency_resolved_final_state", "Cannot open file file_omega");
@@ -1577,7 +1577,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state_offmesh(const unsigned in
     std::vector<std::complex<double>> work(ngroup);
     std::vector<double> v3sq(ns2);
 
-    for (int k = mympi->my_rank; k < nk; k += mympi->nprocs) {
+    for (int k = run.my_rank; k < nk; k += run.nprocs) {
         anharmonic_core->phi3_reciprocal_at(kmesh_in->xk[k], sg.xk[k], work.data());
         for (auto is = 0; is < ns; ++is) {
             for (auto js = 0; js < ns; ++js) {
@@ -1648,7 +1648,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
             anharmonic_core->build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
         }
         const auto omega0 = eval_q[0][snum];
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "\n Number : " << std::setw(5) << number_offset + i + 1 << " (off the k-point grid)\n";
             std::cout << "  Phonon at k = (";
             for (auto j = 0; j < 3; ++j) {
@@ -1668,7 +1668,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
                                                     evec_q[0][snum],
                                                     sg,
                                                     gamma_final);
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             auto &r = results[target.id];
             r.omega = in_kayser(omega0);
             r.fstate_energy = dos->energy_dos;
@@ -1681,7 +1681,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
                 }
             }
         }
-        if (mympi->my_rank == 0 && write_text()) {
+        if (run.my_rank == 0 && write_text()) {
             const auto file_omega = run.job_title + ".fw." + std::to_string(number_offset + i + 1);
             std::ofstream ofs_omega(file_omega);
             if (!ofs_omega) exit("print_frequency_resolved_final_state_offmesh", "Cannot open file file_omega");
@@ -1741,7 +1741,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state(
         }
     }
 
-    for (int ik = mympi->my_rank; ik < triplet.size(); ik += mympi->nprocs) {
+    for (int ik = run.my_rank; ik < triplet.size(); ik += run.nprocs) {
         const auto multi = static_cast<double>(triplet[ik].group.size());
         const auto knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
         const auto knum_minus = kmesh_in->kindex_minus_xk[knum];
@@ -2023,9 +2023,9 @@ void ModeAnalysis::print_V3_elements() const
 
         const auto omega = eval_tmp[knum][snum];
 
-        if (mympi->my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
+        if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2046,7 +2046,7 @@ void ModeAnalysis::print_V3_elements() const
 
         calc_V3norm2(knum, snum, triplet, v3norm);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             auto file_V3 = run.job_title + ".V3." + std::to_string(i + 1);
             ofs_V3.open(file_V3.c_str(), std::ios::out);
             if (!ofs_V3) exit("run_mode_analysis", "Cannot open file file_V3");
@@ -2107,9 +2107,9 @@ void ModeAnalysis::print_V4_elements() const
 
         double omega = eval_tmp[knum][snum];
 
-        if (mympi->my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
+        if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2130,7 +2130,7 @@ void ModeAnalysis::print_V4_elements() const
 
         calc_V4norm2(knum, snum, quartet, v4norm);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             std::string file_V4 = run.job_title + ".V4." + std::to_string(i + 1);
             ofs_V4.open(file_V4.c_str(), std::ios::out);
             if (!ofs_V4) exit("run_mode_analysis", "Cannot open file file_V4");
@@ -2213,7 +2213,7 @@ void ModeAnalysis::calc_V3norm2(const unsigned int knum, const unsigned int snum
         k1 = triplet[ik].group[0].ks[0];
         k2 = triplet[ik].group[0].ks[1];
 
-        for (size_t ib = mympi->my_rank; ib < ns2; ib += mympi->nprocs) {
+        for (size_t ib = run.my_rank; ib < ns2; ib += run.nprocs) {
             is = ib / ns;
             js = ib % ns;
 
@@ -2228,7 +2228,7 @@ void ModeAnalysis::calc_V3norm2(const unsigned int knum, const unsigned int snum
     const size_t count = ntriplet * ns2;
     MPI_Reduce(&ret_loc[0][0], &ret_sum[0][0], count, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (size_t ik = 0; ik < ntriplet; ++ik) {
             for (size_t ib = 0; ib < ns2; ++ib) {
                 ret[ik][ib] = ret_sum[ik][ib];
@@ -2273,7 +2273,7 @@ void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum
         k2 = quartet[ik].group[0].ks[1];
         k3 = quartet[ik].group[0].ks[2];
 
-        for (size_t ib = mympi->my_rank; ib < ns3; ib += mympi->nprocs) {
+        for (size_t ib = run.my_rank; ib < ns3; ib += run.nprocs) {
             is = ib / ns2;
             js = (ib - is * ns2) / ns;
             ks = ib % ns;
@@ -2290,7 +2290,7 @@ void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum
     const size_t count = nquartet * ns3;
     MPI_Reduce(&ret_loc[0][0], &ret_sum[0][0], count, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (size_t ik = 0; ik < nquartet; ++ik) {
             for (size_t ib = 0; ib < ns3; ++ib) {
                 ret[ik][ib] = ret_sum[ik][ib];
@@ -2317,9 +2317,9 @@ void ModeAnalysis::print_Phi3_elements() const
 
         const auto omega = eval_tmp[knum][snum];
 
-        if (mympi->my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
+        if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2338,7 +2338,7 @@ void ModeAnalysis::print_Phi3_elements() const
 
         calc_Phi3(knum, snum, triplet, phi3);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             auto file_V3 = run.job_title + ".Phi3." + std::to_string(i + 1);
             ofs_V3.open(file_V3.c_str(), std::ios::out);
             if (!ofs_V3) exit("print_phi3_element", "Cannot open file file_V3");
@@ -2399,9 +2399,9 @@ void ModeAnalysis::print_Phi4_elements() const
 
         const auto omega = eval_tmp[knum][snum];
 
-        if (mympi->my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
+        if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2420,7 +2420,7 @@ void ModeAnalysis::print_Phi4_elements() const
         std::vector<std::vector<std::complex<double>>> phi4(nk_size, std::vector<std::complex<double>>(ns * ns * ns));
         calc_Phi4(knum, snum, quartet, phi4);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             std::string file_V4 = run.job_title + ".Phi4." + std::to_string(i + 1);
             ofs_V4.open(file_V4.c_str(), std::ios::out);
             if (!ofs_V4) exit("print_phi4_element", "Cannot open file file_V3");
@@ -2514,7 +2514,7 @@ void ModeAnalysis::calc_Phi3(const unsigned int knum, const unsigned int snum, c
         k1 = triplet[ik].group[0].ks[0];
         k2 = triplet[ik].group[0].ks[1];
 
-        for (size_t ib = mympi->my_rank; ib < ns2; ib += mympi->nprocs) {
+        for (size_t ib = run.my_rank; ib < ns2; ib += run.nprocs) {
 
             is = ib / ns;
             js = ib % ns;
@@ -2530,7 +2530,7 @@ void ModeAnalysis::calc_Phi3(const unsigned int knum, const unsigned int snum, c
     const size_t count = ntriplet * ns2;
     MPI_Reduce(&ret_loc[0][0], &ret_sum[0][0], count, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (size_t ik = 0; ik < ntriplet; ++ik) {
             for (size_t ib = 0; ib < ns2; ++ib) {
                 ret[ik][ib] = ret_sum[ik][ib];
@@ -2573,7 +2573,7 @@ void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, c
         k2 = quartet[ik].group[0].ks[1];
         k3 = quartet[ik].group[0].ks[2];
 
-        for (size_t ib = mympi->my_rank; ib < ns3; ib += mympi->nprocs) {
+        for (size_t ib = run.my_rank; ib < ns3; ib += run.nprocs) {
             is = ib / ns2;
             js = (ib - is * ns2) / ns;
             ks = ib % ns;
@@ -2590,7 +2590,7 @@ void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, c
     const size_t count = nquartet * ns3;
     MPI_Reduce(&ret_loc[0][0], &ret_sum[0][0], count, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (size_t ik = 0; ik < nquartet; ++ik) {
             for (size_t ib = 0; ib < ns3; ++ib) {
                 ret[ik][ib] = ret_sum[ik][ib];
@@ -2648,7 +2648,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
         const auto snum = kslist[i] % ns;
         const auto ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             if (writes->getVerbosity() > 0) {
                 std::cout << '\n';
                 std::cout << " SELF_W = 1: Calculate bubble selfenergy with frequency dependency\n";
@@ -2681,7 +2681,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
             const auto T_now = T_arr[iT];
             const auto omega = dos->dymat_dos->get_eigenvalues()[knum][snum];
 
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "  Temperature (K) : " << std::setw(15) << T_now << '\n';
                 std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
             }
@@ -2709,7 +2709,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
 
             // Calculate real part of the self-energy by Kramers-Kronig relation
             kramers_kronig_real(nomega, omega_array, delta_omega, self3_imag[iT], self3_real[iT]);
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 auto &r = results[kslist_id[i]];
                 if (iT == 0) {
                     r.omega = in_kayser(omega);
@@ -2723,7 +2723,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
                     r.self_imag[iT][iomega] = in_kayser(self3_imag[iT][iomega]);
                 }
             }
-            if (mympi->my_rank == 0 && write_text()) {
+            if (run.my_rank == 0 && write_text()) {
                 for (iomega = 0; iomega < nomega; ++iomega) {
                     ofs_self << std::setw(10) << T_now << std::setw(15) << in_kayser(omega);
                     ofs_self << std::setw(10) << in_kayser(omega_array[iomega]) << std::setw(15)
@@ -2733,7 +2733,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
                 ofs_self << '\n';
             }
         }
-        if (mympi->my_rank == 0 && write_text()) ofs_self.close();
+        if (run.my_rank == 0 && write_text()) ofs_self.close();
     }
     print_spectral_function_offmesh(NT, T_arr, kslist.size(), nomega, omega_array, delta_omega);
 
@@ -2781,7 +2781,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
         const auto omega = eval_q[0][snum];
 
         std::ofstream ofs_self;
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             if (writes->getVerbosity() > 0) {
                 std::cout << "\n Number : " << std::setw(5) << number_offset + i + 1 << " (off the k-point grid)\n";
                 std::cout << "  Phonon at k = (";
@@ -2805,7 +2805,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
         }
         for (unsigned int iT = 0; iT < NT; ++iT) {
             const auto T_now = T_arr[iT];
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "  Temperature (K) : " << std::setw(15) << T_now << '\n';
                 std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
             }
@@ -2831,7 +2831,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                 }
             }
             kramers_kronig_real(nomega, omega_array, delta_omega, self_imag, self_real);
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 auto &r = results[target.id];
                 if (iT == 0) {
                     r.omega = in_kayser(omega);
@@ -2846,7 +2846,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                     r.self_imag[iT][iomega] = in_kayser(self_imag[iomega]);
                 }
             }
-            if (mympi->my_rank == 0 && write_text()) {
+            if (run.my_rank == 0 && write_text()) {
                 for (unsigned int iomega = 0; iomega < nomega; ++iomega) {
                     ofs_self << std::setw(10) << T_now << std::setw(15) << in_kayser(omega);
                     ofs_self << std::setw(10) << in_kayser(omega_array[iomega]) << std::setw(15)
@@ -2855,6 +2855,6 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                 ofs_self << '\n';
             }
         }
-        if (mympi->my_rank == 0 && write_text()) ofs_self.close();
+        if (run.my_rank == 0 && write_text()) ofs_self.close();
     }
 }

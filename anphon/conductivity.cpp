@@ -174,10 +174,10 @@ void Conductivity::setup_kappa()
     // step starting at the restart offset, so a restart whose number of
     // finished modes is not a multiple of nprocs reaches up to nprocs - 1
     // rows beyond nk_irred * ns.
-    damping3.resize(dos->kmesh_dos->nk_irred * ns + mympi->nprocs, ntemp);
+    damping3.resize(dos->kmesh_dos->nk_irred * ns + run.nprocs, ntemp);
 
     if (len_boundary > eps) {
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "\n    Bounday scattering effect will be considered with len_boundary = " << len_boundary
                       << "\n\n";
         }
@@ -196,12 +196,12 @@ void Conductivity::setup_kappa()
     // contracted per k point on the fly so the full matrix is never stored unless asked.
     const auto corrected = !PhononVelocity::legacy_velocity();
     if (calc_coherent) {
-        if (mympi->my_rank == 0) velmat.resize(nk_3ph, ns, ns, 3);
+        if (run.my_rank == 0) velmat.resize(nk_3ph, ns, ns, 3);
         else
             velmat.resize(1, 1, 1, 3);
     }
     if (corrected) {
-        if (mympi->my_rank == 0) velblock.resize(nk_3ph, ns, 3, 3);
+        if (run.my_rank == 0) velblock.resize(nk_3ph, ns, 3, 3);
         else
             velblock.resize(1, 1, 1, 1);
     }
@@ -247,7 +247,7 @@ void Conductivity::setup_kappa_4ph()
         for (auto i = 0; i < 3; i++) nkc_tmp[i] = dos->kmesh_dos->nk_i[i];
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "\n";
         std::cout << " Four-phonon scattering rate will be calculated additionally.\n";
         std::cout << " KMESH for 4-ph:\n";
@@ -270,7 +270,7 @@ void Conductivity::setup_kappa_4ph()
     // Rows of damping4 follow the 4ph mesh (KMESH_COARSE may have more
     // irreducible points than the 3ph mesh); the nprocs slack rows are
     // needed for the same reason as in setup_kappa.
-    damping4.resize(kmesh_4ph->nk_irred * ns + mympi->nprocs, ntemp);
+    damping4.resize(kmesh_4ph->nk_irred * ns + run.nprocs, ntemp);
     dymat_4ph = std::make_unique<DymatEigenValue>(true, false, nk_4ph, neval);
 
     eval_tmp.resize(nk_4ph, neval);
@@ -286,7 +286,7 @@ void Conductivity::setup_kappa_4ph()
                                      evec_tmp);
 
     if (!dynamical->get_projection_directions().empty()) {
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (auto ik = 0; ik < nk_4ph; ++ik) {
                 dynamical->project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                            fcs_phonon->force_constant_with_cell[0],
@@ -332,7 +332,7 @@ void Conductivity::setup_kappa_4ph()
 KappaResultIOH5 *Conductivity::setup_ibte_io(const unsigned int nk_i[3], const unsigned int nk_irred_in,
                                              const unsigned int ns_in, const bool reset)
 {
-    if (!use_h5_io || mympi->my_rank != 0) return nullptr;
+    if (!use_h5_io || run.my_rank != 0) return nullptr;
 
     IbteMetaH5 imeta;
     for (auto i = 0; i < 3; ++i) imeta.nk_i[i] = nk_i[i];
@@ -361,7 +361,7 @@ void Conductivity::compute_damping4_interpolated(const KpointMeshUniform *kmesh_
     setup_kappa_4ph();
     calc_anharmonic_imagself4();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         interpolate_data(kmesh_4ph.get(), kmesh_dense_in, damping4, damping4_dense_out);
     }
 
@@ -384,7 +384,7 @@ void Conductivity::prepare_restart(const int mode)
         // 3ph
         nshift_restart = 0;
         vks_done.clear();
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             if (use_h5_io) {
                 load_computed_modes_h5("3ph", damping3, vks_done);
             } else if (!restart_flag_3ph) {
@@ -415,7 +415,7 @@ void Conductivity::prepare_restart(const int mode)
             }
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             nks_done = vks_done.size();
         }
         MPI_Bcast(&nks_done, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -424,7 +424,7 @@ void Conductivity::prepare_restart(const int mode)
         if (nks_done > 0) {
             arr_done.resize(nks_done);
 
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 for (i = 0; i < nks_done; ++i) {
                     arr_done[i] = vks_done[i];
                 }
@@ -438,7 +438,7 @@ void Conductivity::prepare_restart(const int mode)
                 const auto it_set = vks_job.find(arr_done[i]);
 
                 if (it_set == vks_job.end()) {
-                    std::cout << " rank = " << mympi->my_rank << " arr_done = " << arr_done[i] << '\n';
+                    std::cout << " rank = " << run.my_rank << " arr_done = " << arr_done[i] << '\n';
                     exit("prepare_restart", "This cannot happen");
                 } else {
                     vks_job.erase(it_set);
@@ -452,7 +452,7 @@ void Conductivity::prepare_restart(const int mode)
         // 4ph
         nshift_restart4 = 0;
         vks_done4.clear();
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             if (use_h5_io) {
                 load_computed_modes_h5("4ph", damping4, vks_done4);
             } else if (!restart_flag_4ph) {
@@ -478,7 +478,7 @@ void Conductivity::prepare_restart(const int mode)
             }
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             nks_done = vks_done4.size();
         }
         MPI_Bcast(&nks_done, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -487,7 +487,7 @@ void Conductivity::prepare_restart(const int mode)
         if (nks_done > 0) {
             arr_done.resize(nks_done);
 
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 for (i = 0; i < nks_done; ++i) {
                     arr_done[i] = vks_done4[i];
                 }
@@ -501,7 +501,7 @@ void Conductivity::prepare_restart(const int mode)
                 const auto it_set = vks_job4.find(arr_done[i]);
 
                 if (it_set == vks_job4.end()) {
-                    std::cout << " rank = " << mympi->my_rank << " arr_done = " << arr_done[i] << '\n';
+                    std::cout << " rank = " << run.my_rank << " arr_done = " << arr_done[i] << '\n';
                     exit("prepare_restart", "This cannot happen");
                 } else {
                     vks_job4.erase(it_set);
@@ -523,7 +523,7 @@ void Conductivity::setup_result_io(const int mode)
         // before any self-energy computation; a restart flag of 0 discards
         // the previous data of this channel only. Old text .result files
         // are imported once (read-only) when the h5 has no data yet.
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             if (mode == 1) {
                 if (fcs_phonon->fc2_temperature >= 0.0) {
                     if (writes->getVerbosity() > 0)
@@ -565,7 +565,7 @@ void Conductivity::setup_result_io(const int mode)
     }
 
     // check consistency or write header for result, for either 3ph or 4ph calculation
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         if (mode == 1) {
             // 3ph
@@ -854,14 +854,14 @@ void Conductivity::calc_anharmonic_imagself3()
     unsigned int icount = 0;
 
     for (const auto &it: vks_job) {
-        if (icount % mympi->nprocs == mympi->my_rank) {
+        if (icount % run.nprocs == run.my_rank) {
             vks_l.push_back(it);
         }
         ++icount;
     }
 
-    if (mympi->my_rank == 0) {
-        nks_thread.resize(mympi->nprocs);
+    if (run.my_rank == 0) {
+        nks_thread.resize(run.nprocs);
     }
 
     auto nks_tmp = vks_l.size();
@@ -870,12 +870,12 @@ void Conductivity::calc_anharmonic_imagself3()
     // &nks_thread[my_rank] from a null pointer on non-root ranks.
     MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, nks_thread, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Start computing 3-phonon (bubble) self-energies ... \n";
             std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
-            std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
+            std::cout << " They are distributed to " << std::setw(6) << run.nprocs << " MPI processes\n";
             std::cout << '\n' << std::flush;
         }
         nks_thread.clear();
@@ -883,10 +883,10 @@ void Conductivity::calc_anharmonic_imagself3()
 
     unsigned int nk_tmp;
 
-    if (nks_g % mympi->nprocs != 0) {
-        nk_tmp = nks_g / mympi->nprocs + 1;
+    if (nks_g % run.nprocs != 0) {
+        nk_tmp = nks_g / run.nprocs + 1;
     } else {
-        nk_tmp = nks_g / mympi->nprocs;
+        nk_tmp = nks_g / run.nprocs;
     }
 
     if (vks_l.size() < nk_tmp) {
@@ -940,13 +940,13 @@ void Conductivity::calc_anharmonic_imagself3()
         MPI_Gather(&damping3_loc[0],
                    ntemp,
                    MPI_DOUBLE,
-                   damping3[nshift_restart + i * mympi->nprocs],
+                   damping3[nshift_restart + i * run.nprocs],
                    ntemp,
                    MPI_DOUBLE,
                    0,
                    MPI_COMM_WORLD);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             write_result_gamma(i, nshift_restart, vel, damping3, 1);
 
             auto currentTime = std::chrono::system_clock::now();
@@ -977,14 +977,14 @@ void Conductivity::calc_anharmonic_imagself4()
     unsigned int icount = 0;
 
     for (const auto &it: vks_job4) {
-        if (icount % mympi->nprocs == mympi->my_rank) {
+        if (icount % run.nprocs == run.my_rank) {
             vks_l.push_back(it);
         }
         ++icount;
     }
 
-    if (mympi->my_rank == 0) {
-        nks_thread.resize(mympi->nprocs);
+    if (run.my_rank == 0) {
+        nks_thread.resize(run.nprocs);
     }
 
     NDArray<double, 1> damping4_loc;
@@ -995,14 +995,14 @@ void Conductivity::calc_anharmonic_imagself4()
     // &nks_thread[my_rank] from a null pointer on non-root ranks.
     MPI_Gather(&nks_tmp, 1, MPI_UNSIGNED, nks_thread, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (writes->getVerbosity() > 0) {
             std::cout << '\n';
             std::cout << " Start computing 4-phonon self-energies ... \n";
             std::cout << " Four-phonon calculations are much more expensive than three-phonon ones;\n";
             std::cout << " set VERBOSITY = 2 for a per-mode timing breakdown.\n";
             std::cout << " Total Number of phonon modes to be calculated : " << nks_g << '\n';
-            std::cout << " They are distributed to " << std::setw(6) << mympi->nprocs << " MPI processes\n";
+            std::cout << " They are distributed to " << std::setw(6) << run.nprocs << " MPI processes\n";
             std::cout << '\n' << std::flush;
         }
         nks_thread.clear();
@@ -1010,10 +1010,10 @@ void Conductivity::calc_anharmonic_imagself4()
 
     unsigned int nk_tmp;
 
-    if (nks_g % mympi->nprocs != 0) {
-        nk_tmp = nks_g / mympi->nprocs + 1;
+    if (nks_g % run.nprocs != 0) {
+        nk_tmp = nks_g / run.nprocs + 1;
     } else {
-        nk_tmp = nks_g / mympi->nprocs;
+        nk_tmp = nks_g / run.nprocs;
     }
 
     if (vks_l.size() < nk_tmp) {
@@ -1065,13 +1065,13 @@ void Conductivity::calc_anharmonic_imagself4()
         MPI_Gather(&damping4_loc[0],
                    ntemp,
                    MPI_DOUBLE,
-                   damping4[nshift_restart4 + i * mympi->nprocs],
+                   damping4[nshift_restart4 + i * run.nprocs],
                    ntemp,
                    MPI_DOUBLE,
                    0,
                    MPI_COMM_WORLD);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             write_result_gamma(i, nshift_restart4, vel_4ph, damping4, -1);
 
             auto currentTime = std::chrono::system_clock::now();
@@ -1101,7 +1101,7 @@ void Conductivity::calc_anharmonic_imagself()
 void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int nshift, double ***vel_in,
                                       double **damp_in, int mode)
 {
-    const unsigned int np = mympi->nprocs;
+    const unsigned int np = run.nprocs;
     if (use_h5_io) {
         // The gathered batch occupies consecutive rows; frequencies and
         // velocities were stored once at channel creation.
@@ -1160,7 +1160,7 @@ static std::string active_transport_formulation(const bool nonanalytic)
 void Conductivity::report_unresolved_degenerate_blocks(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                                        const double *const *gamma_in) const
 {
-    if (mympi->my_rank != 0 || PhononVelocity::legacy_velocity() || writes->getVerbosity() == 0) return;
+    if (run.my_rank != 0 || PhononVelocity::legacy_velocity() || writes->getVerbosity() == 0) return;
 
     std::vector<std::vector<int>> lo, hi;
     build_block_table(kmesh_in, eval_in, ns, lo, hi);
@@ -1234,7 +1234,7 @@ void Conductivity::compute_kappa()
     unsigned int i;
     unsigned int iks;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         std::string file_kl;
         std::ofstream ofs_kl;
@@ -1625,7 +1625,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
 void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *kmesh_in,
                                                      const double *const *eval_in) const
 {
-    if (mympi->my_rank != 0 || !std::getenv("ALAMODE_CHECK_VELMAT")) return;
+    if (run.my_rank != 0 || !std::getenv("ALAMODE_CHECK_VELMAT")) return;
 
     auto max_abs = 0.0;
     auto max_rel = 0.0;

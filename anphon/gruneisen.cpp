@@ -108,7 +108,7 @@ void Gruneisen::setup()
         }
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         if (print_newfcs) {
             std::cout << '\n';
             if (anharmonic_core->quartic_mode > 0) {
@@ -141,7 +141,7 @@ void Gruneisen::setup()
 
 void Gruneisen::calc_gruneisen()
 {
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         const std::string ion_path = sublattice_relax ? "relaxed-ion " : "";
         if (gruneisen_mode == 1) {
@@ -170,7 +170,7 @@ void Gruneisen::calc_gruneisen()
                                   gruneisen_tensor_dos);
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!" << '\n';
     }
 }

@@ -174,7 +174,7 @@ void PHON::setup_base() const
                                    system->get_primcell().lattice_vector,
                                    system->get_primcell().reciprocal_lattice_vector,
                                    anharmonic_core->quartic_mode,
-                                   mympi->my_rank,
+                                   run_info.my_rank,
                                    get_verbosity());
     dos->setup();
     thermodynamics->setup();
@@ -182,7 +182,7 @@ void PHON::setup_base() const
     dielec->init();
     ewald->init();
 
-    if (mympi->my_rank == 0 && get_verbosity() > 0) {
+    if (run_info.my_rank == 0 && get_verbosity() > 0) {
         std::cout << " \n -----------------------------------------------------------------\n\n";
         if (thermodynamics->classical) {
             std::cout << "\n CLASSICAL = 1: Classical approximations will be used\n";
@@ -193,7 +193,7 @@ void PHON::setup_base() const
 
 void PHON::execute_phonons() const
 {
-    if (mympi->my_rank == 0 && get_verbosity() > 0) {
+    if (run_info.my_rank == 0 && get_verbosity() > 0) {
         std::cout << "                      MODE = phonons                         \n";
         std::cout << "                                                             \n";
         std::cout << "      Phonon calculation within harmonic approximation       \n";
@@ -210,7 +210,7 @@ void PHON::execute_phonons() const
 
     dynamical->diagonalize_dynamical_all();
 
-    if (mode_symmetry->print_irreps && mympi->my_rank == 0) {
+    if (mode_symmetry->print_irreps && run_info.my_rank == 0) {
         mode_symmetry->analyze_irreps_at_gamma();
     }
 
@@ -233,12 +233,12 @@ void PHON::execute_phonons() const
                                                    symmetry->SymmList,
                                                    *anharmonic_core,
                                                    dynamical->neval,
-                                                   mympi->my_rank,
-                                                   mympi->nprocs,
+                                                   run_info.my_rank,
+                                                   run_info.nprocs,
                                                    get_verbosity());
     }
 
-    if (mympi->my_rank == 0) {
+    if (run_info.my_rank == 0) {
         writes->printPhononEnergies();
         if (mode_symmetry->print_irreps) {
             writes->printModeIrrepsSummary();
@@ -252,7 +252,7 @@ void PHON::execute_phonons() const
 
 void PHON::execute_kappa() const
 {
-    if (mympi->my_rank == 0 && get_verbosity() > 0) {
+    if (run_info.my_rank == 0 && get_verbosity() > 0) {
         std::cout << "                        MODE = RTA                           \n";
         std::cout << "                                                             \n";
         std::cout << "      Calculation of phonon line width (lifetime) and        \n";
@@ -270,7 +270,7 @@ void PHON::execute_kappa() const
     isotope->setup_isotope_scattering(*system,
                                       dos->kmesh_dos->nk_irred,
                                       dynamical->neval,
-                                      mympi->my_rank,
+                                      run_info.my_rank,
                                       get_verbosity());
     isotope->calc_isotope_selfenergy_all(*dos->kmesh_dos.get(),
                                          *dos->dymat_dos.get(),
@@ -278,8 +278,8 @@ void PHON::execute_kappa() const
                                          *system,
                                          *integration,
                                          dynamical->neval,
-                                         mympi->my_rank,
-                                         mympi->nprocs,
+                                         run_info.my_rank,
+                                         run_info.nprocs,
                                          get_verbosity());
 
     mode_analysis->setup_mode_analysis();
@@ -288,8 +288,8 @@ void PHON::execute_kappa() const
                                  thermodynamics->classical,
                                  symmetry->SymmList,
                                  *anharmonic_core,
-                                 mympi->my_rank,
-                                 mympi->nprocs);
+                                 run_info.my_rank,
+                                 run_info.nprocs);
 
     if (mode_analysis->ks_analyze_mode) {
         mode_analysis->run_mode_analysis();
@@ -300,7 +300,7 @@ void PHON::execute_kappa() const
 
 void PHON::execute_self_consistent_phonon() const
 {
-    if (mympi->my_rank == 0 && get_verbosity() > 0) {
+    if (run_info.my_rank == 0 && get_verbosity() > 0) {
         if (run_info.mode == "SCPH" && relaxation->relax_str == 0) {
             std::cout << "                        MODE = SCPH                          \n";
             std::cout << "                                                             \n";
@@ -327,12 +327,12 @@ void PHON::execute_self_consistent_phonon() const
     setup_base();
     print_stage_line("setup (IFCs, symmetry, k points, ...)",
                      timer->elapsed() - t_stage,
-                     mympi->my_rank,
+                     run_info.my_rank,
                      get_verbosity());
 
     t_stage = timer->elapsed();
     dynamical->diagonalize_dynamical_all();
-    print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, mympi->my_rank, get_verbosity());
+    print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
     relaxation->setup_relaxation();
 
     if (run_info.mode == "SCPH") {

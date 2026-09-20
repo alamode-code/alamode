@@ -159,7 +159,7 @@ void ModeSymmetry::setup()
 
 void ModeSymmetry::analyze_irreps_at_gamma()
 {
-    if (mympi->my_rank != 0) {
+    if (run.my_rank != 0) {
         return;
     }
 

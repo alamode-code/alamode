@@ -120,7 +120,7 @@ void ScphQhaCommon::setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int 
                        system->get_primcell().reciprocal_lattice_vector,
                        symmetry->use_time_reversal && symmetry->time_reversal_sym);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " Setting up the " << mode_name << " calculations ...\n\n";
         std::cout << "  Gamma-centered uniform grid with the following mesh density:\n";
         std::cout << "  nk1:" << std::setw(5) << kmesh_dense_input[0] << '\n';
@@ -150,7 +150,7 @@ void ScphQhaCommon::setup_eigvecs()
 {
     const auto ns = dynamical->neval;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
     }
 
@@ -185,7 +185,7 @@ void ScphQhaCommon::setup_eigvecs()
     }
     is_acoustic_gamma_harm = dynamical->detect_acoustic_modes_at_gamma(evec_harmonic[ik_gamma_dense]);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done !\n";
     }
 }
@@ -206,7 +206,7 @@ void ScphQhaCommon::setup_structural_data()
 
 void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
 {
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         if (prepare_v3) {
             std::cout << " Preparing for calculating V3 & V4  ...";
         } else {
@@ -229,7 +229,7 @@ void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
     phase_factor = std::make_unique<PhaseFactorCache>(kmesh_dense->nk_i);
     phase_factor->create(true);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done!\n";
     }
 }
@@ -272,7 +272,7 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
         Temp_array[i] = Tmin + dT * static_cast<double>(i);
     }
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         double temp;
         std::ifstream ifs_dymat;
         auto file_dymat = filename_dymat;
@@ -444,7 +444,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
     unsigned int nomega_dielec;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         if (writes->getVerbosity() > 0) {
             std::cout << '\n';
@@ -1042,7 +1042,7 @@ void ScphQhaCommon::print_stage_time(const std::string &label, const double t_st
 
 void ScphQhaCommon::print_stage_value(const std::string &label, const double seconds) const
 {
-    print_stage_line(label, seconds, mympi->my_rank, writes->getVerbosity());
+    print_stage_line(label, seconds, run.my_rank, writes->getVerbosity());
 }
 
 void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
@@ -1185,7 +1185,7 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
     const auto ik_gamma_irred = static_cast<std::size_t>(kmesh_coarse->kpoint_map_symmetry[0].knum_irred_orig);
     const auto jk_gamma_dense = static_cast<std::size_t>(ik_gamma_dense);
     const auto nk2_prod = nk_irred * nk;
-    const auto nprocs = static_cast<std::size_t>(mympi->nprocs);
+    const auto nprocs = static_cast<std::size_t>(run.nprocs);
 
     // The band builder distributes ns-row units; the k-point builder distributes
     // whole slices and needs 2 ns^4 scratch. Prefer band distribution when
@@ -1198,14 +1198,14 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
         const double local_rows = static_cast<double>(nk2_prod) * ns4 / static_cast<double>(nprocs);
         if (nk2_prod < nprocs || scratch_kpoint > local_rows) {
             band = true;
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << " V4 is distributed over " << nprocs << " MPI processes: the band-parallel builder"
                           << " (IALGO = 1) is used so that the rows can be split evenly.\n";
             }
         }
     }
 
-    v4_service = std::make_unique<V4Service>(mympi->my_rank, mympi->nprocs);
+    v4_service = std::make_unique<V4Service>(run.my_rank, run.nprocs);
     v4_service->setup(ns,
                       nk,
                       nk_irred,
@@ -1267,7 +1267,7 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
         ws.v1_ref[is] = 0.0;
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " RELAX_STR = " << to_int(ws.relax_mode) << ": ";
         if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
             std::cout << "Set zeros in derivatives of k-space IFCs by strain.\n\n";

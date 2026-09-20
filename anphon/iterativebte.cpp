@@ -123,12 +123,12 @@ void Iterativebte::setup_iterative()
                                                        *integration,
                                                        *anharmonic_core,
                                                        dynamical->neval,
-                                                       mympi->my_rank,
-                                                       mympi->nprocs);
+                                                       run.my_rank,
+                                                       run.nprocs);
     collision_op->set_isotope_channel(isotope->include_isotope && isotope_inscattering, isotope->isotope_factor.data());
     collision_op->setup();
 
-    if (collision_op->has_isotope_channel() && mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (collision_op->has_isotope_channel() && run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n'
                   << " ISOTOPE_INSCATTERING = 1: the elastic isotope-disorder channel enters\n"
                   << " the collision operator with its in-scattering term (its diagonal is the\n"
@@ -178,7 +178,7 @@ void Iterativebte::setup_iterative()
     MPI_Bcast(t_computed.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(t_converged.data(), static_cast<int>(ntemp), MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         if (use_direct) {
             std::cout << " Direct solution (dense eigendecomposition of the collision kernel)" << '\n';
@@ -215,7 +215,7 @@ void Iterativebte::do_iterativebte()
     if (all_done) {
         // Every temperature was restored from the kappa.h5 file; the
         // expensive L matrices are not needed at all.
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << '\n'
                       << " All temperature points were restored from the kappa.h5 file;\n"
                       << " skipping the calculation of the transition probabilities.\n";
@@ -224,7 +224,7 @@ void Iterativebte::do_iterativebte()
         return;
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " Calculate once for the transition probability L(absorb) and L(emitt)" << '\n';
         std::cout << " Size of L (MB) (approx.) = "
@@ -234,7 +234,7 @@ void Iterativebte::do_iterativebte()
 
     collision_op->build_L();
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "     DONE !" << '\n';
     }
 
@@ -293,7 +293,7 @@ void Iterativebte::iterative_solver()
         NDArray<double, 2> isotope_damping;
         isotope_damping.resize(dos->kmesh_dos->nk_irred, ns);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (auto ik = 0; ik < dos->kmesh_dos->nk_irred; ik++) {
                 for (auto is = 0; is < ns; is++) {
                     isotope_damping[ik][is] = isotope->gamma_isotope[ik][is];
@@ -341,7 +341,7 @@ void Iterativebte::iterative_solver()
         calc_damping4();
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Iteration starts ..." << '\n' << '\n';
     }
 
@@ -372,7 +372,7 @@ void Iterativebte::iterative_solver()
     for (auto itemp = 0; itemp < ntemp; ++itemp) {
 
         if (t_computed[itemp] && t_converged[itemp]) {
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed
                           << std::setprecision(2) << Temperature[itemp]
                           << " K    restored from the kappa.h5 file; skipped.\n";
@@ -397,7 +397,7 @@ void Iterativebte::iterative_solver()
             }
         }
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << " Temperature step ..." << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                       << Temperature[itemp] << " K" << "    -----------------------------\n";
             if (warm_start) {
@@ -496,7 +496,7 @@ void Iterativebte::iterative_solver()
             double local_difference = 0.0;
             double local_norm2 = 0.0;
 
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "   -> iter " << std::setw(3) << itr << ": " << std::flush;
             }
 
@@ -565,7 +565,7 @@ void Iterativebte::iterative_solver()
 
             calc_kappa(itemp, dFold, kappa_new);
             //print kappa
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
                         std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_new[ix][iy];
@@ -598,7 +598,7 @@ void Iterativebte::iterative_solver()
                         kappa[itemp][ix][iy] = kappa_old[ix][iy];
                     }
                 }
-                if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+                if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                     std::cout << "   -> Converged is achieved                 "
                               << "                                            "
                               << "                                    " << std::setw(14) << std::scientific
@@ -631,7 +631,7 @@ void Iterativebte::iterative_solver()
                         kappa[itemp][ix][iy] = kappa_best[3 * ix + iy];
                     }
                 }
-                if (mympi->my_rank == 0) {
+                if (run.my_rank == 0) {
                     if (diverged) {
                         std::cout << "   -> WARNING: the iteration is diverging. Keeping the lowest-residual\n"
                                   << "               iterate (iter " << itr_best
@@ -660,7 +660,7 @@ void Iterativebte::iterative_solver()
     } // itemp
 
     // Per-temperature summary (computed this run only).
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Iterative BTE summary\n";
         std::cout << "     T [K]   iterations   |df'-df|/|df|   converged\n";
         for (auto itemp = 0; itemp < ntemp; ++itemp) {
@@ -688,7 +688,7 @@ void Iterativebte::iterative_solver()
         isotope_damping_loc.clear();
         //isotope_damping.clear();
     }
-    if (mympi->my_rank == 0 && !conductivity->get_use_h5_io()) {
+    if (run.my_rank == 0 && !conductivity->get_use_h5_io()) {
         fs_result.close();
     }
 }
@@ -842,21 +842,21 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
         double maxdiff = 0.0, scale = 0.0;
         MPI_Allreduce(&maxdiff_loc, &maxdiff, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
         MPI_Allreduce(&scale_loc, &scale, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "      (assembly cross-check vs the matrix-free operator: max rel diff = " << std::scientific
                       << std::setprecision(1) << (scale > 0.0 ? maxdiff / scale : 0.0) << ")\n";
         }
     }
 
     std::vector<double> S; // full matrix, row-major, rank 0 only
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         S.assign(nrows3 * nrows3, 0.0);
         std::vector<double> buf;
-        for (auto r = 0; r < mympi->nprocs; ++r) {
+        for (auto r = 0; r < run.nprocs; ++r) {
             // Wedge rows of rank r follow the round-robin distribution.
             std::vector<int> irows;
             for (unsigned int i = 0; i < nk_irred; ++i) {
-                if (static_cast<int>(i) % mympi->nprocs == r) irows.push_back(static_cast<int>(i));
+                if (static_cast<int>(i) % run.nprocs == r) irows.push_back(static_cast<int>(i));
             }
             const double *src = nullptr;
             if (r == 0) {
@@ -876,7 +876,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
             }
         }
     } else {
-        MPI_Send(slab.data(), static_cast<int>(slab.size()), MPI_DOUBLE, 0, mympi->my_rank, MPI_COMM_WORLD);
+        MPI_Send(slab.data(), static_cast<int>(slab.size()), MPI_DOUBLE, 0, run.my_rank, MPI_COMM_WORLD);
     }
     slab.clear();
     slab.shrink_to_fit();
@@ -885,7 +885,7 @@ bool Iterativebte::solve_direct_at_temperature(const int itemp, const double bet
     double residual = 0.0;
     std::vector<double> dF_wedge(nrows3, 0.0);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         // Use one normalized combination u_I = d^{-1/2} sum_{s in I} e_s per
         // degenerate block, avoiding the artificial null modes of P S P.
@@ -1326,7 +1326,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         const auto s2 = wdot(Au, v);
         const auto scale = std::max(std::abs(s1), std::abs(s2));
         const auto asym = scale > 0.0 ? std::abs(s1 - s2) / scale : 0.0;
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             if (writes->getVerbosity() > 0) {
                 std::cout << "      (operator self-adjointness on the Krylov subspace: |<u,Av>-<Au,v>|/|<u,Av>| = "
                           << std::scientific << std::setprecision(1) << asym << ")\n";
@@ -1377,14 +1377,14 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
 
     for (auto itr = 0; itr < max_cycle; ++itr) {
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "   -> iter " << std::setw(3) << itr << ": " << std::flush;
         }
 
         apply_operator(p, Ap);
         const auto pAp = wdot(p, Ap);
         if (pAp <= 0.0) {
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 std::cout << '\n'
                           << "   -> WARNING: <p, Ap> <= 0 encountered; the discretized operator is not\n"
                           << "               positive definite on this vector. Stopping with the best iterate.\n"
@@ -1409,7 +1409,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         NDArray<double, 2> kappa_now;
         kappa_now.resize(3, 3);
         calc_kappa(itemp, dFold, kappa_now);
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             for (auto i = 0; i < 3; ++i) {
                 for (auto j = 0; j < 3; ++j) {
                     std::cout << std::setw(12) << std::scientific << std::setprecision(2) << kappa_now[i][j];
@@ -1434,7 +1434,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
                 }
             }
             kappa_now.clear();
-            if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
                 std::cout << "   -> Converged is achieved                 "
                           << "                                            "
                           << "                                    " << std::setw(14) << std::scientific
@@ -1446,7 +1446,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
         kappa_now.clear();
 
         if (n_growth >= 3) {
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 std::cout << "   -> WARNING: the residual keeps growing (non-symmetric discretization?).\n"
                           << "               Stopping with the best iterate.\n"
                           << std::flush;
@@ -1474,7 +1474,7 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
             }
         }
         kappa_now.clear();
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             std::cout << "   -> WARNING: NOT converged within MAX_CYCLE = " << max_cycle
                       << " CG iterations. Keeping the lowest-residual iterate (iter " << itr_best
                       << ", |r|/|b| = " << std::scientific << std::setprecision(2) << res_best << ").\n"
@@ -1491,14 +1491,14 @@ bool Iterativebte::solve_variational_cg(const int itemp, const double beta, doub
     residual_out = rel_true;
     if (converged && rel_true > convergence_criteria) {
         converged = false;
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             std::cout << "   -> WARNING: the recursive CG residual converged but the explicitly\n"
                       << "               recomputed one is " << std::scientific << std::setprecision(2) << rel_true
                       << "; marking this temperature as NOT converged.\n"
                       << std::flush;
         }
     }
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "      final |r|/|b| (explicit) = " << std::scientific << std::setprecision(2) << rel_true << '\n'
                   << std::flush;
     }
@@ -1604,7 +1604,7 @@ void Iterativebte::write_result()
     if (conductivity->get_use_h5_io()) return;
 
     // write Q and W for all phonon, only phonon in irreducible BZ is written
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (writes->getVerbosity() > 0) {
             std::cout << " Prepare result file ..." << '\n';
         }
@@ -1655,7 +1655,7 @@ void Iterativebte::write_Q_dF(int itemp, NDArray<double, 2> &q, NDArray<double, 
     Q_tmp.clear();
 
     // now we have Q
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (ibte_io) {
             // Durable per-temperature commit into /iterativebte: Q_all is a
             // contiguous [nk_ir][ns] block; dF is flattened at the wedge

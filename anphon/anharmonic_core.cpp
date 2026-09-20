@@ -100,12 +100,12 @@ void AnharmonicCore::setup()
 
     auto t_stage = timer->elapsed();
     if (fcs_phonon->maxorder >= 2) setup_cubic();
-    print_stage_line("IFCs: cubic index groups", timer->elapsed() - t_stage, mympi->my_rank, writes->getVerbosity());
+    print_stage_line("IFCs: cubic index groups", timer->elapsed() - t_stage, run.my_rank, writes->getVerbosity());
     t_stage = timer->elapsed();
     if (fcs_phonon->maxorder >= 3) setup_quartic();
-    print_stage_line("IFCs: quartic index groups", timer->elapsed() - t_stage, mympi->my_rank, writes->getVerbosity());
+    print_stage_line("IFCs: quartic index groups", timer->elapsed() - t_stage, run.my_rank, writes->getVerbosity());
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0 && fcs_phonon->maxorder >= 2) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0 && fcs_phonon->maxorder >= 2) {
         std::cout << "  Number of distinct index groups of the anharmonic IFCs:\n";
         std::cout << "   Order 3 : " << ngroup_v3 << '\n';
         if (fcs_phonon->maxorder >= 3) std::cout << "   Order 4 : " << ngroup_v4 << '\n';

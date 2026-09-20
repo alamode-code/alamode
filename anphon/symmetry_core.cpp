@@ -56,7 +56,7 @@ void Symmetry::setup_symmetry(const bool verbose)
 
     if ((run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0)) {
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             const auto verbosity = verbose ? writes->getVerbosity() : 0;
             if (verbosity > 0) {
                 std::cout << " ==========\n";
@@ -86,7 +86,7 @@ void Symmetry::setup_symmetry(const bool verbose)
             nsym_ref = SymmList_ref.size();
         }
     } else {
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             const auto verbosity = verbose ? writes->getVerbosity() : 0;
             if (verbosity > 0) {
                 std::cout << " ==========\n";
@@ -114,7 +114,7 @@ void Symmetry::setup_symmetry(const bool verbose)
     const auto with_relaxation =
         (run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         const auto verbosity = verbose ? writes->getVerbosity() : 0;
         if (verbosity > 0) {
             std::cout << '\n';
@@ -802,7 +802,7 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     NDArray<double, 3> rot_tmp2;
     NDArray<double, 2> tran_tmp;
 
-    if (mympi->my_rank == 0) n = sym.size();
+    if (run.my_rank == 0) n = sym.size();
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // Nothing to broadcast for an empty symmetry list (e.g. SymmList_ref is only
@@ -815,7 +815,7 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     rot_tmp2.resize(n, 3, 3);
     tran_tmp.resize(n, 3);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (i = 0; i < n; ++i) {
             for (j = 0; j < 3; ++j) {
                 for (k = 0; k < 3; ++k) {
@@ -830,7 +830,7 @@ void Symmetry::broadcast_symmlist(std::vector<SymmetryOperation> &sym) const
     MPI_Bcast(&rot_tmp2[0][0][0], 9 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&tran_tmp[0][0], 3 * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank > 0) {
+    if (run.my_rank > 0) {
         Eigen::Matrix3i rotation;
         Eigen::Matrix3d rotation_cart;
         Eigen::Vector3d tran;

@@ -54,7 +54,7 @@ void Kpoint::kpoint_setups(const std::string mode)
 {
     MPI_Bcast(&kpoint_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " ==========\n";
         std::cout << "  K points \n";
@@ -64,13 +64,13 @@ void Kpoint::kpoint_setups(const std::string mode)
     switch (kpoint_mode) {
     case 0:
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  KPMODE = 0 : Calculation on given k points\n";
         }
 
         setup_kpoint_given(kpInp, system->get_primcell().reciprocal_lattice_vector);
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Number of k points : " << kpoint->kpoint_general->nk << "\n\n";
             std::cout << "  List of k points : " << '\n';
             for (auto i = 0; i < kpoint->kpoint_general->nk; ++i) {
@@ -87,12 +87,12 @@ void Kpoint::kpoint_setups(const std::string mode)
 
     case 1:
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  KPMODE = 1: Band structure calculation\n";
         }
 
         setup_kpoint_band(kpInp, system->get_primcell().reciprocal_lattice_vector);
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Number of paths : " << kpInp.size() << "\n\n";
             std::cout << "  List of k paths : " << '\n';
 
@@ -120,7 +120,7 @@ void Kpoint::kpoint_setups(const std::string mode)
 
     case 2:
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  KPMODE = 2: Uniform grid\n";
         }
 
@@ -128,7 +128,7 @@ void Kpoint::kpoint_setups(const std::string mode)
         nk_tmp[0] = 0;
         nk_tmp[1] = 0;
         nk_tmp[2] = 0;
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (auto i = 0; i < 3; ++i) {
                 const auto nk_in = std::atoi(kpInp[0].kpelem[i].c_str());
                 if (nk_in < 1) {
@@ -143,7 +143,7 @@ void Kpoint::kpoint_setups(const std::string mode)
                               system->get_primcell().reciprocal_lattice_vector,
                               symmetry->use_time_reversal && symmetry->time_reversal_sym);
 
-        if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
             std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
             std::cout << "  nk1:" << std::setw(4) << dos->kmesh_dos->nk_i[0] << '\n';
             std::cout << "  nk2:" << std::setw(4) << dos->kmesh_dos->nk_i[1] << '\n';
@@ -181,7 +181,7 @@ void Kpoint::setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eige
     k.resize(n, 3);
     kdirec.resize(n, 3);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         int j = 0;
         for (const auto &it: kpinfo) {
             for (i = 0; i < 3; ++i) {
@@ -222,7 +222,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
     NDArray<double, 1> axis_tmp;
     unsigned int n = 0;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         NDArray<std::string, 2> kp_symbol;
         NDArray<unsigned int, 1> nk_path;
@@ -307,7 +307,7 @@ void Kpoint::setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen
 
     MPI_Bcast(&n, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank > 0) {
+    if (run.my_rank > 0) {
         xk_tmp.resize(n, 3);
         kdirec_tmp.resize(n, 3);
         axis_tmp.resize(n);
@@ -820,7 +820,7 @@ void Kpoint::mpi_broadcast_kplane_vector(const unsigned int nplane, std::vector<
         naxis.resize(nkp, 2);
         xk_plane.resize(nkp, 3);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (j = 0; j < nkp; ++j) {
                 naxis[j][0] = kp_plane[i][j].n[0];
                 naxis[j][1] = kp_plane[i][j].n[1];
@@ -833,7 +833,7 @@ void Kpoint::mpi_broadcast_kplane_vector(const unsigned int nplane, std::vector<
         MPI_Bcast(&naxis[0][0], 2 * nkp, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(&xk_plane[0][0], 3 * nkp, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        if (mympi->my_rank > 0) {
+        if (run.my_rank > 0) {
             for (j = 0; j < nkp; ++j) {
                 kp_plane[i].emplace_back(xk_plane[j], naxis[j]);
             }

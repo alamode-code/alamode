@@ -68,7 +68,7 @@ void System::setup()
     load_system_info_from_file();
     update_primitive_lattice();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (mass_kd.empty()) {
             const auto nkd_tmp = symbol_kd.size();
             mass_kd.resize(nkd_tmp);
@@ -105,7 +105,7 @@ void System::setup()
     set_atomtype_group(primcell, spin_prim, atomtype_group_prim);
     set_atomtype_group(primcell_distort, spin_prim, atomtype_group_prim_distort);
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         print_structure_information_stdout();
     }
 }
@@ -234,7 +234,7 @@ void System::load_system_info_from_file()
     map_super_alm.resize(3);
     map_prim_alm.resize(3);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (auto i = 0; i < filename_list.size(); ++i) {
             const auto filename = filename_list[i];
             if (!filename.empty()) {
@@ -388,7 +388,7 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
 
     elements.clear();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         using namespace boost::property_tree;
         ptree pt;
@@ -546,7 +546,7 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
     MPI_Bcast(&noncollinear_tmp, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&time_reversal_symmetry_tmp, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (mympi->my_rank > 0) {
+    if (run.my_rank > 0) {
         xr_s_tmp.resize(nat_tmp, 3);
         kd_tmp.resize(nat_tmp);
         map_p2s_tmp.resize(natmin_tmp, ntran_tmp);
@@ -639,7 +639,7 @@ void System::get_structure_and_mapping_table_h5(const std::string &filename, Cel
 
     int natmin_tmp, ntran_tmp;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         File file(filename, File::ReadOnly);
 
         const std::string celltype_s = "SuperCell";
@@ -732,11 +732,11 @@ void System::get_structure_and_mapping_table_h5(const std::string &filename, Cel
     mympi->MPI_Bcast_MappingTable(map_prim_out, 0, MPI_COMM_WORLD);
 
     int nkd_tmp;
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         nkd_tmp = elements.size();
     }
     MPI_Bcast(&nkd_tmp, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (mympi->my_rank != 0) {
+    if (run.my_rank != 0) {
         elements.resize(nkd_tmp);
     }
     for (auto i = 0; i < nkd_tmp; ++i) {
@@ -908,7 +908,7 @@ void System::initialize_distorted_primitive_cell()
     Eigen::Matrix3d lavec_p_strain, rlavec_p_strain, mat_strain;
     double u_tensor_tmp[3][3];
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         for (auto i = 0; i < 3; ++i) {
             for (auto j = 0; j < 3; ++j) {
                 u_tensor_tmp[i][j] = relaxation->init_u_tensor[i][j];
@@ -937,7 +937,7 @@ void System::initialize_distorted_primitive_cell()
     Eigen::MatrixXd xdisp(primcell_distort.number_of_atoms, 3);
     xdisp.setZero();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (!relaxation->init_u0.empty() && relaxation->init_u0.size() != primcell.number_of_atoms * 3)
             exit("initialize_distorted_primitive_cell",
                  "The number of atoms in the primitive cell"

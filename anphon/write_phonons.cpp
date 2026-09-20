@@ -2749,7 +2749,7 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
 
 void Writes::printOutputFile(const std::string &file, const std::string &description) const
 {
-    if (mympi->my_rank != 0 || getVerbosity() == 0) return;
+    if (run.my_rank != 0 || getVerbosity() == 0) return;
     std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file << " : " << description << '\n';
 }
 
@@ -2757,7 +2757,7 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
                                  const double *const *const *kappa_in,
                                  const std::vector<unsigned char> &converged_in) const
 {
-    if (mympi->my_rank != 0) return;
+    if (run.my_rank != 0) return;
 
     const auto file_kappa = run.job_title + ".kl_iter";
 
@@ -2814,7 +2814,7 @@ void Writes::writeKappa() const
 {
     // Write lattice thermal conductivity
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         int i, j, k;
 
         std::string file_kappa;
@@ -2977,7 +2977,7 @@ void Writes::writeSelfenergyIsotope() const
     const auto eval = dos->dymat_dos->get_eigenvalues();
     const auto &gamma_iso = isotope->gamma_isotope;
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         if (isotope->include_isotope == 2) {
 
             auto file_iso = run.job_title + ".self_isotope";
@@ -3303,7 +3303,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 void Writes::printNormalmodeBorncharge() const
 {
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         if (!dielec->has_borncharge()) {
             warn("printNormalmodeBorncharge", "ZMODE = 1 requires BORNINFO; the .zmode file is not created.");
@@ -3363,7 +3363,7 @@ std::string irrep_activity_string(const GammaModeGroup &grp)
 
 void Writes::printModeIrrepsSummary() const
 {
-    if (mympi->my_rank != 0 || getVerbosity() == 0) {
+    if (run.my_rank != 0 || getVerbosity() == 0) {
         return;
     }
 
@@ -3433,7 +3433,7 @@ void Writes::printModeIrrepsSummary() const
 
 void Writes::writeModeIrreps() const
 {
-    if (mympi->my_rank != 0) {
+    if (run.my_rank != 0) {
         return;
     }
 

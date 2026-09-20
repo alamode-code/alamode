@@ -63,7 +63,7 @@ void Fcs_phonon::deallocate_variables()
 
 void Fcs_phonon::setup(const std::string &mode)
 {
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " =================\n";
         std::cout << "  Force Constants \n";
         std::cout << " =================\n\n";
@@ -115,11 +115,11 @@ void Fcs_phonon::setup(const std::string &mode)
 
     force_constant_with_cell.resize(maxorder);
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         const auto t_stage = timer->elapsed();
         load_fcs_from_file(maxorder);
-        print_stage_line("IFCs: read from file", timer->elapsed() - t_stage, mympi->my_rank, writes->getVerbosity());
+        print_stage_line("IFCs: read from file", timer->elapsed() - t_stage, run.my_rank, writes->getVerbosity());
 
         if (writes->getVerbosity() > 0) {
             for (auto i = 0; i < maxorder; ++i) {
@@ -146,12 +146,12 @@ void Fcs_phonon::setup(const std::string &mode)
 
     auto t_stage = timer->elapsed();
     MPI_Bcast_fcs_array(maxorder);
-    print_stage_line("IFCs: MPI broadcast", timer->elapsed() - t_stage, mympi->my_rank, writes->getVerbosity());
+    print_stage_line("IFCs: MPI broadcast", timer->elapsed() - t_stage, run.my_rank, writes->getVerbosity());
     t_stage = timer->elapsed();
     replicate_force_constants(maxorder);
     print_stage_line("IFCs: replicate to the unit cell",
                      timer->elapsed() - t_stage,
-                     mympi->my_rank,
+                     run.my_rank,
                      writes->getVerbosity());
 }
 
@@ -940,7 +940,7 @@ void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N)
         ind.resize(len, nelem, 4);
         relative_vector_tmp.resize(len, nelem - 1, 3);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (j = 0; j < len; ++j) {
                 fcs_tmp[j] = force_constant_with_cell[i][j].fcs_val;
                 for (k = 0; k < nelem; ++k) {
@@ -961,7 +961,7 @@ void Fcs_phonon::MPI_Bcast_fcs_array(const unsigned int N)
         MPI_Bcast(&ind[0][0][0], 4 * nelem * len, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
         MPI_Bcast(&relative_vector_tmp[0][0][0], 3 * len * (nelem - 1), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        if (mympi->my_rank > 0) {
+        if (run.my_rank > 0) {
             force_constant_with_cell[i].clear();
 
             for (j = 0; j < len; ++j) {

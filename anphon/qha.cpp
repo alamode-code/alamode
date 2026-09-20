@@ -295,7 +295,7 @@ void Qha::exec_qha_optimization()
 
     if (restart_qha) {
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             std::cout << " RESTART_QHA is true.\n";
             std::cout << " Dynamical matrix is read from file ...";
         }
@@ -322,7 +322,7 @@ void Qha::exec_qha_optimization()
         if (loaded_h5) {
             // Regenerate the human-readable V0-vs-T output, which may be
             // absent when restarting from the unified file alone.
-            if (with_relax && mympi->my_rank == 0) store_V0_to_file();
+            if (with_relax && run.my_rank == 0) store_V0_to_file();
         } else {
             load_scph_dymat_from_file(delta_dymat_qha,
                                       run.job_title + ".renorm_harm_dymat",
@@ -343,7 +343,7 @@ void Qha::exec_qha_optimization()
             }
 
             // One-way migration of the legacy state into the unified file.
-            if (use_h5_io && mympi->my_rank == 0) {
+            if (use_h5_io && run.my_rank == 0) {
                 write_scph_state_h5(run.job_title + ".qha.h5",
                                     "QHA",
                                     NT,
@@ -372,7 +372,7 @@ void Qha::exec_qha_optimization()
             exec_perturbative_QHA(delta_dymat_qha, delta_harmonic_dymat_renormalize);
         }
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             const auto with_relax = relax_mode != RelaxationStrMode::None;
             if (use_h5_io) {
                 write_scph_state_h5(run.job_title + ".qha.h5",
@@ -500,7 +500,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     C2_array_renorm.resize(9, 9);
 
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
@@ -914,7 +914,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         exit("exec_scph_relax_cell_coordinate_main", "The number of detected optical modes is not ns-3.");
     }
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,

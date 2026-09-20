@@ -192,7 +192,7 @@ void AnharmonicCore::prepare_fc3_compressed()
     cfc->grp_ptr.push_back(static_cast<int>(cfc->sub_a.size()));
     cfc->row_ptr.push_back(static_cast<int>(cfc->grp_dr.size()));
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "\n";
         std::cout << " Three-phonon matrix elements: factorized evaluation\n";
         std::cout << "  Cartesian indices per cell (n)       : " << n << '\n';
@@ -1194,14 +1194,14 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
     }
 
     int nk_tmp;
-    if (nk % mympi->nprocs != 0) {
-        nk_tmp = nk / mympi->nprocs + 1;
+    if (nk % run.nprocs != 0) {
+        nk_tmp = nk / run.nprocs + 1;
     } else {
-        nk_tmp = nk / mympi->nprocs;
+        nk_tmp = nk / run.nprocs;
     }
     std::vector<int> vk_l;
     for (auto ik = 0; ik < nk; ++ik) {
-        if (ik % mympi->nprocs == mympi->my_rank) vk_l.push_back(ik);
+        if (ik % run.nprocs == run.my_rank) vk_l.push_back(ik);
     }
     if (static_cast<int>(vk_l.size()) < nk_tmp) vk_l.push_back(-1);
 
@@ -1210,7 +1210,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
     NDArray<double, 1> v3_arr_loc;
     NDArray<double, 2> v3_arr; // gathered matrix elements, root only
     v3_arr_loc.resize(ns2);
-    if (mympi->my_rank == 0) v3_arr.resize(nk_tmp * mympi->nprocs, ns2);
+    if (run.my_rank == 0) v3_arr.resize(nk_tmp * run.nprocs, ns2);
 
     V3Workspace ws;
     ws.kmesh = nullptr;
@@ -1224,12 +1224,12 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
             v3sq_pairs(ws, kmesh_in, kpairs[ik_now][0], kpairs[ik_now][1], eval, evec, &v3_arr_loc[0]);
         }
         double *recv = nullptr;
-        if (mympi->my_rank == 0) recv = v3_arr[ik * mympi->nprocs];
+        if (run.my_rank == 0) recv = v3_arr[ik * run.nprocs];
         MPI_Gather(&v3_arr_loc[0], ns2, MPI_DOUBLE, recv, ns2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
     v3_arr_loc.clear();
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         NDArray<unsigned int, 1> kmap_identity;
         kmap_identity.resize(nk);
         for (auto i = 0; i < nk; ++i) kmap_identity[i] = i;

@@ -149,7 +149,7 @@ void Dynamical::setup_dynamical()
 {
     neval = 3 * system->get_primcell().number_of_atoms;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
         std::cout << " ==================\n";
         std::cout << "  Dynamical matrix \n";
@@ -189,7 +189,7 @@ void Dynamical::setup_dynamical()
 
     build_27cell_shift_table(xshift_s);
 
-    if (mympi->my_rank == 0) require_eigenvectors = true;
+    if (run.my_rank == 0) require_eigenvectors = true;
 
     MPI_Bcast(&require_eigenvectors, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nonanalytic, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -212,14 +212,14 @@ void Dynamical::setup_dynamical()
         double vec[3];
         std::vector<double> vec2(3);
 
-        if (mympi->my_rank == 0) {
+        if (run.my_rank == 0) {
             for (auto j = 0; j < 3; ++j) {
                 vec[j] = projection_directions[i][j];
             }
         }
         MPI_Bcast(&vec[0], 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        if (mympi->my_rank > 0) {
+        if (run.my_rank > 0) {
             for (auto j = 0; j < 3; ++j) vec2[j] = vec[j];
             projection_directions.push_back(vec2);
         }
@@ -233,7 +233,7 @@ void Dynamical::setup_dynamical()
         prepare_mindist_list(mindist_list);
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n';
     }
 }
@@ -733,7 +733,7 @@ void Dynamical::diagonalize_dynamical_all()
 {
     unsigned int nk;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
     }
     NDArray<double, 2> eval_tmp;
@@ -759,7 +759,7 @@ void Dynamical::diagonalize_dynamical_all()
                               evec_tmp);
 
         if (!projection_directions.empty()) {
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
 
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
@@ -797,7 +797,7 @@ void Dynamical::diagonalize_dynamical_all()
                               evec_tmp);
 
         if (!projection_directions.empty()) {
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                     fcs_phonon->force_constant_with_cell[0],
@@ -835,7 +835,7 @@ void Dynamical::diagonalize_dynamical_all()
                               evec_tmp);
 
         if (!projection_directions.empty()) {
-            if (mympi->my_rank == 0) {
+            if (run.my_rank == 0) {
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                     fcs_phonon->force_constant_with_cell[0],
@@ -858,7 +858,7 @@ void Dynamical::diagonalize_dynamical_all()
         connect_band_by_eigen_similarity(kpoint->kpoint_bs->nk, dymat_band->get_eigenvectors(), index_bconnect);
     }
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 
@@ -920,7 +920,7 @@ void Dynamical::modify_eigenvectors() const
     const auto nk = dos->kmesh_dos->nk;
     const auto ns = neval;
 
-    /*   if (mympi->my_rank == 0) {
+    /*   if (run.my_rank == 0) {
            std::cout << " **********      NOTICE      ********** " << '\n';
            std::cout << " For the brevity of the calculation, " << '\n';
            std::cout << " phonon eigenvectors will be modified" << '\n';
@@ -1308,7 +1308,7 @@ std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<d
         is_acoustic[index[i]] = true;
     }
 
-    if (verbose && mympi->my_rank == 0 && projection[index[2]] < projection_threshold) {
+    if (verbose && run.my_rank == 0 && projection[index[2]] < projection_threshold) {
         std::cout << " WARNING in detect_acoustic_modes_at_gamma:\n";
         std::cout << "  The translational projection of an assigned acoustic mode at Gamma is only "
                   << std::setprecision(4) << projection[index[2]] << " (< " << projection_threshold << ").\n";
@@ -1459,7 +1459,7 @@ void Dynamical::detect_imaginary_branches(const KpointMeshUniform &kmesh_in, dou
     double omega;
 
     auto is_anyof_imaginary = false;
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
 
         is_imaginary.resize(nk_irred, ns);
 

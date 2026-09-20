@@ -67,7 +67,7 @@ void Dielec::init()
 {
     // This should be called after Dos::setup()
 
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         emax = dos->emax;
         emin = dos->emin;
         delta_e = dos->delta_e;
@@ -87,7 +87,7 @@ void Dielec::init()
     // on rank 0 only, so the decision is made there and broadcast;
     // setup_dielectric() is collective.
     int need_born_data = 0;
-    if (mympi->my_rank == 0) {
+    if (run.my_rank == 0) {
         const auto borninfo_given = !file_born.empty();
         if (dynamical->nonanalytic || calc_dielectric_constant) {
             if (!borninfo_given) {
@@ -121,7 +121,7 @@ void Dielec::setup_dielectric(const unsigned int verbosity)
     if (borncharge) borncharge.clear();
 
     borncharge.resize(system->get_primcell().number_of_atoms, 3, 3);
-    if (mympi->my_rank == 0) load_born(symmetrize_borncharge, verbosity);
+    if (run.my_rank == 0) load_born(symmetrize_borncharge, verbosity);
 
     MPI_Bcast(dielec_tensor.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&borncharge[0][0][0], 9 * system->get_primcell().number_of_atoms, MPI_DOUBLE, 0, MPI_COMM_WORLD);

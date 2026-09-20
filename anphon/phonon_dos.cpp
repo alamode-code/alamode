@@ -284,7 +284,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     NDArray<double, 1> weight;
     NDArray<double, 2> proj;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0)
+    if (run.my_rank == 0 && writes->getVerbosity() > 0)
         std::cout << " PDOS = 1 : Calculating atom-projected phonon DOS ... ";
 
     kmap_identity.resize(nk);
@@ -341,7 +341,7 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
     proj.clear();
     kmap_identity.clear();
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) std::cout << " done!\n";
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) std::cout << " done!\n";
 }
 
 
@@ -363,7 +363,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     Eigen::Vector3d qvec;
     Eigen::Vector3cd evec_kappa;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0)
+    if (run.my_rank == 0 && writes->getVerbosity() > 0)
         std::cout << " LONGITUDE_DOS = 1 : Calculating longitudinal-mode projected phonon DOS ... ";
 
     kmap_identity.resize(nk);
@@ -446,7 +446,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
     proj.clear();
     kmap_identity.clear();
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) std::cout << " done!\n";
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) std::cout << " done!\n";
 }
 
 
@@ -473,7 +473,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
     int loc;
     NDArray<int, 1> k_pair;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " TDOS = 1 : Calculating two-phonon DOS for all irreducible k points.\n";
         std::cout << "            This may take a while ... ";
     }
@@ -563,7 +563,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
     kmap_identity.clear();
     k_pair.clear();
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 }
@@ -579,7 +579,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
     NDArray<unsigned int, 1> kmap_identity;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " SPS = 1 : Calculating three-phonon scattering phase space ... ";
     }
 
@@ -678,7 +678,7 @@ void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int sm
 
     ret = (sps_sum1 + 2.0 * sps_sum2) / (3.0 * static_cast<double>(std::pow(ns, 3.0)));
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << "done!\n";
     }
 }
@@ -738,7 +738,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
 
     std::vector<int> ks_g, ks_l;
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " SPS = 2 : Calculating three-phonon scattering phase space\n";
         std::cout << "           with the Bose distribution function ...";
     }
@@ -761,11 +761,11 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     ret_mode.resize(N, 2);
 
     const auto nks_total = nk_irred * ns;
-    const auto nks_each_thread = nks_total / mympi->nprocs;
-    const auto nrem = nks_total - nks_each_thread * mympi->nprocs;
+    const auto nks_each_thread = nks_total / run.nprocs;
+    const auto nrem = nks_total - nks_each_thread * run.nprocs;
 
     if (nrem > 0) {
-        recv_buf.resize((nks_each_thread + 1) * mympi->nprocs, 2 * N);
+        recv_buf.resize((nks_each_thread + 1) * run.nprocs, 2 * N);
     } else {
         recv_buf.resize(nks_total, 2 * N);
     }
@@ -787,17 +787,17 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     ks_l.clear();
     unsigned int count = 0;
     for (auto it = ks_g.begin(); it != ks_g.end(); ++it) {
-        if (count % mympi->nprocs == mympi->my_rank) {
+        if (count % run.nprocs == run.my_rank) {
             ks_l.push_back(*it);
         }
         ++count;
     }
 
     unsigned int nks_tmp;
-    if (ks_g.size() % mympi->nprocs > 0) {
-        nks_tmp = ks_g.size() / mympi->nprocs + 1;
+    if (ks_g.size() % run.nprocs > 0) {
+        nks_tmp = ks_g.size() / run.nprocs + 1;
     } else {
-        nks_tmp = ks_g.size() / mympi->nprocs;
+        nks_tmp = ks_g.size() / run.nprocs;
     }
     if (ks_l.size() < nks_tmp) ks_l.push_back(-1);
 
@@ -837,7 +837,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
         MPI_Gather(&ret_mode[0][0],
                    2 * N,
                    MPI_DOUBLE,
-                   &recv_buf[mympi->nprocs * i][0],
+                   &recv_buf[run.nprocs * i][0],
                    2 * N,
                    MPI_DOUBLE,
                    0,
@@ -867,7 +867,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     recv_buf.clear();
     temperature.clear();
 
-    if (mympi->my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
         std::cout << " done!\n";
     }
 }
