@@ -25,7 +25,11 @@
 
 using namespace PHON_NS;
 
-Dielec::Dielec(PHON *phon) : Pointers(phon)
+Dielec::Dielec(const RunInfo &run_in,
+               const System *system_in,
+               const Symmetry *symmetry_in,
+               const Fcs_phonon *fcs_phonon_in) :
+    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in)
 {
     set_default_variables();
 }

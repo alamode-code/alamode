@@ -14,16 +14,16 @@
 #include <complex>
 #include <vector>
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
 class Dynamical;
 
-class Dielec: protected Pointers
+class Dielec
 {
 public:
-    Dielec(class PHON *);
+    Dielec(const RunInfo &run, const System *system, const Symmetry *symmetry, const Fcs_phonon *fcs_phonon);
 
     ~Dielec();
 
@@ -84,5 +84,12 @@ private:
 
     Eigen::Matrix3d dielec_tensor;
     NDArray<double, 3> borncharge;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Symmetry *symmetry;
+    const Fcs_phonon *fcs_phonon;
 };
 } // namespace PHON_NS
