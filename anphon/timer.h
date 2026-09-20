@@ -11,7 +11,6 @@
 #pragma once
 
 #include <string>
-#include <string>
 
 #if defined(WIN32) || defined(_WIN32)
 #include <Windows.h>

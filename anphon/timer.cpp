@@ -13,7 +13,6 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include "mpi_common.h"
 
 using namespace PHON_NS;
 
