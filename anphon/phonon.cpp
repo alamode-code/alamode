@@ -61,7 +61,7 @@ void PHON::create_pointers()
     // the PHON pointer, so it can come first and be handed to the classes that emit results.
     timer = std::make_unique<Timer>();
     writes = std::make_unique<Writes>(this);
-    system = std::make_unique<System>(this);
+    system = std::make_unique<System>(run_info);
     symmetry = std::make_unique<Symmetry>(run_info, system.get());
     kpoint = std::make_unique<Kpoint>(run_info, system.get(), symmetry.get());
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, timer.get(), system.get());

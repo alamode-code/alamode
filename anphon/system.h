@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
@@ -110,10 +110,10 @@ public:
     }
 };
 
-class System: protected Pointers
+class System
 {
 public:
-    System(class PHON *);
+    System(const RunInfo &run);
 
     ~System();
 
@@ -259,5 +259,9 @@ private:
         231.03588,    238.02891,   -1,        -1}; // They are standard atomic weight recommended by CIAAW.
     // Some recent changes are not considered because of the presence of uncertainty interval.
     // For unstable elements, the atomic mass is set to -1.
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
 };
 } // namespace PHON_NS
