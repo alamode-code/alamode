@@ -18,6 +18,7 @@
 
 #endif
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -50,6 +51,10 @@ struct RunInfo
     // 0 = silent, 1 = normal progress/banners (default), 2 = extra detail.
     // Written only through PHON::set_verbosity (clamps the range).
     unsigned int verbosity = 1;
+
+    // Echo of the input variables, stored as metadata in the HDF5 outputs.
+    // Filled by Writes::writeInputVars on rank 0.
+    std::map<std::string, std::string> input_variables;
 };
 
 class PHON

@@ -341,7 +341,7 @@ void Gruneisen::write_new_fcsxml_all() const
         // FILE_FORMAT rule: h5 (default) writes the schema-stamped HDF5 pair,
         // text the legacy XML pair. Builds without HDF5 always fall back to XML.
 #ifdef _HDF5
-        const bool write_h5 = writes->use_h5_io;
+        const bool write_h5 = run.use_hdf5_io;
 #else
         const bool write_h5 = false;
 #endif

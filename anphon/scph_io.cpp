@@ -174,7 +174,7 @@ ScphSettingsH5 ScphQhaCommon::build_scph_settings_h5(const std::string &mode_nam
 {
     ScphSettingsH5 settings;
     settings.mode = mode_name;
-    settings.input_variables = writes->getInputVariables();
+    settings.input_variables = run.input_variables;
     for (auto i = 0; i < 3; ++i) {
         settings.kmesh_interpolate[i] = kmesh_coarse->nk_i[i];
         settings.kmesh_dense[i] = kmesh_dense->nk_i[i];

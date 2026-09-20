@@ -549,7 +549,7 @@ void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr
     using namespace H5Easy;
     const auto filename = run.job_title + ".selfenergy.h5";
     HighFive::File fh(filename, HighFive::File::Overwrite);
-    write_input_variables_h5(fh, writes->getInputVariables());
+    write_input_variables_h5(fh, run.input_variables);
 
     dump(fh, "/metadata/version", 1);
     dump(fh, "/metadata/mode", std::string("selfenergy"));

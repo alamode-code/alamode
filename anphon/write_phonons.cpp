@@ -123,7 +123,7 @@ void Writes::writeInputVars()
     if (fcs_phonon->fc2_temperature >= 0.0) {
         os << "  FC2_TEMPERATURE = " << fcs_phonon->fc2_temperature << '\n';
     }
-    os << "  FILE_FORMAT = " << (use_h5_io ? "h5" : "text") << "; VERBOSITY = " << run.verbosity << '\n';
+    os << "  FILE_FORMAT = " << (run.use_hdf5_io ? "h5" : "text") << "; VERBOSITY = " << run.verbosity << '\n';
     os << '\n';
 
     // KD and MASS are echoed only when given in the input; otherwise they
@@ -151,8 +151,8 @@ void Writes::writeInputVars()
         }
     }
     os << '\n';
-    if (writes->nbands >= 0) {
-        os << "  NBANDS = " << writes->nbands << '\n';
+    if (nbands >= 0) {
+        os << "  NBANDS = " << nbands << '\n';
     }
 
     os << "  TMIN = " << system->Tmin << "; TMAX = " << system->Tmax << "; DT = " << system->dT << '\n';
@@ -422,7 +422,7 @@ void Writes::writeInputVars()
     os << " -----------------------------------------------------------------\n\n";
 
 #ifdef _HDF5
-    input_variables_echo = parse_input_echo(os.str());
+    phon->run_info.input_variables = parse_input_echo(os.str());
 #endif
     if (run.verbosity > 0) std::cout << os.str();
 }
@@ -632,7 +632,7 @@ void Writes::writePhononInfo()
     // always fall back to text.
     if (dynamical->print_eigenvectors) {
 #ifdef _HDF5
-        if (use_h5_io) {
+        if (run.use_hdf5_io) {
             writeEigenvectorsHdf5();
         } else {
             writeEigenvectors();
@@ -644,7 +644,7 @@ void Writes::writePhononInfo()
 
     if (print_eval) {
 #ifdef _HDF5
-        if (use_h5_io) {
+        if (run.use_hdf5_io) {
             writeEigenvaluesHdf5();
         } else {
             writeEigenvalues();
@@ -1611,7 +1611,7 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
     {
         HighFive::File fh(fname_eval, HighFive::File::ReadWrite);
         stamp_h5_schema(fh, h5_schema_eigenvalues, h5_version_eigen);
-        write_input_variables_h5(fh, input_variables_echo);
+        write_input_variables_h5(fh, run.input_variables);
     }
 
     if (run.verbosity > 0) {
@@ -2007,7 +2007,7 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
     {
         HighFive::File fh(fname_evec, HighFive::File::ReadWrite);
         stamp_h5_schema(fh, h5_schema_eigenvectors, h5_version_eigen);
-        write_input_variables_h5(fh, input_variables_echo);
+        write_input_variables_h5(fh, run.input_variables);
     }
 }
 
@@ -2479,7 +2479,7 @@ void Writes::writeNewFcsH5(const std::string &filename_h5, const std::vector<Fcs
     }
 
     stamp_h5_schema(file, h5_schema_force_constants, h5_version_force_constants);
-    write_input_variables_h5(file, input_variables_echo);
+    write_input_variables_h5(file, run.input_variables);
     dump(file, "/version", ALAMODE_VERSION);
     dump(file, "/original_fcsfile", fcs_phonon->file_fcs);
     dump(file, "/applied_strain", Eigen::Matrix3d(u_applied));
@@ -2716,9 +2716,9 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
                 ofs << std::setw(3) << j % 3 + 1;
                 ofs << std::setw(11) << k / 3 + 1;
                 ofs << std::setw(3) << k % 3 + 1;
-                ofs << std::setw(4) << writes->shift_ucorr[0];
-                ofs << std::setw(4) << writes->shift_ucorr[1];
-                ofs << std::setw(4) << writes->shift_ucorr[2];
+                ofs << std::setw(4) << shift_ucorr[0];
+                ofs << std::setw(4) << shift_ucorr[1];
+                ofs << std::setw(4) << shift_ucorr[2];
                 ofs << std::setw(15) << ucorr_in[i][j][k] * pow2(Bohr_in_Angstrom);
                 ofs << '\n';
             }

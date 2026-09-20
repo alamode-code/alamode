@@ -66,11 +66,6 @@ public:
     void writeKappa() const;
     // One line of the "file : description" listing printed at the end of a run.
     void printOutputFile(const std::string &file, const std::string &description) const;
-    // HDF5 input metadata, filled by writeInputVars on rank 0.
-    const std::map<std::string, std::string> &getInputVariables() const
-    {
-        return input_variables_echo;
-    }
 
     // .kl_iter written by the SOLVER = IBTE path (kappa owned by
     // Iterativebte); header lines record the non-iterative extra channels
@@ -185,7 +180,6 @@ private:
     void writeDielectricFunction() const;
 
     int anime_frames;
-    std::map<std::string, std::string> input_variables_echo;
 
     bool print_xsf;
     bool print_msd;
@@ -198,10 +192,5 @@ private:
     int shift_ucorr[3];
 
     std::string anime_format;
-
-public:
-    // FILE_FORMAT: with h5 (default) the eigenvalue/eigenvector outputs are
-    // written as schema-stamped HDF5 files; with text as plain-text files.
-    bool use_h5_io = true;
 };
 } // namespace PHON_NS

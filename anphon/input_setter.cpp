@@ -102,7 +102,6 @@ void InputSetter::set_general_vars(PHON *phon, const GeneralInputVars &vars) con
 
     phon->writes->nbands = vars.nbands;
     phon->set_verbosity(vars.verbosity);
-    phon->writes->use_h5_io = vars.use_hdf5_io;
 
     phon->integration->epsilon = vars.epsilon;
     phon->integration->ismear = vars.ismear;
