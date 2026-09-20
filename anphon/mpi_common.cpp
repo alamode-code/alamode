@@ -17,7 +17,7 @@
 
 using namespace PHON_NS;
 
-MyMPI::MyMPI(PHON *phon, MPI_Comm comm) : Pointers(phon)
+MyMPI::MyMPI(MPI_Comm comm)
 {
     MPI_Comm_rank(comm, &my_rank);
     MPI_Comm_size(comm, &nprocs);

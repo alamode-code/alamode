@@ -20,15 +20,14 @@
 
 #include <Eigen/Core>
 #include <string>
-#include "pointers.h"
 #include "system.h"
 
 namespace PHON_NS
 {
-class MyMPI: protected Pointers
+class MyMPI
 {
 public:
-    MyMPI(class PHON *, MPI_Comm);
+    explicit MyMPI(MPI_Comm);
 
     ~MyMPI();
 

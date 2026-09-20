@@ -42,7 +42,7 @@ using namespace PHON_NS;
 
 PHON::PHON(MPI_Comm comm)
 {
-    mympi = std::make_unique<MyMPI>(this, comm);
+    mympi = std::make_unique<MyMPI>(comm);
 
     create_pointers();
 }
@@ -55,7 +55,7 @@ PHON::~PHON()
 
 void PHON::create_pointers()
 {
-    timer = std::make_unique<Timer>(this);
+    timer = std::make_unique<Timer>();
     system = std::make_unique<System>(this);
     symmetry = std::make_unique<Symmetry>(this);
     kpoint = std::make_unique<Kpoint>(this);
