@@ -56,30 +56,32 @@ PHON::~PHON()
 
 void PHON::create_pointers()
 {
+    // Providers first: an object is constructed after everything it depends on
+    // (see POINTERS_REMOVAL_PLAN.md). Writes is application shell and may see all.
     timer = std::make_unique<Timer>();
     system = std::make_unique<System>(this);
     symmetry = std::make_unique<Symmetry>(this);
     kpoint = std::make_unique<Kpoint>(this);
     fcs_phonon = std::make_unique<Fcs_phonon>(this);
+    dielec = std::make_unique<Dielec>(this);
+    ewald = std::make_unique<Ewald>(this);
     dynamical = std::make_unique<Dynamical>(this);
     integration = std::make_unique<Integration>();
-    phonon_velocity = std::make_unique<PhononVelocity>(this);
     thermodynamics = std::make_unique<Thermodynamics>();
-    anharmonic_core = std::make_unique<AnharmonicCore>(this);
-    mode_analysis = std::make_unique<ModeAnalysis>(this);
-    mode_symmetry = std::make_unique<ModeSymmetry>(this);
-    selfenergy = std::make_unique<Selfenergy>();
-    conductivity = std::make_unique<Conductivity>(this);
-    writes = std::make_unique<Writes>(this);
     dos = std::make_unique<Dos>(this);
-    gruneisen = std::make_unique<Gruneisen>(this);
+    phonon_velocity = std::make_unique<PhononVelocity>(this);
+    anharmonic_core = std::make_unique<AnharmonicCore>(this);
+    selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
-    scph = std::make_unique<Scph>(this);
-    ewald = std::make_unique<Ewald>(this);
-    dielec = std::make_unique<Dielec>(this);
-    qha = std::make_unique<Qha>(this);
-    iterativebte = std::make_unique<Iterativebte>(this);
+    mode_symmetry = std::make_unique<ModeSymmetry>(this);
+    gruneisen = std::make_unique<Gruneisen>(this);
     relaxation = std::make_unique<Relaxation>(this);
+    writes = std::make_unique<Writes>(this);
+    conductivity = std::make_unique<Conductivity>(this);
+    iterativebte = std::make_unique<Iterativebte>(this);
+    mode_analysis = std::make_unique<ModeAnalysis>(this);
+    scph = std::make_unique<Scph>(this);
+    qha = std::make_unique<Qha>(this);
 }
 
 void PHON::destroy_pointers()
