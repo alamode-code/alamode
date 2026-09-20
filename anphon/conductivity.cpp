@@ -1919,8 +1919,8 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
     damping4_interpolated.resize(ns, ntemp, kmesh_dense_in->nk);
     damping4_coarse.resize(ns, ntemp, kmesh_coarse_in->nk);
 
-    auto interpol = new TriLinearInterpolator(kmesh_coarse_in->nk_i, kmesh_dense_in->nk_i);
-    interpol->setup();
+    TriLinearInterpolator interpol(kmesh_coarse_in->nk_i, kmesh_dense_in->nk_i);
+    interpol.setup();
 
     if (interpolator == "linear") {
 
@@ -1935,7 +1935,7 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
 
         for (auto is = 0; is < ns; ++is) {
             for (auto itemp = 0; itemp < ntemp; ++itemp) {
-                interpol->interpolate(damping4_coarse[is][itemp], damping4_interpolated[is][itemp]);
+                interpol.interpolate(damping4_coarse[is][itemp], damping4_interpolated[is][itemp]);
             }
         }
 
@@ -1964,9 +1964,9 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
         for (auto is = 0; is < ns; ++is) {
             for (auto itemp = 0; itemp < ntemp; ++itemp) {
                 if (interpolator == "modified-log-linear") {
-                    interpol->interpolate_avoidgamma(damping4_coarse[is][itemp], damping4_interpolated[is][itemp], is);
+                    interpol.interpolate_avoidgamma(damping4_coarse[is][itemp], damping4_interpolated[is][itemp], is);
                 } else {
-                    interpol->interpolate(damping4_coarse[is][itemp], damping4_interpolated[is][itemp]);
+                    interpol.interpolate(damping4_coarse[is][itemp], damping4_interpolated[is][itemp]);
                 }
             }
         }
@@ -2014,7 +2014,6 @@ void Conductivity::interpolate_data(const KpointMeshUniform *kmesh_coarse_in, co
 
     damping4_coarse.clear();
     damping4_interpolated.clear();
-    delete interpol;
 }
 
 void Conductivity::lifetime_from_gamma(NDArray<double, 2> &gamma, NDArray<double, 2> &lifetime)
