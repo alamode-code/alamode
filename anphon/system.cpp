@@ -26,7 +26,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "relaxation.h"
 #include "symmetry_core.h"
 #include "write_phonons.h"
 #include "xml_parser.h"
@@ -56,7 +55,8 @@ void System::set_default_variables()
 void System::deallocate_variables()
 {}
 
-void System::setup(const std::vector<std::string> &fcs_files)
+void System::setup(const std::vector<std::string> &fcs_files, const double init_u_tensor[3][3],
+                   const std::vector<double> &init_u0)
 {
     filename_list = fcs_files;
 
@@ -100,7 +100,7 @@ void System::setup(const std::vector<std::string> &fcs_files)
 
     generate_mapping_tables();
 
-    initialize_distorted_primitive_cell();
+    initialize_distorted_primitive_cell(init_u_tensor, init_u0);
 
     // Set atomic types (kind + magmom)
     set_atomtype_group(primcell, spin_prim, atomtype_group_prim);
@@ -899,7 +899,7 @@ void System::generate_mapping_tables()
     }
 }
 
-void System::initialize_distorted_primitive_cell()
+void System::initialize_distorted_primitive_cell(const double init_u_tensor[3][3], const std::vector<double> &init_u0)
 {
     Eigen::Matrix3d lavec_p_strain, rlavec_p_strain, mat_strain;
     double u_tensor_tmp[3][3];
@@ -907,7 +907,7 @@ void System::initialize_distorted_primitive_cell()
     if (run.my_rank == 0) {
         for (auto i = 0; i < 3; ++i) {
             for (auto j = 0; j < 3; ++j) {
-                u_tensor_tmp[i][j] = relaxation->init_u_tensor[i][j];
+                u_tensor_tmp[i][j] = init_u_tensor[i][j];
             }
         }
     }
@@ -934,16 +934,16 @@ void System::initialize_distorted_primitive_cell()
     xdisp.setZero();
 
     if (run.my_rank == 0) {
-        if (!relaxation->init_u0.empty() && relaxation->init_u0.size() != primcell.number_of_atoms * 3)
+        if (!init_u0.empty() && init_u0.size() != primcell.number_of_atoms * 3)
             exit("initialize_distorted_primitive_cell",
                  "The number of atoms in the primitive cell"
                  " \n is not consistent with the &displace field in the input file.");
 
-        if (!relaxation->init_u0.empty()) {
+        if (!init_u0.empty()) {
             for (auto i = 0; i < primcell_distort.number_of_atoms; ++i) {
                 // set displacement in Cartesian coordinates
                 for (auto j = 0; j < 3; ++j) {
-                    xdisp(i, j) = relaxation->init_u0[i * 3 + j];
+                    xdisp(i, j) = init_u0[i * 3 + j];
                 }
             }
         }

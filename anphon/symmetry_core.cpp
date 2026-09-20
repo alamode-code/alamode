@@ -17,7 +17,6 @@
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "relaxation.h"
 #include "scph.h"
 #include "system.h"
 #include "write_phonons.h"
@@ -47,14 +46,14 @@ void Symmetry::set_default_variables()
     tolerance = 1.0e-3;
 }
 
-void Symmetry::setup_symmetry(const bool verbose)
+void Symmetry::setup_symmetry(const bool relaxing_structure, const bool verbose)
 {
     MPI_Bcast(&use_time_reversal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     time_reversal_sym = system->get_spin_prim().time_reversal_symm;
     SymmList.clear();
     SymmList_ref.clear();
 
-    if ((run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0)) {
+    if (relaxing_structure) {
 
         if (run.my_rank == 0) {
             const auto verbosity = verbose ? run.verbosity : 0;
@@ -111,25 +110,23 @@ void Symmetry::setup_symmetry(const bool verbose)
     broadcast_symmlist(SymmList);
     broadcast_symmlist(SymmList_ref);
 
-    const auto with_relaxation =
-        (run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0);
 
     if (run.my_rank == 0) {
         const auto verbosity = verbose ? run.verbosity : 0;
         if (verbosity > 0) {
             std::cout << '\n';
             std::cout << "  Number of symmetry operations : " << nsym << '\n';
-            if (with_relaxation) {
+            if (relaxing_structure) {
                 std::cout << "  Number of symmetry operations in reference structure : " << nsym_ref << "\n\n";
             }
         }
     }
 
     // Built on every rank: the k-point symmetry map derived from it is read on all ranks.
-    const auto cell_tmp = system->get_primcell(with_relaxation);
+    const auto cell_tmp = system->get_primcell(relaxing_structure);
     gensym_withmap(cell_tmp.lattice_vector, cell_tmp.x_fractional, cell_tmp.kind, SymmList, SymmListWithMap);
 
-    if (with_relaxation) {
+    if (relaxing_structure) {
         gensym_withmap(system->get_primcell().lattice_vector,
                        system->get_primcell().x_fractional,
                        system->get_primcell().kind,

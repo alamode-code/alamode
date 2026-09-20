@@ -144,7 +144,12 @@ void PHON::run() const
 
 void PHON::setup_base() const
 {
-    system->setup({fcs_phonon->file_fcs, fcs_phonon->file_fc2, fcs_phonon->file_fc3, fcs_phonon->file_fc4});
+    system->setup({fcs_phonon->file_fcs, fcs_phonon->file_fc2, fcs_phonon->file_fc3, fcs_phonon->file_fc4},
+                  relaxation->init_u_tensor,
+                  relaxation->init_u0);
+
+    const auto relaxing_structure =
+        (run_info.mode == "SCPH" || run_info.mode == "QHA") && relaxation->relax_str != 0;
 
     // &displace DISPMODE = 2 resolves the initial displacements from the harmonic IFCs and
     // the symmetry of the reference cell, so both are prepared before the distorted cell
@@ -153,12 +158,12 @@ void PHON::setup_base() const
     MPI_Bcast(&init_u0_from_modes, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (init_u0_from_modes) {
         fcs_phonon->setup(run_info.mode);
-        symmetry->setup_symmetry(false); // reference-cell operations only (init_u0 is still empty)
+        symmetry->setup_symmetry(relaxing_structure, false); // reference-cell operations only (init_u0 is still empty)
         relaxation->set_init_u0_from_modes();
-        system->initialize_distorted_primitive_cell();
+        system->initialize_distorted_primitive_cell(relaxation->init_u_tensor, relaxation->init_u0);
     }
 
-    symmetry->setup_symmetry();
+    symmetry->setup_symmetry(relaxing_structure);
     kpoint->kpoint_setups(run_info.mode);
     // Broadcasts the IRREPS flag; must precede dielec->init(), which uses it
     // to decide whether Born charges are loaded.

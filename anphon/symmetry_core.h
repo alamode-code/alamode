@@ -170,7 +170,8 @@ public:
     // orientation-dependent Mulliken labels.
     Eigen::Matrix3d spg_transformation_matrix = Eigen::Matrix3d::Identity();
 
-    void setup_symmetry(const bool verbose = true);
+    // relaxing_structure: also build the operations of the distorted cell (SCPH/QHA with RELAX_STR != 0).
+    void setup_symmetry(const bool relaxing_structure, const bool verbose = true);
 
     void make_supercell_mapping_by_symmetry_operations(int **symm_mapping_s) const;
 

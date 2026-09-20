@@ -118,7 +118,9 @@ public:
     ~System();
 
     // fcs_files = {FCSFILE, FC2FILE, FC3FILE, FC4FILE}; the structure is read from them.
-    void setup(const std::vector<std::string> &fcs_files);
+    // init_u_tensor / init_u0: initial strain and displacements (&strain, &displace), rank 0 only.
+    void setup(const std::vector<std::string> &fcs_files, const double init_u_tensor[3][3],
+               const std::vector<double> &init_u0);
 
     const Cell &get_supercell(const int index) const;
 
@@ -126,7 +128,7 @@ public:
 
     // (Re)build primcell_distort from init_u_tensor and init_u0; also called from
     // PHON::setup_base once &displace DISPMODE = 2 entries are resolved.
-    void initialize_distorted_primitive_cell();
+    void initialize_distorted_primitive_cell(const double init_u_tensor[3][3], const std::vector<double> &init_u0);
 
     const Spin &get_spin_super() const;
 
