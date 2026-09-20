@@ -14,7 +14,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "pointers.h"
+#include "phonon.h"
 #include "system.h"
 
 namespace PHON_NS
@@ -139,10 +139,10 @@ public:
 };
 
 
-class Symmetry: protected Pointers
+class Symmetry
 {
 public:
-    Symmetry(class PHON *);
+    Symmetry(const RunInfo &run, const System *system);
 
     ~Symmetry();
 
@@ -211,5 +211,10 @@ private:
 
 
     void broadcast_symmlist(std::vector<SymmetryOperation> &) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
 };
 } // namespace PHON_NS

@@ -28,7 +28,8 @@ extern "C"
 
 using namespace PHON_NS;
 
-Symmetry::Symmetry(PHON *phon) : Pointers(phon)
+Symmetry::Symmetry(const RunInfo &run_in, const System *system_in) :
+    run(run_in), system(system_in)
 {
     set_default_variables();
 }

@@ -62,7 +62,7 @@ void PHON::create_pointers()
     timer = std::make_unique<Timer>();
     writes = std::make_unique<Writes>(this);
     system = std::make_unique<System>(this);
-    symmetry = std::make_unique<Symmetry>(this);
+    symmetry = std::make_unique<Symmetry>(run_info, system.get());
     kpoint = std::make_unique<Kpoint>(run_info, system.get(), symmetry.get());
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, timer.get(), system.get());
     dielec = std::make_unique<Dielec>(run_info, system.get(), symmetry.get(), fcs_phonon.get());
