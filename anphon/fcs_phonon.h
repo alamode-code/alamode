@@ -15,7 +15,7 @@
 #include <vector>
 #include "mathfunctions.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace HighFive
 {
@@ -187,7 +187,7 @@ struct sort_by_heading_indices
     }
 };
 
-class Fcs_phonon: protected Pointers
+class Fcs_phonon
 {
 public:
     // Read a force-constant layout stored below group_prefix ("" = file root)
@@ -196,7 +196,7 @@ public:
     void parse_fcs_from_h5(const HighFive::File &file, const std::string &group_prefix, const int order,
                            std::vector<FcsArrayWithCell> &fcs_out, const int temperature_index = -1) const;
 
-    Fcs_phonon(class PHON *);
+    Fcs_phonon(const RunInfo &run, const Timer *timer, const System *system);
 
     ~Fcs_phonon();
 
@@ -256,5 +256,11 @@ private:
     void MPI_Bcast_fcs_array(unsigned int);
 
     void MPI_Bcast_fc2_ext();
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const Timer *timer;
+    const System *system;
 };
 } // namespace PHON_NS

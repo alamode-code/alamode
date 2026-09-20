@@ -34,7 +34,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Fcs_phonon::Fcs_phonon(PHON *phon) : Pointers(phon)
+Fcs_phonon::Fcs_phonon(const RunInfo &run_in, const Timer *timer_in, const System *system_in) :
+    run(run_in), timer(timer_in), system(system_in)
 {
     set_default_variables();
 }
@@ -149,7 +150,7 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
 void Fcs_phonon::replicate_force_constants(const int maxorder_in)
 {
     for (auto order = 0; order < maxorder_in; ++order) {
-        replicate_force_constant(system.get(), force_constant_with_cell[order]);
+        replicate_force_constant(system, force_constant_with_cell[order]);
     }
 }
 
