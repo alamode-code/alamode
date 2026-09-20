@@ -15,15 +15,22 @@
 #include <vector>
 #include "fcs_phonon.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
 
-class Gruneisen: protected Pointers
+class Gruneisen
 {
 public:
-    Gruneisen(class PHON *);
+    Gruneisen(const RunInfo &run,
+              const Writes *writes,
+              const System *system,
+              const Kpoint *kpoint,
+              const Fcs_phonon *fcs_phonon,
+              const Dynamical *dynamical,
+              const Dos *dos,
+              const AnharmonicCore *anharmonic_core);
 
     ~Gruneisen();
 
@@ -97,5 +104,16 @@ private:
 
     // void impose_ASR_on_harmonic_IFC(std::vector<FcsArrayWithCell> &,
     //                    int);
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const Writes *writes;
+    const System *system;
+    const Kpoint *kpoint;
+    const Fcs_phonon *fcs_phonon;
+    const Dynamical *dynamical;
+    const Dos *dos;
+    const AnharmonicCore *anharmonic_core;
 };
 } // namespace PHON_NS

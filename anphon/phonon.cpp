@@ -57,8 +57,10 @@ PHON::~PHON()
 void PHON::create_pointers()
 {
     // Providers first: an object is constructed after everything it depends on
-    // (see POINTERS_REMOVAL_PLAN.md). Writes is application shell and may see all.
+    // (see POINTERS_REMOVAL_PLAN.md). Writes is application shell: it keeps only
+    // the PHON pointer, so it can come first and be handed to the classes that emit results.
     timer = std::make_unique<Timer>();
+    writes = std::make_unique<Writes>(this);
     system = std::make_unique<System>(this);
     symmetry = std::make_unique<Symmetry>(this);
     kpoint = std::make_unique<Kpoint>(this);
@@ -74,9 +76,15 @@ void PHON::create_pointers()
     selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
     mode_symmetry = std::make_unique<ModeSymmetry>(this);
-    gruneisen = std::make_unique<Gruneisen>(this);
+    gruneisen = std::make_unique<Gruneisen>(run_info,
+                                            writes.get(),
+                                            system.get(),
+                                            kpoint.get(),
+                                            fcs_phonon.get(),
+                                            dynamical.get(),
+                                            dos.get(),
+                                            anharmonic_core.get());
     relaxation = std::make_unique<Relaxation>(this);
-    writes = std::make_unique<Writes>(this);
     conductivity = std::make_unique<Conductivity>(run_info,
                                                   system.get(),
                                                   symmetry.get(),
