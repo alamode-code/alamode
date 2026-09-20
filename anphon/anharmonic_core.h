@@ -16,7 +16,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
@@ -83,10 +83,19 @@ private:
     NDArray<std::complex<double>, 3> exp_phase3;
 };
 
-class AnharmonicCore: protected Pointers
+class AnharmonicCore
 {
 public:
-    AnharmonicCore(class PHON *);
+    AnharmonicCore(const RunInfo &run,
+                   const Timer *timer,
+                   const System *system,
+                   const Symmetry *symmetry,
+                   Fcs_phonon *fcs_phonon,
+                   const Ewald *ewald,
+                   Dynamical *dynamical,
+                   const Integration *integration,
+                   const Thermodynamics *thermodynamics,
+                   const Dos *dos);
 
     ~AnharmonicCore();
 
@@ -406,5 +415,18 @@ private:
     V3Workspace v3_ws_mode;
 
     void v3_fold_first_k(V3Workspace &ws, const int kfirst, std::vector<std::complex<double>> &psi_out) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const Timer *timer;
+    const System *system;
+    const Symmetry *symmetry;
+    Fcs_phonon *fcs_phonon;
+    const Ewald *ewald;
+    Dynamical *dynamical;
+    const Integration *integration;
+    const Thermodynamics *thermodynamics;
+    const Dos *dos;
 };
 } // namespace PHON_NS

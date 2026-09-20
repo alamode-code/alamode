@@ -72,7 +72,16 @@ void PHON::create_pointers()
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(this);
     phonon_velocity = std::make_unique<PhononVelocity>(this);
-    anharmonic_core = std::make_unique<AnharmonicCore>(this);
+    anharmonic_core = std::make_unique<AnharmonicCore>(run_info,
+                                                       timer.get(),
+                                                       system.get(),
+                                                       symmetry.get(),
+                                                       fcs_phonon.get(),
+                                                       ewald.get(),
+                                                       dynamical.get(),
+                                                       integration.get(),
+                                                       thermodynamics.get(),
+                                                       dos.get());
     selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
     mode_symmetry = std::make_unique<ModeSymmetry>(run_info,
