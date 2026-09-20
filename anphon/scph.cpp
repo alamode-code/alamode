@@ -1079,10 +1079,10 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
             fout_step_u_tensor.close();
             fout_u_tensor.close();
         }
-        writes->printOutputFile(run.job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
-        writes->printOutputFile(run.job_title + ".atom_disp", "Relaxed atomic displacements");
+        print_output_file(run, run.job_title + ".normal_disp", "Relaxed normal-coordinate displacements");
+        print_output_file(run, run.job_title + ".atom_disp", "Relaxed atomic displacements");
         if (uses_full_strain_derivatives(relax_mode)) {
-            writes->printOutputFile(run.job_title + ".umn_tensor", "Relaxed strain tensor");
+            print_output_file(run, run.job_title + ".umn_tensor", "Relaxed strain tensor");
         }
 
         cmat_convert.clear();

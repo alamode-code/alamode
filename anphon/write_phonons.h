@@ -17,13 +17,18 @@
 #include <string>
 #include <vector>
 #include "kpoint.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
 class FcsArrayWithCell;
 
-class Writes: protected Pointers
+// One line of the "file : description" listing printed at the end of a run (rank 0, VERBOSITY > 0).
+void print_output_file(const RunInfo &run, const std::string &file, const std::string &description);
+
+// Application shell: the writers read from every object, so Writes keeps the owning
+// PHON instead of a list of collaborators. Physics classes must not do this.
+class Writes
 {
 public:
     Writes(class PHON *);
@@ -64,8 +69,6 @@ public:
     void writeInputVars();
 
     void writeKappa() const;
-    // One line of the "file : description" listing printed at the end of a run.
-    void printOutputFile(const std::string &file, const std::string &description) const;
 
     // .kl_iter written by the SOLVER = IBTE path (kappa owned by
     // Iterativebte); header lines record the non-iterative extra channels
@@ -192,5 +195,8 @@ private:
     int shift_ucorr[3];
 
     std::string anime_format;
+
+    PHON *phon;
+    const RunInfo &run;
 };
 } // namespace PHON_NS
