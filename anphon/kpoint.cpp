@@ -23,7 +23,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "memory.h"
 #include "mpi_common.h"
 #include "niggli_wrapper.h"
-#include "phonon_dos.h"
 #include "symmetry_core.h"
 #include "system.h"
 #include "timer.h"
@@ -124,49 +123,48 @@ void Kpoint::kpoint_setups(const std::string mode)
             std::cout << "  KPMODE = 2: Uniform grid\n";
         }
 
-        unsigned int nk_tmp[3];
-        nk_tmp[0] = 0;
-        nk_tmp[1] = 0;
-        nk_tmp[2] = 0;
+        nk_mesh[0] = 0;
+        nk_mesh[1] = 0;
+        nk_mesh[2] = 0;
         if (run.my_rank == 0) {
             for (auto i = 0; i < 3; ++i) {
                 const auto nk_in = std::atoi(kpInp[0].kpelem[i].c_str());
                 if (nk_in < 1) {
                     exit("kpoint_setups", "Each k-point mesh dimension (KPMODE=2) must be a positive integer.");
                 }
-                nk_tmp[i] = nk_in;
+                nk_mesh[i] = nk_in;
             }
         }
-        MPI_Bcast(&nk_tmp[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        dos->create_kmesh_dos(nk_tmp,
-                              symmetry->SymmList,
-                              system->get_primcell().reciprocal_lattice_vector,
-                              symmetry->use_time_reversal && symmetry->time_reversal_sym);
-
-        if (run.my_rank == 0 && run.verbosity > 0) {
-            std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
-            std::cout << "  nk1:" << std::setw(4) << dos->kmesh_dos->nk_i[0] << '\n';
-            std::cout << "  nk2:" << std::setw(4) << dos->kmesh_dos->nk_i[1] << '\n';
-            std::cout << "  nk3:" << std::setw(4) << dos->kmesh_dos->nk_i[2] << "\n\n";
-            std::cout << "  Number of k points : " << dos->kmesh_dos->nk << '\n';
-            std::cout << "  Number of irreducible k points : " << dos->kmesh_dos->nk_irred << "\n\n";
-            std::cout << "  List of irreducible k points (reciprocal coordinate, weight) : \n";
-
-            for (auto i = 0; i < dos->kmesh_dos->nk_irred; ++i) {
-                std::cout << "  " << std::setw(5) << i + 1 << ":";
-                for (auto j = 0; j < 3; ++j) {
-                    std::cout << std::setprecision(5) << std::setw(14) << std::scientific
-                              << dos->kmesh_dos->kpoint_irred_all[i][0].kval[j];
-                }
-                std::cout << std::setprecision(6) << std::setw(11) << std::fixed << dos->kmesh_dos->weight_k[i] << '\n';
-            }
-            std::cout << '\n';
-        }
+        MPI_Bcast(&nk_mesh[0], 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+        // The mesh itself is owned by Dos; PHON::setup_base creates it from nk_mesh.
 
         break;
 
     default:
         exit("setup_kpoints", "This cannot happen.");
+    }
+}
+
+void Kpoint::print_uniform_mesh_info(const KpointMeshUniform &kmesh) const
+{
+    if (run.my_rank == 0 && run.verbosity > 0) {
+        std::cout << "  Gamma-centered uniform grid with the following mesh density: \n";
+        std::cout << "  nk1:" << std::setw(4) << kmesh.nk_i[0] << '\n';
+        std::cout << "  nk2:" << std::setw(4) << kmesh.nk_i[1] << '\n';
+        std::cout << "  nk3:" << std::setw(4) << kmesh.nk_i[2] << "\n\n";
+        std::cout << "  Number of k points : " << kmesh.nk << '\n';
+        std::cout << "  Number of irreducible k points : " << kmesh.nk_irred << "\n\n";
+        std::cout << "  List of irreducible k points (reciprocal coordinate, weight) : \n";
+
+        for (auto i = 0; i < kmesh.nk_irred; ++i) {
+            std::cout << "  " << std::setw(5) << i + 1 << ":";
+            for (auto j = 0; j < 3; ++j) {
+                std::cout << std::setprecision(5) << std::setw(14) << std::scientific
+                          << kmesh.kpoint_irred_all[i][0].kval[j];
+            }
+            std::cout << std::setprecision(6) << std::setw(11) << std::fixed << kmesh.weight_k[i] << '\n';
+        }
+        std::cout << '\n';
     }
 }
 

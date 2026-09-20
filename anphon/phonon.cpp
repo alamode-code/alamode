@@ -179,6 +179,13 @@ void PHON::setup_base() const
 
     symmetry->setup_symmetry(relaxing_structure);
     kpoint->kpoint_setups(run_info.mode);
+    if (kpoint->kpoint_mode == 2) {
+        dos->create_kmesh_dos(kpoint->nk_mesh,
+                              symmetry->SymmList,
+                              system->get_primcell().reciprocal_lattice_vector,
+                              symmetry->use_time_reversal && symmetry->time_reversal_sym);
+        kpoint->print_uniform_mesh_info(*dos->kmesh_dos);
+    }
     // Broadcasts the IRREPS flag; must precede dielec->init(), which uses it
     // to decide whether Born charges are loaded.
     mode_symmetry->setup();

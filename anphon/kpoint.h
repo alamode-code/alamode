@@ -299,6 +299,11 @@ public:
 
     int kpoint_mode;
 
+    // KPMODE = 2: mesh dimensions from &kpoint, valid on all ranks after kpoint_setups().
+    unsigned int nk_mesh[3]{0, 0, 0};
+
+    void print_uniform_mesh_info(const KpointMeshUniform &kmesh) const;
+
     std::vector<KpointInp> kpInp;
 
     // Self-energy targets: KPMODE 0 list or 1 path. kpInp/kpoint_mode hold KMESH.
