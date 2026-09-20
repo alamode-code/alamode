@@ -42,10 +42,9 @@ using namespace PHON_NS;
 
 PHON::PHON(MPI_Comm comm)
 {
-    mympi = std::make_unique<MyMPI>(comm);
     run_info.comm = comm;
-    run_info.my_rank = mympi->my_rank;
-    run_info.nprocs = mympi->nprocs;
+    MPI_Comm_rank(comm, &run_info.my_rank);
+    MPI_Comm_size(comm, &run_info.nprocs);
 
     create_pointers();
 }
@@ -53,7 +52,6 @@ PHON::PHON(MPI_Comm comm)
 PHON::~PHON()
 {
     destroy_pointers();
-    mympi.reset();
 }
 
 void PHON::create_pointers()

@@ -23,7 +23,7 @@ public:
         fcs_phonon(ptr->fcs_phonon), dynamical(ptr->dynamical), phonon_velocity(ptr->phonon_velocity),
         thermodynamics(ptr->thermodynamics), anharmonic_core(ptr->anharmonic_core), mode_analysis(ptr->mode_analysis),
         selfenergy(ptr->selfenergy), conductivity(ptr->conductivity), iterativebte(ptr->iterativebte),
-        writes(ptr->writes), dos(ptr->dos), gruneisen(ptr->gruneisen), mympi(ptr->mympi), isotope(ptr->isotope),
+        writes(ptr->writes), dos(ptr->dos), gruneisen(ptr->gruneisen), isotope(ptr->isotope),
         scph(ptr->scph), ewald(ptr->ewald), dielec(ptr->dielec), qha(ptr->qha), relaxation(ptr->relaxation),
         mode_symmetry(ptr->mode_symmetry), timer(ptr->timer)
     {}
@@ -51,7 +51,6 @@ protected:
     std::unique_ptr<Writes> &writes;
     std::unique_ptr<Dos> &dos;
     std::unique_ptr<Gruneisen> &gruneisen;
-    std::unique_ptr<MyMPI> &mympi;
     std::unique_ptr<Isotope> &isotope;
     std::unique_ptr<Scph> &scph;
     std::unique_ptr<Ewald> &ewald;

@@ -17,17 +17,16 @@
 
 using namespace PHON_NS;
 
-MyMPI::MyMPI(MPI_Comm comm)
+static int rank_of(MPI_Comm comm)
 {
-    MPI_Comm_rank(comm, &my_rank);
-    MPI_Comm_size(comm, &nprocs);
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+    return rank;
 }
 
-MyMPI::~MyMPI()
-{}
-
-void MyMPI::MPI_Bcast_string(std::string &str, int root, MPI_Comm comm) const
+void PHON_NS::MPI_Bcast_string(std::string &str, int root, MPI_Comm comm)
 {
+    const auto my_rank = rank_of(comm);
     int len = 0;
     if (my_rank == root) {
         len = static_cast<int>(str.length());
@@ -45,8 +44,9 @@ void MyMPI::MPI_Bcast_string(std::string &str, int root, MPI_Comm comm) const
 }
 
 
-void MyMPI::MPI_Bcast_CellClass(Cell &cell, int root, MPI_Comm comm) const
+void PHON_NS::MPI_Bcast_CellClass(Cell &cell, int root, MPI_Comm comm)
 {
+    const auto my_rank = rank_of(comm);
     MPI_Bcast(cell.lattice_vector.data(), 9, MPI_DOUBLE, root, comm);
 
     int natoms;
@@ -63,8 +63,9 @@ void MyMPI::MPI_Bcast_CellClass(Cell &cell, int root, MPI_Comm comm) const
     MPI_Bcast(cell.kind.data(), natoms, MPI_INT, root, comm);
 }
 
-void MyMPI::MPI_Bcast_SpinClass(Spin &spin, int root, MPI_Comm comm) const
+void PHON_NS::MPI_Bcast_SpinClass(Spin &spin, int root, MPI_Comm comm)
 {
+    const auto my_rank = rank_of(comm);
     MPI_Bcast(&spin.lspin, 1, MPI_INT, root, comm);
     MPI_Bcast(&spin.noncollinear, 1, MPI_INT, root, comm);
     MPI_Bcast(&spin.time_reversal_symm, 1, MPI_INT, root, comm);
@@ -99,8 +100,9 @@ void MyMPI::MPI_Bcast_SpinClass(Spin &spin, int root, MPI_Comm comm) const
     }
 }
 
-void MyMPI::MPI_Bcast_MappingTable(MappingTable &mapping, int root, MPI_Comm comm) const
+void PHON_NS::MPI_Bcast_MappingTable(MappingTable &mapping, int root, MPI_Comm comm)
 {
+    const auto my_rank = rank_of(comm);
     int natmin_tmp, ntran_tmp;
     if (my_rank == root) {
         natmin_tmp = mapping.from_true_primitive.size();
@@ -138,8 +140,9 @@ void MyMPI::MPI_Bcast_MappingTable(MappingTable &mapping, int root, MPI_Comm com
     map_1d.clear();
 }
 
-void MyMPI::mpiBcastEigen(Eigen::MatrixXd &mat, int root, MPI_Comm comm) const
+void PHON_NS::mpiBcastEigen(Eigen::MatrixXd &mat, int root, MPI_Comm comm)
 {
+    const auto my_rank = rank_of(comm);
     int nrows, ncols;
 
     if (my_rank == root) {
@@ -155,8 +158,9 @@ void MyMPI::mpiBcastEigen(Eigen::MatrixXd &mat, int root, MPI_Comm comm) const
     MPI_Bcast(mat.data(), nrows * ncols, MPI_DOUBLE, root, comm);
 }
 
-void MyMPI::mpiBcastEigen(Eigen::MatrixXcd &mat, int root, MPI_Comm comm) const
+void PHON_NS::mpiBcastEigen(Eigen::MatrixXcd &mat, int root, MPI_Comm comm)
 {
+    const auto my_rank = rank_of(comm);
     int nrows, ncols;
 
     if (my_rank == root) {

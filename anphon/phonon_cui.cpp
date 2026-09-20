@@ -59,8 +59,8 @@ void PhononCUI::run(const int narg, char **arg, MPI_Comm comm) const
         phon->writes->writeInputVars();
     }
 
-    phon->mympi->MPI_Bcast_string(phon->run_info.job_title, 0, MPI_COMM_WORLD);
-    phon->mympi->MPI_Bcast_string(phon->run_info.mode, 0, MPI_COMM_WORLD);
+    MPI_Bcast_string(phon->run_info.job_title, 0, MPI_COMM_WORLD);
+    MPI_Bcast_string(phon->run_info.mode, 0, MPI_COMM_WORLD);
 
     // VERBOSITY is parsed on rank 0 only; broadcast it so every rank honors
     // the user's setting (Part B threads it into all-rank code paths).

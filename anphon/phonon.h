@@ -97,8 +97,6 @@ public:
 
     std::unique_ptr<class Gruneisen> gruneisen;
 
-    std::unique_ptr<class MyMPI> mympi;
-
     std::unique_ptr<class Isotope> isotope;
 
     std::unique_ptr<class Scph> scph;

@@ -106,8 +106,8 @@ void Relaxation::setup_relaxation()
     MPI_Bcast(&renorm_2to1st, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
     MPI_Bcast(&renorm_34to1st, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
     MPI_Bcast(&elastic_const, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_string(strain_IFC_dir, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_string(strain_file, 0, MPI_COMM_WORLD);
+    MPI_Bcast_string(strain_IFC_dir, 0, MPI_COMM_WORLD);
+    MPI_Bcast_string(strain_file, 0, MPI_COMM_WORLD);
 
     const auto relax_mode = to_relaxation_str_mode(relax_str);
     if (relax_mode != RelaxationStrMode::None) {

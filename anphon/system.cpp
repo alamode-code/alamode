@@ -257,7 +257,7 @@ void System::load_system_info_from_file()
     }
     MPI_Bcast(&filetype[0], 4, MPI_INT, 0, MPI_COMM_WORLD);
     for (auto i = 0; i < 4; ++i) {
-        mympi->MPI_Bcast_string(filename_list[i], 0, MPI_COMM_WORLD);
+        MPI_Bcast_string(filename_list[i], 0, MPI_COMM_WORLD);
     }
 
     Spin spin_super_fc2, spin_prim_fc2;
@@ -562,7 +562,7 @@ void System::get_structure_and_mapping_table_xml(const std::string &filename, Ce
     MPI_Bcast(&kd_tmp[0], nat_tmp, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     for (auto i = 0; i < nkd_tmp; ++i) {
-        mympi->MPI_Bcast_string(elements[i], 0, MPI_COMM_WORLD);
+        MPI_Bcast_string(elements[i], 0, MPI_COMM_WORLD);
     }
 
     MPI_Bcast(&map_p2s_tmp[0][0], natmin_tmp * ntran_tmp, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -724,12 +724,12 @@ void System::get_structure_and_mapping_table_h5(const std::string &filename, Cel
     }
 
     // Broadcast data
-    mympi->MPI_Bcast_CellClass(scell_out, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_CellClass(pcell_out, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_SpinClass(spin_super_out, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_SpinClass(spin_prim_out, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_MappingTable(map_super_out, 0, MPI_COMM_WORLD);
-    mympi->MPI_Bcast_MappingTable(map_prim_out, 0, MPI_COMM_WORLD);
+    MPI_Bcast_CellClass(scell_out, 0, MPI_COMM_WORLD);
+    MPI_Bcast_CellClass(pcell_out, 0, MPI_COMM_WORLD);
+    MPI_Bcast_SpinClass(spin_super_out, 0, MPI_COMM_WORLD);
+    MPI_Bcast_SpinClass(spin_prim_out, 0, MPI_COMM_WORLD);
+    MPI_Bcast_MappingTable(map_super_out, 0, MPI_COMM_WORLD);
+    MPI_Bcast_MappingTable(map_prim_out, 0, MPI_COMM_WORLD);
 
     int nkd_tmp;
     if (run.my_rank == 0) {
@@ -740,7 +740,7 @@ void System::get_structure_and_mapping_table_h5(const std::string &filename, Cel
         elements.resize(nkd_tmp);
     }
     for (auto i = 0; i < nkd_tmp; ++i) {
-        mympi->MPI_Bcast_string(elements[i], 0, MPI_COMM_WORLD);
+        MPI_Bcast_string(elements[i], 0, MPI_COMM_WORLD);
     }
 
     // Fill in missing data
@@ -952,7 +952,7 @@ void System::initialize_distorted_primitive_cell()
             }
         }
     }
-    mympi->mpiBcastEigen(xdisp, 0, MPI_COMM_WORLD);
+    mpiBcastEigen(xdisp, 0, MPI_COMM_WORLD);
 
     // Move the basis to the fractional coordinate
     xdisp = inv_tpi * xdisp * primcell_distort.reciprocal_lattice_vector.transpose();
