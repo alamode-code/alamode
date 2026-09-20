@@ -20,11 +20,8 @@
 #include "fcs_phonon.h"
 #include "mathfunctions.h"
 #include "memory.h"
-#include "mode_symmetry.h"
 #include "mpi_common.h"
-#include "phonon_dos.h"
 #include "system.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -63,14 +60,15 @@ void Dielec::deallocate_variables()
     }
 }
 
-void Dielec::init()
+void Dielec::init(const double emin_dos, const double emax_dos, const double delta_e_dos, const unsigned int nonanalytic,
+                  const bool print_zmode, const bool print_irreps)
 {
-    // This should be called after Dos::setup()
+    // This should be called after Dos::setup(). The arguments are read on rank 0 only.
 
     if (run.my_rank == 0) {
-        emax = dos->emax;
-        emin = dos->emin;
-        delta_e = dos->delta_e;
+        emax = emax_dos;
+        emin = emin_dos;
+        delta_e = delta_e_dos;
         nomega = static_cast<int>((emax - emin) / delta_e);
     }
 
@@ -89,7 +87,7 @@ void Dielec::init()
     int need_born_data = 0;
     if (run.my_rank == 0) {
         const auto borninfo_given = !file_born.empty();
-        if (dynamical->nonanalytic || calc_dielectric_constant) {
+        if (nonanalytic || calc_dielectric_constant) {
             if (!borninfo_given) {
                 if (calc_dielectric_constant) {
                     exitall("Dielec::init()", "BORNINFO must be set when DIELEC = 1.");
@@ -97,7 +95,7 @@ void Dielec::init()
                 exitall("Dielec::init()", "BORNINFO must be set when NONANALYTIC>0.");
             }
             need_born_data = 1;
-        } else if (borninfo_given && (writes->print_zmode || mode_symmetry->print_irreps)) {
+        } else if (borninfo_given && (print_zmode || print_irreps)) {
             need_born_data = 1;
         }
     }
@@ -322,12 +320,12 @@ const double *const *const *Dielec::get_dielectric_func() const
     return dielec;
 }
 
-void Dielec::run_dielec_calculation()
+void Dielec::run_dielec_calculation(const Dynamical &dynamical)
 {
     NDArray<double, 1> xk;
     NDArray<double, 1> eval;
     NDArray<std::complex<double>, 2> evec;
-    const auto ns = dynamical->neval;
+    const auto ns = 3 * system->get_primcell().number_of_atoms;
 
     xk.resize(3);
     eval.resize(ns);
@@ -336,7 +334,7 @@ void Dielec::run_dielec_calculation()
 
     for (auto i = 0; i < 3; ++i) xk[i] = 0.0;
 
-    dynamical->diagonalize_gamma_analytic(eval, evec, true);
+    dynamical.diagonalize_gamma_analytic(eval, evec, true);
 
     compute_dielectric_function(nomega, omega_grid, eval, evec, dielec);
 
@@ -348,7 +346,7 @@ void Dielec::run_dielec_calculation()
 void Dielec::compute_dielectric_function(const unsigned int nomega_in, const double *omega_grid_in, double *eval_in,
                                          std::complex<double> **evec_in, double ***dielec_out)
 {
-    const auto ns = dynamical->neval;
+    const auto ns = 3 * system->get_primcell().number_of_atoms;
     const auto &zstar = borncharge;
 
 #ifdef _DEBUG
@@ -450,22 +448,23 @@ void Dielec::compute_dielectric_function(const unsigned int nomega_in, const dou
     s_born.clear();
 }
 
-std::vector<std::vector<double>> Dielec::get_zstar_mode() const
+std::vector<std::vector<double>> Dielec::get_zstar_mode(const Dynamical &dynamical) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = 3 * system->get_primcell().number_of_atoms;
     std::vector<std::vector<double>> zstar_mode(ns, std::vector<double>(3));
-    compute_mode_effective_charge(zstar_mode, false);
+    compute_mode_effective_charge(dynamical, zstar_mode, false);
     return zstar_mode;
 }
 
-void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode, const bool do_normalize) const
+void Dielec::compute_mode_effective_charge(const Dynamical &dynamical, std::vector<std::vector<double>> &zstar_mode,
+                                           const bool do_normalize) const
 {
     // Compute the effective charges of normal coordinate at q = 0.
 
     std::vector<double> xk(3);
     NDArray<double, 1> eval;
     NDArray<std::complex<double>, 2> evec;
-    const auto ns = dynamical->neval;
+    const auto ns = 3 * system->get_primcell().number_of_atoms;
 
     eval.resize(ns);
     evec.resize(ns, ns);
@@ -476,14 +475,14 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
     std::vector<std::vector<double>> projectors;
     std::vector<double> vecs(3);
 
-    if (!dynamical->get_projection_directions().empty()) {
-        dynamical->project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
+    if (!dynamical.get_projection_directions().empty()) {
+        dynamical.project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                    fcs_phonon->force_constant_with_cell[0],
                                                    &xk[0],
-                                                   dynamical->get_projection_directions(),
+                                                   dynamical.get_projection_directions(),
                                                    evec);
     } else {
-        dynamical->diagonalize_gamma_analytic(eval, evec, true);
+        dynamical.diagonalize_gamma_analytic(eval, evec, true);
     }
 
     compute_mode_effective_charge(zstar_mode, evec, do_normalize);
@@ -499,7 +498,7 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<std::complex<
     // [Gonze & Lee, PRB 55, 10355 (1997), Eq. (53)]. Apply mass division during
     // accumulation without modifying evec_in; retain complex phases.
 
-    const auto ns = dynamical->neval;
+    const auto ns = 3 * system->get_primcell().number_of_atoms;
     const auto &zstar_atom = borncharge;
 
     std::vector<double> invsqrt_mass_amu(ns);
@@ -524,7 +523,7 @@ void Dielec::compute_mode_effective_charge(std::vector<std::vector<double>> &zst
     // mode effective charge, optionally normalized by the normal-coordinate
     // amplitude.
 
-    const auto ns = dynamical->neval;
+    const auto ns = 3 * system->get_primcell().number_of_atoms;
 
     std::vector<std::vector<std::complex<double>>> zstar_complex(ns, std::vector<std::complex<double>>(3));
     compute_mode_effective_charge(zstar_complex, evec_in);

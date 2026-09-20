@@ -3310,7 +3310,7 @@ void Writes::printNormalmodeBorncharge() const
             return;
         }
 
-        auto zstar_born = dielec->get_zstar_mode();
+        auto zstar_born = dielec->get_zstar_mode(*dynamical);
 
         const auto ns = dynamical->neval;
 

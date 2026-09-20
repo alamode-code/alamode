@@ -18,6 +18,8 @@
 
 namespace PHON_NS
 {
+class Dynamical;
+
 class Dielec: protected Pointers
 {
 public:
@@ -25,9 +27,11 @@ public:
 
     ~Dielec();
 
-    void init();
+    // DOS energy grid, NONANALYTIC, ZMODE and IRREPS of the run; read on rank 0 only.
+    void init(double emin_dos, double emax_dos, double delta_e_dos, unsigned int nonanalytic, bool print_zmode,
+              bool print_irreps);
 
-    void run_dielec_calculation();
+    void run_dielec_calculation(const Dynamical &dynamical);
 
     const double *get_omega_grid(unsigned int &nomega) const;
 
@@ -40,7 +44,7 @@ public:
     unsigned int symmetrize_borncharge{};
     std::string file_born;
 
-    std::vector<std::vector<double>> get_zstar_mode() const;
+    std::vector<std::vector<double>> get_zstar_mode(const Dynamical &dynamical) const;
 
     // Mode effective charges from caller-supplied Gamma-point eigenvectors
     // (mass-weighted, [ns][3*natmin]); the eigenvectors are not modified.
@@ -68,7 +72,7 @@ private:
 
     void setup_dielectric(const unsigned int verbosity = 1);
 
-    void compute_mode_effective_charge(std::vector<std::vector<double>> &zstar_mode,
+    void compute_mode_effective_charge(const Dynamical &dynamical, std::vector<std::vector<double>> &zstar_mode,
                                        const bool do_normalize = false) const;
 
     void load_born(const unsigned int flag_symmborn, const unsigned int verbosity = 1);

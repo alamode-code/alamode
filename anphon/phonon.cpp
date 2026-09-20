@@ -203,7 +203,12 @@ void PHON::setup_base() const
     dos->setup();
     thermodynamics->setup();
     anharmonic_core->setup();
-    dielec->init();
+    dielec->init(dos->emin,
+                 dos->emax,
+                 dos->delta_e,
+                 dynamical->nonanalytic,
+                 writes->print_zmode,
+                 mode_symmetry->print_irreps);
     ewald->init();
 
     if (run_info.my_rank == 0 && get_verbosity() > 0) {
@@ -247,7 +252,7 @@ void PHON::execute_phonons() const
         gruneisen->calc_gruneisen();
     }
     if (dielec->calc_dielectric_constant) {
-        dielec->run_dielec_calculation();
+        dielec->run_dielec_calculation(*dynamical);
     }
 
     if (thermodynamics->calc_FE_bubble) {
