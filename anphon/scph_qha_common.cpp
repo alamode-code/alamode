@@ -120,7 +120,7 @@ void ScphQhaCommon::setup_kmesh(unsigned int kmesh_dense_input[3], unsigned int 
                        system->get_primcell().reciprocal_lattice_vector,
                        symmetry->use_time_reversal && symmetry->time_reversal_sym);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " Setting up the " << mode_name << " calculations ...\n\n";
         std::cout << "  Gamma-centered uniform grid with the following mesh density:\n";
         std::cout << "  nk1:" << std::setw(5) << kmesh_dense_input[0] << '\n';
@@ -150,7 +150,7 @@ void ScphQhaCommon::setup_eigvecs()
 {
     const auto ns = dynamical->neval;
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
     }
 
@@ -185,7 +185,7 @@ void ScphQhaCommon::setup_eigvecs()
     }
     is_acoustic_gamma_harm = dynamical->detect_acoustic_modes_at_gamma(evec_harmonic[ik_gamma_dense]);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "done !\n";
     }
 }
@@ -206,7 +206,7 @@ void ScphQhaCommon::setup_structural_data()
 
 void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
 {
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         if (prepare_v3) {
             std::cout << " Preparing for calculating V3 & V4  ...";
         } else {
@@ -229,7 +229,7 @@ void ScphQhaCommon::setup_pp_interaction(const bool prepare_v3)
     phase_factor = std::make_unique<PhaseFactorCache>(kmesh_dense->nk_i);
     phase_factor->create(true);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " done!\n";
     }
 }
@@ -351,7 +351,7 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
         if (icount != NT) {
             exit("load_scph_dymat_from_file", "The temperature information is not consistent");
         }
-        if (writes->getVerbosity() > 0) std::cout << " done.\n";
+        if (run.verbosity > 0) std::cout << " done.\n";
     }
     // Broadcast to all MPI threads
     mpi_bcast_complex(dymat_out, NT, kmesh_coarse_in->nk, ns);
@@ -408,7 +408,7 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
         }
     }
     ofs_dymat.close();
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dymat;
         std::cout << " : Anharmonic dynamical matrix (restart file)\n";
     }
@@ -446,7 +446,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
     if (run.my_rank == 0) {
 
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " Running postprocess of SCPH/QHA (calculation of free energy, MSD, DOS)\n";
             std::cout << " The number of temperature points: " << std::setw(4) << NT << '\n';
@@ -693,7 +693,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
                 t_rest += timer->elapsed() - t_stage;
 
-                if (writes->getVerbosity() > 0) {
+                if (run.verbosity > 0) {
                     std::cout << '.' << std::flush;
                     if (iT % 25 == 24) {
                         std::cout << '\n';
@@ -701,7 +701,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                     }
                 }
             }
-            if (writes->getVerbosity() > 0) std::cout << "\n\n";
+            if (run.verbosity > 0) std::cout << "\n\n";
 
             if (compute_Cv_anharmonic == 1) {
                 // The central difference needs the frequencies at iT-1 and iT+1, so it
@@ -755,7 +755,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             // If delta_dymat_scph_plus_bubble != nullptr, run postprocess again with
             // delta_dymat_scph_plus_bubble.
             if (bubble_in > 0) {
-                if (writes->getVerbosity() > 0) {
+                if (run.verbosity > 0) {
                     std::cout << '\n';
                     std::cout << "   ";
                 }
@@ -864,7 +864,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                         }
                     }
 
-                    if (writes->getVerbosity() > 0) {
+                    if (run.verbosity > 0) {
                         std::cout << '.' << std::flush;
                         if (iT % 25 == 24) {
                             std::cout << '\n';
@@ -872,7 +872,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                         }
                     }
                 }
-                if (writes->getVerbosity() > 0) std::cout << "\n\n";
+                if (run.verbosity > 0) std::cout << "\n\n";
 
                 if (dos->compute_dos) {
                     writes->writePhononDos(dos_update, false, bubble_in);
@@ -1042,7 +1042,7 @@ void ScphQhaCommon::print_stage_time(const std::string &label, const double t_st
 
 void ScphQhaCommon::print_stage_value(const std::string &label, const double seconds) const
 {
-    print_stage_line(label, seconds, run.my_rank, writes->getVerbosity());
+    print_stage_line(label, seconds, run.my_rank, run.verbosity);
 }
 
 void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
@@ -1144,7 +1144,7 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
 void ScphQhaCommon::print_initial_structure(const RelaxationStructureState &state,
                                             const RelaxationStrMode relax_mode) const
 {
-    if (writes->getVerbosity() == 0) return;
+    if (run.verbosity == 0) return;
 
     std::string str_tmp;
 
@@ -1198,7 +1198,7 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
         const double local_rows = static_cast<double>(nk2_prod) * ns4 / static_cast<double>(nprocs);
         if (nk2_prod < nprocs || scratch_kpoint > local_rows) {
             band = true;
-            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && run.verbosity > 0) {
                 std::cout << " V4 is distributed over " << nprocs << " MPI processes: the band-parallel builder"
                           << " (IALGO = 1) is used so that the rows can be split evenly.\n";
             }
@@ -1240,7 +1240,7 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
     for (std::size_t ik = 0; ik < nk_irred; ++ik) {
         knum_of_irred[ik] = kmap_coarse_to_dense[kmesh_coarse->kpoint_irred_all[ik][0].knum];
     }
-    v4_service->finalize_build(knum_of_irred, writes->getVerbosity());
+    v4_service->finalize_build(knum_of_irred, run.verbosity);
 }
 
 void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
@@ -1267,7 +1267,7 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
         ws.v1_ref[is] = 0.0;
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " RELAX_STR = " << to_int(ws.relax_mode) << ": ";
         if (ws.relax_mode == RelaxationStrMode::CoordinatesOnly) {
             std::cout << "Set zeros in derivatives of k-space IFCs by strain.\n\n";
@@ -1367,7 +1367,7 @@ void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspac
         cell_grad_norm = std::sqrt(cell_grad_norm);
     }
 
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << " du0 =" << std::scientific << std::setw(15) << std::setprecision(6) << du0 << " [Bohr]";
         std::cout << " du_tensor =" << std::scientific << std::setw(15) << std::setprecision(6) << du_tensor << '\n';
         std::cout << " |residual force| =" << std::scientific << std::setw(15) << std::setprecision(6) << grad_norm;
@@ -1384,7 +1384,7 @@ void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspac
 void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state, const RelaxationStrMode relax_mode,
                                           const double temp, const bool last_temperature) const
 {
-    if (writes->getVerbosity() == 0) return;
+    if (run.verbosity == 0) return;
 
     std::string str_tmp;
 
@@ -1433,7 +1433,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
         i_temp_loop++;
         auto iT = static_cast<unsigned int>((temp - ctx.Tmin) / ctx.dT);
 
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << "\n ================================================================\n";
             std::cout << "  Temperature = " << temp << " K    (" << std::setw(4) << i_temp_loop + 1 << " of "
                       << std::setw(4) << ctx.NT << ")\n";
@@ -1461,7 +1461,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
                                       ctx.fout_step_u0,
                                       ctx.fout_step_u_tensor);
 
-        if (writes->getVerbosity() > 0) std::cout << " Start structural optimization at " << temp << " K.\n";
+        if (run.verbosity > 0) std::cout << " Start structural optimization at " << temp << " K.\n";
 
         // per-step records for the optimization-history table printed below
         std::vector<StructOptStepRecord> step_history;
@@ -1470,7 +1470,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
         int i_str_loop;
         for (i_str_loop = 0; i_str_loop < relaxation->max_str_iter; i_str_loop++) {
 
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "\n ----------------------------------------------------------------\n";
                 std::cout << "  Structure opt. step " << std::setw(4) << i_str_loop + 1 << " of "
                           << relaxation->max_str_iter << "    (T = " << temp << " K)\n";
@@ -1497,7 +1497,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
                                                temp,
                                                ctx.relax_mode == RelaxationStrMode::CoordinatesAndCell,
                                                model.history_has_scp_column(),
-                                               writes->getVerbosity());
+                                               run.verbosity);
 
         print_final_structure(ctx.structure_state, ctx.relax_mode, temp, i_temp_loop == static_cast<int>(ctx.NT) - 1);
 

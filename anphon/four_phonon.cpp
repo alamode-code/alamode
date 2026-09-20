@@ -279,7 +279,7 @@ void AnharmonicCore::prepare_fc4_compressed()
     cfc->q_ptr.push_back(static_cast<int>(cfc->pair_r1.size()));
     cfc->row_ptr.push_back(static_cast<int>(cfc->q_diff.size()));
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "\n";
         std::cout << " Four-phonon matrix elements: factorized evaluation\n";
         std::cout << "  Cartesian indices per cell (n)        : " << n << '\n';
@@ -331,7 +331,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     if (omega0 < eps8) return;
 
     // VERBOSITY >= 2 prints a per-mode timing breakdown of the kernel.
-    const bool profile = writes->getVerbosity() > 1;
+    const bool profile = run.verbosity > 1;
     Profile prof;
     double t_start = 0.0, t_mode_prep = 0.0;
     if (profile) t_start = wall_seconds();
@@ -467,7 +467,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     const int s1_chunk =
         static_cast<int>(std::max<size_t>(1, std::min<size_t>(ns, budget_bytes / (3 * n2 * sizeof(Cplx)))));
 
-    if (!fourph_memory_reported && run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (!fourph_memory_reported && run.my_rank == 0 && run.verbosity > 0) {
         int nthreads = 1;
 #ifdef _OPENMP
         nthreads = omp_get_max_threads();

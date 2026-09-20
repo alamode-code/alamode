@@ -680,7 +680,7 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                                        kmap_coarse_to_dense,
                                                        mat_transform_sym,
                                                        mindist_list,
-                                                       writes->getVerbosity());
+                                                       run.verbosity);
     print_stage_time("renormalized harmonic frequencies", time_stage);
     time_stage = timer->elapsed();
 
@@ -1113,7 +1113,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                                kmap_coarse_to_dense,
                                                                mat_transform_sym,
                                                                mindist_list,
-                                                               writes->getVerbosity());
+                                                               run.verbosity);
 
             dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
                                                 omega2_harm_renorm[iT],

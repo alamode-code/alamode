@@ -104,7 +104,7 @@ void Dielec::init()
     MPI_Bcast(&need_born_data, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (need_born_data) {
-        setup_dielectric(writes->getVerbosity());
+        setup_dielectric(run.verbosity);
     }
 
     if (calc_dielectric_constant) {

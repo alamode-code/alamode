@@ -57,7 +57,7 @@ void Symmetry::setup_symmetry(const bool verbose)
     if ((run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0)) {
 
         if (run.my_rank == 0) {
-            const auto verbosity = verbose ? writes->getVerbosity() : 0;
+            const auto verbosity = verbose ? run.verbosity : 0;
             if (verbosity > 0) {
                 std::cout << " ==========\n";
                 std::cout << "  Symmetry \n";
@@ -87,7 +87,7 @@ void Symmetry::setup_symmetry(const bool verbose)
         }
     } else {
         if (run.my_rank == 0) {
-            const auto verbosity = verbose ? writes->getVerbosity() : 0;
+            const auto verbosity = verbose ? run.verbosity : 0;
             if (verbosity > 0) {
                 std::cout << " ==========\n";
                 std::cout << "  Symmetry \n";
@@ -115,7 +115,7 @@ void Symmetry::setup_symmetry(const bool verbose)
         (run.mode == "SCPH" && relaxation->relax_str != 0) || (run.mode == "QHA" && relaxation->relax_str != 0);
 
     if (run.my_rank == 0) {
-        const auto verbosity = verbose ? writes->getVerbosity() : 0;
+        const auto verbosity = verbose ? run.verbosity : 0;
         if (verbosity > 0) {
             std::cout << '\n';
             std::cout << "  Number of symmetry operations : " << nsym << '\n';

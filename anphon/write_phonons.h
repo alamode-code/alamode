@@ -105,8 +105,6 @@ public:
 
     void writeDielecFunc(double ****dielec_in, const bool is_qha = false) const;
 
-    unsigned int getVerbosity() const;
-
     bool getPrintMSD() const;
 
     bool getPrintUcorr() const;

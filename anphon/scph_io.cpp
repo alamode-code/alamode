@@ -148,7 +148,7 @@ void ScphQhaCommon::write_anharmonic_correction_fc2(std::complex<double> ****del
     delta_fc2.clear();
 
     ofs_fc2.close();
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_fc2;
 
         if (is_qha) {
@@ -361,7 +361,7 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     const ScphResultIOH5 io(filename);
     io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str);
 
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << filename;
         std::cout << " : Unified " << mode_name << " state (restart file + temperature-dependent FC2)\n";
     }
@@ -397,7 +397,7 @@ bool ScphQhaCommon::load_scph_state_h5(const std::string &filename, const std::s
         if (v0) {
             io.load_v0(settings.temperatures, *v0);
         }
-        if (writes->getVerbosity() > 0) std::cout << " done.\n";
+        if (run.verbosity > 0) std::cout << " done.\n";
     }
 
     mpi_bcast_complex(delta_main, NT, kmesh_coarse->nk, ns);
@@ -477,7 +477,7 @@ void ScphQhaCommon::store_V0_to_file() const
 
     ofs_v0.close();
 
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_v0;
         std::cout << " : Renormalized static potential V0 (restart file)\n";
     }

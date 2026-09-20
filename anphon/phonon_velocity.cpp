@@ -467,7 +467,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
     const auto factor = Bohr_in_Angstrom * 1.0e-10 / (time_ry * 2.0 * pi);
     const auto legacy = legacy_velocity();
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " Calculating group velocity matrix of phonons on uniform grid ... ";
     }
 
@@ -583,7 +583,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
         velblock_loc.clear();
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "done!\n";
     }
 }
@@ -907,7 +907,7 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
     // gradient exists. A central difference can be nonzero there;
     // a directional limit is not implemented.
     if (std::abs(xk_in[0]) < eps && std::abs(xk_in[1]) < eps && std::abs(xk_in[2]) < eps) {
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             static auto warned_gamma = false;
             if (!warned_gamma) {
                 warned_gamma = true;

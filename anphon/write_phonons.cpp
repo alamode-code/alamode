@@ -123,7 +123,7 @@ void Writes::writeInputVars()
     if (fcs_phonon->fc2_temperature >= 0.0) {
         os << "  FC2_TEMPERATURE = " << fcs_phonon->fc2_temperature << '\n';
     }
-    os << "  FILE_FORMAT = " << (use_h5_io ? "h5" : "text") << "; VERBOSITY = " << getVerbosity() << '\n';
+    os << "  FILE_FORMAT = " << (use_h5_io ? "h5" : "text") << "; VERBOSITY = " << run.verbosity << '\n';
     os << '\n';
 
     // KD and MASS are echoed only when given in the input; otherwise they
@@ -424,7 +424,7 @@ void Writes::writeInputVars()
 #ifdef _HDF5
     input_variables_echo = parse_input_echo(os.str());
 #endif
-    if (getVerbosity() > 0) std::cout << os.str();
+    if (run.verbosity > 0) std::cout << os.str();
 }
 
 
@@ -467,7 +467,7 @@ std::array<int, 3> Writes::getShiftUcorr() const
 
 void Writes::printPhononEnergies() const
 {
-    if (getVerbosity() == 0) return;
+    if (run.verbosity == 0) return;
 
     unsigned int i;
     unsigned int ik, is;
@@ -579,7 +579,7 @@ void Writes::writePhononInfo()
         writeNormalModeAnimation(anime_kpoint, anime_cellsize);
     }
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n\n";
         std::cout << " The following files are created: \n";
@@ -666,7 +666,7 @@ void Writes::writePhononInfo()
         writeDielectricFunction();
     }
 
-    if (print_anime && getVerbosity() > 0) {
+    if (print_anime && run.verbosity > 0) {
         if (anime_format == "XSF" || anime_format == "AXSF") {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left
                       << run.job_title + ".anime*.axsf";
@@ -751,7 +751,7 @@ void Writes::writePhononBands() const
 
     ofs_bands.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_bands;
         std::cout << " : Phonon band structure\n";
     }
@@ -775,7 +775,7 @@ void Writes::writePhononBands() const
             ofs_connect << '\n';
         }
         ofs_connect.close();
-        if (getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_connect;
             std::cout << " : Connectivity map information of band dispersion\n";
         }
@@ -838,7 +838,7 @@ void Writes::writePhononVel() const
 
     ofs_vel.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_vel;
         std::cout << " : Phonon velocity along given k path\n";
     }
@@ -924,7 +924,7 @@ void Writes::writePhononVelAll() const
 
     ofs_vel.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_vel;
         std::cout << " : Phonon velocity at all k points\n";
     }
@@ -988,7 +988,7 @@ void Writes::writePhononDos() const
     }
     ofs_dos.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dos;
 
         if (dos->projected_dos & dos->compute_dos) {
@@ -1026,7 +1026,7 @@ void Writes::writeTwoPhononDos() const
 
     ofs_tdos.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_tdos;
         std::cout << " : Two-phonon DOS\n";
     }
@@ -1059,7 +1059,7 @@ void Writes::writeScatteringPhaseSpace() const
 
     ofs_sps.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_sps;
         std::cout << " : Three-phonon scattering phase space\n";
     }
@@ -1084,7 +1084,7 @@ void Writes::writeLongitudinalProjDos() const
     }
     ofs_dos.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dos;
         std::cout << " : Longitudinal projected DOS" << '\n';
     }
@@ -1139,7 +1139,7 @@ void Writes::writeScatteringAmplitude() const
     }
 
     ofs_w.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_w;
         std::cout << " : Three-phonon scattering phase space \n";
         std::cout << " " << std::setw(run.job_title.length() + 16) << " "
@@ -1251,7 +1251,7 @@ void Writes::writeNormalModeDirectionEach(const std::string &fname_axsf, const u
     kd_tmp.clear();
 
     ofs_anime.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_axsf;
         std::cout << " : XcrysDen AXSF file to visualize phonon mode directions\n";
     }
@@ -1366,7 +1366,7 @@ void Writes::writeEigenvaluesEach(const std::string &fname_eval, const unsigned 
 
     index_bconnect_tmp.clear();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_eval;
         std::cout << " : Eigenvalues of all k points\n";
     }
@@ -1614,7 +1614,7 @@ void Writes::writeEigenvaluesEachHdf5(const std::string &fname_eval, const unsig
         write_input_variables_h5(fh, input_variables_echo);
     }
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_eval;
         std::cout << " : Eigenvalues of all k points (HDF5)\n";
     }
@@ -1745,7 +1745,7 @@ void Writes::writeEigenvectorsEach(const std::string &fname_evec, const unsigned
 
     index_bconnect_tmp.clear();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_evec;
         std::cout << " : Eigenvector of all k points\n";
     }
@@ -2083,7 +2083,7 @@ void Writes::writeThermodynamicFunc() const
 
     ofs_thermo.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_thermo;
         std::cout << " : Thermodynamic quantities\n";
     }
@@ -2155,7 +2155,7 @@ void Writes::writeGruneisen()
 
         ofs_gruneisen.close();
 
-        if (getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_gru;
             if (gruneisen->gruneisen_mode == 1) {
                 std::cout << " : Volumetric Gruneisen parameters along given k-path\n";
@@ -2208,7 +2208,7 @@ void Writes::writeGruneisen()
         }
         ofs_gruall.close();
 
-        if (getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_gruall;
             if (gruneisen->gruneisen_mode == 1) {
                 std::cout << " : Volumetric Gruneisen parameters at all k points" << '\n';
@@ -2531,7 +2531,7 @@ void Writes::writeMSD() const
     }
     ofs_rmsd.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_rmsd;
         std::cout << " : Mean-square-displacement (MSD)\n";
     }
@@ -2577,7 +2577,7 @@ void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) cons
     }
 
     ofs_msd.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_msd;
         if (is_qha) {
             std::cout << " : Mean-square-displacement (QHA level)\n";
@@ -2657,7 +2657,7 @@ void Writes::writeDispCorrelation() const
     ofs << std::flush;
     ofs.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_ucorr;
         std::cout << " : displacement correlation functions\n";
     }
@@ -2728,7 +2728,7 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
     ofs << std::flush;
     ofs.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_ucorr;
 
         if (is_qha) {
@@ -2749,7 +2749,7 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
 
 void Writes::printOutputFile(const std::string &file, const std::string &description) const
 {
-    if (run.my_rank != 0 || getVerbosity() == 0) return;
+    if (run.my_rank != 0 || run.verbosity == 0) return;
     std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file << " : " << description << '\n';
 }
 
@@ -2799,7 +2799,7 @@ void Writes::writeKappaIterative(const unsigned int ntemp_in, const double *temp
         ofs_kl << '\n';
     }
     ofs_kl.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << '\n';
         std::cout << " -----------------------------------------------------------------\n\n";
         std::cout << " The following files are created: \n";
@@ -2947,7 +2947,7 @@ void Writes::writeKappa() const
         }
 
 
-        if (getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " -----------------------------------------------------------------\n\n";
             std::cout << " The following files are created: \n";
@@ -3051,7 +3051,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
     for (i = 0; i < 3; ++i) {
         xk[i] = xk_in[i];
     }
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << " -----------------------------------------------------------------\n\n";
         std::cout << " ANIME-tag is given: Making animation files for the given\n";
         std::cout << "                     k point ( ";
@@ -3363,7 +3363,7 @@ std::string irrep_activity_string(const GammaModeGroup &grp)
 
 void Writes::printModeIrrepsSummary() const
 {
-    if (run.my_rank != 0 || getVerbosity() == 0) {
+    if (run.my_rank != 0 || run.verbosity == 0) {
         return;
     }
 
@@ -3568,7 +3568,7 @@ void Writes::writeModeIrreps() const
 
     ofs_irreps.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_irreps;
         std::cout << " : Irreducible representations and IR/Raman activity at Gamma\n";
     }
@@ -3684,7 +3684,7 @@ void Writes::writeParticipationRatioEach(const std::string &fname_pr, const std:
     participation_ratio.clear();
     atomic_participation_ratio.clear();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_pr;
         std::cout << " : Participation ratio for all k points\n";
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_apr;
@@ -3771,7 +3771,7 @@ void Writes::writeParticipationRatioMesh(const std::string &fname_pr, const std:
     participation_ratio.clear();
     atomic_participation_ratio.clear();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_pr;
         std::cout << " : Participation ratio for all k points\n";
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_apr;
@@ -3809,7 +3809,7 @@ void Writes::writeDielectricFunction() const
     ofs_dielec << '\n';
     ofs_dielec.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dielec;
         std::cout << " : Frequency-dependent dielectric function\n";
     }
@@ -3940,7 +3940,7 @@ void Writes::writePhononBands(const unsigned int nk_in, const double *kaxis_in, 
     }
 
     ofs_bands.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_bands;
         if (is_qha) {
             std::cout << " : QHA band structure\n";
@@ -4004,7 +4004,7 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
 
     ofs_dos << '\n';
     ofs_dos.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dos;
         if (is_qha) {
             std::cout << " : QHA DOS\n";
@@ -4110,7 +4110,7 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
     }
 
     ofs_thermo.close();
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_thermo;
         if (is_qha) {
             std::cout << " : QHA heat capacity, free energy, entropy\n";
@@ -4161,7 +4161,7 @@ void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
 
     ofs_dielec.close();
 
-    if (getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_dielec;
         if (is_qha) {
             std::cout << " : QHA frequency-dependent dielectric function\n";
@@ -4169,12 +4169,4 @@ void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
             std::cout << " : SCPH frequency-dependent dielectric function\n";
         }
     }
-}
-
-// PHON is the canonical owner of the verbosity setting; these accessors
-// forward to it so the many existing writes->getVerbosity() call sites keep
-// working unchanged.
-unsigned int Writes::getVerbosity() const
-{
-    return phon->get_verbosity();
 }

@@ -149,7 +149,7 @@ void Dynamical::setup_dynamical()
 {
     neval = 3 * system->get_primcell().number_of_atoms;
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n';
         std::cout << " ==================\n";
         std::cout << "  Dynamical matrix \n";
@@ -233,7 +233,7 @@ void Dynamical::setup_dynamical()
         prepare_mindist_list(mindist_list);
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n';
     }
 }
@@ -733,7 +733,7 @@ void Dynamical::diagonalize_dynamical_all()
 {
     unsigned int nk;
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n' << " Diagonalizing dynamical matrices for all k points ... ";
     }
     NDArray<double, 2> eval_tmp;
@@ -858,7 +858,7 @@ void Dynamical::diagonalize_dynamical_all()
         connect_band_by_eigen_similarity(kpoint->kpoint_bs->nk, dymat_band->get_eigenvectors(), index_bconnect);
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "done!\n";
     }
 

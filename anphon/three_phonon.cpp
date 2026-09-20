@@ -192,7 +192,7 @@ void AnharmonicCore::prepare_fc3_compressed()
     cfc->grp_ptr.push_back(static_cast<int>(cfc->sub_a.size()));
     cfc->row_ptr.push_back(static_cast<int>(cfc->grp_dr.size()));
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "\n";
         std::cout << " Three-phonon matrix elements: factorized evaluation\n";
         std::cout << "  Cartesian indices per cell (n)       : " << n << '\n';

@@ -115,7 +115,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
     NDArray<std::complex<double>, 2> v3_tmp2;
     std::vector<std::complex<double>> evec_conj_ik(ns2);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         if (self_offdiag) {
             std::cout << " SELF_OFFDIAG = 1: Calculating all components of v3_array ... ";
         } else {
@@ -271,7 +271,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 
     zerofill_elements_acoustic_at_gamma(v3_out, 3, kmesh_dense_in->nk, kmesh_coarse_in->nk_irred);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " done !\n";
         timer->print_elapsed();
     }
@@ -515,7 +515,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(v4_distributed::V4RowBlo
     if (run.my_rank == 0) {
         const auto nsize_dble =
             static_cast<double>((v4_block.nrows_local() * ns2 + 2 * ns4) * sizeof(std::complex<double>)) / 1000000000.0;
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << " Estimated memory usage for the V4 arrays on this process (local rows + 2 ns^4 scratch): "
                       << std::setw(10) << std::fixed << std::setprecision(4) << nsize_dble << " GByte.\n";
             if (self_offdiag || relax) {
@@ -674,7 +674,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_kpoint(v4_distributed::V4RowBlo
 
     zerofill_v4_acoustic_at_gamma(v4_block);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " done !\n";
         timer->print_elapsed();
     }
@@ -716,7 +716,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(v4_distributed::V4RowBlock
     if (!(self_offdiag || relaxation->relax_str)) {
         exit("compute_V4_elements_mpi_over_band", "This function can be used only when the full V4 tensor is needed");
     }
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " IALGO = 1 : Use different algorithm efficient when nbands >> nk_3ph\n";
         const auto nsize_dble =
             static_cast<double>((v4_block.nrows_local() * ns2 + 2 * ns * ns2) * sizeof(std::complex<double>)) /
@@ -764,7 +764,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(v4_distributed::V4RowBlock
     // filled on the first owned set and whenever the (ik, jk) pair changes
     std::vector<std::complex<double>> evec_conj_jk(ns2);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " Total number of sets to compute : " << nset_each << '\n';
     }
 
@@ -838,7 +838,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(v4_distributed::V4RowBlock
         if (run.my_rank == 0) {
             const long int nreport = std::max(nset_each / 20, static_cast<long int>(1));
             if ((ii + 1) % nreport == 0 || ii + 1 == nset_each) {
-                if (writes->getVerbosity() > 0) std::cout << " SET " << ii + 1 << " / " << nset_each << " done. \n";
+                if (run.verbosity > 0) std::cout << " SET " << ii + 1 << " / " << nset_each << " done. \n";
             }
         }
 
@@ -849,7 +849,7 @@ void ScphQhaCommon::compute_V4_elements_mpi_over_band(v4_distributed::V4RowBlock
 
     zerofill_v4_acoustic_at_gamma(v4_block);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " done !\n";
         timer->print_elapsed();
     }

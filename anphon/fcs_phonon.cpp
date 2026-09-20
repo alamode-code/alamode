@@ -63,7 +63,7 @@ void Fcs_phonon::deallocate_variables()
 
 void Fcs_phonon::setup(const std::string &mode)
 {
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " =================\n";
         std::cout << "  Force Constants \n";
         std::cout << " =================\n\n";
@@ -119,9 +119,9 @@ void Fcs_phonon::setup(const std::string &mode)
 
         const auto t_stage = timer->elapsed();
         load_fcs_from_file(maxorder);
-        print_stage_line("IFCs: read from file", timer->elapsed() - t_stage, run.my_rank, writes->getVerbosity());
+        print_stage_line("IFCs: read from file", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
 
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             for (auto i = 0; i < maxorder; ++i) {
                 std::cout << "  Number of non-zero IFCs for " << i + 2 << " order: ";
                 std::cout << force_constant_with_cell[i].size() << '\n';
@@ -138,21 +138,21 @@ void Fcs_phonon::setup(const std::string &mode)
                                                  system->get_supercell(i).number_of_atoms,
                                                  system->get_mapping_super_alm(i).from_true_primitive.size(),
                                                  force_constant_with_cell[i]);
-            if (writes->getVerbosity() > 0)
+            if (run.verbosity > 0)
                 std::cout << "   Order " << i + 2 << " : " << std::setw(12) << std::scientific << maxdev << '\n';
         }
-        if (writes->getVerbosity() > 0) std::cout << '\n';
+        if (run.verbosity > 0) std::cout << '\n';
     }
 
     auto t_stage = timer->elapsed();
     MPI_Bcast_fcs_array(maxorder);
-    print_stage_line("IFCs: MPI broadcast", timer->elapsed() - t_stage, run.my_rank, writes->getVerbosity());
+    print_stage_line("IFCs: MPI broadcast", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
     t_stage = timer->elapsed();
     replicate_force_constants(maxorder);
     print_stage_line("IFCs: replicate to the unit cell",
                      timer->elapsed() - t_stage,
                      run.my_rank,
-                     writes->getVerbosity());
+                     run.verbosity);
 }
 
 void Fcs_phonon::replicate_force_constants(const int maxorder_in)
@@ -292,7 +292,7 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
         }
     }
 
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "  Reading force constants from the following file(s):\n";
         for (auto i = 0; i < filename_list.size(); ++i) {
             if (!load_flags[i]) continue;
@@ -315,7 +315,7 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
         }
     }
 
-    if (writes->getVerbosity() > 0) std::cout << "done.\n\n";
+    if (run.verbosity > 0) std::cout << "done.\n\n";
 }
 
 void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs, const int order,
@@ -506,7 +506,7 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
             }
         }
 
-        if (writes->getVerbosity() > 0)
+        if (run.verbosity > 0)
             std::cout << "\n  FC2_TEMPERATURE = " << fc2_temperature
                       << " K : loading the renormalized FC2 at this temperature from " << fname_fcs << "\n  ";
     }
@@ -538,7 +538,7 @@ void Fcs_phonon::parse_fcs_from_h5(const HighFive::File &file, const std::string
     // differs from the internal one to keep the common case quiet.
     const std::string unit_fc_internal = "Ry/bohr^" + std::to_string(order + 2);
     if (!unit_fc.empty() && unit_fc != unit_fc_internal) {
-        if (writes->getVerbosity() > 0)
+        if (run.verbosity > 0)
             std::cout << "\n  " << file.getName() << group_prefix << " [Order " << order + 2 << "]: stored unit "
                       << unit_fc << " -> converted to " << unit_fc_internal << '\n';
     }
@@ -679,7 +679,7 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
                      "An atom of the DFC2FILE cell has no counterpart in the present primitive cell.");
             }
         }
-        if (ncopy > 1 && writes->getVerbosity() > 0) {
+        if (ncopy > 1 && run.verbosity > 0) {
             std::cout << "\n  DFC2FILE: the SCPH cell holds " << ncopy
                       << " copies of the present primitive cell; corrections are folded.";
         }
@@ -793,7 +793,7 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
         }
     }
 
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at " << fc2_temperature
                   << " K from " << fname_dfc2;
         if (nfolded > 0) std::cout << " (" << nfolded << " translational duplicates folded)";

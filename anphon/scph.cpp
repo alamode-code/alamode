@@ -370,7 +370,7 @@ public:
                                                                      scph_.kmap_coarse_to_dense,
                                                                      scph_.mat_transform_sym,
                                                                      scph_.mindist_list,
-                                                                     scph_.writes->getVerbosity());
+                                                                     scph_.run.verbosity);
 
             scph_.dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize_[iT],
                                                       omega2_harm_renorm_[iT],
@@ -856,7 +856,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                                   cmat_convert,
                                                   selfenergy_offdiagonal,
                                                   delta_v2_renorm,
-                                                  writes->getVerbosity());
+                                                  run.verbosity);
             } else {
                 compute_anharmonic_frequency(omega2_anharm[iT],
                                              evec_anharm_tmp,
@@ -865,7 +865,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                              cmat_convert,
                                              selfenergy_offdiagonal,
                                              delta_v2_renorm,
-                                             writes->getVerbosity());
+                                             run.verbosity);
             }
 
             converged_scph_temp[iT] = converged_prev ? 1 : 0;
@@ -1134,7 +1134,7 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                           cmat_convert,
                                           selfenergy_offdiagonal,
                                           ws.delta_v2_renorm,
-                                          writes->getVerbosity(),
+                                          run.verbosity,
                                           true);
     } else {
         compute_anharmonic_frequency(omega2_anharm[iT],
@@ -1144,7 +1144,7 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                      cmat_convert,
                                      selfenergy_offdiagonal,
                                      ws.delta_v2_renorm,
-                                     writes->getVerbosity(),
+                                     run.verbosity,
                                      true);
     }
 

@@ -108,7 +108,7 @@ void Gruneisen::setup()
         }
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         if (print_newfcs) {
             std::cout << '\n';
             if (anharmonic_core->quartic_mode > 0) {
@@ -141,7 +141,7 @@ void Gruneisen::setup()
 
 void Gruneisen::calc_gruneisen()
 {
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n';
         const std::string ion_path = sublattice_relax ? "relaxed-ion " : "";
         if (gruneisen_mode == 1) {
@@ -170,7 +170,7 @@ void Gruneisen::calc_gruneisen()
                                   gruneisen_tensor_dos);
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "done!" << '\n';
     }
 }
@@ -331,7 +331,7 @@ void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fc
 
 void Gruneisen::write_new_fcsxml_all() const
 {
-    if (writes->getVerbosity() > 0) std::cout << '\n';
+    if (run.verbosity > 0) std::cout << '\n';
 
     if (fcs_phonon->update_fc2 || !fcs_phonon->file_fc3.empty()) {
         // The new force-constant files carry a single supercell structure, so
@@ -346,7 +346,7 @@ void Gruneisen::write_new_fcsxml_all() const
         const bool write_h5 = false;
 #endif
 
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             if (write_h5) {
                 std::cout << " NEWFCS = 1 : Following HDF5 files are created. \n";
             } else {
@@ -386,7 +386,7 @@ void Gruneisen::write_new_fcsxml_all() const
         auto file_out = run.job_title + "_+" + extension;
         write_one(file_out, scale);
 
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_out;
             if (strain_newfcs_given) {
                 std::cout << " : Force constants of the system with the strain +u applied\n";
@@ -399,7 +399,7 @@ void Gruneisen::write_new_fcsxml_all() const
         file_out = run.job_title + "_-" + extension;
         write_one(file_out, -scale);
 
-        if (writes->getVerbosity() > 0) {
+        if (run.verbosity > 0) {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_out;
             if (strain_newfcs_given) {
                 std::cout << " : Force constants of the system with the strain -u applied\n";

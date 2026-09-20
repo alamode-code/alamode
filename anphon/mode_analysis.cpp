@@ -132,7 +132,7 @@ void ModeAnalysis::setup_mode_analysis()
 
         if (selfenergy_mode) {
             ks_analyze_mode = true;
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "\n MODE = selfenergy: analysis of the phonon modes given in the &kpoint field.\n\n";
             }
             std::vector<unsigned int> branches; // 1-based
@@ -169,14 +169,14 @@ void ModeAnalysis::setup_mode_analysis()
             } else {
                 exit("setup_mode_analysis", "MODE = selfenergy needs KPMODE = 0 or 1 in the &kpoint field.");
             }
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << " The number of targets = " << kslist.size() + kslist_offmesh.size() << " ("
                           << kslist_offmesh.size() << " off the k-point grid)\n";
             }
         } else if (!ks_input.empty()) {
             ks_analyze_mode = true;
 
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "\n KS_INPUT-tag is given : Analysis on the specified phonon modes\n";
                 std::cout << " will be performed instead of thermal conductivity calculation.\n\n";
             }
@@ -201,7 +201,7 @@ void ModeAnalysis::setup_mode_analysis()
                     ifs_ks >> ktmp[0] >> ktmp[1] >> ktmp[2] >> snum_tmp;
                     add_target(ktmp, snum_tmp, -1.0);
                 }
-                if (writes->getVerbosity() > 0) {
+                if (run.verbosity > 0) {
                     std::cout << " The number of entries = " << kslist.size() + kslist_offmesh.size() << '\n';
                 }
             }
@@ -254,7 +254,7 @@ void ModeAnalysis::setup_mode_analysis()
     if (ks_analyze_mode) {
         if (kpoint->kpoint_mode == 2 && anharmonic_core->use_triplet_symmetry) {
             anharmonic_core->disable_triplet_symmetry();
-            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && run.verbosity > 0) {
                 std::cout << "\n TRISYM was automatically set to 0.\n\n";
             }
         }
@@ -262,7 +262,7 @@ void ModeAnalysis::setup_mode_analysis()
         if (anharmonic_core->quartic_mode > 0) {
             // This is for quartic vertexes.
 
-            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && run.verbosity > 0) {
                 std::cout << " QUARTIC = 1 : Frequency shift due to the loop diagram associated with\n";
                 std::cout << "               quartic anharmonicity will be calculated.\n";
                 std::cout << "               Please check the accuracy of the quartic IFCs \n";
@@ -271,7 +271,7 @@ void ModeAnalysis::setup_mode_analysis()
 
             if (kpoint->kpoint_mode == 2 && anharmonic_core->use_quartet_symmetry) {
                 anharmonic_core->disable_quartet_symmetry();
-                if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+                if (run.my_rank == 0 && run.verbosity > 0) {
                     std::cout << "\n QUADRISYM was automatically set to 0.\n\n";
                 }
             }
@@ -403,7 +403,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
     }
     for (unsigned int iq = 0; iq < nq; ++iq) MPI_Bcast(spectrum_xk[iq].data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "\n INTERPOLATE = 1: bubble self-energy matrix on the " << kmesh_coarse[0] << "x"
                   << kmesh_coarse[1] << "x" << kmesh_coarse[2] << " coarse mesh, spectral function on " << nq
                   << " target q points.\n";
@@ -535,7 +535,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
             }
         }
         ofs << std::defaultfloat;
-        if (writes->getVerbosity() > 0) std::cout << "  Spectral functions are printed in " << file << '\n';
+        if (run.verbosity > 0) std::cout << "  Spectral functions are printed in " << file << '\n';
     }
 }
 
@@ -640,7 +640,7 @@ void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr
             }
         }
     }
-    if (writes->getVerbosity() > 0) {
+    if (run.verbosity > 0) {
         std::cout << "\n Mode-analysis results are written to " << filename << '\n';
     }
 }
@@ -665,7 +665,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
     NDArray<std::complex<double>, 1> self_i;
     NDArray<std::complex<double>, 1> self_j;
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "\n Calculate the line width (FWHM) of phonons\n";
         std::cout << " due to 3-phonon interactions for given " << kslist.size() << " modes.\n";
 
@@ -710,7 +710,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
 
         const auto omega = dos->dymat_dos->get_eigenvalues()[knum][snum];
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << "\n Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
             for (j = 0; j < 3; ++j) {
@@ -862,7 +862,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                 ofs_linewidth << '\n';
             }
             ofs_linewidth.close();
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "  Phonon line-width is printed in " << file_linewidth << '\n';
             }
         }
@@ -942,7 +942,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                 }
 
                 ofs_shift.close();
-                if (writes->getVerbosity() > 0) {
+                if (run.verbosity > 0) {
                     std::cout << "  Phonon frequency shift is printed in " << file_shift << '\n';
                 }
             }
@@ -1021,7 +1021,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
         }
         const auto omega = eval_q[0][snum];
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << "\n Number : " << std::setw(5) << number_offset + i + 1 << " (off the k-point grid)\n";
             std::cout << "  Phonon at k = (";
             for (auto j = 0; j < 3; ++j) {
@@ -1130,7 +1130,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
             for (unsigned int j = 0; j < NT; ++j) {
                 ofs << std::setw(10) << T_arr[j] << std::setw(15) << in_kayser(2.0 * damping[j]) << '\n';
             }
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "  Phonon line-width is printed in " << file_linewidth << '\n';
             }
         }
@@ -1167,7 +1167,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                     }
                     ofs << std::setw(15) << in_kayser(omega_shift) << '\n';
                 }
-                if (writes->getVerbosity() > 0)
+                if (run.verbosity > 0)
                     std::cout << "  Phonon frequency shift is printed in " << file_shift << '\n';
             }
         }
@@ -1370,7 +1370,7 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
                 }
             }
             ofs << std::defaultfloat;
-            if (writes->getVerbosity() > 0) std::cout << "  Matrix elements are printed in " << file << '\n';
+            if (run.verbosity > 0) std::cout << "  Matrix elements are printed in " << file << '\n';
         }
     }
 }
@@ -1390,7 +1390,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
         freq_array[i] = dos->energy_dos[i] * time_ry / Hz_to_kayser;
     }
 
-    if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+    if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n';
         std::cout << " FSTATE_W = 1 : Calculate the frequency-resolved final state amplitude\n";
         std::cout << "                due to 3-phonon interactions.\n";
@@ -1402,7 +1402,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
 
         const auto omega0 = dos->dymat_dos->get_eigenvalues()[knum][snum];
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -1486,7 +1486,7 @@ void ModeAnalysis::print_frequency_resolved_final_state(const unsigned int NT, d
                 ofs_omega << '\n';
             }
             ofs_omega.close();
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "  Frequency-resolved final state amplitude is printed in " << file_omega << '\n';
             }
         }
@@ -1648,7 +1648,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
             anharmonic_core->build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
         }
         const auto omega0 = eval_q[0][snum];
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << "\n Number : " << std::setw(5) << number_offset + i + 1 << " (off the k-point grid)\n";
             std::cout << "  Phonon at k = (";
             for (auto j = 0; j < 3; ++j) {
@@ -1703,7 +1703,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
                 }
                 ofs_omega << '\n';
             }
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "  Frequency-resolved final state amplitude is printed in " << file_omega << '\n';
             }
         }
@@ -2025,7 +2025,7 @@ void ModeAnalysis::print_V3_elements() const
 
         if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2109,7 +2109,7 @@ void ModeAnalysis::print_V4_elements() const
 
         if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2319,7 +2319,7 @@ void ModeAnalysis::print_Phi3_elements() const
 
         if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2401,7 +2401,7 @@ void ModeAnalysis::print_Phi4_elements() const
 
         if (run.my_rank == 0) results[kslist_id[i]].omega = in_kayser(omega);
 
-        if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+        if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << '\n';
             std::cout << " Number : " << std::setw(5) << i + 1 << '\n';
             std::cout << "  Phonon at k = (";
@@ -2649,7 +2649,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
         const auto ik_irred = dos->kmesh_dos->kmap_to_irreducible[knum];
 
         if (run.my_rank == 0) {
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << '\n';
                 std::cout << " SELF_W = 1: Calculate bubble selfenergy with frequency dependency\n";
                 std::cout << " for given " << kslist.size() << " modes.\n\n";
@@ -2681,7 +2681,7 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
             const auto T_now = T_arr[iT];
             const auto omega = dos->dymat_dos->get_eigenvalues()[knum][snum];
 
-            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && run.verbosity > 0) {
                 std::cout << "  Temperature (K) : " << std::setw(15) << T_now << '\n';
                 std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
             }
@@ -2782,7 +2782,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
 
         std::ofstream ofs_self;
         if (run.my_rank == 0) {
-            if (writes->getVerbosity() > 0) {
+            if (run.verbosity > 0) {
                 std::cout << "\n Number : " << std::setw(5) << number_offset + i + 1 << " (off the k-point grid)\n";
                 std::cout << "  Phonon at k = (";
                 for (auto j = 0; j < 3; ++j) {
@@ -2805,7 +2805,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
         }
         for (unsigned int iT = 0; iT < NT; ++iT) {
             const auto T_now = T_arr[iT];
-            if (run.my_rank == 0 && writes->getVerbosity() > 0) {
+            if (run.my_rank == 0 && run.verbosity > 0) {
                 std::cout << "  Temperature (K) : " << std::setw(15) << T_now << '\n';
                 std::cout << "  Frequency (cm^-1) : " << std::setw(15) << in_kayser(omega) << '\n';
             }
