@@ -15,7 +15,7 @@
 #include <memory>
 #include "kpoint.h"
 #include "optimizers.h"
-#include "pointers.h"
+#include "phonon.h"
 #include "relaxation_types.h"
 #include "scph.h"
 #include "strain_coupling_types.h"
@@ -205,10 +205,17 @@ private:
     }
 };
 
-class Relaxation: protected Pointers
+class Relaxation
 {
 public:
-    Relaxation(class PHON *phon);
+    Relaxation(const RunInfo &run,
+               const Timer *timer,
+               const System *system,
+               const Symmetry *symmetry,
+               const Fcs_phonon *fcs_phonon,
+               Ewald *ewald,
+               const Dynamical *dynamical,
+               AnharmonicCore *anharmonic_core);
 
     ~Relaxation();
 
@@ -406,5 +413,16 @@ private:
 
 
     void set_initial_strain(std::array<std::array<double, 3>, 3> &u_tensor) const;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const Timer *timer;
+    const System *system;
+    const Symmetry *symmetry;
+    const Fcs_phonon *fcs_phonon;
+    Ewald *ewald;
+    const Dynamical *dynamical;
+    AnharmonicCore *anharmonic_core;
 };
 } // namespace PHON_NS

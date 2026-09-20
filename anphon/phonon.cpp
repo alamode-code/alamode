@@ -84,7 +84,14 @@ void PHON::create_pointers()
                                             dynamical.get(),
                                             dos.get(),
                                             anharmonic_core.get());
-    relaxation = std::make_unique<Relaxation>(this);
+    relaxation = std::make_unique<Relaxation>(run_info,
+                                              timer.get(),
+                                              system.get(),
+                                              symmetry.get(),
+                                              fcs_phonon.get(),
+                                              ewald.get(),
+                                              dynamical.get(),
+                                              anharmonic_core.get());
     conductivity = std::make_unique<Conductivity>(run_info,
                                                   system.get(),
                                                   symmetry.get(),
