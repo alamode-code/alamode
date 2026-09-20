@@ -67,7 +67,7 @@ void hermitian_eigen(const Eigen::MatrixXcd &mat, Eigen::VectorXd &eval, Eigen::
 }
 } // namespace
 
-Scph::Scph(PHON *phon) : ScphQhaCommon(phon)
+Scph::Scph(const ScphQhaCollaborators &c) : ScphQhaCommon(c)
 {
     set_default_variables();
 }

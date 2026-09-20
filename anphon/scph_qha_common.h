@@ -29,7 +29,7 @@
 #include "mpi.h"
 #include "mpi_common.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 #include "relaxation_types.h"
 #include "scph_result_io.h"
 #include "symmetry_core.h"
@@ -41,12 +41,33 @@ namespace PHON_NS
 {
 class DelVStrainData;
 
-class ScphQhaCommon: protected Pointers
+// Collaborators of the SCPH/QHA drivers (non-owning; owned by PHON, which outlives them).
+// One struct because Scph and Qha forward the same list to their common base.
+struct ScphQhaCollaborators
+{
+    const RunInfo &run;
+    const Timer *timer;
+    const Writes *writes;
+    const System *system;
+    const Symmetry *symmetry;
+    const Kpoint *kpoint;
+    const Fcs_phonon *fcs_phonon;
+    const Dielec *dielec;
+    Dynamical *dynamical;
+    const Integration *integration;
+    Thermodynamics *thermodynamics;
+    Dos *dos;
+    AnharmonicCore *anharmonic_core;
+    Selfenergy *selfenergy;
+    Relaxation *relaxation;
+};
+
+class ScphQhaCommon
 {
 public:
-    explicit ScphQhaCommon(class PHON *phon);
+    explicit ScphQhaCommon(const ScphQhaCollaborators &c);
 
-    ~ScphQhaCommon() override;
+    virtual ~ScphQhaCommon();
 
     // FILE_FORMAT = h5 (default) routes the restart state through the
     // unified PREFIX.scph.h5 / PREFIX.qha.h5 file; text keeps the legacy
@@ -54,6 +75,23 @@ public:
     bool use_h5_io = true;
 
 protected:
+    // Collaborators, see ScphQhaCollaborators.
+    const RunInfo &run;
+    const Timer *timer;
+    const Writes *writes;
+    const System *system;
+    const Symmetry *symmetry;
+    const Kpoint *kpoint;
+    const Fcs_phonon *fcs_phonon;
+    const Dielec *dielec;
+    Dynamical *dynamical;
+    const Integration *integration;
+    Thermodynamics *thermodynamics;
+    Dos *dos;
+    AnharmonicCore *anharmonic_core;
+    Selfenergy *selfenergy;
+    Relaxation *relaxation;
+
     // Shared state between Scph and Qha.
     std::unique_ptr<KpointMeshUniform> kmesh_coarse;
     std::unique_ptr<KpointMeshUniform> kmesh_dense;

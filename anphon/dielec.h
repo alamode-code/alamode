@@ -38,7 +38,7 @@ public:
     const double *const *const *get_dielectric_func() const;
 
     void compute_dielectric_function(const unsigned int nomega_in, const double *omega_grid_in, double *eval_in,
-                                     std::complex<double> **evec_in, double ***dielec_out);
+                                     std::complex<double> **evec_in, double ***dielec_out) const;
 
     int calc_dielectric_constant;
     unsigned int symmetrize_borncharge{};

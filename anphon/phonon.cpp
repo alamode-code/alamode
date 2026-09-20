@@ -122,8 +122,23 @@ void PHON::create_pointers()
                                                    dos.get(),
                                                    anharmonic_core.get(),
                                                    selfenergy.get());
-    scph = std::make_unique<Scph>(this);
-    qha = std::make_unique<Qha>(this);
+    const ScphQhaCollaborators scph_qha_collaborators{run_info,
+                                                          timer.get(),
+                                                          writes.get(),
+                                                          system.get(),
+                                                          symmetry.get(),
+                                                          kpoint.get(),
+                                                          fcs_phonon.get(),
+                                                          dielec.get(),
+                                                          dynamical.get(),
+                                                          integration.get(),
+                                                          thermodynamics.get(),
+                                                          dos.get(),
+                                                          anharmonic_core.get(),
+                                                          selfenergy.get(),
+                                                          relaxation.get()};
+    scph = std::make_unique<Scph>(scph_qha_collaborators);
+    qha = std::make_unique<Qha>(scph_qha_collaborators);
 }
 
 void PHON::destroy_pointers()

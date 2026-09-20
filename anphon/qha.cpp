@@ -26,7 +26,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Qha::Qha(PHON *phon) : ScphQhaCommon(phon)
+Qha::Qha(const ScphQhaCollaborators &c) : ScphQhaCommon(c)
 {
     set_default_variables();
 }

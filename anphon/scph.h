@@ -27,7 +27,7 @@ class ScphRelaxationModel;
 class Scph: protected ScphQhaCommon
 {
 public:
-    Scph(class PHON *phon);
+    explicit Scph(const ScphQhaCollaborators &c);
 
     ~Scph();
 

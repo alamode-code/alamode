@@ -344,7 +344,7 @@ void Dielec::run_dielec_calculation(const Dynamical &dynamical)
 }
 
 void Dielec::compute_dielectric_function(const unsigned int nomega_in, const double *omega_grid_in, double *eval_in,
-                                         std::complex<double> **evec_in, double ***dielec_out)
+                                         std::complex<double> **evec_in, double ***dielec_out) const
 {
     const auto ns = 3 * system->get_primcell().number_of_atoms;
     const auto &zstar = borncharge;
