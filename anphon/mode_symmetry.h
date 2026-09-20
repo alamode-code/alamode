@@ -15,7 +15,7 @@
 
 #include <Eigen/Core>
 
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
@@ -61,10 +61,16 @@ struct GammaIrrepResult
     std::string axis_convention_note;
 };
 
-class ModeSymmetry: protected Pointers
+class ModeSymmetry
 {
 public:
-    ModeSymmetry(class PHON *phon);
+    ModeSymmetry(const RunInfo &run,
+                 const System *system,
+                 const Symmetry *symmetry,
+                 const Fcs_phonon *fcs_phonon,
+                 const Dielec *dielec,
+                 const Ewald *ewald,
+                 const Dynamical *dynamical);
 
     ~ModeSymmetry();
 
@@ -84,5 +90,15 @@ public:
 
 private:
     GammaIrrepResult result_;
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Symmetry *symmetry;
+    const Fcs_phonon *fcs_phonon;
+    const Dielec *dielec;
+    const Ewald *ewald;
+    const Dynamical *dynamical;
 };
 } // namespace PHON_NS

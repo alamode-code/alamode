@@ -75,7 +75,13 @@ void PHON::create_pointers()
     anharmonic_core = std::make_unique<AnharmonicCore>(this);
     selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
-    mode_symmetry = std::make_unique<ModeSymmetry>(this);
+    mode_symmetry = std::make_unique<ModeSymmetry>(run_info,
+                                                   system.get(),
+                                                   symmetry.get(),
+                                                   fcs_phonon.get(),
+                                                   dielec.get(),
+                                                   ewald.get(),
+                                                   dynamical.get());
     gruneisen = std::make_unique<Gruneisen>(run_info,
                                             writes.get(),
                                             system.get(),

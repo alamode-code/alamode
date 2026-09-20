@@ -136,7 +136,20 @@ std::string format_decomposition(const pointgroup::PointGroup &pg, const std::ve
 
 } // namespace
 
-ModeSymmetry::ModeSymmetry(PHON *phon) : Pointers(phon)
+ModeSymmetry::ModeSymmetry(const RunInfo &run_in,
+                           const System *system_in,
+                           const Symmetry *symmetry_in,
+                           const Fcs_phonon *fcs_phonon_in,
+                           const Dielec *dielec_in,
+                           const Ewald *ewald_in,
+                           const Dynamical *dynamical_in) :
+    run(run_in),
+    system(system_in),
+    symmetry(symmetry_in),
+    fcs_phonon(fcs_phonon_in),
+    dielec(dielec_in),
+    ewald(ewald_in),
+    dynamical(dynamical_in)
 {}
 
 ModeSymmetry::~ModeSymmetry() = default;
