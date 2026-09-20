@@ -40,16 +40,28 @@ Improvement:
 #include <vector>
 #include "collision_operator.h"
 #include "ndarray.h"
-#include "pointers.h"
+#include "phonon.h"
 
 namespace PHON_NS
 {
 class KappaResultIOH5;
 
-class Iterativebte: protected Pointers
+class Iterativebte
 {
 public:
-    Iterativebte(class PHON *);
+    Iterativebte(const RunInfo &run,
+                 const System *system,
+                 const Symmetry *symmetry,
+                 const Fcs_phonon *fcs_phonon,
+                 const Dynamical *dynamical,
+                 Integration *integration,
+                 const Thermodynamics *thermodynamics,
+                 const Dos *dos,
+                 const PhononVelocity *phonon_velocity,
+                 AnharmonicCore *anharmonic_core,
+                 const Isotope *isotope,
+                 const Writes *writes,
+                 Conductivity *conductivity);
 
     ~Iterativebte();
 
@@ -147,5 +159,21 @@ private:
     void write_Q_dF(int, NDArray<double, 2> &, NDArray<double, 3> &, bool converged);
 
     void write_kappa_iterative();
+
+private:
+    // Collaborators (non-owning; owned by PHON, which outlives this object).
+    const RunInfo &run;
+    const System *system;
+    const Symmetry *symmetry;
+    const Fcs_phonon *fcs_phonon;
+    const Dynamical *dynamical;
+    Integration *integration;
+    const Thermodynamics *thermodynamics;
+    const Dos *dos;
+    const PhononVelocity *phonon_velocity;
+    AnharmonicCore *anharmonic_core;
+    const Isotope *isotope;
+    const Writes *writes;
+    Conductivity *conductivity;
 };
 } // namespace PHON_NS
