@@ -323,7 +323,11 @@ void PHON::execute_kappa() const
     if (mode_analysis->ks_analyze_mode) {
         mode_analysis->run_mode_analysis();
     } else {
-        conductivity->run_kappa();
+        conductivity->run_kappa(); // broadcasts the solver flags; the RTA solver runs here
+        if (conductivity->solver_ibte) {
+            iterativebte->setup_iterative();
+            iterativebte->do_iterativebte();
+        }
     }
 }
 

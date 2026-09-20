@@ -27,7 +27,6 @@
 #include "integration.h"
 #include "interpolation.h"
 #include "isotope.h"
-#include "iterativebte.h"
 #include "kappa_result_io_text.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -129,16 +128,15 @@ void Conductivity::run_kappa()
     MPI_Bcast(&fph_rta, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    if (solver_ibte) {
-        iterativebte->setup_iterative();
-        iterativebte->do_iterativebte();
-    } else {
-        setup_kappa();
-        calc_anharmonic_imagself();
-        compute_kappa();
-        writes->writeKappa();
-        writes->writeSelfenergyIsotope();
-    }
+    // SOLVER = IBTE: PHON::execute_kappa runs Iterativebte, which uses this
+    // class for the temperature grid, restart I/O and the 4ph interpolation.
+    if (solver_ibte) return;
+
+    setup_kappa();
+    calc_anharmonic_imagself();
+    compute_kappa();
+    writes->writeKappa();
+    writes->writeSelfenergyIsotope();
 }
 
 void Conductivity::init_temperature_grid()
