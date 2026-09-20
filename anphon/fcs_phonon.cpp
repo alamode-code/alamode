@@ -71,6 +71,9 @@ void Fcs_phonon::setup(const std::string &mode)
 
     MPI_Bcast(&anharmonic_core->quartic_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&gruneisen->gruneisen_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // Read below to decide the required IFC order; Gruneisen::setup() broadcasts
+    // it too late, which left maxorder rank-dependent for NEWFCS = 1.
+    MPI_Bcast(&gruneisen->print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&thermodynamics->calc_FE_bubble, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     if (mode == "PHONONS") {
