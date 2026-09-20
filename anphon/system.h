@@ -117,7 +117,8 @@ public:
 
     ~System();
 
-    void setup();
+    // fcs_files = {FCSFILE, FC2FILE, FC3FILE, FC4FILE}; the structure is read from them.
+    void setup(const std::vector<std::string> &fcs_files);
 
     const Cell &get_supercell(const int index) const;
 
@@ -209,6 +210,8 @@ private:
     void print_structure_information_stdout() const;
 
     void load_system_info_from_file();
+
+    std::vector<std::string> filename_list; // see setup()
 
     void get_structure_and_mapping_table_xml(const std::string &filename, Cell &scell_out, Cell &pcell_out,
                                              Spin &spin_super_out, Spin &spin_prim_out, MappingTable &map_super_out,

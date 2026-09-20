@@ -144,7 +144,7 @@ void PHON::run() const
 
 void PHON::setup_base() const
 {
-    system->setup();
+    system->setup({fcs_phonon->file_fcs, fcs_phonon->file_fc2, fcs_phonon->file_fc3, fcs_phonon->file_fc4});
 
     // &displace DISPMODE = 2 resolves the initial displacements from the harmonic IFCs and
     // the symmetry of the reference cell, so both are prepared before the distorted cell

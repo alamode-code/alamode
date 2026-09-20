@@ -22,7 +22,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <string>
 #include "constants.h"
 #include "error.h"
-#include "fcs_phonon.h"
 #include "hdf5_parser.h"
 #include "mathfunctions.h"
 #include "memory.h"
@@ -57,8 +56,10 @@ void System::set_default_variables()
 void System::deallocate_variables()
 {}
 
-void System::setup()
+void System::setup(const std::vector<std::string> &fcs_files)
 {
+    filename_list = fcs_files;
+
     MPI_Bcast(&load_primitive_from_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(lavec_p_input.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&Tmin, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -126,10 +127,10 @@ void System::print_structure_information_stdout() const
     if (load_primitive_from_file) {
         cout << " (from input file)\n\n";
     } else {
-        if (!fcs_phonon->file_fcs.empty()) {
-            cout << " (from " << fcs_phonon->file_fcs << ")\n\n";
+        if (!filename_list[0].empty()) {
+            cout << " (from " << filename_list[0] << ")\n\n";
         } else {
-            cout << " (from " << fcs_phonon->file_fc2 << ")\n\n";
+            cout << " (from " << filename_list[1] << ")\n\n";
         }
     }
 
@@ -225,11 +226,6 @@ void System::load_system_info_from_file()
     // Parse structure information either from the XML file or h5 file
     int filetype[4]; // filetype[0] for FCSFILE, filetype[X-1] for FCXFILE (X=2, 3, 4)
     // -1: FC?FILE not given, 0: FC?FILE in XML format, 1: FC?FLIE in HDF5 format
-    std::vector<std::string> filename_list{fcs_phonon->file_fcs,
-                                           fcs_phonon->file_fc2,
-                                           fcs_phonon->file_fc3,
-                                           fcs_phonon->file_fc4};
-
     supercell.resize(3);
     map_super_alm.resize(3);
     map_prim_alm.resize(3);
