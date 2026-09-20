@@ -1322,7 +1322,7 @@ void Dynamical::calc_participation_ratio_all(const unsigned int nk_in,
                                              const std::complex<double> *const *const *evec_in, double **ret,
                                              double ***ret_all) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = neval;
     const auto natmin = system->get_primcell().number_of_atoms;
 
     NDArray<double, 1> atomic_pr;
@@ -1452,7 +1452,7 @@ void Dynamical::detect_imaginary_branches(const KpointMeshUniform &kmesh_in, dou
     int ik, is;
     const auto nk = kmesh_in.nk;
     const auto nk_irred = kmesh_in.nk_irred;
-    const auto ns = dynamical->neval;
+    const auto ns = neval;
     const auto nks = ns * nk;
     int knum;
     double omega;
@@ -1588,7 +1588,7 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     int is, js;
     const auto nk = kmesh_dense->nk;
     const auto nk_interpolate = kmesh_coarse->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = neval;
     unsigned int knum, knum_interpolate;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
     const auto nk1 = kmesh_coarse->nk_i[0];
@@ -1712,7 +1712,7 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
                                    const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
                                    const bool use_precomputed_dymat, const bool return_sqrt) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = neval;
     const auto nk1 = kmesh_orig[0];
     const auto nk2 = kmesh_orig[1];
     const auto nk3 = kmesh_orig[2];
@@ -1874,7 +1874,7 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
 
 
         // Subtract harmonic contribution
-        dynamical->calc_analytic_k(kmesh_coarse->xk[ik], fcs_phonon->force_constant_with_cell[0], dymat_harmonic);
+        calc_analytic_k(kmesh_coarse->xk[ik], fcs_phonon->force_constant_with_cell[0], dymat_harmonic);
 
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {

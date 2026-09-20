@@ -70,12 +70,12 @@ void Kpoint::kpoint_setups(const std::string mode)
         setup_kpoint_given(kpInp, system->get_primcell().reciprocal_lattice_vector);
 
         if (run.my_rank == 0 && run.verbosity > 0) {
-            std::cout << "  Number of k points : " << kpoint->kpoint_general->nk << "\n\n";
+            std::cout << "  Number of k points : " << kpoint_general->nk << "\n\n";
             std::cout << "  List of k points : " << '\n';
-            for (auto i = 0; i < kpoint->kpoint_general->nk; ++i) {
+            for (auto i = 0; i < kpoint_general->nk; ++i) {
                 std::cout << std::setw(5) << i + 1 << ":";
                 for (auto j = 0; j < 3; ++j) {
-                    std::cout << std::setw(15) << kpoint->kpoint_general->xk[i][j];
+                    std::cout << std::setw(15) << kpoint_general->xk[i][j];
                 }
                 std::cout << '\n';
             }
