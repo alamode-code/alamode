@@ -25,7 +25,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
-#include "pointers.h"
 #include "system.h"
 #include "write_phonons.h"
 

@@ -22,7 +22,7 @@ class AnharmonicCore;
 class PhaseFactorCache;
 class SymmetryOperation;
 
-// Anharmonic phonon self-energy diagrams. No Pointers base: the run-wide
+// Anharmonic phonon self-energy diagrams. The run-wide
 // inputs are stored once by setup_selfenergy (called from
 // PHON::execute_kappa and Scph::bubble_correction), and the per-call data enter as arguments.
 class Selfenergy

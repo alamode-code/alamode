@@ -40,8 +40,8 @@ struct DeltaFcsStrainComponents
 };
 
 // Computes strain derivatives of the IFCs for the SCPH/QHA structural
-// relaxation. All dependencies are explicit constructor arguments (no
-// Pointers base): it is constructed by Relaxation after setup_base(), when
+// relaxation. All dependencies are explicit constructor arguments:
+// it is constructed by Relaxation after setup_base(), when
 // every input already exists.
 class DerivativeIFC
 {

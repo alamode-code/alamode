@@ -131,7 +131,7 @@ private:
 };
 
 // Brillouin-zone integration kernels (tetrahedron / fixed and adaptive
-// smearing). No Pointers base: setup_integration receives its inputs from
+// smearing). setup_integration receives its inputs from
 // the caller (PHON::setup_base); the parser fills the public settings.
 class Integration
 {

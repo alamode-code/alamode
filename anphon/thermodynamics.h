@@ -22,7 +22,7 @@ class AnharmonicCore;
 class SymmetryOperation;
 class DymatEigenValue;
 
-// Thermodynamic functions of the phonon gas. No Pointers base: the methods
+// Thermodynamic functions of the phonon gas. The methods
 // are (mostly static or const) functions of their explicit arguments; the
 // parser fills the public config members and setup() broadcasts them.
 class Thermodynamics

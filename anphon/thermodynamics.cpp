@@ -19,7 +19,6 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
-#include "pointers.h"
 #include "progress_bar.h"
 #include "relaxation.h"
 #include "system.h"

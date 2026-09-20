@@ -23,7 +23,7 @@ class TetraNodes;
 class DymatEigenValue;
 
 // Phonon-isotope (mass-disorder) scattering rates via the Tamura formula.
-// No Pointers base: the entry points take their inputs explicitly from the
+// The entry points take their inputs explicitly from the
 // caller (PHON::execute_kappa); the parser fills the public config members.
 class Isotope
 {

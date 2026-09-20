@@ -14,7 +14,6 @@
 #include <complex>
 #include "anharmonic_core.h"
 #include "kpoint.h"
-#include "pointers.h"
 #include "relaxation_types.h"
 #include "scph_qha_common.h"
 

@@ -245,7 +245,6 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/phonon_cui.h
             ${PROJECT_SOURCE_DIR}/phonon_dos.h
             ${PROJECT_SOURCE_DIR}/phonon_velocity.h
-            ${PROJECT_SOURCE_DIR}/pointers.h
             ${PROJECT_SOURCE_DIR}/optimizers.h
             ${PROJECT_SOURCE_DIR}/q0_contraction.h
             ${PROJECT_SOURCE_DIR}/qha.h

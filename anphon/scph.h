@@ -17,7 +17,6 @@
 #include "dynamical.h"
 #include "gruneisen.h"
 #include "kpoint.h"
-#include "pointers.h"
 #include "scph_qha_common.h"
 
 namespace PHON_NS
