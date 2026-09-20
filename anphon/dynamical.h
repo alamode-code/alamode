@@ -158,9 +158,6 @@ public:
         const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
         MinimumDistList ***mindist_list, const unsigned int verbosity);
 
-
-    const double *const *get_xrs_image() const;
-
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                             const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
                             double **eval_out, std::complex<double> ***evec_out,

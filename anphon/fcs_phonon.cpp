@@ -19,8 +19,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <map>
 #include <string>
 #include <tuple>
+#include "cell_shift_table.h"
 #include "constants.h"
-#include "dynamical.h"
 #include "error.h"
 #include "hdf5_parser.h"
 #include "mathfunctions.h"
@@ -341,7 +341,8 @@ void Fcs_phonon::load_fcs_xml(const std::string &fname_fcs, const int order,
     Eigen::Vector3d relvec_tmp;
     std::vector<unsigned int> atoms_s_tmp;
 
-    const auto xf_image = dynamical->get_xrs_image();
+    NDArray<double, 2> xf_image;
+    build_27cell_shift_table(xf_image);
     const auto [to_true_primitive, from_true_primitive] = system->get_mapping_super_alm(order);
     const auto xf_tmp = system->get_supercell(order).x_fractional;
 

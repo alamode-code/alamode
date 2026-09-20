@@ -17,9 +17,9 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include "cell_shift_table.h"
 #include "constants.h"
 #include "dielec.h"
-#include "dynamical.h"
 #include "error.h"
 #include "memory.h"
 #include "mpi_common.h"
@@ -401,7 +401,8 @@ void Ewald::compute_ewald_fcs()
     std::vector<unsigned int> atom_super(2);
 
     const auto cell_tmp = system->get_supercell(0);
-    const auto xf_image = dynamical->get_xrs_image();
+    NDArray<double, 2> xf_image;
+    build_27cell_shift_table(xf_image);
 
     for (iat = 0; iat < natmin; ++iat) {
         atm_s = map_p2s[iat][0];

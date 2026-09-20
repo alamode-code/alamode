@@ -54,7 +54,7 @@ Dynamical::~Dynamical()
 void Dynamical::set_default_variables()
 {
     neval = 0;
-    build_27cell_shift_table(xshift_s); // Fcs_phonon::setup may run before setup_dynamical
+    build_27cell_shift_table(xshift_s);
     require_eigenvectors = true;
     print_eigenvectors = false;
     nonanalytic = 0;
@@ -1976,9 +1976,4 @@ void Dynamical::duplicate_xk_boundary(const double *xk_in, std::vector<std::vect
             }
         }
     }
-}
-
-const double *const *Dynamical::get_xrs_image() const
-{
-    return xshift_s;
 }
