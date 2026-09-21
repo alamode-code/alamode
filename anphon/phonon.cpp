@@ -244,6 +244,9 @@ void PHON::setup_base() const
     MPI_Bcast(&gruneisen->gruneisen_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&gruneisen->print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&thermodynamics->calc_FE_bubble, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    // RELAX_STR is set on rank 0 by the parser but read below on all ranks
+    // (relaxing_structure); Relaxation::setup_relaxation() broadcasts it too late.
+    MPI_Bcast(&relaxation->relax_str, 1, MPI_INT, 0, MPI_COMM_WORLD);
     const auto setup_fcs = [this]() {
         fcs_phonon->setup(run_info.mode,
                           anharmonic_core->quartic_mode,
