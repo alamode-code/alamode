@@ -40,8 +40,7 @@
 
 using namespace PHON_NS;
 
-Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Dielec *dielec_in, const Ewald *ewald_in) :
-    run(run_in), system(system_in), dielec(dielec_in), ewald(ewald_in)
+Dynamical::Dynamical(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 }
@@ -315,7 +314,8 @@ void Dynamical::prepare_mindist_list(std::vector<int> **mindist_out) const
 }
 
 void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
-                       double *eval_out, std::complex<double> **evec_out, const bool require_evec, int *info_out) const
+                       const Dielec &dielec, double *eval_out, std::complex<double> **evec_out, const bool require_evec,
+                       int *info_out) const
 {
     // Calculate phonon energy for the specific k-point given in fractional basis
 
@@ -335,9 +335,9 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
         dymat_na_k.resize(neval, neval);
 
         if (nonanalytic == 1) {
-            calc_nonanalytic_k_parlinski(xk_in, kvec_in, *dielec, dymat_na_k);
+            calc_nonanalytic_k_parlinski(xk_in, kvec_in, dielec, dymat_na_k);
         } else if (nonanalytic == 2) {
-            calc_nonanalytic_k_mixedspace(xk_in, kvec_in, *dielec, dymat_na_k);
+            calc_nonanalytic_k_mixedspace(xk_in, kvec_in, dielec, dymat_na_k);
         }
 
         for (i = 0; i < neval; ++i) {
@@ -377,21 +377,22 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
 }
 
 void Dynamical::diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec,
-                                           const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const
+                                           const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                           const Ewald &ewald) const
 {
     double xk[3] = {0.0, 0.0, 0.0};
     if (nonanalytic == 3) {
         // eval_k adds an uninitialized nonanalytic matrix for method 3; the
         // Ewald path with the dipole-free force constants is mandatory here.
-        eval_k_ewald(xk, xk, ewald.fc2_without_dipole, eval_out, evec_out, require_evec);
+        eval_k_ewald(xk, xk, ewald.fc2_without_dipole, ewald, eval_out, evec_out, require_evec);
     } else {
-        eval_k(xk, xk, fc2, eval_out, evec_out, require_evec);
+        eval_k(xk, xk, fc2, dielec, eval_out, evec_out, require_evec);
     }
 }
 
 void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const std::vector<FcsArrayWithCell> &fc2_in,
-                             double *eval_out, std::complex<double> **evec_out, const bool require_evec,
-                             int *info_out) const
+                             const Ewald &ewald, double *eval_out, std::complex<double> **evec_out,
+                             const bool require_evec, int *info_out) const
 {
     //
     // Calculate phonon energy for the specific k-point given in fractional basis
@@ -408,7 +409,7 @@ void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const s
     calc_analytic_k(xk_in, fc2_in, dymat_k);
 
     // Calculate Coulombic contributions including long-range interactions
-    ewald->add_longrange_matrix(xk_in, kvec_in, mat_longrange);
+    ewald.add_longrange_matrix(xk_in, kvec_in, mat_longrange);
 
     const auto nat_prim = system->get_primcell().number_of_atoms;
     // Add calculated dynamical matrix of Coulomb parts
@@ -748,7 +749,8 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
 
 void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general,
                                           const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos,
-                                          const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald)
+                                          const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                          const Ewald &ewald)
 {
     unsigned int nk;
 
@@ -772,7 +774,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
                               kpoint_general->xk,
                               kpoint_general->kvec_na,
                               fc2,
-                              ewald.fc2_without_dipole,
+                              dielec,
+                              ewald,
                               require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
@@ -810,7 +813,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
                               kpoint_bs->xk,
                               kpoint_bs->kvec_na,
                               fc2,
-                              ewald.fc2_without_dipole,
+                              dielec,
+                              ewald,
                               require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
@@ -848,7 +852,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
                               kmesh_dos->xk,
                               kmesh_dos->kvec_na,
                               fc2,
-                              ewald.fc2_without_dipole,
+                              dielec,
+                              ewald,
                               require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
@@ -888,9 +893,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
 
 void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in,
                                       const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
-                                      const std::vector<FcsArrayWithCell> &fc2_without_dipole_in,
-                                      const bool require_evec, double **eval_ret,
-                                      std::complex<double> ***evec_ret) const
+                                      const Dielec &dielec, const Ewald &ewald, const bool require_evec,
+                                      double **eval_ret, std::complex<double> ***evec_ret) const
 {
     if (nk_in <= 0) {
         exit("get_eigenvalues_dymat", "The number of k points must be larger than 0.");
@@ -908,13 +912,14 @@ void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *co
         if (nonanalytic == 3) {
             eval_k_ewald(&xk_in[ik][0],
                          &kvec_na_in[ik][0],
-                         fc2_without_dipole_in,
+                         ewald.fc2_without_dipole,
+                         ewald,
                          eval_ret[ik],
                          evec_ret[ik],
                          require_evec,
                          &info);
         } else {
-            eval_k(&xk_in[ik][0], &kvec_na_in[ik][0], fc2, eval_ret[ik], evec_ret[ik], require_evec, &info);
+            eval_k(&xk_in[ik][0], &kvec_na_in[ik][0], fc2, dielec, eval_ret[ik], evec_ret[ik], require_evec, &info);
         }
         if (info != 0) {
             ++nfail;
@@ -1542,7 +1547,8 @@ std::vector<std::vector<double>> Dynamical::get_projection_directions() const
 
 void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in,
                                       const double *const *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
-                                      const Ewald &ewald, std::vector<Eigen::MatrixXcd> &dymat_short,
+                                      const Dielec &dielec, const Ewald &ewald,
+                                      std::vector<Eigen::MatrixXcd> &dymat_short,
                                       std::vector<Eigen::MatrixXcd> &dymat_long) const
 {
     const auto ns = neval;
@@ -1578,9 +1584,9 @@ void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *co
 
         for (auto ik = 0; ik < nk_in; ++ik) {
             if (nonanalytic == 1) {
-                calc_nonanalytic_k_parlinski(xk_in[ik], kvec_in[ik], *dielec, mat_tmp);
+                calc_nonanalytic_k_parlinski(xk_in[ik], kvec_in[ik], dielec, mat_tmp);
             } else if (nonanalytic == 2) {
-                calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], *dielec, mat_tmp);
+                calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], dielec, mat_tmp);
 
             } else if (nonanalytic == 3) {
                 ewald.add_longrange_matrix(xk_in[ik], kvec_in[ik], mat_tmp);
@@ -1603,7 +1609,8 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
     const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
     const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-    MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const
+    MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+    const Ewald &ewald) const
 {
     using namespace Eigen;
 
@@ -1699,6 +1706,7 @@ void Dynamical::compute_renormalized_harmonic_frequency(
                        evec_harm_renormalized,
                        mindist_list,
                        fc2,
+                       dielec,
                        ewald);
 
     for (ik = 0; ik < nk; ++ik) {
@@ -1750,7 +1758,7 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
                                    const unsigned int nk_dense, const double *const *xk_dense,
                                    const double *const *kvec_dense, double **eval_out, std::complex<double> ***evec_out,
                                    MinimumDistList ***mindist_list_in, const std::vector<FcsArrayWithCell> &fc2,
-                                   const Ewald &ewald, const bool return_sqrt) const
+                                   const Dielec &dielec, const Ewald &ewald, const bool return_sqrt) const
 {
     const auto ns = neval;
     const auto nk1 = kmesh_orig[0];
@@ -1784,9 +1792,9 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
         if (nonanalytic) {
             NDArray<std::complex<double>, 2> mat_harmonic_na(ns, ns);
             if (nonanalytic == 1) {
-                calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], *dielec, mat_harmonic_na);
+                calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], dielec, mat_harmonic_na);
             } else if (nonanalytic == 2) {
-                calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], *dielec, mat_harmonic_na);
+                calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], dielec, mat_harmonic_na);
             } else if (nonanalytic == 3) {
                 ewald.add_longrange_matrix(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
             }

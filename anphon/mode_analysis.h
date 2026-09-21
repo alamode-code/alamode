@@ -24,7 +24,7 @@ class ModeAnalysis
 {
 public:
     ModeAnalysis(const RunInfo &run, const System *system, const Symmetry *symmetry, Kpoint *kpoint,
-                 const Fcs_phonon *fcs_phonon, const Ewald *ewald, const Dynamical *dynamical,
+                 const Fcs_phonon *fcs_phonon, const Dielec *dielec, const Ewald *ewald, const Dynamical *dynamical,
                  const Integration *integration, const Thermodynamics *thermodynamics, Dos *dos,
                  AnharmonicCore *anharmonic_core, const Selfenergy *selfenergy);
 
@@ -170,6 +170,7 @@ private:
     const Symmetry *symmetry;
     Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
+    const Dielec *dielec;
     const Ewald *ewald;
     const Dynamical *dynamical;
     const Integration *integration;

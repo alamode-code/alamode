@@ -84,7 +84,7 @@ private:
 class Dynamical
 {
 public:
-    Dynamical(const RunInfo &run, const System *system, const Dielec *dielec, const Ewald *ewald);
+    Dynamical(const RunInfo &run, const System *system);
 
     ~Dynamical();
 
@@ -108,18 +108,18 @@ public:
     // eigenpairs; both null when the run has no uniform mesh (KPMODE != 2).
     void diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general,
                                    const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos,
-                                   const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald);
+                                   const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald);
 
     void setup_dynamical(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general);
 
     // info_out: when given, the LAPACK INFO is stored there instead of exiting on
     // failure (for calls inside OpenMP regions).
-    void eval_k(const double *, const double *, const std::vector<FcsArrayWithCell> &, double *,
+    void eval_k(const double *, const double *, const std::vector<FcsArrayWithCell> &, const Dielec &, double *,
                 std::complex<double> **, const bool, int *info_out = nullptr) const;
 
     void modify_eigenvectors(const KpointMeshUniform &kmesh_dos, DymatEigenValue &dymat_dos) const;
 
-    void eval_k_ewald(const double *, const double *, const std::vector<FcsArrayWithCell> &, double *,
+    void eval_k_ewald(const double *, const double *, const std::vector<FcsArrayWithCell> &, const Ewald &, double *,
                       std::complex<double> **, const bool, int *info_out = nullptr) const;
 
     // Diagonalize the analytic dynamical matrix at Gamma (kvec = 0, so no
@@ -127,7 +127,8 @@ public:
     // dipole-free force constants for NONANALYTIC = 3, where plain eval_k
     // must not be used.  eval_out receives omega^2, as with eval_k.
     void diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec,
-                                    const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const;
+                                    const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                    const Ewald &ewald) const;
 
     static double freq(const double);
 
@@ -166,7 +167,7 @@ public:
     void set_projection_directions(const std::vector<std::vector<double>> projections_in);
 
     void precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_in,
-                               const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald,
+                               const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald,
                                std::vector<Eigen::MatrixXcd> &dymat_short,
                                std::vector<Eigen::MatrixXcd> &dymat_long) const;
 
@@ -176,7 +177,8 @@ public:
         const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
         const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
         const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-        MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const;
+        MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+        const Ewald &ewald) const;
 
     // Interpolate with the short-range / long-range harmonic dynamical matrices built on the fly.
     // Shared tail of the two exec_interpolation forms; false when zheev failed.
@@ -186,7 +188,7 @@ public:
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                             const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
                             double **eval_out, std::complex<double> ***evec_out, MinimumDistList ***mindist_list_in,
-                            const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald,
+                            const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald,
                             const bool return_sqrt = true) const;
 
     // Same, but with the harmonic dynamical matrices precomputed by precompute_dymat_harm.
@@ -203,10 +205,10 @@ public:
                                   const std::vector<int> &kmap_interpolate_to_scph,
                                   const std::vector<FcsArrayWithCell> &fc2) const;
 
+    // For NONANALYTIC = 3 the dipole-free force constants are taken from ewald, not from fc2.
     void get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
-                               const std::vector<FcsArrayWithCell> &fc2,
-                               const std::vector<FcsArrayWithCell> &fc2_without_dipole_in, const bool require_evec,
-                               double **eval_ret, std::complex<double> ***evec_ret) const;
+                               const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald,
+                               const bool require_evec, double **eval_ret, std::complex<double> ***evec_ret) const;
 
 private:
     void set_default_variables();
@@ -241,8 +243,6 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Dielec *dielec;
-    const Ewald *ewald;
 };
 
 } // namespace PHON_NS

@@ -216,7 +216,7 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
     std::vector<double> eval_raw(ns), omega(ns);
     NDArray<std::complex<double>, 2> evec;
     evec.resize(ns, ns);
-    dynamical->diagonalize_gamma_analytic(eval_raw.data(), evec, true, fc2, ewald);
+    dynamical->diagonalize_gamma_analytic(eval_raw.data(), evec, true, fc2, *dielec, ewald);
     for (auto is = 0; is < ns; ++is) {
         omega[is] = Dynamical::freq(eval_raw[is]);
     }

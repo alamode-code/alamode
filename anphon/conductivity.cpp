@@ -195,6 +195,7 @@ void Conductivity::setup_kappa()
                                                   system->get_primcell().lattice_vector,
                                                   *dynamical,
                                                   fcs_phonon->force_constant_with_cell[0],
+                                                  *dielec,
                                                   *ewald,
                                                   vel,
                                                   Bohr_in_Angstrom * 1.0e-10 / time_ry,
@@ -295,7 +296,8 @@ void Conductivity::setup_kappa_4ph()
                                      kmesh_4ph->xk,
                                      kmesh_4ph->kvec_na,
                                      fcs_phonon->force_constant_with_cell[0],
-                                     ewald->fc2_without_dipole,
+                                     *dielec,
+                                     *ewald,
                                      true,
                                      eval_tmp,
                                      evec_tmp);
@@ -323,6 +325,7 @@ void Conductivity::setup_kappa_4ph()
                                                   system->get_primcell().lattice_vector,
                                                   *dynamical,
                                                   fcs_phonon->force_constant_with_cell[0],
+                                                  *dielec,
                                                   *ewald,
                                                   vel_4ph,
                                                   Bohr_in_Angstrom * 1.0e-10 / time_ry,
@@ -344,6 +347,7 @@ void Conductivity::setup_kappa_4ph()
                                                         system->get_primcell().lattice_vector,
                                                         *dynamical,
                                                         fcs_phonon->force_constant_with_cell[0],
+                                                        *dielec,
                                                         *ewald,
                                                         vel_adaptive4);
         integration->create_adaptive_sigma4(kmesh_4ph->nk,

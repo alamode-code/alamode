@@ -3086,7 +3086,7 @@ void Writes::writeNormalModeAnimation(const double xk_in[3], const unsigned int 
 
     // Get eigenvalues and eigenvectors at xk
 
-    phon->dynamical->eval_k(xk, kvec, phon->fcs_phonon->force_constant_with_cell[0], eval, evec, true);
+    phon->dynamical->eval_k(xk, kvec, phon->fcs_phonon->force_constant_with_cell[0], *phon->dielec, eval, evec, true);
 
     for (i = 0; i < ns; ++i) {
         for (j = 0; j < ns; ++j) {

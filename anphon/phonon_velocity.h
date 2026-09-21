@@ -32,11 +32,11 @@ public:
     void setup_velocity();
 
     void phonon_vel_k(const double *, const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2_in,
-                      const Ewald &ewald, double **) const;
+                      const Dielec &dielec, const Ewald &ewald, double **) const;
 
     void get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                         const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2_in,
-                                        const Ewald &ewald, double ***phvel3_out) const;
+                                        const Dielec &dielec, const Ewald &ewald, double ***phvel3_out) const;
 
     void get_phonon_group_velocity_mesh_velmat(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                                const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2_in,
@@ -44,12 +44,12 @@ public:
 
     void get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                             const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2_in,
-                                            const Ewald &ewald, double ***phvel3_out) const;
+                                            const Dielec &dielec, const Ewald &ewald, double ***phvel3_out) const;
 
     void gather_group_velocities_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                       const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2_in,
-                                      const Ewald &ewald, NDArray<double, 3> &vel_out, const double unit_factor,
-                                      const bool bcast_full) const;
+                                      const Dielec &dielec, const Ewald &ewald, NDArray<double, 3> &vel_out,
+                                      const double unit_factor, const bool bcast_full) const;
 
     // velmat_out (full matrix, coherent term only) and velblock_out (per-branch
     // block-summed diad for the Peierls term / boundary speed) may each be nullptr.

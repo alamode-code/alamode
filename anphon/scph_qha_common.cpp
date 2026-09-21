@@ -169,6 +169,7 @@ void ScphQhaCommon::setup_eigvecs()
         dynamical->eval_k(kmesh_dense->xk[ik],
                           kmesh_dense->kvec_na[ik],
                           fcs_phonon->force_constant_with_cell[0],
+                          *dielec,
                           omega2_harmonic[ik],
                           evec_harmonic[ik],
                           true);
@@ -517,6 +518,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                              dos->kmesh_dos->xk,
                                              dos->kmesh_dos->kvec_na,
                                              fcs_phonon->force_constant_with_cell[0],
+                                             *dielec,
                                              *ewald,
                                              dymat_harm_short,
                                              dymat_harm_long);
@@ -895,6 +897,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                               evec_tmp,
                                               mindist_list_in,
                                               fcs_phonon->force_constant_with_cell[0],
+                                              *dielec,
                                               *ewald);
             }
 
@@ -911,6 +914,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                   evec_tmp,
                                                   mindist_list_in,
                                                   fcs_phonon->force_constant_with_cell[0],
+                                                  *dielec,
                                                   *ewald);
                 }
                 writes->writePhononEnergies(kpoint->kpoint_general->nk, eval_update, false, bubble_in);
@@ -927,6 +931,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                              kpoint->kpoint_bs->xk,
                                              kpoint->kpoint_bs->kvec_na,
                                              fcs_phonon->force_constant_with_cell[0],
+                                             *dielec,
                                              *ewald,
                                              dymat_harm_short,
                                              dymat_harm_long);
@@ -985,6 +990,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                               evec_gam,
                                               mindist_list_in,
                                               fcs_phonon->force_constant_with_cell[0],
+                                              *dielec,
                                               *ewald);
 
                 for (auto is = 0; is < ns; ++is) {

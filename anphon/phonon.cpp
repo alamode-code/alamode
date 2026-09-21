@@ -67,7 +67,7 @@ void PHON::create_pointers()
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, system.get());
     dielec = std::make_unique<Dielec>(run_info, system.get());
     ewald = std::make_unique<Ewald>(run_info, system.get());
-    dynamical = std::make_unique<Dynamical>(run_info, system.get(), dielec.get(), ewald.get());
+    dynamical = std::make_unique<Dynamical>(run_info, system.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(run_info, system.get());
@@ -103,6 +103,7 @@ void PHON::create_pointers()
                                                   system.get(),
                                                   symmetry.get(),
                                                   fcs_phonon.get(),
+                                                  dielec.get(),
                                                   ewald.get(),
                                                   dynamical.get(),
                                                   integration.get(),
@@ -118,6 +119,7 @@ void PHON::create_pointers()
                                                    symmetry.get(),
                                                    kpoint.get(),
                                                    fcs_phonon.get(),
+                                                   dielec.get(),
                                                    ewald.get(),
                                                    dynamical.get(),
                                                    integration.get(),
@@ -268,6 +270,7 @@ void PHON::setup_base() const
                                                         system->get_primcell().lattice_vector,
                                                         *dynamical,
                                                         fcs_phonon->force_constant_with_cell[0],
+                                                        *dielec,
                                                         *ewald,
                                                         vel_adaptive);
         integration->create_adaptive_sigma(dos->kmesh_dos.get(),
@@ -318,6 +321,7 @@ void PHON::execute_phonons() const
                                          dos->kmesh_dos.get(),
                                          dos->dymat_dos.get(),
                                          fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
                                          *ewald);
 
     if (mode_symmetry->print_irreps && run_info.my_rank == 0) {
@@ -382,6 +386,7 @@ void PHON::execute_kappa() const
                                              dos->kmesh_dos.get(),
                                              dos->dymat_dos.get(),
                                              fcs_phonon->force_constant_with_cell[0],
+                                             *dielec,
                                              *ewald);
     }
 
@@ -459,6 +464,7 @@ void PHON::execute_self_consistent_phonon() const
                                          dos->kmesh_dos.get(),
                                          dos->dymat_dos.get(),
                                          fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
                                          *ewald);
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
     relaxation->setup_relaxation(symmetry->tolerance);

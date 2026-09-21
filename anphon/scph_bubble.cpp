@@ -78,6 +78,7 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                       evec[iT],
                                       mindist_list,
                                       fcs_phonon->force_constant_with_cell[0],
+                                      *dielec,
                                       *ewald);
     }
 
@@ -188,6 +189,7 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                       evec,
                                       mindist_list,
                                       fcs_phonon->force_constant_with_cell[0],
+                                      *dielec,
                                       *ewald);
 
         for (unsigned int ik = 0; ik < nk_scph; ++ik) find_degenerate_groups(ns, eval[ik], degeneracy_at_k[ik]);

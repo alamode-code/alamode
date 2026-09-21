@@ -337,7 +337,7 @@ void Dielec::run_dielec_calculation(const Dynamical &dynamical, const std::vecto
 
     for (auto i = 0; i < 3; ++i) xk[i] = 0.0;
 
-    dynamical.diagonalize_gamma_analytic(eval, evec, true, fc2, ewald);
+    dynamical.diagonalize_gamma_analytic(eval, evec, true, fc2, *this, ewald);
 
     compute_dielectric_function(nomega, omega_grid, eval, evec, dielec);
 
@@ -487,7 +487,7 @@ void Dielec::compute_mode_effective_charge(const Dynamical &dynamical, const std
                                                   dynamical.get_projection_directions(),
                                                   evec);
     } else {
-        dynamical.diagonalize_gamma_analytic(eval, evec, true, fc2, ewald);
+        dynamical.diagonalize_gamma_analytic(eval, evec, true, fc2, *this, ewald);
     }
 
     compute_mode_effective_charge(zstar_mode, evec, do_normalize);

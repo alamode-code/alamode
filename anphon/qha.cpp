@@ -508,6 +508,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
                                          fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
                                          *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
@@ -685,6 +686,7 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                                        mat_transform_sym,
                                                        mindist_list,
                                                        fcs_phonon->force_constant_with_cell[0],
+                                                       *dielec,
                                                        *ewald);
     print_stage_time("renormalized harmonic frequencies", time_stage);
     time_stage = timer->elapsed();
@@ -931,6 +933,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
                                          fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
                                          *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
@@ -1127,6 +1130,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                                mat_transform_sym,
                                                                mindist_list,
                                                                fcs_phonon->force_constant_with_cell[0],
+                                                               *dielec,
                                                                *ewald);
 
             dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],

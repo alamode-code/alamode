@@ -19,6 +19,7 @@ iterativebte.cpp
 #include "constants.h"
 #include "degeneracy_utils.h"
 #include "dense_symmetric_eigen.h"
+#include "dielec.h"
 #include "dynamical.h"
 #include "error.h"
 #include "ewald.h"
@@ -40,14 +41,15 @@ iterativebte.cpp
 using namespace PHON_NS;
 
 Iterativebte::Iterativebte(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-                           const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, const Dynamical *dynamical_in,
-                           Integration *integration_in, const Thermodynamics *thermodynamics_in, const Dos *dos_in,
+                           const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, const Ewald *ewald_in,
+                           const Dynamical *dynamical_in, Integration *integration_in,
+                           const Thermodynamics *thermodynamics_in, const Dos *dos_in,
                            const PhononVelocity *phonon_velocity_in, AnharmonicCore *anharmonic_core_in,
                            const Isotope *isotope_in, const Writes *writes_in, Conductivity *conductivity_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
-    dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in), dos(dos_in),
-    phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in), writes(writes_in),
-    conductivity(conductivity_in)
+    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in),
+    ewald(ewald_in), dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in),
+    dos(dos_in), phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in),
+    writes(writes_in), conductivity(conductivity_in)
 {
     set_default_variables();
 }
@@ -121,6 +123,7 @@ void Iterativebte::setup_iterative()
                                                   system->get_primcell().lattice_vector,
                                                   *dynamical,
                                                   fcs_phonon->force_constant_with_cell[0],
+                                                  *dielec,
                                                   *ewald,
                                                   vel,
                                                   1.0,

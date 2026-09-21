@@ -371,6 +371,7 @@ public:
                                                                      scph_.mat_transform_sym,
                                                                      scph_.mindist_list,
                                                                      scph_.fcs_phonon->force_constant_with_cell[0],
+                                                                     *scph_.dielec,
                                                                      *scph_.ewald);
 
             scph_.dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize_[iT],
@@ -809,6 +810,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
                                          fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
                                          *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
@@ -984,6 +986,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
                                          fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
                                          *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
@@ -1716,6 +1719,7 @@ void Scph::compute_anharmonic_frequency(double **omega2_out, std::complex<double
                                      kmesh_dense->xk,
                                      kmesh_dense->kvec_na,
                                      fcs_phonon->force_constant_with_cell[0],
+                                     *dielec,
                                      *ewald,
                                      dymat_harm_short,
                                      dymat_harm_long);
@@ -1953,6 +1957,7 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
                                      kmesh_dense->xk,
                                      kmesh_dense->kvec_na,
                                      fcs_phonon->force_constant_with_cell[0],
+                                     *dielec,
                                      *ewald,
                                      dymat_harm_short,
                                      dymat_harm_long);

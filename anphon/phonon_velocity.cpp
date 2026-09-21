@@ -81,11 +81,12 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(
             dynamical.eval_k_ewald(kpoint_bs_in->xk[ik],
                                    kpoint_bs_in->kvec_na[ik],
                                    ewald.fc2_without_dipole,
+                                   ewald,
                                    eval_k,
                                    evec_k,
                                    true);
         } else {
-            dynamical.eval_k(kpoint_bs_in->xk[ik], kpoint_bs_in->kvec_na[ik], fc2_in, eval_k, evec_k, true);
+            dynamical.eval_k(kpoint_bs_in->xk[ik], kpoint_bs_in->kvec_na[ik], fc2_in, dielec, eval_k, evec_k, true);
         }
         for (auto is = 0u; is < ns; ++is) eval_k[is] = dynamical.freq(eval_k[is]);
 
@@ -115,8 +116,8 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(
 
 void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                                     const Dynamical &dynamical,
-                                                    const std::vector<FcsArrayWithCell> &fc2_in, const Ewald &ewald,
-                                                    double ***phvel3_out) const
+                                                    const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
+                                                    const Ewald &ewald, double ***phvel3_out) const
 {
     // This routine computes the group velocities for the given uniform k mesh.
     const auto nk = kmesh_in.nk;
@@ -127,7 +128,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
     vel.resize(ns, 3);
 
     for (unsigned int i = 0; i < nk; ++i) {
-        phonon_vel_k(&kmesh_in.xk[i][0], dynamical, fc2_in, ewald, vel);
+        phonon_vel_k(&kmesh_in.xk[i][0], dynamical, fc2_in, dielec, ewald, vel);
 
         for (unsigned int j = 0; j < ns; ++j) {
             rotvec(vel[j], vel[j], lavec_p);
@@ -142,7 +143,8 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
 
 void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform &kmesh_in,
                                                         const Eigen::Matrix3d &lavec_p, const Dynamical &dynamical,
-                                                        const std::vector<FcsArrayWithCell> &fc2_in, const Ewald &ewald,
+                                                        const std::vector<FcsArrayWithCell> &fc2_in,
+                                                        const Dielec &dielec, const Ewald &ewald,
                                                         double ***phvel3_out) const
 {
     // This routine computes the group velocities for the given uniform k mesh
@@ -200,7 +202,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     vel.resize(ns, 3);
 
     for (unsigned int i = 0; i < nk_loc; ++i) {
-        phonon_vel_k(&kmesh_in.xk[klist_proc[i]][0], dynamical, fc2_in, ewald, vel);
+        phonon_vel_k(&kmesh_in.xk[klist_proc[i]][0], dynamical, fc2_in, dielec, ewald, vel);
 
         for (unsigned int j = 0; j < ns; ++j) {
             rotvec(vel[j], vel[j], lavec_p);
@@ -231,9 +233,9 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
 
 void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                                   const Dynamical &dynamical,
-                                                  const std::vector<FcsArrayWithCell> &fc2_in, const Ewald &ewald,
-                                                  NDArray<double, 3> &vel_out, const double unit_factor,
-                                                  const bool bcast_full) const
+                                                  const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec,
+                                                  const Ewald &ewald, NDArray<double, 3> &vel_out,
+                                                  const double unit_factor, const bool bcast_full) const
 {
     // Allocate and gather velocities on rank 0, or all ranks if bcast_full.
     // Apply unit_factor before broadcasting: 1.0 keeps atomic units;
@@ -248,7 +250,7 @@ void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh
         vel_out.resize(1, 1, 1);
     }
 
-    get_phonon_group_velocity_mesh_mpi(kmesh_in, lavec_p, dynamical, fc2_in, ewald, vel_out);
+    get_phonon_group_velocity_mesh_mpi(kmesh_in, lavec_p, dynamical, fc2_in, dielec, ewald, vel_out);
 
     if (run.my_rank == 0 && unit_factor != 1.0) {
         for (unsigned int i = 0; i < nk; ++i) {
@@ -299,9 +301,9 @@ void PhononVelocity::get_phonon_group_velocity_mesh_velmat(const KpointMeshUnifo
         }
 
         if (dynamical.nonanalytic == 3) {
-            dynamical.eval_k_ewald(kmesh_in.xk[ik], kvec, ewald.fc2_without_dipole, eval_k, evec_k, true);
+            dynamical.eval_k_ewald(kmesh_in.xk[ik], kvec, ewald.fc2_without_dipole, ewald, eval_k, evec_k, true);
         } else {
-            dynamical.eval_k(kmesh_in.xk[ik], kvec, fc2_in, eval_k, evec_k, true);
+            dynamical.eval_k(kmesh_in.xk[ik], kvec, fc2_in, dielec, eval_k, evec_k, true);
         }
         for (auto is = 0u; is < ns; ++is) eval_k[is] = dynamical.freq(eval_k[is]);
 
@@ -497,7 +499,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(const KpointMeshUniform &kmesh_in, 
 }
 
 void PhononVelocity::phonon_vel_k(const double *xk_in, const Dynamical &dynamical,
-                                  const std::vector<FcsArrayWithCell> &fc2_in, const Ewald &ewald,
+                                  const std::vector<FcsArrayWithCell> &fc2_in, const Dielec &dielec, const Ewald &ewald,
                                   double **vel_out) const
 {
     unsigned int j;
@@ -555,11 +557,13 @@ void PhononVelocity::phonon_vel_k(const double *xk_in, const Dynamical &dynamica
                 dynamical.eval_k_ewald(xk_shift[idiff],
                                        kvec_na_tmp[idiff],
                                        ewald.fc2_without_dipole,
+                                       ewald,
                                        omega_shift[idiff],
                                        evec_tmp,
                                        false);
             } else {
-                dynamical.eval_k(xk_shift[idiff], kvec_na_tmp[idiff], fc2_in, omega_shift[idiff], evec_tmp, false);
+                dynamical
+                    .eval_k(xk_shift[idiff], kvec_na_tmp[idiff], fc2_in, dielec, omega_shift[idiff], evec_tmp, false);
             }
         }
 
