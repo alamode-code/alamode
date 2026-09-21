@@ -93,13 +93,7 @@ void PHON::create_pointers()
     mode_symmetry =
         std::make_unique<ModeSymmetry>(run_info, system.get(), symmetry.get(), dielec.get(), dynamical.get());
     gruneisen = std::make_unique<Gruneisen>(run_info, system.get());
-    relaxation = std::make_unique<Relaxation>(run_info,
-                                              timer.get(),
-                                              system.get(),
-                                              symmetry.get(),
-                                              fcs_phonon.get(),
-                                              ewald.get(),
-                                              anharmonic_core.get());
+    relaxation = std::make_unique<Relaxation>(run_info, system.get());
     conductivity = std::make_unique<Conductivity>(run_info,
                                                   system.get(),
                                                   symmetry.get(),
@@ -144,6 +138,7 @@ void PHON::create_pointers()
                                                       symmetry.get(),
                                                       kpoint.get(),
                                                       fcs_phonon.get(),
+                                                      ewald.get(),
                                                       dielec.get(),
                                                       dynamical.get(),
                                                       integration.get(),
@@ -250,7 +245,7 @@ void PHON::setup_base() const
     if (init_u0_from_modes) {
         setup_fcs();
         symmetry->setup_symmetry(relaxing_structure, false); // reference-cell operations only (init_u0 is still empty)
-        relaxation->set_init_u0_from_modes();
+        relaxation->set_init_u0_from_modes(fcs_phonon->force_constant_with_cell[0], symmetry->SymmListWithMap_ref);
         system->initialize_distorted_primitive_cell(relaxation->init_u_tensor, relaxation->init_u0);
     }
 
@@ -402,8 +397,6 @@ void PHON::execute_kappa() const
     selfenergy->setup_selfenergy(dynamical->neval,
                                  integration->epsilon,
                                  thermodynamics->classical,
-                                 symmetry->SymmList,
-                                 *anharmonic_core,
                                  run_info.my_rank,
                                  run_info.nprocs);
 
@@ -459,7 +452,7 @@ void PHON::execute_self_consistent_phonon() const
                                          dos->kmesh_dos.get(),
                                          dos->dymat_dos.get());
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
-    relaxation->setup_relaxation();
+    relaxation->setup_relaxation(symmetry->tolerance);
 
     if (run_info.mode == "SCPH") {
         scph->setup_scph();

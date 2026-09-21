@@ -158,8 +158,6 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
     selfenergy->setup_selfenergy(dynamical->neval,
                                  integration->epsilon,
                                  thermodynamics->classical,
-                                 symmetry->SymmList,
-                                 *anharmonic_core,
                                  run.my_rank,
                                  run.nprocs);
 
@@ -218,9 +216,16 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
                         omegalist.push_back(im * epsilon);
 
-                        auto se_bubble =
-                            selfenergy
-                                ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
+                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_b,
+                                                                           ns,
+                                                                           eval,
+                                                                           evec,
+                                                                           knum,
+                                                                           snum,
+                                                                           temp,
+                                                                           omegalist,
+                                                                           phase_b,
+                                                                           *anharmonic_core);
 
                         if (run.my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -228,9 +233,16 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
 
                         omegalist.push_back(eval[knum][snum] + im * epsilon);
 
-                        auto se_bubble =
-                            selfenergy
-                                ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
+                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_b,
+                                                                           ns,
+                                                                           eval,
+                                                                           evec,
+                                                                           knum,
+                                                                           snum,
+                                                                           temp,
+                                                                           omegalist,
+                                                                           phase_b,
+                                                                           *anharmonic_core);
 
                         if (run.my_rank == 0) real_self[snum] = se_bubble[0].real();
 
@@ -248,9 +260,16 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                             omegalist.push_back(minfreq + static_cast<double>(iomega) * domega + im * epsilon);
                         }
 
-                        auto se_bubble =
-                            selfenergy
-                                ->get_bubble_selfenergy(kmesh_b, ns, eval, evec, knum, snum, temp, omegalist, phase_b);
+                        auto se_bubble = selfenergy->get_bubble_selfenergy(kmesh_b,
+                                                                           ns,
+                                                                           eval,
+                                                                           evec,
+                                                                           knum,
+                                                                           snum,
+                                                                           temp,
+                                                                           omegalist,
+                                                                           phase_b,
+                                                                           *anharmonic_core);
 
                         if (run.my_rank == 0) {
 

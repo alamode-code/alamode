@@ -235,10 +235,12 @@ public:
                                      const unsigned int snum, const unsigned int nomega, const double *omega,
                                      double *ret);
 
-    void calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
-                              const std::vector<double> *fcs_group_v3_in,
-                              const std::vector<RelativeVector> *relvec_v3_in, const PhaseFactorCache *phase_storage_in,
-                              std::complex<double> *ret, const bool use_openmp = true);
+    // Stateless: the cubic group data and the phase cache are all it reads.
+    static void calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
+                                     const std::vector<double> *fcs_group_v3_in,
+                                     const std::vector<RelativeVector> *relvec_v3_in,
+                                     const PhaseFactorCache *phase_storage_in, std::complex<double> *ret,
+                                     const bool use_openmp = true);
 
     // ---- Factorized cubic matrix elements (three_phonon.cpp) ----
     // Per-thread scratch of the V3 kernels; a fresh instance is set up by the

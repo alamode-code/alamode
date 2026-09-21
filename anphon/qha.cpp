@@ -16,6 +16,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
+#include "ewald.h"
+#include "ifc_derivative.h"
 #include "mathfunctions.h"
 #include "mpi_common.h"
 #include "relaxation.h"
@@ -532,7 +534,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         C3_array.resize(9, 9, 9);
         C2_array_ZSISA.resize(9, 9);
 
-        relaxation->set_elastic_constants(C1_array, C2_array, C3_array);
+        relaxation->set_elastic_constants(C1_array, C2_array, C3_array, *fcs_phonon, *ewald);
 
         // output files of structural optimization
         std::ofstream fout_step_q0, fout_step_u0;
@@ -877,7 +879,11 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
     del_v_strain.resize(nk, ns);
 
-    relaxation->compute_del_v_strain(kmesh_coarse.get(),
+    // Collective: every rank reaches this.
+    DerivativeIFC derivative_ifc(*system, *symmetry, *fcs_phonon, run.my_rank, run.nprocs);
+    derivative_ifc.set_verbosity(run.verbosity);
+    relaxation->compute_del_v_strain(derivative_ifc,
+                                     kmesh_coarse.get(),
                                      kmesh_dense.get(),
                                      del_v_strain,
                                      omega2_harmonic,
@@ -885,6 +891,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                      RelaxationStrMode::PerturbativeQha,
                                      mindist_list,
                                      phase_factor.get());
+    if (run.my_rank == 0) timer->print_elapsed();
 
     // set dummy variables as zero for perturbative-QHA paths
     del_v_strain.del3_v1.setZero();
@@ -936,7 +943,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         }
 
         // set elastic constants
-        relaxation->set_elastic_constants(C1_array, C2_array, C3_array);
+        relaxation->set_elastic_constants(C1_array, C2_array, C3_array, *fcs_phonon, *ewald);
 
         // output files of structural optimization
         std::ofstream fout_q0, fout_u0, fout_u_tensor;

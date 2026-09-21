@@ -125,9 +125,8 @@ void build_pairs_vec(const std::vector<int> &index_with_cell, const std::size_t 
 } // namespace
 
 DerivativeIFC::DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in,
-                             AnharmonicCore &anharmonic_core_in, const int my_rank_in, const int nprocs_in) :
-    system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), anharmonic_core_(anharmonic_core_in),
-    my_rank_(my_rank_in), nprocs_(nprocs_in)
+                             const int my_rank_in, const int nprocs_in) :
+    system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
 {}
 
 void DerivativeIFC::print_stage(const std::string &label, const double t_start, const bool newline_first) const
@@ -639,7 +638,6 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
                                                kmesh_coarse_in,
                                                kmesh_dense_in,
                                                phase_cache_in,
-                                               anharmonic_core_,
                                                my_rank_,
                                                nprocs_);
             t_v3_build += stage_clock() - t_build;

@@ -458,6 +458,7 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
                                       dos->dymat_dos->get_eigenvectors(),
                                       nomega,
                                       omega_ry.data(),
+                                      *anharmonic_core,
                                       sig);
             if (run.my_rank != 0) continue;
             // Pi = -2 E W Sigma W E^+
@@ -772,6 +773,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                          dos->kmesh_dos.get(),
                                          dos->dymat_dos->get_eigenvalues(),
                                          dos->dymat_dos->get_eigenvectors(),
+                                         *anharmonic_core,
                                          self_tmp);
                 for (j = 0; j < NT; ++j) {
                     self_a[j] += self_tmp[j] / nblock;
@@ -789,6 +791,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                      dos->kmesh_dos.get(),
                                      dos->dymat_dos->get_eigenvalues(),
                                      dos->dymat_dos->get_eigenvectors(),
+                                     *anharmonic_core,
                                      self_c);
             //            selfenergy->selfenergy_d(NT, T_arr, omega, knum, snum,
             //                                     dos->kmesh_dos.get(),
@@ -888,6 +891,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                                dos->kmesh_dos.get(),
                                                dos->dymat_dos->get_eigenvalues(),
                                                dos->dymat_dos->get_eigenvectors(),
+                                               *anharmonic_core,
                                                self_tmp);
                 for (j = 0; j < NT; ++j) self_tadpole[j] += self_tmp[j] / nblock;
                 if (anharmonic_core->quartic_mode == 1) {
@@ -899,6 +903,7 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                              dos->kmesh_dos.get(),
                                              dos->dymat_dos->get_eigenvalues(),
                                              dos->dymat_dos->get_eigenvectors(),
+                                             *anharmonic_core,
                                              self_tmp);
                     for (j = 0; j < NT; ++j) self_b[j] += self_tmp[j] / nblock;
                 }
@@ -1062,6 +1067,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                                             dos->dymat_dos->get_eigenvalues(),
                                             dos->dymat_dos->get_eigenvectors(),
                                             sg,
+                                            *anharmonic_core,
                                             self_tmp);
                 for (unsigned int j = 0; j < NT; ++j) {
                     self_a[j] += self_tmp[j] / nblock;
@@ -1075,6 +1081,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                                                   dos->kmesh_dos.get(),
                                                   dos->dymat_dos->get_eigenvalues(),
                                                   dos->dymat_dos->get_eigenvectors(),
+                                                  *anharmonic_core,
                                                   self_tmp);
                 for (unsigned int j = 0; j < NT; ++j) self_tadpole[j] += self_tmp[j] / nblock;
                 if (anharmonic_core->quartic_mode == 1) {
@@ -1086,6 +1093,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                                                 dos->kmesh_dos.get(),
                                                 dos->dymat_dos->get_eigenvalues(),
                                                 dos->dymat_dos->get_eigenvectors(),
+                                                *anharmonic_core,
                                                 self_tmp);
                     for (unsigned int j = 0; j < NT; ++j) self_b[j] += self_tmp[j] / nblock;
                 }

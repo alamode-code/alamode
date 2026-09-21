@@ -1003,7 +1003,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         C2_array.resize(9, 9);
         C3_array.resize(9, 9, 9);
 
-        relaxation->set_elastic_constants(C1_array, C2_array, C3_array);
+        relaxation->set_elastic_constants(C1_array, C2_array, C3_array, *fcs_phonon, *ewald);
 
         // output files of structural optimization
         std::ofstream fout_step_q0, fout_step_u0;

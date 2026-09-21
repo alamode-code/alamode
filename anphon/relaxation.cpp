@@ -31,7 +31,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "strain_reference_cell.h"
 #include "symmetry_core.h"
 #include "system.h"
-#include "timer.h"
 #include "write_phonons.h"
 
 extern "C"
@@ -42,15 +41,9 @@ extern "C"
 
 using namespace PHON_NS;
 
-Relaxation::Relaxation(const RunInfo &run_in, const Timer *timer_in, const System *system_in,
-                       const Symmetry *symmetry_in, const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
-                       AnharmonicCore *anharmonic_core_in) :
-    run(run_in), timer(timer_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
-    anharmonic_core(anharmonic_core_in)
+Relaxation::Relaxation(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
-    derivative_ifc =
-        std::make_unique<DerivativeIFC>(*system, *symmetry, *fcs_phonon, *anharmonic_core, run.my_rank, run.nprocs);
 }
 
 Relaxation::~Relaxation() = default;
@@ -88,8 +81,10 @@ void Relaxation::set_default_variables()
     strain_file.clear();
 }
 
-void Relaxation::setup_relaxation()
+void Relaxation::setup_relaxation(const double symprec)
 {
+    symprec_ = symprec;
+
     MPI_Bcast(&relax_str, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
 
     // The strain-coupling settings are consumed on every rank
@@ -112,7 +107,7 @@ void Relaxation::setup_relaxation()
         spacegroup_number_ref = detect_spacegroup(primcell.lattice_vector, xf, label);
         if (run.my_rank == 0 && run.verbosity > 0 && set_init_str == 3) {
             std::cout << "  SET_INIT_STR = 3: the high-symmetry phase is " << label << " (spglib, tolerance "
-                      << std::scientific << std::setprecision(2) << symmetry->tolerance << std::defaultfloat << ")\n\n";
+                      << std::scientific << std::setprecision(2) << symprec_ << std::defaultfloat << ")\n\n";
         }
     }
     if (!uses_strain_coupling(relax_mode)) {
@@ -231,7 +226,8 @@ void Relaxation::create_optimizer(const size_t num_modes)
     }
 }
 
-void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const
+void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array,
+                                       const Fcs_phonon &fcs_phonon, const Ewald &ewald) const
 {
     const auto relax_mode = to_relaxation_str_mode(relax_str);
 
@@ -240,7 +236,7 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
     // or read them from file
     if (uses_strain_coupling(relax_mode)) {
         if (elastic_const == 1) {
-            set_elastic_constants_from_ifcs(C1_array, C2_array, C3_array);
+            set_elastic_constants_from_ifcs(C1_array, C2_array, C3_array, fcs_phonon, ewald);
             return;
         }
         const ElasticTensor elastic(*system);
@@ -315,15 +311,16 @@ void Relaxation::set_elastic_constants(double *C1_array, double **C2_array, doub
     }
 }
 
-void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_array, double ***C3_array) const
+void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_array, double ***C3_array,
+                                                 const Fcs_phonon &fcs_phonon, const Ewald &ewald) const
 {
-    if (fcs_phonon->force_constant_with_cell.size() < 2) {
+    if (fcs_phonon.force_constant_with_cell.size() < 2) {
         exit("set_elastic_constants_from_ifcs",
              "Computing the elastic constants from the IFCs (STRAIN_COUPLING bit 1 clear) requires\n"
              " the harmonic and cubic force constants (FCSFILE, or FC2FILE + FC3FILE).");
     }
-    const auto &fc2 = fcs_phonon->force_constant_with_cell[0];
-    const auto &fc3 = fcs_phonon->force_constant_with_cell[1];
+    const auto &fc2 = fcs_phonon.force_constant_with_cell[0];
+    const auto &fc3 = fcs_phonon.force_constant_with_cell[1];
 
     const ElasticTensor elastic(*system);
 
@@ -340,9 +337,9 @@ void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_a
     // dipole brackets at fixed E field); C3 remains short-range because the
     // strain derivatives of Z* and epsilon are not contained in the IFCs.
     NDArray<double, 4> C2_gpa;
-    const bool longrange = ewald->is_longrange;
+    const bool longrange = ewald.is_longrange;
     if (longrange) {
-        elastic.calc_elastic_tensor_longrange(ewald->fc2_without_dipole, *ewald, C2_gpa, true);
+        elastic.calc_elastic_tensor_longrange(ewald.fc2_without_dipole, ewald, C2_gpa, true);
     } else {
         elastic.calc_elastic_tensor(fc2, C2_gpa, true);
     }
@@ -366,9 +363,9 @@ void Relaxation::set_elastic_constants_from_ifcs(double *C1_array, double **C2_a
     const auto prec = std::cout.precision();
     std::cout << "  STRAIN_COUPLING bit 1 clear: elastic constants are computed from the force constants.\n";
     std::cout << "  Harmonic force constants from  : "
-              << (fcs_phonon->file_fc2.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc2) << '\n';
+              << (fcs_phonon.file_fc2.empty() ? fcs_phonon.file_fcs : fcs_phonon.file_fc2) << '\n';
     std::cout << "  Cubic force constants from     : "
-              << (fcs_phonon->file_fc3.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc3) << '\n';
+              << (fcs_phonon.file_fc3.empty() ? fcs_phonon.file_fcs : fcs_phonon.file_fc3) << '\n';
     if (longrange) {
         std::cout << "  NONANALYTIC = 3: the dipole-dipole long-range correction is applied\n";
         std::cout << "  to the second-order elastic constants (fixed-E, macroscopic term excluded).\n";
@@ -550,7 +547,8 @@ void Relaxation::set_initial_q0(std::vector<double> &q0, std::complex<double> **
     }
 }
 
-void Relaxation::set_init_u0_from_modes()
+void Relaxation::set_init_u0_from_modes(const std::vector<FcsArrayWithCell> &fc2,
+                                        const std::vector<SymmetryOperationWithMapping> &symops_ref)
 {
     // &displace DISPMODE = 2. The eigenvectors of a degenerate subspace S are gauge
     // dependent, so the pattern is defined by the symmetry it keeps instead: the member
@@ -567,7 +565,7 @@ void Relaxation::set_init_u0_from_modes()
     const double tol_omega = 1.0e-7; // ~0.01 cm^-1, same as degeneracy_utils.h
 
     Eigen::MatrixXd dymat = Eigen::MatrixXd::Zero(ns, ns);
-    for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
+    for (const auto &it: fc2) {
         const int i = it.pairs[0].index, j = it.pairs[1].index;
         dymat(i, j) += it.fcs_val * invsqrt_mass[i / 3] * invsqrt_mass[j / 3];
     }
@@ -639,7 +637,7 @@ void Relaxation::set_init_u0_from_modes()
             std::vector<std::string> found_info;
             int nrot = 0;
             bool any_higher = false;
-            for (const auto &op: symmetry->SymmListWithMap_ref) {
+            for (const auto &op: symops_ref) {
                 Eigen::Matrix3d rot;
                 for (int i = 0; i < 3; ++i)
                     for (int j = 0; j < 3; ++j) rot(i, j) = op.rot[3 * i + j];
@@ -691,7 +689,7 @@ void Relaxation::set_init_u0_from_modes()
             for (std::size_t k = 1; k < found.size(); ++k) {
                 const Eigen::VectorXd e0 = sub * found[0], ek = sub * found[k];
                 bool equivalent = false;
-                for (const auto &op: symmetry->SymmListWithMap_ref) {
+                for (const auto &op: symops_ref) {
                     if (std::abs(apply_op(op, e0).col(0).dot(ek)) > 1.0 - 1.0e-6) {
                         equivalent = true;
                         break;
@@ -1161,7 +1159,7 @@ int Relaxation::detect_spacegroup(const Eigen::Matrix3d &lavec, const std::vecto
     }
     int number = 0;
     label = "detection failed";
-    const auto spgdataset = spg_get_dataset(aa, position, types, natmin, symmetry->tolerance);
+    const auto spgdataset = spg_get_dataset(aa, position, types, natmin, symprec_);
     if (spgdataset && spgdataset->spacegroup_number > 0) {
         number = spgdataset->spacegroup_number;
         label = std::string(spgdataset->international_symbol) + " (#" + std::to_string(number) + ")";
@@ -1351,21 +1349,19 @@ void Relaxation::check_str_divergence(int &diverged, const RelaxationStructureSt
 }
 
 
-void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                                      DelVStrainData &del_v_strain, double **omega2_harmonic,
-                                      std::complex<double> ***evec_harmonic, const RelaxationStrMode relax_mode,
-                                      MinimumDistList ***mindist_list, const PhaseFactorCache *phase_cache_in)
+void Relaxation::compute_del_v_strain(const DerivativeIFC &derivative_ifc, const KpointMeshUniform *kmesh_coarse,
+                                      const KpointMeshUniform *kmesh_dense, DelVStrainData &del_v_strain,
+                                      double **omega2_harmonic, std::complex<double> ***evec_harmonic,
+                                      const RelaxationStrMode relax_mode, MinimumDistList ***mindist_list,
+                                      const PhaseFactorCache *phase_cache_in) const
 {
     const auto ns = system->get_num_modes();
     const auto nk = kmesh_dense->nk;
 
-    derivative_ifc->set_verbosity(run.verbosity);
-
     // CoordinatesOnly: keep the unit cell fixed and relax internal coordinates
     // set renormalization from strain as zero
     if (relax_mode == RelaxationStrMode::CoordinatesOnly) {
-        derivative_ifc->set_del_v_fixed_cell(nk, ns, del_v_strain);
-        if (run.my_rank == 0) timer->print_elapsed();
+        derivative_ifc.set_del_v_fixed_cell(nk, ns, del_v_strain);
 
         return;
     }
@@ -1375,20 +1371,18 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
     // same strain derivatives even though the cell is not a variable of the optimization.
     if (uses_full_strain_derivatives(relax_mode)) {
 
-        derivative_ifc->set_del_v_relax_cell(kmesh_coarse,
-                                             kmesh_dense,
-                                             ns,
-                                             del_v_strain,
-                                             omega2_harmonic,
-                                             evec_harmonic,
-                                             renorm_2to1st,
-                                             renorm_34to1st,
-                                             renorm_3to2nd,
-                                             strain_source(),
-                                             mindist_list,
-                                             phase_cache_in);
-
-        if (run.my_rank == 0) timer->print_elapsed();
+        derivative_ifc.set_del_v_relax_cell(kmesh_coarse,
+                                            kmesh_dense,
+                                            ns,
+                                            del_v_strain,
+                                            omega2_harmonic,
+                                            evec_harmonic,
+                                            renorm_2to1st,
+                                            renorm_34to1st,
+                                            renorm_3to2nd,
+                                            strain_source(),
+                                            mindist_list,
+                                            phase_cache_in);
 
         return;
     }
@@ -1396,19 +1390,17 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
     // PerturbativeQha: calculate lowest-order linear equation of QHA.
     if (relax_mode == RelaxationStrMode::PerturbativeQha) {
 
-        derivative_ifc->set_del_v_relax_cell_linearQHA(kmesh_coarse,
-                                                       kmesh_dense,
-                                                       ns,
-                                                       del_v_strain,
-                                                       omega2_harmonic,
-                                                       evec_harmonic,
-                                                       renorm_2to1st,
-                                                       renorm_34to1st,
-                                                       renorm_3to2nd,
-                                                       strain_source(),
-                                                       mindist_list);
-
-        if (run.my_rank == 0) timer->print_elapsed();
+        derivative_ifc.set_del_v_relax_cell_linearQHA(kmesh_coarse,
+                                                      kmesh_dense,
+                                                      ns,
+                                                      del_v_strain,
+                                                      omega2_harmonic,
+                                                      evec_harmonic,
+                                                      renorm_2to1st,
+                                                      renorm_34to1st,
+                                                      renorm_3to2nd,
+                                                      strain_source(),
+                                                      mindist_list);
     }
 }
 

@@ -13,12 +13,14 @@
 #include <Eigen/Core>
 #include <complex>
 #include <memory>
+#include "fcs_phonon.h"
 #include "kpoint.h"
 #include "optimizers.h"
 #include "phonon.h"
 #include "relaxation_types.h"
 #include "scph.h"
 #include "strain_coupling_types.h"
+#include "symmetry_core.h"
 
 namespace PHON_NS
 {
@@ -208,8 +210,7 @@ private:
 class Relaxation
 {
 public:
-    Relaxation(const RunInfo &run, const Timer *timer, const System *system, const Symmetry *symmetry,
-               const Fcs_phonon *fcs_phonon, const Ewald *ewald, AnharmonicCore *anharmonic_core);
+    Relaxation(const RunInfo &run, const System *system);
 
     ~Relaxation();
 
@@ -222,7 +223,8 @@ public:
 
     // Resolve init_disp_modes into init_u0 with the analytic Gamma-point dynamical matrix.
     // Needs Fcs_phonon::setup; must precede the symmetry analysis of the distorted cell.
-    void set_init_u0_from_modes();
+    void set_init_u0_from_modes(const std::vector<FcsArrayWithCell> &fc2,
+                                const std::vector<SymmetryOperationWithMapping> &symops_ref);
 
     // variables related to structural optimization
     int relax_algo;
@@ -273,16 +275,17 @@ public:
     }
 
     std::unique_ptr<Optimizer> optimizer;
-    std::unique_ptr<DerivativeIFC> derivative_ifc;
 
     void create_optimizer(const size_t num_modes);
 
-    void setup_relaxation();
+    // symprec is Symmetry::tolerance, cached for the spglib calls of this class.
+    void setup_relaxation(double symprec);
 
-    void compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
-                              DelVStrainData &del_v_strain, double **omega2_harmonic,
-                              std::complex<double> ***evec_harmonic, RelaxationStrMode relax_mode,
-                              MinimumDistList ***mindist_list, const PhaseFactorCache *phase_cache_in);
+    void compute_del_v_strain(const DerivativeIFC &derivative_ifc, const KpointMeshUniform *kmesh_coarse,
+                              const KpointMeshUniform *kmesh_dense, DelVStrainData &del_v_strain,
+                              double **omega2_harmonic, std::complex<double> ***evec_harmonic,
+                              RelaxationStrMode relax_mode, MinimumDistList ***mindist_list,
+                              const PhaseFactorCache *phase_cache_in) const;
 
     void setInitialDistortion(const double (*u_tensor_in)[3]);
 
@@ -291,13 +294,15 @@ public:
                                 std::complex<double> ***evec_harmonic) const;
 
 
-    void set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array) const;
+    void set_elastic_constants(double *C1_array, double **C2_array, double ***C3_array, const Fcs_phonon &fcs_phonon,
+                               const Ewald &ewald) const;
 
     // STRAIN_COUPLING bit 1 clear: clamped-ion C2 and C3 computed from the loaded
     // harmonic and cubic IFCs (ElasticTensor), converted to Ry per primitive
     // cell. C1 (reference stress) is not contained in the IFC model and is
     // still taken from C1_array.in when present (zero otherwise).
-    void set_elastic_constants_from_ifcs(double *C1_array, double **C2_array, double ***C3_array) const;
+    void set_elastic_constants_from_ifcs(double *C1_array, double **C2_array, double ***C3_array,
+                                         const Fcs_phonon &fcs_phonon, const Ewald &ewald) const;
 
     // The stress tensor at the reference structure (C1): /Elastic/stress of
     // STRAINFILE when given (zero when the dataset is absent), else
@@ -407,11 +412,10 @@ private:
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
-    const Timer *timer;
     const System *system;
-    const Symmetry *symmetry;
-    const Fcs_phonon *fcs_phonon;
-    const Ewald *ewald;
-    AnharmonicCore *anharmonic_core;
+
+    // Symmetry::tolerance, cached by setup_relaxation (Symmetry::setup_symmetry,
+    // which broadcasts it, runs before).
+    double symprec_{0.0};
 };
 } // namespace PHON_NS

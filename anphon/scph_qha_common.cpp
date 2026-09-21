@@ -19,6 +19,7 @@
 #include <vector>
 #include "constants.h"
 #include "dielec.h"
+#include "ifc_derivative.h"
 #include "interpolation.h"
 #include "phonon_dos.h"
 #include "relaxation.h"
@@ -31,7 +32,7 @@ using namespace PHON_NS;
 
 ScphQhaCommon::ScphQhaCommon(const ScphQhaCollaborators &c) :
     run(c.run), timer(c.timer), writes(c.writes), system(c.system), symmetry(c.symmetry), kpoint(c.kpoint),
-    fcs_phonon(c.fcs_phonon), dielec(c.dielec), dynamical(c.dynamical), integration(c.integration),
+    fcs_phonon(c.fcs_phonon), ewald(c.ewald), dielec(c.dielec), dynamical(c.dynamical), integration(c.integration),
     thermodynamics(c.thermodynamics), dos(c.dos), anharmonic_core(c.anharmonic_core), selfenergy(c.selfenergy),
     relaxation(c.relaxation)
 {}
@@ -1278,9 +1279,12 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
     ws.del_v_strain->resize(nk, ns);
 
     // Precompute the strain derivatives of v1 (1st..3rd order), v2 (1st and
-    // 2nd order), and v3 (1st order).
+    // 2nd order), and v3 (1st order). Collective: every rank reaches this.
+    DerivativeIFC derivative_ifc(*system, *symmetry, *fcs_phonon, run.my_rank, run.nprocs);
+    derivative_ifc.set_verbosity(run.verbosity);
     auto t_stage = timer->elapsed();
-    relaxation->compute_del_v_strain(kmesh_coarse.get(),
+    relaxation->compute_del_v_strain(derivative_ifc,
+                                     kmesh_coarse.get(),
                                      kmesh_dense.get(),
                                      *ws.del_v_strain,
                                      omega2_harmonic,
@@ -1288,6 +1292,7 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
                                      ws.relax_mode,
                                      mindist_list,
                                      phase_factor.get());
+    if (run.my_rank == 0) timer->print_elapsed();
     print_stage_time("strain derivatives of the IFCs (total)", t_stage);
 
     // initialize optimizer

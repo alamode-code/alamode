@@ -40,16 +40,16 @@ struct DeltaFcsStrainComponents
 };
 
 // Computes strain derivatives of the IFCs for the SCPH/QHA structural
-// relaxation. All dependencies are explicit constructor arguments. Relaxation
-// constructs it together with itself, i.e. before the input is parsed; the
-// collaborators are only read later, once PHON::setup_base() has run.
+// relaxation. All dependencies are explicit constructor arguments. The SCPH/QHA
+// driver builds it on every rank where it is needed, i.e. after the input is
+// parsed and PHON::setup_base() has run, and passes it to Relaxation.
 class DerivativeIFC
 {
 public:
     using MatrixXcdRowMajor = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-    DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in,
-                  AnharmonicCore &anharmonic_core_in, int my_rank_in, int nprocs_in);
+    DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in, int my_rank_in,
+                  int nprocs_in);
     ~DerivativeIFC() = default;
 
     // VERBOSITY of the run; >= 2 prints the stage timers on rank 0.
@@ -199,7 +199,6 @@ private:
     const System &system_;
     const Symmetry &symmetry_;
     const Fcs_phonon &fcs_phonon_;
-    AnharmonicCore &anharmonic_core_; // phi3(k) evaluation in the V3 kernel
     const int my_rank_;
     const int nprocs_;
     unsigned int verbosity_ = 0;

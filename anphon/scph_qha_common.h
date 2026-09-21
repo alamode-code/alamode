@@ -40,6 +40,7 @@
 namespace PHON_NS
 {
 class DelVStrainData;
+class Ewald;
 
 // Collaborators of the SCPH/QHA drivers (non-owning; owned by PHON, which outlives them).
 // One struct because Scph and Qha forward the same list to their common base.
@@ -52,6 +53,7 @@ struct ScphQhaCollaborators
     const Symmetry *symmetry;
     const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
+    const Ewald *ewald;
     const Dielec *dielec;
     const Dynamical *dynamical;
     const Integration *integration;
@@ -83,6 +85,7 @@ protected:
     const Symmetry *symmetry;
     const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
+    const Ewald *ewald;
     const Dielec *dielec;
     const Dynamical *dynamical;
     const Integration *integration;

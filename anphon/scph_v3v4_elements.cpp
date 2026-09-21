@@ -287,7 +287,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
     std::vector<double> *fcs_group_v3_in, std::vector<RelativeVector> *relvec_v3_in, double *invmass_v3_in,
     int **evec_index_v3_in, const std::complex<double> *const *const *evec_in, const bool self_offdiag,
     const unsigned int ns_in, const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
-    const PhaseFactorCache *phase_storage_in, AnharmonicCore &anharmonic_core_in, const int my_rank, const int nprocs)
+    const PhaseFactorCache *phase_storage_in, const int my_rank, const int nprocs)
 {
     const auto ns = ns_in;
     auto ns2 = ns * ns;
@@ -343,13 +343,13 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
 
     for (unsigned int ik = my_rank; ik < nk_scph; ik += nprocs) {
 
-        anharmonic_core_in.calc_phi3_reciprocal(kmesh_dense_in->xk[ik],
-                                                kmesh_dense_in->xk[kmesh_dense_in->kindex_minus_xk[ik]],
-                                                ngroup_v3_in,
-                                                fcs_group_v3_in,
-                                                relvec_v3_in,
-                                                phase_storage_in,
-                                                phi3_reciprocal_tmp);
+        AnharmonicCore::calc_phi3_reciprocal(kmesh_dense_in->xk[ik],
+                                             kmesh_dense_in->xk[kmesh_dense_in->kindex_minus_xk[ik]],
+                                             ngroup_v3_in,
+                                             fcs_group_v3_in,
+                                             relvec_v3_in,
+                                             phase_storage_in,
+                                             phi3_reciprocal_tmp);
 
 #ifdef _OPENMP
 #pragma omp parallel for private(j)
