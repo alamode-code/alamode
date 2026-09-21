@@ -990,35 +990,37 @@ void Dynamical::get_eigenvalues_dymat_mpi(const unsigned int nk_in, const double
         exit("get_eigenvalues_dymat_mpi", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
     }
 
-    std::vector<int> counts(run.nprocs), displs(run.nprocs);
-
-    for (auto iproc = 0; iproc < run.nprocs; ++iproc) {
-        counts[iproc] = nk_proc[iproc] * ns;
-        displs[iproc] = ik_begin_proc[iproc] * ns;
-    }
+    // One k point is one element of the gather, so the counts and displacements are the
+    // k-point partition itself. Counting in doubles instead would overflow the int that
+    // MPI_Allgatherv takes for a displacement: ns = 300 with a 32x32x32 mesh already puts
+    // the last rank's offset past INT_MAX, and such a run fits in memory on a fat node.
+    MPI_Datatype eigenvalues_at_k;
+    MPI_Type_contiguous(ns, MPI_DOUBLE, &eigenvalues_at_k);
+    MPI_Type_commit(&eigenvalues_at_k);
     MPI_Allgatherv(MPI_IN_PLACE,
                    0,
                    MPI_DATATYPE_NULL,
                    &eval_ret[0][0],
-                   &counts[0],
-                   &displs[0],
-                   MPI_DOUBLE,
+                   &nk_proc[0],
+                   &ik_begin_proc[0],
+                   eigenvalues_at_k,
                    MPI_COMM_WORLD);
+    MPI_Type_free(&eigenvalues_at_k);
 
     // evec_ret is allocated as [nk][1][1] when the eigenvectors are not wanted.
     if (require_evec) {
-        for (auto iproc = 0; iproc < run.nprocs; ++iproc) {
-            counts[iproc] = nk_proc[iproc] * ns * ns;
-            displs[iproc] = ik_begin_proc[iproc] * ns * ns;
-        }
+        MPI_Datatype eigenvectors_at_k;
+        MPI_Type_contiguous(ns * ns, MPI_CXX_DOUBLE_COMPLEX, &eigenvectors_at_k);
+        MPI_Type_commit(&eigenvectors_at_k);
         MPI_Allgatherv(MPI_IN_PLACE,
                        0,
                        MPI_DATATYPE_NULL,
                        &evec_ret[0][0][0],
-                       &counts[0],
-                       &displs[0],
-                       MPI_CXX_DOUBLE_COMPLEX,
+                       &nk_proc[0],
+                       &ik_begin_proc[0],
+                       eigenvectors_at_k,
                        MPI_COMM_WORLD);
+        MPI_Type_free(&eigenvectors_at_k);
     }
 }
 
