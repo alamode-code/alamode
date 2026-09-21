@@ -29,7 +29,7 @@ class Conductivity
 
 public:
     Conductivity(const RunInfo &run, const System *system, const Symmetry *symmetry, const Fcs_phonon *fcs_phonon,
-                 const Ewald *ewald, Dynamical *dynamical, Integration *integration,
+                 const Ewald *ewald, const Dynamical *dynamical, Integration *integration,
                  const Thermodynamics *thermodynamics, const Dos *dos, const PhononVelocity *phonon_velocity,
                  AnharmonicCore *anharmonic_core, const Isotope *isotope);
 
@@ -188,7 +188,7 @@ private:
     const Symmetry *symmetry;
     const Fcs_phonon *fcs_phonon;
     const Ewald *ewald;
-    Dynamical *dynamical;
+    const Dynamical *dynamical;
     Integration *integration;
     const Thermodynamics *thermodynamics;
     const Dos *dos;

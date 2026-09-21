@@ -85,7 +85,7 @@ class Dynamical
 {
 public:
     Dynamical(const RunInfo &run, const System *system, const Kpoint *kpoint, const Fcs_phonon *fcs_phonon,
-              const Dielec *dielec, Ewald *ewald);
+              const Dielec *dielec, const Ewald *ewald);
 
     ~Dynamical();
 
@@ -125,7 +125,7 @@ public:
     // must not be used.  eval_out receives omega^2, as with eval_k.
     void diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec) const;
 
-    double freq(const double) const;
+    static double freq(const double);
 
     std::vector<bool> detect_acoustic_modes_at_gamma(const std::complex<double> *const *evec_gamma,
                                                      double projection_threshold = 0.9, bool verbose = true) const;
@@ -150,7 +150,7 @@ public:
 
     void set_projection_directions(const std::vector<std::vector<double>> projections_in);
 
-    void precompute_dymat_harm(const unsigned int nk_in, double **xk_in, double **kvec_in,
+    void precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_in,
                                std::vector<Eigen::MatrixXcd> &dymat_short,
                                std::vector<Eigen::MatrixXcd> &dymat_long) const;
 
@@ -160,7 +160,7 @@ public:
         const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
         const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
         const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-        MinimumDistList ***mindist_list, const unsigned int verbosity);
+        MinimumDistList ***mindist_list, const unsigned int verbosity) const;
 
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                             const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
@@ -172,12 +172,12 @@ public:
 
     void calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                   std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
-                                  const std::vector<int> &kmap_interpolate_to_scph);
+                                  const std::vector<int> &kmap_interpolate_to_scph) const;
 
     void get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                                const std::vector<FcsArrayWithCell> &fc2,
                                const std::vector<FcsArrayWithCell> &fc2_without_dipole_in, const bool require_evec,
-                               double **eval_ret, std::complex<double> ***evec_ret);
+                               double **eval_ret, std::complex<double> ***evec_ret) const;
 
 private:
     void set_default_variables();
@@ -201,7 +201,7 @@ private:
                                Eigen::MatrixXcd &evec_sub) const;
 
 
-    void duplicate_xk_boundary(const double *, std::vector<std::vector<double>> &);
+    static void duplicate_xk_boundary(const double *, std::vector<std::vector<double>> &);
 
 
     NDArray<double, 2> xshift_s;
@@ -215,7 +215,7 @@ private:
     const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
     const Dielec *dielec;
-    Ewald *ewald;
+    const Ewald *ewald;
 };
 
 } // namespace PHON_NS

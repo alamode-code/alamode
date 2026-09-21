@@ -78,7 +78,7 @@ public:
 
     void init();
 
-    void add_longrange_matrix(const double *, const double *, std::complex<double> **);
+    void add_longrange_matrix(const double *, const double *, std::complex<double> **) const;
 
     // Mass-free Fourier map of the dipole-dipole force constants at the
     // Cartesian wavevector xk_cart (1/bohr), with the macroscopic (G = 0)
@@ -89,7 +89,7 @@ public:
     // coefficient of this object yields the fixed-E (clamped-ion) elastic
     // response of the dipole lattice (Born & Huang, Sec. 26-27). Used by
     // ElasticTensor for the long-range-corrected elastic constants.
-    void calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &phi_out);
+    void calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &phi_out) const;
 
 private:
     std::vector<Gvecs> G_vectors_fcs;
@@ -127,13 +127,13 @@ private:
 
     void calc_reciprocal_space_sum_ewald_fcs(int, int, double **);
 
-    void calc_short_term_dynamical_matrix(int, int, double *, std::complex<double> **);
+    void calc_short_term_dynamical_matrix(int, int, double *, std::complex<double> **) const;
 
     void calc_long_term_dynamical_matrix(const int iat, const int jat, const Eigen::Vector3d &xk_in,
-                                         const Eigen::Vector3d &kvec_in, std::complex<double> **mat_out);
+                                         const Eigen::Vector3d &kvec_in, std::complex<double> **mat_out) const;
 
     void calc_realspace_sum(const int iat, const int jat, const double xdist[3], const double lambda_in,
-                            std::vector<std::vector<double>> &ret);
+                            std::vector<std::vector<double>> &ret) const;
 
     void calc_anisotropic_hmat(double, const double *, Eigen::Matrix3d &hmat_out) const;
 

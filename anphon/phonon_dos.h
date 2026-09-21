@@ -77,15 +77,15 @@ private:
                   const unsigned int neval, const int smearing_method, const unsigned int ntetra,
                   const unsigned int *const *tetras, double *ret) const;
 
-    void calc_atom_projected_dos(const unsigned int nk, double *const *eval, const unsigned int n,
+    void calc_atom_projected_dos(const unsigned int nk, const double *const *eval, const unsigned int n,
                                  const std::vector<double> &energy, double **ret, const unsigned int neval,
                                  const unsigned int natmin, const int smearing_method,
-                                 std::complex<double> ***evec) const;
+                                 const std::complex<double> *const *const *evec) const;
 
-    void calc_two_phonon_dos(double *const *eval, const unsigned int n, const std::vector<double> &energy,
+    void calc_two_phonon_dos(const double *const *eval, const unsigned int n, const std::vector<double> &energy,
                              const int smearing_method, double ***ret) const;
 
-    void calc_total_scattering_phase_space(double *const *eval_in, const int smearing_method, double ***ret_mode,
+    void calc_total_scattering_phase_space(const double *const *eval_in, const int smearing_method, double ***ret_mode,
                                            double &ret) const;
 
     void calc_scattering_phase_space_with_Bose(const double *const *eval_in, const int smearing_method,
@@ -97,10 +97,10 @@ private:
                                                     const int smearing_method, double **ret) const;
 
     void calc_longitudinal_projected_dos(const unsigned int nk, const double *const *xk_in,
-                                         const Eigen::Matrix3d &rlavec_p, double *const *eval, const unsigned int n,
-                                         const std::vector<double> &energy, double *ret, const unsigned int neval,
-                                         const unsigned int natmin, const int smearing_method,
-                                         std::complex<double> ***evec) const;
+                                         const Eigen::Matrix3d &rlavec_p, const double *const *eval,
+                                         const unsigned int n, const std::vector<double> &energy, double *ret,
+                                         const unsigned int neval, const unsigned int natmin, const int smearing_method,
+                                         const std::complex<double> *const *const *evec) const;
 
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).

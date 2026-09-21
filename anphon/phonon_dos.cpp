@@ -274,10 +274,10 @@ void Dos::calc_dos(const unsigned int nk, const unsigned int nk_irreducible, con
     }
 }
 
-void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, const unsigned int n,
+void Dos::calc_atom_projected_dos(const unsigned int nk, const double *const *eval, const unsigned int n,
                                   const std::vector<double> &energy, double **ret, const unsigned int neval,
                                   const unsigned int natmin, const int smearing_method,
-                                  std::complex<double> ***evec) const
+                                  const std::complex<double> *const *const *evec) const
 {
     // Calculate atom projected phonon-DOS
 
@@ -347,10 +347,11 @@ void Dos::calc_atom_projected_dos(const unsigned int nk, double *const *eval, co
 
 
 void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *const *xk_in,
-                                          const Eigen::Matrix3d &rlavec_p, double *const *eval, const unsigned int n,
-                                          const std::vector<double> &energy, double *ret, const unsigned int neval,
-                                          const unsigned int natmin, const int smearing_method,
-                                          std::complex<double> ***evec) const
+                                          const Eigen::Matrix3d &rlavec_p, const double *const *eval,
+                                          const unsigned int n, const std::vector<double> &energy, double *ret,
+                                          const unsigned int neval, const unsigned int natmin,
+                                          const int smearing_method,
+                                          const std::complex<double> *const *const *evec) const
 {
     // Calculate atom projected phonon-DOS
 
@@ -451,7 +452,7 @@ void Dos::calc_longitudinal_projected_dos(const unsigned int nk, const double *c
 }
 
 
-void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, const std::vector<double> &energy,
+void Dos::calc_two_phonon_dos(const double *const *eval_in, const unsigned int n, const std::vector<double> &energy,
                               const int smearing_method, double ***ret) const
 {
     int i, j;
@@ -569,7 +570,7 @@ void Dos::calc_two_phonon_dos(double *const *eval_in, const unsigned int n, cons
     }
 }
 
-void Dos::calc_total_scattering_phase_space(double *const *eval_in, const int smearing_method, double ***ret_mode,
+void Dos::calc_total_scattering_phase_space(const double *const *eval_in, const int smearing_method, double ***ret_mode,
                                             double &ret) const
 {
     int i, j;

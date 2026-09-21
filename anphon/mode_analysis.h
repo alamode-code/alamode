@@ -24,9 +24,9 @@ class ModeAnalysis
 {
 public:
     ModeAnalysis(const RunInfo &run, const System *system, const Symmetry *symmetry, Kpoint *kpoint,
-                 const Fcs_phonon *fcs_phonon, const Ewald *ewald, Dynamical *dynamical, const Integration *integration,
-                 const Thermodynamics *thermodynamics, Dos *dos, AnharmonicCore *anharmonic_core,
-                 const Selfenergy *selfenergy);
+                 const Fcs_phonon *fcs_phonon, const Ewald *ewald, const Dynamical *dynamical,
+                 const Integration *integration, const Thermodynamics *thermodynamics, Dos *dos,
+                 AnharmonicCore *anharmonic_core, const Selfenergy *selfenergy);
 
     ~ModeAnalysis();
 
@@ -168,7 +168,7 @@ private:
     Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
     const Ewald *ewald;
-    Dynamical *dynamical;
+    const Dynamical *dynamical;
     const Integration *integration;
     const Thermodynamics *thermodynamics;
     Dos *dos; // non-const: modify_eigenvectors rewrites dos->dymat_dos

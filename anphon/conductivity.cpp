@@ -48,7 +48,7 @@ static void build_block_table(const KpointMeshUniform *kmesh_in, const double *c
 
 
 Conductivity::Conductivity(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-                           const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, Dynamical *dynamical_in,
+                           const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, const Dynamical *dynamical_in,
                            Integration *integration_in, const Thermodynamics *thermodynamics_in, const Dos *dos_in,
                            const PhononVelocity *phonon_velocity_in, AnharmonicCore *anharmonic_core_in,
                            const Isotope *isotope_in) :

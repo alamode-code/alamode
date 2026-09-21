@@ -41,7 +41,7 @@ using namespace PHON_NS;
 
 AnharmonicCore::AnharmonicCore(const RunInfo &run_in, const Timer *timer_in, const System *system_in,
                                const Symmetry *symmetry_in, Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
-                               Dynamical *dynamical_in, const Integration *integration_in,
+                               const Dynamical *dynamical_in, const Integration *integration_in,
                                const Thermodynamics *thermodynamics_in, const Dos *dos_in) :
     run(run_in), timer(timer_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
     dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in), dos(dos_in)

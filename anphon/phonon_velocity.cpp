@@ -33,7 +33,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 using namespace PHON_NS;
 
 PhononVelocity::PhononVelocity(const RunInfo &run_in, const System *system_in, const Kpoint *kpoint_in,
-                               const Fcs_phonon *fcs_phonon_in, Ewald *ewald_in, const Dynamical *dynamical_in,
+                               const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, const Dynamical *dynamical_in,
                                const Dos *dos_in) :
     run(run_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
     dynamical(dynamical_in), dos(dos_in)
@@ -898,7 +898,7 @@ void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in, const std::ve
 // needed even for diagonal velocities: commutator cancellation applies
 // to the full dynamical matrix, not D_na alone.
 void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const double *omega_in,
-                                                     std::complex<double> **evec_in,
+                                                     const std::complex<double> *const *evec_in,
                                                      std::complex<double> ***velmat_inout,
                                                      const double *kvec_fixed) const
 {
@@ -1058,7 +1058,7 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
 }
 
 void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
-                                              const double *omega_in, std::complex<double> **evec_in,
+                                              const double *omega_in, const std::complex<double> *const *evec_in,
                                               std::complex<double> ***velmat_out) const
 {
     // Use Allen's definition

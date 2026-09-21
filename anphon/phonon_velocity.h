@@ -24,7 +24,7 @@ class PhononVelocity
 {
 public:
     PhononVelocity(const RunInfo &run, const System *system, const Kpoint *kpoint, const Fcs_phonon *fcs_phonon,
-                   Ewald *ewald, const Dynamical *dynamical, const Dos *dos);
+                   const Ewald *ewald, const Dynamical *dynamical, const Dos *dos);
 
     ~PhononVelocity();
 
@@ -66,12 +66,13 @@ public:
 
     // kvec_fixed: hold the nonanalytic direction fixed (band paths, where the
     // eigenproblem uses the segment direction). nullptr = radial, as on a mesh.
-    void add_nonanalytic_velocity_matrix(const double *xk_in, const double *omega_in, std::complex<double> **evec_in,
+    void add_nonanalytic_velocity_matrix(const double *xk_in, const double *omega_in,
+                                         const std::complex<double> *const *evec_in,
                                          std::complex<double> ***velmat_inout,
                                          const double *kvec_fixed = nullptr) const;
 
     void velocity_matrix_analytic(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
-                                  const double *omega_in, std::complex<double> **evec_in,
+                                  const double *omega_in, const std::complex<double> *const *evec_in,
                                   std::complex<double> ***velmat_out) const;
 
     bool print_velocity;
@@ -94,7 +95,7 @@ private:
     const System *system;
     const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
-    Ewald *ewald;
+    const Ewald *ewald;
     const Dynamical *dynamical;
     const Dos *dos;
 };

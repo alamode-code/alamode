@@ -87,8 +87,8 @@ class AnharmonicCore
 {
 public:
     AnharmonicCore(const RunInfo &run, const Timer *timer, const System *system, const Symmetry *symmetry,
-                   Fcs_phonon *fcs_phonon, const Ewald *ewald, Dynamical *dynamical, const Integration *integration,
-                   const Thermodynamics *thermodynamics, const Dos *dos);
+                   Fcs_phonon *fcs_phonon, const Ewald *ewald, const Dynamical *dynamical,
+                   const Integration *integration, const Thermodynamics *thermodynamics, const Dos *dos);
 
     ~AnharmonicCore();
 
@@ -417,7 +417,7 @@ private:
     const Symmetry *symmetry;
     Fcs_phonon *fcs_phonon;
     const Ewald *ewald;
-    Dynamical *dynamical;
+    const Dynamical *dynamical;
     const Integration *integration;
     const Thermodynamics *thermodynamics;
     const Dos *dos;

@@ -55,7 +55,7 @@ std::pair<int, int> degenerate_block(const double *w, const int ns, const int s)
 
 ModeAnalysis::ModeAnalysis(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
                            Kpoint *kpoint_in, const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
-                           Dynamical *dynamical_in, const Integration *integration_in,
+                           const Dynamical *dynamical_in, const Integration *integration_in,
                            const Thermodynamics *thermodynamics_in, Dos *dos_in, AnharmonicCore *anharmonic_core_in,
                            const Selfenergy *selfenergy_in) :
     run(run_in), system(system_in), symmetry(symmetry_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in),

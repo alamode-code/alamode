@@ -305,7 +305,7 @@ void ElasticTensor::calc_elastic_tensor(const std::vector<FcsArrayWithCell> &fcs
     brackets_to_elastic(A, C_gpa, symmetrize);
 }
 
-void ElasticTensor::calc_longwave_brackets_dipole(Ewald &ewald_in, NDArray<double, 4> &ret) const
+void ElasticTensor::calc_longwave_brackets_dipole(const Ewald &ewald_in, NDArray<double, 4> &ret) const
 {
     // A^DD_{ab,cd} = 1/2 d^2/dq_c dq_d [sum_{kappa kappa'} Phi^DD(q)]_{ab} at
     // q -> 0, with the macroscopic (G = 0) term excluded so that the result is
@@ -368,7 +368,7 @@ void ElasticTensor::calc_longwave_brackets_dipole(Ewald &ewald_in, NDArray<doubl
     }
 }
 
-void ElasticTensor::calc_elastic_tensor_longrange(const std::vector<FcsArrayWithCell> &fcs_short, Ewald &ewald_in,
+void ElasticTensor::calc_elastic_tensor_longrange(const std::vector<FcsArrayWithCell> &fcs_short, const Ewald &ewald_in,
                                                   NDArray<double, 4> &C_gpa, const bool symmetrize) const
 {
     NDArray<double, 4> A, A_dd;

@@ -41,7 +41,7 @@
 using namespace PHON_NS;
 
 Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Kpoint *kpoint_in,
-                     const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, Ewald *ewald_in) :
+                     const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, const Ewald *ewald_in) :
     run(run_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in), ewald(ewald_in)
 {
     set_default_variables();
@@ -871,7 +871,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
 void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in,
                                       const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
                                       const std::vector<FcsArrayWithCell> &fc2_without_dipole_in,
-                                      const bool require_evec, double **eval_ret, std::complex<double> ***evec_ret)
+                                      const bool require_evec, double **eval_ret,
+                                      std::complex<double> ***evec_ret) const
 {
     if (nk_in <= 0) {
         exit("get_eigenvalues_dymat", "The number of k points must be larger than 0.");
@@ -1255,7 +1256,7 @@ int Dynamical::transform_eigenvectors(const double *xk_in, std::vector<double> p
     return is_lifted;
 }
 
-double Dynamical::freq(const double x) const
+double Dynamical::freq(const double x)
 {
     // Special treatment to avoid the divergence of computation.
     if (std::abs(x) < eps) return eps15;
@@ -1520,8 +1521,8 @@ std::vector<std::vector<double>> Dynamical::get_projection_directions() const
     return projection_directions;
 }
 
-void Dynamical::precompute_dymat_harm(const unsigned int nk_in, double **xk_in, double **kvec_in,
-                                      std::vector<Eigen::MatrixXcd> &dymat_short,
+void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in,
+                                      const double *const *kvec_in, std::vector<Eigen::MatrixXcd> &dymat_short,
                                       std::vector<Eigen::MatrixXcd> &dymat_long) const
 {
     const auto ns = neval;
@@ -1582,7 +1583,7 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
     const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
     const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-    MinimumDistList ***mindist_list, const unsigned int verbosity)
+    MinimumDistList ***mindist_list, const unsigned int verbosity) const
 {
     using namespace Eigen;
 
@@ -1796,7 +1797,7 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
 
 void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                          std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
-                                         const std::vector<int> &kmap_interpolate_to_scph)
+                                         const std::vector<int> &kmap_interpolate_to_scph) const
 {
     std::complex<double> im(0.0, 1.0);
 

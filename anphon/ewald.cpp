@@ -702,7 +702,7 @@ void Ewald::calc_reciprocal_space_sum_ewald_fcs(const int iat, const int jat, do
     }
 }
 
-void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std::complex<double> **dymat_k_out)
+void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std::complex<double> **dymat_k_out) const
 {
     int icrd, jcrd, iat, jat;
     const auto natmin = system->get_primcell().number_of_atoms;
@@ -751,7 +751,7 @@ void Ewald::add_longrange_matrix(const double *xk_in, const double *kvec_in, std
     }
 }
 
-void Ewald::calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &phi_out)
+void Ewald::calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &phi_out) const
 {
     const auto natmin = system->get_primcell().number_of_atoms;
     const auto map_p2s = system->get_map_p2s(0);
@@ -821,7 +821,7 @@ void Ewald::calc_dipole_fcs_q(const Eigen::Vector3d &xk_cart, Eigen::MatrixXcd &
 }
 
 void Ewald::calc_short_term_dynamical_matrix(const int iat, const int jat, double *xk_in,
-                                             std::complex<double> **mat_out)
+                                             std::complex<double> **mat_out) const
 {
     // Real lattice sum part for a dynamical matrix
     // iat : atom index in the primitive cell
@@ -967,7 +967,7 @@ void Ewald::calc_short_term_dynamical_matrix(const int iat, const int jat, doubl
 }
 
 void Ewald::calc_long_term_dynamical_matrix(const int iat, const int jat, const Eigen::Vector3d &xk_in,
-                                            const Eigen::Vector3d &kvec_in, std::complex<double> **mat_out)
+                                            const Eigen::Vector3d &kvec_in, std::complex<double> **mat_out) const
 {
     // Reciprocal lattice sum part for a dynamical matrix
 
@@ -1113,7 +1113,7 @@ void Ewald::calc_long_term_dynamical_matrix(const int iat, const int jat, const 
 }
 
 void Ewald::calc_realspace_sum(const int iat, const int jat, const double xdist[3], const double lambda_in,
-                               std::vector<std::vector<double>> &ret)
+                               std::vector<std::vector<double>> &ret) const
 {
     // iat : atom index in the supercell
     // jat : atom index in the supercell

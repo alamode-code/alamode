@@ -134,14 +134,14 @@ public:
     // q-derivative of the Ewald dipole force-constant map with the
     // macroscopic (G = 0) term excluded (fixed-E response; Born & Huang,
     // Sec. 26-27). Requires the Ewald machinery (NONANALYTIC = 3).
-    void calc_longwave_brackets_dipole(Ewald &ewald_in, NDArray<double, 4> &ret) const;
+    void calc_longwave_brackets_dipole(const Ewald &ewald_in, NDArray<double, 4> &ret) const;
 
     // Clamped-ion elastic tensor with the dipole long-range correction:
     // brackets of the short-range IFCs (Ewald::fc2_without_dipole, i.e. the
     // fitted IFCs minus the supercell-folded dipole part) plus the analytic
     // dipole brackets of the infinite lattice. Cures the slow supercell-size
     // convergence of the plain bracket sums in polar crystals.
-    void calc_elastic_tensor_longrange(const std::vector<FcsArrayWithCell> &fcs_short, Ewald &ewald_in,
+    void calc_elastic_tensor_longrange(const std::vector<FcsArrayWithCell> &fcs_short, const Ewald &ewald_in,
                                        NDArray<double, 4> &C_gpa, bool symmetrize = true) const;
 
     // Print the brackets A [Ry], the clamped-ion C [GPa], and the Voigt bulk modulus.

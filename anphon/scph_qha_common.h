@@ -53,7 +53,7 @@ struct ScphQhaCollaborators
     const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
     const Dielec *dielec;
-    Dynamical *dynamical;
+    const Dynamical *dynamical;
     const Integration *integration;
     Thermodynamics *thermodynamics;
     Dos *dos;
@@ -84,7 +84,7 @@ protected:
     const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
     const Dielec *dielec;
-    Dynamical *dynamical;
+    const Dynamical *dynamical;
     const Integration *integration;
     Thermodynamics *thermodynamics;
     Dos *dos;
