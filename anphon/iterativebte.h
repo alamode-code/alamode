@@ -1,36 +1,11 @@
 /*
- conductivity.h
+ iterativebte.h
 
- Copyright (c) 2014, 2015, 2016 Terumasa Tadano
+ Copyright (c) 2020 Terumasa Tadano, Wenhao Zhang
 
  This file is distributed under the terms of the MIT license.
  Please see the file 'LICENCE.txt' in the root directory 
  or http://opensource.org/licenses/mit-license.php for information.
-*/
-
-
-/*
-implementation of the iterative bte
-additional parameter:
-    ITERATIVE = 1 -> do iterative calculation
-    MAX_CYCLE = 20 (default)
-    ITER_THRESHOLD = 0.005 (default)
-    
-we need to calculate and store: 
-- k points in the irreducible BZ are divided amoung processors.
-- we calculate L absorb and L emitt, the transition probability of absorption and emission process
-- we go through each temperature, for each temperature, we calculate Q, W is calculated for each iteration
-- for each temperature, we check for convergence
-
-Improvement:
-- how to implement a restart? 
-    iterative part is fast, the time consuming part is the calculation of L
-    so for restart, we should write down L, this means we should change the for so that L contains 
-    the iteration of ik and s1, which we then write out at each iteration.
-    we also need to implement the read and write part.
-    
-- add the direct solution method
-
 */
 
 #pragma once

@@ -1,7 +1,7 @@
 /*
  interpolation.h
 
- Copyright (c) 2021 Terumasa Tadano
+ Copyright (c) 2021 Terumasa Tadano, Wenhao Zhang
 
  This file is distributed under the terms of the MIT license.
  Please see the file 'LICENCE.txt' in the root directory

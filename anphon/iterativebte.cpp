@@ -1,3 +1,13 @@
+/*
+iterativebte.cpp
+
+ Copyright (c) 2020 Terumasa Tadano, Wenhao Zhang
+
+ This file is distributed under the terms of the MIT license.
+ Please see the file 'LICENCE.txt' in the root directory 
+ or http://opensource.org/licenses/mit-license.php for information.
+*/
+
 #include "iterativebte.h"
 #include <Eigen/Dense>
 #include <fstream>
@@ -25,13 +35,6 @@
 #include "thermodynamics.h"
 #include "write_phonons.h"
 
-//mpic++ -o3 -std=c++11 -I../include -I/Users/wenhao/mylib/include -I/Users/wenhao/mylib/spg/include -I/Users/wenhao/mylib/fftw/3.3.9/include -c iterativebte.cpp
-//
-// DONE: test tetrahedron method
-// DONE: test with isotope
-// TODO: test with more grid
-// TODO: calculation from a restart
-// TODO: write .result file
 
 using namespace PHON_NS;
 
