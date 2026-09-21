@@ -20,6 +20,8 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 namespace PHON_NS
 {
+class Integration;
+class TetraNodes;
 
 class RelativeVector
 {
@@ -86,8 +88,7 @@ private:
 class AnharmonicCore
 {
 public:
-    AnharmonicCore(const RunInfo &run, const System *system, const Symmetry *symmetry, const Integration *integration,
-                   const Thermodynamics *thermodynamics, const Dos *dos);
+    AnharmonicCore(const RunInfo &run, const System *system);
 
     ~AnharmonicCore();
 
@@ -110,7 +111,7 @@ public:
                                   const double *xq, const double omega_q, const std::complex<double> *evec_q,
                                   const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                   const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
-                                  double *ret);
+                                  const Integration &integration_in, const bool classical, double *ret);
 
     // Tetrahedron weights use mesh connectivity and average degenerate internal branches.
     // Both difference channels are explicit.
@@ -118,7 +119,7 @@ public:
                                      const double *xq, const double omega_q, const std::complex<double> *evec_q,
                                      const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                      const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
-                                     double *ret);
+                                     const TetraNodes &tetra_nodes_in, const bool classical, double *ret);
 
     // Im Sigma(omega), without degenerate-block averaging (as in the mesh kernel).
     // Keep both difference channels: off-mesh k lists lack k <-> q - k symmetry.
@@ -127,7 +128,7 @@ public:
                                         const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in,
                                         const ShiftedGrid &sg, const unsigned int nomega, const double *omega,
-                                        double *ret);
+                                        const TetraNodes &tetra_nodes_in, const bool classical, double *ret);
 
     // Average delta[2*(is*ns+js)+c] over degenerate internal blocks for gauge invariance.
     static void bubble_average_degenerate(const int ns, const double *w1_arr, const double *w2_arr, double *delta);
@@ -143,12 +144,14 @@ public:
     void calc_damping_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
                                const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                               double *ret);
+                               const std::vector<SymmetryOperation> &symmlist, const Integration &integration_in,
+                               const bool classical, double *ret);
 
     void calc_damping_tetrahedron(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                   const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
                                   const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                  double *ret);
+                                  const std::vector<SymmetryOperation> &symmlist, const TetraNodes &tetra_nodes_in,
+                                  const bool classical, double *ret);
 
     // Four-phonon linewidth with smearing (four_phonon.cpp): the quartic
     // matrix elements of all band triples of a quartet are formed by
@@ -157,7 +160,8 @@ public:
     void calc_damping4_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                 const unsigned int ik_in, const unsigned int is_in, const KpointMeshUniform *kmesh_in,
                                 const double *const *eval_in, const std::complex<double> *const *const *evec_in,
-                                double *ret);
+                                const std::vector<SymmetryOperation> &symmlist, const Integration &integration_in,
+                                const bool classical, double *ret);
 
     // a wrapper to return v3
     //std::complex<double> get_v3(const unsigned int [3],
@@ -238,7 +242,8 @@ public:
     void calc_self3omega_tetrahedron(const double Temp, const KpointMeshUniform *kmesh_in, const double *const *eval,
                                      const std::complex<double> *const *const *evec, const unsigned int ik_in,
                                      const unsigned int snum, const unsigned int nomega, const double *omega,
-                                     double *ret);
+                                     const std::vector<SymmetryOperation> &symmlist, const TetraNodes &tetra_nodes_in,
+                                     const bool classical, double *ret);
 
     // Stateless: the cubic group data and the phase cache are all it reads.
     static void calc_phi3_reciprocal(const double *xk1, const double *xk2, const int ngroup_v3_in,
@@ -420,9 +425,5 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Symmetry *symmetry;
-    const Integration *integration;
-    const Thermodynamics *thermodynamics;
-    const Dos *dos; // only tetra_nodes_dos, in three_phonon.cpp; to be passed as an argument next
 };
 } // namespace PHON_NS

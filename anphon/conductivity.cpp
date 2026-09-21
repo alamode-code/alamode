@@ -956,6 +956,9 @@ void Conductivity::calc_anharmonic_imagself3()
                                                        dos->kmesh_dos.get(),
                                                        dos->dymat_dos->get_eigenvalues(),
                                                        dos->dymat_dos->get_eigenvectors(),
+                                                       symmetry->SymmList,
+                                                       *integration,
+                                                       thermodynamics->classical,
                                                        damping3_loc);
             } else if (integration->ismear == -1) {
                 anharmonic_core->calc_damping_tetrahedron(ntemp,
@@ -966,6 +969,9 @@ void Conductivity::calc_anharmonic_imagself3()
                                                           dos->kmesh_dos.get(),
                                                           dos->dymat_dos->get_eigenvalues(),
                                                           dos->dymat_dos->get_eigenvectors(),
+                                                          symmetry->SymmList,
+                                                          *dos->tetra_nodes_dos,
+                                                          thermodynamics->classical,
                                                           damping3_loc);
             }
         }
@@ -1082,6 +1088,9 @@ void Conductivity::calc_anharmonic_imagself4()
                                                         kmesh_4ph.get(),
                                                         dymat_4ph->get_eigenvalues(),
                                                         dymat_4ph->get_eigenvectors(),
+                                                        symmetry->SymmList,
+                                                        *integration,
+                                                        thermodynamics->classical,
                                                         damping4_loc);
             } else if (integration->ismear_4ph == -1) {
                 // TODO: Implement tetrahedron method for 4ph scattering

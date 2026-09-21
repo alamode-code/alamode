@@ -171,9 +171,10 @@ public:
     static bool add_tetrahedron_weight(const unsigned int *map_to_irreducible_k, const double *energy,
                                        const double e_ref, const unsigned int *tetra, double *weight);
 
-    void calc_weight_tetrahedron(const unsigned int nk_irreducible, const unsigned int *map_to_irreducible_k,
-                                 const double *energy, const double e_ref, const unsigned int ntetra,
-                                 const unsigned int *const *tetras, double *weight) const;
+    // Stateless: only add_tetrahedron_weight and the arguments are involved.
+    static void calc_weight_tetrahedron(const unsigned int nk_irreducible, const unsigned int *map_to_irreducible_k,
+                                        const double *energy, const double e_ref, const unsigned int ntetra,
+                                        const unsigned int *const *tetras, double *weight);
 
     void calc_weight_smearing(const unsigned int nk, const unsigned int nk_irreducible,
                               const unsigned int *map_to_irreducible_k, const double *energy, const double e_ref,

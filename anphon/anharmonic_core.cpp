@@ -17,16 +17,13 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "constants.h"
 #include "error.h"
 #include "fcs_phonon.h"
-#include "integration.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mode_analysis.h"
 #include "mpi_common.h"
-#include "phonon_dos.h"
 #include "stage_timer.h"
 #include "system.h"
-#include "thermodynamics.h"
 #include "write_phonons.h"
 
 #ifdef _OPENMP
@@ -37,11 +34,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-AnharmonicCore::AnharmonicCore(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-                               const Integration *integration_in, const Thermodynamics *thermodynamics_in,
-                               const Dos *dos_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in), integration(integration_in),
-    thermodynamics(thermodynamics_in), dos(dos_in)
+AnharmonicCore::AnharmonicCore(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 }

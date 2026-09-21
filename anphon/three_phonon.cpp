@@ -28,7 +28,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "kpoint.h"
 #include "mathfunctions.h"
 #include "mpi_common.h"
-#include "phonon_dos.h"
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
@@ -562,7 +561,7 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
                                               const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
                                               const double *const *eval_in,
                                               const std::complex<double> *const *const *evec_in, const ShiftedGrid &sg,
-                                              double *ret)
+                                              const Integration &integration_in, const bool classical, double *ret)
 {
     const int nk = kmesh_in->nk;
     const int ns = system->get_num_modes();
@@ -571,7 +570,7 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
 
     for (unsigned int i = 0; i < ntemp; ++i) ret[i] = 0.0;
     if (ngroup_v3 == 0) return;
-    if (integration->ismear == 2) {
+    if (integration_in.ismear == 2) {
         exit("calc_damping_smearing_at", "Adaptive smearing (ISMEAR = 2) is not available for k points off the mesh.");
     }
 
@@ -579,12 +578,11 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
     std::vector<std::complex<double>> e0(ns);
     for (auto a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
 
-    const bool classical = thermodynamics->classical;
     std::vector<double> occ, occ_s;
     tabulate_occupations(ntemp, temp_in, nk, ns, eval_in, classical, occ);
     tabulate_occupations(ntemp, temp_in, nk, ns, sg.eval, classical, occ_s);
-    const int ismear = integration->ismear;
-    const double epsilon = integration->epsilon;
+    const int ismear = integration_in.ismear;
+    const double epsilon = integration_in.epsilon;
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -688,7 +686,8 @@ void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const
                                                  const std::complex<double> *evec_q, const KpointMeshUniform *kmesh_in,
                                                  const double *const *eval_in,
                                                  const std::complex<double> *const *const *evec_in,
-                                                 const ShiftedGrid &sg, double *ret)
+                                                 const ShiftedGrid &sg, const TetraNodes &tetra_nodes_in,
+                                                 const bool classical, double *ret)
 {
     const int nk = kmesh_in->nk;
     const int ns = system->get_num_modes();
@@ -719,12 +718,12 @@ void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const
                 energy_tmp[2][k] = -energy_tmp[1][k];
             }
             for (auto i = 0; i < 3; ++i) {
-                integration->calc_weight_tetrahedron(nk,
+                Integration::calc_weight_tetrahedron(nk,
                                                      kmap_identity,
                                                      energy_tmp[i],
                                                      omega_in,
-                                                     dos->tetra_nodes_dos->get_ntetra(),
-                                                     dos->tetra_nodes_dos->get_tetras(),
+                                                     tetra_nodes_in.get_ntetra(),
+                                                     tetra_nodes_in.get_tetras(),
                                                      weight_tetra[i]);
             }
             for (auto k = 0; k < nk; ++k) {
@@ -737,7 +736,6 @@ void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const
 
     std::vector<std::complex<double>> e0(ns);
     for (auto a = 0; a < ns; ++a) e0[a] = std::conj(evec_q[a]);
-    const bool classical = thermodynamics->classical;
     std::vector<double> occ, occ_s;
     tabulate_occupations(ntemp, temp_in, nk, ns, eval_in, classical, occ);
     tabulate_occupations(ntemp, temp_in, nk, ns, sg.eval, classical, occ_s);
@@ -791,7 +789,8 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
                                                     const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                                     const std::complex<double> *const *const *evec_in,
                                                     const ShiftedGrid &sg, const unsigned int nomega,
-                                                    const double *omega, double *ret)
+                                                    const double *omega, const TetraNodes &tetra_nodes_in,
+                                                    const bool classical, double *ret)
 {
     const int nk = kmesh_in->nk;
     const int ns = system->get_num_modes();
@@ -833,7 +832,6 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
 
     NDArray<unsigned int, 1> kmap_identity(nk);
     for (auto i = 0; i < nk; ++i) kmap_identity[i] = i;
-    const bool classical = thermodynamics->classical;
     std::vector<double> occ, occ_s;
     tabulate_occupations(1, &Temp, nk, ns, eval_in, classical, occ);
     tabulate_occupations(1, &Temp, nk, ns, sg.eval, classical, occ_s);
@@ -857,12 +855,12 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
             }
             for (unsigned int iomega = 0; iomega < nomega; ++iomega) {
                 for (auto i = 0; i < 3; ++i) {
-                    integration->calc_weight_tetrahedron(nk,
+                    Integration::calc_weight_tetrahedron(nk,
                                                          kmap_identity,
                                                          energy_tmp[i],
                                                          omega[iomega],
-                                                         dos->tetra_nodes_dos->get_ntetra(),
-                                                         dos->tetra_nodes_dos->get_tetras(),
+                                                         tetra_nodes_in.get_ntetra(),
+                                                         tetra_nodes_in.get_tetras(),
                                                          weight_tetra[i]);
                 }
                 double sum = 0.0;
@@ -890,7 +888,9 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
 void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                            const unsigned int ik_in, const unsigned int is_in,
                                            const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                           const std::complex<double> *const *const *evec_in, double *ret)
+                                           const std::complex<double> *const *const *evec_in,
+                                           const std::vector<SymmetryOperation> &symmlist,
+                                           const Integration &integration_in, const bool classical, double *ret)
 {
     // Imaginary part of the phonon self-energy at omega_in with Lorentzian,
     // Gaussian or adaptive Gaussian smearing (ISMEAR = 0, 1, 2).
@@ -904,7 +904,7 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
     if (ngroup_v3 == 0) return;
 
     std::vector<KsListGroup> triplet;
-    kmesh_in->get_unique_triplet_k(ik_in, symmetry->SymmList, false, false, triplet);
+    kmesh_in->get_unique_triplet_k(ik_in, symmlist, false, false, triplet);
     const int npair_uniq = static_cast<int>(triplet.size());
 
     const int knum = kmesh_in->kpoint_irred_all[ik_in][0].knum;
@@ -912,23 +912,23 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
 
     prepare_v3_mode(kmesh_in, knum_minus, static_cast<int>(is_in), evec_in);
 
-    const bool classical = thermodynamics->classical;
     std::vector<double> occ;
     tabulate_occupations(ntemp, temp_in, nk, ns, eval_in, classical, occ);
 
-    const int ismear = integration->ismear;
-    const double epsilon = integration->epsilon;
+    const int ismear = integration_in.ismear;
+    const double epsilon = integration_in.epsilon;
     const bool adaptive = ismear == 2;
     std::vector<double> proj;
     double adaptive_factor = 0.0;
     if (adaptive) {
         proj.resize(3 * nks);
+        // adaptive_sigma is tabulated on the DOS mesh; kmesh_in is assumed to be that mesh.
         for (auto ik = 0; ik < nk; ++ik) {
             for (auto is = 0; is < ns; ++is) {
-                integration->adaptive_sigma->get_projected_velocity(ik, is, &proj[3 * (ik * ns + is)]);
+                integration_in.adaptive_sigma->get_projected_velocity(ik, is, &proj[3 * (ik * ns + is)]);
             }
         }
-        adaptive_factor = integration->adaptive_sigma->get_adaptive_factor();
+        adaptive_factor = integration_in.adaptive_sigma->get_adaptive_factor();
     }
 
 #ifdef _OPENMP
@@ -984,7 +984,9 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
 void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                               const unsigned int ik_in, const unsigned int is_in,
                                               const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                              const std::complex<double> *const *const *evec_in, double *ret)
+                                              const std::complex<double> *const *const *evec_in,
+                                              const std::vector<SymmetryOperation> &symmlist,
+                                              const TetraNodes &tetra_nodes_in, const bool classical, double *ret)
 {
     // Imaginary part of the phonon self-energy at omega_in with the
     // tetrahedron method. The crystal symmetry reduces the triplets.
@@ -998,7 +1000,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
     if (ngroup_v3 == 0) return;
 
     std::vector<KsListGroup> triplet;
-    kmesh_in->get_unique_triplet_k(ik_in, symmetry->SymmList, use_triplet_symmetry, sym_permutation, triplet);
+    kmesh_in->get_unique_triplet_k(ik_in, symmlist, use_triplet_symmetry, sym_permutation, triplet);
     const int npair_uniq = static_cast<int>(triplet.size());
 
     NDArray<double, 3> delta_arr;
@@ -1038,12 +1040,12 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
             }
 
             for (auto i = 0; i < 3; ++i) {
-                integration->calc_weight_tetrahedron(nk,
+                Integration::calc_weight_tetrahedron(nk,
                                                      kmap_identity,
                                                      energy_tmp[i],
                                                      omega_in,
-                                                     dos->tetra_nodes_dos->get_ntetra(),
-                                                     dos->tetra_nodes_dos->get_tetras(),
+                                                     tetra_nodes_in.get_ntetra(),
+                                                     tetra_nodes_in.get_tetras(),
                                                      weight_tetra[i]);
             }
 
@@ -1055,8 +1057,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
                 auto w0 = 0.0, w12 = 0.0;
                 for (const auto &member: group) {
                     // A permutation-swapped member (S q2, S q1) carries its weight at S q1.
-                    const auto direct =
-                        kmesh_in->knum_sym(k1_rep, symmetry->SymmList[member.symnum].rotation) == member.ks[0];
+                    const auto direct = kmesh_in->knum_sym(k1_rep, symmlist[member.symnum].rotation) == member.ks[0];
                     const auto jk = direct ? member.ks[0] : member.ks[1];
                     w0 += weight_tetra[0][jk];
                     w12 += weight_tetra[1][jk] - weight_tetra[2][jk];
@@ -1077,7 +1078,6 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
 
     prepare_v3_mode(kmesh_in, knum_minus, static_cast<int>(is_in), evec_in);
 
-    const bool classical = thermodynamics->classical;
     std::vector<double> occ;
     tabulate_occupations(ntemp, temp_in, nk, ns, eval_in, classical, occ);
 
@@ -1125,7 +1125,9 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
                                                  const double *const *eval,
                                                  const std::complex<double> *const *const *evec,
                                                  const unsigned int ik_in, const unsigned int snum,
-                                                 const unsigned int nomega, const double *omega, double *ret)
+                                                 const unsigned int nomega, const double *omega,
+                                                 const std::vector<SymmetryOperation> &symmlist,
+                                                 const TetraNodes &tetra_nodes_in, const bool classical, double *ret)
 {
     // Frequency-dependent imaginary part of the self-energy of mode
     // (ik_in, snum) at temperature Temp with the tetrahedron method. The
@@ -1139,7 +1141,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
     if (ngroup_v3 == 0) return;
 
     std::vector<KsListGroup> triplet;
-    kmesh_in->get_unique_triplet_k(ik_in, symmetry->SymmList, false, false, triplet);
+    kmesh_in->get_unique_triplet_k(ik_in, symmlist, false, false, triplet);
     const int npair_uniq = static_cast<int>(triplet.size());
     if (npair_uniq != nk) {
         exit("calc_self3omega_tetrahedron", "Something is wrong.");
@@ -1196,7 +1198,6 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
         kmap_identity.resize(nk);
         for (auto i = 0; i < nk; ++i) kmap_identity[i] = i;
 
-        const bool classical = thermodynamics->classical;
         std::vector<double> occ;
         tabulate_occupations(1, &Temp, nk, ns, eval, classical, occ);
 
@@ -1223,12 +1224,12 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
                 }
                 for (unsigned int iomega = 0; iomega < nomega; ++iomega) {
                     for (auto i = 0; i < 2; ++i) {
-                        integration->calc_weight_tetrahedron(nk,
+                        Integration::calc_weight_tetrahedron(nk,
                                                              kmap_identity,
                                                              energy_tmp[i],
                                                              omega[iomega],
-                                                             dos->tetra_nodes_dos->get_ntetra(),
-                                                             dos->tetra_nodes_dos->get_tetras(),
+                                                             tetra_nodes_in.get_ntetra(),
+                                                             tetra_nodes_in.get_tetras(),
                                                              weight_tetra[i]);
                     }
                     double sum = 0.0;

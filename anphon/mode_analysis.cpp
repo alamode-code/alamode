@@ -753,6 +753,9 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                                           dos->kmesh_dos.get(),
                                                           dos->dymat_dos->get_eigenvalues(),
                                                           dos->dymat_dos->get_eigenvectors(),
+                                                          symmetry->SymmList,
+                                                          *dos->tetra_nodes_dos,
+                                                          thermodynamics->classical,
                                                           damping_tmp);
             } else if (!calc_realpart) {
                 anharmonic_core->calc_damping_smearing(NT,
@@ -763,6 +766,9 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
                                                        dos->kmesh_dos.get(),
                                                        dos->dymat_dos->get_eigenvalues(),
                                                        dos->dymat_dos->get_eigenvectors(),
+                                                       symmetry->SymmList,
+                                                       *integration,
+                                                       thermodynamics->classical,
                                                        damping_tmp);
             } else {
                 selfenergy->selfenergy_a(NT,
@@ -1108,6 +1114,8 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                                                              dos->dymat_dos->get_eigenvalues(),
                                                              dos->dymat_dos->get_eigenvectors(),
                                                              sg,
+                                                             *dos->tetra_nodes_dos,
+                                                             thermodynamics->classical,
                                                              damping_tmp);
             } else {
                 anharmonic_core->calc_damping_smearing_at(NT,
@@ -1120,6 +1128,8 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
                                                           dos->dymat_dos->get_eigenvalues(),
                                                           dos->dymat_dos->get_eigenvectors(),
                                                           sg,
+                                                          *integration,
+                                                          thermodynamics->classical,
                                                           damping_tmp);
             }
             for (unsigned int j = 0; j < NT; ++j) damping[j] += damping_tmp[j] / nblock;
@@ -2771,6 +2781,9 @@ void ModeAnalysis::print_spectral_function(const unsigned int NT, const double *
                                                                  s,
                                                                  nomega,
                                                                  omega_array,
+                                                                 symmetry->SymmList,
+                                                                 *dos->tetra_nodes_dos,
+                                                                 thermodynamics->classical,
                                                                  imag_tmp);
                     for (iomega = 0; iomega < nomega; ++iomega) self3_imag[iT][iomega] += imag_tmp[iomega] / nblock;
                 }
@@ -2894,6 +2907,8 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
                                                                     sg,
                                                                     nomega,
                                                                     omega_array,
+                                                                    *dos->tetra_nodes_dos,
+                                                                    thermodynamics->classical,
                                                                     imag_tmp);
                     for (unsigned int iomega = 0; iomega < nomega; ++iomega)
                         self_imag[iomega] += imag_tmp[iomega] / nblock;

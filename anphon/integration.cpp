@@ -355,7 +355,7 @@ bool Integration::add_tetrahedron_weight(const unsigned int *map_to_irreducible_
 
 void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible, const unsigned int *map_to_irreducible_k,
                                           const double *energy, const double e_ref, const unsigned int ntetra,
-                                          const unsigned int *const *tetras, double *weight) const
+                                          const unsigned int *const *tetras, double *weight)
 {
     int i;
 

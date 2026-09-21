@@ -299,7 +299,9 @@ void AnharmonicCore::prepare_fc4_compressed()
 void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const double *temp_in, const double omega_in,
                                             const unsigned int ik_in, const unsigned int is_in,
                                             const KpointMeshUniform *kmesh_in, const double *const *eval_in,
-                                            const std::complex<double> *const *const *evec_in, double *ret)
+                                            const std::complex<double> *const *const *evec_in,
+                                            const std::vector<SymmetryOperation> &symmlist,
+                                            const Integration &integration_in, const bool classical, double *ret)
 {
     using Cplx = std::complex<double>;
     using MatrixRow = Eigen::Matrix<Cplx, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -342,7 +344,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
         quartet_cache_flags != (use_quartet_symmetry ? 2 : 0) + (sym_permutation ? 1 : 0))
     {
         std::vector<KsListGroup> quartet_full;
-        kmesh_in->get_unique_quartet_k(ik_in, symmetry->SymmList, use_quartet_symmetry, sym_permutation, quartet_full);
+        kmesh_in->get_unique_quartet_k(ik_in, symmlist, use_quartet_symmetry, sym_permutation, quartet_full);
         quartet_cache_k.resize(3 * quartet_full.size());
         quartet_cache_multi.resize(quartet_full.size());
         for (size_t iq = 0; iq < quartet_full.size(); ++iq) {
@@ -405,7 +407,6 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     }
 
     // Occupation numbers occ[itemp][k * ns + s].
-    const bool classical = thermodynamics->classical;
     const size_t nks = static_cast<size_t>(nk) * ns;
     std::vector<double> occ(static_cast<size_t>(ntemp) * nks);
     for (unsigned int it = 0; it < ntemp; ++it) {
@@ -428,20 +429,21 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
 
     // Smearing settings. For the adaptive scheme the widths are quadratic
     // forms of the projections of the group velocities on the mesh spacings.
-    const int ismear = integration->ismear_4ph;
-    const double epsilon = integration->epsilon_4ph;
+    const int ismear = integration_in.ismear_4ph;
+    const double epsilon = integration_in.epsilon_4ph;
     const bool adaptive = (ismear == 2);
     std::vector<double> proj;
     double adaptive_factor2 = 0.0;
     double sigma_min2 = 0.0;
     if (adaptive) {
         proj.resize(3 * nks);
+        // adaptive_sigma4 is tabulated on kmesh_4ph; kmesh_in is assumed to be that mesh.
         for (auto ik = 0; ik < nk; ++ik) {
             for (auto is = 0; is < ns; ++is) {
-                integration->adaptive_sigma4->get_projected_velocity(ik, is, &proj[3 * (ik * ns + is)]);
+                integration_in.adaptive_sigma4->get_projected_velocity(ik, is, &proj[3 * (ik * ns + is)]);
             }
         }
-        const auto f = integration->adaptive_sigma4->get_adaptive_factor();
+        const auto f = integration_in.adaptive_sigma4->get_adaptive_factor();
         adaptive_factor2 = f * f / 12.0;
         sigma_min2 = AdaptiveSmearingSigma::sigma_min * AdaptiveSmearingSigma::sigma_min;
     }
