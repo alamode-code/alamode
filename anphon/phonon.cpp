@@ -73,10 +73,8 @@ void PHON::create_pointers()
     dos = std::make_unique<Dos>(run_info, system.get());
     phonon_velocity = std::make_unique<PhononVelocity>(run_info, system.get());
     anharmonic_core = std::make_unique<AnharmonicCore>(run_info,
-                                                       timer.get(),
                                                        system.get(),
                                                        symmetry.get(),
-                                                       fcs_phonon.get(),
                                                        integration.get(),
                                                        thermodynamics.get(),
                                                        dos.get());
@@ -263,7 +261,7 @@ void PHON::setup_base() const
     integration->setup_integration(anharmonic_core->quartic_mode, run_info.my_rank, get_verbosity());
     dos->setup(*integration, dynamical->require_eigenvectors);
     thermodynamics->setup();
-    anharmonic_core->setup();
+    anharmonic_core->setup(fcs_phonon->maxorder, fcs_phonon->force_constant_with_cell, dos->kmesh_dos.get());
     dielec->init(dos->emin,
                  dos->emax,
                  dos->delta_e,

@@ -238,7 +238,7 @@ void Selfenergy::selfenergy_tadpole_at(const unsigned int N, const double *T, co
                 arr_cubic2[2] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
                 const auto omega2 = eval_in[ik2][is2];
                 if (omega2 < eps8) continue;
-                const auto v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                const auto v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
                 for (unsigned int i = 0; i < N; ++i) {
                     const auto n2 = classical ? Thermodynamics::fC(omega2, T[i]) : Thermodynamics::fB(omega2, T[i]);
                     ret_mpi[i] += v3_tmp2 * (classical ? 2.0 * n2 : 2.0 * n2 + 1.0);
@@ -401,7 +401,7 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
 
         if (omega1 < eps8) continue;
 
-        auto v3_tmp1 = anharmonic_core.V3(arr_cubic1);
+        auto v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
 
         for (i = 0; i < N; ++i) ret_mpi[i] = std::complex<double>(0.0, 0.0);
 
@@ -410,7 +410,7 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
                 arr_cubic2[1] = ns * ik2 + is2;
                 arr_cubic2[2] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
 
-                auto v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                auto v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
                 const auto omega2 = eval_in[ik2][is2];
 
                 if (omega2 < eps8) continue;
@@ -491,7 +491,7 @@ void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const doubl
                 arr_cubic[2] = ns * ik2 + is2;
                 double omega2 = eval_in[ik2][is2];
 
-                double v3_tmp = std::norm(anharmonic_core.V3(arr_cubic));
+                double v3_tmp = std::norm(anharmonic_core.V3(arr_cubic, kmesh_in->xk, eval_in, evec_in));
 
                 omega_sum[0] = 1.0 / (omega_shift + omega1 + omega2) - 1.0 / (omega_shift - omega1 - omega2);
                 omega_sum[1] = 1.0 / (omega_shift + omega1 - omega2) - 1.0 / (omega_shift - omega1 + omega2);
@@ -559,7 +559,7 @@ void Selfenergy::selfenergy_b(const unsigned int N, const double *T, const doubl
             double omega1 = eval_in[ik1][is1];
             if (omega1 < eps8) continue;
 
-            std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic);
+            std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in);
 
             if (classical) {
                 for (i = 0; i < N; ++i) {
@@ -638,7 +638,7 @@ void Selfenergy::selfenergy_c(const unsigned int N, const double *T, const doubl
                         arr_quartic[3] = ns * ik3 + is3;
                         double omega3 = eval_in[ik3][is3];
 
-                        double v4_tmp = std::norm(anharmonic_core.V4(arr_quartic));
+                        double v4_tmp = std::norm(anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in));
 
                         omega_sum[0] = 1.0 / (omega_shift - omega1 - omega2 - omega3) -
                                        1.0 / (omega_shift + omega1 + omega2 + omega3);
@@ -739,7 +739,7 @@ void Selfenergy::selfenergy_c_mod(const unsigned int N, const double *T, const d
                     arr_quartic[3] = ns * ik3 + is3;
                     double omega3 = eval_in[ik3][is3];
 
-                    double v4_tmp = std::norm(anharmonic_core.V4(arr_quartic)) * multi;
+                    double v4_tmp = std::norm(anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in)) * multi;
 
                     omega_sum[0] =
                         1.0 / (omega_shift - omega1 - omega2 - omega3) - 1.0 / (omega_shift + omega1 + omega2 + omega3);
@@ -842,7 +842,7 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
                     arr_cubic2[1] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
                     arr_quartic[1] = ns * ik2 + is2;
 
-                    std::complex<double> v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                    std::complex<double> v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
 
                     for (unsigned int is3 = 0; is3 < ns; ++is3) {
 
@@ -858,8 +858,10 @@ void Selfenergy::selfenergy_d(const unsigned int N, const double *T, const doubl
                             arr_cubic1[2] = ns * ik4 + is4;
                             arr_quartic[3] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
 
-                            std::complex<double> v3_tmp1 = anharmonic_core.V3(arr_cubic1);
-                            std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic);
+                            std::complex<double> v3_tmp1 =
+                                anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
+                            std::complex<double> v4_tmp =
+                                anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in);
 
                             std::complex<double> v_prod = v3_tmp1 * v3_tmp2 * v4_tmp;
 
@@ -977,7 +979,7 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                             arr_quartic[1] = ns * ik3 + is3;
                             arr_quartic[2] = ns * kmesh_in->kindex_minus_xk[ik3] + is3;
 
-                            v4_tmp = anharmonic_core.V4(arr_quartic);
+                            v4_tmp = anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in);
 
                             for (is4 = 0; is4 < ns; ++is4) {
 
@@ -986,8 +988,8 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                                 arr_cubic1[2] = ns * ik4 + is4;
                                 arr_cubic2[1] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
 
-                                v3_tmp1 = anharmonic_core.V3(arr_cubic1);
-                                v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                                v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
+                                v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
 
                                 v_prod = v3_tmp1 * v3_tmp2 * v4_tmp;
 
@@ -1045,7 +1047,7 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                             arr_quartic[1] = ns * ik3 + is3;
                             arr_quartic[2] = ns * kmesh_in->kindex_minus_xk[ik3] + is3;
 
-                            v4_tmp = anharmonic_core.V4(arr_quartic);
+                            v4_tmp = anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in);
 
                             for (is4 = 0; is4 < ns; ++is4) {
 
@@ -1054,8 +1056,8 @@ void Selfenergy::selfenergy_e(const unsigned int N, const double *T, const doubl
                                 arr_cubic1[2] = ns * ik4 + is4;
                                 arr_cubic2[1] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
 
-                                v3_tmp1 = anharmonic_core.V3(arr_cubic1);
-                                v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                                v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
+                                v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
 
                                 v_prod = v3_tmp1 * v3_tmp2 * v4_tmp;
 
@@ -1182,7 +1184,7 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
                     arr_cubic1[2] = ns * ik2 + is2;
                     arr_cubic4[1] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
 
-                    std::complex<double> v3_tmp1 = anharmonic_core.V3(arr_cubic1);
+                    std::complex<double> v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
 
                     for (unsigned int is5 = 0; is5 < ns; ++is5) {
 
@@ -1191,7 +1193,7 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
                         arr_cubic3[2] = ns * ik5 + is5;
                         arr_cubic4[0] = ns * kmesh_in->kindex_minus_xk[ik5] + is5;
 
-                        std::complex<double> v3_tmp4 = anharmonic_core.V3(arr_cubic4);
+                        std::complex<double> v3_tmp4 = anharmonic_core.V3(arr_cubic4, kmesh_in->xk, eval_in, evec_in);
 
                         for (unsigned int is3 = 0; is3 < ns; ++is3) {
 
@@ -1207,8 +1209,10 @@ void Selfenergy::selfenergy_f(const unsigned int N, const double *T, const doubl
                                 arr_cubic2[2] = ns * ik4 + is4;
                                 arr_cubic3[1] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
 
-                                std::complex<double> v3_tmp2 = anharmonic_core.V3(arr_cubic2);
-                                std::complex<double> v3_tmp3 = anharmonic_core.V3(arr_cubic3);
+                                std::complex<double> v3_tmp2 =
+                                    anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
+                                std::complex<double> v3_tmp3 =
+                                    anharmonic_core.V3(arr_cubic3, kmesh_in->xk, eval_in, evec_in);
 
                                 std::complex<double> v3_prod = v3_tmp1 * v3_tmp2 * v3_tmp3 * v3_tmp4;
 
@@ -1393,7 +1397,7 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
                         arr_quartic[3] = ns * ik3 + is3;
                         arr_cubic2[0] = ns * kmesh_in->kindex_minus_xk[ik3] + is3;
 
-                        std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic);
+                        std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in);
 
                         for (unsigned int is4 = 0; is4 < ns; ++is4) {
                             double omega4 = eval_in[ik4][is4];
@@ -1401,8 +1405,10 @@ void Selfenergy::selfenergy_g(const unsigned int N, const double *T, const doubl
                             arr_cubic1[2] = ns * ik4 + is4;
                             arr_cubic2[1] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
 
-                            std::complex<double> v3_tmp1 = anharmonic_core.V3(arr_cubic1);
-                            std::complex<double> v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                            std::complex<double> v3_tmp1 =
+                                anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
+                            std::complex<double> v3_tmp2 =
+                                anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
 
                             std::complex<double> v_prod = v4_tmp * v3_tmp1 * v3_tmp2;
 
@@ -1520,7 +1526,7 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
                     arr_cubic1[2] = ns * ik2 + is2;
                     arr_cubic3[0] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
 
-                    std::complex<double> v3_tmp1 = anharmonic_core.V3(arr_cubic1);
+                    std::complex<double> v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
 
                     for (unsigned int is3 = 0; is3 < ns; ++is3) {
                         double omega3 = eval_in[ik3][is3];
@@ -1534,7 +1540,8 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
                             arr_cubic3[2] = ns * ik4 + is4;
                             arr_cubic4[0] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
 
-                            std::complex<double> v3_tmp3 = anharmonic_core.V3(arr_cubic3);
+                            std::complex<double> v3_tmp3 =
+                                anharmonic_core.V3(arr_cubic3, kmesh_in->xk, eval_in, evec_in);
 
                             for (unsigned int is5 = 0; is5 < ns; ++is5) {
                                 double omega5 = eval_in[ik5][is5];
@@ -1542,8 +1549,10 @@ void Selfenergy::selfenergy_h(const unsigned int N, const double *T, const doubl
                                 arr_cubic2[2] = ns * ik5 + is5;
                                 arr_cubic4[1] = ns * kmesh_in->kindex_minus_xk[ik5] + is5;
 
-                                std::complex<double> v3_tmp2 = anharmonic_core.V3(arr_cubic2);
-                                std::complex<double> v3_tmp4 = anharmonic_core.V3(arr_cubic4);
+                                std::complex<double> v3_tmp2 =
+                                    anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
+                                std::complex<double> v3_tmp4 =
+                                    anharmonic_core.V3(arr_cubic4, kmesh_in->xk, eval_in, evec_in);
 
                                 std::complex<double> v_prod = v3_tmp1 * v3_tmp2 * v3_tmp3 * v3_tmp4;
 
@@ -1688,7 +1697,7 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
                     arr_quartic[2] = ns * kmesh_in->kindex_minus_xk[ik4] + is4;
                     arr_cubic1[2] = ns * ik4 + is4;
 
-                    std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic);
+                    std::complex<double> v4_tmp = anharmonic_core.V4(arr_quartic, kmesh_in->xk, eval_in, evec_in);
 
                     if (std::abs(omega2 - omega4) < eps) {
 
@@ -1704,8 +1713,8 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
                                 arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[ik1] + is1;
                                 arr_cubic2[1] = ns * ik1 + is1;
 
-                                v3_tmp1 = anharmonic_core.V3(arr_cubic1);
-                                v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                                v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
+                                v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
 
                                 v_prod = v4_tmp * v3_tmp1 * v3_tmp2;
 
@@ -1761,8 +1770,8 @@ void Selfenergy::selfenergy_i(const unsigned int N, const double *T, const doubl
                                 arr_cubic1[0] = ns * kmesh_in->kindex_minus_xk[ik1] + is1;
                                 arr_cubic2[1] = ns * ik1 + is1;
 
-                                v3_tmp1 = anharmonic_core.V3(arr_cubic1);
-                                v3_tmp2 = anharmonic_core.V3(arr_cubic2);
+                                v3_tmp1 = anharmonic_core.V3(arr_cubic1, kmesh_in->xk, eval_in, evec_in);
+                                v3_tmp2 = anharmonic_core.V3(arr_cubic2, kmesh_in->xk, eval_in, evec_in);
 
                                 v_prod = v4_tmp * v3_tmp1 * v3_tmp2;
 
@@ -1869,7 +1878,7 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
                     arr_quartic1[2] = ns * kmesh_in->kindex_minus_xk[ik3] + is3;
                     arr_quartic2[3] = ns * ik3 + is3;
 
-                    std::complex<double> v4_tmp1 = anharmonic_core.V4(arr_quartic1);
+                    std::complex<double> v4_tmp1 = anharmonic_core.V4(arr_quartic1, kmesh_in->xk, eval_in, evec_in);
 
                     if (std::abs(omega1 - omega3) < eps) {
                         double omega1_inv = 1.0 / omega1;
@@ -1880,7 +1889,7 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
                             arr_quartic2[1] = ns * ik2 + is2;
                             arr_quartic2[2] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
 
-                            v4_tmp2 = anharmonic_core.V4(arr_quartic2);
+                            v4_tmp2 = anharmonic_core.V4(arr_quartic2, kmesh_in->xk, eval_in, evec_in);
 
                             v_prod = v4_tmp1 * v4_tmp2;
 
@@ -1911,7 +1920,7 @@ void Selfenergy::selfenergy_j(const unsigned int N, const double *T, const doubl
                             arr_quartic2[1] = ns * ik2 + is2;
                             arr_quartic2[2] = ns * kmesh_in->kindex_minus_xk[ik2] + is2;
 
-                            v4_tmp2 = anharmonic_core.V4(arr_quartic2);
+                            v4_tmp2 = anharmonic_core.V4(arr_quartic2, kmesh_in->xk, eval_in, evec_in);
 
                             v_prod = v4_tmp1 * v4_tmp2;
 

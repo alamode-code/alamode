@@ -86,13 +86,16 @@ private:
 class AnharmonicCore
 {
 public:
-    AnharmonicCore(const RunInfo &run, const Timer *timer, const System *system, const Symmetry *symmetry,
-                   const Fcs_phonon *fcs_phonon, const Integration *integration, const Thermodynamics *thermodynamics,
-                   const Dos *dos);
+    AnharmonicCore(const RunInfo &run, const System *system, const Symmetry *symmetry, const Integration *integration,
+                   const Thermodynamics *thermodynamics, const Dos *dos);
 
     ~AnharmonicCore();
 
-    void setup();
+    // ifcs is Fcs_phonon::force_constant_with_cell (order n in ifcs[n - 1]) and maxorder
+    // its highest available order. kmesh_dos_in is the mesh whose phase table is cached
+    // here for the V3/V4 forms taking no explicit cache; it may be null (non-mesh runs).
+    void setup(unsigned int maxorder, const NDArray<std::vector<FcsArrayWithCell>, 1> &ifcs,
+               const KpointMeshUniform *kmesh_dos_in);
 
     // Eigenpairs on {q - k}; unfolded fractional coordinates preserve exact vertex phases.
     struct ShiftedGrid
@@ -179,16 +182,20 @@ public:
         use_quartet_symmetry = false;
     }
 
-    std::complex<double> V3(const unsigned int[3]);
-
-    std::complex<double> V4(const unsigned int[4]);
-
-    std::complex<double> Phi3(const unsigned int[3]);
-
-    std::complex<double> Phi4(const unsigned int[4]);
-
+    // Forms without an explicit phase cache use the phase table of the mesh given to
+    // setup(); the legs must therefore lie on that mesh. Passing a different grid would
+    // give silently wrong phases with no error.
     std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in);
+
+    std::complex<double> V4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
+                            const std::complex<double> *const *const *evec_in);
+
+    std::complex<double> Phi3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in);
+
+    std::complex<double> Phi4(const unsigned int ks[4], const double *const *xk_in, const double *const *eval_in,
+                              const std::complex<double> *const *const *evec_in);
 
     std::complex<double> V3(const unsigned int ks[3], const double *const *xk_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in,
@@ -401,9 +408,9 @@ private:
     int kindex_phi3_stored[2] = {-1, -1};
     int kindex_phi4_stored[3] = {-1, -1, -1};
 
-    void setup_cubic();
+    void setup_cubic(const std::vector<FcsArrayWithCell> &fcs3_in);
 
-    void setup_quartic();
+    void setup_quartic(const std::vector<FcsArrayWithCell> &fcs4_in);
 
     V3Workspace v3_ws_mode;
 
@@ -412,12 +419,10 @@ private:
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
-    const Timer *timer;
     const System *system;
     const Symmetry *symmetry;
-    const Fcs_phonon *fcs_phonon;
     const Integration *integration;
     const Thermodynamics *thermodynamics;
-    const Dos *dos;
+    const Dos *dos; // only tetra_nodes_dos, in three_phonon.cpp; to be passed as an argument next
 };
 } // namespace PHON_NS

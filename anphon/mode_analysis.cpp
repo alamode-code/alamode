@@ -1811,7 +1811,7 @@ void ModeAnalysis::calc_frequency_resolved_final_state(
                 omega_inner[0] = eval_in[k1][is];
                 omega_inner[1] = eval_in[k2][js];
 
-                const auto v3_tmp = std::norm(anharmonic_core->V3(arr));
+                const auto v3_tmp = std::norm(anharmonic_core->V3(arr, kmesh_in->xk, eval_in, evec_in));
 
                 for (i = 0; i < ntemp; ++i) {
                     const auto T_tmp = temperature[i];
@@ -2274,7 +2274,11 @@ void ModeAnalysis::calc_V3norm2(const unsigned int knum, const unsigned int snum
             arr[1] = ns * k1 + is;
             arr[2] = ns * k2 + js;
 
-            ret_loc[ik][ib] = std::norm(anharmonic_core->V3(arr)) * factor;
+            ret_loc[ik][ib] = std::norm(anharmonic_core->V3(arr,
+                                                            dos->kmesh_dos->xk,
+                                                            dos->dymat_dos->get_eigenvalues(),
+                                                            dos->dymat_dos->get_eigenvectors())) *
+                              factor;
         }
     }
 
@@ -2336,7 +2340,11 @@ void ModeAnalysis::calc_V4norm2(const unsigned int knum, const unsigned int snum
             arr[2] = ns * k2 + js;
             arr[3] = ns * k3 + ks;
 
-            ret_loc[ik][ib] = std::norm(anharmonic_core->V4(arr)) * factor;
+            ret_loc[ik][ib] = std::norm(anharmonic_core->V4(arr,
+                                                            dos->kmesh_dos->xk,
+                                                            dos->dymat_dos->get_eigenvalues(),
+                                                            dos->dymat_dos->get_eigenvectors())) *
+                              factor;
         }
     }
 
@@ -2576,7 +2584,11 @@ void ModeAnalysis::calc_Phi3(const unsigned int knum, const unsigned int snum, c
             arr[1] = ns * k1 + is;
             arr[2] = ns * k2 + js;
 
-            ret_loc[ik][ib] = anharmonic_core->Phi3(arr) * factor;
+            ret_loc[ik][ib] = anharmonic_core->Phi3(arr,
+                                                    dos->kmesh_dos->xk,
+                                                    dos->dymat_dos->get_eigenvalues(),
+                                                    dos->dymat_dos->get_eigenvectors()) *
+                              factor;
         }
     }
 
@@ -2636,7 +2648,11 @@ void ModeAnalysis::calc_Phi4(const unsigned int knum, const unsigned int snum, c
             arr[2] = ns * k2 + js;
             arr[3] = ns * k3 + ks;
 
-            ret_loc[ik][ib] = anharmonic_core->Phi4(arr) * factor;
+            ret_loc[ik][ib] = anharmonic_core->Phi4(arr,
+                                                    dos->kmesh_dos->xk,
+                                                    dos->dymat_dos->get_eigenvalues(),
+                                                    dos->dymat_dos->get_eigenvectors()) *
+                              factor;
         }
     }
 

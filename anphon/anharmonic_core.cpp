@@ -27,7 +27,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "stage_timer.h"
 #include "system.h"
 #include "thermodynamics.h"
-#include "timer.h"
 #include "write_phonons.h"
 
 #ifdef _OPENMP
@@ -38,12 +37,11 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-AnharmonicCore::AnharmonicCore(const RunInfo &run_in, const Timer *timer_in, const System *system_in,
-                               const Symmetry *symmetry_in, const Fcs_phonon *fcs_phonon_in,
+AnharmonicCore::AnharmonicCore(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
                                const Integration *integration_in, const Thermodynamics *thermodynamics_in,
                                const Dos *dos_in) :
-    run(run_in), timer(timer_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in),
-    integration(integration_in), thermodynamics(thermodynamics_in), dos(dos_in)
+    run(run_in), system(system_in), symmetry(symmetry_in), integration(integration_in),
+    thermodynamics(thermodynamics_in), dos(dos_in)
 {
     set_default_variables();
 }
@@ -96,7 +94,8 @@ void AnharmonicCore::deallocate_variables()
     phase_storage_dos.reset();
 }
 
-void AnharmonicCore::setup()
+void AnharmonicCore::setup(const unsigned int maxorder, const NDArray<std::vector<FcsArrayWithCell>, 1> &ifcs,
+                           const KpointMeshUniform *kmesh_dos_in)
 {
     sym_permutation = true;
     use_tuned_ver = true;
@@ -105,22 +104,22 @@ void AnharmonicCore::setup()
     // unique triplet list is built (three_phonon.cpp, thermodynamics.cpp).
     MPI_Bcast(&use_triplet_symmetry, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
-    auto t_stage = timer->elapsed();
-    if (fcs_phonon->maxorder >= 2) setup_cubic();
-    print_stage_line("IFCs: cubic index groups", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
-    t_stage = timer->elapsed();
-    if (fcs_phonon->maxorder >= 3) setup_quartic();
-    print_stage_line("IFCs: quartic index groups", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
+    auto t_stage = stage_clock();
+    if (maxorder >= 2) setup_cubic(ifcs[1]);
+    print_stage_line("IFCs: cubic index groups", stage_clock() - t_stage, run.my_rank, run.verbosity);
+    t_stage = stage_clock();
+    if (maxorder >= 3) setup_quartic(ifcs[2]);
+    print_stage_line("IFCs: quartic index groups", stage_clock() - t_stage, run.my_rank, run.verbosity);
 
-    if (run.my_rank == 0 && run.verbosity > 0 && fcs_phonon->maxorder >= 2) {
+    if (run.my_rank == 0 && run.verbosity > 0 && maxorder >= 2) {
         std::cout << "  Number of distinct index groups of the anharmonic IFCs:\n";
         std::cout << "   Order 3 : " << ngroup_v3 << '\n';
-        if (fcs_phonon->maxorder >= 3) std::cout << "   Order 4 : " << ngroup_v4 << '\n';
+        if (maxorder >= 3) std::cout << "   Order 4 : " << ngroup_v4 << '\n';
         std::cout << '\n';
     }
 
-    if (dos->kmesh_dos.get()) {
-        phase_storage_dos = std::make_unique<PhaseFactorCache>(dos->kmesh_dos->nk_i);
+    if (kmesh_dos_in) {
+        phase_storage_dos = std::make_unique<PhaseFactorCache>(kmesh_dos_in->nk_i);
         phase_storage_dos->create(use_tuned_ver);
     }
 }
@@ -204,46 +203,32 @@ void AnharmonicCore::prepare_group_of_force_constants(const std::vector<FcsArray
     }
 }
 
-std::complex<double> AnharmonicCore::V3(const unsigned int ks[3])
-{
-    return V3(ks,
-              dos->kmesh_dos->xk,
-              dos->dymat_dos->get_eigenvalues(),
-              dos->dymat_dos->get_eigenvectors(),
-              this->phase_storage_dos.get());
-}
-
+// The overloads below reuse the phase table built by setup(), so the legs they are
+// given must lie on the mesh that setup() received.
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
                                         const double *const *eval_in, const std::complex<double> *const *const *evec_in)
 {
     return V3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos.get());
 }
 
-std::complex<double> AnharmonicCore::V4(const unsigned int ks[4])
+std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *const *xk_in,
+                                        const double *const *eval_in, const std::complex<double> *const *const *evec_in)
 {
-    return V4(ks,
-              dos->kmesh_dos->xk,
-              dos->dymat_dos->get_eigenvalues(),
-              dos->dymat_dos->get_eigenvectors(),
-              this->phase_storage_dos.get());
+    return V4(ks, xk_in, eval_in, evec_in, this->phase_storage_dos.get());
 }
 
-std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3])
+std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double *const *xk_in,
+                                          const double *const *eval_in,
+                                          const std::complex<double> *const *const *evec_in)
 {
-    return Phi3(ks,
-                dos->kmesh_dos->xk,
-                dos->dymat_dos->get_eigenvalues(),
-                dos->dymat_dos->get_eigenvectors(),
-                this->phase_storage_dos.get());
+    return Phi3(ks, xk_in, eval_in, evec_in, this->phase_storage_dos.get());
 }
 
-std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4])
+std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double *const *xk_in,
+                                          const double *const *eval_in,
+                                          const std::complex<double> *const *const *evec_in)
 {
-    return Phi4(ks,
-                dos->kmesh_dos->xk,
-                dos->dymat_dos->get_eigenvalues(),
-                dos->dymat_dos->get_eigenvectors(),
-                this->phase_storage_dos.get());
+    return Phi4(ks, xk_in, eval_in, evec_in, this->phase_storage_dos.get());
 }
 
 std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *const *xk_in,
@@ -660,24 +645,24 @@ void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, 
     }
 }
 
-void AnharmonicCore::setup_cubic()
+void AnharmonicCore::setup_cubic(const std::vector<FcsArrayWithCell> &fcs3_in)
 {
-    // force_constant_with_cell[1] is already sorted by Fcs_phonon::setup().
-    prepare_group_of_force_constants(fcs_phonon->force_constant_with_cell[1], ngroup_v3, fcs_group_v3);
+    // fcs3_in is already sorted by Fcs_phonon::setup().
+    prepare_group_of_force_constants(fcs3_in, ngroup_v3, fcs_group_v3);
 
     invmass_v3.resize(ngroup_v3);
     evec_index_v3.resize(ngroup_v3, 3);
     relvec_v3.resize(ngroup_v3);
     phi3_reciprocal.resize(ngroup_v3);
 
-    prepare_relative_vector(fcs_phonon->force_constant_with_cell[1], ngroup_v3, fcs_group_v3, relvec_v3);
+    prepare_relative_vector(fcs3_in, ngroup_v3, fcs_group_v3, relvec_v3);
 
     const auto invsqrt_mass_p = system->get_invsqrt_mass();
 
     int k = 0;
     for (auto i = 0; i < ngroup_v3; ++i) {
         for (int j = 0; j < 3; ++j) {
-            evec_index_v3[i][j] = fcs_phonon->force_constant_with_cell[1][k].pairs[j].index;
+            evec_index_v3[i][j] = fcs3_in[k].pairs[j].index;
         }
         invmass_v3[i] = invsqrt_mass_p[evec_index_v3[i][0] / 3] * invsqrt_mass_p[evec_index_v3[i][1] / 3] *
                         invsqrt_mass_p[evec_index_v3[i][2] / 3];
@@ -685,24 +670,24 @@ void AnharmonicCore::setup_cubic()
     }
 }
 
-void AnharmonicCore::setup_quartic()
+void AnharmonicCore::setup_quartic(const std::vector<FcsArrayWithCell> &fcs4_in)
 {
-    // force_constant_with_cell[2] is already sorted by Fcs_phonon::setup().
-    prepare_group_of_force_constants(fcs_phonon->force_constant_with_cell[2], ngroup_v4, fcs_group_v4);
+    // fcs4_in is already sorted by Fcs_phonon::setup().
+    prepare_group_of_force_constants(fcs4_in, ngroup_v4, fcs_group_v4);
 
     invmass_v4.resize(ngroup_v4);
     evec_index_v4.resize(ngroup_v4, 4);
     relvec_v4.resize(ngroup_v4);
     phi4_reciprocal.resize(ngroup_v4);
 
-    prepare_relative_vector(fcs_phonon->force_constant_with_cell[2], ngroup_v4, fcs_group_v4, relvec_v4);
+    prepare_relative_vector(fcs4_in, ngroup_v4, fcs_group_v4, relvec_v4);
 
     const auto invsqrt_mass_p = system->get_invsqrt_mass();
 
     int k = 0;
     for (auto i = 0; i < ngroup_v4; ++i) {
         for (int j = 0; j < 4; ++j) {
-            evec_index_v4[i][j] = fcs_phonon->force_constant_with_cell[2][k].pairs[j].index;
+            evec_index_v4[i][j] = fcs4_in[k].pairs[j].index;
         }
         invmass_v4[i] = invsqrt_mass_p[evec_index_v4[i][0] / 3] * invsqrt_mass_p[evec_index_v4[i][1] / 3] *
                         invsqrt_mass_p[evec_index_v4[i][2] / 3] * invsqrt_mass_p[evec_index_v4[i][3] / 3];
