@@ -54,6 +54,9 @@ void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const
 {
     MPI_Bcast(&ismear, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // ADAPTIVE_FACTOR is set on rank 0 by the parser but read on all ranks
+    // (prepare_adaptivesmearing / create_adaptive_sigma4).
+    MPI_Bcast(&adaptive_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (my_rank_in == 0) {
         if (verbosity > 0) {
@@ -106,6 +109,10 @@ void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const
             if (verbosity > 0) std::cout << '\n';
         }
     }
+
+    // Re-broadcast: the block above rewrites ismear_4ph = -1 to 2 on rank 0 only,
+    // while the value is read on all ranks (four_phonon.cpp).
+    MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     prepare_adaptivesmearing(kmesh_dos_in, phonon_velocity_in, ns_in, lavec_p, rlavec_p);
 
