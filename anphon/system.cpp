@@ -366,6 +366,16 @@ void System::load_system_info_from_file()
                  "The number of elements in the input file (KD) and that from the FCSFILE are different.");
         }
     }
+
+    // The KD names are set on rank 0 by the parser, while the other ranks fall back to
+    // the names in the force-constant file; the list is read on all ranks. The size is
+    // already identical everywhere (both derive from elements_base).
+    auto nkd_tmp = static_cast<unsigned int>(symbol_kd.size());
+    MPI_Bcast(&nkd_tmp, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    symbol_kd.resize(nkd_tmp);
+    for (unsigned int i = 0; i < nkd_tmp; ++i) {
+        MPI_Bcast_string(symbol_kd[i], 0, MPI_COMM_WORLD);
+    }
 }
 
 void System::get_structure_and_mapping_table_xml(const std::string &filename, Cell &scell_out, Cell &pcell_out,
