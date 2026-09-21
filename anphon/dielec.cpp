@@ -25,9 +25,8 @@
 
 using namespace PHON_NS;
 
-Dielec::Dielec(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-               const Fcs_phonon *fcs_phonon_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in)
+Dielec::Dielec(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in) :
+    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in)
 {
     set_default_variables();
 }
@@ -63,7 +62,8 @@ void Dielec::deallocate_variables()
 }
 
 void Dielec::init(const double emin_dos, const double emax_dos, const double delta_e_dos,
-                  const unsigned int nonanalytic, const bool print_zmode, const bool print_irreps)
+                  const unsigned int nonanalytic, const bool print_zmode, const bool print_irreps,
+                  const std::vector<SymmetryOperationWithMapping> &symops)
 {
     // This should be called after Dos::setup(). The arguments are read on rank 0 only.
 
@@ -104,7 +104,7 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
     MPI_Bcast(&need_born_data, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (need_born_data) {
-        setup_dielectric(run.verbosity);
+        setup_dielectric(symops, run.verbosity);
     }
 
     if (calc_dielectric_constant) {
@@ -116,18 +116,19 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
     }
 }
 
-void Dielec::setup_dielectric(const unsigned int verbosity)
+void Dielec::setup_dielectric(const std::vector<SymmetryOperationWithMapping> &symops, const unsigned int verbosity)
 {
     if (borncharge) borncharge.clear();
 
     borncharge.resize(system->get_primcell().number_of_atoms, 3, 3);
-    if (run.my_rank == 0) load_born(symmetrize_borncharge, verbosity);
+    if (run.my_rank == 0) load_born(symmetrize_borncharge, symops, verbosity);
 
     MPI_Bcast(dielec_tensor.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&borncharge[0][0][0], 9 * system->get_primcell().number_of_atoms, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
-void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verbosity)
+void Dielec::load_born(const unsigned int flag_symmborn, const std::vector<SymmetryOperationWithMapping> &symops,
+                       const unsigned int verbosity)
 {
     // Read the dielectric tensor and born effective charges from file_born
 
@@ -234,15 +235,15 @@ void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verb
             }
         }
 
-        for (auto isym = 0; isym < symmetry->SymmListWithMap.size(); ++isym) {
+        for (auto isym = 0; isym < symops.size(); ++isym) {
             for (i = 0; i < 3; ++i) {
                 for (j = 0; j < 3; ++j) {
-                    rot[i][j] = symmetry->SymmListWithMap[isym].rot[3 * i + j];
+                    rot[i][j] = symops[isym].rot[3 * i + j];
                 }
             }
 
             for (iat = 0; iat < natmin_tmp; ++iat) {
-                int iat_sym = symmetry->SymmListWithMap[isym].mapping[iat];
+                int iat_sym = symops[isym].mapping[iat];
 
                 for (i = 0; i < 3; ++i) {
                     for (j = 0; j < 3; ++j) {
@@ -259,7 +260,7 @@ void Dielec::load_born(const unsigned int flag_symmborn, const unsigned int verb
         for (iat = 0; iat < natmin_tmp; ++iat) {
             for (i = 0; i < 3; ++i) {
                 for (j = 0; j < 3; ++j) {
-                    born_sym[iat][i][j] /= static_cast<double>(symmetry->SymmListWithMap.size());
+                    born_sym[iat][i][j] /= static_cast<double>(symops.size());
                 }
             }
         }

@@ -27,8 +27,7 @@
 
 using namespace PHON_NS;
 
-Ewald::Ewald(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in) :
-    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in)
+Ewald::Ewald(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 }
@@ -61,7 +60,7 @@ void Ewald::deallocate_variables()
     }
 }
 
-void Ewald::init()
+void Ewald::init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2)
 {
     MPI_Bcast(&is_longrange, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&prec_ewald, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -81,14 +80,14 @@ void Ewald::init()
         for (int i = 0; i < natmin_tmp; ++i) {
             for (int j = 0; j < 3; ++j) {
                 for (int k = 0; k < 3; ++k) {
-                    Born_charge[i][j][k] = dielec->get_borncharge()[i][j][k];
+                    Born_charge[i][j][k] = dielec.get_borncharge()[i][j][k];
                 }
             }
         }
 
-        prepare_Ewald(dielec->get_dielec_tensor());
+        prepare_Ewald(dielec.get_dielec_tensor());
         prepare_G();
-        compute_ewald_fcs();
+        compute_ewald_fcs(fc2);
     }
 }
 
@@ -344,7 +343,7 @@ void Ewald::get_pairs_of_minimum_distance(const int nat, const int nsize[3], con
     xcrd.clear();
 }
 
-void Ewald::compute_ewald_fcs()
+void Ewald::compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2)
 {
     int j;
     int iat, jat;
@@ -390,7 +389,7 @@ void Ewald::compute_ewald_fcs()
 
     fcs_total.setZero();
 
-    for (const auto &it: fcs_phonon->force_constant_with_cell[0]) {
+    for (const auto &it: fc2) {
         fcs_total(it.pairs[0].index, 3 * it.atoms_s[1] + it.coords[1]) += it.fcs_val;
     }
     fcs_other = fcs_total - fcs_ewald;

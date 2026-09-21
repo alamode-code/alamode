@@ -60,7 +60,7 @@ public:
 class Ewald
 {
 public:
-    Ewald(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon, const Dielec *dielec);
+    Ewald(const RunInfo &run, const System *system);
 
     ~Ewald();
 
@@ -76,7 +76,7 @@ public:
 
     std::vector<FcsArrayWithCell> fc2_without_dipole;
 
-    void init();
+    void init(const Dielec &dielec, const std::vector<FcsArrayWithCell> &fc2);
 
     void add_longrange_matrix(const double *, const double *, std::complex<double> **) const;
 
@@ -115,7 +115,7 @@ private:
 
     void prepare_G();
 
-    void compute_ewald_fcs();
+    void compute_ewald_fcs(const std::vector<FcsArrayWithCell> &fc2);
 
     void get_pairs_of_minimum_distance(int, const int[3], const Eigen::MatrixXd &);
 
@@ -142,7 +142,5 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Fcs_phonon *fcs_phonon;
-    const Dielec *dielec;
 };
 } // namespace PHON_NS

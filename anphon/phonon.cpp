@@ -65,8 +65,8 @@ void PHON::create_pointers()
     symmetry = std::make_unique<Symmetry>(run_info, system.get());
     kpoint = std::make_unique<Kpoint>(run_info, system.get(), symmetry.get());
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, system.get());
-    dielec = std::make_unique<Dielec>(run_info, system.get(), symmetry.get(), fcs_phonon.get());
-    ewald = std::make_unique<Ewald>(run_info, system.get(), fcs_phonon.get(), dielec.get());
+    dielec = std::make_unique<Dielec>(run_info, system.get(), fcs_phonon.get());
+    ewald = std::make_unique<Ewald>(run_info, system.get());
     dynamical = std::make_unique<Dynamical>(run_info, system.get(), fcs_phonon.get(), dielec.get(), ewald.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
@@ -292,8 +292,9 @@ void PHON::setup_base() const
                  dos->delta_e,
                  dynamical->nonanalytic,
                  writes->print_zmode,
-                 mode_symmetry->print_irreps);
-    ewald->init();
+                 mode_symmetry->print_irreps,
+                 symmetry->SymmListWithMap);
+    ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
 
     if (run_info.my_rank == 0 && get_verbosity() > 0) {
         std::cout << " \n -----------------------------------------------------------------\n\n";

@@ -19,17 +19,18 @@
 namespace PHON_NS
 {
 class Dynamical;
+class SymmetryOperationWithMapping;
 
 class Dielec
 {
 public:
-    Dielec(const RunInfo &run, const System *system, const Symmetry *symmetry, const Fcs_phonon *fcs_phonon);
+    Dielec(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon);
 
     ~Dielec();
 
     // DOS energy grid, NONANALYTIC, ZMODE and IRREPS of the run; read on rank 0 only.
     void init(double emin_dos, double emax_dos, double delta_e_dos, unsigned int nonanalytic, bool print_zmode,
-              bool print_irreps);
+              bool print_irreps, const std::vector<SymmetryOperationWithMapping> &symops);
 
     void run_dielec_calculation(const Dynamical &dynamical);
 
@@ -70,12 +71,13 @@ private:
 
     void deallocate_variables();
 
-    void setup_dielectric(const unsigned int verbosity = 1);
+    void setup_dielectric(const std::vector<SymmetryOperationWithMapping> &symops, const unsigned int verbosity = 1);
 
     void compute_mode_effective_charge(const Dynamical &dynamical, std::vector<std::vector<double>> &zstar_mode,
                                        const bool do_normalize = false) const;
 
-    void load_born(const unsigned int flag_symmborn, const unsigned int verbosity = 1);
+    void load_born(const unsigned int flag_symmborn, const std::vector<SymmetryOperationWithMapping> &symops,
+                   const unsigned int verbosity = 1);
 
     NDArray<double, 1> omega_grid;
     NDArray<double, 3> dielec;
@@ -89,7 +91,6 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Symmetry *symmetry;
     const Fcs_phonon *fcs_phonon;
 };
 } // namespace PHON_NS
