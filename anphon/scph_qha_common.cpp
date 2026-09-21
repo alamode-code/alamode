@@ -464,7 +464,6 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         NDArray<double, 2> xk_gam;
 
         NDArray<double, 2> dos_update;
-        NDArray<double, 3> pdos_update;
         NDArray<double, 1> heat_capacity;
         NDArray<double, 1> heat_capacity_correction;
         NDArray<double, 1> FE_QHA;
@@ -488,10 +487,6 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
 
             if (dos->compute_dos) {
                 dos_update.resize(NT, dos->n_energy);
-
-                if (dos->projected_dos) {
-                    pdos_update.resize(NT, ns, dos->n_energy);
-                }
             }
             heat_capacity.resize(NT);
             FE_QHA.resize(NT);
@@ -555,9 +550,6 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                 dos->update_dos_energy_grid(emin_now, emax_now);
                 // The grid update changes n_energy; the DOS arrays were sized with the old value.
                 dos_update.resize(NT, dos->n_energy);
-                if (dos->projected_dos) {
-                    pdos_update.resize(NT, ns, dos->n_energy);
-                }
             }
 
             double t_interp = 0.0, t_dos = 0.0, t_fe = 0.0, t_rest = 0.0;
@@ -796,9 +788,6 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                     emax_now += dos->delta_e;
                     dos->update_dos_energy_grid(emin_now, emax_now);
                     dos_update.resize(NT, dos->n_energy);
-                    if (dos->projected_dos) {
-                        pdos_update.resize(NT, ns, dos->n_energy);
-                    }
                 }
 
                 for (auto iT = 0; iT < NT; ++iT) {
@@ -1024,7 +1013,6 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
         evec_tmp.clear();
 
         dos_update.clear();
-        pdos_update.clear();
         heat_capacity.clear();
         heat_capacity_correction.clear();
         FE_QHA.clear();

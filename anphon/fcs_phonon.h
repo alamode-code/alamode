@@ -235,8 +235,6 @@ private:
 
     void deallocate_variables();
 
-    void load_fc2_xml();
-
     void load_fcs_xml(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
     void parse_fcs_from_h5(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
@@ -251,11 +249,7 @@ private:
 
     void replicate_force_constants(const int maxorder_in);
 
-    void MPI_Bcast_fc_class(unsigned int) const;
-
     void MPI_Bcast_fcs_array(unsigned int);
-
-    void MPI_Bcast_fc2_ext();
 
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).

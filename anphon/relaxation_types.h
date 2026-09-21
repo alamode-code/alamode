@@ -118,22 +118,6 @@ struct MinimumDistList;
 class PhaseFactorCache;
 class DelVStrainData;
 
-struct DelVStrainOutputs
-{
-    DelVStrainData *del_v_strain{};
-};
-
-struct DelVStrainComputeInputs
-{
-    const KpointMeshUniform *kmesh_coarse{};
-    const KpointMeshUniform *kmesh_dense{};
-    double **omega2_harmonic{};
-    std::complex<double> ***evec_harmonic{};
-    RelaxationStrMode relax_str{RelaxationStrMode::None};
-    MinimumDistList ***mindist_list{};
-    const PhaseFactorCache *phase_cache{};
-};
-
 // One row of the per-temperature structural-optimization history table.
 struct StructOptStepRecord
 {

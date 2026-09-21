@@ -117,11 +117,7 @@ private:
 
     void compute_ewald_fcs();
 
-    void compute_ewald_fcs2();
-
     void get_pairs_of_minimum_distance(int, const int[3], const Eigen::MatrixXd &);
-
-    void calc_longrange_fcs(int, int, int, int, int, double *);
 
     void calc_real_space_sum_ewald_fcs(int, int, double **);
 

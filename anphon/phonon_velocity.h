@@ -34,10 +34,8 @@ public:
 
     void phonon_vel_k(const double *, double **) const;
 
-    void phonon_vel_k2(const double *, const double *, std::complex<double> **, double **) const;
-
     void get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
-                                        const bool irreducible_only, double ***phvel3_out) const;
+                                        double ***phvel3_out) const;
 
     void get_phonon_group_velocity_mesh_velmat(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
                                                double ***phvel3_out) const;
@@ -78,16 +76,11 @@ public:
     bool print_velocity;
 
 private:
-    NDArray<double, 2> xshift_s;
-
     double diff(const double *, unsigned int, double) const;
 
     void set_default_variables();
 
     void deallocate_variables();
-
-    void calc_derivative_dynmat_k(const double *, const std::vector<FcsArrayWithCell> &,
-                                  std::complex<double> ***) const;
 
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).

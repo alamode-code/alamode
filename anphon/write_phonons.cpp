@@ -879,7 +879,6 @@ void Writes::writePhononVelAll() const
     } else {
         phon->phonon_velocity->get_phonon_group_velocity_mesh(*phon->dos->kmesh_dos.get(),
                                                               phon->system->get_primcell().lattice_vector,
-                                                              false,
                                                               phvel_xyz);
     }
     unsigned int ik, is;

@@ -434,7 +434,7 @@ void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class, const Kpoin
     // Use finite-difference velocities for adaptive widths. Degenerate-mode
     // velocities are basis dependent, and widths have a fixed 2e-5 Ry floor,
     // so cell dependence can persist. Use ISMEAR = 1 or 0 for cell independence.
-    phvel_class->get_phonon_group_velocity_mesh(*kmesh_in, lavec_p_in, false, vel);
+    phvel_class->get_phonon_group_velocity_mesh(*kmesh_in, lavec_p_in, vel);
 
     for (auto u = 0; u < 3; u++) {
         for (auto a = 0; a < 3; a++) {

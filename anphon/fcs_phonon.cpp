@@ -30,7 +30,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "stage_timer.h"
 #include "system.h"
 #include "timer.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 

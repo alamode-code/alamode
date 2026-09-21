@@ -24,7 +24,6 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "system.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 

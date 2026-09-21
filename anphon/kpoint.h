@@ -47,62 +47,6 @@ public:
     KpointInp(const std::vector<std::string> &obj) : kpelem(obj) {};
 };
 
-class KpointPlaneGeometry
-{
-public:
-    double xk_origin[3];
-    double xk_edges[2][3];
-    int npoints[2];
-
-    KpointPlaneGeometry() {};
-
-    KpointPlaneGeometry(const double *xk_origin_in, const double *xk_edge1_in, const double *xk_edge2_in,
-                        const int *num)
-    {
-        for (int i = 0; i < 3; ++i) {
-            xk_origin[i] = xk_origin_in[i];
-            xk_edges[0][i] = xk_edge1_in[i];
-            xk_edges[1][i] = xk_edge2_in[i];
-        }
-        for (int i = 0; i < 2; ++i) {
-            npoints[i] = num[i];
-        }
-    }
-};
-
-class KpointPlane
-{
-public:
-    double k[3];
-    int n[2];
-
-    KpointPlane() {};
-
-    KpointPlane(const double *xk_in, const int *n_in)
-    {
-        for (int i = 0; i < 3; ++i) k[i] = xk_in[i];
-        for (int i = 0; i < 2; ++i) n[i] = n_in[i];
-    }
-};
-
-class KpointPlaneTriangle
-{
-public:
-    int index;
-    int knum[3];
-
-    KpointPlaneTriangle() {};
-
-    KpointPlaneTriangle(int index_in, const int *nk_in)
-    {
-        index = index_in;
-
-        for (int i = 0; i < 3; ++i) {
-            knum[i] = nk_in[i];
-        }
-    }
-};
-
 class KsList
 {
 public:
@@ -313,12 +257,7 @@ public:
     std::unique_ptr<KpointBandStructure> kpoint_bs;
     std::unique_ptr<KpointGeneral> kpoint_general;
 
-    int get_knum(const double[3], const unsigned int[3]) const;
-
     void get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int> &sym_list, double S_avg[3][3]) const;
-
-    void get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const Eigen::Matrix3d &lavec_prim,
-                                  std::vector<std::vector<double>> &klist) const;
 
     void setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
@@ -331,8 +270,6 @@ private:
     void deallocate_variables();
 
     void setup_kpoint_given(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
-
-    void mpi_broadcast_kplane_vector(unsigned int, std::vector<KpointPlane> *&) const;
 
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).

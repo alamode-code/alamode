@@ -25,8 +25,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "niggli_wrapper.h"
 #include "symmetry_core.h"
 #include "system.h"
-#include "timer.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -805,63 +803,6 @@ int KpointMeshUniform::get_knum(const double xk[3]) const
     return kloc + nk_i[2] * jloc + nk_i[1] * nk_i[2] * iloc;
 }
 
-void Kpoint::mpi_broadcast_kplane_vector(const unsigned int nplane, std::vector<KpointPlane> *&kp_plane) const
-{
-    int j;
-    NDArray<int, 2> naxis;
-    NDArray<double, 2> xk_plane;
-
-    for (int i = 0; i < nplane; ++i) {
-        int nkp = kp_plane[i].size();
-
-        MPI_Bcast(&nkp, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-        naxis.resize(nkp, 2);
-        xk_plane.resize(nkp, 3);
-
-        if (run.my_rank == 0) {
-            for (j = 0; j < nkp; ++j) {
-                naxis[j][0] = kp_plane[i][j].n[0];
-                naxis[j][1] = kp_plane[i][j].n[1];
-                xk_plane[j][0] = kp_plane[i][j].k[0];
-                xk_plane[j][1] = kp_plane[i][j].k[1];
-                xk_plane[j][2] = kp_plane[i][j].k[2];
-            }
-        }
-
-        MPI_Bcast(&naxis[0][0], 2 * nkp, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&xk_plane[0][0], 3 * nkp, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-        if (run.my_rank > 0) {
-            for (j = 0; j < nkp; ++j) {
-                kp_plane[i].emplace_back(xk_plane[j], naxis[j]);
-            }
-        }
-        naxis.clear();
-        xk_plane.clear();
-    }
-}
-
-int Kpoint::get_knum(const double xk[3], const unsigned int nk[3]) const
-{
-    int i;
-    double diff[3];
-    double dnk[3];
-
-    for (i = 0; i < 3; ++i) dnk[i] = static_cast<double>(nk[i]);
-    for (i = 0; i < 3; ++i) diff[i] = static_cast<double>(nint(xk[i] * dnk[i])) - xk[i] * dnk[i];
-
-    const auto norm = std::sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-
-    if (norm >= eps12) return -1;
-
-    const int iloc = nint(xk[0] * dnk[0] + 2.0 * dnk[0]) % nk[0];
-    const int jloc = nint(xk[1] * dnk[1] + 2.0 * dnk[1]) % nk[1];
-    const int kloc = nint(xk[2] * dnk[2] + 2.0 * dnk[2]) % nk[2];
-
-    return kloc + nk[2] * jloc + nk[1] * nk[2] * iloc;
-}
-
 void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int> &sym_list, double S_avg[3][3]) const
 {
     int i, j;
@@ -924,106 +865,6 @@ void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int
                 S_avg[i][j] /= static_cast<double>(sym_list.size());
             }
         }
-    }
-}
-
-void Kpoint::get_commensurate_kpoints(const Eigen::Matrix3d &lavec_super, const Eigen::Matrix3d &lavec_prim,
-                                      std::vector<std::vector<double>> &klist) const
-{
-    int i, j;
-    Eigen::Matrix3d inv_lavec_super;
-    Eigen::Matrix3d convmat;
-
-    inv_lavec_super = lavec_super.inverse();
-    convmat = (inv_lavec_super * lavec_prim).transpose();
-
-    const auto det = convmat.determinant();
-    const auto nkmax = static_cast<int>(std::ceil(1.0 / det));
-    const auto tol = 1.0e-6;
-    const auto max_denom = 10000; // for safety
-    int k;
-
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-
-            const auto frac = std::abs(convmat(i, j));
-
-            if (frac < tol) {
-                convmat(i, j) = 0.0;
-            } else {
-                auto found_denom = false;
-                for (k = 1; k < max_denom; ++k) {
-                    if (std::abs(frac * static_cast<double>(k) - 1.0) < tol) {
-                        found_denom = true;
-                        break;
-                    }
-                }
-                if (found_denom) {
-                    const auto sign = (0.0 < convmat(i, j)) - (convmat(i, j) < 0.0);
-                    convmat(i, j) = static_cast<double>(sign) / static_cast<double>(k);
-                } else {
-                    exit("get_commensurate_kpoints", "The denominator of the conversion matrix > 10000");
-                }
-            }
-        }
-    }
-
-    const auto nmax_cell = static_cast<int>(nkmax) / 2 + 1;
-    std::vector<int> signs({-1, 1});
-    std::vector<std::vector<int>> comb;
-    comb.clear();
-    for (i = 0; i < nmax_cell; ++i) {
-        for (j = 0; j < nmax_cell; ++j) {
-            for (k = 0; k < nmax_cell; ++k) {
-                for (const auto &sx: signs) {
-                    for (const auto &sy: signs) {
-                        for (const auto &sz: signs) {
-                            comb.push_back({i * sx, j * sy, k * sz});
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    double qtmp[3], qdiff[3];
-
-    for (const auto &p: comb) {
-        for (i = 0; i < 3; ++i) qtmp[i] = p[i];
-        rotvec(qtmp, qtmp, convmat);
-
-        for (i = 0; i < 3; ++i) {
-            qtmp[i] = std::fmod(qtmp[i], 1.0);
-            if (qtmp[i] >= 0.5) {
-                qtmp[i] -= 1.0;
-            } else if (qtmp[i] < -0.5) {
-                qtmp[i] += 1.0;
-            }
-        }
-
-        auto new_entry = true;
-
-        for (const auto &elem: klist) {
-
-            for (i = 0; i < 3; ++i) {
-                qdiff[i] = std::fmod(qtmp[i] - elem[i], 1.0);
-                if (qdiff[i] >= 0.5) {
-                    qdiff[i] -= 1.0;
-                } else if (qdiff[i] < -0.5) {
-                    qdiff[i] += 1.0;
-                }
-            }
-
-            const auto norm = std::sqrt(qdiff[0] * qdiff[0] + qdiff[1] * qdiff[1] + qdiff[2] * qdiff[2]);
-
-            if (norm < tol) {
-                new_entry = false;
-                break;
-            }
-        }
-        if (new_entry) klist.push_back({qtmp[0], qtmp[1], qtmp[2]});
-
-        if (klist.size() == nkmax) break;
     }
 }
 

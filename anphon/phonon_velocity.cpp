@@ -14,7 +14,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <cstdlib>
 #include <iomanip>
 #include <limits>
-#include "cell_shift_table.h"
 #include "constants.h"
 #include "degeneracy_utils.h"
 #include "dense_hermitian_eigen.h"
@@ -28,7 +27,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "system.h"
-#include "write_phonons.h"
 
 using namespace PHON_NS;
 
@@ -49,8 +47,6 @@ PhononVelocity::~PhononVelocity()
 void PhononVelocity::set_default_variables()
 {
     print_velocity = false;
-
-    build_27cell_shift_table(xshift_s);
 }
 
 void PhononVelocity::deallocate_variables()
@@ -199,39 +195,24 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
 }
 
 void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
-                                                    const bool irreducible_only, double ***phvel3_out) const
+                                                    double ***phvel3_out) const
 {
     // This routine computes the group velocities for the given uniform k mesh.
     const auto nk = kmesh_in.nk;
-    const auto nk_irred = kmesh_in.nk_irred;
     const auto ns = dynamical->neval;
 
     NDArray<double, 2> vel;
 
     vel.resize(ns, 3);
 
-    if (irreducible_only) {
-        for (unsigned int i = 0; i < nk_irred; ++i) {
-            phonon_vel_k(&kmesh_in.xk[kmesh_in.kpoint_irred_all[i][0].knum][0], vel);
+    for (unsigned int i = 0; i < nk; ++i) {
+        phonon_vel_k(&kmesh_in.xk[i][0], vel);
 
-            for (unsigned int j = 0; j < ns; ++j) {
-                rotvec(vel[j], vel[j], lavec_p);
-                for (unsigned int k = 0; k < 3; ++k) {
-                    vel[j][k] /= 2.0 * pi;
-                    phvel3_out[i][j][k] = vel[j][k];
-                }
-            }
-        }
-    } else {
-        for (unsigned int i = 0; i < nk; ++i) {
-            phonon_vel_k(&kmesh_in.xk[i][0], vel);
-
-            for (unsigned int j = 0; j < ns; ++j) {
-                rotvec(vel[j], vel[j], lavec_p);
-                for (unsigned int k = 0; k < 3; ++k) {
-                    vel[j][k] /= 2.0 * pi;
-                    phvel3_out[i][j][k] = vel[j][k];
-                }
+        for (unsigned int j = 0; j < ns; ++j) {
+            rotvec(vel[j], vel[j], lavec_p);
+            for (unsigned int k = 0; k < 3; ++k) {
+                vel[j][k] /= 2.0 * pi;
+                phvel3_out[i][j][k] = vel[j][k];
             }
         }
     }
@@ -688,205 +669,6 @@ double PhononVelocity::diff(const double *f, const unsigned int n, const double 
     }
 
     return df;
-}
-
-void PhononVelocity::phonon_vel_k2(const double *xk_in, const double *omega_in, std::complex<double> **evec_in,
-                                   double **vel_out) const
-{
-    unsigned int i, j, l, m;
-    unsigned int icrd;
-    const auto nmode = 3 * system->get_primcell().number_of_atoms;
-
-    NDArray<std::complex<double>, 3> ddyn;
-    std::complex<double> ctmp;
-    NDArray<std::complex<double>, 2> vel_tmp;
-    NDArray<std::complex<double>, 3> mat_tmp;
-    std::complex<double> czero(0.0, 0.0);
-    std::vector<int> smallgroup_k;
-    NDArray<double, 2> eval_tmp;
-
-    if (dynamical->nonanalytic) {
-        exit("phonon_vel_k2",
-             "Sorry. Analytic calculation of "
-             "group velocity is not supported for NONANALYTIC>0.");
-    }
-
-    ddyn.resize(3, nmode, nmode);
-    vel_tmp.resize(3, nmode);
-    calc_derivative_dynmat_k(xk_in, fcs_phonon->force_constant_with_cell[0], ddyn);
-
-    const auto do_diagonalize = false;
-
-    if (do_diagonalize) {
-        // Detect degeneracy at the given k
-        double tol_omega = 1.0e-7; // Approximately equal to 0.01 cm^{-1}
-
-        std::vector<int> degeneracy_at_k;
-
-        degeneracy_at_k.clear();
-
-        double omega_prev = omega_in[0];
-        int ideg = 1;
-
-        for (i = 1; i < nmode; ++i) {
-            double omega_now = omega_in[i];
-
-            if (std::abs(omega_now - omega_prev) < tol_omega) {
-                ++ideg;
-            } else {
-                degeneracy_at_k.push_back(ideg);
-                ideg = 1;
-                omega_prev = omega_now;
-            }
-        }
-        degeneracy_at_k.push_back(ideg);
-
-        int is = 0;
-
-        for (i = 0; i < degeneracy_at_k.size(); ++i) {
-            ideg = degeneracy_at_k[i];
-
-            if (ideg == 1) {
-
-                // When the branch is non-degenerate, the velocity can be calculated
-                // from the diagonal element of e^{*} * DDYN * e.
-
-                for (icrd = 0; icrd < 3; ++icrd) {
-                    vel_tmp[icrd][is] = czero;
-
-                    for (l = 0; l < nmode; ++l) {
-                        ctmp = czero;
-                        for (m = 0; m < nmode; ++m) {
-                            ctmp += ddyn[icrd][l][m] * evec_in[is][m];
-                        }
-                        vel_tmp[icrd][is] += std::conj(evec_in[is][l]) * ctmp;
-                    }
-                    vel_tmp[icrd][is] /= 2.0 * omega_in[is];
-                }
-
-            } else if (ideg > 1) {
-
-                // When the branch is degenerated with two or more branches,
-                // we have to construct a MxM matrix and diagonalize it to obtain
-                // group velocities.
-
-                mat_tmp.resize(3, ideg, ideg);
-                eval_tmp.resize(3, ideg);
-
-                for (icrd = 0; icrd < 3; ++icrd) {
-
-                    for (j = 0; j < ideg; ++j) {
-                        for (unsigned int k = 0; k < ideg; ++k) {
-                            mat_tmp[icrd][j][k] = czero;
-
-                            for (l = 0; l < nmode; ++l) {
-                                ctmp = czero;
-                                for (m = 0; m < nmode; ++m) {
-                                    ctmp += ddyn[icrd][l][m] * evec_in[j + is][m];
-                                }
-                                mat_tmp[icrd][j][k] += std::conj(evec_in[k + is][l]) * ctmp;
-                            }
-                        }
-                    }
-                    // Diagonalize the matrix here
-
-                    solve_dense_hermitian(ideg, mat_tmp[icrd], eval_tmp[icrd], nullptr, false);
-
-                    for (j = 0; j < ideg; ++j) {
-                        vel_tmp[icrd][j + is] = eval_tmp[icrd][j] / (2.0 * omega_in[j + is]);
-                    }
-                }
-
-                mat_tmp.clear();
-                eval_tmp.clear();
-
-            } else {
-                exit("phonon_vel_k2", "This cannot happen.");
-            }
-
-            is += ideg;
-        }
-    } else {
-
-        for (icrd = 0; icrd < 3; ++icrd) {
-
-            for (j = 0; j < nmode; ++j) {
-                vel_tmp[icrd][j] = czero;
-
-                for (l = 0; l < nmode; ++l) {
-                    ctmp = czero;
-                    for (m = 0; m < nmode; ++m) {
-                        ctmp += ddyn[icrd][l][m] * evec_in[j][m];
-                    }
-                    vel_tmp[icrd][j] += std::conj(evec_in[j][l]) * ctmp;
-                }
-            }
-            for (j = 0; j < nmode; ++j) {
-                vel_tmp[icrd][j] /= 2.0 * omega_in[j];
-            }
-        }
-    }
-
-    for (icrd = 0; icrd < 3; ++icrd) {
-        for (i = 0; i < nmode; ++i) {
-            vel_out[i][icrd] = vel_tmp[icrd][i].real();
-        }
-    }
-
-    if (ddyn) {
-        ddyn.clear();
-    }
-    if (vel_tmp) {
-        vel_tmp.clear();
-    }
-
-    double symmetrizer_k[3][3];
-
-    kpoint->get_symmetrization_matrix_at_k(xk_in, smallgroup_k, symmetrizer_k);
-
-    for (i = 0; i < nmode; ++i) {
-        rotvec(vel_out[i], vel_out[i], symmetrizer_k, 'T');
-    }
-}
-
-void PhononVelocity::calc_derivative_dynmat_k(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
-                                              std::complex<double> ***ddyn_out) const
-{
-    unsigned int i, j, k;
-
-    const auto nmode = dynamical->neval;
-
-    for (k = 0; k < 3; ++k) {
-        for (i = 0; i < nmode; ++i) {
-            for (j = 0; j < nmode; ++j) {
-                ddyn_out[k][i][j] = std::complex<double>(0.0, 0.0);
-            }
-        }
-    }
-
-    const auto invsqrt_mass = system->get_invsqrt_mass();
-
-    for (const auto &it: fc2_in) {
-
-        const auto phase =
-            tpi * (it.relvecs[0][0] * xk_in[0] + it.relvecs[0][1] * xk_in[1] + it.relvecs[0][2] * xk_in[2]);
-
-        for (k = 0; k < 3; ++k) {
-            // For the diagonal components, this should be fine,
-            // whereas it.relvecs_vel should be used for computing the off diagonal elements.
-            ddyn_out[k][it.pairs[0].index][it.pairs[1].index] +=
-                it.fcs_val * std::exp(im * phase) * tpi * it.relvecs[0][k] * invsqrt_mass[it.pairs[0].index / 3] *
-                invsqrt_mass[it.pairs[1].index / 3];
-        }
-    }
-
-    for (k = 0; k < 3; ++k) {
-        for (i = 0; i < nmode; ++i) {
-            for (j = 0; j < nmode; ++j) {
-                ddyn_out[k][i][j] *= std::complex<double>(0.0, 1.0);
-            }
-        }
-    }
 }
 
 // Central-difference D_na for NONANALYTIC methods 1/2/3. No unique

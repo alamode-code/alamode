@@ -58,10 +58,7 @@ Relaxation::Relaxation(const RunInfo &run_in, const Timer *timer_in, const Syste
                                                      run.nprocs);
 }
 
-Relaxation::~Relaxation()
-{
-    deallocate_variables();
-}
+Relaxation::~Relaxation() = default;
 
 void Relaxation::set_default_variables()
 {
@@ -95,9 +92,6 @@ void Relaxation::set_default_variables()
     strain_IFC_dir.clear();
     strain_file.clear();
 }
-
-void Relaxation::deallocate_variables()
-{}
 
 void Relaxation::setup_relaxation()
 {
@@ -772,27 +766,6 @@ void Relaxation::set_initial_strain(std::array<std::array<double, 3>, 3> &u_tens
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             u_tensor[i][j] = init_u_tensor[i][j];
-        }
-    }
-}
-
-void Relaxation::calculate_u0(const double *const q0, double *const u0, double **omega2_harmonic,
-                              std::complex<double> ***evec_harmonic) const
-{
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto ns = dynamical->neval;
-
-    for (int i_atm = 0; i_atm < natmin; i_atm++) {
-        for (int ixyz = 0; ixyz < 3; ixyz++) {
-            const auto is = i_atm * 3 + ixyz;
-            u0[is] = 0.0;
-            for (int is2 = 0; is2 < ns; is2++) {
-                if (std::fabs(omega2_harmonic[0][is2]) < eps8) {
-                    continue;
-                }
-                u0[is] += evec_harmonic[0][is2][is].real() * q0[is2];
-            }
-            u0[is] /= std::sqrt(system->get_mass_prim()[i_atm]);
         }
     }
 }

@@ -345,8 +345,6 @@ public:
                                 std::complex<double> **delta_v2_array_original, std::complex<double> ***v3_ref,
                                 const std::complex<double> *const *q4_gamma, const std::vector<double> &q0) const;
 
-    void calculate_u0(const double *const q0, double *const u0, double **omega2_harmonic,
-                      std::complex<double> ***evec_harmonic) const;
     void calculate_u0(const std::vector<double> &q0, std::vector<double> &u0, double **omega2_harmonic,
                       std::complex<double> ***evec_harmonic) const;
 
@@ -401,8 +399,6 @@ public:
 
 private:
     void set_default_variables();
-
-    void deallocate_variables();
 
     void set_initial_q0(std::vector<double> &q0, std::complex<double> ***evec_harmonic) const;
 
