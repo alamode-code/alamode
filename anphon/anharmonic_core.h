@@ -163,11 +163,6 @@ public:
                                 const std::vector<SymmetryOperation> &symmlist, const Integration &integration_in,
                                 const bool classical, double *ret);
 
-    // a wrapper to return v3
-    //std::complex<double> get_v3(const unsigned int [3],
-    //                        double **,
-    //                        std::complex<double> ***);
-
     int quartic_mode;
     bool use_tuned_ver;
     bool use_triplet_symmetry;

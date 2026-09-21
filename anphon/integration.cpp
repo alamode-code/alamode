@@ -50,8 +50,6 @@ void Integration::setup_integration(const int quartic_mode_in, const int my_rank
 {
     MPI_Bcast(&ismear, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    // ADAPTIVE_FACTOR is set on rank 0 by the parser but read on all ranks
-    // (create_adaptive_sigma / create_adaptive_sigma4).
     MPI_Bcast(&adaptive_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (my_rank_in == 0) {
@@ -309,6 +307,10 @@ bool Integration::add_tetrahedron_weight(const unsigned int *map_to_irreducible_
     const auto e4 = e_tmp[3];
 
     if (e_ref < e1 || e4 <= e_ref) return false;
+
+    // A tetrahedron whose four energies agree within rounding error is flat: its
+    // weights scale as 1/(e4 - e1) and depend only on the rounding of the energies.
+    if (e4 - e1 <= 1.0e-10 * std::max(std::abs(e1), std::abs(e4))) return false;
 
     const auto k1 = kindex[sort_arg[0]];
     const auto k2 = kindex[sort_arg[1]];

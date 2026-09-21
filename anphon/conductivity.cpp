@@ -135,8 +135,6 @@ void Conductivity::run_kappa()
     MPI_Bcast(&solver_ibte, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&fph_rta, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-    // LEN_BOUNDARY is set on rank 0 by the parser but read on all ranks
-    // (boundary scattering in Iterativebte and in the RTA gamma).
     MPI_Bcast(&len_boundary, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // SOLVER = IBTE: PHON::execute_kappa runs Iterativebte, which uses this
