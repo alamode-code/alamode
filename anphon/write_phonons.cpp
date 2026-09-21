@@ -3330,7 +3330,8 @@ void Writes::printNormalmodeBorncharge() const
             return;
         }
 
-        auto zstar_born = phon->dielec->get_zstar_mode(*phon->dynamical);
+        auto zstar_born =
+            phon->dielec->get_zstar_mode(*phon->dynamical, phon->fcs_phonon->force_constant_with_cell[0], *phon->ewald);
 
         const auto ns = phon->dynamical->neval;
 

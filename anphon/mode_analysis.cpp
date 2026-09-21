@@ -1029,7 +1029,7 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
         for (auto j = 0; j < 3; ++j) xq[0][j] = target.xk[j];
         if (!same_target_k(kslist_offmesh, i)) {
             eigen_at(xq[0], eval_q, evec_q);
-            anharmonic_core->build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
+            build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
         }
         const auto omega = eval_q[0][snum];
 
@@ -1209,6 +1209,43 @@ void ModeAnalysis::eigen_at(const double *xk, NDArray<double, 2> &eval, NDArray<
                                      evec);
 }
 
+void ModeAnalysis::build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in,
+                                      AnharmonicCore::ShiftedGrid &sg) const
+{
+    const int nk = kmesh_in->nk;
+    const int ns = system->get_num_modes();
+    sg.xk.resize(nk, 3);
+    sg.eval.resize(nk, ns);
+    sg.evec.resize(nk, ns, ns);
+
+    // Non-analytic direction as for the mesh points (kpoint.cpp): folded coordinate
+    // rotated to Cartesian and normalized, zero at Gamma.
+    NDArray<double, 2> kvec(nk, 3);
+    const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
+    for (auto ik = 0; ik < nk; ++ik) {
+        double xf[3];
+        for (auto i = 0; i < 3; ++i) {
+            sg.xk[ik][i] = xq[i] - kmesh_in->xk[ik][i];
+            xf[i] = sg.xk[ik][i] - std::floor(sg.xk[ik][i] + 0.5);
+        }
+        rotvec(kvec[ik], xf, rlavec, 'T');
+        const auto norm = kvec[ik][0] * kvec[ik][0] + kvec[ik][1] * kvec[ik][1] + kvec[ik][2] * kvec[ik][2];
+        if (norm > eps) {
+            for (auto i = 0; i < 3; ++i) kvec[ik][i] /= std::sqrt(norm);
+        } else {
+            for (auto i = 0; i < 3; ++i) kvec[ik][i] = 0.0;
+        }
+    }
+    dynamical->get_eigenvalues_dymat(nk,
+                                     sg.xk,
+                                     kvec,
+                                     fcs_phonon->force_constant_with_cell[0],
+                                     ewald->fc2_without_dipole,
+                                     true,
+                                     sg.eval,
+                                     sg.evec);
+}
+
 void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offset) const
 {
     // |V3|^2 (kind 0) and Phi3 (1): partners q' over the mesh, q'' = q - q' (0) or -q - q' (1).
@@ -1243,7 +1280,7 @@ void ModeAnalysis::print_vertex_offmesh(const int kind, const size_t number_offs
             // Grid of the last internal leg: {sign*q - k}.
             double xs[3];
             for (auto j = 0; j < 3; ++j) xs[j] = sign * xq[0][j];
-            anharmonic_core->build_shifted_grid(xs, dos->kmesh_dos.get(), sg);
+            build_shifted_grid(xs, dos->kmesh_dos.get(), sg);
         }
         const auto omega_q = eval_q[0][snum];
         if (run.my_rank == 0) results[target.id].omega = in_kayser(omega_q);
@@ -1659,7 +1696,7 @@ void ModeAnalysis::print_frequency_resolved_final_state_offmesh(const unsigned i
         for (auto j = 0; j < 3; ++j) xq[0][j] = target.xk[j];
         if (!same_target_k(kslist_offmesh, i)) {
             eigen_at(xq[0], eval_q, evec_q);
-            anharmonic_core->build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
+            build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
         }
         const auto omega0 = eval_q[0][snum];
         if (run.my_rank == 0 && run.verbosity > 0) {
@@ -2790,7 +2827,7 @@ void ModeAnalysis::print_spectral_function_offmesh(const unsigned int NT, const 
         for (auto j = 0; j < 3; ++j) xq[0][j] = target.xk[j];
         if (!same_target_k(kslist_offmesh, i)) {
             eigen_at(xq[0], eval_q, evec_q);
-            anharmonic_core->build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
+            build_shifted_grid(xq[0], dos->kmesh_dos.get(), sg);
         }
         const auto omega = eval_q[0][snum];
 

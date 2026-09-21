@@ -87,8 +87,8 @@ class AnharmonicCore
 {
 public:
     AnharmonicCore(const RunInfo &run, const Timer *timer, const System *system, const Symmetry *symmetry,
-                   const Fcs_phonon *fcs_phonon, const Ewald *ewald, const Dynamical *dynamical,
-                   const Integration *integration, const Thermodynamics *thermodynamics, const Dos *dos);
+                   const Fcs_phonon *fcs_phonon, const Integration *integration, const Thermodynamics *thermodynamics,
+                   const Dos *dos);
 
     ~AnharmonicCore();
 
@@ -101,8 +101,6 @@ public:
         NDArray<double, 2> eval;               // (nk, ns) frequencies
         NDArray<std::complex<double>, 3> evec; // (nk, ns, ns)
     };
-
-    void build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, ShiftedGrid &sg) const;
 
     // Im bubble self-energy at omega_in: full-mesh k, shifted-grid q - k, exact vertex phases.
     void calc_damping_smearing_at(const unsigned int ntemp, const double *temp_in, const double omega_in,
@@ -418,8 +416,6 @@ private:
     const System *system;
     const Symmetry *symmetry;
     const Fcs_phonon *fcs_phonon;
-    const Ewald *ewald;
-    const Dynamical *dynamical;
     const Integration *integration;
     const Thermodynamics *thermodynamics;
     const Dos *dos;

@@ -40,9 +40,8 @@
 
 using namespace PHON_NS;
 
-Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in,
-                     const Dielec *dielec_in, const Ewald *ewald_in) :
-    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in), ewald(ewald_in)
+Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Dielec *dielec_in, const Ewald *ewald_in) :
+    run(run_in), system(system_in), dielec(dielec_in), ewald(ewald_in)
 {
     set_default_variables();
 }
@@ -377,16 +376,16 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
     dymat_k.clear();
 }
 
-void Dynamical::diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out,
-                                           const bool require_evec) const
+void Dynamical::diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec,
+                                           const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const
 {
     double xk[3] = {0.0, 0.0, 0.0};
     if (nonanalytic == 3) {
         // eval_k adds an uninitialized nonanalytic matrix for method 3; the
         // Ewald path with the dipole-free force constants is mandatory here.
-        eval_k_ewald(xk, xk, ewald->fc2_without_dipole, eval_out, evec_out, require_evec);
+        eval_k_ewald(xk, xk, ewald.fc2_without_dipole, eval_out, evec_out, require_evec);
     } else {
-        eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0], eval_out, evec_out, require_evec);
+        eval_k(xk, xk, fc2, eval_out, evec_out, require_evec);
     }
 }
 
@@ -738,7 +737,8 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
 }
 
 void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general,
-                                          const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos)
+                                          const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos,
+                                          const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald)
 {
     unsigned int nk;
 
@@ -761,8 +761,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
         get_eigenvalues_dymat(nk,
                               kpoint_general->xk,
                               kpoint_general->kvec_na,
-                              fcs_phonon->force_constant_with_cell[0],
-                              ewald->fc2_without_dipole,
+                              fc2,
+                              ewald.fc2_without_dipole,
                               require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
@@ -772,7 +772,7 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
 
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
-                                                    fcs_phonon->force_constant_with_cell[0],
+                                                    fc2,
                                                     kpoint_general->xk[ik],
                                                     projection_directions,
                                                     evec_tmp[ik]);
@@ -799,8 +799,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
         get_eigenvalues_dymat(nk,
                               kpoint_bs->xk,
                               kpoint_bs->kvec_na,
-                              fcs_phonon->force_constant_with_cell[0],
-                              ewald->fc2_without_dipole,
+                              fc2,
+                              ewald.fc2_without_dipole,
                               require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
@@ -809,7 +809,7 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
             if (run.my_rank == 0) {
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
-                                                    fcs_phonon->force_constant_with_cell[0],
+                                                    fc2,
                                                     kpoint_bs->xk[ik],
                                                     projection_directions,
                                                     evec_tmp[ik]);
@@ -837,8 +837,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
         get_eigenvalues_dymat(nk,
                               kmesh_dos->xk,
                               kmesh_dos->kvec_na,
-                              fcs_phonon->force_constant_with_cell[0],
-                              ewald->fc2_without_dipole,
+                              fc2,
+                              ewald.fc2_without_dipole,
                               require_eigenvectors,
                               eval_tmp,
                               evec_tmp);
@@ -847,7 +847,7 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
             if (run.my_rank == 0) {
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
-                                                    fcs_phonon->force_constant_with_cell[0],
+                                                    fc2,
                                                     kmesh_dos->xk[ik],
                                                     projection_directions,
                                                     evec_tmp[ik]);
@@ -1089,15 +1089,15 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
             } else {
 
                 Eigen::MatrixXcd evec_sub = evec_orig.block(0, ishift, ns, 2);
-                auto is_lifted = transform_eigenvectors(xk_in, directions[0], dk, evec_sub);
+                auto is_lifted = transform_eigenvectors(xk_in, directions[0], dk, evec_sub, fc2_in);
 
                 if (is_lifted == 0 and ndirec >= 2) {
                     evec_sub = evec_orig.block(0, ishift, ns, 2);
-                    is_lifted = transform_eigenvectors(xk_in, directions[1], dk, evec_sub);
+                    is_lifted = transform_eigenvectors(xk_in, directions[1], dk, evec_sub, fc2_in);
 
                     if (is_lifted == 0 and ndirec >= 3) {
                         evec_sub = evec_orig.block(0, ishift, ns, 2);
-                        is_lifted = transform_eigenvectors(xk_in, directions[2], dk, evec_sub);
+                        is_lifted = transform_eigenvectors(xk_in, directions[2], dk, evec_sub, fc2_in);
                     }
                 }
 
@@ -1124,7 +1124,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
             } else if (ndirec == 1) {
 
                 Eigen::MatrixXcd evec_sub = evec_orig.block(0, ishift, ns, 3);
-                auto is_lifted = transform_eigenvectors(xk_in, directions[0], dk, evec_sub);
+                auto is_lifted = transform_eigenvectors(xk_in, directions[0], dk, evec_sub, fc2_in);
 
                 evec_new.block(0, ishift, ns, 3) = evec_sub.block(0, 0, ns, 3);
                 if (is_lifted == 0) {
@@ -1138,10 +1138,10 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
             } else if (ndirec >= 2) {
 
                 Eigen::MatrixXcd evec_sub = evec_orig.block(0, ishift, ns, 3);
-                auto is_lifted1 = transform_eigenvectors(xk_in, directions[0], dk, evec_sub);
+                auto is_lifted1 = transform_eigenvectors(xk_in, directions[0], dk, evec_sub, fc2_in);
 
                 Eigen::MatrixXcd evec_sub2 = evec_sub.block(0, 1, ns, 2);
-                auto is_lifted2 = transform_eigenvectors(xk_in, directions[1], dk, evec_sub2);
+                auto is_lifted2 = transform_eigenvectors(xk_in, directions[1], dk, evec_sub2, fc2_in);
 
                 evec_new.block(0, ishift, ns, 1) = evec_sub.block(0, 0, ns, 1);
                 evec_new.block(0, ishift + 1, ns, 2) = evec_sub2.block(0, 0, ns, 2);
@@ -1176,7 +1176,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
 }
 
 int Dynamical::transform_eigenvectors(const double *xk_in, std::vector<double> perturb_direction, const double dk,
-                                      Eigen::MatrixXcd &evec_sub) const
+                                      Eigen::MatrixXcd &evec_sub, const std::vector<FcsArrayWithCell> &fc2) const
 {
     int i;
     double xk_shift[3], xk_shift_minus[3];
@@ -1196,8 +1196,8 @@ int Dynamical::transform_eigenvectors(const double *xk_in, std::vector<double> p
 
     dymat_dq.resize(ns, ns);
     dymat_dq_minus.resize(ns, ns);
-    calc_analytic_k(xk_shift, fcs_phonon->force_constant_with_cell[0], dymat_dq);
-    calc_analytic_k(xk_shift_minus, fcs_phonon->force_constant_with_cell[0], dymat_dq_minus);
+    calc_analytic_k(xk_shift, fc2, dymat_dq);
+    calc_analytic_k(xk_shift_minus, fc2, dymat_dq_minus);
 
     for (auto is = 0; is < ns; ++is) {
         for (auto js = 0; js < ns; ++js) {

@@ -84,8 +84,7 @@ private:
 class Dynamical
 {
 public:
-    Dynamical(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon, const Dielec *dielec,
-              const Ewald *ewald);
+    Dynamical(const RunInfo &run, const System *system, const Dielec *dielec, const Ewald *ewald);
 
     ~Dynamical();
 
@@ -108,7 +107,8 @@ public:
     // kmesh_dos / dymat_dos: the uniform mesh owned by Dos and the container that receives its
     // eigenpairs; both null when the run has no uniform mesh (KPMODE != 2).
     void diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general,
-                                   const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos);
+                                   const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos,
+                                   const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald);
 
     void setup_dynamical(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general);
 
@@ -126,7 +126,8 @@ public:
     // directional nonanalytic term).  Dispatches to eval_k_ewald with the
     // dipole-free force constants for NONANALYTIC = 3, where plain eval_k
     // must not be used.  eval_out receives omega^2, as with eval_k.
-    void diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec) const;
+    void diagonalize_gamma_analytic(double *eval_out, std::complex<double> **evec_out, const bool require_evec,
+                                    const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const;
 
     static double freq(const double);
 
@@ -221,7 +222,7 @@ private:
     std::vector<std::vector<double>> projection_directions;
 
     int transform_eigenvectors(const double *xk_in, std::vector<double> perturb_direction, const double dk,
-                               Eigen::MatrixXcd &evec_sub) const;
+                               Eigen::MatrixXcd &evec_sub, const std::vector<FcsArrayWithCell> &fc2) const;
 
 
     static void duplicate_xk_boundary(const double *, std::vector<std::vector<double>> &);
@@ -235,7 +236,6 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Fcs_phonon *fcs_phonon;
     const Dielec *dielec;
     const Ewald *ewald;
 };

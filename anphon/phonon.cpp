@@ -65,9 +65,9 @@ void PHON::create_pointers()
     symmetry = std::make_unique<Symmetry>(run_info, system.get());
     kpoint = std::make_unique<Kpoint>(run_info, system.get(), symmetry.get());
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, system.get());
-    dielec = std::make_unique<Dielec>(run_info, system.get(), fcs_phonon.get());
+    dielec = std::make_unique<Dielec>(run_info, system.get());
     ewald = std::make_unique<Ewald>(run_info, system.get());
-    dynamical = std::make_unique<Dynamical>(run_info, system.get(), fcs_phonon.get(), dielec.get(), ewald.get());
+    dynamical = std::make_unique<Dynamical>(run_info, system.get(), dielec.get(), ewald.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(run_info, system.get());
@@ -83,8 +83,6 @@ void PHON::create_pointers()
                                                        system.get(),
                                                        symmetry.get(),
                                                        fcs_phonon.get(),
-                                                       ewald.get(),
-                                                       dynamical.get(),
                                                        integration.get(),
                                                        thermodynamics.get(),
                                                        dos.get());
@@ -313,10 +311,12 @@ void PHON::execute_phonons() const
     dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
                                          kpoint->kpoint_general.get(),
                                          dos->kmesh_dos.get(),
-                                         dos->dymat_dos.get());
+                                         dos->dymat_dos.get(),
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *ewald);
 
     if (mode_symmetry->print_irreps && run_info.my_rank == 0) {
-        mode_symmetry->analyze_irreps_at_gamma();
+        mode_symmetry->analyze_irreps_at_gamma(fcs_phonon->force_constant_with_cell[0], *ewald);
     }
 
     if (dos->flag_dos) {
@@ -331,7 +331,7 @@ void PHON::execute_phonons() const
                                   dos->dymat_dos.get());
     }
     if (dielec->calc_dielectric_constant) {
-        dielec->run_dielec_calculation(*dynamical);
+        dielec->run_dielec_calculation(*dynamical, fcs_phonon->force_constant_with_cell[0], *ewald);
     }
 
     if (thermodynamics->calc_FE_bubble) {
@@ -375,7 +375,9 @@ void PHON::execute_kappa() const
         dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
                                              kpoint->kpoint_general.get(),
                                              dos->kmesh_dos.get(),
-                                             dos->dymat_dos.get());
+                                             dos->dymat_dos.get(),
+                                             fcs_phonon->force_constant_with_cell[0],
+                                             *ewald);
     }
 
     isotope->setup_isotope_scattering(*system,
@@ -450,7 +452,9 @@ void PHON::execute_self_consistent_phonon() const
     dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
                                          kpoint->kpoint_general.get(),
                                          dos->kmesh_dos.get(),
-                                         dos->dymat_dos.get());
+                                         dos->dymat_dos.get(),
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *ewald);
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
     relaxation->setup_relaxation(symmetry->tolerance);
 

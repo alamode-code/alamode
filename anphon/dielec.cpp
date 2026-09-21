@@ -25,8 +25,7 @@
 
 using namespace PHON_NS;
 
-Dielec::Dielec(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in) :
-    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in)
+Dielec::Dielec(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 }
@@ -323,7 +322,8 @@ const double *const *const *Dielec::get_dielectric_func() const
     return dielec;
 }
 
-void Dielec::run_dielec_calculation(const Dynamical &dynamical)
+void Dielec::run_dielec_calculation(const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2,
+                                    const Ewald &ewald)
 {
     NDArray<double, 1> xk;
     NDArray<double, 1> eval;
@@ -337,7 +337,7 @@ void Dielec::run_dielec_calculation(const Dynamical &dynamical)
 
     for (auto i = 0; i < 3; ++i) xk[i] = 0.0;
 
-    dynamical.diagonalize_gamma_analytic(eval, evec, true);
+    dynamical.diagonalize_gamma_analytic(eval, evec, true, fc2, ewald);
 
     compute_dielectric_function(nomega, omega_grid, eval, evec, dielec);
 
@@ -451,15 +451,17 @@ void Dielec::compute_dielectric_function(const unsigned int nomega_in, const dou
     s_born.clear();
 }
 
-std::vector<std::vector<double>> Dielec::get_zstar_mode(const Dynamical &dynamical) const
+std::vector<std::vector<double>>
+Dielec::get_zstar_mode(const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const
 {
     const auto ns = 3 * system->get_primcell().number_of_atoms;
     std::vector<std::vector<double>> zstar_mode(ns, std::vector<double>(3));
-    compute_mode_effective_charge(dynamical, zstar_mode, false);
+    compute_mode_effective_charge(dynamical, fc2, ewald, zstar_mode, false);
     return zstar_mode;
 }
 
-void Dielec::compute_mode_effective_charge(const Dynamical &dynamical, std::vector<std::vector<double>> &zstar_mode,
+void Dielec::compute_mode_effective_charge(const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2,
+                                           const Ewald &ewald, std::vector<std::vector<double>> &zstar_mode,
                                            const bool do_normalize) const
 {
     // Compute the effective charges of normal coordinate at q = 0.
@@ -480,12 +482,12 @@ void Dielec::compute_mode_effective_charge(const Dynamical &dynamical, std::vect
 
     if (!dynamical.get_projection_directions().empty()) {
         dynamical.project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
-                                                  fcs_phonon->force_constant_with_cell[0],
+                                                  fc2,
                                                   &xk[0],
                                                   dynamical.get_projection_directions(),
                                                   evec);
     } else {
-        dynamical.diagonalize_gamma_analytic(eval, evec, true);
+        dynamical.diagonalize_gamma_analytic(eval, evec, true, fc2, ewald);
     }
 
     compute_mode_effective_charge(zstar_mode, evec, do_normalize);

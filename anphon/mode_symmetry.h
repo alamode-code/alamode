@@ -15,6 +15,7 @@
 
 #include <Eigen/Core>
 
+#include "fcs_phonon.h"
 #include "phonon.h"
 
 namespace PHON_NS
@@ -76,7 +77,7 @@ public:
     void setup();
 
     // Rank 0 only: SymmListWithMap exists only on rank 0.
-    void analyze_irreps_at_gamma();
+    void analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald);
 
     [[nodiscard]] const GammaIrrepResult &get_result() const
     {

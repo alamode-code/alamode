@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <complex>
 #include <vector>
+#include "fcs_phonon.h"
 #include "ndarray.h"
 #include "phonon.h"
 
@@ -24,7 +25,7 @@ class SymmetryOperationWithMapping;
 class Dielec
 {
 public:
-    Dielec(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon);
+    Dielec(const RunInfo &run, const System *system);
 
     ~Dielec();
 
@@ -32,7 +33,8 @@ public:
     void init(double emin_dos, double emax_dos, double delta_e_dos, unsigned int nonanalytic, bool print_zmode,
               bool print_irreps, const std::vector<SymmetryOperationWithMapping> &symops);
 
-    void run_dielec_calculation(const Dynamical &dynamical);
+    void run_dielec_calculation(const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2,
+                                const Ewald &ewald);
 
     const double *get_omega_grid(unsigned int &nomega) const;
 
@@ -45,7 +47,8 @@ public:
     unsigned int symmetrize_borncharge{};
     std::string file_born;
 
-    std::vector<std::vector<double>> get_zstar_mode(const Dynamical &dynamical) const;
+    std::vector<std::vector<double>> get_zstar_mode(const Dynamical &dynamical,
+                                                    const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const;
 
     // Mode effective charges from caller-supplied Gamma-point eigenvectors
     // (mass-weighted, [ns][3*natmin]); the eigenvectors are not modified.
@@ -73,7 +76,8 @@ private:
 
     void setup_dielectric(const std::vector<SymmetryOperationWithMapping> &symops, const unsigned int verbosity = 1);
 
-    void compute_mode_effective_charge(const Dynamical &dynamical, std::vector<std::vector<double>> &zstar_mode,
+    void compute_mode_effective_charge(const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2,
+                                       const Ewald &ewald, std::vector<std::vector<double>> &zstar_mode,
                                        const bool do_normalize = false) const;
 
     void load_born(const unsigned int flag_symmborn, const std::vector<SymmetryOperationWithMapping> &symops,
@@ -91,6 +95,5 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Fcs_phonon *fcs_phonon;
 };
 } // namespace PHON_NS

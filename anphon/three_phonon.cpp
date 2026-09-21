@@ -22,9 +22,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
-#include "dynamical.h"
 #include "error.h"
-#include "ewald.h"
 #include "fcs_phonon.h"
 #include "integration.h"
 #include "kpoint.h"
@@ -557,42 +555,6 @@ double AnharmonicCore::bubble_accumulate(const int ns, const double *occ1, const
         }
     }
     return sum;
-}
-
-void AnharmonicCore::build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, ShiftedGrid &sg) const
-{
-    const int nk = kmesh_in->nk;
-    const int ns = system->get_num_modes();
-    sg.xk.resize(nk, 3);
-    sg.eval.resize(nk, ns);
-    sg.evec.resize(nk, ns, ns);
-
-    // Non-analytic direction as for the mesh points (kpoint.cpp): folded coordinate
-    // rotated to Cartesian and normalized, zero at Gamma.
-    NDArray<double, 2> kvec(nk, 3);
-    const auto &rlavec = system->get_primcell().reciprocal_lattice_vector;
-    for (auto ik = 0; ik < nk; ++ik) {
-        double xf[3];
-        for (auto i = 0; i < 3; ++i) {
-            sg.xk[ik][i] = xq[i] - kmesh_in->xk[ik][i];
-            xf[i] = sg.xk[ik][i] - std::floor(sg.xk[ik][i] + 0.5);
-        }
-        rotvec(kvec[ik], xf, rlavec, 'T');
-        const auto norm = kvec[ik][0] * kvec[ik][0] + kvec[ik][1] * kvec[ik][1] + kvec[ik][2] * kvec[ik][2];
-        if (norm > eps) {
-            for (auto i = 0; i < 3; ++i) kvec[ik][i] /= std::sqrt(norm);
-        } else {
-            for (auto i = 0; i < 3; ++i) kvec[ik][i] = 0.0;
-        }
-    }
-    dynamical->get_eigenvalues_dymat(nk,
-                                     sg.xk,
-                                     kvec,
-                                     fcs_phonon->force_constant_with_cell[0],
-                                     ewald->fc2_without_dipole,
-                                     true,
-                                     sg.eval,
-                                     sg.evec);
 }
 
 void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const double *temp_in, const double omega_in,

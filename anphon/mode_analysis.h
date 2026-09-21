@@ -145,6 +145,9 @@ private:
     // Harmonic eigenpair at an arbitrary fractional k (mesh NAC-direction convention).
     void eigen_at(const double *xk, NDArray<double, 2> &eval, NDArray<std::complex<double>, 3> &evec) const;
 
+    // Eigenpairs on {q - k} for the off-mesh kernels (see AnharmonicCore::ShiftedGrid).
+    void build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, AnharmonicCore::ShiftedGrid &sg) const;
+
     // Vertex listings for the off-mesh targets: every mesh partner (multiplicity 1),
     // rows keyed by fractional coordinates. kind: 0 |V3|^2, 1 Phi3, 2 |V4|^2, 3 Phi4.
     void print_vertex_offmesh(const int kind, const size_t number_offset) const;
