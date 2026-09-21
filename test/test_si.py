@@ -236,7 +236,7 @@ def check_consistency_alm(project_root, abs_tol=0.01, rel_tol=1.0e-9):
     )
     isclose_all = True
     for val1, val2 in zip(data_ref, data_now):
-        isclose_all = isclose_all & isclose(val1, val2, abs_tol)
+        isclose_all = isclose_all & isclose(val1, val2, rel_tol, abs_tol)
 
     if not isclose_all:
         print("Failed to match si222.fcs")
@@ -326,7 +326,9 @@ def check_consistency_anphon(project_root, abs_tol=0.01, rel_tol=1.0e-9):
     isclose_all = True
     for i in range(m1):
         for j in range(n1):
-            isclose_all = isclose_all & isclose(data_ref[i, j], data_now[i, j], abs_tol)
+            isclose_all = isclose_all & isclose(
+                data_ref[i, j], data_now[i, j], rel_tol, abs_tol
+            )
 
     if not isclose_all:
         print("Failed to match si222.bands")
@@ -346,7 +348,9 @@ def check_consistency_anphon(project_root, abs_tol=0.01, rel_tol=1.0e-9):
     isclose_all = True
     for i in range(m1):
         for j in range(n1):
-            isclose_all = isclose_all & isclose(data_ref[i, j], data_now[i, j], abs_tol)
+            isclose_all = isclose_all & isclose(
+                data_ref[i, j], data_now[i, j], rel_tol, abs_tol
+            )
             # print(data_ref[i,j], data_now[i,j], data_ref[i,j]- data_now[i,j])
 
     if not isclose_all:
