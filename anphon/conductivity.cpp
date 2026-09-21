@@ -21,6 +21,7 @@
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "degeneracy_utils.h"
+#include "dielec.h"
 #include "dynamical.h"
 #include "error.h"
 #include "ewald.h"
@@ -48,13 +49,14 @@ static void build_block_table(const KpointMeshUniform *kmesh_in, const double *c
 
 
 Conductivity::Conductivity(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-                           const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, const Dynamical *dynamical_in,
-                           Integration *integration_in, const Thermodynamics *thermodynamics_in, const Dos *dos_in,
+                           const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, const Ewald *ewald_in,
+                           const Dynamical *dynamical_in, Integration *integration_in,
+                           const Thermodynamics *thermodynamics_in, const Dos *dos_in,
                            const PhononVelocity *phonon_velocity_in, AnharmonicCore *anharmonic_core_in,
                            const Isotope *isotope_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
-    dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in), dos(dos_in),
-    phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in)
+    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in),
+    ewald(ewald_in), dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in),
+    dos(dos_in), phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in)
 {
     set_default_variables();
 }
@@ -191,6 +193,9 @@ void Conductivity::setup_kappa()
     // Velocities in m/s on rank 0 (the only rank that assembles kappa).
     phonon_velocity->gather_group_velocities_mesh(*dos->kmesh_dos.get(),
                                                   system->get_primcell().lattice_vector,
+                                                  *dynamical,
+                                                  fcs_phonon->force_constant_with_cell[0],
+                                                  *ewald,
                                                   vel,
                                                   Bohr_in_Angstrom * 1.0e-10 / time_ry,
                                                   false);
@@ -208,7 +213,14 @@ void Conductivity::setup_kappa()
     else
         velblock.resize(1, 1, 1, 1);
 
-    phonon_velocity->calc_phonon_velmat_mesh(calc_coherent ? &velmat : nullptr, &velblock);
+    phonon_velocity->calc_phonon_velmat_mesh(*dos->kmesh_dos.get(),
+                                             *dos->dymat_dos.get(),
+                                             *dynamical,
+                                             fcs_phonon->force_constant_with_cell[0],
+                                             *dielec,
+                                             *ewald,
+                                             calc_coherent ? &velmat : nullptr,
+                                             &velblock);
     if (calc_coherent) {
         check_velocity_matrix_consistency(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
         if (calc_coherent == 2) {
@@ -309,6 +321,9 @@ void Conductivity::setup_kappa_4ph()
     // Velocities in m/s on rank 0, matching the 3ph channel.
     phonon_velocity->gather_group_velocities_mesh(*kmesh_4ph.get(),
                                                   system->get_primcell().lattice_vector,
+                                                  *dynamical,
+                                                  fcs_phonon->force_constant_with_cell[0],
+                                                  *ewald,
                                                   vel_4ph,
                                                   Bohr_in_Angstrom * 1.0e-10 / time_ry,
                                                   false);
@@ -320,12 +335,23 @@ void Conductivity::setup_kappa_4ph()
         }
     }
 
-    integration->create_adaptive_sigma4(kmesh_4ph->nk,
-                                        ns,
-                                        kmesh_4ph.get(),
-                                        phonon_velocity,
-                                        system->get_primcell().lattice_vector,
-                                        system->get_primcell().reciprocal_lattice_vector);
+    // The adaptive table is built once; the early return used to live inside
+    // create_adaptive_sigma4, so the velocities are not recomputed either.
+    if (!integration->adaptive_sigma4) {
+        NDArray<double, 3> vel_adaptive4;
+        vel_adaptive4.resize(kmesh_4ph->nk, ns, 3);
+        phonon_velocity->get_phonon_group_velocity_mesh(*kmesh_4ph.get(),
+                                                        system->get_primcell().lattice_vector,
+                                                        *dynamical,
+                                                        fcs_phonon->force_constant_with_cell[0],
+                                                        *ewald,
+                                                        vel_adaptive4);
+        integration->create_adaptive_sigma4(kmesh_4ph->nk,
+                                            ns,
+                                            kmesh_4ph.get(),
+                                            system->get_primcell().reciprocal_lattice_vector,
+                                            std::move(vel_adaptive4));
+    }
 
     // prepare IO for four phonon
     setup_result_io(-1);

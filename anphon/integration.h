@@ -18,8 +18,6 @@
 
 namespace PHON_NS
 {
-class PhononVelocity;
-
 struct tetra_pair
 {
     double e;
@@ -92,8 +90,9 @@ public:
     AdaptiveSmearingSigma(const AdaptiveSmearingSigma &) = delete;
     AdaptiveSmearingSigma &operator=(const AdaptiveSmearingSigma &) = delete;
 
-    void setup(const PhononVelocity *phvel_class, const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &lavec_p_in,
-               const Eigen::Matrix3d &rlavec_p_in);
+    // vel_in: finished group velocities [nk][ns][3] on the mesh, computed by the
+    // caller (Integration must not depend on PhononVelocity); moved in.
+    void setup(const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &rlavec_p_in, NDArray<double, 3> &&vel_in);
 
     // overload for 3ph or 4ph
     void get_sigma(const unsigned int k1, const unsigned int s1, double &sigma_out);
@@ -149,17 +148,19 @@ public:
     std::unique_ptr<AdaptiveSmearingSigma> adaptive_sigma;
     std::unique_ptr<AdaptiveSmearingSigma> adaptive_sigma4;
 
-    void setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
-                           unsigned int ns_in, const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p,
-                           int quartic_mode_in, int my_rank_in, unsigned int verbosity = 1);
+    void setup_integration(int quartic_mode_in, int my_rank_in, unsigned int verbosity = 1);
 
-    // Allocate and initialize the adaptive smearing table for the 4ph
-    // channel on its (possibly coarser) mesh. Called from
+    // Allocate and initialize the adaptive smearing table for the 3ph channel
+    // on the DOS mesh. Called from PHON::setup_base right after
+    // setup_integration, which is where ismear becomes known on every rank.
+    void create_adaptive_sigma(const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &rlavec_p, unsigned int ns_in,
+                               NDArray<double, 3> &&velocities);
+
+    // Same for the 4ph channel on its (possibly coarser) mesh. Called from
     // Conductivity::setup_kappa_4ph; Integration owns the object and
-    // deletes it in the destructor. No-op if already created.
+    // deletes it in the destructor.
     void create_adaptive_sigma4(unsigned int nk_in, unsigned int ns_in, const KpointMeshUniform *kmesh_in,
-                                const PhononVelocity *phonon_velocity_in, const Eigen::Matrix3d &lavec_p,
-                                const Eigen::Matrix3d &rlavec_p);
+                                const Eigen::Matrix3d &rlavec_p, NDArray<double, 3> &&velocities);
 
     double do_tetrahedron(const double *energy, const double *f, const unsigned int ntetra,
                           const unsigned int *const *tetras, const double e_ref);
@@ -182,9 +183,6 @@ private:
     void set_default_variables();
 
     void deallocate_variables();
-
-    void prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
-                                  unsigned int ns_in, const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p);
 
     static inline double fij(double, double, double);
 

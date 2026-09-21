@@ -20,7 +20,6 @@
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
-#include "phonon_velocity.h"
 #include "system.h"
 
 using namespace PHON_NS;
@@ -47,15 +46,12 @@ void Integration::set_default_variables()
 void Integration::deallocate_variables()
 {}
 
-void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const PhononVelocity *phonon_velocity_in,
-                                    const unsigned int ns_in, const Eigen::Matrix3d &lavec_p,
-                                    const Eigen::Matrix3d &rlavec_p, const int quartic_mode_in, const int my_rank_in,
-                                    const unsigned int verbosity)
+void Integration::setup_integration(const int quartic_mode_in, const int my_rank_in, const unsigned int verbosity)
 {
     MPI_Bcast(&ismear, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
     // ADAPTIVE_FACTOR is set on rank 0 by the parser but read on all ranks
-    // (prepare_adaptivesmearing / create_adaptive_sigma4).
+    // (create_adaptive_sigma / create_adaptive_sigma4).
     MPI_Bcast(&adaptive_factor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (my_rank_in == 0) {
@@ -114,31 +110,25 @@ void Integration::setup_integration(const KpointMeshUniform *kmesh_dos_in, const
     // while the value is read on all ranks (four_phonon.cpp).
     MPI_Bcast(&ismear_4ph, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    prepare_adaptivesmearing(kmesh_dos_in, phonon_velocity_in, ns_in, lavec_p, rlavec_p);
-
     epsilon *= time_ry / Hz_to_kayser;     // Convert epsilon to a.u.
     epsilon_4ph *= time_ry / Hz_to_kayser; // Convert epsilon to a.u.
     MPI_Bcast(&epsilon, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&epsilon_4ph, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
-void Integration::prepare_adaptivesmearing(const KpointMeshUniform *kmesh_dos_in,
-                                           const PhononVelocity *phonon_velocity_in, const unsigned int ns_in,
-                                           const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
+void Integration::create_adaptive_sigma(const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &rlavec_p,
+                                        const unsigned int ns_in, NDArray<double, 3> &&velocities)
 {
-    if (ismear == 2) {
-        adaptive_sigma = std::make_unique<AdaptiveSmearingSigma>(kmesh_dos_in->nk, ns_in, adaptive_factor);
-        adaptive_sigma->setup(phonon_velocity_in, kmesh_dos_in, lavec_p, rlavec_p);
-    }
+    adaptive_sigma = std::make_unique<AdaptiveSmearingSigma>(kmesh_in->nk, ns_in, adaptive_factor);
+    adaptive_sigma->setup(kmesh_in, rlavec_p, std::move(velocities));
 }
 
 void Integration::create_adaptive_sigma4(const unsigned int nk_in, const unsigned int ns_in,
-                                         const KpointMeshUniform *kmesh_in, const PhononVelocity *phonon_velocity_in,
-                                         const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p)
+                                         const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &rlavec_p,
+                                         NDArray<double, 3> &&velocities)
 {
-    if (adaptive_sigma4) return;
     adaptive_sigma4 = std::make_unique<AdaptiveSmearingSigma>(nk_in, ns_in, adaptive_factor);
-    adaptive_sigma4->setup(phonon_velocity_in, kmesh_in, lavec_p, rlavec_p);
+    adaptive_sigma4->setup(kmesh_in, rlavec_p, std::move(velocities));
 }
 
 void TetraNodes::setup()
@@ -435,13 +425,13 @@ void Integration::insertion_sort(double *a, int *ind, int n)
     }
 }
 
-void AdaptiveSmearingSigma::setup(const PhononVelocity *phvel_class, const KpointMeshUniform *kmesh_in,
-                                  const Eigen::Matrix3d &lavec_p_in, const Eigen::Matrix3d &rlavec_p_in)
+void AdaptiveSmearingSigma::setup(const KpointMeshUniform *kmesh_in, const Eigen::Matrix3d &rlavec_p_in,
+                                  NDArray<double, 3> &&vel_in)
 {
     // Use finite-difference velocities for adaptive widths. Degenerate-mode
     // velocities are basis dependent, and widths have a fixed 2e-5 Ry floor,
     // so cell dependence can persist. Use ISMEAR = 1 or 0 for cell independence.
-    phvel_class->get_phonon_group_velocity_mesh(*kmesh_in, lavec_p_in, vel);
+    vel = std::move(vel_in);
 
     for (auto u = 0; u < 3; u++) {
         for (auto a = 0; a < 3; a++) {

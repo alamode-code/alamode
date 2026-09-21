@@ -335,9 +335,9 @@ void Dynamical::eval_k(const double *xk_in, const double *kvec_in, const std::ve
         dymat_na_k.resize(neval, neval);
 
         if (nonanalytic == 1) {
-            calc_nonanalytic_k_parlinski(xk_in, kvec_in, dymat_na_k);
+            calc_nonanalytic_k_parlinski(xk_in, kvec_in, *dielec, dymat_na_k);
         } else if (nonanalytic == 2) {
-            calc_nonanalytic_k_mixedspace(xk_in, kvec_in, dymat_na_k);
+            calc_nonanalytic_k_mixedspace(xk_in, kvec_in, *dielec, dymat_na_k);
         }
 
         for (i = 0; i < neval; ++i) {
@@ -525,7 +525,17 @@ void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsArrayW
     calc_analytic_k(*system, xk_in, fc2_in, dymat_out);
 }
 
-void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *kvec_na_in,
+void Dynamical::calc_nonanalytic_k(const double *xk_in, const double *kvec_na_in, const Dielec &dielec,
+                                   std::complex<double> **dymat_na_out) const
+{
+    if (nonanalytic == 1) {
+        calc_nonanalytic_k_parlinski(xk_in, kvec_na_in, dielec, dymat_na_out);
+    } else if (nonanalytic == 2) {
+        calc_nonanalytic_k_mixedspace(xk_in, kvec_na_in, dielec, dymat_na_out);
+    }
+}
+
+void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *kvec_na_in, const Dielec &dielec,
                                              std::complex<double> **dymat_na_out) const
 {
     // Calculate the non-analytic part of dynamical matrices
@@ -546,8 +556,8 @@ void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *
         }
     }
 
-    auto dielec_tmp = dielec->get_dielec_tensor();
-    const auto borncharge = dielec->get_borncharge();
+    auto dielec_tmp = dielec.get_dielec_tensor();
+    const auto borncharge = dielec.get_borncharge();
 
     for (i = 0; i < 3; ++i) {
         kvec_na_vec[i] = kvec_na_in[i];
@@ -634,7 +644,7 @@ void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *
     }
 }
 
-void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double *kvec_na_in,
+void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double *kvec_na_in, const Dielec &dielec,
                                               std::complex<double> **dymat_na_out) const
 {
     // Calculate the non-analytic part of dynamical matrices
@@ -657,8 +667,8 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
         }
     }
 
-    auto dielec_tmp = dielec->get_dielec_tensor();
-    const auto borncharge = dielec->get_borncharge();
+    auto dielec_tmp = dielec.get_dielec_tensor();
+    const auto borncharge = dielec.get_borncharge();
 
     for (i = 0; i < 3; ++i) {
         kvec_na_vec[i] = kvec_na_in[i];
@@ -1568,9 +1578,9 @@ void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *co
 
         for (auto ik = 0; ik < nk_in; ++ik) {
             if (nonanalytic == 1) {
-                calc_nonanalytic_k_parlinski(xk_in[ik], kvec_in[ik], mat_tmp);
+                calc_nonanalytic_k_parlinski(xk_in[ik], kvec_in[ik], *dielec, mat_tmp);
             } else if (nonanalytic == 2) {
-                calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], mat_tmp);
+                calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], *dielec, mat_tmp);
 
             } else if (nonanalytic == 3) {
                 ewald.add_longrange_matrix(xk_in[ik], kvec_in[ik], mat_tmp);
@@ -1774,9 +1784,9 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
         if (nonanalytic) {
             NDArray<std::complex<double>, 2> mat_harmonic_na(ns, ns);
             if (nonanalytic == 1) {
-                calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
+                calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], *dielec, mat_harmonic_na);
             } else if (nonanalytic == 2) {
-                calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
+                calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], *dielec, mat_harmonic_na);
             } else if (nonanalytic == 3) {
                 ewald.add_longrange_matrix(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
             }

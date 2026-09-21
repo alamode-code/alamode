@@ -797,7 +797,10 @@ void Writes::writePhononVel() const
     // velocity. Printed values at a degeneracy remain one admissible basis choice.
     phon->phonon_velocity->get_phonon_group_velocity_bandstructure_velmat(phon->kpoint->kpoint_bs.get(),
                                                                           phon->system->get_primcell().lattice_vector,
+                                                                          *phon->dynamical,
                                                                           phon->fcs_phonon->force_constant_with_cell[0],
+                                                                          *phon->dielec,
+                                                                          *phon->ewald,
                                                                           phvel_bs);
 
     ofs_vel << "# k-axis, |Velocity| [m / sec]\n";
@@ -853,6 +856,10 @@ void Writes::writePhononVelAll() const
 
     phon->phonon_velocity->get_phonon_group_velocity_mesh_velmat(*phon->dos->kmesh_dos.get(),
                                                                  phon->system->get_primcell().lattice_vector,
+                                                                 *phon->dynamical,
+                                                                 phon->fcs_phonon->force_constant_with_cell[0],
+                                                                 *phon->dielec,
+                                                                 *phon->ewald,
                                                                  phvel_xyz);
     unsigned int ik, is;
 #ifdef _OPENMP

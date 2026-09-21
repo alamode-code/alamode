@@ -71,12 +71,7 @@ void PHON::create_pointers()
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(run_info, system.get());
-    phonon_velocity = std::make_unique<PhononVelocity>(run_info,
-                                                       system.get(),
-                                                       fcs_phonon.get(),
-                                                       ewald.get(),
-                                                       dynamical.get(),
-                                                       dos.get());
+    phonon_velocity = std::make_unique<PhononVelocity>(run_info, system.get());
     anharmonic_core = std::make_unique<AnharmonicCore>(run_info,
                                                        timer.get(),
                                                        system.get(),
@@ -95,6 +90,7 @@ void PHON::create_pointers()
                                                   system.get(),
                                                   symmetry.get(),
                                                   fcs_phonon.get(),
+                                                  dielec.get(),
                                                   ewald.get(),
                                                   dynamical.get(),
                                                   integration.get(),
@@ -107,6 +103,7 @@ void PHON::create_pointers()
                                                   system.get(),
                                                   symmetry.get(),
                                                   fcs_phonon.get(),
+                                                  ewald.get(),
                                                   dynamical.get(),
                                                   integration.get(),
                                                   thermodynamics.get(),
@@ -261,14 +258,23 @@ void PHON::setup_base() const
     dynamical->setup_dynamical(kpoint->kpoint_bs.get(), kpoint->kpoint_general.get());
     if (!init_u0_from_modes) setup_fcs();
     phonon_velocity->setup_velocity();
-    integration->setup_integration(dos->kmesh_dos.get(),
-                                   phonon_velocity.get(),
-                                   dynamical->neval,
-                                   system->get_primcell().lattice_vector,
-                                   system->get_primcell().reciprocal_lattice_vector,
-                                   anharmonic_core->quartic_mode,
-                                   run_info.my_rank,
-                                   get_verbosity());
+    integration->setup_integration(anharmonic_core->quartic_mode, run_info.my_rank, get_verbosity());
+    // ismear is broadcast inside setup_integration, so the adaptive smearing table can
+    // only be built here, on every rank, as prepare_adaptivesmearing used to do.
+    if (integration->ismear == 2) {
+        NDArray<double, 3> vel_adaptive;
+        vel_adaptive.resize(dos->kmesh_dos->nk, dynamical->neval, 3);
+        phonon_velocity->get_phonon_group_velocity_mesh(*dos->kmesh_dos.get(),
+                                                        system->get_primcell().lattice_vector,
+                                                        *dynamical,
+                                                        fcs_phonon->force_constant_with_cell[0],
+                                                        *ewald,
+                                                        vel_adaptive);
+        integration->create_adaptive_sigma(dos->kmesh_dos.get(),
+                                           system->get_primcell().reciprocal_lattice_vector,
+                                           dynamical->neval,
+                                           std::move(vel_adaptive));
+    }
     dos->setup(*integration, dynamical->require_eigenvectors);
     thermodynamics->setup();
     anharmonic_core->setup();

@@ -147,9 +147,14 @@ public:
     // Forwarder for the calls inside Dynamical, which already hold the System handle.
     void calc_analytic_k(const double *, const std::vector<FcsArrayWithCell> &, std::complex<double> **) const;
 
-    void calc_nonanalytic_k_parlinski(const double *, const double *, std::complex<double> **) const;
+    void calc_nonanalytic_k_parlinski(const double *, const double *, const Dielec &, std::complex<double> **) const;
 
-    void calc_nonanalytic_k_mixedspace(const double *, const double *, std::complex<double> **) const;
+    void calc_nonanalytic_k_mixedspace(const double *, const double *, const Dielec &, std::complex<double> **) const;
+
+    // NONANALYTIC = 1/2 dispatch shared with eval_k's inline selection. Nothing is
+    // written for the other methods, so dymat_na_out must be zeroed by the caller.
+    void calc_nonanalytic_k(const double *xk_in, const double *kvec_na_in, const Dielec &dielec,
+                            std::complex<double> **dymat_na_out) const;
 
     void project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p, const std::vector<FcsArrayWithCell> &fc2_in,
                                          const double *xk_in,

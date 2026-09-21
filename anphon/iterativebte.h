@@ -25,9 +25,10 @@ class Iterativebte
 {
 public:
     Iterativebte(const RunInfo &run, const System *system, const Symmetry *symmetry, const Fcs_phonon *fcs_phonon,
-                 const Dynamical *dynamical, Integration *integration, const Thermodynamics *thermodynamics,
-                 const Dos *dos, const PhononVelocity *phonon_velocity, AnharmonicCore *anharmonic_core,
-                 const Isotope *isotope, const Writes *writes, Conductivity *conductivity);
+                 const Ewald *ewald, const Dynamical *dynamical, Integration *integration,
+                 const Thermodynamics *thermodynamics, const Dos *dos, const PhononVelocity *phonon_velocity,
+                 AnharmonicCore *anharmonic_core, const Isotope *isotope, const Writes *writes,
+                 Conductivity *conductivity);
 
     ~Iterativebte();
 
@@ -132,6 +133,7 @@ private:
     const System *system;
     const Symmetry *symmetry;
     const Fcs_phonon *fcs_phonon;
+    const Ewald *ewald;
     const Dynamical *dynamical;
     Integration *integration;
     const Thermodynamics *thermodynamics;
