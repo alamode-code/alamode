@@ -714,6 +714,7 @@ void InputParser::parse_scph_vars(PHON *phon)
                                               "LOWER_TEMP",
                                               "WARMSTART",
                                               "BUBBLE",
+                                              "CV_ANHARM",
                                               "RELAX_STR"};
     std::vector<std::string> no_defaults{"KMESH_SCPH", "KMESH_INTERPOLATE"};
     std::vector<unsigned int> kmesh_v, kmesh_interpolate_v;
@@ -756,6 +757,10 @@ void InputParser::parse_scph_vars(PHON *phon)
     assign_val(scph_vars.lower_temp, "LOWER_TEMP", scph_var_dict);
     assign_val(scph_vars.warmstart, "WARMSTART", scph_var_dict);
     assign_val(scph_vars.bubble, "BUBBLE", scph_var_dict);
+    assign_val(scph_vars.compute_Cv_anharmonic, "CV_ANHARM", scph_var_dict);
+    if (scph_vars.compute_Cv_anharmonic != 0 && scph_vars.compute_Cv_anharmonic != 1) {
+        exit("parse_scph_vars", "CV_ANHARM must be 0 or 1.");
+    }
     assign_val(scph_vars.relax_str, "RELAX_STR", scph_var_dict);
     if (!is_valid_relaxation_str_mode(scph_vars.relax_str)) {
         exit("parse_scph_vars", "RELAX_STR must be 0, 1, 2, 3, or 4.");

@@ -181,6 +181,7 @@ void Writes::writeInputVars()
         os << "  IALGO = " << phon->scph->ialgo << '\n';
         os << "  BUBBLE = " << phon->scph->bubble << '\n';
         if (phon->scph->bubble > 0) print_mesh("KMESH_BUBBLE     ", phon->scph->kmesh_bubble);
+        os << "  CV_ANHARM = " << phon->scph->compute_Cv_anharmonic << '\n';
         os << '\n';
         os << "  RESTART_SCPH = " << phon->scph->restart_scph << '\n';
         os << "  LOWER_TEMP = " << phon->scph->lower_temp << '\n';

@@ -56,6 +56,7 @@ public:
     using ScphQhaCommon::calculate_del_v0_del_umn_renorm;
     using ScphQhaCommon::compute_anharmonic_del_v0_del_umn;
     using ScphQhaCommon::compute_anharmonic_v1_array;
+    using ScphQhaCommon::compute_Cv_anharmonic;
     using ScphQhaCommon::compute_V3_elements_mpi_over_kpoint;
     using ScphQhaCommon::compute_V4_elements_mpi_over_band;
     using ScphQhaCommon::compute_V4_elements_mpi_over_kpoint;

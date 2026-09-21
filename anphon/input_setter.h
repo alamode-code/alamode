@@ -189,6 +189,7 @@ struct ScphInputVars
     bool lower_temp = true;
     bool warmstart = true;
     unsigned int bubble = 0;
+    int compute_Cv_anharmonic = 0; // CV_ANHARM
     int relax_str = 0;
 };
 

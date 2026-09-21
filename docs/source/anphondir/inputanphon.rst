@@ -34,7 +34,7 @@ List of supported input variables
    :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`, :ref:`VERBOSITY <anphon_verbosity>`
    :ref:`TREVSYM <anphon_trevsym>`
    **&scph**
-   :ref:`BUBBLE <anphon_bubble>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`
+   :ref:`BUBBLE <anphon_bubble>`, :ref:`CV_ANHARM <anphon_cv_anharm>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`
    :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`
    :ref:`RELAX_STR <anphon_relax_str>`, :ref:`RESTART_SCPH <anphon_restart_scph>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`, :ref:`TOL_SCPH <anphon_tol_scph>`
    :ref:`WARMSTART <anphon_warmstart>`
@@ -729,6 +729,34 @@ Description of input variables
                ``KMESH_SCPH`` to converge the bubble correction without changing the SCPH
                iteration. Each value must be equal to or a multiple of the number of
                ``KMESH_INTERPOLATE`` in the same direction.
+
+````
+
+.. _anphon_cv_anharm:
+
+* CV_ANHARM-tag = 0 | 1
+
+ === ==============================================================
+  0   Report the QHA-like heat capacity only
+  1   Also report the anharmonic correction to :math:`C_{v}`
+ === ==============================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: With ``CV_ANHARM = 1`` the anharmonic correction to the constant-volume heat
+               capacity that originates from the temperature dependence of the SCPH frequencies
+               is computed, i.e. the term containing
+               :math:`\partial \Omega_{\boldsymbol{q}j} / \partial T`, which is evaluated by a
+               central finite difference of the SCPH frequencies on the temperature grid defined
+               by ``TMIN``, ``TMAX`` and ``DT``. Since the central difference needs both
+               neighboring temperatures, the correction is reported as zero at ``TMIN`` and
+               ``TMAX``; at least three temperature points and a :math:`k` mesh
+               (``KPMODE = 2``) are therefore required. The accuracy of the correction depends
+               on ``DT`` because only the adjacent temperature points enter the derivative; for
+               a more reliable estimate it is recommended to fit the entropy as a function of
+               temperature by a polynomial and differentiate the fitted curve instead. The value
+               is written to ``PREFIX.scph_thermo`` in the extra column
+               ``Cv (anharm correction) [in kB unit]``, which follows the ``Cv`` column.
 
 ````
 

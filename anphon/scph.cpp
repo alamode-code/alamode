@@ -530,6 +530,7 @@ void Scph::set_default_variables()
 void Scph::setup_scph()
 {
     MPI_Bcast(&bubble, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&compute_Cv_anharmonic, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // Prepare coarse/dense q-point meshes used in SCPH iterations and postprocess.
     setup_kmesh(kmesh_scph, kmesh_interpolate, "SCPH", "KMESH_INTERPOLATE should be a integral multiple of KMESH_SCPH");
