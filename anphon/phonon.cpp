@@ -261,8 +261,22 @@ void PHON::setup_base() const
     if (!init_u0_from_modes) setup_fcs();
     phonon_velocity->setup_velocity();
     integration->setup_integration(anharmonic_core->quartic_mode, run_info.my_rank, get_verbosity());
-    // ismear is broadcast inside setup_integration, so the adaptive smearing table can
-    // only be built here, on every rank, as prepare_adaptivesmearing used to do.
+    dos->setup(*integration, dynamical->require_eigenvectors);
+    thermodynamics->setup();
+    anharmonic_core->setup();
+    dielec->init(dos->emin,
+                 dos->emax,
+                 dos->delta_e,
+                 dynamical->nonanalytic,
+                 writes->print_zmode,
+                 mode_symmetry->print_irreps,
+                 symmetry->SymmListWithMap);
+    ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
+
+    // The adaptive smearing widths come from the group velocities, which need the
+    // non-analytic term, so this must follow dielec->init() and ewald->init().  ismear
+    // is broadcast inside setup_integration, so the table cannot be built before that
+    // either; every rank runs this block, as prepare_adaptivesmearing used to do.
     if (integration->ismear == 2) {
         NDArray<double, 3> vel_adaptive;
         vel_adaptive.resize(dos->kmesh_dos->nk, dynamical->neval, 3);
@@ -278,17 +292,6 @@ void PHON::setup_base() const
                                            dynamical->neval,
                                            std::move(vel_adaptive));
     }
-    dos->setup(*integration, dynamical->require_eigenvectors);
-    thermodynamics->setup();
-    anharmonic_core->setup();
-    dielec->init(dos->emin,
-                 dos->emax,
-                 dos->delta_e,
-                 dynamical->nonanalytic,
-                 writes->print_zmode,
-                 mode_symmetry->print_irreps,
-                 symmetry->SymmListWithMap);
-    ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
 
     if (run_info.my_rank == 0 && get_verbosity() > 0) {
         std::cout << " \n -----------------------------------------------------------------\n\n";
