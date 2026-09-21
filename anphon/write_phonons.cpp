@@ -9,17 +9,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 */
 
 #include "write_phonons.h"
-#include "phonon_velocity.h"
-
-namespace
-{
-// PRINTVEL follows the transport velocity formulation: matrix diagonal by default,
-// finite differences under the legacy opt-out.
-bool use_velmat_velocities()
-{
-    return !PHON_NS::PhononVelocity::legacy_velocity();
-}
-} // namespace
 #include <iomanip>
 #include <sstream>
 #include <sys/stat.h>
@@ -806,21 +795,10 @@ void Writes::writePhononVel() const
     // the printed velocities come from the same source; it does NOT make them reproduce
     // the conductivity, which treats degenerate multiplets as blocks having no per-mode
     // velocity. Printed values at a degeneracy remain one admissible basis choice.
-    if (use_velmat_velocities()) {
-        phon->phonon_velocity->get_phonon_group_velocity_bandstructure_velmat(
-            phon->kpoint->kpoint_bs.get(),
-            phon->system->get_primcell().lattice_vector,
-            phon->fcs_phonon->force_constant_with_cell[0],
-            phvel_bs);
-    } else {
-        phon->phonon_velocity->get_phonon_group_velocity_bandstructure(
-            phon->kpoint->kpoint_bs.get(),
-            phon->system->get_primcell().lattice_vector,
-            phon->system->get_primcell().reciprocal_lattice_vector,
-            phon->fcs_phonon->force_constant_with_cell[0],
-            phon->ewald->fc2_without_dipole,
-            phvel_bs);
-    }
+    phon->phonon_velocity->get_phonon_group_velocity_bandstructure_velmat(phon->kpoint->kpoint_bs.get(),
+                                                                          phon->system->get_primcell().lattice_vector,
+                                                                          phon->fcs_phonon->force_constant_with_cell[0],
+                                                                          phvel_bs);
 
     ofs_vel << "# k-axis, |Velocity| [m / sec]\n";
     ofs_vel.setf(std::ios::fixed);
@@ -873,15 +851,9 @@ void Writes::writePhononVelAll() const
     phvel.resize(nk, ns);
     phvel_xyz.resize(nk, ns, 3);
 
-    if (use_velmat_velocities()) {
-        phon->phonon_velocity->get_phonon_group_velocity_mesh_velmat(*phon->dos->kmesh_dos.get(),
-                                                                     phon->system->get_primcell().lattice_vector,
-                                                                     phvel_xyz);
-    } else {
-        phon->phonon_velocity->get_phonon_group_velocity_mesh(*phon->dos->kmesh_dos.get(),
-                                                              phon->system->get_primcell().lattice_vector,
-                                                              phvel_xyz);
-    }
+    phon->phonon_velocity->get_phonon_group_velocity_mesh_velmat(*phon->dos->kmesh_dos.get(),
+                                                                 phon->system->get_primcell().lattice_vector,
+                                                                 phvel_xyz);
     unsigned int ik, is;
 #ifdef _OPENMP
 #pragma omp parallel for private(is)

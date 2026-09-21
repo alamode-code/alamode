@@ -970,8 +970,8 @@ void KappaResultIOH5::open_or_create(const KappaFileMetaH5 &fmeta, const KappaCh
                  ("The existing temperature-resolved result file holds kappa for temperatures this run does not "
                   "recompute, assembled with transport formulation '" +
                   existing_formulation + "', while this run uses '" + transport_formulation +
-                  "'. Use a different PREFIX, include those temperatures in this run, or set "
-                  "ALAMODE_LEGACY_VELOCITY to match the file.")
+                  "'. A file written with a retired velocity treatment cannot be continued. Use a different PREFIX "
+                  "or include those temperatures in this run.")
                      .c_str());
         }
     }

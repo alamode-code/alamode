@@ -23,12 +23,10 @@ namespace PHON_NS
 class PhononVelocity
 {
 public:
-    PhononVelocity(const RunInfo &run, const System *system, const Kpoint *kpoint, const Fcs_phonon *fcs_phonon,
-                   const Ewald *ewald, const Dynamical *dynamical, const Dos *dos);
+    PhononVelocity(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon, const Ewald *ewald,
+                   const Dynamical *dynamical, const Dos *dos);
 
     ~PhononVelocity();
-
-    static bool legacy_velocity();
 
     void setup_velocity();
 
@@ -56,12 +54,6 @@ public:
                                                         const std::vector<FcsArrayWithCell> &fc2_in,
                                                         double **phvel_out) const;
 
-    void get_phonon_group_velocity_bandstructure(const KpointBandStructure *kpoint_bs_in,
-                                                 const Eigen::Matrix3d &lavec_p, const Eigen::Matrix3d &rlavec_p,
-                                                 const std::vector<FcsArrayWithCell> &fc2_in,
-                                                 const std::vector<FcsArrayWithCell> &fc2_without_dipole,
-                                                 double **phvel_out) const;
-
     // kvec_fixed: hold the nonanalytic direction fixed (band paths, where the
     // eigenproblem uses the segment direction). nullptr = radial, as on a mesh.
     void add_nonanalytic_velocity_matrix(const double *xk_in, const double *omega_in,
@@ -86,7 +78,6 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
     const Ewald *ewald;
     const Dynamical *dynamical;

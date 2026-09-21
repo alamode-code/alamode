@@ -11,7 +11,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "phonon_velocity.h"
 #include <algorithm>
 #include <complex>
-#include <cstdlib>
 #include <iomanip>
 #include <limits>
 #include "constants.h"
@@ -30,11 +29,9 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-PhononVelocity::PhononVelocity(const RunInfo &run_in, const System *system_in, const Kpoint *kpoint_in,
-                               const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in, const Dynamical *dynamical_in,
-                               const Dos *dos_in) :
-    run(run_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
-    dynamical(dynamical_in), dos(dos_in)
+PhononVelocity::PhononVelocity(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in,
+                               const Ewald *ewald_in, const Dynamical *dynamical_in, const Dos *dos_in) :
+    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in), dynamical(dynamical_in), dos(dos_in)
 {
     set_default_variables();
 }
@@ -52,16 +49,9 @@ void PhononVelocity::set_default_variables()
 void PhononVelocity::deallocate_variables()
 {}
 
-// Default transport uses the unsymmetrized velocity matrix with nonanalytic
+// Transport uses the unsymmetrized velocity matrix with nonanalytic
 // connection, block-trace Peierls weights, cross-block coherent pairs,
 // block boundary speeds, and matrix-diagonal PRINTVEL.
-// ALAMODE_LEGACY_VELOCITY=1 restores finite-difference velocities and
-// elementwise symmetrization without the nonanalytic velocity term.
-bool PhononVelocity::legacy_velocity()
-{
-    return std::getenv("ALAMODE_LEGACY_VELOCITY") != nullptr;
-}
-
 void PhononVelocity::setup_velocity()
 {
     MPI_Bcast(&print_velocity, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
@@ -116,82 +106,6 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(const Kpoint
     velmat_k.clear();
     evec_k.clear();
     eval_k.clear();
-}
-
-void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStructure *kpoint_bs_in,
-                                                             const Eigen::Matrix3d &lavec_p,
-                                                             const Eigen::Matrix3d &rlavec_p,
-                                                             const std::vector<FcsArrayWithCell> &fc2_in,
-                                                             const std::vector<FcsArrayWithCell> &fc2_without_dipole,
-                                                             double **phvel_out) const
-{
-    unsigned int i;
-    unsigned int idiff;
-    const auto nk = kpoint_bs_in->nk;
-    const auto n = system->get_num_modes();
-    NDArray<double, 2> xk_shift;
-    NDArray<double, 1> xk_tmp;
-    NDArray<double, 2> omega_shift;
-    NDArray<double, 1> omega_tmp;
-
-    const auto h = 1.0e-4;
-
-    NDArray<std::complex<double>, 2> evec_tmp;
-
-    evec_tmp.resize(1, 1);
-
-    const unsigned int ndiff = 2;
-    xk_shift.resize(ndiff, 3);
-    omega_shift.resize(ndiff, n);
-    omega_tmp.resize(ndiff);
-
-    xk_tmp.resize(3);
-
-    for (unsigned int ik = 0; ik < nk; ++ik) {
-
-        // Represent the given kpoint in Cartesian coordinate
-        rotvec(xk_tmp, kpoint_bs_in->xk[ik], rlavec_p, 'T');
-
-        // central difference
-        // f'(x) =~ f(x+h)-f(x-h)/2h
-        for (i = 0; i < 3; ++i) {
-            xk_shift[0][i] = xk_tmp[i] - h * kpoint_bs_in->kvec_na[ik][i];
-            xk_shift[1][i] = xk_tmp[i] + h * kpoint_bs_in->kvec_na[ik][i];
-        }
-
-        for (idiff = 0; idiff < ndiff; ++idiff) {
-
-            // Move back to fractional basis
-
-            rotvec(xk_shift[idiff], xk_shift[idiff], lavec_p, 'T');
-            for (i = 0; i < 3; ++i) xk_shift[idiff][i] /= 2.0 * pi;
-
-            if (dynamical->nonanalytic == 3) {
-                dynamical->eval_k_ewald(xk_shift[idiff],
-                                        kpoint_bs_in->kvec_na[ik],
-                                        fc2_without_dipole,
-                                        omega_shift[idiff],
-                                        evec_tmp,
-                                        false);
-            } else {
-                dynamical
-                    ->eval_k(xk_shift[idiff], kpoint_bs_in->kvec_na[ik], fc2_in, omega_shift[idiff], evec_tmp, false);
-            }
-        }
-
-        for (i = 0; i < n; ++i) {
-            for (idiff = 0; idiff < ndiff; ++idiff) {
-                omega_tmp[idiff] = dynamical->freq(omega_shift[idiff][i]);
-            }
-            phvel_out[ik][i] = diff(omega_tmp, ndiff, h);
-        }
-    }
-    omega_tmp.clear();
-    omega_shift.clear();
-    xk_shift.clear();
-    xk_tmp.clear();
-
-    evec_tmp.clear();
 }
 
 void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kmesh_in, const Eigen::Matrix3d &lavec_p,
@@ -450,7 +364,6 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
     const auto nk = dos->kmesh_dos->nk;
     const auto ns = system->get_num_modes();
     const auto factor = Bohr_in_Angstrom * 1.0e-10 / (time_ry * 2.0 * pi);
-    const auto legacy = legacy_velocity();
 
     if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << " Calculating group velocity matrix of phonons on uniform grid ... ";
@@ -477,7 +390,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
     if (velblock_out) velblock_loc.resize(std::max(nk_loc, 1), ns, 3, 3);
 
     const auto &fc2_vel =
-        (!legacy && dynamical->nonanalytic == 3) ? ewald->fc2_without_dipole : fcs_phonon->force_constant_with_cell[0];
+        (dynamical->nonanalytic == 3) ? ewald->fc2_without_dipole : fcs_phonon->force_constant_with_cell[0];
     const auto eval_all = dos->dymat_dos->get_eigenvalues();
     const auto evec_all = dos->dymat_dos->get_eigenvectors();
     const auto tol_cm = transport_block_tol_cm();
@@ -490,19 +403,8 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
         // constants plus an Ewald long-range matrix, so the velocity matrix has to be
         // built from the same decomposition.
         velocity_matrix_analytic(dos->kmesh_dos->xk[knum], fc2_vel, eval_all[knum], evec_all[knum], vk);
-        if (!legacy) add_nonanalytic_velocity_matrix(dos->kmesh_dos->xk[knum], eval_all[knum], evec_all[knum], vk);
+        add_nonanalytic_velocity_matrix(dos->kmesh_dos->xk[knum], eval_all[knum], evec_all[knum], vk);
 
-        if (legacy) {
-            // Legacy elementwise little-group averaging treats elements as Cartesian
-            // vectors, which is valid only for non-degenerate diagonals and can
-            // suppress degenerate velocities. The default skips this averaging.
-            double symmetrizer_k[3][3];
-            std::vector<int> smallgroup_k;
-            kpoint->get_symmetrization_matrix_at_k(dos->kmesh_dos->xk[knum], smallgroup_k, symmetrizer_k);
-            for (auto j = 0u; j < ns; ++j) {
-                for (auto k = 0u; k < ns; ++k) rotvec(vk[j][k], vk[j][k], symmetrizer_k, 'T');
-            }
-        }
         for (auto j = 0u; j < ns; ++j) {
             for (auto k = 0u; k < ns; ++k) {
                 rotvec(vk[j][k], vk[j][k], system->get_primcell().lattice_vector);

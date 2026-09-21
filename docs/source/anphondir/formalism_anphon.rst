@@ -207,8 +207,8 @@ Inside a degenerate multiplet :math:`\mathcal{B}` the eigenvectors are fixed onl
 :math:`\sum_{j,j'\in\mathcal{B}} v_{\boldsymbol{q}jj'}^{\mu}v_{\boldsymbol{q}j'j}^{\nu}` are. How the transport terms use this is described
 in :ref:`the Peierls-term section <kappa_peierls>`.
 
-Finite difference (legacy)
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Finite difference
+~~~~~~~~~~~~~~~~~
 
 Historically the group velocity was obtained from a central difference,
 
@@ -218,9 +218,9 @@ Historically the group velocity was obtained from a central difference,
 
 where :math:`j` is the index in the *sorted* eigenvalue list at each shifted point. Wherever branches cross or are degenerate the sorted
 index exchanges character between :math:`\boldsymbol{q}\pm\Delta\boldsymbol{q}` and the quotient connects two different branches.
-This path is retained for comparison (environment variable ``ALAMODE_LEGACY_VELOCITY=1``, which restores the previous
-velocity treatment throughout) and is still used by the adaptive smearing widths (``ISMEAR = 2``) and by the iterative
-Boltzmann solvers, which have not been reformulated.
+The option of driving the transport terms from this quotient of sorted eigenvalues has been removed. Finite-difference
+velocities are still used by the adaptive smearing widths (``ISMEAR = 2``) and by the iterative Boltzmann solvers, which
+have not been reformulated.
 
 If one needs to save the group velocities, please turn on the ``PRINTVEL``-tag; the printed values follow the same formulation as the
 conductivity in that run. At a degeneracy they are one admissible basis choice, not a unique value.

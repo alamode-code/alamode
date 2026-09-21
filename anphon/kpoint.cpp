@@ -28,8 +28,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
-Kpoint::Kpoint(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in)
+Kpoint::Kpoint(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 }
@@ -801,71 +800,6 @@ int KpointMeshUniform::get_knum(const double xk[3]) const
     const int kloc = nint(xk[2] * dnk[2] + 2.0 * dnk[2]) % nk_i[2];
 
     return kloc + nk_i[2] * jloc + nk_i[1] * nk_i[2] * iloc;
-}
-
-void Kpoint::get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int> &sym_list, double S_avg[3][3]) const
-{
-    int i, j;
-    double srot[3][3];
-    double srot_inv[3][3], srot_inv_t[3][3];
-    double xk_orig[3], xk_sym[3];
-    double xk_diff[3];
-
-    sym_list.clear();
-
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < 3; ++j) {
-            S_avg[i][j] = 0.0;
-        }
-    }
-
-    for (i = 0; i < 3; ++i) xk_orig[i] = xk_in[i];
-
-    for (auto isym = 0; isym < symmetry->nsym; ++isym) {
-
-        for (i = 0; i < 3; ++i) {
-            for (j = 0; j < 3; ++j) {
-                srot[i][j] = static_cast<double>(symmetry->SymmList[isym].rotation(i, j));
-            }
-        }
-
-        invmat3(srot_inv, srot);
-        transpose3(srot_inv_t, srot_inv);
-        rotvec(xk_sym, xk_orig, srot_inv_t);
-
-        for (i = 0; i < 3; ++i) {
-            xk_sym[i] = xk_sym[i] - nint(xk_sym[i]);
-            const auto diff = xk_sym[i] - xk_orig[i];
-            xk_diff[i] = diff - nint(diff);
-        }
-
-        if (std::sqrt(pow2(xk_diff[0]) + pow2(xk_diff[1]) + pow2(xk_diff[2])) < eps10) {
-            sym_list.push_back(isym);
-
-            for (i = 0; i < 3; ++i) {
-                for (j = 0; j < 3; ++j) {
-                    S_avg[i][j] += srot_inv_t[i][j];
-                }
-            }
-        }
-    }
-
-    if (sym_list.empty()) {
-        static bool warning_issued = false;
-        if (!warning_issued) {
-            warn("get_symmetrization_matrix_at_k", "No small-group operation found. Identity symmetrizer is used.");
-            warning_issued = true;
-        }
-        for (i = 0; i < 3; ++i) {
-            S_avg[i][i] = 1.0;
-        }
-    } else {
-        for (i = 0; i < 3; ++i) {
-            for (j = 0; j < 3; ++j) {
-                S_avg[i][j] /= static_cast<double>(sym_list.size());
-            }
-        }
-    }
 }
 
 void KpointMeshUniform::get_unique_triplet_k(const int ik, const std::vector<SymmetryOperation> &symmlist,

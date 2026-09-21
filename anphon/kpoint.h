@@ -235,7 +235,7 @@ public:
 class Kpoint
 {
 public:
-    Kpoint(const RunInfo &run, const System *system, const Symmetry *symmetry);
+    Kpoint(const RunInfo &run, const System *system);
 
     ~Kpoint();
 
@@ -257,8 +257,6 @@ public:
     std::unique_ptr<KpointBandStructure> kpoint_bs;
     std::unique_ptr<KpointGeneral> kpoint_general;
 
-    void get_symmetrization_matrix_at_k(const double *xk_in, std::vector<int> &sym_list, double S_avg[3][3]) const;
-
     void setup_kpoint_band(const std::vector<KpointInp> &kpinfo, const Eigen::Matrix3d &rlavec_p);
 
     static int get_kmap_coarse_to_dense(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
@@ -275,6 +273,5 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Symmetry *symmetry;
 };
 } // namespace PHON_NS

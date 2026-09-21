@@ -196,23 +196,21 @@ void Conductivity::setup_kappa()
                                                   false);
 
     // The full velocity matrix is the memory hog (nk ns^2 x 3 complex) and is needed only
-    // by the coherent term. The default block-trace Peierls term and the boundary speed
+    // by the coherent term. The block-trace Peierls term and the boundary speed
     // use velblock, the per-branch block-summed diad (nk ns x 9 doubles), which is
     // contracted per k point on the fly so the full matrix is never stored unless asked.
-    const auto corrected = !PhononVelocity::legacy_velocity();
     if (calc_coherent) {
         if (run.my_rank == 0) velmat.resize(nk_3ph, ns, ns, 3);
         else
             velmat.resize(1, 1, 1, 3);
     }
-    if (corrected) {
-        if (run.my_rank == 0) velblock.resize(nk_3ph, ns, 3, 3);
-        else
-            velblock.resize(1, 1, 1, 1);
-    }
-    if (calc_coherent || corrected) {
-        phonon_velocity->calc_phonon_velmat_mesh(calc_coherent ? &velmat : nullptr, corrected ? &velblock : nullptr);
-        if (calc_coherent) check_velocity_matrix_consistency(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
+    if (run.my_rank == 0) velblock.resize(nk_3ph, ns, 3, 3);
+    else
+        velblock.resize(1, 1, 1, 1);
+
+    phonon_velocity->calc_phonon_velmat_mesh(calc_coherent ? &velmat : nullptr, &velblock);
+    if (calc_coherent) {
+        check_velocity_matrix_consistency(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues());
         if (calc_coherent == 2) {
             file_coherent_elems = run.job_title + ".kc_elem";
         }
@@ -1150,7 +1148,6 @@ void Conductivity::write_result_gamma(const unsigned int ik, const unsigned int 
 // must not be advertised.
 static std::string active_transport_formulation(const bool nonanalytic)
 {
-    if (PhononVelocity::legacy_velocity()) return "legacy";
     std::string out = "velmat_blocktrace_nosym";
     if (nonanalytic) out += ",nonanalytic";
     return out;
@@ -1163,7 +1160,7 @@ static std::string active_transport_formulation(const bool nonanalytic)
 void Conductivity::report_unresolved_degenerate_blocks(const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                                                        const double *const *gamma_in) const
 {
-    if (run.my_rank != 0 || PhononVelocity::legacy_velocity() || run.verbosity == 0) return;
+    if (run.my_rank != 0 || run.verbosity == 0) return;
 
     std::vector<std::vector<int>> lo, hi;
     build_block_table(kmesh_in, eval_in, ns, lo, hi);
@@ -1266,33 +1263,23 @@ void Conductivity::compute_kappa()
             // It is constant within each block, as required by the block-trace weights,
             // and reduces to the ordinary speed for non-degenerate branches.
             std::vector<std::vector<int>> bnd_lo, bnd_hi;
-            const auto use_block_speed = !PhononVelocity::legacy_velocity();
-            if (use_block_speed) {
-                build_block_table(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), ns, bnd_lo, bnd_hi);
-            }
+            build_block_table(dos->kmesh_dos.get(), dos->dymat_dos->get_eigenvalues(), ns, bnd_lo, bnd_hi);
 
             for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks) {
                 vel_norm = 0.0;
                 auto knum = dos->kmesh_dos->kpoint_irred_all[iks / ns][0].knum;
                 auto snum = iks % ns;
 
-                if (use_block_speed) {
-                    const auto lo = bnd_lo[iks / ns][snum];
-                    const auto hi = bnd_hi[iks / ns][snum];
-                    // (1/d) Tr(P V^a P V^a P): velblock is already summed over the second
-                    // block index, so summing its trace over the block's branches gives
-                    // the full double sum.
-                    for (auto is2 = lo; is2 < hi; ++is2) {
-                        for (auto a = 0; a < 3; ++a) vel_norm += velblock[knum][is2][a][a];
-                    }
-                    vel_norm /= static_cast<double>(hi - lo);
-                    vel_norm = std::sqrt(std::max(vel_norm, 0.0));
-                } else {
-                    for (auto j = 0; j < 3; ++j) {
-                        vel_norm += vel[knum][snum][j] * vel[knum][snum][j];
-                    }
-                    vel_norm = std::sqrt(vel_norm); // legacy: unchanged expression
+                const auto lo = bnd_lo[iks / ns][snum];
+                const auto hi = bnd_hi[iks / ns][snum];
+                // (1/d) Tr(P V^a P V^a P): velblock is already summed over the second
+                // block index, so summing its trace over the block's branches gives
+                // the full double sum.
+                for (auto is2 = lo; is2 < hi; ++is2) {
+                    for (auto a = 0; a < 3; ++a) vel_norm += velblock[knum][is2][a][a];
                 }
+                vel_norm /= static_cast<double>(hi - lo);
+                vel_norm = std::sqrt(std::max(vel_norm, 0.0));
 
                 for (i = 0; i < ntemp; ++i) {
                     gamma_total[iks][i] += (vel_norm / len_boundary) * time_ry; // same unit as gamma
@@ -1417,8 +1404,6 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, co
     const auto nk_irred = kmesh_in->nk_irred;
     kappa_mode.resize(ntemp, 9, ns, nk_irred);
 
-    const auto use_blocktrace = !PhononVelocity::legacy_velocity();
-
     for (i = 0; i < ntemp; ++i) {
         for (unsigned int j = 0; j < 3; ++j) {
             for (unsigned int k = 0; k < 3; ++k) {
@@ -1438,22 +1423,17 @@ void Conductivity::compute_kappa_intraband(const KpointMeshUniform *kmesh_in, co
                             auto vv_tmp = 0.0;
                             const auto nk_equiv = kmesh_in->kpoint_irred_all[ik].size();
 
-                            // Accumulate group velocity (diad product) for the reducible k points.
-                            // Default: degenerate-block trace of the velocity matrix (see below).
-                            // Legacy opt-out: product of finite-difference velocities.
+                            // Accumulate group velocity (diad product) for the reducible k points
+                            // as the degenerate-block trace of the velocity matrix.
                             for (auto ieq = 0; ieq < nk_equiv; ++ieq) {
                                 const auto ktmp = kmesh_in->kpoint_irred_all[ik][ieq].knum;
 
-                                if (use_blocktrace) {
-                                    // Block-summed diad. Summed over the branches of one
-                                    // degenerate block this is Tr(P_D V^j P_D V^k P_D),
-                                    // invariant under any rotation inside the block; the
-                                    // matching same-block pairs are removed from the
-                                    // coherent term so nothing is double counted.
-                                    vv_tmp += velblock[ktmp][is][j][k];
-                                } else {
-                                    vv_tmp += vel[ktmp][is][j] * vel[ktmp][is][k];
-                                }
+                                // Block-summed diad. Summed over the branches of one
+                                // degenerate block this is Tr(P_D V^j P_D V^k P_D),
+                                // invariant under any rotation inside the block; the
+                                // matching same-block pairs are removed from the
+                                // coherent term so nothing is double counted.
+                                vv_tmp += velblock[ktmp][is][j][k];
                             }
 
                             if (thermodynamics->classical) {
@@ -1514,7 +1494,6 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
 
     // With the block-trace Peierls term, pairs inside one degenerate block are
     // already counted there; only genuine cross-block pairs stay wave-like.
-    const auto use_blocktrace = !PhononVelocity::legacy_velocity();
     std::vector<std::vector<int>> block_lo, block_hi;
 
     std::ofstream ofs;
@@ -1526,7 +1505,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
         kappa_save.resize(ns2, nk_irred);
     }
 
-    if (use_blocktrace) build_block_table(kmesh_in, eval_in, ns, block_lo, block_hi);
+    build_block_table(kmesh_in, eval_in, ns, block_lo, block_hi);
 
     for (auto i = 0; i < ntemp; ++i) {
         for (unsigned int j = 0; j < 3; ++j) {
@@ -1553,7 +1532,7 @@ void Conductivity::compute_kappa_coherent(const KpointMeshUniform *kmesh_in, con
                             // same degenerate block -> already in the Peierls trace.
                             // Zero the element record too, otherwise it keeps whatever a
                             // previous temperature left there.
-                            if (use_blocktrace && js >= block_lo[ik][is] && js < block_hi[ik][is]) {
+                            if (js >= block_lo[ik][is] && js < block_hi[ik][is]) {
                                 if (calc_coherent == 2 && j == k) kappa_save[ib][ik] = czero;
                                 continue;
                             }
@@ -1713,8 +1692,8 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
     ofs.close();
 
     // ALAMODE_CHECK_VELMAT=full compares finite differences of sorted
-    // eigenvalues with analytic velocity-matrix diagonals. Band crossings and
-    // little-group symmetrization can cause differences. dw_min is the nearest
+    // eigenvalues with analytic velocity-matrix diagonals. Band crossings can
+    // cause differences. dw_min is the nearest
     // branch gap; ALAMODE_VELMAT_GAPMAX filters the dump by that gap.
     const auto *const dump_mode = std::getenv("ALAMODE_CHECK_VELMAT");
 
@@ -1731,7 +1710,7 @@ void Conductivity::check_velocity_matrix_consistency(const KpointMeshUniform *km
         ofs_dump << "# Per-mode group velocity: finite difference vs analytic velocity-matrix diagonal\n";
         ofs_dump << "# vFD    : central difference of sorted eigenvalues, no symmetrization at k\n";
         ofs_dump << "# reVmat : Re of the analytic velocity-matrix diagonal as used by the transport terms\n"
-                    "#          (unsymmetrized by default; little-group symmetrized under ALAMODE_LEGACY_VELOCITY)\n";
+                    "#          (unsymmetrized)\n";
         ofs_dump << "# velocities in m/s; omega and dw_min in cm^-1; xk in fractional coordinates\n";
         if (gap_max > 0.0) {
             ofs_dump << "# restricted to modes with dw_min < " << gap_max << " cm^-1\n";
