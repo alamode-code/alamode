@@ -206,11 +206,32 @@ public:
                                   const std::vector<FcsArrayWithCell> &fc2) const;
 
     // For NONANALYTIC = 3 the dipole-free force constants are taken from ewald, not from fc2.
+    //
+    // Every rank diagonalizes every k point, so the caller may be inside a rank-local
+    // block; use the _mpi form below wherever the call is collective.
     void get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                                const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald,
                                const bool require_evec, double **eval_ret, std::complex<double> ***evec_ret) const;
 
+    // Collective. Each rank diagonalizes one contiguous slice of the k points and the
+    // eigenpairs are gathered back to all of them, so every rank ends up with the same
+    // bits. The redundant form above lets a LAPACK whose result depends on memory
+    // placement give two ranks different bases inside a degenerate multiplet, which is
+    // not observable in mode-summed quantities but is in everything mode-resolved.
+    void get_eigenvalues_dymat_mpi(const unsigned int nk_in, const double *const *xk_in,
+                                   const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
+                                   const Dielec &dielec, const Ewald &ewald, const bool require_evec, double **eval_ret,
+                                   std::complex<double> ***evec_ret) const;
+
 private:
+    // Diagonalizes the k points [ik_begin, ik_end) into eval_ret/evec_ret and returns the
+    // number of LAPACK failures. Shared by the two public forms so the eigensolve and the
+    // frequency sign convention exist once.
+    int diagonalize_dymat_range(const int ik_begin, const int ik_end, const double *const *xk_in,
+                                const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
+                                const Dielec &dielec, const Ewald &ewald, const bool require_evec, double **eval_ret,
+                                std::complex<double> ***evec_ret) const;
+
     void set_default_variables();
 
     void deallocate_variables();

@@ -290,15 +290,15 @@ void Conductivity::setup_kappa_4ph()
     eval_tmp.resize(nk_4ph, neval);
     evec_tmp.resize(nk_4ph, neval, neval);
 
-    dynamical->get_eigenvalues_dymat(nk_4ph,
-                                     kmesh_4ph->xk,
-                                     kmesh_4ph->kvec_na,
-                                     fcs_phonon->force_constant_with_cell[0],
-                                     *dielec,
-                                     *ewald,
-                                     true,
-                                     eval_tmp,
-                                     evec_tmp);
+    dynamical->get_eigenvalues_dymat_mpi(nk_4ph,
+                                         kmesh_4ph->xk,
+                                         kmesh_4ph->kvec_na,
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *dielec,
+                                         *ewald,
+                                         true,
+                                         eval_tmp,
+                                         evec_tmp);
 
     if (!dynamical->get_projection_directions().empty()) {
         if (run.my_rank == 0) {

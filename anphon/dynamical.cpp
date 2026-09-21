@@ -770,15 +770,15 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
             evec_tmp.resize(nk, 1, 1);
         }
 
-        get_eigenvalues_dymat(nk,
-                              kpoint_general->xk,
-                              kpoint_general->kvec_na,
-                              fc2,
-                              dielec,
-                              ewald,
-                              require_eigenvectors,
-                              eval_tmp,
-                              evec_tmp);
+        get_eigenvalues_dymat_mpi(nk,
+                                  kpoint_general->xk,
+                                  kpoint_general->kvec_na,
+                                  fc2,
+                                  dielec,
+                                  ewald,
+                                  require_eigenvectors,
+                                  eval_tmp,
+                                  evec_tmp);
 
         if (!projection_directions.empty()) {
             if (run.my_rank == 0) {
@@ -809,15 +809,15 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
         } else {
             evec_tmp.resize(nk, 1, 1);
         }
-        get_eigenvalues_dymat(nk,
-                              kpoint_bs->xk,
-                              kpoint_bs->kvec_na,
-                              fc2,
-                              dielec,
-                              ewald,
-                              require_eigenvectors,
-                              eval_tmp,
-                              evec_tmp);
+        get_eigenvalues_dymat_mpi(nk,
+                                  kpoint_bs->xk,
+                                  kpoint_bs->kvec_na,
+                                  fc2,
+                                  dielec,
+                                  ewald,
+                                  require_eigenvectors,
+                                  eval_tmp,
+                                  evec_tmp);
 
         if (!projection_directions.empty()) {
             if (run.my_rank == 0) {
@@ -848,15 +848,15 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
         } else {
             evec_tmp.resize(nk, 1, 1);
         }
-        get_eigenvalues_dymat(nk,
-                              kmesh_dos->xk,
-                              kmesh_dos->kvec_na,
-                              fc2,
-                              dielec,
-                              ewald,
-                              require_eigenvectors,
-                              eval_tmp,
-                              evec_tmp);
+        get_eigenvalues_dymat_mpi(nk,
+                                  kmesh_dos->xk,
+                                  kmesh_dos->kvec_na,
+                                  fc2,
+                                  dielec,
+                                  ewald,
+                                  require_eigenvectors,
+                                  eval_tmp,
+                                  evec_tmp);
 
         if (!projection_directions.empty()) {
             if (run.my_rank == 0) {
@@ -891,23 +891,18 @@ void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, 
     }
 }
 
-void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in,
-                                      const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
-                                      const Dielec &dielec, const Ewald &ewald, const bool require_evec,
-                                      double **eval_ret, std::complex<double> ***evec_ret) const
+int Dynamical::diagonalize_dymat_range(const int ik_begin, const int ik_end, const double *const *xk_in,
+                                       const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
+                                       const Dielec &dielec, const Ewald &ewald, const bool require_evec,
+                                       double **eval_ret, std::complex<double> ***evec_ret) const
 {
-    if (nk_in <= 0) {
-        exit("get_eigenvalues_dymat", "The number of k points must be larger than 0.");
-    }
-
     // One k-point per thread, one single-threaded LAPACK call each (MKL and the
     // OpenMP build of OpenBLAS run one thread per call inside a parallel region;
     // pthreads OpenBLAS / Accelerate must be pinned, see v4_index_transform.h).
     // For a single k-point the region is inactive and LAPACK keeps its threads.
-    const auto nk = static_cast<int>(nk_in);
     int nfail = 0;
-#pragma omp parallel for schedule(dynamic) reduction(+ : nfail) if (nk > 1)
-    for (int ik = 0; ik < nk; ++ik) {
+#pragma omp parallel for schedule(dynamic) reduction(+ : nfail) if (ik_end - ik_begin > 1)
+    for (int ik = ik_begin; ik < ik_end; ++ik) {
         int info = 0;
         if (nonanalytic == 3) {
             eval_k_ewald(&xk_in[ik][0],
@@ -930,8 +925,100 @@ void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *co
             eval_ret[ik][is] = freq(eval_ret[ik][is]);
         }
     }
+    return nfail;
+}
+
+void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in,
+                                      const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
+                                      const Dielec &dielec, const Ewald &ewald, const bool require_evec,
+                                      double **eval_ret, std::complex<double> ***evec_ret) const
+{
+    if (nk_in <= 0) {
+        exit("get_eigenvalues_dymat", "The number of k points must be larger than 0.");
+    }
+
+    const auto nk = static_cast<int>(nk_in);
+    const auto nfail =
+        diagonalize_dymat_range(0, nk, xk_in, kvec_na_in, fc2, dielec, ewald, require_evec, eval_ret, evec_ret);
+
     if (nfail != 0) {
         exit("get_eigenvalues_dymat", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
+    }
+}
+
+void Dynamical::get_eigenvalues_dymat_mpi(const unsigned int nk_in, const double *const *xk_in,
+                                          const double *const *kvec_na_in, const std::vector<FcsArrayWithCell> &fc2,
+                                          const Dielec &dielec, const Ewald &ewald, const bool require_evec,
+                                          double **eval_ret, std::complex<double> ***evec_ret) const
+{
+    if (nk_in <= 0) {
+        exit("get_eigenvalues_dymat_mpi", "The number of k points must be larger than 0.");
+    }
+
+    const auto nk = static_cast<int>(nk_in);
+    const auto ns = static_cast<int>(neval);
+
+    // Contiguous slices, so the gather writes each rank's block where it already is and
+    // needs no reordering. Ranks beyond the k points simply contribute nothing.
+    std::vector<int> nk_proc(run.nprocs), ik_begin_proc(run.nprocs);
+    const auto nk_base = nk / run.nprocs;
+    const auto nk_rest = nk % run.nprocs;
+    auto ik_now = 0;
+    for (auto iproc = 0; iproc < run.nprocs; ++iproc) {
+        nk_proc[iproc] = nk_base + (iproc < nk_rest ? 1 : 0);
+        ik_begin_proc[iproc] = ik_now;
+        ik_now += nk_proc[iproc];
+    }
+
+    const auto ik_begin = ik_begin_proc[run.my_rank];
+    const auto ik_end = ik_begin + nk_proc[run.my_rank];
+
+    auto nfail = diagonalize_dymat_range(ik_begin,
+                                         ik_end,
+                                         xk_in,
+                                         kvec_na_in,
+                                         fc2,
+                                         dielec,
+                                         ewald,
+                                         require_evec,
+                                         eval_ret,
+                                         evec_ret);
+
+    // Every rank has to leave together, so the failure count is shared before the test.
+    MPI_Allreduce(MPI_IN_PLACE, &nfail, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    if (nfail != 0) {
+        exit("get_eigenvalues_dymat_mpi", "zheev failed to diagonalize the dynamical matrix (INFO != 0).");
+    }
+
+    std::vector<int> counts(run.nprocs), displs(run.nprocs);
+
+    for (auto iproc = 0; iproc < run.nprocs; ++iproc) {
+        counts[iproc] = nk_proc[iproc] * ns;
+        displs[iproc] = ik_begin_proc[iproc] * ns;
+    }
+    MPI_Allgatherv(MPI_IN_PLACE,
+                   0,
+                   MPI_DATATYPE_NULL,
+                   &eval_ret[0][0],
+                   &counts[0],
+                   &displs[0],
+                   MPI_DOUBLE,
+                   MPI_COMM_WORLD);
+
+    // evec_ret is allocated as [nk][1][1] when the eigenvectors are not wanted.
+    if (require_evec) {
+        for (auto iproc = 0; iproc < run.nprocs; ++iproc) {
+            counts[iproc] = nk_proc[iproc] * ns * ns;
+            displs[iproc] = ik_begin_proc[iproc] * ns * ns;
+        }
+        MPI_Allgatherv(MPI_IN_PLACE,
+                       0,
+                       MPI_DATATYPE_NULL,
+                       &evec_ret[0][0][0],
+                       &counts[0],
+                       &displs[0],
+                       MPI_CXX_DOUBLE_COMPLEX,
+                       MPI_COMM_WORLD);
     }
 }
 
