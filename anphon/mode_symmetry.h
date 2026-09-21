@@ -64,8 +64,8 @@ struct GammaIrrepResult
 class ModeSymmetry
 {
 public:
-    ModeSymmetry(const RunInfo &run, const System *system, const Symmetry *symmetry, const Fcs_phonon *fcs_phonon,
-                 const Dielec *dielec, const Ewald *ewald, const Dynamical *dynamical);
+    ModeSymmetry(const RunInfo &run, const System *system, const Symmetry *symmetry, const Dielec *dielec,
+                 const Dynamical *dynamical);
 
     ~ModeSymmetry();
 
@@ -91,9 +91,7 @@ private:
     const RunInfo &run;
     const System *system;
     const Symmetry *symmetry;
-    const Fcs_phonon *fcs_phonon;
     const Dielec *dielec;
-    const Ewald *ewald;
     const Dynamical *dynamical;
 };
 } // namespace PHON_NS

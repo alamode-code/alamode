@@ -64,7 +64,7 @@ void PHON::create_pointers()
     system = std::make_unique<System>(run_info);
     symmetry = std::make_unique<Symmetry>(run_info, system.get());
     kpoint = std::make_unique<Kpoint>(run_info, system.get(), symmetry.get());
-    fcs_phonon = std::make_unique<Fcs_phonon>(run_info, timer.get(), system.get());
+    fcs_phonon = std::make_unique<Fcs_phonon>(run_info, system.get());
     dielec = std::make_unique<Dielec>(run_info, system.get(), symmetry.get(), fcs_phonon.get());
     ewald = std::make_unique<Ewald>(run_info, system.get(), fcs_phonon.get(), dielec.get());
     dynamical = std::make_unique<Dynamical>(run_info, system.get(), fcs_phonon.get(), dielec.get(), ewald.get());
@@ -90,13 +90,8 @@ void PHON::create_pointers()
                                                        dos.get());
     selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
-    mode_symmetry = std::make_unique<ModeSymmetry>(run_info,
-                                                   system.get(),
-                                                   symmetry.get(),
-                                                   fcs_phonon.get(),
-                                                   dielec.get(),
-                                                   ewald.get(),
-                                                   dynamical.get());
+    mode_symmetry =
+        std::make_unique<ModeSymmetry>(run_info, system.get(), symmetry.get(), dielec.get(), dynamical.get());
     gruneisen = std::make_unique<Gruneisen>(run_info,
                                             writes.get(),
                                             system.get(),

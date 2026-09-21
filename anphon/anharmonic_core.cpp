@@ -40,7 +40,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 using namespace PHON_NS;
 
 AnharmonicCore::AnharmonicCore(const RunInfo &run_in, const Timer *timer_in, const System *system_in,
-                               const Symmetry *symmetry_in, Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
+                               const Symmetry *symmetry_in, const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
                                const Dynamical *dynamical_in, const Integration *integration_in,
                                const Thermodynamics *thermodynamics_in, const Dos *dos_in) :
     run(run_in), timer(timer_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
@@ -663,10 +663,7 @@ void AnharmonicCore::calc_phi4_reciprocal(const double *xk1, const double *xk2, 
 
 void AnharmonicCore::setup_cubic()
 {
-    // Sort force_constant[1] using the operator defined in fcs_phonons.h
-    // This sorting is necessary.
-    std::sort(fcs_phonon->force_constant_with_cell[1].begin(), fcs_phonon->force_constant_with_cell[1].end());
-
+    // force_constant_with_cell[1] is already sorted by Fcs_phonon::setup().
     prepare_group_of_force_constants(fcs_phonon->force_constant_with_cell[1], ngroup_v3, fcs_group_v3);
 
     invmass_v3.resize(ngroup_v3);
@@ -691,7 +688,7 @@ void AnharmonicCore::setup_cubic()
 
 void AnharmonicCore::setup_quartic()
 {
-    std::sort(fcs_phonon->force_constant_with_cell[2].begin(), fcs_phonon->force_constant_with_cell[2].end());
+    // force_constant_with_cell[2] is already sorted by Fcs_phonon::setup().
     prepare_group_of_force_constants(fcs_phonon->force_constant_with_cell[2], ngroup_v4, fcs_group_v4);
 
     invmass_v4.resize(ngroup_v4);

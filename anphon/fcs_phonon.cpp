@@ -29,12 +29,10 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "phonon.h"
 #include "stage_timer.h"
 #include "system.h"
-#include "timer.h"
 
 using namespace PHON_NS;
 
-Fcs_phonon::Fcs_phonon(const RunInfo &run_in, const Timer *timer_in, const System *system_in) :
-    run(run_in), timer(timer_in), system(system_in)
+Fcs_phonon::Fcs_phonon(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 }
@@ -108,9 +106,9 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
 
     if (run.my_rank == 0) {
 
-        const auto t_stage = timer->elapsed();
+        const auto t_stage = stage_clock();
         load_fcs_from_file(maxorder);
-        print_stage_line("IFCs: read from file", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
+        print_stage_line("IFCs: read from file", stage_clock() - t_stage, run.my_rank, run.verbosity);
 
         if (run.verbosity > 0) {
             for (auto i = 0; i < maxorder; ++i) {
@@ -135,12 +133,22 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
         if (run.verbosity > 0) std::cout << '\n';
     }
 
-    auto t_stage = timer->elapsed();
+    auto t_stage = stage_clock();
     MPI_Bcast_fcs_array(maxorder);
-    print_stage_line("IFCs: MPI broadcast", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
-    t_stage = timer->elapsed();
+    print_stage_line("IFCs: MPI broadcast", stage_clock() - t_stage, run.my_rank, run.verbosity);
+    t_stage = stage_clock();
     replicate_force_constants(maxorder);
-    print_stage_line("IFCs: replicate to the unit cell", timer->elapsed() - t_stage, run.my_rank, run.verbosity);
+    print_stage_line("IFCs: replicate to the unit cell", stage_clock() - t_stage, run.my_rank, run.verbosity);
+
+    // Sort the anharmonic IFCs using the operator defined in fcs_phonon.h.
+    // This sorting is necessary. It is done once here because AnharmonicCore,
+    // Gruneisen and DerivativeIFC all read these arrays.
+    if (maxorder >= 2) {
+        std::sort(force_constant_with_cell[1].begin(), force_constant_with_cell[1].end());
+    }
+    if (maxorder >= 3) {
+        std::sort(force_constant_with_cell[2].begin(), force_constant_with_cell[2].end());
+    }
 }
 
 void Fcs_phonon::replicate_force_constants(const int maxorder_in)
@@ -150,7 +158,7 @@ void Fcs_phonon::replicate_force_constants(const int maxorder_in)
     }
 }
 
-void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout) const
+void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout)
 {
     // Replicate IFCs from the true primitive cell to the user-defined cell,
     // convert relative vectors to its lattice basis, and derive relvec
@@ -229,7 +237,7 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
             for (auto i = 0; i < order + 1; ++i) {
                 for (auto j = 0; j < 3; ++j) {
                     relvec_tmp[j] = it.relvecs_velocity[i][j] + cell_tmp.x_cartesian(atom_super_tran[0], j) -
-                                    cell_tmp.x_cartesian(system->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
+                                    cell_tmp.x_cartesian(system_in->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
                     relvec_tmp2[j] = it.relvecs_velocity[i][j];
                 }
                 relvec_tmp = convmat * relvec_tmp;

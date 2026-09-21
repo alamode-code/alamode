@@ -196,7 +196,7 @@ public:
     void parse_fcs_from_h5(const HighFive::File &file, const std::string &group_prefix, const int order,
                            std::vector<FcsArrayWithCell> &fcs_out, const int temperature_index = -1) const;
 
-    Fcs_phonon(const RunInfo &run, const Timer *timer, const System *system);
+    Fcs_phonon(const RunInfo &run, const System *system);
 
     ~Fcs_phonon();
 
@@ -225,7 +225,7 @@ public:
 
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout) const;
+    static void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout);
 
 private:
     bool require_cubic;
@@ -254,7 +254,6 @@ private:
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
-    const Timer *timer;
     const System *system;
 };
 } // namespace PHON_NS

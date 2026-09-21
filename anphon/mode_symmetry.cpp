@@ -21,8 +21,6 @@
 #include "dielec.h"
 #include "dynamical.h"
 #include "error.h"
-#include "ewald.h"
-#include "fcs_phonon.h"
 #include "mpi_common.h"
 #include "ndarray.h"
 #include "pointgroup_data.h"
@@ -137,10 +135,8 @@ std::string format_decomposition(const pointgroup::PointGroup &pg, const std::ve
 } // namespace
 
 ModeSymmetry::ModeSymmetry(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-                           const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, const Ewald *ewald_in,
-                           const Dynamical *dynamical_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in),
-    ewald(ewald_in), dynamical(dynamical_in)
+                           const Dielec *dielec_in, const Dynamical *dynamical_in) :
+    run(run_in), system(system_in), symmetry(symmetry_in), dielec(dielec_in), dynamical(dynamical_in)
 {}
 
 ModeSymmetry::~ModeSymmetry() = default;
@@ -216,21 +212,13 @@ void ModeSymmetry::analyze_irreps_at_gamma()
         }
     }
 
-    // Compute analytic Gamma eigenvectors. kvec = 0 removes the directional
-    // term for NONANALYTIC = 1/2; mode 3 requires Ewald with dipole-free IFCs.
+    // Compute analytic Gamma eigenvectors: kvec = 0 removes the directional term.
     std::vector<double> eval_raw(ns), omega(ns);
     NDArray<std::complex<double>, 2> evec;
     evec.resize(ns, ns);
-    {
-        double xk[3] = {0.0, 0.0, 0.0};
-        if (dynamical->nonanalytic == 3) {
-            dynamical->eval_k_ewald(xk, xk, ewald->fc2_without_dipole, eval_raw.data(), evec, true);
-        } else {
-            dynamical->eval_k(xk, xk, fcs_phonon->force_constant_with_cell[0], eval_raw.data(), evec, true);
-        }
-    }
+    dynamical->diagonalize_gamma_analytic(eval_raw.data(), evec, true);
     for (auto is = 0; is < ns; ++is) {
-        omega[is] = dynamical->freq(eval_raw[is]);
+        omega[is] = Dynamical::freq(eval_raw[is]);
     }
 
     // ------------------------------------------------------------------
