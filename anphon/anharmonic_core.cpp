@@ -102,6 +102,9 @@ void AnharmonicCore::setup()
     sym_permutation = true;
     use_tuned_ver = true;
     MPI_Bcast(&use_tuned_ver, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    // TRISYM is set on rank 0 by the parser but read on all ranks when the
+    // unique triplet list is built (three_phonon.cpp, thermodynamics.cpp).
+    MPI_Bcast(&use_triplet_symmetry, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
     auto t_stage = timer->elapsed();
     if (fcs_phonon->maxorder >= 2) setup_cubic();
