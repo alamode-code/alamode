@@ -239,7 +239,10 @@ ScphFc2RowsH5 ScphQhaCommon::build_fc2_rows_h5(const std::complex<double> *const
     dymat_harm_r.resize(ns, ns, ncell);
 
     for (unsigned int ik = 0; ik < ncell; ++ik) {
-        dynamical->calc_analytic_k(kmesh_coarse_in->xk[ik], fcs_phonon->force_constant_with_cell[0], dymat_tmp);
+        Dynamical::calc_analytic_k(*system,
+                                   kmesh_coarse_in->xk[ik],
+                                   fcs_phonon->force_constant_with_cell[0],
+                                   dymat_tmp);
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
                 dymat_harm_q[is][js][ik] = dymat_tmp[is][js];

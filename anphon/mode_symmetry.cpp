@@ -682,7 +682,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     // Per-branch acoustic detector, used as a diagnostic cross-check of the
     // subspace-content criterion (its per-eigenvector projections are
     // basis-dependent inside degenerate clusters, so it is not authoritative).
-    const auto acoustic_flags = dynamical->detect_acoustic_modes_at_gamma(evec, 0.9, false);
+    const auto acoustic_flags = Dynamical::detect_acoustic_modes_at_gamma(*system, evec, 0.9, false);
 
     for (auto ig = 0; ig < ngroup; ++ig) {
         auto &grp = result_.groups[ig];

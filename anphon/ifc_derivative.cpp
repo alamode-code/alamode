@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 #include "anharmonic_core.h"
+#include "cell_shift_table.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -124,10 +125,9 @@ void build_pairs_vec(const std::vector<int> &index_with_cell, const std::size_t 
 } // namespace
 
 DerivativeIFC::DerivativeIFC(const System &system_in, const Symmetry &symmetry_in, const Fcs_phonon &fcs_phonon_in,
-                             const Dynamical &dynamical_in, AnharmonicCore &anharmonic_core_in, const int my_rank_in,
-                             const int nprocs_in) :
-    system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), dynamical_(dynamical_in),
-    anharmonic_core_(anharmonic_core_in), my_rank_(my_rank_in), nprocs_(nprocs_in)
+                             AnharmonicCore &anharmonic_core_in, const int my_rank_in, const int nprocs_in) :
+    system_(system_in), symmetry_(symmetry_in), fcs_phonon_(fcs_phonon_in), anharmonic_core_(anharmonic_core_in),
+    my_rank_(my_rank_in), nprocs_(nprocs_in)
 {}
 
 void DerivativeIFC::print_stage(const std::string &label, const double t_start, const bool newline_first) const
@@ -198,7 +198,7 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
             }
         }
     }
-    const auto is_acoustic_proj = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_proj = Dynamical::detect_acoustic_modes_at_gamma(system_, evec_harmonic[0], 0.9, false);
     for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
         if (!is_acoustic_proj[is]) continue;
         for (int ixyz = 0; ixyz < 9; ++ixyz) {
@@ -295,7 +295,7 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
                                     del2_v1_del_umn2(b1 * 27 + a1 * 9 + b2 * 3 + a2, is));
         for (auto ixyz = 0; ixyz < 81; ++ixyz) del2_v1_del_umn2(ixyz, is) = sym_tmp[ixyz];
     }
-    const auto is_acoustic_proj = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_proj = Dynamical::detect_acoustic_modes_at_gamma(system_, evec_harmonic[0], 0.9, false);
     for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
         if (!is_acoustic_proj[is]) continue;
         for (int ixyz = 0; ixyz < 81; ++ixyz) {
@@ -379,7 +379,7 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
                             }
         for (auto ixyz = 0; ixyz < 729; ++ixyz) del3_v1_del_umn3(ixyz, is) = sym_tmp[ixyz];
     }
-    const auto is_acoustic_proj = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_proj = Dynamical::detect_acoustic_modes_at_gamma(system_, evec_harmonic[0], 0.9, false);
     for (unsigned int is = 0; is < static_cast<unsigned int>(ns); ++is) {
         if (!is_acoustic_proj[is]) continue;
         for (int ixyz = 0; ixyz < 729; ++ixyz) {
@@ -429,7 +429,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (int ik = 0; ik < nk; ik++) {
 
-                dynamical_.calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
+                Dynamical::calc_analytic_k(system_, xk_in[ik], delta_fcs, mat_tmp);
 
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
@@ -490,7 +490,7 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
 
             auto &per_strain = del2_v2_del_umn2[ixyz];
             for (int ik = 0; ik < nk; ik++) {
-                dynamical_.calc_analytic_k(xk_in[ik], delta_fcs, mat_tmp);
+                Dynamical::calc_analytic_k(system_, xk_in[ik], delta_fcs, mat_tmp);
 
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
@@ -569,7 +569,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     std::vector<std::complex<double> *> row_ptrs(static_cast<std::size_t>(nk_dense) * ns);
     std::vector<std::complex<double> **> kptr_view(nk_dense);
 
-    const auto is_acoustic_gamma = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_gamma = Dynamical::detect_acoustic_modes_at_gamma(system_, evec_harmonic[0], 0.9, false);
 
     double t_v3_build = 0.0;
 
@@ -1276,7 +1276,7 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
     }
     del_v2_del_umn_alphamu.clear();
 
-    const auto is_acoustic_gamma = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_gamma = Dynamical::detect_acoustic_modes_at_gamma(system_, evec_harmonic[0], 0.9, false);
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
 
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
@@ -1634,6 +1634,10 @@ void DerivativeIFC::process_strain_harmonic_set(
 
     std::vector<FcsClassExtent> fc2_tmp;
 
+    // Shift table for Dynamical::calc_analytic_k; fc2_tmp only ever uses the home cell (cell_s = 0).
+    NDArray<double, 2> xshift_s;
+    build_27cell_shift_table(xshift_s);
+
     int ixyz1, ixyz2, ixyz3, ixyz4;
     int ixyz1_2, ixyz2_2, ixyz3_2, ixyz4_2;
     int i1, i2;
@@ -1951,7 +1955,7 @@ void DerivativeIFC::process_strain_harmonic_set(
             }
 
             for (ik = 0; ik < nk_interpolate; ik++) {
-                dynamical_.calc_analytic_k(kmesh_coarse->xk[ik], fc2_tmp, dymat_tmp);
+                Dynamical::calc_analytic_k(system_, xshift_s, kmesh_coarse->xk[ik], fc2_tmp, dymat_tmp);
 
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
@@ -1990,7 +1994,7 @@ void DerivativeIFC::process_strain_harmonic_set(
     }
 
     constexpr auto complex_zero = std::complex<double>(0.0, 0.0);
-    const auto is_acoustic_gamma = dynamical_.detect_acoustic_modes_at_gamma(evec_harmonic[0], 0.9, false);
+    const auto is_acoustic_gamma = Dynamical::detect_acoustic_modes_at_gamma(system_, evec_harmonic[0], 0.9, false);
 
     for (ixyz1 = 0; ixyz1 < 9; ixyz1++) {
         auto &per_strain = del_v2_del_umn[ixyz1];

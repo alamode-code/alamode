@@ -187,7 +187,8 @@ void ScphQhaCommon::setup_eigvecs()
     if (ik_gamma_dense < 0) {
         exit("setup_eigvecs", "Gamma point not found in the dense k mesh.");
     }
-    is_acoustic_gamma_harm = dynamical->detect_acoustic_modes_at_gamma(evec_harmonic[ik_gamma_dense]);
+    is_acoustic_gamma_harm =
+        Dynamical::detect_acoustic_modes_at_gamma(*system, evec_harmonic[ik_gamma_dense], 0.9, run.my_rank == 0);
 
     if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << "done !\n";

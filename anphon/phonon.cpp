@@ -67,8 +67,7 @@ void PHON::create_pointers()
     fcs_phonon = std::make_unique<Fcs_phonon>(run_info, timer.get(), system.get());
     dielec = std::make_unique<Dielec>(run_info, system.get(), symmetry.get(), fcs_phonon.get());
     ewald = std::make_unique<Ewald>(run_info, system.get(), fcs_phonon.get(), dielec.get());
-    dynamical =
-        std::make_unique<Dynamical>(run_info, system.get(), kpoint.get(), fcs_phonon.get(), dielec.get(), ewald.get());
+    dynamical = std::make_unique<Dynamical>(run_info, system.get(), fcs_phonon.get(), dielec.get(), ewald.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
     dos = std::make_unique<Dos>(run_info, system.get(), dynamical.get(), integration.get(), thermodynamics.get());
@@ -112,7 +111,6 @@ void PHON::create_pointers()
                                               symmetry.get(),
                                               fcs_phonon.get(),
                                               ewald.get(),
-                                              dynamical.get(),
                                               anharmonic_core.get());
     conductivity = std::make_unique<Conductivity>(run_info,
                                                   system.get(),
@@ -280,7 +278,7 @@ void PHON::setup_base() const
     // Broadcasts the IRREPS flag; must precede dielec->init(), which uses it
     // to decide whether Born charges are loaded.
     mode_symmetry->setup();
-    dynamical->setup_dynamical();
+    dynamical->setup_dynamical(kpoint->kpoint_bs.get(), kpoint->kpoint_general.get());
     if (!init_u0_from_modes) setup_fcs();
     phonon_velocity->setup_velocity();
     integration->setup_integration(dos->kmesh_dos.get(),
@@ -328,7 +326,10 @@ void PHON::execute_phonons() const
 
     setup_base();
 
-    dynamical->diagonalize_dynamical_all(dos->kmesh_dos.get(), dos->dymat_dos.get());
+    dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
+                                         kpoint->kpoint_general.get(),
+                                         dos->kmesh_dos.get(),
+                                         dos->dymat_dos.get());
 
     if (mode_symmetry->print_irreps && run_info.my_rank == 0) {
         mode_symmetry->analyze_irreps_at_gamma();
@@ -384,7 +385,10 @@ void PHON::execute_kappa() const
     setup_base();
 
     if (kpoint->kpoint_mode < 3) {
-        dynamical->diagonalize_dynamical_all(dos->kmesh_dos.get(), dos->dymat_dos.get());
+        dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
+                                             kpoint->kpoint_general.get(),
+                                             dos->kmesh_dos.get(),
+                                             dos->dymat_dos.get());
     }
 
     isotope->setup_isotope_scattering(*system,
@@ -458,7 +462,10 @@ void PHON::execute_self_consistent_phonon() const
                      get_verbosity());
 
     t_stage = timer->elapsed();
-    dynamical->diagonalize_dynamical_all(dos->kmesh_dos.get(), dos->dymat_dos.get());
+    dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
+                                         kpoint->kpoint_general.get(),
+                                         dos->kmesh_dos.get(),
+                                         dos->dymat_dos.get());
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
     relaxation->setup_relaxation();
 

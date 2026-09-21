@@ -44,18 +44,13 @@ using namespace PHON_NS;
 
 Relaxation::Relaxation(const RunInfo &run_in, const Timer *timer_in, const System *system_in,
                        const Symmetry *symmetry_in, const Fcs_phonon *fcs_phonon_in, const Ewald *ewald_in,
-                       const Dynamical *dynamical_in, AnharmonicCore *anharmonic_core_in) :
+                       AnharmonicCore *anharmonic_core_in) :
     run(run_in), timer(timer_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), ewald(ewald_in),
-    dynamical(dynamical_in), anharmonic_core(anharmonic_core_in)
+    anharmonic_core(anharmonic_core_in)
 {
     set_default_variables();
-    derivative_ifc = std::make_unique<DerivativeIFC>(*system,
-                                                     *symmetry,
-                                                     *fcs_phonon,
-                                                     *dynamical,
-                                                     *anharmonic_core,
-                                                     run.my_rank,
-                                                     run.nprocs);
+    derivative_ifc =
+        std::make_unique<DerivativeIFC>(*system, *symmetry, *fcs_phonon, *anharmonic_core, run.my_rank, run.nprocs);
 }
 
 Relaxation::~Relaxation() = default;
@@ -580,7 +575,7 @@ void Relaxation::set_init_u0_from_modes()
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes(dymat);
     const auto &evec = saes.eigenvectors();
     std::vector<double> omega(ns);
-    for (int is = 0; is < ns; ++is) omega[is] = dynamical->freq(saes.eigenvalues()[is]);
+    for (int is = 0; is < ns; ++is) omega[is] = Dynamical::freq(saes.eigenvalues()[is]);
 
     // T(g) at Gamma on a set of column vectors: (T v)_{map[j], a} = sum_b R_ab v_{j, b}.
     // The translation part acts through the atom mapping; Bloch phases are unity at Gamma.

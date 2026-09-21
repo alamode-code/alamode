@@ -207,7 +207,7 @@ void Gruneisen::calc_gruneisen_at_kpoints(const unsigned int nk, const NDArray<d
 
     if (gruneisen_mode == 1) {
         for (unsigned int ik = 0; ik < nk; ++ik) {
-            dynamical->calc_analytic_k(xk[ik], delta_fc2, dfc2_reciprocal);
+            Dynamical::calc_analytic_k(*system, xk[ik], delta_fc2, dfc2_reciprocal);
 
             for (unsigned int is = 0; is < ns; ++is) {
                 const auto gamma = project(ik, is);
@@ -223,7 +223,7 @@ void Gruneisen::calc_gruneisen_at_kpoints(const unsigned int nk, const NDArray<d
 
         for (std::size_t icomp = 0; icomp < ncomp; ++icomp) {
             for (unsigned int ik = 0; ik < nk; ++ik) {
-                dynamical->calc_analytic_k(xk[ik], delta_fc2_strain[icomp], dfc2_reciprocal);
+                Dynamical::calc_analytic_k(*system, xk[ik], delta_fc2_strain[icomp], dfc2_reciprocal);
 
                 for (unsigned int is = 0; is < ns; ++is) {
                     const auto gamma = project(ik, is);

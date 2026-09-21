@@ -84,8 +84,8 @@ private:
 class Dynamical
 {
 public:
-    Dynamical(const RunInfo &run, const System *system, const Kpoint *kpoint, const Fcs_phonon *fcs_phonon,
-              const Dielec *dielec, const Ewald *ewald);
+    Dynamical(const RunInfo &run, const System *system, const Fcs_phonon *fcs_phonon, const Dielec *dielec,
+              const Ewald *ewald);
 
     ~Dynamical();
 
@@ -103,11 +103,14 @@ public:
 
     std::unique_ptr<DymatEigenValue> dymat_band, dymat_general;
 
+    // kpoint_bs / kpoint_general: the band-structure and manual-entry k-point lists owned by
+    // Kpoint; null unless the corresponding KPMODE was requested.
     // kmesh_dos / dymat_dos: the uniform mesh owned by Dos and the container that receives its
     // eigenpairs; both null when the run has no uniform mesh (KPMODE != 2).
-    void diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos);
+    void diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general,
+                                   const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos);
 
-    void setup_dynamical();
+    void setup_dynamical(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general);
 
     // info_out: when given, the LAPACK INFO is stored there instead of exiting on
     // failure (for calls inside OpenMP regions).
@@ -127,14 +130,20 @@ public:
 
     static double freq(const double);
 
-    std::vector<bool> detect_acoustic_modes_at_gamma(const std::complex<double> *const *evec_gamma,
-                                                     double projection_threshold = 0.9, bool verbose = true) const;
+    static std::vector<bool> detect_acoustic_modes_at_gamma(const System &system,
+                                                            const std::complex<double> *const *evec_gamma,
+                                                            double projection_threshold, bool verbose);
 
     void calc_participation_ratio_all(const unsigned int nk_in, const std::complex<double> *const *const *evec_in,
                                       double **ret, double ***ret_all) const;
 
-    void calc_analytic_k(const double *, const std::vector<FcsClassExtent> &, std::complex<double> **) const;
+    static void calc_analytic_k(const System &system, const NDArray<double, 2> &xshift_s, const double *,
+                                const std::vector<FcsClassExtent> &, std::complex<double> **);
 
+    static void calc_analytic_k(const System &system, const double *, const std::vector<FcsArrayWithCell> &,
+                                std::complex<double> **);
+
+    // Forwarder for the calls inside Dynamical, which already hold the System handle.
     void calc_analytic_k(const double *, const std::vector<FcsArrayWithCell> &, std::complex<double> **) const;
 
     void calc_nonanalytic_k_parlinski(const double *, const double *, std::complex<double> **) const;
@@ -212,7 +221,6 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Kpoint *kpoint;
     const Fcs_phonon *fcs_phonon;
     const Dielec *dielec;
     const Ewald *ewald;

@@ -40,9 +40,9 @@
 
 using namespace PHON_NS;
 
-Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Kpoint *kpoint_in,
-                     const Fcs_phonon *fcs_phonon_in, const Dielec *dielec_in, const Ewald *ewald_in) :
-    run(run_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in), ewald(ewald_in)
+Dynamical::Dynamical(const RunInfo &run_in, const System *system_in, const Fcs_phonon *fcs_phonon_in,
+                     const Dielec *dielec_in, const Ewald *ewald_in) :
+    run(run_in), system(system_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in), ewald(ewald_in)
 {
     set_default_variables();
 }
@@ -146,7 +146,7 @@ const std::complex<double> *const *const *DymatEigenValue::get_eigenvectors() co
     return this->evec;
 }
 
-void Dynamical::setup_dynamical()
+void Dynamical::setup_dynamical(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general)
 {
     neval = 3 * system->get_primcell().number_of_atoms;
 
@@ -196,13 +196,12 @@ void Dynamical::setup_dynamical()
     MPI_Bcast(&nonanalytic, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&band_connection, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    if (kpoint->kpoint_bs.get()) {
-        dymat_band = std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint->kpoint_bs->nk, neval);
+    if (kpoint_bs) {
+        dymat_band = std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint_bs->nk, neval);
     }
 
-    if (kpoint->kpoint_general.get()) {
-        dymat_general =
-            std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint->kpoint_general->nk, neval);
+    if (kpoint_general) {
+        dymat_general = std::make_unique<DymatEigenValue>(require_eigenvectors, false, kpoint_general->nk, neval);
     }
 
     // Bcast projection_directions
@@ -458,15 +457,15 @@ void Dynamical::eval_k_ewald(const double *xk_in, const double *kvec_in, const s
     dymat_k.clear();
 }
 
-void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsClassExtent> &fc2_in,
-                                std::complex<double> **dymat_out) const
+void Dynamical::calc_analytic_k(const System &system, const NDArray<double, 2> &xshift_s, const double *xk_in,
+                                const std::vector<FcsClassExtent> &fc2_in, std::complex<double> **dymat_out)
 {
     int i;
+    const auto neval = system.get_num_modes();
     Eigen::Vector3d vec;
-    Eigen::Matrix3d convmat =
-        system->get_primcell().reciprocal_lattice_vector * system->get_supercell(0).lattice_vector;
+    Eigen::Matrix3d convmat = system.get_primcell().reciprocal_lattice_vector * system.get_supercell(0).lattice_vector;
 
-    const auto xf_tmp = system->get_supercell(0).x_fractional;
+    const auto xf_tmp = system.get_supercell(0).x_fractional;
 
     for (i = 0; i < neval; ++i) {
         for (auto j = 0; j < neval; ++j) {
@@ -482,11 +481,11 @@ void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsClassE
         const auto xyz2 = it.xyz2;
         const auto icell = it.cell_s;
 
-        const auto atm1_s = system->get_map_p2s(0)[atm1_p][0];
-        const auto atm2_p = system->get_map_s2p(0)[atm2_s].atom_num;
+        const auto atm1_s = system.get_map_p2s(0)[atm1_p][0];
+        const auto atm2_p = system.get_map_s2p(0)[atm2_s].atom_num;
 
         for (i = 0; i < 3; ++i) {
-            vec[i] = xf_tmp(atm2_s, i) + xshift_s[icell][i] - xf_tmp(system->get_map_p2s(0)[atm2_p][0], i);
+            vec[i] = xf_tmp(atm2_s, i) + xshift_s[icell][i] - xf_tmp(system.get_map_p2s(0)[atm2_p][0], i);
         }
 
         vec = convmat * vec;
@@ -495,20 +494,22 @@ void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsClassE
 
         dymat_out[3 * atm1_p + xyz1][3 * atm2_p + xyz2] +=
             it.fcs_val * std::exp(im * phase) /
-            std::sqrt(system->get_mass_super()[atm1_s] * system->get_mass_super()[atm2_s]);
+            std::sqrt(system.get_mass_super()[atm1_s] * system.get_mass_super()[atm2_s]);
     }
 }
 
-void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
-                                std::complex<double> **dymat_out) const
+void Dynamical::calc_analytic_k(const System &system, const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
+                                std::complex<double> **dymat_out)
 {
+    const auto neval = system.get_num_modes();
+
     for (auto i = 0; i < neval; ++i) {
         for (auto j = 0; j < neval; ++j) {
             dymat_out[i][j] = std::complex<double>(0.0, 0.0);
         }
     }
 
-    const auto invsqrt_mass = system->get_invsqrt_mass();
+    const auto invsqrt_mass = system.get_invsqrt_mass();
 
     for (const auto &it: fc2_in) {
         const auto phase =
@@ -517,6 +518,12 @@ void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsArrayW
                                                            invsqrt_mass[it.pairs[0].index / 3] *
                                                            invsqrt_mass[it.pairs[1].index / 3];
     }
+}
+
+void Dynamical::calc_analytic_k(const double *xk_in, const std::vector<FcsArrayWithCell> &fc2_in,
+                                std::complex<double> **dymat_out) const
+{
+    calc_analytic_k(*system, xk_in, fc2_in, dymat_out);
 }
 
 void Dynamical::calc_nonanalytic_k_parlinski(const double *xk_in, const double *kvec_na_in,
@@ -730,7 +737,8 @@ void Dynamical::calc_nonanalytic_k_mixedspace(const double *xk_in, const double 
     }
 }
 
-void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos)
+void Dynamical::diagonalize_dynamical_all(const KpointBandStructure *kpoint_bs, const KpointGeneral *kpoint_general,
+                                          const KpointMeshUniform *kmesh_dos, DymatEigenValue *dymat_dos)
 {
     unsigned int nk;
 
@@ -741,8 +749,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
     NDArray<std::complex<double>, 3> evec_tmp;
     // k points for general mode (manual entry)
 
-    if (kpoint->kpoint_general.get()) {
-        nk = kpoint->kpoint_general->nk;
+    if (kpoint_general) {
+        nk = kpoint_general->nk;
         eval_tmp.resize(nk, neval);
         if (require_eigenvectors) {
             evec_tmp.resize(nk, neval, neval);
@@ -751,8 +759,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
         }
 
         get_eigenvalues_dymat(nk,
-                              kpoint->kpoint_general->xk,
-                              kpoint->kpoint_general->kvec_na,
+                              kpoint_general->xk,
+                              kpoint_general->kvec_na,
                               fcs_phonon->force_constant_with_cell[0],
                               ewald->fc2_without_dipole,
                               require_eigenvectors,
@@ -765,7 +773,7 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                     fcs_phonon->force_constant_with_cell[0],
-                                                    kpoint->kpoint_general->xk[ik],
+                                                    kpoint_general->xk[ik],
                                                     projection_directions,
                                                     evec_tmp[ik]);
                 }
@@ -780,8 +788,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
     }
 
     // k points for band structure
-    if (kpoint->kpoint_bs.get()) {
-        nk = kpoint->kpoint_bs->nk;
+    if (kpoint_bs) {
+        nk = kpoint_bs->nk;
         eval_tmp.resize(nk, neval);
         if (require_eigenvectors) {
             evec_tmp.resize(nk, neval, neval);
@@ -789,8 +797,8 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
             evec_tmp.resize(nk, 1, 1);
         }
         get_eigenvalues_dymat(nk,
-                              kpoint->kpoint_bs->xk,
-                              kpoint->kpoint_bs->kvec_na,
+                              kpoint_bs->xk,
+                              kpoint_bs->kvec_na,
                               fcs_phonon->force_constant_with_cell[0],
                               ewald->fc2_without_dipole,
                               require_eigenvectors,
@@ -802,7 +810,7 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
                 for (auto ik = 0; ik < nk; ++ik) {
                     project_degenerate_eigenvectors(system->get_primcell().lattice_vector,
                                                     fcs_phonon->force_constant_with_cell[0],
-                                                    kpoint->kpoint_bs->xk[ik],
+                                                    kpoint_bs->xk[ik],
                                                     projection_directions,
                                                     evec_tmp[ik]);
                 }
@@ -854,9 +862,9 @@ void Dynamical::diagonalize_dynamical_all(const KpointMeshUniform *kmesh_dos, Dy
         evec_tmp.clear();
     }
 
-    if (band_connection > 0 && kpoint->kpoint_bs.get()) {
-        index_bconnect.resize(kpoint->kpoint_bs->nk, neval);
-        connect_band_by_eigen_similarity(kpoint->kpoint_bs->nk, dymat_band->get_eigenvectors(), index_bconnect);
+    if (band_connection > 0 && kpoint_bs) {
+        index_bconnect.resize(kpoint_bs->nk, neval);
+        connect_band_by_eigen_similarity(kpoint_bs->nk, dymat_band->get_eigenvectors(), index_bconnect);
     }
 
     if (run.my_rank == 0 && run.verbosity > 0) {
@@ -1266,8 +1274,9 @@ double Dynamical::freq(const double x)
     return -std::sqrt(-x);
 }
 
-std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<double> *const *evec_gamma,
-                                                            const double projection_threshold, const bool verbose) const
+std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const System &system,
+                                                            const std::complex<double> *const *evec_gamma,
+                                                            const double projection_threshold, const bool verbose)
 {
     // Select the three Gamma modes with greatest overlap with rigid translations:
     //   t_alpha[3*j + beta] = delta_{alpha beta} sqrt(m_j / M),
@@ -1275,9 +1284,9 @@ std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<d
     // This avoids classifying soft optical modes by frequency alone.
     // evec_gamma[is][3*j + alpha] holds mass-weighted mode components.
 
-    const auto ns = neval;
-    const auto natmin = system->get_primcell().number_of_atoms;
-    const auto &mass_prim = system->get_mass_prim();
+    const auto ns = system.get_num_modes();
+    const auto natmin = system.get_primcell().number_of_atoms;
+    const auto &mass_prim = system.get_mass_prim();
 
     auto mass_total = 0.0;
     for (auto j = 0; j < natmin; ++j) {
@@ -1310,7 +1319,7 @@ std::vector<bool> Dynamical::detect_acoustic_modes_at_gamma(const std::complex<d
         is_acoustic[index[i]] = true;
     }
 
-    if (verbose && run.my_rank == 0 && projection[index[2]] < projection_threshold) {
+    if (verbose && projection[index[2]] < projection_threshold) {
         std::cout << " WARNING in detect_acoustic_modes_at_gamma:\n";
         std::cout << "  The translational projection of an assigned acoustic mode at Gamma is only "
                   << std::setprecision(4) << projection[index[2]] << " (< " << projection_threshold << ").\n";
