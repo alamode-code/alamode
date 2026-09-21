@@ -47,6 +47,8 @@ void Symmetry::set_default_variables()
 void Symmetry::setup_symmetry(const bool relaxing_structure, const bool verbose)
 {
     MPI_Bcast(&use_time_reversal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    // TOLERANCE is set on rank 0 by the parser but read on all ranks (gensym_withmap below).
+    MPI_Bcast(&tolerance, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     time_reversal_sym = system->get_spin_prim().time_reversal_symm;
     SymmList.clear();
     SymmList_ref.clear();
