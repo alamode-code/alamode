@@ -598,6 +598,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                        eval_update[iT],
                                                        dos->tetra_nodes_dos->get_ntetra(),
                                                        dos->tetra_nodes_dos->get_tetras(),
+                                                       *integration,
                                                        dos_update[iT]);
                 }
 
@@ -811,6 +812,7 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                            eval_update[iT],
                                                            dos->tetra_nodes_dos->get_ntetra(),
                                                            dos->tetra_nodes_dos->get_tetras(),
+                                                           *integration,
                                                            dos_update[iT]);
                     }
 

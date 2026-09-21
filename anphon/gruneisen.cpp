@@ -13,7 +13,6 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include "anharmonic_core.h"
 #include "constants.h"
 #include "dynamical.h"
 #include "elastic_tensor.h"
@@ -24,17 +23,12 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "mathfunctions.h"
 #include "memory.h"
 #include "mpi_common.h"
-#include "phonon_dos.h"
 #include "system.h"
 #include "write_phonons.h"
 
 using namespace PHON_NS;
 
-Gruneisen::Gruneisen(const RunInfo &run_in, const Writes *writes_in, const System *system_in, const Kpoint *kpoint_in,
-                     const Fcs_phonon *fcs_phonon_in, const Dynamical *dynamical_in, const Dos *dos_in,
-                     const AnharmonicCore *anharmonic_core_in) :
-    run(run_in), writes(writes_in), system(system_in), kpoint(kpoint_in), fcs_phonon(fcs_phonon_in),
-    dynamical(dynamical_in), dos(dos_in), anharmonic_core(anharmonic_core_in)
+Gruneisen::Gruneisen(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
 };
@@ -66,7 +60,7 @@ void Gruneisen::deallocate_variables()
     delta_fc2_strain.clear();
 }
 
-void Gruneisen::setup()
+void Gruneisen::setup(const int quartic_mode, const NDArray<std::vector<FcsArrayWithCell>, 1> &ifcs)
 {
     MPI_Bcast(&delta_a, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&print_newfcs, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
@@ -76,45 +70,29 @@ void Gruneisen::setup()
 
     if (sublattice_relax && (gruneisen_mode > 0 || print_newfcs)) {
         const ElasticTensor elastic_tensor(*system);
-        elastic_tensor.calc_sublattice_response(fcs_phonon->force_constant_with_cell[0], sublattice_response);
+        elastic_tensor.calc_sublattice_response(ifcs[0], sublattice_response);
     }
 
     if (gruneisen_mode == 1) {
-        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2, Eigen::Matrix3d::Identity());
+        prepare_delta_fcs(ifcs[1], delta_fc2, Eigen::Matrix3d::Identity());
     }
     if (gruneisen_mode >= 2) {
-        prepare_delta_fcs_strain(fcs_phonon->force_constant_with_cell[1], delta_fc2_strain);
+        prepare_delta_fcs_strain(ifcs[1], delta_fc2_strain);
     }
 
     if (print_newfcs) {
         const Eigen::Matrix3d strain_dir = strain_newfcs_given ? strain_newfcs : Eigen::Matrix3d::Identity();
 
-        prepare_delta_fcs(fcs_phonon->force_constant_with_cell[1], delta_fc2_newfcs, strain_dir);
-        if (anharmonic_core->quartic_mode > 0) {
-            prepare_delta_fcs(fcs_phonon->force_constant_with_cell[2], delta_fc3_newfcs, strain_dir);
-        }
-    }
-    if (gruneisen_mode == 1) {
-        if (kpoint->kpoint_bs.get()) {
-            gruneisen_bs.resize(kpoint->kpoint_bs->nk, system->get_num_modes());
-        }
-        if (dos->kmesh_dos.get()) {
-            gruneisen_dos.resize(dos->kmesh_dos->nk, system->get_num_modes());
-        }
-    } else if (gruneisen_mode >= 2) {
-        const auto ncomp = number_of_strain_components();
-        if (kpoint->kpoint_bs.get()) {
-            gruneisen_tensor_bs.resize(kpoint->kpoint_bs->nk, system->get_num_modes(), ncomp);
-        }
-        if (dos->kmesh_dos.get()) {
-            gruneisen_tensor_dos.resize(dos->kmesh_dos->nk, system->get_num_modes(), ncomp);
+        prepare_delta_fcs(ifcs[1], delta_fc2_newfcs, strain_dir);
+        if (quartic_mode > 0) {
+            prepare_delta_fcs(ifcs[2], delta_fc3_newfcs, strain_dir);
         }
     }
 
     if (run.my_rank == 0 && run.verbosity > 0) {
         if (print_newfcs) {
             std::cout << '\n';
-            if (anharmonic_core->quartic_mode > 0) {
+            if (quartic_mode > 0) {
                 std::cout << " NEWFCS = 1 : Harmonic and cubic force constants of \n";
             } else {
                 std::cout << " NEWFCS = 1 : Harmonic force constants of \n";
@@ -142,7 +120,8 @@ void Gruneisen::setup()
     }
 }
 
-void Gruneisen::calc_gruneisen()
+void Gruneisen::calc_gruneisen(const KpointBandStructure *kpoint_bs, const DymatEigenValue *dymat_band,
+                               const KpointMeshUniform *kmesh_dos, const DymatEigenValue *dymat_dos)
 {
     if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n';
@@ -155,20 +134,37 @@ void Gruneisen::calc_gruneisen()
         }
     }
 
-    if (kpoint->kpoint_bs.get()) {
-        calc_gruneisen_at_kpoints(kpoint->kpoint_bs->nk,
-                                  kpoint->kpoint_bs->xk,
-                                  dynamical->dymat_band->get_eigenvalues(),
-                                  dynamical->dymat_band->get_eigenvectors(),
+    if (gruneisen_mode == 1) {
+        if (kpoint_bs) {
+            gruneisen_bs.resize(kpoint_bs->nk, system->get_num_modes());
+        }
+        if (kmesh_dos) {
+            gruneisen_dos.resize(kmesh_dos->nk, system->get_num_modes());
+        }
+    } else if (gruneisen_mode >= 2) {
+        const auto ncomp = number_of_strain_components();
+        if (kpoint_bs) {
+            gruneisen_tensor_bs.resize(kpoint_bs->nk, system->get_num_modes(), ncomp);
+        }
+        if (kmesh_dos) {
+            gruneisen_tensor_dos.resize(kmesh_dos->nk, system->get_num_modes(), ncomp);
+        }
+    }
+
+    if (kpoint_bs) {
+        calc_gruneisen_at_kpoints(kpoint_bs->nk,
+                                  kpoint_bs->xk,
+                                  dymat_band->get_eigenvalues(),
+                                  dymat_band->get_eigenvectors(),
                                   gruneisen_bs,
                                   gruneisen_tensor_bs);
     }
 
-    if (dos->kmesh_dos.get()) {
-        calc_gruneisen_at_kpoints(dos->kmesh_dos->nk,
-                                  dos->kmesh_dos->xk,
-                                  dos->dymat_dos->get_eigenvalues(),
-                                  dos->dymat_dos->get_eigenvectors(),
+    if (kmesh_dos) {
+        calc_gruneisen_at_kpoints(kmesh_dos->nk,
+                                  kmesh_dos->xk,
+                                  dymat_dos->get_eigenvalues(),
+                                  dymat_dos->get_eigenvectors(),
                                   gruneisen_dos,
                                   gruneisen_tensor_dos);
     }
@@ -332,11 +328,11 @@ void Gruneisen::prepare_delta_fcs_strain(const std::vector<FcsArrayWithCell> &fc
 }
 
 
-void Gruneisen::write_new_fcsxml_all() const
+void Gruneisen::write_new_fcsxml_all(const Writes &writes, const bool update_fc2, const bool has_fc3_file) const
 {
     if (run.verbosity > 0) std::cout << '\n';
 
-    if (fcs_phonon->update_fc2 || !fcs_phonon->file_fc3.empty()) {
+    if (update_fc2 || has_fc3_file) {
         // The new force-constant files carry a single supercell structure, so
         // the harmonic and cubic terms must come from the same FCSFILE.
         warn("write_new_fcsxml_all", "NEWFCS = 1 cannot be combined with FC2FILE or FC3FILE.");
@@ -379,11 +375,11 @@ void Gruneisen::write_new_fcsxml_all() const
         auto write_one = [&](const std::string &filename, const double scale_signed) {
 #ifdef _HDF5
             if (write_h5) {
-                writes->writeNewFcsH5(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
+                writes.writeNewFcsH5(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
                 return;
             }
 #endif
-            writes->writeNewFcsXml(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
+            writes.writeNewFcsXml(filename, delta_fc2_newfcs, delta_fc3_newfcs, strain_dir, scale_signed, sub_disp);
         };
 
         auto file_out = run.job_title + "_+" + extension;

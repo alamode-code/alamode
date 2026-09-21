@@ -70,7 +70,7 @@ void PHON::create_pointers()
     dynamical = std::make_unique<Dynamical>(run_info, system.get(), fcs_phonon.get(), dielec.get(), ewald.get());
     integration = std::make_unique<Integration>();
     thermodynamics = std::make_unique<Thermodynamics>();
-    dos = std::make_unique<Dos>(run_info, system.get(), dynamical.get(), integration.get(), thermodynamics.get());
+    dos = std::make_unique<Dos>(run_info, system.get());
     phonon_velocity = std::make_unique<PhononVelocity>(run_info,
                                                        system.get(),
                                                        kpoint.get(),
@@ -92,14 +92,7 @@ void PHON::create_pointers()
     isotope = std::make_unique<Isotope>();
     mode_symmetry =
         std::make_unique<ModeSymmetry>(run_info, system.get(), symmetry.get(), dielec.get(), dynamical.get());
-    gruneisen = std::make_unique<Gruneisen>(run_info,
-                                            writes.get(),
-                                            system.get(),
-                                            kpoint.get(),
-                                            fcs_phonon.get(),
-                                            dynamical.get(),
-                                            dos.get(),
-                                            anharmonic_core.get());
+    gruneisen = std::make_unique<Gruneisen>(run_info, system.get());
     relaxation = std::make_unique<Relaxation>(run_info,
                                               timer.get(),
                                               system.get(),
@@ -284,7 +277,7 @@ void PHON::setup_base() const
                                    anharmonic_core->quartic_mode,
                                    run_info.my_rank,
                                    get_verbosity());
-    dos->setup();
+    dos->setup(*integration, dynamical->require_eigenvectors);
     thermodynamics->setup();
     anharmonic_core->setup();
     dielec->init(dos->emin,
@@ -332,12 +325,15 @@ void PHON::execute_phonons() const
     }
 
     if (dos->flag_dos) {
-        dos->calc_dos_all();
+        dos->calc_dos_all(*integration, thermodynamics->classical);
     }
 
-    gruneisen->setup();
+    gruneisen->setup(anharmonic_core->quartic_mode, fcs_phonon->force_constant_with_cell);
     if (gruneisen->gruneisen_mode > 0) {
-        gruneisen->calc_gruneisen();
+        gruneisen->calc_gruneisen(kpoint->kpoint_bs.get(),
+                                  dynamical->dymat_band.get(),
+                                  dos->kmesh_dos.get(),
+                                  dos->dymat_dos.get());
     }
     if (dielec->calc_dielectric_constant) {
         dielec->run_dielec_calculation(*dynamical);
@@ -362,7 +358,7 @@ void PHON::execute_phonons() const
         }
         writes->writePhononInfo();
         if (gruneisen->print_newfcs) {
-            gruneisen->write_new_fcsxml_all();
+            gruneisen->write_new_fcsxml_all(*writes, fcs_phonon->update_fc2, !fcs_phonon->file_fc3.empty());
         }
     }
 }

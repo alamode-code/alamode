@@ -13,7 +13,9 @@
 #include <complex>
 #include <string>
 #include <vector>
+#include "dynamical.h"
 #include "fcs_phonon.h"
+#include "kpoint.h"
 #include "ndarray.h"
 #include "phonon.h"
 
@@ -23,9 +25,7 @@ namespace PHON_NS
 class Gruneisen
 {
 public:
-    Gruneisen(const RunInfo &run, const Writes *writes, const System *system, const Kpoint *kpoint,
-              const Fcs_phonon *fcs_phonon, const Dynamical *dynamical, const Dos *dos,
-              const AnharmonicCore *anharmonic_core);
+    Gruneisen(const RunInfo &run, const System *system);
 
     ~Gruneisen();
 
@@ -47,7 +47,7 @@ public:
     // Applies to the Gruneisen parameters and to NEWFCS.
     int sublattice_relax;
 
-    void setup();
+    void setup(int quartic_mode, const NDArray<std::vector<FcsArrayWithCell>, 1> &ifcs);
 
     NDArray<std::complex<double>, 2> gruneisen_bs;
     NDArray<std::complex<double>, 2> gruneisen_dos;
@@ -62,9 +62,12 @@ public:
         return gruneisen_mode == 2 ? 3 : (gruneisen_mode == 3 ? 6 : 0);
     }
 
-    void calc_gruneisen();
+    // All four arguments are optional (null in runs that do not build the
+    // corresponding k-point set / eigenvalue container).
+    void calc_gruneisen(const KpointBandStructure *kpoint_bs, const DymatEigenValue *dymat_band,
+                        const KpointMeshUniform *kmesh_dos, const DymatEigenValue *dymat_dos);
 
-    void write_new_fcsxml_all() const;
+    void write_new_fcsxml_all(const Writes &writes, bool update_fc2, bool has_fc3_file) const;
 
 private:
     void set_default_variables();
@@ -103,12 +106,6 @@ private:
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
-    const Writes *writes;
     const System *system;
-    const Kpoint *kpoint;
-    const Fcs_phonon *fcs_phonon;
-    const Dynamical *dynamical;
-    const Dos *dos;
-    const AnharmonicCore *anharmonic_core;
 };
 } // namespace PHON_NS
