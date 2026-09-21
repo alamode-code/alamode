@@ -536,7 +536,7 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
 
 void Relaxation::set_initial_q0(std::vector<double> &q0, std::complex<double> ***evec_harmonic) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto natmin = system->get_primcell().number_of_atoms;
     if (q0.size() != static_cast<std::size_t>(ns)) {
         q0.resize(ns);
@@ -774,7 +774,7 @@ void Relaxation::calculate_u0(const std::vector<double> &q0, std::vector<double>
                               std::complex<double> ***evec_harmonic) const
 {
     const auto natmin = system->get_primcell().number_of_atoms;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     if (u0.size() != q0.size()) {
         u0.resize(q0.size());
@@ -813,7 +813,7 @@ void Relaxation::update_cell_coordinate(
     auto &du0 = structure_state.du0;
     auto &du_tensor = structure_state.du_tensor;
 
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     int is;
 
     MatrixXcd Cmat(ns, ns), v2_mat_full(ns, ns);
@@ -1044,7 +1044,7 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
     auto &du0 = structure_state.du0;
     auto &du_tensor = structure_state.du_tensor;
 
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     int is, i1, i2;
 
     double last_step_norm = 0.0;
@@ -1361,7 +1361,7 @@ void Relaxation::compute_del_v_strain(const KpointMeshUniform *kmesh_coarse, con
                                       std::complex<double> ***evec_harmonic, const RelaxationStrMode relax_mode,
                                       MinimumDistList ***mindist_list, const PhaseFactorCache *phase_cache_in)
 {
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto nk = kmesh_dense->nk;
 
     derivative_ifc->set_verbosity(run.verbosity);
@@ -1472,7 +1472,7 @@ void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, cons
                                          const DelVStrainData &del_v_strain,
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     constexpr double factor1 = 0.5;
     constexpr double factor2 = 1.0 / 6.0;
@@ -1517,7 +1517,7 @@ void Relaxation::renormalize_v2_from_umn(const KpointMeshUniform *kmesh_coarse,
     // This computes the renormalization of the 2nd-order IFCs due to strain, using the 3rd- and 4th-order IFCs.
     // The result is stored in delta_v2_renorm, which is a 2D array of size nk_interpolate x (ns*ns), where nk_interpolate is the number of k-points in the coarse mesh and ns is the number of phonon modes.
     const auto nk_interpolate = kmesh_coarse->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     unsigned int ik, knum;
     unsigned int is1, is2;
     int ixyz1, ixyz2;
@@ -1567,7 +1567,7 @@ void Relaxation::renormalize_v3_from_umn(const KpointMeshUniform *kmesh_coarse, 
                                          const std::array<std::array<double, 3>, 3> &u_tensor) const
 {
     const auto nk_scph = kmesh_dense->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     unsigned int ik;
     unsigned int is1, is2, is3;
     unsigned int ixyz1, ixyz2;
@@ -1603,7 +1603,7 @@ void Relaxation::renormalize_v1_from_q0(double **omega2_harmonic, const KpointMe
                                         const std::vector<double> &q0) const
 {
     int is1;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto factor = 0.5 * 4.0 * kmesh_dense->nk;
     const auto factor2 = 1.0 / 6.0 * 4.0 * kmesh_dense->nk;
 
@@ -1660,7 +1660,7 @@ void Relaxation::renormalize_v2_from_q0(std::complex<double> ***evec_harmonic, c
     const auto factor = 4.0 * nk_scph;
     const auto factor2 = 4.0 * nk_scph * 0.5;
 
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
 
     NDArray<std::complex<double>, 3> dymat_q;
@@ -1747,7 +1747,7 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic, const KpointMe
                                         const std::vector<double> &q0) const
 {
     int is1, is2;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto nk_scph = kmesh_dense->nk;
     constexpr double factor2 = 1.0 / 2.0;
     const double factor3 = 1.0 / 6.0 * 4.0 * nk_scph;
@@ -1792,7 +1792,7 @@ void Relaxation::renormalize_v0_from_q0(double **omega2_harmonic, const KpointMe
 void Relaxation::write_resfile_header(std::ofstream &fout_q0, std::ofstream &fout_u0,
                                       std::ofstream &fout_u_tensor) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     int is1, iat1, ixyz1, ixyz2;
     std::string str_tmp, str_tmp2;
@@ -1868,7 +1868,7 @@ void Relaxation::write_resfile_atT(const RelaxationStructureState &structure_sta
 void Relaxation::write_stepresfile_header_atT(std::ofstream &fout_step_q0, std::ofstream &fout_step_u0,
                                               std::ofstream &fout_step_u_tensor, const double temp) const
 {
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     int ixyz1;
     std::string str_tmp;

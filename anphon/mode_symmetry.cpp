@@ -170,7 +170,7 @@ void ModeSymmetry::analyze_irreps_at_gamma()
     result_ = GammaIrrepResult{};
     auto &warnings = result_.warnings;
 
-    const auto ns = static_cast<int>(dynamical->neval);
+    const auto ns = static_cast<int>(system->get_num_modes());
     const auto &symops = symmetry->SymmListWithMap;
     const auto nsym = static_cast<int>(symops.size());
 

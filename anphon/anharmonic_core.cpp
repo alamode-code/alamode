@@ -253,7 +253,7 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
 {
     int i;
     unsigned int kn[3], sn[3];
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
 
     double omega[3];
 
@@ -299,7 +299,7 @@ std::complex<double> AnharmonicCore::V3(const unsigned int ks[3], const double *
     // concurrently. The members read below are immutable after setup.
     int i;
     unsigned int kn[3], sn[3];
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
 
     double omega[3];
 
@@ -336,7 +336,7 @@ std::complex<double> AnharmonicCore::Phi3(const unsigned int ks[3], const double
 {
     int i;
     unsigned int kn[3], sn[3];
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     double omega[3];
 
@@ -482,7 +482,7 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
                                         const PhaseFactorCache *phase_storage_in)
 {
     int i;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     unsigned int kn[4], sn[4];
     double omega[4];
 
@@ -521,7 +521,7 @@ std::complex<double> AnharmonicCore::V4(const unsigned int ks[4], const double *
     // owns the per-quartet reciprocal-FC4 cache and no OpenMP region is
     // entered here.
     int i;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     unsigned int kn[4], sn[4];
     double omega[4];
 
@@ -558,7 +558,7 @@ std::complex<double> AnharmonicCore::Phi4(const unsigned int ks[4], const double
                                           const PhaseFactorCache *phase_storage_in)
 {
     int i;
-    int ns = dynamical->neval;
+    int ns = system->get_num_modes();
     unsigned int kn[4], sn[4];
     double omega[4];
 

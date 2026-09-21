@@ -113,8 +113,10 @@ void Dos::setup()
 
         update_dos_energy_grid(emin, emax, true);
 
-        dymat_dos =
-            std::make_unique<DymatEigenValue>(dynamical->require_eigenvectors, false, kmesh_dos->nk, dynamical->neval);
+        dymat_dos = std::make_unique<DymatEigenValue>(dynamical->require_eigenvectors,
+                                                      false,
+                                                      kmesh_dos->nk,
+                                                      system->get_num_modes());
 
         if (integration->ismear == -1) {
             tetra_nodes_dos = std::make_unique<TetraNodes>(kmesh_dos->nk_i[0], kmesh_dos->nk_i[1], kmesh_dos->nk_i[2]);
@@ -148,7 +150,7 @@ void Dos::update_dos_energy_grid(const double emin_in, const double emax_in, con
 void Dos::calc_dos_all()
 {
     const auto nk = kmesh_dos->nk;
-    const auto neval = dynamical->neval;
+    const auto neval = system->get_num_modes();
     NDArray<double, 2> eval;
 
     eval.resize(neval, nk);
@@ -224,7 +226,7 @@ void Dos::calc_dos_all()
     }
 
     if (scattering_phase_space == 1) {
-        sps3_mode.resize(kmesh_dos->nk_irred, dynamical->neval, 2);
+        sps3_mode.resize(kmesh_dos->nk_irred, system->get_num_modes(), 2);
         calc_total_scattering_phase_space(dymat_dos->get_eigenvalues(), integration->ismear, sps3_mode, total_sps3);
     } else if (scattering_phase_space == 2) {
         const auto Tmin = system->Tmin;
@@ -232,7 +234,7 @@ void Dos::calc_dos_all()
         const auto dT = system->dT;
         const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
 
-        sps3_with_bose.resize(kmesh_dos->nk_irred, dynamical->neval, NT, 2);
+        sps3_with_bose.resize(kmesh_dos->nk_irred, system->get_num_modes(), NT, 2);
         calc_scattering_phase_space_with_Bose(dymat_dos->get_eigenvalues(), integration->ismear, sps3_with_bose);
     }
 }
@@ -460,7 +462,7 @@ void Dos::calc_two_phonon_dos(const double *const *eval_in, const unsigned int n
     int k;
 
     const auto nk = kmesh_dos->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto nk_reduced = kmesh_dos->nk_irred;
 
     const int ns2 = ns * ns;
@@ -576,7 +578,7 @@ void Dos::calc_total_scattering_phase_space(const double *const *eval_in, const 
     int i, j;
 
     const auto nk = kmesh_dos->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const int ns2 = ns * ns;
 
     NDArray<unsigned int, 1> kmap_identity;
@@ -690,7 +692,7 @@ void Dos::calc_dos_from_given_frequency(const KpointMeshUniform *kmesh_in, const
                                         double *dos_out) const
 {
     const auto nk = kmesh_in->nk;
-    const auto neval = dynamical->neval;
+    const auto neval = system->get_num_modes();
     NDArray<double, 2> eval;
 
     eval.resize(neval, nk);
@@ -731,7 +733,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     int ik, iT;
     const auto nk_irred = kmesh_dos->nk_irred;
     const auto nk = kmesh_dos->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     unsigned int imode;
     NDArray<unsigned int, 1> k2_arr;
     NDArray<double, 2> recv_buf;

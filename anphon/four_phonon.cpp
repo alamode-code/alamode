@@ -177,7 +177,7 @@ void AnharmonicCore::prepare_fc4_compressed()
     // the mode and of the k mesh, so it is built once.
 
     auto cfc = std::make_unique<FC4Compressed>();
-    const int n = dynamical->neval;
+    const int n = system->get_num_modes();
     cfc->n = n;
 
     std::map<std::array<int, 3>, int> r1map, r3map, dmap;
@@ -307,7 +307,7 @@ void AnharmonicCore::calc_damping4_smearing(const unsigned int ntemp, const doub
     using ConstMapRow = Eigen::Map<const MatrixRow>;
 
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const int n = ns;
     const size_t ns2 = static_cast<size_t>(ns) * ns;
     const size_t ns3 = ns2 * ns;

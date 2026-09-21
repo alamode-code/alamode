@@ -141,7 +141,7 @@ void DerivativeIFC::compute_dV1_dumn(MatrixXcdRowMajor &del_v1_del_umn,
     // Calculate the first-order derivative of IFC1 with respect to strain in real space and transform it to the reciprocal space representation.
     // This term corresponds to Eq. (C1) of 10.1103/PhysRevB.106.224104
     const auto natmin = system_.get_primcell().number_of_atoms;
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
     const auto invsqrt_mass = system_.get_invsqrt_mass();
     Eigen::MatrixXd del_v1_del_umn_in_real_space(9, ns);
 
@@ -233,7 +233,7 @@ void DerivativeIFC::compute_d2V1_dumn2(MatrixXcdRowMajor &del2_v1_del_umn2,
     // It can be obtained from the IFC3 in the unstrained system.
     // This term corresponds to Eq. (C2) of 10.1103/PhysRevB.106.224104
     const auto natmin = system_.get_primcell().number_of_atoms;
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
     const auto invsqrt_mass = system_.get_invsqrt_mass();
     Eigen::MatrixXd del2_v1_del_umn2_in_real_space(81, ns);
 
@@ -311,7 +311,7 @@ void DerivativeIFC::compute_d3V1_dumn3(MatrixXcdRowMajor &del3_v1_del_umn3,
     // It can be obtained from the IFC4 in the unstrained system.
     // This term corresponds to Eq. (C3) of 10.1103/PhysRevB.106.224104
     const auto natmin = system_.get_primcell().number_of_atoms;
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
     const auto invsqrt_mass = system_.get_invsqrt_mass();
     Eigen::MatrixXd del3_v1_del_umn3_in_real_space(729, ns);
 
@@ -397,7 +397,7 @@ void DerivativeIFC::compute_dV2_dumn(std::vector<MatrixXcdRowMajor> &del_v2_del_
 
     using namespace Eigen;
 
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
     int is1, is2;
 
     std::vector<FcsArrayWithCell> delta_fcs;
@@ -459,7 +459,7 @@ void DerivativeIFC::compute_d2V2_dumn2(std::vector<MatrixXcdRowMajor> &del2_v2_d
     // This term corresponds to Eq. (C5) of 10.1103/ PhysRevB.106.224104.
     using namespace Eigen;
 
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
 
     std::vector<FcsArrayWithCell> fcs_aligned;
     fcs_aligned.clear();
@@ -519,7 +519,7 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
 {
     // Calculate the first-order derivative of IFC3 with respect to strain in real space and transform it to the reciprocal space representation.
     // This term corresponds to Eq. (C6) of 10.1103/PhysRevB.106.224104.
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
     const auto ns2 = static_cast<std::size_t>(ns) * ns;
     const auto nk_dense = static_cast<int>(kmesh_dense_in->nk);
 
@@ -1224,7 +1224,7 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
 {
     using namespace Eigen;
 
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
 
     int ixyz1, ixyz2;
     int ik, is, js;
@@ -1343,7 +1343,7 @@ void DerivativeIFC::process_strain_force_set(const strain_coupling::StrainForceS
                                              const std::complex<double> *const *const *const evec_harmonic) const
 {
     const auto natmin = system_.get_primcell().number_of_atoms;
-    auto ns = dynamical_.neval;
+    auto ns = system_.get_num_modes();
 
     int ixyz1, ixyz2, ixyz3, ixyz12, ixyz22, ixyz32, i1, i2;
     int iat1, iat2, is1, isymm;
@@ -1627,7 +1627,7 @@ void DerivativeIFC::process_strain_harmonic_set(
     const auto nat3 = nat * 3;
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto nk = kmesh_dense->nk;
-    const auto ns = dynamical_.neval;
+    const auto ns = system_.get_num_modes();
 
     NDArray<int, 2> symm_mapping_s;
     NDArray<int, 2> inv_translation_mapping;

@@ -67,6 +67,7 @@ void System::setup(const std::vector<std::string> &fcs_files, const double init_
 
     load_system_info_from_file();
     update_primitive_lattice();
+    num_modes = static_cast<unsigned int>(3 * primcell.number_of_atoms);
 
     if (run.my_rank == 0) {
         if (mass_kd.empty()) {

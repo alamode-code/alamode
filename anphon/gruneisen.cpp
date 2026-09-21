@@ -96,18 +96,18 @@ void Gruneisen::setup()
     }
     if (gruneisen_mode == 1) {
         if (kpoint->kpoint_bs.get()) {
-            gruneisen_bs.resize(kpoint->kpoint_bs->nk, dynamical->neval);
+            gruneisen_bs.resize(kpoint->kpoint_bs->nk, system->get_num_modes());
         }
         if (dos->kmesh_dos.get()) {
-            gruneisen_dos.resize(dos->kmesh_dos->nk, dynamical->neval);
+            gruneisen_dos.resize(dos->kmesh_dos->nk, system->get_num_modes());
         }
     } else if (gruneisen_mode >= 2) {
         const auto ncomp = number_of_strain_components();
         if (kpoint->kpoint_bs.get()) {
-            gruneisen_tensor_bs.resize(kpoint->kpoint_bs->nk, dynamical->neval, ncomp);
+            gruneisen_tensor_bs.resize(kpoint->kpoint_bs->nk, system->get_num_modes(), ncomp);
         }
         if (dos->kmesh_dos.get()) {
-            gruneisen_tensor_dos.resize(dos->kmesh_dos->nk, dynamical->neval, ncomp);
+            gruneisen_tensor_dos.resize(dos->kmesh_dos->nk, system->get_num_modes(), ncomp);
         }
     }
 
@@ -188,7 +188,7 @@ void Gruneisen::calc_gruneisen_at_kpoints(const unsigned int nk, const NDArray<d
     // gamma = -<e|dD/deps_iso|e> / (6 omega^2) into gamma_iso. gruneisen_mode >= 2:
     // generalized parameters gamma_{mu nu} = -<e|dD/deps_{mu nu}|e> / (2 omega^2)
     // per strain component into gamma_tensor.
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     NDArray<std::complex<double>, 2> dfc2_reciprocal(ns, ns);
 

@@ -77,7 +77,7 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure_velmat(const Kpoint
                                                                     double **phvel_out) const
 {
     const auto nk = kpoint_bs_in->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     NDArray<std::complex<double>, 3> velmat_k;
     NDArray<std::complex<double>, 2> evec_k;
@@ -128,7 +128,7 @@ void PhononVelocity::get_phonon_group_velocity_bandstructure(const KpointBandStr
     unsigned int i;
     unsigned int idiff;
     const auto nk = kpoint_bs_in->nk;
-    const auto n = dynamical->neval;
+    const auto n = system->get_num_modes();
     NDArray<double, 2> xk_shift;
     NDArray<double, 1> xk_tmp;
     NDArray<double, 2> omega_shift;
@@ -199,7 +199,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh(const KpointMeshUniform &kme
 {
     // This routine computes the group velocities for the given uniform k mesh.
     const auto nk = kmesh_in.nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     NDArray<double, 2> vel;
 
@@ -225,7 +225,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_mpi(const KpointMeshUniform 
     // This routine computes the group velocities for the given uniform k mesh
     // using MPI parallelization.
     const auto nk = kmesh_in.nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     NDArray<double, 2> vel;
     NDArray<double, 3> phvel3_loc;
@@ -315,7 +315,7 @@ void PhononVelocity::gather_group_velocities_mesh(const KpointMeshUniform &kmesh
     // Bohr_in_Angstrom * 1.0e-10 / time_ry gives m/s.
     // Other ranks receive dummy storage; the caller deallocates vel_out.
     const auto nk = kmesh_in.nk;
-    const auto neval = dynamical->neval;
+    const auto neval = system->get_num_modes();
 
     if (run.my_rank == 0 || bcast_full) {
         vel_out.resize(nk, neval, 3);
@@ -348,7 +348,7 @@ void PhononVelocity::get_phonon_group_velocity_mesh_velmat(const KpointMeshUnifo
                                                            const Eigen::Matrix3d &lavec_p, double ***phvel3_out) const
 {
     const auto nk = kmesh_in.nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
 
     // Self-contained (diagonalizes for itself) so it does not depend on dos->dymat_dos
     // having been filled or on the mesh being kmesh_dos.
@@ -448,7 +448,7 @@ void PhononVelocity::calc_phonon_velmat_mesh(NDArray<std::complex<double>, 4> *v
     if (!velmat_out && !velblock_out) return;
 
     const auto nk = dos->kmesh_dos->nk;
-    const auto ns = dynamical->neval;
+    const auto ns = system->get_num_modes();
     const auto factor = Bohr_in_Angstrom * 1.0e-10 / (time_ry * 2.0 * pi);
     const auto legacy = legacy_velocity();
 
@@ -577,7 +577,7 @@ void PhononVelocity::phonon_vel_k(const double *xk_in, double **vel_out) const
 {
     unsigned int j;
     unsigned int idiff;
-    const auto n = dynamical->neval;
+    const auto n = system->get_num_modes();
     NDArray<double, 2> xk_shift;
     NDArray<std::complex<double>, 2> evec_tmp;
     NDArray<double, 2> omega_shift;
@@ -686,7 +686,7 @@ void PhononVelocity::add_nonanalytic_velocity_matrix(const double *xk_in, const 
 {
     if (dynamical->nonanalytic == 0) return;
 
-    const auto nmode = dynamical->neval;
+    const auto nmode = system->get_num_modes();
     const auto h = 1.0e-4;
 
     // Drop the nonanalytic velocity at Gamma, where no direction-independent
@@ -849,7 +849,7 @@ void PhononVelocity::velocity_matrix_analytic(const double *xk_in, const std::ve
 
     unsigned int i, j, k;
 
-    const auto nmode = dynamical->neval;
+    const auto nmode = system->get_num_modes();
 
     NDArray<std::complex<double>, 3> ddymat;
 

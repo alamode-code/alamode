@@ -126,6 +126,13 @@ public:
 
     const Cell &get_primcell(const bool distorted = false) const;
 
+    // Number of phonon modes = 3 * (atoms of the primitive cell); valid after System::setup()
+    // and identical for the distorted cell.
+    unsigned int get_num_modes() const
+    {
+        return num_modes;
+    }
+
     // (Re)build primcell_distort from init_u_tensor and init_u0; also called from
     // PHON::setup_base once &displace DISPMODE = 2 entries are resolved.
     void initialize_distorted_primitive_cell(const double init_u_tensor[3][3], const std::vector<double> &init_u0);
@@ -186,6 +193,7 @@ private:
 
     std::vector<Cell> supercell;
     Cell primcell, primcell_distort;
+    unsigned int num_modes = 0;
     Spin spin_super, spin_prim;
     std::vector<MappingTable> map_super_alm, map_prim_alm;
 

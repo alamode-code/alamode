@@ -112,7 +112,7 @@ void AnharmonicCore::prepare_fc3_compressed()
     if (fc3_compressed) return;
 
     auto cfc = std::make_unique<FC3Compressed>();
-    const int n = dynamical->neval;
+    const int n = system->get_num_modes();
     cfc->n = n;
 
     std::map<std::array<int, 3>, int> drmap, rcmap;
@@ -562,7 +562,7 @@ double AnharmonicCore::bubble_accumulate(const int ns, const double *occ1, const
 void AnharmonicCore::build_shifted_grid(const double *xq, const KpointMeshUniform *kmesh_in, ShiftedGrid &sg) const
 {
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     sg.xk.resize(nk, 3);
     sg.eval.resize(nk, ns);
     sg.evec.resize(nk, ns, ns);
@@ -603,7 +603,7 @@ void AnharmonicCore::calc_damping_smearing_at(const unsigned int ntemp, const do
                                               double *ret)
 {
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const size_t ns2 = static_cast<size_t>(ns) * ns;
     const size_t nks = static_cast<size_t>(nk) * ns;
 
@@ -729,7 +729,7 @@ void AnharmonicCore::calc_damping_tetrahedron_at(const unsigned int ntemp, const
                                                  const ShiftedGrid &sg, double *ret)
 {
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const size_t ns2 = static_cast<size_t>(ns) * ns;
     const size_t nks = static_cast<size_t>(nk) * ns;
 
@@ -832,7 +832,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron_at(const double Temp, const dou
                                                     const double *omega, double *ret)
 {
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const size_t ns2 = static_cast<size_t>(ns) * ns;
 
     for (unsigned int iomega = 0; iomega < nomega; ++iomega) ret[iomega] = 0.0;
@@ -934,7 +934,7 @@ void AnharmonicCore::calc_damping_smearing(const unsigned int ntemp, const doubl
     // Gaussian or adaptive Gaussian smearing (ISMEAR = 0, 1, 2).
 
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const size_t ns2 = static_cast<size_t>(ns) * ns;
     const size_t nks = static_cast<size_t>(nk) * ns;
 
@@ -1028,7 +1028,7 @@ void AnharmonicCore::calc_damping_tetrahedron(const unsigned int ntemp, const do
     // tetrahedron method. The crystal symmetry reduces the triplets.
 
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const size_t ns2 = static_cast<size_t>(ns) * ns;
     const size_t nks = static_cast<size_t>(nk) * ns;
 
@@ -1170,7 +1170,7 @@ void AnharmonicCore::calc_self3omega_tetrahedron(const double Temp, const Kpoint
     // matrix elements are distributed over the MPI ranks by k1.
 
     const int nk = kmesh_in->nk;
-    const int ns = dynamical->neval;
+    const int ns = system->get_num_modes();
     const size_t ns2 = static_cast<size_t>(ns) * ns;
 
     for (unsigned int iomega = 0; iomega < nomega; ++iomega) ret[iomega] = 0.0;
