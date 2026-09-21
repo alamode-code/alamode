@@ -507,6 +507,8 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
 
@@ -682,7 +684,8 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                                        kmap_coarse_to_dense,
                                                        mat_transform_sym,
                                                        mindist_list,
-                                                       run.verbosity);
+                                                       fcs_phonon->force_constant_with_cell[0],
+                                                       *ewald);
     print_stage_time("renormalized harmonic frequencies", time_stage);
     time_stage = timer->elapsed();
 
@@ -690,7 +693,8 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                         omega2_harm_renorm[iT],
                                         evec_harm_renorm_tmp,
                                         kmesh_coarse.get(),
-                                        kmap_coarse_to_dense);
+                                        kmap_coarse_to_dense,
+                                        fcs_phonon->force_constant_with_cell[0]);
     // delta_harmonic_dymat_renormalize is copied to dymat_anharm after structure convergence,
     // which is required for postprocess.
 
@@ -926,6 +930,8 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
 
@@ -1120,13 +1126,15 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                                                                kmap_coarse_to_dense,
                                                                mat_transform_sym,
                                                                mindist_list,
-                                                               run.verbosity);
+                                                               fcs_phonon->force_constant_with_cell[0],
+                                                               *ewald);
 
             dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize[iT],
                                                 omega2_harm_renorm[iT],
                                                 evec_harm_renorm_tmp,
                                                 kmesh_coarse.get(),
-                                                kmap_coarse_to_dense);
+                                                kmap_coarse_to_dense,
+                                                fcs_phonon->force_constant_with_cell[0]);
 
             // copy delta_harmonic_dymat_renormalize to dymat_anharm
             for (is1 = 0; is1 < ns; is1++) {

@@ -76,9 +76,9 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
                                       dos->kmesh_dos->kvec_na,
                                       eval[iT],
                                       evec[iT],
-                                      dymat_harm_short,
-                                      dymat_harm_long,
-                                      mindist_list);
+                                      mindist_list,
+                                      fcs_phonon->force_constant_with_cell[0],
+                                      *ewald);
     }
 
     thermodynamics->compute_FE_bubble_SCPH(eval,
@@ -186,9 +186,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                       kmesh_b->kvec_na,
                                       eval,
                                       evec,
-                                      dymat_harm_short,
-                                      dymat_harm_long,
-                                      mindist_list);
+                                      mindist_list,
+                                      fcs_phonon->force_constant_with_cell[0],
+                                      *ewald);
 
         for (unsigned int ik = 0; ik < nk_scph; ++ik) find_degenerate_groups(ns, eval[ik], degeneracy_at_k[ik]);
 
@@ -370,7 +370,8 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                                 eval_bubble[iT],
                                                 evec,
                                                 kmesh_coarse.get(),
-                                                *kmap_b);
+                                                *kmap_b,
+                                                fcs_phonon->force_constant_with_cell[0]);
         }
     }
 

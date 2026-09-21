@@ -370,13 +370,15 @@ public:
                                                                      scph_.kmap_coarse_to_dense,
                                                                      scph_.mat_transform_sym,
                                                                      scph_.mindist_list,
-                                                                     scph_.run.verbosity);
+                                                                     scph_.fcs_phonon->force_constant_with_cell[0],
+                                                                     *scph_.ewald);
 
             scph_.dynamical->calc_new_dymat_with_evec(delta_harmonic_dymat_renormalize_[iT],
                                                       omega2_harm_renorm_[iT],
                                                       evec_harm_renorm_tmp_,
                                                       scph_.kmesh_coarse.get(),
-                                                      scph_.kmap_coarse_to_dense);
+                                                      scph_.kmap_coarse_to_dense,
+                                                      scph_.fcs_phonon->force_constant_with_cell[0]);
         }
 
         scph_.converged_str_temp[iT] = converged_this_temp ? 1 : 0;
@@ -467,7 +469,8 @@ private:
                                                   omega2_anharm_[dst],
                                                   scph_.evec_harmonic,
                                                   scph_.kmesh_coarse.get(),
-                                                  scph_.kmap_coarse_to_dense);
+                                                  scph_.kmap_coarse_to_dense,
+                                                  scph_.fcs_phonon->force_constant_with_cell[0]);
         for (auto is = 0; is < ns; ++is) {
             for (auto js = 0; js < ns; ++js) {
                 for (auto ik = 0; ik < nk_interpolate; ++ik) {
@@ -805,6 +808,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
 
@@ -875,7 +880,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
                                                 omega2_anharm[iT],
                                                 evec_anharm_tmp,
                                                 kmesh_coarse.get(),
-                                                kmap_coarse_to_dense);
+                                                kmap_coarse_to_dense,
+                                                fcs_phonon->force_constant_with_cell[0]);
 
             if (!warmstart_scph) converged_prev = false;
         }
@@ -977,6 +983,8 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
         dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                          kmesh_dense->xk,
                                          kmesh_dense->kvec_na,
+                                         fcs_phonon->force_constant_with_cell[0],
+                                         *ewald,
                                          dymat_harm_short,
                                          dymat_harm_long);
 
@@ -1161,7 +1169,8 @@ void Scph::solve_scp_and_compute_forces(StructuralOptWorkspace &ws, const unsign
                                         omega2_anharm[iT],
                                         evec_anharm_tmp,
                                         kmesh_coarse.get(),
-                                        kmap_coarse_to_dense);
+                                        kmap_coarse_to_dense,
+                                        fcs_phonon->force_constant_with_cell[0]);
 
     print_stage_time("new dynamical matrix", time_stage);
     time_stage = timer->elapsed();
@@ -1520,24 +1529,22 @@ void Scph::interpolate_to_dense_mesh(std::complex<double> ***dymat_q,
 
     fourier_dymat_k_to_r(kmesh_interpolate[0], kmesh_interpolate[1], kmesh_interpolate[2], ns, dymat_q, dymat_r_new);
 
-    // Create temporary C-style arrays for exec_interpolation
+    // Create temporary C-style arrays for exec_interpolation_precomputed
     NDArray<double, 2> eval_temp;
     NDArray<std::complex<double>, 3> evec_temp;
     eval_temp.resize(nk, ns);
     evec_temp.resize(nk, ns, ns);
 
-    dynamical->exec_interpolation(kmesh_interpolate,
-                                  dymat_r_new,
-                                  nk,
-                                  kmesh_dense->xk,
-                                  kmesh_dense->kvec_na,
-                                  eval_temp,
-                                  evec_temp,
-                                  dymat_harm_short,
-                                  dymat_harm_long,
-                                  mindist_list,
-                                  true,
-                                  true);
+    dynamical->exec_interpolation_precomputed(kmesh_interpolate,
+                                              dymat_r_new,
+                                              nk,
+                                              kmesh_dense->xk,
+                                              eval_temp,
+                                              evec_temp,
+                                              dymat_harm_short,
+                                              dymat_harm_long,
+                                              mindist_list,
+                                              true);
 
     for (unsigned int ik = 0; ik < nk; ++ik) {
         // Copy eigenvalues from temp array to Eigen matrix
@@ -1708,6 +1715,8 @@ void Scph::compute_anharmonic_frequency(double **omega2_out, std::complex<double
     dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                      kmesh_dense->xk,
                                      kmesh_dense->kvec_na,
+                                     fcs_phonon->force_constant_with_cell[0],
+                                     *ewald,
                                      dymat_harm_short,
                                      dymat_harm_long);
 
@@ -1943,6 +1952,8 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
     dynamical->precompute_dymat_harm(kmesh_dense->nk,
                                      kmesh_dense->xk,
                                      kmesh_dense->kvec_na,
+                                     fcs_phonon->force_constant_with_cell[0],
+                                     *ewald,
                                      dymat_harm_short,
                                      dymat_harm_long);
 

@@ -1531,7 +1531,8 @@ std::vector<std::vector<double>> Dynamical::get_projection_directions() const
 }
 
 void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in,
-                                      const double *const *kvec_in, std::vector<Eigen::MatrixXcd> &dymat_short,
+                                      const double *const *kvec_in, const std::vector<FcsArrayWithCell> &fc2,
+                                      const Ewald &ewald, std::vector<Eigen::MatrixXcd> &dymat_short,
                                       std::vector<Eigen::MatrixXcd> &dymat_long) const
 {
     const auto ns = neval;
@@ -1550,9 +1551,9 @@ void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *co
 
     for (auto ik = 0; ik < nk_in; ++ik) {
         if (nonanalytic == 3) {
-            calc_analytic_k(xk_in[ik], ewald->fc2_without_dipole, mat_tmp);
+            calc_analytic_k(xk_in[ik], ewald.fc2_without_dipole, mat_tmp);
         } else {
-            calc_analytic_k(xk_in[ik], fcs_phonon->force_constant_with_cell[0], mat_tmp);
+            calc_analytic_k(xk_in[ik], fc2, mat_tmp);
         }
 
         for (auto is = 0; is < ns; ++is) {
@@ -1572,7 +1573,7 @@ void Dynamical::precompute_dymat_harm(const unsigned int nk_in, const double *co
                 calc_nonanalytic_k_mixedspace(xk_in[ik], kvec_in[ik], mat_tmp);
 
             } else if (nonanalytic == 3) {
-                ewald->add_longrange_matrix(xk_in[ik], kvec_in[ik], mat_tmp);
+                ewald.add_longrange_matrix(xk_in[ik], kvec_in[ik], mat_tmp);
             }
             for (auto is = 0; is < ns; ++is) {
                 for (auto js = 0; js < ns; ++js) {
@@ -1592,7 +1593,7 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
     const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
     const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-    MinimumDistList ***mindist_list, const unsigned int verbosity) const
+    MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const
 {
     using namespace Eigen;
 
@@ -1630,9 +1631,7 @@ void Dynamical::compute_renormalized_harmonic_frequency(
     // Set initial harmonic dymat without IFC renormalization
 
     for (ik = 0; ik < nk_interpolate; ++ik) {
-        calc_analytic_k(kmesh_coarse->xk[ik],
-                        fcs_phonon->force_constant_with_cell[0],
-                        dymat_harmonic_without_renormalize[ik]);
+        calc_analytic_k(kmesh_coarse->xk[ik], fc2, dymat_harmonic_without_renormalize[ik]);
     }
 
     for (ik = 0; ik < nk_irred_interpolate; ++ik) {
@@ -1681,8 +1680,6 @@ void Dynamical::compute_renormalized_harmonic_frequency(
 
     fourier_dymat_k_to_r(nk1, nk2, nk3, ns, dymat_q, dymat_new);
 
-    std::vector<Eigen::MatrixXcd> dymat_short, dymat_long;
-
     exec_interpolation(kmesh_coarse->nk_i,
                        dymat_new,
                        nk,
@@ -1690,9 +1687,9 @@ void Dynamical::compute_renormalized_harmonic_frequency(
                        kmesh_dense->kvec_na,
                        eval_interpolate,
                        evec_harm_renormalized,
-                       dymat_short,
-                       dymat_long,
-                       mindist_list);
+                       mindist_list,
+                       fc2,
+                       ewald);
 
     for (ik = 0; ik < nk; ++ik) {
         for (is = 0; is < ns; ++is) {
@@ -1717,12 +1714,33 @@ void Dynamical::compute_renormalized_harmonic_frequency(
 }
 
 
+// Diagonalize one interpolated dynamical matrix and store the frequencies, shared by
+// exec_interpolation and exec_interpolation_precomputed so that the sign convention of
+// the square root cannot drift between them. Returns false if zheev failed.
+bool Dynamical::diagonalize_interpolated_dymat(const unsigned int ns, std::complex<double> **mat_tmp, double *eval_real,
+                                               double *eval_out, std::complex<double> **evec_out,
+                                               const bool return_sqrt)
+{
+    if (solve_dense_hermitian_info(ns, mat_tmp, eval_real, evec_out, true, 'U') != 0) {
+        return false;
+    }
+
+    for (unsigned int is = 0; is < ns; ++is) {
+        const auto eval_tmp = eval_real[is];
+        if (return_sqrt) {
+            eval_out[is] = (eval_tmp < 0.0) ? -std::sqrt(-eval_tmp) : std::sqrt(eval_tmp);
+        } else {
+            eval_out[is] = eval_tmp;
+        }
+    }
+    return true;
+}
+
 void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                                    const unsigned int nk_dense, const double *const *xk_dense,
                                    const double *const *kvec_dense, double **eval_out, std::complex<double> ***evec_out,
-                                   const std::vector<Eigen::MatrixXcd> &dymat_short,
-                                   const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
-                                   const bool use_precomputed_dymat, const bool return_sqrt) const
+                                   MinimumDistList ***mindist_list_in, const std::vector<FcsArrayWithCell> &fc2,
+                                   const Ewald &ewald, const bool return_sqrt) const
 {
     const auto ns = neval;
     const auto nk1 = kmesh_orig[0];
@@ -1742,60 +1760,36 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
 
         r2q(xk_dense[ik], nk1, nk2, nk3, ns, mindist_list_in, dymat_r, mat_tmp);
 
-        if (use_precomputed_dymat) {
-            for (unsigned int i = 0; i < ns; ++i) {
-                for (unsigned int j = 0; j < ns; ++j) {
-                    mat_tmp[i][j] += dymat_short[ik](i, j);
-                }
-            }
-            if (nonanalytic) {
-                for (unsigned int i = 0; i < ns; ++i) {
-                    for (unsigned int j = 0; j < ns; ++j) {
-                        mat_tmp[i][j] += dymat_long[ik](i, j);
-                    }
-                }
-            }
+        NDArray<std::complex<double>, 2> mat_harmonic(ns, ns);
+        if (nonanalytic == 3) {
+            calc_analytic_k(xk_dense[ik], ewald.fc2_without_dipole, mat_harmonic);
         } else {
-            NDArray<std::complex<double>, 2> mat_harmonic(ns, ns);
-            if (nonanalytic == 3) {
-                calc_analytic_k(xk_dense[ik], ewald->fc2_without_dipole, mat_harmonic);
-            } else {
-                calc_analytic_k(xk_dense[ik], fcs_phonon->force_constant_with_cell[0], mat_harmonic);
+            calc_analytic_k(xk_dense[ik], fc2, mat_harmonic);
+        }
+        for (unsigned int i = 0; i < ns; ++i) {
+            for (unsigned int j = 0; j < ns; ++j) {
+                mat_tmp[i][j] += mat_harmonic[i][j];
+            }
+        }
+        if (nonanalytic) {
+            NDArray<std::complex<double>, 2> mat_harmonic_na(ns, ns);
+            if (nonanalytic == 1) {
+                calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
+            } else if (nonanalytic == 2) {
+                calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
+            } else if (nonanalytic == 3) {
+                ewald.add_longrange_matrix(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
             }
             for (unsigned int i = 0; i < ns; ++i) {
                 for (unsigned int j = 0; j < ns; ++j) {
-                    mat_tmp[i][j] += mat_harmonic[i][j];
-                }
-            }
-            if (nonanalytic) {
-                NDArray<std::complex<double>, 2> mat_harmonic_na(ns, ns);
-                if (nonanalytic == 1) {
-                    calc_nonanalytic_k_parlinski(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
-                } else if (nonanalytic == 2) {
-                    calc_nonanalytic_k_mixedspace(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
-                } else if (nonanalytic == 3) {
-                    ewald->add_longrange_matrix(xk_dense[ik], kvec_dense[ik], mat_harmonic_na);
-                }
-                for (unsigned int i = 0; i < ns; ++i) {
-                    for (unsigned int j = 0; j < ns; ++j) {
-                        mat_tmp[i][j] += mat_harmonic_na[i][j];
-                    }
+                    mat_tmp[i][j] += mat_harmonic_na[i][j];
                 }
             }
         }
 
-        if (solve_dense_hermitian_info(ns, mat_tmp, eval_real, evec_out[ik], true, 'U') != 0) {
+        if (!diagonalize_interpolated_dymat(ns, mat_tmp, eval_real, eval_out[ik], evec_out[ik], return_sqrt)) {
             ++nfail;
             continue;
-        }
-
-        for (unsigned int is = 0; is < ns; ++is) {
-            const auto eval_tmp = eval_real[is];
-            if (return_sqrt) {
-                eval_out[ik][is] = (eval_tmp < 0.0) ? -std::sqrt(-eval_tmp) : std::sqrt(eval_tmp);
-            } else {
-                eval_out[ik][is] = eval_tmp;
-            }
         }
     }
     if (nfail != 0) {
@@ -1804,9 +1798,60 @@ void Dynamical::exec_interpolation(const unsigned int kmesh_orig[3], std::comple
 }
 
 
+void Dynamical::exec_interpolation_precomputed(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
+                                               const unsigned int nk_dense, const double *const *xk_dense,
+                                               double **eval_out, std::complex<double> ***evec_out,
+                                               const std::vector<Eigen::MatrixXcd> &dymat_short,
+                                               const std::vector<Eigen::MatrixXcd> &dymat_long,
+                                               MinimumDistList ***mindist_list_in, const bool return_sqrt) const
+{
+    const auto ns = neval;
+    const auto nk1 = kmesh_orig[0];
+    const auto nk2 = kmesh_orig[1];
+    const auto nk3 = kmesh_orig[2];
+    const auto nk = static_cast<int>(nk_dense);
+    int nfail = 0;
+
+    // Parallelize k points with thread-local scratch and serial nested regions.
+    // Pin pthreads OpenBLAS / Accelerate threads (see v4_index_transform.h).
+    // A single k point keeps LAPACK threading. Report eigensolver failures after
+    // the region; allocation failures abort from the worker.
+#pragma omp parallel for schedule(dynamic) reduction(+ : nfail) if (nk > 1)
+    for (int ik = 0; ik < nk; ++ik) {
+        NDArray<std::complex<double>, 2> mat_tmp(ns, ns);
+        NDArray<double, 1> eval_real(ns);
+
+        r2q(xk_dense[ik], nk1, nk2, nk3, ns, mindist_list_in, dymat_r, mat_tmp);
+
+        for (unsigned int i = 0; i < ns; ++i) {
+            for (unsigned int j = 0; j < ns; ++j) {
+                mat_tmp[i][j] += dymat_short[ik](i, j);
+            }
+        }
+        if (nonanalytic) {
+            for (unsigned int i = 0; i < ns; ++i) {
+                for (unsigned int j = 0; j < ns; ++j) {
+                    mat_tmp[i][j] += dymat_long[ik](i, j);
+                }
+            }
+        }
+
+        if (!diagonalize_interpolated_dymat(ns, mat_tmp, eval_real, eval_out[ik], evec_out[ik], return_sqrt)) {
+            ++nfail;
+            continue;
+        }
+    }
+    if (nfail != 0) {
+        // Location kept as "exec_interpolation" so that the printed message is unchanged.
+        exit("exec_interpolation", "zheev failed to diagonalize the interpolated dynamical matrix (INFO != 0).");
+    }
+}
+
+
 void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                          std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
-                                         const std::vector<int> &kmap_interpolate_to_scph) const
+                                         const std::vector<int> &kmap_interpolate_to_scph,
+                                         const std::vector<FcsArrayWithCell> &fc2) const
 {
     std::complex<double> im(0.0, 1.0);
 
@@ -1886,7 +1931,7 @@ void Dynamical::calc_new_dymat_with_evec(std::complex<double> ***dymat_out, doub
 
 
         // Subtract harmonic contribution
-        calc_analytic_k(kmesh_coarse->xk[ik], fcs_phonon->force_constant_with_cell[0], dymat_harmonic);
+        calc_analytic_k(kmesh_coarse->xk[ik], fc2, dymat_harmonic);
 
         for (is = 0; is < ns; ++is) {
             for (js = 0; js < ns; ++js) {

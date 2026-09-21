@@ -516,6 +516,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             dynamical->precompute_dymat_harm(dos->kmesh_dos->nk,
                                              dos->kmesh_dos->xk,
                                              dos->kmesh_dos->kvec_na,
+                                             fcs_phonon->force_constant_with_cell[0],
+                                             *ewald,
                                              dymat_harm_short,
                                              dymat_harm_long);
 
@@ -527,17 +529,15 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                 for (auto iT = 0; iT < NT; ++iT) {
                     if (iT == 0 || (iT == NT - 1)) {
                         // Interpolate SCPH frequencies on the DOS mesh (edge temperatures for energy-grid bounds).
-                        dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                                      delta_dymat[iT],
-                                                      dos->kmesh_dos->nk,
-                                                      dos->kmesh_dos->xk,
-                                                      dos->kmesh_dos->kvec_na,
-                                                      eval_update[iT],
-                                                      evec_tmp,
-                                                      dymat_harm_short,
-                                                      dymat_harm_long,
-                                                      mindist_list_in,
-                                                      true);
+                        dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                                  delta_dymat[iT],
+                                                                  dos->kmesh_dos->nk,
+                                                                  dos->kmesh_dos->xk,
+                                                                  eval_update[iT],
+                                                                  evec_tmp,
+                                                                  dymat_harm_short,
+                                                                  dymat_harm_long,
+                                                                  mindist_list_in);
 
                         for (unsigned int j = 0; j < dos->kmesh_dos->nk_irred; ++j) {
                             for (unsigned int k = 0; k < ns; ++k) {
@@ -561,33 +561,29 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                 auto t_stage = timer->elapsed();
 
                 // Interpolate SCPH-renormalized frequencies/eigenvectors onto DOS mesh.
-                dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                              delta_dymat[iT],
-                                              dos->kmesh_dos->nk,
-                                              dos->kmesh_dos->xk,
-                                              dos->kmesh_dos->kvec_na,
-                                              eval_update[iT],
-                                              evec_tmp,
-                                              dymat_harm_short,
-                                              dymat_harm_long,
-                                              mindist_list_in,
-                                              true);
+                dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                          delta_dymat[iT],
+                                                          dos->kmesh_dos->nk,
+                                                          dos->kmesh_dos->xk,
+                                                          eval_update[iT],
+                                                          evec_tmp,
+                                                          dymat_harm_short,
+                                                          dymat_harm_long,
+                                                          mindist_list_in);
 
                 // Interpolate the renormalized harmonic branch needed for the SCPH free-energy
                 // correction. In QHA mode the correction is not used (compute_FE_total ignores
                 // it), so the interpolation and the correction are skipped.
                 if (!is_qha) {
-                    dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                                  delta_harmonic_dymat_renormalize[iT],
-                                                  dos->kmesh_dos->nk,
-                                                  dos->kmesh_dos->xk,
-                                                  dos->kmesh_dos->kvec_na,
-                                                  eval_harm_renorm[iT],
-                                                  evec_harm_renorm,
-                                                  dymat_harm_short,
-                                                  dymat_harm_long,
-                                                  mindist_list_in,
-                                                  true);
+                    dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                              delta_harmonic_dymat_renormalize[iT],
+                                                              dos->kmesh_dos->nk,
+                                                              dos->kmesh_dos->xk,
+                                                              eval_harm_renorm[iT],
+                                                              evec_harm_renorm,
+                                                              dymat_harm_short,
+                                                              dymat_harm_long,
+                                                              mindist_list_in);
                 }
 
                 t_interp += timer->elapsed() - t_stage;
@@ -766,17 +762,15 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                     double eval_tmp;
                     for (auto iT = 0; iT < NT; ++iT) {
                         if (iT == 0 || (iT == NT - 1)) {
-                            dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                                          delta_dymat_scph_plus_bubble[iT],
-                                                          dos->kmesh_dos->nk,
-                                                          dos->kmesh_dos->xk,
-                                                          dos->kmesh_dos->kvec_na,
-                                                          eval_update[iT],
-                                                          evec_tmp,
-                                                          dymat_harm_short,
-                                                          dymat_harm_long,
-                                                          mindist_list_in,
-                                                          true);
+                            dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                                      delta_dymat_scph_plus_bubble[iT],
+                                                                      dos->kmesh_dos->nk,
+                                                                      dos->kmesh_dos->xk,
+                                                                      eval_update[iT],
+                                                                      evec_tmp,
+                                                                      dymat_harm_short,
+                                                                      dymat_harm_long,
+                                                                      mindist_list_in);
 
                             for (unsigned int j = 0; j < dos->kmesh_dos->nk_irred; ++j) {
                                 for (unsigned int k = 0; k < ns; ++k) {
@@ -796,17 +790,15 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                 for (auto iT = 0; iT < NT; ++iT) {
                     auto temperature = Tmin + dT * static_cast<double>(iT);
 
-                    dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                                  delta_dymat_scph_plus_bubble[iT],
-                                                  dos->kmesh_dos->nk,
-                                                  dos->kmesh_dos->xk,
-                                                  dos->kmesh_dos->kvec_na,
-                                                  eval_update[iT],
-                                                  evec_tmp,
-                                                  dymat_harm_short,
-                                                  dymat_harm_long,
-                                                  mindist_list_in,
-                                                  true);
+                    dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                              delta_dymat_scph_plus_bubble[iT],
+                                                              dos->kmesh_dos->nk,
+                                                              dos->kmesh_dos->xk,
+                                                              eval_update[iT],
+                                                              evec_tmp,
+                                                              dymat_harm_short,
+                                                              dymat_harm_long,
+                                                              mindist_list_in);
 
                     if (dos->compute_dos) {
                         dos->calc_dos_from_given_frequency(dos->kmesh_dos.get(),
@@ -901,9 +893,9 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                               kpoint->kpoint_general->kvec_na,
                                               eval_update[iT],
                                               evec_tmp,
-                                              dymat_harm_short,
-                                              dymat_harm_long,
-                                              mindist_list_in);
+                                              mindist_list_in,
+                                              fcs_phonon->force_constant_with_cell[0],
+                                              *ewald);
             }
 
             writes->writePhononEnergies(kpoint->kpoint_general->nk, eval_update, is_qha, 0);
@@ -917,9 +909,9 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                                   kpoint->kpoint_general->kvec_na,
                                                   eval_update[iT],
                                                   evec_tmp,
-                                                  dymat_harm_short,
-                                                  dymat_harm_long,
-                                                  mindist_list_in);
+                                                  mindist_list_in,
+                                                  fcs_phonon->force_constant_with_cell[0],
+                                                  *ewald);
                 }
                 writes->writePhononEnergies(kpoint->kpoint_general->nk, eval_update, false, bubble_in);
             }
@@ -934,38 +926,36 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
             dynamical->precompute_dymat_harm(kpoint->kpoint_bs->nk,
                                              kpoint->kpoint_bs->xk,
                                              kpoint->kpoint_bs->kvec_na,
+                                             fcs_phonon->force_constant_with_cell[0],
+                                             *ewald,
                                              dymat_harm_short,
                                              dymat_harm_long);
 
             for (auto iT = 0; iT < NT; ++iT) {
-                dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                              delta_dymat[iT],
-                                              kpoint->kpoint_bs->nk,
-                                              kpoint->kpoint_bs->xk,
-                                              kpoint->kpoint_bs->kvec_na,
-                                              eval_update[iT],
-                                              evec_tmp,
-                                              dymat_harm_short,
-                                              dymat_harm_long,
-                                              mindist_list_in,
-                                              true);
+                dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                          delta_dymat[iT],
+                                                          kpoint->kpoint_bs->nk,
+                                                          kpoint->kpoint_bs->xk,
+                                                          eval_update[iT],
+                                                          evec_tmp,
+                                                          dymat_harm_short,
+                                                          dymat_harm_long,
+                                                          mindist_list_in);
             }
 
             writes->writePhononBands(kpoint->kpoint_bs->nk, kpoint->kpoint_bs->kaxis, eval_update, is_qha, 0);
 
             if (bubble_in > 0) {
                 for (auto iT = 0; iT < NT; ++iT) {
-                    dynamical->exec_interpolation(kmesh_coarse_in->nk_i,
-                                                  delta_dymat_scph_plus_bubble[iT],
-                                                  kpoint->kpoint_bs->nk,
-                                                  kpoint->kpoint_bs->xk,
-                                                  kpoint->kpoint_bs->kvec_na,
-                                                  eval_update[iT],
-                                                  evec_tmp,
-                                                  dymat_harm_short,
-                                                  dymat_harm_long,
-                                                  mindist_list_in,
-                                                  true);
+                    dynamical->exec_interpolation_precomputed(kmesh_coarse_in->nk_i,
+                                                              delta_dymat_scph_plus_bubble[iT],
+                                                              kpoint->kpoint_bs->nk,
+                                                              kpoint->kpoint_bs->xk,
+                                                              eval_update[iT],
+                                                              evec_tmp,
+                                                              dymat_harm_short,
+                                                              dymat_harm_long,
+                                                              mindist_list_in);
                 }
                 writes->writePhononBands(kpoint->kpoint_bs->nk,
                                          kpoint->kpoint_bs->kaxis,
@@ -993,9 +983,9 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
                                               xk_gam,
                                               eval_gam,
                                               evec_gam,
-                                              dymat_harm_short,
-                                              dymat_harm_long,
-                                              mindist_list_in);
+                                              mindist_list_in,
+                                              fcs_phonon->force_constant_with_cell[0],
+                                              *ewald);
 
                 for (auto is = 0; is < ns; ++is) {
                     if (eval_gam[0][is] < 0.0) {

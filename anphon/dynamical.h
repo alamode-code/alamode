@@ -160,6 +160,7 @@ public:
     void set_projection_directions(const std::vector<std::vector<double>> projections_in);
 
     void precompute_dymat_harm(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_in,
+                               const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald,
                                std::vector<Eigen::MatrixXcd> &dymat_short,
                                std::vector<Eigen::MatrixXcd> &dymat_long) const;
 
@@ -169,19 +170,32 @@ public:
         const double *const *omega2_harmonic, const std::complex<double> *const *const *evec_harmonic,
         const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,
         const std::vector<int> &kmap_interpolate_to_scph, std::complex<double> ****mat_transform_sym,
-        MinimumDistList ***mindist_list, const unsigned int verbosity) const;
+        MinimumDistList ***mindist_list, const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald) const;
+
+    // Interpolate with the short-range / long-range harmonic dynamical matrices built on the fly.
+    // Shared tail of the two exec_interpolation forms; false when zheev failed.
+    static bool diagonalize_interpolated_dymat(unsigned int ns, std::complex<double> **mat_tmp, double *eval_real,
+                                               double *eval_out, std::complex<double> **evec_out, bool return_sqrt);
 
     void exec_interpolation(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
                             const unsigned int nk_dense, const double *const *xk_dense, const double *const *kvec_dense,
-                            double **eval_out, std::complex<double> ***evec_out,
-                            const std::vector<Eigen::MatrixXcd> &dymat_short,
-                            const std::vector<Eigen::MatrixXcd> &dymat_long, MinimumDistList ***mindist_list_in,
-                            const bool use_precomputed_dymat = false, const bool return_sqrt = true) const;
+                            double **eval_out, std::complex<double> ***evec_out, MinimumDistList ***mindist_list_in,
+                            const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald,
+                            const bool return_sqrt = true) const;
+
+    // Same, but with the harmonic dynamical matrices precomputed by precompute_dymat_harm.
+    void exec_interpolation_precomputed(const unsigned int kmesh_orig[3], std::complex<double> ***dymat_r,
+                                        const unsigned int nk_dense, const double *const *xk_dense, double **eval_out,
+                                        std::complex<double> ***evec_out,
+                                        const std::vector<Eigen::MatrixXcd> &dymat_short,
+                                        const std::vector<Eigen::MatrixXcd> &dymat_long,
+                                        MinimumDistList ***mindist_list_in, const bool return_sqrt = true) const;
 
 
     void calc_new_dymat_with_evec(std::complex<double> ***dymat_out, double **omega2_in,
                                   std::complex<double> ***evec_in, const KpointMeshUniform *kmesh_coarse,
-                                  const std::vector<int> &kmap_interpolate_to_scph) const;
+                                  const std::vector<int> &kmap_interpolate_to_scph,
+                                  const std::vector<FcsArrayWithCell> &fc2) const;
 
     void get_eigenvalues_dymat(const unsigned int nk_in, const double *const *xk_in, const double *const *kvec_na_in,
                                const std::vector<FcsArrayWithCell> &fc2,
