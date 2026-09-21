@@ -295,7 +295,7 @@ void Dielec::load_born(const unsigned int flag_symmborn, const std::vector<Symme
                 std::cout << "  Symmetrized Born effective charge tensor in Cartesian coordinate." << '\n';
                 for (i = 0; i < natmin_tmp; ++i) {
                     std::cout << "  Atom" << std::setw(5) << i + 1 << "(" << std::setw(3)
-                              << system->symbol_kd[system->get_primcell().kind[system->get_map_p2s(0)[i][0]]]
+                              << system->symbol_kd[system->get_supercell(0).kind[system->get_map_p2s(0)[i][0]]]
                               << ") :" << '\n';
 
                     for (j = 0; j < 3; ++j) {
