@@ -65,8 +65,7 @@ struct GammaIrrepResult
 class ModeSymmetry
 {
 public:
-    ModeSymmetry(const RunInfo &run, const System *system, const Symmetry *symmetry, const Dielec *dielec,
-                 const Dynamical *dynamical);
+    ModeSymmetry(const RunInfo &run, const System *system);
 
     ~ModeSymmetry();
 
@@ -77,7 +76,8 @@ public:
     void setup();
 
     // Rank 0 only: SymmListWithMap exists only on rank 0.
-    void analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald);
+    void analyze_irreps_at_gamma(const Symmetry &symmetry, const Dynamical &dynamical,
+                                 const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec, const Ewald &ewald);
 
     [[nodiscard]] const GammaIrrepResult &get_result() const
     {
@@ -91,8 +91,5 @@ private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).
     const RunInfo &run;
     const System *system;
-    const Symmetry *symmetry;
-    const Dielec *dielec;
-    const Dynamical *dynamical;
 };
 } // namespace PHON_NS

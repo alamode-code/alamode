@@ -75,8 +75,7 @@ void PHON::create_pointers()
     anharmonic_core = std::make_unique<AnharmonicCore>(run_info, system.get());
     selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
-    mode_symmetry =
-        std::make_unique<ModeSymmetry>(run_info, system.get(), symmetry.get(), dielec.get(), dynamical.get());
+    mode_symmetry = std::make_unique<ModeSymmetry>(run_info, system.get());
     gruneisen = std::make_unique<Gruneisen>(run_info, system.get());
     relaxation = std::make_unique<Relaxation>(run_info, system.get());
     conductivity = std::make_unique<Conductivity>(run_info,
@@ -321,7 +320,11 @@ void PHON::execute_phonons() const
                                          *ewald);
 
     if (mode_symmetry->print_irreps && run_info.my_rank == 0) {
-        mode_symmetry->analyze_irreps_at_gamma(fcs_phonon->force_constant_with_cell[0], *ewald);
+        mode_symmetry->analyze_irreps_at_gamma(*symmetry,
+                                               *dynamical,
+                                               fcs_phonon->force_constant_with_cell[0],
+                                               *dielec,
+                                               *ewald);
     }
 
     if (dos->flag_dos) {

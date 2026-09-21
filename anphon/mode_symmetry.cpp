@@ -134,9 +134,7 @@ std::string format_decomposition(const pointgroup::PointGroup &pg, const std::ve
 
 } // namespace
 
-ModeSymmetry::ModeSymmetry(const RunInfo &run_in, const System *system_in, const Symmetry *symmetry_in,
-                           const Dielec *dielec_in, const Dynamical *dynamical_in) :
-    run(run_in), system(system_in), symmetry(symmetry_in), dielec(dielec_in), dynamical(dynamical_in)
+ModeSymmetry::ModeSymmetry(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {}
 
 ModeSymmetry::~ModeSymmetry() = default;
@@ -157,7 +155,9 @@ void ModeSymmetry::setup()
     }
 }
 
-void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &fc2, const Ewald &ewald)
+void ModeSymmetry::analyze_irreps_at_gamma(const Symmetry &symmetry, const Dynamical &dynamical,
+                                           const std::vector<FcsArrayWithCell> &fc2, const Dielec &dielec,
+                                           const Ewald &ewald)
 {
     if (run.my_rank != 0) {
         return;
@@ -167,10 +167,10 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
     auto &warnings = result_.warnings;
 
     const auto ns = static_cast<int>(system->get_num_modes());
-    const auto &symops = symmetry->SymmListWithMap;
+    const auto &symops = symmetry.SymmListWithMap;
     const auto nsym = static_cast<int>(symops.size());
 
-    if (nsym == 0 || static_cast<int>(symmetry->SymmList.size()) != nsym) {
+    if (nsym == 0 || static_cast<int>(symmetry.SymmList.size()) != nsym) {
         warnings.emplace_back("symmetry operation tables are unavailable; analysis skipped.");
         return;
     }
@@ -183,7 +183,7 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
     std::vector<Eigen::Matrix3d> rot_cart;
     rot_latt.reserve(nsym);
     rot_cart.reserve(nsym);
-    for (const auto &op: symmetry->SymmList) {
+    for (const auto &op: symmetry.SymmList) {
         rot_latt.push_back(op.rotation);
         rot_cart.push_back(op.rotation_cart);
     }
@@ -216,7 +216,7 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
     std::vector<double> eval_raw(ns), omega(ns);
     NDArray<std::complex<double>, 2> evec;
     evec.resize(ns, ns);
-    dynamical->diagonalize_gamma_analytic(eval_raw.data(), evec, true, fc2, *dielec, ewald);
+    dynamical.diagonalize_gamma_analytic(eval_raw.data(), evec, true, fc2, dielec, ewald);
     for (auto is = 0; is < ns; ++is) {
         omega[is] = Dynamical::freq(eval_raw[is]);
     }
@@ -420,11 +420,11 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
         pg = &pointgroup::pg_table[pg_number - 1];
         Eigen::Vector3d zhat = Eigen::Vector3d::Zero();
         Eigen::Vector3d xhat = Eigen::Vector3d::Zero();
-        if (symmetry->has_spg_dataset) {
+        if (symmetry.has_spg_dataset) {
             // Conventional frame: L_conv = L_input * P^-1 using spglib's transformation.
             // When a unique principal axis of order >= 3 exists, check that c is parallel to it.
             const Eigen::Matrix3d &lavec = system->get_primcell().lattice_vector;
-            const Eigen::Matrix3d &pmat = symmetry->spg_transformation_matrix;
+            const Eigen::Matrix3d &pmat = symmetry.spg_transformation_matrix;
             if (std::abs(pmat.determinant()) > 1.0e-8) {
                 const Eigen::Matrix3d lconv = lavec * pmat.inverse();
                 zhat = lconv.col(2).normalized();
@@ -785,10 +785,10 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
     // S_ab(lambda) = sum_{nu in lambda} Z*_mode[nu][a] Z*_mode[nu][b] is
     // invariant under rotations within the degenerate subspace.
     // ------------------------------------------------------------------
-    result_.has_borncharge = dielec->has_borncharge();
+    result_.has_borncharge = dielec.has_borncharge();
     if (result_.has_borncharge) {
         std::vector<std::vector<std::complex<double>>> zstar_mode(ns, std::vector<std::complex<double>>(3));
-        dielec->compute_mode_effective_charge(zstar_mode, evec);
+        dielec.compute_mode_effective_charge(zstar_mode, evec);
         for (auto ig = 0; ig < ngroup; ++ig) {
             auto &grp = result_.groups[ig];
             // S_ab = Re sum_nu Z_nu,a conj(Z_nu,b): invariant under both
@@ -872,8 +872,8 @@ void ModeSymmetry::analyze_irreps_at_gamma(const std::vector<FcsArrayWithCell> &
         result_.pg_number = pg_number;
         result_.pg_schoenflies = pg->schoenflies;
         result_.pg_international = pg->international;
-        if (symmetry->has_spg_dataset) {
-            result_.spg_symbol = symmetry->spg_symbol + " (#" + std::to_string(symmetry->spg_number) + ")";
+        if (symmetry.has_spg_dataset) {
+            result_.spg_symbol = symmetry.spg_symbol + " (#" + std::to_string(symmetry.spg_number) + ")";
         }
     }
 
