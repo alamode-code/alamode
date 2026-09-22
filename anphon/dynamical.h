@@ -278,6 +278,11 @@ private:
                                double **eval_ret,
                                std::complex<double> ***evec_ret);
 
+    void bcast_eigensystem_from_root(const unsigned int nk_in,
+                                     const bool require_evec,
+                                     double **eval_inout,
+                                     std::complex<double> ***evec_inout) const;
+
     std::vector<std::vector<double>> projection_directions;
 
     int transform_eigenvectors(double *xk_in,
