@@ -89,8 +89,15 @@ class ParseResult:
                     t_min = float(line[0])
                     t_max = float(line[1])
                     t_stp = float(line[2])
-                    nstemp = int((t_max - t_min) / t_stp + 1)
-                    self.temperatures = np.arange(t_min, t_max + t_stp, t_stp)
+                    # Build the grid from the point count rather than from
+                    # arange's stop value: arange(t_min, t_max + t_stp, t_stp)
+                    # can yield one more entry than nstemp (t_min = 0,
+                    # t_max = 1, t_stp = 0.3 gives 5 labels for 4 columns),
+                    # and the extra label then indexes past self.gamma.
+                    # anphon writes int((TMAX - TMIN) / DT) + 1 columns at
+                    # TMIN + i * DT, which is what this reproduces.
+                    nstemp = int((t_max - t_min) / t_stp) + 1
+                    self.temperatures = t_min + t_stp * np.arange(nstemp)
                     self.gamma = np.zeros((total_irq, self.nat * 3, nstemp))  # <-
                     self.vel = np.zeros((total_irq, self.nat * 3, 48, 3))
                     self.multiplicity = np.zeros(total_irq)
