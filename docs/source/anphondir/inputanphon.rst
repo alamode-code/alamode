@@ -30,9 +30,9 @@ List of supported input variables
    :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`, :ref:`FC3FILE <anphon_fc2file>`, :ref:`FC4FILE <anphon_fc2file>`, :ref:`FCSFILE <anphon_fcsfile>`
    :ref:`FILE_FORMAT <anphon_file_format>`, :ref:`ISMEAR <anphon_ismear>`, :ref:`KD <anphon_kd>`, :ref:`MASS <anphon_mass>`
    :ref:`MODE <anphon_mode>`, :ref:`NA_SIGMA <anphon_na_sigma>`, :ref:`NBANDS <anphon_nbands>`, :ref:`NONANALYTIC <anphon_nonanalytic>`
-   :ref:`PREC_EWALD <anphon_prec_ewald>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`, :ref:`TMAX <anphon_tmin>`
-   :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TRISYM <anphon_trisym>`, :ref:`VERBOSITY <anphon_verbosity>`
-   :ref:`TREVSYM <anphon_trevsym>`
+   :ref:`PREC_EWALD <anphon_prec_ewald>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`, :ref:`RELAXED_STRUCTURE <anphon_relaxed_structure>`
+   :ref:`TMAX <anphon_tmin>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TREVSYM <anphon_trevsym>`
+   :ref:`TRISYM <anphon_trisym>`, :ref:`VERBOSITY <anphon_verbosity>`
    **&scph**
    :ref:`BUBBLE <anphon_bubble>`, :ref:`CV_ANHARM <anphon_cv_anharm>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`
    :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`
@@ -505,6 +505,80 @@ Description of input variables
                corrections only. Giving a state file as the harmonic FC2 source
                *together with* ``DFC2FILE`` uses only its coarse-mesh-folded base
                FC2 and prints a warning, since that is rarely intended.
+
+````
+
+.. _anphon_relaxed_structure:
+
+* RELAXED_STRUCTURE-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+ :Description: Run on the crystal structure that an earlier SCPH or QHA
+               calculation relaxed, instead of the original one.
+
+               When ``RELAX_STR > 0``, an SCPH/QHA run finds a new equilibrium
+               structure at every temperature: the cell is strained and the
+               atoms shift. It stores those structures in its
+               ``PREFIX``.scph.h5 / ``PREFIX``.qha.h5 file. Setting
+               ``RELAXED_STRUCTURE = 1`` makes the present run adopt the one at
+               :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`, which must also
+               be given. The structure is read from ``DFC2FILE`` if present,
+               otherwise from ``FC2FILE`` or ``FCSFILE``.
+
+               Two things then follow the relaxed structure that did not before:
+
+               * **The cell itself** — its volume, its reciprocal lattice and
+                 its symmetry. This matters because thermal conductivity is
+                 inversely proportional to the cell volume, group velocities are
+                 measured in the deformed reciprocal lattice, and a relaxation
+                 usually *lowers* the symmetry, which changes the set of
+                 irreducible **q** points.
+               * **The cubic force constants**, which the deformation changes
+                 just as it changes the harmonic ones. They are corrected using
+                 the quartic force constants, so ``FC4FILE`` — or an ``FCSFILE``
+                 containing the quartic order — must be available even for a
+                 three-phonon calculation. This is the same FC4 the SCPH/QHA run
+                 itself needed, and the run checks that it is indeed the same
+                 one.
+
+               Without this tag, a follow-up calculation uses the renormalized
+               harmonic force constants of the relaxed structure together with
+               the *original* cell and the *original* cubic force constants,
+               which do not describe the same crystal.
+
+               A typical two-step use, thermal conductivity at 300 K::
+
+                   &general
+                     MODE = kappa
+                     FCSFILE = si_anharm.h5      # original structure, FC2/FC3/FC4
+                     DFC2FILE = si_scph.scph.h5  # from the RELAX_STR run
+                     FC2_TEMPERATURE = 300
+                     RELAXED_STRUCTURE = 1
+                     TMIN = 300; TMAX = 300
+                   /
+
+               The same tag works for ``MODE = phonons``, giving phonon
+               dispersion, DOS, mean square displacements, thermodynamic
+               functions and Grüneisen parameters on the relaxed structure.
+
+               Please note:
+
+               * Use the same :ref:`TOLERANCE <anphon_tolerance>` as the SCPH/QHA
+                 run. The symmetry of the relaxed structure is detected with it,
+                 and a different value may give a different space group. The run
+                 prints the space group the relaxation found next to the one it
+                 detects itself, so the two can be compared.
+               * Born effective charges and the dielectric tensor are **not**
+                 adjusted to the relaxed structure; ``BORNINFO`` is used as
+                 given. For polar materials under a sizeable strain this is the
+                 largest remaining approximation.
+               * The correction to the cubic force constants assumes force
+                 constants that satisfy the acoustic and rotational invariance
+                 conditions well (``ICONST`` in *alm*); its accuracy is limited
+                 by how well they do.
+               * This tag cannot be combined with ``RELAX_STR > 0`` in the same
+                 run, nor with :ref:`NEWFCS <anphon_newfcs>`.
 
 ````
 
