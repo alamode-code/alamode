@@ -205,8 +205,13 @@ public:
         }
     }
 
-    void finalize_temperature(unsigned int, double, bool, bool &) override
-    {}
+    void finalize_temperature(const unsigned int iT, double, bool, bool &) override
+    {
+        // Same point in run_structural_optimization_loop as the SCPH hook:
+        // after calculate_u0 has refreshed structure_state.u0, so the record
+        // is the structure the .atom_disp / .umn_tensor outputs report.
+        qha_.record_relaxed_structure(iT, ws_.structure_state);
+    }
 
     void print_run_summary() override
     {}
@@ -1148,6 +1153,11 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
                     }
                 }
             }
+
+            // Unlike the iterative branches, this structure is not one
+            // optimizer step ahead of its dymat: the renormalization just
+            // above was evaluated at exactly this u_tensor and q0.
+            record_relaxed_structure(iT, structure_state);
         }
 
         fout_q0.close();
