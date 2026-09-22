@@ -650,6 +650,14 @@ void Scph::exec_scph()
                 load_V0_from_file();
             }
 
+            // The legacy text files carry no convergence record, and the
+            // temperature loop that would have measured one did not run.
+            // Publish "unknown" (absent /convergence datasets) rather than
+            // the all-converged initialization these vectors still hold,
+            // which later runs would otherwise accept as evidence.
+            converged_scph_temp.clear();
+            converged_str_temp.clear();
+
             // One-way migration of the legacy state into the unified file;
             // the text files themselves are left untouched.
             if (use_h5_io && run.my_rank == 0) {

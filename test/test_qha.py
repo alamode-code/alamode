@@ -40,6 +40,7 @@ import subprocess
 import sys
 import zipfile
 
+import h5py
 import numpy as np
 
 from test_scph_h5 import check_structure_group
@@ -237,6 +238,41 @@ def stage_text_io(anphonbin):
             abs_tol=1.0e-12,
             label="text-restart",
         )
+    if info:
+        return info
+
+    # Restart from the same legacy text state but in h5 mode, which migrates
+    # it into ZnO_qha4t.qha.h5. The text files carry no convergence record
+    # and no relaxed structure, so the migrated file must claim neither --
+    # an all-converged /convergence here would later pass the
+    # ALLOW_UNCONVERGED guard without any evidence behind it.
+    with open("qha_text_restart.in") as f:
+        text = f.read()
+    migrate_in = text.replace("  FILE_FORMAT = text\n", "")
+    if "FILE_FORMAT" in migrate_in:
+        print("text-io: could not switch the restart input back to h5 output")
+        return 1
+    with open("qha_migrate.in", "w") as f:
+        f.write(migrate_in)
+    # Must not be left over from an earlier run of this stage: an existing
+    # h5 state is the preferred restart source, and finding one would skip
+    # the migration this check exists to exercise.
+    if os.path.exists("ZnO_qha4t.qha.h5"):
+        os.remove("ZnO_qha4t.qha.h5")
+    if run_anphon(anphonbin, "qha_migrate.in", "qha_migrate.log"):
+        return 1
+    with open("qha_migrate.log") as f:
+        if "RESTART_QHA is true" not in f.read():
+            print("text-io: the migration run did not restart")
+            return 1
+    if not os.path.exists("ZnO_qha4t.qha.h5"):
+        print("text-io: the legacy state was not migrated to h5")
+        return 1
+    with h5py.File("ZnO_qha4t.qha.h5", "r") as f:
+        for group in ("convergence", "structure", "provenance"):
+            if group in f:
+                print("text-io: migrated file claims /%s it cannot know" % group)
+                return 1
     return info
 
 
