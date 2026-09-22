@@ -78,6 +78,11 @@ struct GeneralInputVars
     // as FCSFILE or FC2FILE (negative = disabled).
     double fc2_temperature = -1.0;
 
+    // RELAXED_STRUCTURE: run on the structure relaxed at FC2_TEMPERATURE by
+    // an earlier SCPH/QHA run, read from the /structure group of its state
+    // file (DFC2FILE, else FC2FILE).
+    int relaxed_structure = 0;
+
     bool classical = false;
     bool use_triplet_symmetry = true; // TRISYM
     bool allow_unconverged = false;   // ALLOW_UNCONVERGED

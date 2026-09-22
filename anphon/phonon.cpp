@@ -9,6 +9,7 @@
 */
 
 #include "phonon.h"
+#include <iomanip>
 #include <iostream>
 #include "anharmonic_core.h"
 #include "conductivity.h"
@@ -30,6 +31,7 @@
 #include "qha.h"
 #include "relaxation.h"
 #include "scph.h"
+#include "scph_result_io.h"
 #include "selfenergy.h"
 #include "stage_timer.h"
 #include "symmetry_core.h"
@@ -200,6 +202,74 @@ void PHON::run() const
     }
 }
 
+void PHON::apply_relaxed_structure() const
+{
+    // The state file is the one that also supplies the renormalized FC2,
+    // in the order FC2_TEMPERATURE itself resolves: DFC2FILE carries the
+    // correction when given, otherwise the FC2 comes from FC2FILE, or from
+    // FCSFILE when no separate FC2 file was named.
+    const auto &statefile = !fcs_phonon->file_dfc2.empty()  ? fcs_phonon->file_dfc2
+                            : !fcs_phonon->file_fc2.empty() ? fcs_phonon->file_fc2
+                                                            : fcs_phonon->file_fcs;
+
+    std::vector<double> u_tensor(9, 0.0), u0;
+    std::string spg_label;
+    int natmin_file = 0;
+
+    if (run_info.my_rank == 0) {
+        const ScphResultIOH5 io(statefile);
+        if (!io.load_structure(fcs_phonon->fc2_temperature, u_tensor, u0, spg_label)) {
+            exit("apply_relaxed_structure",
+                 "RELAXED_STRUCTURE = 1, but the state file carries no /structure group.\n"
+                 " It must come from a run with RELAX_STR != 0; a fixed-cell SCPH run relaxes\n"
+                 " nothing and stores no structure.");
+        }
+        io.check_convergence({fcs_phonon->fc2_temperature}, run_info.allow_unconverged);
+        natmin_file = static_cast<int>(u0.size() / 3);
+    }
+
+    MPI_Bcast(u_tensor.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&natmin_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (run_info.my_rank != 0) u0.assign(3 * natmin_file, 0.0);
+    MPI_Bcast(u0.data(), 3 * natmin_file, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (static_cast<size_t>(natmin_file) != system->get_primcell().number_of_atoms) {
+        exit("apply_relaxed_structure",
+             "The relaxed structure was recorded for a different number of primitive-cell atoms\n"
+             " than this run uses. The two runs must share the same primitive cell.");
+    }
+
+    if (run_info.my_rank == 0 && run_info.verbosity > 0) {
+        std::cout << "\n RELAXED_STRUCTURE = 1: adopting the structure relaxed at " << fcs_phonon->fc2_temperature
+                  << " K,\n  read from " << statefile;
+        if (!spg_label.empty()) {
+            std::cout << "\n  space group of that structure, as the relaxation found it: " << spg_label
+                      << "\n  (TOLERANCE must match, or this run may find a different one)";
+        }
+        std::cout << '\n';
+    }
+
+    const auto volume_ref = system->get_primcell().volume;
+    system->apply_deformation(u_tensor, u0);
+    fcs_phonon->deform_relative_vectors(u0);
+
+    // The crystal-structure block was printed by System::setup(), before the
+    // deformation, so report what the run actually uses.
+    if (run_info.my_rank == 0 && run_info.verbosity > 0) {
+        const auto &cell = system->get_primcell();
+        std::cout << "\n  Lattice vectors of the relaxed cell [Bohr]:\n";
+        for (auto j = 0; j < 3; ++j) {
+            std::cout << "   a" << j + 1 << " :";
+            for (auto i = 0; i < 3; ++i) {
+                std::cout << std::setw(15) << std::setprecision(8) << std::fixed << cell.lattice_vector(i, j);
+            }
+            std::cout << '\n';
+        }
+        std::cout << std::defaultfloat << "  Volume : " << cell.volume << " (a.u.)^3, " << cell.volume / volume_ref
+                  << " x the reference cell\n\n";
+    }
+}
+
 void PHON::setup_base() const
 {
     system->setup({fcs_phonon->file_fcs, fcs_phonon->file_fc2, fcs_phonon->file_fc3, fcs_phonon->file_fc4},
@@ -237,6 +307,19 @@ void PHON::setup_base() const
         system->initialize_distorted_primitive_cell(relaxation->init_u_tensor, relaxation->init_u0);
     }
 
+    // RELAXED_STRUCTURE: move onto the relaxed crystal before anything reads
+    // the geometry. The IFCs have to be loaded first, because the
+    // reference-geometry relative vectors that replicate_force_constant
+    // builds are what deform_relative_vectors then corrects; and this has to
+    // precede setup_symmetry, whose space group drives the k-point
+    // reduction, and setup_dynamical, which builds mindist_list.
+    MPI_Bcast(&fcs_phonon->relaxed_structure, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    const auto fcs_loaded_early = init_u0_from_modes || fcs_phonon->relaxed_structure;
+    if (fcs_phonon->relaxed_structure) {
+        if (!init_u0_from_modes) setup_fcs();
+        apply_relaxed_structure();
+    }
+
     symmetry->setup_symmetry(relaxing_structure);
     kpoint->kpoint_setups(run_info.mode);
     if (kpoint->kpoint_mode == 2) {
@@ -250,7 +333,10 @@ void PHON::setup_base() const
     // to decide whether Born charges are loaded.
     mode_symmetry->setup();
     dynamical->setup_dynamical(kpoint->kpoint_bs.get(), kpoint->kpoint_general.get());
-    if (!init_u0_from_modes) setup_fcs();
+    // Not when it was loaded early: reloading would replicate the IFCs
+    // against the already-deformed cells, and the relative vectors that
+    // came out would be neither the reference nor the deformed ones.
+    if (!fcs_loaded_early) setup_fcs();
     phonon_velocity->setup_velocity();
     integration->setup_integration(anharmonic_core->quartic_mode, run_info.my_rank, get_verbosity());
     dos->setup(*integration, dynamical->require_eigenvectors);

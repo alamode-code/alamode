@@ -909,6 +909,55 @@ void System::generate_mapping_tables()
     }
 }
 
+void System::apply_deformation(const std::vector<double> &u_tensor, const std::vector<double> &u0)
+{
+    if (u_tensor.size() != 9) {
+        exit("apply_deformation", "The deformation gradient must have nine components.");
+    }
+    if (!u0.empty() && u0.size() != 3 * primcell.number_of_atoms) {
+        exit("apply_deformation",
+             "The number of displacement components does not match the primitive cell of this run.");
+    }
+
+    Eigen::Matrix3d deform = Eigen::Matrix3d::Identity();
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            deform(i, j) += u_tensor[3 * i + j];
+        }
+    }
+
+    // Displace by the u0 of the primitive atom each atom maps to, in the
+    // fractional basis of the cell being deformed. The affine part needs no
+    // work: it leaves fractional coordinates unchanged by construction.
+    const auto deform_cell = [&](Cell &cell, const std::vector<Maps> &map_s2p) {
+        cell.lattice_vector = deform * cell.lattice_vector;
+        recips(cell.lattice_vector, cell.reciprocal_lattice_vector);
+        cell.volume = volume(cell.lattice_vector, Direct);
+
+        if (!u0.empty()) {
+            const Eigen::Matrix3d lavec_inv = cell.lattice_vector.inverse();
+            for (size_t iat = 0; iat < cell.number_of_atoms; ++iat) {
+                const auto kappa = map_s2p.empty() ? iat : map_s2p[iat].atom_num;
+                const Eigen::Vector3d disp(u0[3 * kappa], u0[3 * kappa + 1], u0[3 * kappa + 2]);
+                cell.x_fractional.row(iat) += (lavec_inv * disp).transpose();
+            }
+        }
+        cell.x_cartesian = cell.x_fractional * cell.lattice_vector.transpose();
+    };
+
+    deform_cell(primcell, {});
+    for (size_t order = 0; order < supercell.size(); ++order) {
+        deform_cell(supercell[order], map_s2p_new[order]);
+    }
+
+    // primcell_distort exists for the relaxation's symmetry analysis and is
+    // built from the &strain / &displace input; a run that adopts a relaxed
+    // structure does not relax, so it is simply kept in step.
+    primcell_distort = primcell;
+    set_atomtype_group(primcell, spin_prim, atomtype_group_prim);
+    set_atomtype_group(primcell_distort, spin_prim, atomtype_group_prim_distort);
+}
+
 void System::initialize_distorted_primitive_cell(const double init_u_tensor[3][3], const std::vector<double> &init_u0)
 {
     Eigen::Matrix3d lavec_p_strain, rlavec_p_strain, mat_strain;

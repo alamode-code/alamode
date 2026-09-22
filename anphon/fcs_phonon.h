@@ -223,6 +223,13 @@ public:
     // (shorter-ranged) anharmonic correction.
     std::string file_dfc2;
 
+    // RELAXED_STRUCTURE: run on the structure an earlier SCPH/QHA run
+    // relaxed at fc2_temperature. The deformation is read from the
+    // /structure group of file_dfc2 (else file_fc2) and applied in
+    // PHON::setup_base, so symmetry, volume, reciprocal lattice and group
+    // velocities all describe the relaxed crystal.
+    int relaxed_structure = 0;
+
     // Fingerprint of the IFCs this run loaded, one entry per order, taken
     // after the MPI broadcast but before replication and sorting. An
     // SCPH/QHA run with RELAX_STR != 0 stores it; a later run that adopts
@@ -253,6 +260,19 @@ public:
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
     static void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout);
+
+    // Carry the loaded IFCs onto the deformed crystal, for every order.
+    //
+    // relvecs needs nothing: replicate_force_constant strips the atomic
+    // basis positions out of it, leaving the pure lattice translation whose
+    // fractional components are the integer triplet (n1, n2, n3), and
+    // deforming the lattice relabels nothing. relvecs_velocity keeps those
+    // basis positions, and in the fractional basis the affine part cancels
+    //   lavec_def^-1 [(I + u) r + du0] = relvecs_velocity + lavec_def^-1 du0
+    // so only the sublattice displacement difference of the two legs is
+    // left to add. Call after System::apply_deformation, whose deformed
+    // lattice this uses.
+    void deform_relative_vectors(const std::vector<double> &u0);
 
 private:
     bool require_cubic;

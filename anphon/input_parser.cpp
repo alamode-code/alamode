@@ -158,7 +158,8 @@ void InputParser::parse_general_vars(PHON *phon)
                                               "FILE_FORMAT",
                                               "FC2_TEMPERATURE",
                                               "ALLOW_UNCONVERGED",
-                                              "DFC2FILE"};
+                                              "DFC2FILE",
+                                              "RELAXED_STRUCTURE"};
 
     std::vector<std::string> no_defaults{"PREFIX", "MODE"};
     std::vector<std::string> kdname_v, masskd_v;
@@ -326,6 +327,25 @@ void InputParser::parse_general_vars(PHON *phon)
     general_vars.dfc2file = general_var_dict["DFC2FILE"];
     if (!general_vars.dfc2file.empty() && general_vars.fc2_temperature < 0.0) {
         exit("parse_general_vars", "DFC2FILE requires FC2_TEMPERATURE to select the temperature.");
+    }
+
+    // RELAXED_STRUCTURE = 1: run on the structure an earlier SCPH/QHA run
+    // relaxed at FC2_TEMPERATURE, read from the /structure group of that
+    // run's state file. FC2_TEMPERATURE names the temperature, so it is
+    // required; the file is DFC2FILE when given, else FC2FILE.
+    assign_val(general_vars.relaxed_structure, "RELAXED_STRUCTURE", general_var_dict);
+    if (general_vars.relaxed_structure != 0 && general_vars.relaxed_structure != 1) {
+        exit("parse_general_vars", "RELAXED_STRUCTURE-tag can take 0 or 1.");
+    }
+    if (general_vars.relaxed_structure && general_vars.fc2_temperature < 0.0) {
+        exit("parse_general_vars", "RELAXED_STRUCTURE requires FC2_TEMPERATURE to select the temperature.");
+    }
+    if (general_vars.relaxed_structure && general_vars.dfc2file.empty() && general_vars.fc2file.empty() &&
+        general_vars.fcsfile.empty())
+    {
+        exit("parse_general_vars",
+             "RELAXED_STRUCTURE needs the SCPH/QHA state file that carries the relaxed structure,\n"
+             " given as DFC2FILE, FC2FILE or FCSFILE.");
     }
 
     // Keep the values the later blocks depend on.

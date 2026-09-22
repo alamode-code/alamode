@@ -180,6 +180,32 @@ void Fcs_phonon::replicate_force_constants(const int maxorder_in)
     }
 }
 
+void Fcs_phonon::deform_relative_vectors(const std::vector<double> &u0)
+{
+    if (u0.empty()) return;
+
+    const auto natmin = system->get_primcell().number_of_atoms;
+    if (u0.size() != 3 * natmin) {
+        exit("deform_relative_vectors", "The displacement field does not match the primitive cell of this run.");
+    }
+
+    const Eigen::Matrix3d lavec_inv = system->get_primcell().lattice_vector.inverse();
+    std::vector<Eigen::Vector3d> du0_frac(natmin);
+    for (size_t kappa = 0; kappa < natmin; ++kappa) {
+        du0_frac[kappa] = lavec_inv * Eigen::Vector3d(u0[3 * kappa], u0[3 * kappa + 1], u0[3 * kappa + 2]);
+    }
+
+    for (auto order = 0; order < maxorder; ++order) {
+        for (auto &it: force_constant_with_cell[order]) {
+            const auto kappa_first = it.pairs[0].index / 3;
+            for (size_t leg = 0; leg < it.relvecs_velocity.size(); ++leg) {
+                const auto kappa_leg = it.pairs[leg + 1].index / 3;
+                it.relvecs_velocity[leg] += du0_frac[kappa_leg] - du0_frac[kappa_first];
+            }
+        }
+    }
+}
+
 void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout)
 {
     // Replicate IFCs from the true primitive cell to the user-defined cell,

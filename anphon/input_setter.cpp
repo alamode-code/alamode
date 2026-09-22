@@ -113,6 +113,7 @@ void InputSetter::set_general_vars(PHON *phon, const GeneralInputVars &vars) con
     phon->fcs_phonon->fc2_temperature = vars.fc2_temperature;
     phon->fcs_phonon->file_dfc2 = vars.dfc2file;
     phon->fcs_phonon->update_fc2 = !vars.fc2file.empty();
+    phon->fcs_phonon->relaxed_structure = vars.relaxed_structure;
 
     phon->thermodynamics->classical = vars.classical;
     phon->anharmonic_core->use_triplet_symmetry = vars.use_triplet_symmetry;

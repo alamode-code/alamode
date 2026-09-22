@@ -129,6 +129,11 @@ public:
 
     void setup_base() const;
 
+    // RELAXED_STRUCTURE: read the relaxed structure at FC2_TEMPERATURE from
+    // the SCPH/QHA state file and move the cells and the loaded IFCs onto
+    // it. Collective; rank 0 reads and the deformation is broadcast.
+    void apply_relaxed_structure() const;
+
 private:
     void create_pointers();
 

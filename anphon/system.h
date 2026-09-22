@@ -139,6 +139,24 @@ public:
     // PHON::setup_base once &displace DISPMODE = 2 entries are resolved.
     void initialize_distorted_primitive_cell(const double init_u_tensor[3][3], const std::vector<double> &init_u0);
 
+    // Move this run onto the deformed crystal: lavec -> (I + u) lavec for the
+    // primitive cell and every per-order supercell, with each atom displaced
+    // by u0 of the primitive atom it maps to. Unlike
+    // initialize_distorted_primitive_cell, which builds a separate
+    // primcell_distort for the relaxation's symmetry analysis, this replaces
+    // the cells the run actually uses, so volume, reciprocal lattice, group
+    // velocities and symmetry all follow.
+    //
+    // Must run after generate_mapping_tables(): that matching has a 1e-3 bohr
+    // tolerance which a u0 of a tenth of a bohr would break. The matching
+    // inside Fcs_phonon::replicate_force_constant is safe either way, since
+    // it compares two images of the same primitive atom and the identical
+    // u0(kappa) cancels.
+    //
+    // u_tensor is row-major 3x3, dimensionless; u0 is Cartesian bohr,
+    // 3 * natmin entries, and may be empty for a purely affine deformation.
+    void apply_deformation(const std::vector<double> &u_tensor, const std::vector<double> &u0);
+
     const Spin &get_spin_super() const;
 
     const Spin &get_spin_prim() const;

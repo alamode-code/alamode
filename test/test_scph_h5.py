@@ -98,6 +98,73 @@ def check_provenance(statefile, logfile, fcsfile=None):
     return 0
 
 
+def check_relaxed_structure(anphonbin):
+    """RELAXED_STRUCTURE = 1 must deform the cell without moving the bands.
+
+    The BaTiO3 fixture relaxes with strain at 280 K. Running the same FC2 on
+    the reference and on the relaxed cell must give identical frequencies at
+    the same *fractional* q: relvecs are integer lattice translations and
+    the phase is 2 pi k_frac . R_frac, so the deformation cannot reach them,
+    and the u0 part is a diagonal gauge factor. What must change is the
+    geometry -- the reciprocal lattice, hence the Cartesian k path -- and
+    the symmetry, which the strain lowers.
+    """
+    kpath = "&kpoint\n 1\n G 0.0 0.0 0.0 X 0.5 0.0 0.5 21\n/\n"
+    for relaxed in (0, 1):
+        with open("relaxed_%d.in" % relaxed, "w") as f:
+            f.write(
+                "&general\n PREFIX = relaxed_%d; MODE = phonons\n"
+                " FCSFILE = %s.scph.h5\n FC2_TEMPERATURE = 280\n"
+                " RELAXED_STRUCTURE = %d\n NONANALYTIC = 0\n/\n"
+                % (relaxed, PREFIX, relaxed)
+            )
+            f.write(kpath)
+        if run_anphon(anphonbin, "relaxed_%d.in" % relaxed, "relaxed_%d.log" % relaxed):
+            print("RELAXED_STRUCTURE = %d run failed" % relaxed)
+            return 1
+
+    ref = np.loadtxt("relaxed_0.bands")
+    now = np.loadtxt("relaxed_1.bands")
+    if ref.shape != now.shape:
+        print("RELAXED_STRUCTURE changed the band array shape")
+        return 1
+    # Same fractional q, same FC2 -> bit-identical frequencies.
+    if not np.array_equal(ref[:, 1:], now[:, 1:]):
+        print(
+            "RELAXED_STRUCTURE moved the frequencies by up to %g cm^-1; the deformation "
+            "must not reach the fractional-basis relative vectors"
+            % np.abs(ref[:, 1:] - now[:, 1:]).max()
+        )
+        return 1
+
+    # The Cartesian k path must shrink exactly as the reciprocal lattice does.
+    with h5py.File(PREFIX + ".scph.h5", "r") as f:
+        temps = list(f["settings/temperatures"][...])
+        u = f["structure/u_tensor"][temps.index(280.0)]
+    deform = np.eye(3) + u
+    direction = np.array([1.0, 0.0, 1.0])  # G -> X in the primitive reciprocal basis
+    expected = np.linalg.norm(np.linalg.inv(deform).T @ direction) / np.linalg.norm(
+        direction
+    )
+    got = now[-1, 0] / ref[-1, 0]
+    if abs(got - expected) > 1e-5:
+        print("k-path scaled by %.8f, expected %.8f" % (got, expected))
+        return 1
+    if abs(expected - 1.0) < 1e-6:
+        print("the 280 K strain is too small for this check to mean anything")
+        return 1
+
+    # The strain lowers the cubic reference to a tetragonal cell.
+    with open("relaxed_0.log") as f:
+        sym_ref = re.search(r"Space group: (\S+)", f.read()).group(1)
+    with open("relaxed_1.log") as f:
+        sym_now = re.search(r"Space group: (\S+)", f.read()).group(1)
+    if sym_ref == sym_now:
+        print("RELAXED_STRUCTURE did not change the space group (%s)" % sym_ref)
+        return 1
+    return 0
+
+
 def check_structure_group(prefix, statefile, logfile=None, fcsfile=None):
     """Cross-check /structure of a SCPH/QHA state file against its text outputs.
 
@@ -465,6 +532,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_convergence_guard(anphonbin):
         return 1
     print("Convergence flags + ALLOW_UNCONVERGED guard --> pass")
+
+    if check_relaxed_structure(anphonbin):
+        return 1
+    print("RELAXED_STRUCTURE geometry + gauge invariance --> pass")
 
     return 0
 
