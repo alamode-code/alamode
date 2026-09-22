@@ -388,8 +388,25 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
         }
     }
 
+    // Only meaningful next to a structure: it exists to let a consumer of
+    // that structure verify it is deforming with the same IFCs.
+    ScphProvenanceH5 provenance;
+    if (structure) {
+        provenance.fcs_nrows = fcs_phonon->fcs_nrows;
+        provenance.fcs_checksum = fcs_phonon->fcs_checksum;
+    }
+
     const ScphResultIOH5 io(filename);
-    io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str, structure);
+    io.write_state(settings,
+                   cells,
+                   delta_main,
+                   delta_harm_renorm,
+                   v0,
+                   &fc2,
+                   conv_scph,
+                   conv_str,
+                   structure,
+                   &provenance);
 
     if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << filename;

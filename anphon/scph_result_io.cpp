@@ -163,7 +163,7 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
                                  const std::vector<double> *v0, const ScphFc2RowsH5 *fc2,
                                  const std::vector<unsigned char> *converged_scph,
                                  const std::vector<unsigned char> *converged_structure,
-                                 const ScphStructureH5 *structure) const
+                                 const ScphStructureH5 *structure, const ScphProvenanceH5 *provenance) const
 {
     using namespace H5Easy;
 
@@ -289,6 +289,14 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
             dset_u0.createAttribute("unit", std::string("bohr"));
 
             dump(fh, "/structure/spg_label", structure->spg_label);
+        }
+
+        // Fingerprint of the IFCs behind that structure.
+        if (provenance && !provenance->fcs_nrows.empty()) {
+            std::vector<unsigned long long> nrows(provenance->fcs_nrows.begin(), provenance->fcs_nrows.end());
+            dump(fh, "/provenance/fcs_nrows", nrows);
+            dump(fh, "/provenance/fcs_checksum", provenance->fcs_checksum);
+            dumpAttribute(fh, "/provenance/fcs_checksum", "definition", std::string("sum of |fcs_val| per order"));
         }
 
         // Per-temperature convergence flags (1 = converged). Consumers

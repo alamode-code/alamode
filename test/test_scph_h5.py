@@ -28,7 +28,41 @@ def run_anphon(anphonbin, input_file, logfile):
     return ret.returncode
 
 
-def check_structure_group(prefix, statefile):
+def check_provenance(statefile, logfile):
+    """/provenance must fingerprint the IFCs the run actually loaded.
+
+    The run prints its per-order entry count, so the log is an independent
+    witness for fcs_nrows. logfile may be None to skip that cross-check.
+    """
+    with h5py.File(statefile, "r") as f:
+        if "provenance" not in f:
+            print("%s has no /provenance group" % statefile)
+            return 1
+        nrows = list(f["provenance/fcs_nrows"][...])
+        checksum = f["provenance/fcs_checksum"][...]
+
+    if len(nrows) != len(checksum) or not nrows:
+        print("/provenance of %s has inconsistent lengths" % statefile)
+        return 1
+    if any(n <= 0 for n in nrows) or not np.all(checksum > 0.0):
+        print("/provenance of %s holds empty orders:" % statefile, nrows, checksum)
+        return 1
+
+    if logfile is None:
+        return 0
+    with open(logfile) as fh:
+        logged = [
+            int(line.split(":")[-1])
+            for line in fh
+            if "Number of non-zero IFCs for" in line
+        ]
+    if logged != nrows:
+        print("/provenance/fcs_nrows %s != logged IFC counts %s" % (nrows, logged))
+        return 1
+    return 0
+
+
+def check_structure_group(prefix, statefile, logfile=None):
     """Cross-check /structure of a SCPH/QHA state file against its text outputs.
 
     The text files are written in sweep order while the h5 rows follow
@@ -55,6 +89,9 @@ def check_structure_group(prefix, statefile):
     # buffers are initialized with.
     if len(spg) != nt or not all(re.fullmatch(r"\S+ \(#\d+\)", s) for s in spg):
         print("/structure/spg_label of %s is not spglib output:" % statefile, spg)
+        return 1
+
+    if check_provenance(statefile, logfile) != 0:
         return 1
 
     for name, arr, ncol in (
@@ -147,7 +184,7 @@ def check_fresh_run(anphonbin, reference_dir):
         ]
 
     # Shapes, label format, and agreement with the text outputs.
-    if check_structure_group(PREFIX, PREFIX + ".scph.h5") != 0:
+    if check_structure_group(PREFIX, PREFIX + ".scph.h5", "fresh.log") != 0:
         return 1
 
     # BaTiO3 crosses the cubic -> tetragonal transition inside 280-300 K, so

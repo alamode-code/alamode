@@ -168,7 +168,7 @@ def stage_fresh(anphonbin, refdir):
         )
     # Iterative branch: recorded through the shared structural-optimization
     # loop, like SCPH.
-    info += check_structure_group("ZnO_qha4", "ZnO_qha4.qha.h5")
+    info += check_structure_group("ZnO_qha4", "ZnO_qha4.qha.h5", "qha_fresh.log")
     return info
 
 
@@ -282,7 +282,7 @@ def stage_perturbative(anphonbin, refdir):
         )
     # The perturbative branch records the relaxed structure on its own path,
     # not through the shared structural-optimization loop.
-    info += check_structure_group("ZnO_pqha", "ZnO_pqha.qha.h5")
+    info += check_structure_group("ZnO_pqha", "ZnO_pqha.qha.h5", "qha_pert.log")
     return info
 
 

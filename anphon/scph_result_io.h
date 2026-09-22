@@ -72,6 +72,21 @@ struct ScphStructureH5
     std::vector<std::string> spg_label; // [NT], e.g. "P4mm (#99)"
 };
 
+// Fingerprint of the IFCs the producing run loaded (Fcs_phonon::fcs_nrows /
+// fcs_checksum), written alongside a relaxed structure so that a consumer
+// can verify it is deforming with the same force constants the relaxation
+// used. Empty vectors mean the run recorded none.
+//
+// Only the writing side lives here so far: the comparison belongs with the
+// run that adopts the structure, where it can be tested end to end. Entry
+// counts should be compared exactly and the checksums with a relative
+// tolerance, since summation order may differ between runs.
+struct ScphProvenanceH5
+{
+    std::vector<std::size_t> fcs_nrows;
+    std::vector<double> fcs_checksum;
+};
+
 // Renormalized FC2 on the virtual supercell, in the row layout of the
 // alamode force-constant schema (/ForceConstants/Order2). base_values holds
 // the coarse-mesh-folded harmonic FC2; values_per_temperature the total
@@ -129,8 +144,8 @@ public:
                      const std::complex<double> *const *const *const *delta_main,
                      const std::complex<double> *const *const *const *delta_harm_renorm, const std::vector<double> *v0,
                      const ScphFc2RowsH5 *fc2, const std::vector<unsigned char> *converged_scph,
-                     const std::vector<unsigned char> *converged_structure,
-                     const ScphStructureH5 *structure = nullptr) const;
+                     const std::vector<unsigned char> *converged_structure, const ScphStructureH5 *structure = nullptr,
+                     const ScphProvenanceH5 *provenance = nullptr) const;
 
     // Refuse (or, with allow_unconverged, only warn about) temperatures
     // whose SCPH iteration or structural optimization did not converge.

@@ -223,6 +223,18 @@ public:
     // (shorter-ranged) anharmonic correction.
     std::string file_dfc2;
 
+    // Fingerprint of the IFCs this run loaded, one entry per order, taken
+    // after the MPI broadcast but before replication so that every rank and
+    // every run fingerprints the same representation. An SCPH/QHA run with
+    // RELAX_STR != 0 stores it; a later run that adopts the relaxed
+    // structure compares against it, because the deformation it applies was
+    // determined by those IFCs -- above all by FC4, which fixes both the
+    // optimization that produced u0/u_tensor and the Phi4 : d correction a
+    // consumer builds from it. A different FC4 pairs a deformed FC3 with a
+    // structure it does not belong to, and nothing downstream would notice.
+    std::vector<std::size_t> fcs_nrows;
+    std::vector<double> fcs_checksum; // sum of |fcs_val| per order
+
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
     static void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout);
