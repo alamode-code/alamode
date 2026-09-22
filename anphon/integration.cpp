@@ -189,6 +189,13 @@ double Integration::do_tetrahedron(const double *energy,
         const auto f3 = tetra_data[2].f;
         const auto f4 = tetra_data[3].f;
 
+        // Skip a tetrahedron whose four energies agree within rounding errors. This happens
+        // when its corners are equivalent by symmetry (e.g. the four k points
+        // (+-10/21, +-10/21, +-10/21) of a 21x21x21 mesh of an fcc lattice); the weights
+        // below are then 0/0, and whether e1 <= e_ref < e4 holds, as well as the value
+        // of the weights, is decided by the last bits of the eigenvalues.
+        if (e4 - e1 <= 1.0e-10 * std::max(std::abs(e1), std::abs(e4))) continue;
+
         if (e3 <= e_ref && e_ref < e4) {
             g = 3.0 * std::pow(e4 - e_ref, 2) / ((e4 - e1) * (e4 - e2) * (e4 - e3));
 
@@ -262,6 +269,13 @@ void Integration::calc_weight_tetrahedron(const unsigned int nk_irreducible,
         const auto k2 = kindex[sort_arg[1]];
         const auto k3 = kindex[sort_arg[2]];
         const auto k4 = kindex[sort_arg[3]];
+
+        // Skip a tetrahedron whose four energies agree within rounding errors. This happens
+        // when its corners are equivalent by symmetry (e.g. the four k points
+        // (+-10/21, +-10/21, +-10/21) of a 21x21x21 mesh of an fcc lattice); the weights
+        // below are then 0/0, and whether e1 <= e_ref < e4 holds, as well as the value
+        // of the weights, is decided by the last bits of the eigenvalues.
+        if (e4 - e1 <= 1.0e-10 * std::max(std::abs(e1), std::abs(e4))) continue;
 
         auto I1 = 0.0;
         auto I2 = 0.0;
