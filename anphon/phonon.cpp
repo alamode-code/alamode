@@ -218,13 +218,53 @@ void PHON::apply_relaxed_structure() const
 
     if (run_info.my_rank == 0) {
         const ScphResultIOH5 io(statefile);
-        if (!io.load_structure(fcs_phonon->fc2_temperature, u_tensor, u0, spg_label)) {
+        Eigen::Matrix3d lavec_file;
+        Eigen::MatrixXd xf_file;
+        if (!io.load_structure(fcs_phonon->fc2_temperature, u_tensor, u0, spg_label, lavec_file, xf_file)) {
             exit("apply_relaxed_structure",
                  "RELAXED_STRUCTURE = 1, but the state file carries no /structure group.\n"
                  " It must come from a run with RELAX_STR != 0; a fixed-cell SCPH run relaxes\n"
                  " nothing and stores no structure.");
         }
         io.check_convergence({fcs_phonon->fc2_temperature}, run_info.allow_unconverged);
+
+        // u0 is indexed by the producer's primitive-cell atoms. The atom
+        // order need not match this run's -- a state file whose FC2
+        // correction is mapped positionally by append_delta_fc2_from_scph
+        // may well be ordered differently -- so map by position and reorder,
+        // rather than trusting the index. This also rejects a state file
+        // recorded for a different cell, which would otherwise displace the
+        // wrong atoms with no complaint.
+        const auto &primcell = system->get_primcell();
+        if (static_cast<size_t>(xf_file.rows()) != primcell.number_of_atoms) {
+            exit("apply_relaxed_structure",
+                 "The relaxed structure was recorded for a different number of primitive-cell atoms\n"
+                 " than this run uses. The two runs must share the same primitive cell.");
+        }
+        if ((lavec_file - primcell.lattice_vector).cwiseAbs().maxCoeff() > 1.0e-4) {
+            exit("apply_relaxed_structure",
+                 "The reference cell of the relaxed structure differs from the cell of this run.\n"
+                 " The deformation is relative to the producer's reference cell, so the two must match.");
+        }
+
+        std::vector<double> u0_mapped(u0.size(), 0.0);
+        for (Eigen::Index i = 0; i < xf_file.rows(); ++i) {
+            auto match = -1;
+            for (size_t p = 0; p < primcell.number_of_atoms; ++p) {
+                Eigen::Vector3d xdiff = xf_file.row(i).transpose() - primcell.x_fractional.row(p).transpose();
+                xdiff = xdiff.unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+                if ((primcell.lattice_vector * xdiff).norm() < 1.0e-3) {
+                    match = static_cast<int>(p);
+                    break;
+                }
+            }
+            if (match < 0) {
+                exit("apply_relaxed_structure",
+                     "An atom of the relaxed structure has no counterpart in the primitive cell of this run.");
+            }
+            for (auto j = 0; j < 3; ++j) u0_mapped[3 * match + j] = u0[3 * i + j];
+        }
+        u0.swap(u0_mapped);
         natmin_file = static_cast<int>(u0.size() / 3);
     }
 
@@ -232,12 +272,6 @@ void PHON::apply_relaxed_structure() const
     MPI_Bcast(&natmin_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (run_info.my_rank != 0) u0.assign(3 * natmin_file, 0.0);
     MPI_Bcast(u0.data(), 3 * natmin_file, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    if (static_cast<size_t>(natmin_file) != system->get_primcell().number_of_atoms) {
-        exit("apply_relaxed_structure",
-             "The relaxed structure was recorded for a different number of primitive-cell atoms\n"
-             " than this run uses. The two runs must share the same primitive cell.");
-    }
 
     if (run_info.my_rank == 0 && run_info.verbosity > 0) {
         std::cout << "\n RELAXED_STRUCTURE = 1: adopting the structure relaxed at " << fcs_phonon->fc2_temperature

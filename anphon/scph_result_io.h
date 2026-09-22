@@ -136,8 +136,11 @@ public:
     // carries no /structure group (RELAX_STR = 0, or a file written before
     // the group existed), leaving the outputs untouched. u_tensor_out is
     // row-major 3x3; u0_out is Cartesian bohr, 3 per primitive-cell atom.
+    // lavec_out / xf_out receive the *reference* primitive cell the
+    // deformation is relative to, so that a consumer can check it is the
+    // same cell and map the displacements onto its own atom order.
     bool load_structure(double temp_requested, std::vector<double> &u_tensor_out, std::vector<double> &u0_out,
-                        std::string &spg_label_out) const;
+                        std::string &spg_label_out, Eigen::Matrix3d &lavec_out, Eigen::MatrixXd &xf_out) const;
 
     // Write the complete state atomically. delta_harm_renorm, v0, fc2, and
     // the convergence vectors may be null when the run does not produce

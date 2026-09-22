@@ -103,6 +103,15 @@ void InputParser::parse_input(PHON *phon)
         parse_qha_vars(phon);
     }
     if ((run_mode == "SCPH" || run_mode == "QHA") && relax_str != 0) {
+        // Adopting a previously relaxed structure while relaxing again is
+        // not defined: the optimizer would still start from the &strain /
+        // &displace input, while the symmetry and the k-point reduction
+        // would describe the imported cell instead.
+        if (relaxed_structure) {
+            exit("parse_input",
+                 "RELAXED_STRUCTURE = 1 cannot be combined with RELAX_STR != 0.\n"
+                 " Adopt a relaxed structure in a run that does not relax again.");
+        }
         if (!locate_tag("&relax")) exit("parse_input", "&relax entry not found in the input file");
         parse_relax_vars(phon);
 
@@ -334,6 +343,7 @@ void InputParser::parse_general_vars(PHON *phon)
     // run's state file. FC2_TEMPERATURE names the temperature, so it is
     // required; the file is DFC2FILE when given, else FC2FILE.
     assign_val(general_vars.relaxed_structure, "RELAXED_STRUCTURE", general_var_dict);
+    relaxed_structure = general_vars.relaxed_structure;
     if (general_vars.relaxed_structure != 0 && general_vars.relaxed_structure != 1) {
         exit("parse_general_vars", "RELAXED_STRUCTURE-tag can take 0 or 1.");
     }

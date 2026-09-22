@@ -129,10 +129,15 @@ void ScphResultIOH5::load_v0(const std::vector<double> &temps_requested, std::ve
 }
 
 bool ScphResultIOH5::load_structure(const double temp_requested, std::vector<double> &u_tensor_out,
-                                    std::vector<double> &u0_out, std::string &spg_label_out) const
+                                    std::vector<double> &u0_out, std::string &spg_label_out, Eigen::Matrix3d &lavec_out,
+                                    Eigen::MatrixXd &xf_out) const
 {
     const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
     if (!fh.exist("/structure/u_tensor")) return false;
+
+    std::vector<int> kinds;
+    std::vector<std::string> elements;
+    get_structures_from_h5(fh, "PrimitiveCell", lavec_out, xf_out, kinds, elements);
 
     const auto row = impl->temperature_rows(fh, {temp_requested}).front();
 

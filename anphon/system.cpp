@@ -954,8 +954,12 @@ void System::apply_deformation(const std::vector<double> &u_tensor, const std::v
     // built from the &strain / &displace input; a run that adopts a relaxed
     // structure does not relax, so it is simply kept in step.
     primcell_distort = primcell;
-    set_atomtype_group(primcell, spin_prim, atomtype_group_prim);
-    set_atomtype_group(primcell_distort, spin_prim, atomtype_group_prim_distort);
+
+    // The atom-type groups are deliberately left alone. They partition atoms
+    // by species and collinear moment, neither of which a deformation
+    // touches, and set_atomtype_group resizes without clearing, so calling
+    // it a second time would list every atom twice -- which the noncollinear
+    // symmetry search would then turn into duplicate operations.
 }
 
 void System::initialize_distorted_primitive_cell(const double init_u_tensor[3][3], const std::vector<double> &init_u0)

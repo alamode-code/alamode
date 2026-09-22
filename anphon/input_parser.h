@@ -48,6 +48,7 @@ private:
     bool use_hdf5_io = true;
     int quartic_mode = 0;
     int relax_str = 0;
+    int relaxed_structure = 0; // RELAXED_STRUCTURE, kept for the cross-field check
     bool calc_FE_bubble = false;
     unsigned int scph_bubble = 0;
     RelaxInputVars relax_vars;
