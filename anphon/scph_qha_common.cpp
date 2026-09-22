@@ -1427,7 +1427,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
 
     for (double temp: ctx.vec_temp) {
         i_temp_loop++;
-        auto iT = static_cast<unsigned int>((temp - ctx.Tmin) / ctx.dT);
+        auto iT = system->get_temperature_index(temp);
 
         if (run.verbosity > 0) {
             std::cout << "\n ================================================================\n";

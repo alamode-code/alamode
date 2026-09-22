@@ -971,7 +971,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
         for (double temp: vec_temp) {
             i_temp_loop++;
-            auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
+            auto iT = system->get_temperature_index(temp);
 
             calc_v1_vib(v1_vib, v3_ref, temp);
             calc_del_v0_del_umn_vib(del_v0_del_umn_vib, del_v_strain, temp);

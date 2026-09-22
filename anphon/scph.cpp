@@ -838,7 +838,7 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
         auto converged_prev = false;
 
         for (const double temp: vec_temp) {
-            const auto iT = static_cast<unsigned int>((temp - Tmin) / dT);
+            const auto iT = system->get_temperature_index(temp);
 
             // Initialize phonon eigenvectors with harmonic values
 

@@ -14,6 +14,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 #include <vector>
+#include "error.h"
+#include "mathfunctions.h"
 #include "ndarray.h"
 #include "phonon.h"
 
@@ -170,6 +172,21 @@ public:
             grid[i] = Tmin + static_cast<double>(i) * dT;
         }
         return grid;
+    }
+
+    // Row of get_temperature_grid() that temp belongs to. The grid holds
+    // Tmin + i*dT, so the quotient is an integer up to rounding error and
+    // must be rounded, not truncated: (280.1 - 280) / 0.1 evaluates to
+    // 0.9999999999999964, which truncation maps to row 0. That silently
+    // left some rows written twice and others never written at all.
+    unsigned int get_temperature_index(const double temp) const
+    {
+        const auto index = nint((temp - Tmin) / dT);
+        const auto nt = static_cast<int>((Tmax - Tmin) / dT) + 1;
+        if (index < 0 || index >= nt) {
+            exit("get_temperature_index", "A temperature outside TMIN..TMAX has no row in the grid.");
+        }
+        return static_cast<unsigned int>(index);
     }
 
     int get_atomic_number_by_name(const std::string &) const;
