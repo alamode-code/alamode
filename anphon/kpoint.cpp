@@ -795,9 +795,20 @@ int KpointMeshUniform::get_knum(const double xk[3]) const
 
     if (norm >= eps12) return -1;
 
-    const int iloc = nint(xk[0] * dnk[0] + 2.0 * dnk[0]) % nk_i[0];
-    const int jloc = nint(xk[1] * dnk[1] + 2.0 * dnk[1]) % nk_i[1];
-    const int kloc = nint(xk[2] * dnk[2] + 2.0 * dnk[2]) % nk_i[2];
+    // The index is (x * N) mod N, folded with a signed modulo. Shifting by 2N first, as
+    // this used to, only covers a sum of two mesh vectors: the quartet partner
+    // -k0 - k1 - k2 reaches -3 + 3/N, so for N >= 4 the shifted value is still negative,
+    // and `int % unsigned int` then converts it to a huge unsigned and returns a valid
+    // but wrong index with no diagnostic. nk_i is unsigned, hence the casts -- taking the
+    // remainder against it directly would reintroduce exactly that conversion.
+    const auto fold = [](const double xk_frac, const unsigned int nk_dim) {
+        const auto nk_signed = static_cast<int>(nk_dim);
+        return ((nint(xk_frac * static_cast<double>(nk_dim)) % nk_signed) + nk_signed) % nk_signed;
+    };
+
+    const int iloc = fold(xk[0], nk_i[0]);
+    const int jloc = fold(xk[1], nk_i[1]);
+    const int kloc = fold(xk[2], nk_i[2]);
 
     return kloc + nk_i[2] * jloc + nk_i[1] * nk_i[2] * iloc;
 }
