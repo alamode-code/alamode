@@ -364,13 +364,13 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     }
 
     // The relaxed structure is meaningful only for RELAX_STR != 0, and only
-    // when *every* temperature recorded one: a restart or a legacy-text
-    // migration skips the temperature loop entirely, and a non-integral
-    // (TMAX - TMIN) / DT makes the truncating iT of
-    // run_structural_optimization_loop visit some indices twice and others
-    // never. Publishing the zero rows that leaves would be worse than
-    // publishing nothing, since a consumer cannot tell them from a genuinely
-    // undeformed structure.
+    // when *every* temperature recorded one. A restart or a legacy-text
+    // migration skips the temperature loop entirely and is caught by the
+    // size check; the per-row check below is a guard, since a row left at
+    // zero is indistinguishable to a consumer from a genuinely undeformed
+    // structure. It should be unreachable now that System
+    // ::get_temperature_index rounds, and firing means the temperature loop
+    // did not visit every row.
     const auto ns = static_cast<size_t>(dynamical->neval);
     const ScphStructureH5 *structure = nullptr;
     if (relax_str_in != 0 && relaxed_structure.u_tensor.size() == static_cast<size_t>(NT) * 9 &&
@@ -383,8 +383,8 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
         } else {
             warn("write_scph_state_h5",
                  "Some temperatures recorded no relaxed structure, so /structure is omitted from the\n"
-                 " state file. This happens when (TMAX - TMIN) / DT is not integral, which also makes\n"
-                 " the stored dynamical matrices skip temperature points; choose a commensurate DT.");
+                 " state file. The temperature loop did not visit every row of the grid, which means\n"
+                 " the stored dynamical matrices are incomplete as well. Please report this.");
         }
     }
 

@@ -176,8 +176,9 @@ public:
 
     // Row of get_temperature_grid() that temp belongs to. The grid holds
     // Tmin + i*dT, so the quotient is an integer up to rounding error and
-    // must be rounded, not truncated: (280.1 - 280) / 0.1 evaluates to
-    // 0.9999999999999964, which truncation maps to row 0. That silently
+    // must be rounded, not truncated: with Tmin = 280 and dT = 0.1 the
+    // third grid point reconstructs as 1.9999999999998863, which truncation
+    // maps to row 1 -- the row the second point already owns. That silently
     // left some rows written twice and others never written at all.
     unsigned int get_temperature_index(const double temp) const
     {
