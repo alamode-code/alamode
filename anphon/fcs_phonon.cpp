@@ -102,6 +102,17 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
         // parser (parse_analysis_vars).
     }
 
+    // RELAXED_STRUCTURE deforms the cubic IFCs as Phi3 + Phi4 : d, so a run
+    // that uses them at all needs the quartic ones, whether or not
+    // four-phonon scattering is wanted. Without this a 3ph KAPPA run would
+    // adopt the relaxed cell but silently keep the reference FC3, which is
+    // the very inconsistency the tag exists to remove. The producer had to
+    // load FC4 anyway, so this asks for nothing the user does not have.
+    if (relaxed_structure && require_cubic) {
+        maxorder = 3;
+        require_quartic = true;
+    }
+
     force_constant_with_cell.resize(maxorder);
 
     if (run.my_rank == 0) {
@@ -333,6 +344,25 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
                      "Either FCSFILE or FC4FILE must be given in the "
                      "&general section of the input file.");
             }
+        }
+    }
+
+    // RELAXED_STRUCTURE raises require_quartic on its own, so the file the
+    // user named for the other orders may simply not carry FC4. Say so
+    // here: letting the loader fall through produces a bare HDF5 "cannot
+    // open dataset" that explains nothing.
+    if (relaxed_structure && require_quartic && filename_list[2].size() > 3 &&
+        filename_list[2].compare(filename_list[2].size() - 3, 3, ".h5") == 0)
+    {
+        const HighFive::File probe(filename_list[2], HighFive::File::ReadOnly);
+        if (!probe.exist("/ForceConstants/Order4")) {
+            exit("load_fcs_from_file",
+                 ("RELAXED_STRUCTURE = 1 needs the quartic force constants, to deform FC3 as\n"
+                  " Phi3 + Phi4 : d, but " +
+                  filename_list[2] +
+                  " carries none.\n Give FC4FILE, or an FCSFILE that includes the quartic order -- the same ones\n"
+                  " the SCPH/QHA run used.")
+                     .c_str());
         }
     }
 

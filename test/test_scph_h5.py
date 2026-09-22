@@ -165,6 +165,97 @@ def check_relaxed_structure(anphonbin):
     return 0
 
 
+def check_deformed_fc3(anphonbin):
+    """RELAXED_STRUCTURE must also deform FC3 and guard the FC4 it used.
+
+    Three things: a 3ph KAPPA run has to pull in FC4 even though
+    four-phonon scattering is off, because Phi3 + Phi4 : d needs it; the
+    resulting kappa has to differ from the undeformed run, or the
+    correction is not reaching the scattering; and a state file recorded
+    with a different FC4 has to be refused.
+    """
+    for relaxed in (0, 1):
+        with open("defo_%d.in" % relaxed, "w") as f:
+            f.write(
+                "&general\n PREFIX = defo_%d; MODE = KAPPA\n FCSFILE = cBTO222.h5\n"
+                " DFC2FILE = %s.scph.h5\n FC2_TEMPERATURE = 280\n"
+                " RELAXED_STRUCTURE = %d\n TMIN = 280; TMAX = 280; DT = 10\n"
+                " NONANALYTIC = 0\n/\n&kpoint\n 2\n 4 4 4\n/\n"
+                % (relaxed, PREFIX, relaxed)
+            )
+        if run_anphon(anphonbin, "defo_%d.in" % relaxed, "defo_%d.log" % relaxed):
+            print("RELAXED_STRUCTURE = %d kappa run failed" % relaxed)
+            return 1
+
+    with open("defo_1.log") as f:
+        log = f.read()
+    if "Number of non-zero IFCs for 4 order" not in log:
+        print(
+            "RELAXED_STRUCTURE did not pull in FC4; Phi4 : d cannot have been applied"
+        )
+        return 1
+    if "FC4 is not loaded" in log or "differs from the force constants" in log:
+        print("unexpected provenance/FC4 diagnostic:", log[-400:])
+        return 1
+
+    # Direct witness that Phi4 : d was contracted, at fixed geometry: the
+    # cubic list must actually have grown. The kappa comparison below is an
+    # end-to-end smoke check and cannot isolate this, since the two runs
+    # also differ in volume, velocities and symmetry.
+    grew = re.search(r"Deformed FC3 \(Phi3 \+ Phi4 : d\): (\d+) -> (\d+) entries", log)
+    if not grew:
+        print("the deformed-FC3 step did not run")
+        return 1
+    if int(grew.group(2)) <= int(grew.group(1)):
+        print(
+            "Phi4 : d added no cubic entries (%s -> %s)"
+            % (grew.group(1), grew.group(2))
+        )
+        return 1
+
+    ref = np.loadtxt("defo_0.kl")
+    now = np.loadtxt("defo_1.kl")
+    # Both must be physical first: a mesh too coarse to carry scattering
+    # gives zeros, and "0 differs from 1.5" would pass the test below while
+    # meaning nothing.
+    if not (ref[1] > 1e-3 and now[1] > 1e-3):
+        print(
+            "kappa_xx is degenerate (ref %g, relaxed %g); the mesh carries no scattering"
+            % (ref[1], now[1])
+        )
+        return 1
+    rel = np.abs(now[1] - ref[1]) / abs(ref[1])
+    if rel < 1e-3:
+        print(
+            "kappa_xx moved by only %.2e; the deformed FC3 is not reaching kappa" % rel
+        )
+        return 1
+
+    # A state file whose recorded FC4 fingerprint does not match must be
+    # refused: its structure belongs to different force constants.
+    shutil.copy(PREFIX + ".scph.h5", "wrongfc4.h5")
+    with h5py.File("wrongfc4.h5", "r+") as f:
+        sums = f["provenance/fcs_sum_abs"][...]
+        sums[2] *= 1.01
+        del f["provenance/fcs_sum_abs"]
+        f["provenance/fcs_sum_abs"] = sums
+    with open("defo_bad.in", "w") as f:
+        f.write(
+            open("defo_1.in")
+            .read()
+            .replace(PREFIX + ".scph.h5", "wrongfc4.h5")
+            .replace("PREFIX = defo_1", "PREFIX = defo_bad")
+        )
+    if run_anphon(anphonbin, "defo_bad.in", "defo_bad.log") == 0:
+        print("a state file recorded with a different FC4 was accepted")
+        return 1
+    with open("defo_bad.log") as f:
+        if "differs from the force constants" not in f.read():
+            print("the mismatched-FC4 run failed for the wrong reason")
+            return 1
+    return 0
+
+
 def check_structure_group(prefix, statefile, logfile=None, fcsfile=None):
     """Cross-check /structure of a SCPH/QHA state file against its text outputs.
 
@@ -536,6 +627,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_relaxed_structure(anphonbin):
         return 1
     print("RELAXED_STRUCTURE geometry + gauge invariance --> pass")
+
+    if check_deformed_fc3(anphonbin):
+        return 1
+    print("RELAXED_STRUCTURE deformed FC3 + FC4 provenance guard --> pass")
 
     return 0
 

@@ -162,6 +162,58 @@ bool ScphResultIOH5::load_structure(const double temp_requested, std::vector<dou
     return true;
 }
 
+std::vector<unsigned int> ScphResultIOH5::compare_provenance(const ScphProvenanceH5 &current) const
+{
+    std::vector<unsigned int> mismatched;
+
+    const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
+    // Every dataset must be there: a file written by an older build can
+    // carry some of them, and a missing one should mean "no fingerprint to
+    // compare", not a raw HDF5 abort.
+    for (const auto *name: {"fcs_nrows", "fcs_sum_abs", "fcs_sum_signed", "fcs_sum_sq"}) {
+        if (!fh.exist(std::string("/provenance/") + name)) return mismatched;
+    }
+
+    const auto nrows_file = H5Easy::load<std::vector<unsigned long long>>(fh, "/provenance/fcs_nrows");
+    const auto abs_file = H5Easy::load<std::vector<double>>(fh, "/provenance/fcs_sum_abs");
+    const auto signed_file = H5Easy::load<std::vector<double>>(fh, "/provenance/fcs_sum_signed");
+    const auto sq_file = H5Easy::load<std::vector<double>>(fh, "/provenance/fcs_sum_sq");
+
+    if (abs_file.size() != nrows_file.size() || signed_file.size() != nrows_file.size() ||
+        sq_file.size() != nrows_file.size())
+    {
+        warn("scph_result_io", "The /provenance datasets of the state file disagree in length; skipping the check.");
+        return mismatched;
+    }
+
+    // Summation order can differ between runs, so compare relatively rather
+    // than bit-for-bit. `scale` is the magnitude the sum is accumulated
+    // from, not the sum itself: sum v is cancellation-prone, and for a
+    // model whose quartic terms nearly cancel a relative test against its
+    // own near-zero value would fail on reordering noise alone.
+    const auto differs = [](const double a, const double b, const double scale) {
+        return std::abs(a - b) > 1.0e-10 * std::max(scale, 1.0e-30);
+    };
+
+    // Order 0 is skipped on purpose. RELAXED_STRUCTURE requires
+    // FC2_TEMPERATURE, so the consumer's FC2 is the renormalized one read
+    // back from this very file and never matches the bare FC2 the producer
+    // loaded; comparing it would warn on every correct run. The orders that
+    // must agree are the anharmonic ones.
+    const auto n = std::min(current.fcs_nrows.size(), nrows_file.size());
+    for (size_t order = 1; order < n; ++order) {
+        const auto scale_abs = std::max(current.fcs_sum_abs[order], abs_file[order]);
+        if (current.fcs_nrows[order] != static_cast<size_t>(nrows_file[order]) ||
+            differs(current.fcs_sum_abs[order], abs_file[order], scale_abs) ||
+            differs(current.fcs_sum_signed[order], signed_file[order], scale_abs) ||
+            differs(current.fcs_sum_sq[order], sq_file[order], std::max(current.fcs_sum_sq[order], sq_file[order])))
+        {
+            mismatched.push_back(static_cast<unsigned int>(order));
+        }
+    }
+    return mismatched;
+}
+
 void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCellsH5 &cells,
                                  const std::complex<double> *const *const *const *delta_main,
                                  const std::complex<double> *const *const *const *delta_harm_renorm,

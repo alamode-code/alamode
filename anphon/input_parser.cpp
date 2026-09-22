@@ -415,6 +415,16 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
             exit("parse_analysis_vars", "SUBLATTICE_RELAX must be 0 or 1.");
         }
         assign_val(analysis_vars.print_newfcs, "NEWFCS", analysis_var_dict);
+        // RELAXED_STRUCTURE replaces the cubic IFCs with Phi3 + Phi4 : d,
+        // whose new entries carry the *quartic* supercell's atom indices.
+        // They are safe to use -- nothing downstream of the deformation
+        // reads them -- but not to serialize, and NEWFCS would write them
+        // out against the harmonic supercell.
+        if (analysis_vars.print_newfcs && relaxed_structure) {
+            exit("parse_analysis_vars",
+                 "NEWFCS = 1 cannot be combined with RELAXED_STRUCTURE = 1: the deformed cubic\n"
+                 " force constants are built for use in this run, not for writing out.");
+        }
         assign_val(analysis_vars.delta_a, "DELTA_A", analysis_var_dict);
 
         assign_val(analysis_vars.quartic_mode, "QUARTIC", analysis_var_dict);

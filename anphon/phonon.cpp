@@ -9,6 +9,7 @@
 */
 
 #include "phonon.h"
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include "anharmonic_core.h"
@@ -19,6 +20,7 @@
 #include "ewald.h"
 #include "fcs_phonon.h"
 #include "gruneisen.h"
+#include "ifc_derivative.h"
 #include "integration.h"
 #include "isotope.h"
 #include "iterativebte.h"
@@ -266,6 +268,31 @@ void PHON::apply_relaxed_structure() const
         }
         u0.swap(u0_mapped);
         natmin_file = static_cast<int>(u0.size() / 3);
+
+        // The deformation was determined by the IFCs the relaxation loaded
+        // -- above all by FC4, which drove the optimization that produced
+        // u0 and u_tensor and which the Phi4 : d correction below is built
+        // from. A different FC4 pairs a deformed FC3 with a structure it
+        // does not belong to, and nothing downstream would notice.
+        ScphProvenanceH5 current;
+        current.fcs_nrows = fcs_phonon->fcs_nrows;
+        current.fcs_sum_abs = fcs_phonon->fcs_sum_abs;
+        current.fcs_sum_signed = fcs_phonon->fcs_sum_signed;
+        current.fcs_sum_sq = fcs_phonon->fcs_sum_sq;
+        for (const auto order: io.compare_provenance(current)) {
+            const auto what = "order " + std::to_string(order + 2) +
+                              " differs from the force constants the"
+                              " relaxation used";
+            if (order + 2 >= 4) {
+                exit("apply_relaxed_structure",
+                     (what + ".\n The relaxed structure and the quartic force constants belong together;"
+                             " supply the\n same FC4 the SCPH/QHA run did, or rerun the relaxation.")
+                         .c_str());
+            }
+            // A better FC3 is a legitimate thing to bring to a deformed run,
+            // so this one only warns.
+            warn("apply_relaxed_structure", (what + "; continuing.").c_str());
+        }
     }
 
     MPI_Bcast(u_tensor.data(), 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -282,6 +309,41 @@ void PHON::apply_relaxed_structure() const
         }
         std::cout << '\n';
     }
+
+    // FC3 of the deformed structure, Phi3 + Phi4 : d with
+    // d = u . R + u0. The Taylor expansion is about the *reference*
+    // structure, so this must run before the cells move and be given the
+    // reference lattice as convmat; deforming first would silently hand it
+    // (I + u) R and make the strain term second-order wrong.
+    Eigen::Matrix3d displacement_gradient;
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) displacement_gradient(i, j) = u_tensor[3 * i + j];
+    }
+    if (fcs_phonon->maxorder >= 3) {
+        Eigen::VectorXd sublattice = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(u0.size()));
+        for (size_t i = 0; i < u0.size(); ++i) sublattice(static_cast<Eigen::Index>(i)) = u0[i];
+
+        std::vector<FcsArrayWithCell> fc3_deformed;
+        DerivativeIFC::compute_deformed_ifcs(fcs_phonon->force_constant_with_cell,
+                                             1,
+                                             displacement_gradient,
+                                             sublattice,
+                                             system->get_primcell().lattice_vector,
+                                             fc3_deformed);
+        // The corrections are appended unsorted, and the cubic list must
+        // stay in the order Fcs_phonon::setup established: AnharmonicCore
+        // groups consecutive equal index sets.
+        std::sort(fc3_deformed.begin(), fc3_deformed.end());
+        const auto nfc3_before = fcs_phonon->force_constant_with_cell[1].size();
+        const auto nfc3_after = fc3_deformed.size();
+        fcs_phonon->force_constant_with_cell[1] = std::move(fc3_deformed);
+        if (run_info.my_rank == 0 && run_info.verbosity > 0) {
+            std::cout << "  Deformed FC3 (Phi3 + Phi4 : d): " << nfc3_before << " -> " << nfc3_after << " entries\n";
+        }
+    }
+    // maxorder < 3 here means the run does not use the cubic IFCs either
+    // (a band structure, say), so there is nothing to deform: Fcs_phonon
+    // ::setup raises maxorder to 3 whenever they are required.
 
     const auto volume_ref = system->get_primcell().volume;
     system->apply_deformation(u_tensor, u0);
@@ -320,6 +382,10 @@ void PHON::setup_base() const
     // RELAX_STR is set on rank 0 by the parser but read below on all ranks
     // (relaxing_structure); Relaxation::setup_relaxation() broadcasts it too late.
     MPI_Bcast(&relaxation->relax_str, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // Also set on rank 0 only, and read inside Fcs_phonon::setup, where it
+    // raises maxorder: every rank must agree before any setup_fcs() call,
+    // or they would load a different number of IFC orders and diverge.
+    MPI_Bcast(&fcs_phonon->relaxed_structure, 1, MPI_INT, 0, MPI_COMM_WORLD);
     const auto setup_fcs = [this]() {
         fcs_phonon->setup(run_info.mode,
                           anharmonic_core->quartic_mode,
@@ -347,7 +413,6 @@ void PHON::setup_base() const
     // builds are what deform_relative_vectors then corrects; and this has to
     // precede setup_symmetry, whose space group drives the k-point
     // reduction, and setup_dynamical, which builds mindist_list.
-    MPI_Bcast(&fcs_phonon->relaxed_structure, 1, MPI_INT, 0, MPI_COMM_WORLD);
     const auto fcs_loaded_early = init_u0_from_modes || fcs_phonon->relaxed_structure;
     if (fcs_phonon->relaxed_structure) {
         if (!init_u0_from_modes) setup_fcs();

@@ -77,9 +77,7 @@ struct ScphStructureH5
 // can verify it is deforming with the same force constants the relaxation
 // used. Empty vectors mean the run recorded none.
 //
-// Only the writing side lives here so far: the comparison belongs with the
-// run that adopts the structure, where it can be tested end to end. Entry
-// counts should be compared exactly and the sums with a relative tolerance,
+// Entry counts are compared exactly and the sums with a relative tolerance,
 // since summation order may differ between runs. See Fcs_phonon for what
 // the sums can and cannot distinguish.
 struct ScphProvenanceH5
@@ -141,6 +139,11 @@ public:
     // same cell and map the displacements onto its own atom order.
     bool load_structure(double temp_requested, std::vector<double> &u_tensor_out, std::vector<double> &u0_out,
                         std::string &spg_label_out, Eigen::Matrix3d &lavec_out, Eigen::MatrixXd &xf_out) const;
+
+    // Orders whose IFC fingerprint disagrees with the stored one; empty when
+    // they match or the file carries none. Only orders both runs loaded are
+    // compared -- a consumer may legitimately load fewer.
+    std::vector<unsigned int> compare_provenance(const ScphProvenanceH5 &current) const;
 
     // Write the complete state atomically. delta_harm_renorm, v0, fc2, and
     // the convergence vectors may be null when the run does not produce
