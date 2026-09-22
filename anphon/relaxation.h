@@ -369,8 +369,9 @@ public:
     void distorted_cell_of(const RelaxationStructureState &state, Eigen::Matrix3d &lavec,
                            std::vector<Eigen::Vector3d> &xf) const;
 
-    // spglib number of the structure of a state (SET_INIT_STR = 3).
-    int spacegroup_of(const RelaxationStructureState &state) const;
+    // spglib number of the structure of a state (SET_INIT_STR = 3). When
+    // label is non-null it also receives the symbol, e.g. "P4mm (#99)".
+    int spacegroup_of(const RelaxationStructureState &state, std::string *label = nullptr) const;
 
     std::string print_structure_and_symmetry(const RelaxationStructureState &structure_state,
                                              const std::complex<double> *del_v0_del_umn_atT) const;

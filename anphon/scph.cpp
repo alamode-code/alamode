@@ -383,6 +383,16 @@ public:
         }
 
         scph_.converged_str_temp[iT] = converged_this_temp ? 1 : 0;
+        // ws_.structure_state is the structure this temperature kept:
+        // after_structure_loop has already replaced it with the last
+        // converged one (or the initial one) when the optimization failed.
+        // It is the same state the .atom_disp / .umn_tensor text outputs
+        // report, one optimizer update past the structure whose dymat is
+        // stored for iT -- update_cell_coordinate moves it after the SCP
+        // solve and the convergence test then bounds that last step by
+        // COORD_CONV_TOL / CELL_CONV_TOL. Rows whose optimization failed are
+        // marked in /convergence/structure and must be refused there.
+        scph_.record_relaxed_structure(iT, ws_.structure_state);
         converged_prev = scph_.warmstart_scph && converged_this_temp;
     }
 

@@ -128,12 +128,42 @@ void ScphResultIOH5::load_v0(const std::vector<double> &temps_requested, std::ve
     }
 }
 
+bool ScphResultIOH5::load_structure(const double temp_requested, std::vector<double> &u_tensor_out,
+                                    std::vector<double> &u0_out, std::string &spg_label_out) const
+{
+    const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
+    if (!fh.exist("/structure/u_tensor")) return false;
+
+    const auto row = impl->temperature_rows(fh, {temp_requested}).front();
+
+    const auto dset_u = fh.getDataSet("/structure/u_tensor");
+    u_tensor_out.assign(9, 0.0);
+    dset_u.select({row, 0, 0}, {1, 3, 3}).read(u_tensor_out.data());
+
+    const auto dset_u0 = fh.getDataSet("/structure/u0");
+    const auto dims = dset_u0.getDimensions();
+    if (dims.size() != 3 || dims[2] != 3) {
+        exit("scph_result_io", "Unexpected shape of /structure/u0 in the state file");
+    }
+    u0_out.assign(dims[1] * 3, 0.0);
+    dset_u0.select({row, 0, 0}, {1, dims[1], 3}).read(u0_out.data());
+
+    if (fh.exist("/structure/spg_label")) {
+        const auto labels = H5Easy::load<std::vector<std::string>>(fh, "/structure/spg_label");
+        spg_label_out = row < labels.size() ? labels[row] : std::string{};
+    } else {
+        spg_label_out.clear();
+    }
+    return true;
+}
+
 void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCellsH5 &cells,
                                  const std::complex<double> *const *const *const *delta_main,
                                  const std::complex<double> *const *const *const *delta_harm_renorm,
                                  const std::vector<double> *v0, const ScphFc2RowsH5 *fc2,
                                  const std::vector<unsigned char> *converged_scph,
-                                 const std::vector<unsigned char> *converged_structure) const
+                                 const std::vector<unsigned char> *converged_structure,
+                                 const ScphStructureH5 *structure) const
 {
     using namespace H5Easy;
 
@@ -240,6 +270,25 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         if (v0) {
             dump(fh, "/V0", *v0);
             dumpAttribute(fh, "/V0", "unit", std::string("Ry"));
+        }
+
+        // Relaxed structure per temperature (RELAX_STR != 0 only). The
+        // reference cell it deforms is the PrimitiveCell group above.
+        if (structure) {
+            if (structure->u_tensor.size() != nt * 9 || structure->u0.size() != nt * ns ||
+                structure->spg_label.size() != nt)
+            {
+                exit("scph_result_io", "Inconsistent size of the relaxed-structure payload");
+            }
+            auto dset_u = h5_create_dataset_compressed<double>(fh, "/structure/u_tensor", {nt, 3, 3}, 1);
+            dset_u.write_raw(structure->u_tensor.data());
+            dset_u.createAttribute("unit", std::string("dimensionless"));
+
+            auto dset_u0 = h5_create_dataset_compressed<double>(fh, "/structure/u0", {nt, natmin, 3}, 1);
+            dset_u0.write_raw(structure->u0.data());
+            dset_u0.createAttribute("unit", std::string("bohr"));
+
+            dump(fh, "/structure/spg_label", structure->spg_label);
         }
 
         // Per-temperature convergence flags (1 = converged). Consumers

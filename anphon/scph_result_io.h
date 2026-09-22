@@ -50,6 +50,28 @@ struct ScphCellsH5
     unsigned int ncell_grid[3] = {1, 1, 1}; // = KMESH_INTERPOLATE
 };
 
+// Relaxed structure per temperature, written only when RELAX_STR != 0.
+// It is the deformation that turns the *reference* primitive cell (the
+// PrimitiveCell group of this file) into the equilibrium structure at that
+// temperature: lavec -> (I + u_tensor) lavec and a Cartesian displacement
+// u0 per primitive-cell atom. A follow-up KAPPA/BUBBLE run reads it to put
+// itself on the relaxed crystal; the SCPH/QHA run itself never needs it,
+// since it carries the deformation in reciprocal space.
+//
+// Two caveats for consumers. The structure is the one the text outputs
+// .atom_disp / .umn_tensor report, which is one optimizer update past the
+// structure whose /dymat rows were computed; the convergence test bounds
+// that last step by COORD_CONV_TOL / CELL_CONV_TOL. And a temperature whose
+// structural optimization failed still has a row here -- it holds the
+// fallback structure, which may be the input distortion paired with
+// reference harmonic data -- so /convergence/structure must be honored.
+struct ScphStructureH5
+{
+    std::vector<double> u_tensor;       // [NT * 9] row-major, dimensionless
+    std::vector<double> u0;             // [NT * 3 * natmin], Cartesian bohr
+    std::vector<std::string> spg_label; // [NT], e.g. "P4mm (#99)"
+};
+
 // Renormalized FC2 on the virtual supercell, in the row layout of the
 // alamode force-constant schema (/ForceConstants/Order2). base_values holds
 // the coarse-mesh-folded harmonic FC2; values_per_temperature the total
@@ -92,6 +114,13 @@ public:
 
     void load_v0(const std::vector<double> &temps_requested, std::vector<double> &v0_out) const;
 
+    // Relaxed structure at one temperature. Returns false when the file
+    // carries no /structure group (RELAX_STR = 0, or a file written before
+    // the group existed), leaving the outputs untouched. u_tensor_out is
+    // row-major 3x3; u0_out is Cartesian bohr, 3 per primitive-cell atom.
+    bool load_structure(double temp_requested, std::vector<double> &u_tensor_out, std::vector<double> &u0_out,
+                        std::string &spg_label_out) const;
+
     // Write the complete state atomically. delta_harm_renorm, v0, fc2, and
     // the convergence vectors may be null when the run does not produce
     // them (absent /convergence datasets mean "unknown", e.g. a legacy
@@ -100,7 +129,8 @@ public:
                      const std::complex<double> *const *const *const *delta_main,
                      const std::complex<double> *const *const *const *delta_harm_renorm, const std::vector<double> *v0,
                      const ScphFc2RowsH5 *fc2, const std::vector<unsigned char> *converged_scph,
-                     const std::vector<unsigned char> *converged_structure) const;
+                     const std::vector<unsigned char> *converged_structure,
+                     const ScphStructureH5 *structure = nullptr) const;
 
     // Refuse (or, with allow_unconverged, only warn about) temperatures
     // whose SCPH iteration or structural optimization did not converge.

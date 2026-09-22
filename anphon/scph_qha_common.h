@@ -130,6 +130,26 @@ protected:
     std::vector<unsigned char> converged_scph_temp;
     std::vector<unsigned char> converged_str_temp;
 
+    // Converged relaxed structure per temperature (rank 0, RELAX_STR != 0).
+    // Recorded next to converged_str_temp, so it holds whatever structure
+    // the temperature loop actually accepted, including a fallback copied
+    // from the last converged temperature. Written to the state file for a
+    // follow-up KAPPA/BUBBLE run; unused by this run.
+    ScphStructureH5 relaxed_structure;
+
+    // Which temperatures actually recorded a structure. Not written to the
+    // file: it guards against publishing zero rows when the temperature loop
+    // skips an index, which the truncating iT of
+    // run_structural_optimization_loop can do for a non-integral
+    // (TMAX - TMIN) / DT.
+    std::vector<unsigned char> relaxed_structure_recorded;
+
+    // Record structure_state (and its space group) as the result of iT.
+    // Sized on first use from converged_str_temp, the array it must stay
+    // aligned with, so entries land in temperature order whichever way the
+    // TMIN/TMAX sweep runs. Call it only after converged_str_temp is sized.
+    void record_relaxed_structure(unsigned int iT, const RelaxationStructureState &structure_state);
+
     // Static relaxed-structure energy V0(T), stored in the SCPH/QHA state file.
     // Size on every rank before restart broadcasts.
     std::vector<double> V0;

@@ -1129,13 +1129,15 @@ void Relaxation::distorted_cell_of(const RelaxationStructureState &state, Eigen:
     }
 }
 
-int Relaxation::spacegroup_of(const RelaxationStructureState &state) const
+int Relaxation::spacegroup_of(const RelaxationStructureState &state, std::string *label) const
 {
     Eigen::Matrix3d lavec;
     std::vector<Eigen::Vector3d> xf;
     distorted_cell_of(state, lavec, xf);
-    std::string label;
-    return detect_spacegroup(lavec, xf, label);
+    std::string label_tmp;
+    const auto number = detect_spacegroup(lavec, xf, label_tmp);
+    if (label) *label = label_tmp;
+    return number;
 }
 
 int Relaxation::detect_spacegroup(const Eigen::Matrix3d &lavec, const std::vector<Eigen::Vector3d> &xf,

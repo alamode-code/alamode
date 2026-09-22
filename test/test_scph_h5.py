@@ -7,6 +7,7 @@ the temperature-dependent FC2, validated against the tools/dfc2.py route.
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -88,6 +89,69 @@ def check_fresh_run(anphonbin, reference_dir):
         if not np.allclose(total[0] - base, np.array(rows), rtol=1e-8, atol=1e-14):
             print("temperature-dependent FC2 disagrees with .scph_dfc2")
             return 1
+
+        # /structure holds the relaxed structure per temperature (RELAX_STR
+        # != 0). It must agree with the authoritative text outputs, which are
+        # written in sweep order (high T first) while the h5 rows follow
+        # /settings/temperatures -- so this also pins the row indexing.
+        temps = f["settings/temperatures"][...]
+        u_tensor = f["structure/u_tensor"][...]
+        u0 = f["structure/u0"][...]
+        spg = [
+            s.decode() if isinstance(s, bytes) else s
+            for s in f["structure/spg_label"][...]
+        ]
+        if u_tensor.shape != (nt, 3, 3) or u0.shape[0] != nt or u0.shape[2] != 3:
+            print("/structure datasets have wrong shapes")
+            return 1
+        if len(spg) != nt:
+            print("/structure/spg_label has the wrong length")
+            return 1
+        # Labels must be real spglib results, not the empty placeholders the
+        # buffers are initialized with.
+        if not all(re.fullmatch(r"\S+ \(#\d+\)", s) for s in spg):
+            print("/structure/spg_label entries are not spglib labels:", spg)
+            return 1
+        # BaTiO3 crosses the cubic -> tetragonal transition inside 280-300 K,
+        # so the labels must not all be identical; that also pins the labels
+        # to their own temperature rather than to the sweep order.
+        if len(set(spg)) < 2:
+            print("/structure/spg_label is constant across the transition:", spg)
+            return 1
+        tetragonal = [
+            i for i in range(nt) if abs(u_tensor[i][2][2] - u_tensor[i][0][0]) > 1e-6
+        ]
+        if not tetragonal:
+            print("no tetragonal row found; the reference data changed")
+            return 1
+        for i in range(nt):
+            cubic_label = "Pm-3m" in spg[i]
+            if cubic_label == (i in tetragonal):
+                print(
+                    "spg_label row %d (%s) disagrees with its own u_tensor"
+                    % (i, spg[i])
+                )
+                return 1
+
+        for name, arr, ncol in (
+            (PREFIX + ".umn_tensor", u_tensor.reshape(nt, 9), 9),
+            (PREFIX + ".atom_disp", u0.reshape(nt, -1), u0.shape[1] * 3),
+        ):
+            txt = np.loadtxt(name)
+            txt = np.atleast_2d(txt)
+            if txt.shape[1] != ncol + 1:
+                print("unexpected column count in %s" % name)
+                return 1
+            for it, temp in enumerate(temps):
+                match = np.flatnonzero(np.abs(txt[:, 0] - temp) < 1e-6)
+                if match.size != 1:
+                    print("no unique %g K row in %s" % (temp, name))
+                    return 1
+                # The text files carry 7 significant digits (setprecision(6)
+                # in scientific notation); the h5 holds the full doubles.
+                if not np.allclose(arr[it], txt[match[0], 1:], rtol=1e-6, atol=1e-14):
+                    print("/structure disagrees with %s at %g K" % (name, temp))
+                    return 1
     return 0
 
 

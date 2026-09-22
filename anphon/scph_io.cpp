@@ -19,6 +19,7 @@
  - write_scph_state_h5 / load_scph_state_h5: store/restore the unified state
 */
 
+#include <algorithm>
 #include <complex>
 #include <fstream>
 #include <iomanip>
@@ -28,6 +29,7 @@
 #include "interpolation.h"
 #include "kpoint.h"
 #include "memory.h"
+#include "relaxation.h"
 #include "scph_qha_common.h"
 #include "scph_result_io.h"
 #include "system.h"
@@ -361,8 +363,33 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
              " and will be refused by later calculations unless ALLOW_UNCONVERGED = 1 is set.");
     }
 
+    // The relaxed structure is meaningful only for RELAX_STR != 0, and only
+    // when *every* temperature recorded one: a restart or a legacy-text
+    // migration skips the temperature loop entirely, and a non-integral
+    // (TMAX - TMIN) / DT makes the truncating iT of
+    // run_structural_optimization_loop visit some indices twice and others
+    // never. Publishing the zero rows that leaves would be worse than
+    // publishing nothing, since a consumer cannot tell them from a genuinely
+    // undeformed structure.
+    const auto ns = static_cast<size_t>(dynamical->neval);
+    const ScphStructureH5 *structure = nullptr;
+    if (relax_str_in != 0 && relaxed_structure.u_tensor.size() == static_cast<size_t>(NT) * 9 &&
+        relaxed_structure.u0.size() == static_cast<size_t>(NT) * ns)
+    {
+        const auto nmissing =
+            std::count(relaxed_structure_recorded.begin(), relaxed_structure_recorded.end(), static_cast<char>(0));
+        if (nmissing == 0) {
+            structure = &relaxed_structure;
+        } else {
+            warn("write_scph_state_h5",
+                 "Some temperatures recorded no relaxed structure, so /structure is omitted from the\n"
+                 " state file. This happens when (TMAX - TMIN) / DT is not integral, which also makes\n"
+                 " the stored dynamical matrices skip temperature points; choose a commensurate DT.");
+        }
+    }
+
     const ScphResultIOH5 io(filename);
-    io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str);
+    io.write_state(settings, cells, delta_main, delta_harm_renorm, v0, &fc2, conv_scph, conv_str, structure);
 
     if (run.verbosity > 0) {
         std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << filename;
@@ -449,6 +476,34 @@ void ScphQhaCommon::load_V0_from_file()
         ifs_v0.close();
     }
     MPI_Bcast(V0.data(), NT, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+}
+
+void ScphQhaCommon::record_relaxed_structure(const unsigned int iT, const RelaxationStructureState &structure_state)
+{
+    const auto ns = static_cast<size_t>(dynamical->neval);
+    const auto NT = converged_str_temp.size();
+
+    if (iT >= NT) {
+        exit("record_relaxed_structure", "The temperature index is outside the convergence table.");
+    }
+
+    if (relaxed_structure.u_tensor.size() != NT * 9) {
+        relaxed_structure.u_tensor.assign(NT * 9, 0.0);
+        relaxed_structure.u0.assign(NT * ns, 0.0);
+        relaxed_structure.spg_label.assign(NT, std::string{});
+        relaxed_structure_recorded.assign(NT, 0);
+    }
+    relaxed_structure_recorded[iT] = 1;
+
+    for (auto i = 0; i < 3; ++i) {
+        for (auto j = 0; j < 3; ++j) {
+            relaxed_structure.u_tensor[static_cast<size_t>(iT) * 9 + 3 * i + j] = structure_state.u_tensor[i][j];
+        }
+    }
+    for (size_t is = 0; is < ns; ++is) {
+        relaxed_structure.u0[static_cast<size_t>(iT) * ns + is] = structure_state.u0[is];
+    }
+    relaxation->spacegroup_of(structure_state, &relaxed_structure.spg_label[iT]);
 }
 
 void ScphQhaCommon::store_V0_to_file() const
