@@ -843,11 +843,8 @@ void Dynamical::diagonalize_dynamical_all()
                                                     evec_tmp[ik]);
                 }
             }
-
-            MPI_Bcast(&evec_tmp[0][0][0],
-                      nk * neval * neval,
-                      MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
         }
+        bcast_eigensystem_from_root(nk, eigenvectors, eval_tmp, evec_tmp);
 
         dymat_general->set_eigenvals_and_eigenvecs(nk,
                                                    eval_tmp,
@@ -884,11 +881,8 @@ void Dynamical::diagonalize_dynamical_all()
                                                     evec_tmp[ik]);
                 }
             }
-
-            MPI_Bcast(&evec_tmp[0][0][0],
-                      nk * neval * neval,
-                      MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
         }
+        bcast_eigensystem_from_root(nk, eigenvectors, eval_tmp, evec_tmp);
 
         dymat_band->set_eigenvals_and_eigenvecs(nk,
                                                 eval_tmp,
@@ -926,11 +920,8 @@ void Dynamical::diagonalize_dynamical_all()
                                                     evec_tmp[ik]);
                 }
             }
-
-            MPI_Bcast(&evec_tmp[0][0][0],
-                      nk * neval * neval,
-                      MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
         }
+        bcast_eigensystem_from_root(nk, eigenvectors, eval_tmp, evec_tmp);
 
         dos->dymat_dos->set_eigenvals_and_eigenvecs(nk,
                                                     eval_tmp,
@@ -993,6 +984,25 @@ void Dynamical::get_eigenvalues_dymat(const unsigned int nk_in,
         for (unsigned int is = 0; is < neval; ++is) {
             eval_ret[ik][is] = freq(eval_ret[ik][is]);
         }
+    }
+}
+
+void Dynamical::bcast_eigensystem_from_root(const unsigned int nk_in,
+                                            const bool require_evec,
+                                            double **eval_inout,
+                                            std::complex<double> ***evec_inout) const
+{
+    // Every rank diagonalizes the same dynamical matrices, but the eigenvectors of
+    // degenerate modes are fixed only up to a unitary rotation, and LAPACK does not
+    // always return the same ones on every rank (on A64FX the result depends on the
+    // memory layout of the process). Self-energies of degenerate modes computed on
+    // different ranks then refer to different bases, and the results depend on the
+    // number of MPI processes and vary from run to run. Use the eigenvalues and
+    // eigenvectors of rank 0 on every rank.
+    MPI_Bcast(&eval_inout[0][0], nk_in * neval, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if (require_evec) {
+        MPI_Bcast(&evec_inout[0][0][0], nk_in * neval * neval,
+                  MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
     }
 }
 
