@@ -393,7 +393,9 @@ void ScphQhaCommon::write_scph_state_h5(const std::string &filename, const std::
     ScphProvenanceH5 provenance;
     if (structure) {
         provenance.fcs_nrows = fcs_phonon->fcs_nrows;
-        provenance.fcs_checksum = fcs_phonon->fcs_checksum;
+        provenance.fcs_sum_abs = fcs_phonon->fcs_sum_abs;
+        provenance.fcs_sum_signed = fcs_phonon->fcs_sum_signed;
+        provenance.fcs_sum_sq = fcs_phonon->fcs_sum_sq;
     }
 
     const ScphResultIOH5 io(filename);

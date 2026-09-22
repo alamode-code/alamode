@@ -224,16 +224,31 @@ public:
     std::string file_dfc2;
 
     // Fingerprint of the IFCs this run loaded, one entry per order, taken
-    // after the MPI broadcast but before replication so that every rank and
-    // every run fingerprints the same representation. An SCPH/QHA run with
-    // RELAX_STR != 0 stores it; a later run that adopts the relaxed
-    // structure compares against it, because the deformation it applies was
-    // determined by those IFCs -- above all by FC4, which fixes both the
-    // optimization that produced u0/u_tensor and the Phi4 : d correction a
-    // consumer builds from it. A different FC4 pairs a deformed FC3 with a
-    // structure it does not belong to, and nothing downstream would notice.
+    // after the MPI broadcast but before replication and sorting. An
+    // SCPH/QHA run with RELAX_STR != 0 stores it; a later run that adopts
+    // the relaxed structure compares against it, because the deformation it
+    // applies was determined by those IFCs -- above all by FC4, which fixes
+    // both the optimization that produced u0/u_tensor and the Phi4 : d
+    // correction a consumer builds from it. A different FC4 pairs a
+    // deformed FC3 with a structure it does not belong to, and nothing
+    // downstream would notice.
+    //
+    // Three sums rather than one: |v| alone is blind to a sign flip, and
+    // signed alone is blind to cancelling changes. All three are symmetric
+    // functions of the value multiset, so they cannot see a permutation of
+    // values between rows -- an index-aware digest could, but would also
+    // fire spuriously when the same model is read from XML instead of HDF5,
+    // whose row identifiers need not agree. Refitting or recutting a model
+    // moves these sums; relabelling its rows does not.
+    //
+    // Cross-run comparability holds per order only when both runs built that
+    // order the same way: DFC2FILE appends its correction inside
+    // load_fcs_from_file, so order 0 legitimately differs between a run that
+    // used it and one that did not.
     std::vector<std::size_t> fcs_nrows;
-    std::vector<double> fcs_checksum; // sum of |fcs_val| per order
+    std::vector<double> fcs_sum_abs;    // sum of |fcs_val| per order
+    std::vector<double> fcs_sum_signed; // sum of fcs_val per order
+    std::vector<double> fcs_sum_sq;     // sum of fcs_val^2 per order
 
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 

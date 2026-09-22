@@ -28,41 +28,77 @@ def run_anphon(anphonbin, input_file, logfile):
     return ret.returncode
 
 
-def check_provenance(statefile, logfile):
+def check_provenance(statefile, logfile, fcsfile=None):
     """/provenance must fingerprint the IFCs the run actually loaded.
 
-    The run prints its per-order entry count, so the log is an independent
-    witness for fcs_nrows. logfile may be None to skip that cross-check.
+    Two independent witnesses: the run prints its per-order entry count, and
+    the FCS file holds the values those counts expand from. Either may be
+    None to skip that half.
     """
     with h5py.File(statefile, "r") as f:
         if "provenance" not in f:
             print("%s has no /provenance group" % statefile)
             return 1
-        nrows = list(f["provenance/fcs_nrows"][...])
-        checksum = f["provenance/fcs_checksum"][...]
+        nrows = [int(n) for n in f["provenance/fcs_nrows"][...]]
+        sums = {
+            key: f["provenance/fcs_sum_" + key][...] for key in ("abs", "signed", "sq")
+        }
 
-    if len(nrows) != len(checksum) or not nrows:
+    if not nrows or any(len(v) != len(nrows) for v in sums.values()):
         print("/provenance of %s has inconsistent lengths" % statefile)
         return 1
-    if any(n <= 0 for n in nrows) or not np.all(checksum > 0.0):
-        print("/provenance of %s holds empty orders:" % statefile, nrows, checksum)
+    if any(n <= 0 for n in nrows):
+        print("/provenance of %s holds empty orders:" % statefile, nrows)
+        return 1
+    for key, v in sums.items():
+        if not np.all(np.isfinite(v)):
+            print("/provenance/fcs_sum_%s of %s is not finite:" % (key, statefile), v)
+            return 1
+    # |sum v| <= sum |v| and sum v^2 > 0 hold for any real multiset; a value
+    # copied from another order or an invented constant usually breaks one.
+    if np.any(np.abs(sums["signed"]) > sums["abs"] * (1.0 + 1e-12)):
+        print("/provenance of %s: |sum v| exceeds sum |v|" % statefile)
+        return 1
+    if np.any(sums["abs"] <= 0.0) or np.any(sums["sq"] <= 0.0):
+        print("/provenance of %s has a non-positive magnitude sum" % statefile)
         return 1
 
-    if logfile is None:
+    if logfile is not None:
+        with open(logfile) as fh:
+            logged = [
+                int(line.split(":")[-1])
+                for line in fh
+                if "Number of non-zero IFCs for" in line
+            ]
+        if logged != nrows:
+            print("/provenance/fcs_nrows %s != logged IFC counts %s" % (nrows, logged))
+            return 1
+
+    if fcsfile is None:
         return 0
-    with open(logfile) as fh:
-        logged = [
-            int(line.split(":")[-1])
-            for line in fh
-            if "Number of non-zero IFCs for" in line
-        ]
-    if logged != nrows:
-        print("/provenance/fcs_nrows %s != logged IFC counts %s" % (nrows, logged))
-        return 1
+    # anphon expands each stored row over the permutations of its trailing
+    # legs and drops |v| < eps, so the loaded sum |v| is bounded below by the
+    # file's own sum (each row survives at least once) and above by it times
+    # the largest permutation multiplicity of that order.
+    max_multiplicity = {0: 1, 1: 2, 2: 6}
+    with h5py.File(fcsfile, "r") as f:
+        for order in range(len(nrows)):
+            key = "ForceConstants/Order%d/force_constant_values" % (order + 2)
+            if key not in f:
+                continue
+            file_sum = float(np.abs(f[key][...]).sum())
+            lo = file_sum * (1.0 - 1e-9)
+            hi = file_sum * max_multiplicity[order] * (1.0 + 1e-9)
+            if not lo <= sums["abs"][order] <= hi:
+                print(
+                    "/provenance/fcs_sum_abs[%d] = %g is outside [%g, %g] implied by %s"
+                    % (order, sums["abs"][order], lo, hi, fcsfile)
+                )
+                return 1
     return 0
 
 
-def check_structure_group(prefix, statefile, logfile=None):
+def check_structure_group(prefix, statefile, logfile=None, fcsfile=None):
     """Cross-check /structure of a SCPH/QHA state file against its text outputs.
 
     The text files are written in sweep order while the h5 rows follow
@@ -91,7 +127,7 @@ def check_structure_group(prefix, statefile, logfile=None):
         print("/structure/spg_label of %s is not spglib output:" % statefile, spg)
         return 1
 
-    if check_provenance(statefile, logfile) != 0:
+    if check_provenance(statefile, logfile, fcsfile) != 0:
         return 1
 
     for name, arr, ncol in (
@@ -184,7 +220,10 @@ def check_fresh_run(anphonbin, reference_dir):
         ]
 
     # Shapes, label format, and agreement with the text outputs.
-    if check_structure_group(PREFIX, PREFIX + ".scph.h5", "fresh.log") != 0:
+    if (
+        check_structure_group(PREFIX, PREFIX + ".scph.h5", "fresh.log", "cBTO222.h5")
+        != 0
+    ):
         return 1
 
     # BaTiO3 crosses the cubic -> tetragonal transition inside 280-300 K, so

@@ -141,13 +141,21 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
     // replicate_force_constants, which multiplies the entry count by the
     // number of translations of the user cell.
     fcs_nrows.assign(maxorder, 0);
-    fcs_checksum.assign(maxorder, 0.0);
-    for (auto order = 0; order < maxorder; ++order) {
+    fcs_sum_abs.assign(maxorder, 0.0);
+    fcs_sum_signed.assign(maxorder, 0.0);
+    fcs_sum_sq.assign(maxorder, 0.0);
+    for (unsigned int order = 0; order < maxorder; ++order) {
         const auto &fcs = force_constant_with_cell[order];
         fcs_nrows[order] = fcs.size();
-        auto sum = 0.0;
-        for (const auto &it: fcs) sum += std::abs(it.fcs_val);
-        fcs_checksum[order] = sum;
+        auto sum_abs = 0.0, sum_signed = 0.0, sum_sq = 0.0;
+        for (const auto &it: fcs) {
+            sum_abs += std::abs(it.fcs_val);
+            sum_signed += it.fcs_val;
+            sum_sq += it.fcs_val * it.fcs_val;
+        }
+        fcs_sum_abs[order] = sum_abs;
+        fcs_sum_signed[order] = sum_signed;
+        fcs_sum_sq[order] = sum_sq;
     }
 
     t_stage = stage_clock();

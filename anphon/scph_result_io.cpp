@@ -295,8 +295,14 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         if (provenance && !provenance->fcs_nrows.empty()) {
             std::vector<unsigned long long> nrows(provenance->fcs_nrows.begin(), provenance->fcs_nrows.end());
             dump(fh, "/provenance/fcs_nrows", nrows);
-            dump(fh, "/provenance/fcs_checksum", provenance->fcs_checksum);
-            dumpAttribute(fh, "/provenance/fcs_checksum", "definition", std::string("sum of |fcs_val| per order"));
+            dump(fh, "/provenance/fcs_sum_abs", provenance->fcs_sum_abs);
+            dump(fh, "/provenance/fcs_sum_signed", provenance->fcs_sum_signed);
+            dump(fh, "/provenance/fcs_sum_sq", provenance->fcs_sum_sq);
+            dumpAttribute(fh,
+                          "/provenance/fcs_nrows",
+                          "definition",
+                          std::string("per IFC order, as loaded and before replication: entry count, "
+                                      "sum |v|, sum v, sum v^2"));
         }
 
         // Per-temperature convergence flags (1 = converged). Consumers

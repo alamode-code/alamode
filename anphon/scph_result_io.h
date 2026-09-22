@@ -79,12 +79,15 @@ struct ScphStructureH5
 //
 // Only the writing side lives here so far: the comparison belongs with the
 // run that adopts the structure, where it can be tested end to end. Entry
-// counts should be compared exactly and the checksums with a relative
-// tolerance, since summation order may differ between runs.
+// counts should be compared exactly and the sums with a relative tolerance,
+// since summation order may differ between runs. See Fcs_phonon for what
+// the sums can and cannot distinguish.
 struct ScphProvenanceH5
 {
     std::vector<std::size_t> fcs_nrows;
-    std::vector<double> fcs_checksum;
+    std::vector<double> fcs_sum_abs;
+    std::vector<double> fcs_sum_signed;
+    std::vector<double> fcs_sum_sq;
 };
 
 // Renormalized FC2 on the virtual supercell, in the row layout of the
