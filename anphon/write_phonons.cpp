@@ -1085,9 +1085,8 @@ void Writes::writeScatteringAmplitude() const
     std::ofstream ofs_w;
 
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     ofs_w.open(file_w.c_str(), std::ios::out);
 
@@ -2009,10 +2008,9 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
 void Writes::writeThermodynamicFunc() const
 {
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
 
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     std::ofstream ofs_thermo;
     auto file_thermo = run.job_title + ".thermo";
@@ -2497,7 +2495,6 @@ void Writes::writeMSD() const
     const auto ns = phon->dynamical->neval;
 
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
     const auto nk = phon->dos->kmesh_dos->nk;
     const auto &xk = phon->dos->kmesh_dos->xk;
@@ -2510,7 +2507,7 @@ void Writes::writeMSD() const
     ofs_rmsd << "# Mean Square Displacements at a function of temperature.\n";
     ofs_rmsd << "# Temperature [K], <(u_{1}^{x})^{2}>, <(u_{1}^{y})^{2}>, <(u_{1}^{z})^{2}>, .... [Angstrom^2]\n";
 
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     for (unsigned int i = 0; i < NT; ++i) {
 
@@ -2535,9 +2532,8 @@ void Writes::writeMSD(double **msd_in, const bool is_qha, const int bubble) cons
 {
     const auto ns = phon->dynamical->neval;
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     std::ofstream ofs_msd;
     std::string file_msd;
@@ -2598,9 +2594,8 @@ void Writes::writeDispCorrelation() const
 
     const auto ns = phon->dynamical->neval;
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     ofs.open(file_ucorr.c_str(), std::ios::out);
     if (!ofs) exit("writeDispCorrelation", "Could not open file_rmsd");
@@ -2664,9 +2659,8 @@ void Writes::writeDispCorrelation(double ***ucorr_in, const bool is_qha, const i
 
     const auto ns = phon->dynamical->neval;
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     if (is_qha) {
         file_ucorr = run.job_title + ".qha_ucorr";
@@ -3820,9 +3814,8 @@ void Writes::writePhononEnergies(const unsigned int nk_in, const double *const *
 {
     const auto ns = phon->dynamical->neval;
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     std::ofstream ofs_energy;
     std::string file_energy;
@@ -3890,9 +3883,8 @@ void Writes::writePhononBands(const unsigned int nk_in, const double *kaxis_in, 
 
     unsigned int i;
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
     const auto ns = phon->dynamical->neval;
     auto kcount = 0;
 
@@ -3962,9 +3954,8 @@ void Writes::writePhononDos(double **dos_in, const bool is_qha, const int bubble
 {
     unsigned int iT;
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     std::ofstream ofs_dos;
     std::string file_dos;
@@ -4027,9 +4018,8 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
                                     const bool is_qha) const
 {
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     bool print_anharmonic_correction_Cv = false;
 
@@ -4123,9 +4113,8 @@ void Writes::writeThermodynamicFunc(double *heat_capacity, double *heat_capacity
 void Writes::writeDielecFunc(double ****dielec_in, const bool is_qha) const
 {
     const auto Tmin = phon->system->Tmin;
-    const auto Tmax = phon->system->Tmax;
     const auto dT = phon->system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = phon->system->get_num_temperature_points();
 
     std::ofstream ofs_dielec;
     std::string file_dielec;

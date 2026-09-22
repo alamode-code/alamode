@@ -164,9 +164,25 @@ public:
     // The temperature grid implied by TMIN/TMAX/DT. Every consumer of the
     // grid must derive it from here so the point count and rounding agree
     // across the code base.
+    // Number of points on the TMIN/TMAX/DT grid. Truncating the quotient
+    // drops TMAX whenever it lands just under an integer in binary64:
+    // (280.4 - 280) / 0.1 is 3.9999999999997726 and (1 - 0) / 0.1 is
+    // 9.999999999999998, so those grids stopped one DT short of the TMAX
+    // the user asked for. Snap to the nearest integer when the quotient is
+    // within rounding noise of one, and truncate otherwise -- rounding
+    // unconditionally would append a point above TMAX for a genuinely
+    // non-integral range such as TMIN = 0, TMAX = 0.8, DT = 0.3.
+    unsigned int get_num_temperature_points() const
+    {
+        const auto quotient = (Tmax - Tmin) / dT;
+        const auto nearest = std::round(quotient);
+        const auto integral = std::abs(quotient - nearest) < 1.0e-8 * std::max(1.0, std::abs(nearest));
+        return static_cast<unsigned int>(integral ? nearest : std::floor(quotient)) + 1;
+    }
+
     std::vector<double> get_temperature_grid() const
     {
-        const auto nt = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+        const auto nt = get_num_temperature_points();
         std::vector<double> grid(nt);
         for (unsigned int i = 0; i < nt; ++i) {
             grid[i] = Tmin + static_cast<double>(i) * dT;
@@ -183,7 +199,7 @@ public:
     unsigned int get_temperature_index(const double temp) const
     {
         const auto index = nint((temp - Tmin) / dT);
-        const auto nt = static_cast<int>((Tmax - Tmin) / dT) + 1;
+        const auto nt = static_cast<int>(get_num_temperature_points());
         if (index < 0 || index >= nt) {
             exit("get_temperature_index", "A temperature outside TMIN..TMAX has no row in the grid.");
         }

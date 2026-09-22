@@ -224,10 +224,7 @@ void Dos::calc_dos_all(const Integration &integration, const bool classical)
         sps3_mode.resize(kmesh_dos->nk_irred, system->get_num_modes(), 2);
         calc_total_scattering_phase_space(dymat_dos->get_eigenvalues(), integration, sps3_mode, total_sps3);
     } else if (scattering_phase_space == 2) {
-        const auto Tmin = system->Tmin;
-        const auto Tmax = system->Tmax;
-        const auto dT = system->dT;
-        const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+        const auto NT = system->get_num_temperature_points();
 
         sps3_with_bose.resize(kmesh_dos->nk_irred, system->get_num_modes(), NT, 2);
         calc_scattering_phase_space_with_Bose(dymat_dos->get_eigenvalues(), integration, classical, sps3_with_bose);
@@ -732,7 +729,6 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
     NDArray<double, 2> ret_mode;
     double omega0;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
     NDArray<double, 1> temperature;
     int ik, iT;
@@ -752,7 +748,7 @@ void Dos::calc_scattering_phase_space_with_Bose(const double *const *eval_in, co
         std::cout << "           with the Bose distribution function ...";
     }
 
-    const auto N = static_cast<int>((Tmax - Tmin) / dT) + 1;
+    const auto N = static_cast<int>(system->get_num_temperature_points());
     temperature.resize(N);
     for (i = 0; i < N; ++i) temperature[i] = Tmin + static_cast<double>(i) * dT;
 

@@ -270,9 +270,8 @@ void ScphQhaCommon::load_scph_dymat_from_file(std::complex<double> ****dymat_out
 {
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
     std::vector<double> Temp_array(NT);
 
     for (int i = 0; i < NT; ++i) {
@@ -380,7 +379,7 @@ void ScphQhaCommon::store_renormalized_dymat_to_file(const std::complex<double> 
     // auto file_dymat = run.job_title + ".scph_dymat";
     auto file_dymat = filename_dymat;
 
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     ofs_dymat.open(file_dymat.c_str(), std::ios::out);
 
@@ -445,9 +444,8 @@ void ScphQhaCommon::postprocess(std::complex<double> ****delta_dymat,
     NDArray<double, 3> eval_harm_renorm;
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     unsigned int nomega_dielec;
 

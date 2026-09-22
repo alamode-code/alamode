@@ -269,10 +269,7 @@ void Qha::setup_qha()
 void Qha::exec_qha_optimization()
 {
     const auto ns = dynamical->neval;
-    const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
-    const auto dT = system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     NDArray<std::complex<double>, 4> delta_dymat_qha;
     NDArray<std::complex<double>, 4> delta_harmonic_dymat_renormalize;
@@ -441,7 +438,6 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
 
@@ -494,7 +490,7 @@ void Qha::exec_QHA_relax_main(std::complex<double> ****dymat_anharm,
 
     // temperature grid
     std::vector<double> vec_temp;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     omega2_harm_renorm.resize(NT, nk, ns);
     evec_harm_renorm_tmp.resize(nk, ns, ns);
@@ -817,7 +813,6 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
     const auto ns = dynamical->neval;
     const auto nk_irred_interpolate = kmesh_coarse->nk_irred;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
 
     // renormalization of harmonic dynamical matrix
@@ -852,7 +847,7 @@ void Qha::exec_perturbative_QHA(std::complex<double> ****dymat_anharm,
 
     // temperature grid
     std::vector<double> vec_temp;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     MatrixXcd elastic_mat_tmp(ns - 3 + 6, ns - 3 + 6); // optical phonons + independent strain
     VectorXcd q0_umn(ns - 3 + 6), del_Fvib_q0_umn(ns - 3 + 6);

@@ -299,12 +299,11 @@ void ModeAnalysis::setup_mode_analysis()
 
 void ModeAnalysis::run_mode_analysis()
 {
-    const auto Tmax = system->Tmax;
     const auto Tmin = system->Tmin;
     const auto dT = system->dT;
     NDArray<double, 1> T_arr;
 
-    unsigned int NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    unsigned int NT = system->get_num_temperature_points();
     T_arr.resize(NT);
     for (unsigned int i = 0; i < NT; ++i) T_arr[i] = Tmin + static_cast<double>(i) * dT;
 

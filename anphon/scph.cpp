@@ -561,16 +561,13 @@ void Scph::setup_scph()
 void Scph::exec_scph()
 {
     const auto ns = dynamical->neval;
-    const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
-    const auto dT = system->dT;
 
     NDArray<std::complex<double>, 4> delta_dymat_scph;
     NDArray<std::complex<double>, 4> delta_dymat_scph_plus_bubble;
     // change of harmonic dymat by IFC renormalization
     NDArray<std::complex<double>, 4> delta_harmonic_dymat_renormalize;
 
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     MPI_Bcast(&restart_scph, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&use_h5_io, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
@@ -780,9 +777,8 @@ void Scph::exec_scph_main(std::complex<double> ****dymat_anharm)
     const auto nk_interpolate = kmesh_coarse->nk;
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
     // Compute matrix element of 4-phonon interaction
 
@@ -931,7 +927,6 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
     const auto nk = kmesh_dense->nk;
     const auto ns = dynamical->neval;
     const auto Tmin = system->Tmin;
-    const auto Tmax = system->Tmax;
     const auto dT = system->dT;
     NDArray<double, 3> omega2_anharm;
     NDArray<std::complex<double>, 3> evec_anharm_tmp;
@@ -981,7 +976,7 @@ void Scph::exec_scph_relax_cell_coordinate_main(std::complex<double> ****dymat_a
 
     // temperature grid
     std::vector<double> vec_temp;
-    const auto NT = static_cast<unsigned int>((Tmax - Tmin) / dT) + 1;
+    const auto NT = system->get_num_temperature_points();
 
 
     omega2_anharm.resize(NT, nk, ns);
