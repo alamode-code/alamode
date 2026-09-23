@@ -1,0 +1,622 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-24 01:36+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:10
+msgid "BAs: four-phonon scattering in the lattice thermal conductivity"
+msgstr "BAs: 格子熱伝導率における 4 フォノン散乱"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:12
+msgid "At a glance"
+msgstr "概要"
+
+#: ../../source/tutorial_pages/bas_4ph.rst
+msgid "Goal"
+msgstr "目標"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:15
+msgid ""
+"Calculate the lattice thermal conductivity of cubic boron arsenide (BAs) "
+"with three- and four-phonon scattering."
+msgstr "3 フォノン散乱と 4 フォノン散乱を考慮して、立方晶ヒ化ホウ素 (BAs) の格子熱伝導率を計算します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst
+msgid "You will learn"
+msgstr "学べること"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:17
+msgid ""
+"how to switch on four-phonon scattering (``INCLUDE_4PH``, "
+"``KMESH_COARSE``, ``ISMEAR_4PH``, ``INTERPOLATOR``)"
+msgstr ""
+"4 フォノン散乱を有効にする方法 "
+"(``INCLUDE_4PH``、``KMESH_COARSE``、``ISMEAR_4PH``、``INTERPOLATOR``)"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:18
+msgid ""
+"how **anphon** reuses the linewidths stored in ``PREFIX``.kappa.h5 so "
+"that a 4ph run does not repeat the 3ph part"
+msgstr "**anphon** が ``PREFIX``.kappa.h5 に保存された線幅を再利用し、4ph の計算で 3ph の部分を繰り返さないしくみ"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:19
+msgid "how to go beyond the relaxation-time approximation with ``SOLVER = IBTE``"
+msgstr "``SOLVER = IBTE`` を用いて緩和時間近似を超える方法"
+
+#: ../../source/tutorial_pages/bas_4ph.rst
+msgid "Prerequisites"
+msgstr "前提"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:20
+msgid ""
+"ALAMODE (**anphon**) and an MPI environment. The force constants up to "
+"fourth order are provided, so no DFT calculation is needed."
+msgstr "ALAMODE (**anphon**) と MPI 環境。4 次までの力定数が用意されているので、DFT 計算は不要です。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst
+msgid "Example files"
+msgstr "例のファイル"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:21
+msgid "``example/BAs``"
+msgstr "``example/BAs``"
+
+#: ../../source/tutorial_pages/bas_4ph.rst
+msgid "Run time"
+msgstr "所要時間"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:22
+msgid ""
+"With ``mpirun -np 4`` and two OpenMP threads per process on a laptop, the"
+" three steps take about 15 s, 20 s, and 2 minutes."
+msgstr ""
+"ノートパソコン上で ``mpirun -np 4`` を用い、1 プロセスあたり 2 つの OpenMP スレッドで実行した場合、3 "
+"つのステップの所要時間はそれぞれ約 15 s、20 s、2 分です。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:24
+msgid ""
+"Cubic BAs (zincblende structure) was predicted to have an ultrahigh "
+"lattice thermal conductivity of more than 2000 W/mK at room temperature "
+"from first-principles calculations that include only three-phonon (3ph) "
+"scattering [#lindsay2013]_. The reason is a very small three-phonon phase"
+" space. Because As is about seven times heavier than B, there is a large "
+"gap between the acoustic and the optical branches, so that two acoustic "
+"phonons cannot merge into an optical phonon. In addition, the acoustic "
+"branches are bunched together, which suppresses the scattering among "
+"acoustic phonons."
+msgstr ""
+"立方晶 BAs (閃亜鉛鉱構造) は、3 フォノン (3ph) 散乱のみを考慮した第一原理計算により、室温で 2000 W/mK "
+"を超える極めて高い格子熱伝導率をもつと予測されました [#lindsay2013]_。その理由は、3 "
+"フォノン散乱の位相空間が非常に小さいことです。As は B より約 7 倍重いため、音響分枝と光学分枝の間に大きなギャップがあり、2 "
+"つの音響フォノンが合体して 1 "
+"つの光学フォノンになることができません。さらに、音響分枝どうしが互いに近接しているため、音響フォノン間の散乱が抑制されます。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:31
+msgid ""
+"When three-phonon scattering is this weak, four-phonon (4ph) scattering "
+"becomes important. Feng, Lindsay, and Ruan showed that 4ph scattering "
+"reduces the predicted thermal conductivity of BAs substantially "
+"[#feng2017]_, and three experiments reported room-temperature values of "
+"about 1000--1300 W/mK in 2018 [#kang2018]_ [#li2018]_ [#tian2018]_."
+msgstr ""
+"3 フォノン散乱がこれほど弱い場合、4 フォノン (4ph) 散乱が重要になります。Feng、Lindsay、Ruan は、4ph 散乱によって "
+"BAs の熱伝導率の予測値が大幅に低下することを示し [#feng2017]_、2018 年には 3 つの実験により約 1000–1300 "
+"W/mK の室温での値が報告されました [#kang2018]_ [#li2018]_ [#tian2018]_。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:35
+msgid ""
+"In this tutorial, we calculate the thermal conductivity of BAs at three "
+"levels of theory:"
+msgstr "このチュートリアルでは、BAs の熱伝導率を次の 3 つの理論レベルで計算します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:37
+msgid ":ref:`Three-phonon scattering in the RTA <tutorial_BAs_step1>`"
+msgstr ":ref:`RTA における 3 フォノン散乱 <tutorial_BAs_step1>`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:38
+msgid ":ref:`Add four-phonon scattering <tutorial_BAs_step2>`"
+msgstr ":ref:`4 フォノン散乱の追加 <tutorial_BAs_step2>`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:39
+msgid ":ref:`Go beyond the RTA with the iterative BTE <tutorial_BAs_step3>`"
+msgstr ":ref:`反復 BTE による RTA を超えた計算 <tutorial_BAs_step3>`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:41
+msgid ""
+"followed by a :ref:`comparison of the results <tutorial_BAs_results>`. "
+"Each step has its own input file, :red:`step1_3ph.in`, "
+":red:`step2_4ph.in`, and :red:`step3_ibte.in`."
+msgstr ""
+"最後に :ref:`結果の比較 <tutorial_BAs_results>` を行います。各ステップにはそれぞれ入力ファイル "
+":red:`step1_3ph.in`、:red:`step2_4ph.in`、:red:`step3_ibte.in` があります。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:44
+msgid ""
+"The input files and the reference outputs are provided in "
+"**example/BAs/reference**."
+msgstr "入力ファイルと参照出力は **example/BAs/reference** にあります。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:50
+msgid "Input files and force constants"
+msgstr "入力ファイルと力定数"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:52
+msgid ""
+"Move to the example directory and copy the three input files of this "
+"tutorial:"
+msgstr "例のディレクトリに移動し、このチュートリアルの 3 つの入力ファイルをコピーします。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:59
+msgid "The directory already contains the two files that the inputs refer to:"
+msgstr "ディレクトリには、入力ファイルが参照する次の 2 つのファイルがすでに含まれています。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:61
+msgid ""
+":red:`BAs-paw-40-480-N60-rcut12-8.xml` contains the harmonic, cubic, and "
+"quartic force constants (the ``HARMONIC``, ``ANHARM3``, and ``ANHARM4`` "
+"sections) of a 216-atom supercell, which is the 3x3x3 conventional cell "
+"of BAs. The file was written by **alm** 1.1.0."
+msgstr ""
+":red:`BAs-paw-40-480-N60-rcut12-8.xml` には、BAs の従来単位胞を 3x3x3 倍した 216 "
+"原子のスーパーセルに対する調和・3 次・4 次の力定数 (``HARMONIC``、``ANHARM3``、``ANHARM4`` セクション) "
+"が含まれています。このファイルは **alm** 1.1.0 で書き出されたものです。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:64
+msgid ""
+":red:`BAs.born` contains the dielectric constant and the Born effective "
+"charges. BAs is a polar material, so the dipole-dipole interaction splits"
+" the LO and TO modes near :math:`\\Gamma`. ``NONANALYTIC = 2`` adds this "
+"non-analytic correction to the dynamical matrix by the mixed-space "
+"approach, and ``BORNINFO`` gives the file name. See the :ref:`PbTe "
+"tutorial <label_tutorial_pbte>` for more about the ``NONANALYTIC`` "
+"options."
+msgstr ""
+":red:`BAs.born` には誘電率とボルン有効電荷が含まれています。BAs は極性物質であるため、双極子-双極子相互作用によって "
+":math:`\\Gamma` 近傍で LO モードと TO モードが分裂します。``NONANALYTIC = 2`` "
+"は混合空間法によってこの非解析補正を動的行列に加え、``BORNINFO`` でそのファイル名を指定します。``NONANALYTIC`` "
+"オプションの詳細は :ref:`PbTe のチュートリアル <label_tutorial_pbte>` を参照してください。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:71
+msgid ""
+"**anphon** restarts from :red:`PREFIX.kappa.h5` whenever that file exists"
+" (see :ref:`step 2 <tutorial_BAs_step2>`). If you run the tutorial again,"
+" or if a :red:`BAs.kappa.h5` from another calculation is in the "
+"directory, remove it before step 1:"
+msgstr ""
+"**anphon** は、:red:`PREFIX.kappa.h5` が存在する場合は常にそのファイルから再開します (:ref:`ステップ 2"
+" <tutorial_BAs_step2>` を参照)。チュートリアルを再度実行する場合や、別の計算による :red:`BAs.kappa.h5`"
+" がディレクトリにある場合は、ステップ 1 の前に削除してください。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:83
+msgid "Step 1. Three-phonon scattering in the RTA"
+msgstr "ステップ 1. RTA における 3 フォノン散乱"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:85
+msgid ""
+"The first input :red:`step1_3ph.in` is an ordinary thermal conductivity "
+"calculation like the one in the :ref:`Si tutorial <label_tutorial_01>`:"
+msgstr ""
+"最初の入力 :red:`step1_3ph.in` は、:ref:`Si のチュートリアル <label_tutorial_01>` "
+"と同様の通常の熱伝導率計算です。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:89
+msgid ""
+":download:`Download step1_3ph.in "
+"<../../../example/BAs/reference/step1_3ph.in>`"
+msgstr ""
+":download:`step1_3ph.in をダウンロード "
+"<../../../example/BAs/reference/step1_3ph.in>`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:91
+msgid ""
+"The 3ph linewidths are calculated on a 20x20x20 :math:`k` mesh with the "
+"adaptive smearing (``ISMEAR = 2``) from 100 K to 1000 K. ``ISOTOPE = 1`` "
+"adds the scattering by isotope disorder, which is sizable in BAs because "
+"natural boron is a mixture of :sup:`10`\\ B and :sup:`11`\\ B (As has "
+"only one stable isotope). Run **anphon**:"
+msgstr ""
+"3ph の線幅は、適応スミアリング (``ISMEAR = 2``) を用いて 20x20x20 の :math:`k` メッシュ上で、100 K"
+" から 1000 K まで計算されます。``ISOTOPE = 1`` は同位体の乱れによる散乱 (同位体散乱) を加えます。天然のホウ素は "
+":sup:`10`\\ B と :sup:`11`\\ B の混合物であるため (As の安定同位体は 1 つだけです)、BAs "
+"ではこの散乱の寄与が大きくなります。**anphon** を実行します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:101
+#, python-brace-format
+msgid ""
+"The 20x20x20 mesh has 256 irreducible :math:`k` points, so the linewidths"
+" of :math:`256 \\times 6 = 1536` modes are calculated. The thermal "
+"conductivity tensor is written to :red:`BAs.kl`, and all the linewidths "
+"are stored in :red:`BAs.kappa.h5`. At 300 K, :math:`\\kappa_{xx}` is 1218"
+" W/mK."
+msgstr ""
+"20x20x20 メッシュには 256 個の既約 :math:`k` 点があるので、:math:`256 \\times 6 = 1536` "
+"個のモードの線幅が計算されます。熱伝導率テンソルは :red:`BAs.kl` に書き出され、すべての線幅は "
+":red:`BAs.kappa.h5` に保存されます。300 K では :math:`\\kappa_{xx}` は 1218 W/mK です。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:109
+msgid "Step 2. Add four-phonon scattering"
+msgstr "ステップ 2. 4 フォノン散乱の追加"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:111
+msgid ""
+"The second input :red:`step2_4ph.in` differs from the first one only in "
+"the ``&kappa`` field:"
+msgstr "2 番目の入力 :red:`step2_4ph.in` は、``&kappa`` フィールドだけが最初の入力と異なります。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:116
+msgid ""
+":download:`Download step2_4ph.in "
+"<../../../example/BAs/reference/step2_4ph.in>`"
+msgstr ""
+":download:`step2_4ph.in をダウンロード "
+"<../../../example/BAs/reference/step2_4ph.in>`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:118
+msgid ""
+"``INCLUDE_4PH = 1`` switches on the four-phonon scattering. It requires "
+"the quartic force constants, which are in the ``FCSFILE``."
+msgstr ""
+"``INCLUDE_4PH = 1`` で 4 フォノン散乱を有効にします。これには 4 次の力定数が必要で、``FCSFILE`` "
+"に含まれています。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:119
+msgid ""
+"``KMESH_COARSE = 8 8 8``: 4ph calculations are far more expensive than "
+"3ph ones, so the 4ph scattering rates are calculated on this coarser mesh"
+" and then interpolated onto the 20x20x20 mesh of the ``&kpoint`` field."
+msgstr ""
+"``KMESH_COARSE = 8 8 8``: 4ph の計算は 3ph よりはるかに計算コストが高いため、4ph "
+"の散乱率はこの粗いメッシュ上で計算し、その後 ``&kpoint`` フィールドの 20x20x20 メッシュに補間します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:121
+msgid ""
+"``ISMEAR_4PH = 2`` selects the adaptive Gaussian smearing for the 4ph "
+"processes, independently of ``ISMEAR`` for the 3ph ones. Adaptive "
+"smearing is recommended on coarse 4ph meshes, where a single fixed width "
+"is hard to converge."
+msgstr ""
+"``ISMEAR_4PH = 2`` は、3ph 過程に対する ``ISMEAR`` とは独立に、4ph "
+"過程に適応ガウススミアリングを選択します。粗い 4ph メッシュでは単一の固定幅で収束させるのが難しいため、適応スミアリングを推奨します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:123
+msgid ""
+"``INTERPOLATOR = log-linear`` interpolates the logarithm of the 4ph "
+"scattering rates trilinearly (the default)."
+msgstr "``INTERPOLATOR = log-linear`` は、4ph 散乱率の対数を 3 重線形補間します (デフォルト)。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:124
+msgid ""
+"``RESTART_4PH = 0`` calculates the 4ph linewidths from scratch instead of"
+" reusing stored ones (see below)."
+msgstr "``RESTART_4PH = 0`` は、保存された 4ph の線幅を再利用せず、最初から計算します (後述)。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:126
+msgid "Run **anphon** with the same ``PREFIX``:"
+msgstr "同じ ``PREFIX`` で **anphon** を実行します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:132
+msgid ""
+"Because :red:`BAs.kappa.h5` from step 1 exists, ``RESTART`` defaults to "
+"1, and **anphon** loads the 3ph linewidths. ``RESTART_4PH = 0`` in "
+":red:`step2_4ph.in` makes **anphon** calculate the 4ph linewidths from "
+"scratch. Without it, **anphon** would import the 4ph linewidths of an "
+"older version from the legacy file :red:`BAs.4ph.result` in the same "
+"directory (with only a warning that the force constant files differ). The"
+" log file shows that only the 4ph part is calculated::"
+msgstr ""
+"ステップ 1 の :red:`BAs.kappa.h5` が存在するため ``RESTART`` のデフォルトは 1 となり、**anphon**"
+" は 3ph の線幅を読み込みます。:red:`step2_4ph.in` の ``RESTART_4PH = 0`` "
+"により、**anphon** は 4ph の線幅を最初から計算します。これを指定しないと、**anphon** "
+"は同じディレクトリにある旧形式のファイル :red:`BAs.4ph.result` から古いバージョンの 4ph の線幅を読み込んでしまいます "
+"(力定数ファイルが異なるという警告が出るだけです)。ログファイルから、4ph の部分だけが計算されていることがわかります::"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:146
+msgid ""
+"The 8x8x8 mesh has 29 irreducible :math:`k` points, which gives :math:`29"
+" \\times 6 = 174` modes. The 3ph and 4ph linewidths are stored side by "
+"side in :red:`BAs.kappa.h5`, and each channel restarts separately. This "
+"is the practical point of this step: you can converge the 3ph part first "
+"and add the expensive 4ph part later, or test several 4ph settings with "
+"``RESTART_4PH = 0``, without repeating the 3ph calculation. The same "
+"mechanism lets you resume a calculation that was stopped before the end."
+msgstr ""
+"8x8x8 メッシュには 29 個の既約 :math:`k` 点があり、:math:`29 \\times 6 = 174` "
+"個のモードになります。3ph と 4ph の線幅は :red:`BAs.kappa.h5` "
+"に並べて保存され、それぞれのチャネルは別々に再開されます。これがこのステップの実用上の要点です。3ph の計算を繰り返すことなく、3ph "
+"の部分を先に収束させてから高コストな 4ph の部分を後で追加したり、``RESTART_4PH = 0`` を用いていくつかの 4ph "
+"の設定を試したりできます。同じしくみにより、途中で停止した計算を再開することもできます。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:153
+msgid ""
+"The stored linewidths are reused as they are. If you change the force "
+"constants or a setting that changes the linewidths, such as the :math:`k`"
+" mesh or the smearing, delete :red:`BAs.kappa.h5`, or set ``RESTART = 0``"
+" (3ph part) or ``RESTART_4PH = 0`` (4ph part) in the ``&kappa`` field. "
+"``RESTART_4PH = 0`` discards only the 4ph linewidths and keeps the 3ph "
+"ones."
+msgstr ""
+"保存された線幅はそのまま再利用されます。力定数や、:math:`k` "
+"メッシュやスミアリングなど線幅が変わる設定を変更した場合は、:red:`BAs.kappa.h5` を削除するか、``&kappa`` "
+"フィールドで ``RESTART = 0`` (3ph の部分) または ``RESTART_4PH = 0`` (4ph の部分) "
+"を設定してください。``RESTART_4PH = 0`` は 4ph の線幅のみを破棄し、3ph の線幅は保持します。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:158
+msgid ""
+"With ``INCLUDE_4PH = 1``, the output :red:`BAs.kl` is replaced by two "
+"files:"
+msgstr "``INCLUDE_4PH = 1`` の場合、出力 :red:`BAs.kl` は次の 2 つのファイルに置き換えられます。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:160
+msgid ""
+":red:`BAs.kl3`: the thermal conductivity with three-phonon (and isotope) "
+"scattering only. It is the same as :red:`BAs.kl` of step 1."
+msgstr ""
+":red:`BAs.kl3`: 3 フォノン散乱 (および同位体散乱) のみを考慮した熱伝導率。ステップ 1 の :red:`BAs.kl` "
+"と同じです。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:161
+msgid ""
+":red:`BAs.kl4`: the thermal conductivity with three- and four-phonon "
+"scattering."
+msgstr ":red:`BAs.kl4`: 3 フォノン散乱と 4 フォノン散乱を考慮した熱伝導率。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:163
+#, python-brace-format
+msgid ""
+"At 300 K, the four-phonon scattering reduces :math:`\\kappa_{xx}` from "
+"1218 W/mK to 811 W/mK, by one third. The linewidths in "
+":red:`BAs.kappa.h5` (group ``/scattering/3ph`` and ``/scattering/4ph``, "
+"see :ref:`label_hdf5_kappa`) show where this comes from. The following "
+"figure plots them at 300 K, each on its own :math:`k` mesh."
+msgstr ""
+"300 K では、4 フォノン散乱によって :math:`\\kappa_{xx}` は 1218 W/mK から 811 W/mK へと 3 "
+"分の 1 減少します。その原因は :red:`BAs.kappa.h5` の線幅 (グループ ``/scattering/3ph`` と "
+"``/scattering/4ph``、:ref:`label_hdf5_kappa` を参照) からわかります。次の図は、300 K "
+"における線幅をそれぞれの :math:`k` メッシュ上でプロットしたものです。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:171
+msgid ""
+"Three- and four-phonon linewidths of BAs at 300 K. The lifetime is "
+":math:`\\tau = 1/(2\\Gamma)`, with :math:`\\Gamma` as an angular "
+"frequency."
+msgstr ""
+"300 K における BAs の 3 フォノンおよび 4 フォノン線幅。寿命は :math:`\\tau = 1/(2\\Gamma)` "
+"で与えられます。ここで :math:`\\Gamma` は角振動数の単位で表した線幅です。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:173
+msgid ""
+"Above 600 cm\\ :sup:`-1`, the 3ph linewidths of the optical modes drop by"
+" orders of magnitude near 700 cm\\ :sup:`-1`, where the three-phonon "
+"processes are nearly forbidden, and the 4ph channel dominates. For the "
+"acoustic modes above about 150 cm\\ :sup:`-1`, the 4ph linewidths are "
+"comparable to the 3ph ones. The plotted data were extracted from "
+":red:`BAs.kappa.h5` with ``h5py`` and are provided as "
+":red:`BAs_linewidth_3ph_300K.txt` and :red:`BAs_linewidth_4ph_300K.txt` "
+"in **example/BAs/reference**; the zero linewidths of the acoustic modes "
+"at :math:`\\Gamma` are omitted."
+msgstr ""
+"600 cm\\ :sup:`-1` 以上では、3 フォノン過程がほぼ禁制となる 700 cm\\ :sup:`-1` 付近で光学モードの 3ph"
+" 線幅が桁違いに小さくなり、4ph のチャネルが支配的になります。約 150 cm\\ :sup:`-1` 以上の音響モードでは、4ph の線幅は"
+" 3ph の線幅と同程度です。プロットしたデータは ``h5py`` を用いて :red:`BAs.kappa.h5` "
+"から抽出したもので、**example/BAs/reference** に :red:`BAs_linewidth_3ph_300K.txt` "
+"および :red:`BAs_linewidth_4ph_300K.txt` として用意されています。:math:`\\Gamma` "
+"点における音響モードのゼロの線幅は省いています。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:182
+msgid "Step 3. Go beyond the RTA with the iterative BTE"
+msgstr "ステップ 3. 反復 BTE による RTA を超えた計算"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:184
+msgid ""
+"In the relaxation-time approximation (RTA), every scattering process is "
+"treated as if it destroyed the heat current. Normal processes, which "
+"conserve the crystal momentum, do not, and they dominate the three-phonon"
+" scattering in BAs. The RTA therefore underestimates the thermal "
+"conductivity of BAs, and the linearized Boltzmann transport equation "
+"(BTE) should be solved. The third input :red:`step3_ibte.in` adds "
+"``SOLVER = IBTE`` to the second one:"
+msgstr ""
+"緩和時間近似 (RTA) "
+"では、すべての散乱過程が熱流を失わせるかのように扱われます。しかし、結晶運動量を保存する正常過程は熱流を失わせません。BAs の 3 "
+"フォノン散乱ではこの正常過程が支配的です。そのため RTA は BAs の熱伝導率を過小評価するので、線形化ボルツマン輸送方程式 (BTE) "
+"を解く必要があります。3 番目の入力 :red:`step3_ibte.in` は、2 番目の入力に ``SOLVER = IBTE`` "
+"を加えたものです。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:192
+msgid ""
+":download:`Download step3_ibte.in "
+"<../../../example/BAs/reference/step3_ibte.in>`"
+msgstr ""
+":download:`step3_ibte.in をダウンロード "
+"<../../../example/BAs/reference/step3_ibte.in>`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:198
+msgid ""
+"The iterative solver needs the full three-phonon collision matrix, which "
+"is not stored in :red:`BAs.kappa.h5`, so this step recalculates the 3ph "
+"transition probabilities. The 4ph linewidths are reused (``174 previously"
+" computed 4ph modes were loaded from BAs.kappa.h5.``), and they enter as "
+"out-scattering terms only: the header of the output file says ``4ph is "
+"included non-iteratively``. The result is written to :red:`BAs.kl_iter`."
+msgstr ""
+"反復法のソルバーには 3 フォノンの衝突行列全体が必要ですが、これは :red:`BAs.kappa.h5` "
+"には保存されていないため、このステップでは 3ph の遷移確率を再計算します。4ph の線幅は再利用され (``174 previously "
+"computed 4ph modes were loaded from BAs.kappa.h5.``)、流出散乱 (out-"
+"scattering) の項としてのみ取り込まれます。出力ファイルのヘッダーにも ``4ph is included non-"
+"iteratively`` と書かれています。結果は :red:`BAs.kl_iter` に書き出されます。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:204
+msgid ""
+"``SOLVER = IBTE`` is a pilot implementation under development, and "
+"**anphon** prints a warning to that effect at the start of the run. "
+"Please check the validity of the results carefully."
+msgstr ""
+"``SOLVER = IBTE`` は開発中の試験的な実装であり、**anphon** "
+"は実行開始時にその旨の警告を出力します。結果の妥当性は慎重に確認してください。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:207
+#, python-brace-format, python-format
+msgid ""
+"The log file prints :math:`\\kappa` at every iteration for each "
+"temperature. With the default ``ITER_THRESHOLD = 0.02``, :math:`\\kappa` "
+"still changes by about 2% between the last two iterations, so use a "
+"smaller :ref:`ITER_THRESHOLD <anphon_iter_threshold>` for production "
+"calculations. At 300 K, :math:`\\kappa_{xx}` is 1171 W/mK, about 45% "
+"higher than the RTA value with the same scattering processes. The "
+"background of the iterative solution is explained in :ref:`this page "
+"<kappa_beyond_rta>`."
+msgstr ""
+"ログファイルには、各温度について反復ごとの :math:`\\kappa` が出力されます。デフォルトの ``ITER_THRESHOLD = "
+"0.02`` では、最後の 2 回の反復の間で :math:`\\kappa` がまだ約 2% 変化するので、実用計算ではより小さい "
+":ref:`ITER_THRESHOLD <anphon_iter_threshold>` を用いてください。300 K では "
+":math:`\\kappa_{xx}` は 1171 W/mK で、同じ散乱過程を用いた RTA の値より約 45% "
+"高くなります。反復解の背景については :ref:`こちらのページ <kappa_beyond_rta>` で説明しています。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:217
+msgid "Results"
+msgstr "結果"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:219
+#, python-brace-format
+msgid ""
+"The thermal conductivity :math:`\\kappa_{xx}` at 300 K from the three "
+"steps is summarized below (:math:`\\kappa_{yy}` and :math:`\\kappa_{zz}` "
+"are the same by cubic symmetry)."
+msgstr ""
+"3 つのステップで得られた 300 K における熱伝導率 :math:`\\kappa_{xx}` を以下にまとめます (立方晶の対称性により "
+":math:`\\kappa_{yy}` と :math:`\\kappa_{zz}` も同じ値です)。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:226
+msgid "Scattering and solver"
+msgstr "散乱とソルバー"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:227
+msgid "Output file"
+msgstr "出力ファイル"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:228
+#, python-brace-format
+msgid ":math:`\\kappa_{xx}` at 300 K (W/mK)"
+msgstr "300 K における :math:`\\kappa_{xx}` (W/mK)"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:229
+msgid "3ph + isotope, RTA"
+msgstr "3ph + 同位体、RTA"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:230
+msgid ":red:`BAs.kl` (:red:`BAs.kl3`)"
+msgstr ":red:`BAs.kl` (:red:`BAs.kl3`)"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:231
+msgid "1218"
+msgstr "1218"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:232
+msgid "3ph + 4ph + isotope, RTA"
+msgstr "3ph + 4ph + 同位体、RTA"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:233
+msgid ":red:`BAs.kl4`"
+msgstr ":red:`BAs.kl4`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:234
+msgid "811"
+msgstr "811"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:235
+msgid "3ph + 4ph + isotope, iterative BTE"
+msgstr "3ph + 4ph + 同位体、反復 BTE"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:236
+msgid ":red:`BAs.kl_iter`"
+msgstr ":red:`BAs.kl_iter`"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:237
+msgid "1171"
+msgstr "1171"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:239
+msgid ""
+"The experimental values are about 1000--1300 W/mK [#kang2018]_ [#li2018]_"
+" [#tian2018]_."
+msgstr "実験値は約 1000–1300 W/mK です [#kang2018]_ [#li2018]_ [#tian2018]_。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:254
+#, python-brace-format
+msgid "Temperature dependence of :math:`\\kappa_{xx}` of BAs."
+msgstr "BAs の :math:`\\kappa_{xx}` の温度依存性。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:256
+msgid ""
+"The 4ph scattering grows faster with temperature than the 3ph scattering,"
+" so its effect is small at 100 K (2319 W/mK versus 2277 W/mK) and large "
+"at 1000 K (421 W/mK versus 123 W/mK). The iterative solution raises "
+":math:`\\kappa` at all temperatures, most strongly at low temperatures, "
+"where the normal processes dominate."
+msgstr ""
+"4ph 散乱は 3ph 散乱よりも温度とともに速く増大するため、その効果は 100 K では小さく (2319 W/mK に対して 2277 "
+"W/mK)、1000 K では大きくなります (421 W/mK に対して 123 W/mK)。反復解はすべての温度で "
+":math:`\\kappa` を増大させ、その効果は正常過程が支配的な低温で最も大きくなります。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:261
+msgid ""
+"The inputs of this tutorial are chosen so that it runs in a few minutes "
+"on a laptop. For a quantitative result, check the convergence of "
+":math:`\\kappa` with respect to the 3ph :math:`k` mesh of the ``&kpoint``"
+" field and, independently, with respect to ``KMESH_COARSE``. "
+"``WRITE_INTERPOL = 1`` writes the interpolated 4ph linewidths on the "
+"dense mesh, which helps to check the interpolation. Thanks to the restart"
+" mechanism of step 2, testing ``KMESH_COARSE`` does not require the 3ph "
+"calculation to be repeated: set ``RESTART_4PH = 0`` so that only the 4ph "
+"linewidths are recalculated."
+msgstr ""
+"このチュートリアルの入力は、ノートパソコンで数分で実行できるように選んであります。定量的な結果を得るには、``&kpoint`` フィールドの "
+"3ph 用 :math:`k` メッシュに対する :math:`\\kappa` の収束と、それとは独立に ``KMESH_COARSE`` "
+"に対する収束を確認してください。``WRITE_INTERPOL = 1`` を指定すると、補間された 4ph "
+"の線幅が密なメッシュ上で書き出されるので、補間の確認に役立ちます。ステップ 2 の再開のしくみにより、``KMESH_COARSE`` を試す際に"
+" 3ph の計算を繰り返す必要はありません。``RESTART_4PH = 0`` を設定すれば、4ph の線幅だけが再計算されます。"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:269
+msgid "References"
+msgstr "参考文献"
+
+#: ../../source/tutorial_pages/bas_4ph.rst:270
+msgid ""
+"Lindsay, D. A. Broido, and T. L. Reinecke, Phys. Rev. Lett. **111**, "
+"025901 (2013)."
+msgstr ""
+"Lindsay, D. A. Broido, and T. L. Reinecke, Phys. Rev. Lett. **111**, "
+"025901 (2013)."
+
+#: ../../source/tutorial_pages/bas_4ph.rst:271
+msgid "Feng, L. Lindsay, and X. Ruan, Phys. Rev. B **96**, 161201(R) (2017)."
+msgstr "Feng, L. Lindsay, and X. Ruan, Phys. Rev. B **96**, 161201(R) (2017)."
+
+#: ../../source/tutorial_pages/bas_4ph.rst:272
+msgid "Kang *et al.*, Science **361**, 575 (2018)."
+msgstr "Kang *et al.*, Science **361**, 575 (2018)."
+
+#: ../../source/tutorial_pages/bas_4ph.rst:273
+msgid "Li *et al.*, Science **361**, 579 (2018)."
+msgstr "Li *et al.*, Science **361**, 579 (2018)."
+
+#: ../../source/tutorial_pages/bas_4ph.rst:274
+msgid "Tian *et al.*, Science **361**, 582 (2018)."
+msgstr "Tian *et al.*, Science **361**, 582 (2018)."
+

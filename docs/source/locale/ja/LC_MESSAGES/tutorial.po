@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 00:14+0900\n"
+"POT-Creation-Date: 2026-09-24 01:36+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -60,110 +60,130 @@ msgid ":bdg-primary:`Si` :bdg-secondary:`LAMMPS forces`"
 msgstr ":bdg-primary:`Si` :bdg-secondary:`LAMMPS による力`"
 
 #: ../../source/tutorial.rst:34
+msgid ""
+"Lattice thermal conductivity of BAs with and without four-phonon "
+"scattering"
+msgstr "4 フォノン散乱の有無による BAs の格子熱伝導率"
+
+#: ../../source/tutorial.rst:34
+msgid "BAs: four-phonon scattering"
+msgstr "BAs: 4 フォノン散乱"
+
+#: ../../source/tutorial.rst:40
+msgid ""
+"Add four-phonon scattering to the thermal conductivity of BAs and go "
+"beyond the RTA."
+msgstr "BAs の熱伝導率に 4 フォノン散乱を加え、RTA を超えた計算を行います。"
+
+#: ../../source/tutorial.rst:43
+msgid ":bdg-primary:`BAs` :bdg-secondary:`kappa + 4ph`"
+msgstr ":bdg-primary:`BAs` :bdg-secondary:`熱伝導率 + 4ph`"
+
+#: ../../source/tutorial.rst:45
 msgid "Phonon dispersion of PbTe with different NONANALYTIC options"
 msgstr "NONANALYTIC オプションごとの PbTe のフォノン分散"
 
-#: ../../source/tutorial.rst:34
+#: ../../source/tutorial.rst:45
 msgid "PbTe (non-analytic correction)"
 msgstr "PbTe (非解析補正)"
 
-#: ../../source/tutorial.rst:40
+#: ../../source/tutorial.rst:51
 msgid ""
 "LO-TO splitting in polar materials from Born effective charges and the "
 "NONANALYTIC options."
 msgstr "ボルン有効電荷と NONANALYTIC オプションによる極性物質の LO-TO 分裂を扱います。"
 
-#: ../../source/tutorial.rst:43
+#: ../../source/tutorial.rst:54
 msgid ":bdg-primary:`PbTe` :bdg-secondary:`harmonic + NONANALYTIC`"
 msgstr ":bdg-primary:`PbTe` :bdg-secondary:`調和 + NONANALYTIC`"
 
-#: ../../source/tutorial.rst:45
+#: ../../source/tutorial.rst:56
 msgid "Self-consistent phonon dispersion of SrTiO3"
 msgstr "SrTiO3 の自己無撞着フォノン分散"
 
-#: ../../source/tutorial.rst:45
+#: ../../source/tutorial.rst:56
 msgid "SrTiO3: self-consistent phonons"
 msgstr "SrTiO3: 自己無撞着フォノン"
 
-#: ../../source/tutorial.rst:51
+#: ../../source/tutorial.rst:62
 msgid ""
 "Stabilize soft modes at finite temperature and compute SCP thermodynamic "
 "functions."
 msgstr "有限温度でソフトモードを安定化し、SCP 熱力学関数を計算します。"
 
-#: ../../source/tutorial.rst:54
+#: ../../source/tutorial.rst:65
 msgid ":bdg-primary:`SrTiO3` :bdg-secondary:`MODE = SCPH`"
 msgstr ":bdg-primary:`SrTiO3` :bdg-secondary:`MODE = SCPH`"
 
-#: ../../source/tutorial.rst:56
+#: ../../source/tutorial.rst:67
 msgid "Cross-validation score of BaTiO3"
 msgstr "BaTiO3 の交差検証スコア"
 
-#: ../../source/tutorial.rst:56
+#: ../../source/tutorial.rst:67
 msgid "BaTiO3: anharmonic IFCs"
 msgstr "BaTiO3: 非調和 IFC"
 
-#: ../../source/tutorial.rst:62
+#: ../../source/tutorial.rst:73
 msgid ""
 "Fit anharmonic IFCs from AIMD-sampled configurations, with the "
 "regularization chosen by cross validation."
 msgstr "AIMD でサンプリングした構造から非調和 IFC をフィッティングします。正則化の強さは交差検証で決めます。"
 
-#: ../../source/tutorial.rst:65
+#: ../../source/tutorial.rst:76
 msgid ":bdg-primary:`BaTiO3` :bdg-secondary:`anharmonic IFCs + CV`"
 msgstr ":bdg-primary:`BaTiO3` :bdg-secondary:`非調和 IFC + CV`"
 
-#: ../../source/tutorial.rst:67
+#: ../../source/tutorial.rst:78
 msgid "2x2x2 supercell of Si"
 msgstr "Si の 2x2x2 スーパーセル"
 
-#: ../../source/tutorial.rst:67
+#: ../../source/tutorial.rst:78
 msgid "Si: anharmonic IFCs"
 msgstr "Si: 非調和 IFC"
 
-#: ../../source/tutorial.rst:73
+#: ../../source/tutorial.rst:84
 msgid ""
 "Sample configurations from the harmonic potential energy surface and run "
 "the CV sets as separate jobs."
 msgstr "調和ポテンシャルエネルギー曲面から構造をサンプリングし、CV の各セットを別々のジョブとして実行します。"
 
-#: ../../source/tutorial.rst:76
+#: ../../source/tutorial.rst:87
 msgid ":bdg-primary:`Si` :bdg-secondary:`anharmonic IFCs + CV`"
 msgstr ":bdg-primary:`Si` :bdg-secondary:`非調和 IFC + CV`"
 
-#: ../../source/tutorial.rst:78
+#: ../../source/tutorial.rst:89
 msgid "Temperature dependence of atomic displacements in BaTiO3"
 msgstr "BaTiO3 における原子変位の温度依存性"
 
-#: ../../source/tutorial.rst:78
+#: ../../source/tutorial.rst:89
 msgid "BaTiO3: SCPH structural optimization"
 msgstr "BaTiO3: SCPH 構造最適化"
 
-#: ../../source/tutorial.rst:84
+#: ../../source/tutorial.rst:95
 msgid ""
 "Follow the cubic-tetragonal phase transition through the temperature-"
 "dependent atomic positions."
 msgstr "温度依存する原子位置から立方晶-正方晶相転移を追跡します。"
 
-#: ../../source/tutorial.rst:87
+#: ../../source/tutorial.rst:98
 msgid ":bdg-primary:`BaTiO3` :bdg-secondary:`SCPH + RELAX_STR`"
 msgstr ":bdg-primary:`BaTiO3` :bdg-secondary:`SCPH + RELAX_STR`"
 
-#: ../../source/tutorial.rst:89
+#: ../../source/tutorial.rst:100
 msgid "Thermal strain of ZnO"
 msgstr "ZnO の熱ひずみ"
 
-#: ../../source/tutorial.rst:89
+#: ../../source/tutorial.rst:100
 msgid "ZnO: QHA structural optimization"
 msgstr "ZnO: QHA 構造最適化"
 
-#: ../../source/tutorial.rst:95
+#: ../../source/tutorial.rst:106
 msgid ""
 "Thermal expansion of wurtzite ZnO from the strain couplings within the "
 "QHA."
 msgstr "準調和近似 (QHA) の範囲で、ひずみ結合からウルツ鉱型 ZnO の熱膨張を計算します。"
 
-#: ../../source/tutorial.rst:98
+#: ../../source/tutorial.rst:109
 msgid ":bdg-primary:`ZnO` :bdg-secondary:`QHA + RELAX_STR`"
 msgstr ":bdg-primary:`ZnO` :bdg-secondary:`QHA + RELAX_STR`"
 

@@ -31,6 +31,17 @@ Tutorial
          +++
          :bdg-primary:`Si` :bdg-secondary:`LAMMPS forces`
 
+      .. grid-item-card:: BAs: four-phonon scattering
+         :link: tutorial_pages/bas_4ph
+         :link-type: doc
+         :img-top: ../img/BAs_kappa.png
+         :img-alt: Lattice thermal conductivity of BAs with and without four-phonon scattering
+
+         Add four-phonon scattering to the thermal conductivity of BAs and go beyond the RTA.
+
+         +++
+         :bdg-primary:`BAs` :bdg-secondary:`kappa + 4ph`
+
       .. grid-item-card:: PbTe (non-analytic correction)
          :link: tutorial_pages/pbte_nonanalytic_correction
          :link-type: doc
@@ -103,6 +114,7 @@ Tutorial
 
    tutorial_pages/silicon
    tutorial_pages/silicon_lammps
+   tutorial_pages/bas_4ph
    tutorial_pages/pbte_nonanalytic_correction
    tutorial_pages/sto_scph
    tutorial_pages/bto_ifc

@@ -1,0 +1,24 @@
+&general
+  PREFIX = BAs
+  MODE = kappa
+  KD = As B
+  MASS = 74.9216 10.81
+  FCSFILE = BAs-paw-40-480-N60-rcut12-8.xml
+  NONANALYTIC = 2
+  BORNINFO = BAs.born
+  TMIN = 100; TMAX = 1000; DT = 50
+  ISMEAR = 2
+/
+&cell
+1.88973
+   0.00000000   2.37148152   2.37148152
+   2.37148152   0.00000000   2.37148152
+   2.37148152   2.37148152   0.00000000
+/
+&kpoint
+  2
+  20 20 20
+/
+&kappa
+  ISOTOPE = 1
+/
