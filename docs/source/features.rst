@@ -85,8 +85,8 @@ Harmonic properties
      -
      -
 
-Three-phonon properties
-^^^^^^^^^^^^^^^^^^^^^^^
+Cubic anharmonic properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -133,11 +133,12 @@ Three-phonon properties
      - ✓
      - (✓)
 
-Note: FC4 is needed for the frequency shift due to the quartic term (``QUARTIC = 1``),
-and for the strain dependence of the cubic force constants (``NEWFCS`` with ``QUARTIC = 1``).
+.. note::
+   FC4 is needed for the frequency shift due to the quartic term (``QUARTIC = 1``),
+   and for the strain dependence of the cubic force constants (``NEWFCS`` with ``QUARTIC = 1``).
 
-Four-phonon and finite-temperature properties
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Quartic anharmonic properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -163,13 +164,13 @@ Four-phonon and finite-temperature properties
      - ✓
      - ✓
      - ✓
-   * - Thermal expansion within the quasi-harmonic approximation
+   * - Crystal structure and thermal expansion at finite temperatures by SCPH
+     - ``MODE = SCPH``, ``RELAX_STR``
+     - ✓
+     - ✓
+     - ✓
+   * - Crystal structure and thermal expansion within the quasi-harmonic approximation
      - ``MODE = QHA``
-     - ✓
-     - ✓
-     - ✓
-   * - Crystal structure at finite temperatures
-     - ``RELAX_STR`` in ``MODE = SCPH`` or ``QHA``
      - ✓
      - ✓
      - ✓
@@ -179,7 +180,8 @@ Four-phonon and finite-temperature properties
      - ✓
      - ✓
 
-Note: relaxing the cell (``RELAX_STR = 2``) also needs DFT calculations of strained cells (``STRAINFILE``),
-unless symmetry allows them to be skipped (``STRAIN_COUPLING = 0``); see :doc:`quickstart`.
+.. note::
+   Relaxing the cell (``RELAX_STR = 2``) also needs DFT calculations of strained cells (``STRAINFILE``),
+   unless symmetry allows them to be skipped (``STRAIN_COUPLING = 0``); see :doc:`quickstart`.
 
 The input variables are described in :ref:`label_inputvar_anphon`, and step-by-step examples are given in the :doc:`tutorial`.

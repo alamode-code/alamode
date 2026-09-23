@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 16:12+0900\n"
+"POT-Creation-Date: 2026-09-23 16:30+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -71,27 +71,27 @@ msgid "Harmonic properties"
 msgstr "調和物性"
 
 #: ../../source/features.rst:32 ../../source/features.rst:95
-#: ../../source/features.rst:146
+#: ../../source/features.rst:147
 msgid "Property"
 msgstr "物性"
 
 #: ../../source/features.rst:33 ../../source/features.rst:96
-#: ../../source/features.rst:147
+#: ../../source/features.rst:148
 msgid "Setting"
 msgstr "設定"
 
 #: ../../source/features.rst:34 ../../source/features.rst:97
-#: ../../source/features.rst:148
+#: ../../source/features.rst:149
 msgid "FC2"
 msgstr "FC2"
 
 #: ../../source/features.rst:35 ../../source/features.rst:98
-#: ../../source/features.rst:149
+#: ../../source/features.rst:150
 msgid "FC3"
 msgstr "FC3"
 
 #: ../../source/features.rst:36 ../../source/features.rst:99
-#: ../../source/features.rst:150
+#: ../../source/features.rst:151
 msgid "FC4"
 msgstr "FC4"
 
@@ -115,15 +115,15 @@ msgstr "``MODE = phonons``, ``KPMODE = 1``"
 #: ../../source/features.rst:122 ../../source/features.rst:123
 #: ../../source/features.rst:127 ../../source/features.rst:128
 #: ../../source/features.rst:132 ../../source/features.rst:133
-#: ../../source/features.rst:153 ../../source/features.rst:154
-#: ../../source/features.rst:155 ../../source/features.rst:158
-#: ../../source/features.rst:159 ../../source/features.rst:160
-#: ../../source/features.rst:163 ../../source/features.rst:164
-#: ../../source/features.rst:165 ../../source/features.rst:168
-#: ../../source/features.rst:169 ../../source/features.rst:170
-#: ../../source/features.rst:173 ../../source/features.rst:174
-#: ../../source/features.rst:175 ../../source/features.rst:178
-#: ../../source/features.rst:179 ../../source/features.rst:180
+#: ../../source/features.rst:154 ../../source/features.rst:155
+#: ../../source/features.rst:156 ../../source/features.rst:159
+#: ../../source/features.rst:160 ../../source/features.rst:161
+#: ../../source/features.rst:164 ../../source/features.rst:165
+#: ../../source/features.rst:166 ../../source/features.rst:169
+#: ../../source/features.rst:170 ../../source/features.rst:171
+#: ../../source/features.rst:174 ../../source/features.rst:175
+#: ../../source/features.rst:176 ../../source/features.rst:179
+#: ../../source/features.rst:180 ../../source/features.rst:181
 msgid "✓"
 msgstr "✓"
 
@@ -200,8 +200,8 @@ msgid "``DIELEC``, ``ZMODE`` (with ``BORNINFO``)"
 msgstr "``DIELEC``、``ZMODE`` (``BORNINFO`` が必要)"
 
 #: ../../source/features.rst:89
-msgid "Three-phonon properties"
-msgstr "3 フォノン物性"
+msgid "Cubic anharmonic properties"
+msgstr "3 次の非調和性が関わる物性"
 
 #: ../../source/features.rst:100
 msgid "Gr\\ |umulaut_u|\\ neisen parameters"
@@ -263,76 +263,87 @@ msgstr "ひずみを与えたセルの力定数"
 msgid "``NEWFCS``"
 msgstr "``NEWFCS``"
 
-#: ../../source/features.rst:136
+#: ../../source/features.rst:137
 msgid ""
-"Note: FC4 is needed for the frequency shift due to the quartic term "
-"(``QUARTIC = 1``), and for the strain dependence of the cubic force constants"
-" (``NEWFCS`` with ``QUARTIC = 1``)."
+"FC4 is needed for the frequency shift due to the quartic term (``QUARTIC = "
+"1``), and for the strain dependence of the cubic force constants (``NEWFCS`` "
+"with ``QUARTIC = 1``)."
 msgstr ""
-"注: 4 次の項による振動数シフト (``QUARTIC = 1``) と、3 次の力定数のひずみ依存性 (``NEWFCS`` と ``QUARTIC "
-"= 1``) には FC4 が必要です。"
+"4 次の項による振動数シフト (``QUARTIC = 1``) と、3 次の力定数のひずみ依存性 (``NEWFCS`` と ``QUARTIC = "
+"1``) には FC4 が必要です。"
 
-#: ../../source/features.rst:140
-msgid "Four-phonon and finite-temperature properties"
-msgstr "4 フォノン物性と有限温度物性"
+#: ../../source/features.rst:141
+msgid "Quartic anharmonic properties"
+msgstr "4 次の非調和性が関わる物性"
 
-#: ../../source/features.rst:151
+#: ../../source/features.rst:152
 msgid "Four-phonon scattering in the thermal conductivity"
 msgstr "熱伝導率における 4 フォノン散乱"
 
-#: ../../source/features.rst:152
+#: ../../source/features.rst:153
 msgid "``MODE = kappa``, ``INCLUDE_4PH = 1``"
 msgstr "``MODE = kappa``, ``INCLUDE_4PH = 1``"
 
-#: ../../source/features.rst:156
+#: ../../source/features.rst:157
 msgid ""
 "Temperature-dependent phonons by the self-consistent phonon (SCPH) method"
 msgstr "自己無撞着フォノン (SCPH) 法による温度依存フォノン"
 
-#: ../../source/features.rst:157 ../../source/features.rst:162
+#: ../../source/features.rst:158 ../../source/features.rst:163
 msgid "``MODE = SCPH``"
 msgstr "``MODE = SCPH``"
 
-#: ../../source/features.rst:161
+#: ../../source/features.rst:162
 msgid "Anharmonic free energy"
 msgstr "非調和自由エネルギー"
 
-#: ../../source/features.rst:166
-msgid "Thermal expansion within the quasi-harmonic approximation"
-msgstr "準調和近似による熱膨張"
-
 #: ../../source/features.rst:167
+msgid "Crystal structure and thermal expansion at finite temperatures by SCPH"
+msgstr "SCPH による有限温度の結晶構造と熱膨張"
+
+#: ../../source/features.rst:168
+msgid "``MODE = SCPH``, ``RELAX_STR``"
+msgstr "``MODE = SCPH``、``RELAX_STR``"
+
+#: ../../source/features.rst:172
+msgid ""
+"Crystal structure and thermal expansion within the quasi-harmonic "
+"approximation"
+msgstr "準調和近似による有限温度の結晶構造と熱膨張"
+
+#: ../../source/features.rst:173
 msgid "``MODE = QHA``"
 msgstr "``MODE = QHA``"
 
-#: ../../source/features.rst:171
-msgid "Crystal structure at finite temperatures"
-msgstr "有限温度での結晶構造"
-
-#: ../../source/features.rst:172
-msgid "``RELAX_STR`` in ``MODE = SCPH`` or ``QHA``"
-msgstr "``MODE = SCPH`` または ``QHA`` での ``RELAX_STR``"
-
-#: ../../source/features.rst:176
+#: ../../source/features.rst:177
 msgid "Thermal conductivity with SCPH or QHA phonons and structures"
 msgstr "SCPH または QHA のフォノンと構造を用いた熱伝導率"
 
-#: ../../source/features.rst:177
+#: ../../source/features.rst:178
 msgid "``FC2_TEMPERATURE`` (and ``RELAXED_STRUCTURE``)"
 msgstr "``FC2_TEMPERATURE`` (および ``RELAXED_STRUCTURE``)"
 
-#: ../../source/features.rst:182
+#: ../../source/features.rst:184
 msgid ""
-"Note: relaxing the cell (``RELAX_STR = 2``) also needs DFT calculations of "
-"strained cells (``STRAINFILE``), unless symmetry allows them to be skipped "
+"Relaxing the cell (``RELAX_STR = 2``) also needs DFT calculations of strained"
+" cells (``STRAINFILE``), unless symmetry allows them to be skipped "
 "(``STRAIN_COUPLING = 0``); see :doc:`quickstart`."
 msgstr ""
-"注: セルの最適化 (``RELAX_STR = 2``) には、ひずみを与えたセルの DFT 計算 (``STRAINFILE``) "
+"セルの最適化 (``RELAX_STR = 2``) には、ひずみを与えたセルの DFT 計算 (``STRAINFILE``) "
 "も必要です。ただし対称性により省略できる場合 (``STRAIN_COUPLING = 0``) を除きます。:doc:`quickstart` "
 "を参照してください。"
 
-#: ../../source/features.rst:185
+#: ../../source/features.rst:187
 msgid ""
 "The input variables are described in :ref:`label_inputvar_anphon`, and step-"
 "by-step examples are given in the :doc:`tutorial`."
 msgstr "入力変数は :ref:`label_inputvar_anphon` に、手順を追った例は :doc:`tutorial` にあります。"
+
+#~ msgid "Three-phonon properties"
+#~ msgstr "3 フォノン物性"
+
+#~ msgid "Four-phonon and finite-temperature properties"
+#~ msgstr "4 フォノン物性と有限温度物性"
+
+#~ msgid "``RELAX_STR`` in ``MODE = SCPH`` or ``QHA``"
+#~ msgstr "``MODE = SCPH`` または ``QHA`` での ``RELAX_STR``"
