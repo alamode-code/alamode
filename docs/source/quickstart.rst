@@ -29,8 +29,9 @@ Step 1: Force constants with alm
    Phonons are sensitive to the lattice constant, especially in polar materials such as perovskites.
 
 2. **Choose a supercell.**
-   A conventional cell is usually a reasonable start.
-   If the primitive cell is already large (:math:`a \sim 10` |Angstrom|), it can be used as it is.
+   The suitable size depends on the material and the properties of interest.
+   Give the primitive cell to *alm* and let it generate the supercell with :ref:`SUPERCELL <alm_supercell>` (recommended),
+   or build the supercell with an external tool such as pymatgen or ASE and give it to *alm* as it is.
 
 3. **Harmonic force constants (FC2).**
    Run *alm* with ``MODE = suggest`` and ``NORDER = 1`` to obtain the displacement patterns (``PREFIX``.pattern_HARMONIC),

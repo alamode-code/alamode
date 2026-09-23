@@ -209,8 +209,8 @@ ALM = dict(
         "cell": (
             "set",
             L(
-                "Choose a supercell\na conventional cell is often a good start",
-                "スーパーセルを決める\n通常は慣用単位胞程度から",
+                "Choose a supercell\n`SUPERCELL` of alm (recommended),\nor build it with pymatgen, ASE, ...",
+                "スーパーセルを決める\nalm の `SUPERCELL` (推奨),\nまたは pymatgen, ASE などで作成",
             ),
         ),
         "sug": (

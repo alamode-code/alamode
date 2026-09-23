@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 13:47+0900\n"
+"POT-Creation-Date: 2026-09-23 16:00+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -72,14 +72,17 @@ msgstr ""
 
 #: ../../source/quickstart.rst:31
 msgid ""
-"**Choose a supercell.** A conventional cell is usually a reasonable start. If"
-" the primitive cell is already large (:math:`a \\sim 10` |Angstrom|), it can "
-"be used as it is."
+"**Choose a supercell.** The suitable size depends on the material and the "
+"properties of interest. Give the primitive cell to *alm* and let it generate "
+"the supercell with :ref:`SUPERCELL <alm_supercell>` (recommended), or build "
+"the supercell with an external tool such as pymatgen or ASE and give it to "
+"*alm* as it is."
 msgstr ""
-"**スーパーセルを決める。** 通常は慣用単位胞から始めるのが妥当です。基本セルがすでに大きい場合 (:math:`a \\sim 10` "
-"|Angstrom|) は、そのまま用いることもできます。"
+"**スーパーセルを決める。** 適切な大きさは物質や目的の物性によって異なります。基本セルを *alm* に与えて :ref:`SUPERCELL "
+"<alm_supercell>` でスーパーセルを生成する (推奨) か、pymatgen や ASE などの外部ツールでスーパーセルを作成し、そのまま "
+"*alm* に与えます。"
 
-#: ../../source/quickstart.rst:35
+#: ../../source/quickstart.rst:36
 msgid ""
 "**Harmonic force constants (FC2).** Run *alm* with ``MODE = suggest`` and "
 "``NORDER = 1`` to obtain the displacement patterns "
@@ -89,13 +92,13 @@ msgstr ""
 "**調和力定数 (FC2)。** *alm* を ``MODE = suggest``、``NORDER = 1`` で実行して変位パターン "
 "(``PREFIX``.pattern_HARMONIC) を得て、``displace.py`` で変位させた構造を作成します::"
 
-#: ../../source/quickstart.rst:42
+#: ../../source/quickstart.rst:43
 msgid ""
 "Calculate the forces of all structures with DFT, and collect the "
 "displacements and forces into one file (``DFSET``)::"
 msgstr "すべての構造について DFT で力を計算し、変位と力を 1 つのファイル (``DFSET``) にまとめます::"
 
-#: ../../source/quickstart.rst:46
+#: ../../source/quickstart.rst:47
 msgid ""
 "Then set ``MODE = optimize``, give the ``DFSET`` file in the ``&optimize`` "
 "field, and run *alm* again with ``LMODEL = ols``. The harmonic force "
@@ -104,7 +107,7 @@ msgstr ""
 "次に ``MODE = optimize`` とし、``&optimize`` フィールドで ``DFSET`` ファイルを指定して、``LMODEL ="
 " ols`` で *alm* を再度実行します。調和力定数は ``PREFIX``.h5 に書き出されます。"
 
-#: ../../source/quickstart.rst:49
+#: ../../source/quickstart.rst:50
 msgid ""
 "**Anharmonic force constants (FC3, FC4, ...)** — needed for ``kappa``, "
 "``SCPH``, ``QHA``, and more. The recommended way is to fit them to random "
@@ -113,7 +116,7 @@ msgstr ""
 "**非調和力定数 (FC3, FC4, ...)** — ``kappa``、``SCPH``、``QHA`` "
 "などに必要です。ランダムな変位にフィットする方法を推奨します:"
 
-#: ../../source/quickstart.rst:52
+#: ../../source/quickstart.rst:53
 msgid ""
 "Calculate the harmonic phonons of the supercell with *anphon* (``MODE = "
 "phonons``, ``KPMODE = 0``) using the harmonic force constants. This writes "
@@ -122,7 +125,7 @@ msgstr ""
 "調和力定数を用いて、*anphon* (``MODE = phonons``、``KPMODE = 0``) "
 "でスーパーセルの調和フォノンを計算します。フォノンの固有ベクトルが ``PREFIX``.evec に書き出されます。"
 
-#: ../../source/quickstart.rst:54
+#: ../../source/quickstart.rst:55
 msgid ""
 "``displace.py --random_normalcoord --evec PREFIX.evec --temp T`` generates "
 "structures sampled at the temperature ``T``. Alternatively, ``--random`` adds"
@@ -131,11 +134,11 @@ msgstr ""
 "``displace.py --random_normalcoord --evec PREFIX.evec --temp T`` は温度 ``T`` "
 "でサンプリングした構造を生成します。代わりに ``--random`` を用いると、分子動力学計算のスナップショットにランダムな変位を加えます。"
 
-#: ../../source/quickstart.rst:56
+#: ../../source/quickstart.rst:57
 msgid "Calculate the forces with DFT and make a ``DFSET`` file as in step 3."
 msgstr "ステップ 3 と同様に DFT で力を計算し、``DFSET`` ファイルを作成します。"
 
-#: ../../source/quickstart.rst:57
+#: ../../source/quickstart.rst:58
 msgid ""
 "Run *alm* with ``MODE = optimize``, ``NORDER = 2`` or larger, and ``LMODEL = "
 "enet`` or ``adaptive-lasso``. Give the harmonic force constants with "
@@ -144,11 +147,11 @@ msgstr ""
 "*alm* を ``MODE = optimize``、``NORDER = 2`` 以上、``LMODEL = enet`` または "
 "``adaptive-lasso`` で実行します。``FC2FIX`` で調和力定数を与えると、非調和項のみがフィットされます。"
 
-#: ../../source/quickstart.rst:60
+#: ../../source/quickstart.rst:61
 msgid "The result, ``PREFIX``.h5, contains everything *anphon* needs."
 msgstr "結果の ``PREFIX``.h5 には、*anphon* に必要な情報がすべて含まれます。"
 
-#: ../../source/quickstart.rst:62
+#: ../../source/quickstart.rst:63
 msgid ""
 "``displace.py`` and ``extract.py`` support VASP, Quantum ESPRESSO, OpenMX, "
 "xTAPP, and LAMMPS. The ``DFSET`` format is described :ref:`here "
@@ -159,20 +162,20 @@ msgstr ""
 "に対応しています。``DFSET`` の形式は :ref:`こちら <label_format_DFSET>`、完全な例は "
 ":doc:`tutorial_pages/silicon_ifc` を参照してください。"
 
-#: ../../source/quickstart.rst:65
+#: ../../source/quickstart.rst:66
 msgid ""
 "The input variables of *alm* are listed :ref:`here <label_inputvar_alm>`."
 msgstr "*alm* の入力変数の一覧は :ref:`こちら <label_inputvar_alm>` です。"
 
-#: ../../source/quickstart.rst:69
+#: ../../source/quickstart.rst:70
 msgid "Step 2: Phonon properties with anphon"
 msgstr "ステップ 2: anphon によるフォノン物性の計算"
 
-#: ../../source/quickstart.rst:71
+#: ../../source/quickstart.rst:72
 msgid "Flowchart for choosing the MODE of anphon"
 msgstr "anphon の MODE を選ぶフローチャート"
 
-#: ../../source/quickstart.rst:75
+#: ../../source/quickstart.rst:76
 msgid ""
 "Choosing ``MODE``. Each box lists the force constants (FC2: harmonic, FC3: "
 "cubic, FC4: quartic) that ``PREFIX``.h5 must contain."
@@ -180,7 +183,7 @@ msgstr ""
 "``MODE`` の選び方。各ボックスには、``PREFIX``.h5 に含まれている必要がある力定数 (FC2: 調和、FC3: 3 次、FC4: 4 "
 "次) を示しています。"
 
-#: ../../source/quickstart.rst:77
+#: ../../source/quickstart.rst:78
 msgid ""
 "Set ``MODE`` and ``FCSFILE = PREFIX.h5`` in the ``&general`` field of the "
 "*anphon* input, and run::"
@@ -188,63 +191,63 @@ msgstr ""
 "*anphon* の入力の ``&general`` フィールドで ``MODE`` と ``FCSFILE = PREFIX.h5`` "
 "を指定し、次のように実行します::"
 
-#: ../../source/quickstart.rst:82
+#: ../../source/quickstart.rst:83
 msgid ""
 "OpenMP threads are set by ``OMP_NUM_THREADS`` and can be combined with MPI. "
 "The main output files are:"
 msgstr "OpenMP のスレッド数は ``OMP_NUM_THREADS`` で指定し、MPI と併用できます。主な出力ファイルは次の通りです:"
 
-#: ../../source/quickstart.rst:89
+#: ../../source/quickstart.rst:90
 msgid "``MODE``"
 msgstr "``MODE``"
 
-#: ../../source/quickstart.rst:90
+#: ../../source/quickstart.rst:91
 msgid "Main output files"
 msgstr "主な出力ファイル"
 
-#: ../../source/quickstart.rst:91
+#: ../../source/quickstart.rst:92
 msgid "phonons"
 msgstr "phonons"
 
-#: ../../source/quickstart.rst:92
+#: ../../source/quickstart.rst:93
 msgid ""
 "``PREFIX``.bands (dispersion), .dos, .thermo (thermodynamic functions), .msd "
 "(mean-square displacements)"
 msgstr "``PREFIX``.bands (分散関係), .dos, .thermo (熱力学関数), .msd (平均二乗変位)"
 
-#: ../../source/quickstart.rst:93
+#: ../../source/quickstart.rst:94
 msgid "kappa"
 msgstr "kappa"
 
-#: ../../source/quickstart.rst:94
+#: ../../source/quickstart.rst:95
 msgid "``PREFIX``.kappa.h5 (all results), .kl (thermal conductivity)"
 msgstr "``PREFIX``.kappa.h5 (すべての結果), .kl (熱伝導率)"
 
-#: ../../source/quickstart.rst:95
+#: ../../source/quickstart.rst:96
 msgid "selfenergy"
 msgstr "selfenergy"
 
-#: ../../source/quickstart.rst:96
+#: ../../source/quickstart.rst:97
 msgid "``PREFIX``.selfenergy.h5"
 msgstr "``PREFIX``.selfenergy.h5"
 
-#: ../../source/quickstart.rst:97
+#: ../../source/quickstart.rst:98
 msgid "SCPH"
 msgstr "SCPH"
 
-#: ../../source/quickstart.rst:98
+#: ../../source/quickstart.rst:99
 msgid "``PREFIX``.scph.h5, .scph_bands, .scph_dos, .scph_thermo"
 msgstr "``PREFIX``.scph.h5, .scph_bands, .scph_dos, .scph_thermo"
 
-#: ../../source/quickstart.rst:99
+#: ../../source/quickstart.rst:100
 msgid "QHA"
 msgstr "QHA"
 
-#: ../../source/quickstart.rst:100
+#: ../../source/quickstart.rst:101
 msgid "``PREFIX``.qha.h5, .qha_thermo"
 msgstr "``PREFIX``.qha.h5, .qha_thermo"
 
-#: ../../source/quickstart.rst:102
+#: ../../source/quickstart.rst:103
 msgid ""
 "The input variables of *anphon* are listed :ref:`here "
 "<label_inputvar_anphon>`, and all output files :ref:`here "
@@ -253,27 +256,27 @@ msgstr ""
 "*anphon* の入力変数の一覧は :ref:`こちら <label_inputvar_anphon>`、すべての出力ファイルは :ref:`こちら "
 "<reference_output>` です。"
 
-#: ../../source/quickstart.rst:106
+#: ../../source/quickstart.rst:107
 msgid "Finite-temperature calculations (SCPH and QHA)"
 msgstr "有限温度の計算 (SCPH と QHA)"
 
-#: ../../source/quickstart.rst:108
+#: ../../source/quickstart.rst:109
 msgid "Flowchart for the structural optimization at finite temperatures"
 msgstr "有限温度での構造最適化のフローチャート"
 
-#: ../../source/quickstart.rst:112
+#: ../../source/quickstart.rst:113
 msgid ""
 "Options of the finite-temperature calculations, and how to use their results "
 "in later calculations."
 msgstr "有限温度の計算のオプションと、その結果を後の計算で使う方法。"
 
-#: ../../source/quickstart.rst:114
+#: ../../source/quickstart.rst:115
 msgid ""
 "``RELAX_STR`` selects what is relaxed at each temperature: nothing, the "
 "atomic positions, or the atomic positions and the cell."
 msgstr "``RELAX_STR`` で、各温度で何を最適化するか (何もしない、原子位置のみ、原子位置とセル) を選びます。"
 
-#: ../../source/quickstart.rst:115
+#: ../../source/quickstart.rst:116
 msgid ""
 "Relaxing the cell also needs the elastic constants and the coupling between "
 "strain and forces. They come from DFT calculations of strained cells, "
@@ -287,7 +290,7 @@ msgstr ""
 "として与えます。ひずみと力の結合が対称性によりゼロになる場合は、``STRAIN_COUPLING = 0`` とするとこれらの DFT "
 "計算を省略し、残りを力定数から推定します。"
 
-#: ../../source/quickstart.rst:118
+#: ../../source/quickstart.rst:119
 msgid ""
 "The results at every temperature are stored in ``PREFIX``.scph.h5 or "
 "``PREFIX``.qha.h5. To use them in a later ``MODE = kappa`` or ``phonons`` "
@@ -303,63 +306,63 @@ msgstr ""
 "``RELAXED_STRUCTURE = 1`` も指定します。このとき ``FCSFILE`` には SCPH/QHA 計算と同じ FC4 "
 "が含まれている必要があります。``kappa`` では、計算ごとに ``TMIN = TMAX = FC2_TEMPERATURE`` とします。"
 
-#: ../../source/quickstart.rst:126
+#: ../../source/quickstart.rst:127
 msgid "Step 3: Analyze the results"
 msgstr "ステップ 3: 結果の解析"
 
-#: ../../source/quickstart.rst:132
+#: ../../source/quickstart.rst:133
 msgid "Script"
 msgstr "スクリプト"
 
-#: ../../source/quickstart.rst:133
+#: ../../source/quickstart.rst:134
 msgid "Reads"
 msgstr "読み込むファイル"
 
-#: ../../source/quickstart.rst:134
+#: ../../source/quickstart.rst:135
 msgid "Shows"
 msgstr "表示する内容"
 
-#: ../../source/quickstart.rst:135
+#: ../../source/quickstart.rst:136
 msgid "``plotband.py``"
 msgstr "``plotband.py``"
 
-#: ../../source/quickstart.rst:136
+#: ../../source/quickstart.rst:137
 msgid "``PREFIX``.bands"
 msgstr "``PREFIX``.bands"
 
-#: ../../source/quickstart.rst:137
+#: ../../source/quickstart.rst:138
 msgid "Phonon dispersion"
 msgstr "フォノン分散関係"
 
-#: ../../source/quickstart.rst:138
+#: ../../source/quickstart.rst:139
 msgid "``plotdos.py``"
 msgstr "``plotdos.py``"
 
-#: ../../source/quickstart.rst:139
+#: ../../source/quickstart.rst:140
 msgid "``PREFIX``.dos"
 msgstr "``PREFIX``.dos"
 
-#: ../../source/quickstart.rst:140
+#: ../../source/quickstart.rst:141
 msgid "Phonon density of states"
 msgstr "フォノン状態密度"
 
-#: ../../source/quickstart.rst:141
+#: ../../source/quickstart.rst:142
 msgid "``analyzer.py``"
 msgstr "``analyzer.py``"
 
-#: ../../source/quickstart.rst:142
+#: ../../source/quickstart.rst:143
 msgid "``PREFIX``.kappa.h5"
 msgstr "``PREFIX``.kappa.h5"
 
-#: ../../source/quickstart.rst:143
+#: ../../source/quickstart.rst:144
 msgid "Phonon lifetimes, mean free paths, cumulative thermal conductivity"
 msgstr "フォノン寿命、平均自由行程、累積熱伝導率"
 
-#: ../../source/quickstart.rst:145
+#: ../../source/quickstart.rst:146
 msgid "For example::"
 msgstr "例えば::"
 
-#: ../../source/quickstart.rst:151
+#: ../../source/quickstart.rst:152
 msgid ""
 "Each script prints its options with ``-h``. Complete examples are given in "
 "the :doc:`tutorial`."
@@ -681,3 +684,11 @@ msgstr "各スクリプトのオプションは ``-h`` で表示できます。�
 #~ "各温度の結果は ``PREFIX``.scph.h5 または ``PREFIX``.qha.h5 に保存されます。後の ``MODE = kappa`` "
 #~ "や ``phonons`` の計算で用いるには ``FC2_TEMPERATURE`` を指定し、構造を最適化した場合は "
 #~ "``RELAXED_STRUCTURE = 1`` も指定します。"
+
+#~ msgid ""
+#~ "**Choose a supercell.** A conventional cell is usually a reasonable start. If"
+#~ " the primitive cell is already large (:math:`a \\sim 10` |Angstrom|), it can "
+#~ "be used as it is."
+#~ msgstr ""
+#~ "**スーパーセルを決める。** 通常は慣用単位胞から始めるのが妥当です。基本セルがすでに大きい場合 (:math:`a \\sim 10` "
+#~ "|Angstrom|) は、そのまま用いることもできます。"
