@@ -22,3 +22,9 @@ article[role="main"],
 .bz-header-brand > img {
   height: 2.5rem;
 }
+
+/* The :red: role (file names in the tutorials) is pure red, which is hard to read
+   on the dark page. */
+:root[data-theme="dark"] .red {
+  color: #ff8a80;
+}

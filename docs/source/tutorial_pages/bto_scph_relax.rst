@@ -19,7 +19,7 @@ The example input files are provided in **example/BaTiO3/scph_relax**.
 
 Let's move to the example directory
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/scph_relax
 
@@ -32,7 +32,7 @@ Let's move to the example directory
 This tutorial assumes that the harmonic and anharmonic force constants are already calculated up to the fourth order.
 Please copy the file of IFCs calculated in :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` to the current directory.
 
-.. code-block:: bash 
+.. code-block:: console
 
   $ cp ../anharm_IFCs/4_optimize/reference/cBTO222.h5 ./
 
@@ -97,7 +97,7 @@ Then, write the low-temperature structure to the ``&displace``-field.
 
 Now, run the calculation with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ ${ALAMODE_ROOT}/anphon/anphon BTO_scph_thermo.in > BTO_scph_thermo.log
 
@@ -119,7 +119,7 @@ Now, run the calculation with
 
 Plotting the result with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ gnuplot plot_structure.plt
 
@@ -140,7 +140,7 @@ The estimated transition temperature (:math:`T_c`) is around 150~175 K.
 
 The plot of the free energy can be obtained with
 
-.. code-block:: bash
+.. code-block:: console
 
   $ gnuplot plot_free_energy.plt
 

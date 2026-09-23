@@ -18,7 +18,7 @@ The example input files are provided in **example/BaTiO3/anharm_IFCs**.
 
 Let's move to the example directory.
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs
 
@@ -42,7 +42,7 @@ Prepare the :red:`POTCAR` file by yourself and run the AIMD calculation to obtai
 Next, we generate the supercells with random atomic displacements from the AIMD trajectory.
 First, we move to the **1_configurations** directory and copy :red:`vasprun.xml`
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd 1_configurations
   $ cp ../1_vasp_md/vasprun.xml ./ # If you have performed the AIMD calculation
@@ -50,7 +50,7 @@ First, we move to the **1_configurations** directory and copy :red:`vasprun.xml`
 
 :red:`POSCAR_ref_supercell` is the structure of the reference supercell for which we want to calculate the IFCs.
 
-.. code-block:: bash
+.. code-block:: console
 
   $ python3 ${ALAMODE_ROOT}/tools/displace.py --VASP POSCAR_ref_supercell -md vasprun.xml -e 1001:5000:50 --random --mag 0.04 --prefix disp_aimd+random_
 
@@ -101,7 +101,7 @@ files provided in **2_vasp_dfset/reference** to **2_vasp_dfset**.
 
 Generate the displacement-force data with the command
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/2_vasp_dfset
   $ cp ../1_configurations/POSCAR_ref_supercell ./
@@ -123,7 +123,7 @@ Please see :ref:`the documentation <alm_theory_enet>` for the notation and the t
 
 You can run the CV calculation with the following commands.
 
-.. code-block:: bash 
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/3_cv
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_cv.in > BTO_alm_cv.log
@@ -140,7 +140,7 @@ This is because we would like to capture the stability or the curvature of the p
 
 Plotting the generated :red:`cBTO222.cvscore` with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ gnuplot cv_plot.plt
  
@@ -167,7 +167,7 @@ We can see that the CV score takes a minimum at the optimal :math:`\alpha`, whic
 
 Finally, we calculate the IFCs of BaTiO\ :sub:`3` in **example/BaTiO3/anharm_IFCs/4_optimize**.
 
-.. code-block:: bash 
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/4_optimize
 
@@ -186,7 +186,7 @@ You can also use a smaller value for ``CONV_TOL`` to get a more accurate result.
 
 With the input file prepared, run the calculation with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_opt.in > BTO_alm_opt.log
 

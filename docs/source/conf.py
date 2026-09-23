@@ -21,6 +21,7 @@ import sys
 # Make the pure-Python ``alm`` package importable for autodoc (the API reference
 # on the alm_python page) without having to compile/install the wrapper first.
 sys.path.insert(0, os.path.abspath("../../python"))
+sys.path.insert(0, os.path.abspath("sphinxext"))
 
 # autodoc only needs the docstrings/signatures of the high-level alm.py, so mock
 # the compiled extension (and NumPy, which is only used inside method bodies).
@@ -46,6 +47,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
+    "alamode_lexer",  # lexers for ALAMODE input files and plain :: blocks
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -113,6 +115,10 @@ exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+
+# Plain "::" blocks pick their lexer from the content (shell session, ALAMODE
+# input, Python, or text); see sphinxext/alamode_lexer.py.
+highlight_language = "alamode-auto"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []

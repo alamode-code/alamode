@@ -16,7 +16,7 @@ The example input files are provided in **example/SrTiO3/reference**.
 
 Let's move to the example directory
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/SrTiO3
 
@@ -30,7 +30,7 @@ In this tutorial, we assume that the harmonic and anharmonic force constants (up
 
 To start an SCPH calculation, please copy the force constant files and BORNINFO as follows:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cp reference/STO_anharm.xml.bz2 .
     $ bunzip2 STO_anharm.xml.bz2
@@ -65,7 +65,7 @@ Please prepare an input file for band structure calculation (``phband.in``) as f
 
 Please run **anphon** and plot the band structure as
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ${ALAMODE_ROOT}/anphon/anphon phband.in > phband.log
     $ python ${ALAMODE_ROOT}/tools/plotband.py STO222_NA3.bands
@@ -102,14 +102,14 @@ The important parameters for the SCP calculation are :ref:`KMESH_INTERPOLATE <an
 
 Now, let's run **anphon** using MPI parallelization.
 
-.. code-block:: bash
+.. code-block:: console
     
     $ export OMP_NUM_THREADS=1
     $ mpirun -np 4 ${ALAMODE_ROOT}/anphon/anphon scph.in > scph.log
 
 The calculation finishes in ~2 minutes. When it is done, please check if the SCPH iteration reached convergence.
 
-.. code-block:: bash
+.. code-block:: console
     
     $ grep "conv" scph.log
 
@@ -122,7 +122,7 @@ In the working directory, the following files are created:
 
 Let's plot the finite-temperature band structures.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ gnuplot
     gnuplot> set terminal qt font "Helvetica,20"
@@ -155,7 +155,7 @@ Please copy ``scph.in`` to ``scph2.in`` and edit ``scph2.in`` as follows:
 We use the same ``PREFIX`` as before so that the code can restart the calculation from ``STO_scph2-2.scph_dymat``. 
 The code can skip the most expensive part of the SCP calculation, so we run **anphon** without MPI:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ${ALAMODE_ROOT}/anphon/anphon scph2.in > scph2.log
 
@@ -167,7 +167,7 @@ When the calculation finishes, the following files are created in the working di
 
 These files can be plotted and processed easily. For example, let's plot the MSD of Sr, Ti, and O atoms using gnuplot.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ gnuplot
     gnuplot> set terminal qt font "Helvetica,20"
@@ -186,7 +186,7 @@ We can see that the MSD of an oxygen is large in the plane perpendicular to the 
 
 In the ``STO_scph2-2.scph_thermo`` file, vibrational free energies within the SCP theory are stored, which can be used to predict phase stability and thermal expansitivy of anharmonic materials. In the file, 3-5 columns give vibrational free energies.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ head -n 10 STO_scph2-2.scph_thermo
 

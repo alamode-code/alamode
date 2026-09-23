@@ -15,7 +15,7 @@ All input files can be found at the **example/PbTe** subdirectory.
 
 Let's move to the example directory
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/PbTe
 
@@ -34,7 +34,7 @@ Now, let's construct a 4x4x4 supercell.
 This can be done by creating a simple script by yourself or using a method implemented in popular libraries, such as ``ase`` or ``pymatgen``.
 This time, we will use the python script ``makedisp_vasp.py`` in the working directory. To use this script, ``pymatgen`` needs to be installed (if you have not):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ conda activate alm 
     $ conda install -c conda-forge pymatgen
@@ -50,7 +50,7 @@ Here, the scaling matrix (:math:`M_{p\rightarrow s}`) is the matrix that transfo
 
 By issuing the command
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python makedisp_vasp.py
 
@@ -79,13 +79,13 @@ This can be done easily, for example, as
 
 When all calculations are done, please collect the displacement-force datasets as
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python ${ALAMODE_ROOT}/tools/extract.py --VASP SPOSCAR vasprun_?.xml > DFSET_harmonic
 
 In this tutorial, we have placed the VASP outputs in ``vasp_outputs/`` directory, so you can skip the VASP calculations by using the ``vasprun_?.xml`` files in that directory as
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python ${ALAMODE_ROOT}/tools/extract.py --VASP SPOSCAR vasp_outputs/vasprun_?.xml > DFSET_harmonic
 
@@ -97,7 +97,7 @@ In this tutorial, we have placed the VASP outputs in ``vasp_outputs/`` directory
 
 Please just run
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python makedisp_vasp.py DFSET_harmonic
 
@@ -121,7 +121,7 @@ Once the DFPT calculation finishes, please parse the electronic permittivity ten
 
 If you used VASP, the ``BORNINFO`` file can be created by issuing
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python ${ALAMODE_ROOT}/tools/extract.py --VASP SPOSCAR --get born vasprun.xml > PbTe.born
 
@@ -144,7 +144,7 @@ The input file for **anphon** (``phband.in``) looks like
 
 Please run **anphon** and plot the bands file
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ${ALAMODE_ROOT}/anphon/anphon phband.in > phband.log
     $ python ${ALAMODE_ROOT}/tools/plotband.py PbTe_NA0.bands
@@ -166,7 +166,7 @@ Please change the ``PREFIX`` and ``NONANALYTIC`` tags as
 This option activates the Parlinski's approach with the damping factor of :math:`\sigma = 0.15`.
 After running **anphon** again, we can compare phonon dispersion curves with and without the NA correction.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ${ALAMODE_ROOT}/anphon/anphon phband.in > phband.log2
     $ python ${ALAMODE_ROOT}/tools/plotband.py PbTe_NA0.bands PbTe_NA1.bands
@@ -180,7 +180,7 @@ The LO-TO splitting occurs as expected.
 Please repeat the above calculations with the other ``NONANALYTIC`` options (``NONANALYTIC=2`` (mixed-space) and ``NONANALYTIC=3`` (Ewald method)).
 Finally, we plot all results together to see the difference.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python ${ALAMODE_ROOT}/tools/plotband.py PbTe_NA?.bands
 

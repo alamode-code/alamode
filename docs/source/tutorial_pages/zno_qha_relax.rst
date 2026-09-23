@@ -15,7 +15,7 @@ This page explains how to calculate crystal structures at finite temperatures (:
 
 Let's move to the example directory
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/ZnO/qha_relax
 
@@ -190,7 +190,7 @@ the two give identical results.
 
 Run the calculation with 
 
-.. code-block:: bash 
+.. code-block:: console
 
   $ ${ALAMODE_ROOT}/anphon/anphon ZnO_qha_thermo.in > ZnO_qha_thermo.log
 
@@ -202,7 +202,7 @@ Run the calculation with
 
 We can plot the :math:`T`-dependence of the thermal strain, which is written in :red:`ZnO_qha.umn_tensor`, with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ gnuplot plot.plt
 

@@ -17,7 +17,7 @@ The example input files are provided in **example/Si/anharm_IFCs**.
 
 Let us move to the example directory.
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs
 
@@ -32,7 +32,7 @@ The procedure is the same as explained in :ref:`Tutorial 7.1 <label_tutorial_01>
 
 We first calculate the displacement patterns by **alm**.
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/1_harmonic
   $ ${ALAMODE_ROOT}/alm/alm si_alm_sug.in > si_alm_sug.log
@@ -43,7 +43,7 @@ After running the VASP calculation and obtaining :red:`DFSET_harmonic`
 (You can skip this part because :red:`DFSET_harmonic` is provided in this tutorial), 
 calculate the harmonic IFCs with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ ${ALAMODE_ROOT}/alm/alm si_alm_opt.in > si_alm_opt.log
 
@@ -63,7 +63,7 @@ harmonic PES at a given temperature.
 In preparation, we calculate the phonon frequencies and the polarization vectors at 
 commensurate :math:`q`-points.
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/2_generate_config
   $ python3 ${ALAMODE_ROOT}/tools/displace.py --VASP POSCAR_supercell --prim POSCAR_primitive_cell --random_normalcoord >> "si_anphon.in"
@@ -114,7 +114,7 @@ The information on the :math:`q`-points are written out in :red:`si_anphon.in` a
 
 Now, delete the unnecessary part of the output and run the **anphon** calculation.
 
-.. code-block:: bash
+.. code-block:: console
 
   $ ${ALAMODE_ROOT}/anphon/anphon si_anphon.in > si_anphon.log
 
@@ -122,7 +122,7 @@ The calculated phonon frequencies and the polarization vectors are stored in :re
 
 With these preparations, we can generate supercells with random displacements by 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ mkdir configurations
   $ cd configurations
@@ -193,7 +193,7 @@ the result of another CV set will overwrite the output file otherwise.
 
 Run the calculation with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/3_cv
   $ ${ALAMODE_ROOT}/alm/alm si_alm_cvset1.in > si_alm_cvset1.log
@@ -203,7 +203,7 @@ Run the calculation with
 
 After all the calculations are finished, collect the cvscore data with 
 
-.. code-block:: bash
+.. code-block:: console
 
   $ python3 cvscore.py *cvset > si222.cvscore
 
@@ -236,7 +236,7 @@ Set ``CV = 0`` and set the optimal :math:`\alpha` with ``L1_ALPHA = 2.25633e-07`
 
 Run the calculation with 
 
-.. code-block:: bash 
+.. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/4_optimize
   $ ${ALAMODE_ROOT}/alm/alm si_alm_opt.in > si_alm_opt.log
