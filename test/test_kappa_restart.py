@@ -11,6 +11,7 @@ ALAMODE_TEST_KILL=1) physical crash recovery via SIGKILL.
 
 import hashlib
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -366,6 +367,16 @@ def check_ibte_h5(anphonbin):
             print("computed flags not fully set after the fresh IBTE run")
             return 1
     kl_fresh = np.loadtxt(IBTE_PREFIX + ".kl_iter")
+    # The stored kappa must be the last iterate printed in the log (it used
+    # to be the one before). The log prints three significant digits.
+    last_xx = [
+        float(m.group(1))
+        for block in open("ibte_fresh.log").read().split("Temperature step")[1:]
+        for m in [list(re.finditer(r"-> iter +\d+: +(\S+)", block))[-1]]
+    ]
+    if not np.allclose(kl_fresh[: len(last_xx), 1], last_xx, rtol=6e-3):
+        print(".kl_iter is not the last iterate of the IBTE log")
+        return 1
 
     # No-op restart: every temperature restored, L not rebuilt.
     if run_anphon(anphonbin, "ibte.in", "ibte_noop.log"):

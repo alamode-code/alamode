@@ -613,7 +613,7 @@ void Iterativebte::iterative_solver()
                 converged_this_temp = true;
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {
-                        kappa[itemp][ix][iy] = kappa_old[ix][iy];
+                        kappa[itemp][ix][iy] = kappa_new[ix][iy]; // the latest iterate
                     }
                 }
                 if (run.my_rank == 0 && run.verbosity > 0) {
