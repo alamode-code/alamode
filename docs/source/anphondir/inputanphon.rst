@@ -451,7 +451,7 @@ Description of input variables
                ``PREFIX``.V0, ...) are written in both modes. The
                eigenvalue/eigenvector outputs of :ref:`PRINTEVAL <anphon_printeval>`
                and :ref:`PRINTEVEC <anphon_printevec>` also follow this tag: ``h5``
-               writes the schema-stamped \*.eval.hdf5 / \*.evec.hdf5 files, ``text``
+               writes the schema-stamped \*.eval.h5 / \*.evec.h5 files, ``text``
                the plain-text variants.
 
 ````
@@ -1567,6 +1567,8 @@ Note that a zero initial displacement keeps the full symmetry of the reference s
     OMEGA_RANGE = 300 600 0.5   # frequency window and step for INTERPOLATE [cm^-1]
   /
 
+At least one output must be requested; ``LINEWIDTH = 0`` suppresses the linewidth output, for example when only the frequency shift is needed.
+
 With ``INTERPOLATE = 1`` the full bubble self-energy matrix :math:`\Sigma_{jj'}(\mathbf{q},\omega)` (Lorentzian broadening ``EPSILON``) is computed on the coarse mesh, transformed to the displacement basis where it does not depend on the eigenvector gauge, Fourier-interpolated to every target wave vector, and the spectral function :math:`A(\mathbf{q},\omega) = -\frac{2\omega}{\pi}\,\mathrm{Im}\,\mathrm{Tr}\,[\omega^2 - D(\mathbf{q}) - \Pi(\mathbf{q},\omega)]^{-1}` and its branch projections are written (``PREFIX.spectrum`` or the ``spectrum/`` group of the HDF5 file). The interpolation is exact on the coarse-mesh points; between them the accuracy is set by the coarse mesh, so compare with the direct linewidths of a few targets. The cost grows with the number of coarse points and frequencies; ``OMEGA_RANGE`` restricts the window (default: 0 to twice the highest frequency in steps of ``DELTA_E``).
 
 With the default ``FILE_FORMAT = h5`` the results of all targets are collected in one file ``PREFIX.selfenergy.h5`` (group ``targets/NNNNN`` per target in the order of the ``&kpoint`` field and ``BRANCHES``, with ``xk``, ``branch``, ``frequency``, ``kaxis`` for a path, ``linewidth``, ``shift_*``, ``self_omega``/``self_real``/``self_imag``, ``fstate_*``, and units as attributes; the path coordinates are repeated under ``path/``). With ``FILE_FORMAT = text`` the per-target text files of the ``KS_INPUT`` analysis are written instead. The matrix-element listings (``PRINTV3``/``PRINTV4``) are always text files.
@@ -1595,7 +1597,7 @@ Targets that fall on the integration mesh are evaluated as in the ``KS_INPUT`` a
 
  :Default: 0
  :Type: Integer
- :Description:  When ``MODE = phonons`` and ``GRUNEISEN >= 1``, Gr\ |umulaut_u|\ neisen parameters will be stored in ``PREFIX``.gruneisen (*KPMODE* = 1) or ``PREFIX``.gru_all (*KPMODE* = 2). ``GRUNEISEN = 1`` computes the volumetric parameters :math:`\gamma_{\boldsymbol{q}j} = -\frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \log{V}}`. ``GRUNEISEN = 2`` and ``3`` compute the generalized parameters :math:`\gamma_{\boldsymbol{q}j}^{\mu\nu} = -\frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \varepsilon_{\mu\nu}}` for the diagonal or all 6 symmetric strain components, respectively, and the output files change to a long format with one line per (*k* point, branch) containing the phonon frequency and the strain components. The volumetric value equals one third of the trace, :math:`\gamma_{\boldsymbol{q}j} = (\gamma_{\boldsymbol{q}j}^{xx}+\gamma_{\boldsymbol{q}j}^{yy}+\gamma_{\boldsymbol{q}j}^{zz})/3`. See :ref:`this page <formalism_gruneisen>` for the formalism.
+ :Description:  When ``MODE = phonons`` and ``GRUNEISEN >= 1``, Gr\ |umulaut_u|\ neisen parameters will be stored in ``PREFIX``.gru_kpoints (*KPMODE* = 0), ``PREFIX``.gruneisen (*KPMODE* = 1), or ``PREFIX``.gru_all (*KPMODE* = 2). ``GRUNEISEN = 1`` computes the volumetric parameters :math:`\gamma_{\boldsymbol{q}j} = -\frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \log{V}}`. ``GRUNEISEN = 2`` and ``3`` compute the generalized parameters :math:`\gamma_{\boldsymbol{q}j}^{\mu\nu} = -\frac{\partial \log{\omega_{\boldsymbol{q}j}}}{\partial \varepsilon_{\mu\nu}}` for the diagonal or all 6 symmetric strain components, respectively, and the output files change to a long format with one line per (*k* point, branch) containing the phonon frequency and the strain components. The volumetric value equals one third of the trace, :math:`\gamma_{\boldsymbol{q}j} = (\gamma_{\boldsymbol{q}j}^{xx}+\gamma_{\boldsymbol{q}j}^{yy}+\gamma_{\boldsymbol{q}j}^{zz})/3`. See :ref:`this page <formalism_gruneisen>` for the formalism.
 
 .. Note::
 
@@ -1648,7 +1650,7 @@ Targets that fall on the integration mesh are evaluated as in the ``KS_INPUT`` a
 
  :Default: 0
  :Type: Integer
- :Description: When ``PRINTEVAL = 1``, the phonon frequencies are saved in ``PREFIX``.eval (*KPMODE* = 0), ``PREFIX``.band.eval (*KPMODE* = 1), and ``PREFIX``.mesh.eval (*KPMODE* = 2). The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes the corresponding \*.eval.hdf5 files (schema ``alamode:eigenvalues``) instead of the text files; ``FILE_FORMAT = text`` (or a build without HDF5 support) writes the plain-text files.
+ :Description: When ``PRINTEVAL = 1``, the phonon frequencies are saved in ``PREFIX``.eval (*KPMODE* = 0), ``PREFIX``.band.eval (*KPMODE* = 1), and ``PREFIX``.mesh.eval (*KPMODE* = 2). The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes the corresponding \*.eval.h5 files (schema ``alamode:eigenvalues``) instead of the text files; ``FILE_FORMAT = text`` (or a build without HDF5 support) writes the plain-text files.
 
 ````
 
@@ -1663,7 +1665,7 @@ Targets that fall on the integration mesh are evaluated as in the ``KS_INPUT`` a
 
  :Default: 0
  :Type: Integer
- :Description: The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes ``PREFIX``\ [.band|.mesh].evec.hdf5 (schema ``alamode:eigenvectors``); ``FILE_FORMAT = text`` (or a build without HDF5 support) writes the plain-text ``PREFIX``\ [.band|.mesh].evec files.
+ :Description: The file format follows :ref:`FILE_FORMAT <anphon_file_format>`: the default ``h5`` writes ``PREFIX``\ [.band|.mesh].evec.h5 (schema ``alamode:eigenvectors``); ``FILE_FORMAT = text`` (or a build without HDF5 support) writes the plain-text ``PREFIX``\ [.band|.mesh].evec files.
 
 ````
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-14 10:11+0900\n"
+"POT-Creation-Date: 2026-09-23 19:17+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -110,25 +110,25 @@ msgid ""
 ":red:`si_anphon.in` as follows."
 msgstr ":math:`q` 点に関する情報は、以下のように :red:`si_anphon.in` に書き出されます。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:111
+#: ../../source/tutorial_pages/silicon_ifc.rst:115
 msgid ""
 "Now, delete the unnecessary part of the output and run the **anphon** "
 "calculation."
 msgstr "次に、出力の不要な部分を削除して **anphon** 計算を実行します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:117
+#: ../../source/tutorial_pages/silicon_ifc.rst:121
 msgid ""
 "The calculated phonon frequencies and the polarization vectors are stored in"
-" :red:`si222_harmonic.evec`."
-msgstr "計算されたフォノン振動数と偏極ベクトルは :red:`si222_harmonic.evec` に保存されます。"
+" :red:`si222_harmonic.evec.h5`."
+msgstr "計算されたフォノン振動数と偏極ベクトルは :red:`si222_harmonic.evec.h5` に保存されます。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:119
+#: ../../source/tutorial_pages/silicon_ifc.rst:123
 msgid ""
 "With these preparations, we can generate supercells with random "
 "displacements by"
 msgstr "これらの準備が整うと、次のコマンドでランダムな変位を加えたスーパーセルを生成できます。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:128
+#: ../../source/tutorial_pages/silicon_ifc.rst:132
 msgid ""
 "Here, we generated ``-nd 100`` configurations by randomly sampling from the "
 "distribution at ``--temp 300`` K in the harmonic PES."
@@ -136,7 +136,7 @@ msgstr ""
 "ここでは、調和 PES における ``--temp 300`` K の分布からランダムサンプリングを行い、``-nd 100`` "
 "個の配置を生成しました。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:131
+#: ../../source/tutorial_pages/silicon_ifc.rst:135
 msgid ""
 "Please run the DFT calculation for each generated supercell using the VASP "
 "input in **example/Si/anharm_IFCs/1_harmonic/VASP_input**. Then, use "
@@ -148,30 +148,30 @@ msgstr ""
 "<tutorial_Si_step2>` で説明した手順に従い、**extract.py** を用いて :red:`DFSET_randomQ` "
 "を取得します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:138
+#: ../../source/tutorial_pages/silicon_ifc.rst:142
 msgid ""
 "The imaginary frequencies are replaced by their absolute values in the "
 "random sampling. Thus, the procedure can be performed for the strongly "
 "anharmonic materials as well."
 msgstr "ランダムサンプリングでは、虚振動数はその絶対値で置き換えられます。したがって、この手順は非調和性の強い物質に対しても実行できます。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:141
+#: ../../source/tutorial_pages/silicon_ifc.rst:145
 msgid ""
 "However, the user must be careful whether the generated set of random "
 "configurations is a good dataset for calculating IFCs."
 msgstr "ただし、生成されたランダム配置の集合が力定数の計算に適したデータセットかどうかは、ユーザーが注意深く確認する必要があります。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:147
+#: ../../source/tutorial_pages/silicon_ifc.rst:151
 msgid "3. Cross validation (CV)"
 msgstr "3. 交差検証 (cross validation, CV)"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:149
+#: ../../source/tutorial_pages/silicon_ifc.rst:153
 msgid ""
 "In this step, we explain how to run the different sets of CV calculations "
 "separately."
 msgstr "このステップでは、異なる CV 計算のセットを個別に実行する方法を説明します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:151
+#: ../../source/tutorial_pages/silicon_ifc.rst:155
 msgid ""
 "The calculation of different sets can be executed in parallel because they "
 "are independent of each other. So, if you have a cluster computer with "
@@ -183,7 +183,7 @@ msgstr ""
 "異なるセットの計算は互いに独立しているため、並列に実行できます。したがって、複数コアを持つクラスター計算機があれば、各 CV "
 "セットの計算を別々のジョブで実行できます。入力ファイルの準備はやや複雑になりますが、CV 計算の計算コストが大きい場合には時間の節約になります。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:157
+#: ../../source/tutorial_pages/silicon_ifc.rst:161
 msgid ""
 "The input files are :red:`si_alm_cvset1.in` to :red:`si_alm_cvset4.in` in "
 "**example/Si/anharm_IFCs/3_cv**."
@@ -191,13 +191,13 @@ msgstr ""
 "入力ファイルは **example/Si/anharm_IFCs/3_cv** にある :red:`si_alm_cvset1.in` から "
 ":red:`si_alm_cvset4.in` です。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:159
+#: ../../source/tutorial_pages/silicon_ifc.rst:163
 msgid ""
 "The essential parts of the input file :red:`si_alm_cvset1.in` are as "
 "follows."
 msgstr "入力ファイル :red:`si_alm_cvset1.in` の主要部分は以下のとおりです。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:161
+#: ../../source/tutorial_pages/silicon_ifc.rst:165
 msgid ""
 "We have ``NDATA = 100`` displacement-force data, and we will perform CV with"
 " 4 sets. Thus, we want to use the first 25 data (``NSTART_CV = 1``, "
@@ -209,7 +209,7 @@ msgstr ""
 "の計算では、最初の 25 個のデータ（``NSTART_CV = 1``、``NEND_CV = 25``）を検証プロセスで使用します。これらの 25 "
 "セットは訓練プロセスでは除外する必要がある点に注意してください（``SKIP = 1-25``）。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:166
+#: ../../source/tutorial_pages/silicon_ifc.rst:170
 msgid ""
 "The input files of the other CV sets are set accordingly. It is important "
 "that we use different ``PREFIX`` for each set because the result of another "
@@ -218,16 +218,16 @@ msgstr ""
 "他の CV セットの入力ファイルも、同様に設定します。各セットで異なる ``PREFIX`` を使用することが重要です。そうしないと、別の CV "
 "セットの結果が出力ファイルを上書きしてしまうためです。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:190
-#: ../../source/tutorial_pages/silicon_ifc.rst:233
+#: ../../source/tutorial_pages/silicon_ifc.rst:194
+#: ../../source/tutorial_pages/silicon_ifc.rst:237
 msgid "Run the calculation with"
 msgstr "次のコマンドで計算を実行します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:200
+#: ../../source/tutorial_pages/silicon_ifc.rst:204
 msgid "After all the calculations are finished, collect the cvscore data with"
 msgstr "すべての計算が終了したら、次のコマンドで cvscore データを収集します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:208
+#: ../../source/tutorial_pages/silicon_ifc.rst:212
 msgid ""
 "The number of :math:`\\alpha` for which the calculation is performed can "
 "differ depending on the CV sets because the calculation stops in the middle "
@@ -239,29 +239,29 @@ msgstr ""
 "セットによって異なる場合があります。計算が異なるステップで停止した場合、Python スクリプトは \"Inconsistent number of "
 "entries\" というエラーで停止します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:213
+#: ../../source/tutorial_pages/silicon_ifc.rst:217
 msgid ""
 "In that case, please manually adjust the cvset files so that the number of "
 "entries is consistent."
 msgstr "その場合は、エントリ数が一致するように cvset ファイルを手動で調整してください。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:216
+#: ../../source/tutorial_pages/silicon_ifc.rst:220
 msgid ""
 "The optimal amplitude of regularization (:math:`\\alpha`) can be read from "
 "the last line of :red:`si222.cvscore`."
 msgstr "最適な正則化の振幅 (:math:`\\alpha`) は、:red:`si222.cvscore` の最終行から読み取ることができます。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:226
+#: ../../source/tutorial_pages/silicon_ifc.rst:230
 msgid "4. Calculation of IFCs"
 msgstr "4. 力定数の計算"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:228
+#: ../../source/tutorial_pages/silicon_ifc.rst:232
 msgid ""
 "Finally, we calculate the IFCs of silicon in "
 "**example/Si/anharm_IFCs/4_optimize**."
 msgstr "最後に、**example/Si/anharm_IFCs/4_optimize** でシリコンの力定数を計算します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:230
+#: ../../source/tutorial_pages/silicon_ifc.rst:234
 msgid ""
 "The input file is :red:`si_alm_opt.in`. Set ``CV = 0`` and set the optimal "
 ":math:`\\alpha` with ``L1_ALPHA = 2.25633e-07`` in ``&optimize``-field."
@@ -269,7 +269,7 @@ msgstr ""
 "入力ファイルは :red:`si_alm_opt.in` です。``CV = 0`` を設定し、``&optimize`` フィールドで "
 "``L1_ALPHA = 2.25633e-07`` として最適な :math:`\\alpha` を設定します。"
 
-#: ../../source/tutorial_pages/silicon_ifc.rst:240
+#: ../../source/tutorial_pages/silicon_ifc.rst:244
 msgid ""
 "The calculated IFCs are written out in :red:`si222.h5`. The fitting error is"
 msgstr "計算された力定数は :red:`si222.h5` に書き出されます。フィッティング誤差は次のとおりです。"

@@ -93,9 +93,9 @@ The information on the :math:`q`-points are written out in :red:`si_anphon.in` a
 
   The --evec option is necessary when '--random_normalcoord'
   option is used.
-  Please generate a PREFIX.evec file by using the ANPHON code
+  Please generate a PREFIX.evec.h5 file by using the ANPHON code
   with the following inputs and then run displace.py again with
-  --evec=PREFIX.evec option:
+  --evec=PREFIX.evec.h5 option:
 
   &cell
   1.0
@@ -107,6 +107,10 @@ The information on the :math:`q`-points are written out in :red:`si_anphon.in` a
   0
     0.000000000000000    0.000000000000000    0.000000000000000
     ...
+  /
+  &analysis
+   PRINTEVEC = 1
+  /
 
 Now, delete the unnecessary part of the output and run the **anphon** calculation.
 
@@ -114,7 +118,7 @@ Now, delete the unnecessary part of the output and run the **anphon** calculatio
 
   $ ${ALAMODE_ROOT}/anphon/anphon si_anphon.in > si_anphon.log
 
-The calculated phonon frequencies and the polarization vectors are stored in :red:`si222_harmonic.evec`.
+The calculated phonon frequencies and the polarization vectors are stored in :red:`si222_harmonic.evec.h5`.
 
 With these preparations, we can generate supercells with random displacements by 
 
@@ -122,8 +126,8 @@ With these preparations, we can generate supercells with random displacements by
 
   $ mkdir configurations
   $ cd configurations
-  $ cp ../POSCAR_primitive_cell  ../POSCAR_supercell ../si222_harmonic.evec ./
-  $ python3 ${ALAMODE_ROOT}/tools/displace.py --VASP POSCAR_supercell --prim POSCAR_primitive_cell --random_normalcoord --evec si222_harmonic.evec --temp 300 --prefix randomQ_ -nd 100
+  $ cp ../POSCAR_primitive_cell  ../POSCAR_supercell ../si222_harmonic.evec.h5 ./
+  $ python3 ${ALAMODE_ROOT}/tools/displace.py --VASP POSCAR_supercell --prim POSCAR_primitive_cell --random_normalcoord --evec si222_harmonic.evec.h5 --temp 300 --prefix randomQ_ -nd 100
 
 Here, we generated ``-nd 100`` configurations by randomly sampling from the distribution
 at ``--temp 300`` K in the harmonic PES.

@@ -51,14 +51,14 @@ Files written for the points of the ``&kpoint`` field. *KPMODE* 0, 1, and 2 give
    * - ``PREFIX``.phvel, ``PREFIX``.phvel_all
      - ``PRINTVEL = 1`` with *KPMODE* = 1 or 2
      - Group velocities along the paths, or at every mesh point (magnitude and components)
-   * - ``PREFIX``\ [.band | .mesh].eval.hdf5
+   * - ``PREFIX``\ [.band | .mesh].eval.h5
      - ``PRINTEVAL = 1``
      - Phonon eigenvalues. The file name follows *KPMODE* 0, 1, 2 (no suffix, ``.band``, ``.mesh``);
        plain text ``PREFIX``\ [.band | .mesh].eval with ``FILE_FORMAT = text``
-   * - ``PREFIX``\ [.band | .mesh].evec.hdf5
+   * - ``PREFIX``\ [.band | .mesh].evec.h5
      - ``PRINTEVEC = 1``
      - Phonon eigenvalues and eigenvectors, named as above;
-       plain text ``PREFIX``\ [.band | .mesh].evec with ``FILE_FORMAT = text`` (the format read by ``displace.py --evec``)
+       plain text ``PREFIX``\ [.band | .mesh].evec with ``FILE_FORMAT = text``. Both can be given to ``displace.py --evec``
    * - ``PREFIX``\ [.band | .mesh].pr, .apr
      - ``PRINTPR = 1``
      - Participation ratio and atomic participation ratio of every mode, named as above
@@ -68,10 +68,10 @@ Files written for the points of the ``&kpoint`` field. *KPMODE* 0, 1, and 2 give
    * - ``PREFIX``.animeNNN.xyz, ``PREFIX``.animeNNN.axsf
      - ``ANIME`` (with ``ANIME_CELLSIZE``)
      - Animation of mode NNN; XYZ (default) or AXSF with ``ANIME_FORMAT``
-   * - ``PREFIX``.gruneisen, ``PREFIX``.gru_all
-     - ``GRUNEISEN >= 1`` with *KPMODE* = 1 or 2
-     - Gr\ |umulaut_u|\ neisen parameters along the paths or on the mesh: volumetric (``GRUNEISEN = 1``)
-       or for each strain component (``2``, ``3``)
+   * - ``PREFIX``.gru_kpoints, ``PREFIX``.gruneisen, ``PREFIX``.gru_all
+     - ``GRUNEISEN >= 1`` with *KPMODE* = 0, 1, or 2
+     - Gr\ |umulaut_u|\ neisen parameters at the given points, along the paths, or on the mesh:
+       volumetric (``GRUNEISEN = 1``) or for each strain component (``2``, ``3``)
    * - ``PREFIX``\_+.h5, ``PREFIX``\_-.h5
      - ``NEWFCS = 1``
      - Force constants of the crystal strained by :math:`\pm u`, usable as ``FCSFILE``
@@ -145,7 +145,7 @@ Files written for the points of the ``&kpoint`` field. *KPMODE* 0, 1, and 2 give
      - Always (default format)
      - Results of all target modes. See :ref:`label_hdf5_selfenergy`
    * - ``PREFIX``.Gamma.N
-     - ``FILE_FORMAT = text`` (``LINEWIDTH = 1``)
+     - ``FILE_FORMAT = text``, ``LINEWIDTH = 1`` (default)
      - Linewidth :math:`2\Gamma` vs. temperature of target N
    * - ``PREFIX``.Shift.N
      - ``FILE_FORMAT = text``, ``SHIFT = 1``

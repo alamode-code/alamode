@@ -289,15 +289,15 @@ ALM = dict(
         "evec": (
             "anphon",
             L(
-                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`\n`PRINTEVEC = 1`, `FILE_FORMAT = text`  → PREFIX.evec",
-                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`\n`PRINTEVEC = 1`, `FILE_FORMAT = text`  → PREFIX.evec",
+                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`\n`PRINTEVEC = 1`  → PREFIX.evec.h5",
+                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`\n`PRINTEVEC = 1`  → PREFIX.evec.h5",
             ),
         ),
         "dB": (
             "tool",
             L(
-                "displace.py\n`--random_normalcoord`\n`--evec PREFIX.evec --temp T`\nrandom displacements sampled at temperature T\n(or `--random` on MD snapshots)",
-                "displace.py\n`--random_normalcoord`\n`--evec PREFIX.evec --temp T`\n温度 T でサンプリングしたランダム変位\n(または MD スナップショットに `--random`)",
+                "displace.py\n`--random_normalcoord`\n`--evec PREFIX.evec.h5 --temp T`\nrandom displacements sampled at temperature T\n(or `--random` on MD snapshots)",
+                "displace.py\n`--random_normalcoord`\n`--evec PREFIX.evec.h5 --temp T`\n温度 T でサンプリングしたランダム変位\n(または MD スナップショットに `--random`)",
             ),
         ),
         "dftB": (

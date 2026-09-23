@@ -71,8 +71,8 @@ Step 1: Force constants with alm
    The recommended way is to fit them to random displacements:
 
    * Calculate the harmonic phonons of the supercell with *anphon* (``MODE = phonons``, ``KPMODE = 0``) using the harmonic force constants,
-     with ``PRINTEVEC = 1`` and ``FILE_FORMAT = text``. This writes the phonon eigenvectors to ``PREFIX``.evec.
-   * ``displace.py --random_normalcoord --evec PREFIX.evec --temp T`` generates structures sampled at the temperature ``T``.
+     with ``PRINTEVEC = 1``. This writes the phonon eigenvectors to ``PREFIX``.evec.h5.
+   * ``displace.py --random_normalcoord --evec PREFIX.evec.h5 --temp T`` generates structures sampled at the temperature ``T``.
      Alternatively, ``--random`` adds random displacements to snapshots of a molecular-dynamics run.
    * Calculate the forces with DFT and make a ``DFSET`` file as in step 3.
    * Run *alm* with ``MODE = optimize``, ``NORDER = 2`` or larger, and ``LMODEL = enet`` or ``adaptive-lasso``.
