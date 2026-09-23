@@ -94,7 +94,7 @@ Acknowledgment
 
 This project has been partially supported by the following grants:
 
-* JST PRESTO "Innovation in first-principles prediction of materials properties by incorporating finite-temperature effects"
+* JST PRESTO "Advancing first-principles prediction of physical properties through the introduction of finite-temperature effects"
 * Grant-in-Aid for Scientific Research (C) (21K03424)
 * Grant-in-Aid for Young Scientists (B) (16K17724) 
 * Grant-in-Aid for Scientific Research on Innovative Areas 'Materials Design through Computics: Complex Correlation and Non-Equilibrium Dynamics'. (http://computics-material.jp)

@@ -228,8 +228,8 @@ msgstr "本プロジェクトは以下の研究助成の支援を受けていま
 
 #: ../../source/intro.rst:97
 msgid ""
-"JST PRESTO \"Innovation in first-principles prediction of materials "
-"properties by incorporating finite-temperature effects\""
+"JST PRESTO \"Advancing first-principles prediction of physical properties "
+"through the introduction of finite-temperature effects\""
 msgstr "JST さきがけ「有限温度効果の導入で挑む第一原理物性予測の革新」"
 
 #: ../../source/intro.rst:98
