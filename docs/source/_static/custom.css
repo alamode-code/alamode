@@ -28,3 +28,13 @@ article[role="main"],
 :root[data-theme="dark"] .red {
   color: #ff8a80;
 }
+
+/* Tutorial index cards: same-height thumbnails. Several plots have a
+   transparent background, so give them a white one (dark axis labels stay
+   readable in dark mode). */
+.tutorial-grid .sd-card-img-top {
+  height: 11rem;
+  object-fit: contain;
+  background: #fff;
+  padding: 0.5rem;
+}

@@ -11,6 +11,18 @@
 BaTiO\ :sub:`3` : An SCPH-based structural optimization example
 --------------------------------------------------------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Calculate the temperature dependence of the atomic positions across the cubic-tetragonal phase transition of BaTiO\ :sub:`3` with the SCPH theory.
+   :You will learn:
+      - how to set ``RELAX_STR`` and the ``&relax`` and ``&displace`` fields
+      - how to run cooling (``SET_INIT_STR = 3``) and heating (``SET_INIT_STR = 2``) calculations
+      - how to read the transition temperature from the atomic displacements and free energies
+   :Prerequisites: :ref:`The BaTiO3 IFC tutorial <label_tutorial_bto_ifc>` (the IFC file is provided) and :ref:`the SrTiO3 SCPH tutorial <label_tutorial_sto_scph>`.
+   :Example files: ``example/BaTiO3/scph_relax``
+   :Run time: More than 10 minutes without parallelization.
+
 This page explains how to calculate crystal structures at finite temperatures based on the SCPH theory.
 We calculate the cubic-tetragonal structural phase transition of BaTiO\ :sub:`3`.
 We fix the shape of the unit cell and calculate the temperature(:math:`T`)-dependence of the atomic positions.
@@ -100,6 +112,8 @@ Now, run the calculation with
 .. code-block:: console
 
   $ ${ALAMODE_ROOT}/anphon/anphon BTO_scph_thermo.in > BTO_scph_thermo.log
+
+:download:`Download BTO_scph_thermo.in <../../../example/BaTiO3/scph_relax/BTO_scph_thermo.in>`
 
 .. _tutorial_BTO_scph_relax_step3:
 

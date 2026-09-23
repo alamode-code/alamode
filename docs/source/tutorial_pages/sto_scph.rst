@@ -9,6 +9,18 @@
 SrTiO\ :sub:`3` : A self-consistent phonon example
 ---------------------------------------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Stabilize the soft modes of cubic SrTiO\ :sub:`3` at finite temperatures with the self-consistent phonon (SCP) method.
+   :You will learn:
+      - how to confirm the harmonic instability from the phonon dispersion
+      - how to set up the ``&scph`` field (``KMESH_INTERPOLATE``, ``KMESH_SCPH``, ``SELF_OFFDIAG``)
+      - how to obtain temperature-dependent phonon bands, mean square displacements, and free energies
+   :Prerequisites: Harmonic and anharmonic force constants (provided in ``reference/``) and an MPI environment.
+   :Example files: ``example/SrTiO3``
+   :Run time: The SCP calculation finishes in about 2 minutes with 4 MPI processes.
+
 This page explains how to run a self-consistent phonon (SCP) calculation using ALAMODE.
 The target material is cubic SrTiO\ :sub:`3`, which is a well-known perovskite solid exhibiting soft phonons.
 
@@ -63,6 +75,8 @@ Please prepare an input file for band structure calculation (``phband.in``) as f
 
 .. literalinclude:: ../../../example/SrTiO3/reference/phband.in
 
+:download:`Download phband.in <../../../example/SrTiO3/reference/phband.in>`
+
 Please run **anphon** and plot the band structure as
 
 .. code-block:: console
@@ -87,6 +101,8 @@ Please copy ``phband.in`` to ``scph.in`` and edit ``scph.in`` as follows:
 
 .. literalinclude:: ../../../example/SrTiO3/reference/scph.in
    :emphasize-lines: 2-3, 7, 26-32
+
+:download:`Download scph.in <../../../example/SrTiO3/reference/scph.in>`
 
 Here, the ``&scph`` field is added to the input. 
 The important parameters for the SCP calculation are :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>` and :ref:`KMESH_SCPH <anphon_kmesh_scph>`. The former defines the :math:`\boldsymbol{q}`\ -point mesh used to solve the SCP calculation and perform (inverse) Fourier transformation of dynamical matrices, while the latter defines the :math:`\boldsymbol{q}`\ -point mesh used to compute the renormalization term associated with the loop self-energy diagram. Also, :ref:`SELF_OFFDIAG <anphon_self_offdiag>` option controls whether the off-diagonal components of the loop self-energy are considered or not. In the above example, we neglect the off-diagonal components to make the calculation faster. We will see the effect of the off-diagonal components later.
@@ -151,6 +167,8 @@ Please copy ``scph.in`` to ``scph2.in`` and edit ``scph2.in`` as follows:
 
 .. literalinclude:: ../../../example/SrTiO3/reference/scph2.in
    :emphasize-lines: 8, 18-21, 31-33
+
+:download:`Download scph2.in <../../../example/SrTiO3/reference/scph2.in>`
 
 We use the same ``PREFIX`` as before so that the code can restart the calculation from ``STO_scph2-2.scph_dymat``. 
 The code can skip the most expensive part of the SCP calculation, so we run **anphon** without MPI:

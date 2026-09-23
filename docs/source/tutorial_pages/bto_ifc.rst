@@ -11,6 +11,17 @@
 BaTiO\ :sub:`3` : Anharmonic interatomic force constants (IFCs)
 --------------------------------------------------------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Calculate the anharmonic IFCs of the strongly anharmonic cubic BaTiO\ :sub:`3`.
+   :You will learn:
+      - how to generate randomly displaced supercells from an AIMD trajectory with ``displace.py``
+      - how to choose the regularization amplitude :math:`\alpha` by cross validation
+      - how to fit the anharmonic IFCs with the optimal :math:`\alpha`
+   :Prerequisites: Harmonic IFCs (see :ref:`the Si tutorial <label_tutorial_01>`) and VASP (the reference ``vasprun.xml`` files are provided).
+   :Example files: ``example/BaTiO3/anharm_IFCs``
+
 This page explains how to calculate anharmonic interatomic force constants (IFCs) using ALAMODE, especially for strongly anharmonic materials.
 The target material is cubic BaTiO\ :sub:`3`, which exhibits a strong lattice anharmonicity.
 
@@ -128,6 +139,8 @@ You can run the CV calculation with the following commands.
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs/3_cv
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_cv.in > BTO_alm_cv.log
 
+:download:`Download BTO_alm_cv.in <../../../example/BaTiO3/anharm_IFCs/3_cv/BTO_alm_cv.in>`
+
 In :red:`BTO_alm_cv.in`, ``FC2FIX = ../cBTO222_harmonic.xml`` means that we fix the harmonic IFCs with the values in the given file (both the HDF5 and the legacy XML formats are accepted).
 This is because we would like to capture the stability or the curvature of the potential energy surface at the reference structure accurately.
 
@@ -189,6 +202,8 @@ With the input file prepared, run the calculation with
 .. code-block:: console
 
   $ ${ALAMODE_ROOT}/alm/alm BTO_alm_opt.in > BTO_alm_opt.log
+
+:download:`Download BTO_alm_opt.in <../../../example/BaTiO3/anharm_IFCs/4_optimize/BTO_alm_opt.in>`
 
 The calculated IFCs are written out in :red:`cBTO222.h5` (add ``FCS_ALAMODE = 1`` to the **&general** field if you also want the :red:`cBTO222.fcs` listing).
 

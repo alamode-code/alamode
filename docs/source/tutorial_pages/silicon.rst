@@ -13,6 +13,18 @@
 Silicon
 -------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Calculate phonon dispersion, phonon DOS, and lattice thermal conductivity of bulk Si from DFT forces.
+   :You will learn:
+      - how to generate displacement patterns with **alm** and collect forces with ``displace.py`` and ``extract.py``
+      - how to fit harmonic and cubic IFCs by least squares
+      - how to calculate phonon dispersion, DOS, and thermal conductivity with **anphon**
+      - how to analyze phonon lifetimes, cumulative and spectral thermal conductivity
+   :Prerequisites: ALAMODE (**alm** and **anphon**) and a DFT code (QE, VASP, xTAPP, or OpenMX). The reference DFSET files let you skip the DFT calculations.
+   :Example files: ``example/Si``
+
 .. figure:: ../../img/si222.png
    :scale: 40%
    :align: center
@@ -42,6 +54,8 @@ In the file, the crystal structure of a 2x2x2 conventional supercell of Si is sp
 .. literalinclude:: ../../../example/Si/reference/si_alm1.in
    :lines: 1-30
 
+:download:`Download si_alm1.in <../../../example/Si/reference/si_alm1.in>`
+
 Replace the lattice constant of the supercell (20.406 Bohr) by your own value.
 
 Then, execute **alm**
@@ -66,25 +80,36 @@ Then, prepare input files necessary to run an external DFT code for each configu
 Since this procedure is a little tiresome, we provide a subsidiary Python script for VASP, Quantum-ESPRESSO (QE), and xTAPP.
 Using the script :red:`displace.py` in the tools/ directory, you can generate the necessary input files as follows:
 
-    **QE**
-    ::
+.. tab-set::
+   :sync-group: dftcode
 
-        $ python displace.py --QE=si222.pw.in --mag=0.01 -pf si222.pattern_HARMONIC
+   .. tab-item:: QE
+      :sync: qe
 
-    **VASP**
-    ::
+      .. code-block:: console
 
-        $ python displace.py --VASP=POSCAR.orig --mag=0.01 -pf si222.pattern_HARMONIC
+         $ python displace.py --QE=si222.pw.in --mag=0.01 -pf si222.pattern_HARMONIC
 
-    **xTAPP**
-    ::
+   .. tab-item:: VASP
+      :sync: vasp
 
-        $ python displace.py --xTAPP=si222.cg --mag=0.01 -pf si222.pattern_HARMONIC
+      .. code-block:: console
 
-    **OpenMX**
-    ::
+         $ python displace.py --VASP=POSCAR.orig --mag=0.01 -pf si222.pattern_HARMONIC
 
-        $ python displace.py --OpenMX=si222.dat --mag=0.01 -pf si222.pattern_HARMONIC
+   .. tab-item:: xTAPP
+      :sync: xtapp
+
+      .. code-block:: console
+
+         $ python displace.py --xTAPP=si222.cg --mag=0.01 -pf si222.pattern_HARMONIC
+
+   .. tab-item:: OpenMX
+      :sync: openmx
+
+      .. code-block:: console
+
+         $ python displace.py --OpenMX=si222.dat --mag=0.01 -pf si222.pattern_HARMONIC
 
 The ``--mag`` option specifies the displacement length in units of Angstrom. 
 You need to specify an input file with equilibrium atomic positions either by the ``--QE``, ``--VASP``, ``--xTAPP``, ``--OpenMX`` or ``--LAMMPS``.
@@ -111,25 +136,36 @@ as follows::
 
 The next step is to collect the displacement data and force data by the Python script :red:`extract.py` (also in the tools/ directory). This script can extract atomic displacements, atomic forces, and total energies from multiple output files as follows:
 
-    **QE**
-    ::
+.. tab-set::
+   :sync-group: dftcode
 
-    $ python extract.py --QE=si222.pw.in *.pw.out > DFSET_harmonic
+   .. tab-item:: QE
+      :sync: qe
 
-    **VASP**
-    ::
+      .. code-block:: console
 
-    $ python extract.py --VASP=POSCAR.orig vasprun*.xml > DFSET_harmonic
+         $ python extract.py --QE=si222.pw.in *.pw.out > DFSET_harmonic
 
-    **xTAPP**
-    ::
+   .. tab-item:: VASP
+      :sync: vasp
 
-    $ python extract.py --xTAPP=si222.cg *.str > DFSET_harmonic
+      .. code-block:: console
 
-    **OpenMX**
-    ::
+         $ python extract.py --VASP=POSCAR.orig vasprun*.xml > DFSET_harmonic
 
-    $ python extract.py --OpenMX=si222.dat *.out > DFSET_harmonic
+   .. tab-item:: xTAPP
+      :sync: xtapp
+
+      .. code-block:: console
+
+         $ python extract.py --xTAPP=si222.cg *.str > DFSET_harmonic
+
+   .. tab-item:: OpenMX
+      :sync: openmx
+
+      .. code-block:: console
+
+         $ python extract.py --OpenMX=si222.dat *.out > DFSET_harmonic
 
 In the above examples, atomic displacements and corresponding atomic forces of all the configurations are merged as :red:`DFSET_harmonic`. 
 These files will be used in the following fitting procedure as ``DFSET`` (See :ref:`Format of DFSET <label_format_DFSET>`).
@@ -174,8 +210,10 @@ human-readable listing :red:`si222.fcs` (and the legacy :red:`si222.xml`) as wel
 The file :red:`si222.fcs` contains all IFCs in Rydberg atomic units, and
 you can find symmetrically irreducible sets of IFCs in the first part as:
 
-.. literalinclude:: ../../../example/Si/reference/si222.fcs
-   :lines: 1-40
+.. dropdown:: si222.fcs (first 40 lines)
+
+   .. literalinclude:: ../../../example/Si/reference/si222.fcs
+      :lines: 1-40
 
 Harmonic IFCs :math:`\Phi_{\mu\nu}(i,j)` in the supercell are given in the third column
 and the multiplicity :math:`P` is the number of times each interaction :math:`(i, j)` occurs within the given cutoff radius.
@@ -200,6 +238,8 @@ The file :red:`si222.h5` is the one that **anphon** reads in the following steps
 Open the file :red:`si_phband.in` and edit it for your system.
 
 .. literalinclude:: ../../../example/Si/reference/si_phband.in
+
+:download:`Download si_phband.in <../../../example/Si/reference/si_phband.in>`
 
 Please specify the force-constant file you obtained in step 3 with the ``FCSFILE``-tag as above.
 In the **&cell**-field, you need to define the lattice vector of a **primitive cell**.

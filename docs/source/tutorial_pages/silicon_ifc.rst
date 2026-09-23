@@ -11,6 +11,17 @@
 Si : Anharmonic interatomic force constants (IFCs)
 ---------------------------------------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Calculate the anharmonic IFCs of Si from configurations sampled on the harmonic potential energy surface.
+   :You will learn:
+      - how to sample random configurations in normal coordinates with ``displace.py --random_normalcoord``
+      - how to run the cross-validation sets as separate jobs and collect them with ``cvscore.py``
+      - how to fit the anharmonic IFCs with the optimal :math:`\alpha`
+   :Prerequisites: :ref:`The Si tutorial <label_tutorial_01>`, :ref:`the BaTiO3 IFC tutorial <label_tutorial_bto_ifc>`, and VASP (``DFSET_harmonic`` is provided).
+   :Example files: ``example/Si/anharm_IFCs``
+
 This page explains another method to calculate anharmonic interatomic force constants (IFCs) using ALAMODE.
 
 The example input files are provided in **example/Si/anharm_IFCs**.
@@ -37,6 +48,8 @@ We first calculate the displacement patterns by **alm**.
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/1_harmonic
   $ ${ALAMODE_ROOT}/alm/alm si_alm_sug.in > si_alm_sug.log
 
+:download:`Download si_alm_sug.in <../../../example/Si/anharm_IFCs/1_harmonic/si_alm_sug.in>`
+
 Then, generate the VASP input files using the generated ``si222_harmonic.pattern_HARMONIC`` 
 and the input files in the **VASP_input** directory.
 After running the VASP calculation and obtaining :red:`DFSET_harmonic`
@@ -46,6 +59,8 @@ calculate the harmonic IFCs with
 .. code-block:: console
 
   $ ${ALAMODE_ROOT}/alm/alm si_alm_opt.in > si_alm_opt.log
+
+:download:`Download si_alm_opt.in <../../../example/Si/anharm_IFCs/1_harmonic/si_alm_opt.in>`
 
 .. _tutorial_Si_IFC_step2:
 
@@ -70,47 +85,49 @@ commensurate :math:`q`-points.
 
 The information on the :math:`q`-points are written out in :red:`si_anphon.in` as follows.
 
-.. code-block::
+.. dropdown:: si_anphon.in after running displace.py
 
-  &general
-    PREFIX = si222_harmonic
-    MODE   = phonons
-    FCSFILE = si222_harmonic.h5
+   .. code-block::
 
-    KD = Si
-  /
+     &general
+       PREFIX = si222_harmonic
+       MODE   = phonons
+       FCSFILE = si222_harmonic.h5
 
-  *****************************************************************
-      displace.py --  Generator of displaced configurations
-                        Version. 1.2.1
-  *****************************************************************
+       KD = Si
+     /
 
-  Output format                  : VASP POSCAR
-  Structure before displacements : POSCAR_supercell
-  Output file names              : disp{counter}.POSCAR
-  Magnitude of displacements     : 0.02 Angstrom
-  Number of atoms                : 64
+     *****************************************************************
+         displace.py --  Generator of displaced configurations
+                           Version. 1.2.1
+     *****************************************************************
 
-  The --evec option is necessary when '--random_normalcoord'
-  option is used.
-  Please generate a PREFIX.evec.h5 file by using the ANPHON code
-  with the following inputs and then run displace.py again with
-  --evec=PREFIX.evec.h5 option:
+     Output format                  : VASP POSCAR
+     Structure before displacements : POSCAR_supercell
+     Output file names              : disp{counter}.POSCAR
+     Magnitude of displacements     : 0.02 Angstrom
+     Number of atoms                : 64
 
-  &cell
-  1.0
-    0.000000000000000   5.131551292420093   5.131551292420093
-    5.131551292420093   0.000000000000000   5.131551292420093
-    5.131551292420093   5.131551292420093   0.000000000000000
-  /
-  &kpoint
-  0
-    0.000000000000000    0.000000000000000    0.000000000000000
-    ...
-  /
-  &analysis
-   PRINTEVEC = 1
-  /
+     The --evec option is necessary when '--random_normalcoord'
+     option is used.
+     Please generate a PREFIX.evec.h5 file by using the ANPHON code
+     with the following inputs and then run displace.py again with
+     --evec=PREFIX.evec.h5 option:
+
+     &cell
+     1.0
+       0.000000000000000   5.131551292420093   5.131551292420093
+       5.131551292420093   0.000000000000000   5.131551292420093
+       5.131551292420093   5.131551292420093   0.000000000000000
+     /
+     &kpoint
+     0
+       0.000000000000000    0.000000000000000    0.000000000000000
+       ...
+     /
+     &analysis
+      PRINTEVEC = 1
+     /
 
 Now, delete the unnecessary part of the output and run the **anphon** calculation.
 
@@ -190,6 +207,8 @@ the result of another CV set will overwrite the output file otherwise.
 
   ...
 
+:download:`Download si_alm_cvset1.in <../../../example/Si/anharm_IFCs/3_cv/si_alm_cvset1.in>`
+
 
 Run the calculation with 
 
@@ -206,6 +225,8 @@ After all the calculations are finished, collect the cvscore data with
 .. code-block:: console
 
   $ python3 cvscore.py *cvset > si222.cvscore
+
+:download:`Download cvscore.py <../../../example/Si/anharm_IFCs/3_cv/cvscore.py>`
 
 
 .. note::
@@ -240,6 +261,8 @@ Run the calculation with
 
   $ cd ${ALAMODE_ROOT}/example/Si/anharm_IFCs/4_optimize
   $ ${ALAMODE_ROOT}/alm/alm si_alm_opt.in > si_alm_opt.log
+
+:download:`Download si_alm_opt.in <../../../example/Si/anharm_IFCs/4_optimize/si_alm_opt.in>`
 
 The calculated IFCs are written out in :red:`si222.h5`.
 The fitting error is 

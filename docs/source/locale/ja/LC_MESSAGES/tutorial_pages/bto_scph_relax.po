@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:54+0900\n"
+"POT-Creation-Date: 2026-09-24 00:14+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -24,6 +24,68 @@ msgid "BaTiO\\ :sub:`3` : An SCPH-based structural optimization example"
 msgstr "BaTiO\\ :sub:`3` : SCPHに基づく構造最適化の例"
 
 #: ../../source/tutorial_pages/bto_scph_relax.rst:14
+msgid "At a glance"
+msgstr "概要"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst
+msgid "Goal"
+msgstr "目標"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:17
+msgid ""
+"Calculate the temperature dependence of the atomic positions across the "
+"cubic-tetragonal phase transition of BaTiO\\ :sub:`3` with the SCPH theory."
+msgstr "SCPH 理論を用いて、BaTiO\\ :sub:`3` の立方晶-正方晶相転移にわたる原子位置の温度依存性を計算します。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst
+msgid "You will learn"
+msgstr "学べること"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:19
+msgid "how to set ``RELAX_STR`` and the ``&relax`` and ``&displace`` fields"
+msgstr "``RELAX_STR`` と ``&relax`` および ``&displace`` フィールドの設定方法"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:20
+msgid ""
+"how to run cooling (``SET_INIT_STR = 3``) and heating (``SET_INIT_STR = 2``)"
+" calculations"
+msgstr "冷却計算 (``SET_INIT_STR = 3``) と加熱計算 (``SET_INIT_STR = 2``) の実行方法"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:21
+msgid ""
+"how to read the transition temperature from the atomic displacements and "
+"free energies"
+msgstr "原子変位と自由エネルギーから転移温度を読み取る方法"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst
+msgid "Prerequisites"
+msgstr "前提"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:22
+msgid ""
+":ref:`The BaTiO3 IFC tutorial <label_tutorial_bto_ifc>` (the IFC file is "
+"provided) and :ref:`the SrTiO3 SCPH tutorial <label_tutorial_sto_scph>`."
+msgstr ""
+":ref:`BaTiO3 の IFC チュートリアル <label_tutorial_bto_ifc>` (IFC ファイルは用意されています) と "
+":ref:`SrTiO3 の SCPH チュートリアル <label_tutorial_sto_scph>`。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst
+msgid "Example files"
+msgstr "例のファイル"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:23
+msgid "``example/BaTiO3/scph_relax``"
+msgstr "``example/BaTiO3/scph_relax``"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst
+msgid "Run time"
+msgstr "所要時間"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:24
+msgid "More than 10 minutes without parallelization."
+msgstr "並列化なしで 10 分以上かかります。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:26
 msgid ""
 "This page explains how to calculate crystal structures at finite "
 "temperatures based on the SCPH theory. We calculate the cubic-tetragonal "
@@ -34,19 +96,19 @@ msgstr ""
 "このページでは、SCPH理論に基づいて有限温度における結晶構造を計算する方法を説明します。ここでは、BaTiO\\ :sub:`3` の立方晶-"
 "正方晶構造相転移を計算します。単位胞 (unit cell) の形状を固定し、原子位置の温度 (:math:`T`) 依存性を計算します。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:18
+#: ../../source/tutorial_pages/bto_scph_relax.rst:30
 msgid "The example input files are provided in **example/BaTiO3/scph_relax**."
 msgstr "例題の入力ファイル (input file) は **example/BaTiO3/scph_relax** に用意されています。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:20
+#: ../../source/tutorial_pages/bto_scph_relax.rst:32
 msgid "Let's move to the example directory"
 msgstr "例題のディレクトリに移動しましょう"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:30
+#: ../../source/tutorial_pages/bto_scph_relax.rst:42
 msgid "1. Prepare force constants"
 msgstr "1. 力定数 (force constants) を準備する"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:32
+#: ../../source/tutorial_pages/bto_scph_relax.rst:44
 msgid ""
 "This tutorial assumes that the harmonic and anharmonic force constants are "
 "already calculated up to the fourth order. Please copy the file of IFCs "
@@ -57,7 +119,7 @@ msgstr ""
 "力定数が4次まですでに計算されていることを前提とします。:ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` "
 "で計算した原子間力定数 (IFCs) のファイルをカレントディレクトリにコピーしてください。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:41
+#: ../../source/tutorial_pages/bto_scph_relax.rst:53
 msgid ""
 "We need to calculate the force constants in the phase with the highest "
 "symmetry (cubic phase in the case of BaTiO\\ :sub:`3`) to calculate the "
@@ -67,7 +129,7 @@ msgstr ""
 "構造相転移を計算するには、最も高い対称性を持つ相（BaTiO\\ :sub:`3` "
 "の場合は立方晶相）で力定数を計算する必要があります。これは、計算された原子間力定数の組がこの参照構造における対称性を満たすためです。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:45
+#: ../../source/tutorial_pages/bto_scph_relax.rst:57
 msgid ""
 "Suppose we calculate the IFCs at orthorhombic structure, for example. In "
 "that case, the generated IFCs do not satisfy the symmetry between the states"
@@ -76,11 +138,11 @@ msgid ""
 msgstr ""
 "例えば、斜方晶構造で原子間力定数を計算するとします。その場合、生成された原子間力定数は反対の分極を持つ状態間の対称性を満たさず、構造は高温で高対称な立方晶相に収束しません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:52
+#: ../../source/tutorial_pages/bto_scph_relax.rst:64
 msgid "2. Prepare the input file"
 msgstr "2. 入力ファイルを準備する"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:54
+#: ../../source/tutorial_pages/bto_scph_relax.rst:66
 msgid ""
 "In addition to the input file of the SCPH calculation at the fixed reference"
 " structure (See :ref:`Tutorial 7.4 <label_tutorial_sto_scph>` for example), "
@@ -91,7 +153,7 @@ msgstr ""
 "を参照）に加えて、``&scph`` フィールドの ``RELAX_STR`` タグ、``&relax`` フィールド、``&displace`` "
 "フィールドを適切に設定する必要があります。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:58
+#: ../../source/tutorial_pages/bto_scph_relax.rst:70
 msgid ""
 "We specify the initial atomic displacements in ``&displace``-field, which "
 "are added to the high-symmetry reference structure. This is necessary to "
@@ -100,13 +162,13 @@ msgstr ""
 "``&displace`` フィールドで初期の原子変位 (displacement) "
 "を指定します。これは高対称な参照構造に加えられます。これは立方晶相からの自発的対称性の破れを誘起するために必要です。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:62
+#: ../../source/tutorial_pages/bto_scph_relax.rst:74
 msgid ""
 "The input file of the anphon calculation is :red:`BTO_scph_thermo.in`. The "
 "line ::"
 msgstr "anphon計算の入力ファイルは :red:`BTO_scph_thermo.in` です。次の行 ::"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:68
+#: ../../source/tutorial_pages/bto_scph_relax.rst:80
 msgid ""
 "is for the cooling calculation. With ``SET_INIT_STR = 3``, the initial "
 "structure of the SCPH-based structural optimization is set from the "
@@ -122,7 +184,7 @@ msgstr ""
 "spglib で見つかるかどうかで判定され、その際の対称性の許容誤差には :ref:`TOLERANCE <anphon_tolerance>` "
 "タグの値が用いられます。詳しくは :ref:`ドキュメント <anphon_set_init_str>` を参照してください。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:77
+#: ../../source/tutorial_pages/bto_scph_relax.rst:89
 msgid ""
 "(Earlier versions required the ``COOLING_U0_INDEX`` and ``COOLING_U0_THR`` "
 "tags here. They are deprecated and ignored; the symmetry is now detected "
@@ -131,7 +193,7 @@ msgstr ""
 "(以前のバージョンでは、ここで ``COOLING_U0_INDEX`` と ``COOLING_U0_THR`` "
 "タグが必要でした。これらは非推奨となり無視されます。現在は対称性が自動的に判定されます。)"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:80
+#: ../../source/tutorial_pages/bto_scph_relax.rst:92
 msgid ""
 "To perform the heating calculation, set ``LOWER_TEMP = 0`` in "
 "``&scph``-field and ``SET_INIT_STR = 2``. Then, write the low-temperature "
@@ -140,7 +202,7 @@ msgstr ""
 "加熱計算を行うには、``&scph`` フィールドで ``LOWER_TEMP = 0`` および ``SET_INIT_STR = 2`` "
 "を設定します。そして、低温の構造を ``&displace`` フィールドに記述します。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:84
+#: ../../source/tutorial_pages/bto_scph_relax.rst:96
 msgid ""
 "We use a coarse SCPH :math:`q`-mesh of ``KMESH_SCPH = 4 4 4`` to save "
 "computational cost. Convergence with respect to ``KMESH_SCPH`` and the "
@@ -151,7 +213,7 @@ msgstr ""
 "メッシュを使用します。正確な計算結果を得るには、``KMESH_SCPH`` および閾値 ``COORD_CONV_TOL`` "
 "に関する収束を注意深く確認する必要があります。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:90
+#: ../../source/tutorial_pages/bto_scph_relax.rst:102
 msgid ""
 "The convergence of the structure gets significantly slower right at the "
 "vicinity of the phase transition because the gradient of the free energy "
@@ -165,11 +227,19 @@ msgstr ""
 " :math:`T` 依存性を得ることが難しいことがあります。この問題は、より大きな :math:`T` "
 "ステップを選び、異なる相の自由エネルギーの交点から転移温度を見積もることで部分的に回避できます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:98
+#: ../../source/tutorial_pages/bto_scph_relax.rst:110
 msgid "Now, run the calculation with"
 msgstr "それでは、次のコマンドで計算を実行します"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:107
+#: ../../source/tutorial_pages/bto_scph_relax.rst:116
+msgid ""
+":download:`Download BTO_scph_thermo.in "
+"<../../../example/BaTiO3/scph_relax/BTO_scph_thermo.in>`"
+msgstr ""
+":download:`BTO_scph_thermo.in をダウンロード "
+"<../../../example/BaTiO3/scph_relax/BTO_scph_thermo.in>`"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:121
 msgid ""
 "The calculation can takes more than 10 minutes if you don't use "
 "parallelizations. If you want to try the calculation in a shorter time, "
@@ -182,25 +252,25 @@ msgstr ""
 "1.0e-5`` や ``DT = 25`` に大きな値を使用するか、``TMAX = 400`` "
 "を小さくしてください。``COORD_CONV_TOL`` が大きいと構造は完全には収束しませんが、計算の概要を把握することができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:114
+#: ../../source/tutorial_pages/bto_scph_relax.rst:128
 msgid ""
 "The calculation time may be shorter in the future as we will implement a "
 "more sophisticated algorithm for the structure update."
 msgstr "構造更新のためのより洗練されたアルゴリズムを実装する予定であるため、計算時間は将来的に短くなる可能性があります。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:118
+#: ../../source/tutorial_pages/bto_scph_relax.rst:132
 msgid "3. Analyze the calculation results"
 msgstr "3. 計算結果を解析する"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:120
+#: ../../source/tutorial_pages/bto_scph_relax.rst:134
 msgid "Plotting the result with"
 msgstr "次のコマンドで結果をプロットすると"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:126
+#: ../../source/tutorial_pages/bto_scph_relax.rst:140
 msgid "you will get the following plot."
 msgstr "次のプロットが得られます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:128
+#: ../../source/tutorial_pages/bto_scph_relax.rst:142
 msgid ""
 "The atomic displacements are zero at high temperatures, where the structure "
 "converges to the high-symmetry cubic phase. At low temperatures, the atoms "
@@ -211,17 +281,17 @@ msgstr ""
 "高温では原子変位がゼロであり、構造は高対称な立方晶相に収束します。低温では、原子は :math:`z` "
 "方向に変位し、構造は正方晶相になります。見積もられた転移温度 (:math:`T_c`) はおよそ150~175 Kです。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:138
+#: ../../source/tutorial_pages/bto_scph_relax.rst:152
 msgid ""
 "The :math:`T`-dependence of the atomic displacements in cubic-tetragonal "
 "structural phase transition of BaTiO\\ :sub:`3`."
 msgstr "BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移における原子変位の :math:`T` 依存性。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:141
+#: ../../source/tutorial_pages/bto_scph_relax.rst:155
 msgid "The plot of the free energy can be obtained with"
 msgstr "自由エネルギーのプロットは次のコマンドで得られます"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:147
+#: ../../source/tutorial_pages/bto_scph_relax.rst:161
 #, python-brace-format
 msgid ""
 "We can see that static energy :math:`U_0` monotonically increases while the "
@@ -238,19 +308,19 @@ msgstr ""
 "で等しいため、全自由エネルギーの変化はそれほど大きくありません。このように、結晶構造の :math:`T` "
 "依存性において、エンタルピー項とエントロピー項の競合を見ることができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:160
+#: ../../source/tutorial_pages/bto_scph_relax.rst:174
 msgid ""
 "The :math:`T`-dependence of the free energy in cubic-tetragonal structural "
 "phase transition of BaTiO\\ :sub:`3`."
 msgstr "BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移における自由エネルギーの :math:`T` 依存性。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:165
+#: ../../source/tutorial_pages/bto_scph_relax.rst:179
 msgid ""
 "We can estimate :math:`T_c` more accurately from the crossing point of the "
 "free energies of different phases."
 msgstr "異なる相の自由エネルギーの交点から、:math:`T_c` をより正確に見積もることができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:167
+#: ../../source/tutorial_pages/bto_scph_relax.rst:181
 #, python-brace-format
 msgid ""
 "If we perform the cooling calculation without initial displacement, we will "
@@ -267,7 +337,7 @@ msgstr ""
 "が大きすぎて交点やヒステリシスが見えない場合は、自由エネルギー差 :math:`F_{cubic}-F_{tetra}` を低温側から外挿して "
 ":math:`T_c` を見積もることができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:176
+#: ../../source/tutorial_pages/bto_scph_relax.rst:190
 msgid ""
 "BaTiO\\ :sub:`3` shows a three-step structural phase transition between four"
 " different phases. For the other two phase transitions that occur at lower "
@@ -278,7 +348,7 @@ msgstr ""
 "BaTiO\\ :sub:`3` は4つの異なる相の間で3段階の構造相転移を示します。より低温で起こる他の2つの相転移（正方晶-斜方晶および斜方晶-"
 "菱面体晶転移）については、低 :math:`T` 相の対称性は高 :math:`T` 相の対称性の部分群ではありません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:180
+#: ../../source/tutorial_pages/bto_scph_relax.rst:194
 msgid ""
 "In such cases, we recommend calculating cubic-orthorhombic and cubic-"
 "rhombohedral phase transitions separately and comparing the free energies "
@@ -286,13 +356,13 @@ msgid ""
 msgstr ""
 "このような場合、立方晶-斜方晶および立方晶-菱面体晶の相転移を個別に計算し、自由エネルギーを比較することを推奨します。その理由は次のとおりです"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:183
+#: ../../source/tutorial_pages/bto_scph_relax.rst:197
 msgid ""
 "The calculated hysteresis does not necessarily reflect the physics if the "
 "transition is strongly first-order."
 msgstr "転移が強い一次転移である場合、計算されたヒステリシスは必ずしも物理を反映しません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:185
+#: ../../source/tutorial_pages/bto_scph_relax.rst:199
 msgid ""
 "The symmetry makes the calculation more stable and efficient. If we directly"
 " calculate the tetra-ortho transition, the symmetry used in the calculation "
@@ -304,7 +374,7 @@ msgstr ""
 "斜方晶転移を直接計算すると、計算で使用される対称性はこれら2つの相の対称群の共通部分群になりますが、代わりに立方晶-"
 "斜方晶転移を計算すると斜方晶相の完全な対称性を活用できます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:191
+#: ../../source/tutorial_pages/bto_scph_relax.rst:205
 msgid ""
 "We will need to prepare additional inputs, the elastic constants, and the "
 "strain-harmonic-IFC coupling if we relax the unit cell as well. The strain-"
@@ -314,7 +384,7 @@ msgstr ""
 "単位胞も緩和する場合は、追加の入力、弾性定数、およびひずみ-調和IFC結合 (strain-harmonic-IFC coupling) "
 "を準備する必要があります。ひずみ-力結合はBaTiO\\ :sub:`3` では対称性からゼロになるため必要ありません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:194
+#: ../../source/tutorial_pages/bto_scph_relax.rst:208
 msgid ""
 "Please see the :ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` for the "
 "details of the preparation of these inputs; the ``tools/elastic.py`` and "

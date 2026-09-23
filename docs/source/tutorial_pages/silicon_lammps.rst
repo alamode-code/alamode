@@ -10,6 +10,18 @@
 Silicon with LAMMPS
 -------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Use LAMMPS instead of a DFT code to calculate the atomic forces of Si (Stillinger-Weber potential).
+   :You will learn:
+      - how to prepare the LAMMPS input files for ALAMODE
+      - how to generate displaced structures with ``displace.py --LAMMPS``
+      - how to build the DFSET files from the LAMMPS forces with ``extract.py``
+   :Prerequisites: :ref:`The Si tutorial <label_tutorial_01>` and a LAMMPS build (e.g. ``lmp_serial``).
+   :Example files: ``example/Si_LAMMPS``
+   :Run time: The force calculations finish in a few seconds.
+
 Here, we demonstrate how to use ALAMODE together with LAMMPS.
 All input files can be found in the **example/Si_LAMMPS** directory.
 Before starting the tutorial, please build the LAMMPS code (e.g. ``lmp_serial``).
@@ -20,10 +32,16 @@ First, you need to make two input files for LAMMPS: :red:`in.sw` and :red:`Si222
 
 .. literalinclude:: ../../../example/Si_LAMMPS/in.sw
 
+:download:`Download in.sw <../../../example/Si_LAMMPS/in.sw>`
+
 In the file :red:`Si222.lammps`, the lattice vectors and atomic positions of a relaxed supercell structure are defined as follows:
 
-.. literalinclude:: ../../../example/Si_LAMMPS/Si222.lammps
-   :lines: 1-30
+.. dropdown:: Si222.lammps (first 30 lines)
+
+   .. literalinclude:: ../../../example/Si_LAMMPS/Si222.lammps
+      :lines: 1-30
+
+:download:`Download Si222.lammps <../../../example/Si_LAMMPS/Si222.lammps>`
 
 Next, please generate a set of structure files for displaced configurations using 
 the python script::

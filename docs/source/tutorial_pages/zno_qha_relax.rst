@@ -11,6 +11,17 @@
 ZnO : A QHA-based structural optimization example
 ---------------------------------------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Calculate the temperature dependence of the unit cell shape and the atomic positions of wurtzite ZnO within the QHA.
+   :You will learn:
+      - how to prepare the elastic constants, the strain-force coupling, and the strain-harmonic-IFC coupling
+      - how to pass them to **anphon** as a ``STRAINFILE`` container or as text files
+      - how the QHA, ZSISA, and v-ZSISA schemes compare
+   :Prerequisites: Harmonic and anharmonic force constants (provided as zipped XML files).
+   :Example files: ``example/ZnO/qha_relax``
+
 This page explains how to calculate crystal structures at finite temperatures (:math:`T`) based on the quasiharmonic approximation (QHA).
 
 Let's move to the example directory
@@ -98,6 +109,8 @@ same quantities, with the units as attributes and the reference structure once.
   rotational invariance of the fitted force constants, so comparing the values printed in the
   log against DFT elastic constants (``elastic.py fit --compare anphon.log``) is recommended.
 
+  :download:`Download elastic_constants.in <../../../example/ZnO/qha_relax/strain_IFC/elastic_constants.in>`
+
 * The strain-force coupling is obtained from the forces in strained primitive cells.
   ``elastic.py fit`` writes it from the runs it already has; without ``elastic.py`` (``STRAIN_COUPLING = 6``)
   use ``strainifc.py generate --coupling force`` / ``strainifc.py collect``.
@@ -120,6 +133,8 @@ same quantities, with the units as attributes and the reference structure once.
     0.000000  0.034812  -0.022224
     0.000000  -0.039854  0.022224
     0.000000  0.039854  0.022224
+
+  :download:`Download strain_force.in <../../../example/ZnO/qha_relax/strain_IFC/strain_force.in>`
 
   The rows follow the atom order of the primitive cell of :red:`anphon` (the ``&cell`` field); the meaning of
   the weight ``1.0`` is similar to that in the next paragraph. Files written by ``elastic.py fit --fcs`` or
@@ -169,6 +184,8 @@ same quantities, with the units as attributes and the reference structure once.
   `strainIFCcoupling <https://github.com/r-masuki/strainIFCcoupling>`_ code by R. Masuki, on which
   :red:`strainifc.py` is based, produces the same file format.
 
+  :download:`Download strain_harmonic.in <../../../example/ZnO/qha_relax/strain_IFC/strain_harmonic.in>`
+
 .. _tutorial_ZnO_QHA_step3:
 
 3. Prepare the input file.
@@ -193,6 +210,9 @@ Run the calculation with
 .. code-block:: console
 
   $ ${ALAMODE_ROOT}/anphon/anphon ZnO_qha_thermo.in > ZnO_qha_thermo.log
+
+:download:`Download ZnO_qha_thermo.in <../../../example/ZnO/qha_relax/ZnO_qha_thermo.in>`,
+:download:`Download ZnO_qha_thermo_strainfile.in <../../../example/ZnO/qha_relax/ZnO_qha_thermo_strainfile.in>`
 
 
 .. _tutorial_ZnO_QHA_step4:

@@ -48,7 +48,16 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "alamode_lexer",  # lexers for ALAMODE input files and plain :: blocks
+    "sphinx_design",  # tabs, dropdowns, cards and badges in the tutorials
+    "sphinx_copybutton",
 ]
+
+# Copy only the commands of shell sessions: strip the "$ " / "% " prompts and
+# skip the output lines. Blocks without prompts (input files) are copied whole.
+copybutton_prompt_text = r"\$ |% |gnuplot> "
+copybutton_prompt_is_regexp = True
+copybutton_only_copy_prompt_lines = True
+copybutton_line_continuation_character = "\\"  # keep the lines of a multi-line command
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

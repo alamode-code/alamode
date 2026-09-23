@@ -9,6 +9,17 @@
 PbTe (non-analytic correction)
 ------------------------------
 
+.. admonition:: At a glance
+   :class: tip
+
+   :Goal: Include the non-analytic correction in the phonon dispersion of the polar semiconductor PbTe.
+   :You will learn:
+      - how to build a supercell and displaced structures with ``makedisp_vasp.py``
+      - how to create the ``BORNINFO`` file (dielectric tensor and Born effective charges) from a DFPT calculation
+      - how the ``NONANALYTIC`` options 1, 2, and 3 differ
+   :Prerequisites: VASP (the VASP outputs are provided in ``vasp_outputs/``) and ``pymatgen``.
+   :Example files: ``example/PbTe``
+
 This part demonstrates how to include the non-analytic correction in phonon and thermal conductivity calculations of polar semiconductors.
 
 All input files can be found at the **example/PbTe** subdirectory.
@@ -30,6 +41,8 @@ The crystal structure of the primitive cell in the VASP POSCAR format is
 
 .. literalinclude:: ../../../example/PbTe/vasp_inputs/POSCAR
 
+:download:`Download POSCAR <../../../example/PbTe/vasp_inputs/POSCAR>`
+
 Now, let's construct a 4x4x4 supercell. 
 This can be done by creating a simple script by yourself or using a method implemented in popular libraries, such as ``ase`` or ``pymatgen``.
 This time, we will use the python script ``makedisp_vasp.py`` in the working directory. To use this script, ``pymatgen`` needs to be installed (if you have not):
@@ -43,6 +56,8 @@ Then, edit the header part of the script.
 
 .. literalinclude:: ../../../example/PbTe/makedisp_vasp.py
     :lines: 9-18
+
+:download:`Download makedisp_vasp.py <../../../example/PbTe/makedisp_vasp.py>`
 
 Here, the scaling matrix (:math:`M_{p\rightarrow s}`) is the matrix that transforms the primitive lattice vectors :math:`(\boldsymbol{a}_p, \boldsymbol{b}_p, \boldsymbol{c}_p)` into the supercell lattice vectors as :math:`(\boldsymbol{a}_s, \boldsymbol{b}_s, \boldsymbol{c}_s) = (\boldsymbol{a}_p, \boldsymbol{b}_p, \boldsymbol{c}_p) M_{p\rightarrow s}`.
 
@@ -141,6 +156,8 @@ We first compute phonon dispersion without non-analytic (NA) correction.
 The input file for **anphon** (``phband.in``) looks like
 
 .. literalinclude:: ../../../example/PbTe/reference/phband.in
+
+:download:`Download phband.in <../../../example/PbTe/reference/phband.in>`
 
 Please run **anphon** and plot the bands file
 
