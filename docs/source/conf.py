@@ -48,6 +48,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "alamode_lexer",  # lexers for ALAMODE input files and plain :: blocks
+    "alamode_plots",  # interactive-plot directive (Plotly figures from example/ data)
     "sphinx_design",  # tabs, dropdowns, cards and badges in the tutorials
     "sphinx_copybutton",
 ]

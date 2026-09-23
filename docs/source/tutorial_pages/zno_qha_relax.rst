@@ -231,7 +231,17 @@ to obtain the following figure.
 We can see that the thermal expansion is negative at low temperatures, and it turns positive at high temperatures.
 The pace of expansion of the :math:`a`-axis is faster than that of the :math:`c`-axis, which agrees with the result in `the paper <https://arxiv.org/abs/2302.04537>`_.
 
-.. figure:: ../../img/ZnO_thermal_strain.png
+.. interactive-plot::
+  :kind: xy
+  :series: ../../../example/ZnO/qha_relax/reference/ZnO_qha.umn_tensor 1:2 u<sub>xx</sub> = u<sub>yy</sub>
+     ../../../example/ZnO/qha_relax/reference/ZnO_qha.umn_tensor 1:10 u<sub>zz</sub>
+     ../../../example/ZnO/qha_relax/reference/ZnO_qha_zsisa.umn_tensor 1:2 u<sub>xx</sub> = u<sub>yy</sub>, ZSISA
+     ../../../example/ZnO/qha_relax/reference/ZnO_qha_zsisa.umn_tensor 1:10 u<sub>zz</sub>, ZSISA
+     ../../../example/ZnO/qha_relax/reference/ZnO_qha_vzsisa.umn_tensor 1:2 u<sub>xx</sub> = u<sub>yy</sub>, v-ZSISA
+     ../../../example/ZnO/qha_relax/reference/ZnO_qha_vzsisa.umn_tensor 1:10 u<sub>zz</sub>, v-ZSISA
+  :xlabel: Temperature (K)
+  :ylabel: Thermal strain
+  :fallback: ../../img/ZnO_thermal_strain.png
   :scale: 30%
   :align: center
 

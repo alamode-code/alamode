@@ -201,7 +201,12 @@ Finally, we plot all results together to see the difference.
 
     $ python ${ALAMODE_ROOT}/tools/plotband.py PbTe_NA?.bands
 
-.. image:: ../../img/PbTe_harm_compare.png
+.. interactive-plot::
+   :kind: dispersion-compare
+   :data: ../../../example/PbTe/reference/PbTe_NA0.bands ../../../example/PbTe/reference/PbTe_NA1.bands
+          ../../../example/PbTe/reference/PbTe_NA2.bands ../../../example/PbTe/reference/PbTe_NA3.bands
+   :labels: NONANALYTIC = 0; NONANALYTIC = 1; NONANALYTIC = 2; NONANALYTIC = 3
+   :fallback: ../../img/PbTe_harm_compare.png
    :scale: 40
    :align: center
 

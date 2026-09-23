@@ -266,7 +266,11 @@ For visualizing phonon dispersion relations, we provide a Python script :red:`pl
 
 Then, the phonon dispersion is displayed as follows:
 
-.. image:: ../../img/Si_phband_DFT.png
+.. interactive-plot::
+   :kind: dispersion
+   :data: ../../../example/Si/reference/si222.bands
+   :labels: si222.bands
+   :fallback: ../../img/Si_phband_DFT.png
    :scale: 30
    :align: center
 
@@ -299,9 +303,18 @@ The command
 
 will show the phonon DOS of Si by a pop-up window:
 
-.. image:: ../../img/Si_phdos_DFT.png
+.. interactive-plot::
+   :kind: dispersion
+   :data: ../../../example/Si/reference/si222.bands
+   :dos: ../../../example/Si/reference/si222_20.dos.bz2
+   :fallback: ../../img/Si_phdos_DFT.png
    :scale: 30
    :align: center
+
+.. only:: html
+
+   The interactive figure above shows the DOS next to the phonon dispersion;
+   ``plotdos.py`` plots the DOS alone, with the frequency on the horizontal axis.
 
 To improve the resolution of DOS, try again with a denser :math:`k` grid and a smaller ``DELTA_E`` value.
 

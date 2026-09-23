@@ -147,7 +147,15 @@ Let's plot the finite-temperature band structures.
     gnuplot> plot for [col=3:17] "< awk '{if ($1!=0.0) print $0}' STO_scph2-2.scph_bands" u 2:col w l lt 1
     gnuplot> replot for [col=2:16] "STO222_NA3.bands" u 1:col w l lt 2
 
-.. image:: ../../img/STO_scph.png
+.. interactive-plot::
+   :kind: dispersion-temperature
+   :data: ../../../example/SrTiO3/reference/STO_scph2-2.scph_bands
+   :labels: SCPH
+   :tmin: 50
+   :temperature: 300
+   :reference: ../../../example/SrTiO3/reference/STO222_NA3.bands
+   :reference-label: Harmonic (STO222_NA3.bands)
+   :fallback: ../../img/STO_scph.png
    :scale: 20
    :align: center
 

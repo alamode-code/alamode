@@ -145,7 +145,16 @@ At low temperatures, the atoms are displaced along the :math:`z`-direction,
 and the structure is in the tetragonal phase.
 The estimated transition temperature (:math:`T_c`) is around 150~175 K.
 
-.. figure:: ../../img/BaTiO3_scph_relax.png
+.. interactive-plot::
+  :kind: xy
+  :series: ../../../example/BaTiO3/scph_relax/reference/cBTO222_scph.atom_disp 1:4 Ba(z)
+     ../../../example/BaTiO3/scph_relax/reference/cBTO222_scph.atom_disp 1:7 Ti(z)
+     ../../../example/BaTiO3/scph_relax/reference/cBTO222_scph.atom_disp 1:10 O(1,2,z)
+     ../../../example/BaTiO3/scph_relax/reference/cBTO222_scph.atom_disp 1:16 O(3,z)
+  :xlabel: Temperature (K)
+  :ylabel: Atomic displacements (Bohr)
+  :markers:
+  :fallback: ../../img/BaTiO3_scph_relax.png
   :scale: 40%
   :align: center
 
