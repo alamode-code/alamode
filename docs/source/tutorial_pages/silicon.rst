@@ -25,7 +25,9 @@ Silicon
    :Prerequisites: ALAMODE (**alm** and **anphon**) and a DFT code (QE, VASP, xTAPP, or OpenMX). The reference DFSET files let you skip the DFT calculations.
    :Example files: ``example/Si``
 
-.. figure:: ../../img/si222.png
+.. structure-viewer::
+   :structure: ../../../example/Si/reference/si_alm1.in
+   :fallback: ../../img/si222.png
    :scale: 40%
    :align: center
 

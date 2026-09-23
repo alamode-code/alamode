@@ -90,6 +90,17 @@ Please run **anphon** and plot the band structure as
 
 It is clear that phonons are dynamically unstable at the :math:`\Gamma` and R points.
 
+.. structure-viewer::
+   :structure: ../../tools/mode_animations/sto_R.in
+   :animation: ../../tools/mode_animations/sto_R_soft.xyz
+   :amplitude: 4
+   :bonds: Ti O
+   :fallback: ../../img/STO_R_soft_mode.png
+   :width: 60%
+   :align: center
+
+   The unstable harmonic mode at the R point: the TiO\ :sub:`6` octahedra rotate in antiphase while Sr and Ti stay still (displacements exaggerated).
+
 .. _tutorial_STO_step3:
 
 3. Phonons within the self-consistent phonon method

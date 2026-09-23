@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 00:14+0900\n"
+"POT-Creation-Date: 2026-09-24 01:05+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -281,17 +281,26 @@ msgstr ""
 "高温では原子変位がゼロであり、構造は高対称な立方晶相に収束します。低温では、原子は :math:`z` "
 "方向に変位し、構造は正方晶相になります。見積もられた転移温度 (:math:`T_c`) はおよそ150~175 Kです。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:152
+#: ../../source/tutorial_pages/bto_scph_relax.rst:161
 msgid ""
 "The :math:`T`-dependence of the atomic displacements in cubic-tetragonal "
 "structural phase transition of BaTiO\\ :sub:`3`."
 msgstr "BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移における原子変位の :math:`T` 依存性。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:155
+#: ../../source/tutorial_pages/bto_scph_relax.rst:173
+msgid ""
+"The polar soft mode of cubic BaTiO\\ :sub:`3` at :math:`\\Gamma` in the "
+"harmonic approximation: Ti moves against the O octahedra, predominantly "
+"along :math:`z` (displacements exaggerated)."
+msgstr ""
+"調和近似における立方晶 BaTiO\\ :sub:`3` の :math:`\\Gamma` 点の極性ソフトモード: Ti が O "
+"八面体と逆向きに、主に :math:`z` 方向へ変位します (変位は誇張しています)。"
+
+#: ../../source/tutorial_pages/bto_scph_relax.rst:175
 msgid "The plot of the free energy can be obtained with"
 msgstr "自由エネルギーのプロットは次のコマンドで得られます"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:161
+#: ../../source/tutorial_pages/bto_scph_relax.rst:181
 #, python-brace-format
 msgid ""
 "We can see that static energy :math:`U_0` monotonically increases while the "
@@ -308,19 +317,19 @@ msgstr ""
 "で等しいため、全自由エネルギーの変化はそれほど大きくありません。このように、結晶構造の :math:`T` "
 "依存性において、エンタルピー項とエントロピー項の競合を見ることができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:174
+#: ../../source/tutorial_pages/bto_scph_relax.rst:194
 msgid ""
 "The :math:`T`-dependence of the free energy in cubic-tetragonal structural "
 "phase transition of BaTiO\\ :sub:`3`."
 msgstr "BaTiO\\ :sub:`3` の立方晶-正方晶構造相転移における自由エネルギーの :math:`T` 依存性。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:179
+#: ../../source/tutorial_pages/bto_scph_relax.rst:199
 msgid ""
 "We can estimate :math:`T_c` more accurately from the crossing point of the "
 "free energies of different phases."
 msgstr "異なる相の自由エネルギーの交点から、:math:`T_c` をより正確に見積もることができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:181
+#: ../../source/tutorial_pages/bto_scph_relax.rst:201
 #, python-brace-format
 msgid ""
 "If we perform the cooling calculation without initial displacement, we will "
@@ -337,7 +346,7 @@ msgstr ""
 "が大きすぎて交点やヒステリシスが見えない場合は、自由エネルギー差 :math:`F_{cubic}-F_{tetra}` を低温側から外挿して "
 ":math:`T_c` を見積もることができます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:190
+#: ../../source/tutorial_pages/bto_scph_relax.rst:210
 msgid ""
 "BaTiO\\ :sub:`3` shows a three-step structural phase transition between four"
 " different phases. For the other two phase transitions that occur at lower "
@@ -348,7 +357,7 @@ msgstr ""
 "BaTiO\\ :sub:`3` は4つの異なる相の間で3段階の構造相転移を示します。より低温で起こる他の2つの相転移（正方晶-斜方晶および斜方晶-"
 "菱面体晶転移）については、低 :math:`T` 相の対称性は高 :math:`T` 相の対称性の部分群ではありません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:194
+#: ../../source/tutorial_pages/bto_scph_relax.rst:214
 msgid ""
 "In such cases, we recommend calculating cubic-orthorhombic and cubic-"
 "rhombohedral phase transitions separately and comparing the free energies "
@@ -356,13 +365,13 @@ msgid ""
 msgstr ""
 "このような場合、立方晶-斜方晶および立方晶-菱面体晶の相転移を個別に計算し、自由エネルギーを比較することを推奨します。その理由は次のとおりです"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:197
+#: ../../source/tutorial_pages/bto_scph_relax.rst:217
 msgid ""
 "The calculated hysteresis does not necessarily reflect the physics if the "
 "transition is strongly first-order."
 msgstr "転移が強い一次転移である場合、計算されたヒステリシスは必ずしも物理を反映しません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:199
+#: ../../source/tutorial_pages/bto_scph_relax.rst:219
 msgid ""
 "The symmetry makes the calculation more stable and efficient. If we directly"
 " calculate the tetra-ortho transition, the symmetry used in the calculation "
@@ -374,7 +383,7 @@ msgstr ""
 "斜方晶転移を直接計算すると、計算で使用される対称性はこれら2つの相の対称群の共通部分群になりますが、代わりに立方晶-"
 "斜方晶転移を計算すると斜方晶相の完全な対称性を活用できます。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:205
+#: ../../source/tutorial_pages/bto_scph_relax.rst:225
 msgid ""
 "We will need to prepare additional inputs, the elastic constants, and the "
 "strain-harmonic-IFC coupling if we relax the unit cell as well. The strain-"
@@ -384,7 +393,7 @@ msgstr ""
 "単位胞も緩和する場合は、追加の入力、弾性定数、およびひずみ-調和IFC結合 (strain-harmonic-IFC coupling) "
 "を準備する必要があります。ひずみ-力結合はBaTiO\\ :sub:`3` では対称性からゼロになるため必要ありません。"
 
-#: ../../source/tutorial_pages/bto_scph_relax.rst:208
+#: ../../source/tutorial_pages/bto_scph_relax.rst:228
 msgid ""
 "Please see the :ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` for the "
 "details of the preparation of these inputs; the ``tools/elastic.py`` and "

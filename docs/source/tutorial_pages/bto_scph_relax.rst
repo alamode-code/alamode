@@ -161,6 +161,17 @@ The estimated transition temperature (:math:`T_c`) is around 150~175 K.
   The :math:`T`-dependence of the atomic displacements in cubic-tetragonal
   structural phase transition of BaTiO\ :sub:`3`.
 
+.. structure-viewer::
+  :structure: ../../tools/mode_animations/bto_G.in
+  :animation: ../../tools/mode_animations/bto_G_soft.xyz
+  :amplitude: 4
+  :bonds: Ti O
+  :fallback: ../../img/BTO_G_soft_mode.png
+  :width: 60%
+  :align: center
+
+  The polar soft mode of cubic BaTiO\ :sub:`3` at :math:`\Gamma` in the harmonic approximation: Ti moves against the O octahedra, predominantly along :math:`z` (displacements exaggerated).
+
 The plot of the free energy can be obtained with
 
 .. code-block:: console

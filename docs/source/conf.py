@@ -49,6 +49,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "alamode_lexer",  # lexers for ALAMODE input files and plain :: blocks
     "alamode_plots",  # interactive-plot directive (Plotly figures from example/ data)
+    "alamode_structures",  # structure-viewer directive (3Dmol.js structures, mode animations)
     "sphinx_design",  # tabs, dropdowns, cards and badges in the tutorials
     "sphinx_copybutton",
 ]

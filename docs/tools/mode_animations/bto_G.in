@@ -1,0 +1,25 @@
+&general
+ PREFIX = bto_G
+ MODE = phonons
+ KD = Ba Ti O
+ FCSFILE = cBTO222_harmonic.xml
+/
+
+&cell
+7.53159676409
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+/
+
+&kpoint
+0
+0.0 0.0 0.0
+/
+
+&analysis
+ ANIME = 0.0 0.0 0.0
+ ANIME_CELLSIZE = 2 2 2
+ ANIME_FORMAT = xyz
+ ANIME_FRAMES = 20
+/

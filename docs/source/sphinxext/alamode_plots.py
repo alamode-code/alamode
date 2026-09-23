@@ -127,11 +127,24 @@ class MissingData(Exception):
     """A data file of an interactive plot does not exist."""
 
 
-class interactive_plot(nodes.General, nodes.Element):
-    """Holds the JSON payload; its only child is the fallback figure/image."""
+class fallback_node(nodes.General, nodes.Element):
+    """Holds the JSON payload; its only child is the fallback figure/image.
+
+    ``css`` names the <figure> class and the prefix of its canvas/data classes.
+    """
+
+    css = ""
+
+
+class interactive_plot(fallback_node):
+    css = "alamode-plot"
 
 
 class InteractivePlot(Figure):
+    """Base for figures drawn by JavaScript from a JSON payload (see run)."""
+
+    name = "interactive-plot"
+    node_class = interactive_plot
     required_arguments = 0
     option_spec = dict(
         Figure.option_spec,
@@ -220,13 +233,13 @@ class InteractivePlot(Figure):
 
     def run(self):
         if "fallback" not in self.options:
-            raise self.error("interactive-plot: :fallback: image is required")
+            raise self.error(f"{self.name}: :fallback: image is required")
         try:
             payload = self._payload()
         except MissingData as e:
             payload = None
             self.state.document.reporter.warning(
-                f"interactive-plot: data file not found: {e}; showing the static image",
+                f"{self.name}: data file not found: {e}; showing the static image",
                 line=self.lineno,
             )
         self.arguments = [self.options.pop("fallback")]
@@ -241,21 +254,21 @@ class InteractivePlot(Figure):
                 fallback["align"] = fig["align"]
         if payload is None:
             return [fallback]
-        node = interactive_plot()
+        node = self.node_class()
         node["payload"] = payload
         node += fallback
         return [node]
 
 
 class StripInteractivePlots(SphinxPostTransform):
-    """Non-HTML builders: keep only the fallback figure."""
+    """Non-HTML builders: keep only the fallback figure (all fallback_node kinds)."""
 
     default_priority = 200
 
     def run(self, **kwargs):
         if self.app.builder.format == "html":
             return
-        for node in list(self.document.findall(interactive_plot)):
+        for node in list(self.document.findall(fallback_node)):
             node.replace_self(node.children)
 
 
@@ -267,14 +280,15 @@ def visit_html(self, node):
     children = list(fb.children) if isinstance(fb, nodes.figure) else [fb]
     caption = next((c for c in children if isinstance(c, nodes.caption)), None)
     ids = " ".join(fb.get("ids", []))
+    css = node.css
     data = json.dumps(
         node["payload"], separators=(",", ":"), ensure_ascii=False
     ).replace("</", "<\\/")
     self.body.append(
-        f'<figure class="alamode-plot align-{fb.get("align", "center")}"'
+        f'<figure class="{css} align-{fb.get("align", "center")}"'
         + (f' id="{ids.split()[0]}"' if ids else "")
-        + '>\n<div class="alamode-plot-canvas"></div>\n'
-        + f'<script type="application/json" class="alamode-plot-data">{data}</script>\n<noscript>'
+        + f'>\n<div class="{css}-canvas"></div>\n'
+        + f'<script type="application/json" class="{css}-data">{data}</script>\n<noscript>'
     )
     for c in children:
         if not isinstance(c, (nodes.caption, nodes.legend)):
