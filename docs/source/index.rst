@@ -23,6 +23,7 @@ Users Guide
    alm_root
    alm_python
    anphon_root
+   hdf5_format
    tutorial
    faq
 

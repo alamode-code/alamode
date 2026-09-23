@@ -135,11 +135,16 @@ def render(name, graph, nodes, edges, lang, same=(), theme="light"):
         lines.append("  { rank=same; %s; }" % "; ".join(group))
     lines.append("}")
     source = "\n".join(lines)
+    render_source(name, source, lang, theme)
+
+
+def render_source(name, source, lang, theme="light", output_dir=HERE):
+    """Render DOT through PDF to outlined SVG, using the shared naming scheme."""
     # NAME[.dark][.ja].ext -- Sphinx's default figure_language_filename is
     # {root}.{language}{ext}, so the language must come last.
     stem = name + ("" if theme == "light" else "." + theme)
     stem += "" if lang == "en" else "." + lang
-    pdf = HERE / (stem + ".pdf")
+    pdf = Path(output_dir) / (stem + ".pdf")
     subprocess.run([DOT, "-Tpdf", "-o", str(pdf)], input=source.encode(), check=True)
     # The SVG is converted from the PDF so that the text becomes glyph outlines:
     # Graphviz's own SVG places each font run at a fixed x, and runs overlap
@@ -284,8 +289,8 @@ ALM = dict(
         "evec": (
             "anphon",
             L(
-                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`  → PREFIX.evec",
-                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`  → PREFIX.evec",
+                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`\n`PRINTEVEC = 1`, `FILE_FORMAT = text`  → PREFIX.evec",
+                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`\n`PRINTEVEC = 1`, `FILE_FORMAT = text`  → PREFIX.evec",
             ),
         ),
         "dB": (

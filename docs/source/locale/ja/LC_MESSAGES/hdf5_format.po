@@ -1,0 +1,391 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-23 17:02+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/hdf5_format.rst:2
+msgid "HDF5 files"
+msgstr "HDF5 ファイル"
+
+#: ../../source/hdf5_format.rst:6
+msgid ""
+"ALAMODE stores the force constants and the main results in HDF5 files. HDF5 "
+"is a portable binary format organized like a file system: **groups** "
+"(folders) contain **datasets** (arrays) and other groups, and both can carry "
+"**attributes** (small labels such as units). The chart below shows which "
+"program writes each file and which program reads it."
+msgstr ""
+"ALAMODE は力定数と主な計算結果を HDF5 ファイルに保存します。HDF5 "
+"はファイルシステムのように構成されたポータブルなバイナリ形式で、**グループ** (フォルダ) が **データセット** (配列) "
+"や他のグループを含み、どちらも **属性** (単位などの小さなラベル) "
+"を持つことができます。下の図は、各ファイルをどのプログラムが書き出し、どのプログラムが読み込むかを示しています。"
+
+#: ../../source/hdf5_format.rst:11 ../../source/hdf5_format.rst:20
+msgid "Which programs write and read the HDF5 files of ALAMODE"
+msgstr "ALAMODE の HDF5 ファイルを書き出すプログラムと読み込むプログラム"
+
+#: ../../source/hdf5_format.rst:16 ../../source/hdf5_format.rst:25
+msgid "HDF5 files of ALAMODE and the programs that write and read them."
+msgstr "ALAMODE の HDF5 ファイルと、それらを書き出すプログラムおよび読み込むプログラム。"
+
+#: ../../source/hdf5_format.rst:29
+msgid "Reading the files"
+msgstr "ファイルの読み方"
+
+#: ../../source/hdf5_format.rst:31
+msgid ""
+"List the contents of a file with ``h5ls -r PREFIX.h5`` (from the HDF5 tools),"
+" or read it in Python with h5py::"
+msgstr ""
+"ファイルの内容は (HDF5 ツールに含まれる) ``h5ls -r PREFIX.h5`` で一覧表示できます。また、Python では h5py "
+"で読み込めます::"
+
+#: ../../source/hdf5_format.rst:41
+msgid "The files share a few conventions:"
+msgstr "各ファイルには共通の約束事がいくつかあります:"
+
+#: ../../source/hdf5_format.rst:43
+msgid ""
+"The root attributes identify the file: ``schema`` (e.g. "
+"``alamode:kappa_result``), ``format_version``, ``alamode_version``, "
+"``alamode_git_commit``, and ``created_date``."
+msgstr ""
+"ルートの属性がファイルを識別します: ``schema`` (例: "
+"``alamode:kappa_result``)、``format_version``、``alamode_version``、``alamode_git_commit``、``created_date``。"
+
+#: ../../source/hdf5_format.rst:45
+msgid "Physical quantities carry their unit in a ``unit`` attribute."
+msgstr "物理量はその単位を ``unit`` 属性に持ちます。"
+
+#: ../../source/hdf5_format.rst:46
+msgid ""
+"Indices of atoms, coordinates (0, 1, 2 = :math:`x, y, z`), and branches start"
+" from 0."
+msgstr "原子、座標 (0, 1, 2 = :math:`x, y, z`)、分枝のインデックスは 0 から始まります。"
+
+#: ../../source/hdf5_format.rst:47
+msgid ""
+"``/metadata/input_variables`` records the input variables of the run that "
+"wrote the file, one attribute per tag."
+msgstr ""
+"``/metadata/input_variables`` には、そのファイルを書き出した計算の入力変数がタグごとに 1 つの属性として記録されます。"
+
+#: ../../source/hdf5_format.rst:49
+msgid ""
+"In the figures below, folder-shaped boxes are groups, the boxes next to them "
+"list their datasets with the shapes (``()`` is a scalar) and units (``[ ]``),"
+" and dashed boxes are written only under the condition shown. The symbols for"
+" the array sizes are explained at the bottom of each figure."
+msgstr ""
+"以下の図では、フォルダ形のボックスがグループを表し、その横のボックスにはデータセットが形状 (``()`` はスカラー) と単位 (``[ ]``) "
+"とともに列挙されています。破線のボックスは、示された条件のときにのみ書き出されます。配列サイズを表す記号は各図の下部で説明しています。"
+
+#: ../../source/hdf5_format.rst:56
+msgid "Force constants (PREFIX.h5)"
+msgstr "力定数 (PREFIX.h5)"
+
+#: ../../source/hdf5_format.rst:58
+msgid ""
+"Written by *alm* (``MODE = optimize``), and by *anphon* for strained cells "
+"(``NEWFCS = 1``). *anphon* reads it through ``FCSFILE`` (or ``FC2FILE``, "
+"``FC3FILE``, ``FC4FILE``)."
+msgstr ""
+"*alm* (``MODE = optimize``) と、歪んだセルに対して *anphon* (``NEWFCS = 1``) "
+"が書き出します。*anphon* は ``FCSFILE`` (または ``FC2FILE``、``FC3FILE``、``FC4FILE``) "
+"を通じてこのファイルを読み込みます。"
+
+#: ../../source/hdf5_format.rst:61 ../../source/hdf5_format.rst:70
+msgid "Layout of the force-constant file"
+msgstr "力定数ファイルの構成"
+
+#: ../../source/hdf5_format.rst:66 ../../source/hdf5_format.rst:75
+msgid "Layout of the force-constant file (schema ``alamode:force_constants``)."
+msgstr "力定数ファイルの構成 (スキーマ ``alamode:force_constants``)。"
+
+#: ../../source/hdf5_format.rst:78
+#, python-brace-format
+msgid ""
+"``/ForceConstants/Order2``, ``Order3``, ``Order4``, ...: the harmonic, cubic,"
+" quartic, ... force constants, one row per force constant "
+":math:`\\Phi_{\\alpha_1 \\cdots \\alpha_n}(i_1, \\ldots, i_n)`:"
+msgstr ""
+"``/ForceConstants/Order2``、``Order3``、``Order4``、...: 調和、3 次、4 次、... "
+"の力定数で、力定数 :math:`\\Phi_{\\alpha_1 \\cdots \\alpha_n}(i_1, \\ldots, i_n)` ごとに "
+"1 行です:"
+
+#: ../../source/hdf5_format.rst:81
+msgid "``force_constant_values``: the value, in Ry/bohr\\ :sup:`n`."
+msgstr "``force_constant_values``: 力定数の値 (単位 Ry/bohr\\ :sup:`n`)。"
+
+#: ../../source/hdf5_format.rst:82
+msgid ""
+"``atom_indices``: the atoms :math:`i_1, \\ldots, i_n` as indices in the "
+"primitive cell; ``atom_indices_supercell``: the same atoms in the supercell."
+msgstr ""
+"``atom_indices``: 原子 :math:`i_1, \\ldots, i_n` "
+"の基本セルでのインデックス。``atom_indices_supercell``: 同じ原子のスーパーセルでのインデックス。"
+
+#: ../../source/hdf5_format.rst:84
+msgid ""
+"``coord_indices``: the Cartesian components :math:`\\alpha_1, \\ldots, "
+"\\alpha_n`."
+msgstr "``coord_indices``: デカルト成分 :math:`\\alpha_1, \\ldots, \\alpha_n`。"
+
+#: ../../source/hdf5_format.rst:85
+msgid ""
+"``shift_vectors``: the vectors from the first atom to the other atoms "
+"(Cartesian, bohr)."
+msgstr "``shift_vectors``: 最初の原子から他の原子へのベクトル (デカルト座標、bohr)。"
+
+#: ../../source/hdf5_format.rst:87
+msgid ""
+"``/PrimitiveCell`` and ``/SuperCell``: lattice vectors (bohr, one vector per "
+"row), fractional coordinates, elements, atomic kinds, and ``mapping_table``, "
+"which gives the supercell index of every primitive-cell atom in each "
+"translated cell."
+msgstr ""
+"``/PrimitiveCell`` と ``/SuperCell``: 格子ベクトル (bohr、1 行に 1 "
+"ベクトル)、分率座標、元素、原子種、および ``mapping_table`` (並進した各セルにおける基本セルの各原子のスーパーセルでのインデックス)。"
+
+#: ../../source/hdf5_format.rst:93
+msgid "Thermal conductivity (PREFIX.kappa.h5)"
+msgstr "熱伝導率 (PREFIX.kappa.h5)"
+
+#: ../../source/hdf5_format.rst:95
+msgid ""
+"Written by ``MODE = kappa``. The file is updated during the run, so an "
+"interrupted calculation continues from it with ``RESTART = 1``, and "
+"``analyzer.py`` reads it for lifetimes, mean free paths, and cumulative "
+"thermal conductivity."
+msgstr ""
+"``MODE = kappa`` で書き出されます。このファイルは計算中に更新されるため、中断した計算は ``RESTART = 1`` "
+"でこのファイルから再開できます。また、``analyzer.py`` はこのファイルを読み込んで、寿命、平均自由行程、累積熱伝導率を求めます。"
+
+#: ../../source/hdf5_format.rst:98 ../../source/hdf5_format.rst:107
+msgid "Layout of the thermal-conductivity file"
+msgstr "熱伝導率ファイルの構成"
+
+#: ../../source/hdf5_format.rst:103 ../../source/hdf5_format.rst:112
+msgid "Layout of ``PREFIX``.kappa.h5 (schema ``alamode:kappa_result``)."
+msgstr "``PREFIX``.kappa.h5 の構成 (スキーマ ``alamode:kappa_result``)。"
+
+#: ../../source/hdf5_format.rst:115
+msgid ""
+"``/kappa``: the thermal-conductivity tensors in W/mK, one :math:`3 \\times 3`"
+" tensor per temperature. ``kappa_peierls`` is the usual (Peierls) term, the "
+"content of ``PREFIX``.kl. With ``KAPPA_COHERENT > 0``, ``kappa_coherent`` and"
+" their sum ``kappa_total`` are added. The ``scattering_processes`` attribute "
+"of each tensor names the scattering included, e.g. ``3ph+4ph+isotope``. With "
+"``INCLUDE_4PH = 1``, ``kappa_3ph_only`` keeps the three-phonon-only result, "
+"and with ``KAPPA_SPEC = 1``, ``kappa_spec`` holds the spectrum on the "
+"frequency axis ``energy_axis``."
+msgstr ""
+"``/kappa``: 熱伝導率テンソル (W/mK) で、温度ごとに 1 つの :math:`3 \\times 3` "
+"テンソルです。``kappa_peierls`` は通常の (Peierls) 項で、``PREFIX``.kl "
+"の内容に相当します。``KAPPA_COHERENT > 0`` のときは、``kappa_coherent`` とそれらの和 "
+"``kappa_total`` が追加されます。各テンソルの ``scattering_processes`` 属性は、含まれる散乱過程を示します (例:"
+" ``3ph+4ph+isotope``)。``INCLUDE_4PH = 1`` のときは ``kappa_3ph_only`` に 3 "
+"フォノン散乱のみの結果が保存され、``KAPPA_SPEC = 1`` のときは ``kappa_spec`` に振動数軸 ``energy_axis``"
+" 上のスペクトルが保存されます。"
+
+#: ../../source/hdf5_format.rst:121
+msgid ""
+"``/scattering/3ph``: phonon frequencies (cm\\ :sup:`-1`) and linewidths "
+":math:`\\Gamma` (cm\\ :sup:`-1`) at the irreducible :math:`k` points, and "
+"group velocities (m/s) on the full mesh. The lifetime is :math:`\\tau = "
+"1/(2\\Gamma)`. ``gamma`` has one row per mode (:math:`k` point × branch) and "
+"one column per temperature; ``gamma_computed`` marks the rows already "
+"calculated, which is what makes restarting possible. ``equiv_knum`` and "
+"``equiv_offsets`` list the full-mesh :math:`k` points that belong to each "
+"irreducible point."
+msgstr ""
+"``/scattering/3ph``: 既約 :math:`k` 点でのフォノン振動数 (cm\\ :sup:`-1`) と線幅 "
+":math:`\\Gamma` (cm\\ :sup:`-1`)、および全メッシュ上の群速度 (m/s)。寿命は :math:`\\tau = "
+"1/(2\\Gamma)` です。``gamma`` はモード (:math:`k` 点 × 分枝) ごとに 1 行、温度ごとに 1 "
+"列を持ちます。``gamma_computed`` は計算済みの行を示し、これによって再開が可能になります。``equiv_knum`` と "
+"``equiv_offsets`` は、各既約点に属する全メッシュの :math:`k` 点を列挙します。"
+
+#: ../../source/hdf5_format.rst:127
+msgid ""
+"``/scattering/4ph`` (``INCLUDE_4PH = 1``) has the same layout for the four-"
+"phonon linewidths, and ``/scattering/isotope`` (``ISOTOPE > 0``) holds the "
+"isotope-scattering linewidths."
+msgstr ""
+"``/scattering/4ph`` (``INCLUDE_4PH = 1``) は 4 "
+"フォノン散乱の線幅について同じ構成を持ち、``/scattering/isotope`` (``ISOTOPE > 0``) "
+"は同位体散乱の線幅を保持します。"
+
+#: ../../source/hdf5_format.rst:129
+msgid ""
+"``/iterativebte`` (``SOLVER = IBTE``): the result of the iterative solution "
+"of the Boltzmann equation."
+msgstr "``/iterativebte`` (``SOLVER = IBTE``): ボルツマン方程式の反復解の結果。"
+
+#: ../../source/hdf5_format.rst:130
+msgid ""
+"``/metadata``: temperatures, the primitive cell, smearing settings, and the "
+"input variables."
+msgstr "``/metadata``: 温度、基本セル、スメアリングの設定、入力変数。"
+
+#: ../../source/hdf5_format.rst:132
+msgid ""
+"When the harmonic force constants depend on temperature (``FC2_TEMPERATURE`` "
+"with an SCPH or QHA result), the file is *temperature resolved* (root "
+"attribute ``temperature_resolved = 1``): frequencies and velocities gain a "
+"leading temperature axis, and runs at different temperatures accumulate in "
+"one file."
+msgstr ""
+"調和力定数が温度に依存する場合 (SCPH または QHA の結果を用いた ``FC2_TEMPERATURE``)、ファイルは *温度分解* "
+"(ルート属性 ``temperature_resolved = 1``) となります。振動数と速度の先頭に温度の軸が加わり、異なる温度での計算結果が 1 "
+"つのファイルに蓄積されます。"
+
+#: ../../source/hdf5_format.rst:139
+msgid "SCPH and QHA results (PREFIX.scph.h5, PREFIX.qha.h5)"
+msgstr "SCPH と QHA の結果 (PREFIX.scph.h5、PREFIX.qha.h5)"
+
+#: ../../source/hdf5_format.rst:141
+msgid ""
+"Written by ``MODE = SCPH`` and ``MODE = QHA`` at the end of the run. A later "
+"run uses it through ``FC2_TEMPERATURE`` (with ``FCSFILE``, ``FC2FILE``, or "
+"``DFC2FILE``) and ``RELAXED_STRUCTURE``, and to restart the calculation."
+msgstr ""
+"``MODE = SCPH`` と ``MODE = QHA`` の計算の最後に書き出されます。後の計算では ``FC2_TEMPERATURE`` "
+"(``FCSFILE``、``FC2FILE``、または ``DFC2FILE`` とともに) と ``RELAXED_STRUCTURE`` "
+"を通じて使われるほか、計算の再開にも使われます。"
+
+#: ../../source/hdf5_format.rst:144 ../../source/hdf5_format.rst:153
+msgid "Layout of the SCPH and QHA result file"
+msgstr "SCPH と QHA の結果ファイルの構成"
+
+#: ../../source/hdf5_format.rst:149 ../../source/hdf5_format.rst:158
+msgid ""
+"Layout of ``PREFIX``.scph.h5 and ``PREFIX``.qha.h5 (schema "
+"``alamode:scph_state``)."
+msgstr ""
+"``PREFIX``.scph.h5 と ``PREFIX``.qha.h5 の構成 (スキーマ ``alamode:scph_state``)。"
+
+#: ../../source/hdf5_format.rst:161
+msgid ""
+"``/ForceConstants/Order2``: the harmonic force constants folded onto the "
+"supercell of ``KMESH_INTERPOLATE``; "
+"``Order2_temperature_dependent/force_constant_values`` holds the effective "
+"(renormalized) values at every temperature and uses the index datasets of "
+"``Order2``."
+msgstr ""
+"``/ForceConstants/Order2``: ``KMESH_INTERPOLATE`` "
+"のスーパーセルに折り畳んだ調和力定数。``Order2_temperature_dependent/force_constant_values`` "
+"は各温度での有効な (繰り込まれた) 値を保持し、``Order2`` のインデックスのデータセットを共用します。"
+
+#: ../../source/hdf5_format.rst:164
+msgid ""
+"``/convergence``: whether the SCPH iteration (``scph``) and the structural "
+"optimization (``structure``) converged at each temperature. Later runs refuse"
+" unconverged temperatures unless ``ALLOW_UNCONVERGED`` is set."
+msgstr ""
+"``/convergence``: 各温度で SCPH の反復 (``scph``) と構造最適化 (``structure``) "
+"が収束したかどうか。``ALLOW_UNCONVERGED`` を設定しない限り、後の計算は収束していない温度を受け付けません。"
+
+#: ../../source/hdf5_format.rst:166
+msgid ""
+"``/structure`` (``RELAX_STR > 0``): the relaxed structure at each "
+"temperature: the displacement gradient ``u_tensor``, the atomic displacements"
+" ``u0`` (bohr), and the space group ``spg_label``. ``/provenance`` records a "
+"fingerprint of the force constants used, which ``RELAXED_STRUCTURE`` checks."
+msgstr ""
+"``/structure`` (``RELAX_STR > 0``): 各温度での最適化された構造で、変位勾配 ``u_tensor``、原子変位 "
+"``u0`` (bohr)、空間群 ``spg_label`` を含みます。``/provenance`` "
+"には使用した力定数のフィンガープリントが記録され、``RELAXED_STRUCTURE`` がこれを照合します。"
+
+#: ../../source/hdf5_format.rst:169
+msgid ""
+"``/dymat``, ``V0``: the change of the dynamical matrix and the potential "
+"energy used to restart the calculation."
+msgstr "``/dymat``、``V0``: 計算の再開に用いる動力学行列の変化とポテンシャルエネルギー。"
+
+#: ../../source/hdf5_format.rst:170
+msgid ""
+"``/settings``: the temperatures and meshes of the run. The root attribute "
+"``mode`` is ``SCPH`` or ``QHA``."
+msgstr "``/settings``: 計算の温度とメッシュ。ルート属性 ``mode`` は ``SCPH`` または ``QHA`` です。"
+
+#: ../../source/hdf5_format.rst:175
+msgid "Self-energy (PREFIX.selfenergy.h5)"
+msgstr "自己エネルギー (PREFIX.selfenergy.h5)"
+
+#: ../../source/hdf5_format.rst:177
+msgid "Written by ``MODE = selfenergy``, with one group per target mode."
+msgstr "``MODE = selfenergy`` で書き出され、対象モードごとに 1 つのグループを持ちます。"
+
+#: ../../source/hdf5_format.rst:179 ../../source/hdf5_format.rst:188
+msgid "Layout of the self-energy file"
+msgstr "自己エネルギーファイルの構成"
+
+#: ../../source/hdf5_format.rst:184 ../../source/hdf5_format.rst:193
+msgid "Layout of ``PREFIX``.selfenergy.h5."
+msgstr "``PREFIX``.selfenergy.h5 の構成。"
+
+#: ../../source/hdf5_format.rst:196
+msgid ""
+"``/targets/00001``, ``00002``, ...: one group per target (wave vector × "
+"branch), in the order of the ``&kpoint`` field and ``BRANCHES``, with the "
+"wave vector ``xk``, the ``branch``, the harmonic ``frequency``, and the "
+"requested results: ``linewidth`` (the full width :math:`2\\Gamma`, per "
+"temperature), the frequency shifts ``shift_*``, the frequency-dependent self-"
+"energy ``self_*``, and the final-state analysis ``fstate_*``."
+msgstr ""
+"``/targets/00001``、``00002``、...: 対象 (波数ベクトル × 分枝) ごとに 1 つのグループで、``&kpoint`` "
+"フィールドと ``BRANCHES`` の順に並びます。各グループには波数ベクトル ``xk``、分枝 ``branch``、調和振動数 "
+"``frequency`` と、要求された結果が含まれます: ``linewidth`` (全幅 "
+":math:`2\\Gamma`、温度ごと)、振動数シフト ``shift_*``、振動数に依存する自己エネルギー ``self_*``、終状態解析 "
+"``fstate_*``。"
+
+#: ../../source/hdf5_format.rst:200
+msgid ""
+"``/path``: the path coordinates when the targets lie on a band path (``KPMODE"
+" = 1``)."
+msgstr "``/path``: 対象がバンド経路上にある場合 (``KPMODE = 1``) の経路座標。"
+
+#: ../../source/hdf5_format.rst:201
+msgid "``/spectrum`` (``INTERPOLATE = 1``): the spectral function."
+msgstr "``/spectrum`` (``INTERPOLATE = 1``): スペクトル関数。"
+
+#: ../../source/hdf5_format.rst:202
+msgid ""
+"``/metadata``: temperatures, the integration mesh, and the input variables."
+msgstr "``/metadata``: 温度、積分メッシュ、入力変数。"
+
+#: ../../source/hdf5_format.rst:205
+msgid ""
+"The linewidth in this file is the full width :math:`2\\Gamma`, while "
+"``gamma`` in ``PREFIX``.kappa.h5 is :math:`\\Gamma`."
+msgstr ""
+"このファイルの線幅は全幅 :math:`2\\Gamma` ですが、``PREFIX``.kappa.h5 の ``gamma`` は "
+":math:`\\Gamma` です。"
+
+#: ../../source/hdf5_format.rst:209
+msgid "Strain couplings (PREFIX.strain.h5)"
+msgstr "ひずみ結合 (PREFIX.strain.h5)"
+
+#: ../../source/hdf5_format.rst:211
+msgid ""
+"The file given as ``STRAINFILE`` for cell relaxation is made by the strain "
+"tools and is described in :ref:`label_strain_container`."
+msgstr ""
+"セルの構造最適化で ``STRAINFILE`` として与えるファイルはひずみツールで作成します。その説明は "
+":ref:`label_strain_container` にあります。"

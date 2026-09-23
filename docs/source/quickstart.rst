@@ -70,8 +70,8 @@ Step 1: Force constants with alm
 4. **Anharmonic force constants (FC3, FC4, ...)** — needed for ``kappa``, ``SCPH``, ``QHA``, and more.
    The recommended way is to fit them to random displacements:
 
-   * Calculate the harmonic phonons of the supercell with *anphon* (``MODE = phonons``, ``KPMODE = 0``) using the harmonic force constants.
-     This writes the phonon eigenvectors to ``PREFIX``.evec.
+   * Calculate the harmonic phonons of the supercell with *anphon* (``MODE = phonons``, ``KPMODE = 0``) using the harmonic force constants,
+     with ``PRINTEVEC = 1`` and ``FILE_FORMAT = text``. This writes the phonon eigenvectors to ``PREFIX``.evec.
    * ``displace.py --random_normalcoord --evec PREFIX.evec --temp T`` generates structures sampled at the temperature ``T``.
      Alternatively, ``--random`` adds random displacements to snapshots of a molecular-dynamics run.
    * Calculate the forces with DFT and make a ``DFSET`` file as in step 3.
