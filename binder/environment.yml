@@ -1,0 +1,21 @@
+# Binder (mybinder.org) environment for the notebooks in example/notebooks/.
+# postBuild compiles the alm Python module against these packages.
+name: alamode-binder
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - h5py
+  - matplotlib
+  - scikit-learn
+  - pyyaml
+  - spglib
+  - eigen
+  - boost
+  - hdf5
+  - compilers
+  - cmake>=3.17,<4
+  - nanobind>=2.0
+  - scikit-build-core>=0.8

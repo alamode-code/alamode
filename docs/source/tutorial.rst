@@ -121,3 +121,40 @@ Tutorial
    tutorial_pages/silicon_ifc
    tutorial_pages/bto_scph_relax
    tutorial_pages/zno_qha_relax
+
+Notebooks
+---------
+
+The Jupyter notebooks in ``example/notebooks/`` do the analysis in Python.
+They are stored with their outputs, so you can read them on GitHub or run them online.
+
+.. only:: html
+
+   .. grid:: 1 1 2 2
+      :gutter: 3
+
+      .. grid-item-card:: Analysing PREFIX.kappa.h5
+
+         Rebuild the thermal conductivity of Si from the lifetimes and velocities in the HDF5 file, and plot the cumulative thermal conductivity.
+         Needs only NumPy, h5py, and Matplotlib.
+
+         +++
+         :bdg-link-primary:`View on GitHub <https://github.com/alamode-code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>`
+         :bdg-link-primary:`Open in Colab <https://colab.research.google.com/github/alamode-code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>`
+         :bdg-link-primary:`Launch Binder <https://mybinder.org/v2/gh/alamode-code/alamode/2.0dev?labpath=example%2Fnotebooks%2Fkappa_h5_analysis.ipynb>`
+
+      .. grid-item-card:: Fitting force constants in Python
+
+         Fit the harmonic and cubic IFCs of Si with the alm Python module, and try a scikit-learn regressor.
+         Needs the compiled alm module, which Binder builds for you.
+
+         +++
+         :bdg-link-primary:`View on GitHub <https://github.com/alamode-code/alamode/blob/2.0dev/example/notebooks/alm_python_fit.ipynb>`
+         :bdg-link-primary:`Launch Binder <https://mybinder.org/v2/gh/alamode-code/alamode/2.0dev?labpath=example%2Fnotebooks%2Falm_python_fit.ipynb>`
+
+.. only:: latex
+
+   * Analysing PREFIX.kappa.h5 (``kappa_h5_analysis.ipynb``):
+     https://github.com/alamode-code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb
+   * Fitting force constants in Python (``alm_python_fit.ipynb``):
+     https://github.com/alamode-code/alamode/blob/2.0dev/example/notebooks/alm_python_fit.ipynb

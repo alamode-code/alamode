@@ -1,0 +1,10 @@
+#!/bin/bash
+# Build and install the alm Python module (python/) into the Binder environment.
+set -euo pipefail
+PREFIX="${CONDA_PREFIX:-${NB_PYTHON_PREFIX:-$(python -c 'import sys; print(sys.prefix)')}}"
+export CONDA_PREFIX="$PREFIX"   # python/CMakeLists.txt uses it for search paths and RPATH
+python -m pip install --no-build-isolation --no-deps ./python \
+    -C cmake.define.SPGLIB_ROOT="$PREFIX" \
+    -C cmake.define.EIGEN3_INCLUDE="$PREFIX/include/eigen3" \
+    -C cmake.define.BOOST_INCLUDE="$PREFIX/include" \
+    -C cmake.define.HDF5_ROOT="$PREFIX"

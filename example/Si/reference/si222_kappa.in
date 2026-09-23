@@ -1,0 +1,22 @@
+&general
+  PREFIX = si222
+  MODE = kappa
+  FCSFILE = si222_cubic.xml  # bunzip2 -k si222_cubic.xml.bz2
+
+  KD = Si
+  MASS = 28.0855
+
+  TMIN = 100; TMAX = 1000; DT = 50
+/
+
+&cell
+  10.203
+  0.0 0.5 0.5
+  0.5 0.0 0.5
+  0.5 0.5 0.0
+/
+
+&kpoint
+  2
+  10 10 10
+/

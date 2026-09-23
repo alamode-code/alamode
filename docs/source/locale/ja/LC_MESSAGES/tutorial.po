@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 01:36+0900\n"
+"POT-Creation-Date: 2026-09-24 03:17+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -186,4 +186,94 @@ msgstr "準調和近似 (QHA) の範囲で、ひずみ結合からウルツ鉱�
 #: ../../source/tutorial.rst:109
 msgid ":bdg-primary:`ZnO` :bdg-secondary:`QHA + RELAX_STR`"
 msgstr ":bdg-primary:`ZnO` :bdg-secondary:`QHA + RELAX_STR`"
+
+#: ../../source/tutorial.rst:126
+msgid "Notebooks"
+msgstr "ノートブック"
+
+#: ../../source/tutorial.rst:128
+msgid ""
+"The Jupyter notebooks in ``example/notebooks/`` do the analysis in "
+"Python. They are stored with their outputs, so you can read them on "
+"GitHub or run them online."
+msgstr ""
+"``example/notebooks/`` の Jupyter ノートブックでは、Python "
+"で解析を行います。出力付きで保存されているので、GitHub 上で読むことも、オンラインで実行することもできます。"
+
+#: ../../source/tutorial.rst:136
+msgid "Analysing PREFIX.kappa.h5"
+msgstr "PREFIX.kappa.h5 の解析"
+
+#: ../../source/tutorial.rst:138
+msgid ""
+"Rebuild the thermal conductivity of Si from the lifetimes and velocities "
+"in the HDF5 file, and plot the cumulative thermal conductivity. Needs "
+"only NumPy, h5py, and Matplotlib."
+msgstr ""
+"HDF5 ファイルに含まれる寿命と群速度から Si の熱伝導率を再構成し、累積熱伝導率をプロットします。必要なのは "
+"NumPy、h5py、Matplotlib のみです。"
+
+#: ../../source/tutorial.rst:142
+#, python-format
+msgid ""
+":bdg-link-primary:`View on GitHub <https://github.com/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>` "
+":bdg-link-primary:`Open in Colab "
+"<https://colab.research.google.com/github/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>` "
+":bdg-link-primary:`Launch Binder <https://mybinder.org/v2/gh/alamode-"
+"code/alamode/2.0dev?labpath=example%2Fnotebooks%2Fkappa_h5_analysis.ipynb>`"
+msgstr ""
+":bdg-link-primary:`GitHub で見る <https://github.com/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>` "
+":bdg-link-primary:`Colab で開く <https://colab.research.google.com/github"
+"/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>` "
+":bdg-link-primary:`Binder で起動 <https://mybinder.org/v2/gh/alamode-"
+"code/alamode/2.0dev?labpath=example%2Fnotebooks%2Fkappa_h5_analysis.ipynb>`"
+
+#: ../../source/tutorial.rst:146
+msgid "Fitting force constants in Python"
+msgstr "Python による力定数のフィッティング"
+
+#: ../../source/tutorial.rst:148
+msgid ""
+"Fit the harmonic and cubic IFCs of Si with the alm Python module, and try"
+" a scikit-learn regressor. Needs the compiled alm module, which Binder "
+"builds for you."
+msgstr ""
+"alm の Python モジュールで Si の調和および 3 次の IFC をフィッティングし、scikit-learn "
+"の回帰手法も試します。コンパイル済みの alm モジュールが必要ですが、Binder では自動でビルドされます。"
+
+#: ../../source/tutorial.rst:152
+#, python-format
+msgid ""
+":bdg-link-primary:`View on GitHub <https://github.com/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/alm_python_fit.ipynb>` :bdg-"
+"link-primary:`Launch Binder <https://mybinder.org/v2/gh/alamode-"
+"code/alamode/2.0dev?labpath=example%2Fnotebooks%2Falm_python_fit.ipynb>`"
+msgstr ""
+":bdg-link-primary:`GitHub で見る <https://github.com/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/alm_python_fit.ipynb>` :bdg-"
+"link-primary:`Binder で起動 <https://mybinder.org/v2/gh/alamode-"
+"code/alamode/2.0dev?labpath=example%2Fnotebooks%2Falm_python_fit.ipynb>`"
+
+#: ../../source/tutorial.rst:157
+msgid ""
+"Analysing PREFIX.kappa.h5 (``kappa_h5_analysis.ipynb``): "
+"https://github.com/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb"
+msgstr ""
+"PREFIX.kappa.h5 の解析 (``kappa_h5_analysis.ipynb``): https://github.com"
+"/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb"
+
+#: ../../source/tutorial.rst:159
+msgid ""
+"Fitting force constants in Python (``alm_python_fit.ipynb``): "
+"https://github.com/alamode-"
+"code/alamode/blob/2.0dev/example/notebooks/alm_python_fit.ipynb"
+msgstr ""
+"Python による力定数のフィッティング (``alm_python_fit.ipynb``): https://github.com"
+"/alamode-code/alamode/blob/2.0dev/example/notebooks/alm_python_fit.ipynb"
 

@@ -129,6 +129,9 @@ with ``RESTART = 1``, and ``analyzer.py`` reads it for lifetimes, mean free path
 * ``/iterativebte`` (``SOLVER = IBTE``): the result of the iterative solution of the Boltzmann equation.
 * ``/metadata``: temperatures, the primitive cell, smearing settings, and the input variables.
 
+The notebook `Analysing PREFIX.kappa.h5 <https://github.com/alamode-code/alamode/blob/2.0dev/example/notebooks/kappa_h5_analysis.ipynb>`__
+reads this file and rebuilds the thermal conductivity from the lifetimes and velocities in it.
+
 When the harmonic force constants depend on temperature (``FC2_TEMPERATURE`` with an SCPH or QHA result),
 the file is *temperature resolved* (root attribute ``temperature_resolved = 1``):
 frequencies and velocities gain a leading temperature axis, and runs at different temperatures accumulate in one file.
