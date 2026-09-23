@@ -1,0 +1,19 @@
+&general
+  PREFIX = si_conv
+  MODE = kappa
+  FCSFILE = si222_cubic.h5
+  KD = Si
+  MASS = 28.0855
+/
+
+&cell
+  10.203
+  1.0 0.0 0.0
+  0.0 1.0 0.0
+  0.0 0.0 1.0
+/
+
+&kpoint
+  2
+  10 10 10
+/

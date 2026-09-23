@@ -13,18 +13,33 @@ Silicon with LAMMPS
 .. admonition:: At a glance
    :class: tip
 
-   :Goal: Use LAMMPS instead of a DFT code to calculate the atomic forces of Si (Stillinger-Weber potential).
+   :Goal: Use LAMMPS instead of a DFT code to calculate the atomic forces of Si (Stillinger-Weber potential),
+          and calculate the lattice thermal conductivity from different unit-cell inputs.
    :You will learn:
       - how to prepare the LAMMPS input files for ALAMODE
       - how to generate displaced structures with ``displace.py --LAMMPS``
       - how to build the DFSET files from the LAMMPS forces with ``extract.py``
-   :Prerequisites: :ref:`The Si tutorial <label_tutorial_01>` and a LAMMPS build (e.g. ``lmp_serial``).
+      - how the unit cell given in the ``&cell`` field affects the :math:`k`-point convergence of the thermal conductivity
+   :Prerequisites: :ref:`The Si tutorial <label_tutorial_01>` and LAMMPS (e.g. ``conda install -c conda-forge lammps``).
    :Example files: ``example/Si_LAMMPS``
-   :Run time: The force calculations finish in a few seconds.
+   :Run time: :red:`run_all.sh` runs the whole workflow in about 5 seconds.
+              The denser :math:`k` meshes in the last section take up to about 20 minutes each.
 
 Here, we demonstrate how to use ALAMODE together with LAMMPS.
 All input files can be found in the **example/Si_LAMMPS** directory.
-Before starting the tutorial, please build the LAMMPS code (e.g. ``lmp_serial``).
+Before starting the tutorial, please install LAMMPS. The easiest way is ``conda install -c conda-forge lammps``,
+which provides the binary ``lmp``. If you build LAMMPS yourself, the binary may be called ``lmp_serial`` or ``lmp_mpi`` instead.
+
+The script :red:`run_all.sh` performs all the steps below: displacement patterns by **alm**, force calculations by LAMMPS,
+fitting of the harmonic and cubic force constants, phonon dispersion, and thermal conductivity with the primitive cell and a :math:`10\times 10\times 10` mesh.
+It takes about 5 seconds::
+
+    $ LAMMPS=lmp ALAMODE_ROOT=/path/to/alamode bash run_all.sh
+
+The environment variables ``LAMMPS``, ``ALAMODE_ROOT``, ``ALM``, and ``ANPHON`` override the default paths
+of the binaries, and ``python3`` must provide NumPy and PyYAML.
+
+:download:`Download run_all.sh <../../../example/Si_LAMMPS/run_all.sh>`
 
 As a simple example, we calculate phonon dispersion curves of Si using the Stillinger-Weber (SW) potential implemented in LAMMPS.
 First, you need to make two input files for LAMMPS: :red:`in.sw` and :red:`Si222.lammps` (file name is arbitrary, though).
@@ -77,5 +92,177 @@ can be generated as follows::
 
     $ python extract.py --LAMMPS=Si222.lammps XFSET.cubic* > DFSET_cubic
 
-Then, using these files and following exactly the same procedure as the last tutorial section,
+Then, using these files and following exactly the same procedure as :ref:`the Si tutorial <tutorial_Si_step3>`,
 you can calculate phonons and thermal conductivity of Si using the SW potential.
+:red:`run_all.sh` fits the harmonic IFCs to :red:`si222_harm.h5` and then the cubic IFCs to :red:`si222_cubic.h5`,
+keeping the harmonic IFCs fixed (``FC2FIX = si222_harm.h5``).
+
+
+.. _tutorial_Si_lammps_cells:
+
+Thermal conductivity from different unit cells
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The lattice thermal conductivity :math:`\kappa` is a property of the crystal.
+It does not depend on which unit cell you give to **anphon**, provided that the Brillouin zone sampling is converged.
+In practice, however, the choice of the unit cell changes how fast :math:`\kappa` converges with respect to the :math:`k` mesh.
+In this section, we compare three choices using :red:`si222_cubic.h5` from :red:`run_all.sh`.
+
+**Which unit cell does anphon use?**
+The ``&cell`` field of **anphon** (see :ref:`&cell-field <anphon_cell_field>`) can be omitted when ``FCSFILE`` is an HDF5 file.
+In that case, **anphon** uses the primitive cell stored in that file by **alm**.
+If ``&cell`` is given, it replaces the stored cell.
+It must be the true primitive cell or a supercell of it, such as the conventional cell,
+so that the supercell stored in ``FCSFILE`` consists of whole copies of it.
+
+In this example, the **alm** input defines the 64-atom cubic supercell (:math:`2\times 2\times 2` conventional cell) and has no ``PRIMCELL`` tag.
+Therefore, the "primitive cell" stored in :red:`si222_cubic.h5` is the 64-atom supercell itself,
+and **anphon** uses this 64-atom cell when ``&cell`` is omitted.
+To store the true primitive cell, set :ref:`PRIMCELL <alm_primcell>` in the ``&general`` field of the **alm** input.
+Its rows give the primitive lattice vectors in units of the input lattice vectors. Here, we may use::
+
+    PRIMCELL = 0 1/4 1/4  1/4 0 1/4  1/4 1/4 0
+
+or ``PRIMCELL = Auto`` to detect the primitive cell with spglib.
+
+We use the following three inputs. Apart from their ``PREFIX``, they differ only in the ``&cell`` field and in the :math:`k` mesh.
+
+.. tab-set::
+
+   .. tab-item:: Primitive cell
+
+      .. literalinclude:: ../../../example/Si_LAMMPS/reference/kappa_prim.in
+
+      :download:`Download kappa_prim.in <../../../example/Si_LAMMPS/reference/kappa_prim.in>`
+
+   .. tab-item:: Conventional cell
+
+      .. literalinclude:: ../../../example/Si_LAMMPS/reference/kappa_conv.in
+
+      :download:`Download kappa_conv.in <../../../example/Si_LAMMPS/reference/kappa_conv.in>`
+
+   .. tab-item:: &cell omitted (64-atom cell)
+
+      .. literalinclude:: ../../../example/Si_LAMMPS/reference/kappa_omitted.in
+
+      :download:`Download kappa_omitted.in <../../../example/Si_LAMMPS/reference/kappa_omitted.in>`
+
+Run them in the directory that contains :red:`si222_cubic.h5`::
+
+    $ anphon reference/kappa_prim.in > kappa_prim.log
+    $ anphon reference/kappa_conv.in > kappa_conv.log
+    $ anphon reference/kappa_omitted.in > kappa_omitted.log
+
+To test the convergence, change the three numbers in the ``&kpoint`` field.
+To compare the cells at the same :math:`k`-point density, count the :math:`k` points per primitive cell:
+an :math:`N\times N\times N` mesh of the primitive cell has :math:`N^{3}`,
+an :math:`M\times M\times M` mesh of the conventional cell (4 primitive cells) has :math:`4M^{3}`,
+and an :math:`L\times L\times L` mesh of the 64-atom cell (32 primitive cells) has :math:`32L^{3}`.
+We also repeated the calculations with Gaussian smearing (``ISMEAR = 1`` with the default ``EPSILON = 10``)
+in addition to the default tetrahedron method (``ISMEAR = -1``); see :ref:`ISMEAR <anphon_ismear>`.
+All the calculations include isotope scattering (``ISOTOPE = 1``, the default).
+
+The following table and figure show :math:`\kappa_{xx}` at 300 K (W/mK).
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 20 20
+
+   * - ``&cell`` and :math:`k` mesh
+     - :math:`k` points per primitive cell
+     - Tetrahedron (``ISMEAR = -1``)
+     - Gaussian (``ISMEAR = 1``)
+   * - Primitive, :math:`10^3`
+     - 1000
+     - 412.42
+     - 394.71
+   * - Primitive, :math:`20^3`
+     - 8000
+     - 490.76
+     - 446.41
+   * - Primitive, :math:`30^3`
+     - 27000
+     - 508.66
+     - 453.82
+   * - Primitive, :math:`40^3`
+     - 64000
+     - 518.01
+     - 456.41
+   * - Conventional, :math:`5^3`
+     - 500
+     - 379.42
+     - 385.37
+   * - Conventional, :math:`10^3`
+     - 4000
+     - 441.02
+     - 440.15
+   * - Conventional, :math:`15^3`
+     - 13500
+     - 464.82
+     - 449.30
+   * - Conventional, :math:`20^3`
+     - 32000
+     - 480.33
+     - 453.91
+   * - Omitted (64-atom), :math:`5^3`
+     - 4000
+     - 445.05
+     - 440.22
+
+.. interactive-plot::
+   :kind: xy
+   :series: ../../../example/Si_LAMMPS/reference/kappa_300K_prim.txt 1:2 primitive, tetrahedron
+      ../../../example/Si_LAMMPS/reference/kappa_300K_conv.txt 1:2 conventional, tetrahedron
+      ../../../example/Si_LAMMPS/reference/kappa_300K_prim.txt 1:3 primitive, Gaussian
+      ../../../example/Si_LAMMPS/reference/kappa_300K_conv.txt 1:3 conventional, Gaussian
+      ../../../example/Si_LAMMPS/reference/kappa_300K_64atom.txt 1:2 64-atom cell, tetrahedron
+      ../../../example/Si_LAMMPS/reference/kappa_300K_64atom.txt 1:3 64-atom cell, Gaussian
+   :xlabel: k points per primitive cell
+   :ylabel: kappa_xx at 300 K (W/mK)
+   :log: x
+   :markers:
+   :fallback: ../../img/Si_lammps_kappa_cells.png
+   :scale: 60%
+   :align: center
+
+:download:`kappa_300K_prim.txt <../../../example/Si_LAMMPS/reference/kappa_300K_prim.txt>`,
+:download:`kappa_300K_conv.txt <../../../example/Si_LAMMPS/reference/kappa_300K_conv.txt>`,
+:download:`kappa_300K_64atom.txt <../../../example/Si_LAMMPS/reference/kappa_300K_64atom.txt>`
+
+**Same k points, different cells.**
+The conventional :math:`10\times 10\times 10` mesh and the 64-atom :math:`5\times 5\times 5` mesh sample exactly the same
+:math:`k` points in the Brillouin zone of the primitive cell.
+With Gaussian smearing, the two results agree within 0.02% (440.15 and 440.22 W/mK).
+Without isotope scattering (``ISOTOPE = 0``), they agree equally well (526.65 and 526.77 W/mK).
+With the tetrahedron method, however, they differ by about 1% (441.02 and 445.05 W/mK).
+
+The reason is that the tetrahedron method interpolates each phonon band linearly inside each tetrahedron,
+band by band in the order of the band index, that is, in the order of increasing frequency.
+In a larger cell, the bands are folded into a smaller Brillouin zone,
+and the frequency-sorted bands cross each other much more often, so that a band index no longer follows a single phonon branch.
+Near such crossings, the linear interpolation is less accurate, so a larger cell tends to need a denser mesh for the same accuracy.
+This has two consequences in the figure above:
+
+- With the tetrahedron method, the conventional cell converges more slowly than the primitive cell.
+  At 32000 :math:`k` points per primitive cell, the conventional cell gives 480 W/mK,
+  whereas the primitive cell gives 509 to 518 W/mK at a similar or higher density.
+- With Gaussian smearing of a fixed width, the band ordering does not enter,
+  and both cells follow essentially the same curve against the :math:`k`-point density
+  (456.41 W/mK for the primitive cell and 453.91 W/mK for the conventional cell at the densest meshes).
+
+**The smearing width also matters.**
+At the densest primitive-cell mesh, Gaussian smearing gives 456.41 W/mK, compared with 518.01 W/mK for the tetrahedron method
+(which is still increasing slowly).
+The fixed width ``EPSILON = 10`` cm\ :sup:`-1` broadens the energy conservation of the three-phonon processes and of the isotope scattering,
+and this bias does not vanish with a denser mesh alone.
+The tetrahedron method has no width parameter,
+whereas a Gaussian result must also be converged with respect to ``EPSILON``, together with the :math:`k` mesh.
+
+.. tip::
+
+   - Use the primitive cell for thermal conductivity calculations, especially with the tetrahedron method.
+   - If ``&cell`` is omitted, **anphon** uses whatever primitive cell **alm** stored in the HDF5 file.
+     Check the unit cell in the **anphon** log, or set ``PRIMCELL`` in the **alm** input so that the true primitive cell is stored.
+   - A large unit cell also makes **anphon** much slower.
+     With 4 MPI processes and 2 OpenMP threads, the 64-atom :math:`5\times 5\times 5` run took about 6 minutes,
+     while the conventional :math:`10\times 10\times 10` run, which samples the same :math:`k` points, took about 30 seconds.

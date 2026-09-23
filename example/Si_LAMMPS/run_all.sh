@@ -1,13 +1,17 @@
 #!/bin/bash
+set -e
 
-# Please modify the following paths appropriately
-#export DYLD_LIBRARY_PATH=/Users/tadano/src/spglib/lib/:$DYLD_LIBRARY_PATH
-#export LD_LIBRARY_PATH=/Users/tadano/src/spglib/lib/:$LD_LIBRARY_PATH
+# Runs the whole tutorial: displacement patterns, LAMMPS forces, harmonic and
+# cubic force constants, phonon dispersion, and thermal conductivity.
+# The paths below can be overridden with environment variables, e.g.
+#   LAMMPS=/path/to/lmp ALAMODE_ROOT=/path/to/alamode bash run_all.sh
+# python3 must provide NumPy and PyYAML.
 
-# Binaries 
-LAMMPS=${HOME}/src/lammps/_build/lmp
-#LAMMPS=/usr/local/bin/lmp
-ALAMODE_ROOT=${HOME}/src/alamode
+# Binaries
+LAMMPS=${LAMMPS:-lmp}
+ALAMODE_ROOT=${ALAMODE_ROOT:-${HOME}/src/alamode}
+ALM=${ALM:-${ALAMODE_ROOT}/_build/alm/alm}
+ANPHON=${ANPHON:-${ALAMODE_ROOT}/_build/anphon/anphon}
 
 # Generate displacement patterns
 
@@ -104,14 +108,14 @@ cat << EOF > si_alm0.in
 
 EOF
 
-${ALAMODE_ROOT}/alm/alm si_alm0.in > alm.log
+"${ALM}" si_alm0.in > alm.log
 
 
 # Generate structure files of LAMMPS
-mkdir displace; cd displace/
+mkdir -p displace; cd displace/
 
-python ${ALAMODE_ROOT}/tools/displace.py --LAMMPS ../Si222.lammps --prefix harm --mag 0.01 -pf ../si222.pattern_HARMONIC >> run.log
-python ${ALAMODE_ROOT}/tools/displace.py --LAMMPS ../Si222.lammps --prefix cubic --mag 0.04 -pf ../si222.pattern_ANHARM3 >> run.log
+python3 "${ALAMODE_ROOT}/tools/displace.py" --LAMMPS ../Si222.lammps --prefix harm --mag 0.01 -pf ../si222.pattern_HARMONIC >> run.log
+python3 "${ALAMODE_ROOT}/tools/displace.py" --LAMMPS ../Si222.lammps --prefix cubic --mag 0.04 -pf ../si222.pattern_ANHARM3 >> run.log
 
 cp ../Si.sw .
 cp ../in.sw .
@@ -120,7 +124,7 @@ cp ../in.sw .
 for ((i=1; i<=1; i++))
 do
    cp harm${i}.lammps tmp.lammps
-   $LAMMPS < in.sw >> run.log
+   "$LAMMPS" < in.sw >> run.log
    mv XFSET XFSET.harm${i}
 done
 
@@ -128,13 +132,13 @@ for ((i=1; i<=20; i++))
 do
    suffix=`echo ${i} | awk '{printf("%02d", $1)}'`
    cp cubic${suffix}.lammps tmp.lammps
-   $LAMMPS < in.sw >> run.log
+   "$LAMMPS" < in.sw >> run.log
    mv XFSET XFSET.cubic${suffix}
 done
 
 # Collect data
-python ${ALAMODE_ROOT}/tools/extract.py --LAMMPS ../Si222.lammps XFSET.harm* > DFSET_harmonic
-python ${ALAMODE_ROOT}/tools/extract.py --LAMMPS ../Si222.lammps XFSET.cubic* > DFSET_cubic
+python3 "${ALAMODE_ROOT}/tools/extract.py" --LAMMPS ../Si222.lammps XFSET.harm* > DFSET_harmonic
+python3 "${ALAMODE_ROOT}/tools/extract.py" --LAMMPS ../Si222.lammps XFSET.cubic* > DFSET_cubic
 
 cd ../
 
@@ -235,7 +239,7 @@ cat << EOF > si_alm1.in
 /
 
 EOF
-${ALAMODE_ROOT}/alm/alm si_alm1.in >> alm.log
+"${ALM}" si_alm1.in >> alm.log
 
 # Extract cubic force constants
 cat << EOF > si_alm2.in
@@ -248,7 +252,7 @@ cat << EOF > si_alm2.in
 
 &optimize
  DFSET = displace/DFSET_cubic
- FC2FIX = si222_harm.xml
+ FC2FIX = si222_harm.h5
 /
 
 &interaction
@@ -335,14 +339,14 @@ cat << EOF > si_alm2.in
 /
 
 EOF
-${ALAMODE_ROOT}/alm/alm si_alm2.in >> alm.log
+"${ALM}" si_alm2.in >> alm.log
 
 # Phonon dispersion
 cat << EOF > phband.in
 &general
   PREFIX = si222
   MODE = phonons
-  FCSFILE =si222_harm.xml
+  FCSFILE = si222_harm.h5
 
   KD = Si
   MASS = 28.0855
@@ -364,14 +368,14 @@ cat << EOF > phband.in
 
 EOF
 
-${ALAMODE_ROOT}/anphon/anphon phband.in > phband.log
+"${ANPHON}" phband.in > phband.log
 
 # Thermal conductivity
 cat << EOF > RTA.in
 &general
   PREFIX = si222_10
-  MODE = RTA
-  FCSFILE = si222_cubic.xml
+  MODE = kappa
+  FCSFILE = si222_cubic.h5
 
   KD = Si
   MASS = 28.0855
@@ -391,4 +395,4 @@ cat << EOF > RTA.in
 
 EOF
 
-${ALAMODE_ROOT}/anphon/anphon RTA.in > RTA.log
+"${ANPHON}" RTA.in > RTA.log

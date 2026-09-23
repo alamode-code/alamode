@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 00:14+0900\n"
+"POT-Creation-Date: 2026-09-24 03:01+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -34,40 +34,51 @@ msgstr "目標"
 #: ../../source/tutorial_pages/silicon_lammps.rst:16
 msgid ""
 "Use LAMMPS instead of a DFT code to calculate the atomic forces of Si "
-"(Stillinger-Weber potential)."
-msgstr "DFT コードの代わりに LAMMPS を用いて Si の原子に働く力を計算します (Stillinger-Weber ポテンシャル)。"
+"(Stillinger-Weber potential), and calculate the lattice thermal "
+"conductivity from different unit-cell inputs."
+msgstr ""
+"DFT コードの代わりに LAMMPS を用いて Si の原子に働く力を計算し (Stillinger-Weber "
+"ポテンシャル)、異なる単位胞の入力から格子熱伝導率を計算します。"
 
 #: ../../source/tutorial_pages/silicon_lammps.rst
 msgid "You will learn"
 msgstr "学べること"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:18
+#: ../../source/tutorial_pages/silicon_lammps.rst:19
 msgid "how to prepare the LAMMPS input files for ALAMODE"
 msgstr "ALAMODE 用の LAMMPS 入力ファイルを準備する方法"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:19
+#: ../../source/tutorial_pages/silicon_lammps.rst:20
 msgid "how to generate displaced structures with ``displace.py --LAMMPS``"
 msgstr "``displace.py --LAMMPS`` で変位させた構造を生成する方法"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:20
+#: ../../source/tutorial_pages/silicon_lammps.rst:21
 msgid "how to build the DFSET files from the LAMMPS forces with ``extract.py``"
 msgstr "``extract.py`` を用いて LAMMPS の力から DFSET ファイルを作成する方法"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:22
+msgid ""
+"how the unit cell given in the ``&cell`` field affects the "
+":math:`k`-point convergence of the thermal conductivity"
+msgstr "``&cell`` フィールドで与える単位胞が熱伝導率の :math:`k` 点収束にどう影響するか"
 
 #: ../../source/tutorial_pages/silicon_lammps.rst
 msgid "Prerequisites"
 msgstr "前提"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:21
+#: ../../source/tutorial_pages/silicon_lammps.rst:23
 msgid ""
-":ref:`The Si tutorial <label_tutorial_01>` and a LAMMPS build (e.g. "
-"``lmp_serial``)."
-msgstr ":ref:`Si のチュートリアル <label_tutorial_01>` とビルド済みの LAMMPS (例: ``lmp_serial``)。"
+":ref:`The Si tutorial <label_tutorial_01>` and LAMMPS (e.g. ``conda "
+"install -c conda-forge lammps``)."
+msgstr ""
+":ref:`Si のチュートリアル <label_tutorial_01>` と LAMMPS (例: ``conda install -c "
+"conda-forge lammps``)。"
 
 #: ../../source/tutorial_pages/silicon_lammps.rst
 msgid "Example files"
 msgstr "例のファイル"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:22
+#: ../../source/tutorial_pages/silicon_lammps.rst:24
 msgid "``example/Si_LAMMPS``"
 msgstr "``example/Si_LAMMPS``"
 
@@ -75,22 +86,55 @@ msgstr "``example/Si_LAMMPS``"
 msgid "Run time"
 msgstr "所要時間"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:23
-msgid "The force calculations finish in a few seconds."
-msgstr "力の計算は数秒で終わります。"
-
 #: ../../source/tutorial_pages/silicon_lammps.rst:25
+msgid ""
+":red:`run_all.sh` runs the whole workflow in about 5 seconds. The denser "
+":math:`k` meshes in the last section take up to about 20 minutes each."
+msgstr ""
+":red:`run_all.sh` はワークフロー全体を約 5 秒で実行します。最後の節の密な :math:`k` "
+"点メッシュでは、それぞれ最大で約 20 分かかります。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:28
 msgid ""
 "Here, we demonstrate how to use ALAMODE together with LAMMPS. All input "
 "files can be found in the **example/Si_LAMMPS** directory. Before "
-"starting the tutorial, please build the LAMMPS code (e.g. "
-"``lmp_serial``)."
+"starting the tutorial, please install LAMMPS. The easiest way is ``conda "
+"install -c conda-forge lammps``, which provides the binary ``lmp``. If "
+"you build LAMMPS yourself, the binary may be called ``lmp_serial`` or "
+"``lmp_mpi`` instead."
 msgstr ""
-"ここでは、ALAMODE を LAMMPS と組み合わせて使用する方法を示します。すべての入力ファイル (input file) は "
-"**example/Si_LAMMPS** ディレクトリにあります。チュートリアルを始める前に、LAMMPS コード (例: "
-"``lmp_serial``) をビルドしておいてください。"
+"ここでは、ALAMODE を LAMMPS と組み合わせて使用する方法を示します。すべての入力ファイルは "
+"**example/Si_LAMMPS** ディレクトリにあります。チュートリアルを始める前に、LAMMPS "
+"をインストールしてください。最も簡単な方法は ``conda install -c conda-forge lammps`` "
+"で、これによりバイナリ ``lmp`` が提供されます。LAMMPS を自分でビルドした場合、バイナリ名は ``lmp_serial`` や "
+"``lmp_mpi`` となっている可能性があります。"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:29
+#: ../../source/tutorial_pages/silicon_lammps.rst:33
+msgid ""
+"The script :red:`run_all.sh` performs all the steps below: displacement "
+"patterns by **alm**, force calculations by LAMMPS, fitting of the "
+"harmonic and cubic force constants, phonon dispersion, and thermal "
+"conductivity with the primitive cell and a :math:`10\\times 10\\times 10`"
+" mesh. It takes about 5 seconds::"
+msgstr ""
+"スクリプト :red:`run_all.sh` は以下のすべてのステップを実行します。すなわち、**alm** "
+"による変位パターンの生成、LAMMPS による力の計算、調和および 3 次の力定数のフィッティング、フォノン分散の計算、そして基本セルと "
+":math:`10\\times 10\\times 10` メッシュによる熱伝導率の計算です。所要時間は約 5 秒です::"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:39
+msgid ""
+"The environment variables ``LAMMPS``, ``ALAMODE_ROOT``, ``ALM``, and "
+"``ANPHON`` override the default paths of the binaries, and ``python3`` "
+"must provide NumPy and PyYAML."
+msgstr ""
+"環境変数 ``LAMMPS``、``ALAMODE_ROOT``、``ALM``、``ANPHON`` "
+"によってバイナリのデフォルトのパスを変更できます。また、``python3`` では NumPy と PyYAML が使用できる必要があります。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:42
+msgid ":download:`Download run_all.sh <../../../example/Si_LAMMPS/run_all.sh>`"
+msgstr ":download:`run_all.sh をダウンロード <../../../example/Si_LAMMPS/run_all.sh>`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:44
 msgid ""
 "As a simple example, we calculate phonon dispersion curves of Si using "
 "the Stillinger-Weber (SW) potential implemented in LAMMPS. First, you "
@@ -104,11 +148,11 @@ msgstr ""
 ":red:`Si222.lammps` を作成する必要があります (ファイル名は任意です)。:red:`in.sw` は LAMMPS "
 "のメインの入力ファイルであり、その中で経験的力場 (empirical force field) の種類が次のように定義されています。"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:35
+#: ../../source/tutorial_pages/silicon_lammps.rst:50
 msgid ":download:`Download in.sw <../../../example/Si_LAMMPS/in.sw>`"
 msgstr ":download:`in.sw をダウンロード <../../../example/Si_LAMMPS/in.sw>`"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:37
+#: ../../source/tutorial_pages/silicon_lammps.rst:52
 msgid ""
 "In the file :red:`Si222.lammps`, the lattice vectors and atomic positions"
 " of a relaxed supercell structure are defined as follows:"
@@ -120,19 +164,19 @@ msgstr ""
 msgid "Si222.lammps (first 30 lines)"
 msgstr "Si222.lammps (先頭 30 行)"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:44
+#: ../../source/tutorial_pages/silicon_lammps.rst:59
 msgid ""
 ":download:`Download Si222.lammps "
 "<../../../example/Si_LAMMPS/Si222.lammps>`"
 msgstr ":download:`Si222.lammps をダウンロード <../../../example/Si_LAMMPS/Si222.lammps>`"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:46
+#: ../../source/tutorial_pages/silicon_lammps.rst:61
 msgid ""
 "Next, please generate a set of structure files for displaced "
 "configurations using the python script::"
 msgstr "次に、python スクリプトを用いて、変位 (displacement) させた配置の構造ファイル一式を生成してください。"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:52
+#: ../../source/tutorial_pages/silicon_lammps.rst:67
 msgid ""
 "The pattern files can be generated by the **alm** code as decribed "
 ":ref:`here <tutorial_Si_step1>`. The above commands create "
@@ -145,18 +189,426 @@ msgstr ""
 "構造ファイルが作成されます。次に、以下のスクリプトを実行し、生成された構造に対する原子に働く力 (force) "
 "を計算します。これは数秒で完了するはずです。"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:73
+#: ../../source/tutorial_pages/silicon_lammps.rst:88
 msgid ""
 "After the force calculations are finished, displacement and force data "
 "sets can be generated as follows::"
 msgstr "力の計算が終わったら、変位と力のデータセットを次のように生成できます。"
 
-#: ../../source/tutorial_pages/silicon_lammps.rst:80
+#: ../../source/tutorial_pages/silicon_lammps.rst:95
 msgid ""
-"Then, using these files and following exactly the same procedure as the "
-"last tutorial section, you can calculate phonons and thermal conductivity"
-" of Si using the SW potential."
+"Then, using these files and following exactly the same procedure as "
+":ref:`the Si tutorial <tutorial_Si_step3>`, you can calculate phonons and"
+" thermal conductivity of Si using the SW potential. :red:`run_all.sh` "
+"fits the harmonic IFCs to :red:`si222_harm.h5` and then the cubic IFCs to"
+" :red:`si222_cubic.h5`, keeping the harmonic IFCs fixed (``FC2FIX = "
+"si222_harm.h5``)."
 msgstr ""
-"そして、これらのファイルを用い、前のチュートリアルの節とまったく同じ手順に従うことで、SW ポテンシャルを使って Si のフォノンと熱伝導率 "
-"(thermal conductivity) を計算できます。"
+"そして、これらのファイルを用い、:ref:`Si のチュートリアル <tutorial_Si_step3>` とまったく同じ手順に従うことで、SW"
+" ポテンシャルを使って Si のフォノンと熱伝導率を計算できます。:red:`run_all.sh` は、調和 IFC をフィッティングして "
+":red:`si222_harm.h5` に保存し、続いて調和 IFC を固定したまま (``FC2FIX = si222_harm.h5``) "
+"3 次の IFC をフィッティングして :red:`si222_cubic.h5` に保存します。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:104
+msgid "Thermal conductivity from different unit cells"
+msgstr "異なる単位胞を用いた熱伝導率の計算"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:106
+msgid ""
+"The lattice thermal conductivity :math:`\\kappa` is a property of the "
+"crystal. It does not depend on which unit cell you give to **anphon**, "
+"provided that the Brillouin zone sampling is converged. In practice, "
+"however, the choice of the unit cell changes how fast :math:`\\kappa` "
+"converges with respect to the :math:`k` mesh. In this section, we compare"
+" three choices using :red:`si222_cubic.h5` from :red:`run_all.sh`."
+msgstr ""
+"格子熱伝導率 :math:`\\kappa` は結晶の性質であり、ブリルアンゾーンのサンプリングが収束していれば、**anphon** "
+"にどの単位胞を与えても変わりません。しかし実際には、単位胞の選び方によって :math:`k` 点メッシュに対する :math:`\\kappa`"
+" の収束の速さが変わります。この節では、:red:`run_all.sh` で得られた :red:`si222_cubic.h5` を用いて 3 "
+"通りの選び方を比較します。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:111
+msgid ""
+"**Which unit cell does anphon use?** The ``&cell`` field of **anphon** "
+"(see :ref:`&cell-field <anphon_cell_field>`) can be omitted when "
+"``FCSFILE`` is an HDF5 file. In that case, **anphon** uses the primitive "
+"cell stored in that file by **alm**. If ``&cell`` is given, it replaces "
+"the stored cell. It must be the true primitive cell or a supercell of it,"
+" such as the conventional cell, so that the supercell stored in "
+"``FCSFILE`` consists of whole copies of it."
+msgstr ""
+"**anphon はどの単位胞を使うのか？** **anphon** の ``&cell`` フィールド (:ref:`&cell フィールド "
+"<anphon_cell_field>` を参照) は、``FCSFILE`` が HDF5 "
+"ファイルの場合は省略できます。その場合、**anphon** は **alm** がそのファイルに保存した基本セルを使用します。``&cell``"
+" を与えた場合は、保存されたセルの代わりにそれが使われます。``FCSFILE`` "
+"に保存されたスーパーセルがその整数個のコピーで構成されるように、このセルは真の基本セルか、慣用単位胞などその基本セルのスーパーセルでなければなりません。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:118
+msgid ""
+"In this example, the **alm** input defines the 64-atom cubic supercell "
+"(:math:`2\\times 2\\times 2` conventional cell) and has no ``PRIMCELL`` "
+"tag. Therefore, the \"primitive cell\" stored in :red:`si222_cubic.h5` is"
+" the 64-atom supercell itself, and **anphon** uses this 64-atom cell when"
+" ``&cell`` is omitted. To store the true primitive cell, set "
+":ref:`PRIMCELL <alm_primcell>` in the ``&general`` field of the **alm** "
+"input. Its rows give the primitive lattice vectors in units of the input "
+"lattice vectors. Here, we may use::"
+msgstr ""
+"この例では、**alm** の入力は 64 原子の立方晶スーパーセル (慣用単位胞の :math:`2\\times 2\\times 2`) "
+"を定義しており、``PRIMCELL`` タグはありません。したがって、:red:`si222_cubic.h5` に保存された「基本セル」は "
+"64 原子のスーパーセルそのものであり、``&cell`` を省略すると **anphon** はこの 64 "
+"原子のセルを使用します。真の基本セルを保存するには、**alm** の入力の ``&general`` フィールドで :ref:`PRIMCELL"
+" <alm_primcell>` "
+"を設定します。その各行は、入力の格子ベクトルを単位とした基本格子ベクトルを与えます。ここでは次のように指定できます::"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:126
+msgid "or ``PRIMCELL = Auto`` to detect the primitive cell with spglib."
+msgstr "あるいは、``PRIMCELL = Auto`` として spglib で基本セルを自動検出することもできます。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:128
+msgid ""
+"We use the following three inputs. Apart from their ``PREFIX``, they "
+"differ only in the ``&cell`` field and in the :math:`k` mesh."
+msgstr ""
+"以下の 3 つの入力を使用します。``PREFIX`` を除けば、これらの違いは ``&cell`` フィールドと :math:`k` "
+"点メッシュのみです。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst
+msgid "Primitive cell"
+msgstr "基本セル"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:136
+msgid ""
+":download:`Download kappa_prim.in "
+"<../../../example/Si_LAMMPS/reference/kappa_prim.in>`"
+msgstr ""
+":download:`kappa_prim.in をダウンロード "
+"<../../../example/Si_LAMMPS/reference/kappa_prim.in>`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst
+msgid "Conventional cell"
+msgstr "慣用単位胞"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:142
+msgid ""
+":download:`Download kappa_conv.in "
+"<../../../example/Si_LAMMPS/reference/kappa_conv.in>`"
+msgstr ""
+":download:`kappa_conv.in をダウンロード "
+"<../../../example/Si_LAMMPS/reference/kappa_conv.in>`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst
+msgid "&cell omitted (64-atom cell)"
+msgstr "&cell を省略 (64 原子のセル)"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:148
+msgid ""
+":download:`Download kappa_omitted.in "
+"<../../../example/Si_LAMMPS/reference/kappa_omitted.in>`"
+msgstr ""
+":download:`kappa_omitted.in をダウンロード "
+"<../../../example/Si_LAMMPS/reference/kappa_omitted.in>`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:150
+msgid "Run them in the directory that contains :red:`si222_cubic.h5`::"
+msgstr ":red:`si222_cubic.h5` があるディレクトリで次のように実行します::"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:156
+#, python-brace-format
+msgid ""
+"To test the convergence, change the three numbers in the ``&kpoint`` "
+"field. To compare the cells at the same :math:`k`-point density, count "
+"the :math:`k` points per primitive cell: an :math:`N\\times N\\times N` "
+"mesh of the primitive cell has :math:`N^{3}`, an :math:`M\\times M\\times"
+" M` mesh of the conventional cell (4 primitive cells) has :math:`4M^{3}`,"
+" and an :math:`L\\times L\\times L` mesh of the 64-atom cell (32 "
+"primitive cells) has :math:`32L^{3}`. We also repeated the calculations "
+"with Gaussian smearing (``ISMEAR = 1`` with the default ``EPSILON = 10``)"
+" in addition to the default tetrahedron method (``ISMEAR = -1``); see "
+":ref:`ISMEAR <anphon_ismear>`. All the calculations include isotope "
+"scattering (``ISOTOPE = 1``, the default)."
+msgstr ""
+"収束を調べるには、``&kpoint`` フィールドの 3 つの数値を変更します。同じ :math:`k` "
+"点密度でセルを比較するため、基本セルあたりの :math:`k` 点の数を数えます。基本セルの :math:`N\\times N\\times "
+"N` メッシュは :math:`N^{3}` 個、慣用単位胞 (基本セル 4 個分) の :math:`M\\times M\\times M` "
+"メッシュは :math:`4M^{3}` 個、64 原子のセル (基本セル 32 個分) の :math:`L\\times L\\times "
+"L` メッシュは :math:`32L^{3}` 個に相当します。また、デフォルトの四面体法 (``ISMEAR = -1``) "
+"に加えて、ガウス関数によるスメアリング (``ISMEAR = 1``、``EPSILON = 10`` はデフォルト値) "
+"でも計算を行いました。:ref:`ISMEAR <anphon_ismear>` を参照してください。すべての計算には同位体散乱 "
+"(``ISOTOPE = 1``、デフォルト) が含まれています。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:165
+#, python-brace-format
+msgid "The following table and figure show :math:`\\kappa_{xx}` at 300 K (W/mK)."
+msgstr "次の表と図に、300 K における :math:`\\kappa_{xx}` (W/mK) を示します。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:171
+msgid "``&cell`` and :math:`k` mesh"
+msgstr "``&cell`` と :math:`k` 点メッシュ"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:172
+msgid ":math:`k` points per primitive cell"
+msgstr "基本セルあたりの :math:`k` 点の数"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:173
+msgid "Tetrahedron (``ISMEAR = -1``)"
+msgstr "四面体法 (``ISMEAR = -1``)"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:174
+msgid "Gaussian (``ISMEAR = 1``)"
+msgstr "ガウス関数 (``ISMEAR = 1``)"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:175
+msgid "Primitive, :math:`10^3`"
+msgstr "基本セル、:math:`10^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:176
+msgid "1000"
+msgstr "1000"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:177
+msgid "412.42"
+msgstr "412.42"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:178
+msgid "394.71"
+msgstr "394.71"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:179
+msgid "Primitive, :math:`20^3`"
+msgstr "基本セル、:math:`20^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:180
+msgid "8000"
+msgstr "8000"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:181
+msgid "490.76"
+msgstr "490.76"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:182
+msgid "446.41"
+msgstr "446.41"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:183
+msgid "Primitive, :math:`30^3`"
+msgstr "基本セル、:math:`30^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:184
+msgid "27000"
+msgstr "27000"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:185
+msgid "508.66"
+msgstr "508.66"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:186
+msgid "453.82"
+msgstr "453.82"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:187
+msgid "Primitive, :math:`40^3`"
+msgstr "基本セル、:math:`40^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:188
+msgid "64000"
+msgstr "64000"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:189
+msgid "518.01"
+msgstr "518.01"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:190
+msgid "456.41"
+msgstr "456.41"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:191
+msgid "Conventional, :math:`5^3`"
+msgstr "慣用単位胞、:math:`5^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:192
+msgid "500"
+msgstr "500"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:193
+msgid "379.42"
+msgstr "379.42"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:194
+msgid "385.37"
+msgstr "385.37"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:195
+msgid "Conventional, :math:`10^3`"
+msgstr "慣用単位胞、:math:`10^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:196
+#: ../../source/tutorial_pages/silicon_lammps.rst:208
+msgid "4000"
+msgstr "4000"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:197
+msgid "441.02"
+msgstr "441.02"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:198
+msgid "440.15"
+msgstr "440.15"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:199
+msgid "Conventional, :math:`15^3`"
+msgstr "慣用単位胞、:math:`15^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:200
+msgid "13500"
+msgstr "13500"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:201
+msgid "464.82"
+msgstr "464.82"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:202
+msgid "449.30"
+msgstr "449.30"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:203
+msgid "Conventional, :math:`20^3`"
+msgstr "慣用単位胞、:math:`20^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:204
+msgid "32000"
+msgstr "32000"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:205
+msgid "480.33"
+msgstr "480.33"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:206
+msgid "453.91"
+msgstr "453.91"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:207
+msgid "Omitted (64-atom), :math:`5^3`"
+msgstr "省略 (64 原子)、:math:`5^3`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:209
+msgid "445.05"
+msgstr "445.05"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:210
+msgid "440.22"
+msgstr "440.22"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:228
+msgid ""
+":download:`kappa_300K_prim.txt "
+"<../../../example/Si_LAMMPS/reference/kappa_300K_prim.txt>`, "
+":download:`kappa_300K_conv.txt "
+"<../../../example/Si_LAMMPS/reference/kappa_300K_conv.txt>`, "
+":download:`kappa_300K_64atom.txt "
+"<../../../example/Si_LAMMPS/reference/kappa_300K_64atom.txt>`"
+msgstr ""
+":download:`kappa_300K_prim.txt "
+"<../../../example/Si_LAMMPS/reference/kappa_300K_prim.txt>`, "
+":download:`kappa_300K_conv.txt "
+"<../../../example/Si_LAMMPS/reference/kappa_300K_conv.txt>`, "
+":download:`kappa_300K_64atom.txt "
+"<../../../example/Si_LAMMPS/reference/kappa_300K_64atom.txt>`"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:232
+msgid ""
+"**Same k points, different cells.** The conventional :math:`10\\times "
+"10\\times 10` mesh and the 64-atom :math:`5\\times 5\\times 5` mesh "
+"sample exactly the same :math:`k` points in the Brillouin zone of the "
+"primitive cell. With Gaussian smearing, the two results agree within "
+"0.02% (440.15 and 440.22 W/mK). Without isotope scattering (``ISOTOPE = "
+"0``), they agree equally well (526.65 and 526.77 W/mK). With the "
+"tetrahedron method, however, they differ by about 1% (441.02 and 445.05 "
+"W/mK)."
+msgstr ""
+"**同じ k 点、異なるセル。** 慣用単位胞の :math:`10\\times 10\\times 10` メッシュと 64 原子のセルの "
+":math:`5\\times 5\\times 5` メッシュは、基本セルのブリルアンゾーン内でまったく同じ :math:`k` "
+"点をサンプリングします。ガウス関数によるスメアリングでは、2 つの結果は 0.02% 以内で一致します (440.15 および 440.22 "
+"W/mK)。同位体散乱を含めない場合 (``ISOTOPE = 0``) も同様によく一致します (526.65 および 526.77 "
+"W/mK)。しかし四面体法では、両者は約 1% 異なります (441.02 および 445.05 W/mK)。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:239
+msgid ""
+"The reason is that the tetrahedron method interpolates each phonon band "
+"linearly inside each tetrahedron, band by band in the order of the band "
+"index, that is, in the order of increasing frequency. In a larger cell, "
+"the bands are folded into a smaller Brillouin zone, and the frequency-"
+"sorted bands cross each other much more often, so that a band index no "
+"longer follows a single phonon branch. Near such crossings, the linear "
+"interpolation is less accurate, so a larger cell tends to need a denser "
+"mesh for the same accuracy. This has two consequences in the figure "
+"above:"
+msgstr ""
+"その理由は、四面体法が各フォノンバンドを各四面体の内部で線形補間し、しかもそれをバンド番号の順、すなわち振動数の小さい順にバンドごとに行うためです。大きなセルではバンドがより小さなブリルアンゾーンに折り返され、振動数順に並べたバンドどうしがはるかに頻繁に交差するため、バンド番号はもはや単一のフォノン分枝に対応しません。このようなバンドの交差の近くでは線形補間の精度が低下するため、大きなセルほど同じ精度を得るのにより密なメッシュが必要になる傾向があります。その結果、上の図には次の"
+" 2 つの特徴が現れます。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:246
+msgid ""
+"With the tetrahedron method, the conventional cell converges more slowly "
+"than the primitive cell. At 32000 :math:`k` points per primitive cell, "
+"the conventional cell gives 480 W/mK, whereas the primitive cell gives "
+"509 to 518 W/mK at a similar or higher density."
+msgstr ""
+"四面体法では、慣用単位胞は基本セルよりも収束が遅くなります。基本セルあたり 32000 個の :math:`k` 点で慣用単位胞は 480 "
+"W/mK を与えるのに対し、同程度以上の密度の基本セルでは 509 から 518 W/mK が得られます。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:249
+msgid ""
+"With Gaussian smearing of a fixed width, the band ordering does not "
+"enter, and both cells follow essentially the same curve against the "
+":math:`k`-point density (456.41 W/mK for the primitive cell and 453.91 "
+"W/mK for the conventional cell at the densest meshes)."
+msgstr ""
+"幅を固定したガウス関数によるスメアリングではバンドの順序は関係せず、両方のセルは :math:`k` 点密度に対して実質的に同じ曲線をたどります "
+"(最も密なメッシュで、基本セルは 456.41 W/mK、慣用単位胞は 453.91 W/mK)。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:253
+msgid ""
+"**The smearing width also matters.** At the densest primitive-cell mesh, "
+"Gaussian smearing gives 456.41 W/mK, compared with 518.01 W/mK for the "
+"tetrahedron method (which is still increasing slowly). The fixed width "
+"``EPSILON = 10`` cm\\ :sup:`-1` broadens the energy conservation of the "
+"three-phonon processes and of the isotope scattering, and this bias does "
+"not vanish with a denser mesh alone. The tetrahedron method has no width "
+"parameter, whereas a Gaussian result must also be converged with respect "
+"to ``EPSILON``, together with the :math:`k` mesh."
+msgstr ""
+"**スメアリングの幅も重要です。** 基本セルの最も密なメッシュでは、ガウス関数によるスメアリングは 456.41 W/mK を与え、四面体法の "
+"518.01 W/mK (まだゆっくりと増加しています) よりも小さくなります。固定された幅 ``EPSILON = 10`` cm\\ "
+":sup:`-1` は 3 "
+"フォノン過程と同位体散乱のエネルギー保存を広げ、この偏りはメッシュを密にするだけでは消えません。四面体法には幅のパラメータがありませんが、ガウス関数による結果は"
+" :math:`k` 点メッシュとともに ``EPSILON`` についても収束させる必要があります。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:263
+msgid ""
+"Use the primitive cell for thermal conductivity calculations, especially "
+"with the tetrahedron method."
+msgstr "熱伝導率の計算には、特に四面体法を用いる場合は、基本セルを使用してください。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:264
+msgid ""
+"If ``&cell`` is omitted, **anphon** uses whatever primitive cell **alm** "
+"stored in the HDF5 file. Check the unit cell in the **anphon** log, or "
+"set ``PRIMCELL`` in the **alm** input so that the true primitive cell is "
+"stored."
+msgstr ""
+"``&cell`` を省略すると、**anphon** は **alm** が HDF5 "
+"ファイルに保存した基本セルをそのまま使用します。**anphon** のログで単位胞を確認するか、真の基本セルが保存されるように **alm** "
+"の入力で ``PRIMCELL`` を設定してください。"
+
+#: ../../source/tutorial_pages/silicon_lammps.rst:266
+msgid ""
+"A large unit cell also makes **anphon** much slower. With 4 MPI processes"
+" and 2 OpenMP threads, the 64-atom :math:`5\\times 5\\times 5` run took "
+"about 6 minutes, while the conventional :math:`10\\times 10\\times 10` "
+"run, which samples the same :math:`k` points, took about 30 seconds."
+msgstr ""
+"単位胞が大きいと **anphon** の計算も大幅に遅くなります。4 MPI プロセスと 2 OpenMP スレッドを用いた場合、64 "
+"原子のセルの :math:`5\\times 5\\times 5` の計算には約 6 分かかったのに対し、同じ :math:`k` "
+"点をサンプリングする慣用単位胞の :math:`10\\times 10\\times 10` の計算は約 30 秒でした。"
 

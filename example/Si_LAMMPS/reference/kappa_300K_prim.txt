@@ -1,0 +1,6 @@
+# Si (Stillinger-Weber), kappa_xx at 300 K (W/mK), &cell = primitive cell, N x N x N mesh
+# k points per primitive cell, tetrahedron (ISMEAR = -1), Gaussian (ISMEAR = 1, EPSILON = 10)
+1000 412.42 394.71
+8000 490.76 446.41
+27000 508.66 453.82
+64000 518.01 456.41

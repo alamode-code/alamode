@@ -1,0 +1,12 @@
+&general
+  PREFIX = si_omitted
+  MODE = kappa
+  FCSFILE = si222_cubic.h5
+  KD = Si
+  MASS = 28.0855
+/
+
+&kpoint
+  2
+  5 5 5
+/
