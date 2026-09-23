@@ -9,9 +9,11 @@ article[role="main"],
 }
 
 /* Softer dark mode: breeze's default page (oklch L = 0.175) is close to black,
-   which makes the thin body text hard to read. Lift the surfaces and the text. */
+   which makes the thin body text hard to read. Lift the surfaces and the text.
+   The page (surface-1 = surface - 0.045 L) matches the slate navy #222d3d of
+   ttadano.github.io. */
 :root[data-theme="dark"] {
-  --bz-color-surface: oklch(.3 .012 265);
+  --bz-color-surface: oklch(.339 .038 258);
   --bz-color-text: oklch(.95 .004 265);
   --bz-color-muted: oklch(.85 .004 265);
 }
