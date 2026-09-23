@@ -23,17 +23,11 @@ Features
 
 The list of features, together with the force constants each of them needs, is given in :doc:`features`.
 
-.. Note::
-   Tutorials for structural optimization at finite temperatures are included in this
-   documentation; see :doc:`tutorial_pages/bto_scph_relax` (SCPH-based) and
-   :doc:`tutorial_pages/zno_qha_relax` (QHA-based).
-
 Links
 -----
 
 * Git repository : https://github.com/alamode-code/alamode (see :doc:`download`)
-* Documentation  : https://alamode.readthedocs.io (this page)
-* SourceForge (release packages) : https://sourceforge.net/projects/alamode
+* Documentation  : https://alamode-code.github.io/alamode/ (this page)
 
 
 License
@@ -100,6 +94,7 @@ Acknowledgment
 
 This project has been partially supported by the following grants:
 
+* JST PRESTO "Innovation in first-principles prediction of materials properties by incorporating finite-temperature effects"
 * Grant-in-Aid for Scientific Research (C) (21K03424)
 * Grant-in-Aid for Young Scientists (B) (16K17724) 
 * Grant-in-Aid for Scientific Research on Innovative Areas 'Materials Design through Computics: Complex Correlation and Non-Equilibrium Dynamics'. (http://computics-material.jp)
