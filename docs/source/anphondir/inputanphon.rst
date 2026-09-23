@@ -33,6 +33,20 @@ List of supported input variables
    :ref:`PREC_EWALD <anphon_prec_ewald>`, :ref:`PREFIX <anphon_prefix>`, :ref:`PRINTSYM <anphon_printsym>`, :ref:`RELAXED_STRUCTURE <anphon_relaxed_structure>`
    :ref:`TMAX <anphon_tmin>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TREVSYM <anphon_trevsym>`
    :ref:`TRISYM <anphon_trisym>`, :ref:`VERBOSITY <anphon_verbosity>`
+   **&cell**
+   :ref:`Lattice vectors <anphon_cell_field>`
+   **&kpoint**
+   :ref:`KPMODE <anphon_kpoint_field>`
+   **&kappa**
+   :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
+   :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
+   :ref:`ISOTOPE_INSCATTERING <anphon_isotope_inscattering>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`, :ref:`KAPPA_SPEC <anphon_kappa_spec>`
+   :ref:`KMESH_COARSE <anphon_kmesh_coarse>`, :ref:`LEN_BOUNDARY <anphon_len_boundary>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`MIN_CYCLE <anphon_min_cycle>`
+   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`SOLVER <anphon_solver>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
+   **&selfenergy**
+   :ref:`BRANCHES <anphon_selfenergy_field>`, :ref:`FSTATE_W <anphon_selfenergy_field>`, :ref:`INTERPOLATE <anphon_selfenergy_field>`, :ref:`KMESH <anphon_selfenergy_field>`
+   :ref:`KMESH_COARSE <anphon_selfenergy_field>`, :ref:`LINEWIDTH <anphon_selfenergy_field>`, :ref:`OMEGA_RANGE <anphon_selfenergy_field>`, :ref:`PRINTV3 <anphon_selfenergy_field>`
+   :ref:`PRINTV4 <anphon_selfenergy_field>`, :ref:`SELF_W <anphon_selfenergy_field>`, :ref:`SHIFT <anphon_selfenergy_field>`
    **&scph**
    :ref:`BUBBLE <anphon_bubble>`, :ref:`CV_ANHARM <anphon_cv_anharm>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`
    :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`, :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`
@@ -43,11 +57,14 @@ List of supported input variables
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
-   :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`
-   :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`
-   :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`
-   :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`
+   :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`
+   :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    :ref:`ELASTIC_CONST (deprecated) <anphon_elastic_const>`, :ref:`RENORM_2TO1ST (deprecated) <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST (deprecated) <anphon_renorm_34to1st>`, :ref:`RENORM_3TO2ND (deprecated) <anphon_renorm_3to2nd>`
+   **&strain**
+   :ref:`Strain tensor <anphon_strain_field>`
+   **&displace**
+   :ref:`DISPMODE <anphon_displace_field>`
    **&analysis**
    :ref:`ANIME <anphon_anime>`, :ref:`ANIME_CELLSIZE <anphon_anime_cellsize>`, :ref:`ANIME_FORMAT <anphon_anime_format>`, :ref:`ANIME_FRAMES <anphon_anime_frames>`
    :ref:`DIELEC <anphon_dielec>`, :ref:`DOS <anphon_dos>`, :ref:`FC2_EWALD <anphon_fc2_ewald>`, :ref:`GRUNEISEN <anphon_gruneisen>`
@@ -57,13 +74,6 @@ List of supported input variables
    :ref:`PROJECTION_AXES <anphon_projection_axes>`, :ref:`QUARTIC <anphon_quartic>`, :ref:`REALPART <anphon_realpart>`, :ref:`SELF_ENERGY <anphon_self_energy>`
    :ref:`SELF_W <anphon_self_w>`, :ref:`SHIFT_UCORR <anphon_shift_ucorr>`, :ref:`SPS <anphon_sps>`, :ref:`SUBLATTICE_RELAX <anphon_sublattice_relax>`
    :ref:`TDOS <anphon_tdos>`, :ref:`UCORR <anphon_ucorr>`, :ref:`ZMODE <anphon_zmode>`
-   **&kappa**
-   :ref:`ADAPTIVE_FACTOR <anphon_adaptive_factor>`, :ref:`EPSILON_4PH <anphon_epsilon_4ph>`, :ref:`IBTE_MIXING <anphon_ibte_mixing>`, :ref:`INCLUDE_4PH <anphon_include_4ph>`
-   :ref:`INTERPOLATOR <anphon_interpolator>`, :ref:`ISMEAR_4PH <anphon_ismear_4ph>`, :ref:`ISOFACT <anphon_isofact>`, :ref:`ISOTOPE <anphon_isotope>`
-   :ref:`ISOTOPE_INSCATTERING <anphon_isotope_inscattering>`, :ref:`ITER_THRESHOLD <anphon_iter_threshold>`, :ref:`KAPPA_COHERENT <anphon_kappa_coherent>`
-   :ref:`KAPPA_SPEC <anphon_kappa_spec>`
-   :ref:`KMESH_COARSE <anphon_kmesh_coarse>`, :ref:`LEN_BOUNDARY <anphon_len_boundary>`, :ref:`MAX_CYCLE <anphon_max_cycle>`, :ref:`MIN_CYCLE <anphon_min_cycle>`
-   :ref:`RESTART <anphon_restart>`, :ref:`RESTART_4PH <anphon_restart_4ph>`, :ref:`SOLVER <anphon_solver>`, :ref:`WRITE_INTERPOL <anphon_write_interpol>`
 
 
 
@@ -85,20 +95,30 @@ Description of input variables
 
 .. _anphon_mode:
 
-* **MODE**-tag = phonons | kappa
+* **MODE**-tag = phonons | kappa | selfenergy | SCPH | QHA
 
- ========= ==============================================================
-  phonons  | Calculate phonon dispersion relation, phonon DOS, 
-           | Gr\ |umulaut_u|\ neisen parameters etc.
+ ============ ==============================================================
+  phonons     | Calculate phonon dispersion relation, phonon DOS,
+              | Gr\ |umulaut_u|\ neisen parameters etc.
 
-  kappa    | Calculate phonon lifetimes and lattice thermal conductivity
-           | based on the Boltzmann transport equation (BTE). The solver
-           | level (RTA, IBTE, ...) is chosen by the :ref:`SOLVER <anphon_solver>`
-           | tag of the &kappa field. ``MODE = RTA`` is a deprecated alias.
+  kappa       | Calculate phonon lifetimes and lattice thermal conductivity
+              | based on the Boltzmann transport equation (BTE). The solver
+              | level (RTA, IBTE, ...) is chosen by the :ref:`SOLVER <anphon_solver>`
+              | tag of the &kappa field. ``MODE = RTA`` is a deprecated alias.
 
-   SCPH    | Calculate temperature dependent phonon dispersion curves
-           | by the self-consistent phonon method.
- ========= ==============================================================
+  selfenergy  | Calculate the anharmonic self-energy (linewidth, frequency
+              | shift, spectral function) of selected phonon modes at
+              | arbitrary wave vectors. See the
+              | :ref:`&selfenergy field <anphon_selfenergy_field>`.
+
+  SCPH        | Calculate temperature dependent phonon dispersion curves
+              | by the self-consistent phonon method. With
+              | :ref:`RELAX_STR <anphon_relax_str>` the crystal structure at
+              | each temperature is optimized as well.
+
+  QHA         | Calculate the crystal structure and phonons at finite
+              | temperatures within the quasi-harmonic approximation.
+ ============ ==============================================================
 
  :Default: None
  :Type: String
@@ -1361,6 +1381,8 @@ Description of input variables
 
 ````
 
+.. _anphon_cell_field:
+
 "&cell"-field
 +++++++++++++
 
@@ -1383,6 +1405,8 @@ The cell parameters are then given by :math:`\vec{a}_{1} = a \times (a_{11}, a_{
  here for the primitive cell.
 
 ````
+
+.. _anphon_kpoint_field:
 
 "&kpoint"-field
 +++++++++++++++
@@ -1431,6 +1455,8 @@ The first entry **KPMODE** specifies the types of calculation which is followed 
 
 ````
 
+.. _anphon_strain_field:
+
 "&strain"-field (Read when ``RELAX_STR = 2, 4``; optional when ``MODE = phonons`` with ``NEWFCS = 1``)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1449,6 +1475,8 @@ When ``MODE = phonons`` with :ref:`NEWFCS <anphon_newfcs>` = 1, this field is op
 the force constants of the systems strained by :math:`+u` and :math:`-u` are estimated and saved
 to ``PREFIX``\_+.h5/``PREFIX``\_-.h5 (or the XML pair with ``FILE_FORMAT = text``). This is the
 recommended way to specify the deformation for ``NEWFCS = 1``.
+
+.. _anphon_displace_field:
 
 "&displace"-field (Read only when ``RELAX_STR = 1, 2``)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1510,6 +1538,8 @@ Note that a zero initial displacement keeps the full symmetry of the reference s
    1  0.03  1 1 1
 
  The resolved Cartesian displacements, the degenerate set, and the rotation used are printed at the beginning of the log. anphon stops with an error when the reference structure has no rotation about the axis, when no member of the set is invariant (the axis is incompatible with the mode), or when several members are (choose a higher-order axis). When rotations about the same axis through different points select distinct patterns that are not symmetry-equivalent domains, the candidates are printed as ``DISPMODE = 1`` lines and the run stops so that one of them can be given explicitly.
+
+.. _anphon_selfenergy_field:
 
 "&selfenergy"-field (``MODE = selfenergy``)
 ++++++++++++++++++++++++++++++++++++++++++++

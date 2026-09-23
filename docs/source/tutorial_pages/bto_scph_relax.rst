@@ -60,7 +60,7 @@ which are added to the high-symmetry reference structure.
 This is necessary to induce spontaneous symmetry breaking from the cubic phase.
 
 The input file of the anphon calculation is :red:`BTO_scph_thermo.in`.
-The lines
+The line
 ::
 
   SET_INIT_STR = 3
