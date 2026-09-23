@@ -200,15 +200,11 @@ ALM = dict(
                 "スーパーセルを決める\n通常は慣用単位胞程度から",
             ),
         ),
-        "q": (
-            "ask",
-            L("Quartic or\nhigher IFCs\nneeded?", "4次以上の\n力定数が\n必要?"),
-        ),
         "sug": (
             "alm",
             L(
-                "alm   `MODE = suggest`\ndisplacement patterns  (NORDER = 1 or 2)",
-                "alm   `MODE = suggest`\n変位パターン  (NORDER = 1 または 2)",
+                "alm   `MODE = suggest`  (NORDER = 1)\nharmonic displacement patterns",
+                "alm   `MODE = suggest`  (NORDER = 1)\n調和項の変位パターン",
             ),
         ),
         "dA": (
@@ -218,50 +214,86 @@ ALM = dict(
                 "displace.py  `--pattern_file`\n小さな変位 (約 0.01 Å)",
             ),
         ),
+        "dftA": (
+            "dft",
+            L("DFT forces → extract.py → DFSET", "DFT で力を計算 → extract.py → DFSET"),
+        ),
+        "fitA": (
+            "alm",
+            L(
+                "alm   `MODE = optimize`  (NORDER = 1)\n`LMODEL = ols`",
+                "alm   `MODE = optimize`  (NORDER = 1)\n`LMODEL = ols`",
+            ),
+        ),
+        "fc2": (
+            "file",
+            L(
+                "harmonic.h5\nharmonic force constants (FC2)",
+                "harmonic.h5\n調和力定数 (FC2)",
+            ),
+        ),
+        "q": (
+            "ask",
+            L("Anharmonic\nIFCs\nneeded?", "非調和\n力定数が\n必要?"),
+        ),
+        "done": (
+            "end",
+            L("phonons, DOS,\nthermodynamics", "フォノン分散, DOS,\n熱力学量"),
+        ),
+        "evec": (
+            "anphon",
+            L(
+                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`  → PREFIX.evec",
+                "anphon   `MODE = phonons`  (KPMODE = 0)\n`FCSFILE = harmonic.h5`  → PREFIX.evec",
+            ),
+        ),
         "dB": (
             "tool",
             L(
-                "displace.py  `--random_normalcoord`\nthermal sampling from the harmonic phonons,\nor `--random` on MD snapshots",
-                "displace.py  `--random_normalcoord`\n調和フォノンから有限温度でサンプリング,\nまたは MD スナップショットに `--random`",
+                "displace.py  `--random_normalcoord --evec PREFIX.evec --temp T`\nrandom displacements sampled at temperature T\n(or `--random` on MD snapshots)",
+                "displace.py  `--random_normalcoord --evec PREFIX.evec --temp T`\n温度 T でサンプリングしたランダム変位\n(または MD スナップショットに `--random`)",
             ),
         ),
-        "dft": (
+        "dftB": (
             "dft",
-            L("DFT\nforces for every structure", "DFT\nすべての構造について力を計算"),
+            L("DFT forces → extract.py → DFSET", "DFT で力を計算 → extract.py → DFSET"),
         ),
-        "ext": (
-            "tool",
-            L(
-                "extract.py\ndisplacements and forces → DFSET",
-                "extract.py\n変位と力 → DFSET",
-            ),
-        ),
-        "fit": (
+        "fitB": (
             "alm",
             L(
-                "alm   `MODE = optimize`\n`LMODEL = ols`  or  `enet`, `adaptive-lasso`",
-                "alm   `MODE = optimize`\n`LMODEL = ols`  または  `enet`, `adaptive-lasso`",
+                "alm   `MODE = optimize`  (NORDER = 2, 3, ...)\n`LMODEL = enet` or `adaptive-lasso`,  `FC2FIX = harmonic.h5`",
+                "alm   `MODE = optimize`  (NORDER = 2, 3, ...)\n`LMODEL = enet` または `adaptive-lasso`,  `FC2FIX = harmonic.h5`",
             ),
         ),
-        "fcs": ("file", L("PREFIX.h5\nforce constants", "PREFIX.h5\n力定数")),
+        "fcs": (
+            "file",
+            L(
+                "PREFIX.h5\nharmonic and anharmonic force constants",
+                "PREFIX.h5\n調和および非調和力定数",
+            ),
+        ),
     },
     edges=[
         ("start", "cell"),
-        ("cell", "q"),
-        ("q", "sug", dict(label=NO)),
+        ("cell", "sug"),
+        ("sug", "dA"),
+        ("dA", "dftA"),
+        ("dftA", "fitA"),
+        ("fitA", "fc2"),
+        ("fc2", "q"),
+        ("q", "done", dict(label=NO)),
         (
             "q",
-            "dB",
-            dict(label=L("yes\n(SCPH, QHA, 4-phonon)", "はい\n(SCPH, QHA, 4フォノン)")),
+            "evec",
+            dict(
+                label=L("yes\n(kappa, SCPH, QHA, ...)", "はい\n(kappa, SCPH, QHA など)")
+            ),
         ),
-        ("sug", "dA"),
-        ("dA", "dft"),
-        ("dB", "dft"),
-        ("dft", "ext"),
-        ("ext", "fit"),
-        ("fit", "fcs"),
+        ("evec", "dB"),
+        ("dB", "dftB"),
+        ("dftB", "fitB"),
+        ("fitB", "fcs"),
     ],
-    same=[["dA", "dB"]],
 )
 
 # ------------------------------------------------------------- anphon mode
