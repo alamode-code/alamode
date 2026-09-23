@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-14 10:11+0900\n"
+"POT-Creation-Date: 2026-09-23 12:16+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -345,6 +345,27 @@ msgstr ""
 
 #: ../../source/anphondir/outputanphon.rst:156
 msgid ""
+"Like every HDF5 file written by ``anphon`` (and the force-constant file of "
+"``alm``), it records the input variables echoed in the header of the log "
+"file as string attributes of the group ``/metadata/input_variables``, one "
+"attribute per tag "
+"(``dict(h5py.File(...)[\"metadata/input_variables\"].attrs)``). The group "
+"always describes the *latest* run that wrote to the file, so after a restart"
+" it shows the restart's settings. A temperature-resolved file "
+"(``FC2_TEMPERATURE``), which accumulates runs at different basis "
+"temperatures, additionally keeps one record per run under "
+"``/metadata/input_variables_runs/<FC2_TEMPERATURE>``."
+msgstr ""
+"``anphon`` が書き出すすべての HDF5 ファイル (および ``alm`` の力定数ファイル) "
+"と同様に、ログファイルのヘッダーに出力される入力変数を、グループ ``/metadata/input_variables`` "
+"の文字列属性としてタグごとに 1 つずつ記録します "
+"(``dict(h5py.File(...)[\"metadata/input_variables\"].attrs)``)。このグループは常にファイルに書き込んだ"
+" *最新* の計算を表すため、リスタート後はリスタート時の設定を示します。温度分解ファイル (``FC2_TEMPERATURE``) "
+"は異なる基準温度の計算を蓄積するため、さらに計算ごとの記録を "
+"``/metadata/input_variables_runs/<FC2_TEMPERATURE>`` に保持します。"
+
+#: ../../source/anphondir/outputanphon.rst:166
+msgid ""
 "With ``SOLVER = IBTE``, the file additionally carries an ``/iterativebte`` "
 "group holding the per-temperature results of the iterative solver: the "
 "diagonal (out-scattering) part ``Q``, the deviation function ``dF`` at the "
@@ -362,7 +383,7 @@ msgstr ""
 "は保存された結果を破棄します)。すべての温度が既に存在する場合は、計算コストの高い遷移確率は一切再構築されません。RTA と IBTE "
 "の結果は同じファイル内に共存します。"
 
-#: ../../source/anphondir/outputanphon.rst:167
+#: ../../source/anphondir/outputanphon.rst:177
 msgid ""
 "When the run uses a temperature-dependent basis (:ref:`FC2_TEMPERATURE "
 "<anphon_fc2_temperature>` with an SCPH/QHA state file), the file switches to"
@@ -381,11 +402,11 @@ msgstr ""
 "つのポータブルなファイルにまとまります。各計算では ``TMIN = TMAX = FC2_TEMPERATURE`` "
 "を設定し、それぞれの熱伝導率がその温度の自己無撞着な基底で計算されるようにしてください。"
 
-#: ../../source/anphondir/outputanphon.rst:178
+#: ../../source/anphondir/outputanphon.rst:188
 msgid "``PREFIX``.result"
 msgstr "``PREFIX``.result"
 
-#: ../../source/anphondir/outputanphon.rst:180
+#: ../../source/anphondir/outputanphon.rst:190
 msgid ""
 "Legacy text counterpart of ``PREFIX``.kappa.h5, written when ``FILE_FORMAT ="
 " text``. In this file, phonon frequency, group velocity, and anharmonic "
@@ -397,11 +418,11 @@ msgstr ""
 "に対応する従来のテキストファイル。フォノン振動数、群速度、非調和フォノン線幅が出力されます。古い計算による既存のファイルは、既定の h5 "
 "モードでのリスタート時に一度だけ読み取り専用で ``PREFIX``.kappa.h5 へ取り込まれます。"
 
-#: ../../source/anphondir/outputanphon.rst:186
+#: ../../source/anphondir/outputanphon.rst:196
 msgid "``PREFIX``.kl"
 msgstr "``PREFIX``.kl"
 
-#: ../../source/anphondir/outputanphon.rst:188
+#: ../../source/anphondir/outputanphon.rst:198
 msgid ""
 "Lattice thermal conductivity tensor (Peierls term). Created when ``MODE = "
 "kappa``."
@@ -409,11 +430,11 @@ msgstr ""
 "格子熱伝導率テンソル (lattice thermal conductivity tensor)（Peierls 項）。``MODE = kappa``"
 " のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:190
+#: ../../source/anphondir/outputanphon.rst:200
 msgid "``PREFIX``.kl_iter"
 msgstr "``PREFIX``.kl_iter"
 
-#: ../../source/anphondir/outputanphon.rst:192
+#: ../../source/anphondir/outputanphon.rst:202
 msgid ""
 "Lattice thermal conductivity tensor obtained by solving the linearized "
 "Boltzmann transport equation beyond the RTA (full 3x3 tensor per "
@@ -425,11 +446,11 @@ msgstr ""
 "kappa`` かつ ``SOLVER = IBTE``、``VBTE``、または ``DBTE`` "
 "のときに作成されます。反復が収束しなかった温度はコメント行に記されます。"
 
-#: ../../source/anphondir/outputanphon.rst:198
+#: ../../source/anphondir/outputanphon.rst:208
 msgid "``PREFIX``.kl_spec"
 msgstr "``PREFIX``.kl_spec"
 
-#: ../../source/anphondir/outputanphon.rst:200
+#: ../../source/anphondir/outputanphon.rst:210
 msgid ""
 "Spectra of lattice thermal conductivity. Only diagonal components are saved."
 " Created when ``MODE = kappa`` and ``KAPPA_SPEC = 1``."
@@ -437,11 +458,11 @@ msgstr ""
 "格子熱伝導率のスペクトル。対角成分のみが保存されます。``MODE = kappa`` かつ ``KAPPA_SPEC = 1`` "
 "のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:204
+#: ../../source/anphondir/outputanphon.rst:214
 msgid "``PREFIX``.kl_coherent"
 msgstr "``PREFIX``.kl_coherent"
 
-#: ../../source/anphondir/outputanphon.rst:206
+#: ../../source/anphondir/outputanphon.rst:216
 msgid ""
 "Coherent component of lattice thermal conductivity. Created when "
 "``KAPPA_COHERENT > 0`` in ``MODE = kappa``."
@@ -449,11 +470,11 @@ msgstr ""
 "格子熱伝導率のコヒーレント成分 (coherent component)。``MODE = kappa`` において ``KAPPA_COHERENT "
 "> 0`` のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:209
+#: ../../source/anphondir/outputanphon.rst:219
 msgid "``PREFIX``.kc_elem"
 msgstr "``PREFIX``.kc_elem"
 
-#: ../../source/anphondir/outputanphon.rst:211
+#: ../../source/anphondir/outputanphon.rst:221
 msgid ""
 "Momentum- and mode-decomposed contributions to the coherent components of "
 "lattice thermal conductivity. Created when ``KAPPA_COHERENT = 2`` in ``MODE "
@@ -462,11 +483,11 @@ msgstr ""
 "格子熱伝導率のコヒーレント成分に対する、運動量分解およびモード分解された寄与。``MODE = kappa`` において "
 "``KAPPA_COHERENT = 2`` のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:215
+#: ../../source/anphondir/outputanphon.rst:225
 msgid "``PREFIX``.self_isotope"
 msgstr "``PREFIX``.self_isotope"
 
-#: ../../source/anphondir/outputanphon.rst:217
+#: ../../source/anphondir/outputanphon.rst:227
 msgid ""
 "Phonon selfenergy due to isotope scatterings calculated by Tamura's formula."
 " Created when ``MODE = kappa`` and ``ISOTOPE = 2``."
@@ -474,11 +495,11 @@ msgstr ""
 "Tamura の公式で計算された、同位体散乱 (isotope scatterings) によるフォノン自己エネルギー "
 "(selfenergy)。``MODE = kappa`` かつ ``ISOTOPE = 2`` のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:222
+#: ../../source/anphondir/outputanphon.rst:232
 msgid "``PREFIX``.scph.h5 (``PREFIX``.qha.h5 for ``MODE = QHA``)"
 msgstr "``PREFIX``.scph.h5 (``MODE = QHA`` では ``PREFIX``.qha.h5)"
 
-#: ../../source/anphondir/outputanphon.rst:224
+#: ../../source/anphondir/outputanphon.rst:234
 msgid ""
 "Unified state file of an SCPH/QHA run (schema ``alamode:scph_state``), "
 "written atomically at the end of the run with the default ``FILE_FORMAT = "
@@ -505,11 +526,11 @@ msgstr ""
 "<anphon_fc2_temperature>` タグによってこれらを直接利用でき、``dfc2.py`` ワークフローを置き換えます。h5py "
 "で読むことができます。"
 
-#: ../../source/anphondir/outputanphon.rst:239
+#: ../../source/anphondir/outputanphon.rst:249
 msgid "``PREFIX``.scph_dymat"
 msgstr "``PREFIX``.scph_dymat"
 
-#: ../../source/anphondir/outputanphon.rst:241
+#: ../../source/anphondir/outputanphon.rst:251
 msgid ""
 "Anharmonic dynamical matrix calculated on the :math:`k` grid defined by the "
 "``KMESH_INTERPOLATE`` tag. Legacy restart file, written when ``FILE_FORMAT ="
@@ -521,30 +542,30 @@ msgstr ""
 "のときに書き出される従来のリスタートファイルです。古い計算による既存のファイルは、既定の h5 モードでのリスタート時に一度だけ "
 "``PREFIX``.scph.h5 へ取り込まれます。"
 
-#: ../../source/anphondir/outputanphon.rst:246
+#: ../../source/anphondir/outputanphon.rst:256
 msgid "``PREFIX``.scph_bands"
 msgstr "``PREFIX``.scph_bands"
 
-#: ../../source/anphondir/outputanphon.rst:248
+#: ../../source/anphondir/outputanphon.rst:258
 msgid "Anharmonic phonon dispersion curves."
 msgstr "非調和フォノン分散曲線。"
 
-#: ../../source/anphondir/outputanphon.rst:250
+#: ../../source/anphondir/outputanphon.rst:260
 msgid "``PREFIX``.scph_dos"
 msgstr "``PREFIX``.scph_dos"
 
-#: ../../source/anphondir/outputanphon.rst:252
+#: ../../source/anphondir/outputanphon.rst:262
 msgid ""
 "Anharmonic phonon DOS. Created when ``MODE = SCPH`` and ``DOS = 1`` with "
 "**KPMODE** = 2."
 msgstr ""
 "非調和フォノンDOS。``MODE = SCPH`` かつ ``DOS = 1`` および **KPMODE** = 2 のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:255
+#: ../../source/anphondir/outputanphon.rst:265
 msgid "``PREFIX``.scph_thermo"
 msgstr "``PREFIX``.scph_thermo"
 
-#: ../../source/anphondir/outputanphon.rst:257
+#: ../../source/anphondir/outputanphon.rst:267
 msgid ""
 "Constant volume heat capacity, vibrational entropy, and vibrational free "
 "energy calculated based on the self-consistent phonon calculation. Created "
@@ -554,11 +575,11 @@ msgstr ""
 "計算に基づいて計算された、定積熱容量、振動エントロピー、および振動自由エネルギー。``MODE = SCPH`` かつ **KPMODE** = 2 "
 "のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:263
+#: ../../source/anphondir/outputanphon.rst:273
 msgid "``PREFIX``.scph_msd"
 msgstr "``PREFIX``.scph_msd"
 
-#: ../../source/anphondir/outputanphon.rst:265
+#: ../../source/anphondir/outputanphon.rst:275
 msgid ""
 "Mean square displacement calculated within the SCPH theory. Created when "
 "``MODE = SCPH`` and ``PRINTMSD = 1`` with **KPMODE** = 2."
@@ -566,11 +587,11 @@ msgstr ""
 "SCPH理論の枠組みで計算された平均二乗変位。``MODE = SCPH`` かつ ``PRINTMSD = 1`` および **KPMODE** = "
 "2 のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:267
+#: ../../source/anphondir/outputanphon.rst:277
 msgid "``PREFIX``.scph_dfc2"
 msgstr "``PREFIX``.scph_dfc2"
 
-#: ../../source/anphondir/outputanphon.rst:269
+#: ../../source/anphondir/outputanphon.rst:279
 msgid ""
 "This file contains :math:`\\Delta D(\\boldsymbol{q}) = "
 "D_{\\mathrm{SCPH}}(\\boldsymbol{q}) - "
@@ -582,11 +603,11 @@ msgstr ""
 "D_{\\mathrm{Harmonic}}(\\boldsymbol{q})` が含まれます。定義については :ref:`formalism of "
 "the SCPH calculation <formalism_SCPH>` を参照してください。"
 
-#: ../../source/anphondir/outputanphon.rst:274
+#: ../../source/anphondir/outputanphon.rst:284
 msgid "``PREFIX``.atom_disp"
 msgstr "``PREFIX``.atom_disp"
 
-#: ../../source/anphondir/outputanphon.rst:276
+#: ../../source/anphondir/outputanphon.rst:286
 #, python-brace-format
 msgid ""
 "Temperature-dependence of the atomic displacements :math:`u^{(0)}_{\\alpha "
@@ -596,11 +617,11 @@ msgstr ""
 "デカルト表示における原子変位 (atomic displacements) :math:`u^{(0)}_{\\alpha \\mu}` "
 "の温度依存性。``MODE = SCPH`` かつ ``RELAX_STR != 0`` のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:278
+#: ../../source/anphondir/outputanphon.rst:288
 msgid "``PREFIX``.normal_disp"
 msgstr "``PREFIX``.normal_disp"
 
-#: ../../source/anphondir/outputanphon.rst:280
+#: ../../source/anphondir/outputanphon.rst:290
 #, python-brace-format
 msgid ""
 "Temperature-dependence of the atomic displacement :math:`q^{(0)}_{\\lambda}`"
@@ -610,11 +631,11 @@ msgstr ""
 "基準座標表示における原子変位 :math:`q^{(0)}_{\\lambda}` の温度依存性。``MODE = SCPH`` かつ "
 "``RELAX_STR != 0`` のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:282
+#: ../../source/anphondir/outputanphon.rst:292
 msgid "``PREFIX``.umn_tensor"
 msgstr "``PREFIX``.umn_tensor"
 
-#: ../../source/anphondir/outputanphon.rst:284
+#: ../../source/anphondir/outputanphon.rst:294
 #, python-brace-format
 msgid ""
 "Temperature-dependence of the displacement gradient tensor :math:`u_{\\mu "
@@ -623,11 +644,11 @@ msgstr ""
 "変位勾配テンソル (displacement gradient tensor) :math:`u_{\\mu \\nu}` の温度依存性。``MODE "
 "= SCPH`` かつ ``RELAX_STR = 2, -1, -2`` のときに作成されます。"
 
-#: ../../source/anphondir/outputanphon.rst:286
+#: ../../source/anphondir/outputanphon.rst:296
 msgid "``PREFIX``.V0"
 msgstr "``PREFIX``.V0"
 
-#: ../../source/anphondir/outputanphon.rst:288
+#: ../../source/anphondir/outputanphon.rst:298
 msgid ""
 "Temperature-dependent zero-th order IFC :math:`U_0`. Created when ``MODE = "
 "SCPH`` and ``RELAX_STR != 0``. This file is used to restart the SCPH/QHA + "
@@ -636,11 +657,11 @@ msgstr ""
 "温度依存の0次原子間力定数 (IFC) :math:`U_0`。``MODE = SCPH`` かつ ``RELAX_STR != 0`` "
 "のときに作成されます。このファイルはSCPH/QHA + 構造最適化のリスタートに使用されます。"
 
-#: ../../source/anphondir/outputanphon.rst:291
+#: ../../source/anphondir/outputanphon.rst:301
 msgid "``PREFIX``.renorm_harm_dymat"
 msgstr "``PREFIX``.renorm_harm_dymat"
 
-#: ../../source/anphondir/outputanphon.rst:293
+#: ../../source/anphondir/outputanphon.rst:303
 msgid ""
 "Renormalization of harmonic dynamical matrix by the structure change. "
 "Created when ``MODE = SCPH`` and ``RELAX_STR != 0``. This file is used to "
@@ -649,33 +670,33 @@ msgstr ""
 "構造変化による調和 (harmonic) 動力学行列の繰り込み。``MODE = SCPH`` かつ ``RELAX_STR != 0`` "
 "のときに作成されます。このファイルはSCPH/QHA + 構造最適化のリスタートに使用されます。"
 
-#: ../../source/anphondir/outputanphon.rst:296
+#: ../../source/anphondir/outputanphon.rst:306
 msgid "step_q0.txt"
 msgstr "step_q0.txt"
 
-#: ../../source/anphondir/outputanphon.rst:298
+#: ../../source/anphondir/outputanphon.rst:308
 #, python-brace-format
 msgid ""
 "Record of atomic displacement :math:`q^{(0)}_{\\lambda}` at all steps of "
 "structural optimization."
 msgstr "構造最適化の全ステップにおける原子変位 :math:`q^{(0)}_{\\lambda}` の記録。"
 
-#: ../../source/anphondir/outputanphon.rst:300
+#: ../../source/anphondir/outputanphon.rst:310
 msgid "step_u0.txt"
 msgstr "step_u0.txt"
 
-#: ../../source/anphondir/outputanphon.rst:302
+#: ../../source/anphondir/outputanphon.rst:312
 #, python-brace-format
 msgid ""
 "Record of atomic displacements :math:`u^{(0)}_{\\alpha \\mu}` at all steps "
 "of structural optimization."
 msgstr "構造最適化の全ステップにおける原子変位 :math:`u^{(0)}_{\\alpha \\mu}` の記録。"
 
-#: ../../source/anphondir/outputanphon.rst:304
+#: ../../source/anphondir/outputanphon.rst:314
 msgid "step_u_tensor.txt"
 msgstr "step_u_tensor.txt"
 
-#: ../../source/anphondir/outputanphon.rst:306
+#: ../../source/anphondir/outputanphon.rst:316
 #, python-brace-format
 msgid ""
 "Record of displacement gradient tensor :math:`u_{\\mu \\nu}` at all steps of"

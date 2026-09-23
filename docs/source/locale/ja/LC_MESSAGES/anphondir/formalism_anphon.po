@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-14 10:57+0900\n"
+"POT-Creation-Date: 2026-09-23 12:16+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -527,8 +527,8 @@ msgstr ""
 "<kappa_peierls>` で説明します。"
 
 #: ../../source/anphondir/formalism_anphon.rst:211
-msgid "Finite difference (legacy)"
-msgstr "有限差分 (レガシー)"
+msgid "Finite difference"
+msgstr "有限差分"
 
 #: ../../source/anphondir/formalism_anphon.rst:213
 msgid ""
@@ -554,15 +554,14 @@ msgid ""
 " quotient connects two different branches. The option of driving the "
 "transport terms from this quotient of sorted eigenvalues has been removed. "
 "Finite-difference velocities are still used by the adaptive smearing widths "
-"(``ISMEAR = 2``) and by the iterative Boltzmann solvers, which have not been "
-"reformulated."
+"(``ISMEAR = 2``) and by the iterative Boltzmann solvers, which have not been"
+" reformulated."
 msgstr ""
 "から求められていました。ここで :math:`j` は各シフト点における *ソートされた* "
 "固有値リスト中のインデックスです。バンドが交差または縮退している箇所では、ソートされたインデックスが "
 ":math:`\\boldsymbol{q}\\pm\\Delta\\boldsymbol{q}` の間で性格を入れ替えるため、この商は異なる 2 "
-"つのバンドを結んでしまいます。ソートされた固有値の差分商から輸送項を計算するオプションは削除されました。"
-"差分による群速度は、まだ再定式化されていない適応スメアリング幅 (``ISMEAR = 2``) "
-"および反復ボルツマンソルバーでは引き続き用いられます。"
+"つのバンドを結んでしまいます。ソートされた固有値の差分商から輸送項を計算するオプションは削除されました。差分による群速度は、まだ再定式化されていない適応スメアリング幅"
+" (``ISMEAR = 2``) および反復ボルツマンソルバーでは引き続き用いられます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:225
 msgid ""
@@ -1511,7 +1510,6 @@ msgstr ""
 "\\kappa_{\\mathrm{ph}}^{\\mu\\mu}(\\omega) \\; \\mathrm{d}\\omega` が得られます。"
 
 #: ../../source/anphondir/formalism_anphon.rst:619
-#, python-brace-format
 msgid ""
 "The RTA treats every scattering event as if it simply destroyed the excess "
 "of phonons in mode :math:`\\lambda`. In reality a collision also *creates* "
