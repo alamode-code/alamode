@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 00:14+0900\n"
+"POT-Creation-Date: 2026-09-24 03:25+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -103,10 +103,9 @@ msgstr "まず、対象とするスーパーセル (supercell) における調�
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:42
 msgid ""
-"The procedure is the same as explained in :ref:`Tutorial 7.1 "
-"<label_tutorial_01>`, so we briefly describe the outline here."
-msgstr ""
-"手順は :ref:`Tutorial 7.1 <label_tutorial_01>` で説明したものと同じなので、ここでは概略を簡単に述べます。"
+"The procedure is the same as explained in :ref:`label_tutorial_01`, so we "
+"briefly describe the outline here."
+msgstr "手順は :ref:`label_tutorial_01` で説明したものと同じなので、ここでは概略を簡単に述べます。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:44
 msgid "We first calculate the displacement patterns by **alm**."
@@ -147,12 +146,10 @@ msgstr "2. 変位力データを生成する"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:70
 msgid ""
-"In :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>`, we used the AIMD "
-"calculation to generate random configurations, from which we calculated the "
-"anharmonic IFCs."
+"In :ref:`label_tutorial_bto_ifc`, we used the AIMD calculation to generate "
+"random configurations, from which we calculated the anharmonic IFCs."
 msgstr ""
-":ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` では、AIMD "
-"計算を用いてランダムな配置を生成し、そこから非調和力定数を計算しました。"
+":ref:`label_tutorial_bto_ifc` では、AIMD 計算を用いてランダムな配置を生成し、そこから非調和力定数を計算しました。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:73
 msgid ""
@@ -215,12 +212,11 @@ msgid ""
 "Please run the DFT calculation for each generated supercell using the VASP "
 "input in **example/Si/anharm_IFCs/1_harmonic/VASP_input**. Then, use "
 "**extract.py** to obtain :red:`DFSET_randomQ` using the procedure explained "
-"in :ref:`Tutorial 7.1 <tutorial_Si_step2>`."
+"in :ref:`tutorial_Si_step2`."
 msgstr ""
 "**example/Si/anharm_IFCs/1_harmonic/VASP_input** にある VASP "
-"の入力を使い、生成された各スーパーセルについて DFT 計算を実行してください。その後、:ref:`Tutorial 7.1 "
-"<tutorial_Si_step2>` で説明した手順に従い、**extract.py** を用いて :red:`DFSET_randomQ` "
-"を取得します。"
+"の入力を使い、生成された各スーパーセルについて DFT 計算を実行してください。その後、:ref:`tutorial_Si_step2` "
+"で説明した手順に従い、**extract.py** を用いて :red:`DFSET_randomQ` を取得します。"
 
 #: ../../source/tutorial_pages/silicon_ifc.rst:159
 msgid ""

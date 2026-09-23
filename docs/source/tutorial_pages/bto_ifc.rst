@@ -1,5 +1,3 @@
-.. _label_tutorial_bto_ifc:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
@@ -7,6 +5,8 @@
 .. role:: red
 
 .. |Angstrom|   unicode:: U+00C5 
+
+.. _label_tutorial_bto_ifc:
 
 BaTiO\ :sub:`3` : Anharmonic interatomic force constants (IFCs)
 --------------------------------------------------------------------
@@ -33,7 +33,6 @@ Let's move to the example directory.
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/anharm_IFCs
 
-
 .. _tutorial_BTO_IFC_step1:
 
 1. Generate the randomly displaced supercells
@@ -42,7 +41,7 @@ Let's move to the example directory.
 .. note::
   There is a more efficient way to generate supercells with random displacements 
   for weakly anharmonic materials or materials without imaginary harmonic frequencies.
-  Please see :ref:`Tutorial 7.6 <label_tutorial_silicon_ifc>` for details.
+  Please see :ref:`label_tutorial_silicon_ifc` for details.
 
 We use the *ab initio* molecular dynamics (AIMD) calculations to generate the supercells with random displacements.
 
@@ -127,7 +126,7 @@ from which we can calculate the anharmonic IFCs.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We assume that the harmonic force constants are already calculated. 
-Please use the method explained in :ref:`Tutorial 7.1 <label_tutorial_01>` for the calculation of harmonic IFCs.
+Please use the method explained in :ref:`label_tutorial_01` for the calculation of harmonic IFCs.
 
 In the cross validation, we determine the optimal amplitude of regularization (:math:`\alpha`) in the elastic-net or adaptive lasso.
 Please see :ref:`the documentation <alm_theory_enet>` for the notation and the theoretical background.

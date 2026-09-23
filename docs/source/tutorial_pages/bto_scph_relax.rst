@@ -1,5 +1,3 @@
-.. _label_tutorial_bto_scph_relax:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
@@ -7,6 +5,8 @@
 .. role:: red
 
 .. |Angstrom|   unicode:: U+00C5
+
+.. _label_tutorial_bto_scph_relax:
 
 BaTiO\ :sub:`3` : An SCPH-based structural optimization example
 --------------------------------------------------------------------
@@ -35,14 +35,13 @@ Let's move to the example directory
 
   $ cd ${ALAMODE_ROOT}/example/BaTiO3/scph_relax
 
-
 .. _tutorial_BTO_scph_relax_step1:
 
 1. Prepare force constants
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This tutorial assumes that the harmonic and anharmonic force constants are already calculated up to the fourth order.
-Please copy the file of IFCs calculated in :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` to the current directory.
+Please copy the file of IFCs calculated in :ref:`label_tutorial_bto_ifc` to the current directory.
 
 .. code-block:: console
 
@@ -64,7 +63,7 @@ Please copy the file of IFCs calculated in :ref:`Tutorial 7.5 <label_tutorial_bt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In addition to the input file of the SCPH calculation at the fixed reference structure 
-(See :ref:`Tutorial 7.4 <label_tutorial_sto_scph>` for example), 
+(See :ref:`label_tutorial_sto_scph` for example), 
 we need to set ``RELAX_STR``-tag in ``&scph``-field, ``&relax``-field, and ``&displace``-field properly.
 
 We specify the initial atomic displacements in ``&displace``-field, 
@@ -225,6 +224,6 @@ of the crystal structure.
   We will need to prepare additional inputs, the elastic constants, and the strain-harmonic-IFC coupling if we relax the unit cell as well.
   The strain-force coupling is not necessary for BaTiO\ :sub:`3` because they are zero from symmetry.
 
-  Please see the :ref:`Tutorial 7.8 <label_tutorial_zno_qha_relax>` for the details of the preparation of these inputs;
+  Please see :ref:`label_tutorial_zno_qha_relax` for the details of the preparation of these inputs;
   the ``tools/elastic.py`` and ``tools/strainifc.py`` scripts generate them from DFT calculations of strained cells
   and collect them in one HDF5 file given as ``STRAINFILE`` in the ``&relax`` field.

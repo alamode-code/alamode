@@ -1,10 +1,10 @@
-.. _label_tutorial_sto_scph:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
 
 .. role:: red
+
+.. _label_tutorial_sto_scph:
 
 SrTiO\ :sub:`3` : A self-consistent phonon example
 ---------------------------------------------------
@@ -32,7 +32,6 @@ Let's move to the example directory
 
   $ cd ${ALAMODE_ROOT}/example/SrTiO3
 
-
 .. _tutorial_STO_step1:
 
 1. Prepare force constants and BORNINFO
@@ -47,7 +46,6 @@ To start an SCPH calculation, please copy the force constant files and BORNINFO 
     $ cp reference/STO_anharm.xml.bz2 .
     $ bunzip2 STO_anharm.xml.bz2
     $ cp reference/BORN .
-
 
 .. note::
 

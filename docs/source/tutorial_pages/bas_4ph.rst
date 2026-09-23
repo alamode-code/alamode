@@ -1,10 +1,10 @@
-.. _label_tutorial_bas_4ph:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
 
 .. role:: red
+
+.. _label_tutorial_bas_4ph:
 
 BAs: four-phonon scattering in the lattice thermal conductivity
 ---------------------------------------------------------------

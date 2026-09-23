@@ -1,10 +1,10 @@
-.. _label_tutorial_pbte:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
 
 .. role:: red
+
+.. _label_tutorial_pbte:
 
 PbTe (non-analytic correction)
 ------------------------------
@@ -29,7 +29,6 @@ Let's move to the example directory
 .. code-block:: console
 
   $ cd ${ALAMODE_ROOT}/example/PbTe
-
 
 .. _tutorial_PbTe_step1:
 

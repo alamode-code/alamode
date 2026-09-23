@@ -1,5 +1,3 @@
-.. _label_tutorial_zno_qha_relax:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
@@ -7,6 +5,8 @@
 .. role:: red
 
 .. |Angstrom|   unicode:: U+00C5 
+
+.. _label_tutorial_zno_qha_relax:
 
 ZnO : A QHA-based structural optimization example
 ---------------------------------------------------
@@ -37,7 +37,6 @@ Let's move to the example directory
 
 This tutorial assumes that the harmonic and anharmonic force constants are already calculated up to fourth order. 
 Here, please unzip all the XML files in **example/ZnO/qha_relax** and **example/ZnO/qha_relax/strain_IFC** before running the calculation.
-
 
 .. note::
   We use the harmonic IFCs calculated in the :math:`4\times 4\times 2` supercell 

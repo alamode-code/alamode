@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 00:37+0900\n"
+"POT-Creation-Date: 2026-09-24 03:25+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -83,11 +83,11 @@ msgstr "例のファイル"
 msgid "``example/Si``"
 msgstr "``example/Si``"
 
-#: ../../source/tutorial_pages/silicon.rst:32
+#: ../../source/tutorial_pages/silicon.rst:34
 msgid "Silicon. 2x2x2 conventional supercell"
 msgstr "シリコン。2x2x2 の従来型スーパーセル (conventional supercell)"
 
-#: ../../source/tutorial_pages/silicon.rst:34
+#: ../../source/tutorial_pages/silicon.rst:36
 msgid ""
 "In the following, (anharmonic) phonon properties of bulk silicon (Si) are "
 "calculated by a 2x2x2 conventional cell containing 64 atoms."
@@ -95,44 +95,44 @@ msgstr ""
 "以下では、64原子を含む 2x2x2 の従来型セル (conventional cell) を用いて、バルクシリコン (Si) の（非調和）フォノン "
 "(phonon) 物性を計算します。"
 
-#: ../../source/tutorial_pages/silicon.rst:36
+#: ../../source/tutorial_pages/silicon.rst:38
 msgid ":ref:`Get displacement pattern by alm <tutorial_Si_step1>`"
 msgstr ":ref:`alm による変位パターンの取得 <tutorial_Si_step1>`"
 
-#: ../../source/tutorial_pages/silicon.rst:37
+#: ../../source/tutorial_pages/silicon.rst:39
 msgid ""
 ":ref:`Calculate atomic forces for the displaced configurations "
 "<tutorial_Si_step2>`"
 msgstr ":ref:`変位させた構成に対する原子に働く力の計算 <tutorial_Si_step2>`"
 
-#: ../../source/tutorial_pages/silicon.rst:38
+#: ../../source/tutorial_pages/silicon.rst:40
 msgid ":ref:`Estimate force constants by fitting <tutorial_Si_step3>`"
 msgstr ":ref:`フィッティングによる力定数 (force constant) の推定 <tutorial_Si_step3>`"
 
-#: ../../source/tutorial_pages/silicon.rst:39
+#: ../../source/tutorial_pages/silicon.rst:41
 msgid ":ref:`Calculate phonon dispersion and phonon DOS <tutorial_Si_step4>`"
 msgstr ":ref:`フォノン分散とフォノン状態密度 (DOS) の計算 <tutorial_Si_step4>`"
 
-#: ../../source/tutorial_pages/silicon.rst:40
+#: ../../source/tutorial_pages/silicon.rst:42
 msgid ""
 ":ref:`Estimate anharmonic IFCs for thermal conductivity <tutorial_Si_step5>`"
 msgstr ""
 ":ref:`熱伝導率 (thermal conductivity) のための非調和原子間力定数 (anharmonic IFCs) の推定 "
 "<tutorial_Si_step5>`"
 
-#: ../../source/tutorial_pages/silicon.rst:41
+#: ../../source/tutorial_pages/silicon.rst:43
 msgid ":ref:`Calculate thermal conductivity <tutorial_Si_step6>`"
 msgstr ":ref:`熱伝導率の計算 <tutorial_Si_step6>`"
 
-#: ../../source/tutorial_pages/silicon.rst:42
+#: ../../source/tutorial_pages/silicon.rst:44
 msgid ":ref:`Analyze results <tutorial_Si_step7>`"
 msgstr ":ref:`結果の解析 <tutorial_Si_step7>`"
 
-#: ../../source/tutorial_pages/silicon.rst:48
+#: ../../source/tutorial_pages/silicon.rst:50
 msgid "1. Get displacement patterns by **alm**"
 msgstr "1. **alm** による変位 (displacement) パターンの取得"
 
-#: ../../source/tutorial_pages/silicon.rst:50
+#: ../../source/tutorial_pages/silicon.rst:52
 msgid ""
 "Change directory to **example/Si** and open file :red:`si_alm.in`. This file"
 " is an input for the code **alm**, which estimates interatomic force "
@@ -145,24 +145,24 @@ msgstr ""
 "を推定するプログラム **alm** の入力ファイル (input file) です。このファイルでは、Si の 2x2x2 "
 "従来型スーパーセルの結晶構造が、以下のように **&cell** および **&position** フィールドで指定されています。"
 
-#: ../../source/tutorial_pages/silicon.rst:57
+#: ../../source/tutorial_pages/silicon.rst:59
 msgid ""
 ":download:`Download si_alm1.in <../../../example/Si/reference/si_alm1.in>`"
 msgstr ""
 ":download:`si_alm1.in をダウンロード <../../../example/Si/reference/si_alm1.in>`"
 
-#: ../../source/tutorial_pages/silicon.rst:59
+#: ../../source/tutorial_pages/silicon.rst:61
 msgid ""
 "Replace the lattice constant of the supercell (20.406 Bohr) by your own "
 "value."
 msgstr "スーパーセル (supercell) の格子定数（20.406 Bohr）をご自身の値に置き換えてください。"
 
-#: ../../source/tutorial_pages/silicon.rst:61
-#: ../../source/tutorial_pages/silicon.rst:360
+#: ../../source/tutorial_pages/silicon.rst:63
+#: ../../source/tutorial_pages/silicon.rst:362
 msgid "Then, execute **alm** ::"
 msgstr "次に、**alm** を実行します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:66
+#: ../../source/tutorial_pages/silicon.rst:68
 msgid ""
 "which creates a file :red:`si222.pattern_HARMONIC` in the working directory."
 " In the pattern file, suggested displacement patterns are defined in "
@@ -173,11 +173,11 @@ msgstr ""
 "が作成されます。このパターンファイルでは、提案された変位パターンがデカルト座標で定義されています。ファイルからわかるように、バルク Si の調和 "
 "(harmonic) 原子間力定数に対する変位パターンは1つだけです。"
 
-#: ../../source/tutorial_pages/silicon.rst:74
+#: ../../source/tutorial_pages/silicon.rst:76
 msgid "2. Calculate atomic forces for the displaced configurations"
 msgstr "2. 変位させた構成に対する原子に働く力の計算"
 
-#: ../../source/tutorial_pages/silicon.rst:76
+#: ../../source/tutorial_pages/silicon.rst:78
 msgid ""
 "Next, calculate atomic forces for all the displaced configurations defined "
 "in :red:`si222.pattern_HARMONIC`. To do so, you first need to decide the "
@@ -190,7 +190,7 @@ msgstr ""
 "寄与が無視できる程度に小さくする必要があります。多くの場合、:math:`\\Delta u \\sim 0.01` |Angstrom| "
 "が妥当な選択です。"
 
-#: ../../source/tutorial_pages/silicon.rst:79
+#: ../../source/tutorial_pages/silicon.rst:81
 msgid ""
 "Then, prepare input files necessary to run an external DFT code for each "
 "configuration. Since this procedure is a little tiresome, we provide a "
@@ -219,7 +219,7 @@ msgstr "xTAPP"
 msgid "OpenMX"
 msgstr "OpenMX"
 
-#: ../../source/tutorial_pages/silicon.rst:114
+#: ../../source/tutorial_pages/silicon.rst:116
 msgid ""
 "The ``--mag`` option specifies the displacement length in units of Angstrom."
 " You need to specify an input file with equilibrium atomic positions either "
@@ -229,17 +229,17 @@ msgstr ""
 "単位で指定します。``--QE``、``--VASP``、``--xTAPP``、``--OpenMX``、``--LAMMPS`` "
 "のいずれかを用いて、平衡原子位置を含む入力ファイルを指定する必要があります。"
 
-#: ../../source/tutorial_pages/silicon.rst:117
+#: ../../source/tutorial_pages/silicon.rst:119
 msgid ""
 "Then, calculate atomic forces for all the configurations. This can be done "
 "with a simple shell script as follows::"
 msgstr "次に、すべての構成について原子に働く力を計算します。これは以下のような簡単なシェルスクリプトで実行できます::"
 
-#: ../../source/tutorial_pages/silicon.rst:135
+#: ../../source/tutorial_pages/silicon.rst:137
 msgid "In QE, you need to set tprnfor=.true. to print out atomic forces."
 msgstr "QE では、原子に働く力を出力するために tprnfor=.true. を設定する必要があります。"
 
-#: ../../source/tutorial_pages/silicon.rst:137
+#: ../../source/tutorial_pages/silicon.rst:139
 msgid ""
 "The next step is to collect the displacement data and force data by the "
 "Python script :red:`extract.py` (also in the tools/ directory). This script "
@@ -250,7 +250,7 @@ msgstr ""
 "ディレクトリにあります）を用いて、変位データと力のデータを収集することです。このスクリプトは、以下のように複数の出力ファイル (output file)"
 " から原子変位、原子に働く力、全エネルギーを抽出できます。"
 
-#: ../../source/tutorial_pages/silicon.rst:170
+#: ../../source/tutorial_pages/silicon.rst:172
 msgid ""
 "In the above examples, atomic displacements and corresponding atomic forces "
 "of all the configurations are merged as :red:`DFSET_harmonic`. These files "
@@ -261,7 +261,7 @@ msgstr ""
 "として統合されます。これらのファイルは、以降のフィッティング手順において ``DFSET`` として使用されます（:ref:`DFSET のフォーマット"
 " <label_format_DFSET>` を参照）。"
 
-#: ../../source/tutorial_pages/silicon.rst:175
+#: ../../source/tutorial_pages/silicon.rst:177
 msgid ""
 "For your convenience, we provide the :red:`DFSET_harmonic` file in the "
 "reference/ subdirectory. These files are generated by the Quantum-ESPRESSO "
@@ -272,11 +272,11 @@ msgstr ""
 "サブディレクトリに用意しています。これらのファイルは、``--mag=0.02`` を指定して Quantum-ESPRESSO "
 "パッケージで生成されたものです。これらのファイルを作業ディレクトリにコピーすることで、次のステップに進むことができます。"
 
-#: ../../source/tutorial_pages/silicon.rst:181
+#: ../../source/tutorial_pages/silicon.rst:183
 msgid "3. Estimate force constants by fitting"
 msgstr "3. フィッティングによる力定数の推定"
 
-#: ../../source/tutorial_pages/silicon.rst:183
+#: ../../source/tutorial_pages/silicon.rst:185
 msgid ""
 "Edit the file :red:`si_alm.in` to perform least-square fitting. Change the "
 "``MODE = suggest`` to ``MODE = optimize`` as follows::"
@@ -284,21 +284,21 @@ msgstr ""
 "最小二乗フィッティングを実行するために、ファイル :red:`si_alm.in` を編集します。以下のように ``MODE = suggest`` を"
 " ``MODE = optimize`` に変更します::"
 
-#: ../../source/tutorial_pages/silicon.rst:193
+#: ../../source/tutorial_pages/silicon.rst:195
 msgid "Also, add the **&optimize** field as::"
 msgstr "また、以下のように **&optimize** フィールドを追加します::"
 
-#: ../../source/tutorial_pages/silicon.rst:199
+#: ../../source/tutorial_pages/silicon.rst:201
 msgid "Then, execute **alm** again ::"
 msgstr "次に、再び **alm** を実行します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:204
+#: ../../source/tutorial_pages/silicon.rst:206
 msgid ""
 "This time **alm** extract harmonic IFCs from the given displacement-force "
 "data set (``DFSET_harmonic``)."
 msgstr "今回は、**alm** が与えられた変位-力データセット（``DFSET_harmonic``）から調和原子間力定数を抽出します。"
 
-#: ../../source/tutorial_pages/silicon.rst:206
+#: ../../source/tutorial_pages/silicon.rst:208
 msgid ""
 "You can find the file :red:`si222.h5` in the working directory, which "
 "contains crystal structure, symmetry, IFCs, and all other information "
@@ -320,7 +320,7 @@ msgstr ""
 msgid "si222.fcs (first 40 lines)"
 msgstr "si222.fcs (先頭 40 行)"
 
-#: ../../source/tutorial_pages/silicon.rst:218
+#: ../../source/tutorial_pages/silicon.rst:220
 #, python-brace-format
 msgid ""
 "Harmonic IFCs :math:`\\Phi_{\\mu\\nu}(i,j)` in the supercell are given in "
@@ -338,7 +338,7 @@ msgstr ""
 "とまったく同じであるためです。ここで原子 2' は、周期境界条件のもとでの原子 2 の隣接イメージです。原子間力定数の大きさを比較する場合、3列目の値を"
 " :math:`P` で割る必要があります。"
 
-#: ../../source/tutorial_pages/silicon.rst:223
+#: ../../source/tutorial_pages/silicon.rst:225
 msgid ""
 "In the log file :red:`si_alm.log2`, the :ref:`fitting "
 "error<fitting_formalism>` is printed. Try ::"
@@ -346,21 +346,21 @@ msgstr ""
 "ログファイル :red:`si_alm.log2` には、:ref:`フィッティング誤差 <fitting_formalism>` "
 "が出力されます。次を試してください ::"
 
-#: ../../source/tutorial_pages/silicon.rst:230
+#: ../../source/tutorial_pages/silicon.rst:232
 msgid ""
 "The file :red:`si222.h5` is the one that **anphon** reads in the following "
 "steps."
 msgstr "ファイル :red:`si222.h5` は、以降のステップで **anphon** が読み込むファイルです。"
 
-#: ../../source/tutorial_pages/silicon.rst:236
+#: ../../source/tutorial_pages/silicon.rst:238
 msgid "4. Calculate phonon dispersion and phonon DOS"
 msgstr "4. フォノン分散とフォノン状態密度 (DOS) の計算"
 
-#: ../../source/tutorial_pages/silicon.rst:238
+#: ../../source/tutorial_pages/silicon.rst:240
 msgid "Open the file :red:`si_phband.in` and edit it for your system."
 msgstr "ファイル :red:`si_phband.in` を開き、ご自身のシステムに合わせて編集してください。"
 
-#: ../../source/tutorial_pages/silicon.rst:242
+#: ../../source/tutorial_pages/silicon.rst:244
 msgid ""
 ":download:`Download si_phband.in "
 "<../../../example/Si/reference/si_phband.in>`"
@@ -368,7 +368,7 @@ msgstr ""
 ":download:`si_phband.in をダウンロード "
 "<../../../example/Si/reference/si_phband.in>`"
 
-#: ../../source/tutorial_pages/silicon.rst:244
+#: ../../source/tutorial_pages/silicon.rst:246
 msgid ""
 "Please specify the force-constant file you obtained in step 3 with the "
 "``FCSFILE``-tag as above. In the **&cell**-field, you need to define the "
@@ -379,12 +379,12 @@ msgstr ""
 "(primitive cell)** の格子ベクトルを定義する必要があります。フォノン分散計算では、**&kpoint** フィールドの最初の項目を "
 "1（**KPMODE** = 1）にする必要があります。"
 
-#: ../../source/tutorial_pages/silicon.rst:248
-#: ../../source/tutorial_pages/silicon.rst:291
+#: ../../source/tutorial_pages/silicon.rst:250
+#: ../../source/tutorial_pages/silicon.rst:293
 msgid "Then, execute **anphon** ::"
 msgstr "次に、**anphon** を実行します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:253
+#: ../../source/tutorial_pages/silicon.rst:255
 msgid ""
 "which creates a file :red:`si222.bands` in the working directory. In this "
 "file, phonon frequencies along the given reciprocal path are printed in "
@@ -393,13 +393,13 @@ msgstr ""
 "これにより、作業ディレクトリにファイル :red:`si222.bands` "
 "が作成されます。このファイルには、与えられた逆格子パスに沿ったフォノン周波数が cm\\ :sup:`-1` 単位で以下のように出力されます。"
 
-#: ../../source/tutorial_pages/silicon.rst:259
+#: ../../source/tutorial_pages/silicon.rst:261
 msgid ""
 "You can plot the phonon dispersion relation with gnuplot or any other plot "
 "software."
 msgstr "フォノン分散関係は、gnuplot やその他のプロットソフトウェアでプロットできます。"
 
-#: ../../source/tutorial_pages/silicon.rst:261
+#: ../../source/tutorial_pages/silicon.rst:263
 msgid ""
 "For visualizing phonon dispersion relations, we provide a Python script "
 ":red:`plotband.py` in the tools/ directory (Matplotlib is required.). Try ::"
@@ -407,11 +407,11 @@ msgstr ""
 "フォノン分散関係を可視化するために、tools/ ディレクトリに Python スクリプト :red:`plotband.py` "
 "を用意しています（Matplotlib が必要です）。次を試してください ::"
 
-#: ../../source/tutorial_pages/silicon.rst:267
+#: ../../source/tutorial_pages/silicon.rst:269
 msgid "Then, the phonon dispersion is displayed as follows:"
 msgstr "すると、フォノン分散が以下のように表示されます。"
 
-#: ../../source/tutorial_pages/silicon.rst:277
+#: ../../source/tutorial_pages/silicon.rst:279
 msgid ""
 "You can save the figure as png, eps, or other formats from this window. You "
 "can also change the energy unit of phonon frequency from cm\\ :sup:`-1` to "
@@ -422,7 +422,7 @@ msgstr ""
 " cm\\ :sup:`-1` から THz または meV に変更することもできます。:red:`plotband.py` "
 "の使い方の詳細については、次を入力してください ::"
 
-#: ../../source/tutorial_pages/silicon.rst:284
+#: ../../source/tutorial_pages/silicon.rst:286
 msgid ""
 "Next, let us calculate the phonon DOS. Copy :red:`si_phband.in` to "
 ":red:`si_phdos.in` and edit the **&kpoint** field as follows::"
@@ -430,7 +430,7 @@ msgstr ""
 "次に、フォノン状態密度 (DOS) を計算してみましょう。:red:`si_phband.in` を :red:`si_phdos.in` "
 "にコピーし、**&kpoint** フィールドを以下のように編集します::"
 
-#: ../../source/tutorial_pages/silicon.rst:296
+#: ../../source/tutorial_pages/silicon.rst:298
 msgid ""
 "This time, **anphon** creates files :red:`si222.dos` and :red:`si222.thermo`"
 " in the working directory, which contain phonon DOS and thermodynamic "
@@ -442,11 +442,11 @@ msgstr ""
 "を作成します。これらにはそれぞれフォノン状態密度と熱力学関数が含まれています。フォノン状態密度と射影状態密度を可視化するために、tools/ "
 "ディレクトリに Python スクリプト :red:`plotdos.py` を用意しています（Matplotlib が必要です）。次のコマンド ::"
 
-#: ../../source/tutorial_pages/silicon.rst:304
+#: ../../source/tutorial_pages/silicon.rst:306
 msgid "will show the phonon DOS of Si by a pop-up window:"
 msgstr "を実行すると、Si のフォノン状態密度がポップアップウィンドウで表示されます。"
 
-#: ../../source/tutorial_pages/silicon.rst:316
+#: ../../source/tutorial_pages/silicon.rst:318
 msgid ""
 "The interactive figure above shows the DOS next to the phonon dispersion; "
 "``plotdos.py`` plots the DOS alone, with the frequency on the horizontal "
@@ -454,29 +454,28 @@ msgid ""
 msgstr ""
 "上の対話的な図では、状態密度をフォノン分散の横に表示しています。``plotdos.py`` は状態密度のみを、振動数を横軸にしてプロットします。"
 
-#: ../../source/tutorial_pages/silicon.rst:319
+#: ../../source/tutorial_pages/silicon.rst:321
 msgid ""
 "To improve the resolution of DOS, try again with a denser :math:`k` grid and"
 " a smaller ``DELTA_E`` value."
 msgstr ""
 "状態密度の分解能を向上させるには、より密な :math:`k` グリッドと、より小さい ``DELTA_E`` の値で再度実行してください。"
 
-#: ../../source/tutorial_pages/silicon.rst:325
+#: ../../source/tutorial_pages/silicon.rst:327
 msgid "5. Estimate cubic IFCs for thermal conductivity"
 msgstr "5. 熱伝導率のための3次原子間力定数 (cubic IFCs) の推定"
 
-#: ../../source/tutorial_pages/silicon.rst:328
+#: ../../source/tutorial_pages/silicon.rst:330
 msgid ""
 "Note that there are more efficient ways to calculate anharmonic IFCs, "
 "especially when you calculate the quartic or higher-order terms. Please see "
-":ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` and :ref:`Tutorial 7.6 "
-"<label_tutorial_silicon_ifc>` for details."
+":ref:`label_tutorial_bto_ifc` and :ref:`label_tutorial_silicon_ifc` for "
+"details."
 msgstr ""
-"特に4次以上の高次項を計算する場合には、非調和原子間力定数を計算するより効率的な方法があることに注意してください。詳細については、:ref:`チュートリアル"
-" 7.5 <label_tutorial_bto_ifc>` および :ref:`チュートリアル 7.6 "
-"<label_tutorial_silicon_ifc>` を参照してください。"
+"特に4次以上の高次項を計算する場合には、非調和原子間力定数を計算するより効率的な方法があることに注意してください。詳細については、:ref:`label_tutorial_bto_ifc`"
+" および :ref:`label_tutorial_silicon_ifc` を参照してください。"
 
-#: ../../source/tutorial_pages/silicon.rst:332
+#: ../../source/tutorial_pages/silicon.rst:334
 msgid ""
 "Copy file :red:`si_alm.in` to :red:`si_alm2.in`. Edit the **&general**, "
 "**&interaction**, and **&cutoff** fields of :red:`si_alm2.in` as the "
@@ -485,14 +484,14 @@ msgstr ""
 "ファイル :red:`si_alm.in` を :red:`si_alm2.in` にコピーします。:red:`si_alm2.in` の "
 "**&general**、**&interaction**、**&cutoff** フィールドを以下のように編集します::"
 
-#: ../../source/tutorial_pages/silicon.rst:342
+#: ../../source/tutorial_pages/silicon.rst:344
 msgid ""
 "Change the ``PREFIX`` from *si222* to *si222_cubic* and set ``MODE`` to "
 "*suggest*."
 msgstr ""
 "``PREFIX`` を *si222* から *si222_cubic* に変更し、``MODE`` を *suggest* に設定します。"
 
-#: ../../source/tutorial_pages/silicon.rst:350
+#: ../../source/tutorial_pages/silicon.rst:352
 msgid ""
 "Change the ``NORDER`` tag from ``NORDER = 1`` to ``NORDER = 2`` to include "
 "cubic IFCs. Here, we consider cubic interaction pairs up to second nearest "
@@ -501,7 +500,7 @@ msgstr ""
 "3次原子間力定数を含めるために、``NORDER`` タグを ``NORDER = 1`` から ``NORDER = 2`` "
 "に変更します。ここでは、カットオフ半径を以下のように指定することで、第二近接までの3次相互作用ペアを考慮します::"
 
-#: ../../source/tutorial_pages/silicon.rst:357
+#: ../../source/tutorial_pages/silicon.rst:359
 msgid ""
 "7.3 Bohr is slightly larger than the distance of second nearest neighbors "
 "(7.21461 Bohr). Change the cutoff value appropriately for your own case. "
@@ -511,7 +510,7 @@ msgstr ""
 "Bohr）よりわずかに大きい値です。カットオフ値は、ご自身の場合に応じて適切に変更してください。（原子間距離はファイル "
 ":red:`si_alm.log` に記載されています。）"
 
-#: ../../source/tutorial_pages/silicon.rst:365
+#: ../../source/tutorial_pages/silicon.rst:367
 msgid ""
 "which creates files si222_cubic.pattern_HARMONIC and "
 ":red:`si222_cubic.pattern_ANHARM3`."
@@ -519,7 +518,7 @@ msgstr ""
 "これにより、ファイル si222_cubic.pattern_HARMONIC と :red:`si222_cubic.pattern_ANHARM3`"
 " が作成されます。"
 
-#: ../../source/tutorial_pages/silicon.rst:367
+#: ../../source/tutorial_pages/silicon.rst:369
 msgid ""
 "Then, calculate atomic forces of displaced configurations given in the file "
 ":red:`si222_cubic.pattern_ANHARM3`, and collect the displacement and force "
@@ -530,7 +529,7 @@ msgstr ""
 "に与えられた変位構成について原子に働く力を計算し、ステップ3および4で調和原子間力定数に対して行ったのと同様に、変位と力のデータセットをファイル "
 ":red:`DFSET_cubic` に収集します。"
 
-#: ../../source/tutorial_pages/silicon.rst:370
+#: ../../source/tutorial_pages/silicon.rst:372
 msgid ""
 "Since making :red:`DFSET_cubic` requires moderate computational resources, "
 "you can skip this procedure by copying file :red:`reference/DFSET_cubic` to "
@@ -541,27 +540,27 @@ msgstr ""
 "を作業ディレクトリにコピーすることでこの手順を省略できます。提供しているファイルは、``--mag=0.04`` を指定して Quantum-"
 "ESPRESSO パッケージで生成されたものです。"
 
-#: ../../source/tutorial_pages/silicon.rst:373
+#: ../../source/tutorial_pages/silicon.rst:375
 msgid ""
 "In :red:`si_alm2.in`, change ``MODE = suggest`` to ``MODE = optimize`` and "
 "add the following::"
 msgstr ""
 ":red:`si_alm2.in` で、``MODE = suggest`` を ``MODE = optimize`` に変更し、以下を追加します::"
 
-#: ../../source/tutorial_pages/silicon.rst:380
+#: ../../source/tutorial_pages/silicon.rst:382
 msgid ""
 "By the ``FC2FIX`` tag, harmonic IFCs are fixed to the values in "
 ":red:`si222.h5`. Then, execute **alm** again ::"
 msgstr ""
 "``FC2FIX`` タグにより、調和原子間力定数が :red:`si222.h5` の値に固定されます。次に、再び **alm** を実行します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:386
+#: ../../source/tutorial_pages/silicon.rst:388
 msgid ""
 "which creates the file :red:`si222_cubic.h5`. This time cubic IFCs are also "
 "included in the file."
 msgstr "これにより、ファイル :red:`si222_cubic.h5` が作成されます。今回は、このファイルに3次原子間力定数も含まれます。"
 
-#: ../../source/tutorial_pages/silicon.rst:389
+#: ../../source/tutorial_pages/silicon.rst:391
 msgid ""
 "In the above example, we obtained cubic IFCs by least square fitting with "
 "harmonic IFCs being fixed to the value of the previous harmonic calculation."
@@ -571,15 +570,15 @@ msgstr ""
 "上記の例では、調和原子間力定数を以前の調和計算の値に固定した状態で、最小二乗フィッティングによって3次原子間力定数を求めました。代わりに、調和原子間力定数と3次原子間力定数を同時に推定することもできます。そのためには、以下のように"
 " :red:`DFSET_harmonic` と :red:`DFSET_cubic` を統合します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:394
+#: ../../source/tutorial_pages/silicon.rst:396
 msgid "and change the **&optimize** field as the following::"
 msgstr "そして、**&optimize** フィールドを以下のように変更します::"
 
-#: ../../source/tutorial_pages/silicon.rst:405
+#: ../../source/tutorial_pages/silicon.rst:407
 msgid "6. Calculate thermal conductivity"
 msgstr "6. 熱伝導率の計算"
 
-#: ../../source/tutorial_pages/silicon.rst:407
+#: ../../source/tutorial_pages/silicon.rst:409
 msgid ""
 "Copy file :red:`si_phdos.in` to :red:`si_RTA.in` and edit the ``MODE`` and "
 "``FCSFILE`` tags as follows::"
@@ -587,15 +586,15 @@ msgstr ""
 "ファイル :red:`si_phdos.in` を :red:`si_RTA.in` にコピーし、``MODE`` および ``FCSFILE`` "
 "タグを以下のように編集します::"
 
-#: ../../source/tutorial_pages/silicon.rst:418
+#: ../../source/tutorial_pages/silicon.rst:420
 msgid "In addition, change the :math:`k` grid density as::"
 msgstr "さらに、:math:`k` グリッド密度を以下のように変更します::"
 
-#: ../../source/tutorial_pages/silicon.rst:425
+#: ../../source/tutorial_pages/silicon.rst:427
 msgid "Then, execute **anphon** as a background job ::"
 msgstr "次に、**anphon** をバックグラウンドジョブとして実行します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:430
+#: ../../source/tutorial_pages/silicon.rst:432
 msgid ""
 "Please be patient. This can take a while. When the job finishes, you can "
 "find a file :red:`si222.kl` in which the lattice thermal conductivity is "
@@ -605,11 +604,11 @@ msgstr ""
 "しばらくお待ちください。これには時間がかかる場合があります。ジョブが終了すると、格子熱伝導率が保存されたファイル :red:`si222.kl` "
 "が生成されます。このファイルは、gnuplot（またはその他のプロットソフトウェア）を用いて以下のようにプロットできます::"
 
-#: ../../source/tutorial_pages/silicon.rst:444
+#: ../../source/tutorial_pages/silicon.rst:446
 msgid "Calculated lattice thermal conductivity of Si (click to enlarge)"
 msgstr "計算された Si の格子熱伝導率（クリックで拡大）"
 
-#: ../../source/tutorial_pages/silicon.rst:446
+#: ../../source/tutorial_pages/silicon.rst:448
 msgid ""
 "As you can see, the thermal conductivity diverges in :math:`T\\rightarrow 0`"
 " limit. This occurs because we only considered intrinsic phonon-phonon "
@@ -622,7 +621,7 @@ msgstr ""
 "フォノン散乱のみを考慮し、低温領域で支配的となるフォノン-境界散乱を無視しているために生じます。境界散乱の効果は、tools ディレクトリにある "
 "Python スクリプト ``analyzer.py`` を用いて取り入れることができます::"
 
-#: ../../source/tutorial_pages/silicon.rst:453
+#: ../../source/tutorial_pages/silicon.rst:455
 msgid ""
 "(``--3ph si222.result`` can be used instead of ``--h5 si222.kappa.h5`` when "
 "the calculation was run with ``FILE_FORMAT = text``.)"
@@ -630,13 +629,13 @@ msgstr ""
 "(計算を ``FILE_FORMAT = text`` で実行した場合は、``--h5 si222.kappa.h5`` の代わりに ``--3ph "
 "si222.result`` を使用できます。)"
 
-#: ../../source/tutorial_pages/silicon.rst:455
+#: ../../source/tutorial_pages/silicon.rst:457
 msgid ""
 "In this script, the phonon lifetimes are altered using the Matthiessen's "
 "rule"
 msgstr "このスクリプトでは、フォノン寿命がマティーセン則 (Matthiessen's rule) を用いて変更されます。"
 
-#: ../../source/tutorial_pages/silicon.rst:457
+#: ../../source/tutorial_pages/silicon.rst:459
 msgid ""
 "\\frac{1}{\\tau_{q}^{total}} = \\frac{1}{\\tau_{q}^{p-p}} + "
 "\\frac{2|\\boldsymbol{v}_{q}|}{L}."
@@ -644,7 +643,7 @@ msgstr ""
 "\\frac{1}{\\tau_{q}^{total}} = \\frac{1}{\\tau_{q}^{p-p}} + "
 "\\frac{2|\\boldsymbol{v}_{q}|}{L}."
 
-#: ../../source/tutorial_pages/silicon.rst:461
+#: ../../source/tutorial_pages/silicon.rst:463
 msgid ""
 "Here, the first term on the right-hand side of the equation is the "
 "scattering rate due to the phonon-phonon scattering and the second term is "
@@ -657,7 +656,7 @@ msgstr ""
 ":math:`L` は、``--size`` オプションを用いて nm "
 "単位で指定する必要があります。その結果も上図に示されており、境界効果によって発散が解消されています。"
 
-#: ../../source/tutorial_pages/silicon.rst:467
+#: ../../source/tutorial_pages/silicon.rst:469
 msgid ""
 "When a calculation is performed with a smearing method (``ISMEAR=0 or 1``) "
 "instead of the tetrahedron method (``ISMEAR=-1``), the thermal conductivity "
@@ -676,21 +675,21 @@ msgstr ""
 "のピーク値は消失するはずです。さらに、低温領域におけるフォノン励起と熱輸送を記述するには、（``ISMEAR`` の値に関係なく）非常に密な "
 ":math:`q` グリッドが必要です。"
 
-#: ../../source/tutorial_pages/silicon.rst:474
+#: ../../source/tutorial_pages/silicon.rst:476
 msgid "7. Analyze results"
 msgstr "7. 結果の解析"
 
-#: ../../source/tutorial_pages/silicon.rst:476
+#: ../../source/tutorial_pages/silicon.rst:478
 msgid ""
 "There are many ways to analyze the result for better understandings of "
 "nanoscale thermal transport. Some selected features are introduced below:"
 msgstr "ナノスケールの熱輸送をより深く理解するために、結果を解析する方法は数多くあります。以下では、いくつかの代表的な機能を紹介します。"
 
-#: ../../source/tutorial_pages/silicon.rst:480
+#: ../../source/tutorial_pages/silicon.rst:482
 msgid "Phonon lifetime"
 msgstr "フォノン寿命"
 
-#: ../../source/tutorial_pages/silicon.rst:482
+#: ../../source/tutorial_pages/silicon.rst:484
 msgid ""
 "The file :red:`si222.kappa.h5` contains phonon frequencies, group "
 "velocities, and linewidths at irreducible :math:`k` points (with "
@@ -702,31 +701,31 @@ msgstr ""
 "(``FILE_FORMAT = text`` の場合は同じデータがテキストファイル :red:`si222.result` "
 "に書き出されます)。このファイルから、以下のようにフォノン寿命を抽出できます::"
 
-#: ../../source/tutorial_pages/silicon.rst:498
+#: ../../source/tutorial_pages/silicon.rst:500
 msgid "Phonon lifetime of Si at 300 K (click to enlarge)"
 msgstr "300 K における Si のフォノン寿命（クリックで拡大）"
 
-#: ../../source/tutorial_pages/silicon.rst:500
+#: ../../source/tutorial_pages/silicon.rst:502
 msgid ""
 "In the above figure, phonon lifetimes calculated with :math:`20\\times "
 "20\\times 20\\ q` points are also shown by open circles."
 msgstr "上図では、:math:`20\\times 20\\times 20\\ q` 点で計算されたフォノン寿命も白丸で示されています。"
 
-#: ../../source/tutorial_pages/silicon.rst:504
+#: ../../source/tutorial_pages/silicon.rst:506
 msgid "Cumulative thermal conductivity"
 msgstr "累積熱伝導率"
 
-#: ../../source/tutorial_pages/silicon.rst:506
+#: ../../source/tutorial_pages/silicon.rst:508
 msgid ""
 "Following the procedure below, you can obtain the :ref:`cumulative thermal "
 "conductivity <cumulative_kappa>`::"
 msgstr "以下の手順に従うことで、:ref:`累積熱伝導率 <cumulative_kappa>` を得ることができます::"
 
-#: ../../source/tutorial_pages/silicon.rst:519
+#: ../../source/tutorial_pages/silicon.rst:521
 msgid "Cumulative thermal conductivity of Si at 300 K (click to enlarge)"
 msgstr "300 K における Si の累積熱伝導率（クリックで拡大）"
 
-#: ../../source/tutorial_pages/silicon.rst:521
+#: ../../source/tutorial_pages/silicon.rst:523
 msgid ""
 "To draw a smooth line, you have to use a denser :math:`q` grid as shown in "
 "the figure by the orange line, which are obtained with :math:`20\\times "
@@ -735,11 +734,11 @@ msgstr ""
 "滑らかな線を描くには、図中のオレンジ色の線で示されているように、より密な :math:`q` グリッドを使用する必要があります。この線は "
 ":math:`20\\times 20\\times 20\\ q` 点で得られたものです。"
 
-#: ../../source/tutorial_pages/silicon.rst:525
+#: ../../source/tutorial_pages/silicon.rst:527
 msgid "Beyond the relaxation-time approximation"
 msgstr "緩和時間近似を超えて"
 
-#: ../../source/tutorial_pages/silicon.rst:527
+#: ../../source/tutorial_pages/silicon.rst:529
 msgid ""
 "The RTA neglects the in-scattering term of the collision operator and "
 "therefore underestimates :math:`\\kappa` of crystals in which Normal "
@@ -752,7 +751,7 @@ msgstr ""
 "を参照)。代わりに線形化ボルツマン輸送方程式を解くには、:red:`si_RTA.in` の ``&kappa`` フィールドに ``SOLVER`` "
 "タグを追加します::"
 
-#: ../../source/tutorial_pages/silicon.rst:536
+#: ../../source/tutorial_pages/silicon.rst:538
 msgid ""
 "and run anphon again. The converged result is saved in :red:`si222.kl_iter` "
 "with the same layout as :red:`si222.kl`, so both can be plotted together::"
@@ -760,7 +759,7 @@ msgstr ""
 "そして anphon を再度実行します。収束した結果は :red:`si222.kl` と同じ形式で :red:`si222.kl_iter` "
 "に保存されるので、両者を一緒にプロットできます::"
 
-#: ../../source/tutorial_pages/silicon.rst:543
+#: ../../source/tutorial_pages/silicon.rst:545
 msgid ""
 "For silicon on this :math:`10\\times 10\\times 10` grid the correction is "
 "below 1% at room temperature but exceeds 20% below 30 K, where Normal "
@@ -770,17 +769,17 @@ msgstr ""
 "この :math:`10\\times 10\\times 10` グリッドでのシリコンの場合、補正は室温では 1% 未満ですが、正常過程が支配的になる"
 " 30 K 以下では 20% を超えます。ダイヤモンドや BAs のような非常に高い熱伝導率をもつ物質では、補正ははるかに大きくなります。"
 
-#: ../../source/tutorial_pages/silicon.rst:548
+#: ../../source/tutorial_pages/silicon.rst:550
 msgid "Thermal conductivity spectrum"
 msgstr "熱伝導率スペクトル"
 
-#: ../../source/tutorial_pages/silicon.rst:550
+#: ../../source/tutorial_pages/silicon.rst:552
 msgid ""
 "To calculate the :ref:`spectrum of thermal conductivity <kappa>`, modify the"
 " :red:`si_RTA.in` as follows::"
 msgstr ":ref:`熱伝導率のスペクトル <kappa>` を計算するには、:red:`si_RTA.in` を以下のように変更します::"
 
-#: ../../source/tutorial_pages/silicon.rst:579
+#: ../../source/tutorial_pages/silicon.rst:581
 msgid ""
 "The frequency range is specified with the ``EMIN``, ``EMAX``, and "
 "``DELTA_E`` tags, and ``KAPPA_SPEC = 1`` is set in the ``&kappa`` field. "
@@ -789,7 +788,7 @@ msgstr ""
 "周波数範囲は ``EMIN``、``EMAX``、``DELTA_E`` タグで指定し、``&kappa`` フィールドで ``KAPPA_SPEC ="
 " 1`` を設定します。次に、再び anphon を実行します ::"
 
-#: ../../source/tutorial_pages/silicon.rst:584
+#: ../../source/tutorial_pages/silicon.rst:586
 msgid ""
 "After the calculation finishes, you can find the file :red:`si222.kl_spec` "
 "which contains the spectra of thermal conductivity at various temperatures. "
@@ -798,11 +797,11 @@ msgstr ""
 "計算が終了すると、さまざまな温度における熱伝導率スペクトルを含むファイル :red:`si222.kl_spec` "
 "が生成されます。室温でのデータは、以下のようにプロットできます::"
 
-#: ../../source/tutorial_pages/silicon.rst:596
+#: ../../source/tutorial_pages/silicon.rst:598
 msgid "The spectrum of thermal conductivity of Si at 300 K (click to enlarge)"
 msgstr "300 K における Si の熱伝導率スペクトル（クリックで拡大）"
 
-#: ../../source/tutorial_pages/silicon.rst:599
+#: ../../source/tutorial_pages/silicon.rst:601
 #, python-brace-format, python-format
 msgid ""
 "In the above figure, the computational result with :math:`20\\times "

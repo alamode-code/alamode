@@ -1,11 +1,10 @@
-
-.. _label_tutorial_si_lammps:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
 
 .. role:: red
+
+.. _label_tutorial_si_lammps:
 
 Silicon with LAMMPS
 -------------------

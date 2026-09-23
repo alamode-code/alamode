@@ -1,6 +1,3 @@
-
-.. _label_tutorial_01:
-
 .. |Angstrom|   unicode:: U+00C5
 
 .. raw:: html
@@ -9,6 +6,7 @@
 
 .. role:: red
 
+.. _label_tutorial_01:
 
 Silicon
 -------
@@ -42,7 +40,6 @@ In the following, (anharmonic) phonon properties of bulk silicon (Si) are calcul
 #. :ref:`Estimate anharmonic IFCs for thermal conductivity <tutorial_Si_step5>`
 #. :ref:`Calculate thermal conductivity <tutorial_Si_step6>`
 #. :ref:`Analyze results <tutorial_Si_step7>`
-
 
 .. _tutorial_Si_step1:
 
@@ -329,7 +326,7 @@ To improve the resolution of DOS, try again with a denser :math:`k` grid and a s
 .. note::
     Note that there are more efficient ways to calculate anharmonic IFCs, especially when 
     you calculate the quartic or higher-order terms.
-    Please see :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>` and :ref:`Tutorial 7.6 <label_tutorial_silicon_ifc>` for details.
+    Please see :ref:`label_tutorial_bto_ifc` and :ref:`label_tutorial_silicon_ifc` for details.
 
 Copy file :red:`si_alm.in` to :red:`si_alm2.in`. 
 Edit the **&general**, **&interaction**, and **&cutoff** fields of :red:`si_alm2.in` as the following::

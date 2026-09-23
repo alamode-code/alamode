@@ -1,5 +1,3 @@
-.. _label_tutorial_silicon_ifc:
-
 .. raw:: html
 
     <style> .red {color:red} </style>
@@ -7,6 +5,8 @@
 .. role:: red
 
 .. |Angstrom|   unicode:: U+00C5 
+
+.. _label_tutorial_silicon_ifc:
 
 Si : Anharmonic interatomic force constants (IFCs)
 ---------------------------------------------------
@@ -39,7 +39,7 @@ Let us move to the example directory.
 
 First, we calculate the harmonic IFCs in the considering supercell.
 
-The procedure is the same as explained in :ref:`Tutorial 7.1 <label_tutorial_01>`, so we briefly describe the outline here.
+The procedure is the same as explained in :ref:`label_tutorial_01`, so we briefly describe the outline here.
 
 We first calculate the displacement patterns by **alm**.
 
@@ -67,7 +67,7 @@ calculate the harmonic IFCs with
 2. Generate the displacement-force data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In :ref:`Tutorial 7.5 <label_tutorial_bto_ifc>`, we used the AIMD calculation
+In :ref:`label_tutorial_bto_ifc`, we used the AIMD calculation
 to generate random configurations, from which we calculated the anharmonic IFCs.
 
 However, the low-energy region of the potential energy surface (PES) can be sampled more efficiently 
@@ -152,7 +152,7 @@ at ``--temp 300`` K in the harmonic PES.
 Please run the DFT calculation for each generated supercell
 using the VASP input in **example/Si/anharm_IFCs/1_harmonic/VASP_input**.
 Then, use **extract.py** to obtain :red:`DFSET_randomQ` using the procedure explained 
-in :ref:`Tutorial 7.1 <tutorial_Si_step2>`.
+in :ref:`tutorial_Si_step2`.
 
 .. note::
   
