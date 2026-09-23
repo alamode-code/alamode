@@ -1,0 +1,52 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-24 03:17+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/input_builder.rst:4
+msgid "Input file builder"
+msgstr "入力ファイル作成ツール"
+
+#: ../../source/input_builder.rst:8
+msgid ""
+"This page writes a starting input file for *alm* or *anphon*. Choose the "
+"program and the mode, paste a VASP POSCAR or type in the structure, and "
+"fill in the remaining fields. The input on the right (or below, on a "
+"narrow screen) updates as you type; copy it or download it as a file. "
+"Everything runs in your browser, and nothing is sent anywhere."
+msgstr ""
+"このページでは、*alm* または *anphon* の入力ファイルのひな形を作成します。プログラムとモードを選び、VASP の POSCAR "
+"を貼り付けるか構造を入力して、残りの欄を埋めてください。右側 (画面が狭い場合は下側) "
+"の入力ファイルは入力に合わせて更新されるので、コピーするかファイルとしてダウンロードしてください。処理はすべてブラウザ内で行われ、データはどこにも送信されません。"
+
+#: ../../source/input_builder.rst:13
+msgid ""
+"The builder covers the common tags only. For the other tags, see "
+":ref:`the alm input reference <reference_input_alm>` and :doc:`the anphon"
+" input reference <anphondir/inputanphon>`."
+msgstr ""
+"このツールが扱うのはよく使うタグのみです。その他のタグについては :ref:`alm の入力変数 <reference_input_alm>` と"
+" :doc:`anphon の入力変数 <anphondir/inputanphon>` を参照してください。"
+
+#: ../../source/input_builder.rst:24
+msgid ""
+"An interactive input-file builder for *alm* and *anphon* is available in "
+"the HTML version of this documentation."
+msgstr "*alm* と *anphon* の入力ファイルを対話的に作成するツールが、このドキュメントの HTML 版にあります。"
+

@@ -1,0 +1,143 @@
+/* Input-file builder (input_builder.rst, _static/input_builder.js).
+   Colours come from the breeze theme variables, so light and dark modes follow the page. */
+.alamode-input-builder {
+  --aib-border: var(--bz-color-outline, rgba(128, 128, 128, 0.4));
+  --aib-field: var(--bz-color-surface-2, transparent);
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+.aib-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .aib-grid { grid-template-columns: minmax(0, 1fr); }
+}
+.aib-form fieldset {
+  min-width: 0;
+  margin: 0 0 0.9rem;
+  padding: 0.5rem 0.8rem 0.7rem;
+  border: 1px solid var(--aib-border);
+  border-radius: var(--bz-border-radius, 6px);
+}
+.aib-form legend {
+  padding: 0 0.3rem;
+  font-weight: 600;
+}
+.aib-form [hidden] { display: none !important; }
+.aib-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.4rem 0.9rem;
+  margin: 0.35rem 0;
+}
+.aib-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.35rem 0;
+}
+.aib-row .aib-field { margin: 0; min-width: 0; max-width: 100%; }
+.aib-field > span {
+  font-size: 0.8rem;
+  color: var(--bz-color-muted);
+}
+.aib-form input:not([type="radio"]):not([type="checkbox"]),
+.aib-form select,
+.aib-form textarea {
+  font: inherit;
+  font-family: var(--bz-font-mono, monospace);
+  font-size: 0.85rem;
+  color: var(--bz-color-text);
+  background: var(--aib-field);
+  border: 1px solid var(--aib-border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+}
+.aib-form select { font-family: inherit; max-width: 100%; }
+.aib-form textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  white-space: pre;
+  overflow-x: auto;
+}
+.aib-form input:focus, .aib-form select:focus, .aib-form textarea:focus {
+  outline: 2px solid var(--bz-color-primary, #4a90d9);
+  outline-offset: -1px;
+}
+.aib-radio, .aib-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.2rem 0;
+}
+.aib-check { display: flex; }
+.aib-note {
+  margin: 0.3rem 0;
+  font-size: 0.8rem;
+  color: var(--bz-color-muted);
+}
+.aib-button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.7rem;
+  color: var(--bz-color-text);
+  background: var(--bz-color-surface-3, transparent);
+  border: 1px solid var(--aib-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.aib-button:hover { border-color: var(--bz-color-primary, #4a90d9); }
+.aib-cutoffs { border-collapse: collapse; margin: 0.2rem 0 0.4rem; }
+.aib-cutoffs th, .aib-cutoffs td {
+  padding: 0.15rem 0.6rem 0.15rem 0;
+  text-align: left;
+  font-weight: normal;
+  border: none;
+}
+.aib-cutoffs th { font-size: 0.8rem; color: var(--bz-color-muted); }
+.aib-output {
+  position: sticky;
+  top: calc(var(--bz-header-height, 3.5rem) + 1rem);
+  min-width: 0;
+}
+.aib-outhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.aib-pre {
+  margin: 0;
+  max-height: 75vh;
+  overflow: auto;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  background: var(--bz-code-block-background-color, var(--bz-color-surface-2));
+  border: 1px solid var(--bz-code-block-border-color, var(--aib-border));
+  border-radius: var(--bz-border-radius, 6px);
+}
+.aib-messages {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font-size: 0.82rem;
+}
+.aib-messages li {
+  margin: 0.15rem 0;
+  padding: 0.2rem 0.5rem;
+  border-left: 3px solid;
+}
+.aib-messages .aib-error { border-color: var(--bz-color-red, #d33); }
+.aib-messages .aib-warning { border-color: var(--bz-color-orange, #e90); }
+.aib-messages .aib-ok { border-color: var(--bz-color-green, #3a3); color: var(--bz-color-muted); }
+.aib-note.aib-error { color: var(--bz-color-red, #d33); }
+.aib-outhead > span { white-space: nowrap; }

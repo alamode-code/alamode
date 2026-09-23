@@ -20,6 +20,7 @@ Users Guide
    download
    install
    quickstart
+   input_builder
    alm_root
    alm_python
    anphon_root

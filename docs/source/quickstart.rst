@@ -8,6 +8,8 @@ ALAMODE consists of two programs.
 and **anphon** uses these force constants to calculate phonon properties.
 The chart below shows how the two programs, the DFT code, and the helper scripts in the ``tools/`` directory work together.
 
+The :doc:`input_builder` writes a starting input file for either program from a POSCAR.
+
 .. figure:: ../img/flowcharts/overview.*
    :align: center
    :alt: Overall workflow: DFT, alm, anphon and the analysis tools
