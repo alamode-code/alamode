@@ -32,7 +32,7 @@ LAMMPS_) by themselves to compute harmonic and anharmonic force constants.
 Optional requirements
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-* Python (>= 3.x), Numpy, and Matplotlib
+* Python (>= 3.x), NumPy, PyYAML, and Matplotlib
 * XcrySDen_ or VMD_
 
 Small Python scripts for visualizing phonon dispersion relations, phonon DOS, etc. are provided;
@@ -68,7 +68,7 @@ source, for example with ``conda install -c conda-forge git`` after activating
 the environment. After the source tree is downloaded in Step 2, update this
 environment from ``etc/alamode-environment.yml``. That environment file installs
 the compiler tools, OpenMPI, Boost, Eigen, CMake, spglib, HDF5, FFTW, NumPy,
-SciPy, and h5py from conda-forge, matching the GitHub Actions workflow.
+SciPy, h5py, and PyYAML from conda-forge, matching the GitHub Actions workflow.
 
 
 Step 2. Download source 
@@ -178,7 +178,7 @@ This installs
 
 .. note::
 
-    The python scripts require NumPy and, depending on the script, matplotlib, h5py, or ASE.
+    The python scripts require NumPy and, depending on the script, PyYAML (``displace.py``), matplotlib, h5py, or ASE.
     These must be available in the python environment (``python3``) from which you run the
     scripts; ``make install`` does not install any python dependencies.
 
@@ -224,7 +224,7 @@ Step 2. Download source and create the environment
 ``pixi init --import`` seeds the project manifest (``pixi.toml``) from the
 same conda environment file used by the conda instructions and the GitHub
 Actions workflow, so the toolchain (compilers, OpenMPI, Boost, Eigen, CMake,
-spglib, HDF5, FFTW, NumPy, SciPy, and h5py) is identical. The ``pixi add``
+spglib, HDF5, FFTW, NumPy, SciPy, h5py, and PyYAML) is identical. The ``pixi add``
 line pins Python and adds ``pip`` and ``make``, which are used by the build
 and by the :ref:`Python wrapper <alm_python_install>`. Both commands solve the
 dependencies, install them into ``.pixi/envs/default``, and write
