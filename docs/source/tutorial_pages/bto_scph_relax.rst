@@ -64,18 +64,18 @@ The lines
 ::
 
   SET_INIT_STR = 3
-  COOLING_U0_INDEX = 5
-  COOLING_U0_THR = 0.005
 
-are for the cooling calculation. 
+is for the cooling calculation.
 With ``SET_INIT_STR = 3``, the initial structure of the SCPH-based structural optimization
-is set from ``&displace``-field if the structure at the previous temperature converges to the
-high-symmetry phase. 
-The structure is considered to be in the high-symmetry phase if the ``COOLING_U0_INDEX`` th component 
-of the atomic displacement is smaller than ``COOLING_U0_THR`` [Bohr].
-Because we count the components from zero, ``COOLING_U0_INDEX = 5`` means that we focus on 
-the :math:`z`-component of the second atom (Ti). 
-Please see :ref:`the documentation <anphon_cooling_u0_index>` for more detailed explanations.
+is set from the ``&displace``-field if the structure at the previous temperature converges to
+the high-symmetry phase.
+The structure is judged to be in the high-symmetry phase when spglib finds the space group of
+the undistorted reference cell for it, using the symmetry tolerance of the
+:ref:`TOLERANCE <anphon_tolerance>` tag.
+Please see :ref:`the documentation <anphon_set_init_str>` for more detailed explanations.
+
+(Earlier versions required the ``COOLING_U0_INDEX`` and ``COOLING_U0_THR`` tags here. They are
+deprecated and ignored; the symmetry is now detected automatically.)
 
 To perform the heating calculation, set ``LOWER_TEMP = 0`` in ``&scph``-field and ``SET_INIT_STR = 2``.
 Then, write the low-temperature structure to the ``&displace``-field.

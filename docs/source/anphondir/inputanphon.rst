@@ -34,10 +34,10 @@ List of supported input variables
    :ref:`TMAX <anphon_tmin>`, :ref:`TMIN <anphon_tmin>`, :ref:`TOLERANCE <anphon_tolerance>`, :ref:`TREVSYM <anphon_trevsym>`
    :ref:`TRISYM <anphon_trisym>`, :ref:`VERBOSITY <anphon_verbosity>`
    **&scph**
-   :ref:`BUBBLE <anphon_bubble>`, :ref:`CV_ANHARM <anphon_cv_anharm>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`, :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`
-   :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`, :ref:`MIXALPHA <anphon_mixalpha>`
-   :ref:`RELAX_STR <anphon_relax_str>`, :ref:`RESTART_SCPH <anphon_restart_scph>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`, :ref:`TOL_SCPH <anphon_tol_scph>`
-   :ref:`WARMSTART <anphon_warmstart>`
+   :ref:`BUBBLE <anphon_bubble>`, :ref:`CV_ANHARM <anphon_cv_anharm>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`
+   :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`, :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`
+   :ref:`MIXALPHA <anphon_mixalpha>`, :ref:`RELAX_STR <anphon_relax_str>`, :ref:`RESTART_SCPH <anphon_restart_scph>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
+   :ref:`TOL_SCPH <anphon_tol_scph>`, :ref:`WARMSTART <anphon_warmstart>`
    **&qha**
    :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
@@ -946,7 +946,7 @@ Description of input variables
  :Type: Integer
 
  :Description: This option is used only when ``mode = QHA`` and ``RELAX_STR = 2``.
- It must be 0 when ``RELAX_STR = 4``.
+               It must be 0 when ``RELAX_STR = 4``.
 
 ````
 
@@ -1432,7 +1432,7 @@ The first entry **KPMODE** specifies the types of calculation which is followed 
 ````
 
 "&strain"-field (Read when ``RELAX_STR = 2, 4``; optional when ``MODE = phonons`` with ``NEWFCS = 1``)
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Please specify the displacement gradient tensor :math:`u_{\mu \nu}` as ::
 
