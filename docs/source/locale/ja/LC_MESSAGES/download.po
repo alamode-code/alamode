@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ALAMODE 2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-03 01:27+0900\n"
+"POT-Creation-Date: 2026-09-23 16:12+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: ja <LL@li.org>\n"
@@ -25,21 +25,70 @@ msgstr "ダウンロード"
 
 #: ../../source/download.rst:4
 msgid ""
-"The latest and previous release packages of ALAMODE are available at "
-"https://sourceforge.net/projects/alamode."
+"The recommended way to obtain ALAMODE is from the `GitHub repository "
+"<https://github.com/alamode-code/alamode>`_, which always has the latest "
+"version."
 msgstr ""
-"ALAMODEの最新版および過去のリリースパッケージは https://sourceforge.net/projects/alamode "
-"から入手できます。"
+"ALAMODE は、常に最新版がある `GitHub リポジトリ <https://github.com/alamode-code/alamode>`_ "
+"から入手することを推奨します。"
 
-#: ../../source/download.rst:7
-msgid "You can also obtain the source code from the Git repository::"
-msgstr "ソースコードはGitリポジトリからも取得できます::"
+#: ../../source/download.rst:8
+msgid "With git (recommended)"
+msgstr "git を使う (推奨)"
 
-#: ../../source/download.rst:13
+#: ../../source/download.rst:10
 msgid ""
-"Use the branch that corresponds to the documentation you are reading. For the"
-" development documentation and the current GitHub workflow, this is "
-"``2.0dev``."
+"Clone the repository and switch to the branch that corresponds to the "
+"documentation you are reading (``2.0dev`` for this development "
+"documentation)::"
 msgstr ""
-"ご覧になっているドキュメントに対応するブランチを使用してください。開発版ドキュメントおよび現在の GitHub ワークフローの場合は ``2.0dev``"
-" です。"
+"リポジトリをクローンし、ご覧になっているドキュメントに対応するブランチ (この開発版ドキュメントでは ``2.0dev``) に切り替えます::"
+
+#: ../../source/download.rst:17
+msgid ""
+"To update to the latest version later, run ``git pull`` in the same "
+"directory."
+msgstr "後で最新版に更新するには、同じディレクトリで ``git pull`` を実行します。"
+
+#: ../../source/download.rst:20
+msgid "Without git"
+msgstr "git を使わない場合"
+
+#: ../../source/download.rst:22
+msgid ""
+"**Latest version** — open the `repository page <https://github.com/alamode-"
+"code/alamode>`_, select the branch, and choose *Code* → *Download ZIP*."
+msgstr ""
+"**最新版** — `リポジトリのページ <https://github.com/alamode-code/alamode>`_ を開き、ブランチを選んで"
+" *Code* → *Download ZIP* を選択します。"
+
+#: ../../source/download.rst:24
+msgid ""
+"**Release versions** — download an archive from the `GitHub releases page "
+"<https://github.com/alamode-code/alamode/releases>`_."
+msgstr ""
+"**リリース版** — `GitHub のリリースページ <https://github.com/alamode-"
+"code/alamode/releases>`_ からアーカイブをダウンロードします。"
+
+#: ../../source/download.rst:27
+msgid "Alternative: SourceForge"
+msgstr "その他: SourceForge"
+
+#: ../../source/download.rst:29
+msgid ""
+"Release packages are also available at "
+"https://sourceforge.net/projects/alamode. They are not updated as often as "
+"GitHub, so use them only if GitHub is not accessible."
+msgstr ""
+"リリースパッケージは https://sourceforge.net/projects/alamode からも入手できます。ただし GitHub "
+"ほど頻繁には更新されないため、GitHub にアクセスできない場合にのみ利用してください。"
+
+#~ msgid ""
+#~ "The latest and previous release packages of ALAMODE are available at "
+#~ "https://sourceforge.net/projects/alamode."
+#~ msgstr ""
+#~ "ALAMODEの最新版および過去のリリースパッケージは https://sourceforge.net/projects/alamode "
+#~ "から入手できます。"
+
+#~ msgid "You can also obtain the source code from the Git repository::"
+#~ msgstr "ソースコードはGitリポジトリからも取得できます::"
