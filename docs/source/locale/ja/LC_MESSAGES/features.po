@@ -1,0 +1,338 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2014, Terumasa Tadano
+# This file is distributed under the same license as the ALAMODE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ALAMODE 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-23 16:12+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: ja <LL@li.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../source/features.rst:2
+msgid "Features"
+msgstr "機能"
+
+#: ../../source/features.rst:7
+msgid "General"
+msgstr "一般"
+
+#: ../../source/features.rst:9
+msgid ""
+"Extraction of harmonic and anharmonic force constants based on the supercell "
+"approach"
+msgstr "スーパーセル法に基づく調和力定数および非調和力定数の抽出"
+
+#: ../../source/features.rst:10
+msgid "Applicable to arbitrary crystal structures and low-dimensional systems"
+msgstr "任意の結晶構造および低次元系に適用可能"
+
+#: ../../source/features.rst:11
+msgid "Accurate treatment of translational and rotational invariance"
+msgstr "並進不変性および回転不変性の正確な取り扱い"
+
+#: ../../source/features.rst:12
+msgid ""
+"Interfaces to the VASP, Quantum ESPRESSO, OpenMX, xTAPP, and LAMMPS codes"
+msgstr "VASP、Quantum ESPRESSO、OpenMX、xTAPP、LAMMPS とのインターフェース"
+
+#: ../../source/features.rst:13
+msgid "Mainly written in C++, parallelized with MPI+OpenMP"
+msgstr "主に C++ で記述され、MPI+OpenMP で並列化"
+
+#: ../../source/features.rst:18
+msgid "Properties and the force constants they need"
+msgstr "計算できる物性と必要な力定数"
+
+#: ../../source/features.rst:20
+msgid ""
+"The tables below list what *anphon* can calculate and which force constants "
+"must be available. FC2, FC3, and FC4 are the harmonic, cubic, and quartic "
+"force constants. In *alm*, they correspond to ``NORDER = 1``, ``2``, and "
+"``3``, respectively. ✓: required; (✓): required only for the option given in "
+"the note."
+msgstr ""
+"以下の表は、*anphon* で計算できる物性と、それに必要な力定数をまとめたものです。FC2、FC3、FC4 はそれぞれ調和、3 次、4 "
+"次の力定数で、*alm* の ``NORDER = 1``、``2``、``3`` に対応します。✓: 必要、(✓): "
+"注に記したオプションを使う場合のみ必要。"
+
+#: ../../source/features.rst:26
+msgid "Harmonic properties"
+msgstr "調和物性"
+
+#: ../../source/features.rst:32 ../../source/features.rst:95
+#: ../../source/features.rst:146
+msgid "Property"
+msgstr "物性"
+
+#: ../../source/features.rst:33 ../../source/features.rst:96
+#: ../../source/features.rst:147
+msgid "Setting"
+msgstr "設定"
+
+#: ../../source/features.rst:34 ../../source/features.rst:97
+#: ../../source/features.rst:148
+msgid "FC2"
+msgstr "FC2"
+
+#: ../../source/features.rst:35 ../../source/features.rst:98
+#: ../../source/features.rst:149
+msgid "FC3"
+msgstr "FC3"
+
+#: ../../source/features.rst:36 ../../source/features.rst:99
+#: ../../source/features.rst:150
+msgid "FC4"
+msgstr "FC4"
+
+#: ../../source/features.rst:37
+msgid "Phonon dispersion"
+msgstr "フォノン分散"
+
+#: ../../source/features.rst:38
+msgid "``MODE = phonons``, ``KPMODE = 1``"
+msgstr "``MODE = phonons``, ``KPMODE = 1``"
+
+#: ../../source/features.rst:39 ../../source/features.rst:44
+#: ../../source/features.rst:49 ../../source/features.rst:54
+#: ../../source/features.rst:59 ../../source/features.rst:64
+#: ../../source/features.rst:69 ../../source/features.rst:74
+#: ../../source/features.rst:79 ../../source/features.rst:84
+#: ../../source/features.rst:102 ../../source/features.rst:103
+#: ../../source/features.rst:107 ../../source/features.rst:108
+#: ../../source/features.rst:112 ../../source/features.rst:113
+#: ../../source/features.rst:117 ../../source/features.rst:118
+#: ../../source/features.rst:122 ../../source/features.rst:123
+#: ../../source/features.rst:127 ../../source/features.rst:128
+#: ../../source/features.rst:132 ../../source/features.rst:133
+#: ../../source/features.rst:153 ../../source/features.rst:154
+#: ../../source/features.rst:155 ../../source/features.rst:158
+#: ../../source/features.rst:159 ../../source/features.rst:160
+#: ../../source/features.rst:163 ../../source/features.rst:164
+#: ../../source/features.rst:165 ../../source/features.rst:168
+#: ../../source/features.rst:169 ../../source/features.rst:170
+#: ../../source/features.rst:173 ../../source/features.rst:174
+#: ../../source/features.rst:175 ../../source/features.rst:178
+#: ../../source/features.rst:179 ../../source/features.rst:180
+msgid "✓"
+msgstr "✓"
+
+#: ../../source/features.rst:42
+msgid "Phonon DOS, atom-projected DOS"
+msgstr "フォノン状態密度、原子射影状態密度"
+
+#: ../../source/features.rst:43
+msgid "``MODE = phonons``, ``KPMODE = 2``; ``PDOS``"
+msgstr "``MODE = phonons``, ``KPMODE = 2``; ``PDOS``"
+
+#: ../../source/features.rst:47
+msgid "Heat capacity, entropy, and free energy"
+msgstr "比熱、エントロピー、自由エネルギー"
+
+#: ../../source/features.rst:48
+msgid "``MODE = phonons``, ``KPMODE = 2``"
+msgstr "``MODE = phonons``, ``KPMODE = 2``"
+
+#: ../../source/features.rst:52
+msgid "Mean-square displacements, displacement correlation"
+msgstr "平均二乗変位、変位相関"
+
+#: ../../source/features.rst:53
+msgid "``PRINTMSD``, ``UCORR``"
+msgstr "``PRINTMSD``, ``UCORR``"
+
+#: ../../source/features.rst:57
+msgid "Group velocities"
+msgstr "群速度"
+
+#: ../../source/features.rst:58
+msgid "``PRINTVEL``"
+msgstr "``PRINTVEL``"
+
+#: ../../source/features.rst:62
+msgid "Two-phonon DOS, three-phonon scattering phase space"
+msgstr "2 フォノン状態密度、3 フォノン散乱位相空間"
+
+#: ../../source/features.rst:63
+msgid "``TDOS``, ``SPS``"
+msgstr "``TDOS``, ``SPS``"
+
+#: ../../source/features.rst:67
+msgid "Participation ratio (localization of phonon modes)"
+msgstr "参加率 (フォノンモードの局在性)"
+
+#: ../../source/features.rst:68
+msgid "``PRINTPR``"
+msgstr "``PRINTPR``"
+
+#: ../../source/features.rst:72
+msgid "Visualization and animation of phonon modes"
+msgstr "フォノンモードの可視化とアニメーション"
+
+#: ../../source/features.rst:73
+msgid "``PRINTXSF``, ``ANIME``"
+msgstr "``PRINTXSF``, ``ANIME``"
+
+#: ../../source/features.rst:77
+msgid "Irreducible representations and IR/Raman activity at :math:`\\Gamma`"
+msgstr "既約表現と :math:`\\Gamma` 点での IR/Raman 活性"
+
+#: ../../source/features.rst:78
+msgid "``IRREPS``"
+msgstr "``IRREPS``"
+
+#: ../../source/features.rst:82
+msgid "Dielectric function, mode effective charges"
+msgstr "誘電関数、モード有効電荷"
+
+#: ../../source/features.rst:83
+msgid "``DIELEC``, ``ZMODE`` (with ``BORNINFO``)"
+msgstr "``DIELEC``、``ZMODE`` (``BORNINFO`` が必要)"
+
+#: ../../source/features.rst:89
+msgid "Three-phonon properties"
+msgstr "3 フォノン物性"
+
+#: ../../source/features.rst:100
+msgid "Gr\\ |umulaut_u|\\ neisen parameters"
+msgstr "Gr\\ |umulaut_u|\\ neisen パラメータ"
+
+#: ../../source/features.rst:101
+msgid "``MODE = phonons``, ``GRUNEISEN``"
+msgstr "``MODE = phonons``, ``GRUNEISEN``"
+
+#: ../../source/features.rst:105
+msgid "Lattice thermal conductivity (RTA or full solution of the BTE)"
+msgstr "格子熱伝導率 (緩和時間近似または BTE の完全な解)"
+
+#: ../../source/features.rst:106
+msgid "``MODE = kappa``, ``SOLVER``"
+msgstr "``MODE = kappa``, ``SOLVER``"
+
+#: ../../source/features.rst:110
+msgid "Coherent (off-diagonal) thermal conductivity"
+msgstr "コヒーレント (非対角) 熱伝導率"
+
+#: ../../source/features.rst:111
+msgid "``KAPPA_COHERENT``"
+msgstr "``KAPPA_COHERENT``"
+
+#: ../../source/features.rst:115
+msgid "Thermal conductivity spectrum, cumulative thermal conductivity"
+msgstr "熱伝導率スペクトル、累積熱伝導率"
+
+#: ../../source/features.rst:116
+msgid "``KAPPA_SPEC``, ``analyzer.py``"
+msgstr "``KAPPA_SPEC``, ``analyzer.py``"
+
+#: ../../source/features.rst:120
+msgid "Isotope and boundary scattering"
+msgstr "同位体散乱と境界散乱"
+
+#: ../../source/features.rst:121
+msgid "``ISOTOPE``, ``LEN_BOUNDARY``"
+msgstr "``ISOTOPE``, ``LEN_BOUNDARY``"
+
+#: ../../source/features.rst:125
+msgid "Phonon linewidth, frequency shift, spectral function"
+msgstr "フォノン線幅、振動数シフト、スペクトル関数"
+
+#: ../../source/features.rst:126
+msgid "``MODE = selfenergy``"
+msgstr "``MODE = selfenergy``"
+
+#: ../../source/features.rst:129 ../../source/features.rst:134
+msgid "(✓)"
+msgstr "(✓)"
+
+#: ../../source/features.rst:130
+msgid "Force constants of strained cells"
+msgstr "ひずみを与えたセルの力定数"
+
+#: ../../source/features.rst:131
+msgid "``NEWFCS``"
+msgstr "``NEWFCS``"
+
+#: ../../source/features.rst:136
+msgid ""
+"Note: FC4 is needed for the frequency shift due to the quartic term "
+"(``QUARTIC = 1``), and for the strain dependence of the cubic force constants"
+" (``NEWFCS`` with ``QUARTIC = 1``)."
+msgstr ""
+"注: 4 次の項による振動数シフト (``QUARTIC = 1``) と、3 次の力定数のひずみ依存性 (``NEWFCS`` と ``QUARTIC "
+"= 1``) には FC4 が必要です。"
+
+#: ../../source/features.rst:140
+msgid "Four-phonon and finite-temperature properties"
+msgstr "4 フォノン物性と有限温度物性"
+
+#: ../../source/features.rst:151
+msgid "Four-phonon scattering in the thermal conductivity"
+msgstr "熱伝導率における 4 フォノン散乱"
+
+#: ../../source/features.rst:152
+msgid "``MODE = kappa``, ``INCLUDE_4PH = 1``"
+msgstr "``MODE = kappa``, ``INCLUDE_4PH = 1``"
+
+#: ../../source/features.rst:156
+msgid ""
+"Temperature-dependent phonons by the self-consistent phonon (SCPH) method"
+msgstr "自己無撞着フォノン (SCPH) 法による温度依存フォノン"
+
+#: ../../source/features.rst:157 ../../source/features.rst:162
+msgid "``MODE = SCPH``"
+msgstr "``MODE = SCPH``"
+
+#: ../../source/features.rst:161
+msgid "Anharmonic free energy"
+msgstr "非調和自由エネルギー"
+
+#: ../../source/features.rst:166
+msgid "Thermal expansion within the quasi-harmonic approximation"
+msgstr "準調和近似による熱膨張"
+
+#: ../../source/features.rst:167
+msgid "``MODE = QHA``"
+msgstr "``MODE = QHA``"
+
+#: ../../source/features.rst:171
+msgid "Crystal structure at finite temperatures"
+msgstr "有限温度での結晶構造"
+
+#: ../../source/features.rst:172
+msgid "``RELAX_STR`` in ``MODE = SCPH`` or ``QHA``"
+msgstr "``MODE = SCPH`` または ``QHA`` での ``RELAX_STR``"
+
+#: ../../source/features.rst:176
+msgid "Thermal conductivity with SCPH or QHA phonons and structures"
+msgstr "SCPH または QHA のフォノンと構造を用いた熱伝導率"
+
+#: ../../source/features.rst:177
+msgid "``FC2_TEMPERATURE`` (and ``RELAXED_STRUCTURE``)"
+msgstr "``FC2_TEMPERATURE`` (および ``RELAXED_STRUCTURE``)"
+
+#: ../../source/features.rst:182
+msgid ""
+"Note: relaxing the cell (``RELAX_STR = 2``) also needs DFT calculations of "
+"strained cells (``STRAINFILE``), unless symmetry allows them to be skipped "
+"(``STRAIN_COUPLING = 0``); see :doc:`quickstart`."
+msgstr ""
+"注: セルの最適化 (``RELAX_STR = 2``) には、ひずみを与えたセルの DFT 計算 (``STRAINFILE``) "
+"も必要です。ただし対称性により省略できる場合 (``STRAIN_COUPLING = 0``) を除きます。:doc:`quickstart` "
+"を参照してください。"
+
+#: ../../source/features.rst:185
+msgid ""
+"The input variables are described in :ref:`label_inputvar_anphon`, and step-"
+"by-step examples are given in the :doc:`tutorial`."
+msgstr "入力変数は :ref:`label_inputvar_anphon` に、手順を追った例は :doc:`tutorial` にあります。"

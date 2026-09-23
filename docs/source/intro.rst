@@ -21,57 +21,19 @@ What is ALAMODE?
 Features
 --------
 
-General
-^^^^^^^
-
-* Extraction of harmonic and anharmonic force constants based on the supercell approach
-* Applicable to arbitrary crystal structures and low-dimensional systems
-* Accurate treatment of translational and rotational invariance
-* Interfaces to the VASP, Quantum ESPRESSO, OpenMX, xTAPP, and LAMMPS codes
-* Mainly written in C++, parallelized with MPI+OpenMP
-
-Harmonic properties
-^^^^^^^^^^^^^^^^^^^
-* Phonon dispersion
-* Phonon DOS, atom-projected phonon DOS
-* Two-phonon DOS
-* Vibrational thermodynamic functions (heat capacity, entropy, free energy)
-* Mean-square displacement
-* Animation and visualization of phonon modes (requires VMD or XCrysDen)
-* 3-phonon scattering phase space
-* Phonon-isotope scattering rate
-* Participation ratio for analyzing the localization of phonon modes
-
-Anharmonic properties
-^^^^^^^^^^^^^^^^^^^^^
-
-.. |umulaut_u|    unicode:: U+00FC
-
-* Gr\ |umulaut_u|\ neisen parameter via cubic force constants
-* Lattice thermal conductivity by BTE-RTA
-* Cumulative thermal conductivity
-* Phonon linewidth due to 3-phonon interactions
-* Phonon frequency shift due to 3- and 4-phonon interactions
-* Temperature-dependent effective potential method
-* Self-consistent phonon (SCPH) calculation
-* Anharmonic vibrational free energy
-* Structural optimization at finite temperatures based on SCPH or QHA
+The list of features, together with the force constants each of them needs, is given in :doc:`features`.
 
 .. Note::
-   In the current version, structural optimization **cannot** be combined with thermal conductivity calculations or bubble corrections.
-   The standard SCPH dispersion and thermodynamic properties are calculated correctly for relaxed configurations.
-
-.. Note::
-   Tutorials for structural optimization at finite temperatures are now included in this
+   Tutorials for structural optimization at finite temperatures are included in this
    documentation; see :doc:`tutorial_pages/bto_scph_relax` (SCPH-based) and
    :doc:`tutorial_pages/zno_qha_relax` (QHA-based).
 
 Links
 -----
 
-* Download page  : https://sourceforge.net/projects/alamode
+* Git repository : https://github.com/alamode-code/alamode (see :doc:`download`)
 * Documentation  : https://alamode.readthedocs.io (this page)
-* Git repository : https://github.com/alamode-code/alamode
+* SourceForge (release packages) : https://sourceforge.net/projects/alamode
 
 
 License

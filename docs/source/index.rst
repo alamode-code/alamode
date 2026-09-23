@@ -16,6 +16,7 @@ Users Guide
    :glob:
 
    intro
+   features
    download
    install
    quickstart
