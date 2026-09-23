@@ -21,8 +21,8 @@ DOT = os.environ.get("DOT", "dot")
 FONT = {"en": "Helvetica", "ja": "Hiragino Sans"}
 MONO = "Courier"
 
-# role -> node attributes. Roles differ in shape as well as colour, so the
-# charts stay readable in grey scale.
+# Role -> node attributes. Shapes, border styles, and explicit program names
+# supplement colour so that the charts also work in grey scale.
 STYLE = {
     "alm": dict(
         shape="box",
@@ -79,7 +79,13 @@ def label(text, lang, plain=False):
                 if i == 0
                 else '<FONT POINT-SIZE="10">%s</FONT>' % html
             )
-    return "<" + "<BR/>".join(out) + ">"
+    # Separate rows give mixed Latin/Japanese fonts enough vertical clearance.
+    return (
+        '<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" '
+        'CELLPADDING="2">'
+        + "".join("<TR><TD>%s</TD></TR>" % row for row in out)
+        + "</TABLE>>"
+    )
 
 
 def render(name, graph, nodes, edges, lang, same=()):
@@ -153,8 +159,8 @@ OVERVIEW = dict(
         "strain": (
             "tool",
             L(
-                "Strained-cell DFT  (optional)\nonly to relax the cell at finite T",
-                "ひずみを与えたセルの DFT  (任意)\n有限温度でセルを最適化するときのみ",
+                "Strain tools (optional)\nstrained-cell DFT → STRAINFILE",
+                "ひずみ用ツール (任意)\nひずみを与えたセルの DFT → STRAINFILE",
             ),
         ),
         "anp": ("anphon", L("anphon\nphonon properties", "anphon\nフォノン物性")),
@@ -166,7 +172,7 @@ OVERVIEW = dict(
             ),
         ),
         "tools": (
-            "end",
+            "tool",
             L(
                 "Analysis tools\nplotband.py  plotdos.py  analyzer.py",
                 "解析ツール\nplotband.py  plotdos.py  analyzer.py",
@@ -179,7 +185,11 @@ OVERVIEW = dict(
         ("dftf", "fit"),
         ("fit", "fcs"),
         ("fcs", "anp"),
-        ("strain", "anp", dict(style="dashed", label=L("STRAINFILE", "STRAINFILE"))),
+        (
+            "strain",
+            "anp",
+            dict(style="dashed", label=L("cell relaxation", "セルの最適化")),
+        ),
         ("anp", "out"),
         ("out", "tools"),
     ],
@@ -237,8 +247,11 @@ ALM = dict(
             L("Anharmonic\nIFCs\nneeded?", "非調和\n力定数が\n必要?"),
         ),
         "done": (
-            "end",
-            L("phonons, DOS,\nthermodynamics", "フォノン分散, DOS,\n熱力学量"),
+            "anphon",
+            L(
+                "anphon\nphonons, DOS, thermodynamics",
+                "anphon\nフォノン分散, DOS, 熱力学量",
+            ),
         ),
         "evec": (
             "anphon",
@@ -250,8 +263,8 @@ ALM = dict(
         "dB": (
             "tool",
             L(
-                "displace.py  `--random_normalcoord --evec PREFIX.evec --temp T`\nrandom displacements sampled at temperature T\n(or `--random` on MD snapshots)",
-                "displace.py  `--random_normalcoord --evec PREFIX.evec --temp T`\n温度 T でサンプリングしたランダム変位\n(または MD スナップショットに `--random`)",
+                "displace.py\n`--random_normalcoord`\n`--evec PREFIX.evec --temp T`\nrandom displacements sampled at temperature T\n(or `--random` on MD snapshots)",
+                "displace.py\n`--random_normalcoord`\n`--evec PREFIX.evec --temp T`\n温度 T でサンプリングしたランダム変位\n(または MD スナップショットに `--random`)",
             ),
         ),
         "dftB": (
@@ -261,8 +274,8 @@ ALM = dict(
         "fitB": (
             "alm",
             L(
-                "alm   `MODE = optimize`  (NORDER = 2, 3, ...)\n`LMODEL = enet` or `adaptive-lasso`,  `FC2FIX = harmonic.h5`",
-                "alm   `MODE = optimize`  (NORDER = 2, 3, ...)\n`LMODEL = enet` または `adaptive-lasso`,  `FC2FIX = harmonic.h5`",
+                "alm   `MODE = optimize`  (NORDER = 2, 3, ...)\n`LMODEL = enet` or `adaptive-lasso`\n`FC2FIX = harmonic.h5`",
+                "alm   `MODE = optimize`  (NORDER = 2, 3, ...)\n`LMODEL = enet` または `adaptive-lasso`\n`FC2FIX = harmonic.h5`",
             ),
         ),
         "fcs": (
@@ -281,7 +294,7 @@ ALM = dict(
         ("dftA", "fitA"),
         ("fitA", "fc2"),
         ("fc2", "q"),
-        ("q", "done", dict(label=NO)),
+        ("q", "done", dict(label=NO, constraint="false")),
         (
             "q",
             "evec",
@@ -294,6 +307,7 @@ ALM = dict(
         ("dftB", "fitB"),
         ("fitB", "fcs"),
     ],
+    same=[["q", "done"]],
 )
 
 # ------------------------------------------------------------- anphon mode
@@ -305,36 +319,36 @@ MODES = dict(
         "ph": (
             "anphon",
             L(
-                "Dispersion, DOS, thermodynamics\n`MODE = phonons`    FC2  (+ FC3 for Grüneisen)",
-                "分散関係, DOS, 熱力学関数\n`MODE = phonons`    FC2  (グリュナイゼン定数は + FC3)",
+                "Dispersion, DOS, thermodynamics\n`MODE = phonons`\nFC2  (+ FC3 for Grüneisen)",
+                "分散関係, DOS, 熱力学関数\n`MODE = phonons`\nFC2  (グリュナイゼン定数は + FC3)",
             ),
         ),
         "ka": (
             "anphon",
             L(
-                "Thermal conductivity\n`MODE = kappa`    FC2, FC3  (+ FC4 for 4-phonon)",
-                "格子熱伝導率\n`MODE = kappa`    FC2, FC3  (4フォノン散乱は + FC4)",
+                "Thermal conductivity\n`MODE = kappa`\nFC2, FC3  (+ FC4 for 4-phonon)",
+                "格子熱伝導率\n`MODE = kappa`\nFC2, FC3  (4フォノン散乱は + FC4)",
             ),
         ),
         "se": (
             "anphon",
             L(
-                "Linewidth or spectrum at chosen q\n`MODE = selfenergy`    FC2, FC3",
-                "指定した q 点の線幅・スペクトル\n`MODE = selfenergy`    FC2, FC3",
+                "Linewidth or spectrum at chosen q\n`MODE = selfenergy`\nFC2, FC3",
+                "指定した q 点の線幅・スペクトル\n`MODE = selfenergy`\nFC2, FC3",
             ),
         ),
         "sc": (
             "anphon",
             L(
-                "Phonons at finite T, strong anharmonicity\n`MODE = SCPH`    FC2, FC3, FC4",
-                "有限温度のフォノン (強い非調和性)\n`MODE = SCPH`    FC2, FC3, FC4",
+                "Phonons at finite T, strong anharmonicity\n`MODE = SCPH`\nFC2, FC3, FC4",
+                "有限温度のフォノン (強い非調和性)\n`MODE = SCPH`\nFC2, FC3, FC4",
             ),
         ),
         "qh": (
             "anphon",
             L(
-                "Thermal expansion, structure vs T\n`MODE = QHA`    FC2, FC3, FC4",
-                "熱膨張, 構造の温度変化\n`MODE = QHA`    FC2, FC3, FC4",
+                "Thermal expansion, structure vs T\n`MODE = QHA`\nFC2, FC3, FC4",
+                "熱膨張, 構造の温度変化\n`MODE = QHA`\nFC2, FC3, FC4",
             ),
         ),
     },
@@ -371,22 +385,22 @@ FINITE_T = dict(
         "r2": (
             "set",
             L(
-                "`RELAX_STR = 2`\npositions and cell  (QHA: also 3)",
-                "`RELAX_STR = 2`\n原子位置とセル  (QHA は 3 も可)",
+                "`RELAX_STR = 2`\npositions and cell",
+                "`RELAX_STR = 2`\n原子位置とセル",
             ),
         ),
         "q3": (
             "ask",
             L(
-                "DFT data of\nstrained cells\navailable?",
-                "ひずみを与えた\nセルの DFT\nデータがある?",
+                "Skip the\nstrained-cell\nDFT?",
+                "ひずみセルの\nDFT を\n省略する?",
             ),
         ),
         "tl": (
             "tool",
             L(
-                "strainifc.py, elastic.py\n→ strainfile.py",
-                "strainifc.py, elastic.py\n→ strainfile.py",
+                "Strain tools\nstrained-cell DFT\nstrainifc.py, elastic.py → strainfile.py",
+                "ひずみ用ツール\nひずみセルの DFT を準備\nstrainifc.py, elastic.py → strainfile.py",
             ),
         ),
         "sf": (
@@ -399,8 +413,8 @@ FINITE_T = dict(
         "c0": (
             "set",
             L(
-                "`STRAIN_COUPLING = 0`\nestimated from the IFCs;\nhigh-symmetry crystals only",
-                "`STRAIN_COUPLING = 0`\n力定数から推定;\n高対称な結晶のみ",
+                "`STRAIN_COUPLING = 0`\nelastic / harmonic couplings from IFCs;\nstrain–force coupling set to zero",
+                "`STRAIN_COUPLING = 0`\n弾性定数・調和項の結合を IFC から推定\nひずみと力の結合はゼロ",
             ),
         ),
         "run": (
@@ -417,18 +431,19 @@ FINITE_T = dict(
                 "温度 T の\n結果を別の\n計算に使う?",
             ),
         ),
+        "end": ("end", L("Analyze the results", "結果を解析")),
         "fu": (
             "set",
             L(
-                "`FC2_TEMPERATURE = T`\n+ `RELAXED_STRUCTURE = 1`  if the structure was relaxed",
-                "`FC2_TEMPERATURE = T`\n構造を最適化した場合は + `RELAXED_STRUCTURE = 1`",
+                "Reuse the state file\n`FCSFILE = PREFIX.h5` (original IFCs)\n`DFC2FILE = PREFIX.scph.h5` (or .qha.h5)\n`FC2_TEMPERATURE = T` (stored temperature)\nIf relaxed: `RELAXED_STRUCTURE = 1`\nand retain the original FC4",
+                "保存した結果を再利用\n`FCSFILE = PREFIX.h5` (元の IFC)\n`DFC2FILE = PREFIX.scph.h5` (または .qha.h5)\n`FC2_TEMPERATURE = T` (保存済みの温度)\n構造最適化後は `RELAXED_STRUCTURE = 1`\n元の FC4 も必要",
             ),
         ),
         "re": (
             "anphon",
             L(
-                "anphon\n`MODE = kappa` or `phonons`  on the result at T",
-                "anphon\n温度 T の結果で `MODE = kappa` または `phonons`",
+                "anphon\n`MODE = kappa` or `phonons`\nFor kappa: `TMIN = TMAX = T`",
+                "anphon\n`MODE = kappa` または `phonons`\nkappa の場合: `TMIN = TMAX = T`",
             ),
         ),
     },
@@ -439,8 +454,17 @@ FINITE_T = dict(
         ("q2", "r1", dict(label=NO)),
         ("q2", "r2", dict(label=YES)),
         ("r2", "q3"),
-        ("q3", "tl", dict(label=YES)),
-        ("q3", "c0", dict(label=NO)),
+        ("q3", "tl", dict(label=NO)),
+        (
+            "q3",
+            "c0",
+            dict(
+                label=L(
+                    "yes (only if the strain–force\ncoupling is zero by symmetry)",
+                    "はい (対称性により\nひずみと力の結合が\nゼロの場合のみ)",
+                )
+            ),
+        ),
         ("tl", "sf"),
         ("r0", "run"),
         ("r1", "run"),
@@ -448,9 +472,10 @@ FINITE_T = dict(
         ("c0", "run"),
         ("run", "q4"),
         ("q4", "fu", dict(label=YES)),
+        ("q4", "end", dict(label=NO, constraint="false")),
         ("fu", "re"),
     ],
-    same=[["r1", "r2"]],
+    same=[["r0", "r1", "r2"], ["sf", "c0"], ["q4", "end"]],
 )
 
 CHARTS = {

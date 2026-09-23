@@ -114,10 +114,12 @@ Finite-temperature calculations (SCPH and QHA)
 * ``RELAX_STR`` selects what is relaxed at each temperature: nothing, the atomic positions, or the atomic positions and the cell.
 * Relaxing the cell also needs the elastic constants and the coupling between strain and forces.
   They come from DFT calculations of strained cells, prepared with the :ref:`strain tools <label_strain_tools>` and given as ``STRAINFILE``.
-  For high-symmetry crystals, ``STRAIN_COUPLING = 0`` estimates them from the force constants instead.
+  If the coupling between strain and forces is zero by symmetry, ``STRAIN_COUPLING = 0`` skips these DFT calculations and estimates the rest from the force constants.
 * The results at every temperature are stored in ``PREFIX``.scph.h5 or ``PREFIX``.qha.h5.
-  To use them in a later ``MODE = kappa`` or ``phonons`` calculation, set ``FC2_TEMPERATURE``,
-  and also ``RELAXED_STRUCTURE = 1`` if the structure was relaxed.
+  To use them in a later ``MODE = kappa`` or ``phonons`` calculation, keep ``FCSFILE`` pointing to the original IFCs,
+  set ``DFC2FILE`` to the SCPH/QHA result file, and set ``FC2_TEMPERATURE`` to a stored temperature.
+  If the structure was relaxed, also set ``RELAXED_STRUCTURE = 1``; ``FCSFILE`` must then contain the same FC4 as used in the SCPH/QHA run.
+  For ``kappa``, set ``TMIN = TMAX = FC2_TEMPERATURE`` for each run.
 
 
 Step 3: Analyze the results
