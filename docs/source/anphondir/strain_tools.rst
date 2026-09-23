@@ -301,6 +301,8 @@ XML force-constant files).
   header when ``--fcs`` is given (and ``/StrainForce`` of the container with ``--strain-file``). All six strain modes are required
   (anphon demands that the weights of every component sum to 1); ``--modes`` subsets are only
   meaningful for ``--coupling harmonic`` (anphon completes the missing components by symmetry).
+  Use ``--central``: the one-sided difference can bias the thermal expansion noticeably
+  (by about 10 percent for the c axis of ZnO at 1000 K).
 * ``--coupling harmonic``: the template is the **same supercell** as the one used to fit the
   harmonic force constants given to anphon. For every strained supercell the ALM displacement
   patterns are generated (``strain_NNN/disp_MM``), plus the undisplaced strained cell
@@ -318,42 +320,6 @@ file with the shell lines that run the DFT code in one directory (``--dft-comman
 ``job.sh`` files in the same way as the original strainIFCcoupling scripts; without them a plain
 ``run_all.sh`` loop is written. Template inputs for wurtzite ZnO are provided in
 ``example/ZnO/strain_IFC_workflow``.
-
-Validation
-----------
-
-The tools were validated against the data of the ZnO (QHA) and BaTiO\ :sub:`3` (SCPH) tutorials
-with VASP 6.5.1 (PBEsol, PAW_PBE Zn/O and Ba_sv/Ti_sv/O, ENCUT 600/550 eV, the tutorial cells):
-
-* ``strain_force.in`` (ZnO, one-sided, smag 0.005) reproduces the tutorial file to 1e-6 eV/Å; the
-  harmonic force constants of the undeformed 4×4×2 (ZnO) and 2×2×2 (BaTiO\ :sub:`3`) supercells
-  (``--with-reference``) agree with the tutorial ``FC2FILE`` to at most 7e-5 Ry/bohr\ :sup:`2` (0.05 %), and
-  the strain derivatives of the harmonic force constants to 0.2–1 % (RMS).
-* Clamped-ion SOEC from ``elastic.py fit --fit stress`` (85 primitive-cell runs, smag 0.01): ZnO
-  C11/C12/C13/C33/C44 = 276.6/95.7/67.8/302.6/55.2 GPa vs 277.8/96.3/68.0/303.9/56.1 in the tutorial
-  file; BaTiO\ :sub:`3` 316.8/110.5/127.3 vs 320.2/113.2/130.3 GPa; dominant TOEC within 1–2 %.
-  ``--fit both`` agrees with ``--fit stress`` to 0.01 GPa; a step of 0.005 gives a 4× worse condition
-  number, so ``--smag 0.01`` is recommended.
-* End to end, the regenerated inputs give thermal strains within 1 % (ZnO QHA, 0–1000 K) and 2 %
-  (BaTiO\ :sub:`3` SCPH, 280–300 K, including the tetragonal phase) of the tutorial results.
-* The one-sided finite difference of the strain–force coupling (the scheme of the original data)
-  biases the c-axis expansion of ZnO at 1000 K by about +12 % relative to central differences
-  (``--central``, 13 instead of 7 primitive-cell runs) — use ``--central`` for this coupling.
-* ``C1_array.in`` from the residual stress of the reference (-0.04 GPa for ZnO) shifts the 0 K cell
-  by :math:`-C^{-1}\sigma_0` as expected (up to 4 % of the thermal strain); the IFC route for the
-  elastic constants (``STRAIN_COUPLING`` bit 1 clear) overestimates u\ :sub:`zz` of ZnO by 33 % at 1000 K because of its C13/C33 error (see above).
-  With the dipole correction (``NONANALYTIC = 3`` and the ``BORNINFO`` of ``example/ZnO/qha_relax``,
-  PBEsol DFPT: :math:`\varepsilon_\infty` = 6.61/5.95, Z*(Zn) = 2.14/2.17) the IFC-derived C13/C33 move from 25/374 to 52/323 GPa
-  (DFT 68/303) and the u\ :sub:`zz` error drops to 25 %. For cubic BaTiO\ :sub:`3` (``BORNINFO`` of
-  ``example/BaTiO3/scph_relax``: :math:`\varepsilon_\infty` = 6.79, Z*(Ti) = 7.40, :math:`Z^{*}(\mathrm{O}_{\parallel})` = -5.86) the IFC route gives
-  C11/C12/C44 = 391/216/123 GPa uncorrected and 346/71/125 GPa with the dipole correction, vs 317/110/127 GPa
-  from ``elastic.py`` when the tutorial 2×2×2 harmonic cell is used. The IFC route does converge with the
-  size of the harmonic supercell given as ``FC2FILE``: with the dipole correction, 3×3×3 gives
-  295/117/125 GPa and 4×4×4 gives 318/117/127 GPa (without it the values oscillate: 254/130/125 and
-  359/140/127), because the minimum-image reach of the 2×2×2 cell (a = 3.99 Å) aliases every shell from the
-  second Ti–O neighbour outward. Hence use the IFC route only with a harmonic supercell of at least
-  3×3×3 *and* ``NONANALYTIC = 3`` for such polar perovskites; otherwise the DFT route (``elastic.py``, a few
-  minutes for the 5-atom cell) is the recommended source of the elastic constants for polar materials.
 
 .. [Masuki2022] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **106**, 224104 (2022).
 .. [Masuki2023] R. Masuki, T. Nomoto, R. Arita, and T. Tadano, Phys. Rev. B **107**, 134119 (2023).
