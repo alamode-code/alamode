@@ -3,7 +3,9 @@
 
 Each chart is defined once, with its labels in English and Japanese, and
 rendered by Graphviz to PDF (LaTeX) and, through poppler's pdftocairo, to SVG (HTML) for both languages:
-NAME.svg / NAME.pdf and NAME.ja.svg / NAME.ja.pdf. Sphinx picks the
+NAME.svg / NAME.pdf and NAME.ja.svg / NAME.ja.pdf. A dark-palette set,
+NAME.dark.svg and NAME.dark.ja.svg, is shown instead in the dark mode of the
+HTML theme (only-light / only-dark classes in quickstart.rst). Sphinx picks the
 language variant through figure_language_filename and the format through
 the ``NAME.*`` wildcard. The rendered files are committed, so building the
 documentation does not need Graphviz or poppler; rerun this script after editing.
@@ -22,39 +24,50 @@ PDFTOCAIRO = os.environ.get("PDFTOCAIRO", "pdftocairo")  # poppler
 FONT = {"en": "Helvetica", "ja": "Hiragino Sans"}
 MONO = "Courier"
 
-# Role -> node attributes. Shapes, border styles, and explicit program names
+# Role -> node shape. Shapes, border styles, and explicit program names
 # supplement colour so that the charts also work in grey scale.
 STYLE = {
-    "alm": dict(
-        shape="box",
-        style="rounded,filled",
-        fillcolor="#DCEBFA",
-        color="#2B6CB0",
-        penwidth="1.6",
+    "alm": dict(shape="box", style="rounded,filled", penwidth="1.6"),
+    "anphon": dict(shape="box", style="rounded,filled", penwidth="1.6"),
+    "dft": dict(shape="box", style="filled"),
+    "tool": dict(shape="box", style="filled,dashed"),
+    "file": dict(shape="note", style="filled"),
+    "ask": dict(shape="diamond", style="filled", margin="0.02"),
+    "end": dict(shape="box", style="rounded,filled"),
+    "set": dict(shape="box", style="filled"),
+}
+
+# Theme -> text and edge colours, and role -> (fill, border). The background is
+# transparent, so the dark set is drawn on the dark page of the HTML theme.
+THEMES = {
+    "light": dict(
+        text="#000000",
+        edge="#444444",
+        roles={
+            "alm": ("#DCEBFA", "#2B6CB0"),
+            "anphon": ("#DDF2E3", "#2F855A"),
+            "dft": ("#ECECEC", "#555555"),
+            "tool": ("#FFF4D6", "#B7791F"),
+            "file": ("#FFFFFF", "#777777"),
+            "ask": ("#FCE9E9", "#C53030"),
+            "end": ("#EFE6FB", "#6B46C1"),
+            "set": ("#FFFFFF", "#2F855A"),
+        },
     ),
-    "anphon": dict(
-        shape="box",
-        style="rounded,filled",
-        fillcolor="#DDF2E3",
-        color="#2F855A",
-        penwidth="1.6",
+    "dark": dict(
+        text="#E8ECF1",
+        edge="#AEB6C0",
+        roles={
+            "alm": ("#1D3A5C", "#6CA8E8"),
+            "anphon": ("#1C4230", "#6CCB8F"),
+            "dft": ("#3A3F46", "#A3ABB5"),
+            "tool": ("#4A3A14", "#E0AE4E"),
+            "file": ("#2B3038", "#9AA3AD"),
+            "ask": ("#4D2226", "#F08A8A"),
+            "end": ("#382A57", "#B39AF0"),
+            "set": ("#2B3038", "#6CCB8F"),
+        },
     ),
-    "dft": dict(shape="box", style="filled", fillcolor="#ECECEC", color="#555555"),
-    "tool": dict(
-        shape="box", style="filled,dashed", fillcolor="#FFF4D6", color="#B7791F"
-    ),
-    "file": dict(shape="note", style="filled", fillcolor="#FFFFFF", color="#777777"),
-    "ask": dict(
-        shape="diamond",
-        style="filled",
-        fillcolor="#FCE9E9",
-        color="#C53030",
-        margin="0.02",
-    ),
-    "end": dict(
-        shape="box", style="rounded,filled", fillcolor="#EFE6FB", color="#6B46C1"
-    ),
-    "set": dict(shape="box", style="filled", fillcolor="#FFFFFF", color="#2F855A"),
 }
 
 
@@ -89,20 +102,27 @@ def label(text, lang, plain=False):
     )
 
 
-def render(name, graph, nodes, edges, lang, same=()):
+def render(name, graph, nodes, edges, lang, same=(), theme="light"):
     font = FONT[lang]
+    th = THEMES[theme]
     lines = [
         "digraph %s {" % name,
-        '  graph [bgcolor="white", fontname="%s", %s];' % (font, graph),
-        '  node  [fontname="%s", fontsize="12", margin="0.15,0.08"];' % font,
-        '  edge  [fontname="%s", fontsize="10", color="#444444", arrowsize="0.8"];'
-        % font,
+        '  graph [bgcolor="transparent", fontname="%s", %s];' % (font, graph),
+        '  node  [fontname="%s", fontsize="12", margin="0.15,0.08", fontcolor="%s"];'
+        % (font, th["text"]),
+        '  edge  [fontname="%s", fontsize="10", color="%s", fontcolor="%s", '
+        'arrowsize="0.8"];' % (font, th["edge"], th["text"]),
     ]
     for nid, (role, text) in nodes.items():
-        attrs = ", ".join('%s="%s"' % kv for kv in STYLE[role].items())
+        fill, border = th["roles"][role]
+        attrs = dict(STYLE[role], fillcolor=fill, color=border)
         lines.append(
             "  %s [label=%s, %s];"
-            % (nid, label(text[lang], lang, role == "ask"), attrs)
+            % (
+                nid,
+                label(text[lang], lang, role == "ask"),
+                ", ".join('%s="%s"' % kv for kv in attrs.items()),
+            )
         )
     for e in edges:
         src, dst = e[0], e[1]
@@ -115,8 +135,11 @@ def render(name, graph, nodes, edges, lang, same=()):
         lines.append("  { rank=same; %s; }" % "; ".join(group))
     lines.append("}")
     source = "\n".join(lines)
-    suffix = "" if lang == "en" else "." + lang
-    pdf = HERE / ("%s%s.pdf" % (name, suffix))
+    # NAME[.dark][.ja].ext -- Sphinx's default figure_language_filename is
+    # {root}.{language}{ext}, so the language must come last.
+    stem = name + ("" if theme == "light" else "." + theme)
+    stem += "" if lang == "en" else "." + lang
+    pdf = HERE / (stem + ".pdf")
     subprocess.run([DOT, "-Tpdf", "-o", str(pdf)], input=source.encode(), check=True)
     # The SVG is converted from the PDF so that the text becomes glyph outlines:
     # Graphviz's own SVG places each font run at a fixed x, and runs overlap
@@ -124,6 +147,8 @@ def render(name, graph, nodes, edges, lang, same=()):
     subprocess.run(
         [PDFTOCAIRO, "-svg", str(pdf), str(pdf.with_suffix(".svg"))], check=True
     )
+    if theme != "light":
+        pdf.unlink()  # the dark set is used by the HTML pages only
 
 
 def L(en, ja):
@@ -491,5 +516,7 @@ CHARTS = {
 if __name__ == "__main__":
     for name, c in CHARTS.items():
         for lang in ("en", "ja"):
-            render(name, c["graph"], c["nodes"], c["edges"], lang, c.get("same", ()))
+            for theme in THEMES:
+                args = (c["graph"], c["nodes"], c["edges"], lang, c.get("same", ()))
+                render(name, *args, theme=theme)
         print("rendered", name)

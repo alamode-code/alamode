@@ -7,3 +7,11 @@ article[role="main"],
 .article-container {
   max-width: var(--content-width);
 }
+
+/* Softer dark mode: breeze's default page (oklch L = 0.175) is close to black,
+   which makes the thin body text hard to read. Lift the surfaces and the text. */
+:root[data-theme="dark"] {
+  --bz-color-surface: oklch(.3 .012 265);
+  --bz-color-text: oklch(.95 .004 265);
+  --bz-color-muted: oklch(.85 .004 265);
+}

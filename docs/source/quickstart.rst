@@ -11,8 +11,18 @@ The chart below shows how the two programs, the DFT code, and the helper scripts
 .. figure:: ../img/flowcharts/overview.*
    :align: center
    :alt: Overall workflow: DFT, alm, anphon and the analysis tools
+   :figclass: only-light
 
    Overall workflow. Blue: *alm*; green: *anphon*; grey: DFT calculations; yellow: helper scripts in ``tools/``.
+
+.. only:: html
+
+   .. figure:: ../img/flowcharts/overview.dark.*
+      :align: center
+      :alt: Overall workflow: DFT, alm, anphon and the analysis tools
+      :figclass: only-dark
+
+      Overall workflow. Blue: *alm*; green: *anphon*; grey: DFT calculations; yellow: helper scripts in ``tools/``.
 
 
 Step 1: Force constants with alm
@@ -21,8 +31,18 @@ Step 1: Force constants with alm
 .. figure:: ../img/flowcharts/alm_workflow.*
    :align: center
    :alt: Flowchart for calculating force constants with alm
+   :figclass: only-light
 
    How to obtain the force constants. The harmonic force constants are calculated first; they are needed to generate the random displacements for the anharmonic force constants.
+
+.. only:: html
+
+   .. figure:: ../img/flowcharts/alm_workflow.dark.*
+      :align: center
+      :alt: Flowchart for calculating force constants with alm
+      :figclass: only-dark
+
+      How to obtain the force constants. The harmonic force constants are calculated first; they are needed to generate the random displacements for the anharmonic force constants.
 
 1. **Prepare the DFT reference.**
    Converge the cutoff energy and the :math:`k`-point density, then relax the primitive cell until the forces are negligible.
@@ -72,8 +92,18 @@ Step 2: Phonon properties with anphon
 .. figure:: ../img/flowcharts/anphon_modes.*
    :align: center
    :alt: Flowchart for choosing the MODE of anphon
+   :figclass: only-light
 
    Choosing ``MODE``. Each box lists the force constants (FC2: harmonic, FC3: cubic, FC4: quartic) that ``PREFIX``.h5 must contain.
+
+.. only:: html
+
+   .. figure:: ../img/flowcharts/anphon_modes.dark.*
+      :align: center
+      :alt: Flowchart for choosing the MODE of anphon
+      :figclass: only-dark
+
+      Choosing ``MODE``. Each box lists the force constants (FC2: harmonic, FC3: cubic, FC4: quartic) that ``PREFIX``.h5 must contain.
 
 Set ``MODE`` and ``FCSFILE = PREFIX.h5`` in the ``&general`` field of the *anphon* input, and run::
 
@@ -109,8 +139,18 @@ Finite-temperature calculations (SCPH and QHA)
 .. figure:: ../img/flowcharts/finite_temperature.*
    :align: center
    :alt: Flowchart for the structural optimization at finite temperatures
+   :figclass: only-light
 
    Options of the finite-temperature calculations, and how to use their results in later calculations.
+
+.. only:: html
+
+   .. figure:: ../img/flowcharts/finite_temperature.dark.*
+      :align: center
+      :alt: Flowchart for the structural optimization at finite temperatures
+      :figclass: only-dark
+
+      Options of the finite-temperature calculations, and how to use their results in later calculations.
 
 * ``RELAX_STR`` selects what is relaxed at each temperature: nothing, the atomic positions, or the atomic positions and the cell.
 * Relaxing the cell also needs the elastic constants and the coupling between strain and forces.
