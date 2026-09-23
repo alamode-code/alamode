@@ -1,66 +1,57 @@
-ALM: Output files 
+ALM: Output files
 -----------------
 
-* ``PREFIX``.pattern_HARMONIC, ``PREFIX``.pattern_ANHARM?
+Displacement patterns (``MODE = suggest``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- These files contain displacement patterns in Cartesian coordinate. 
- The length of displacement is normalized to unity for each atom.
- Created when ``MODE = suggest``.
- Patterns for anharmonic force constants are printed only when ``NORDER > 1``.
+* ``PREFIX``.pattern_HARMONIC, ``PREFIX``.pattern_ANHARM3, ``PREFIX``.pattern_ANHARM4, ...
 
-* ``PREFIX``.fcs
+ Displacement patterns in Cartesian coordinates, one file per order, in the YAML format.
+ The length of the displacement is normalized to unity for each atom.
+ The anharmonic patterns are written only when ``NORDER > 1``.
+ These files are read by ``displace.py --pattern_file``.
 
- Harmonic and anharmonic force constants in Rydberg atomic units.
- In the first section, only symmetry-reduced force constants are printed.
- All symmetry-related force constants are shown in the following section
- with the symmetry prefactor (:math:`\pm 1`).
- Created when ``MODE = optimize``.
-
-* ``PREFIX``.xml
-
- An XML file containing the necessary information for performing
- phonon calculations.
- The file can be read by *anphon* using the ``FCSFILE``-tag.
- Created by default when ``MODE = optimize`` (controlled by ``FCS_ALAMODE``).
- When ``LMODEL = enet | adaptive-lasso``, the file is created only when the cross-validation mode is off (``CV = 0``).
+Force constants (``MODE = optimize``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * ``PREFIX``.h5
 
- An HDF5 file containing the same information as ``PREFIX``.xml in the HDF5 format.
- It can also be read by *anphon* using the ``FCSFILE``-tag.
- Created by default when ``MODE = optimize``.
- When ``LMODEL = enet | adaptive-lasso``, the file is created only when the cross-validation mode is off (``CV = 0``).
+ The force constants and the crystal structure in the HDF5 format.
+ This is the standard output: it is always written and is read by *anphon* through ``FCSFILE``.
+ The layout of the file is described in :ref:`label_hdf5_fcs`.
 
-* ``PREFIX``.FORCE_CONSTANT_3RD
+* ``PREFIX``.xml, ``PREFIX``.fcs
 
- Third-order force constants in the FORCE_CONSTANT_3RD format of the ShengBTE code.
- Created when ``MODE = optimize`` and ``FC3_SHENGBTE = 1``.
- When ``LMODEL = enet | adaptive-lasso``, the file is created only when the cross-validation mode is off (``CV = 0``).
+ Legacy outputs, written only when ``FCS_ALAMODE = 1``.
+ ``PREFIX``.xml holds the same information as ``PREFIX``.h5 in the XML format, and *anphon* can still read it.
+ ``PREFIX``.fcs is a human-readable list of the force constants in Rydberg atomic units:
+ the symmetry-reduced force constants first, then all symmetry-related ones with the symmetry prefactor (:math:`\pm 1`).
 
-* ``PREFIX``.FORCE_CONSTANT_4TH
+* ``PREFIX``.FORCE_CONSTANT_3RD, ``PREFIX``.FORCE_CONSTANT_4TH
 
- Fourth-order force constants in the FORCE_CONSTANT_4TH format of the ShengBTE (FourPhonon) code.
- Created when ``MODE = optimize``, ``FC4_SHENGBTE = 1``, and ``NORDER > 2``.
-
-* ``PREFIX``.fc
-
- Second-order force constants in the Quantum ESPRESSO ``.fc`` format.
- Created when ``MODE = optimize`` and ``FC2_QEFC = 1``.
+ Third- and fourth-order force constants in the format of the ShengBTE and FourPhonon codes.
+ Written when ``FC3_SHENGBTE = 1`` and ``FC4_SHENGBTE = 1`` (the latter needs ``NORDER > 2``).
 
 * ``PREFIX``.hessian
 
- The entire Hessian matrix of the supercell.
- Created when ``MODE = optimize`` and ``HESSIAN = 1``.
+ The entire Hessian matrix of the supercell. Written when ``HESSIAN = 1``.
 
-* ``PREFIX``.cvset 
- 
- This file contains training and validation errors of cross-validation performed with the *manually* given ``DFSET`` (training dataset) and ``DFSET_CV`` (validation dataset). Created when the manual cross-validation mode is selected by setting ``CV = -1``.
+.. note::
+   With ``LMODEL = enet`` or ``adaptive-lasso``, the force-constant files are written only when
+   cross-validation is off (``CV = 0``). A cross-validation run only selects the regularization parameter.
 
-* ``PREFIX``.cvset[1, ..., ``CV``]
+Cross-validation (``MODE = optimize``, ``LMODEL = enet`` or ``adaptive-lasso``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- These files contain training and validation errors of cross-validation performed for ``CV`` subsets. Created when the automatic cross-validation mode is selected by setting ``CV > 1``.
+* ``PREFIX``.cvset
+
+ Training and validation errors of the cross-validation with the given ``DFSET`` (training) and ``DFSET_CV`` (validation) data.
+ Written when ``CV = -1``.
+
+* ``PREFIX``.cvset1, ..., ``PREFIX``.cvset\ *N*
+
+ Training and validation errors for each of the *N* = ``CV`` subsets. Written when ``CV > 1``.
 
 * ``PREFIX``.cvscore
 
- The mean value and standard deviation of the training and validation errors are reported. Created when the automatic cross-validation (``CV > 1``) is finished.
-
+ Mean and standard deviation of the training and validation errors over the subsets. Written when ``CV > 1``.
