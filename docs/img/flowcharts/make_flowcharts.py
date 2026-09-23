@@ -2,11 +2,11 @@
 """Render the flowcharts of the "Running ALAMODE" page.
 
 Each chart is defined once, with its labels in English and Japanese, and
-rendered by Graphviz to SVG (HTML) and PDF (LaTeX) for both languages:
+rendered by Graphviz to PDF (LaTeX) and, through poppler's pdftocairo, to SVG (HTML) for both languages:
 NAME.svg / NAME.pdf and NAME.ja.svg / NAME.ja.pdf. Sphinx picks the
 language variant through figure_language_filename and the format through
 the ``NAME.*`` wildcard. The rendered files are committed, so building the
-documentation does not need Graphviz; rerun this script after editing.
+documentation does not need Graphviz or poppler; rerun this script after editing.
 
     python3 make_flowcharts.py            # uses `dot` from PATH
     DOT=/path/to/dot python3 make_flowcharts.py
@@ -18,6 +18,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 DOT = os.environ.get("DOT", "dot")
+PDFTOCAIRO = os.environ.get("PDFTOCAIRO", "pdftocairo")  # poppler
 FONT = {"en": "Helvetica", "ja": "Hiragino Sans"}
 MONO = "Courier"
 
@@ -115,12 +116,14 @@ def render(name, graph, nodes, edges, lang, same=()):
     lines.append("}")
     source = "\n".join(lines)
     suffix = "" if lang == "en" else "." + lang
-    for fmt in ("svg", "pdf"):
-        subprocess.run(
-            [DOT, "-T" + fmt, "-o", str(HERE / ("%s%s.%s" % (name, suffix, fmt)))],
-            input=source.encode(),
-            check=True,
-        )
+    pdf = HERE / ("%s%s.pdf" % (name, suffix))
+    subprocess.run([DOT, "-Tpdf", "-o", str(pdf)], input=source.encode(), check=True)
+    # The SVG is converted from the PDF so that the text becomes glyph outlines:
+    # Graphviz's own SVG places each font run at a fixed x, and runs overlap
+    # when the browser substitutes fonts with other widths.
+    subprocess.run(
+        [PDFTOCAIRO, "-svg", str(pdf), str(pdf.with_suffix(".svg"))], check=True
+    )
 
 
 def L(en, ja):
