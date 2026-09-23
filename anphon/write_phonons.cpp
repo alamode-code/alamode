@@ -1380,7 +1380,7 @@ void Writes::writeEigenvaluesHdf5() const
     std::string fname_eval;
 
     if (phon->kpoint->kpoint_general.get() && phon->dynamical->dymat_general) {
-        fname_eval = run.job_title + ".eval.hdf5";
+        fname_eval = run.job_title + ".eval.h5";
         writeEigenvaluesEachHdf5(fname_eval,
                                  phon->kpoint->kpoint_general->nk,
                                  phon->kpoint->kpoint_general->xk,
@@ -1389,7 +1389,7 @@ void Writes::writeEigenvaluesHdf5() const
     }
 
     if (phon->kpoint->kpoint_bs.get() && phon->dynamical->dymat_band) {
-        fname_eval = run.job_title + ".band.eval.hdf5";
+        fname_eval = run.job_title + ".band.eval.h5";
         writeEigenvaluesEachHdf5(fname_eval,
                                  phon->kpoint->kpoint_bs->nk,
                                  phon->kpoint->kpoint_bs->xk,
@@ -1398,7 +1398,7 @@ void Writes::writeEigenvaluesHdf5() const
     }
 
     if (phon->dos->kmesh_dos.get() && phon->dos->dymat_dos.get()) {
-        fname_eval = run.job_title + ".mesh.eval.hdf5";
+        fname_eval = run.job_title + ".mesh.eval.h5";
         writeEigenvaluesEachHdf5(fname_eval,
                                  phon->dos->kmesh_dos->nk,
                                  phon->dos->kmesh_dos->xk,
@@ -1749,7 +1749,7 @@ void Writes::writeEigenvectorsHdf5() const
     std::string fname_evec;
 
     if (phon->kpoint->kpoint_general.get() && phon->dynamical->dymat_general) {
-        fname_evec = run.job_title + ".evec.hdf5";
+        fname_evec = run.job_title + ".evec.h5";
         writeEigenvectorsEachHdf5(fname_evec,
                                   phon->kpoint->kpoint_general->nk,
                                   phon->kpoint->kpoint_general->xk,
@@ -1759,7 +1759,7 @@ void Writes::writeEigenvectorsHdf5() const
     }
 
     if (phon->kpoint->kpoint_bs.get() && phon->dynamical->dymat_band) {
-        fname_evec = run.job_title + ".band.evec.hdf5";
+        fname_evec = run.job_title + ".band.evec.h5";
         writeEigenvectorsEachHdf5(fname_evec,
                                   phon->kpoint->kpoint_bs->nk,
                                   phon->kpoint->kpoint_bs->xk,
@@ -1769,7 +1769,7 @@ void Writes::writeEigenvectorsHdf5() const
     }
 
     if (phon->dos->kmesh_dos.get() && phon->dos->dymat_dos.get()) {
-        fname_evec = run.job_title + ".mesh.evec.hdf5";
+        fname_evec = run.job_title + ".mesh.evec.h5";
         writeEigenvectorsEachHdf5(fname_evec,
                                   phon->dos->kmesh_dos->nk,
                                   phon->dos->kmesh_dos->xk,
@@ -2001,6 +2001,11 @@ void Writes::writeEigenvectorsEachHdf5(const std::string &fname_evec, const unsi
         stamp_h5_schema(fh, h5_schema_eigenvectors, h5_version_eigen);
         write_input_variables_h5(fh, run.input_variables);
     }
+
+    if (run.verbosity > 0) {
+        std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << fname_evec;
+        std::cout << " : Eigenvector of all k points (HDF5)\n";
+    }
 }
 
 #endif
@@ -2156,17 +2161,19 @@ void Writes::writeGruneisen()
         }
     }
 
-    if (phon->dos->kmesh_dos.get() && (phon->gruneisen->gruneisen_dos || phon->gruneisen->gruneisen_tensor_dos)) {
-
+    // PREFIX.gru_all (KPMODE = 2 mesh) and PREFIX.gru_kpoints (KPMODE = 0 list) share one format.
+    auto write_gru_list = [&](const std::string &file_gruall,
+                              const std::string &where,
+                              const unsigned int nk,
+                              const NDArray<double, 2> &xk,
+                              const double *const *eval,
+                              const NDArray<std::complex<double>, 2> &gamma_iso,
+                              const NDArray<std::complex<double>, 3> &gamma_tensor) {
         std::ofstream ofs_gruall;
-        auto file_gruall = run.job_title + ".gru_all";
         ofs_gruall.open(file_gruall.c_str(), std::ios::out);
-        if (!ofs_gruall) exit("writeGruneisen", "cannot open file_gruall");
+        if (!ofs_gruall) exit("writeGruneisen", ("cannot open " + file_gruall).c_str());
 
-        const auto nk = phon->dos->kmesh_dos->nk;
         const auto ns = phon->dynamical->neval;
-        const auto &xk = phon->dos->kmesh_dos->xk;
-        const auto eval = phon->dos->dymat_dos->get_eigenvalues();
 
         if (phon->gruneisen->gruneisen_mode == 1) {
             ofs_gruall << "# Volumetric Gruneisen parameter: gamma = -dln(omega)/dln(V)\n";
@@ -2188,10 +2195,10 @@ void Writes::writeGruneisen()
                 ofs_gruall << std::setw(5) << j;
                 ofs_gruall << std::setw(15) << in_kayser(eval[i][j]);
                 if (phon->gruneisen->gruneisen_mode == 1) {
-                    ofs_gruall << std::setw(15) << phon->gruneisen->gruneisen_dos[i][j].real();
+                    ofs_gruall << std::setw(15) << gamma_iso[i][j].real();
                 } else {
                     for (auto ic = 0; ic < ncomp; ++ic) {
-                        ofs_gruall << std::setw(15) << phon->gruneisen->gruneisen_tensor_dos[i][j][ic].real();
+                        ofs_gruall << std::setw(15) << gamma_tensor[i][j][ic].real();
                     }
                 }
                 ofs_gruall << '\n';
@@ -2202,11 +2209,33 @@ void Writes::writeGruneisen()
         if (run.verbosity > 0) {
             std::cout << "  " << std::setw(run.job_title.length() + 12) << std::left << file_gruall;
             if (phon->gruneisen->gruneisen_mode == 1) {
-                std::cout << " : Volumetric Gruneisen parameters at all k points" << '\n';
+                std::cout << " : Volumetric Gruneisen parameters at " << where << '\n';
             } else {
-                std::cout << " : Generalized Gruneisen parameters at all k points" << '\n';
+                std::cout << " : Generalized Gruneisen parameters at " << where << '\n';
             }
         }
+    };
+
+    if (phon->dos->kmesh_dos.get() && (phon->gruneisen->gruneisen_dos || phon->gruneisen->gruneisen_tensor_dos)) {
+        write_gru_list(run.job_title + ".gru_all",
+                       "all k points",
+                       phon->dos->kmesh_dos->nk,
+                       phon->dos->kmesh_dos->xk,
+                       phon->dos->dymat_dos->get_eigenvalues(),
+                       phon->gruneisen->gruneisen_dos,
+                       phon->gruneisen->gruneisen_tensor_dos);
+    }
+
+    if (phon->kpoint->kpoint_general.get() &&
+        (phon->gruneisen->gruneisen_general || phon->gruneisen->gruneisen_tensor_general))
+    {
+        write_gru_list(run.job_title + ".gru_kpoints",
+                       "given k points",
+                       phon->kpoint->kpoint_general->nk,
+                       phon->kpoint->kpoint_general->xk,
+                       phon->dynamical->dymat_general->get_eigenvalues(),
+                       phon->gruneisen->gruneisen_general,
+                       phon->gruneisen->gruneisen_tensor_general);
     }
 }
 

@@ -54,6 +54,8 @@ void Gruneisen::deallocate_variables()
     gruneisen_dos.clear();
     gruneisen_tensor_bs.clear();
     gruneisen_tensor_dos.clear();
+    gruneisen_general.clear();
+    gruneisen_tensor_general.clear();
     delta_fc2.clear();
     delta_fc2_newfcs.clear();
     delta_fc3_newfcs.clear();
@@ -121,8 +123,11 @@ void Gruneisen::setup(const int quartic_mode, const NDArray<std::vector<FcsArray
 }
 
 void Gruneisen::calc_gruneisen(const KpointBandStructure *kpoint_bs, const DymatEigenValue *dymat_band,
-                               const KpointMeshUniform *kmesh_dos, const DymatEigenValue *dymat_dos)
+                               const KpointMeshUniform *kmesh_dos, const DymatEigenValue *dymat_dos,
+                               const KpointGeneral *kpoint_general, const DymatEigenValue *dymat_general)
 {
+    if (!dymat_general) kpoint_general = nullptr;
+
     if (run.my_rank == 0 && run.verbosity > 0) {
         std::cout << '\n';
         const std::string ion_path = sublattice_relax ? "relaxed-ion " : "";
@@ -141,6 +146,9 @@ void Gruneisen::calc_gruneisen(const KpointBandStructure *kpoint_bs, const Dymat
         if (kmesh_dos) {
             gruneisen_dos.resize(kmesh_dos->nk, system->get_num_modes());
         }
+        if (kpoint_general) {
+            gruneisen_general.resize(kpoint_general->nk, system->get_num_modes());
+        }
     } else if (gruneisen_mode >= 2) {
         const auto ncomp = number_of_strain_components();
         if (kpoint_bs) {
@@ -148,6 +156,9 @@ void Gruneisen::calc_gruneisen(const KpointBandStructure *kpoint_bs, const Dymat
         }
         if (kmesh_dos) {
             gruneisen_tensor_dos.resize(kmesh_dos->nk, system->get_num_modes(), ncomp);
+        }
+        if (kpoint_general) {
+            gruneisen_tensor_general.resize(kpoint_general->nk, system->get_num_modes(), ncomp);
         }
     }
 
@@ -167,6 +178,15 @@ void Gruneisen::calc_gruneisen(const KpointBandStructure *kpoint_bs, const Dymat
                                   dymat_dos->get_eigenvectors(),
                                   gruneisen_dos,
                                   gruneisen_tensor_dos);
+    }
+
+    if (kpoint_general) {
+        calc_gruneisen_at_kpoints(kpoint_general->nk,
+                                  kpoint_general->xk,
+                                  dymat_general->get_eigenvalues(),
+                                  dymat_general->get_eigenvectors(),
+                                  gruneisen_general,
+                                  gruneisen_tensor_general);
     }
 
     if (run.my_rank == 0 && run.verbosity > 0) {

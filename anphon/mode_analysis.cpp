@@ -551,6 +551,12 @@ bool ModeAnalysis::write_text() const
     return !(selfenergy_mode && run.use_hdf5_io);
 }
 
+bool ModeAnalysis::print_linewidth() const
+{
+    // MODE = selfenergy follows LINEWIDTH; KS_INPUT (SELF_ENERGY) always prints it.
+    return !selfenergy_mode || linewidth_requested;
+}
+
 void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr) const
 {
     using namespace H5Easy;
@@ -838,10 +844,12 @@ void ModeAnalysis::print_selfenergy(const unsigned int NT, double *T_arr)
         if (run.my_rank == 0) {
             auto &r = results[kslist_id[i]];
             r.omega = in_kayser(omega);
-            r.linewidth.resize(NT);
-            for (j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping_a[j]);
+            if (print_linewidth()) {
+                r.linewidth.resize(NT);
+                for (j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping_a[j]);
+            }
         }
-        if (run.my_rank == 0 && write_text()) {
+        if (run.my_rank == 0 && write_text() && print_linewidth()) {
             auto file_linewidth = run.job_title + ".Gamma." + std::to_string(i + 1);
             ofs_linewidth.open(file_linewidth.c_str(), std::ios::out);
             if (!ofs_linewidth) exit("print_selfenergy", "Cannot open file file_linewidth");
@@ -1137,10 +1145,12 @@ void ModeAnalysis::print_selfenergy_offmesh(const unsigned int NT, const double 
         if (run.my_rank == 0) {
             auto &r = results[target.id];
             r.omega = in_kayser(omega);
-            r.linewidth.resize(NT);
-            for (unsigned int j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping[j]);
+            if (print_linewidth()) {
+                r.linewidth.resize(NT);
+                for (unsigned int j = 0; j < NT; ++j) r.linewidth[j] = in_kayser(2.0 * damping[j]);
+            }
         }
-        if (run.my_rank == 0 && write_text()) {
+        if (run.my_rank == 0 && write_text() && print_linewidth()) {
             const auto file_linewidth = run.job_title + ".Gamma." + std::to_string(number_offset + i + 1);
             std::ofstream ofs(file_linewidth);
             if (!ofs) exit("print_selfenergy_offmesh", "Cannot open file file_linewidth");

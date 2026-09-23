@@ -521,7 +521,9 @@ void PHON::execute_phonons() const
         gruneisen->calc_gruneisen(kpoint->kpoint_bs.get(),
                                   dynamical->dymat_band.get(),
                                   dos->kmesh_dos.get(),
-                                  dos->dymat_dos.get());
+                                  dos->dymat_dos.get(),
+                                  kpoint->kpoint_general.get(),
+                                  dynamical->dymat_general.get());
     }
     if (dielec->calc_dielectric_constant) {
         dielec->run_dielec_calculation(*dynamical, fcs_phonon->force_constant_with_cell[0], *ewald);

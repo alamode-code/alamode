@@ -51,21 +51,24 @@ public:
 
     NDArray<std::complex<double>, 2> gruneisen_bs;
     NDArray<std::complex<double>, 2> gruneisen_dos;
+    NDArray<std::complex<double>, 2> gruneisen_general; // KPMODE = 0 list
 
     // Generalized Gruneisen parameters gamma_{mu nu}(k, s) for gruneisen_mode >= 2,
     // shaped [nk, ns, ncomp] with ncomp = 3 (mode 2) or 6 (mode 3, Voigt order).
     NDArray<std::complex<double>, 3> gruneisen_tensor_bs;
     NDArray<std::complex<double>, 3> gruneisen_tensor_dos;
+    NDArray<std::complex<double>, 3> gruneisen_tensor_general;
 
     int number_of_strain_components() const
     {
         return gruneisen_mode == 2 ? 3 : (gruneisen_mode == 3 ? 6 : 0);
     }
 
-    // All four arguments are optional (null in runs that do not build the
+    // All arguments are optional (null in runs that do not build the
     // corresponding k-point set / eigenvalue container).
     void calc_gruneisen(const KpointBandStructure *kpoint_bs, const DymatEigenValue *dymat_band,
-                        const KpointMeshUniform *kmesh_dos, const DymatEigenValue *dymat_dos);
+                        const KpointMeshUniform *kmesh_dos, const DymatEigenValue *dymat_dos,
+                        const KpointGeneral *kpoint_general, const DymatEigenValue *dymat_general);
 
     void write_new_fcsxml_all(const Writes &writes, bool update_fc2, bool has_fc3_file) const;
 

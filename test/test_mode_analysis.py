@@ -35,6 +35,8 @@ CASES = {
             "si_se_path.in",
             "si_se_h5.in",
             "si_se_int.in",
+            "si_se_nolw.in",
+            "si_se_nolw_h5.in",
         ],
         "files": [
             "../../../example/Si/reference/si222_cubic.xml.bz2"
@@ -55,11 +57,11 @@ def read_rows(path):
     opener = gzip.open if path.endswith(".gz") else open
     with opener(path, "rt") as f:
         lines = f.readlines()
-    header = [l for l in lines if l.startswith("#")]
+    header = [ln for ln in lines if ln.startswith("#")]
     rows = [
-        [float(x) for x in l.split()]
-        for l in lines
-        if l.strip() and not l.startswith("#")
+        [float(x) for x in ln.split()]
+        for ln in lines
+        if ln.strip() and not ln.startswith("#")
     ]
     return header, np.array(rows)
 
@@ -77,8 +79,13 @@ def gamma_from_listing(header, a, nk, eps=2.0, temp=300.0):
     w1, w2, v, m = a[:, 2], a[:, 5], a[:, 6], a[:, 7]
     ok = (w1 > 1e-3) & (w2 > 1e-3)
     w1, w2, v, m = w1[ok], w2[ok], v[ok], m[ok]
-    lor = lambda w: eps / np.pi / (w * w + eps * eps)
-    bose = lambda w: 1.0 / np.expm1(1.4387769 * w / temp)
+
+    def lor(w):
+        return eps / np.pi / (w * w + eps * eps)
+
+    def bose(w):
+        return 1.0 / np.expm1(1.4387769 * w / temp)
+
     f1, f2 = bose(w1), bose(w2)
     d0 = lor(omega0 - w1 - w2) - lor(omega0 + w1 + w2)
     d1 = lor(omega0 - w1 + w2) - lor(omega0 + w1 - w2)
@@ -109,7 +116,10 @@ def compare_case(case, workdir, refdir, nk):
             # the rows (all columns except the values) must agree as a set: sort rows lexicographically
             nval = 2 if ".Phi" in name else 1
             key_cols = [c for c in range(ar.shape[1] - 1 - nval)] + [ar.shape[1] - 1]
-            order = lambda a: a[np.lexsort(a[:, key_cols].T[::-1])][:, key_cols]
+
+            def order(a, key_cols=key_cols):
+                return a[np.lexsort(a[:, key_cols].T[::-1])][:, key_cols]
+
             ok &= np.allclose(order(ar), order(an), rtol=1e-6, atol=1e-8)
             if ".V3." in name and case == "si":
                 gfile = os.path.join(workdir, name.replace(".V3.", ".Gamma."))
@@ -140,7 +150,10 @@ def check_offmesh(workdir):
     exact mesh point the two kernels agree to all digits (verified by forcing the
     off-mesh path); the reference files guard that."""
     nfail = 0
-    g = lambda n: np.loadtxt(os.path.join(workdir, f"si_off.Gamma.{n}"))[:, 1]
+
+    def g(n):
+        return np.loadtxt(os.path.join(workdir, f"si_off.Gamma.{n}"))[:, 1]
+
     for a, b, tol, what in (
         (1, 3, 1e-4, "mesh vs 1e-7 off mesh"),
         (3, 4, 1e-8, "q vs q+G"),
@@ -150,15 +163,21 @@ def check_offmesh(workdir):
         if rel > tol:
             print(f"  si/si_off: {what}: relative difference {rel:.2e} > {tol:.0e}")
             nfail += 1
-    gt = lambda n: np.loadtxt(os.path.join(workdir, f"si_offt.Gamma.{n}"))[:, 1]
+
+    def gt(n):
+        return np.loadtxt(os.path.join(workdir, f"si_offt.Gamma.{n}"))[:, 1]
+
     rel = np.abs(gt(2) - gt(4)).max() / np.abs(gt(2)).max()
     if rel > 1e-2:
         print(
             f"  si/si_offt: tetrahedron mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-2"
         )
         nfail += 1
+
     # REALPART (smearing): tadpole and bubble shifts, generic point (1 vs 3) and X (2 vs 6)
-    sh = lambda n: np.loadtxt(os.path.join(workdir, f"si_off.Shift.{n}"))[:, 1:3]
+    def sh(n):
+        return np.loadtxt(os.path.join(workdir, f"si_off.Shift.{n}"))[:, 1:3]
+
     for a, b, what in ((1, 3, "generic point"), (2, 6, "X")):
         rel = np.abs(sh(a) - sh(b)).max() / np.abs(sh(a)).max()
         if rel > 1e-4:
@@ -166,15 +185,21 @@ def check_offmesh(workdir):
                 f"  si/si_off: shift {what} mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-4"
             )
             nfail += 1
+
     # FSTATE_W (smearing): generic point on mesh (1) vs 1e-7 off mesh (3), both channels
-    fw = lambda n: np.loadtxt(os.path.join(workdir, f"si_off.fw.{n}"))[:, 1:]
+    def fw(n):
+        return np.loadtxt(os.path.join(workdir, f"si_off.fw.{n}"))[:, 1:]
+
     rel = np.abs(fw(1) - fw(3)).max() / np.abs(fw(1)).max()
     if rel > 1e-4:
         print(
             f"  si/si_off: FSTATE_W mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-4"
         )
         nfail += 1
-    fwt = lambda n: np.loadtxt(os.path.join(workdir, f"si_offt.fw.{n}"))[:, 1:]
+
+    def fwt(n):
+        return np.loadtxt(os.path.join(workdir, f"si_offt.fw.{n}"))[:, 1:]
+
     rel = np.abs(fwt(2) - fwt(4)).max() / np.abs(fwt(2)).max()
     if (
         rel > 1e-1
@@ -183,8 +208,11 @@ def check_offmesh(workdir):
             f"  si/si_offt: FSTATE_W (tetrahedron) mesh vs 1e-7 off mesh: relative difference {rel:.2e} > 1e-1"
         )
         nfail += 1
+
     # SELF_W: Im Sigma(omega) at the generic point, on mesh (2) vs 1e-7 off mesh (4)
-    st = lambda n: np.loadtxt(os.path.join(workdir, f"si_offt.Self.{n}"))[:, 4]
+    def st(n):
+        return np.loadtxt(os.path.join(workdir, f"si_offt.Self.{n}"))[:, 4]
+
     rel = np.abs(st(2) - st(4)).max() / np.abs(st(2)).max()
     if rel > 1e-2:
         print(
@@ -250,6 +278,36 @@ def check_selfenergy_h5(workdir):
     return nfail
 
 
+def check_no_linewidth(workdir, anphon):
+    """si_se_nolw(_h5).in: SHIFT = 1 with LINEWIDTH = 0 writes the shifts (on- and
+    off-mesh targets) but no PREFIX.Gamma.N files and no /targets/N/linewidth.
+    si_se_none.in turns every output off and must stop at input parsing."""
+    nfail = 0
+    files = os.listdir(workdir)
+    if any(f.startswith("si_se_nolw.Gamma.") for f in files):
+        print("  si/si_se_nolw: PREFIX.Gamma.N written with LINEWIDTH = 0")
+        nfail += 1
+    if sum(f.startswith("si_se_nolw.Shift.") for f in files) != 9:
+        print("  si/si_se_nolw: expected 9 PREFIX.Shift.N files")
+        nfail += 1
+    if shutil.which("h5ls") is not None:
+        out = subprocess.run(
+            ["h5ls", "-r", os.path.join(workdir, "si_se_nolw_h5.selfenergy.h5")],
+            capture_output=True,
+            text=True,
+        ).stdout
+        if "/linewidth" in out or out.count("/shift_bubble") != 9:
+            print("  si/si_se_nolw_h5: linewidth present or shift missing in h5")
+            nfail += 1
+    else:
+        print("  si/si_se_nolw_h5: h5ls not found, HDF5 checks SKIPPED")
+    ret = subprocess.run([anphon, "si_se_none.in"], capture_output=True, text=True)
+    if ret.returncode == 0 or "Nothing to compute" not in ret.stdout + ret.stderr:
+        print("  si/si_se_none: all-zero &selfenergy flags not rejected")
+        nfail += 1
+    return nfail
+
+
 def check_interpolate(workdir):
     """si_se_int.in: INTERPOLATE on the Gamma-X path (3 points, branches 4-6). Each
     branch-projected spectrum must carry unit weight and peak within 1.5 cm^-1 of
@@ -274,7 +332,7 @@ def check_interpolate(workdir):
     for (iq, b), n in mapping.items():
         gfile = os.path.join(workdir, f"si_se_int.Gamma.{n}")
         omega_j = float(
-            [l for l in open(gfile) if l.startswith("# Frequency")][0].split()[-1]
+            [ln for ln in open(gfile) if ln.startswith("# Frequency")][0].split()[-1]
         )
         shift = np.loadtxt(os.path.join(workdir, f"si_se_int.Shift.{n}"))[-1]
         delta = shift[1] + shift[2]
@@ -319,6 +377,7 @@ def main():
             nfail += check_offmesh(workdir)
             nfail += check_selfenergy_h5(workdir)
             nfail += check_interpolate(workdir)
+            nfail += check_no_linewidth(workdir, anphon)
         if case == "bto":
             nfail += check_offmesh_bto(workdir)
     print("mode analysis --> " + ("pass" if nfail == 0 else f"failed ({nfail})"))

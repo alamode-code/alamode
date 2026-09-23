@@ -805,6 +805,9 @@ void InputParser::parse_scph_vars(PHON *phon)
     if (!is_valid_relaxation_str_mode(scph_vars.relax_str)) {
         exit("parse_scph_vars", "RELAX_STR must be 0, 1, 2, 3, or 4.");
     }
+    if (scph_vars.relax_str == to_int(RelaxationStrMode::PerturbativeQha)) {
+        exit("parse_scph_vars", "RELAX_STR = 3 (perturbative) is available only for MODE = QHA.");
+    }
     if (scph_vars.relax_str != to_int(RelaxationStrMode::None) && !scph_vars.selfenergy_offdiagonal) {
         exit("parse_scph_vars", "SELF_OFFDIAG = 0 cannot be used when RELAX_STR != 0.");
     }
@@ -1582,6 +1585,10 @@ void InputParser::parse_selfenergy_vars(PHON *phon)
     assign_val(fstate_w, "FSTATE_W", var_dict);
     assign_val(print_v3, "PRINTV3", var_dict);
     assign_val(print_v4, "PRINTV4", var_dict);
+    if (!linewidth && !shift && !self_w && !fstate_w && !print_v3 && !print_v4 && !interpolate) {
+        exit("parse_selfenergy_vars",
+             "Nothing to compute: LINEWIDTH, SHIFT, SELF_W, FSTATE_W, PRINTV3, PRINTV4 and INTERPOLATE are all 0.");
+    }
 
     input_setter->set_selfenergy_vars(phon,
                                       kmesh,

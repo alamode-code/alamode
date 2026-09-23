@@ -137,9 +137,9 @@ class AlamodeDisplace(object):
                 print(
                     "The --evec option is necessary when '--random_normalcoord'\n"
                     "option is used. \n"
-                    "Please generate a PREFIX.evec file by using the ANPHON code\n"
+                    "Please generate a PREFIX.evec.h5 file by using the ANPHON code\n"
                     "with the following inputs and then run displace.py again with\n"
-                    "--evec=PREFIX.evec option:\n\n"
+                    "--evec=PREFIX.evec.h5 option:\n\n"
                 )
 
                 print("&cell")
@@ -1232,38 +1232,81 @@ class AlamodeDisplace(object):
             temperature_au = self._K_BOLTZMANN * temperature / self._RYDBERG_TO_JOULE
             return temperature_au / omega
 
+    @staticmethod
+    def _read_evec_hdf5(file_in):
+        """Read anphon's PREFIX.evec.h5 (or legacy .evec.hdf5).
+
+        Returns (xq, omega2, evec, mass) in the same units as the text
+        PREFIX.evec: omega2 in Ry^2 with the sign of the frequency kept
+        (negative for imaginary modes), evec[iq, imode, :] as written.
+        """
+        try:
+            import h5py
+        except ImportError as err:
+            raise RuntimeError(
+                "h5py is required to read the HDF5 file %s. Install h5py, or "
+                "rerun anphon with FILE_FORMAT = text to get PREFIX.evec." % file_in
+            ) from err
+
+        # cm^-1 -> Ry, same constants as include/constants.h (kayser_to_Ry).
+        time_ry = 6.62606896e-34 / (2.0 * math.pi) / (4.35974394e-18 / 2.0)
+        hz_to_kayser = 1.0e-2 / (2.0 * math.pi) / 299792458
+        kayser_to_ry = time_ry / hz_to_kayser
+
+        with h5py.File(file_in, "r") as f:
+            xq = np.array(f["Kpoints/kpoint_coordinates"][:], dtype=float)
+            omega = np.array(f["Eigenvalues/frequencies"][:]) * kayser_to_ry
+            pol = f["Eigenvalues/polarization_vectors"][:]
+            mass = [float(m) for m in f["PrimitiveCell/masses"][:]]
+        omega2 = np.sign(omega) * omega**2
+        evec = pol[..., 0] + 1j * pol[..., 1]
+        return xq, omega2, evec, mass
+
     def _load_phonon_results(self, file_in):
         tol_zero = 1.0e-3
 
-        f = open(file_in, "r")
+        try:
+            import h5py
 
-        # skip 10 lines
-        for _ in range(10):
-            f.readline()
+            is_hdf5 = h5py.is_hdf5(file_in)
+        except ImportError:
+            with open(file_in, "rb") as fb:
+                is_hdf5 = fb.read(8) == b"\x89HDF\r\n\x1a\n"
 
-        nmode = int(f.readline().split(":")[1])
-        nq = int(f.readline().split(":")[1])
-        _nkd = int(f.readline().split(":")[1])
-        mass = [float(t) for t in f.readline().split(":")[1].split()]
-        # skip 3 lines
-        for _ in range(3):
-            f.readline()
+        if is_hdf5:
+            xq, omega2, evec, mass = self._read_evec_hdf5(file_in)
+            nq, nmode = omega2.shape
+        else:
+            f = open(file_in, "r")
 
-        omega2 = np.zeros((nq, nmode))
-
-        evec = np.zeros((nq, nmode, nmode), dtype=np.complex128)
-        xq = np.zeros((nq, 3))
-
-        for iq in range(nq):
-            xq_tmp = [float(a) for a in (f.readline().split(":")[1]).split()]
-            xq[iq, :] = xq_tmp[:]
-            for imode in range(nmode):
-                omega2[iq, imode] = float(f.readline().split(":")[1])
-                for jmode in range(nmode):
-                    line = f.readline().split()
-                    evec[iq, imode, jmode] = complex(float(line[0]), float(line[1]))
+            # skip 10 lines
+            for _ in range(10):
                 f.readline()
-            f.readline()
+
+            nmode = int(f.readline().split(":")[1])
+            nq = int(f.readline().split(":")[1])
+            _nkd = int(f.readline().split(":")[1])
+            mass = [float(t) for t in f.readline().split(":")[1].split()]
+            # skip 3 lines
+            for _ in range(3):
+                f.readline()
+
+            omega2 = np.zeros((nq, nmode))
+
+            evec = np.zeros((nq, nmode, nmode), dtype=np.complex128)
+            xq = np.zeros((nq, 3))
+
+            for iq in range(nq):
+                xq_tmp = [float(a) for a in (f.readline().split(":")[1]).split()]
+                xq[iq, :] = xq_tmp[:]
+                for imode in range(nmode):
+                    omega2[iq, imode] = float(f.readline().split(":")[1])
+                    for jmode in range(nmode):
+                        line = f.readline().split()
+                        evec[iq, imode, jmode] = complex(float(line[0]), float(line[1]))
+                    f.readline()
+                f.readline()
+            f.close()
 
         qlist_real = []
         qlist_uniq = []
@@ -1293,8 +1336,6 @@ class AlamodeDisplace(object):
                 qlist_uniq.append(iq)
 
         qlist_uniq = list(set(qlist_uniq) - set(qlist_real))
-
-        f.close()
 
         self._qpoints = xq
         self._omega2 = omega2

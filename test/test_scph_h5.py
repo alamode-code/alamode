@@ -594,6 +594,21 @@ def check_convergence_guard(anphonbin):
     return 0
 
 
+def check_relax_str3_rejected(anphonbin):
+    # RELAX_STR = 3 (perturbative) is QHA only; SCPH must stop at input parsing.
+    with open("BTO_scph_thermo.in") as f:
+        src = f.read().replace("RELAX_STR = 2", "RELAX_STR = 3")
+    with open("rs3.in", "w") as f:
+        f.write(src)
+    if run_anphon(anphonbin, "rs3.in", "rs3.log") == 0:
+        print("SCPH accepted RELAX_STR = 3")
+        return 1
+    if "available only for MODE = QHA" not in open("rs3.log").read():
+        print("SCPH RELAX_STR = 3 failed without the expected message")
+        return 1
+    return 0
+
+
 def runtest_scph_h5(anphonbin, project_root):
     scph_example_dir = os.path.join(project_root, "example", "BaTiO3", "scph_relax")
     reference_dir = os.path.join(scph_example_dir, "reference_for_test")
@@ -603,6 +618,10 @@ def runtest_scph_h5(anphonbin, project_root):
 
     if copy_input_files(os.getcwd(), scph_example_dir, fc_reference_dir) != 0:
         return 1
+
+    if check_relax_str3_rejected(anphonbin):
+        return 1
+    print("SCPH rejects RELAX_STR = 3 --> pass")
 
     if check_fresh_run(anphonbin, reference_dir):
         return 1

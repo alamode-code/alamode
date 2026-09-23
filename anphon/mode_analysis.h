@@ -89,6 +89,7 @@ public:
     mutable std::vector<TargetResult> results; // filled by the (const) printers
 
     bool write_text() const;
+    bool print_linewidth() const; // false only for MODE = selfenergy with LINEWIDTH = 0
 
     void write_results_hdf5(const unsigned int NT, const double *T_arr) const;
 

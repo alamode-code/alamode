@@ -353,7 +353,9 @@ if __name__ == "__main__":
         "--evec",
         type=str,
         default=None,
-        help="Specify the filename containing eigenvalues and eigenvectors.",
+        help="Specify the filename containing eigenvalues and eigenvectors: "
+        "PREFIX.evec.h5 (anphon's default HDF5 output) or the text PREFIX.evec "
+        "(FILE_FORMAT = text). The format is detected from the file content.",
     )
 
     parser.add_argument(
