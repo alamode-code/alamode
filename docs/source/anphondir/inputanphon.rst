@@ -1386,7 +1386,16 @@ Description of input variables
 "&cell"-field
 +++++++++++++
 
-Please specify the cell parameters of the *primitive cell* as::
+This field gives the unit cell used by *anphon*. It can be omitted when ``FCSFILE`` is an HDF5 file
+(``PREFIX``.h5): the primitive cell defined in the *alm* calculation, which is stored in that file, is then used.
+With an XML file (``PREFIX``.xml), the field is required.
+
+When the field is given, it replaces the cell stored in ``FCSFILE``.
+The cell must be either the true primitive cell or a supercell of it, such as the conventional cell,
+so that the supercell of the *alm* calculation consists of whole copies of it.
+Otherwise *anphon* stops with an error.
+
+The cell parameters are given as::
 
  &cell
   a
