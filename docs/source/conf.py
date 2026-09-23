@@ -138,8 +138,6 @@ html_theme_options = {
     # top-level entries become header tabs and the sidebar only shows the
     # pages of the current section.
     "header_tabs": False,
-    # html_logo is shown in light mode; this transparent copy in dark mode.
-    "dark_logo": "alamode_dark.png",
 }
 
 # Repository info in the html_context convention used by breeze's
@@ -182,7 +180,7 @@ html_logo = "../img/alamode.png"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static", "../img/alamode_dark.png"]
+html_static_path = ["_static"]
 
 # Multi-version and multi-language switchers plus a per-language PDF download
 # link: small theme-agnostic helpers that read the versions.json (site root)

@@ -17,3 +17,8 @@ article[role="main"],
   --bz-color-text: oklch(.95 .004 265);
   --bz-color-muted: oklch(.85 .004 265);
 }
+
+/* A slightly larger header logo; it still fits the 3.5rem header. */
+.bz-header-brand > img {
+  height: 2.5rem;
+}
