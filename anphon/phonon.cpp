@@ -310,30 +310,15 @@ void PHON::apply_relaxed_structure() const
         std::cout << '\n';
     }
 
-    // FC3 of the deformed structure, Phi3 + Phi4 : d with
-    // d = u . R + u0. The Taylor expansion is about the *reference*
-    // structure, so this must run before the cells move and be given the
-    // reference lattice as convmat; deforming first would silently hand it
-    // (I + u) R and make the strain term second-order wrong.
-    Eigen::Matrix3d displacement_gradient;
-    for (auto i = 0; i < 3; ++i) {
-        for (auto j = 0; j < 3; ++j) displacement_gradient(i, j) = u_tensor[3 * i + j];
-    }
+    // FC3 of the deformed structure, Phi3 + Phi4 : d. This must run before
+    // the cells move: the helper needs the reference lattice.
     if (fcs_phonon->maxorder >= 3) {
-        Eigen::VectorXd sublattice = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(u0.size()));
-        for (size_t i = 0; i < u0.size(); ++i) sublattice(static_cast<Eigen::Index>(i)) = u0[i];
-
         std::vector<FcsArrayWithCell> fc3_deformed;
-        DerivativeIFC::compute_deformed_ifcs(fcs_phonon->force_constant_with_cell,
-                                             1,
-                                             displacement_gradient,
-                                             sublattice,
-                                             system->get_primcell().lattice_vector,
-                                             fc3_deformed);
-        // The corrections are appended unsorted, and the cubic list must
-        // stay in the order Fcs_phonon::setup established: AnharmonicCore
-        // groups consecutive equal index sets.
-        std::sort(fc3_deformed.begin(), fc3_deformed.end());
+        DerivativeIFC::compute_deformed_cubic_ifcs(fcs_phonon->force_constant_with_cell,
+                                                   u_tensor.data(),
+                                                   u0,
+                                                   system->get_primcell().lattice_vector,
+                                                   fc3_deformed);
         const auto nfc3_before = fcs_phonon->force_constant_with_cell[1].size();
         const auto nfc3_after = fc3_deformed.size();
         fcs_phonon->force_constant_with_cell[1] = std::move(fc3_deformed);

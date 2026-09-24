@@ -444,6 +444,28 @@ void ScphResultIOH5::check_convergence(const std::vector<double> &temps_requeste
     }
 }
 
+void ScphResultIOH5::load_convergence(const std::vector<double> &temps_requested, std::vector<unsigned char> &scph_out,
+                                      std::vector<unsigned char> &structure_out) const
+{
+    scph_out.assign(temps_requested.size(), 1);
+    structure_out.assign(temps_requested.size(), 1);
+
+    const HighFive::File fh(impl->filename, HighFive::File::ReadOnly);
+    if (!fh.exist("/convergence")) return;
+
+    const auto rows = impl->temperature_rows(fh, temps_requested);
+    const auto load = [&](const std::string &name, std::vector<unsigned char> &out) {
+        if (!fh.exist("/convergence/" + name)) return;
+        std::vector<unsigned char> flags;
+        fh.getDataSet("/convergence/" + name).read(flags);
+        for (size_t i = 0; i < rows.size(); ++i) {
+            if (rows[i] < flags.size()) out[i] = flags[rows[i]];
+        }
+    };
+    load("scph", scph_out);
+    load("structure", structure_out);
+}
+
 const std::string &ScphResultIOH5::get_filename() const
 {
     return impl->filename;

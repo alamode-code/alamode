@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <complex>
 #include <cstdint>
 #include <string>
@@ -157,6 +158,28 @@ public:
                               sublattice_displacement,
                               convmat,
                               fcs_deformed);
+    }
+
+    // FC3 of a relaxed structure, Phi3 + Phi4 : d with d = u . R + u0, sorted as
+    // Fcs_phonon::setup sorts the cubic list (AnharmonicCore groups consecutive
+    // equal index sets). u_tensor is the displacement gradient, row-major 3x3;
+    // u0 the Cartesian shifts of the primitive-cell atoms (3 natmin). The Taylor
+    // expansion is about the reference structure, so reference_lattice must be the
+    // *undeformed* primitive lattice: (I + u) R would make the strain term
+    // second-order wrong.
+    template <class FcsByOrder>
+    static void compute_deformed_cubic_ifcs(const FcsByOrder &fcs_by_order, const double *u_tensor,
+                                            const std::vector<double> &u0, const Eigen::Matrix3d &reference_lattice,
+                                            std::vector<FcsArrayWithCell> &fc3_deformed)
+    {
+        Eigen::Matrix3d displacement_gradient;
+        for (auto i = 0; i < 3; ++i) {
+            for (auto j = 0; j < 3; ++j) displacement_gradient(i, j) = u_tensor[3 * i + j];
+        }
+        const Eigen::VectorXd sublattice =
+            Eigen::Map<const Eigen::VectorXd>(u0.data(), static_cast<Eigen::Index>(u0.size()));
+        compute_deformed_ifcs(fcs_by_order, 1, displacement_gradient, sublattice, reference_lattice, fc3_deformed);
+        std::sort(fc3_deformed.begin(), fc3_deformed.end());
     }
 
     void compute_dV1_dumn(MatrixXcdRowMajor &dV1_dumn,

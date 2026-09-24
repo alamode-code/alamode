@@ -134,7 +134,7 @@ protected:
     // Recorded next to converged_str_temp, so it holds whatever structure
     // the temperature loop actually accepted, including a fallback copied
     // from the last converged temperature. Written to the state file for a
-    // follow-up KAPPA/BUBBLE run; unused by this run.
+    // follow-up KAPPA/BUBBLE run, and used by this run's BUBBLE > 0 step.
     ScphStructureH5 relaxed_structure;
 
     // Which temperatures actually recorded a structure. Not written to the
@@ -149,6 +149,11 @@ protected:
     // aligned with, so entries land in temperature order whichever way the
     // TMIN/TMAX sweep runs. Call it only after converged_str_temp is sized.
     void record_relaxed_structure(unsigned int iT, const RelaxationStructureState &structure_state);
+
+    // Fill relaxed_structure for every temperature of this run from the
+    // /structure group of a state file (restart of a relaxed run). Rank 0
+    // reads; exits when the file carries no structure.
+    void load_relaxed_structures_h5(const std::string &filename);
 
     // Static relaxed-structure energy V0(T), stored in the SCPH/QHA state file.
     // Size on every rank before restart broadcasts.

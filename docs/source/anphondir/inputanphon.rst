@@ -808,7 +808,17 @@ Description of input variables
                ``BUBBLE = 3`` therefore costs about one thousand self-energy evaluations per mode
                instead of one.
 
-               The bubble correction cannot be combined with ``RELAX_STR > 0``.
+               With ``RELAX_STR > 0`` the correction is evaluated on the structure relaxed at each
+               temperature: the SCPH phonons already belong to it, and the cubic force constants are
+               deformed to it as :math:`\Phi_3 + \Phi_4 : d` (as with
+               :ref:`RELAXED_STRUCTURE <anphon_relaxed_structure>`). Temperatures whose SCPH iteration or
+               structural optimization did not converge keep the SCPH result. The structure is the one
+               the optimizer accepted, which differs from that of the final SCPH solution within
+               ``COORD_CONV_TOL`` / ``CELL_CONV_TOL``. A restart (``RESTART_SCPH = 1``) takes the
+               structures from ``PREFIX``.scph.h5; the legacy text restart files do not carry them
+               and are refused for this combination. In a phase with large
+               symmetry-breaking displacements the one-loop correction can overshoot and even turn a
+               stable mode imaginary; it is a frequency correction, not a stability test.
 
 ````
 

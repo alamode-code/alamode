@@ -31,6 +31,10 @@ Silicon ANPHON --> pass
 - `test_kpmode0.py` covers SCPH postprocess on a general k-point list
   (KPMODE = 0) with the non-analytic correction enabled — the only fixture
   exercising the kpoint_general branch.
+- `test_scph_h5.py` also covers `BUBBLE > 0` with `RELAX_STR != 0` (BaTiO3, tetragonal
+  at 280 K): the in-run on-shell bubble, restarted from the state file, must match
+  `MODE = selfenergy` + `RELAXED_STRUCTURE = 1` mode by mode, differ from the undeformed
+  reference, and be reproduced on 2 MPI ranks when `mpirun` is available.
 - `test_dfc2_fold.py` covers `DFC2FILE` from an SCPH run whose `&cell` is an
   integer supercell of the primitive cell (BaTiO3 1x1x2 cell, 2 2 1 meshes):
   the folded correction must reproduce a primitive-cell SCPH with the same q

@@ -98,6 +98,11 @@ public:
     void setup(unsigned int maxorder, const NDArray<std::vector<FcsArrayWithCell>, 1> &ifcs,
                const KpointMeshUniform *kmesh_dos_in);
 
+    // Swap in another cubic IFC set (sorted as Fcs_phonon::setup sorts it), e.g.
+    // Phi3 + Phi4 : d of a relaxed structure, and drop every cache built from the
+    // previous one. Local to the calling rank: every rank that evaluates V3 must call it.
+    void replace_cubic(const std::vector<FcsArrayWithCell> &fcs3_in);
+
     // Eigenpairs on {q - k}; unfolded fractional coordinates preserve exact vertex phases.
     struct ShiftedGrid
     {

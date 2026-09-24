@@ -18,20 +18,25 @@
  - bubble_correction: Calculate bubble self-energy corrections to frequencies
 */
 
+#include <algorithm>
 #include <complex>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <vector>
 #include "anharmonic_core.h"
 #include "constants.h"
 #include "degeneracy_utils.h"
 #include "dynamical.h"
 #include "error.h"
+#include "fcs_phonon.h"
+#include "ifc_derivative.h"
 #include "integration.h"
 #include "kpoint.h"
 #include "memory.h"
 #include "mpi_common.h"
 #include "phonon_dos.h"
+#include "relaxation.h"
 #include "scph.h"
 #include "selfenergy.h"
 #include "system.h"
@@ -41,7 +46,7 @@ using namespace PHON_NS;
 
 void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::complex<double> ****delta_dymat_scph)
 {
-    const auto NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
+    const auto NT = system->get_num_temperature_points();
     const auto nk_ref = dos->kmesh_dos->nk;
     const auto ns = dynamical->neval;
     NDArray<double, 3> eval;
@@ -104,7 +109,7 @@ void Scph::compute_free_energy_bubble_SCPH(const unsigned int kmesh[3], std::com
 void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                              std::complex<double> ****delta_dymat_scph_plus_bubble)
 {
-    const auto NT = static_cast<unsigned int>((system->Tmax - system->Tmin) / system->dT) + 1;
+    const auto NT = system->get_num_temperature_points();
     const auto ns = dynamical->neval;
 
     auto epsilon = integration->epsilon;
@@ -177,8 +182,86 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
     NDArray<std::vector<int>, 1> degeneracy_at_k;
     degeneracy_at_k.resize(nk_scph);
 
+    // Relaxed run (RELAX_STR != 0). The SCP propagators already belong to the
+    // relaxed structure of each temperature: the stored correction is the full
+    // SCP matrix minus the reference harmonic one, so it contains the q0 and
+    // strain renormalization, and the phases exp(ik.R) of fractional k do not
+    // change under the homogeneous strain. Only the cubic IFCs do, to
+    // Phi3 + Phi4 : d(T). Temperatures whose SCP iteration or structure did not
+    // converge keep the SCPH result without the bubble correction.
+    // The recorded structure is the one the optimizer accepted, one update past
+    // the structure of the last SCP solve (see ScphRelaxationModel::
+    // finalize_temperature); the two differ within COORD_CONV_TOL/CELL_CONV_TOL.
+    const auto relaxed = relaxation->relax_str != 0;
+    std::vector<double> u_tensor_all, u0_all;
+    std::vector<int> use_temp(NT, 1);
+    if (relaxed) {
+        const auto nt = static_cast<size_t>(NT);
+        const auto nsz = static_cast<size_t>(ns);
+        if (nt > static_cast<size_t>(std::numeric_limits<int>::max()) / std::max(nsz, size_t{9})) {
+            exit("bubble_correction", "Too many temperatures x modes to broadcast the relaxed structures.");
+        }
+        if (run.my_rank == 0) {
+            if (relaxed_structure.u_tensor.size() != nt * 9 || relaxed_structure.u0.size() != nt * nsz ||
+                relaxed_structure_recorded.size() != nt)
+            {
+                exit("bubble_correction", "The relaxed structures of this run are not available.");
+            }
+            u_tensor_all = relaxed_structure.u_tensor;
+            u0_all = relaxed_structure.u0;
+            for (size_t iT = 0; iT < nt; ++iT) {
+                // An unrecorded temperature was never visited by the loop, so its
+                // SCP matrix does not exist either: nothing to keep or correct.
+                if (!relaxed_structure_recorded[iT]) {
+                    exit("bubble_correction",
+                         "A temperature of the grid has no relaxed structure; the structural\n"
+                         " optimization loop skipped it. Check TMIN, TMAX and DT.");
+                }
+                const auto conv_scph = converged_scph_temp.size() != nt || converged_scph_temp[iT];
+                const auto conv_str = converged_str_temp.size() != nt || converged_str_temp[iT];
+                use_temp[iT] = conv_scph && conv_str ? 1 : 0;
+            }
+        } else {
+            u_tensor_all.resize(nt * 9);
+            u0_all.resize(nt * nsz);
+        }
+        MPI_Bcast(u_tensor_all.data(), static_cast<int>(nt * 9), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(u0_all.data(), static_cast<int>(nt * nsz), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(use_temp.data(), static_cast<int>(NT), MPI_INT, 0, MPI_COMM_WORLD);
+        if (run.my_rank == 0) {
+            std::cout << "  RELAX_STR != 0: the cubic IFCs are deformed to the relaxed structure\n"
+                         "  of each temperature (Phi3 + Phi4 : d).\n\n";
+        }
+    }
+
     for (auto iT = 0; iT < NT; ++iT) {
         const auto temp = system->Tmin + system->dT * float(iT);
+
+        if (relaxed) {
+            if (!use_temp[iT]) {
+                if (run.my_rank == 0) {
+                    std::cout << " Temperature (K) : " << std::setw(6) << temp
+                              << " : skipped (SCPH or structure not converged); the SCPH result is kept.\n\n";
+                    for (auto is = 0; is < ns; ++is) {
+                        for (auto js = 0; js < ns; ++js) {
+                            for (auto ik = 0; ik < kmesh_coarse->nk; ++ik) {
+                                delta_dymat_scph_plus_bubble[iT][is][js][ik] = delta_dymat_scph[iT][is][js][ik];
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+            const auto offset = static_cast<size_t>(iT) * ns;
+            const std::vector<double> u0_T(u0_all.begin() + offset, u0_all.begin() + offset + ns);
+            std::vector<FcsArrayWithCell> fc3_deformed;
+            DerivativeIFC::compute_deformed_cubic_ifcs(fcs_phonon->force_constant_with_cell,
+                                                       &u_tensor_all[static_cast<size_t>(iT) * 9],
+                                                       u0_T,
+                                                       system->get_primcell().lattice_vector,
+                                                       fc3_deformed);
+            anharmonic_core->replace_cubic(fc3_deformed);
+        }
 
         dynamical->exec_interpolation(kmesh_interpolate,
                                       delta_dymat_scph[iT],
@@ -330,9 +413,16 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                     }
                 }
                 if (run.my_rank == 0) {
+                    // Explicit format: the stream state left by earlier output
+                    // otherwise decides the precision (two digits in some runs).
+                    const auto flags = std::cout.flags();
+                    const auto prec = std::cout.precision();
+                    std::cout << std::scientific << std::setprecision(6);
                     std::cout << "   branch : " << std::setw(5) << snum + 1;
                     std::cout << " omega (SC1) = " << std::setw(15) << in_kayser(eval[knum][snum]) << " (cm^-1); ";
                     std::cout << " Re[Self] = " << std::setw(15) << in_kayser(real_self[snum]) << " (cm^-1)\n";
+                    std::cout.flags(flags);
+                    std::cout.precision(prec);
                 }
             }
 
@@ -376,6 +466,9 @@ void Scph::bubble_correction(std::complex<double> ****delta_dymat_scph,
                                                 fcs_phonon->force_constant_with_cell[0]);
         }
     }
+
+    // Later consumers expect the reference cubic IFCs.
+    if (relaxed) anharmonic_core->replace_cubic(fcs_phonon->force_constant_with_cell[1]);
 
     eval.clear();
     evec.clear();

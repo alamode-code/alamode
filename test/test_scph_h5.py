@@ -3,7 +3,8 @@
 
 Covers: fresh-run schema and physical-output consistency (BaTiO3 SCPH with
 cell relaxation), pure-h5 restart, and the FC2_TEMPERATURE direct read of
-the temperature-dependent FC2, validated against the tools/dfc2.py route.
+the temperature-dependent FC2, validated against the tools/dfc2.py route,
+RELAXED_STRUCTURE, and the bubble self-energy on the relaxed structure.
 """
 
 import os
@@ -609,6 +610,259 @@ def check_relax_str3_rejected(anphonbin):
     return 0
 
 
+def parse_bubble_log(logfile):
+    """{(T, xk): [(branch, omega, Re Sigma)]} from the per-branch bubble lines."""
+    out = {}
+    temp = xk = None
+    with open(logfile) as f:
+        for line in f:
+            m = re.match(r"\s*Temperature \(K\) :\s*(\S+)", line)
+            if m:
+                temp = float(m.group(1))
+                continue
+            m = re.match(r"\s*Irred\. k:\s*\d+\s*\(([^)]*)\)", line)
+            if m:
+                xk = tuple(round(float(x), 6) for x in m.group(1).split())
+                continue
+            m = re.match(
+                r"\s*branch :\s*(\d+)\s+omega \(SC1\) =\s*(\S+)\s*\(cm\^-1\);"
+                r"\s*Re\[Self\] =\s*(\S+)",
+                line,
+            )
+            if m:
+                out.setdefault((temp, xk), []).append(
+                    (int(m.group(1)), float(m.group(2)), float(m.group(3)))
+                )
+    return out
+
+
+def degenerate_average(rows, tol=1e-3):
+    """Re Sigma averaged over degenerate branches, as MODE = selfenergy reports it."""
+    omega = np.array([r[1] for r in rows])
+    self_re = np.array([r[2] for r in rows])
+    avg = self_re.copy()
+    i = 0
+    while i < len(omega):
+        j = i
+        while j + 1 < len(omega) and abs(omega[j + 1] - omega[i]) < tol:
+            j += 1
+        avg[i : j + 1] = self_re[i : j + 1].mean()
+        i = j + 1
+    return avg
+
+
+def check_bubble_on_relaxed(anphonbin):
+    """BUBBLE > 0 with RELAX_STR != 0 deforms the cubic IFCs per temperature.
+
+    The in-run on-shell bubble (BUBBLE = 2, restarted from the state file)
+    must reproduce MODE = selfenergy + RELAXED_STRUCTURE = 1 on the same
+    state file, mode by mode, at 280 K, where the relaxed structure is
+    tetragonal. The same reference without RELAXED_STRUCTURE must differ,
+    or the test would not see a missing deformation.
+    """
+    temp = 280.0
+    targets = [(0.0, 0.0, 0.0), (0.0, 0.0, 0.5)]
+
+    # Own prefix, so the restart does not touch the files of the other stages.
+    shutil.copy(PREFIX + ".scph.h5", "bub_scph.scph.h5")
+    with open("BTO_scph_thermo.in") as f:
+        src = (
+            f.read()
+            .replace("PREFIX = " + PREFIX, "PREFIX = bub_scph")
+            .replace("RELAX_STR = 2", "RELAX_STR = 2\n  RESTART_SCPH = 1\n  BUBBLE = 2")
+        )
+    with open("bub.in", "w") as f:
+        f.write(src)
+    if run_anphon(anphonbin, "bub.in", "bub.log"):
+        print("BUBBLE = 2 with RELAX_STR = 2 failed")
+        return 1
+    with open("bub.log") as f:
+        if "the cubic IFCs are deformed to the relaxed structure" not in f.read():
+            print("the bubble step did not deform the cubic IFCs")
+            return 1
+    bubble = parse_bubble_log("bub.log")
+
+    for relaxed in (1, 0):
+        with open("bubref_%d.in" % relaxed, "w") as f:
+            f.write(
+                "&general\n PREFIX = bubref_%d; MODE = selfenergy\n FCSFILE = cBTO222.h5\n"
+                " DFC2FILE = %s.scph.h5\n FC2_TEMPERATURE = %g\n RELAXED_STRUCTURE = %d\n"
+                " TMIN = %g; TMAX = %g; DT = 10\n ISMEAR = 0; EPSILON = 10\n/\n"
+                "&kpoint\n 0\n%s/\n&selfenergy\n KMESH = 4 4 4\n BRANCHES = all\n"
+                " LINEWIDTH = 0\n SHIFT = 1\n/\n"
+                % (
+                    relaxed,
+                    PREFIX,
+                    temp,
+                    relaxed,
+                    temp,
+                    temp,
+                    "".join(" %g %g %g\n" % xk for xk in targets),
+                )
+            )
+        if run_anphon(anphonbin, "bubref_%d.in" % relaxed, "bubref_%d.log" % relaxed):
+            print(
+                "MODE = selfenergy reference (RELAXED_STRUCTURE = %d) failed" % relaxed
+            )
+            return 1
+
+    def max_difference(reference_file):
+        # NaN would slip through max(); require finite values and full coverage
+        # (every target, every non-acoustic branch).
+        diffs = []
+        with h5py.File(reference_file, "r") as f:
+            for key in f["targets"]:
+                g = f["targets"][key]
+                if g["frequency"][()] < 1e-3:
+                    continue
+                xk = tuple(round(float(x), 6) for x in g["xk"][()])
+                if (temp, xk) not in bubble:
+                    return np.inf
+                avg = degenerate_average(bubble[(temp, xk)])
+                diffs.append(avg[int(g["branch"][()]) - 1] + g["shift_bubble"][0])
+        if len(diffs) < len(targets) * 15 - 3 or not np.all(np.isfinite(diffs)):
+            return np.inf
+        return float(np.max(np.abs(diffs)))
+
+    agree = max_difference("bubref_1.selfenergy.h5")
+    if agree > 1e-3:
+        print(
+            "in-run bubble differs from MODE = selfenergy on the relaxed structure by %.3e cm^-1"
+            % agree
+        )
+        return 1
+    undeformed = max_difference("bubref_0.selfenergy.h5")
+    if not np.isfinite(undeformed) or undeformed < 1.0:
+        print(
+            "the undeformed reference differs by only %.3e cm^-1; the test cannot see the deformation"
+            % undeformed
+        )
+        return 1
+
+    # Repeated FC3 replacement: 300 K alone (one deformation) must give what the
+    # 280-300 K run gave at 300 K after two earlier deformations; stale caches of
+    # a previous cubic set would show up here.
+    shutil.copy(PREFIX + ".scph.h5", "bub300_scph.scph.h5")
+    with open("bub300.in", "w") as f:
+        f.write(
+            src.replace("PREFIX = bub_scph", "PREFIX = bub300_scph").replace(
+                "TMIN = 280", "TMIN = 300"
+            )
+        )
+    if run_anphon(anphonbin, "bub300.in", "bub300.log"):
+        print("BUBBLE = 2 restart at 300 K alone failed")
+        return 1
+    alone = parse_bubble_log("bub300.log")
+    keys300 = [k for k in bubble if k[0] == 300.0]
+    if not keys300 or any(
+        k not in alone
+        or not np.allclose(
+            [r[2] for r in bubble[k]], [r[2] for r in alone[k]], rtol=1e-8, atol=1e-10
+        )
+        for k in keys300
+    ):
+        print("bubble at 300 K depends on the temperatures computed before it")
+        return 1
+
+    # An unconverged temperature keeps the SCPH result: mark 280 K unconverged
+    # in a copy of the state file and restart with ALLOW_UNCONVERGED.
+    shutil.copy(PREFIX + ".scph.h5", "bubskip_scph.scph.h5")
+    with h5py.File("bubskip_scph.scph.h5", "r+") as f:
+        temps = list(f["settings/temperatures"][...])
+        flags = f["convergence/structure"][...]
+        flags[temps.index(temp)] = 0
+        f["convergence/structure"][...] = flags
+    with open("bubskip.in", "w") as f:
+        f.write(
+            src.replace("PREFIX = bub_scph", "PREFIX = bubskip_scph").replace(
+                "FCSFILE = cBTO222.h5", "FCSFILE = cBTO222.h5\n  ALLOW_UNCONVERGED = 1"
+            )
+        )
+    if run_anphon(anphonbin, "bubskip.in", "bubskip.log"):
+        print("BUBBLE = 2 restart with an unconverged temperature failed")
+        return 1
+    with open("bubskip.log") as f:
+        skipped = re.findall(r"Temperature \(K\) :\s*(\S+) : skipped", f.read())
+    if [float(t) for t in skipped] != [temp]:
+        print("expected only %g K to be skipped, got %s" % (temp, skipped))
+        return 1
+
+    def dfc2_block(filename, t):
+        # rows of one temperature block of a .scph*_dfc2 file
+        with open(filename) as f:
+            blocks = f.read().split("# Temp = ")[1:]
+        for b in blocks:
+            head, _, body = b.partition("\n")
+            if abs(float(head) - t) < 1e-6:
+                return np.array(
+                    [
+                        [float(x) for x in line.split()]
+                        for line in body.split("\n")
+                        if line.strip()
+                    ]
+                )
+        return None
+
+    kept = dfc2_block("bubskip_scph.scph+bubble(w)_dfc2", temp)
+    # the restart writes no .scph_dfc2; the state file is a copy of the fresh run's
+    scph = dfc2_block(PREFIX + ".scph_dfc2", temp)
+    if (
+        kept is None
+        or scph is None
+        or kept.shape != scph.shape
+        or not np.allclose(kept, scph)
+    ):
+        print("the skipped temperature did not keep the SCPH correction")
+        return 1
+
+    # A fresh relaxation hands the structures to the bubble step in memory
+    # (record_relaxed_structure) instead of through the state file; both
+    # routes must give the same correction.
+    with open("bubfresh.in", "w") as f:
+        f.write(
+            src.replace("PREFIX = bub_scph", "PREFIX = bubfresh").replace(
+                "  RESTART_SCPH = 1\n", ""
+            )
+        )
+    if os.path.exists("bubfresh.scph.h5"):
+        os.remove("bubfresh.scph.h5")
+    if run_anphon(anphonbin, "bubfresh.in", "bubfresh.log"):
+        print("fresh relaxation with BUBBLE = 2 failed")
+        return 1
+    fresh = parse_bubble_log("bubfresh.log")
+    if set(fresh) != set(bubble) or any(
+        not np.allclose(
+            [r[2] for r in bubble[k]], [r[2] for r in fresh[k]], rtol=1e-6, atol=1e-8
+        )
+        for k in bubble
+    ):
+        print("fresh relaxation + BUBBLE differs from the restart")
+        return 1
+
+    # The structures live on rank 0 and are broadcast to the ranks that
+    # evaluate V3: a 2-rank run must reproduce the serial one.
+    if shutil.which("mpirun") is not None:
+        shutil.copy(PREFIX + ".scph.h5", "bub_scph.scph.h5")
+        with open("bub_np2.log", "w") as f:
+            ret = subprocess.run(
+                ["mpirun", "-np", "2", anphonbin, "bub.in"],
+                stdout=f,
+                stderr=subprocess.STDOUT,
+            )
+        if ret.returncode:
+            print("BUBBLE = 2 with RELAX_STR = 2 failed on 2 MPI ranks")
+            return 1
+        bubble_np2 = parse_bubble_log("bub_np2.log")
+        for key, rows in bubble.items():
+            other = bubble_np2.get(key)
+            if other is None or not np.allclose(
+                [r[2] for r in rows], [r[2] for r in other], rtol=1e-6, atol=1e-8
+            ):
+                print("2-rank bubble differs from the serial one at", key)
+                return 1
+    return 0
+
+
 def runtest_scph_h5(anphonbin, project_root):
     scph_example_dir = os.path.join(project_root, "example", "BaTiO3", "scph_relax")
     reference_dir = os.path.join(scph_example_dir, "reference_for_test")
@@ -650,6 +904,10 @@ def runtest_scph_h5(anphonbin, project_root):
     if check_deformed_fc3(anphonbin):
         return 1
     print("RELAXED_STRUCTURE deformed FC3 + FC4 provenance guard --> pass")
+
+    if check_bubble_on_relaxed(anphonbin):
+        return 1
+    print("BUBBLE on the relaxed structure (RELAX_STR != 0) --> pass")
 
     return 0
 

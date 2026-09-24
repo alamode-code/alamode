@@ -644,6 +644,9 @@ void AnharmonicCore::setup_cubic(const std::vector<FcsArrayWithCell> &fcs3_in)
 
     invmass_v3.resize(ngroup_v3);
     evec_index_v3.resize(ngroup_v3, 3);
+    // prepare_relative_vector appends, and resize keeps the old contents when
+    // the group count is unchanged, so start from empty lists.
+    relvec_v3.clear();
     relvec_v3.resize(ngroup_v3);
     phi3_reciprocal.resize(ngroup_v3);
 
@@ -662,6 +665,20 @@ void AnharmonicCore::setup_cubic(const std::vector<FcsArrayWithCell> &fcs3_in)
     }
 }
 
+void AnharmonicCore::replace_cubic(const std::vector<FcsArrayWithCell> &fcs3_in)
+{
+    setup_cubic(fcs3_in);
+    // Everything below was derived from the previous cubic set and is keyed only
+    // by k points or modes, so a stale entry would be silently reused.
+    fc3_compressed.reset();
+    v3_ws_mode = V3Workspace{};
+    psi_mode.clear();
+    psi_mode_kfirst = -1;
+    psi_mode_sfirst = -1;
+    kindex_phi3_stored[0] = -1;
+    kindex_phi3_stored[1] = -1;
+}
+
 void AnharmonicCore::setup_quartic(const std::vector<FcsArrayWithCell> &fcs4_in)
 {
     // fcs4_in is already sorted by Fcs_phonon::setup().
@@ -669,6 +686,9 @@ void AnharmonicCore::setup_quartic(const std::vector<FcsArrayWithCell> &fcs4_in)
 
     invmass_v4.resize(ngroup_v4);
     evec_index_v4.resize(ngroup_v4, 4);
+    // prepare_relative_vector appends, and resize keeps the old contents when
+    // the group count is unchanged, so start from empty lists.
+    relvec_v4.clear();
     relvec_v4.resize(ngroup_v4);
     phi4_reciprocal.resize(ngroup_v4);
 

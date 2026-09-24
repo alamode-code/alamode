@@ -160,6 +160,11 @@ public:
     // whose SCPH iteration or structural optimization did not converge.
     void check_convergence(const std::vector<double> &temps_requested, bool allow_unconverged) const;
 
+    // The stored convergence flags of the requested temperatures (1 where the
+    // file carries none, as check_convergence treats them).
+    void load_convergence(const std::vector<double> &temps_requested, std::vector<unsigned char> &scph_out,
+                          std::vector<unsigned char> &structure_out) const;
+
     [[nodiscard]] const std::string &get_filename() const;
 
 private:

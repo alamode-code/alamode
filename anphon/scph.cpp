@@ -594,9 +594,6 @@ void Scph::exec_scph()
     if (relax_mode != RelaxationStrMode::None && thermodynamics->calc_FE_bubble) {
         exit("exec_scph", "Sorry, RELAX_STR!=0 can't be used with bubble correction of the free energy.");
     }
-    if (relax_mode != RelaxationStrMode::None && bubble > 0) {
-        exit("exec_scph", "Sorry, RELAX_STR!=0 can't be used with bubble self-energy on top of the SCPH calculation.");
-    }
 
     if (restart_scph) {
 
@@ -625,7 +622,15 @@ void Scph::exec_scph()
             // Regenerate the human-readable V0-vs-T output, which may be
             // absent when restarting from the unified file alone.
             if (with_relax && run.my_rank == 0) store_V0_to_file();
+            // The bubble self-energy of a relaxed run needs the structure of
+            // every temperature to deform the cubic IFCs.
+            if (with_relax && bubble > 0) load_relaxed_structures_h5(run.job_title + ".scph.h5");
         } else {
+            if (with_relax && bubble > 0) {
+                exit("exec_scph",
+                     "BUBBLE > 0 with RELAX_STR != 0 needs the relaxed structures, which only the\n"
+                     " state file PREFIX.scph.h5 carries; the legacy text restart files do not.");
+            }
             // Read anharmonic correction to the dynamical matrix from the legacy text files.
             // Resume SCPH by loading previously saved anharmonic dynamical-matrix corrections.
             load_scph_dymat_from_file(delta_dymat_scph,

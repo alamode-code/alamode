@@ -524,6 +524,51 @@ void ScphQhaCommon::record_relaxed_structure(const unsigned int iT, const Relaxa
     relaxation->spacegroup_of(structure_state, &relaxed_structure.spg_label[iT]);
 }
 
+void ScphQhaCommon::load_relaxed_structures_h5(const std::string &filename)
+{
+    if (run.my_rank != 0) return;
+
+    const auto ns = static_cast<size_t>(dynamical->neval);
+    const auto NT = static_cast<size_t>(system->get_num_temperature_points());
+
+    relaxed_structure.u_tensor.assign(NT * 9, 0.0);
+    relaxed_structure.u0.assign(NT * ns, 0.0);
+    relaxed_structure.spg_label.assign(NT, std::string{});
+    relaxed_structure_recorded.assign(NT, 0);
+
+    const ScphResultIOH5 io(filename);
+
+    // The restart does not rerun the loop that measures convergence, so take
+    // the flags from the file: a consumer must skip the same temperatures a
+    // fresh run would (ALLOW_UNCONVERGED lets unconverged rows through the
+    // restart guard).
+    std::vector<double> temps(NT);
+    for (size_t iT = 0; iT < NT; ++iT) temps[iT] = system->Tmin + system->dT * static_cast<double>(iT);
+    io.load_convergence(temps, converged_scph_temp, converged_str_temp);
+
+    std::vector<double> u_tensor, u0;
+    std::string spg_label;
+    Eigen::Matrix3d lavec;
+    Eigen::MatrixXd xf;
+    for (size_t iT = 0; iT < NT; ++iT) {
+        if (!io.load_structure(temps[iT], u_tensor, u0, spg_label, lavec, xf)) {
+            exit("load_relaxed_structures_h5",
+                 ("The state file " + filename +
+                  " carries no /structure group. BUBBLE > 0 with RELAX_STR != 0\n"
+                  " needs the relaxed structures; rerun the relaxation with this version of anphon.")
+                     .c_str());
+        }
+        if (u0.size() != ns) {
+            exit("load_relaxed_structures_h5",
+                 "The relaxed structure in the state file has a different number of atoms than this run.");
+        }
+        std::copy(u_tensor.begin(), u_tensor.end(), relaxed_structure.u_tensor.begin() + iT * 9);
+        std::copy(u0.begin(), u0.end(), relaxed_structure.u0.begin() + iT * ns);
+        relaxed_structure.spg_label[iT] = spg_label;
+        relaxed_structure_recorded[iT] = 1;
+    }
+}
+
 void ScphQhaCommon::store_V0_to_file() const
 {
     const auto Tmin = system->Tmin;

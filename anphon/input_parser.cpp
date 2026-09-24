@@ -797,6 +797,9 @@ void InputParser::parse_scph_vars(PHON *phon)
     assign_val(scph_vars.lower_temp, "LOWER_TEMP", scph_var_dict);
     assign_val(scph_vars.warmstart, "WARMSTART", scph_var_dict);
     assign_val(scph_vars.bubble, "BUBBLE", scph_var_dict);
+    if (scph_vars.bubble > 3) {
+        exit("parse_scph_vars", "BUBBLE must be 0, 1, 2, or 3.");
+    }
     assign_val(scph_vars.compute_Cv_anharmonic, "CV_ANHARM", scph_var_dict);
     if (scph_vars.compute_Cv_anharmonic != 0 && scph_vars.compute_Cv_anharmonic != 1) {
         exit("parse_scph_vars", "CV_ANHARM must be 0 or 1.");
@@ -1205,12 +1208,11 @@ void InputParser::check_relax_vars() const
     // structural optimization
     if (relax_str != 0) {
 
+        // The bubble free energy is not the functional the relaxation minimizes.
+        // The bubble self-energy (BUBBLE > 0) is evaluated on the relaxed structure
+        // of each temperature, with the cubic IFCs deformed accordingly.
         if (calc_FE_bubble) {
             exit("check_relax_vars", "Sorry, RELAX_STR!=0 can't be used with bubble correction of the free energy.");
-        }
-        if (scph_bubble > 0) {
-            exit("check_relax_vars",
-                 "Sorry, RELAX_STR!=0 can't be used with bubble self-energy on top of the SCPH calculation.");
         }
 
         // the energy is evaluated at a nonzero strain: the elastic constants and the
