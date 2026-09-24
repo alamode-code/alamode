@@ -807,6 +807,9 @@ void InputParser::parse_scph_vars(PHON *phon)
     if (scph_vars.bubble_tol <= 0.0) exit("parse_scph_vars", "BUBBLE_TOL must be positive.");
     assign_val(scph_vars.bubble_ladder, "BUBBLE_LADDER", scph_var_dict);
     assign_val(scph_vars.bubble_fd_check, "BUBBLE_FD_CHECK", scph_var_dict);
+    if (scph_vars.bubble_fd_check < 0 || scph_vars.bubble_fd_check > 2) {
+        exit("parse_scph_vars", "BUBBLE_FD_CHECK must be 0, 1 (full check), or 2 (explicit blocks only).");
+    }
     assign_val(scph_vars.compute_Cv_anharmonic, "CV_ANHARM", scph_var_dict);
     if (scph_vars.compute_Cv_anharmonic != 0 && scph_vars.compute_Cv_anharmonic != 1) {
         exit("parse_scph_vars", "CV_ANHARM must be 0 or 1.");

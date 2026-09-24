@@ -199,10 +199,13 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     // ---- P: the projection the SCP loop applies to its Gamma matrix (the
     //      group of the starting structure, symmetrize_dynamical_matrix).
     //      For the optimizer (report = false) the response is projected in the
-    //      same way, (I - P V4 T) y = P B, so that the Hessian is the Jacobian
-    //      of the forces the relaxation actually sees; in symmetry-breaking
-    //      directions the unrestricted curvature differs from it, and a Newton
-    //      step with it amplifies noise there. The reported curvature is
+    //      same way, (I - P V4 T) y = P B. At a structure that keeps the
+    //      starting symmetry (and for infinitesimal departures from it) this is
+    //      the Jacobian of the forces the relaxation sees; the unrestricted
+    //      curvature differs from it in symmetry-breaking directions, and a
+    //      Newton step with it amplified noise there. At finite
+    //      symmetry-broken iterates the explicit part A, built from the
+    //      projected SCP matrix, is not exact. The reported curvature is
     //      unrestricted. P is the identity for a P1 structure.
     // ponytail: nsym ns^3 per column; symmetry-adapted blocks if large cells need it
     const bool project =
@@ -267,7 +270,8 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
 
     // explicit part E = dg/dx at fixed occupations: A for the displacements;
     // the strain columns by central differences of the gradient at fixed G
-    // (a polynomial in the strain of degree <= 3, so the step error is tiny),
+    // (a polynomial in the strain, of degree <= 5 with C3 through the
+    // Green-Lagrange strain: second-order truncation error in h),
     // the displacement-strain rows by the symmetry of E.
     MatrixXd E = MatrixXd::Zero(ntot, ntot);
     E.topLeftCorner(nopt, nopt) = A;
@@ -318,6 +322,55 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
         renormalize_ifcs_at_structure(ws);
         ws.structure_state = saved_state;
         E.block(nopt, 0, nv, nopt) = E.block(0, nopt, nopt, nv).transpose();
+
+        // BUBBLE_FD_CHECK (1 or 2): the transpose above assumes that the force and the
+        // stress at fixed occupations derive from one function. Check it
+        // independently: the stress differentiated over the displacements.
+        if (report && bubble_fd_check && nopt > 0) {
+            const double hq = 1.0e-4;
+            MatrixXd E_vq(nv, nopt);
+            std::vector<cplx> st(9), dv(9);
+            std::array<std::array<double, 3>, 3> eta{};
+            relaxation->calculate_eta_tensor(eta, solved_state.u_tensor);
+            const auto stress_at = [&](const std::vector<double> &q) {
+                calculate_del_v0_del_umn_renorm(st.data(),
+                                                ws.C1_array,
+                                                ws.C2_array,
+                                                ws.C3_array,
+                                                eta,
+                                                solved_state.u_tensor,
+                                                *ws.del_v_strain,
+                                                q,
+                                                ws.pvcell,
+                                                kmesh_dense.get());
+                compute_anharmonic_del_v0_del_umn(dv.data(),
+                                                  st.data(),
+                                                  *ws.del_v_strain,
+                                                  solved_state.u_tensor,
+                                                  q,
+                                                  cmat_convert,
+                                                  omega2_scp,
+                                                  temp,
+                                                  kmesh_dense.get());
+                VectorXd g(nv);
+                for (Index m = 0; m < nv; ++m) {
+                    const auto [i, j] = strain_state_pair(m);
+                    g(m) = dv[3 * i + j].real() + (i != j ? dv[3 * j + i].real() : 0.0);
+                }
+                return g;
+            };
+            for (Index j = 0; j < nopt; ++j) {
+                auto qp = solved_state.q0, qm = solved_state.q0;
+                qp[optical[j]] += hq;
+                qm[optical[j]] -= hq;
+                E_vq.col(j) = (stress_at(qp) - stress_at(qm)) / (2.0 * hq);
+            }
+            const auto scale = std::max(E.block(0, nopt, nopt, nv).cwiseAbs().maxCoeff(), 1.0e-300);
+            std::cout << "  BUBBLE_FD_CHECK: explicit stress-displacement block vs transpose of force-strain block:"
+                      << " max diff / max = " << std::scientific << std::setprecision(3)
+                      << (E_vq - E.block(nopt, 0, nv, nopt)).cwiseAbs().maxCoeff() / scale << " (max " << scale << ")"
+                      << std::defaultfloat << '\n';
+        }
     }
 
     int total_applications = 0;
@@ -598,6 +651,16 @@ void Scph::report_scp_hessian_fd_check(const Eigen::MatrixXd &J, const Eigen::Ma
                   << Dn.bottomLeftCorner(nv, nq).cwiseAbs().maxCoeff() / norm << ", uu "
                   << Dn.bottomRightCorner(nv, nv).cwiseAbs().maxCoeff() / norm << "; max |J_qu| "
                   << Jn.topRightCorner(nq, nv).cwiseAbs().maxCoeff() / norm << ")";
+        // each block relative to its own size, so that a small block cannot
+        // hide behind the global normalization
+        const auto rel = [](const Eigen::MatrixXd &d, const Eigen::MatrixXd &j) {
+            return d.cwiseAbs().maxCoeff() / std::max(j.cwiseAbs().maxCoeff(), 1.0e-300);
+        };
+        std::cout << "\n  BUBBLE_FD_CHECK: per block, relative to the block (blocks qq "
+                  << rel(Dn.topLeftCorner(nq, nq), Jn.topLeftCorner(nq, nq)) << ", qu "
+                  << rel(Dn.topRightCorner(nq, nv), Jn.topRightCorner(nq, nv)) << ", uq "
+                  << rel(Dn.bottomLeftCorner(nv, nq), Jn.bottomLeftCorner(nv, nq)) << ", uu "
+                  << rel(Dn.bottomRightCorner(nv, nv), Jn.bottomRightCorner(nv, nv)) << ";)";
     }
     std::cout << std::defaultfloat << '\n';
 }

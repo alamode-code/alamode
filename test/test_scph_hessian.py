@@ -3,19 +3,30 @@
 
 A 1x1x2 cell of cubic BaTiO3 (KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1, so the
 Z point of the primitive cell folds onto Gamma and the cubic couplings
-between Gamma and Z do not vanish) is relaxed with RELAX_STR = 2 from a small
-random P1 displacement, so that the SCP loop applies no symmetry projection.
-At the converged structure:
+between Gamma and Z do not vanish).
 
-- the analytic Jacobian of the SCP force and stress (static bubble + quartic
-  ladder, solved by GMRES; displacements and the six strain components) must
-  match central finite differences of them (BUBBLE_FD_CHECK = 1);
-- it must be symmetric;
-- without the ladder (BUBBLE_LADDER = 0) the finite differences must NOT be
-  matched, or the test could not see the ladder;
-- a 2-rank run (batched V4 contraction over distributed rows) must reproduce
-  the serial one, and its ordinary SCPH outputs (no FD check) must equal those
-  of the FD-checked run, whose SCP state is restored after the displacements.
+- Relaxed with RELAX_STR = 2 from a small random P1 displacement (no symmetry
+  projection in the SCP loop), the analytic Jacobian of the SCP force and
+  stress (static bubble + quartic ladder, solved by GMRES; displacements and
+  the six strain components) must match central finite differences of them
+  (BUBBLE_FD_CHECK = 1), block by block, and be symmetric; without the ladder
+  (BUBBLE_LADDER = 0) the finite differences must NOT be matched.
+- At the cubic structure in its 30 K, -4 GPa cell (fixed, RELAX_STR = 4,
+  reached from 300 K; a saddle the SCP loop keeps, all SCPH frequencies
+  real) the curvature must be negative along one direction, exported to
+  PREFIX.scph_hessian_displace as a P4mm distortion that a new run reads back
+  exactly.
+- BUBBLE_HESS = 1 at 300 K: Newton with the full Hessian (strain block) from
+  the P1 start reaches the default minimum (atoms and cell) in no more steps,
+  also on 2 ranks, and BFGS with the projected Hessian (the SCP loop keeps
+  P4mm) returns a small P4mm displacement to the cubic structure.
+- At a polar minimum (9 % tetragonal strain, 100 K) the explicit
+  stress-displacement block, differentiated independently
+  (BUBBLE_FD_CHECK = 2), must equal the transposed force-strain block that J
+  uses.
+- A 2-rank run (batched V4 contraction over distributed rows) must reproduce
+  the serial curvature, and its ordinary SCPH outputs (no FD check) must equal
+  those of the FD-checked run, whose SCP state is restored.
 """
 
 import os
@@ -78,14 +89,25 @@ def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
         f.write(head + "\n".join(lines))
 
 
-def fd_mismatch(logfile, block=None):
-    """Scaled max |J - J_fd|, overall or for one block (qq, qu, uq, uu)."""
+def fd_mismatch(logfile, block=None, relative=False):
+    """Scaled max |J - J_fd|: overall, or of one block (qq, qu, uq, uu) relative
+    to the whole matrix or (relative=True) to that block."""
     with open(logfile) as f:
         text = f.read()
     m = re.search(r"BUBBLE_FD_CHECK: max \|J - J_fd\| / max \|J\| = (\S+)", text)
     if block is not None:
-        m = re.search(r"blocks .*?\b%s (\S+?)[,;]" % block, text)
+        head = r"relative to the block \(" if relative else r"max \|J - J_fd\|.*?\("
+        m = re.search(head + r"blocks .*?\b%s (\S+?)[,;]" % block, text)
     return float(m.group(1)) if m else None
+
+
+def reciprocity(logfile):
+    """(difference, size) of the last explicit stress-displacement check."""
+    with open(logfile) as f:
+        found = re.findall(
+            r"explicit stress-displacement block .*? = (\S+) \(max (\S+)\)", f.read()
+        )
+    return tuple(float(x) for x in found[-1]) if found else (None, None)
 
 
 def curvature_rows(prefix):
@@ -143,10 +165,22 @@ def main():
 
     # displacements to the accuracy of the SCP solves; the strain columns also
     # carry the O(h^2) truncation of the strain differences (h = 1e-4)
-    full_qq = fd_mismatch("full.log", "qq")
+    # (qu and uq are ~1e-5 of J at this nearly centrosymmetric structure, too
+    # small to be checked relative to themselves; the polar case below checks
+    # the explicit coupling independently)
+    full_qq = fd_mismatch("full.log", "qq", relative=True)
+    full_uu = fd_mismatch("full.log", "uu", relative=True)
     full = fd_mismatch("full.log")
-    if full_qq is None or not full_qq < 1.0e-8 or not full < 1.0e-6:
-        print("analytic Jacobian vs finite differences: %s (qq %s)" % (full, full_qq))
+    if (
+        None in (full_qq, full_uu, full)
+        or not full_qq < 1.0e-8
+        or not full_uu < 1.0e-6
+        or not full < 1.0e-6
+    ):
+        print(
+            "analytic Jacobian vs finite differences: %s (qq %s, uu %s, each relative to its block)"
+            % (full, full_qq, full_uu)
+        )
         ok = False
     asym, w_full = curvature("full")
     if not asym < 1.0e-8:
@@ -269,7 +303,7 @@ def main():
         return 1
 
     # BUBBLE_HESS = 1 at 300 K, where the SCP solves are robust (near the 30 K
-    # instability every relaxation hinges on marginal SCP solves).
+    # instability, relaxation outcomes changed with the MPI rank count).
     # (a) Newton with the full Hessian (strain block, coupled solve) from the
     #     rattled P1 start: the minimum of the default run, in no more steps.
     write_input("newton", "")
@@ -294,7 +328,13 @@ def main():
         and "BUBBLE_HESS: optimizer Hessian from the free-energy curvature (with strain)"
         in log
         and log.count("Structure opt. step") <= steps_default
-        and np.allclose(u_newton, u_default, atol=1.0e-4)
+        and np.allclose(u_newton, u_default, rtol=0.0, atol=1.0e-4)
+        and np.allclose(
+            np.loadtxt("newton.umn_tensor", ndmin=2)[-1, 1:],
+            np.loadtxt("full.umn_tensor", ndmin=2)[-1, 1:],
+            rtol=0.0,
+            atol=1.0e-5,
+        )
         and np.linalg.eigvalsh(relaxed_elastic("newton")).min() > 0.0
     ):
         print(
@@ -334,7 +374,69 @@ def main():
             "BUBBLE_HESS fixed cell: not back to cubic, see %s/fixedhess.log" % WORKDIR
         )
         ok = False
+    # (c) the Newton run on 2 ranks (the curvature through the V4 service)
+    if shutil.which("mpirun") is not None:
+        with open("newton_np2.in", "w") as f:
+            f.write(src_n.replace("PREFIX = newton", "PREFIX = newton_np2", 1))
+        if run_anphon(
+            ["mpirun", "-np", "2", anphonbin, "newton_np2.in"], "newton_np2.log"
+        ):
+            print("2-rank BUBBLE_HESS run failed, see %s/newton_np2.log" % WORKDIR)
+            return 1
+        with open("newton_np2.log") as f:
+            log_np2 = f.read()
+        if not (
+            "Structural optimization converged" in log_np2
+            and "BUBBLE_HESS: optimizer Hessian from the free-energy curvature (with strain)"
+            in log_np2
+        ):
+            print("BUBBLE_HESS: the 2-rank run did not converge with the curvature")
+            ok = False
+        for ext, tol in ((".atom_disp", 1.0e-6), (".umn_tensor", 1.0e-8)):
+            a = np.loadtxt("newton" + ext, ndmin=2)[-1, 1:]
+            b = np.loadtxt("newton_np2" + ext, ndmin=2)[-1, 1:]
+            if not np.allclose(a, b, rtol=0.0, atol=tol):
+                print("BUBBLE_HESS: 2-rank %s differs from the serial run" % ext)
+                ok = False
     print("BUBBLE_HESS relaxations --> %s" % ("pass" if ok else "fail"))
+    if not ok:
+        return 1
+
+    # A polar minimum: the saddle cell stretched to 9 % along z, 100 K reached
+    # from 300 K. The explicit stress-displacement block, differentiated
+    # independently (BUBBLE_FD_CHECK = 2), must equal the transposed
+    # force-strain block that J uses, where that coupling is substantial.
+    with open("fixedhess.in") as f:
+        src_p = f.read()
+    src_p = src_p.replace("PREFIX = fixedhess", "PREFIX = polar", 1)
+    src_p = src_p.replace("  BUBBLE_HESS = 1\n", "", 1)
+    src_p = src_p.replace("  BUBBLE = 4", "  BUBBLE = 4\n  BUBBLE_FD_CHECK = 2", 1)
+    src_p = re.sub(r"TMIN\s*=\s*\S+", "TMIN = 100", src_p, count=1)
+    src_p = re.sub(r"DT\s*=\s*\S+", "DT = 200", src_p, count=1)
+    src_p = re.sub(
+        r"&strain.*?\n/\n",
+        "&strain\n-0.01 0.0 0.0\n0.0 -0.01 0.0\n0.0 0.0 0.09\n/\n",
+        src_p,
+        count=1,
+        flags=re.S,
+    )
+    with open("polar.in", "w") as f:
+        f.write(src_p)
+    if run_anphon([anphonbin, "polar.in"], "polar.log"):
+        print("polar run failed, see %s/polar.log" % WORKDIR)
+        return 1
+    diff, size = reciprocity("polar.log")
+    u_polar = np.abs(np.loadtxt("polar.atom_disp", ndmin=2)[-1, 1:]).max()
+    if diff is None or not (u_polar > 0.1 and size > 1.0e-4 and diff < 1.0e-8):
+        print(
+            "polar: max |u| %g, explicit coupling %s, transpose mismatch %s"
+            % (u_polar, size, diff)
+        )
+        ok = False
+    print(
+        "explicit coupling blocks at a polar minimum --> %s"
+        % ("pass" if ok else "fail")
+    )
     if not ok:
         return 1
 

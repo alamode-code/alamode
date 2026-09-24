@@ -196,7 +196,7 @@ struct ScphInputVars
     unsigned int bubble = 0;
     double bubble_tol = 1.0e-8;    // BUBBLE_TOL (BUBBLE = 4: relative residual of the response solve)
     int bubble_ladder = 1;         // BUBBLE_LADDER (debug: 0 drops the quartic ladder)
-    int bubble_fd_check = 0;       // BUBBLE_FD_CHECK (debug: finite-difference force Jacobian)
+    int bubble_fd_check = 0;       // BUBBLE_FD_CHECK (debug: 1 finite-difference Jacobian, 2 explicit blocks only)
     int compute_Cv_anharmonic = 0; // CV_ANHARM
     int relax_str = 0;
 };

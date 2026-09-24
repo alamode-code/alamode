@@ -338,12 +338,25 @@ public:
                                                           cmat_convert_,
                                                           omega2_anharm_[iT],
                                                           jacobian);
-                if (ok && scph_.bubble_fd_check) {
+                if (ok && scph_.bubble_fd_check == 1) {
+                    // the optimizer's (projected) Hessian, before the displaced solves
+                    Eigen::MatrixXd projected;
+                    const auto ok_projected = scph_.compute_scp_hessian(ws_,
+                                                                        solved_structure_state_,
+                                                                        iT,
+                                                                        temp,
+                                                                        cmat_convert_,
+                                                                        omega2_anharm_[iT],
+                                                                        projected,
+                                                                        false);
                     const auto jacobian_fd = finite_difference_force_jacobian(iT, temp);
-                    scph_.report_scp_hessian_fd_check(jacobian,
-                                                      jacobian_fd,
-                                                      jacobian.rows() -
-                                                          static_cast<Eigen::Index>(ws_.harm_optical_modes.size()));
+                    const auto nv = jacobian.rows() - static_cast<Eigen::Index>(ws_.harm_optical_modes.size());
+                    std::cout << "  BUBBLE_FD_CHECK, curvature (unrestricted):\n";
+                    scph_.report_scp_hessian_fd_check(jacobian, jacobian_fd, nv);
+                    if (ok_projected) {
+                        std::cout << "  BUBBLE_FD_CHECK, optimizer Hessian (projected as in the SCP loop):\n";
+                        scph_.report_scp_hessian_fd_check(projected, jacobian_fd, nv);
+                    }
                 }
             }
             return StructOptStepStatus::Converged;
