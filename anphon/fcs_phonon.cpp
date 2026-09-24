@@ -32,6 +32,26 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 using namespace PHON_NS;
 
+namespace
+{
+// Round a relative vector in the primitive-cell basis to the lattice vector it
+// must be. A large residual means the atomic positions of an IFC file do not
+// match the primitive cell of this run (e.g. an origin shift between files).
+Eigen::Vector3d snap_to_lattice_vector(const Eigen::Vector3d &xf, const char *caller)
+{
+    Eigen::Vector3d rounded;
+    for (auto j = 0; j < 3; ++j) {
+        rounded[j] = static_cast<double>(nint(xf[j]));
+        if (std::abs(xf[j] - rounded[j]) > 1.0e-3) {
+            exit(caller,
+                 "A relative vector of the IFCs is not a lattice vector of the primitive cell.\n"
+                 " The atomic positions of the IFC files are inconsistent with the primitive cell of this run.");
+        }
+    }
+    return rounded;
+}
+} // namespace
+
 Fcs_phonon::Fcs_phonon(const RunInfo &run_in, const System *system_in) : run(run_in), system(system_in)
 {
     set_default_variables();
@@ -276,6 +296,7 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
     std::vector<unsigned int> atom_new_prim(order + 2), atom_new_super(order + 2);
 
     const auto convmat = system_in->get_primcell().lattice_vector.inverse();
+    const auto &xc_prim = system_in->get_primcell().x_cartesian;
 
     for (const auto &it_trans: map_trans) {
         for (const auto &it: fcs_inout) {
@@ -298,11 +319,15 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
             relvecs_vel.clear();
             for (auto i = 0; i < order + 1; ++i) {
                 for (auto j = 0; j < 3; ++j) {
-                    relvec_tmp[j] = it.relvecs_velocity[i][j] + cell_tmp.x_cartesian(atom_super_tran[0], j) -
-                                    cell_tmp.x_cartesian(system_in->get_map_p2s(order)[atom_new_prim[i + 1]][0], j);
+                    // Measure the lattice vector from the primitive-cell positions of this run,
+                    // not from the translation-0 images of the file's supercell: those images
+                    // may differ by a lattice vector between FC2FILE and FC3FILE, which would
+                    // put FC2 and FC3 in different Bloch gauges.
+                    relvec_tmp[j] =
+                        it.relvecs_velocity[i][j] + xc_prim(atom_new_prim[0], j) - xc_prim(atom_new_prim[i + 1], j);
                     relvec_tmp2[j] = it.relvecs_velocity[i][j];
                 }
-                relvec_tmp = convmat * relvec_tmp;
+                relvec_tmp = snap_to_lattice_vector(convmat * relvec_tmp, "replicate_force_constant");
                 relvec_tmp2 = convmat * relvec_tmp2;
                 relvecs.emplace_back(relvec_tmp);
                 relvecs_vel.emplace_back(relvec_tmp2);
@@ -895,8 +920,10 @@ void Fcs_phonon::append_delta_fc2_rows(std::vector<FcsArrayWithCell> &fc2_inout)
         atoms_s[0] = atom1_s;
         atoms_s[1] = static_cast<unsigned int>(atom2_s);
         // Same conventions as replicate_force_constant.
-        relvecs[0] = convmat * (relvec + scell.x_cartesian.row(atom1_s).transpose() -
-                                scell.x_cartesian.row(map_p2s[jat][0]).transpose());
+        relvecs[0] =
+            snap_to_lattice_vector(convmat * (relvec + system->get_primcell().x_cartesian.row(iat).transpose() -
+                                              system->get_primcell().x_cartesian.row(jat).transpose()),
+                                   "append_delta_fc2_rows");
         relvecs_vel[0] = convmat * relvec;
         fc2_inout.emplace_back(reals[4 * i + 3], pairs, atoms_s, relvecs, relvecs_vel);
     }
