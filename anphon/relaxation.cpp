@@ -934,7 +934,13 @@ void Relaxation::update_cell_coordinate(
 
                 itmp2 = (itmp1 + 1) % 3;
                 itmp3 = (itmp1 + 2) % 3;
-                del_v0_strain_vec(itmp1 + 3) = del_v0_strain_atT[itmp2 * 3 + itmp3];
+                // The shear state moves u_ij and u_ji together: its gradient is
+                // dF/du_ij + dF/du_ji, and the Hessian below is d^2F for the same
+                // state variables (symmetric, as BFGS assumes). The stress dF/du
+                // is not symmetric under a prestress; u_ij alone would make the
+                // fixed point miss dF = 0.
+                del_v0_strain_vec(itmp1 + 3) =
+                    del_v0_strain_atT[itmp2 * 3 + itmp3] + del_v0_strain_atT[itmp3 * 3 + itmp2];
             }
 
             for (itmp1 = 0; itmp1 < 3; itmp1++) {
@@ -947,7 +953,7 @@ void Relaxation::update_cell_coordinate(
                     itmp3 = (itmp2 + 1) % 3;
                     itmp4 = (itmp2 + 2) % 3;
                     C2_mat_tmp(itmp1, itmp2 + 3) = 2.0 * C2_array[itmp1 * 3 + itmp1][itmp3 * 3 + itmp4];
-                    C2_mat_tmp(itmp2 + 3, itmp1) = C2_array[itmp3 * 3 + itmp4][itmp1 * 3 + itmp1];
+                    C2_mat_tmp(itmp2 + 3, itmp1) = 2.0 * C2_array[itmp3 * 3 + itmp4][itmp1 * 3 + itmp1];
                 }
             }
             for (itmp1 = 0; itmp1 < 3; itmp1++) {
@@ -956,7 +962,7 @@ void Relaxation::update_cell_coordinate(
                     itmp4 = (itmp1 + 2) % 3;
                     itmp5 = (itmp2 + 1) % 3;
                     itmp6 = (itmp2 + 2) % 3;
-                    C2_mat_tmp(itmp1 + 3, itmp2 + 3) = 2.0 * C2_array[itmp3 * 3 + itmp4][itmp5 * 3 + itmp6];
+                    C2_mat_tmp(itmp1 + 3, itmp2 + 3) = 4.0 * C2_array[itmp3 * 3 + itmp4][itmp5 * 3 + itmp6];
                 }
             }
 
@@ -964,6 +970,15 @@ void Relaxation::update_cell_coordinate(
             for (itmp1 = 0; itmp1 < 6; itmp1++) {
                 for (itmp2 = 0; itmp2 < 6; itmp2++) {
                     hessian_mat[itmp1 + ns - 3][itmp2 + ns - 3] = C2_mat_tmp(itmp1, itmp2).real();
+                }
+            }
+            // A full free-energy Hessian (BUBBLE_HESS with a cell), d^2F for the
+            // same state variables, replaces the cell and cross blocks too.
+            if (relax_algo >= 2 && coord_hessian && coord_hessian->rows() == static_cast<Index>(ns + 3)) {
+                for (is = 0; is < static_cast<int>(ns + 3); is++) {
+                    for (int js = 0; js < static_cast<int>(ns + 3); js++) {
+                        hessian_mat[is][js] = (*coord_hessian)(is, js);
+                    }
                 }
             }
             // write to grad vector and state vector

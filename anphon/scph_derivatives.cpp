@@ -289,35 +289,16 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
 
     const int nk = kmesh_dense_in->nk;
     const int ns = dynamical->neval;
-    const auto ns2 = static_cast<std::size_t>(ns) * ns;
     const double factor = 4.0 * static_cast<double>(nk);
     const double factor2 = 1.0 / factor;
 
-    // del_v2_del_umn_renorm[i1 * nk + ik](is1, is2): strain derivative of the harmonic IFCs
-    // renormalized by the strain (del2_v2) and by the displacement q0 (del_v3)
+    // del_v2_del_umn_renorm[i1 * nk + ik]: the strain vertices
     std::vector<MatrixXcdRowMajor> del_v2_del_umn_renorm(9 * nk, MatrixXcdRowMajor(ns, ns));
-
-    VectorXcd q0c(ns);
-    for (auto is = 0; is < ns; is++) {
-        q0c(is) = std::complex<double>(q0[is], 0.0);
-    }
 
 #pragma omp parallel for collapse(2)
     for (int i1 = 0; i1 < 9; i1++) {
         for (int ik = 0; ik < nk; ik++) {
-            auto &mat = del_v2_del_umn_renorm[i1 * nk + ik];
-            // the (is1, is2) rows of del_v2 / del2_v2 are contiguous in is1*ns+is2 order
-            Map<VectorXcd> flat(mat.data(), ns2);
-            flat = del_v_strain.del_v2[i1].row(ik).transpose();
-            // renormalization by strain
-            for (auto i2 = 0; i2 < 9; i2++) {
-                flat += u_tensor[i2 / 3][i2 % 3] * del_v_strain.del2_v2[i1 * 9 + i2].row(ik).transpose();
-            }
-            // renormalization by displacement: sum_is3 del_v3[i1][ik](is3, is2*ns+is1) q0[is3],
-            // accumulated in the (is2, is1) order of del_v3 and added transposed
-            const VectorXcd acc = factor * (del_v_strain.del_v3[i1][ik].transpose() * q0c);
-            Map<const MatrixXcdRowMajor> acc_mat(acc.data(), ns, ns); // acc_mat(is2, is1)
-            mat += acc_mat.transpose();
+            del_v2_del_umn_renorm[i1 * nk + ik] = strain_vertex(del_v_strain, u_tensor, q0, i1, ik, nk);
         }
     }
 
@@ -348,6 +329,35 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
             del_v0_del_umn_SCP[i1] += factor2 * del_v2_del_umn_renorm[i1 * nk + ik].cwiseProduct(GT).sum();
         }
     }
+}
+
+Eigen::MatrixXcd ScphQhaCommon::strain_vertex(const DelVStrainData &del_v_strain,
+                                              const std::array<std::array<double, 3>, 3> &u_tensor,
+                                              const std::vector<double> &q0, const int i1, const int ik,
+                                              const int nk) const
+{
+    using namespace Eigen;
+    using MatrixXcdRowMajor = Matrix<std::complex<double>, Dynamic, Dynamic, RowMajor>;
+    const int ns = dynamical->neval;
+    const auto ns2 = static_cast<std::size_t>(ns) * ns;
+    const double factor = 4.0 * static_cast<double>(nk);
+
+    MatrixXcdRowMajor mat(ns, ns);
+    // the (is1, is2) rows of del_v2 / del2_v2 are contiguous in is1*ns+is2 order
+    Map<VectorXcd> flat(mat.data(), ns2);
+    flat = del_v_strain.del_v2[i1].row(ik).transpose();
+    // renormalization by strain
+    for (auto i2 = 0; i2 < 9; i2++) {
+        flat += u_tensor[i2 / 3][i2 % 3] * del_v_strain.del2_v2[i1 * 9 + i2].row(ik).transpose();
+    }
+    // renormalization by displacement: sum_is3 del_v3[i1][ik](is3, is2*ns+is1) q0[is3],
+    // accumulated in the (is2, is1) order of del_v3 and added transposed
+    VectorXcd q0c(ns);
+    for (auto is = 0; is < ns; is++) q0c(is) = std::complex<double>(q0[is], 0.0);
+    const VectorXcd acc = factor * (del_v_strain.del_v3[i1][ik].transpose() * q0c);
+    Map<const MatrixXcdRowMajor> acc_mat(acc.data(), ns, ns); // acc_mat(is2, is1)
+    mat += acc_mat.transpose();
+    return mat;
 }
 
 void ScphQhaCommon::get_derivative_central_diff(const double delta_t, const unsigned int nk, double **omega0,

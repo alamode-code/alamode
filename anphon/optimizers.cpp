@@ -175,6 +175,32 @@ void CellCoord_Newton_Optimizer::update_state(const int dim, const std::vector<d
         }
     }
 
+    // A Hessian with a coordinate-strain block (BUBBLE_HESS) is solved as one
+    // system; each part of the Newton step keeps its own mixing factor.
+    bool coupled = false;
+    for (int i = 0; i < dim - 6 && !coupled; ++i) {
+        for (int j = dim - 6; j < dim; ++j) {
+            if (hessian[i][j] != 0.0 || hessian[j][i] != 0.0) {
+                coupled = true;
+                break;
+            }
+        }
+    }
+    if (coupled) {
+        Eigen::MatrixXd H(dim, dim);
+        Eigen::VectorXd g(dim);
+        for (int i = 0; i < dim; ++i) {
+            g(i) = grad_vec[i];
+            for (int j = 0; j < dim; ++j) H(i, j) = hessian[i][j];
+        }
+        const Eigen::VectorXd step = H.colPivHouseholderQr().solve(g);
+        for (int i = 0; i < dim; ++i) {
+            delta[i] = -(i < dim - 6 ? mixbeta_coord : mixbeta_cell) * step(i);
+            state_vec[i] += delta[i];
+        }
+        return;
+    }
+
     coord_optimizer->update_state(dim - 6, grad_coord, state_coord, hessian_coord, delta_coord);
     cell_optimizer->update_state(6, grad_cell, state_cell, hessian_cell, delta_cell);
 

@@ -315,6 +315,14 @@ protected:
                                            double **omega2_anharm_T, double T_in,
                                            const KpointMeshUniform *kmesh_dense_in);
 
+    // Strain vertex M(is1, is2) = d Phi_k(is1, is2) / d u_{i1} (harmonic-mode
+    // basis, dense k-point ik) at fixed occupations: del_v2 renormalized by the
+    // strain (del2_v2) and the displacement q0 (del_v3). The SCP stress is
+    // del_v0_del_umn_renorm + sum_k tr[M G^T] / (4 N).
+    Eigen::MatrixXcd strain_vertex(const DelVStrainData &del_v_strain,
+                                   const std::array<std::array<double, 3>, 3> &u_tensor, const std::vector<double> &q0,
+                                   int i1, int ik, int nk) const;
+
     void get_derivative_central_diff(double delta_t, unsigned int nk, double **omega0, double **omega2,
                                      double **domega_dt);
 

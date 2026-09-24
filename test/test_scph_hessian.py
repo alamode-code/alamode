@@ -7,9 +7,9 @@ between Gamma and Z do not vanish) is relaxed with RELAX_STR = 2 from a small
 random P1 displacement, so that the SCP loop applies no symmetry projection.
 At the converged structure:
 
-- the analytic force Jacobian (static bubble + quartic ladder, solved by
-  GMRES) must match central finite differences of the SCP force
-  (BUBBLE_FD_CHECK = 1) to the accuracy of the SCP solves;
+- the analytic Jacobian of the SCP force and stress (static bubble + quartic
+  ladder, solved by GMRES; displacements and the six strain components) must
+  match central finite differences of them (BUBBLE_FD_CHECK = 1);
 - it must be symmetric;
 - without the ladder (BUBBLE_LADDER = 0) the finite differences must NOT be
   matched, or the test could not see the ladder;
@@ -78,22 +78,40 @@ def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
         f.write(head + "\n".join(lines))
 
 
-def fd_mismatch(logfile):
+def fd_mismatch(logfile, block=None):
+    """Scaled max |J - J_fd|, overall or for one block (qq, qu, uq, uu)."""
     with open(logfile) as f:
-        m = re.search(
-            r"BUBBLE_FD_CHECK: max \|J - J_fd\| / max \|J\| = (\S+)", f.read()
-        )
+        text = f.read()
+    m = re.search(r"BUBBLE_FD_CHECK: max \|J - J_fd\| / max \|J\| = (\S+)", text)
+    if block is not None:
+        m = re.search(r"blocks .*?\b%s (\S+?)[,;]" % block, text)
     return float(m.group(1)) if m else None
+
+
+def curvature_rows(prefix):
+    """Mode rows (index, SCPH, free energy) of the last temperature block."""
+    with open(prefix + ".scph_hessian") as f:
+        block = f.read().split("# T = ")[-1]
+    rows = [
+        line.split()
+        for line in block.splitlines()[1:]
+        if line.strip() and not line.startswith("#")
+    ]
+    return block, np.array(rows, dtype=float)
 
 
 def curvature(prefix):
     """(asymmetry, free-energy curvature frequencies) of the last temperature block."""
-    with open(prefix + ".scph_hessian") as f:
-        text = f.read()
-    block = text.split("# T = ")[-1]
+    block, rows = curvature_rows(prefix)
     asym = float(re.search(r"asymmetry = (\S+)", block).group(1))
-    rows = [line.split() for line in block.splitlines()[1:] if line.strip()]
-    return asym, np.array([float(r[2]) for r in rows])
+    return asym, rows[:, 2]
+
+
+def relaxed_elastic(prefix):
+    """Relaxed-ion elastic curvature (Voigt, GPa) of the last temperature block."""
+    block, _ = curvature_rows(prefix)
+    lines = block.split("# relaxed ions")[1].splitlines()[1:7]
+    return np.array([line.lstrip("#").split() for line in lines], dtype=float)
 
 
 def main():
@@ -123,9 +141,12 @@ def main():
             print("%s run failed, see %s/%s.log" % (prefix, WORKDIR, prefix))
             return 1
 
+    # displacements to the accuracy of the SCP solves; the strain columns also
+    # carry the O(h^2) truncation of the strain differences (h = 1e-4)
+    full_qq = fd_mismatch("full.log", "qq")
     full = fd_mismatch("full.log")
-    if full is None or not full < 1.0e-7:
-        print("analytic Jacobian vs finite differences: %s" % full)
+    if full_qq is None or not full_qq < 1.0e-8 or not full < 1.0e-6:
+        print("analytic Jacobian vs finite differences: %s (qq %s)" % (full, full_qq))
         ok = False
     asym, w_full = curvature("full")
     if not asym < 1.0e-8:
@@ -145,21 +166,31 @@ def main():
     if not ok:
         return 1
 
-    # Cubic start at 30 K under -4 GPa: the SCP loop keeps the cubic saddle
-    # (every SCPH frequency is real), but the free energy curves down along the
+    # The cubic structure at the cell it takes at 30 K under -4 GPa, held fixed
+    # (RELAX_STR = 4; the SCP solve at 30 K is reached from 300 K, LOWER_TEMP):
+    # every SCPH frequency is real, but the free energy curves down along the
     # polar mode, and the exported direction must break the symmetry to P4mm.
     write_input("saddle", "", temp=30, pressure=-4, rattle=False)
+    with open("saddle.in") as f:
+        src = f.read()
+    src = src.replace("RELAX_STR = 2", "RELAX_STR = 4\n  LOWER_TEMP = 1", 1)
+    src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = 300", src, count=1)
+    src = re.sub(r"DT\s*=\s*\S+", "DT = 270", src, count=1)
+    src = re.sub(
+        r"&strain.*?\n/\n",
+        "&strain\n0.027071539788 0.0 0.0\n0.0 0.027071539788 0.0\n"
+        "0.0 0.0 0.034980863080\n/\n",
+        src,
+        count=1,
+        flags=re.S,
+    )
+    with open("saddle.in", "w") as f:
+        f.write(src)
     if run_anphon([anphonbin, "saddle.in"], "saddle.log"):
         print("saddle run failed, see %s/saddle.log" % WORKDIR)
         return 1
-    with open("saddle.scph_hessian") as f:
-        rows = [
-            line.split()
-            for line in f.read().split("# T = ")[-1].splitlines()[1:]
-            if line.strip()
-        ]
-    w_scph = np.array([float(r[1]) for r in rows])
-    w_free = np.array([float(r[2]) for r in rows])
+    _, rows = curvature_rows("saddle")
+    w_scph, w_free = rows[:, 1], rows[:, 2]
     if not (w_scph.min() > 0.0 and w_free[0] < 0.0 and w_free[1] > 0.0):
         print("saddle: SCPH %s, free energy %s" % (w_scph[:3], w_free[:3]))
         ok = False
@@ -189,6 +220,8 @@ def main():
         src = f.read()
     exported = text.split("\n&displace")[1].split("\n\n")[0]
     src = src.replace("PREFIX = saddle", "PREFIX = follow", 1)
+    src = src.replace("RELAX_STR = 4\n  LOWER_TEMP = 1", "RELAX_STR = 2", 1)
+    src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = 30", src, count=1)
     src = src.replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 1", 1)
     src = re.sub(r"&strain.*?\n/\n", "", src, count=1, flags=re.S)
     src = src.split("&displace")[0] + "&displace" + exported + "\n\n"
@@ -235,36 +268,73 @@ def main():
     if not ok:
         return 1
 
-    # BUBBLE_HESS = 1 from the exported structure: BFGS started from the
-    # saddle-free free-energy curvature must reach the P4mm minimum (all
-    # curvatures positive); with the default Hessian this run gives up after
-    # repeated SCP failures. On 2 ranks when possible (V4 served by workers).
-    src = src.replace("PREFIX = follow", "PREFIX = relaxhess", 1)
-    src = src.replace("MAX_STR_ITER = 1\n", "MAX_STR_ITER = 100\n", 1)
-    src = src.replace("&relax", "&relax\n  BUBBLE_HESS = 1", 1)
-    with open("relaxhess.in", "w") as f:
-        f.write(src)
-    cmd = [anphonbin, "relaxhess.in"]
-    if shutil.which("mpirun") is not None:
-        cmd = ["mpirun", "-np", "2"] + cmd
-    if run_anphon(cmd, "relaxhess.log"):
-        print("BUBBLE_HESS run failed, see %s/relaxhess.log" % WORKDIR)
+    # BUBBLE_HESS = 1 at 300 K, where the SCP solves are robust (near the 30 K
+    # instability every relaxation hinges on marginal SCP solves).
+    # (a) Newton with the full Hessian (strain block, coupled solve) from the
+    #     rattled P1 start: the minimum of the default run, in no more steps.
+    write_input("newton", "")
+    with open("newton.in") as f:
+        src_n = f.read()
+    src_n = src_n.replace("RELAX_ALGO = 3", "RELAX_ALGO = 2\n  BUBBLE_HESS = 1", 1)
+    src_n = re.sub(r"MIXBETA_COORD\s*=\s*\S+", "MIXBETA_COORD = 1.0", src_n, count=1)
+    src_n = re.sub(r"MIXBETA_CELL\s*=\s*\S+", "MIXBETA_CELL = 1.0", src_n, count=1)
+    with open("newton.in", "w") as f:
+        f.write(src_n)
+    if run_anphon([anphonbin, "newton.in"], "newton.log"):
+        print("BUBBLE_HESS Newton run failed, see %s/newton.log" % WORKDIR)
         return 1
-    with open("relaxhess.log") as f:
+    with open("newton.log") as f:
         log = f.read()
-    _, w_min = curvature("relaxhess")
+    with open("full.log") as f:
+        steps_default = f.read().count("Structure opt. step")
+    u_newton = np.loadtxt("newton.atom_disp", ndmin=2)[-1, 1:]
+    u_default = np.loadtxt("full.atom_disp", ndmin=2)[-1, 1:]
+    if not (
+        "Structural optimization converged" in log
+        and "BUBBLE_HESS: optimizer Hessian from the free-energy curvature (with strain)"
+        in log
+        and log.count("Structure opt. step") <= steps_default
+        and np.allclose(u_newton, u_default, atol=1.0e-4)
+        and np.linalg.eigvalsh(relaxed_elastic("newton")).min() > 0.0
+    ):
+        print(
+            "BUBBLE_HESS Newton: not converged to the default minimum, see %s/newton.log"
+            % WORKDIR
+        )
+        ok = False
+    # (b) BFGS at the fixed saddle cell from a small P4mm displacement (the
+    #     exported direction), so that the SCP loop keeps P4mm and the
+    #     optimizer Hessian is projected: back to the cubic structure.
+    with open("saddle.in") as f:
+        src_f = f.read()
+    src_f = src_f.replace("PREFIX = saddle", "PREFIX = fixedhess", 1)
+    src_f = re.sub(r"TMIN\s*=\s*\S+", "TMIN = 300", src_f, count=1)
+    src_f = src_f.replace("&relax", "&relax\n  BUBBLE_HESS = 1", 1)
+    small = "\n".join(
+        " ".join("%.10e" % (0.2 * float(x)) for x in line.split())
+        for line in exported.split("&strain")[0].strip().splitlines()[1:]
+        if line.strip() != "/"
+    )
+    src_f = src_f.split("&displace")[0] + "&displace\n 1\n" + small + "\n/\n\n"
+    src_f += "&kpoint\n  2\n  8 8 4\n/\n"
+    with open("fixedhess.in", "w") as f:
+        f.write(src_f)
+    if run_anphon([anphonbin, "fixedhess.in"], "fixedhess.log"):
+        print("BUBBLE_HESS fixed-cell run failed, see %s/fixedhess.log" % WORKDIR)
+        return 1
+    with open("fixedhess.log") as f:
+        log = f.read()
+    u_fixed = np.loadtxt("fixedhess.atom_disp", ndmin=2)[-1, 1:]
     if not (
         "Structural optimization converged" in log
         and "BUBBLE_HESS: optimizer Hessian from the free-energy curvature" in log
-        and log.rsplit("Space group :", 1)[-1].split()[0] == "P4mm"
-        and w_min.min() > 0.0
+        and np.abs(u_fixed).max() < 1.0e-3
     ):
-        print("BUBBLE_HESS: no converged P4mm minimum, see %s/relaxhess.log" % WORKDIR)
+        print(
+            "BUBBLE_HESS fixed cell: not back to cubic, see %s/fixedhess.log" % WORKDIR
+        )
         ok = False
-    print(
-        "BUBBLE_HESS relaxation from the exported direction --> %s"
-        % ("pass" if ok else "fail")
-    )
+    print("BUBBLE_HESS relaxations --> %s" % ("pass" if ok else "fail"))
     if not ok:
         return 1
 

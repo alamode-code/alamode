@@ -201,7 +201,8 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
      - ``BUBBLE = 4`` (MODE = SCPH, ``RELAX_STR > 0``)
      - Curvature of the SCP free energy at each converged temperature: frequencies of the SCPH
        and of the free-energy curvature (static bubble + quartic ladder) along the :math:`\Gamma`
-       displacements; negative values are unstable directions
+       displacements; negative values are unstable directions. With a cell (``RELAX_STR = 2, 4``),
+       ``#`` lines with the clamped- and relaxed-ion elastic curvature (Voigt, GPa)
    * - ``PREFIX``.scph_hessian_displace
      - ``BUBBLE = 4``, a negative curvature
      - For each unstable direction, the ``&displace`` (``DISPMODE = 1``, Cartesian, bohr) and

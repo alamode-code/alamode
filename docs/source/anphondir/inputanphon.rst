@@ -846,8 +846,12 @@ Description of input variables
                group of the displaced structure, as a start for a relaxation in the lower symmetry. A
                temperature is skipped, with the reason, when its final SCPH iteration
                repaired an eigenvalue, a frequency vanishes, the translations mix with optical modes,
-               the response equation does not converge, or the Jacobian is not symmetric. The
-               ordinary SCPH outputs are written as usual; the curvature is static, so no DOS or
+               the response equation does not converge, or the Jacobian is not symmetric. With a
+               cell (``RELAX_STR = 2, 4``) the curvature also covers the six strain components, and
+               the elastic curvature of the free energy plus :math:`pV` with respect to the strain
+               of the reference cell (Voigt notation, GPa, with clamped and with relaxed atoms; the
+               phonon occupations respond in both) is printed and written to
+               ``PREFIX``.scph_hessian. The ordinary SCPH outputs are written as usual; the curvature is static, so no DOS or
                thermodynamic output is derived from it. The present version needs ``RELAX_STR > 0``,
                ``KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1`` (use a supercell) and ``NONANALYTIC = 0``,
                and cannot be combined with ``RESTART_SCPH``; an existing state file does not switch
@@ -1132,9 +1136,14 @@ Description of input variables
                leaves a saddle point downhill. The curvature is computed whenever the optimizer
                reads a Hessian: at every step for ``RELAX_ALGO = 2``, and when the BFGS history
                is initialized for ``RELAX_ALGO = 3``. When it is not available at a step (see
-               ``BUBBLE = 4``), the default Hessian is used and the log says why. The cell block
-               and the coupling between coordinates and strain are unchanged. Requires
-               ``MODE = SCPH``, ``BUBBLE = 4`` and ``RELAX_ALGO = 2`` or ``3``.
+               ``BUBBLE = 4``), the default Hessian is used and the log says why. With
+               ``RELAX_STR = 2`` the cell block and the coupling between coordinates and strain
+               come from the same curvature (``RELAX_ALGO = 2`` then solves the coupled Newton
+               equation, each part scaled by its ``MIXBETA``); with a fixed cell only the
+               coordinate block is used. The phonon response in this Hessian is restricted to the
+               symmetry the SCPH equation is solved in (that of the initial structure), so that it
+               is the Jacobian of the forces the optimizer sees. Requires ``MODE = SCPH``,
+               ``BUBBLE = 4`` and ``RELAX_ALGO = 2`` or ``3``.
 
 ````
 

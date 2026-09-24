@@ -145,15 +145,21 @@ private:
     // temperature is not eligible or the result cannot be trusted. With
     // report = false (BUBBLE_HESS, at every optimizer step) nothing is
     // written to files and the log gets one line.
-    bool compute_scp_hessian(const StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state,
-                             unsigned int iT, double temp, std::complex<double> ***cmat_convert, double **omega2_scp,
-                             Eigen::MatrixXd &J, bool report = true);
+    // With a cell (RELAX_STR = 2, 4), J also has the six strain state
+    // variables of the optimizer after the optical modes. ws is used as
+    // scratch (strain finite differences at fixed occupations) and restored.
+    bool compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state, unsigned int iT,
+                             double temp, std::complex<double> ***cmat_convert, double **omega2_scp, Eigen::MatrixXd &J,
+                             bool report = true);
     void export_unstable_directions(const RelaxationStructureState &solved_state, const std::vector<int> &optical,
                                     const Eigen::MatrixXd &J, double temp);
     bool hessian_displace_started = false;
     void write_scp_hessian(double temp, const std::string &skip_reason, const Eigen::MatrixXd &J,
-                           const Eigen::MatrixXd &A, int n_applications, double residual, double asymmetry);
-    void report_scp_hessian_fd_check(const Eigen::MatrixXd &J, const Eigen::MatrixXd &jacobian_fd) const;
+                           const Eigen::MatrixXd &A, int n_applications, double residual, double asymmetry,
+                           const Eigen::MatrixXd &C_clamped = Eigen::MatrixXd(),
+                           const Eigen::MatrixXd &C_relaxed = Eigen::MatrixXd());
+    void report_scp_hessian_fd_check(const Eigen::MatrixXd &J, const Eigen::MatrixXd &jacobian_fd,
+                                     Eigen::Index nv = 0) const;
     bool hessian_file_started = false;
     // Whether the final iteration of the last SCP solve repaired an eigenvalue
     // (either branch of diagonalize_and_symmetrize); such a fixed point is not

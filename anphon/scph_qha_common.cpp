@@ -1355,7 +1355,7 @@ void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspac
             const double fd = del_v0_del_umn_eff[i1 * 3 + i1].real();
             const int j1 = (i1 + 1) % 3;
             const int j2 = (i1 + 2) % 3;
-            const double fs = del_v0_del_umn_eff[j1 * 3 + j2].real();
+            const double fs = 0.5 * (del_v0_del_umn_eff[j1 * 3 + j2].real() + del_v0_del_umn_eff[j2 * 3 + j1].real());
             cell_grad_norm += fd * fd + fs * fs;
         }
         cell_grad_norm = std::sqrt(cell_grad_norm);

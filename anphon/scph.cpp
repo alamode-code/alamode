@@ -240,6 +240,7 @@ public:
         Eigen::MatrixXd fe_hessian;
         const Eigen::MatrixXd *coord_hessian = nullptr;
         if (scph_.relaxation->bubble_hess && scph_.relaxation->optimizer->reads_hessian() &&
+            (!harm_optical_modes.empty() || ws_.relax_mode == RelaxationStrMode::CoordinatesAndCell) &&
             scph_.compute_scp_hessian(ws_,
                                       structure_state,
                                       iT,
@@ -249,6 +250,11 @@ public:
                                       fe_hessian,
                                       false))
         {
+            // at a fixed cell only the displacement block is a Hessian of the optimized variables
+            if (ws_.relax_mode != RelaxationStrMode::CoordinatesAndCell) {
+                fe_hessian =
+                    Eigen::MatrixXd(fe_hessian.topLeftCorner(harm_optical_modes.size(), harm_optical_modes.size()));
+            }
             constexpr double floor_cm = 1.0; // ponytail: fixed 1 cm^-1 floor; a tag if systems need another
             fe_hessian = scph_hessian::saddle_free(fe_hessian, pow2(floor_cm / Ry_to_kayser));
             coord_hessian = &fe_hessian;
@@ -334,7 +340,10 @@ public:
                                                           jacobian);
                 if (ok && scph_.bubble_fd_check) {
                     const auto jacobian_fd = finite_difference_force_jacobian(iT, temp);
-                    scph_.report_scp_hessian_fd_check(jacobian, jacobian_fd);
+                    scph_.report_scp_hessian_fd_check(jacobian,
+                                                      jacobian_fd,
+                                                      jacobian.rows() -
+                                                          static_cast<Eigen::Index>(ws_.harm_optical_modes.size()));
                 }
             }
             return StructOptStepStatus::Converged;
@@ -524,22 +533,45 @@ private:
             all_converged = all_converged && converged && !scph_.last_scp_repaired;
         };
 
+        // with a cell: the six strain state variables of the optimizer too
+        const Eigen::Index nv = uses_full_strain_derivatives(ws_.relax_mode) ? 6 : 0;
+        const Eigen::Index ntot = nopt + nv;
+        const double delta_strain = 1.0e-4;
+        const auto strain_pair = [](const Eigen::Index m) {
+            return m < 3 ? std::make_pair(static_cast<int>(m), static_cast<int>(m))
+                         : std::make_pair(static_cast<int>((m + 1) % 3), static_cast<int>((m + 2) % 3));
+        };
         std::cout << "\n BUBBLE_FD_CHECK: finite-difference force Jacobian over " << nopt << " optical modes (step "
-                  << delta << ")\n";
-        Eigen::MatrixXd jacobian(nopt, nopt);
-        std::vector<double> v1_plus(nopt);
-        for (Eigen::Index jj = 0; jj < nopt; ++jj) {
+                  << delta << ")";
+        if (nv > 0) std::cout << " and " << nv << " strain components (step " << delta_strain << ")";
+        std::cout << '\n';
+        Eigen::MatrixXd jacobian(ntot, ntot);
+        Eigen::VectorXd g_plus(ntot);
+        const auto gradient = [&]() {
+            Eigen::VectorXd g(ntot);
+            for (Eigen::Index i = 0; i < nopt; ++i) g(i) = v1[optical[i]].real();
+            for (Eigen::Index m = 0; m < nv; ++m) {
+                const auto [i, j] = strain_pair(m);
+                g(nopt + m) = dv0[3 * i + j].real() + (i != j ? dv0[3 * j + i].real() : 0.0);
+            }
+            return g;
+        };
+        for (Eigen::Index jj = 0; jj < ntot; ++jj) {
+            const auto step = jj < nopt ? delta : delta_strain;
             for (const int sign: {1, -1}) {
                 auto state = solved_structure_state_;
-                state.q0[optical[jj]] += sign * delta;
+                if (jj < nopt) {
+                    state.q0[optical[jj]] += sign * step;
+                } else {
+                    const auto [i, j] = strain_pair(jj - nopt);
+                    state.u_tensor[i][j] += sign * step;
+                    if (i != j) state.u_tensor[j][i] += sign * step;
+                }
                 solve_at(state);
-                for (Eigen::Index i = 0; i < nopt; ++i) {
-                    const auto value = v1[optical[i]].real();
-                    if (sign == 1) {
-                        v1_plus[i] = value;
-                    } else {
-                        jacobian(i, jj) = (v1_plus[i] - value) / (2.0 * delta);
-                    }
+                if (sign == 1) {
+                    g_plus = gradient();
+                } else {
+                    jacobian.col(jj) = (g_plus - gradient()) / (2.0 * step);
                 }
             }
         }
