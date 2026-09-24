@@ -37,6 +37,13 @@ public:
         initialize_flag = 1;
     }
 
+    // Whether the next update_state call reads its hessian argument (BFGS
+    // only when it initializes; Newton every step; steepest descent never).
+    virtual bool reads_hessian() const
+    {
+        return true;
+    }
+
 protected:
     int initialize_flag = 0; // flag to run initialization
 };
@@ -69,6 +76,11 @@ public:
 
     void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
                       const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
+
+    bool reads_hessian() const override
+    {
+        return false;
+    }
 };
 
 class CellCoord_Newton_Optimizer: public Optimizer
@@ -96,6 +108,11 @@ public:
 
     void update_state(const int dim, const std::vector<double> &grad_vec, std::vector<double> &state_vec,
                       const std::vector<std::vector<double>> &hessian, std::vector<double> &delta);
+
+    bool reads_hessian() const override
+    {
+        return initialize_flag == 1;
+    }
 
     // Regular GDIIS with a BFGS-updated inverse Hessian and the size-dependent
     // angle acceptance criterion.

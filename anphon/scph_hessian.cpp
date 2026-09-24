@@ -71,7 +71,7 @@ Eigen::VectorXd signed_frequencies(const Eigen::MatrixXd &M)
 
 bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state,
                                const unsigned int iT, const double temp, std::complex<double> ***cmat_convert,
-                               double **omega2_scp, Eigen::MatrixXd &J)
+                               double **omega2_scp, Eigen::MatrixXd &J, const bool report)
 {
     using namespace Eigen;
     (void)iT;
@@ -82,15 +82,22 @@ bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const Relaxatio
     const auto nopt = static_cast<Index>(optical.size());
     const auto ikg = static_cast<unsigned int>(kmap_coarse_to_dense[0]);
 
-    std::cout << "\n BUBBLE = 4: curvature of the SCP free energy (force Jacobian dg/dq0) at " << temp << " K\n";
+    if (report) {
+        std::cout << "\n BUBBLE = 4: curvature of the SCP free energy (force Jacobian dg/dq0) at " << temp << " K\n";
+    }
 
     const auto skip = [&](const std::string &reason) {
-        std::cout << "  skipped: " << reason << ".\n";
-        write_scp_hessian(temp, reason, MatrixXd(), MatrixXd(), 0, 0.0, 0.0);
+        if (report) {
+            std::cout << "  skipped: " << reason << ".\n";
+            write_scp_hessian(temp, reason, MatrixXd(), MatrixXd(), 0, 0.0, 0.0);
+        } else {
+            std::cout << " BUBBLE_HESS: no free-energy curvature (" << reason << "); default optimizer Hessian.\n";
+        }
         return false;
     };
 
     // ---- eligibility at the final fixed point
+    if (nopt == 0) return skip("there are no optical modes");
     if (last_scp_repaired) return skip("the final SCP iteration repaired an eigenvalue");
     const auto frozen_gamma = classify_acoustic_modes_from_cmat(cmat_convert[ikg]);
     for (unsigned int ik = 0; ik < nk; ++ik) {
@@ -238,6 +245,15 @@ bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const Relaxatio
     }
     if (!J.allFinite()) return skip("the Jacobian is not finite");
 
+    const auto asym = (J - J.transpose()).norm() / std::max(J.norm(), 1.0e-300);
+    if (!report) {
+        if (asym > 1.0e-6) return skip("the force Jacobian is not symmetric");
+        std::cout << " BUBBLE_HESS: optimizer Hessian from the free-energy curvature, lowest " << std::fixed
+                  << std::setprecision(4) << signed_frequencies(J)(0) << std::defaultfloat << " cm^-1 ("
+                  << total_applications << " applications of V4)\n";
+        return true;
+    }
+
     std::cout << "  response solve: " << (bubble_ladder ? "GMRES" : "none (BUBBLE_LADDER = 0)") << ", " << nopt
               << " right-hand sides";
     if (bubble_ladder) {
@@ -246,7 +262,6 @@ bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const Relaxatio
     }
     std::cout << '\n';
 
-    const auto asym = (J - J.transpose()).norm() / std::max(J.norm(), 1.0e-300);
     std::cout << "  asymmetry |J - J^T| / |J| = " << std::scientific << std::setprecision(2) << asym
               << std::defaultfloat << '\n';
     // A Jacobian that is not symmetric is not the Hessian of a free energy;

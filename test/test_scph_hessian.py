@@ -235,6 +235,39 @@ def main():
     if not ok:
         return 1
 
+    # BUBBLE_HESS = 1 from the exported structure: BFGS started from the
+    # saddle-free free-energy curvature must reach the P4mm minimum (all
+    # curvatures positive); with the default Hessian this run gives up after
+    # repeated SCP failures. On 2 ranks when possible (V4 served by workers).
+    src = src.replace("PREFIX = follow", "PREFIX = relaxhess", 1)
+    src = src.replace("MAX_STR_ITER = 1\n", "MAX_STR_ITER = 100\n", 1)
+    src = src.replace("&relax", "&relax\n  BUBBLE_HESS = 1", 1)
+    with open("relaxhess.in", "w") as f:
+        f.write(src)
+    cmd = [anphonbin, "relaxhess.in"]
+    if shutil.which("mpirun") is not None:
+        cmd = ["mpirun", "-np", "2"] + cmd
+    if run_anphon(cmd, "relaxhess.log"):
+        print("BUBBLE_HESS run failed, see %s/relaxhess.log" % WORKDIR)
+        return 1
+    with open("relaxhess.log") as f:
+        log = f.read()
+    _, w_min = curvature("relaxhess")
+    if not (
+        "Structural optimization converged" in log
+        and "BUBBLE_HESS: optimizer Hessian from the free-energy curvature" in log
+        and log.rsplit("Space group :", 1)[-1].split()[0] == "P4mm"
+        and w_min.min() > 0.0
+    ):
+        print("BUBBLE_HESS: no converged P4mm minimum, see %s/relaxhess.log" % WORKDIR)
+        ok = False
+    print(
+        "BUBBLE_HESS relaxation from the exported direction --> %s"
+        % ("pass" if ok else "fail")
+    )
+    if not ok:
+        return 1
+
     if shutil.which("mpirun") is not None:
         write_input("np2", "")
         if run_anphon(["mpirun", "-np", "2", anphonbin, "np2.in"], "np2.log"):

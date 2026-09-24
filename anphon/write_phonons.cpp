@@ -225,6 +225,7 @@ void Writes::writeInputVars()
         os << "  SET_INIT_STR = " << phon->relaxation->set_init_str << '\n';
 
         os << "  ADD_HESS_DIAG = " << phon->relaxation->add_hess_diag << '\n';
+        os << "  BUBBLE_HESS = " << phon->relaxation->bubble_hess << '\n';
         os << "  STAT_PRESSURE = " << phon->relaxation->stat_pressure << '\n';
 
         if (run.mode == "QHA" && phon->relaxation->relax_str == 2) {

@@ -103,6 +103,17 @@ inline Eigen::MatrixXcd apply_dk(const Eigen::MatrixXcd &C, const Eigen::MatrixX
     return C * in_eigenbasis.cwiseProduct(L.cast<std::complex<double>>()) * C.adjoint();
 }
 
+// V max(|lambda|, floor) V^T of the symmetric part of J: a positive-definite
+// optimizer Hessian that keeps the curvature magnitudes but turns the ascent
+// a Newton step takes along a negative curvature into descent (saddle-free
+// Newton). floor > 0 bounds the step along near-flat directions.
+inline Eigen::MatrixXd saddle_free(const Eigen::MatrixXd &J, const double floor)
+{
+    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(0.5 * (J + J.transpose()));
+    const Eigen::VectorXd lambda = es.eigenvalues().cwiseAbs().cwiseMax(floor);
+    return es.eigenvectors() * lambda.asDiagonal() * es.eigenvectors().transpose();
+}
+
 // Restarted GMRES for (I - K) y = b with several right-hand sides (columns of
 // B), advanced together so that K is applied to one block per step:
 // apply_k(const MatrixXcd &in, MatrixXcd &out) sets out = K in. Each column is

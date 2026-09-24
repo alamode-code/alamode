@@ -277,6 +277,9 @@ void Qha::exec_qha_optimization()
     delta_harmonic_dymat_renormalize.resize(NT, ns, ns, kmesh_coarse->nk);
 
     const auto relax_mode = to_relaxation_str_mode(relaxation->relax_str);
+    if (run.my_rank == 0 && relaxation->bubble_hess) {
+        exit("exec_qha_optimization", "BUBBLE_HESS = 1 is available only with MODE = SCPH and BUBBLE = 4.");
+    }
 
     zerofill_harmonic_dymat_renormalize(delta_harmonic_dymat_renormalize, NT);
 

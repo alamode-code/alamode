@@ -56,7 +56,7 @@ List of supported input variables
    :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
-   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
+   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`BUBBLE_HESS <anphon_bubble_hess>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
    :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`
    :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`
    :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
@@ -1114,6 +1114,27 @@ Description of input variables
                which is used to update crystal structures in structural optimization.
                ``ADD_HESS_DIAG`` makes the calculation more robust in the presence of soft modes near the structural phase transition, but setting large values will make the convergence slower.
                This option is used only when ``RELAX_ALGO = 2``.
+
+````
+
+.. _anphon_bubble_hess:
+
+* BUBBLE_HESS-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+
+ :Description: ``BUBBLE_HESS = 1`` takes the atomic-coordinate block of the Hessian of the
+               structural optimizer from the curvature of the SCP free energy (``BUBBLE = 4``)
+               at the current structure, instead of the SCP :math:`\Gamma` matrix plus
+               ``ADD_HESS_DIAG``. Its negative eigenvalues are replaced by their absolute values
+               and all are bounded below by (1 cm\ :sup:`-1`)\ :sup:`2`, so that the step
+               leaves a saddle point downhill. The curvature is computed whenever the optimizer
+               reads a Hessian: at every step for ``RELAX_ALGO = 2``, and when the BFGS history
+               is initialized for ``RELAX_ALGO = 3``. When it is not available at a step (see
+               ``BUBBLE = 4``), the default Hessian is used and the log says why. The cell block
+               and the coupling between coordinates and strain are unchanged. Requires
+               ``MODE = SCPH``, ``BUBBLE = 4`` and ``RELAX_ALGO = 2`` or ``3``.
 
 ````
 

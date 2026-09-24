@@ -38,6 +38,7 @@
 #include "mpi_common.h"
 #include "phonon_dos.h"
 #include "relaxation.h"
+#include "scph_hessian_kernels.h"
 #include "symmetry_core.h"
 #include "system.h"
 #include "thermodynamics.h"
@@ -234,6 +235,25 @@ public:
         // the optimizer moves structure_state one step past it.
         if (scph_.bubble == 4) solved_structure_state_ = structure_state;
 
+        // BUBBLE_HESS: the optimizer Hessian is the saddle-free free-energy
+        // curvature at this structure, whenever the optimizer reads one.
+        Eigen::MatrixXd fe_hessian;
+        const Eigen::MatrixXd *coord_hessian = nullptr;
+        if (scph_.relaxation->bubble_hess && scph_.relaxation->optimizer->reads_hessian() &&
+            scph_.compute_scp_hessian(ws_,
+                                      structure_state,
+                                      iT,
+                                      temp,
+                                      cmat_convert_,
+                                      omega2_anharm_[iT],
+                                      fe_hessian,
+                                      false))
+        {
+            constexpr double floor_cm = 1.0; // ponytail: fixed 1 cm^-1 floor; a tag if systems need another
+            fe_hessian = scph_hessian::saddle_free(fe_hessian, pow2(floor_cm / Ry_to_kayser));
+            coord_hessian = &fe_hessian;
+        }
+
         scph_.relaxation->update_cell_coordinate(structure_state,
                                                  v1_SCP_,
                                                  omega2_anharm_[iT],
@@ -242,7 +262,8 @@ public:
                                                  cmat_convert_,
                                                  harm_optical_modes,
                                                  scph_.omega2_harmonic,
-                                                 scph_.evec_harmonic);
+                                                 scph_.evec_harmonic,
+                                                 coord_hessian);
         const auto du0 = structure_state.du0;
         const auto du_tensor = structure_state.du_tensor;
 
@@ -752,6 +773,10 @@ void Scph::exec_scph()
             std::remove((run.job_title + ".scph_hessian").c_str());
             std::remove((run.job_title + ".scph_hessian_displace").c_str());
         }
+    }
+    if (run.my_rank == 0 && relaxation->bubble_hess) {
+        if (bubble != 4) exit("exec_scph", "BUBBLE_HESS = 1 needs BUBBLE = 4.");
+        if (relaxation->relax_algo < 2) exit("exec_scph", "BUBBLE_HESS = 1 needs RELAX_ALGO = 2 or 3.");
     }
 
     if (restart_scph) {

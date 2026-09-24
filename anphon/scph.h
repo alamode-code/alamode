@@ -142,10 +142,12 @@ private:
     // BUBBLE = 4 (scph_hessian.cpp): curvature of the SCP free energy with
     // respect to the Gamma displacements at a converged SCP solution of the
     // structural optimization. Returns false (and reports why) when the
-    // temperature is not eligible or the result cannot be trusted.
+    // temperature is not eligible or the result cannot be trusted. With
+    // report = false (BUBBLE_HESS, at every optimizer step) nothing is
+    // written to files and the log gets one line.
     bool compute_scp_hessian(const StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state,
                              unsigned int iT, double temp, std::complex<double> ***cmat_convert, double **omega2_scp,
-                             Eigen::MatrixXd &J);
+                             Eigen::MatrixXd &J, bool report = true);
     void export_unstable_directions(const RelaxationStructureState &solved_state, const std::vector<int> &optical,
                                     const Eigen::MatrixXd &J, double temp);
     bool hessian_displace_started = false;

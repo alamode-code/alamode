@@ -1056,7 +1056,7 @@ void InputParser::parse_relax_vars(PHON *phon)
         "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",    "ALPHA_STDECENT",    "CELL_CONV_TOL",
         "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX", "COOLING_U0_THR",    "ADD_HESS_DIAG",
         "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR",
-        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING"};
+        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING",  "BUBBLE_HESS"};
 
     std::map<std::string, std::string> stropt_var_dict;
 
@@ -1116,6 +1116,10 @@ void InputParser::parse_relax_vars(PHON *phon)
         }
     }
     assign_val(relax_vars.add_hess_diag, "ADD_HESS_DIAG", stropt_var_dict);
+    assign_val(relax_vars.bubble_hess, "BUBBLE_HESS", stropt_var_dict);
+    if (relax_vars.bubble_hess < 0 || relax_vars.bubble_hess > 1) {
+        exit("parse_relax_vars", "BUBBLE_HESS must be 0 or 1.");
+    }
     assign_val(relax_vars.stat_pressure, "STAT_PRESSURE", stropt_var_dict);
 
     // STRAIN_COUPLING selects where the elastic constants and the strain

@@ -40,6 +40,7 @@ using PHON_NS::scph_hessian::divided_difference;
 using PHON_NS::scph_hessian::divided_difference_matrix;
 using PHON_NS::scph_hessian::gmres_identity_minus;
 using PHON_NS::scph_hessian::OccupationFactor;
+using PHON_NS::scph_hessian::saddle_free;
 using cplx = std::complex<double>;
 
 namespace
@@ -296,6 +297,16 @@ void test_gmres()
     }
 }
 
+void test_saddle_free()
+{
+    // J = R diag(-4, 1e-6, 9) R^T: |eigenvalues| with the floor, same eigenvectors
+    Eigen::MatrixXd R = Eigen::MatrixXd(Eigen::Quaterniond(0.9, 0.2, -0.3, 0.1).normalized().toRotationMatrix());
+    const Eigen::MatrixXd J = R * Eigen::Vector3d(-4.0, 1.0e-6, 9.0).asDiagonal() * R.transpose();
+    const Eigen::MatrixXd want = R * Eigen::Vector3d(4.0, 1.0e-2, 9.0).asDiagonal() * R.transpose();
+    const Eigen::MatrixXd H = saddle_free(J, 1.0e-2);
+    check((H - want).norm() < 1.0e-12, "saddle-free Hessian", (H - want).norm());
+}
+
 } // namespace
 
 int main()
@@ -303,6 +314,7 @@ int main()
     test_derivative();
     test_daleckii_krein();
     test_gmres();
+    test_saddle_free();
     test_one_mode();
     if (failures == 0) std::printf("scph_hessian_kernels: all checks passed\n");
     return failures == 0 ? 0 : 1;

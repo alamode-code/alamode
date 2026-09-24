@@ -792,7 +792,8 @@ void Relaxation::update_cell_coordinate(
     RelaxationStructureState &structure_state, const std::complex<double> *const v1_array_atT,
     const double *const *const omega2_array, const std::complex<double> *const del_v0_strain_atT,
     const double *const *const C2_array, const std::complex<double> *const *const *const cmat_convert,
-    const std::vector<int> &harm_optical_modes, double **omega2_harmonic, std::complex<double> ***evec_harmonic) const
+    const std::vector<int> &harm_optical_modes, double **omega2_harmonic, std::complex<double> ***evec_harmonic,
+    const Eigen::MatrixXd *coord_hessian) const
 {
     using namespace Eigen;
     const auto relax_mode = to_relaxation_str_mode(relax_str);
@@ -860,9 +861,11 @@ void Relaxation::update_cell_coordinate(
             // set hessian
             for (is = 0; is < ns - 3; is++) {
                 for (js = 0; js < ns - 3; js++) {
-                    hessian_mat[is][js] = v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]).real();
+                    hessian_mat[is][js] = coord_hessian
+                                              ? (*coord_hessian)(is, js)
+                                              : v2_mat_full(harm_optical_modes[is], harm_optical_modes[js]).real();
                 }
-                hessian_mat[is][is] += add_hess_diag_omega2;
+                if (!coord_hessian) hessian_mat[is][is] += add_hess_diag_omega2;
             }
         }
 

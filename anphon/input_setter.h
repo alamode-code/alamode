@@ -231,6 +231,7 @@ struct RelaxInputVars
     int set_init_str = 1;
 
     double add_hess_diag = 100.0; // [cm^{-1}]
+    int bubble_hess = 0;          // BUBBLE_HESS: free-energy curvature (BUBBLE = 4) as the optimizer Hessian
     double stat_pressure = 0.0;   // [GPa]
 
     // STRAIN_COUPLING as given (-1 when the deprecated tags below set a

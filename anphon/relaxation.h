@@ -251,6 +251,10 @@ public:
     // Reference space group; SET_INIT_STR = 3 re-seeds displacements when it is restored.
     int spacegroup_number_ref{0};
     double add_hess_diag;
+    // BUBBLE_HESS = 1: the coordinate block of the optimizer Hessian is the
+    // curvature of the SCP free energy (BUBBLE = 4) at the current structure,
+    // with |eigenvalues| (saddle-free) instead of the SCP Gamma matrix + ADD_HESS_DIAG.
+    int bubble_hess{0};
     double stat_pressure;
 
     // STRAIN_COUPLING as given (-1: the deprecated RENORM_*/ELASTIC_CONST
@@ -356,7 +360,8 @@ public:
                                 const double *const *const, const std::complex<double> *const,
                                 const double *const *const, const std::complex<double> *const *const *const,
                                 const std::vector<int> &, double **omega2_harmonic,
-                                std::complex<double> ***evec_harmonic) const;
+                                std::complex<double> ***evec_harmonic,
+                                const Eigen::MatrixXd *coord_hessian = nullptr) const;
 
     void rescue_step_after_scp_failure(RelaxationStructureState &structure_state,
                                        const std::complex<double> *const v1_array_atT,

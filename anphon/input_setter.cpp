@@ -269,6 +269,7 @@ void InputSetter::set_relax_vars(PHON *phon, const RelaxInputVars &vars) const
     phon->relaxation->set_init_str = vars.set_init_str;
 
     phon->relaxation->add_hess_diag = vars.add_hess_diag;
+    phon->relaxation->bubble_hess = vars.bubble_hess;
     phon->relaxation->stat_pressure = vars.stat_pressure;
 
     phon->relaxation->strain_coupling = vars.strain_coupling;
