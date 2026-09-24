@@ -782,7 +782,7 @@ Description of input variables
 
 .. _anphon_bubble:
 
-* BUBBLE-tag = 0 | 1 | 2 | 3
+* BUBBLE-tag = 0 | 1 | 2 | 3 | 4
 
  === ================================================================================================
   0   No bubble correction to the dynamical matrix
@@ -791,6 +791,8 @@ Description of input variables
       :math:`\omega = \Omega_{\boldsymbol{q}j}`
   3   Quasiparticle correction: the real part of the bubble self-energy at the solution of
       :math:`\omega^{2} = \Omega_{\boldsymbol{q}j}^{2} - 2\Omega_{\boldsymbol{q}j}\,\mathrm{Re}\,\Sigma^{\mathrm{B}}_{\boldsymbol{q}j}(\omega)`
+  4   Curvature of the SCP free energy: static bubble with the quartic ladder resummed, at
+      :math:`\Gamma` of the cell, along a structural optimization (``RELAX_STR > 0``)
  === ================================================================================================
 
  :Default: 0
@@ -826,6 +828,36 @@ Description of input variables
                and are refused for this combination. In a phase with large
                symmetry-breaking displacements the one-loop correction can overshoot and even turn a
                stable mode imaginary; it is a frequency correction, not a stability test.
+
+               ``BUBBLE = 4`` answers that stability question instead. At every temperature whose
+               structural optimization converges, it computes the derivative of the SCP force with
+               respect to the :math:`\Gamma` displacements: the SCPH curvature plus the response of
+               the phonon occupations, i.e. the static bubble with the quartic ladder resummed
+               (Masuki *et al.*, Phys. Rev. B **106**, 224104 (2022), Appendix B). The
+               self-consistent response equation is solved by GMRES to the relative residual
+               ``BUBBLE_TOL``; the response is not symmetrized, so directions that break the symmetry
+               of the structure are included. When this force Jacobian is symmetric, it is the
+               curvature of the SCP free energy, and the frequencies
+               :math:`\mathrm{sign}(\lambda)\sqrt{|\lambda|}` of its eigenvalues :math:`\lambda` are
+               printed, with the SCPH ones for comparison, and written to ``PREFIX``.scph_hessian; a
+               negative value marks a direction in which the structure is not a minimum of the free
+               energy. A temperature is skipped, with the reason, when its final SCPH iteration
+               repaired an eigenvalue, a frequency vanishes, the translations mix with optical modes,
+               the response equation does not converge, or the Jacobian is not symmetric. The
+               ordinary SCPH outputs are written as usual; the curvature is static, so no DOS or
+               thermodynamic output is derived from it. The present version needs ``RELAX_STR > 0``,
+               ``KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1`` (use a supercell) and ``NONANALYTIC = 0``,
+               and cannot be combined with ``RESTART_SCPH``; an existing state file does not switch
+               such a run to a restart.
+
+````
+
+.. _anphon_bubble_tol:
+
+* BUBBLE_TOL-tag : Relative residual of the response equation of ``BUBBLE = 4``
+
+ :Default: 1.0e-8
+ :Type: Double
 
 ````
 

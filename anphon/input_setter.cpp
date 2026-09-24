@@ -229,6 +229,9 @@ void InputSetter::set_scph_vars(PHON *phon, const ScphInputVars &vars) const
     phon->scph->lower_temp = vars.lower_temp;
     phon->scph->warmstart_scph = vars.warmstart;
     phon->scph->bubble = vars.bubble;
+    phon->scph->bubble_tol = vars.bubble_tol;
+    phon->scph->bubble_ladder = vars.bubble_ladder;
+    phon->scph->bubble_fd_check = vars.bubble_fd_check;
     phon->scph->compute_Cv_anharmonic = vars.compute_Cv_anharmonic;
     phon->relaxation->relax_str = vars.relax_str;
 }

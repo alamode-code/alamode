@@ -229,6 +229,10 @@ public:
         }
         n_scp_failures_ = 0;
 
+        // BUBBLE = 4 needs the structure the SCP equation was just solved at;
+        // the optimizer moves structure_state one step past it.
+        if (scph_.bubble == 4) solved_structure_state_ = structure_state;
+
         scph_.relaxation->update_cell_coordinate(structure_state,
                                                  v1_SCP_,
                                                  omega2_anharm_[iT],
@@ -297,6 +301,14 @@ public:
             std::cout << " Structural optimization converged in " << i_str_loop + 1 << "-th loop.\n";
             std::cout << " break structural loop.\n\n";
             converged_this_temp_ = true;
+            if (scph_.bubble == 4) {
+                Eigen::MatrixXd jacobian;
+                const auto ok = scph_.compute_scp_hessian(ws_, iT, temp, cmat_convert_, omega2_anharm_[iT], jacobian);
+                if (ok && scph_.bubble_fd_check) {
+                    const auto jacobian_fd = finite_difference_force_jacobian(iT, temp);
+                    scph_.report_scp_hessian_fd_check(jacobian, jacobian_fd);
+                }
+            }
             return StructOptStepStatus::Converged;
         }
 
@@ -424,6 +436,121 @@ public:
     }
 
 private:
+    // BUBBLE_FD_CHECK: central differences of the SCP force over the optical
+    // Gamma modes at the solved structure, re-solving the SCP equation at fixed
+    // structure. It goes through the production path, so the symmetry
+    // projection of the SCP loop applies (compare in P1 for all irreps). The
+    // SCP state of the solved structure is restored afterwards.
+    Eigen::MatrixXd finite_difference_force_jacobian(const unsigned int iT, const double temp)
+    {
+        const auto nk = scph_.kmesh_dense->nk;
+        const auto nk_coarse = scph_.kmesh_coarse->nk;
+        const auto ns = scph_.dynamical->neval;
+        const auto &optical = ws_.harm_optical_modes;
+        const auto nopt = static_cast<Eigen::Index>(optical.size());
+        const double delta = 1.0e-3;
+
+        // Snapshot of everything the displaced solves overwrite; restored
+        // exactly afterwards (a re-solve need not return to the same branch).
+        const auto accepted_state = ws_.structure_state;
+        const auto converged_prev_saved = converged_prev_;
+        const auto converged_scph_saved = scph_.converged_scph_temp[iT];
+        const auto repaired_saved = scph_.last_scp_repaired;
+        std::vector<double> omega2_saved(static_cast<size_t>(nk) * ns);
+        std::vector<std::complex<double>> cmat_saved(static_cast<size_t>(nk) * ns * ns),
+            evec_saved(static_cast<size_t>(nk) * ns * ns), dymat_saved(static_cast<size_t>(nk_coarse) * ns * ns);
+        for (unsigned int ik = 0; ik < nk; ++ik) {
+            for (unsigned int a = 0; a < ns; ++a) {
+                omega2_saved[ik * ns + a] = omega2_anharm_[iT][ik][a];
+                for (unsigned int b = 0; b < ns; ++b) {
+                    cmat_saved[(ik * ns + a) * ns + b] = cmat_convert_[ik][a][b];
+                    evec_saved[(ik * ns + a) * ns + b] = evec_anharm_tmp_[ik][a][b];
+                }
+            }
+        }
+        for (unsigned int a = 0; a < ns; ++a) {
+            for (unsigned int b = 0; b < ns; ++b) {
+                for (unsigned int ik = 0; ik < nk_coarse; ++ik) {
+                    dymat_saved[(a * ns + b) * nk_coarse + ik] = dymat_anharm_[iT][a][b][ik];
+                }
+            }
+        }
+
+        NDArray<std::complex<double>, 1> v1(ns), dv0(9);
+        bool all_converged = true;
+        const auto solve_at = [&](const RelaxationStructureState &state) {
+            ws_.structure_state = state;
+            scph_.renormalize_ifcs_at_structure(ws_);
+            bool warm = true, converged = false;
+            scph_.solve_scp_and_compute_forces(ws_,
+                                               iT,
+                                               temp,
+                                               cmat_convert_,
+                                               warm,
+                                               converged,
+                                               dymat_anharm_,
+                                               omega2_anharm_,
+                                               evec_anharm_tmp_,
+                                               v1,
+                                               dv0);
+            all_converged = all_converged && converged && !scph_.last_scp_repaired;
+        };
+
+        std::cout << "\n BUBBLE_FD_CHECK: finite-difference force Jacobian over " << nopt << " optical modes (step "
+                  << delta << ")\n";
+        Eigen::MatrixXd jacobian(nopt, nopt);
+        std::vector<double> v1_plus(nopt);
+        for (Eigen::Index jj = 0; jj < nopt; ++jj) {
+            for (const int sign: {1, -1}) {
+                auto state = solved_structure_state_;
+                state.q0[optical[jj]] += sign * delta;
+                solve_at(state);
+                for (Eigen::Index i = 0; i < nopt; ++i) {
+                    const auto value = v1[optical[i]].real();
+                    if (sign == 1) {
+                        v1_plus[i] = value;
+                    } else {
+                        jacobian(i, jj) = (v1_plus[i] - value) / (2.0 * delta);
+                    }
+                }
+            }
+        }
+
+        // restore: the IFCs of the solved structure are a function of the
+        // structure alone; the SCP data come back from the snapshot
+        ws_.structure_state = solved_structure_state_;
+        scph_.renormalize_ifcs_at_structure(ws_);
+        for (unsigned int ik = 0; ik < nk; ++ik) {
+            for (unsigned int a = 0; a < ns; ++a) {
+                omega2_anharm_[iT][ik][a] = omega2_saved[ik * ns + a];
+                for (unsigned int b = 0; b < ns; ++b) {
+                    cmat_convert_[ik][a][b] = cmat_saved[(ik * ns + a) * ns + b];
+                    evec_anharm_tmp_[ik][a][b] = evec_saved[(ik * ns + a) * ns + b];
+                }
+            }
+        }
+        for (unsigned int a = 0; a < ns; ++a) {
+            for (unsigned int b = 0; b < ns; ++b) {
+                for (unsigned int ik = 0; ik < nk_coarse; ++ik) {
+                    dymat_anharm_[iT][a][b][ik] = dymat_saved[(a * ns + b) * nk_coarse + ik];
+                }
+            }
+        }
+        scph_.converged_scph_temp[iT] = converged_scph_saved;
+        scph_.last_scp_repaired = repaired_saved;
+        ws_.structure_state = accepted_state;
+        converged_prev_ = converged_prev_saved;
+
+        if (!all_converged) {
+            std::cout << "  BUBBLE_FD_CHECK: a displaced SCP solve did not converge (or was repaired);"
+                         " the comparison is skipped.\n";
+            return Eigen::MatrixXd();
+        }
+        return jacobian;
+    }
+
+    RelaxationStructureState solved_structure_state_;
+
     bool structure_state_is_finite(const RelaxationStructureState &state) const
     {
         for (const auto value: state.q0) {
@@ -595,6 +722,26 @@ void Scph::exec_scph()
         exit("exec_scph", "Sorry, RELAX_STR!=0 can't be used with bubble correction of the free energy.");
     }
 
+    if (bubble == 4) {
+        // First release of the free-energy Hessian (FREE_ENERGY_HESSIAN_PLAN.md).
+        if (relax_mode == RelaxationStrMode::None) {
+            exit("exec_scph", "BUBBLE = 4 is computed along a structural optimization; set RELAX_STR != 0.");
+        }
+        if (kmesh_coarse->nk != 1 || kmesh_dense->nk != 1) {
+            exit("exec_scph",
+                 "BUBBLE = 4 needs KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1 in this version\n"
+                 " (use a supercell; the curvature is then exact for the SCP free energy on that mesh).");
+        }
+        if (restart_scph) {
+            exit("exec_scph",
+                 "BUBBLE = 4 needs the V4 service and the renormalized cubic IFCs of the running\n"
+                 " optimization; it cannot be combined with RESTART_SCPH.");
+        }
+        if (dynamical->nonanalytic) {
+            exit("exec_scph", "BUBBLE = 4 is not available with NONANALYTIC > 0 yet.");
+        }
+    }
+
     if (restart_scph) {
 
         if (run.my_rank == 0) {
@@ -746,7 +893,9 @@ void Scph::exec_scph()
         }
     }
 
-    if (bubble) {
+    // BUBBLE = 4 is evaluated inside the structural optimization, not here.
+    const auto bubble_frequency = bubble <= 3 ? bubble : 0u;
+    if (bubble_frequency) {
         delta_dymat_scph_plus_bubble.resize(NT, ns, ns, kmesh_coarse->nk);
         // Add bubble self-energy to SCPH dynamical-matrix correction.
         bubble_correction(delta_dymat_scph, delta_dymat_scph_plus_bubble);
@@ -757,7 +906,7 @@ void Scph::exec_scph()
                                             kmesh_coarse.get(),
                                             mindist_list,
                                             false,
-                                            bubble);
+                                            bubble_frequency);
         }
     }
 
@@ -767,7 +916,7 @@ void Scph::exec_scph()
                 kmesh_coarse.get(),
                 mindist_list,
                 false,
-                bubble);
+                bubble_frequency);
 
     delta_dymat_scph.clear();
     delta_harmonic_dymat_renormalize.clear();
@@ -1507,6 +1656,7 @@ void Scph::diagonalize_and_symmetrize(const Eigen::MatrixXcd &Fmat, const std::v
                     std::cout << "  onsite V4 is negative\n\n";
                 }
                 eval_tmp(is) = std::abs(omega2_tmp);
+                if (eval_repaired) *eval_repaired = true;
             }
         }
     }
@@ -1749,7 +1899,9 @@ void Scph::compute_anharmonic_frequency(double **omega2_out, std::complex<double
     // Main loop
     const auto time_loop_start = timer->elapsed();
     double time_fmat = 0.0;
+    last_scp_repaired = false;
     for (iloop = 0; iloop < maxiter; ++iloop) {
+        bool eval_repaired_iter = false;
 
         // Compute Qmat and Dmat from current frequencies
         compute_qmat_and_dmat(omega_now, T_in, cmat_convert, dmat_convert);
@@ -1794,7 +1946,8 @@ void Scph::compute_anharmonic_frequency(double **omega2_out, std::complex<double
                                        verbosity,
                                        icount,
                                        eval_tmp,
-                                       dymat_q);
+                                       dymat_q,
+                                       &eval_repaired_iter);
 
         } // close loop ik
 
@@ -1810,6 +1963,7 @@ void Scph::compute_anharmonic_frequency(double **omega2_out, std::complex<double
         // Check convergence on the coarse k points
         if (check_convergence(omega_now, omega_old, conv_tol, verbosity_iter, iloop, diff)) {
             if (verbosity_iter > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
+            last_scp_repaired = eval_repaired_iter;
             break;
         }
 
@@ -2057,6 +2211,7 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
     // Main loop
     const auto time_loop_start = timer->elapsed();
     double time_fmat = 0.0, time_diag = 0.0, time_interp = 0.0, time_dmat = 0.0;
+    last_scp_repaired = false;
     for (iloop = 0; iloop < maxiter; ++iloop) {
 
         // Evaluate g(x_n): build F from the current D, diagonalize on the
@@ -2135,6 +2290,7 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
             if (rnorm_rel < resid_rel_tol) {
                 if (verbosity_iter > 0) std::cout << "  DIFF < SCPH_TOL : break SCPH loop\n";
                 scp_converged = true;
+                last_scp_repaired = eval_repaired;
                 break;
             }
             if (verbosity_iter > 0) {

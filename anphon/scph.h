@@ -34,6 +34,10 @@ public:
     unsigned int kmesh_interpolate[3];
     unsigned int kmesh_bubble[3]; // q mesh of the bubble self-energy (KMESH_BUBBLE)
     unsigned int bubble;
+    // BUBBLE = 4 (free-energy Hessian): residual tolerance and debug switches
+    double bubble_tol = 1.0e-8;
+    int bubble_ladder = 1;
+    int bubble_fd_check = 0;
 
     using ScphQhaCommon::use_h5_io;
 
@@ -134,6 +138,21 @@ private:
     void compute_free_energy_bubble_SCPH(const unsigned int[3], std::complex<double> ****);
 
     void bubble_correction(std::complex<double> ****, std::complex<double> ****);
+
+    // BUBBLE = 4 (scph_hessian.cpp): curvature of the SCP free energy with
+    // respect to the Gamma displacements at a converged SCP solution of the
+    // structural optimization. Returns false (and reports why) when the
+    // temperature is not eligible or the result cannot be trusted.
+    bool compute_scp_hessian(const StructuralOptWorkspace &ws, unsigned int iT, double temp,
+                             std::complex<double> ***cmat_convert, double **omega2_scp, Eigen::MatrixXd &J);
+    void write_scp_hessian(double temp, const std::string &skip_reason, const Eigen::MatrixXd &J,
+                           const Eigen::MatrixXd &A, int n_applications, double residual, double asymmetry);
+    void report_scp_hessian_fd_check(const Eigen::MatrixXd &J, const Eigen::MatrixXd &jacobian_fd) const;
+    bool hessian_file_started = false;
+    // Whether the final iteration of the last SCP solve repaired an eigenvalue
+    // (either branch of diagonalize_and_symmetrize); such a fixed point is not
+    // differentiable in the sense BUBBLE = 4 needs.
+    bool last_scp_repaired = false;
 };
 
 // zgemm_ is declared in blas_wrapper.h (call it via zgemm_cpx).

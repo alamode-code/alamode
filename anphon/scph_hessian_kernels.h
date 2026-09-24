@@ -27,9 +27,10 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
+#include <complex>
 #include <vector>
 
 namespace PHON_NS::scph_hessian
@@ -100,6 +101,115 @@ inline Eigen::MatrixXcd apply_dk(const Eigen::MatrixXcd &C, const Eigen::MatrixX
 {
     const Eigen::MatrixXcd in_eigenbasis = C.adjoint() * dPhi * C;
     return C * in_eigenbasis.cwiseProduct(L.cast<std::complex<double>>()) * C.adjoint();
+}
+
+// Restarted GMRES for (I - K) y = b with several right-hand sides (columns of
+// B), advanced together so that K is applied to one block per step:
+// apply_k(const MatrixXcd &in, MatrixXcd &out) sets out = K in. Each column is
+// an independent Krylov problem with its own Hessenberg matrix, rotations and
+// dimension; it stops extending at convergence or at a happy breakdown, so an
+// early column never meets a singular back substitution. Returns true when every
+// column reached rel_residual <= tol; false on a non-finite residual or when
+// max_restarts cycles did not suffice.
+template <class ApplyK>
+bool gmres_identity_minus(const Eigen::MatrixXcd &B, Eigen::MatrixXcd &Y, ApplyK &&apply_k, const int restart,
+                          const int max_restarts, const double tol, std::vector<double> &rel_residual,
+                          int &n_applications)
+{
+    using namespace Eigen;
+    using cplx = std::complex<double>;
+    const auto n = B.rows();
+    const auto m = B.cols();
+    Y = MatrixXcd::Zero(n, m);
+    rel_residual.assign(static_cast<size_t>(m), 0.0);
+    n_applications = 0;
+
+    VectorXd bnorm(m);
+    for (Index c = 0; c < m; ++c) bnorm(c) = B.col(c).norm();
+
+    MatrixXcd KY(n, m);
+    for (int cycle = 0;; ++cycle) {
+        apply_k(Y, KY);
+        ++n_applications;
+        const MatrixXcd R = B - (Y - KY);
+        VectorXd beta(m);
+        std::vector<bool> active(static_cast<size_t>(m), false);
+        bool any_active = false;
+        for (Index c = 0; c < m; ++c) {
+            beta(c) = R.col(c).norm();
+            if (!std::isfinite(beta(c))) return false;
+            rel_residual[c] = bnorm(c) > 0.0 ? beta(c) / bnorm(c) : 0.0;
+            active[c] = rel_residual[c] > tol;
+            any_active = any_active || active[c];
+        }
+        if (!any_active) return true;
+        if (cycle == max_restarts) return false;
+
+        std::vector<MatrixXcd> V;
+        V.reserve(restart + 1);
+        V.emplace_back(MatrixXcd::Zero(n, m));
+        for (Index c = 0; c < m; ++c) {
+            if (active[c]) V[0].col(c) = R.col(c) / beta(c);
+        }
+        std::vector<MatrixXcd> H(m, MatrixXcd::Zero(restart + 1, restart));
+        std::vector<VectorXcd> g(m, VectorXcd::Zero(restart + 1));
+        std::vector<std::vector<cplx>> cs(m), sn(m);
+        std::vector<int> dim(static_cast<size_t>(m), 0);
+        for (Index c = 0; c < m; ++c) g[c](0) = beta(c);
+
+        for (int j = 0; j < restart && any_active; ++j) {
+            MatrixXcd W(n, m);
+            apply_k(V[j], W);
+            ++n_applications;
+            W = V[j] - W; // (I - K) v
+            any_active = false;
+            for (Index c = 0; c < m; ++c) {
+                if (!active[c]) {
+                    W.col(c).setZero();
+                    continue;
+                }
+                for (int i = 0; i <= j; ++i) {
+                    const cplx h = V[i].col(c).dot(W.col(c)); // conj(V) . W
+                    H[c](i, j) = h;
+                    W.col(c) -= h * V[i].col(c);
+                }
+                const double hn = W.col(c).norm();
+                for (int i = 0; i < j; ++i) {
+                    const cplx a = H[c](i, j), b = H[c](i + 1, j);
+                    H[c](i, j) = std::conj(cs[c][i]) * a + std::conj(sn[c][i]) * b;
+                    H[c](i + 1, j) = -sn[c][i] * a + cs[c][i] * b;
+                }
+                const cplx a = H[c](j, j);
+                const double r = std::sqrt(std::norm(a) + hn * hn);
+                const cplx cj = r > 0.0 ? a / r : cplx(1.0, 0.0);
+                const cplx sj = r > 0.0 ? cplx(hn / r, 0.0) : cplx(0.0, 0.0);
+                cs[c].push_back(cj);
+                sn[c].push_back(sj);
+                H[c](j, j) = r;
+                const cplx gj = g[c](j);
+                g[c](j) = std::conj(cj) * gj;
+                g[c](j + 1) = -sj * gj;
+                dim[c] = j + 1;
+                // converged, or the Krylov space is exhausted (happy breakdown)
+                const bool done = std::abs(g[c](j + 1)) <= tol * bnorm(c) || hn <= 1.0e-14 * r;
+                if (done || r == 0.0) {
+                    active[c] = false;
+                    W.col(c).setZero();
+                } else {
+                    W.col(c) /= hn;
+                    any_active = true;
+                }
+            }
+            V.push_back(std::move(W));
+        }
+        for (Index c = 0; c < m; ++c) {
+            const int k = dim[c];
+            if (k == 0) continue;
+            const VectorXcd z = H[c].topLeftCorner(k, k).template triangularView<Upper>().solve(g[c].head(k));
+            if (!z.allFinite()) return false;
+            for (int i = 0; i < k; ++i) Y.col(c) += z(i) * V[i].col(c);
+        }
+    }
 }
 
 } // namespace PHON_NS::scph_hessian

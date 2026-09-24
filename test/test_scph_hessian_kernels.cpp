@@ -12,6 +12,9 @@
    function G(Phi) = C f(Lambda) C^dagger, for random complex Hermitian
    matrices with distinct and with exactly degenerate eigenvalues; the zero
    rows and columns of frozen modes (a fixed translational subspace);
+ - restarted block GMRES for (I - K) y = b: columns converging at different
+   steps (a happy breakdown in one of them), a zero right-hand side, restarts,
+   a random non-Hermitian K against a direct solve, and a non-finite K;
  - the one-mode double well V = -a x^2/2 + b x^4/4 (hbar = m = 1): the static
    bubble with the quartic ladder resummed,
      d2F/du0^2 = K - (V3^2 Lambda/2) / (1 + V4 Lambda/2),  Lambda = -f'(K)/2,
@@ -26,6 +29,7 @@
 #include <cmath>
 #include <complex>
 #include <cstdio>
+#include <limits>
 #include <random>
 #include <string>
 #include <vector>
@@ -34,6 +38,7 @@
 using PHON_NS::scph_hessian::apply_dk;
 using PHON_NS::scph_hessian::divided_difference;
 using PHON_NS::scph_hessian::divided_difference_matrix;
+using PHON_NS::scph_hessian::gmres_identity_minus;
 using PHON_NS::scph_hessian::OccupationFactor;
 using cplx = std::complex<double>;
 
@@ -210,12 +215,94 @@ void test_one_mode()
     }
 }
 
+void test_gmres()
+{
+    using Eigen::MatrixXcd;
+    std::vector<double> residual;
+    int napply = 0;
+
+    // I - K = diag(1, 2); column 0 converges in one step (happy breakdown),
+    // column 1 needs two.
+    {
+        MatrixXcd K = MatrixXcd::Zero(2, 2);
+        K(1, 1) = -1.0;
+        MatrixXcd B(2, 2);
+        B << 1.0, 1.0, 0.0, 1.0;
+        MatrixXcd Y;
+        const bool ok = gmres_identity_minus(
+            B,
+            Y,
+            [&](const MatrixXcd &in, MatrixXcd &out) { out = K * in; },
+            10,
+            5,
+            1.0e-12,
+            residual,
+            napply);
+        MatrixXcd want(2, 2);
+        want << 1.0, 1.0, 0.0, 0.5;
+        check(ok && (Y - want).norm() < 1.0e-12, "GMRES: columns converging at different steps", (Y - want).norm());
+    }
+
+    // random non-Hermitian K with spectral radius < 1; a zero column and an
+    // eigenvector column; a short restart forces several cycles
+    {
+        std::mt19937 rng(777);
+        std::normal_distribution<double> g(0.0, 1.0);
+        const int n = 30;
+        MatrixXcd K(n, n);
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) K(i, j) = cplx(g(rng), g(rng));
+        }
+        Eigen::ComplexEigenSolver<MatrixXcd> es(K);
+        K *= 0.8 / es.eigenvalues().cwiseAbs().maxCoeff();
+        Eigen::ComplexEigenSolver<MatrixXcd> es2(K);
+        MatrixXcd B(n, 4);
+        for (int i = 0; i < n; ++i) B(i, 0) = cplx(g(rng), g(rng));
+        B.col(1).setZero();
+        B.col(2) = es2.eigenvectors().col(0);
+        for (int i = 0; i < n; ++i) B(i, 3) = cplx(g(rng), g(rng));
+        MatrixXcd Y;
+        const bool ok = gmres_identity_minus(
+            B,
+            Y,
+            [&](const MatrixXcd &in, MatrixXcd &out) { out = K * in; },
+            4,
+            400,
+            1.0e-12,
+            residual,
+            napply);
+        const MatrixXcd direct = (MatrixXcd::Identity(n, n) - K).partialPivLu().solve(B);
+        const double err = (Y - direct).norm() / direct.norm();
+        check(ok && err < 1.0e-9, "GMRES: random K with restarts vs direct solve", err);
+        check(Y.col(1).isZero(), "GMRES: zero right-hand side");
+    }
+
+    // a non-finite operator must fail, not report convergence
+    {
+        MatrixXcd B = MatrixXcd::Ones(3, 1), Y;
+        const bool ok = gmres_identity_minus(
+            B,
+            Y,
+            [&](const MatrixXcd &in, MatrixXcd &out) {
+                out = in;
+                out(0, 0) = std::numeric_limits<double>::quiet_NaN();
+            },
+            5,
+            3,
+            1.0e-12,
+            residual,
+            napply);
+        check(!ok, "GMRES: non-finite operator is reported as a failure");
+    }
+}
+
 } // namespace
 
 int main()
 {
     test_derivative();
     test_daleckii_krein();
+    test_gmres();
     test_one_mode();
     if (failures == 0) std::printf("scph_hessian_kernels: all checks passed\n");
     return failures == 0 ? 0 : 1;

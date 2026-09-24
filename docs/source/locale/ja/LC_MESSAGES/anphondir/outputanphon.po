@@ -1301,3 +1301,19 @@ msgstr ""
 
 #~ msgid "step_u_tensor.txt"
 #~ msgstr "step_u_tensor.txt"
+
+msgid "``PREFIX``.scph_hessian"
+msgstr "``PREFIX``.scph_hessian"
+
+msgid "``BUBBLE = 4`` (MODE = SCPH, ``RELAX_STR > 0``)"
+msgstr "``BUBBLE = 4`` (MODE = SCPH、``RELAX_STR > 0``)"
+
+msgid ""
+"Curvature of the SCP free energy at each converged temperature: frequencies "
+"of the SCPH and of the free-energy curvature (static bubble + quartic ladder) "
+"along the :math:`\\Gamma` displacements; negative values are unstable "
+"directions"
+msgstr ""
+"収束した各温度での SCP 自由エネルギーの曲率: :math:`\\Gamma` 点の変位に沿った SCPH "
+"の振動数と自由エネルギー曲率 (静的バブル + 4 次のラダー) の振動数。負の値は不安定な"
+"方向を示します"

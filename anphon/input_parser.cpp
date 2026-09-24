@@ -754,6 +754,9 @@ void InputParser::parse_scph_vars(PHON *phon)
                                               "LOWER_TEMP",
                                               "WARMSTART",
                                               "BUBBLE",
+                                              "BUBBLE_TOL",
+                                              "BUBBLE_LADDER",
+                                              "BUBBLE_FD_CHECK",
                                               "CV_ANHARM",
                                               "RELAX_STR"};
     std::vector<std::string> no_defaults{"KMESH_SCPH", "KMESH_INTERPOLATE"};
@@ -797,9 +800,13 @@ void InputParser::parse_scph_vars(PHON *phon)
     assign_val(scph_vars.lower_temp, "LOWER_TEMP", scph_var_dict);
     assign_val(scph_vars.warmstart, "WARMSTART", scph_var_dict);
     assign_val(scph_vars.bubble, "BUBBLE", scph_var_dict);
-    if (scph_vars.bubble > 3) {
-        exit("parse_scph_vars", "BUBBLE must be 0, 1, 2, or 3.");
+    if (scph_vars.bubble > 4) {
+        exit("parse_scph_vars", "BUBBLE must be 0, 1, 2, 3, or 4.");
     }
+    assign_val(scph_vars.bubble_tol, "BUBBLE_TOL", scph_var_dict);
+    if (scph_vars.bubble_tol <= 0.0) exit("parse_scph_vars", "BUBBLE_TOL must be positive.");
+    assign_val(scph_vars.bubble_ladder, "BUBBLE_LADDER", scph_var_dict);
+    assign_val(scph_vars.bubble_fd_check, "BUBBLE_FD_CHECK", scph_var_dict);
     assign_val(scph_vars.compute_Cv_anharmonic, "CV_ANHARM", scph_var_dict);
     if (scph_vars.compute_Cv_anharmonic != 0 && scph_vars.compute_Cv_anharmonic != 1) {
         exit("parse_scph_vars", "CV_ANHARM must be 0 or 1.");
@@ -828,6 +835,10 @@ void InputParser::parse_scph_vars(PHON *phon)
         auto file_scph_h5 = job_title + ".scph.h5";
         if (stat(file_scph_h5.c_str(), &st) == 0) scph_vars.restart_scph = true;
     }
+    // BUBBLE = 4 is evaluated inside the structural optimization, so an
+    // existing state file must not switch the run to a restart; only an
+    // explicit RESTART_SCPH = 1 reaches the refusal in exec_scph.
+    if (scph_vars.bubble == 4) scph_vars.restart_scph = false;
 
     assign_val(scph_vars.restart_scph, "RESTART_SCPH", scph_var_dict);
 

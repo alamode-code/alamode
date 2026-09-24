@@ -197,6 +197,11 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
    * - ``PREFIX``.scph_thermo, .qha_thermo
      - *KPMODE* = 2
      - Heat capacity, entropy, and free energy vs. temperature
+   * - ``PREFIX``.scph_hessian
+     - ``BUBBLE = 4`` (MODE = SCPH, ``RELAX_STR > 0``)
+     - Curvature of the SCP free energy at each converged temperature: frequencies of the SCPH
+       and of the free-energy curvature (static bubble + quartic ladder) along the :math:`\Gamma`
+       displacements; negative values are unstable directions
    * - ``PREFIX``.scph_msd, .qha_msd
      - *KPMODE* = 2, ``PRINTMSD = 1``
      - Mean-square displacements vs. temperature

@@ -196,6 +196,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/relaxation.cpp
             ${PROJECT_SOURCE_DIR}/scph.cpp
             ${PROJECT_SOURCE_DIR}/scph_bubble.cpp
+            ${PROJECT_SOURCE_DIR}/scph_hessian.cpp
             ${PROJECT_SOURCE_DIR}/scph_derivatives.cpp
             ${PROJECT_SOURCE_DIR}/scph_io.cpp
             ${PROJECT_SOURCE_DIR}/scph_qha_common.cpp
@@ -250,6 +251,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/qha.h
             ${PROJECT_SOURCE_DIR}/relaxation.h
             ${PROJECT_SOURCE_DIR}/scph.h
+            ${PROJECT_SOURCE_DIR}/scph_hessian_kernels.h
             ${PROJECT_SOURCE_DIR}/selfenergy.h
             ${PROJECT_SOURCE_DIR}/symmetry_core.h
             ${PROJECT_SOURCE_DIR}/system.h

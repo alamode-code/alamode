@@ -35,6 +35,11 @@ Silicon ANPHON --> pass
   at 280 K): the in-run on-shell bubble, restarted from the state file, must match
   `MODE = selfenergy` + `RELAXED_STRUCTURE = 1` mode by mode, differ from the undeformed
   reference, and be reproduced on 2 MPI ranks when `mpirun` is available.
+- `test_scph_hessian.py` covers `BUBBLE = 4` (curvature of the SCP free energy) on a 1x1x2
+  BaTiO3 cell relaxed from a P1 start: the analytic force Jacobian (static bubble + quartic
+  ladder, GMRES) against finite differences of the SCP force (`BUBBLE_FD_CHECK`), its
+  symmetry, the necessity of the ladder, and a 2-rank run. `test_scph_hessian_kernels`
+  (C++) covers the occupation factor, divided differences and the Daleckii-Krein map.
 - `test_dfc2_fold.py` covers `DFC2FILE` from an SCPH run whose `&cell` is an
   integer supercell of the primitive cell (BaTiO3 1x1x2 cell, 2 2 1 meshes):
   the folded correction must reproduce a primitive-cell SCPH with the same q
