@@ -43,6 +43,7 @@
 #include "interpolation.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
+#include "relaxation.h"
 #include "scph.h"
 #include "scph_hessian_kernels.h"
 #include "thermodynamics.h"
@@ -68,8 +69,9 @@ Eigen::VectorXd signed_frequencies(const Eigen::MatrixXd &M)
 }
 } // namespace
 
-bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const unsigned int iT, const double temp,
-                               std::complex<double> ***cmat_convert, double **omega2_scp, Eigen::MatrixXd &J)
+bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state,
+                               const unsigned int iT, const double temp, std::complex<double> ***cmat_convert,
+                               double **omega2_scp, Eigen::MatrixXd &J)
 {
     using namespace Eigen;
     (void)iT;
@@ -252,7 +254,93 @@ bool Scph::compute_scp_hessian(const StructuralOptWorkspace &ws, const unsigned 
     if (asym > 1.0e-6) return skip("the force Jacobian is not symmetric, so it is not a free-energy curvature");
 
     write_scp_hessian(temp, "", J, A, total_applications, worst_residual, asym);
+    export_unstable_directions(solved_state, optical, J, temp);
     return true;
+}
+
+void Scph::export_unstable_directions(const RelaxationStructureState &solved_state, const std::vector<int> &optical,
+                                      const Eigen::MatrixXd &J, const double temp)
+{
+    // Every negative curvature: the space group the solved structure takes
+    // when moved along it (largest atomic step 0.05 bohr; its isotropy
+    // subgroup, for a nondegenerate direction), and that structure as
+    // &displace (DISPMODE = 1) and &strain blocks to restart the optimization from.
+    using namespace Eigen;
+    const SelfAdjointEigenSolver<MatrixXd> es(0.5 * (J + J.transpose()));
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto ns = static_cast<size_t>(dynamical->neval);
+    const double amplitude = 0.05;
+
+    std::ofstream ofs;
+    for (Index k = 0; k < es.eigenvalues().size() && es.eigenvalues()(k) < 0.0; ++k) {
+        if (!ofs.is_open()) {
+            ofs.open(run.job_title + ".scph_hessian_displace",
+                     hessian_displace_started ? std::ios::app : std::ios::out);
+            if (!ofs) exit("export_unstable_directions", "cannot open PREFIX.scph_hessian_displace");
+            if (!hessian_displace_started) {
+                ofs << "# Unstable directions of the SCP free energy (BUBBLE = 4): each block is a &displace\n"
+                       "# field (DISPMODE = 1, Cartesian, bohr) and a &strain field of the converged structure\n"
+                       "# moved 0.05 bohr (largest atomic step) along one negative-curvature eigenvector,\n"
+                       "# for a new RELAX_STR run in the lower symmetry.\n\n";
+                hessian_displace_started = true;
+            }
+        }
+        const auto lambda = es.eigenvalues()(k);
+        Index degeneracy = 0;
+        for (Index l = 0; l < es.eigenvalues().size(); ++l) {
+            if (std::abs(es.eigenvalues()(l) - lambda) <= 1.0e-6 * std::abs(lambda)) ++degeneracy;
+        }
+
+        // Cartesian step over the same optical modes as J (calculate_u0 would
+        // drop harmonic modes below its coarser cutoff).
+        std::vector<double> dq(ns, 0.0), du(ns, 0.0);
+        const auto &mass = system->get_mass_prim();
+        for (size_t i = 0; i < optical.size(); ++i) {
+            dq[optical[i]] = es.eigenvectors()(static_cast<Index>(i), k);
+            for (size_t j = 0; j < ns; ++j) {
+                du[j] += evec_harmonic[0][optical[i]][j].real() * dq[optical[i]] / std::sqrt(mass[j / 3]);
+            }
+        }
+        double umax = 0.0;
+        for (size_t iat = 0; iat < natmin; ++iat) {
+            umax = std::max(umax, std::hypot(du[3 * iat], du[3 * iat + 1], du[3 * iat + 2]));
+        }
+        if (umax <= 0.0) continue;
+        const double scale = amplitude / umax;
+
+        auto displaced = solved_state;
+        for (size_t is = 0; is < ns; ++is) {
+            displaced.q0[is] += scale * dq[is];
+            displaced.u0[is] += scale * du[is];
+        }
+        std::string subgroup;
+        relaxation->spacegroup_of(displaced, &subgroup);
+
+        const auto freq = -std::sqrt(-lambda) * Ry_to_kayser;
+        std::cout << "  unstable direction " << k + 1 << ": " << std::fixed << std::setprecision(4) << freq
+                  << std::defaultfloat << " cm^-1"
+                  << (degeneracy > 1 ? " (degenerate x" + std::to_string(degeneracy) + ")" : "")
+                  << ", displaced structure: " << subgroup << '\n';
+
+        ofs << "# T = " << temp << " K, direction " << k + 1 << ", " << std::fixed << std::setprecision(4) << freq
+            << " cm^-1, displaced structure " << subgroup;
+        if (degeneracy > 1) {
+            ofs << " (one arbitrary member of a " << degeneracy << "-fold set; others may give other subgroups)";
+        }
+        // The whole initial structure of the new run: the converged
+        // displacements and strain plus the step along the direction.
+        ofs << "\n&displace\n 1\n" << std::scientific << std::setprecision(10);
+        for (size_t iat = 0; iat < natmin; ++iat) {
+            for (auto x = 0; x < 3; ++x) ofs << std::setw(20) << displaced.u0[3 * iat + x];
+            ofs << '\n';
+        }
+        ofs << "/\n&strain\n";
+        for (const auto &row: solved_state.u_tensor) {
+            for (const auto v: row) ofs << std::setw(20) << v;
+            ofs << '\n';
+        }
+        ofs << "/\n\n" << std::defaultfloat;
+    }
 }
 
 void Scph::write_scp_hessian(const double temp, const std::string &skip_reason, const Eigen::MatrixXd &J,

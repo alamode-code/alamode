@@ -38,12 +38,14 @@ def run_anphon(cmd, logfile):
         ).returncode
 
 
-def write_input(prefix, extra):
+def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
     with open("BTO_scph_thermo.in") as f:
         src = f.read()
     src = re.sub(r"PREFIX\s*=\s*\S+", "PREFIX = %s" % prefix, src, count=1)
-    src = re.sub(r"TMIN\s*=\s*\S+", "TMIN = 300", src, count=1)
-    src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = 300", src, count=1)
+    src = re.sub(r"TMIN\s*=\s*\S+", "TMIN = %g" % temp, src, count=1)
+    src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = %g" % temp, src, count=1)
+    if pressure is not None:
+        src = src.replace("&relax", "&relax\n  STAT_PRESSURE = %g" % pressure, 1)
     src = re.sub(r"KMESH_INTERPOLATE\s*=.*", "KMESH_INTERPOLATE = 1 1 1", src, count=1)
     src = re.sub(r"KMESH_SCPH\s*=.*", "KMESH_SCPH = 1 1 1", src, count=1)
     src = re.sub(
@@ -69,7 +71,8 @@ def write_input(prefix, extra):
         "  0.0 0.0 2.0",
     ]
     for _ in range(10):
-        lines.append(" ".join("%.6e" % (rng.uniform(-1, 1) * 2e-3) for _ in range(3)))
+        amp = 2e-3 if rattle else 0.0
+        lines.append(" ".join("%.6e" % (rng.uniform(-1, 1) * amp) for _ in range(3)))
     lines.append("/\n\n&kpoint\n  2\n  8 8 4\n/\n")
     with open(prefix + ".in", "w") as f:
         f.write(head + "\n".join(lines))
@@ -138,6 +141,96 @@ def main():
     print(
         "BUBBLE = 4 vs finite differences, ladder on/off --> %s"
         % ("pass" if ok else "fail")
+    )
+    if not ok:
+        return 1
+
+    # Cubic start at 30 K under -4 GPa: the SCP loop keeps the cubic saddle
+    # (every SCPH frequency is real), but the free energy curves down along the
+    # polar mode, and the exported direction must break the symmetry to P4mm.
+    write_input("saddle", "", temp=30, pressure=-4, rattle=False)
+    if run_anphon([anphonbin, "saddle.in"], "saddle.log"):
+        print("saddle run failed, see %s/saddle.log" % WORKDIR)
+        return 1
+    with open("saddle.scph_hessian") as f:
+        rows = [
+            line.split()
+            for line in f.read().split("# T = ")[-1].splitlines()[1:]
+            if line.strip()
+        ]
+    w_scph = np.array([float(r[1]) for r in rows])
+    w_free = np.array([float(r[2]) for r in rows])
+    if not (w_scph.min() > 0.0 and w_free[0] < 0.0 and w_free[1] > 0.0):
+        print("saddle: SCPH %s, free energy %s" % (w_scph[:3], w_free[:3]))
+        ok = False
+    if not os.path.exists("saddle.scph_hessian_displace"):
+        print("saddle: no unstable direction exported")
+        ok = False
+    else:
+        with open("saddle.scph_hessian_displace") as f:
+            text = f.read()
+        blocks = re.findall(r"&displace\n 1\n(.*?)\n/", text, re.S)
+        u = np.array([[float(x) for x in b.split()] for b in blocks])
+        if "P4mm (#99)" not in text or u.shape != (1, 30):
+            print("saddle: unexpected displacement export\n%s" % text)
+            ok = False
+        elif not np.isclose(np.abs(u).max(), 0.05):
+            print("saddle: displacement not scaled to 0.05 bohr")
+            ok = False
+    if not ok:
+        print("BUBBLE = 4 unstable direction at a saddle --> fail")
+        return 1
+
+    # Restart from the exported structure (one step: the SCP solve near this
+    # saddle at 30 K is too stiff for a regression-test relaxation). The run
+    # must start from exactly the exported displacements and strain, in P4mm,
+    # and remove an export left over from an earlier run with its PREFIX.
+    with open("saddle.in") as f:
+        src = f.read()
+    exported = text.split("\n&displace")[1].split("\n\n")[0]
+    src = src.replace("PREFIX = saddle", "PREFIX = follow", 1)
+    src = src.replace("MAX_STR_ITER = 1000", "MAX_STR_ITER = 1", 1)
+    src = re.sub(r"&strain.*?\n/\n", "", src, count=1, flags=re.S)
+    src = src.split("&displace")[0] + "&displace" + exported + "\n\n"
+    src += "&kpoint\n  2\n  8 8 4\n/\n"
+    with open("follow.in", "w") as f:
+        f.write(src)
+    shutil.copy("saddle.scph_hessian_displace", "follow.scph_hessian_displace")
+    if run_anphon([anphonbin, "follow.in"], "follow.log"):
+        print("run from the exported direction failed, see %s/follow.log" % WORKDIR)
+        return 1
+    with open("follow.log") as f:
+        log = f.read()
+    u_echo = np.array(
+        [
+            [float(x) for x in line.split(":")[1].split()]
+            for line in log.split("Initial atomic displacements [Bohr] :")[1]
+            .split("\n\n")[0]
+            .strip()
+            .splitlines()
+        ]
+    ).ravel()
+    strain_echo = np.array(
+        log.split("Initial strain (displacement gradient tensor u_{mu nu}) :")[1]
+        .split("\n\n")[0]
+        .split(),
+        dtype=float,
+    )
+    strain_exported = np.array(
+        exported.split("&strain")[1].split("/")[0].split(), dtype=float
+    )
+    if not (
+        np.allclose(u_echo, u[0], atol=1e-8)
+        and np.allclose(strain_echo, strain_exported, atol=1e-8)
+        and "Space group :  P4mm (#99)" in log
+    ):
+        print("the exported structure is not what the new run starts from")
+        ok = False
+    if os.path.exists("follow.scph_hessian_displace"):
+        print("a stale PREFIX.scph_hessian_displace survived a new run")
+        ok = False
+    print(
+        "BUBBLE = 4 unstable direction at a saddle --> %s" % ("pass" if ok else "fail")
     )
     if not ok:
         return 1

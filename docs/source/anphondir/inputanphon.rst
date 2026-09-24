@@ -841,7 +841,10 @@ Description of input variables
                :math:`\mathrm{sign}(\lambda)\sqrt{|\lambda|}` of its eigenvalues :math:`\lambda` are
                printed, with the SCPH ones for comparison, and written to ``PREFIX``.scph_hessian; a
                negative value marks a direction in which the structure is not a minimum of the free
-               energy. A temperature is skipped, with the reason, when its final SCPH iteration
+               energy. Each such direction is also written to ``PREFIX``.scph_hessian_displace as a
+               ``&displace`` and a ``&strain`` field of the structure moved 0.05 bohr along it, labeled with the space
+               group of the displaced structure, as a start for a relaxation in the lower symmetry. A
+               temperature is skipped, with the reason, when its final SCPH iteration
                repaired an eigenvalue, a frequency vanishes, the translations mix with optical modes,
                the response equation does not converge, or the Jacobian is not symmetric. The
                ordinary SCPH outputs are written as usual; the curvature is static, so no DOS or

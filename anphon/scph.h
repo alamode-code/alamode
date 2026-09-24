@@ -143,8 +143,12 @@ private:
     // respect to the Gamma displacements at a converged SCP solution of the
     // structural optimization. Returns false (and reports why) when the
     // temperature is not eligible or the result cannot be trusted.
-    bool compute_scp_hessian(const StructuralOptWorkspace &ws, unsigned int iT, double temp,
-                             std::complex<double> ***cmat_convert, double **omega2_scp, Eigen::MatrixXd &J);
+    bool compute_scp_hessian(const StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state,
+                             unsigned int iT, double temp, std::complex<double> ***cmat_convert, double **omega2_scp,
+                             Eigen::MatrixXd &J);
+    void export_unstable_directions(const RelaxationStructureState &solved_state, const std::vector<int> &optical,
+                                    const Eigen::MatrixXd &J, double temp);
+    bool hessian_displace_started = false;
     void write_scp_hessian(double temp, const std::string &skip_reason, const Eigen::MatrixXd &J,
                            const Eigen::MatrixXd &A, int n_applications, double residual, double asymmetry);
     void report_scp_hessian_fd_check(const Eigen::MatrixXd &J, const Eigen::MatrixXd &jacobian_fd) const;

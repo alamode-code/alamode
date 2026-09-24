@@ -1317,3 +1317,18 @@ msgstr ""
 "収束した各温度での SCP 自由エネルギーの曲率: :math:`\\Gamma` 点の変位に沿った SCPH "
 "の振動数と自由エネルギー曲率 (静的バブル + 4 次のラダー) の振動数。負の値は不安定な"
 "方向を示します"
+
+msgid "``PREFIX``.scph_hessian_displace"
+msgstr "``PREFIX``.scph_hessian_displace"
+
+msgid "``BUBBLE = 4``, a negative curvature"
+msgstr "``BUBBLE = 4``、負の曲率がある場合"
+
+msgid ""
+"For each unstable direction, the ``&displace`` (``DISPMODE = 1``, Cartesian, "
+"bohr) and ``&strain`` fields of the converged structure moved 0.05 bohr along "
+"it, with the space group of the displaced structure"
+msgstr ""
+"各不安定方向について、収束した構造をその方向に 0.05 bohr 動かした構造の "
+"``&displace`` (``DISPMODE = 1``、デカルト座標、bohr) と ``&strain`` フィールド、"
+"および変位後の構造の空間群"

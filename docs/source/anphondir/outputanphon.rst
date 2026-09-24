@@ -202,6 +202,11 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
      - Curvature of the SCP free energy at each converged temperature: frequencies of the SCPH
        and of the free-energy curvature (static bubble + quartic ladder) along the :math:`\Gamma`
        displacements; negative values are unstable directions
+   * - ``PREFIX``.scph_hessian_displace
+     - ``BUBBLE = 4``, a negative curvature
+     - For each unstable direction, the ``&displace`` (``DISPMODE = 1``, Cartesian, bohr) and
+       ``&strain`` fields of the converged structure moved 0.05 bohr along it, with the space group
+       of the displaced structure
    * - ``PREFIX``.scph_msd, .qha_msd
      - *KPMODE* = 2, ``PRINTMSD = 1``
      - Mean-square displacements vs. temperature

@@ -15,6 +15,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <cstdio>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -303,7 +304,13 @@ public:
             converged_this_temp_ = true;
             if (scph_.bubble == 4) {
                 Eigen::MatrixXd jacobian;
-                const auto ok = scph_.compute_scp_hessian(ws_, iT, temp, cmat_convert_, omega2_anharm_[iT], jacobian);
+                const auto ok = scph_.compute_scp_hessian(ws_,
+                                                          solved_structure_state_,
+                                                          iT,
+                                                          temp,
+                                                          cmat_convert_,
+                                                          omega2_anharm_[iT],
+                                                          jacobian);
                 if (ok && scph_.bubble_fd_check) {
                     const auto jacobian_fd = finite_difference_force_jacobian(iT, temp);
                     scph_.report_scp_hessian_fd_check(jacobian, jacobian_fd);
@@ -739,6 +746,11 @@ void Scph::exec_scph()
         }
         if (dynamical->nonanalytic) {
             exit("exec_scph", "BUBBLE = 4 is not available with NONANALYTIC > 0 yet.");
+        }
+        if (run.my_rank == 0) {
+            // outputs of an earlier run with this PREFIX must not survive a run that writes none
+            std::remove((run.job_title + ".scph_hessian").c_str());
+            std::remove((run.job_title + ".scph_hessian_displace").c_str());
         }
     }
 
