@@ -94,6 +94,14 @@ public:
     // updated, see v4_distributed::accumulate_fmat).
     void fmat(const std::complex<double> *dvec, std::complex<double> ***fmat_inout);
 
+    // ---- rank 0 ----
+    // Batched full-matrix contraction for linear-response solves
+    // (v4_distributed::accumulate_fmat_batch): fout (nrhs blocks of
+    // nk_irred * ns * ns) is overwritten with V4 contracted with the nrhs D
+    // blocks of dmat (nrhs blocks of nk_dense * ns * ns); complete on rank 0.
+    // Needs the full tensor; dmat and fout must not overlap.
+    void fmat_batch(const std::complex<double> *dmat, std::size_t nrhs, std::complex<double> *fout);
+
     // The q0 sweep of q0_contraction.h over the distributed rows; on return
     // v3_renorm and q4_q0 are complete on rank 0. A q0 that is exactly zero
     // takes the local fast path without involving the other ranks.
@@ -116,11 +124,14 @@ private:
     {
         OP_FMAT = 1,
         OP_Q0 = 2,
-        OP_DONE = 3
+        OP_DONE = 3,
+        OP_FMAT_BATCH = 4
     };
 
     void broadcast_opcode(int op) const;
     void reduce_to_root(std::complex<double> *buf, std::size_t count) const;
+    void broadcast_from_root(std::complex<double> *buf, std::size_t count) const;
+    void fmat_batch_local_and_reduce(const std::complex<double> *dmat, std::size_t nrhs, std::complex<double> *fout);
     void fmat_local_and_reduce(const std::complex<double> *dvec, std::complex<double> ***fmat_inout);
     void q0_local_and_reduce(const double *q0, const std::complex<double> *const *const *v3_with_umn,
                              std::complex<double> ***v3_renorm, std::complex<double> ***q4_q0);
@@ -141,6 +152,7 @@ private:
     NDArray<std::complex<double>, 3> fmat_buf_;
     NDArray<std::complex<double>, 3> v3_buf_;
     NDArray<std::complex<double>, 3> q4_buf_;
+    std::vector<std::complex<double>> dmat_batch_buf_, fmat_batch_buf_;
 };
 
 } // namespace PHON_NS

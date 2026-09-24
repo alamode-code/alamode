@@ -264,4 +264,49 @@ inline void accumulate_fmat(const V4RowBlock &blk, const std::complex<double> *d
     }
 }
 
+// Batched, full-matrix form for linear-response solves (the SCPH Hessian):
+//   F_m[ik_irred](a,b) += sum_jk sum_c v4[(ik_irred,jk)][a,b][c] D_m[jk][c],  every (a, b), m < nrhs,
+// with D_m at dmat + m * nk_dense * ns2 (same row-by-row layout as dvec) and F_m
+// at fout + m * nk_irred * ns2, fout[.. + ik_irred * ns2 + a * ns + b]. Unlike
+// accumulate_fmat it computes the upper triangle too, so the map is
+// complex-linear in D (a Hermitian completion is only real-linear), and each
+// owned unit (ik_prod, a) is one dense product of its ns x ns2 rows with the
+// ns2 x nrhs block of D_jk. Needs every row (full_tensor).
+inline void accumulate_fmat_batch(const V4RowBlock &blk, const std::complex<double> *dmat, const std::size_t nrhs,
+                                  std::complex<double> *fout)
+{
+    using namespace Eigen;
+    using RowMat = Matrix<std::complex<double>, Dynamic, Dynamic, RowMajor>;
+    const std::size_t ns = blk.ns;
+    const std::size_t ns2 = blk.ns2;
+    const std::size_t nk = blk.nk_dense;
+    const auto dstride = static_cast<Index>(nk * ns2);
+    const auto fstride = static_cast<Index>(blk.nk_irred * ns2);
+
+    for (std::size_t ik_irred = 0; ik_irred < blk.nk_irred; ++ik_irred) {
+        // Threads own rows a, so each block F_m[ik_irred](a, :) has one writer.
+#pragma omp parallel for schedule(dynamic, 1)
+        for (long a_l = 0; a_l < static_cast<long>(ns); ++a_l) {
+            const auto a = static_cast<std::size_t>(a_l);
+            Map<Matrix<std::complex<double>, Dynamic, Dynamic>, 0, OuterStride<>> F(fout + ik_irred * ns2 + a * ns,
+                                                                                    static_cast<Index>(ns),
+                                                                                    static_cast<Index>(nrhs),
+                                                                                    OuterStride<>(fstride));
+            for (std::size_t jk = 0; jk < nk; ++jk) {
+                const std::size_t u = V4RowBlock::unit_of(ik_irred * nk + jk, a, ns);
+                if (!blk.owns_unit(u)) {
+                    continue;
+                }
+                const Map<const RowMat> V(blk.row(u, 0), static_cast<Index>(ns), static_cast<Index>(ns2));
+                const Map<const Matrix<std::complex<double>, Dynamic, Dynamic>, 0, OuterStride<>> D(
+                    dmat + jk * ns2,
+                    static_cast<Index>(ns2),
+                    static_cast<Index>(nrhs),
+                    OuterStride<>(dstride));
+                F.noalias() += V * D;
+            }
+        }
+    }
+}
+
 } // namespace PHON_NS::v4_distributed

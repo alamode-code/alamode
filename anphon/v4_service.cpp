@@ -150,6 +150,39 @@ void V4Service::reduce_to_root(std::complex<double> *buf, const std::size_t coun
     }
 }
 
+void V4Service::broadcast_from_root(std::complex<double> *buf, const std::size_t count) const
+{
+    for (std::size_t offset = 0; offset < count; offset += mpi_chunk) {
+        const auto n = static_cast<int>(std::min(mpi_chunk, count - offset));
+        MPI_Bcast(buf + offset, n, mpi_complex_type, 0, MPI_COMM_WORLD);
+    }
+}
+
+void V4Service::fmat_batch_local_and_reduce(const std::complex<double> *dmat, const std::size_t nrhs,
+                                            std::complex<double> *fout)
+{
+    const auto count = nrhs * nk_irred_ * ns2_;
+    std::fill(fout, fout + count, std::complex<double>(0.0, 0.0));
+    v4_distributed::accumulate_fmat_batch(block_, dmat, nrhs, fout);
+    if (distributed()) {
+        reduce_to_root(fout, count);
+    }
+}
+
+void V4Service::fmat_batch(const std::complex<double> *dmat, const std::size_t nrhs, std::complex<double> *fout)
+{
+    if (!full_tensor_) {
+        PHON_NS::exit("V4Service::fmat_batch", "the batched contraction needs every V4 element (full tensor).");
+    }
+    if (distributed()) {
+        broadcast_opcode(OP_FMAT_BATCH);
+        auto n = static_cast<unsigned long long>(nrhs);
+        MPI_Bcast(&n, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
+        broadcast_from_root(const_cast<std::complex<double> *>(dmat), nrhs * nk_dense_ * ns2_);
+    }
+    fmat_batch_local_and_reduce(dmat, nrhs, fout);
+}
+
 void V4Service::fmat_local_and_reduce(const std::complex<double> *dvec, std::complex<double> ***fmat_inout)
 {
     v4_distributed::accumulate_fmat(block_, dvec, offdiag_fmat_, fmat_inout);
@@ -275,6 +308,14 @@ void V4Service::worker_loop()
                       MPI_COMM_WORLD);
             std::fill(&fmat_buf_[0][0][0], &fmat_buf_[0][0][0] + fmat_buf_.size(), czero);
             fmat_local_and_reduce(dvec_buf_.data(), fmat_buf_);
+        } else if (code == OP_FMAT_BATCH) {
+            unsigned long long n = 0;
+            MPI_Bcast(&n, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
+            const auto nrhs = static_cast<std::size_t>(n);
+            dmat_batch_buf_.resize(nrhs * nk_dense_ * ns2_);
+            fmat_batch_buf_.resize(nrhs * nk_irred_ * ns2_);
+            broadcast_from_root(dmat_batch_buf_.data(), dmat_batch_buf_.size());
+            fmat_batch_local_and_reduce(dmat_batch_buf_.data(), nrhs, fmat_batch_buf_.data());
         } else if (code == OP_Q0) {
             if (v3_buf_.size() == 0) {
                 v3_buf_.resize(nk_dense_, ns_, ns2_);
@@ -288,6 +329,8 @@ void V4Service::worker_loop()
     }
     // release the worker buffers
     std::vector<std::complex<double>>().swap(dvec_buf_);
+    std::vector<std::complex<double>>().swap(dmat_batch_buf_);
+    std::vector<std::complex<double>>().swap(fmat_batch_buf_);
     fmat_buf_.clear();
     v3_buf_.clear();
     q4_buf_.clear();

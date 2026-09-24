@@ -376,9 +376,25 @@ if (BUILD_V4_DISTRIBUTED_TEST)
     target_compile_options(test_v4_distributed PRIVATE -Wall -Wextra $<$<CONFIG:Release>:-O3>)
     target_include_directories(test_v4_distributed PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/../include
                                                            ${eigen_includes})
-    target_link_libraries(test_v4_distributed ${openmplibrary})
+    # accumulate_fmat_batch is an Eigen product: BLAS when USE_EIGEN_BLAS is on
+    target_link_libraries(test_v4_distributed ${openmplibrary} ${lapack_target} ${blas_target})
     if (eigen_target)
         target_link_libraries(test_v4_distributed ${eigen_target})
+    endif ()
+endif ()
+
+# Unit test for the kernels of the SCPH free-energy Hessian (scph_hessian_kernels.h):
+# occupation factor, divided differences, the Daleckii-Krein map against finite
+# differences, and the one-mode double-well curvature. Eigen only; no MPI.
+option(BUILD_SCPH_HESSIAN_KERNELS_TEST "Build the SCPH Hessian kernels unit test" ON)
+if (BUILD_SCPH_HESSIAN_KERNELS_TEST)
+    add_executable(test_scph_hessian_kernels ${PROJECT_SOURCE_DIR}/../test/test_scph_hessian_kernels.cpp)
+    target_compile_options(test_scph_hessian_kernels PRIVATE -Wall -Wextra)
+    target_include_directories(test_scph_hessian_kernels PRIVATE ${PROJECT_SOURCE_DIR} ${eigen_includes})
+    # USE_EIGEN_BLAS routes Eigen's products to BLAS
+    target_link_libraries(test_scph_hessian_kernels ${lapack_target} ${blas_target})
+    if (eigen_target)
+        target_link_libraries(test_scph_hessian_kernels ${eigen_target})
     endif ()
 endif ()
 

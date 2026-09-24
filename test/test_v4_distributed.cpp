@@ -291,6 +291,54 @@ void test_fmat(const std::size_t ns, const std::size_t nk, const std::size_t nk_
         check(ok, label + ": accumulate_fmat does not add to the seeded input (or touches the upper triangle)");
     }
 }
+// accumulate_fmat_batch: every (a, b), every right-hand side, against the naive
+// formula; the partial sums of a random 3-rank partition must add up to it.
+void test_fmat_batch(const std::size_t ns, const std::size_t nk, const std::size_t nk_irred, const std::size_t nrhs,
+                     const unsigned seed, const std::string &label)
+{
+    const auto ns2 = ns * ns;
+    std::mt19937 rng(seed);
+    std::normal_distribution<double> g(0.0, 1.0);
+    NDArray<cplx, 3> v4(nk_irred * nk, ns2, ns2);
+    for (std::size_t i = 0; i < v4.size(); ++i) (&v4[0][0][0])[i] = cplx(g(rng), g(rng));
+    std::vector<cplx> dmat(nrhs * nk * ns2);
+    for (auto &x: dmat) x = cplx(g(rng), g(rng));
+
+    std::vector<cplx> want(nrhs * nk_irred * ns2, cplx(0.0, 0.0));
+    for (std::size_t m = 0; m < nrhs; ++m) {
+        for (std::size_t ik = 0; ik < nk_irred; ++ik) {
+            for (std::size_t a = 0; a < ns; ++a) {
+                for (std::size_t b = 0; b < ns; ++b) {
+                    cplx sum(0.0, 0.0);
+                    for (std::size_t jk = 0; jk < nk; ++jk) {
+                        for (std::size_t c = 0; c < ns2; ++c) {
+                            sum += v4[ik * nk + jk][a * ns + b][c] * dmat[m * nk * ns2 + jk * ns2 + c];
+                        }
+                    }
+                    want[m * nk_irred * ns2 + ik * ns2 + a * ns + b] = sum;
+                }
+            }
+        }
+    }
+
+    const auto nunits = nk_irred * nk * ns;
+    std::uniform_int_distribution<std::size_t> cut(0, nunits);
+    std::size_t c1 = cut(rng), c2 = cut(rng);
+    if (c1 > c2) std::swap(c1, c2);
+    const std::vector<std::size_t> bounds{0, c1, c2, nunits};
+    std::vector<cplx> got(want.size(), cplx(0.0, 0.0));
+    for (int r = 0; r < 3; ++r) {
+        V4RowBlock blk;
+        blk.allocate(ns, nk, nk_irred, bounds[r], bounds[r + 1]);
+        fill_block_from_full(blk, v4);
+        std::vector<cplx> part(want.size(), cplx(0.0, 0.0));
+        accumulate_fmat_batch(blk, dmat.data(), nrhs, part.data());
+        for (std::size_t i = 0; i < got.size(); ++i) got[i] += part[i];
+    }
+    bool ok = true;
+    for (std::size_t i = 0; i < want.size(); ++i) ok = ok && close(got[i], want[i], 1.0e-11);
+    check(ok, label + ": accumulate_fmat_batch vs the naive formula (partitioned)");
+}
 } // namespace
 
 int main()
@@ -300,6 +348,8 @@ int main()
     test_fmat(5, 1, 1, true, 5u, "offdiag gamma-only");
     test_fmat(7, 2, 3, false, 8u, "diagonal-only nk=2 nk_irred=3");
     test_fmat(4, 4, 1, false, 13u, "diagonal-only nk=4");
+    test_fmat_batch(5, 3, 2, 4, 21u, "batch nk=3 nk_irred=2 nrhs=4");
+    test_fmat_batch(6, 1, 1, 7, 34u, "batch gamma-only nrhs=7");
 
     if (nfail == 0) {
         std::printf("test_v4_distributed: all checks passed\n");
