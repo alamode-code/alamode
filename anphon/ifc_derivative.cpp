@@ -1571,7 +1571,7 @@ DerivativeIFC::load_strain_harmonic_set(const strain_coupling::StrainSource &str
                                                          symbols,
                                                          what.c_str());
                 container.load_harmonic_fc2(entry, fcs_phonon_, fc2_deformed[imode]);
-                fcs_phonon_.replicate_force_constant(&system_, fc2_deformed[imode]);
+                fcs_phonon_.replicate_force_constant(&system_, fc2_deformed[imode], true);
             }
         } catch (const std::runtime_error &e) {
             exit("calculate_delv2_delumn_finite_difference", e.what());
@@ -1606,7 +1606,7 @@ DerivativeIFC::load_strain_harmonic_set(const strain_coupling::StrainSource &str
     fc2_deformed.assign(set.entries.size(), {});
     for (std::size_t imode = 0; imode < set.entries.size(); ++imode) {
         fcs_phonon_.get_fcs_from_file(strain_source.ifc_dir + set.entries[imode].label, 0, fc2_deformed[imode]);
-        fcs_phonon_.replicate_force_constant(&system_, fc2_deformed[imode]);
+        fcs_phonon_.replicate_force_constant(&system_, fc2_deformed[imode], true);
     }
     return set;
 }

@@ -259,7 +259,11 @@ public:
 
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    static void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout);
+    // strained_cell: the IFCs belong to a strained copy of the supercell, whose
+    // relative vectors are lattice vectors of the reference cell only up to
+    // the strain, so they are rounded without checking the residual.
+    static void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout,
+                                         bool strained_cell = false);
 
     // Carry the loaded IFCs onto the deformed crystal, for every order.
     //

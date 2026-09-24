@@ -37,12 +37,12 @@ namespace
 // Round a relative vector in the primitive-cell basis to the lattice vector it
 // must be. A large residual means the atomic positions of an IFC file do not
 // match the primitive cell of this run (e.g. an origin shift between files).
-Eigen::Vector3d snap_to_lattice_vector(const Eigen::Vector3d &xf, const char *caller)
+Eigen::Vector3d snap_to_lattice_vector(const Eigen::Vector3d &xf, const char *caller, const bool check = true)
 {
     Eigen::Vector3d rounded;
     for (auto j = 0; j < 3; ++j) {
         rounded[j] = static_cast<double>(nint(xf[j]));
-        if (std::abs(xf[j] - rounded[j]) > 1.0e-3) {
+        if (check && std::abs(xf[j] - rounded[j]) > 1.0e-3) {
             exit(caller,
                  "A relative vector of the IFCs is not a lattice vector of the primitive cell.\n"
                  " The atomic positions of the IFC files are inconsistent with the primitive cell of this run.");
@@ -240,7 +240,8 @@ void Fcs_phonon::deform_relative_vectors(const std::vector<double> &u0)
     }
 }
 
-void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout)
+void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout,
+                                          const bool strained_cell)
 {
     // Replicate IFCs from the true primitive cell to the user-defined cell,
     // convert relative vectors to its lattice basis, and derive relvec
@@ -327,7 +328,7 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
                         it.relvecs_velocity[i][j] + xc_prim(atom_new_prim[0], j) - xc_prim(atom_new_prim[i + 1], j);
                     relvec_tmp2[j] = it.relvecs_velocity[i][j];
                 }
-                relvec_tmp = snap_to_lattice_vector(convmat * relvec_tmp, "replicate_force_constant");
+                relvec_tmp = snap_to_lattice_vector(convmat * relvec_tmp, "replicate_force_constant", !strained_cell);
                 relvec_tmp2 = convmat * relvec_tmp2;
                 relvecs.emplace_back(relvec_tmp);
                 relvecs_vel.emplace_back(relvec_tmp2);
