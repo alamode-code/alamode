@@ -171,6 +171,9 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
 
     t_stage = stage_clock();
     replicate_force_constants(maxorder);
+    // Collective on every rank: DFC2FILE is known on rank 0 only, and a run
+    // without it broadcasts zero rows.
+    append_delta_fc2_rows(force_constant_with_cell[0]);
     print_stage_line("IFCs: replicate to the unit cell", stage_clock() - t_stage, run.my_rank, run.verbosity);
 
     // Sort the anharmonic IFCs using the operator defined in fcs_phonon.h.
@@ -381,12 +384,10 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
 
         get_fcs_from_file(filename_list[i], i, force_constant_with_cell[i]);
 
-        // Legacy dfc2.py workflow, native: add the (short-ranged) anharmonic
-        // FC2 correction of an SCPH/QHA state file onto the harmonic FC2 of
-        // a possibly larger supercell.
-        if (i == 0 && !file_dfc2.empty()) {
-            append_delta_fc2_from_scph(file_dfc2, force_constant_with_cell[i]);
-        }
+        // Legacy dfc2.py workflow, native: the (short-ranged) anharmonic FC2
+        // correction of an SCPH/QHA state file, added onto the harmonic FC2 of
+        // a possibly larger supercell after replication (append_delta_fc2_rows).
+        if (i == 0 && !file_dfc2.empty()) read_delta_fc2_from_scph(file_dfc2);
     }
 
     if (run.verbosity > 0) std::cout << "done.\n\n";
@@ -682,7 +683,7 @@ void Fcs_phonon::parse_fcs_from_h5(const HighFive::File &file, const std::string
 }
 
 
-void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::vector<FcsArrayWithCell> &fcs_out) const
+void Fcs_phonon::read_delta_fc2_from_scph(const std::string &fname_dfc2)
 {
     using namespace H5Easy;
     const File file(fname_dfc2, File::ReadOnly);
@@ -690,7 +691,7 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
     check_h5_schema(file, h5_schema_scph_state, h5_version_scph_state);
 
     if (fc2_temperature < 0.0) {
-        exit("append_delta_fc2_from_scph", "FC2_TEMPERATURE must be given together with DFC2FILE.");
+        exit("read_delta_fc2_from_scph", "FC2_TEMPERATURE must be given together with DFC2FILE.");
     }
     const auto itemp = h5_resolve_temperature_index(file, fc2_temperature, eps6, "/settings/temperatures");
 
@@ -703,11 +704,11 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
     };
     if (!iteration_converged("scph") || !iteration_converged("structure")) {
         if (run.allow_unconverged) {
-            warn("append_delta_fc2_from_scph",
+            warn("read_delta_fc2_from_scph",
                  "The iterations at FC2_TEMPERATURE did not converge;\n"
                  " using the FC2 correction anyway because ALLOW_UNCONVERGED = 1.");
         } else {
-            exit("append_delta_fc2_from_scph",
+            exit("read_delta_fc2_from_scph",
                  "The SCPH iteration or structural optimization at FC2_TEMPERATURE did not converge\n"
                  " in the run that produced DFC2FILE. Reconverge it (MAXITER, MAX_STR_ITER, ...)\n"
                  " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
@@ -730,12 +731,12 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
         const Eigen::Matrix3d transmat_int =
             transmat.unaryExpr([](const double x) { return static_cast<double>(nint(x)); });
         if ((transmat - transmat_int).cwiseAbs().maxCoeff() > eps4) {
-            exit("append_delta_fc2_from_scph",
+            exit("read_delta_fc2_from_scph",
                  "The cell of DFC2FILE is not an integer supercell of the present primitive cell.");
         }
         const auto ncopy = nint(std::abs(transmat_int.determinant()));
         if (static_cast<size_t>(xf_dfc2.rows()) != ncopy * primcell.number_of_atoms) {
-            exit("append_delta_fc2_from_scph",
+            exit("read_delta_fc2_from_scph",
                  "The number of atoms in the DFC2FILE cell is inconsistent with the present primitive cell.");
         }
         map_dfc2_to_prim.assign(xf_dfc2.rows(), -1);
@@ -750,7 +751,7 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
                 }
             }
             if (map_dfc2_to_prim[i] < 0) {
-                exit("append_delta_fc2_from_scph",
+                exit("read_delta_fc2_from_scph",
                      "An atom of the DFC2FILE cell has no counterpart in the present primitive cell.");
             }
         }
@@ -777,37 +778,17 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
                                 itemp);
     const Eigen::ArrayXd delta = fcs_total - fcs_base;
 
-    // Re-express each row in the supercell of the harmonic FC2 file: the
-    // Cartesian relative vector is physical and carries over unchanged; the
-    // second atom is located in the present supercell by position matching
-    // (both cells tile the same primitive cell, so a match must exist when
-    // the two supercells are commensurate).
-    const auto &scell = system->get_supercell(0);
-    const auto &map_p2s = system->get_map_p2s(0);
-    const auto &map_s2p = system->get_map_s2p(0);
-    const auto &map_alm = system->get_mapping_super_alm(0);
-    const Eigen::Matrix3d lavec_super_inv = scell.lattice_vector.inverse();
-
-    // Start corrections at the FCS-file primitive atoms: replicate_force_constant
-    // applies that cell's translations. Using all current-cell atoms would
-    // overcount when the current cell is larger.
-    std::vector<std::vector<unsigned int>> atoms1_s(map_p2s.size());
-    for (const auto &images: map_alm.from_true_primitive) {
-        atoms1_s[map_s2p[images[0]].atom_num].push_back(images[0]);
-    }
-
-    std::vector<AtomCellSuper> ivec_pair(2);
-    std::vector<unsigned int> atoms_s_pair(2);
-    std::vector<Eigen::Vector3d> relvecs_pair(1);
-
-    // Translationally equivalent rows (copies of the primitive cell inside the SCPH
-    // cell) are keyed by (atom1, coord1, atom2, coord2, relvec) and added once.
+    // Keep one row per (atom1, coord1, atom2, coord2, relvec) of the *present*
+    // primitive cell. Copies of that cell inside the SCPH cell must agree;
+    // the rows are turned into force constants only after replication
+    // (append_delta_fc2_rows), because replicate_force_constant would impose
+    // the translations of the FCS-file primitive cell, which a relaxed SCPH
+    // cell (a cell-doubling distortion, say) need not respect.
     std::map<std::tuple<int, int, int, int, long, long, long>, double> seen;
 
-    size_t nadded = 0, nfolded = 0;
+    dfc2_rows.clear();
+    size_t nfolded = 0;
     for (Eigen::Index irow = 0; irow < delta.size(); ++irow) {
-        if (std::abs(delta[irow]) < eps) continue;
-
         const auto iat = map_dfc2_to_prim[atom_indices(irow, 0)];
         const auto jat = map_dfc2_to_prim[atom_indices(irow, 1)];
 
@@ -824,56 +805,102 @@ void Fcs_phonon::append_delta_fc2_from_scph(const std::string &fname_dfc2, std::
         const auto it = seen.find(key);
         if (it != seen.end()) {
             if (std::abs(it->second - delta[irow]) > 1.0e-8 * std::max(1.0, std::abs(it->second))) {
-                exit("append_delta_fc2_from_scph",
+                exit("read_delta_fc2_from_scph",
                      "Translationally equivalent correction rows of DFC2FILE carry different values;\n"
-                     " the SCPH cell does not respect the primitive translations.");
+                     " the SCPH cell does not respect the translations of the present primitive cell.");
             }
             ++nfolded;
             continue;
         }
         seen.emplace(key, delta[irow]);
-
-        for (const auto atom1_s: atoms1_s[iat]) {
-            const Eigen::Vector3d target = scell.x_cartesian.row(atom1_s).transpose() + relvec;
-            const Eigen::Vector3d xf_target = lavec_super_inv * target;
-
-            int atom2_s = -1;
-            for (const auto &cand: map_p2s[jat]) {
-                Eigen::Vector3d xdiff = xf_target - scell.x_fractional.row(cand).transpose();
-                xdiff = xdiff.unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
-                if ((scell.lattice_vector * xdiff).norm() < 1.0e-3) {
-                    atom2_s = static_cast<int>(cand);
-                    break;
-                }
-            }
-            if (atom2_s == -1) {
-                exit("append_delta_fc2_from_scph",
-                     "A correction row of DFC2FILE has no matching atom in the present supercell.\n"
-                     " The supercells of DFC2FILE and the harmonic FC2 file are probably incommensurate.");
-            }
-
-            // Same atom index space as the rows read from the FCS file (its primitive cell).
-            ivec_pair[0].index = 3 * map_alm.to_true_primitive[atom1_s].atom_num + coord_indices(irow, 0);
-            ivec_pair[0].cell_s = 0;
-            ivec_pair[0].tran = 0;
-            ivec_pair[1].index = 3 * map_alm.to_true_primitive[atom2_s].atom_num + coord_indices(irow, 1);
-            ivec_pair[1].cell_s = 0;
-            ivec_pair[1].tran = 0;
-            atoms_s_pair[0] = atom1_s;
-            atoms_s_pair[1] = static_cast<unsigned int>(atom2_s);
-            relvecs_pair[0] = relvec;
-
-            fcs_out.emplace_back(delta[irow], ivec_pair, atoms_s_pair, relvecs_pair);
-            ++nadded;
-        }
+        // Zero rows are compared above (a zero copy against a nonzero one is
+        // an error) but not kept.
+        if (std::abs(delta[irow]) < eps) continue;
+        dfc2_rows.push_back({iat, coord_indices(irow, 0), jat, coord_indices(irow, 1), relvec, delta[irow]});
     }
 
     if (run.verbosity > 0) {
-        std::cout << "\n  DFC2FILE: added " << nadded << " anharmonic FC2 correction rows at " << fc2_temperature
+        std::cout << "\n  DFC2FILE: " << dfc2_rows.size() << " anharmonic FC2 correction rows at " << fc2_temperature
                   << " K from " << fname_dfc2;
         if (nfolded > 0) std::cout << " (" << nfolded << " translational duplicates folded)";
         std::cout << "\n  ";
     }
+}
+
+void Fcs_phonon::append_delta_fc2_rows(std::vector<FcsArrayWithCell> &fc2_inout)
+{
+    // Broadcast the rows read on rank 0 (flattened), then build replicated FC2
+    // entries on every rank, in the layout replicate_force_constant produces:
+    // pairs[].index over the present primitive cell, pairs[].tran of the
+    // supercell image, relvecs and relvecs_velocity in its lattice basis.
+    int nrows = static_cast<int>(dfc2_rows.size());
+    MPI_Bcast(&nrows, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (nrows == 0) return;
+
+    std::vector<int> ints(4 * static_cast<size_t>(nrows));
+    std::vector<double> reals(4 * static_cast<size_t>(nrows));
+    if (run.my_rank == 0) {
+        for (size_t i = 0; i < dfc2_rows.size(); ++i) {
+            const auto &r = dfc2_rows[i];
+            ints[4 * i] = r.iat;
+            ints[4 * i + 1] = r.coord1;
+            ints[4 * i + 2] = r.jat;
+            ints[4 * i + 3] = r.coord2;
+            for (auto k = 0; k < 3; ++k) reals[4 * i + k] = r.relvec[k];
+            reals[4 * i + 3] = r.value;
+        }
+    }
+    MPI_Bcast(ints.data(), 4 * nrows, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(reals.data(), 4 * nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    const auto &scell = system->get_supercell(0);
+    const auto &map_p2s = system->get_map_p2s(0);
+    const auto &map_s2p = system->get_map_s2p(0);
+    const Eigen::Matrix3d lavec_super_inv = scell.lattice_vector.inverse();
+    const Eigen::Matrix3d convmat = system->get_primcell().lattice_vector.inverse();
+
+    std::vector<AtomCellSuper> pairs(2);
+    std::vector<unsigned int> atoms_s(2);
+    std::vector<Eigen::Vector3d> relvecs(1), relvecs_vel(1);
+
+    for (auto i = 0; i < nrows; ++i) {
+        const auto iat = ints[4 * i];
+        const auto jat = ints[4 * i + 2];
+        const Eigen::Vector3d relvec(reals[4 * i], reals[4 * i + 1], reals[4 * i + 2]);
+
+        // First atom: the translation-0 image of iat, as after replication.
+        const auto atom1_s = map_p2s[iat][0];
+        const Eigen::Vector3d xf_target = lavec_super_inv * (scell.x_cartesian.row(atom1_s).transpose() + relvec);
+        int atom2_s = -1;
+        for (const auto &cand: map_p2s[jat]) {
+            Eigen::Vector3d xdiff = xf_target - scell.x_fractional.row(cand).transpose();
+            xdiff = xdiff.unaryExpr([](const double x) { return x - static_cast<double>(nint(x)); });
+            if ((scell.lattice_vector * xdiff).norm() < 1.0e-3) {
+                atom2_s = static_cast<int>(cand);
+                break;
+            }
+        }
+        if (atom2_s == -1) {
+            exit("append_delta_fc2_rows",
+                 "A correction row of DFC2FILE has no matching atom in the present supercell.\n"
+                 " The supercells of DFC2FILE and the harmonic FC2 file are probably incommensurate.");
+        }
+
+        pairs[0].index = 3 * iat + ints[4 * i + 1];
+        pairs[0].tran = map_s2p[atom1_s].tran_num;
+        pairs[0].cell_s = 0;
+        pairs[1].index = 3 * jat + ints[4 * i + 3];
+        pairs[1].tran = map_s2p[atom2_s].tran_num;
+        pairs[1].cell_s = 0;
+        atoms_s[0] = atom1_s;
+        atoms_s[1] = static_cast<unsigned int>(atom2_s);
+        // Same conventions as replicate_force_constant.
+        relvecs[0] = convmat * (relvec + scell.x_cartesian.row(atom1_s).transpose() -
+                                scell.x_cartesian.row(map_p2s[jat][0]).transpose());
+        relvecs_vel[0] = convmat * relvec;
+        fc2_inout.emplace_back(reals[4 * i + 3], pairs, atoms_s, relvecs, relvecs_vel);
+    }
+    dfc2_rows.clear();
 }
 
 

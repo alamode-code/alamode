@@ -286,7 +286,21 @@ private:
 
     void parse_fcs_from_h5(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
 
-    void append_delta_fc2_from_scph(const std::string &fname_dfc2, std::vector<FcsArrayWithCell> &fcs_out) const;
+    // DFC2FILE: the anharmonic FC2 correction of an SCPH/QHA state file.
+    // read_* (rank 0, during loading) keeps one row per present-cell atom pair
+    // and relative vector; append_* (every rank, after replication) turns them
+    // into replicated FC2 entries.
+    struct DeltaFc2Row
+    {
+        int iat, coord1, jat, coord2;
+        Eigen::Vector3d relvec; // Cartesian, bohr
+        double value;
+    };
+    std::vector<DeltaFc2Row> dfc2_rows;
+
+    void read_delta_fc2_from_scph(const std::string &fname_dfc2);
+
+    void append_delta_fc2_rows(std::vector<FcsArrayWithCell> &fc2_inout);
 
     void load_fcs_from_file(const int maxorder_in);
 

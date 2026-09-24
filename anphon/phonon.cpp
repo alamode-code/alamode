@@ -232,7 +232,7 @@ void PHON::apply_relaxed_structure() const
 
         // u0 is indexed by the producer's primitive-cell atoms. The atom
         // order need not match this run's -- a state file whose FC2
-        // correction is mapped positionally by append_delta_fc2_from_scph
+        // correction is mapped positionally by read_delta_fc2_from_scph
         // may well be ordered differently -- so map by position and reorder,
         // rather than trusting the index. This also rejects a state file
         // recorded for a different cell, which would otherwise displace the

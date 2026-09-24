@@ -500,6 +500,13 @@ Description of input variables
                flags of the state file are enforced as for a direct
                ``FC2_TEMPERATURE`` read.
 
+               The correction may break the translations of the primitive cell of the
+               harmonic FC2 file, as a cell-doubling distortion relaxed with
+               ``RELAX_STR > 0`` in a supercell does; it is kept atom by atom. The
+               ``&cell`` of the present run must then be that SCPH cell (or a cell whose
+               copies inside the SCPH cell carry identical corrections); the run stops
+               when it finds copies whose corrections differ.
+
                ``DFC2FILE`` never replaces the harmonic FC2 — it is purely additive.
                The base FC2 follows the usual precedence (``FC2FILE`` if given,
                otherwise ``FCSFILE``), and ``FC2_TEMPERATURE`` refers to ``DFC2FILE``
