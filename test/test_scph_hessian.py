@@ -10,7 +10,8 @@ between Gamma and Z do not vanish).
   stress (static bubble + quartic ladder, solved by GMRES; displacements and
   the six strain components) must match central finite differences of them
   (BUBBLE_FD_CHECK = 1), block by block, and be symmetric; without the ladder
-  (BUBBLE_LADDER = 0) the finite differences must NOT be matched.
+  (BUBBLE_LADDER = 0) the finite differences must NOT be matched. Gamma phonons
+  from PREFIX.scph_fe.h5 (DFC2FILE) must give the curvature frequencies.
 - At the cubic structure in its 30 K, -4 GPa cell (fixed, RELAX_STR = 4,
   reached from 300 K; a saddle the SCP loop keeps, all SCPH frequencies
   real) the curvature must be negative along one direction, exported to
@@ -183,6 +184,35 @@ def main():
         )
         ok = False
     asym, w_full = curvature("full")
+    # PREFIX.scph_fe.h5: Gamma phonons from it (DFC2FILE) must give the
+    # free-energy curvature frequencies, those from the SCPH state the SCPH ones
+    _, rows = curvature_rows("full")
+    with open("full.in") as f:
+        cell = "&cell" + f.read().split("&cell")[1].split("/")[0] + "/\n"
+    for state, col in (("full.scph.h5", 1), ("full.scph_fe.h5", 2)):
+        with open("gamma.in", "w") as f:
+            f.write(
+                "&general\n PREFIX = gamma\n MODE = phonons\n FCSFILE = cBTO222.h5\n"
+                " DFC2FILE = %s\n FC2_TEMPERATURE = 300\n/\n%s&kpoint\n 0\n 0 0 0\n/\n"
+                % (state, cell)
+            )
+        if run_anphon([anphonbin, "gamma.in"], "gamma.log"):
+            print("Gamma phonon run from %s failed" % state)
+            return 1
+        with open("gamma.log") as f:
+            w = sorted(
+                float(x)
+                for x in re.findall(r"^\s+\d+\s+(-?\d+\.\d+) cm\^-1", f.read(), re.M)
+            )
+        w = np.array(w[3 : 3 + len(rows)])
+        if w.shape != rows[:, col].shape or not np.allclose(
+            w, rows[:, col], rtol=0.0, atol=1e-3
+        ):
+            print(
+                "Gamma phonons from %s do not match column %d of full.scph_hessian"
+                % (state, col)
+            )
+            ok = False
     if not asym < 1.0e-8:
         print("the Jacobian is not symmetric: %g" % asym)
         ok = False

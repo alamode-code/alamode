@@ -203,6 +203,13 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
        and of the free-energy curvature (static bubble + quartic ladder) along the :math:`\Gamma`
        displacements; negative values are unstable directions. With a cell (``RELAX_STR = 2, 4``),
        ``#`` lines with the clamped- and relaxed-ion elastic curvature (Voigt, GPa)
+   * - ``PREFIX``.scph_fe.h5
+     - ``BUBBLE = 4``
+     - The SCPH state file again, with the correction of the free-energy curvature at
+       :math:`\Gamma` added to the renormalized FC2. Use it with ``DFC2FILE`` (or ``FC2FILE``)
+       and ``FC2_TEMPERATURE`` for dispersions and DOS interpolated like the SCPH ones; exact at
+       the :math:`\Gamma` point of the cell. Temperatures without a curvature are flagged
+       unconverged
    * - ``PREFIX``.scph_hessian_displace
      - ``BUBBLE = 4``, a negative curvature
      - For each unstable direction, the ``&displace`` (``DISPMODE = 1``, Cartesian, bohr) and

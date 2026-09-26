@@ -936,6 +936,7 @@ void Scph::exec_scph()
                                     with_relax ? &V0 : nullptr,
                                     kmesh_coarse.get(),
                                     mindist_list);
+                if (bubble == 4) write_fe_state_h5(delta_dymat_scph, delta_harmonic_dymat_renormalize, NT);
                 // .V0 doubles as a human-readable physical output (V0 vs T),
                 // so the text file is kept; restart reads only the h5.
                 if (with_relax) store_V0_to_file();

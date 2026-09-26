@@ -1320,6 +1320,21 @@ msgstr ""
 "方向を示します。セルを含む場合 (``RELAX_STR = 2, 4``) は、原子固定と原子緩和の弾性曲"
 "率 (Voigt、GPa) が ``#`` で始まる行に出力されます"
 
+msgid "``PREFIX``.scph_fe.h5"
+msgstr "``PREFIX``.scph_fe.h5"
+
+msgid ""
+"The SCPH state file again, with the correction of the free-energy curvature "
+"at :math:`\\Gamma` added to the renormalized FC2. Use it with ``DFC2FILE`` "
+"(or ``FC2FILE``) and ``FC2_TEMPERATURE`` for dispersions and DOS interpolated "
+"like the SCPH ones; exact at the :math:`\\Gamma` point of the cell. "
+"Temperatures without a curvature are flagged unconverged"
+msgstr ""
+"SCPH の状態ファイルと同じ形式で、繰り込まれた FC2 に :math:`\\Gamma` 点での自由エネル"
+"ギー曲率の補正を加えたもの。``DFC2FILE`` (または ``FC2FILE``) と ``FC2_TEMPERATURE`` "
+"とともに用いると、SCPH と同様に補間した分散や DOS が得られます (セルの :math:`\\Gamma` "
+"点では厳密)。曲率が得られなかった温度は未収束として記録されます"
+
 msgid "``PREFIX``.scph_hessian_displace"
 msgstr "``PREFIX``.scph_hessian_displace"
 

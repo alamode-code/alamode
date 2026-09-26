@@ -94,7 +94,6 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     // differences below overwrite
     const RelaxationStructureState solved_state = solved_state_in;
     using namespace Eigen;
-    (void)iT;
     const auto nk = kmesh_dense->nk;
     const auto ns = static_cast<Index>(dynamical->neval);
     const auto ns2 = ns * ns;
@@ -482,8 +481,68 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     }
 
     write_scp_hessian(temp, "", Jqq, A, total_applications, worst_residual, asym, C_clamped, C_relaxed);
+
+    // J - A in the Cartesian basis of the Gamma dynamical matrix: added to the
+    // SCPH correction in PREFIX.scph_fe.h5 (the translations carry none).
+    {
+        const auto NT = system->get_num_temperature_points();
+        if (fe_dymat_correction.size() != NT) fe_dymat_correction.assign(NT, MatrixXcd());
+        MatrixXcd U_opt(ns, nopt);
+        for (Index i = 0; i < nopt; ++i) U_opt.col(i) = Uk[ikg].col(optical[i]);
+        const MatrixXd dJ = 0.5 * (Jqq + Jqq.transpose()) - A;
+        fe_dymat_correction[iT] = U_opt * dJ.cast<cplx>() * U_opt.adjoint();
+    }
     if (nopt > 0) export_unstable_directions(solved_state, optical, Jqq, temp);
     return true;
+}
+
+void Scph::write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat_scph,
+                             NDArray<std::complex<double>, 4> &delta_harmonic_dymat_renormalize, const unsigned int NT)
+{
+    // The SCPH state file again, with the Gamma correction J - A of the
+    // free-energy curvature added to the SCPH one. Temperatures without a
+    // curvature are flagged unconverged so that consumers refuse them.
+    const auto ns = dynamical->neval;
+    NDArray<std::complex<double>, 4> delta_fe;
+    delta_fe.resize(NT, ns, ns, kmesh_coarse->nk);
+    const auto ik_gamma = 0u; // KMESH_INTERPOLATE = 1 1 1
+    const auto saved_flags = converged_scph_temp;
+    std::string missing;
+    for (unsigned int iT = 0; iT < NT; ++iT) {
+        const bool have = iT < fe_dymat_correction.size() && fe_dymat_correction[iT].size() > 0;
+        for (unsigned int is = 0; is < ns; ++is) {
+            for (unsigned int js = 0; js < ns; ++js) {
+                for (unsigned int ik = 0; ik < kmesh_coarse->nk; ++ik) {
+                    delta_fe[iT][is][js][ik] = delta_dymat_scph[iT][is][js][ik];
+                }
+                if (have) delta_fe[iT][is][js][ik_gamma] += fe_dymat_correction[iT](is, js);
+            }
+        }
+        if (!have) {
+            if (converged_scph_temp.size() == NT) converged_scph_temp[iT] = 0;
+            missing += " " + std::to_string(system->Tmin + system->dT * iT);
+        }
+    }
+    const auto with_relax = to_relaxation_str_mode(relaxation->relax_str) != RelaxationStrMode::None;
+    write_scph_state_h5(run.job_title + ".scph_fe.h5",
+                        "SCPH",
+                        NT,
+                        dynamical->nonanalytic,
+                        selfenergy_offdiagonal,
+                        relaxation->relax_str,
+                        "scph",
+                        delta_fe.ptr(),
+                        with_relax ? delta_harmonic_dymat_renormalize.ptr() : nullptr,
+                        with_relax ? &V0 : nullptr,
+                        kmesh_coarse.get(),
+                        mindist_list);
+    converged_scph_temp = saved_flags;
+    if (!missing.empty()) {
+        warn("write_fe_state_h5",
+             ("No free-energy curvature at T =" + missing +
+              " K; those temperatures are flagged unconverged in PREFIX.scph_fe.h5.")
+                 .c_str());
+    }
 }
 
 void Scph::export_unstable_directions(const RelaxationStructureState &solved_state, const std::vector<int> &optical,
