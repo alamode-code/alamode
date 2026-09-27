@@ -2,6 +2,46 @@ import numpy as np
 import spglib
 from ase.units import Bohr
 
+try:
+    import numba
+    from numba import njit, prange
+
+    _HAVE_NUMBA = True
+except ImportError:  # the numpy loop in compute() is used instead
+    _HAVE_NUMBA = False
+
+_SNAPSHOT_BLOCK = 64  # snapshots per kernel call (bounds the per-thread force buffers)
+
+
+if _HAVE_NUMBA:
+
+    @njit(parallel=True, cache=True)
+    def _polynomial_energy_forces(indices, coefs, disp_t, forces_buf, energy_buf):
+        """E = sum_e c_e prod_k u[i_ek] and F = -dE/du for one order, threads over terms.
+
+        disp_t is (3*natoms, nsnap) so that each term streams contiguous snapshots;
+        repeated indices within a term are handled by the product rule.
+        """
+        nthreads = forces_buf.shape[0]
+        nterms, order = indices.shape
+        nsnap = disp_t.shape[1]
+        chunk = (nterms + nthreads - 1) // nthreads
+        for t in prange(nthreads):
+            prefix = np.empty(order + 1)
+            x = np.empty(order)
+            for e in range(t * chunk, min(nterms, (t + 1) * chunk)):
+                c = coefs[e]
+                for b in range(nsnap):
+                    prefix[0] = 1.0
+                    for k in range(order):
+                        x[k] = disp_t[indices[e, k], b]
+                        prefix[k + 1] = prefix[k] * x[k]
+                    energy_buf[t, b] += c * prefix[order]
+                    suffix = 1.0
+                    for k in range(order - 1, -1, -1):
+                        forces_buf[t, indices[e, k], b] -= c * prefix[k] * suffix
+                        suffix *= x[k]
+
 
 class TaylorExpansionPotential:
     """
@@ -28,6 +68,9 @@ class TaylorExpansionPotential:
     - _check_consistency_primitive_cell(primcell1, primcell2): Checks the consistency of the primitive cell.
     - _set_taylor_indices(self): Sets the indices for the Taylor expansion calculation.
     - gamma(flatten_indicies): Calculates the gamma values for given indices.
+
+    If numba is installed, compute() evaluates each order as one merged polynomial with a
+    multithreaded kernel (use_numba = False selects the numpy loop over translations).
     """
 
     def __init__(self, supercell0, maxorder=4):
@@ -50,6 +93,9 @@ class TaylorExpansionPotential:
         self.map_translation = None
         self.transformation_matrix = None
         self.transformation_matrix_int = None
+        # numba kernel over merged terms if available; False selects the numpy loop.
+        self.use_numba = _HAVE_NUMBA
+        self._terms = {}
 
         self._build_structure()
 
@@ -106,6 +152,41 @@ class TaylorExpansionPotential:
                 segment_starts, 0
             ]
 
+        self._terms = {}  # built on first numba compute()
+
+    def _merged_terms(self, fckey):
+        """Expand one order over all translations into flat (index tuple, coefficient) terms with
+        E = sum c prod u; tuples are sorted and identical ones merged (the product is symmetric)."""
+        order = int(fckey[2:])
+        coefs = self.gamma_scaled_fcs_values[fckey] / float(order)
+        atoms = self.atom_indices_taylor[fckey]
+        coords = self.coord_indices_taylor[fckey].astype(np.int64)
+        mapping = self.map_translation.astype(np.int64)
+        ntran = mapping.shape[1]
+        # translations in blocks of ~1e7 rows to bound memory, merged within and across blocks
+        step = max(1, 10_000_000 // max(1, len(coefs)))
+        parts, weights = [], []
+        for t0 in range(0, ntran, step):
+            tr = slice(t0, min(ntran, t0 + step))
+            flat = 3 * mapping[atoms, tr] + coords[:, :, np.newaxis]
+            flat = np.sort(flat.transpose(2, 0, 1).reshape(-1, order), axis=1)
+            unique, inverse = np.unique(flat, axis=0, return_inverse=True)
+            nblock = tr.stop - tr.start
+            parts.append(unique)
+            weights.append(
+                np.bincount(
+                    inverse.ravel(),
+                    weights=np.tile(coefs, nblock),
+                    minlength=len(unique),
+                )
+            )
+        unique, inverse = np.unique(np.concatenate(parts), axis=0, return_inverse=True)
+        merged = np.bincount(
+            inverse.ravel(), weights=np.concatenate(weights), minlength=len(unique)
+        )
+        keep = merged != 0.0
+        return np.ascontiguousarray(unique[keep]), merged[keep]
+
     def compute(self, displacements):
         """
         Computes the Taylor expansion potential and forces for given displacements.
@@ -130,7 +211,33 @@ class TaylorExpansionPotential:
         natoms = self.supercell0.get_global_number_of_atoms()
         displacements_flat = displacements.reshape(nsnapshots, natoms * 3)
 
+        if self.use_numba and _HAVE_NUMBA:
+            if not self._terms:
+                self._terms = {
+                    k: self._merged_terms(k) for k in self.gamma_scaled_fcs_values
+                }
+            nthreads = numba.get_num_threads()
+            for fckey, (indices, coefs) in self._terms.items():
+                energy = np.zeros(nsnapshots)
+                forces_flat = np.zeros((nsnapshots, natoms * 3))
+                for b0 in range(0, nsnapshots, _SNAPSHOT_BLOCK):
+                    block = slice(b0, min(nsnapshots, b0 + _SNAPSHOT_BLOCK))
+                    disp_t = np.ascontiguousarray(
+                        displacements_flat[block].T, dtype=float
+                    )
+                    forces_buf = np.zeros((nthreads,) + disp_t.shape)
+                    energy_buf = np.zeros((nthreads, disp_t.shape[1]))
+                    _polynomial_energy_forces(
+                        indices, coefs, disp_t, forces_buf, energy_buf
+                    )
+                    energy[block] = energy_buf.sum(axis=0)
+                    forces_flat[block] = forces_buf.sum(axis=0).T
+                potential_energy[fckey] = energy
+                atomic_forces[fckey] = forces_flat.reshape(nsnapshots, natoms, 3)
+
         for fckey in self.gamma_scaled_fcs_values.keys():
+            if fckey in potential_energy:
+                continue
             order = int(fckey[2:])
             forces_flat = np.zeros((nsnapshots, natoms * 3), dtype=float)
             energy_taylor = np.zeros(nsnapshots, dtype=float)
