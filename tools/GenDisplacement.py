@@ -210,7 +210,11 @@ class AlamodeDisplace(object):
 
                     if nat_from_pattern // self._supercell.nat > 1:
                         self._set_updated_structure(obj["structure"]["supercell"])
-            except ImportError:
+            except (
+                ImportError,
+                KeyError,
+                TypeError,
+            ):  # no yaml, or an old-format pattern file
                 pass
 
             for pattern in self._pattern:
@@ -538,8 +542,9 @@ class AlamodeDisplace(object):
 
                     pattern_tmp.append(pattern_set)
 
-            except ValueError:
-                # If failed, assume the old format
+            except (ValueError, KeyError, TypeError, yaml.YAMLError):
+                # If failed, assume the old format ("Basis : C" also loads as YAML, as a dict without "displacements")
+                f.seek(0)
 
                 tmp, basis = f.readline().rstrip().split(":")
                 if basis == "F":
