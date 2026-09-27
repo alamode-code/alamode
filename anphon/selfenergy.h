@@ -60,6 +60,14 @@ public:
                        const unsigned int nomega, const double *omega, AnharmonicCore &anharmonic_core,
                        NDArray<std::complex<double>, 3> &sig) const;
 
+    // Same sig as bubble_matrix, with the pole weights first binned on x_n = n * dbin (linear hats)
+    // and transformed analytically (Im = binned density, Re = its Kramers-Kronig transform).
+    // The k sum is independent of nomega. Reduced to rank 0.
+    void bubble_matrix_binned(const double Temp, const unsigned int knum, const KpointMeshUniform *kmesh_in,
+                              const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                              const unsigned int nomega, const double *omega, const double dbin,
+                              AnharmonicCore &anharmonic_core, NDArray<std::complex<double>, 3> &sig) const;
+
     void selfenergy_tadpole(const unsigned int N, const double *T, const double omega, const unsigned int knum,
                             const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                             const std::complex<double> *const *const *evec_in, AnharmonicCore &anharmonic_core,
@@ -133,6 +141,11 @@ private:
     bool classical;
     int my_rank;
     int nprocs;
+
+    // bubble_matrix_binned: the Kramers-Kronig kernel (nbin x nomega, column major) is kept
+    // between calls with the same grid, bin width and epsilon.
+    mutable std::vector<double> binned_kernel_key;
+    mutable std::vector<std::complex<double>> binned_kernel;
 
     void mpi_reduce_complex(unsigned int, std::complex<double> *, std::complex<double> *) const;
 };

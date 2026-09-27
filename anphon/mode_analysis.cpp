@@ -93,6 +93,7 @@ void ModeAnalysis::setup_mode_analysis()
 
     MPI_Bcast(&selfenergy_mode, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&interpolate, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&interpolate_binned, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(kmesh_coarse, 3, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(omega_range, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&kpoint->target_mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -410,7 +411,8 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
     for (unsigned int iq = 0; iq < nq; ++iq) MPI_Bcast(spectrum_xk[iq].data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (run.my_rank == 0 && run.verbosity > 0) {
-        std::cout << "\n INTERPOLATE = 1: bubble self-energy matrix on the " << kmesh_coarse[0] << "x"
+        std::cout << "\n INTERPOLATE = " << (interpolate_binned ? 2 : 1) << ": bubble self-energy matrix"
+                  << (interpolate_binned ? " (binned + Kramers-Kronig)" : "") << " on the " << kmesh_coarse[0] << "x"
                   << kmesh_coarse[1] << "x" << kmesh_coarse[2] << " coarse mesh, spectral function on " << nq
                   << " target q points.\n";
     }
@@ -450,15 +452,28 @@ void ModeAnalysis::run_interpolated_spectrum(const unsigned int NT, const double
 
     for (unsigned int iT = 0; iT < NT; ++iT) {
         for (unsigned int ic = 0; ic < nk_c; ++ic) {
-            selfenergy->bubble_matrix(T_arr[iT],
-                                      knum_c[ic],
-                                      kmesh,
-                                      dos->dymat_dos->get_eigenvalues(),
-                                      dos->dymat_dos->get_eigenvectors(),
-                                      nomega,
-                                      omega_ry.data(),
-                                      *anharmonic_core,
-                                      sig);
+            if (interpolate_binned) {
+                selfenergy->bubble_matrix_binned(T_arr[iT],
+                                                 knum_c[ic],
+                                                 kmesh,
+                                                 dos->dymat_dos->get_eigenvalues(),
+                                                 dos->dymat_dos->get_eigenvectors(),
+                                                 nomega,
+                                                 omega_ry.data(),
+                                                 delta_omega * time_ry / Hz_to_kayser,
+                                                 *anharmonic_core,
+                                                 sig);
+            } else {
+                selfenergy->bubble_matrix(T_arr[iT],
+                                          knum_c[ic],
+                                          kmesh,
+                                          dos->dymat_dos->get_eigenvalues(),
+                                          dos->dymat_dos->get_eigenvectors(),
+                                          nomega,
+                                          omega_ry.data(),
+                                          *anharmonic_core,
+                                          sig);
+            }
             if (run.my_rank != 0) continue;
             // Pi = -2 E W Sigma W E^+
             Eigen::MatrixXcd E(ns, ns);

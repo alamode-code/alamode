@@ -39,6 +39,7 @@ public:
     std::string branches_spec = "all";
     bool linewidth_requested = false;           // LINEWIDTH only; calc_selfenergy includes SHIFT.
     bool interpolate = false;                   // INTERPOLATE: spectral function from the interpolated Sigma matrix
+    bool interpolate_binned = false;            // INTERPOLATE = 2: Sigma matrix by binning + Kramers-Kronig
     unsigned int kmesh_coarse[3] = {0, 0, 0};   // KMESH_COARSE
     double omega_range[3] = {-1.0, -1.0, -1.0}; // OMEGA_RANGE min max step (cm^-1); negative: DOS grid
 

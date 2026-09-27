@@ -1577,9 +1577,10 @@ void InputParser::parse_selfenergy_vars(PHON *phon)
     int linewidth = 1, shift = 0, self_w = 0, fstate_w = 0, print_v3 = 0, print_v4 = 0, interpolate = 0;
     unsigned int kmesh_coarse[3] = {0, 0, 0};
     assign_val(interpolate, "INTERPOLATE", var_dict);
+    if (interpolate < 0 || interpolate > 2) exit("parse_selfenergy_vars", "INTERPOLATE must be 0, 1 or 2.");
     if (interpolate) {
         if (var_dict.find("KMESH_COARSE") == var_dict.end()) {
-            exit("parse_selfenergy_vars", "INTERPOLATE = 1 needs KMESH_COARSE.");
+            exit("parse_selfenergy_vars", "INTERPOLATE needs KMESH_COARSE.");
         }
         std::vector<std::string> kc;
         split_str_by_space(var_dict["KMESH_COARSE"], kc);

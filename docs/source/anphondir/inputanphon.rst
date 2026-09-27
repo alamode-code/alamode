@@ -1653,7 +1653,7 @@ Note that a zero initial displacement keeps the full symmetry of the reference s
     SELF_W = 0             # Sigma(omega, T), PREFIX.Self.[n]      (tetrahedron only)
     FSTATE_W = 0           # frequency-resolved final state, PREFIX.fw.[n]
     PRINTV3 = 0; PRINTV4 = 0
-    INTERPOLATE = 0        # 1: spectral function from the Fourier-interpolated self-energy matrix
+    INTERPOLATE = 0        # 1: spectral function from the Fourier-interpolated self-energy matrix; 2: same, binned + Kramers-Kronig
     KMESH_COARSE = 5 5 5   # coarse mesh for INTERPOLATE (must divide KMESH)
     OMEGA_RANGE = 300 600 0.5   # frequency window and step for INTERPOLATE [cm^-1]
   /
@@ -1661,6 +1661,8 @@ Note that a zero initial displacement keeps the full symmetry of the reference s
 At least one output must be requested; ``LINEWIDTH = 0`` suppresses the linewidth output, for example when only the frequency shift is needed.
 
 With ``INTERPOLATE = 1`` the full bubble self-energy matrix :math:`\Sigma_{jj'}(\mathbf{q},\omega)` (Lorentzian broadening ``EPSILON``) is computed on the coarse mesh, transformed to the displacement basis where it does not depend on the eigenvector gauge, Fourier-interpolated to every target wave vector, and the spectral function :math:`A(\mathbf{q},\omega) = -\frac{2\omega}{\pi}\,\mathrm{Im}\,\mathrm{Tr}\,[\omega^2 - D(\mathbf{q}) - \Pi(\mathbf{q},\omega)]^{-1}` and its branch projections are written (``PREFIX.spectrum`` or the ``spectrum/`` group of the HDF5 file). The interpolation is exact on the coarse-mesh points; between them the accuracy is set by the coarse mesh, so compare with the direct linewidths of a few targets. The cost grows with the number of coarse points and frequencies; ``OMEGA_RANGE`` restricts the window (default: 0 to twice the highest frequency in steps of ``DELTA_E``).
+
+``INTERPOLATE = 2`` computes the same matrix :math:`\Sigma_{jj'}(\mathbf{q},\omega+i\epsilon)` without a frequency loop over the :math:`\mathbf{k}` sum. The weights of the poles at :math:`\omega_1+\omega_2` and :math:`|\omega_1-\omega_2|` are distributed linearly onto a grid with the spacing of the frequency step, and the self-energy is obtained from this binned spectral density analytically: the imaginary part is the density itself and the real part its Kramers-Kronig transform. The difference from ``INTERPOLATE = 1`` is of the order of (step / ``EPSILON``)\ :sup:`2`, so use a step well below ``EPSILON``. The cost of the :math:`\mathbf{k}` sum no longer grows with the number of frequencies.
 
 With the default ``FILE_FORMAT = h5`` the results of all targets are collected in one file ``PREFIX.selfenergy.h5`` (group ``targets/NNNNN`` per target in the order of the ``&kpoint`` field and ``BRANCHES``, with ``xk``, ``branch``, ``frequency``, ``kaxis`` for a path, ``linewidth``, ``shift_*``, ``self_omega``/``self_real``/``self_imag``, ``fstate_*``, and units as attributes; the path coordinates are repeated under ``path/``). With ``FILE_FORMAT = text`` the per-target text files of the ``KS_INPUT`` analysis are written instead. The matrix-element listings (``PRINTV3``/``PRINTV4``) are always text files.
 

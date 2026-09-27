@@ -361,6 +361,7 @@ void InputSetter::set_selfenergy_vars(PHON *phon, const unsigned int kmesh[3], c
     ma.print_V3 = print_v3;
     ma.print_V4 = print_v4;
     ma.interpolate = interpolate != 0;
+    ma.interpolate_binned = interpolate == 2;
     for (auto i = 0; i < 3; ++i) {
         ma.kmesh_coarse[i] = kmesh_coarse[i];
         ma.omega_range[i] = omega_range[i];

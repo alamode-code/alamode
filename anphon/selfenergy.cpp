@@ -441,6 +441,167 @@ void Selfenergy::selfenergy_tadpole(const unsigned int N, const double *T, const
     ret_mpi.clear();
 }
 
+namespace
+{
+// Cauchy transform of the unit-area hat (1 - |t|) on [-1, 1]: g(u) = int (1 - |t|) / (u - t) dt.
+// Branch: u on the real axis with +0 imaginary part gives the retarded limit.
+std::complex<double> hat_cauchy(const std::complex<double> u)
+{
+    if (std::abs(u) > 20.0) {
+        // g = sum_{m even} 2 / ((m + 1)(m + 2)) u^-(m+1); the closed form cancels badly here.
+        const auto x = 1.0 / u;
+        const auto x2 = x * x;
+        std::complex<double> s = 0.0;
+        for (int m = 12; m >= 0; m -= 2) s = s * x2 + 2.0 / ((m + 1.0) * (m + 2.0));
+        return s * x;
+    }
+    auto xlogx = [](const std::complex<double> z) {
+        return z == 0.0 ? std::complex<double>(0.0, 0.0) : z * std::log(z);
+    };
+    return xlogx(u + 1.0) + xlogx(u - 1.0) - 2.0 * xlogx(u);
+}
+} // namespace
+
+void Selfenergy::bubble_matrix_binned(const double Temp, const unsigned int knum, const KpointMeshUniform *kmesh_in,
+                                      const double *const *eval_in, const std::complex<double> *const *const *evec_in,
+                                      const unsigned int nomega, const double *omega, const double dbin,
+                                      AnharmonicCore &anharmonic_core, NDArray<std::complex<double>, 3> &sig) const
+{
+    // Each (k, s1, s2) term of bubble_matrix is a pair of odd pole pairs,
+    // r [1/(z - x) - 1/(z + x)] with x = omega1 + omega2 (r = -f1) and x = |omega1 - omega2|
+    // (r = -f2 sign(omega1 - omega2)). The weights r VV_jj' are distributed linearly onto the two
+    // nearest nodes x_n = n dbin, giving R_n (ns^2 per node). Then
+    //   sig(z) = sum_n R_n [h(z - x_n) - h(z + x_n)],  h(z) = g(z / dbin) / dbin,
+    // is exact for the binned density at any z = omega + i epsilon (epsilon = 0 allowed).
+    // Pass 1 (threads over k) builds V3 for a chunk of k; pass 2 (threads over j) accumulates
+    // one shared R, so memory is ns^2 x nbin per rank.
+    using namespace Eigen;
+    if (dbin <= 0.0) exit("bubble_matrix_binned", "The bin width must be positive.");
+    const auto nk = kmesh_in->nk;
+    const auto &xk = kmesh_in->xk;
+    const int ns2 = ns * ns;
+
+    double emax = 0.0;
+    for (unsigned int ik = 0; ik < nk; ++ik)
+        for (unsigned int is = 0; is < ns; ++is) emax = std::max(emax, eval_in[ik][is]);
+    const int nbin = static_cast<int>(2.0 * emax / dbin) + 2;
+    MatrixXcd R = MatrixXcd::Zero(ns2, nbin);
+
+    std::vector<std::complex<double>> e0(ns * ns);
+    for (unsigned int j = 0; j < ns; ++j)
+        for (unsigned int a = 0; a < ns; ++a) e0[j * ns + a] = std::conj(evec_in[knum][j][a]); // e(-q) = e(q)^*
+    std::vector<int> k_local;
+    for (unsigned int ik1 = my_rank; ik1 < nk; ik1 += nprocs) k_local.push_back(ik1);
+    const int nlocal = k_local.size();
+
+    // Terms of one chunk: v3[t * ns + j], and two (node, weight) pairs per pole.
+    const int nk_chunk = std::max(1, (1 << 20) / std::max(1, ns2 * static_cast<int>(ns)));
+    std::vector<std::complex<double>> v3(static_cast<size_t>(nk_chunk) * ns2 * ns);
+    std::vector<int> node(static_cast<size_t>(nk_chunk) * ns2 * 4);
+    std::vector<double> wnode(static_cast<size_t>(nk_chunk) * ns2 * 4);
+
+    for (int ic0 = 0; ic0 < nlocal; ic0 += nk_chunk) {
+        const int nc = std::min(nk_chunk, nlocal - ic0);
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        {
+            std::vector<std::complex<double>> phi3(anharmonic_core.get_ngroup_fcs(3));
+#ifdef _OPENMP
+#pragma omp for schedule(dynamic, 1)
+#endif
+            for (int ic = 0; ic < nc; ++ic) {
+                const auto ik1 = k_local[ic0 + ic];
+                double xk_tmp[3];
+                for (auto i = 0; i < 3; ++i) xk_tmp[i] = xk[knum][i] - xk[ik1][i];
+                const auto ik2 = kmesh_in->get_knum(xk_tmp);
+                anharmonic_core.phi3_reciprocal_at(xk[ik1], xk[ik2], phi3.data());
+                for (unsigned int is1 = 0; is1 < ns; ++is1) {
+                    const double omega1 = eval_in[ik1][is1];
+                    for (unsigned int is2 = 0; is2 < ns; ++is2) {
+                        const size_t t = static_cast<size_t>(ic) * ns2 + is1 * ns + is2;
+                        const double omega2 = eval_in[ik2][is2];
+                        for (int p = 0; p < 4; ++p) wnode[4 * t + p] = 0.0;
+                        for (int p = 0; p < 4; ++p) node[4 * t + p] = 0;
+                        if (omega1 < eps8 || omega2 < eps8) continue;
+                        for (unsigned int j = 0; j < ns; ++j) {
+                            const double omega_j = eval_in[knum][j];
+                            v3[t * ns + j] = omega_j < eps8 ? 0.0
+                                                            : anharmonic_core.contract_phi3(&e0[j * ns],
+                                                                                            evec_in[ik1][is1],
+                                                                                            evec_in[ik2][is2],
+                                                                                            phi3.data()) /
+                                                                  std::sqrt(omega_j * omega1 * omega2);
+                        }
+                        const double n1 =
+                            classical ? Thermodynamics::fC(omega1, Temp) : Thermodynamics::fB(omega1, Temp);
+                        const double n2 =
+                            classical ? Thermodynamics::fC(omega2, Temp) : Thermodynamics::fB(omega2, Temp);
+                        const double f1 = classical ? n1 + n2 : n1 + n2 + 1.0;
+                        const double f2 = n2 - n1;
+                        const double x[2] = {omega1 + omega2, std::abs(omega1 - omega2)};
+                        const double r[2] = {-f1, omega1 >= omega2 ? -f2 : f2};
+                        for (int p = 0; p < 2; ++p) {
+                            const double tb = x[p] / dbin;
+                            const int n0 = static_cast<int>(tb);
+                            const double frac = tb - n0;
+                            node[4 * t + 2 * p] = n0;
+                            node[4 * t + 2 * p + 1] = n0 + 1;
+                            wnode[4 * t + 2 * p] = r[p] * (1.0 - frac);
+                            wnode[4 * t + 2 * p + 1] = r[p] * frac;
+                        }
+                    }
+                }
+            }
+        }
+        const size_t nterm = static_cast<size_t>(nc) * ns2;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int j = 0; j < static_cast<int>(ns); ++j) {
+            for (size_t t = 0; t < nterm; ++t) {
+                const auto vj = v3[t * ns + j];
+                if (vj == 0.0) continue;
+                for (int p = 0; p < 4; ++p) {
+                    const double w = wnode[4 * t + p];
+                    if (w == 0.0) continue;
+                    const auto c = w * vj;
+                    auto col = R.col(node[4 * t + p]).data() + j * ns;
+                    for (unsigned int jp = 0; jp < ns; ++jp) col[jp] += c * std::conj(v3[t * ns + jp]);
+                }
+            }
+        }
+    }
+
+    // sig(z) = R K with K(n, io) = h(z_io - x_n) - h(z_io + x_n); node 0 drops out (R is odd).
+    std::vector<double> key{static_cast<double>(nbin), dbin, epsilon};
+    key.insert(key.end(), omega, omega + nomega);
+    if (key != binned_kernel_key) {
+        binned_kernel.resize(static_cast<size_t>(nbin) * nomega);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int io = 0; io < static_cast<int>(nomega); ++io) {
+            const std::complex<double> z = omega[io] + im * epsilon;
+            for (int n = 0; n < nbin; ++n) {
+                const double xn = n * dbin;
+                binned_kernel[static_cast<size_t>(io) * nbin + n] =
+                    (hat_cauchy((z - xn) / dbin) - hat_cauchy((z + xn) / dbin)) / dbin;
+            }
+        }
+        binned_kernel_key = key;
+    }
+    const Map<const MatrixXcd> K(binned_kernel.data(), nbin, nomega);
+    const MatrixXcd sig_flat = R * K;
+
+    const double factor = 1.0 / (static_cast<double>(nk) * std::pow(2.0, 4));
+    NDArray<std::complex<double>, 3> sig_mpi(nomega, ns, ns);
+    for (unsigned int io = 0; io < nomega; ++io)
+        for (unsigned int j = 0; j < ns; ++j)
+            for (unsigned int jp = 0; jp < ns; ++jp) sig_mpi[io][j][jp] = sig_flat(j * ns + jp, io) * factor;
+    mpi_reduce_complex(nomega * ns * ns, &sig_mpi[0][0][0], &sig[0][0][0]);
+}
+
 void Selfenergy::selfenergy_a(const unsigned int N, const double *T, const double omega, const unsigned int knum,
                               const unsigned int snum, const KpointMeshUniform *kmesh_in, const double *const *eval_in,
                               const std::complex<double> *const *const *evec_in, AnharmonicCore &anharmonic_core,
