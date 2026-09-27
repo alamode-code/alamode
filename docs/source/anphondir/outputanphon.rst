@@ -205,12 +205,17 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
        ``#`` lines with the clamped- and relaxed-ion elastic curvature (Voigt, GPa)
    * - ``PREFIX``.scph_fe.h5
      - ``BUBBLE = 4``
-     - The SCPH state file again, with the correction of the free-energy curvature at
-       :math:`\Gamma` added to the renormalized FC2. Use it with ``DFC2FILE`` (or ``FC2FILE``)
-       and ``FC2_TEMPERATURE`` for dispersions and DOS interpolated like the SCPH ones; exact at
-       the :math:`\Gamma` point of the cell. Not written on a k-mesh (``KMESH_SCPH`` other than
-       ``1 1 1``). Temperatures without a curvature are flagged
-       unconverged
+     - The SCPH state file again, with the correction of the free-energy curvature at every
+       point of the mesh (:math:`\Gamma` for ``KMESH_SCPH = 1 1 1``) added to the renormalized
+       FC2. Use it with ``DFC2FILE`` (or ``FC2FILE``) and ``FC2_TEMPERATURE`` for dispersions and
+       DOS interpolated like the SCPH ones; exact at the points of the mesh. Temperatures without
+       a curvature are flagged unconverged
+   * - ``PREFIX``.scph_hessian_q
+     - ``BUBBLE = 4`` on a k-mesh
+     - Curvature of the SCP free energy at the irreducible :math:`\boldsymbol{Q}`-points of the mesh
+       other than :math:`\Gamma`: for each converged temperature and :math:`\boldsymbol{Q}`, the
+       frequencies of the SCPH and of the free-energy curvature (all branches); negative values are
+       unstable modulations
    * - ``PREFIX``.scph_hessian_displace
      - ``BUBBLE = 4``, a negative curvature
      - For each unstable direction, the ``&displace`` (``DISPMODE = 1``, Cartesian, bohr) and

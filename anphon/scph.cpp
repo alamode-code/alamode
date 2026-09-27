@@ -822,6 +822,7 @@ void Scph::exec_scph()
             // outputs of an earlier run with this PREFIX must not survive a run that writes none
             std::remove((run.job_title + ".scph_hessian").c_str());
             std::remove((run.job_title + ".scph_hessian_displace").c_str());
+            std::remove((run.job_title + ".scph_hessian_q").c_str());
             std::remove((run.job_title + ".scph_fe.h5").c_str());
         }
     }

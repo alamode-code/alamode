@@ -165,11 +165,13 @@ private:
     // (either branch of diagonalize_and_symmetrize); such a fixed point is not
     // differentiable in the sense BUBBLE = 4 needs.
     bool last_scp_repaired = false;
-    // BUBBLE = 4: the correction J - A of the Gamma dynamical matrix (Cartesian,
-    // mass weighted, like delta_dymat_scph) per temperature; empty where the
-    // curvature was not obtained. Written to PREFIX.scph_fe.h5 on top of the
+    // BUBBLE = 4: the correction H - A of the dynamical matrix (Cartesian,
+    // mass weighted, like delta_dymat_scph) per temperature and coarse k-point
+    // (J - A at Gamma, the finite-Q curvature elsewhere on a mesh); empty where
+    // the curvature was not obtained. Written to PREFIX.scph_fe.h5 on top of the
     // SCPH correction, for dispersions interpolated like the SCPH ones.
-    std::vector<Eigen::MatrixXcd> fe_dymat_correction;
+    std::vector<std::vector<Eigen::MatrixXcd>> fe_dymat_correction;
+    bool hessian_q_file_started = false;
     void write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat_scph,
                            NDArray<std::complex<double>, 4> &delta_harmonic_dymat_renormalize, unsigned int NT);
 };

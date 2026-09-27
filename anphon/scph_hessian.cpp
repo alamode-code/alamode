@@ -38,6 +38,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -48,6 +49,7 @@
 #include "dynamical.h"
 #include "error.h"
 #include "fcs_phonon.h"
+#include "ifc_derivative.h"
 #include "interpolation.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -94,73 +96,128 @@ Eigen::VectorXd diagonal_scale(const Eigen::MatrixXd &M)
     return d;
 }
 
-// The quartic ladder done in real space on a k-mesh of n1 x n2 x n3 points
-// (FINITE_Q_HESSIAN_PLAN.md, steps A and B). Every stored FC4 entry, divided by
-// the square roots of its four masses, goes to the slot
-//   (i, j, R_j; l, m, R_m - R_l)   (cell offsets reduced modulo the mesh),
-// where i is the leg in the home cell and R_j, R_l, R_m the lattice offsets of
-// the other legs; entries that land in one slot add up. This is the
-// element-wise sum from which V4 is built, since the phases of the mesh do not
-// see the reduction.
-struct QuarticMesh
+// Cell of a lattice offset (integer lattice coordinates) on a k-mesh of
+// n1 x n2 x n3 points, reduced modulo the mesh.
+int mesh_cell(const std::array<int, 3> &nki, const Eigen::Vector3d &v)
 {
-    unsigned int ns;
-    unsigned int nk;
-    std::array<int, 3> nki;
-    std::vector<std::array<unsigned int, 6>> index; // i, j, cell(R_j), l, m, cell(R_m - R_l)
+    int r = 0;
+    for (int d = 0; d < 3; ++d) {
+        auto n = static_cast<int>(std::lround(v[d])) % nki[d];
+        if (n < 0) n += nki[d];
+        r = r * nki[d] + n;
+    }
+    return r;
+}
+
+// Mass-weighted IFCs of order n folded onto the cells of a k-mesh (steps A-C
+// of FINITE_Q_HESSIAN_PLAN.md): every stored entry, divided by the square
+// roots of its masses, goes to the slot of its atom indices and of the cell
+// offsets of legs 2..n relative to the first leg (reduced modulo the mesh);
+// entries that land in one slot add up. This is the element-wise sum from
+// which the reciprocal-space vertices are built, since the phases of the mesh
+// do not see the reduction. slot = (index[0..n-1], cell[0..n-2]).
+template <int N>
+struct FoldedIfcs
+{
+    unsigned int ns = 0;
+    unsigned int nk = 0;
+    std::array<int, 3> nki{};
+    std::vector<std::array<unsigned int, 2 * N - 1>> slot;
     std::vector<double> weight;
 
-    int cell(const Eigen::Vector3d &v) const
-    {
-        int r = 0;
-        for (int d = 0; d < 3; ++d) {
-            auto n = static_cast<int>(std::lround(v[d])) % nki[d];
-            if (n < 0) n += nki[d];
-            r = r * nki[d] + n;
-        }
-        return r;
-    }
-
-    QuarticMesh(const std::vector<PHON_NS::FcsArrayWithCell> &fc4, const std::vector<double> &invsqrt_mass,
-                const unsigned int ns_in, const unsigned int *nk_in) : ns(ns_in)
+    FoldedIfcs(const std::vector<PHON_NS::FcsArrayWithCell> &fcs, const std::vector<double> &invsqrt_mass,
+               const unsigned int ns_in, const unsigned int *nk_in) : ns(ns_in)
     {
         nki = {static_cast<int>(nk_in[0]), static_cast<int>(nk_in[1]), static_cast<int>(nk_in[2])};
         nk = static_cast<unsigned int>(nki[0] * nki[1] * nki[2]);
-        std::unordered_map<unsigned long long, double> sum;
-        sum.reserve(fc4.size());
-        for (const auto &e: fc4) {
-            const unsigned long long i = e.pairs[0].index, j = e.pairs[1].index, l = e.pairs[2].index,
-                                     m = e.pairs[3].index;
-            const unsigned long long rj = cell(e.relvecs[0]), rlm = cell(e.relvecs[2] - e.relvecs[1]);
-            const auto key = (((((i * ns + j) * nk + rj) * ns + l) * ns + m) * nk) + rlm;
-            sum[key] +=
-                e.fcs_val * invsqrt_mass[i / 3] * invsqrt_mass[j / 3] * invsqrt_mass[l / 3] * invsqrt_mass[m / 3];
+        if (N * std::log2(static_cast<double>(ns)) + (N - 1) * std::log2(static_cast<double>(nk)) >= 63.0) {
+            PHON_NS::exit("FoldedIfcs", "the IFC slots of this cell and k-mesh do not fit a 64-bit key.");
         }
-        index.reserve(sum.size());
+        std::unordered_map<unsigned long long, double> sum;
+        sum.reserve(fcs.size());
+        for (const auto &e: fcs) {
+            unsigned long long key = 0;
+            double w = e.fcs_val;
+            for (int n = 0; n < N; ++n) {
+                key = key * ns + e.pairs[n].index;
+                w *= invsqrt_mass[e.pairs[n].index / 3];
+            }
+            for (int n = 0; n < N - 1; ++n) key = key * nk + mesh_cell(nki, e.relvecs[n]);
+            sum[key] += w;
+        }
+        slot.reserve(sum.size());
         weight.reserve(sum.size());
         for (const auto &[key, w]: sum) {
             auto r = key;
-            std::array<unsigned int, 6> id{};
-            const unsigned long long base[6] = {ns, ns, nk, ns, ns, nk};
-            for (int d = 5; d >= 0; --d) {
-                id[d] = static_cast<unsigned int>(r % base[d]);
-                r /= base[d];
+            std::array<unsigned int, 2 * N - 1> id{};
+            for (int d = 2 * N - 2; d >= 0; --d) {
+                const unsigned long long base = d >= N ? nk : ns;
+                id[d] = static_cast<unsigned int>(r % base);
+                r /= base;
             }
-            index.push_back(id);
+            slot.push_back(id);
             weight.push_back(w);
         }
     }
+};
 
-    // z_ij(R_j) = (1/4) sum W x_lm(R_m - R_l) (Cartesian, mass weighted,
-    // unconjugated); x and z hold one ns x ns matrix per cell of the mesh.
-    void apply(const std::vector<Eigen::MatrixXcd> &x, std::vector<Eigen::MatrixXcd> &z) const
+// The quartic ladder in real space with momentum transfer Q:
+//   z_ij(R_j) = (1/4) sum W_ijlm(R_j, R_l, R_m) e^{iQ.R_l} x_lm(R_m - R_l)
+// (Cartesian, mass weighted, unconjugated; x and z hold one ns x ns matrix per
+// cell of the mesh; qphase[r] = e^{2 pi i Q.R_r}, nullptr for Q = 0).
+struct QuarticMesh: FoldedIfcs<4>
+{
+    std::vector<unsigned int> cell_lm; // cell(R_m - R_l) per slot
+
+    QuarticMesh(const std::vector<PHON_NS::FcsArrayWithCell> &fcs, const std::vector<double> &invsqrt_mass,
+                const unsigned int ns_in, const unsigned int *nk_in) : FoldedIfcs<4>(fcs, invsqrt_mass, ns_in, nk_in)
+    {
+        cell_lm.reserve(slot.size());
+        for (const auto &id: slot) {
+            cell_lm.push_back(static_cast<unsigned int>(mesh_cell(nki, cell_vector(id[6]) - cell_vector(id[5]))));
+        }
+    }
+
+    void apply(const std::vector<Eigen::MatrixXcd> &x, std::vector<Eigen::MatrixXcd> &z,
+               const std::vector<cplx> *qphase = nullptr) const
     {
         z.assign(nk, Eigen::MatrixXcd::Zero(ns, ns));
         for (size_t e = 0; e < weight.size(); ++e) {
-            const auto &id = index[e];
-            z[id[2]](id[0], id[1]) += weight[e] * x[id[5]](id[3], id[4]);
+            const auto &id = slot[e];
+            // slot: i, j, l, m, cell(R_j), cell(R_l), cell(R_m)
+            const auto rlm = cell_lm[e];
+            const cplx w = qphase ? weight[e] * (*qphase)[id[5]] : cplx(weight[e], 0.0);
+            z[id[4]](id[0], id[1]) += w * x[rlm](id[2], id[3]);
         }
         for (auto &m: z) m *= 0.25;
+    }
+
+    Eigen::Vector3d cell_vector(const unsigned int r) const
+    {
+        Eigen::Vector3d v;
+        auto rr = static_cast<int>(r);
+        for (int d = 2; d >= 0; --d) {
+            v[d] = rr % nki[d];
+            rr /= nki[d];
+        }
+        return v;
+    }
+};
+
+// The cubic source of a displacement pattern u(R) = eps e^{iQ.R} (mass
+// weighted): y_ij(R_j) = sum W_ijl(R_j, R_l) eps_l e^{iQ.R_l}, the change of
+// the (mass-weighted) harmonic IFCs Phi(i 0, j R_j) per unit amplitude.
+struct CubicMesh: FoldedIfcs<3>
+{
+    using FoldedIfcs<3>::FoldedIfcs;
+
+    void source(const Eigen::VectorXcd &eps, const std::vector<cplx> &qphase, std::vector<Eigen::MatrixXcd> &y) const
+    {
+        y.assign(nk, Eigen::MatrixXcd::Zero(ns, ns));
+        for (size_t e = 0; e < weight.size(); ++e) {
+            const auto &id = slot[e]; // i, j, l, cell(R_j), cell(R_l)
+            y[id[3]](id[0], id[1]) += weight[e] * eps[id[2]] * qphase[id[4]];
+        }
     }
 };
 } // namespace
@@ -232,10 +289,12 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     occ.classical = thermodynamics->classical;
 
     std::vector<MatrixXcd> Uk(nk), Ck(nk), Pk(nk), Lk(nk);
+    std::vector<VectorXd> lambda_k(nk);
     for (unsigned int ik = 0; ik < nk; ++ik) {
         Uk[ik].resize(ns, ns);
         Ck[ik].resize(ns, ns);
-        VectorXd lambda(ns);
+        auto &lambda = lambda_k[ik];
+        lambda.resize(ns);
         for (Index a = 0; a < ns; ++a) {
             for (Index s = 0; s < ns; ++s) {
                 Uk[ik](a, s) = evec_harmonic[ik][s][a];
@@ -291,57 +350,61 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     //      check of BUBBLE_FD_CHECK): F = P U^dagger Z(U P D P U^dagger) U P in
     //      the harmonic basis at Gamma, P dropping the acoustic modes as the V4
     //      builder does; the same map as fmat_batch at one k-point
+    //      With momentum transfer Q the blocks couple k+Q (rows) to k (columns):
+    //      X_k = U_{k+Q} D_k U_k^dagger, x(R) = (1/N) sum_k e^{-ik.R} X_k,
+    //      F_k = U_{k+Q}^dagger [sum_R e^{ik.R} z(R)] U_k, z from x with the phase
+    //      e^{iQ.R_l} on the third leg (a block operator O(R1, R2) = e^{iQ.R1} x(R2 - R1)).
+    const bool finite_q = report && nk > 1;
     std::unique_ptr<QuarticMesh> quartic_rs;
-    std::vector<std::vector<cplx>> kphase; // e^{2 pi i k.R} for k on the mesh and R a cell of it
-    if (bubble_ladder == 2 || (report && bubble_fd_check)) {
+    if (bubble_ladder == 2 || (report && bubble_fd_check) || (finite_q && bubble_ladder)) {
         quartic_rs = std::make_unique<QuarticMesh>(fcs_phonon->force_constant_with_cell[2],
                                                    system->get_invsqrt_mass(),
                                                    static_cast<unsigned int>(ns),
                                                    kmesh_dense->nk_i);
-        kphase.assign(nk, std::vector<cplx>(nk));
-        for (unsigned int ik = 0; ik < nk; ++ik) {
-            for (unsigned int r = 0; r < nk; ++r) {
-                int n[3], rr = static_cast<int>(r);
-                for (int d = 2; d >= 0; --d) {
-                    n[d] = rr % quartic_rs->nki[d];
-                    rr /= quartic_rs->nki[d];
-                }
-                double arg = 0.0;
-                for (int d = 0; d < 3; ++d) arg += kmesh_dense->xk[ik][d] * n[d];
-                kphase[ik][r] = std::exp(cplx(0.0, 2.0 * pi * arg));
+    }
+    std::vector<std::vector<cplx>> kphase(nk, std::vector<cplx>(nk)); // e^{2 pi i k.R}, R a cell of the mesh
+    for (unsigned int ik = 0; ik < nk; ++ik) {
+        for (unsigned int r = 0; r < nk; ++r) {
+            int n[3], rr = static_cast<int>(r);
+            for (int d = 2; d >= 0; --d) {
+                n[d] = rr % static_cast<int>(kmesh_dense->nk_i[d]);
+                rr /= static_cast<int>(kmesh_dense->nk_i[d]);
             }
+            double arg = 0.0;
+            for (int d = 0; d < 3; ++d) arg += kmesh_dense->xk[ik][d] * n[d];
+            kphase[ik][r] = std::exp(cplx(0.0, 2.0 * pi * arg));
         }
     }
-    const auto fmat_real_space = [&](const cplx *d_in, cplx *f_out) {
-        std::vector<MatrixXcd> x(nk, MatrixXcd::Zero(ns, ns)), z;
-        for (unsigned int ik = 0; ik < nk; ++ik) {
-            MatrixXcd D = Map<const MatrixXcdRow>(d_in + static_cast<size_t>(ik) * ns2, ns, ns);
-            if (ik == ikg) {
-                for (Index a = 0; a < ns; ++a) {
-                    if (!is_acoustic_gamma_harm[a]) continue;
-                    D.row(a).setZero();
-                    D.col(a).setZero();
-                }
-            }
-            const MatrixXcd X = Uk[ik] * D * Uk[ik].adjoint();
-            for (unsigned int r = 0; r < nk; ++r) x[r] += std::conj(kphase[ik][r]) * X;
-        }
-        for (auto &m: x) m /= static_cast<double>(nk);
-        quartic_rs->apply(x, z);
-        for (unsigned int ik = 0; ik < nk; ++ik) {
-            MatrixXcd Z = MatrixXcd::Zero(ns, ns);
-            for (unsigned int r = 0; r < nk; ++r) Z += kphase[ik][r] * z[r];
-            MatrixXcd F = Uk[ik].adjoint() * Z * Uk[ik];
-            if (ik == ikg) {
-                for (Index a = 0; a < ns; ++a) {
-                    if (!is_acoustic_gamma_harm[a]) continue;
-                    F.row(a).setZero();
-                    F.col(a).setZero();
-                }
-            }
-            Map<MatrixXcdRow>(f_out + static_cast<size_t>(ik) * ns2, ns, ns) = F;
+    std::vector<unsigned int> k_identity(nk);
+    for (unsigned int ik = 0; ik < nk; ++ik) k_identity[ik] = ik;
+    // the acoustic Gamma rows (left leg k+Q = Gamma) and columns (right leg k = Gamma)
+    const auto drop_acoustic = [&](MatrixXcd &M, const unsigned int left, const unsigned int right) {
+        for (Index a = 0; a < ns; ++a) {
+            if (!is_acoustic_gamma_harm[a]) continue;
+            if (left == ikg) M.row(a).setZero();
+            if (right == ikg) M.col(a).setZero();
         }
     };
+    const auto fmat_q =
+        [&](const cplx *d_in, cplx *f_out, const std::vector<unsigned int> &kq, const std::vector<cplx> *qphase) {
+            std::vector<MatrixXcd> x(nk, MatrixXcd::Zero(ns, ns)), z;
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                MatrixXcd D = Map<const MatrixXcdRow>(d_in + static_cast<size_t>(ik) * ns2, ns, ns);
+                drop_acoustic(D, kq[ik], ik);
+                const MatrixXcd X = Uk[kq[ik]] * D * Uk[ik].adjoint();
+                for (unsigned int r = 0; r < nk; ++r) x[r] += std::conj(kphase[ik][r]) * X;
+            }
+            for (auto &m: x) m /= static_cast<double>(nk);
+            quartic_rs->apply(x, z, qphase);
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                MatrixXcd Z = MatrixXcd::Zero(ns, ns);
+                for (unsigned int r = 0; r < nk; ++r) Z += kphase[ik][r] * z[r];
+                MatrixXcd F = Uk[kq[ik]].adjoint() * Z * Uk[ik];
+                drop_acoustic(F, kq[ik], ik);
+                Map<MatrixXcdRow>(f_out + static_cast<size_t>(ik) * ns2, ns, ns) = F;
+            }
+        };
+    const auto fmat_real_space = [&](const cplx *d_in, cplx *f_out) { fmat_q(d_in, f_out, k_identity, nullptr); };
 
     // BUBBLE_FD_CHECK: the real-space ladder against the V4 service on fixed
     // inputs (random Hermitian, random general complex, one off-diagonal unit
@@ -687,16 +750,270 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
 
     write_scp_hessian(temp, "", Jqq, A, total_applications, worst_residual, asym, C_clamped, C_relaxed);
 
-    // J - A in the Cartesian basis of the Gamma dynamical matrix: added to the
-    // SCPH correction in PREFIX.scph_fe.h5 (the translations carry none).
+    // H - A in the Cartesian basis of the dynamical matrix, per coarse k-point,
+    // added to the SCPH correction in PREFIX.scph_fe.h5: J - A at Gamma (the
+    // translations carry none), and on a mesh the finite-Q curvature elsewhere.
+    const auto NT = system->get_num_temperature_points();
+    if (fe_dymat_correction.size() != NT) fe_dymat_correction.assign(NT, {});
+    fe_dymat_correction[iT].clear();
+    std::vector<MatrixXcd> correction(kmesh_coarse->nk, MatrixXcd::Zero(ns, ns));
     {
-        const auto NT = system->get_num_temperature_points();
-        if (fe_dymat_correction.size() != NT) fe_dymat_correction.assign(NT, MatrixXcd());
         MatrixXcd U_opt(ns, nopt);
         for (Index i = 0; i < nopt; ++i) U_opt.col(i) = Uk[ikg].col(optical[i]);
         const MatrixXd dJ = 0.5 * (Jqq + Jqq.transpose()) - A;
-        fe_dymat_correction[iT] = U_opt * dJ.cast<cplx>() * U_opt.adjoint();
+        correction[0] = U_opt * dJ.cast<cplx>() * U_opt.adjoint();
     }
+
+    // ---- finite Q on the mesh (FINITE_Q_HESSIAN_PLAN.md, step C): the curvature
+    //      of the free energy for u(R) = eps e^{iQ.R} + c.c.,
+    //        H(Q) = A(Q) + (1/4N) sum_k tr[ B_s(k)^dagger dG_t(k) ],
+    //      with A(Q) the SCP matrix at Q, the sources B_s(k) = U_{k+Q}^dagger
+    //      Y_s(k) U_k from the cubic IFCs of the solved structure (the change of
+    //      the SCP matrix per unit amplitude of harmonic mode s at Q), and the
+    //      response dG_t = T_Q (I - K_Q T_Q)^{-1} B_t, T_Q the Daleckii-Krein map
+    //      between the spectra at k+Q and k. At Q = 0 this is J_qq.
+    bool complete = true;
+    if (finite_q) {
+        const auto t_q = timer->elapsed();
+        std::vector<cplx>().swap(dmat); // the Gamma solve's scratch
+        std::vector<cplx>().swap(fout);
+        std::vector<cplx>().swap(dG);
+        std::vector<FcsArrayWithCell> fc3_solved;
+        double u_flat[9];
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) u_flat[3 * i + j] = solved_state.u_tensor[i][j];
+        }
+        DerivativeIFC::compute_deformed_cubic_ifcs(fcs_phonon->force_constant_with_cell,
+                                                   u_flat,
+                                                   solved_state.u0,
+                                                   system->get_primcell().lattice_vector,
+                                                   fc3_solved);
+        const CubicMesh cubic(fc3_solved, system->get_invsqrt_mass(), static_cast<unsigned int>(ns), kmesh_dense->nk_i);
+        const size_t col = static_cast<size_t>(nk) * ns2;
+
+        const auto k_plus = [&](const unsigned int iq) {
+            std::vector<unsigned int> kq(nk);
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                double xk[3];
+                for (int d = 0; d < 3; ++d) xk[d] = kmesh_dense->xk[ik][d] + kmesh_dense->xk[iq][d];
+                const auto n = kmesh_dense->get_knum(xk);
+                if (n < 0) exit("compute_scp_hessian", "k + Q is not on the mesh.");
+                kq[ik] = static_cast<unsigned int>(n);
+            }
+            return kq;
+        };
+        // sources of the harmonic modes s0 .. s0 + m - 1 at Q (columns), blocks (k+Q, k)
+        const auto sources_at =
+            [&](const unsigned int iq, const std::vector<unsigned int> &kq, const Index s0, const Index m) {
+                MatrixXcd B(static_cast<Index>(col), m);
+#pragma omp parallel for schedule(dynamic, 1)
+                for (Index c = 0; c < m; ++c) {
+                    std::vector<MatrixXcd> y;
+                    cubic.source(Uk[iq].col(s0 + c), kphase[iq], y);
+                    for (unsigned int ik = 0; ik < nk; ++ik) {
+                        MatrixXcd Yk = MatrixXcd::Zero(ns, ns);
+                        for (unsigned int r = 0; r < nk; ++r) Yk += kphase[ik][r] * y[r];
+                        Map<MatrixXcdRow>(B.data() + c * col + static_cast<size_t>(ik) * ns2, ns, ns) =
+                            Uk[kq[ik]].adjoint() * Yk * Uk[ik];
+                    }
+                }
+                return B;
+            };
+        const auto curvature_at = [&](const unsigned int iq, MatrixXcd &H, int &napply_q, double &residual_q) {
+            const auto kq = k_plus(iq);
+            const auto *qphase = &kphase[iq];
+            std::vector<MatrixXcd> LQ(nk, MatrixXcd::Zero(ns, ns));
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                for (Index s = 0; s < ns; ++s) {
+                    if (kq[ik] == ikg && frozen_gamma[s]) continue;
+                    for (Index t = 0; t < ns; ++t) {
+                        if (ik == ikg && frozen_gamma[t]) continue;
+                        LQ[ik](s, t) = scph_hessian::divided_difference(occ, lambda_k[kq[ik]](s), lambda_k[ik](t));
+                    }
+                }
+            }
+            const auto apply_TQ = [&](const cplx *y, cplx *dGq) {
+                for (unsigned int ik = 0; ik < nk; ++ik) {
+                    const Map<const MatrixXcdRow> Y(y + static_cast<size_t>(ik) * ns2, ns, ns);
+                    const MatrixXcd in_eig = Ck[kq[ik]].adjoint() * Y * Ck[ik];
+                    Map<MatrixXcdRow>(dGq + static_cast<size_t>(ik) * ns2, ns, ns) =
+                        Ck[kq[ik]] * in_eig.cwiseProduct(LQ[ik]) * Ck[ik].adjoint();
+                }
+            };
+            std::vector<cplx> dq, fq;
+            const auto apply_KQ = [&](const MatrixXcd &Yb, MatrixXcd &out) {
+                const auto m = Yb.cols();
+                dq.resize(static_cast<size_t>(m) * col);
+                fq.resize(static_cast<size_t>(m) * col);
+#pragma omp parallel for schedule(dynamic, 1)
+                for (Index c = 0; c < m; ++c) apply_TQ(Yb.col(c).data(), dq.data() + c * col);
+#pragma omp parallel for schedule(dynamic, 1)
+                for (Index c = 0; c < m; ++c) fmat_q(dq.data() + c * col, fq.data() + c * col, kq, qphase);
+                out = Map<const MatrixXcd>(fq.data(), static_cast<Index>(col), m);
+            };
+            // in chunks of columns t; the rows s pair with sources made again per
+            // chunk unless one chunk holds them all (the memory bound of the solve)
+            H = Ck[iq] * lambda_k[iq].cast<cplx>().asDiagonal() * Ck[iq].adjoint();
+            napply_q = 0;
+            residual_q = 0.0;
+            for (Index t0 = 0; t0 < ns; t0 += chunk) {
+                const auto m = std::min(chunk, ns - t0);
+                const MatrixXcd Bc = sources_at(iq, kq, t0, m);
+                MatrixXcd Y = Bc;
+                if (bubble_ladder) {
+                    std::vector<double> residual;
+                    int napply = 0;
+                    const bool ok = scph_hessian::gmres_identity_minus(Bc,
+                                                                       Y,
+                                                                       apply_KQ,
+                                                                       restart,
+                                                                       max_restarts,
+                                                                       bubble_tol,
+                                                                       residual,
+                                                                       napply);
+                    napply_q += napply;
+                    for (const auto r: residual) residual_q = std::max(residual_q, r);
+                    if (!ok) return false;
+                }
+                MatrixXcd dGc(static_cast<Index>(col), m);
+#pragma omp parallel for schedule(dynamic, 1)
+                for (Index c = 0; c < m; ++c) apply_TQ(Y.col(c).data(), dGc.col(c).data());
+                Y.resize(0, 0);
+                for (Index s0 = 0; s0 < ns; s0 += chunk) {
+                    const auto ms = std::min(chunk, ns - s0);
+                    if (ms == ns && m == ns) {
+                        H.middleCols(t0, m) += Bc.adjoint() * dGc / four_n;
+                    } else {
+                        H.block(s0, t0, ms, m) += sources_at(iq, kq, s0, ms).adjoint() * dGc / four_n;
+                    }
+                }
+            }
+            return H.allFinite();
+        };
+
+        // BUBBLE_FD_CHECK: the real-space sources and the whole finite-Q path at
+        // Q = 0 against the Gamma construction (4N v3_renorm^T and J_qq)
+        if (bubble_fd_check && nopt > 0) {
+            const MatrixXcd B = sources_at(ikg, k_identity, 0, ns);
+            double diff = 0.0, scale = 0.0;
+            for (Index j = 0; j < nopt; ++j) {
+                for (unsigned int ik = 0; ik < nk; ++ik) {
+                    const Map<const MatrixXcdRow> Bk(B.data() + optical[j] * col + static_cast<size_t>(ik) * ns2,
+                                                     ns,
+                                                     ns);
+                    for (Index a = 0; a < ns; ++a) {
+                        for (Index b = 0; b < ns; ++b) {
+                            if ((ik == ikg) && (is_acoustic_gamma_harm[a] || is_acoustic_gamma_harm[b])) continue;
+                            const auto ref = four_n * ws.v3_renorm[ik][optical[j]][b * ns + a];
+                            diff = std::max(diff, std::abs(Bk(a, b) - ref));
+                            scale = std::max(scale, std::abs(ref));
+                        }
+                    }
+                }
+            }
+            MatrixXcd H0;
+            int n0 = 0;
+            double r0 = 0.0;
+            double dh = -1.0;
+            if (curvature_at(ikg, H0, n0, r0)) {
+                MatrixXd H0opt(nopt, nopt);
+                for (Index i = 0; i < nopt; ++i)
+                    for (Index j = 0; j < nopt; ++j) H0opt(i, j) = H0(optical[i], optical[j]).real();
+                dh = (H0opt - Jqq).cwiseAbs().maxCoeff() / std::max(Jqq.cwiseAbs().maxCoeff(), 1.0e-300);
+            }
+            std::cout << "  BUBBLE_FD_CHECK: finite-Q sources at Q = 0 vs 4N v3_renorm^T: max diff / max = "
+                      << std::scientific << std::setprecision(3) << diff / std::max(scale, 1.0e-300)
+                      << "\n  BUBBLE_FD_CHECK: finite-Q curvature at Q = 0 vs J_qq: ";
+            if (dh >= 0.0) {
+                std::cout << "max diff / max = " << dh;
+            } else {
+                std::cout << "not obtained (the response equation did not converge)";
+            }
+            std::cout << std::defaultfloat << '\n';
+        }
+
+        // the irreducible Q-points of the mesh other than Gamma (rank 0 runs the
+        // structural loop; the other ranks serve V4 requests meanwhile)
+        std::vector<unsigned int> qlist;
+        for (unsigned int ir = 0; ir < kmesh_coarse->nk_irred; ++ir) {
+            const auto knum = kmesh_coarse->kpoint_irred_all[ir][0].knum;
+            if (knum != 0) qlist.push_back(knum);
+        }
+        const auto nq = qlist.size();
+        std::vector<cplx> Hall(nq * ns2, cplx(0.0, 0.0));
+        std::vector<double> stat(3 * nq, 0.0); // success, applications, residual
+        for (size_t n = 0; n < nq; ++n) {
+            MatrixXcd H;
+            int napply = 0;
+            double res = 0.0;
+            const bool ok = curvature_at(kmap_coarse_to_dense[qlist[n]], H, napply, res);
+            if (ok) Map<MatrixXcd>(Hall.data() + n * ns2, ns, ns) = H;
+            stat[3 * n] = ok ? 1.0 : 0.0;
+            stat[3 * n + 1] = napply;
+            stat[3 * n + 2] = res;
+        }
+
+        std::vector<std::string> lines;
+        int napply_all = 0;
+        for (size_t n = 0; n < nq; ++n) {
+            const auto iq = kmap_coarse_to_dense[qlist[n]];
+            const Map<const MatrixXcd> H(Hall.data() + n * ns2, ns, ns);
+            napply_all += static_cast<int>(stat[3 * n + 1]);
+            const auto asym_q = (H - H.adjoint()).norm() / std::max(H.norm(), 1.0e-300);
+            std::ostringstream head;
+            head << "# Q = " << std::fixed << std::setprecision(6) << kmesh_dense->xk[iq][0] << ' '
+                 << kmesh_dense->xk[iq][1] << ' ' << kmesh_dense->xk[iq][2];
+            if (stat[3 * n] < 0.5 || asym_q > 1.0e-6) {
+                complete = false;
+                head << "  skipped: "
+                     << (stat[3 * n] < 0.5 ? "the response equation did not converge (or is not finite)"
+                                           : "H(Q) is not Hermitian")
+                     << '\n';
+                lines.push_back(head.str());
+                continue;
+            }
+            const MatrixXcd Hh = 0.5 * (H + H.adjoint());
+            const MatrixXcd AQ = Ck[iq] * lambda_k[iq].cast<cplx>().asDiagonal() * Ck[iq].adjoint();
+            const SelfAdjointEigenSolver<MatrixXcd> es(Hh);
+            VectorXd w_scp(ns);
+            for (Index s = 0; s < ns; ++s) w_scp(s) = std::sqrt(std::max(lambda_k[iq](s), 0.0)) * Ry_to_kayser;
+            std::sort(w_scp.data(), w_scp.data() + ns);
+            head << "  asymmetry = " << std::scientific << std::setprecision(3) << asym_q
+                 << "  residual = " << stat[3 * n + 2] << '\n'
+                 << std::fixed << std::setprecision(6);
+            for (Index s = 0; s < ns; ++s) {
+                const auto l = es.eigenvalues()(s);
+                head << std::setw(6) << s + 1 << std::setw(16) << w_scp(s) << std::setw(16)
+                     << (l >= 0.0 ? 1.0 : -1.0) * std::sqrt(std::abs(l)) * Ry_to_kayser << '\n';
+            }
+            lines.push_back(head.str());
+            correction[qlist[n]] = Uk[iq] * (Hh - AQ) * Uk[iq].adjoint();
+        }
+        std::cout << "  finite Q: " << nq << " irreducible Q-points besides Gamma, " << napply_all
+                  << (bubble_ladder ? " ladder applications" : " (no ladder)") << " (" << std::fixed
+                  << std::setprecision(1) << timer->elapsed() - t_q << " s)" << std::defaultfloat
+                  << (complete ? "" : "; some Q-points skipped, see PREFIX.scph_hessian_q") << '\n';
+        {
+            const auto fname = run.job_title + ".scph_hessian_q";
+            std::ofstream ofs(fname, hessian_q_file_started ? std::ios::app : std::ios::out);
+            if (!ofs) exit("compute_scp_hessian", "cannot open PREFIX.scph_hessian_q");
+            if (!hessian_q_file_started) {
+                ofs << "# Curvature of the SCP free energy at the irreducible Q-points of the mesh other than\n"
+                       "# Gamma (BUBBLE = 4; Gamma is in PREFIX.scph_hessian): frequencies sign(l) sqrt(|l|) of\n"
+                       "# the eigenvalues l of the Hermitian H(Q), in cm^-1, Q in reciprocal lattice units.\n"
+                       "# Columns: index, SCPH (fixed occupations), free-energy curvature\n";
+                hessian_q_file_started = true;
+            }
+            ofs << "# T = " << temp << " K\n";
+            for (const auto &l: lines) ofs << l << '\n';
+        }
+        if (complete)
+            replicate_dymat_for_all_kpoints(kmesh_coarse.get(),
+                                            static_cast<unsigned int>(ns),
+                                            mat_transform_sym,
+                                            correction);
+    }
+    if (complete) fe_dymat_correction[iT] = std::move(correction);
     if (nopt > 0) export_unstable_directions(solved_state, optical, Jqq, temp);
     return true;
 }
@@ -704,31 +1021,39 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
 void Scph::write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat_scph,
                              NDArray<std::complex<double>, 4> &delta_harmonic_dymat_renormalize, const unsigned int NT)
 {
-    // The SCPH state file again, with the Gamma correction J - A of the
-    // free-energy curvature added to the SCPH one. Temperatures without a
-    // curvature are flagged unconverged so that consumers refuse them.
-    if (kmesh_coarse->nk > 1) {
-        // ponytail: Gamma-only correction; a mesh needs every Q (finite-Q Hessian) before this file is meaningful
-        if (run.my_rank == 0) {
-            std::cout << "\n PREFIX.scph_fe.h5 is not written on a k-mesh: the curvature correction is known at"
-                         " Gamma only.\n";
-        }
-        return;
-    }
+    // The SCPH state file again, with the correction H - A of the free-energy
+    // curvature added to the SCPH one at every point of the mesh. Temperatures
+    // without a curvature are flagged unconverged so that consumers refuse them.
+    // The SCPH correction is stored per cell of the mesh (k -> R as in
+    // Dynamical::calc_new_dymat_with_evec); the curvature correction per k-point
+    // goes through the same transform.
     const auto ns = dynamical->neval;
+    const auto nk = kmesh_coarse->nk;
     NDArray<std::complex<double>, 4> delta_fe;
-    delta_fe.resize(NT, ns, ns, kmesh_coarse->nk);
-    const auto ik_gamma = 0u; // KMESH_INTERPOLATE = 1 1 1 here
+    delta_fe.resize(NT, ns, ns, nk);
+    NDArray<std::complex<double>, 3> corr_k, corr_r;
+    corr_k.resize(ns, ns, nk);
+    corr_r.resize(ns, ns, nk);
     const auto saved_flags = converged_scph_temp;
     std::string missing;
     for (unsigned int iT = 0; iT < NT; ++iT) {
-        const bool have = iT < fe_dymat_correction.size() && fe_dymat_correction[iT].size() > 0;
+        const bool have = iT < fe_dymat_correction.size() && fe_dymat_correction[iT].size() == nk;
+        if (have) {
+            for (unsigned int is = 0; is < ns; ++is)
+                for (unsigned int js = 0; js < ns; ++js)
+                    for (unsigned int ik = 0; ik < nk; ++ik) corr_k[is][js][ik] = fe_dymat_correction[iT][ik](is, js);
+            fourier_dymat_k_to_r(kmesh_coarse->nk_i[0],
+                                 kmesh_coarse->nk_i[1],
+                                 kmesh_coarse->nk_i[2],
+                                 ns,
+                                 corr_k,
+                                 corr_r);
+        }
         for (unsigned int is = 0; is < ns; ++is) {
             for (unsigned int js = 0; js < ns; ++js) {
-                for (unsigned int ik = 0; ik < kmesh_coarse->nk; ++ik) {
-                    delta_fe[iT][is][js][ik] = delta_dymat_scph[iT][is][js][ik];
+                for (unsigned int ir = 0; ir < nk; ++ir) {
+                    delta_fe[iT][is][js][ir] = delta_dymat_scph[iT][is][js][ir] + (have ? corr_r[is][js][ir] : 0.0);
                 }
-                if (have) delta_fe[iT][is][js][ik_gamma] += fe_dymat_correction[iT](is, js);
             }
         }
         if (!have) {
