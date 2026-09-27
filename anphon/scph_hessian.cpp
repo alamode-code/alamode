@@ -52,6 +52,7 @@
 #include "scph.h"
 #include "scph_hessian_kernels.h"
 #include "thermodynamics.h"
+#include "timer.h"
 #include "v4_service.h"
 
 using namespace PHON_NS;
@@ -155,6 +156,7 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     const auto &optical = ws.harm_optical_modes;
     const auto nopt = static_cast<Index>(optical.size());
     const auto ikg = static_cast<unsigned int>(kmap_coarse_to_dense[0]);
+    const auto t_start = timer->elapsed();
 
     if (report) {
         std::cout << "\n BUBBLE = 4: curvature of the SCP free energy (force Jacobian dg/dq0) at " << temp << " K\n";
@@ -499,6 +501,7 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
 
     int total_applications = 0;
     double worst_residual = 0.0;
+    const auto t_solve = timer->elapsed();
     J.resize(ntot, ntot);
     std::vector<cplx> dG(static_cast<size_t>(nk) * ns2);
     for (Index j0 = 0; j0 < ntot; j0 += chunk) {
@@ -571,7 +574,8 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
                   << ", max relative residual " << std::scientific << std::setprecision(2) << worst_residual
                   << std::defaultfloat;
     }
-    std::cout << '\n';
+    std::cout << " (solve " << std::fixed << std::setprecision(1) << timer->elapsed() - t_solve << " s, curvature "
+              << timer->elapsed() - t_start << " s)" << std::defaultfloat << '\n';
 
     std::cout << "  asymmetry |J - J^T| / |J| (diagonally scaled) = " << std::scientific << std::setprecision(2) << asym
               << std::defaultfloat << '\n';
