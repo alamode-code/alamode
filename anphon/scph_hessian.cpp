@@ -30,16 +30,21 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
+#include <random>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
+#include "fcs_phonon.h"
 #include "interpolation.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -84,6 +89,56 @@ Eigen::VectorXd diagonal_scale(const Eigen::MatrixXd &M)
     for (Eigen::Index i = 0; i < M.rows(); ++i) d(i) = 1.0 / std::sqrt(std::max(std::abs(M(i, i)), 1.0e-300));
     return d;
 }
+
+// The quartic ladder done in real space at Gamma of the cell (one k-point):
+// W_abcd = sum of the stored FC4 entries with Cartesian indices (a,b,c,d),
+// each divided by the square roots of the four masses. All lattice phases
+// are 1 at Gamma, so entries that differ only by cell vectors add up. This is
+// the element-wise sum from which V4 at (k, k') = (Gamma, Gamma) is built;
+// see FINITE_Q_HESSIAN_PLAN.md, step A.
+struct QuarticGamma
+{
+    std::vector<std::array<unsigned int, 4>> index;
+    std::vector<double> weight;
+
+    QuarticGamma(const std::vector<PHON_NS::FcsArrayWithCell> &fc4, const std::vector<double> &invsqrt_mass,
+                 const unsigned int ns)
+    {
+        std::unordered_map<unsigned long long, double> sum;
+        sum.reserve(fc4.size());
+        const auto key = [ns](const unsigned int a, const unsigned int b, const unsigned int c, const unsigned int d) {
+            return ((static_cast<unsigned long long>(a) * ns + b) * ns + c) * ns + d;
+        };
+        for (const auto &e: fc4) {
+            const auto a = e.pairs[0].index, b = e.pairs[1].index, c = e.pairs[2].index, d = e.pairs[3].index;
+            sum[key(a, b, c, d)] +=
+                e.fcs_val * invsqrt_mass[a / 3] * invsqrt_mass[b / 3] * invsqrt_mass[c / 3] * invsqrt_mass[d / 3];
+        }
+        index.reserve(sum.size());
+        weight.reserve(sum.size());
+        for (const auto &[k, w]: sum) {
+            auto r = k;
+            std::array<unsigned int, 4> id{};
+            for (int j = 3; j >= 0; --j) {
+                id[j] = static_cast<unsigned int>(r % ns);
+                r /= ns;
+            }
+            index.push_back(id);
+            weight.push_back(w);
+        }
+    }
+
+    // Z_ab = (1/4) sum_cd W_abcd X_cd (Cartesian, mass weighted), unconjugated.
+    void apply(const Eigen::MatrixXcd &X, Eigen::MatrixXcd &Z) const
+    {
+        Z.setZero(X.rows(), X.cols());
+        for (size_t e = 0; e < weight.size(); ++e) {
+            const auto &id = index[e];
+            Z(id[0], id[1]) += weight[e] * X(id[2], id[3]);
+        }
+        Z *= 0.25;
+    }
+};
 } // namespace
 
 bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state_in,
@@ -216,6 +271,71 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
         Y = Uk[ikg].adjoint() * cart * Uk[ikg];
     };
 
+    // ---- the quartic ladder in real space (BUBBLE_LADDER = 2, and the operator
+    //      check of BUBBLE_FD_CHECK): F = P U^dagger Z(U P D P U^dagger) U P in
+    //      the harmonic basis at Gamma, P dropping the acoustic modes as the V4
+    //      builder does; the same map as fmat_batch at one k-point
+    std::unique_ptr<QuarticGamma> quartic_rs;
+    if (bubble_ladder == 2 || (report && bubble_fd_check)) {
+        quartic_rs = std::make_unique<QuarticGamma>(fcs_phonon->force_constant_with_cell[2],
+                                                    system->get_invsqrt_mass(),
+                                                    static_cast<unsigned int>(ns));
+    }
+    const auto fmat_real_space = [&](const cplx *d_in, cplx *f_out) {
+        MatrixXcd D = Map<const MatrixXcdRow>(d_in, ns, ns);
+        for (Index a = 0; a < ns; ++a) {
+            if (!is_acoustic_gamma_harm[a]) continue;
+            D.row(a).setZero();
+            D.col(a).setZero();
+        }
+        const MatrixXcd X = Uk[ikg] * D * Uk[ikg].adjoint();
+        MatrixXcd Z;
+        quartic_rs->apply(X, Z);
+        MatrixXcd F = Uk[ikg].adjoint() * Z * Uk[ikg];
+        for (Index a = 0; a < ns; ++a) {
+            if (!is_acoustic_gamma_harm[a]) continue;
+            F.row(a).setZero();
+            F.col(a).setZero();
+        }
+        Map<MatrixXcdRow>(f_out, ns, ns) = F;
+    };
+
+    // BUBBLE_FD_CHECK: the real-space ladder against the V4 service on fixed
+    // inputs (random Hermitian, random general complex, one off-diagonal unit
+    // pair, random with acoustic components); both must give the same numbers.
+    if (report && bubble_fd_check && nk == 1) {
+        const Index m = 4;
+        std::vector<cplx> din(static_cast<size_t>(m) * ns2), fv4(static_cast<size_t>(m) * ns2),
+            frs(static_cast<size_t>(m) * ns2);
+        std::mt19937 rng(20260927);
+        std::normal_distribution<double> gauss(0.0, 1.0);
+        const auto block = [&](const Index c) { return Map<MatrixXcdRow>(din.data() + c * ns2, ns, ns); };
+        MatrixXcd R(ns, ns);
+        for (Index a = 0; a < ns; ++a)
+            for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), gauss(rng));
+        block(0) = 0.5 * (R + R.adjoint());
+        for (Index a = 0; a < ns; ++a)
+            for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), gauss(rng));
+        block(1) = R;
+        block(2).setZero();
+        if (nopt > 0) block(2)(optical[0], optical[nopt > 1 ? 1 : 0]) = cplx(1.0, 0.5);
+        for (Index a = 0; a < ns; ++a)
+            for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), 0.0);
+        block(3) = R;
+        v4_service->fmat_batch(din.data(), static_cast<size_t>(m), fv4.data());
+        double diff = 0.0, scale = 0.0;
+        for (Index c = 0; c < m; ++c) {
+            fmat_real_space(din.data() + c * ns2, frs.data() + c * ns2);
+            for (Index i = 0; i < ns2; ++i) {
+                diff = std::max(diff, std::abs(frs[c * ns2 + i] - fv4[c * ns2 + i]));
+                scale = std::max(scale, std::abs(fv4[c * ns2 + i]));
+            }
+        }
+        std::cout << "  BUBBLE_FD_CHECK: real-space quartic ladder vs V4 service: max |F_rs - F_v4| / max |F_v4| = "
+                  << std::scientific << std::setprecision(3) << diff / std::max(scale, 1.0e-300) << " ("
+                  << quartic_rs->weight.size() << " folded FC4 entries)" << std::defaultfloat << '\n';
+    }
+
     // ---- K = V4 T on blocks of right-hand sides (one batched V4 sweep)
     std::vector<cplx> dmat, fout;
     const auto apply_K = [&](const MatrixXcd &Yblk, MatrixXcd &out) {
@@ -224,7 +344,12 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
         fout.resize(static_cast<size_t>(m) * ns2);
 #pragma omp parallel for schedule(dynamic, 1)
         for (Index c = 0; c < m; ++c) apply_T(Yblk.col(c).data(), dmat.data() + static_cast<size_t>(c) * nk * ns2);
-        v4_service->fmat_batch(dmat.data(), static_cast<size_t>(m), fout.data());
+        if (bubble_ladder == 2) {
+#pragma omp parallel for schedule(dynamic, 1)
+            for (Index c = 0; c < m; ++c) fmat_real_space(dmat.data() + c * nk * ns2, fout.data() + c * ns2);
+        } else {
+            v4_service->fmat_batch(dmat.data(), static_cast<size_t>(m), fout.data());
+        }
         out.resize(ns2, m);
         for (Index c = 0; c < m; ++c) out.col(c) = Map<const VectorXcd>(fout.data() + c * ns2, ns2);
         if (project) {
@@ -437,11 +562,14 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
         return true;
     }
 
-    std::cout << "  response solve: " << (bubble_ladder ? "GMRES" : "none (BUBBLE_LADDER = 0)") << ", " << ntot
-              << " right-hand sides";
+    std::cout << "  response solve: "
+              << (bubble_ladder == 2 ? "GMRES, real-space ladder"
+                                     : (bubble_ladder ? "GMRES" : "none (BUBBLE_LADDER = 0)"))
+              << ", " << ntot << " right-hand sides";
     if (bubble_ladder) {
-        std::cout << ", " << total_applications << " applications of V4, max relative residual " << std::scientific
-                  << std::setprecision(2) << worst_residual << std::defaultfloat;
+        std::cout << ", " << total_applications << (bubble_ladder == 2 ? " ladder applications" : " applications of V4")
+                  << ", max relative residual " << std::scientific << std::setprecision(2) << worst_residual
+                  << std::defaultfloat;
     }
     std::cout << '\n';
 

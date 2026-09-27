@@ -10,7 +10,9 @@ between Gamma and Z do not vanish).
   stress (static bubble + quartic ladder, solved by GMRES; displacements and
   the six strain components) must match central finite differences of them
   (BUBBLE_FD_CHECK = 1), block by block, and be symmetric; without the ladder
-  (BUBBLE_LADDER = 0) the finite differences must NOT be matched. Gamma phonons
+  (BUBBLE_LADDER = 0) the finite differences must NOT be matched. The
+  real-space quartic ladder (BUBBLE_LADDER = 2) must equal the V4 service,
+  directly and through the curvature. Gamma phonons
   from PREFIX.scph_fe.h5 (DFC2FILE) must give the curvature frequencies.
 - At the cubic structure in its 30 K, -4 GPa cell (fixed, RELAX_STR = 4,
   reached from 300 K; a saddle the SCP loop keeps, all SCPH frequencies
@@ -184,6 +186,21 @@ def main():
         )
         ok = False
     asym, w_full = curvature("full")
+    # the real-space quartic ladder (BUBBLE_LADDER = 2) is the same operator as
+    # the V4 service: checked directly on fixed inputs, and through J
+    with open("full.log") as f:
+        m = re.search(r"real-space quartic ladder vs V4 service: .*? = (\S+)", f.read())
+    if m is None or not float(m.group(1)) < 1.0e-12:
+        print("real-space ladder vs V4 service: %s" % (m.group(1) if m else None))
+        ok = False
+    write_input("rsladder", "  BUBBLE_LADDER = 2\n")
+    if run_anphon([anphonbin, "rsladder.in"], "rsladder.log"):
+        print("real-space ladder run failed, see %s/rsladder.log" % WORKDIR)
+        return 1
+    _, w_rs = curvature("rsladder")
+    if w_rs.shape != w_full.shape or not np.allclose(w_rs, w_full, rtol=0.0, atol=1e-6):
+        print("curvature with the real-space ladder differs from the V4 one")
+        ok = False
     # PREFIX.scph_fe.h5: Gamma phonons from it (DFC2FILE) must give the
     # free-energy curvature frequencies, those from the SCPH state the SCPH ones
     _, rows = curvature_rows("full")
@@ -487,6 +504,32 @@ def main():
             if a.shape != b.shape or not np.allclose(a, b, rtol=1e-6, atol=1e-10):
                 print("%s differs between the FD-checked and the plain run" % ext)
                 ok = False
+        # the real-space ladder on 2 ranks, with the full finite-difference check
+        write_input("np2rs", "  BUBBLE_LADDER = 2\n  BUBBLE_FD_CHECK = 1\n")
+        if run_anphon(["mpirun", "-np", "2", anphonbin, "np2rs.in"], "np2rs.log"):
+            print("2-rank real-space ladder run failed, see %s/np2rs.log" % WORKDIR)
+            return 1
+        with open("np2rs.log") as f:
+            m = re.search(
+                r"real-space quartic ladder vs V4 service: .*? = (\S+)", f.read()
+            )
+        qq = fd_mismatch("np2rs.log", "qq", relative=True)
+        uu = fd_mismatch("np2rs.log", "uu", relative=True)
+        _, w_np2rs = curvature("np2rs")
+        if (
+            m is None
+            or not float(m.group(1)) < 1.0e-12
+            or None in (qq, uu)
+            or not qq < 1.0e-8
+            or not uu < 1.0e-6
+            or w_np2rs.shape != w_full.shape
+            or not np.allclose(w_np2rs, w_full, rtol=1e-6)
+        ):
+            print(
+                "2-rank real-space ladder: operator %s, FD qq %s uu %s"
+                % (m.group(1) if m else None, qq, uu)
+            )
+            ok = False
         print("BUBBLE = 4 on 2 MPI ranks --> %s" % ("pass" if ok else "fail"))
     return 0 if ok else 1
 

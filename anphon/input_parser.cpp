@@ -806,6 +806,9 @@ void InputParser::parse_scph_vars(PHON *phon)
     assign_val(scph_vars.bubble_tol, "BUBBLE_TOL", scph_var_dict);
     if (scph_vars.bubble_tol <= 0.0) exit("parse_scph_vars", "BUBBLE_TOL must be positive.");
     assign_val(scph_vars.bubble_ladder, "BUBBLE_LADDER", scph_var_dict);
+    if (scph_vars.bubble_ladder < 0 || scph_vars.bubble_ladder > 2) {
+        exit("parse_scph_vars", "BUBBLE_LADDER must be 0 (no ladder), 1 (V4 service) or 2 (real space).");
+    }
     assign_val(scph_vars.bubble_fd_check, "BUBBLE_FD_CHECK", scph_var_dict);
     if (scph_vars.bubble_fd_check < 0 || scph_vars.bubble_fd_check > 2) {
         exit("parse_scph_vars", "BUBBLE_FD_CHECK must be 0, 1 (full check), or 2 (explicit blocks only).");
