@@ -1955,9 +1955,13 @@ void DerivativeIFC::process_strain_harmonic_set(
             for (ik = 0; ik < nk_interpolate; ik++) {
                 Dynamical::calc_analytic_k(system_, xshift_s, kmesh_coarse->xk[ik], fc2_tmp, dymat_tmp);
 
+                // The supercell differences carry no image information (cell_s = 0), so at a k not
+                // commensurate with the strained supercell the matrix can be non-Hermitian, and the SCP solve
+                // and the stress then see different couplings. Keep the Hermitian part.
+                // ponytail: exact only at commensurate k; keep the lattice cells of fc2_deformed if needed.
                 for (is1 = 0; is1 < ns; is1++) {
                     for (is2 = 0; is2 < ns; is2++) {
-                        dymat_q[is1][is2][ik] = dymat_tmp[is1][is2];
+                        dymat_q[is1][is2][ik] = 0.5 * (dymat_tmp[is1][is2] + std::conj(dymat_tmp[is2][is1]));
                     }
                 }
             }

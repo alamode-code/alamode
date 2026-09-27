@@ -853,7 +853,8 @@ Description of input variables
                phonon occupations respond in both) is printed and written to
                ``PREFIX``.scph_hessian. The ordinary SCPH outputs are written as usual; the curvature is static, so no DOS or
                thermodynamic output is derived from it. The present version needs ``RELAX_STR > 0``,
-               ``KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1`` (use a supercell) and ``NONANALYTIC = 0``,
+               ``KMESH_SCPH = KMESH_INTERPOLATE`` (a supercell with ``1 1 1``, or a k-mesh; the curvature is
+               for displacements periodic with the cell, :math:`\Gamma` only) and ``NONANALYTIC = 0``,
                and cannot be combined with ``RESTART_SCPH``; an existing state file does not switch
                such a run to a restart.
 

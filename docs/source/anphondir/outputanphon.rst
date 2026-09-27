@@ -208,7 +208,8 @@ With ``BUBBLE = 1, 2, 3``, SCPH additionally writes the bubble-corrected version
      - The SCPH state file again, with the correction of the free-energy curvature at
        :math:`\Gamma` added to the renormalized FC2. Use it with ``DFC2FILE`` (or ``FC2FILE``)
        and ``FC2_TEMPERATURE`` for dispersions and DOS interpolated like the SCPH ones; exact at
-       the :math:`\Gamma` point of the cell. Temperatures without a curvature are flagged
+       the :math:`\Gamma` point of the cell. Not written on a k-mesh (``KMESH_SCPH`` other than
+       ``1 1 1``). Temperatures without a curvature are flagged
        unconverged
    * - ``PREFIX``.scph_hessian_displace
      - ``BUBBLE = 4``, a negative curvature

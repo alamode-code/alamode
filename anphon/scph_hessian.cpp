@@ -41,6 +41,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include "constants.h"
 #include "dynamical.h"
 #include "error.h"
@@ -91,53 +94,73 @@ Eigen::VectorXd diagonal_scale(const Eigen::MatrixXd &M)
     return d;
 }
 
-// The quartic ladder done in real space at Gamma of the cell (one k-point):
-// W_abcd = sum of the stored FC4 entries with Cartesian indices (a,b,c,d),
-// each divided by the square roots of the four masses. All lattice phases
-// are 1 at Gamma, so entries that differ only by cell vectors add up. This is
-// the element-wise sum from which V4 at (k, k') = (Gamma, Gamma) is built;
-// see FINITE_Q_HESSIAN_PLAN.md, step A.
-struct QuarticGamma
+// The quartic ladder done in real space on a k-mesh of n1 x n2 x n3 points
+// (FINITE_Q_HESSIAN_PLAN.md, steps A and B). Every stored FC4 entry, divided by
+// the square roots of its four masses, goes to the slot
+//   (i, j, R_j; l, m, R_m - R_l)   (cell offsets reduced modulo the mesh),
+// where i is the leg in the home cell and R_j, R_l, R_m the lattice offsets of
+// the other legs; entries that land in one slot add up. This is the
+// element-wise sum from which V4 is built, since the phases of the mesh do not
+// see the reduction.
+struct QuarticMesh
 {
-    std::vector<std::array<unsigned int, 4>> index;
+    unsigned int ns;
+    unsigned int nk;
+    std::array<int, 3> nki;
+    std::vector<std::array<unsigned int, 6>> index; // i, j, cell(R_j), l, m, cell(R_m - R_l)
     std::vector<double> weight;
 
-    QuarticGamma(const std::vector<PHON_NS::FcsArrayWithCell> &fc4, const std::vector<double> &invsqrt_mass,
-                 const unsigned int ns)
+    int cell(const Eigen::Vector3d &v) const
     {
+        int r = 0;
+        for (int d = 0; d < 3; ++d) {
+            auto n = static_cast<int>(std::lround(v[d])) % nki[d];
+            if (n < 0) n += nki[d];
+            r = r * nki[d] + n;
+        }
+        return r;
+    }
+
+    QuarticMesh(const std::vector<PHON_NS::FcsArrayWithCell> &fc4, const std::vector<double> &invsqrt_mass,
+                const unsigned int ns_in, const unsigned int *nk_in) : ns(ns_in)
+    {
+        nki = {static_cast<int>(nk_in[0]), static_cast<int>(nk_in[1]), static_cast<int>(nk_in[2])};
+        nk = static_cast<unsigned int>(nki[0] * nki[1] * nki[2]);
         std::unordered_map<unsigned long long, double> sum;
         sum.reserve(fc4.size());
-        const auto key = [ns](const unsigned int a, const unsigned int b, const unsigned int c, const unsigned int d) {
-            return ((static_cast<unsigned long long>(a) * ns + b) * ns + c) * ns + d;
-        };
         for (const auto &e: fc4) {
-            const auto a = e.pairs[0].index, b = e.pairs[1].index, c = e.pairs[2].index, d = e.pairs[3].index;
-            sum[key(a, b, c, d)] +=
-                e.fcs_val * invsqrt_mass[a / 3] * invsqrt_mass[b / 3] * invsqrt_mass[c / 3] * invsqrt_mass[d / 3];
+            const unsigned long long i = e.pairs[0].index, j = e.pairs[1].index, l = e.pairs[2].index,
+                                     m = e.pairs[3].index;
+            const unsigned long long rj = cell(e.relvecs[0]), rlm = cell(e.relvecs[2] - e.relvecs[1]);
+            const auto key = (((((i * ns + j) * nk + rj) * ns + l) * ns + m) * nk) + rlm;
+            sum[key] +=
+                e.fcs_val * invsqrt_mass[i / 3] * invsqrt_mass[j / 3] * invsqrt_mass[l / 3] * invsqrt_mass[m / 3];
         }
         index.reserve(sum.size());
         weight.reserve(sum.size());
-        for (const auto &[k, w]: sum) {
-            auto r = k;
-            std::array<unsigned int, 4> id{};
-            for (int j = 3; j >= 0; --j) {
-                id[j] = static_cast<unsigned int>(r % ns);
-                r /= ns;
+        for (const auto &[key, w]: sum) {
+            auto r = key;
+            std::array<unsigned int, 6> id{};
+            const unsigned long long base[6] = {ns, ns, nk, ns, ns, nk};
+            for (int d = 5; d >= 0; --d) {
+                id[d] = static_cast<unsigned int>(r % base[d]);
+                r /= base[d];
             }
             index.push_back(id);
             weight.push_back(w);
         }
     }
 
-    // Z_ab = (1/4) sum_cd W_abcd X_cd (Cartesian, mass weighted), unconjugated.
-    void apply(const Eigen::MatrixXcd &X, Eigen::MatrixXcd &Z) const
+    // z_ij(R_j) = (1/4) sum W x_lm(R_m - R_l) (Cartesian, mass weighted,
+    // unconjugated); x and z hold one ns x ns matrix per cell of the mesh.
+    void apply(const std::vector<Eigen::MatrixXcd> &x, std::vector<Eigen::MatrixXcd> &z) const
     {
-        Z.setZero(X.rows(), X.cols());
+        z.assign(nk, Eigen::MatrixXcd::Zero(ns, ns));
         for (size_t e = 0; e < weight.size(); ++e) {
             const auto &id = index[e];
-            Z(id[0], id[1]) += weight[e] * X(id[2], id[3]);
+            z[id[2]](id[0], id[1]) += weight[e] * x[id[5]](id[3], id[4]);
         }
-        Z *= 0.25;
+        for (auto &m: z) m *= 0.25;
     }
 };
 } // namespace
@@ -226,27 +249,15 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
         Lk[ik] = scph_hessian::divided_difference_matrix(occ, lambda, &frozen).cast<cplx>();
     }
 
-    // ---- T: coarse-Gamma change y of the SCP matrix (harmonic basis, row-major
-    //      a*ns+b) -> occupation change dG_k on the dense mesh (row-major, block
-    //      k at dG + k*ns2). Interpolation as in interpolate_to_dense_mesh, but
-    //      without the symmetrization: the response is unrestricted. Buffers
-    //      are per call so that columns can run in parallel.
+    // ---- T: change y of the SCP matrix at every k (harmonic basis, row-major
+    //      a*ns+b, block k at y + k*ns2) -> occupation change dG_k (same
+    //      layout). The meshes are matched (KMESH_SCPH = KMESH_INTERPOLATE), so
+    //      there is no interpolation, and no symmetrization: the response is
+    //      unrestricted. Buffers are per call so that columns can run in parallel.
     const auto apply_T = [&](const cplx *y, cplx *dG) {
-        NDArray<cplx, 3> dymat_k(ns, ns, 1), dymat_r(ns, ns, 1);
-        NDArray<cplx, 2> mat_k(ns, ns);
-        const Map<const MatrixXcdRow> Y(y, ns, ns);
-        const MatrixXcd cart_gamma = Uk[ikg] * Y * Uk[ikg].adjoint();
-        for (Index a = 0; a < ns; ++a) {
-            for (Index b = 0; b < ns; ++b) dymat_k[a][b][0] = cart_gamma(a, b);
-        }
-        fourier_dymat_k_to_r(1, 1, 1, static_cast<unsigned int>(ns), dymat_k, dymat_r);
-        MatrixXcd cart(ns, ns);
         for (unsigned int ik = 0; ik < nk; ++ik) {
-            r2q(kmesh_dense->xk[ik], 1, 1, 1, static_cast<unsigned int>(ns), mindist_list, dymat_r, mat_k);
-            for (Index a = 0; a < ns; ++a) {
-                for (Index b = 0; b < ns; ++b) cart(a, b) = mat_k[a][b];
-            }
-            const MatrixXcd in_eig = Pk[ik].adjoint() * cart * Pk[ik];
+            const Map<const MatrixXcdRow> Y(y + static_cast<size_t>(ik) * ns2, ns, ns);
+            const MatrixXcd in_eig = Ck[ik].adjoint() * Y * Ck[ik];
             Map<MatrixXcdRow>(dG + static_cast<size_t>(ik) * ns2, ns, ns) =
                 Ck[ik] * in_eig.cwiseProduct(Lk[ik]) * Ck[ik].adjoint();
         }
@@ -266,6 +277,9 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     // ponytail: nsym ns^3 per column; symmetry-adapted blocks if large cells need it
     const bool project =
         !report && kmesh_coarse->small_group_of_k[0].size() + kmesh_coarse->symop_minus_at_k[0].size() > 1;
+    // ponytail: the projected optimizer Hessian is built for one k-point; on a
+    // mesh it would need the star replication of the SCP loop
+    if (project && nk > 1) return skip("the projected optimizer Hessian needs KMESH_SCPH = 1 1 1");
     const auto apply_P = [&](cplx *y) {
         Map<MatrixXcdRow> Y(y, ns, ns);
         MatrixXcd cart = Uk[ikg] * Y * Uk[ikg].adjoint();
@@ -277,65 +291,101 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     //      check of BUBBLE_FD_CHECK): F = P U^dagger Z(U P D P U^dagger) U P in
     //      the harmonic basis at Gamma, P dropping the acoustic modes as the V4
     //      builder does; the same map as fmat_batch at one k-point
-    std::unique_ptr<QuarticGamma> quartic_rs;
+    std::unique_ptr<QuarticMesh> quartic_rs;
+    std::vector<std::vector<cplx>> kphase; // e^{2 pi i k.R} for k on the mesh and R a cell of it
     if (bubble_ladder == 2 || (report && bubble_fd_check)) {
-        quartic_rs = std::make_unique<QuarticGamma>(fcs_phonon->force_constant_with_cell[2],
-                                                    system->get_invsqrt_mass(),
-                                                    static_cast<unsigned int>(ns));
+        quartic_rs = std::make_unique<QuarticMesh>(fcs_phonon->force_constant_with_cell[2],
+                                                   system->get_invsqrt_mass(),
+                                                   static_cast<unsigned int>(ns),
+                                                   kmesh_dense->nk_i);
+        kphase.assign(nk, std::vector<cplx>(nk));
+        for (unsigned int ik = 0; ik < nk; ++ik) {
+            for (unsigned int r = 0; r < nk; ++r) {
+                int n[3], rr = static_cast<int>(r);
+                for (int d = 2; d >= 0; --d) {
+                    n[d] = rr % quartic_rs->nki[d];
+                    rr /= quartic_rs->nki[d];
+                }
+                double arg = 0.0;
+                for (int d = 0; d < 3; ++d) arg += kmesh_dense->xk[ik][d] * n[d];
+                kphase[ik][r] = std::exp(cplx(0.0, 2.0 * pi * arg));
+            }
+        }
     }
     const auto fmat_real_space = [&](const cplx *d_in, cplx *f_out) {
-        MatrixXcd D = Map<const MatrixXcdRow>(d_in, ns, ns);
-        for (Index a = 0; a < ns; ++a) {
-            if (!is_acoustic_gamma_harm[a]) continue;
-            D.row(a).setZero();
-            D.col(a).setZero();
+        std::vector<MatrixXcd> x(nk, MatrixXcd::Zero(ns, ns)), z;
+        for (unsigned int ik = 0; ik < nk; ++ik) {
+            MatrixXcd D = Map<const MatrixXcdRow>(d_in + static_cast<size_t>(ik) * ns2, ns, ns);
+            if (ik == ikg) {
+                for (Index a = 0; a < ns; ++a) {
+                    if (!is_acoustic_gamma_harm[a]) continue;
+                    D.row(a).setZero();
+                    D.col(a).setZero();
+                }
+            }
+            const MatrixXcd X = Uk[ik] * D * Uk[ik].adjoint();
+            for (unsigned int r = 0; r < nk; ++r) x[r] += std::conj(kphase[ik][r]) * X;
         }
-        const MatrixXcd X = Uk[ikg] * D * Uk[ikg].adjoint();
-        MatrixXcd Z;
-        quartic_rs->apply(X, Z);
-        MatrixXcd F = Uk[ikg].adjoint() * Z * Uk[ikg];
-        for (Index a = 0; a < ns; ++a) {
-            if (!is_acoustic_gamma_harm[a]) continue;
-            F.row(a).setZero();
-            F.col(a).setZero();
+        for (auto &m: x) m /= static_cast<double>(nk);
+        quartic_rs->apply(x, z);
+        for (unsigned int ik = 0; ik < nk; ++ik) {
+            MatrixXcd Z = MatrixXcd::Zero(ns, ns);
+            for (unsigned int r = 0; r < nk; ++r) Z += kphase[ik][r] * z[r];
+            MatrixXcd F = Uk[ik].adjoint() * Z * Uk[ik];
+            if (ik == ikg) {
+                for (Index a = 0; a < ns; ++a) {
+                    if (!is_acoustic_gamma_harm[a]) continue;
+                    F.row(a).setZero();
+                    F.col(a).setZero();
+                }
+            }
+            Map<MatrixXcdRow>(f_out + static_cast<size_t>(ik) * ns2, ns, ns) = F;
         }
-        Map<MatrixXcdRow>(f_out, ns, ns) = F;
     };
 
     // BUBBLE_FD_CHECK: the real-space ladder against the V4 service on fixed
     // inputs (random Hermitian, random general complex, one off-diagonal unit
-    // pair, random with acoustic components); both must give the same numbers.
-    if (report && bubble_fd_check && nk == 1) {
+    // pair, random with acoustic components) at every k; compared on the
+    // irreducible k-points the service returns.
+    if (report && bubble_fd_check) {
         const Index m = 4;
-        std::vector<cplx> din(static_cast<size_t>(m) * ns2), fv4(static_cast<size_t>(m) * ns2),
-            frs(static_cast<size_t>(m) * ns2);
+        const auto nirr = static_cast<size_t>(kmesh_coarse->nk_irred);
+        const size_t col = static_cast<size_t>(nk) * ns2;
+        std::vector<cplx> din(m * col), fv4(m * nirr * ns2), frs(m * col);
         std::mt19937 rng(20260927);
         std::normal_distribution<double> gauss(0.0, 1.0);
-        const auto block = [&](const Index c) { return Map<MatrixXcdRow>(din.data() + c * ns2, ns, ns); };
-        MatrixXcd R(ns, ns);
-        for (Index a = 0; a < ns; ++a)
-            for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), gauss(rng));
-        block(0) = 0.5 * (R + R.adjoint());
-        for (Index a = 0; a < ns; ++a)
-            for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), gauss(rng));
-        block(1) = R;
-        block(2).setZero();
-        if (nopt > 0) block(2)(optical[0], optical[nopt > 1 ? 1 : 0]) = cplx(1.0, 0.5);
-        for (Index a = 0; a < ns; ++a)
-            for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), 0.0);
-        block(3) = R;
+        for (Index c = 0; c < m; ++c) {
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                Map<MatrixXcdRow> D(din.data() + c * col + static_cast<size_t>(ik) * ns2, ns, ns);
+                MatrixXcd R(ns, ns);
+                for (Index a = 0; a < ns; ++a)
+                    for (Index b = 0; b < ns; ++b) R(a, b) = cplx(gauss(rng), c == 3 ? 0.0 : gauss(rng));
+                if (c == 0) D = 0.5 * (R + R.adjoint());
+                if (c == 1 || c == 3) D = R;
+                if (c == 2) {
+                    D.setZero();
+                    if (ik == ikg && nopt > 0) D(optical[0], optical[nopt > 1 ? 1 : 0]) = cplx(1.0, 0.5);
+                }
+            }
+        }
         v4_service->fmat_batch(din.data(), static_cast<size_t>(m), fv4.data());
         double diff = 0.0, scale = 0.0;
         for (Index c = 0; c < m; ++c) {
-            fmat_real_space(din.data() + c * ns2, frs.data() + c * ns2);
-            for (Index i = 0; i < ns2; ++i) {
-                diff = std::max(diff, std::abs(frs[c * ns2 + i] - fv4[c * ns2 + i]));
-                scale = std::max(scale, std::abs(fv4[c * ns2 + i]));
+            fmat_real_space(din.data() + c * col, frs.data() + c * col);
+            for (size_t ir = 0; ir < nirr; ++ir) {
+                const auto knum = kmesh_coarse->kpoint_irred_all[ir][0].knum;
+                const auto kd = static_cast<size_t>(kmap_coarse_to_dense[knum]);
+                for (Index i = 0; i < ns2; ++i) {
+                    const auto f4 = fv4[(c * nirr + ir) * ns2 + i];
+                    diff = std::max(diff, std::abs(frs[c * col + kd * ns2 + i] - f4));
+                    scale = std::max(scale, std::abs(f4));
+                }
             }
         }
         std::cout << "  BUBBLE_FD_CHECK: real-space quartic ladder vs V4 service: max |F_rs - F_v4| / max |F_v4| = "
                   << std::scientific << std::setprecision(3) << diff / std::max(scale, 1.0e-300) << " ("
-                  << quartic_rs->weight.size() << " folded FC4 entries)" << std::defaultfloat << '\n';
+                  << quartic_rs->weight.size() << " folded FC4 entries, " << nirr << " irreducible k)"
+                  << std::defaultfloat << '\n';
     }
 
     // ---- K = V4 T on blocks of right-hand sides (one batched V4 sweep)
@@ -343,17 +393,17 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     const auto apply_K = [&](const MatrixXcd &Yblk, MatrixXcd &out) {
         const auto m = static_cast<Index>(Yblk.cols());
         dmat.resize(static_cast<size_t>(m) * nk * ns2);
-        fout.resize(static_cast<size_t>(m) * ns2);
+        fout.resize(static_cast<size_t>(m) * nk * ns2);
 #pragma omp parallel for schedule(dynamic, 1)
         for (Index c = 0; c < m; ++c) apply_T(Yblk.col(c).data(), dmat.data() + static_cast<size_t>(c) * nk * ns2);
         if (bubble_ladder == 2) {
 #pragma omp parallel for schedule(dynamic, 1)
-            for (Index c = 0; c < m; ++c) fmat_real_space(dmat.data() + c * nk * ns2, fout.data() + c * ns2);
+            for (Index c = 0; c < m; ++c) fmat_real_space(dmat.data() + c * nk * ns2, fout.data() + c * nk * ns2);
         } else {
             v4_service->fmat_batch(dmat.data(), static_cast<size_t>(m), fout.data());
         }
-        out.resize(ns2, m);
-        for (Index c = 0; c < m; ++c) out.col(c) = Map<const VectorXcd>(fout.data() + c * ns2, ns2);
+        out.resize(nk * ns2, m);
+        for (Index c = 0; c < m; ++c) out.col(c) = Map<const VectorXcd>(fout.data() + c * nk * ns2, nk * ns2);
         if (project) {
 #pragma omp parallel for schedule(dynamic, 1)
             for (Index c = 0; c < m; ++c) apply_P(out.col(c).data());
@@ -361,13 +411,19 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     };
 
     // ---- sources B_j and the solve, in chunks of right-hand sides that bound
-    //      the memory: Krylov basis and work blocks (restart + 4) plus the dense
-    //      D and response blocks (2 nk), replicated on every rank for the latter
+    //      the memory: per right-hand side the Krylov basis (restart + 1), B, Y,
+    //      KY, R and the D and response blocks, each nk ns^2; the real-space
+    //      ladder also holds x and z (2 blocks) per OpenMP thread
     const auto four_n = 4.0 * static_cast<double>(nk);
     const int restart = 30, max_restarts = 60;
-    const double bytes_per_rhs =
-        (static_cast<double>(restart + 4) + 2.0 * static_cast<double>(nk)) * static_cast<double>(ns2) * sizeof(cplx);
-    const auto chunk = std::max<Index>(1, static_cast<Index>(8.0e9 / bytes_per_rhs));
+    const double block_bytes = static_cast<double>(nk) * static_cast<double>(ns2) * sizeof(cplx);
+    int nthreads = 1;
+#ifdef _OPENMP
+    nthreads = omp_get_max_threads();
+#endif
+    const double fixed_bytes = bubble_ladder == 2 ? 2.0 * nthreads * block_bytes : 0.0;
+    const auto chunk =
+        std::max<Index>(1, static_cast<Index>(std::max(0.0, 8.0e9 - fixed_bytes) / ((restart + 7.0) * block_bytes)));
 
     MatrixXd A(nopt, nopt);
     const MatrixXcd F_gamma =
@@ -383,13 +439,24 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     const bool with_strain = uses_full_strain_derivatives(ws.relax_mode);
     const Index nv = with_strain ? 6 : 0;
     const Index ntot = nopt + nv;
-    std::vector<MatrixXcd> Vstrain;
+    std::vector<std::vector<MatrixXcd>> Vstrain(nv); // [m][k]
     for (Index m = 0; m < nv; ++m) {
         const auto [i, j] = strain_state_pair(m);
-        Vstrain.push_back(strain_vertex(*ws.del_v_strain, solved_state.u_tensor, solved_state.q0, 3 * i + j, ikg, nk));
-        if (i != j) {
-            Vstrain.back() +=
-                strain_vertex(*ws.del_v_strain, solved_state.u_tensor, solved_state.q0, 3 * j + i, ikg, nk);
+        for (unsigned int ik = 0; ik < nk; ++ik) {
+            Vstrain[m].push_back(strain_vertex(*ws.del_v_strain,
+                                               solved_state.u_tensor,
+                                               solved_state.q0,
+                                               3 * i + j,
+                                               static_cast<int>(ik),
+                                               static_cast<int>(nk)));
+            if (i != j) {
+                Vstrain[m][ik] += strain_vertex(*ws.del_v_strain,
+                                                solved_state.u_tensor,
+                                                solved_state.q0,
+                                                3 * j + i,
+                                                static_cast<int>(ik),
+                                                static_cast<int>(nk));
+            }
         }
     }
     const auto factor2 = 1.0 / four_n;
@@ -506,13 +573,17 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     std::vector<cplx> dG(static_cast<size_t>(nk) * ns2);
     for (Index j0 = 0; j0 < ntot; j0 += chunk) {
         const auto m = std::min(chunk, ntot - j0);
-        MatrixXcd B(ns2, m);
+        // sources at every k: dPhi_k/dq_j = 4N v3_renorm[k][j]^T, dPhi_k/dv_m = M_k
+        MatrixXcd B(static_cast<Index>(nk) * ns2, m);
         for (Index c = 0; c < m; ++c) {
             const auto col = j0 + c;
-            for (Index a = 0; a < ns; ++a) {
-                for (Index b = 0; b < ns; ++b) {
-                    B(a * ns + b, c) =
-                        col < nopt ? four_n * ws.v3_renorm[ikg][optical[col]][b * ns + a] : Vstrain[col - nopt](a, b);
+            for (unsigned int ik = 0; ik < nk; ++ik) {
+                const auto off = static_cast<Index>(ik) * ns2;
+                for (Index a = 0; a < ns; ++a) {
+                    for (Index b = 0; b < ns; ++b) {
+                        B(off + a * ns + b, c) = col < nopt ? four_n * ws.v3_renorm[ik][optical[col]][b * ns + a]
+                                                            : Vstrain[col - nopt][ik](a, b);
+                    }
                 }
             }
         }
@@ -542,9 +613,11 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
                         for (Index ab = 0; ab < ns2; ++ab) resp += v3[ab] * g[ab];
                     }
                 } else {
-                    // stress: sum_ab M(a,b) G(b,a) / (4N), at the single (Gamma) point
-                    const Map<const MatrixXcdRow> dGk(dG.data(), ns, ns);
-                    resp = factor2 * Vstrain[i - nopt].cwiseProduct(dGk.transpose()).sum();
+                    // stress: sum_k sum_ab M_k(a,b) dG_k(b,a) / (4N)
+                    for (unsigned int ik = 0; ik < nk; ++ik) {
+                        const Map<const MatrixXcdRow> dGk(dG.data() + static_cast<size_t>(ik) * ns2, ns, ns);
+                        resp += factor2 * Vstrain[i - nopt][ik].cwiseProduct(dGk.transpose()).sum();
+                    }
                 }
                 J(i, j0 + c) = E(i, j0 + c) + resp.real();
             }
@@ -634,10 +707,18 @@ void Scph::write_fe_state_h5(const NDArray<std::complex<double>, 4> &delta_dymat
     // The SCPH state file again, with the Gamma correction J - A of the
     // free-energy curvature added to the SCPH one. Temperatures without a
     // curvature are flagged unconverged so that consumers refuse them.
+    if (kmesh_coarse->nk > 1) {
+        // ponytail: Gamma-only correction; a mesh needs every Q (finite-Q Hessian) before this file is meaningful
+        if (run.my_rank == 0) {
+            std::cout << "\n PREFIX.scph_fe.h5 is not written on a k-mesh: the curvature correction is known at"
+                         " Gamma only.\n";
+        }
+        return;
+    }
     const auto ns = dynamical->neval;
     NDArray<std::complex<double>, 4> delta_fe;
     delta_fe.resize(NT, ns, ns, kmesh_coarse->nk);
-    const auto ik_gamma = 0u; // KMESH_INTERPOLATE = 1 1 1
+    const auto ik_gamma = 0u; // KMESH_INTERPOLATE = 1 1 1 here
     const auto saved_flags = converged_scph_temp;
     std::string missing;
     for (unsigned int iT = 0; iT < NT; ++iT) {

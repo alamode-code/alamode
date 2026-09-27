@@ -800,11 +800,16 @@ void Scph::exec_scph()
         if (relax_mode == RelaxationStrMode::None) {
             exit("exec_scph", "BUBBLE = 4 is computed along a structural optimization; set RELAX_STR != 0.");
         }
-        if (kmesh_coarse->nk != 1 || kmesh_dense->nk != 1) {
+        if (kmesh_coarse->nk_i[0] != kmesh_dense->nk_i[0] || kmesh_coarse->nk_i[1] != kmesh_dense->nk_i[1] ||
+            kmesh_coarse->nk_i[2] != kmesh_dense->nk_i[2])
+        {
             exit("exec_scph",
-                 "BUBBLE = 4 needs KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1 in this version\n"
-                 " (use a supercell; the curvature is then exact for the SCP free energy on that mesh).");
+                 "BUBBLE = 4 needs matched meshes, KMESH_SCPH = KMESH_INTERPOLATE (use a supercell or a mesh;\n"
+                 " the curvature is then exact for the SCP free energy on that mesh).");
         }
+        // the V4 service returns the irreducible k-points only, which symmetry-breaking
+        // responses cannot use: a k-mesh takes the real-space quartic ladder
+        if (kmesh_dense->nk > 1 && bubble_ladder == 1) bubble_ladder = 2;
         if (restart_scph) {
             exit("exec_scph",
                  "BUBBLE = 4 needs the V4 service and the renormalized cubic IFCs of the running\n"
@@ -817,6 +822,7 @@ void Scph::exec_scph()
             // outputs of an earlier run with this PREFIX must not survive a run that writes none
             std::remove((run.job_title + ".scph_hessian").c_str());
             std::remove((run.job_title + ".scph_hessian_displace").c_str());
+            std::remove((run.job_title + ".scph_fe.h5").c_str());
         }
     }
     if (run.my_rank == 0 && relaxation->bubble_hess) {
