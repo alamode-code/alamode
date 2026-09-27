@@ -53,6 +53,7 @@
 #include "interpolation.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
+#include "quartic_real_space.h"
 #include "relaxation.h"
 #include "scph.h"
 #include "scph_hessian_kernels.h"
@@ -61,6 +62,8 @@
 #include "v4_service.h"
 
 using namespace PHON_NS;
+using quartic_rs::CubicMesh;
+using quartic_rs::QuarticMesh;
 
 namespace
 {
@@ -96,130 +99,6 @@ Eigen::VectorXd diagonal_scale(const Eigen::MatrixXd &M)
     return d;
 }
 
-// Cell of a lattice offset (integer lattice coordinates) on a k-mesh of
-// n1 x n2 x n3 points, reduced modulo the mesh.
-int mesh_cell(const std::array<int, 3> &nki, const Eigen::Vector3d &v)
-{
-    int r = 0;
-    for (int d = 0; d < 3; ++d) {
-        auto n = static_cast<int>(std::lround(v[d])) % nki[d];
-        if (n < 0) n += nki[d];
-        r = r * nki[d] + n;
-    }
-    return r;
-}
-
-// Mass-weighted IFCs of order n folded onto the cells of a k-mesh (steps A-C
-// of FINITE_Q_HESSIAN_PLAN.md): every stored entry, divided by the square
-// roots of its masses, goes to the slot of its atom indices and of the cell
-// offsets of legs 2..n relative to the first leg (reduced modulo the mesh);
-// entries that land in one slot add up. This is the element-wise sum from
-// which the reciprocal-space vertices are built, since the phases of the mesh
-// do not see the reduction. slot = (index[0..n-1], cell[0..n-2]).
-template <int N>
-struct FoldedIfcs
-{
-    unsigned int ns = 0;
-    unsigned int nk = 0;
-    std::array<int, 3> nki{};
-    std::vector<std::array<unsigned int, 2 * N - 1>> slot;
-    std::vector<double> weight;
-
-    FoldedIfcs(const std::vector<PHON_NS::FcsArrayWithCell> &fcs, const std::vector<double> &invsqrt_mass,
-               const unsigned int ns_in, const unsigned int *nk_in) : ns(ns_in)
-    {
-        nki = {static_cast<int>(nk_in[0]), static_cast<int>(nk_in[1]), static_cast<int>(nk_in[2])};
-        nk = static_cast<unsigned int>(nki[0] * nki[1] * nki[2]);
-        if (N * std::log2(static_cast<double>(ns)) + (N - 1) * std::log2(static_cast<double>(nk)) >= 63.0) {
-            PHON_NS::exit("FoldedIfcs", "the IFC slots of this cell and k-mesh do not fit a 64-bit key.");
-        }
-        std::unordered_map<unsigned long long, double> sum;
-        sum.reserve(fcs.size());
-        for (const auto &e: fcs) {
-            unsigned long long key = 0;
-            double w = e.fcs_val;
-            for (int n = 0; n < N; ++n) {
-                key = key * ns + e.pairs[n].index;
-                w *= invsqrt_mass[e.pairs[n].index / 3];
-            }
-            for (int n = 0; n < N - 1; ++n) key = key * nk + mesh_cell(nki, e.relvecs[n]);
-            sum[key] += w;
-        }
-        slot.reserve(sum.size());
-        weight.reserve(sum.size());
-        for (const auto &[key, w]: sum) {
-            auto r = key;
-            std::array<unsigned int, 2 * N - 1> id{};
-            for (int d = 2 * N - 2; d >= 0; --d) {
-                const unsigned long long base = d >= N ? nk : ns;
-                id[d] = static_cast<unsigned int>(r % base);
-                r /= base;
-            }
-            slot.push_back(id);
-            weight.push_back(w);
-        }
-    }
-};
-
-// The quartic ladder in real space with momentum transfer Q:
-//   z_ij(R_j) = (1/4) sum W_ijlm(R_j, R_l, R_m) e^{iQ.R_l} x_lm(R_m - R_l)
-// (Cartesian, mass weighted, unconjugated; x and z hold one ns x ns matrix per
-// cell of the mesh; qphase[r] = e^{2 pi i Q.R_r}, nullptr for Q = 0).
-struct QuarticMesh: FoldedIfcs<4>
-{
-    std::vector<unsigned int> cell_lm; // cell(R_m - R_l) per slot
-
-    QuarticMesh(const std::vector<PHON_NS::FcsArrayWithCell> &fcs, const std::vector<double> &invsqrt_mass,
-                const unsigned int ns_in, const unsigned int *nk_in) : FoldedIfcs<4>(fcs, invsqrt_mass, ns_in, nk_in)
-    {
-        cell_lm.reserve(slot.size());
-        for (const auto &id: slot) {
-            cell_lm.push_back(static_cast<unsigned int>(mesh_cell(nki, cell_vector(id[6]) - cell_vector(id[5]))));
-        }
-    }
-
-    void apply(const std::vector<Eigen::MatrixXcd> &x, std::vector<Eigen::MatrixXcd> &z,
-               const std::vector<cplx> *qphase = nullptr) const
-    {
-        z.assign(nk, Eigen::MatrixXcd::Zero(ns, ns));
-        for (size_t e = 0; e < weight.size(); ++e) {
-            const auto &id = slot[e];
-            // slot: i, j, l, m, cell(R_j), cell(R_l), cell(R_m)
-            const auto rlm = cell_lm[e];
-            const cplx w = qphase ? weight[e] * (*qphase)[id[5]] : cplx(weight[e], 0.0);
-            z[id[4]](id[0], id[1]) += w * x[rlm](id[2], id[3]);
-        }
-        for (auto &m: z) m *= 0.25;
-    }
-
-    Eigen::Vector3d cell_vector(const unsigned int r) const
-    {
-        Eigen::Vector3d v;
-        auto rr = static_cast<int>(r);
-        for (int d = 2; d >= 0; --d) {
-            v[d] = rr % nki[d];
-            rr /= nki[d];
-        }
-        return v;
-    }
-};
-
-// The cubic source of a displacement pattern u(R) = eps e^{iQ.R} (mass
-// weighted): y_ij(R_j) = sum W_ijl(R_j, R_l) eps_l e^{iQ.R_l}, the change of
-// the (mass-weighted) harmonic IFCs Phi(i 0, j R_j) per unit amplitude.
-struct CubicMesh: FoldedIfcs<3>
-{
-    using FoldedIfcs<3>::FoldedIfcs;
-
-    void source(const Eigen::VectorXcd &eps, const std::vector<cplx> &qphase, std::vector<Eigen::MatrixXcd> &y) const
-    {
-        y.assign(nk, Eigen::MatrixXcd::Zero(ns, ns));
-        for (size_t e = 0; e < weight.size(); ++e) {
-            const auto &id = slot[e]; // i, j, l, cell(R_j), cell(R_l)
-            y[id[3]](id[0], id[1]) += weight[e] * eps[id[2]] * qphase[id[4]];
-        }
-    }
-};
 } // namespace
 
 bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStructureState &solved_state_in,
@@ -410,7 +289,7 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
     // inputs (random Hermitian, random general complex, one off-diagonal unit
     // pair, random with acoustic components) at every k; compared on the
     // irreducible k-points the service returns.
-    if (report && bubble_fd_check) {
+    if (report && bubble_fd_check && v4_real_space != 1) {
         const Index m = 4;
         const auto nirr = static_cast<size_t>(kmesh_coarse->nk_irred);
         const size_t col = static_cast<size_t>(nk) * ns2;

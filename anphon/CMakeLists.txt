@@ -193,6 +193,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/phonon_velocity.cpp
             ${PROJECT_SOURCE_DIR}/optimizers.cpp
             ${PROJECT_SOURCE_DIR}/qha.cpp
+            ${PROJECT_SOURCE_DIR}/quartic_real_space.cpp
             ${PROJECT_SOURCE_DIR}/relaxation.cpp
             ${PROJECT_SOURCE_DIR}/scph.cpp
             ${PROJECT_SOURCE_DIR}/scph_bubble.cpp
@@ -249,6 +250,7 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/optimizers.h
             ${PROJECT_SOURCE_DIR}/q0_contraction.h
             ${PROJECT_SOURCE_DIR}/qha.h
+            ${PROJECT_SOURCE_DIR}/quartic_real_space.h
             ${PROJECT_SOURCE_DIR}/relaxation.h
             ${PROJECT_SOURCE_DIR}/scph.h
             ${PROJECT_SOURCE_DIR}/scph_hessian_kernels.h

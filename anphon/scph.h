@@ -37,6 +37,7 @@ public:
     // BUBBLE = 4 (free-energy Hessian): residual tolerance and debug switches
     double bubble_tol = 1.0e-8;
     int bubble_ladder = 1;
+    using ScphQhaCommon::v4_real_space; // V4_REAL_SPACE
     int bubble_fd_check = 0;
 
     using ScphQhaCommon::use_h5_io;

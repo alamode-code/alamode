@@ -774,6 +774,7 @@ void Scph::exec_scph()
     MPI_Bcast(&selfenergy_offdiagonal, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     MPI_Bcast(&ialgo, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     MPI_Bcast(&imix_scph, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&v4_real_space, 1, MPI_INT, 0, MPI_COMM_WORLD); // every rank must skip the V4 build alike
 
     delta_dymat_scph.resize(NT, ns, ns, kmesh_coarse->nk);
     delta_harmonic_dymat_renormalize.resize(NT, ns, ns, kmesh_coarse->nk);
@@ -808,8 +809,9 @@ void Scph::exec_scph()
                  " the curvature is then exact for the SCP free energy on that mesh).");
         }
         // the V4 service returns the irreducible k-points only, which symmetry-breaking
-        // responses cannot use: a k-mesh takes the real-space quartic ladder
-        if (kmesh_dense->nk > 1 && bubble_ladder == 1) bubble_ladder = 2;
+        // responses cannot use: a k-mesh takes the real-space quartic ladder, as does
+        // a run without the V4 tensor
+        if ((kmesh_dense->nk > 1 || v4_real_space == 1) && bubble_ladder == 1) bubble_ladder = 2;
         if (restart_scph) {
             exit("exec_scph",
                  "BUBBLE = 4 needs the V4 service and the renormalized cubic IFCs of the running\n"
@@ -1680,7 +1682,7 @@ void Scph::update_fmat_with_v4(const std::vector<Eigen::MatrixXcd> &Fmat0,
             }
         }
     }
-    v4_service->fmat(dvec.data(), fmat_all);
+    fmat_contract(dvec.data(), fmat_all);
 
     if (offdiag) {
         // Hermitian completion of the upper triangle
@@ -2027,7 +2029,7 @@ void Scph::compute_anharmonic_frequency(double **omega2_out, std::complex<double
             // Diagonalize and symmetrize
             diagonalize_and_symmetrize(Fmat,
                                        evec_initial,
-                                       v4_service->v4_diag(),
+                                       v4_diag(),
                                        ik,
                                        knum,
                                        knum_interpolate,
@@ -2327,7 +2329,7 @@ void Scph::compute_anharmonic_frequency_diis(double **omega2_out, std::complex<d
             const auto time_diag_start = timer->elapsed();
             diagonalize_and_symmetrize(Fmat,
                                        evec_initial,
-                                       v4_service->v4_diag(),
+                                       v4_diag(),
                                        ik,
                                        knum,
                                        knum_interpolate,
