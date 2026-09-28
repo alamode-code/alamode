@@ -1,5 +1,6 @@
 #include "ifc_derivative.h"
 #include <algorithm>
+#include <array>
 #include <boost/sort/block_indirect_sort/block_indirect_sort.hpp>
 #include <cmath>
 #include <cstdlib>
@@ -1632,7 +1633,7 @@ void DerivativeIFC::process_strain_harmonic_set(
 
     std::vector<FcsClassExtent> fc2_tmp;
 
-    // Shift table for Dynamical::calc_analytic_k; fc2_tmp only ever uses the home cell (cell_s = 0).
+    // Shift table for Dynamical::calc_analytic_k (fc2_tmp places each partner at its minimum-distance images).
     NDArray<double, 2> xshift_s;
     build_27cell_shift_table(xshift_s);
 
@@ -1936,19 +1937,66 @@ void DerivativeIFC::process_strain_harmonic_set(
     dymat_new.resize(ns, ns, nk_interpolate);
     dymat_tmp.resize(ns, ns);
 
+    // The folded coefficients know the partner only modulo the finite-difference supercell. Spread each one equally
+    // over the partner's shortest images from the home atom: a single in-box image (cell_s = 0) is exact on the
+    // supercell's own q mesh but breaks D(q) = D(q)^dagger elsewhere (KMESH_INTERPOLATE != that supercell).
+    const auto &scell = system_.get_supercell(0);
+    std::vector<std::vector<std::vector<int>>> min_images(natmin, std::vector<std::vector<int>>(nat));
+    for (int iat = 0; iat < natmin; ++iat) {
+        const auto iat_s = system_.get_map_p2s(0)[iat][0];
+        for (int jat = 0; jat < nat; ++jat) {
+            std::array<double, 27> dist{};
+            for (int icell = 0; icell < 27; ++icell) {
+                Eigen::Vector3d vec;
+                for (int k = 0; k < 3; ++k) {
+                    vec[k] = scell.x_fractional(jat, k) + xshift_s[icell][k] - scell.x_fractional(iat_s, k);
+                }
+                dist[icell] = (scell.lattice_vector * vec).norm();
+            }
+            const auto dmin = *std::min_element(dist.begin(), dist.end());
+            for (int icell = 0; icell < 27; ++icell) {
+                if (dist[icell] < dmin + eps6) min_images[iat][jat].push_back(icell);
+            }
+            // calc_analytic_k only knows the 27 neighbouring cells; for a strongly skewed supercell a shortest image
+            // can lie further out, so check the shifts up to +-3 and refuse rather than silently use a longer one.
+            // (ponytail: +-3 covers any reasonably reduced cell; a Minkowski-reduced basis would make it a proof)
+            for (int n1 = -3; n1 <= 3; ++n1) {
+                for (int n2 = -3; n2 <= 3; ++n2) {
+                    for (int n3 = -3; n3 <= 3; ++n3) {
+                        if (std::abs(n1) <= 1 && std::abs(n2) <= 1 && std::abs(n3) <= 1) continue;
+                        Eigen::Vector3d vec;
+                        const int nn[3] = {n1, n2, n3};
+                        for (int k = 0; k < 3; ++k) {
+                            vec[k] = scell.x_fractional(jat, k) + nn[k] - scell.x_fractional(iat_s, k);
+                        }
+                        if ((scell.lattice_vector * vec).norm() < dmin + eps6) {
+                            exit("calculate_delv2_delumn_finite_difference",
+                                 "A shortest image of the strain-harmonic coupling lies beyond the neighbouring\n"
+                                 " supercells (strongly skewed supercell). Use a reduced supercell basis.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
             fc2_tmp.clear();
             for (i1 = 0; i1 < natmin * 3; i1++) {
                 for (i2 = 0; i2 < nat * 3; i2++) {
-                    FcsClassExtent fce_tmp;
-                    fce_tmp.atm1 = i1 / 3;
-                    fce_tmp.atm2 = i2 / 3;
-                    fce_tmp.xyz1 = i1 % 3;
-                    fce_tmp.xyz2 = i2 % 3;
-                    fce_tmp.cell_s = 0;
-                    fce_tmp.fcs_val = dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2];
-                    fc2_tmp.push_back(fce_tmp);
+                    const auto &images = min_images[i1 / 3][i2 / 3];
+                    const auto weight = 1.0 / static_cast<double>(images.size());
+                    for (const auto icell: images) {
+                        FcsClassExtent fce_tmp;
+                        fce_tmp.atm1 = i1 / 3;
+                        fce_tmp.atm2 = i2 / 3;
+                        fce_tmp.xyz1 = i1 % 3;
+                        fce_tmp.xyz2 = i2 % 3;
+                        fce_tmp.cell_s = icell;
+                        fce_tmp.fcs_val = dphi2_dumn_realspace_symm[ixyz1][ixyz2][i1][i2] * weight;
+                        fc2_tmp.push_back(fce_tmp);
+                    }
                 }
             }
 
