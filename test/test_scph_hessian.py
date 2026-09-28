@@ -10,7 +10,15 @@ between Gamma and Z do not vanish).
   stress (static bubble + quartic ladder, solved by GMRES; displacements and
   the six strain components) must match central finite differences of them
   (BUBBLE_FD_CHECK = 1), block by block, and be symmetric; without the ladder
-  (BUBBLE_LADDER = 0) the finite differences must NOT be matched. Gamma phonons
+  (BUBBLE_LADDER = 0) the finite differences must NOT be matched. The
+  real-space quartic ladder (BUBBLE_LADDER = 2) must equal the V4 service,
+  directly and through the curvature. On the 5-atom cell with matched k-meshes
+  1 1 2 and 1 1 3 (complex k, not commensurate with the strain supercells) the
+  same finite-difference check must pass block by block, and the finite-Q path
+  at Q = 0 must reproduce the Gamma sources and J_qq. The finite-Q curvature
+  (5-atom cell, meshes 1 1 2 and 1 1 4) must fold onto the Gamma and zone
+  boundary curvature of the 10-atom cell, and phonons from PREFIX.scph_fe.h5 at
+  Q = 1/4, 3/4 must be the curvature ones. Gamma phonons
   from PREFIX.scph_fe.h5 (DFC2FILE) must give the curvature frequencies.
 - At the cubic structure in its 30 K, -4 GPa cell (fixed, RELAX_STR = 4,
   reached from 300 K; a saddle the SCP loop keeps, all SCPH frequencies
@@ -21,12 +29,12 @@ between Gamma and Z do not vanish).
   the P1 start reaches the default minimum (atoms and cell) in no more steps,
   also on 2 ranks, and BFGS with the projected Hessian (the SCP loop keeps
   P4mm) returns a small P4mm displacement to the cubic structure.
-- At a polar minimum (9 % tetragonal strain, 100 K) the explicit
+- At a polar minimum (9 % tetragonal strain, 300 K) the explicit
   stress-displacement block, differentiated independently
   (BUBBLE_FD_CHECK = 2), must equal the transposed force-strain block that J
   uses.
 - A 2-rank run (batched V4 contraction over distributed rows) must reproduce
-  the serial curvature, and its ordinary SCPH outputs (no FD check) must equal
+  the serial curvature (also on the 1 1 3 mesh), and its ordinary SCPH outputs (no FD check) must equal
   those of the FD-checked run, whose SCP state is restored.
 """
 
@@ -50,7 +58,9 @@ def run_anphon(cmd, logfile):
         ).returncode
 
 
-def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
+def write_input(
+    prefix, extra, temp=300, pressure=None, rattle=True, mesh="1 1 1", ncell=2
+):
     with open("BTO_scph_thermo.in") as f:
         src = f.read()
     src = re.sub(r"PREFIX\s*=\s*\S+", "PREFIX = %s" % prefix, src, count=1)
@@ -58,8 +68,10 @@ def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
     src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = %g" % temp, src, count=1)
     if pressure is not None:
         src = src.replace("&relax", "&relax\n  STAT_PRESSURE = %g" % pressure, 1)
-    src = re.sub(r"KMESH_INTERPOLATE\s*=.*", "KMESH_INTERPOLATE = 1 1 1", src, count=1)
-    src = re.sub(r"KMESH_SCPH\s*=.*", "KMESH_SCPH = 1 1 1", src, count=1)
+    src = re.sub(
+        r"KMESH_INTERPOLATE\s*=.*", "KMESH_INTERPOLATE = " + mesh, src, count=1
+    )
+    src = re.sub(r"KMESH_SCPH\s*=.*", "KMESH_SCPH = " + mesh, src, count=1)
     src = re.sub(
         r"MAXITER\s*=\s*\S+", "MAXITER = 5000\n  TOL_SCPH = 1.0e-12", src, count=1
     )
@@ -70,7 +82,7 @@ def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
     head = head.replace(
         "&scph",
         "&cell\n 1.0\n %.10f 0.0 0.0\n 0.0 %.10f 0.0\n 0.0 0.0 %.10f\n/\n&scph"
-        % (A, A, 2 * A),
+        % (A, A, ncell * A),
         1,
     )
     rng = random.Random(11)
@@ -80,12 +92,12 @@ def write_input(prefix, extra, temp=300, pressure=None, rattle=True):
         "  %.11f" % A,
         "  1.0 0.0 0.0",
         "  0.0 1.0 0.0",
-        "  0.0 0.0 2.0",
+        "  0.0 0.0 %d.0" % ncell,
     ]
-    for _ in range(10):
+    for _ in range(5 * ncell):
         amp = 2e-3 if rattle else 0.0
         lines.append(" ".join("%.6e" % (rng.uniform(-1, 1) * amp) for _ in range(3)))
-    lines.append("/\n\n&kpoint\n  2\n  8 8 4\n/\n")
+    lines.append("/\n\n&kpoint\n  2\n  8 8 %d\n/\n" % (8 // ncell))
     with open(prefix + ".in", "w") as f:
         f.write(head + "\n".join(lines))
 
@@ -128,6 +140,20 @@ def curvature(prefix):
     block, rows = curvature_rows(prefix)
     asym = float(re.search(r"asymmetry = (\S+)", block).group(1))
     return asym, rows[:, 2]
+
+
+def curvature_q(prefix):
+    """Free-energy curvature frequencies per Q_z of the last temperature block of
+    PREFIX.scph_hessian_q."""
+    block = open(prefix + ".scph_hessian_q").read().split("# T = ")[-1]
+    out, cur = {}, None
+    for line in block.splitlines():
+        if line.startswith("# Q ="):
+            cur = round(float(line.split()[5]), 6)
+            out[cur] = []
+        elif line.strip() and not line.startswith("#") and cur is not None:
+            out[cur].append(float(line.split()[2]))
+    return out
 
 
 def relaxed_elastic(prefix):
@@ -184,6 +210,131 @@ def main():
         )
         ok = False
     asym, w_full = curvature("full")
+    # the real-space quartic ladder (BUBBLE_LADDER = 2) is the same operator as
+    # the V4 service: checked directly on fixed inputs, and through J
+    with open("full.log") as f:
+        m = re.search(r"real-space quartic ladder vs V4 service: .*? = (\S+)", f.read())
+    if m is None or not float(m.group(1)) < 1.0e-12:
+        print("real-space ladder vs V4 service: %s" % (m.group(1) if m else None))
+        ok = False
+    write_input("rsladder", "  BUBBLE_LADDER = 2\n")
+    if run_anphon([anphonbin, "rsladder.in"], "rsladder.log"):
+        print("real-space ladder run failed, see %s/rsladder.log" % WORKDIR)
+        return 1
+    _, w_rs = curvature("rsladder")
+    if w_rs.shape != w_full.shape or not np.allclose(w_rs, w_full, rtol=0.0, atol=1e-6):
+        print("curvature with the real-space ladder differs from the V4 one")
+        ok = False
+    # matched k-meshes (N > 1: the real-space ladder by default) on the 5-atom cell: 1 1 3 has complex k
+    # and is not commensurate with the 2x2x2 strain supercells (Hermitian part of dV2/du)
+    for mesh in ("1 1 2", "1 1 3"):
+        prefix = "mesh" + mesh.replace(" ", "")
+        write_input(prefix, "  BUBBLE_FD_CHECK = 1\n", mesh=mesh, ncell=1)
+        if run_anphon([anphonbin, prefix + ".in"], prefix + ".log"):
+            print("%s run failed, see %s/%s.log" % (prefix, WORKDIR, prefix))
+            return 1
+        with open(prefix + ".log") as f:
+            m = re.search(
+                r"real-space quartic ladder vs V4 service: .*? = (\S+)", f.read()
+            )
+        # the coupling blocks relative to themselves only where they are sizeable
+        # (1 1 3: ~1e-2 of J; 1 1 2: ~1e-5, checked relative to the whole J)
+        own = mesh == "1 1 3"
+        blocks = {
+            b: fd_mismatch(prefix + ".log", b, relative=own or b in ("qq", "uu"))
+            for b in ("qq", "qu", "uq", "uu")
+        }
+        limits = {
+            "qq": 1.0e-8,
+            "qu": 1.0e-4 if own else 1.0e-6,
+            "uq": 1.0e-4 if own else 1.0e-6,
+            "uu": 1.0e-6,
+        }
+        if (
+            m is None
+            or not float(m.group(1)) < 1.0e-12
+            or any(blocks[b] is None or not blocks[b] < limits[b] for b in limits)
+        ):
+            print(
+                "mesh %s: operator %s, FD per block %s"
+                % (mesh, m.group(1) if m else None, blocks)
+            )
+            ok = False
+    # the finite-Q path at Q = 0 against the Gamma construction (1 1 3 run)
+    with open("mesh113.log") as f:
+        text = f.read()
+    q0_checks = [
+        float(x)
+        for x in re.findall(
+            r"finite-Q (?:sources|curvature) at Q = 0 vs .*? = (\S+)", text
+        )
+    ]
+    if len(q0_checks) != 2 or not max(q0_checks) < 1.0e-10:
+        print("finite-Q path at Q = 0 vs the Gamma construction: %s" % q0_checks)
+        ok = False
+    # finite Q folds onto Gamma of a supercell: the cubic structure (reached from
+    # a small P4mm start, fixed cell) of the 5-atom cell on 1 1 2 and 1 1 4
+    # against the 10-atom cell on 1 1 1 and 1 1 2. Q = 1/4 has complex phases;
+    # the 10-atom cell sees it at its zone boundary with real ones.
+    for small, big, mesh_s, mesh_b in (
+        ("f5m2", "f10m1", "1 1 2", "1 1 1"),
+        ("f5m4", "f10m2", "1 1 4", "1 1 2"),
+    ):
+        for prefix, mesh, ncell in ((small, mesh_s, 1), (big, mesh_b, 2)):
+            write_input(prefix, "", mesh=mesh, ncell=ncell, rattle=False)
+            with open(prefix + ".in") as f:
+                src = f.read().replace("RELAX_STR = 2", "RELAX_STR = 1", 1)
+            head, disp = src.split("&displace\n")
+            lines = disp.split("\n")
+            for t in [1] if ncell == 1 else [2, 3]:  # Ti along z
+                lines[5 + t] = "0.0 0.0 1.0e-3"
+            with open(prefix + ".in", "w") as f:
+                f.write(head + "&displace\n" + "\n".join(lines))
+            if run_anphon([anphonbin, prefix + ".in"], prefix + ".log"):
+                print("%s run failed, see %s/%s.log" % (prefix, WORKDIR, prefix))
+                return 1
+    q_s = curvature_q("f5m2")
+    fold_2 = [
+        sorted(list(curvature("f5m2")[1]) + q_s[0.5]),
+        sorted(curvature("f10m1")[1]),
+    ]
+    q_s, q_b = curvature_q("f5m4"), curvature_q("f10m2")
+    fold_4 = [sorted(2 * q_s[0.25]), sorted(q_b[0.5])]
+    fold_4g = [
+        sorted(list(curvature("f5m4")[1]) + q_s[0.5]),
+        sorted(curvature("f10m2")[1]),
+    ]
+    for name, (a, b) in (("1/2", fold_2), ("1/4", fold_4), ("Gamma of 1 1 2", fold_4g)):
+        if len(a) != len(b) or not np.allclose(a, b, rtol=0.0, atol=1e-4):
+            print("finite Q does not fold onto the supercell (%s)" % name)
+            ok = False
+    # PREFIX.scph_fe.h5 on a mesh: phonons at its Q-points are the curvature ones
+    with open("f5m4.in") as f:
+        cell = "&cell" + f.read().split("&cell")[1].split("/")[0] + "/\n"
+    with open("feq.in", "w") as f:
+        f.write(
+            "&general\n PREFIX = feq\n MODE = phonons\n FCSFILE = cBTO222.h5\n"
+            " DFC2FILE = f5m4.scph_fe.h5\n FC2_TEMPERATURE = 300\n/\n%s"
+            "&kpoint\n 0\n 0 0 0.25\n 0 0 0.75\n/\n" % cell
+        )
+    if run_anphon([anphonbin, "feq.in"], "feq.log"):
+        print("phonon run from f5m4.scph_fe.h5 failed")
+        return 1
+    with open("feq.log") as f:
+        w = [
+            float(x)
+            for x in re.findall(r"^\s+\d+\s+(-?\d+\.\d+) cm\^-1", f.read(), re.M)
+        ]
+    ref = sorted(q_s[0.25])
+    if (
+        len(w) != 2 * len(ref)
+        or not np.allclose(sorted(w[: len(ref)]), ref, atol=1e-3)
+        or not np.allclose(sorted(w[len(ref) :]), ref, atol=1e-3)
+    ):
+        print(
+            "phonons from PREFIX.scph_fe.h5 at Q = 1/4, 3/4 are not the curvature ones"
+        )
+        ok = False
     # PREFIX.scph_fe.h5: Gamma phonons from it (DFC2FILE) must give the
     # free-energy curvature frequencies, those from the SCPH state the SCPH ones
     _, rows = curvature_rows("full")
@@ -238,6 +389,9 @@ def main():
     with open("saddle.in") as f:
         src = f.read()
     src = src.replace("RELAX_STR = 2", "RELAX_STR = 4\n  LOWER_TEMP = 1", 1)
+    # the SCP solve at 30 K is stiff (~2e4 iterations from the 300 K solution);
+    # within one structure step, so that it does not hinge on the platform
+    src = src.replace("MAXITER = 5000", "MAXITER = 30000", 1)
     src = re.sub(r"TMAX\s*=\s*\S+", "TMAX = 300", src, count=1)
     src = re.sub(r"DT\s*=\s*\S+", "DT = 270", src, count=1)
     src = re.sub(
@@ -432,17 +586,21 @@ def main():
     if not ok:
         return 1
 
-    # A polar minimum: the saddle cell stretched to 9 % along z, 100 K reached
-    # from 300 K. The explicit stress-displacement block, differentiated
-    # independently (BUBBLE_FD_CHECK = 2), must equal the transposed
-    # force-strain block that J uses, where that coupling is substantial.
+    # A polar minimum: the saddle cell stretched to 9 % along z at 300 K, from
+    # twice the exported direction (a small start relaxes to the P4/mmm saddle,
+    # which only roundoff can leave). The explicit stress-displacement block,
+    # differentiated independently (BUBBLE_FD_CHECK = 2), must equal the
+    # transposed force-strain block that J uses, where that coupling is substantial.
     with open("fixedhess.in") as f:
         src_p = f.read()
     src_p = src_p.replace("PREFIX = fixedhess", "PREFIX = polar", 1)
     src_p = src_p.replace("  BUBBLE_HESS = 1\n", "", 1)
     src_p = src_p.replace("  BUBBLE = 4", "  BUBBLE = 4\n  BUBBLE_FD_CHECK = 2", 1)
-    src_p = re.sub(r"TMIN\s*=\s*\S+", "TMIN = 100", src_p, count=1)
-    src_p = re.sub(r"DT\s*=\s*\S+", "DT = 200", src_p, count=1)
+    big = "\n".join(
+        " ".join("%.10e" % (10.0 * float(x)) for x in line.split())
+        for line in small.splitlines()
+    )
+    src_p = src_p.replace(small, big, 1)
     src_p = re.sub(
         r"&strain.*?\n/\n",
         "&strain\n-0.01 0.0 0.0\n0.0 -0.01 0.0\n0.0 0.0 0.09\n/\n",
@@ -487,6 +645,54 @@ def main():
             if a.shape != b.shape or not np.allclose(a, b, rtol=1e-6, atol=1e-10):
                 print("%s differs between the FD-checked and the plain run" % ext)
                 ok = False
+        # the real-space ladder on 2 ranks, with the full finite-difference check
+        write_input("np2rs", "  BUBBLE_LADDER = 2\n  BUBBLE_FD_CHECK = 1\n")
+        if run_anphon(["mpirun", "-np", "2", anphonbin, "np2rs.in"], "np2rs.log"):
+            print("2-rank real-space ladder run failed, see %s/np2rs.log" % WORKDIR)
+            return 1
+        with open("np2rs.log") as f:
+            m = re.search(
+                r"real-space quartic ladder vs V4 service: .*? = (\S+)", f.read()
+            )
+        qq = fd_mismatch("np2rs.log", "qq", relative=True)
+        uu = fd_mismatch("np2rs.log", "uu", relative=True)
+        _, w_np2rs = curvature("np2rs")
+        if (
+            m is None
+            or not float(m.group(1)) < 1.0e-12
+            or None in (qq, uu)
+            or not qq < 1.0e-8
+            or not uu < 1.0e-6
+            or w_np2rs.shape != w_full.shape
+            or not np.allclose(w_np2rs, w_full, rtol=1e-6)
+        ):
+            print(
+                "2-rank real-space ladder: operator %s, FD qq %s uu %s"
+                % (m.group(1) if m else None, qq, uu)
+            )
+            ok = False
+        # a k-mesh on 2 ranks (complex k): the serial 1 1 3 curvature and FD check
+        write_input("np2mesh", "  BUBBLE_FD_CHECK = 1\n", mesh="1 1 3", ncell=1)
+        if run_anphon(["mpirun", "-np", "2", anphonbin, "np2mesh.in"], "np2mesh.log"):
+            print("2-rank k-mesh run failed, see %s/np2mesh.log" % WORKDIR)
+            return 1
+        blocks = {
+            b: fd_mismatch("np2mesh.log", b, relative=True)
+            for b in ("qq", "qu", "uq", "uu")
+        }
+        limits = {"qq": 1.0e-8, "qu": 1.0e-4, "uq": 1.0e-4, "uu": 1.0e-6}
+        _, w_mesh = curvature("mesh113")
+        _, w_np2mesh = curvature("np2mesh")
+        q_serial, q_np2 = curvature_q("mesh113"), curvature_q("np2mesh")
+        if (
+            any(blocks[b] is None or not blocks[b] < limits[b] for b in limits)
+            or w_np2mesh.shape != w_mesh.shape
+            or not np.allclose(w_np2mesh, w_mesh, rtol=1e-6)
+            or sorted(q_serial) != sorted(q_np2)
+            or any(not np.allclose(q_np2[q], q_serial[q], rtol=1e-6) for q in q_serial)
+        ):
+            print("2-rank k-mesh: FD per block %s" % blocks)
+            ok = False
         print("BUBBLE = 4 on 2 MPI ranks --> %s" % ("pass" if ok else "fail"))
     return 0 if ok else 1
 

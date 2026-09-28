@@ -30,6 +30,7 @@
 #include "mpi_common.h"
 #include "ndarray.h"
 #include "phonon.h"
+#include "quartic_real_space.h"
 #include "relaxation_types.h"
 #include "scph_result_io.h"
 #include "symmetry_core.h"
@@ -267,6 +268,17 @@ protected:
     // SCP solvers (fmat) and the q0 renormalization (q0_sweep); the other ranks serve
     // the contractions in v4_service->worker_loop() while rank 0 runs the loops.
     std::unique_ptr<V4Service> v4_service;
+
+    // V4_REAL_SPACE (SCPH): 1 replaces the V4 tensor by contractions over the
+    // folded real-space FC4 (rank 0; the other ranks build nothing and only wait
+    // for the final opcode), 2 builds both and compares them (the tensor is used).
+    int v4_real_space = 0;
+    std::unique_ptr<quartic_rs::RealSpaceV4> v4_rs;
+    mutable bool v4_rs_fmat_checked = false, v4_rs_q0_checked = false;
+    void fmat_contract(const std::complex<double> *dvec, std::complex<double> ***fmat_all) const;
+    void q0_contract(const double *q0, const std::complex<double> *const *const *v3_with_umn,
+                     std::complex<double> ***v3_renorm, std::complex<double> ***q4_q0) const;
+    const double *const *v4_diag() const;
 
     // Choose the builder and the partition, allocate the local rows, build them
     // and gather the on-site diagonal. full_tensor: every element (SELF_OFFDIAG = 1

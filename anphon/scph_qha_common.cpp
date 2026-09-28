@@ -1075,7 +1075,7 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
     // v3_renorm and q4_q0 for the v1, v2, and v0 updates (q0_contraction.h).
     const auto ik_gamma_irred = static_cast<std::size_t>(kmesh_coarse->kpoint_map_symmetry[0].knum_irred_orig);
     const auto time_sweep_start = timer->elapsed();
-    v4_service->q0_sweep(q0.data(), ws.v3_with_umn, ws.v3_renorm, ws.q4_q0);
+    q0_contract(q0.data(), ws.v3_with_umn, ws.v3_renorm, ws.q4_q0);
     print_stage_time("q0 renormalization: sweep over V4", time_sweep_start);
     time_stage = timer->elapsed();
 
@@ -1195,7 +1195,32 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
         }
     }
 
+    std::vector<unsigned int> knum_of_irred(nk_irred);
+    for (std::size_t ik = 0; ik < nk_irred; ++ik) {
+        knum_of_irred[ik] = kmap_coarse_to_dense[kmesh_coarse->kpoint_irred_all[ik][0].knum];
+    }
     v4_service = std::make_unique<V4Service>(run.my_rank, run.nprocs);
+    if (v4_real_space > 0 && run.my_rank == 0) {
+        v4_rs = std::make_unique<quartic_rs::RealSpaceV4>(fcs_phonon->force_constant_with_cell[2],
+                                                          system->get_invsqrt_mass(),
+                                                          static_cast<unsigned int>(ns),
+                                                          kmesh_dense->nk_i,
+                                                          kmesh_dense->xk,
+                                                          evec_harmonic,
+                                                          is_acoustic_gamma_harm,
+                                                          static_cast<unsigned int>(ik_gamma_dense),
+                                                          knum_of_irred,
+                                                          offdiag_fmat);
+        std::cout << " V4_REAL_SPACE = " << v4_real_space << ": quartic couplings from the real-space FC4 ("
+                  << v4_rs->folded_entries() << " entries folded on the dense mesh, " << std::fixed
+                  << std::setprecision(1) << v4_rs->folded_entries() * 40.0 / 1.0e6 << std::defaultfloat << " MB)"
+                  << (v4_real_space == 1 ? "; the V4 tensor is not built.\n" : "; compared with the V4 tensor.\n");
+        if (v4_real_space == 1 && run.nprocs > 1) {
+            std::cout << "  NOTE: the real-space contractions run on MPI rank 0 only; the other " << run.nprocs - 1
+                      << " processes stay idle.\n        Run with one process and OpenMP threads instead.\n";
+        }
+    }
+    if (v4_real_space == 1) return;
     v4_service->setup(ns,
                       nk,
                       nk_irred,
@@ -1226,11 +1251,93 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
                                             phi4_reciprocal);
     }
 
-    std::vector<unsigned int> knum_of_irred(nk_irred);
-    for (std::size_t ik = 0; ik < nk_irred; ++ik) {
-        knum_of_irred[ik] = kmap_coarse_to_dense[kmesh_coarse->kpoint_irred_all[ik][0].knum];
-    }
     v4_service->finalize_build(knum_of_irred, run.verbosity);
+    if (v4_rs) {
+        double diff = 0.0, scale = 0.0;
+        for (std::size_t ik = 0; ik < nk_irred; ++ik) {
+            for (std::size_t a = 0; a < ns; ++a) {
+                diff = std::max(diff, std::abs(v4_rs->v4_diag()[ik][a] - v4_service->v4_diag()[ik][a]));
+                scale = std::max(scale, std::abs(v4_service->v4_diag()[ik][a]));
+            }
+        }
+        std::cout << "  V4_REAL_SPACE = 2: on-site V4, real space vs tensor: max diff / max = " << std::scientific
+                  << std::setprecision(3) << diff / std::max(scale, 1.0e-300) << std::defaultfloat << '\n';
+    }
+}
+
+const double *const *ScphQhaCommon::v4_diag() const
+{
+    return v4_real_space == 1 ? v4_rs->v4_diag() : v4_service->v4_diag();
+}
+
+void ScphQhaCommon::fmat_contract(const std::complex<double> *dvec, std::complex<double> ***fmat_all) const
+{
+    if (v4_real_space == 1) {
+        v4_rs->fmat(dvec, fmat_all);
+        return;
+    }
+    if (v4_real_space == 2 && !v4_rs_fmat_checked) {
+        // the first contraction of the run, on a copy of the seeded F
+        const auto nirr = kmesh_coarse->nk_irred;
+        const auto ns = dynamical->neval;
+        NDArray<std::complex<double>, 3> f_rs(nirr, ns, ns);
+        for (unsigned int ik = 0; ik < nirr; ++ik)
+            for (unsigned int a = 0; a < ns; ++a)
+                for (unsigned int b = 0; b < ns; ++b) f_rs[ik][a][b] = fmat_all[ik][a][b];
+        v4_rs->fmat(dvec, f_rs);
+        v4_service->fmat(dvec, fmat_all);
+        double diff = 0.0, scale = 0.0;
+        for (unsigned int ik = 0; ik < nirr; ++ik)
+            for (unsigned int a = 0; a < ns; ++a)
+                for (unsigned int b = 0; b <= a; ++b) {
+                    diff = std::max(diff, std::abs(f_rs[ik][a][b] - fmat_all[ik][a][b]));
+                    scale = std::max(scale, std::abs(fmat_all[ik][a][b]));
+                }
+        std::cout << "  V4_REAL_SPACE = 2: SCP matrix (first contraction), real space vs tensor: max diff / max = "
+                  << std::scientific << std::setprecision(3) << diff / std::max(scale, 1.0e-300) << std::defaultfloat
+                  << '\n';
+        v4_rs_fmat_checked = true;
+        return;
+    }
+    v4_service->fmat(dvec, fmat_all);
+}
+
+void ScphQhaCommon::q0_contract(const double *q0, const std::complex<double> *const *const *v3_with_umn,
+                                std::complex<double> ***v3_renorm, std::complex<double> ***q4_q0) const
+{
+    if (v4_real_space == 1) {
+        v4_rs->q0_sweep(q0, v3_with_umn, v3_renorm, q4_q0);
+        return;
+    }
+    v4_service->q0_sweep(q0, v3_with_umn, v3_renorm, q4_q0);
+    if (v4_real_space == 2 && !v4_rs_q0_checked) {
+        // the first sweep with a nonzero q0
+        const auto ns = dynamical->neval;
+        const auto nk = kmesh_dense->nk;
+        const auto nirr = kmesh_coarse->nk_irred;
+        bool nonzero = false;
+        for (unsigned int a = 0; a < ns; ++a) nonzero = nonzero || q0[a] != 0.0;
+        if (!nonzero) return;
+        NDArray<std::complex<double>, 3> v3(nk, ns, ns * ns), q4(nirr, ns, ns);
+        v4_rs->q0_sweep(q0, v3_with_umn, v3, q4);
+        double d3 = 0.0, s3 = 0.0, d4 = 0.0, s4 = 0.0;
+        for (unsigned int k = 0; k < nk; ++k)
+            for (unsigned int a = 0; a < ns; ++a)
+                for (unsigned int c = 0; c < ns * ns; ++c) {
+                    d3 = std::max(d3, std::abs(v3[k][a][c] - v3_renorm[k][a][c]));
+                    s3 = std::max(s3, std::abs(v3_renorm[k][a][c] - v3_with_umn[k][a][c]));
+                }
+        for (unsigned int k = 0; k < nirr; ++k)
+            for (unsigned int a = 0; a < ns; ++a)
+                for (unsigned int b = 0; b < ns; ++b) {
+                    d4 = std::max(d4, std::abs(q4[k][a][b] - q4_q0[k][a][b]));
+                    s4 = std::max(s4, std::abs(q4_q0[k][a][b]));
+                }
+        std::cout << "  V4_REAL_SPACE = 2: q0 sweep, real space vs tensor: v3 (the q0 part) " << std::scientific
+                  << std::setprecision(3) << d3 / std::max(s3, 1.0e-300) << ", q4_q0 " << d4 / std::max(s4, 1.0e-300)
+                  << std::defaultfloat << '\n';
+        v4_rs_q0_checked = true;
+    }
 }
 
 void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)

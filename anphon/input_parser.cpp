@@ -757,6 +757,7 @@ void InputParser::parse_scph_vars(PHON *phon)
                                               "BUBBLE_TOL",
                                               "BUBBLE_LADDER",
                                               "BUBBLE_FD_CHECK",
+                                              "V4_REAL_SPACE",
                                               "CV_ANHARM",
                                               "RELAX_STR"};
     std::vector<std::string> no_defaults{"KMESH_SCPH", "KMESH_INTERPOLATE"};
@@ -806,6 +807,13 @@ void InputParser::parse_scph_vars(PHON *phon)
     assign_val(scph_vars.bubble_tol, "BUBBLE_TOL", scph_var_dict);
     if (scph_vars.bubble_tol <= 0.0) exit("parse_scph_vars", "BUBBLE_TOL must be positive.");
     assign_val(scph_vars.bubble_ladder, "BUBBLE_LADDER", scph_var_dict);
+    if (scph_vars.bubble_ladder < 0 || scph_vars.bubble_ladder > 2) {
+        exit("parse_scph_vars", "BUBBLE_LADDER must be 0 (no ladder), 1 (V4 service) or 2 (real space).");
+    }
+    assign_val(scph_vars.v4_real_space, "V4_REAL_SPACE", scph_var_dict);
+    if (scph_vars.v4_real_space < 0 || scph_vars.v4_real_space > 2) {
+        exit("parse_scph_vars", "V4_REAL_SPACE must be 0 (V4 tensor), 1 (real space) or 2 (both, compared).");
+    }
     assign_val(scph_vars.bubble_fd_check, "BUBBLE_FD_CHECK", scph_var_dict);
     if (scph_vars.bubble_fd_check < 0 || scph_vars.bubble_fd_check > 2) {
         exit("parse_scph_vars", "BUBBLE_FD_CHECK must be 0, 1 (full check), or 2 (explicit blocks only).");

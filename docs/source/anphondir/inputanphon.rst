@@ -51,7 +51,7 @@ List of supported input variables
    :ref:`BUBBLE <anphon_bubble>`, :ref:`CV_ANHARM <anphon_cv_anharm>`, :ref:`IALGO <anphon_ialgo>`, :ref:`IMIX <anphon_imix>`
    :ref:`KMESH_INTERPOLATE <anphon_kmesh_interpolate>`, :ref:`KMESH_SCPH <anphon_kmesh_scph>`, :ref:`LOWER_TEMP <anphon_lower_temp>`, :ref:`MAXITER <anphon_maxiter>`
    :ref:`MIXALPHA <anphon_mixalpha>`, :ref:`RELAX_STR <anphon_relax_str>`, :ref:`RESTART_SCPH <anphon_restart_scph>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
-   :ref:`TOL_SCPH <anphon_tol_scph>`, :ref:`WARMSTART <anphon_warmstart>`
+   :ref:`TOL_SCPH <anphon_tol_scph>`, :ref:`V4_REAL_SPACE <anphon_v4_real_space>`, :ref:`WARMSTART <anphon_warmstart>`
    **&qha**
    :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
@@ -750,6 +750,34 @@ Description of input variables
 
 ````
 
+.. _anphon_v4_real_space:
+
+* V4_REAL_SPACE-tag = 0 | 1 | 2
+
+ === ===============================================================================
+  0   The quartic couplings are the reciprocal-space tensor V4
+  1   The quartic couplings are contracted over the real-space fourth-order IFCs
+  2   Both, compared in the log (the tensor is used); for testing
+ === ===============================================================================
+
+ :Default: 0
+ :Type: Integer
+ :Description: The SCPH iteration contracts the quartic coupling with the displacement
+               correlation of the dense mesh once per iteration, and the structural
+               optimization contracts it with the displacement once per step. With
+               ``V4_REAL_SPACE = 0`` these use the tensor V4 between the irreducible points of
+               ``KMESH_INTERPOLATE`` and the points of ``KMESH_SCPH``, whose memory grows as the
+               fourth power of the number of modes and whose construction is usually the most
+               expensive part of the run. With ``V4_REAL_SPACE = 1`` the same contractions are done
+               over the fourth-order IFCs folded onto the cells of ``KMESH_SCPH`` (exact for the
+               loaded IFCs; the memory is that of the folded IFC list plus a few matrices of
+               :math:`N_k \times n_s^2` elements), and the tensor is not built. The
+               contractions run on one MPI process with OpenMP threads; the other processes stay
+               idle, so run with one process and many threads. ``BUBBLE = 4`` then uses the
+               real-space quartic ladder.
+
+````
+
 .. _anphon_ialgo:
 
 * IALGO-tag = 0 | 1
@@ -853,7 +881,9 @@ Description of input variables
                phonon occupations respond in both) is printed and written to
                ``PREFIX``.scph_hessian. The ordinary SCPH outputs are written as usual; the curvature is static, so no DOS or
                thermodynamic output is derived from it. The present version needs ``RELAX_STR > 0``,
-               ``KMESH_SCPH = KMESH_INTERPOLATE = 1 1 1`` (use a supercell) and ``NONANALYTIC = 0``,
+               ``KMESH_SCPH = KMESH_INTERPOLATE`` (a supercell with ``1 1 1``, or a k-mesh, on which the
+               curvature is also computed for the modulations at the other irreducible :math:`\boldsymbol{Q}`
+               of the mesh, ``PREFIX``.scph_hessian_q) and ``NONANALYTIC = 0``,
                and cannot be combined with ``RESTART_SCPH``; an existing state file does not switch
                such a run to a restart.
 
