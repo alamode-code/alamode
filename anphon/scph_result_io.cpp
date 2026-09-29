@@ -9,6 +9,7 @@
 */
 
 #include "scph_result_io.h"
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <mpi.h>
@@ -98,6 +99,33 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
     }
     if (load<int>(fh, "/settings/selfenergy_offdiag") != settings.selfenergy_offdiag) {
         exit("scph_result_io", "The SELF_OFFDIAG tag is not consistent");
+    }
+    // Absent EFIELD: a zero-field run (or a file written before the tag existed).
+    std::vector<double> efield_file(3, 0.0);
+    if (fh.exist("/settings/efield")) efield_file = load<std::vector<double>>(fh, "/settings/efield");
+    if (efield_file.size() != 3) exit("scph_result_io", "/settings/efield of the restart file must have 3 entries");
+    for (auto i = 0; i < 3; ++i) {
+        if (efield_file[i] != settings.efield[i]) {
+            exit("scph_result_io",
+                 "The EFIELD tag is not consistent with the restart file. A field sweep is not a restart:\n"
+                 " seed the next field from the previous structure with tools/efield_seed.py instead.");
+        }
+    }
+    if (efield_file[0] != 0.0 || efield_file[1] != 0.0 || efield_file[2] != 0.0) {
+        if (!fh.exist("/settings/born_charges")) {
+            exit("scph_result_io", "The restart file has a nonzero EFIELD but no /settings/born_charges");
+        }
+        const auto dset = fh.getDataSet("/settings/born_charges");
+        std::vector<double> zstar_file(dset.getElementCount());
+        dset.read(zstar_file.data());
+        auto same = zstar_file.size() == settings.born_charges.size();
+        for (size_t i = 0; same && i < zstar_file.size(); ++i) {
+            same = std::abs(zstar_file[i] - settings.born_charges[i]) <=
+                   1.0e-10 * std::max({std::abs(zstar_file[i]), std::abs(settings.born_charges[i]), 1.0});
+        }
+        if (!same) {
+            exit("scph_result_io", "The Born effective charges (BORNINFO) are not consistent with the restart file");
+        }
     }
 }
 
@@ -257,6 +285,13 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
         dump(fh, "/settings/nonanalytic", settings.nonanalytic);
         dump(fh, "/settings/selfenergy_offdiag", settings.selfenergy_offdiag);
         dump(fh, "/settings/relax_str", settings.relax_str);
+        if (settings.efield[0] != 0.0 || settings.efield[1] != 0.0 || settings.efield[2] != 0.0) {
+            dump(fh, "/settings/efield", std::vector<double>(settings.efield.begin(), settings.efield.end()));
+            dumpAttribute(fh, "/settings/efield", "unit", std::string("eV/Angstrom"));
+            const auto nat = settings.born_charges.size() / 9;
+            fh.createDataSet<double>("/settings/born_charges", HighFive::DataSpace({nat, 3, 3}))
+                .write_raw(settings.born_charges.data());
+        }
 
         // Primitive cell (identity mapping) and the virtual supercell
         // (primitive cell tiled by KMESH_INTERPOLATE, cell-major atom order:

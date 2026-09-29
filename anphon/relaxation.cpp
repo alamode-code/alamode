@@ -67,6 +67,7 @@ void Relaxation::set_default_variables()
 
     add_hess_diag = 100.0; // [cm^{-1}]
     stat_pressure = 0.0;   // [GPa]
+    efield.fill(0.0);      // [eV/Angstrom]
 
     // Sources of the strain couplings and elastic constants. The input parser
     // sets these on rank 0 only; the defaults must match RelaxInputVars so
@@ -497,8 +498,15 @@ void Relaxation::set_init_structure_atT(RelaxationStructureState &structure_stat
             if (optimizer) optimizer->reset();
         }
         // Re-seed symmetry breaking when the reference space group is restored.
-        else if (spacegroup_of(structure_state) == spacegroup_number_ref)
+        // Not under a field: the geometric check ignores it, and the structure
+        // always carries the induced distortion, so the previous T is the seed.
+        else if (has_efield())
         {
+            if (run.verbosity > 0) {
+                std::cout << " EFIELD != 0: SET_INIT_STR = 3 re-seeding disabled;"
+                             " start from the structure at the previous temperature.\n\n";
+            }
+        } else if (spacegroup_of(structure_state) == spacegroup_number_ref) {
             if (run.verbosity > 0) {
                 std::cout << '\n';
                 std::cout << " the structure at the previous temperature has the space group of the"

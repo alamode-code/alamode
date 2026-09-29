@@ -29,9 +29,9 @@ public:
 
     ~Dielec();
 
-    // DOS energy grid, NONANALYTIC, ZMODE and IRREPS of the run; read on rank 0 only.
+    // DOS energy grid, NONANALYTIC, ZMODE, IRREPS and EFIELD != 0 of the run; read on rank 0 only.
     void init(double emin_dos, double emax_dos, double delta_e_dos, unsigned int nonanalytic, bool print_zmode,
-              bool print_irreps, const std::vector<SymmetryOperationWithMapping> &symops);
+              bool print_irreps, const std::vector<SymmetryOperationWithMapping> &symops, bool use_efield = false);
 
     void run_dielec_calculation(const Dynamical &dynamical, const std::vector<FcsArrayWithCell> &fc2,
                                 const Ewald &ewald);

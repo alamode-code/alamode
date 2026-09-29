@@ -57,10 +57,10 @@ List of supported input variables
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`BUBBLE_HESS <anphon_bubble_hess>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`
-   :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`
-   :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`
-   :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`
-   :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`EFIELD <anphon_efield>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`
+   :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`
+   :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`
+   :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    :ref:`ELASTIC_CONST (deprecated) <anphon_elastic_const>`, :ref:`RENORM_2TO1ST (deprecated) <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST (deprecated) <anphon_renorm_34to1st>`, :ref:`RENORM_3TO2ND (deprecated) <anphon_renorm_3to2nd>`
    **&strain**
    :ref:`Strain tensor <anphon_strain_field>`
@@ -141,7 +141,7 @@ Description of input variables
 * MASS-tag : List of atomic masses, one value per atomic species (in the order of the ``KD``-tag)
 
  :Default: Standard atomic weight of elements given by the ``KD``-tag
- :Type: Array of double
+ :Type: Array of doubles
  :Example: In the case of Bi\ :sub:`2`\ Te\ :sub:`3`, ``MASS`` should be ``MASS = 208.98 127.60``.
 
 ````
@@ -1316,6 +1316,70 @@ Description of input variables
 
  :Default: 0.0
  :Type: Double
+
+````
+
+.. _anphon_efield:
+
+* EFIELD-tag = Ex Ey Ez: Static electric field in eV/Å (Cartesian components).
+
+ :Default: 0 0 0
+ :Type: Array of doubles
+
+ :Description: The field is given as the force on a unit charge, i.e., numerically in V/Å
+               (1 MV/cm = 0.01 eV/Å; 100 kV/cm = 0.001 eV/Å), the same unit as ``EFIELD_PEAD`` of VASP.
+               A nonzero field adds the fixed-field electric enthalpy
+               :math:`-\boldsymbol{E}\cdot\sum_{k}Z^{*}_{k}\boldsymbol{u}_{0,k}` to the free energy
+               minimized in the structural optimization, where :math:`Z^{*}_{k}` are the Born effective
+               charges of the ``BORNINFO`` file (required) and :math:`\boldsymbol{u}_{0,k}` the
+               :math:`\Gamma`-point displacement of atom :math:`k`. It is ignored unless ``MODE = SCPH``
+               or ``QHA`` with ``RELAX_STR = 1, 2, 4``; it is an error with ``RELAX_STR = 3``.
+               The term is linear in the displacements, so only :math:`\boldsymbol{u}_{0}` couples to the
+               field; the phonons change through the field-induced structure.
+
+               :math:`\boldsymbol{E}` is the internal macroscopic field of an insulator (short-circuit,
+               fixed-:math:`\boldsymbol{E}` boundary condition). Carrier screening and depolarization
+               fields (fixed-:math:`\boldsymbol{D}` conditions) are not modeled.
+
+               Only the symmetry operations of the (distorted) cell that leave :math:`\boldsymbol{E}`
+               invariant are kept; the k-point reduction, the symmetrization of the dynamical matrix and
+               of the Born charges, and the ``IRREPS`` labels refer to this subgroup. The re-seeding of
+               ``SET_INIT_STR = 3`` is disabled under a field: each temperature starts from the structure
+               of the previous one.
+
+               The log shows, per optimization step and for the final structure at each temperature,
+               the displacement-induced polarization
+               :math:`\Delta\boldsymbol{P}=\Omega^{-1}\sum_{k}Z^{*}_{k}\boldsymbol{u}_{0,k}` in
+               :math:`\mu\mathrm{C/cm}^2` (:math:`\Omega` is the cell volume at the current strain) and
+               the field energy in Ry. :math:`\Delta\boldsymbol{P}` is not the total polarization of a
+               polar reference structure. The same quantities are written to ``PREFIX.polarization``
+               with the columns: temperature, :math:`\Delta P_x`, :math:`\Delta P_y`, :math:`\Delta P_z`,
+               field energy, and a convergence flag (1 when the optimization converged).
+
+               The field and the Born charges are stored in ``PREFIX.scph.h5`` /
+               ``PREFIX.qha.h5``. A restart (``RESTART_SCPH``, ``RESTART_QHA``) with a different
+               ``EFIELD`` or ``BORNINFO`` is refused, and the legacy text restart files cannot be used
+               with a nonzero field. A field sweep is therefore not a restart: run each field value as a
+               new optimization seeded from the relaxed structure of the previous one with
+
+               .. code-block:: bash
+
+                  $ python tools/efield_seed.py PREFIX [--temp T]
+
+               which prints the ``&displace`` and ``&strain`` blocks for the next input
+               (default: the last temperature).
+
+               Limitations:
+
+               * The Born charges are fixed: the nonlinearity of :math:`\boldsymbol{P}(\boldsymbol{u})`
+                 and the strain dependence of :math:`Z^{*}` are omitted.
+               * The clamped-ion (electronic) piezoelectric response is omitted, so the strain response
+                 is only the ionic part. This is exact to lowest order for a centrosymmetric reference
+                 but incomplete for a polar reference such as wurtzite.
+               * Terms of order :math:`E^2` (Raman / electrostriction through
+                 :math:`\epsilon^{\infty}`) are neglected. For typical perovskites they are of order
+                 :math:`10^{-3}` of the Born force at 1 MV/cm (an estimate, not a strict bound).
+               * Switching is homogeneous, so intrinsic coercive fields greatly exceed experimental ones.
 
 ````
 

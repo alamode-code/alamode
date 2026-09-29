@@ -11,6 +11,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <fstream>
 #include <map>
@@ -72,6 +73,8 @@ private:
     void parse_qha_vars(PHON *phon);
 
     void parse_relax_vars(PHON *phon);
+
+    std::array<double, 3> parse_efield(const std::map<std::string, std::string> &var_dict);
 
     void check_relax_vars() const;
 

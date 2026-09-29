@@ -367,6 +367,10 @@ void PHON::setup_base() const
     // RELAX_STR is set on rank 0 by the parser but read below on all ranks
     // (relaxing_structure); Relaxation::setup_relaxation() broadcasts it too late.
     MPI_Bcast(&relaxation->relax_str, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // EFIELD filters the symmetry operations and makes dielec->init() load the
+    // Born charges, both before setup_relaxation().
+    MPI_Bcast(relaxation->efield.data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    symmetry->efield = relaxation->efield;
     // Also set on rank 0 only, and read inside Fcs_phonon::setup, where it
     // raises maxorder: every rank must agree before any setup_fcs() call,
     // or they would load a different number of IFC orders and diverge.
@@ -432,7 +436,8 @@ void PHON::setup_base() const
                  dynamical->nonanalytic,
                  writes->print_zmode,
                  mode_symmetry->print_irreps,
-                 symmetry->SymmListWithMap);
+                 symmetry->SymmListWithMap,
+                 relaxing_structure && relaxation->has_efield());
     ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
 
     // The adaptive smearing widths come from the group velocities, which need the

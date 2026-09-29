@@ -177,6 +177,7 @@ public:
         const auto spg_label = scph_.relaxation->print_structure_and_symmetry(
             structure_state,
             (uses_full_strain_derivatives(ws_.relax_mode) && scp_converged_step) ? del_v0_del_umn_SCP_ : nullptr);
+        scph_.print_efield_response(ws_);
         std::cout << '\n';
         scph_.print_stage_time("structure print + symmetry", time_stage);
         time_stage = scph_.timer->elapsed();
@@ -864,6 +865,11 @@ void Scph::exec_scph()
             // every temperature to deform the cubic IFCs.
             if (with_relax && bubble > 0) load_relaxed_structures_h5(run.job_title + ".scph.h5");
         } else {
+            if (relaxation->has_efield()) {
+                exit("exec_scph",
+                     "RESTART_SCPH with EFIELD != 0 needs the state file PREFIX.scph.h5, which records\n"
+                     " the field; the legacy text restart files do not.");
+            }
             if (with_relax && bubble > 0) {
                 exit("exec_scph",
                      "BUBBLE > 0 with RELAX_STR != 0 needs the relaxed structures, which only the\n"

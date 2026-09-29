@@ -204,6 +204,10 @@ struct StructuralOptWorkspace
 
     // indices of the optical modes at the Gamma point
     std::vector<int> harm_optical_modes;
+
+    // EFIELD: zE[s] = sum_k E . Z*_k e_s(k) / sqrt(M_k) [Ry/Bohr per normal coordinate],
+    // the field energy being -sum_s zE[s] q0[s]; empty without a field
+    std::vector<double> zE;
 };
 
 enum class StructOptStepStatus

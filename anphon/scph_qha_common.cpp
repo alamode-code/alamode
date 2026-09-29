@@ -1106,6 +1106,11 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                        ws.v3_with_umn,
                                        ws.q4_q0[ik_gamma_irred],
                                        q0);
+    // EFIELD: the linear field term -sum_s zE[s] q0[s]; it has no curvature.
+    for (std::size_t is = 0; is < ws.zE.size(); is++) {
+        ws.v1_renorm[is] -= ws.zE[is];
+        ws.v0_renorm -= ws.zE[is] * q0[is];
+    }
     print_stage_time("q0 renormalization v0, v1, v2", time_stage);
     time_stage = timer->elapsed();
 
@@ -1433,6 +1438,69 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
     if (js != ns - 3) {
         exit("setup_structural_opt_buffers", "The number of detected optical modes is not ns-3.");
     }
+
+    // EFIELD: zE[s] such that -E . sum_k Z*_k u0_k = -sum_s zE[s] q0[s] for u0
+    // from Relaxation::calculate_u0, with the same eps8 mask. Local work on every
+    // rank, done here because renormalize_ifcs_at_structure runs in rank-0 regions.
+    ws.zE.clear();
+    if (relaxation->has_efield()) {
+        constexpr auto efield_to_ry = Bohr_in_Angstrom / Ryd_in_eV; // eV/Angstrom -> Ry/(e Bohr)
+        std::vector<std::vector<std::complex<double>>> zstar_mode(ns, std::vector<std::complex<double>>(3));
+        dielec->compute_mode_effective_charge(zstar_mode, evec_harmonic[0]);
+        ws.zE.assign(ns, 0.0);
+        auto masked_optical = false;
+        for (auto is = 0; is < ns; is++) {
+            auto ze = 0.0;
+            for (auto i = 0; i < 3; i++) ze += relaxation->efield[i] * efield_to_ry * zstar_mode[is][i].real();
+            // compute_mode_effective_charge divides by sqrt(M [amu]); calculate_u0 by sqrt(M [Ry]).
+            ze /= std::sqrt(amu_ry);
+            if (std::fabs(omega2_harmonic[0][is]) < eps8) {
+                if (!is_acoustic_gamma_harm[is] && std::fabs(ze) > eps12) masked_optical = true;
+                continue;
+            }
+            ws.zE[is] = ze;
+        }
+        if (masked_optical && run.my_rank == 0) {
+            warn("setup_structural_opt_buffers",
+                 "EFIELD: an optical mode with |omega^2| < 1e-8 at Gamma gets no field force.");
+        }
+    }
+}
+
+double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, double dpol[3]) const
+{
+    const auto &state = ws.structure_state;
+    const auto natmin = system->get_primcell().number_of_atoms;
+    const auto zstar = dielec->get_borncharge();
+
+    // Delta P = (1/Omega) sum_k Z*_k u0_k at the current volume
+    Eigen::Matrix3d fmat = Eigen::Matrix3d::Identity();
+    for (auto i = 0; i < 3; i++) {
+        for (auto j = 0; j < 3; j++) fmat(i, j) += state.u_tensor[i][j];
+    }
+    const auto volume = system->get_primcell().volume * fmat.determinant();
+    constexpr auto e_bohr2_to_uc_cm2 = 1.6021766208e-19 / (Bohr_in_Angstrom * Bohr_in_Angstrom * 1.0e-16) * 1.0e6;
+    for (auto a = 0; a < 3; a++) {
+        dpol[a] = 0.0;
+        for (auto k = 0; k < natmin; k++) {
+            for (auto b = 0; b < 3; b++) dpol[a] += zstar[k][a][b] * state.u0[3 * k + b];
+        }
+        dpol[a] *= e_bohr2_to_uc_cm2 / volume;
+    }
+    auto energy = 0.0;
+    for (std::size_t is = 0; is < ws.zE.size(); is++) energy -= ws.zE[is] * state.q0[is];
+    return energy;
+}
+
+void ScphQhaCommon::print_efield_response(const StructuralOptWorkspace &ws) const
+{
+    if (ws.zE.empty() || run.verbosity == 0) return;
+
+    double dpol[3];
+    const auto energy = efield_response(ws, dpol);
+    std::cout << " EFIELD: Delta P [uC/cm^2] =";
+    for (auto a = 0; a < 3; a++) std::cout << std::scientific << std::setw(15) << std::setprecision(6) << dpol[a];
+    std::cout << ", field energy [Ry] =" << std::setw(15) << energy << std::defaultfloat << '\n';
 }
 
 void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspace &ws,
@@ -1478,15 +1546,27 @@ void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspac
         }
         std::cout << '\n';
     }
+    if (run.verbosity > 1) {
+        // Full-precision PES offset and gradient at the evaluated structure
+        // (the EFIELD energy/gradient consistency test reads them).
+        std::cout << " V0 at this structure [Ry] =" << std::scientific << std::setprecision(15) << std::setw(24)
+                  << ws.v0_renorm << '\n';
+        std::cout << " gradient dF/dq0 (all Gamma modes) :";
+        for (auto is = 0; is < ns; is++) {
+            std::cout << std::setw(24) << v1_eff[is].real();
+        }
+        std::cout << std::defaultfloat << '\n';
+    }
 
     step_history.push_back({true, du0, du_tensor, grad_norm, cell_grad_norm, spg_label});
 }
 
-void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state, const RelaxationStrMode relax_mode,
+void ScphQhaCommon::print_final_structure(const StructuralOptWorkspace &ws, const RelaxationStrMode relax_mode,
                                           const double temp, const bool last_temperature) const
 {
     if (run.verbosity == 0) return;
 
+    const auto &state = ws.structure_state;
     std::string str_tmp;
 
     std::cout << " ----------------------------------------------------------------\n";
@@ -1518,6 +1598,7 @@ void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state,
 
     std::cout << "\n Final structure at " << temp << " K :\n";
     relaxation->print_structure_and_symmetry(state, nullptr);
+    print_efield_response(ws);
 
     if (last_temperature) {
         std::cout << " ----------------------------------------------------------------\n\n";
@@ -1529,6 +1610,18 @@ void ScphQhaCommon::print_final_structure(const RelaxationStructureState &state,
 void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, StructuralOptLoopContext &ctx)
 {
     auto i_temp_loop = -1;
+
+    // EFIELD: displacement-induced polarization and field energy per temperature
+    std::ofstream fout_pol;
+    if (!ctx.ws.zE.empty()) {
+        fout_pol.open(run.job_title + ".polarization");
+        if (!fout_pol) warn("run_structural_optimization_loop", "Cannot open PREFIX.polarization for writing.");
+        const auto &e = relaxation->efield;
+        fout_pol << "# EFIELD = " << e[0] << " " << e[1] << " " << e[2] << " [eV/Angstrom]\n";
+        fout_pol << "# Delta P = (1/Omega) sum_k Z*_k u0_k [uC/cm^2]; field energy = -E . sum_k Z*_k u0_k [Ry]\n";
+        fout_pol << "#" << std::setw(14) << "temp [K]" << std::setw(15) << "Px" << std::setw(15) << "Py"
+                 << std::setw(15) << "Pz" << std::setw(15) << "E_field" << std::setw(6) << "conv" << '\n';
+    }
 
     for (double temp: ctx.vec_temp) {
         i_temp_loop++;
@@ -1600,7 +1693,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
                                                model.history_has_scp_column(),
                                                run.verbosity);
 
-        print_final_structure(ctx.structure_state, ctx.relax_mode, temp, i_temp_loop == static_cast<int>(ctx.NT) - 1);
+        print_final_structure(ctx.ws, ctx.relax_mode, temp, i_temp_loop == static_cast<int>(ctx.NT) - 1);
 
         model.record_v0(iT);
 
@@ -1609,8 +1702,21 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
 
         relaxation->write_resfile_atT(ctx.structure_state, temp, ctx.fout_q0, ctx.fout_u0, ctx.fout_u_tensor);
 
+        if (fout_pol.is_open()) {
+            double dpol[3];
+            const auto energy = efield_response(ctx.ws, dpol);
+            fout_pol << std::scientific << std::setprecision(6) << std::setw(15) << temp;
+            for (const auto p: dpol) fout_pol << std::setw(15) << p;
+            fout_pol << std::setw(15) << energy << std::setw(6) << (converged_this_temp ? 1 : 0) << '\n';
+        }
+
         model.finalize_temperature(iT, temp, converged_this_temp, ctx.converged_prev);
     }
 
     model.print_run_summary();
+
+    if (fout_pol.is_open()) {
+        fout_pol.close();
+        print_output_file(run, run.job_title + ".polarization", "Field-induced polarization (EFIELD)");
+    }
 }

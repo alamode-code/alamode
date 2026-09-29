@@ -11,6 +11,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <array>
 #include <complex>
 #include <map>
 #include <memory>
@@ -32,6 +33,11 @@ struct ScphSettingsH5
     int nonanalytic = 0;              // warn on mismatch at restart
     int selfenergy_offdiag = 1;       // exit on mismatch at restart
     int relax_str = 0;
+    // EFIELD [eV/Angstrom] and the (ASR-corrected) Born charges it acts on,
+    // [natmin * 9] row-major. Written only for a nonzero field; absent means
+    // zero field. Exit on mismatch.
+    std::array<double, 3> efield{};
+    std::vector<double> born_charges;
 };
 
 // Primitive cell of the SCPH run; the virtual supercell (primitive cell

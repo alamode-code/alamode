@@ -62,7 +62,7 @@ void Dielec::deallocate_variables()
 
 void Dielec::init(const double emin_dos, const double emax_dos, const double delta_e_dos,
                   const unsigned int nonanalytic, const bool print_zmode, const bool print_irreps,
-                  const std::vector<SymmetryOperationWithMapping> &symops)
+                  const std::vector<SymmetryOperationWithMapping> &symops, const bool use_efield)
 {
     // This should be called after Dos::setup(). The arguments are read on rank 0 only.
 
@@ -80,7 +80,7 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
     MPI_Bcast(&delta_e, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
-    // Born-charge data is needed by the nonanalytic correction and DIELEC
+    // Born-charge data is needed by the nonanalytic correction, DIELEC and EFIELD
     // (BORNINFO required, hard error when absent) and by the ZMODE and
     // IRREPS analyses (used only when BORNINFO is given).  file_born lives
     // on rank 0 only, so the decision is made there and broadcast;
@@ -88,8 +88,11 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
     int need_born_data = 0;
     if (run.my_rank == 0) {
         const auto borninfo_given = !file_born.empty();
-        if (nonanalytic || calc_dielectric_constant) {
+        if (nonanalytic || calc_dielectric_constant || use_efield) {
             if (!borninfo_given) {
+                if (use_efield) {
+                    exitall("Dielec::init()", "BORNINFO must be set when EFIELD is nonzero.");
+                }
                 if (calc_dielectric_constant) {
                     exitall("Dielec::init()", "BORNINFO must be set when DIELEC = 1.");
                 }

@@ -10,8 +10,10 @@
 
 #include "input_parser.h"
 #include <algorithm>
+#include <array>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <istream>
@@ -1058,6 +1060,29 @@ void InputParser::parse_qha_vars(PHON *phon)
     qha_var_dict.clear();
 }
 
+std::array<double, 3> InputParser::parse_efield(const std::map<std::string, std::string> &var_dict)
+{
+    // EFIELD = Ex Ey Ez [eV/Angstrom], Cartesian; absent means zero field.
+    std::array<double, 3> efield{};
+    const auto it = var_dict.find("EFIELD");
+    if (it == var_dict.end()) return efield;
+
+    std::vector<std::string> str_vec;
+    split_str_by_space(it->second, str_vec);
+    if (str_vec.size() != 3) {
+        exit("parse_relax_vars", "EFIELD must have exactly three entries (Ex Ey Ez in eV/Angstrom).");
+    }
+    for (auto i = 0; i < 3; ++i) {
+        try {
+            efield[i] = boost::lexical_cast<double>(str_vec[i]);
+        } catch (const boost::bad_lexical_cast &) {
+            efield[i] = std::nan("");
+        }
+        if (!std::isfinite(efield[i])) exit("parse_relax_vars", "EFIELD entries must be finite numbers.");
+    }
+    return efield;
+}
+
 void InputParser::parse_relax_vars(PHON *phon)
 {
     // Read input parameters in the &relax-field.
@@ -1067,7 +1092,7 @@ void InputParser::parse_relax_vars(PHON *phon)
         "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",    "ALPHA_STDECENT",    "CELL_CONV_TOL",
         "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX", "COOLING_U0_THR",    "ADD_HESS_DIAG",
         "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR",
-        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING",  "BUBBLE_HESS"};
+        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING",  "BUBBLE_HESS",       "EFIELD"};
 
     std::map<std::string, std::string> stropt_var_dict;
 
@@ -1132,6 +1157,12 @@ void InputParser::parse_relax_vars(PHON *phon)
         exit("parse_relax_vars", "BUBBLE_HESS must be 0 or 1.");
     }
     assign_val(relax_vars.stat_pressure, "STAT_PRESSURE", stropt_var_dict);
+    relax_vars.efield = parse_efield(stropt_var_dict);
+    if (relax_str == to_int(RelaxationStrMode::PerturbativeQha) &&
+        (relax_vars.efield[0] != 0.0 || relax_vars.efield[1] != 0.0 || relax_vars.efield[2] != 0.0))
+    {
+        exit("parse_relax_vars", "EFIELD cannot be used with RELAX_STR = 3 (perturbative QHA).");
+    }
 
     // STRAIN_COUPLING selects where the elastic constants and the strain
     // couplings of the cell relaxation come from. Units digit: the sum of

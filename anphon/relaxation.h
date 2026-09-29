@@ -256,6 +256,14 @@ public:
     // with |eigenvalues| (saddle-free) instead of the SCP Gamma matrix + ADD_HESS_DIAG.
     int bubble_hess{0};
     double stat_pressure;
+    // EFIELD [eV/Angstrom], Cartesian: static field coupling to the Born charges
+    // through -E . sum_k Z*_k u0_k (fixed-E electric enthalpy).
+    std::array<double, 3> efield;
+
+    bool has_efield() const
+    {
+        return efield[0] != 0.0 || efield[1] != 0.0 || efield[2] != 0.0;
+    }
 
     // STRAIN_COUPLING as given (-1: the deprecated RENORM_*/ELASTIC_CONST
     // tags set a combination it cannot express). The four switches below

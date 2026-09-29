@@ -227,6 +227,10 @@ void Writes::writeInputVars()
         os << "  ADD_HESS_DIAG = " << phon->relaxation->add_hess_diag << '\n';
         os << "  BUBBLE_HESS = " << phon->relaxation->bubble_hess << '\n';
         os << "  STAT_PRESSURE = " << phon->relaxation->stat_pressure << '\n';
+        if (phon->relaxation->has_efield()) {
+            os << "  EFIELD = " << phon->relaxation->efield[0] << " " << phon->relaxation->efield[1] << " "
+               << phon->relaxation->efield[2] << " [eV/Angstrom]\n";
+        }
 
         if (run.mode == "QHA" && phon->relaxation->relax_str == 2) {
             os << "  QHA_SCHEME = " << to_int(phon->qha->qha_scheme) << '\n';

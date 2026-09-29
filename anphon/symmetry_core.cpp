@@ -81,6 +81,21 @@ void Symmetry::setup_symmetry(const bool relaxing_structure, const bool verbose)
                                      SymmList,
                                      verbosity);
 
+            // A static field is a polar vector: keep the operations that leave it invariant.
+            const Eigen::Vector3d evec(efield[0], efield[1], efield[2]);
+            if (evec.norm() > 0.0) {
+                SymmList.erase(std::remove_if(SymmList.begin(),
+                                              SymmList.end(),
+                                              [&evec](const SymmetryOperation &op) {
+                                                  return (op.rotation_cart * evec - evec).norm() > 1.0e-6 * evec.norm();
+                                              }),
+                               SymmList.end());
+                if (verbosity > 0) {
+                    std::cout << "  EFIELD: " << SymmList.size()
+                              << " operations of the distorted cell leave the field invariant (kept).\n";
+                }
+            }
+
             nsym = SymmList.size();
             nsym_ref = SymmList_ref.size();
         }

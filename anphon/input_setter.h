@@ -231,9 +231,10 @@ struct RelaxInputVars
 
     int set_init_str = 1;
 
-    double add_hess_diag = 100.0; // [cm^{-1}]
-    int bubble_hess = 0;          // BUBBLE_HESS: free-energy curvature (BUBBLE = 4) as the optimizer Hessian
-    double stat_pressure = 0.0;   // [GPa]
+    double add_hess_diag = 100.0;   // [cm^{-1}]
+    int bubble_hess = 0;            // BUBBLE_HESS: free-energy curvature (BUBBLE = 4) as the optimizer Hessian
+    double stat_pressure = 0.0;     // [GPa]
+    std::array<double, 3> efield{}; // EFIELD [eV/Angstrom], Cartesian
 
     // STRAIN_COUPLING as given (-1 when the deprecated tags below set a
     // combination it cannot express); the four switches are derived from it.

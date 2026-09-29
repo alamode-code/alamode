@@ -11,6 +11,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <array>
 #include <set>
 #include <string>
 #include <vector>
@@ -151,6 +152,8 @@ public:
     bool use_time_reversal = false;
     bool printsymmetry;
     double tolerance;
+    // EFIELD [eV/Angstrom] (rank 0): with relaxing_structure, SymmList keeps only the operations with R E = E.
+    std::array<double, 3> efield{};
     std::vector<SymmetryOperation> SymmList;
     std::vector<SymmetryOperationWithMapping> SymmListWithMap;
 

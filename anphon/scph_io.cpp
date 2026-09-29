@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <iostream>
 #include "constants.h"
+#include "dielec.h"
 #include "dynamical.h"
 #include "interpolation.h"
 #include "kpoint.h"
@@ -188,6 +189,12 @@ ScphSettingsH5 ScphQhaCommon::build_scph_settings_h5(const std::string &mode_nam
     settings.nonanalytic = static_cast<int>(nonanalytic_in);
     settings.selfenergy_offdiag = selfenergy_offdiagonal_in ? 1 : 0;
     settings.relax_str = relax_str_in;
+    if (relaxation->has_efield()) {
+        settings.efield = relaxation->efield;
+        const auto natmin = system->get_primcell().number_of_atoms;
+        const auto zstar = dielec->get_borncharge();
+        settings.born_charges.assign(&zstar[0][0][0], &zstar[0][0][0] + 9 * natmin);
+    }
     return settings;
 }
 
