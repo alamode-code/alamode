@@ -208,6 +208,13 @@ struct StructuralOptWorkspace
     // EFIELD: zE[s] = sum_k E . Z*_k e_s(k) / sqrt(M_k) [Ry/Bohr per normal coordinate],
     // the field energy being -sum_s zE[s] q0[s]; empty without a field
     std::vector<double> zE;
+
+    // The structure of the last V0 / SCP (QHA) solution and gradients: the
+    // optimizer moves structure_state one step past it. The polarization is
+    // reported here, so that it belongs to the same structure as V0 and G.
+    // After a failed temperature SCPH restores structure_state (and V0) from
+    // the last converged point, but this keeps the last attempted structure.
+    RelaxationStructureState evaluated_state;
 };
 
 enum class StructOptStepStatus

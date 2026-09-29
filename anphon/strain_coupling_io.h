@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -24,6 +25,7 @@
 //   /Elastic/            stress (3,3), soec (9,9), toec (9,9,9), all in GPa
 //   /StrainForce/        modes, smag, weight, forces [n, natom, 3] in eV/Angstrom, Cell/
 //   /StrainHarmonic/     modes, smag, weight, entry_NNN/ (alm force-constant layout)
+//   /Piezoelectric/      clamped_ion (3,3,3): proper clamped-ion tensor e_ijk in C/m^2 (EFIELD)
 //
 // The class returns the plain structs of strain_coupling_types.h, so the
 // consumers do not depend on HDF5. Every method throws std::runtime_error with
@@ -45,6 +47,7 @@ struct ContainerSummary
     bool has_c2c3{false};
     bool has_strain_force{false};
     bool has_strain_harmonic{false};
+    bool has_piezo{false};
     std::size_t natom_reference{0};
     std::string created_date;
     std::string writer;
@@ -76,6 +79,11 @@ public:
     // /StrainHarmonic metadata and the SuperCell of every entry; the force
     // constants are read separately with load_harmonic_fc2.
     [[nodiscard]] StrainHarmonicSet read_strain_harmonic() const;
+
+    // /Piezoelectric/clamped_ion: e_ijk [C/m^2], flat index (i * 3 + j) * 3 + k;
+    // checks the unit, the convention attribute, the shape, finiteness and the
+    // symmetry in jk.
+    [[nodiscard]] std::array<double, 27> read_piezo() const;
 
     // Read the harmonic force constants of one entry (entry.label is its group).
     void load_harmonic_fc2(const StrainHarmonicEntry &entry, const Fcs_phonon &fcs_phonon,

@@ -29,7 +29,8 @@ public:
 
     ~Dielec();
 
-    // DOS energy grid, NONANALYTIC, ZMODE, IRREPS and EFIELD != 0 of the run; read on rank 0 only.
+    // DOS energy grid, NONANALYTIC, ZMODE, IRREPS and EFIELD != 0 or POL_REF (use_efield) of the run;
+    // read on rank 0 only.
     void init(double emin_dos, double emax_dos, double delta_e_dos, unsigned int nonanalytic, bool print_zmode,
               bool print_irreps, const std::vector<SymmetryOperationWithMapping> &symops, bool use_efield = false,
               bool relaxing = false);

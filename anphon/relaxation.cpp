@@ -68,6 +68,8 @@ void Relaxation::set_default_variables()
     add_hess_diag = 100.0; // [cm^{-1}]
     stat_pressure = 0.0;   // [GPa]
     efield.fill(0.0);      // [eV/Angstrom]
+    pol_ref.fill(0.0);     // [C/m^2]
+    pol_ref_given = false;
 
     // Sources of the strain couplings and elastic constants. The input parser
     // sets these on rank 0 only; the defaults must match RelaxInputVars so
@@ -82,7 +84,7 @@ void Relaxation::set_default_variables()
     strain_file.clear();
 }
 
-void Relaxation::setup_relaxation(const double symprec)
+void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inversion)
 {
     symprec_ = symprec;
 
@@ -116,6 +118,7 @@ void Relaxation::setup_relaxation(const double symprec)
     }
     if (!strain_file.empty()) {
         validate_strain_file();
+        load_piezo();
     } else if (run.my_rank == 0 &&
                (renorm_2to1st == 2 || renorm_3to2nd == 2 || renorm_3to2nd == 3 || elastic_const == 2))
     {
@@ -123,6 +126,40 @@ void Relaxation::setup_relaxation(const double symprec)
                   << "        STRAIN_IFC_DIR (and C1_array.in in the working directory). This route is deprecated:\n"
                   << "        pack the files into one container with 'tools/strainfile.py pack' and give it as\n"
                   << "        STRAINFILE in the &relax field.\n\n";
+    }
+    // A strained cell under a field without e0: fine for a centrosymmetric
+    // reference (e0 = 0 by symmetry), possibly incomplete otherwise (432 is a
+    // known false positive).
+    if (run.my_rank == 0 && has_efield() && !has_piezo0() && !ref_has_inversion) {
+        warn("setup_relaxation",
+             "EFIELD with a strained cell: the reference structure has no inversion, but no clamped-ion\n"
+             " piezoelectric tensor e0 is given (STRAINFILE /Piezoelectric). The clamped-ion piezoelectric\n"
+             " response may be missing. Add it with 'tools/strainfile.py piezo'.");
+    }
+}
+
+void Relaxation::load_piezo()
+{
+    piezo0.fill(0.0);
+    efield_strain_gradient.fill(0.0);
+    try {
+        const strain_coupling::StrainCouplingFile container(strain_file);
+        if (!container.probe().has_piezo) return;
+        piezo0 = container.read_piezo();
+    } catch (const std::runtime_error &e) {
+        exit("setup_relaxation", e.what());
+    }
+    for (auto &x: piezo0) x /= e_bohr2_in_c_m2; // C/m^2 -> e/Bohr^2
+    piezo0_source = strain_file + ":/Piezoelectric/clamped_ion";
+    if (!has_piezo_field_term()) return;
+
+    // dH_E/du_mn = -Omega_ref E0_i e0_imn: E0 in Ry/(e Bohr), Omega_ref in Bohr^3.
+    constexpr auto efield_to_ry = Bohr_in_Angstrom / Ryd_in_eV;
+    const auto volume = system->get_primcell().volume;
+    for (auto mn = 0; mn < 9; ++mn) {
+        for (auto i = 0; i < 3; ++i) {
+            efield_strain_gradient[mn] -= volume * efield[i] * efield_to_ry * piezo0[i * 9 + mn];
+        }
     }
 }
 
@@ -178,7 +215,8 @@ void Relaxation::validate_strain_file() const
                                                 : "absent")
                       << (summary.has_stress ? " + reference stress" : ", no reference stress") << "\n"
                       << "    StrainForce    : " << (summary.has_strain_force ? "present" : "absent") << "\n"
-                      << "    StrainHarmonic : " << (summary.has_strain_harmonic ? "present" : "absent") << "\n\n";
+                      << "    StrainHarmonic : " << (summary.has_strain_harmonic ? "present" : "absent") << "\n"
+                      << "    Piezoelectric  : " << (summary.has_piezo ? "present" : "absent (e0 = 0)") << "\n\n";
             std::cout.flags(flags);
             std::cout.precision(prec);
         }
@@ -1275,7 +1313,8 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         const auto pressure_gpa = -stress.trace() / 3.0 / gpa_to_ry_bohr3;
 
         if (run.verbosity > 0) {
-            std::cout << "  Stress tensor [GPa]:\n";
+            std::cout << "  Stress tensor [GPa]" << (has_piezo_field_term() ? " (incl. EFIELD piezo term)" : "")
+                      << ":\n";
             for (auto i = 0; i < 3; ++i) {
                 std::cout << "   ";
                 for (auto j = 0; j < 3; ++j) {
@@ -1435,7 +1474,8 @@ void Relaxation::compute_del_v_strain(const DerivativeIFC &derivative_ifc, const
 void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
                                          std::array<std::array<double, 3>, 3> &eta_tensor, double *C1_array,
                                          double **C2_array, double ***C3_array,
-                                         const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell)
+                                         const std::array<std::array<double, 3>, 3> &u_tensor,
+                                         const double pvcell) const
 {
     // This function computes the total enthalpy change induced by the strain.
     // The inputs are the eta_tensor (the Green-Lagrange strain tensor
@@ -1481,6 +1521,11 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
 
     const double det_F_tensor = std::abs(vec_tmp1.dot(vec_tmp2.cross(vec_tmp3)));
     v0_with_umn += pvcell * det_F_tensor;
+
+    // EFIELD with e0 (fixed voltage): -E0_i Omega_ref e0_ikl u_kl, linear in u
+    if (has_piezo_field_term()) {
+        for (auto kl = 0; kl < 9; ++kl) v0_with_umn += efield_strain_gradient[kl] * u_tensor[kl / 3][kl % 3];
+    }
 }
 
 void Relaxation::renormalize_v1_from_umn(std::complex<double> *v1_with_umn, const std::complex<double> *const v1_ref,

@@ -58,6 +58,13 @@ the pieces belong together and to the cell of the run:
        alm ``.h5`` files (``SuperCell``, ``ForceConstants/Order2``). anphon
        checks every entry against the supercell of ``FC2FILE``/``FCSFILE``
        deformed by the entry's own strain, atom by atom.
+   * - ``/Piezoelectric``
+     - ``EFIELD`` with a strained cell (``RELAX_STR = 2, 4``); optional
+     - ``clamped_ion`` (3×3×3): the proper **clamped-ion** piezoelectric
+       tensor :math:`e^{(0)}_{ijk}` in C/m² (symmetric in :math:`jk`, Cartesian
+       axes of ``/ReferenceCell``), with the attributes ``unit = "C/m^2"``,
+       ``convention = "proper, clamped-ion"``, ``method``, ``source`` and
+       ``code_version``. Absent means :math:`e^{(0)} = 0`.
 
 The producing commands write into the container directly; the same file can
 be updated by each, replacing only its own groups and refusing a reference
@@ -86,6 +93,8 @@ and the anphon input needs a single line::
     strainfile.py check ZnO.strain.h5 --anphon-cell anphon.in --fcs FC2FILE
     strainfile.py pack  --strain-ifc-dir strain_IFC [--c1 C1_array.in] --fcs FC2FILE --anphon-cell anphon.in
                         [--legacy-cell anphon.in] -o ZnO.strain.h5
+    strainfile.py piezo ZnO.strain.h5 --outcar OUTCAR [--structure POSCAR] [--overwrite]
+    strainfile.py piezo ZnO.strain.h5 --voigt e0.txt --structure POSCAR [--overwrite]
 
 ``show`` prints the contents (cells, units, the elastic constants in GPa, the
 strain modes and their weight sums) and which anphon settings the file
@@ -93,10 +102,36 @@ supports; ``check`` repeats anphon's consistency checks against a planned run
 before it is submitted; ``pack`` converts an existing ``STRAIN_IFC_DIR`` (any
 subset of the text files; legacy ``Ry`` files are converted to GPa with the
 volume of ``--legacy-cell``, the ``&cell`` of the run they were made for, and
-that assumption is recorded in the file). Every write records its command
+that assumption is recorded in the file); ``piezo`` adds the clamped-ion
+piezoelectric tensor used by ``EFIELD`` (below). Every write records its command
 line in the ``provenance`` attribute. The container is read on every MPI
 rank and must not be modified while anphon runs. Non-magnetic reference
 structures only.
+
+**The clamped-ion piezoelectric tensor** (``/Piezoelectric``). ``strainfile.py
+piezo`` writes it into an existing container and replaces only that group
+(``--overwrite`` when it exists; the other groups are kept byte for byte).
+
+* ``--outcar``: a VASP ``LEPSILON = .TRUE.`` OUTCAR. The **last** complete block
+  ``PIEZOELECTRIC TENSOR (including local field effects) for field in x, y, z
+  (C/m^2)`` is used. Its rows are the field direction, its columns
+  ``XX YY ZZ XY YZ ZX``, and a shear column is the tensor component itself
+  (:math:`e_{x,ZX} = e_{xxz} = e_{xzx}`: no factor 2, no sign change). The block of
+  the same name in ``e Angst`` is the derivative of the dipole of the simulation
+  cell (extensive) and is not used; the ``IONIC CONTR`` blocks (``IBRION = 7, 8``)
+  hold the relaxed-ion part, which anphon already obtains from the Born charges,
+  and are ignored. An OUTCAR with only those blocks is refused.
+* ``--voigt``: a 3×6 text table in C/m² (rows :math:`x, y, z`, columns
+  ``xx yy zz yz xz xy``, shear columns equal to the tensor component) from any
+  code, e.g. ABINIT's proper clamped-ion tensor. It requires ``--structure``.
+
+The lattice, species and fractional coordinates of the calculation (read from the
+OUTCAR, or from ``--structure``, a POSCAR or ``vasprun.xml``) must describe the
+crystal of ``/ReferenceCell`` in the same Cartesian frame (a nested cell is
+accepted), because the tensor is Cartesian. The file records the method, the
+VASP version and the source path. The tensor must be the clamped-ion one: a
+relaxed-ion total counts the ionic response twice. (VASP 5.4.4 and older have
+a sign bug in ``LCALCEPS``.)
 
 .. _label_strain_legacy_files:
 

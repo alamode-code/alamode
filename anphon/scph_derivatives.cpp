@@ -129,6 +129,10 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0
         del_v0_strain_with_strain[i1] += pvcell * (F_tensor[ixyz1][ixyz3] * F_tensor[ixyz2][ixyz4] -
                                                    F_tensor[ixyz1][ixyz4] * F_tensor[ixyz2][ixyz3]);
     }
+    // EFIELD with e0 (fixed voltage): the constant -Omega_ref E0_i e0_imn
+    if (relaxation->has_piezo_field_term()) {
+        for (i1 = 0; i1 < 9; i1++) del_v0_strain_with_strain[i1] += relaxation->efield_strain_gradient[i1];
+    }
 
     // calculate del_v1_del_umn
     for (i1 = 0; i1 < 9; i1++) {

@@ -1,0 +1,115 @@
+ vasp.6.5.1 10Mar25 (build Feb 02 2026 19:02:31) complex                        
+  
+ executed on             LinuxIFC date 2026.08.29  10:38:54
+ running   32 mpi-ranks, with    1 threads/rank, on    1 nodes
+ distrk:  each k-point on    8 cores,    4 groups
+ distr:  one band on NCORE=   1 cores,    8 groups
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+ INCAR:
+   SYSTEM = ZnO dielectric tensor and Born charges (DFPT)
+   PREC = Accurate
+   ENCUT = 600
+   EDIFF = 1.0e-8
+   ADDGRID = .TRUE.
+   LREAL = .FALSE.
+   ISMEAR = 0
+   SIGMA = 0.05
+   GGA = PS
+   LEPSILON = .TRUE.
+   IBRION = -1
+   NCORE = 1
+   KPAR = 4
+   LWAVE = .FALSE.
+   LCHARG = .FALSE.
+
+ POTCAR:    PAW_PBE Zn 06Sep2000                  
+ POTCAR:    PAW_PBE O 08Apr2002                   
+ POTCAR:    PAW_PBE Zn 06Sep2000                  
+   VRHFIN =Zn: d10 p2                                                                               
+   TITEL  = PAW_PBE Zn 06Sep2000                                                                    
+   VRHFIN =O: s2p4                                                                                  
+   TITEL  = PAW_PBE O 08Apr2002                                                                     
+----------------------------------------------------------------------------------------
+
+                                     Primitive cell                                     
+
+  volume of cell :      47.3775
+
+  direct lattice vectors                    reciprocal lattice vectors
+     3.235859326  0.000000000  0.000000000     0.309036920  0.178422549  0.000000000
+    -1.617929663  2.802336380  0.000000000     0.000000000  0.356845098  0.000000000
+     0.000000000  0.000000000  5.224712026     0.000000000  0.000000000  0.191398109
+
+  length of vectors
+     3.235859326  3.235859326  5.224712026     0.356845098  0.356845098  0.191398109
+
+  position of ions in fractional coordinates (direct lattice)
+     0.333333333  0.666666667  0.000732960
+     0.666666667  0.333333333  0.500732960
+     0.333333333  0.666666667  0.379577040
+     0.666666667  0.333333333  0.879577040
+
+  ion indices of the primitive-cell ions
+   dimension x,y,z NGXF=    56 NGYF=   56 NGZF=   84
+   support grid    NGXF=   112 NGYF=  112 NGZF=  168
+   ions per type =               2   2
+   NGX,Y,Z   is equivalent  to a cutoff of  14.39, 14.39, 13.36 a.u.
+
+  energy-cutoff  :      600.00
+  volume of cell :       47.38
+      direct lattice vectors                 reciprocal lattice vectors
+     3.235859326  0.000000000  0.000000000     0.309036920  0.178422549  0.000000000
+    -1.617929663  2.802336380  0.000000000     0.000000000  0.356845098  0.000000000
+     0.000000000  0.000000000  5.224712026     0.000000000  0.000000000  0.191398109
+
+  length of vectors
+     3.235859326  3.235859326  5.224712026     0.356845098  0.356845098  0.191398109
+
+ 
+ position of ions in fractional coordinates (direct lattice) 
+   0.33333333  0.66666667  0.00073296
+   0.66666667  0.33333333  0.50073296
+   0.33333333  0.66666667  0.37957704
+   0.66666667  0.33333333  0.87957704
+ 
+
+ PIEZOELECTRIC TENSOR FIELD DIRECTION 1  (e Angst)
+ -----------------------------------------------------------------------------
+     0.00014  0.00000  1.22617           ( -0.00000  0.00000  0.05554)
+     0.00000 -0.00024  0.00000           (  0.00000  0.00001  0.00000)
+     1.22617  0.00000 -0.00005           (  0.05554  0.00000  0.00000)
+
+ PIEZOELECTRIC TENSOR FIELD DIRECTION 1  (C/m^2)
+ -----------------------------------------------------------------------------
+     0.00005  0.00000  0.41466
+     0.00000 -0.00008  0.00000
+     0.41466  0.00000 -0.00002
+
+
+
+ MACROSCOPIC STATIC DIELECTRIC TENSOR (including local field effects in DFT)
+ ------------------------------------------------------
+           6.612444     0.000000     0.000000
+           0.000000     6.612444    -0.000000
+           0.000000    -0.000000     5.952707
+ ------------------------------------------------------
+
+
+ PIEZOELECTRIC TENSOR (including local field effects)  for field in x, y, z        (e  Angst)
+          XX          YY          ZZ          XY          YZ          ZX
+  --------------------------------------------------------------------------------
+  x     0.00000     0.00000     0.00000    -0.00000     0.00000     1.22624
+  y    -0.00000     0.00000     0.00000     0.00000     1.22624     0.00000
+  z     1.14065     1.14065    -2.31588     0.00000    -0.00000    -0.00000
+
+ PIEZOELECTRIC TENSOR (including local field effects)  for field in x, y, z        (C/m^2)
+          XX          YY          ZZ          XY          YZ          ZX
+  --------------------------------------------------------------------------------
+  x     0.00000     0.00000     0.00000    -0.00000     0.00000     0.41468
+  y    -0.00000     0.00000     0.00000     0.00000     0.41468     0.00000
+  z     0.38574     0.38574    -0.78317     0.00000    -0.00000    -0.00000
+ 

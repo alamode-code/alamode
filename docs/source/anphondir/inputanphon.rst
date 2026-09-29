@@ -59,8 +59,8 @@ List of supported input variables
    :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`BUBBLE_HESS <anphon_bubble_hess>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`
    :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`EFIELD <anphon_efield>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`
    :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`
-   :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`
-   :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   :ref:`POL_REF <anphon_pol_ref>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`
+   :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    :ref:`ELASTIC_CONST (deprecated) <anphon_elastic_const>`, :ref:`RENORM_2TO1ST (deprecated) <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST (deprecated) <anphon_renorm_34to1st>`, :ref:`RENORM_3TO2ND (deprecated) <anphon_renorm_3to2nd>`
    **&strain**
    :ref:`Strain tensor <anphon_strain_field>`
@@ -1328,18 +1328,52 @@ Description of input variables
 
  :Description: The field is given as the force on a unit charge, i.e., numerically in V/Å
                (1 MV/cm = 0.01 eV/Å; 100 kV/cm = 0.001 eV/Å), the same unit as ``EFIELD_PEAD`` of VASP.
-               A nonzero field adds the fixed-field electric enthalpy
-               :math:`-\boldsymbol{E}\cdot\sum_{k}Z^{*}_{k}\boldsymbol{u}_{0,k}` to the free energy
-               minimized in the structural optimization, where :math:`Z^{*}_{k}` are the Born effective
-               charges of the ``BORNINFO`` file (required) and :math:`\boldsymbol{u}_{0,k}` the
-               :math:`\Gamma`-point displacement of atom :math:`k`. It is ignored unless ``MODE = SCPH``
-               or ``QHA`` with ``RELAX_STR = 1, 2, 4``; it is an error with ``RELAX_STR = 3``.
-               The term is linear in the displacements, so only :math:`\boldsymbol{u}_{0}` couples to the
-               field; the phonons change through the field-induced structure.
+               A nonzero field adds the electric enthalpy of an electroded sample held at **fixed
+               voltage**,
 
-               :math:`\boldsymbol{E}` is the internal macroscopic field of an insulator (short-circuit,
-               fixed-:math:`\boldsymbol{E}` boundary condition). Carrier screening and depolarization
-               fields (fixed-:math:`\boldsymbol{D}` conditions) are not modeled.
+               .. math::
+
+                  H_E = -\boldsymbol{E}\cdot\tilde{\boldsymbol{d}}, \qquad
+                  \tilde{\boldsymbol{d}} = \Omega_{\mathrm{ref}}\, e^{(0)}\!:\!u + \sum_{k}Z^{*}_{k}\boldsymbol{u}_{0,k},
+
+               to the free energy minimized in the structural optimization. Here :math:`Z^{*}_{k}` are the
+               Born effective charges of the ``BORNINFO`` file (required), :math:`\boldsymbol{u}_{0,k}` the
+               :math:`\Gamma`-point displacement of atom :math:`k`, :math:`u` the displacement gradient
+               (``&strain``, :math:`F = I + u`), :math:`\Omega_{\mathrm{ref}}` the volume of the reference
+               primitive cell, and :math:`e^{(0)}` the clamped-ion piezoelectric tensor from the
+               ``/Piezoelectric`` group of ``STRAINFILE`` (zero when absent; see below). It is ignored
+               unless ``MODE = SCPH`` or ``QHA`` with ``RELAX_STR = 1, 2, 4``; it is an error with
+               ``RELAX_STR = 3``.
+
+               ``EFIELD`` is the field **at the reference geometry**, i.e. the voltage per reference
+               cell. Electrodes fix the potential drop across the sample, so the Cartesian field follows
+               the deformation, :math:`\boldsymbol{E}(u) = F^{-T}\boldsymbol{E}`, and the factor
+               :math:`F` of the Cartesian dipole :math:`F\tilde{\boldsymbol{d}}` cancels in
+               :math:`-\boldsymbol{E}(u)\cdot F\tilde{\boldsymbol{d}}`. As a consequence the polarization of
+               the reference structure (``POL_REF``) and its Berry-phase branch only shift
+               :math:`H_E` by a constant and never act on the structure, and the cell feels the constant
+               stress :math:`\partial H_E/\partial u_{mn} = -\Omega_{\mathrm{ref}}E_i e^{(0)}_{imn}`
+               (the converse **proper** piezoelectric effect, no strain curvature). The ionic term keeps
+               :math:`-\boldsymbol{E}\cdot\sum_k Z^{*}_k\boldsymbol{u}_{0,k}` instead of the exact
+               :math:`-\boldsymbol{E}\cdot F^{-1}\sum_k Z^{*}_k\boldsymbol{u}_{0,k}`; the difference is of the
+               order :math:`E\,u\,u_0`, like the neglected strain dependence of :math:`Z^{*}`.
+               :math:`\boldsymbol{E}` is the internal macroscopic field of an insulator (short-circuit
+               electrodes); carrier screening and depolarization fields (fixed-:math:`\boldsymbol{D}`
+               conditions) are not modeled.
+
+               **Clamped-ion piezoelectric tensor.** With a strained cell (``RELAX_STR = 2, 4``) the
+               electronic part of the converse piezoelectric response comes from
+               ``/Piezoelectric/clamped_ion`` of ``STRAINFILE`` (C/m², written by
+               ``strainfile.py piezo``, see :ref:`the strain tools <label_strain_tools>`). It must be the
+               **clamped-ion** proper tensor: the ionic (relaxed-ion) contribution is already produced by
+               the :math:`Z^{*}\boldsymbol{u}_0` term, so giving the relaxed-ion total, or VASP's
+               ``IONIC CONTR`` block, counts it twice. From a VASP ``LEPSILON`` run take the block
+               ``PIEZOELECTRIC TENSOR (including local field effects) for field in x, y, z (C/m^2)``;
+               the block of the same name in ``e Angst`` is the derivative of the dipole of the
+               simulation cell (extensive), the ``C/m^2`` one is intensive. Without the group (and on the
+               ``STRAIN_IFC_DIR`` route) :math:`e^{(0)} = 0`; that is exact for a centrosymmetric
+               reference, and anphon warns when the reference has no inversion (the clamped-ion response
+               "may be missing"; point group 432 is a known false positive).
 
                Only the symmetry operations of the (distorted) cell that leave :math:`\boldsymbol{E}`
                invariant are kept; the k-point reduction, the symmetrization of the dynamical matrix and
@@ -1347,24 +1381,44 @@ Description of input variables
                ``SET_INIT_STR = 3`` is disabled under a field: each temperature starts from the structure
                of the previous one.
 
-               The log shows, per optimization step and for the final structure at each temperature,
-               the displacement-induced polarization
-               :math:`\Delta\boldsymbol{P}=\Omega^{-1}\sum_{k}Z^{*}_{k}\boldsymbol{u}_{0,k}` in
-               :math:`\mu\mathrm{C/cm}^2` (:math:`\Omega` is the cell volume at the current strain) and
-               the field energy in Ry. :math:`\Delta\boldsymbol{P}` is not the total polarization of a
-               polar reference structure. The same quantities are written to ``PREFIX.polarization``
-               with the columns: temperature, :math:`\Delta P_x`, :math:`\Delta P_y`, :math:`\Delta P_z`,
-               field energy, and a convergence flag (1 when the optimization converged).
-               :math:`\Delta\boldsymbol{P}` and ``PREFIX.polarization`` are also produced without a
-               field whenever ``BORNINFO`` is given in a structural optimization (field energy 0). For a
-               centrosymmetric reference, :math:`\Delta\boldsymbol{P}` is then the spontaneous
-               polarization in the linear Born-charge approximation.
+               **Polarization output.** Whenever ``BORNINFO`` is given in a structural optimization
+               (also without a field), the log shows per optimization step and per temperature the
+               Cartesian polarization, the conjugate of :math:`H_E`,
 
-               The field and the Born charges are stored in ``PREFIX.scph.h5`` /
-               ``PREFIX.qha.h5``. A restart (``RESTART_SCPH``, ``RESTART_QHA``) with a different
-               ``EFIELD`` or ``BORNINFO`` is refused, and the legacy text restart files cannot be used
-               with a nonzero field. A field sweep is therefore not a restart: run each field value as a
-               new optimization seeded from the relaxed structure of the previous one with
+               .. math::
+
+                  \boldsymbol{P} = \frac{F\,(\boldsymbol{d}_{\mathrm{ref}} + \tilde{\boldsymbol{d}})}{\Omega_{\mathrm{ref}}\det F},
+                  \qquad \boldsymbol{d}_{\mathrm{ref}} = \Omega_{\mathrm{ref}}\boldsymbol{P}_{\mathrm{ref}},
+
+               in :math:`\mu\mathrm{C/cm}^2`, its ionic-displacement part
+               :math:`F\sum_k Z^{*}_k\boldsymbol{u}_{0,k}/(\Omega_{\mathrm{ref}}\det F)`, and the field
+               energy :math:`-\boldsymbol{E}\cdot\tilde{\boldsymbol{d}}` in Ry.
+               :math:`\boldsymbol{P}_{\mathrm{ref}}` is ``POL_REF`` (zero when not given; the header says
+               so). ``PREFIX.polarization`` has one row per temperature with the columns: temperature,
+               :math:`P_x`, :math:`P_y`, :math:`P_z` (total), :math:`P^{\mathrm{ion}}_x`,
+               :math:`P^{\mathrm{ion}}_y`, :math:`P^{\mathrm{ion}}_z`, the field energy, and a convergence
+               flag (1 when the optimization converged), printed with 11 significant digits; the header
+               echoes ``EFIELD``, ``POL_REF`` and the source of :math:`e^{(0)}`. Each row refers to the
+               **last evaluated structure** of the temperature. When the optimization converged
+               (flag 1), that is the structure of the last free energy and gradients (``PREFIX.V0``),
+               and the final structure printed in the log and written to ``PREFIX.atom_disp`` /
+               ``PREFIX.umn_tensor`` is one optimizer step further. With flag 0 it is the last attempted
+               structure, which need not match ``PREFIX.V0`` or the printed final structure (a failed
+               SCPH temperature restores the previous converged or initial state). With
+               ``VERBOSITY >= 2`` the log also prints :math:`\boldsymbol{P}`, :math:`\tilde{\boldsymbol{d}}`
+               (e Bohr) and the nine strain gradients :math:`\partial F/\partial u_{mn}` (static plus
+               thermal) at full precision for every step. For a centrosymmetric reference without a field,
+               :math:`\boldsymbol{P}` is the spontaneous polarization in the linear Born-charge
+               approximation.
+
+               ``EFIELD``, ``POL_REF`` and :math:`e^{(0)}` are stored in ``PREFIX.scph.h5`` /
+               ``PREFIX.qha.h5``, and with a nonzero field also the Born charges. A restart
+               (``RESTART_SCPH``, ``RESTART_QHA``) with a different ``EFIELD``, ``POL_REF`` or
+               :math:`e^{(0)}` is refused, and so is one with different Born charges (``BORNINFO``) when
+               ``EFIELD`` is nonzero (they are not checked at zero field). The
+               legacy text restart files cannot be used when any of ``EFIELD``, ``POL_REF`` and
+               :math:`e^{(0)}` is nonzero. A field sweep is therefore not a restart: run each field value
+               as a new optimization seeded from the relaxed structure of the previous one with
 
                .. code-block:: bash
 
@@ -1376,14 +1430,46 @@ Description of input variables
                Limitations:
 
                * The Born charges are fixed: the nonlinearity of :math:`\boldsymbol{P}(\boldsymbol{u})`
-                 and the strain dependence of :math:`Z^{*}` are omitted.
-               * The clamped-ion (electronic) piezoelectric response is omitted, so the strain response
-                 is only the ionic part. This is exact to lowest order for a centrosymmetric reference
-                 but incomplete for a polar reference such as wurtzite.
+                 and the strain dependence of :math:`Z^{*}` are omitted, and so are nonlinear
+                 piezoelectric coefficients. The model is an exact polynomial, not a complete
+                 second-order expansion. :math:`\det F > 0` is assumed.
                * Terms of order :math:`E^2` (Raman / electrostriction through
                  :math:`\epsilon^{\infty}`) are neglected. For typical perovskites they are of order
                  :math:`10^{-3}` of the Born force at 1 MV/cm (an estimate, not a strict bound).
                * Switching is homogeneous, so intrinsic coercive fields greatly exceed experimental ones.
+
+````
+
+.. _anphon_pol_ref:
+
+* POL_REF-tag = Px Py Pz: Polarization of the reference structure in C/m² (Cartesian components).
+
+ :Default: not given (0 0 0)
+ :Type: Array of doubles
+
+ :Description: Output only: ``POL_REF`` never enters an energy, a force or a stress (see ``EFIELD``:
+               under fixed voltage the reference dipole shifts the enthalpy by a constant). It is added
+               to the reported polarization as
+               :math:`F\boldsymbol{P}_{\mathrm{ref}}/\det F` (:math:`\approx\boldsymbol{P}_{\mathrm{ref}}`
+               for small strain). It requires ``BORNINFO`` (an error otherwise, also at zero field); it
+               does not need ``EFIELD`` or ``STRAINFILE``. When it is not given, the log and the header of
+               ``PREFIX.polarization`` state that :math:`\boldsymbol{P}` excludes the reference
+               polarization.
+
+               :math:`\boldsymbol{P}_{\mathrm{ref}}` is a formal (Berry-phase) polarization, defined only
+               modulo a polarization quantum. Give it on a branch that is continuous from a chosen
+               nonpolar reference (e.g. relative to zinc blende for a wurtzite) and do not re-wrap it;
+               the choice of the branch is the user's responsibility. From a VASP ``LCALCPOL`` run of the
+               reference structure,
+
+               .. math::
+
+                  \boldsymbol{P}_{\mathrm{ref}}\,[\mathrm{C/m^2}] =
+                  \frac{\boldsymbol{p}[\mathrm{elc}] + \boldsymbol{p}[\mathrm{ion}]}{\Omega}\times 16.0218,
+
+               where :math:`\boldsymbol{p}` (e Å) is the dipole of the simulation cell, which is
+               extensive: :math:`\Omega` (Å³) must be the volume of the same cell. 16.0218 converts
+               e/Å² to C/m².
 
 ````
 

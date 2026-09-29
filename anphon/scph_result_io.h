@@ -38,6 +38,11 @@ struct ScphSettingsH5
     // zero field. Exit on mismatch.
     std::array<double, 3> efield{};
     std::vector<double> born_charges;
+    // POL_REF [C/m^2] and the clamped-ion piezoelectric tensor e0 as used
+    // [e/Bohr^2, (3,3,3)], independent of the field. Each is written only when
+    // nonzero; absent means zero. Exit on mismatch.
+    std::array<double, 3> pol_ref{};
+    std::array<double, 27> piezo0{};
 };
 
 // Primitive cell of the SCPH run; the virtual supercell (primitive cell

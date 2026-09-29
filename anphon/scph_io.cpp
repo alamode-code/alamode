@@ -195,6 +195,8 @@ ScphSettingsH5 ScphQhaCommon::build_scph_settings_h5(const std::string &mode_nam
         const auto zstar = dielec->get_borncharge();
         settings.born_charges.assign(&zstar[0][0][0], &zstar[0][0][0] + 9 * natmin);
     }
+    settings.pol_ref = relaxation->pol_ref;
+    settings.piezo0 = relaxation->piezo0;
     return settings;
 }
 

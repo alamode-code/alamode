@@ -74,7 +74,9 @@ private:
 
     void parse_relax_vars(PHON *phon);
 
-    std::array<double, 3> parse_efield(const std::map<std::string, std::string> &var_dict);
+    // A three-component &relax tag (EFIELD, POL_REF); what describes the entries.
+    std::array<double, 3> parse_vector3(const std::map<std::string, std::string> &var_dict, const std::string &tag,
+                                        const std::string &what);
 
     void check_relax_vars() const;
 

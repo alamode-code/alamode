@@ -324,3 +324,156 @@ def test_pack_from_legacy_text(cu_fc2, tmp_path):
     assert any(
         "no /Elastic/soec" in ln for ln in sf.supported_settings(sf.summary(out2))
     )
+
+
+# ---------------------------------------------------------------- piezo
+OUTCAR_ZNO = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "data", "OUTCAR_ZnO_piezo"
+)
+
+
+def _zno_container(tmp_path, cell=None):
+    """A container whose /ReferenceCell is the crystal of the OUTCAR fixture, with /Elastic."""
+    if cell is None:
+        cell = sf.parse_outcar_piezo(OUTCAR_ZNO)[2]
+    p = str(tmp_path / "zno.h5")
+    with sf.update(p, cell) as f:
+        sf.write_elastic(f, np.diag([0.1, 0.2, 0.3]))
+    return p
+
+
+def test_parse_outcar_piezo():
+    e, version, cell = sf.parse_outcar_piezo(OUTCAR_ZNO)
+    assert version == "vasp.6.5.1"
+    # the last C/m^2 block; shear column ZX is e_xxz = e_xzx (no factor 2)
+    assert e[0, 0, 2] == e[0, 2, 0] == 0.41468 and e[1, 1, 2] == e[1, 2, 1] == 0.41468
+    assert e[2, 0, 0] == e[2, 1, 1] == 0.38574 and e[2, 2, 2] == -0.78317
+    assert np.allclose(
+        sf.piezo_to_voigt(e)[2], [0.38574, 0.38574, -0.78317, 0.0, 0.0, 0.0]
+    )
+    assert cell.elements == ["Zn", "Zn", "O", "O"]
+    assert np.isclose(abs(np.linalg.det(cell.lavec)), 47.3775, atol=1e-3)
+    assert np.isclose(cell.xf[2, 2], 0.37957704)
+
+
+def test_parse_outcar_piezo_refuses_ionic_and_extensive(tmp_path):
+    text = open(OUTCAR_ZNO).read()
+    head = "PIEZOELECTRIC TENSOR (including local field effects)  for field in x, y, z"
+    cm2 = head + "        (C/m^2)"
+    # only the e*Angst block left
+    p = tmp_path / "OUTCAR_eA"
+    p.write_text(text.replace(cm2, "SOMETHING ELSE"))
+    with pytest.raises(ValueError, match="extensive"):
+        sf.parse_outcar_piezo(str(p))
+    # only IONIC CONTR blocks
+    p = tmp_path / "OUTCAR_ion"
+    p.write_text(
+        text.replace(head, "PIEZOELECTRIC TENSOR IONIC CONTR  for field in x, y, z")
+    )
+    with pytest.raises(ValueError, match="IONIC CONTR"):
+        sf.parse_outcar_piezo(str(p))
+    # a later, truncated C/m^2 block is skipped: the last complete one is used
+    p = tmp_path / "OUTCAR_trunc"
+    p.write_text(text + "\n " + cm2 + "\n          XX          YY\n")
+    assert sf.parse_outcar_piezo(str(p))[0][0, 0, 2] == 0.41468
+    # a later block cut inside its z row: the previous complete block is used
+    block = text[text.index(cm2) :].split("\n")[:6]
+    block[5] = block[5].split("-0.78317")[0]
+    p = tmp_path / "OUTCAR_trunc_row"
+    p.write_text(text + "\n " + "\n".join(block).replace("0.41468", "9.99999") + "\n")
+    e = sf.parse_outcar_piezo(str(p))[0]
+    assert e[0, 0, 2] == 0.41468 and e[2, 2, 2] == -0.78317
+
+
+def test_piezo_from_outcar_replaces_only_its_group(tmp_path):
+    p = _zno_container(tmp_path)
+    with h5py.File(p, "r") as f:
+        stress_before = f["Elastic/stress"][()]
+    sf.add_piezo(p, outcar=OUTCAR_ZNO, log=QUIET)
+    with h5py.File(p, "r") as f:
+        assert set(f) == {"ReferenceCell", "Elastic", "Piezoelectric"}
+        assert np.array_equal(f["Elastic/stress"][()], stress_before)
+        e, attrs = sf.read_piezo(f)
+        assert attrs["unit"] == "C/m^2" and attrs["convention"] == "proper, clamped-ion"
+        assert attrs["code_version"] == "vasp.6.5.1" and "LEPSILON" in attrs["method"]
+        assert attrs["source"].endswith("OUTCAR_ZnO_piezo")
+        assert e[0, 2, 0] == 0.41468
+        prov = json.loads(sf._decode(f.attrs["provenance"]))
+        assert prov[-1]["group"] == "Piezoelectric"
+    with pytest.raises(ValueError, match="--overwrite"):
+        sf.add_piezo(p, outcar=OUTCAR_ZNO, log=QUIET)
+    sf.add_piezo(p, outcar=OUTCAR_ZNO, overwrite=True, log=QUIET)
+    info = sf.summary(p)
+    assert info["piezo"] is not None and info["elastic"][0] is not None
+    assert any(
+        "piezoelectric" in ln and "present" in ln for ln in sf.supported_settings(info)
+    )
+    assert not sf.check(p, log=QUIET)
+    # the CLI wiring
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import importlib
+
+    cli = importlib.import_module("strainfile")
+    cli.main(["piezo", p, "--outcar", OUTCAR_ZNO, "--overwrite"])
+    with pytest.raises(SystemExit):
+        cli.main(["piezo", p, "--outcar", OUTCAR_ZNO])
+
+
+def test_piezo_refuses_another_crystal(tmp_path):
+    cell = sf.parse_outcar_piezo(OUTCAR_ZNO)[2]
+    other = ReferenceCell(cell.lavec * 1.01, cell.elements, cell.xf)
+    p = _zno_container(tmp_path, other)
+    with pytest.raises(ValueError, match="not the crystal"):
+        sf.add_piezo(p, outcar=OUTCAR_ZNO, log=QUIET)
+    with pytest.raises(ValueError, match="does not exist"):
+        sf.add_piezo(str(tmp_path / "none.h5"), outcar=OUTCAR_ZNO, log=QUIET)
+
+
+def test_piezo_from_voigt_table(tmp_path, ase_mod):
+    cell = sf.parse_outcar_piezo(OUTCAR_ZNO)[2]
+    p = _zno_container(tmp_path)
+    table = np.arange(1.0, 19.0).reshape(3, 6) / 10.0
+    t = tmp_path / "e.txt"
+    np.savetxt(t, table)
+    with pytest.raises(ValueError, match="--structure"):
+        sf.add_piezo(p, voigt=str(t), log=QUIET)
+    poscar = tmp_path / "POSCAR"
+    lines = ["ZnO", "1.0"] + ["  %.10f %.10f %.10f" % tuple(r) for r in cell.lavec]
+    lines += ["Zn O", "2 2", "Direct"] + [
+        "  %.10f %.10f %.10f" % tuple(r) for r in cell.xf
+    ]
+    poscar.write_text("\n".join(lines) + "\n")
+    e = sf.add_piezo(p, voigt=str(t), structure=str(poscar), log=QUIET)
+    # standard Voigt order xx yy zz yz xz xy, shear = tensor component
+    assert e[1, 1, 2] == e[1, 2, 1] == table[1, 3]
+    assert e[2, 0, 2] == e[2, 2, 0] == table[2, 4]
+    assert e[0, 0, 1] == e[0, 1, 0] == table[0, 5]
+    assert np.allclose(sf.piezo_to_voigt(e), table)
+    bad = tmp_path / "bad.txt"
+    np.savetxt(bad, table[:, :5])
+    with pytest.raises(ValueError, match="3 x 6"):
+        sf.add_piezo(
+            p, voigt=str(bad), structure=str(poscar), overwrite=True, log=QUIET
+        )
+
+
+def test_read_piezo_rejects_malformed(tmp_path):
+    p = _zno_container(tmp_path)
+    sf.add_piezo(p, outcar=OUTCAR_ZNO, log=QUIET)
+    e = sf.parse_outcar_piezo(OUTCAR_ZNO)[0]
+    asym = e.copy()
+    asym[0, 0, 2] += 1.0e-3
+    for mutate, match in (
+        (lambda d: d.attrs.__setitem__("unit", "e/bohr^2"), "unit"),
+        (lambda d: d.attrs.__setitem__("convention", "improper"), "convention"),
+        (lambda d: d.__setitem__(Ellipsis, asym), "symmetric"),
+    ):
+        q = str(tmp_path / "m.h5")
+        shutil.copyfile(p, q)
+        with h5py.File(q, "r+") as f:
+            mutate(f["Piezoelectric/clamped_ion"])
+        with h5py.File(q, "r") as f, pytest.raises(ValueError, match=match):
+            sf.read_piezo(f)
+    with pytest.raises(ValueError, match="symmetric"):
+        with sf.update(p, sf.parse_outcar_piezo(OUTCAR_ZNO)[2]) as f:
+            sf.write_piezo(f, asym)

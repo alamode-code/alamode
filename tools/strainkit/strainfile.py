@@ -9,6 +9,8 @@ Layout (every group except /ReferenceCell is optional)::
     /StrainForce/        modes, smag, weight, displacement_gradient, forces [n, natom, 3] (eV/A), Cell/
     /StrainHarmonic/     modes, smag, weight, displacement_gradient, entry_NNN/{PrimitiveCell, SuperCell,
                          ForceConstants/Order2}  (verbatim alm force-constant layout)
+    /Piezoelectric/      clamped_ion (3,3,3) [C/m^2]: the proper clamped-ion tensor e_ijk (symmetric
+                         in jk, Cartesian axes of /ReferenceCell), used by EFIELD with a strained cell
 
 Cell groups store the lattice vectors as rows in bohr (the alm convention),
 fractional coordinates, 0-based ``atomic_kinds`` into ``elements``.  The
@@ -36,7 +38,10 @@ REFERENCE = "ReferenceCell"
 ELASTIC = "Elastic"
 FORCE = "StrainForce"
 HARMONIC = "StrainHarmonic"
+PIEZO = "Piezoelectric"
 UNIT_FORCE = "eV/angstrom"
+UNIT_PIEZO = "C/m^2"
+PIEZO_CONVENTION = "proper, clamped-ion"
 
 
 def _h5py():
@@ -253,7 +258,7 @@ def update(path, reference_cell, record=None, force=False, source=None):
     else:
         if os.path.exists(path) and force:
             with h5py.File(path, "r") as old:
-                dropped = [k for k in (ELASTIC, FORCE, HARMONIC) if k in old]
+                dropped = [k for k in (ELASTIC, FORCE, HARMONIC, PIEZO) if k in old]
         f = h5py.File(part, "w")
         stamp_root(f)
         write_cell_group(
@@ -580,6 +585,239 @@ def read_strain_harmonic(f):
     return [(m, float(s), float(w)) for m, s, w in zip(modes, smag, weight)], entries
 
 
+# ------------------------------------------------------------ piezoelectric
+# (j, k) of the Voigt columns: standard xx yy zz yz xz xy, and VASP's OUTCAR
+# order XX YY ZZ XY YZ ZX.  In both the shear column is the tensor component
+# itself (e_i,yz = e_iyz = e_izy): no factor 2.
+VOIGT_PAIRS = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
+VASP_PAIRS = [(0, 0), (1, 1), (2, 2), (0, 1), (1, 2), (2, 0)]
+
+
+def piezo_from_columns(table, pairs):
+    """(3, 3, 3) tensor e_ijk from a 3x6 table whose columns are the (j, k) ``pairs``."""
+    t = np.asarray(table, dtype=float)
+    if t.shape != (3, 6) or not np.all(np.isfinite(t)):
+        raise ValueError(
+            f"a piezoelectric table must be 3 x 6 finite numbers, got shape {t.shape}"
+        )
+    e = np.zeros((3, 3, 3))
+    for c, (j, k) in enumerate(pairs):
+        e[:, j, k] = e[:, k, j] = t[:, c]
+    return e
+
+
+def piezo_to_voigt(e):
+    """The 3x6 table (standard xx yy zz yz xz xy order) of a (3, 3, 3) tensor."""
+    return np.array([[e[i, j, k] for j, k in VOIGT_PAIRS] for i in range(3)])
+
+
+def _validate_piezo(e, where):
+    e = np.asarray(e, dtype=float)
+    if e.shape != (3, 3, 3):
+        raise ValueError(f"{where}: shape {e.shape}, expected (3, 3, 3)")
+    if not np.all(np.isfinite(e)):
+        raise ValueError(f"{where}: non-finite values")
+    dev = np.abs(e - e.transpose(0, 2, 1)).max()
+    if dev > 1.0e-8:
+        raise ValueError(f"{where}: not symmetric in jk (max deviation {dev:.2e})")
+    return e
+
+
+def write_piezo(f, e_cm2, attrs=None):
+    """Replace /Piezoelectric: clamped_ion (3,3,3) in C/m^2 with its attributes."""
+    e = _validate_piezo(e_cm2, f"/{PIEZO}/clamped_ion")
+    if PIEZO in f:
+        del f[PIEZO]
+    g = f.create_group(PIEZO)
+    d = g.create_dataset("clamped_ion", data=e)
+    d.attrs["unit"] = UNIT_PIEZO
+    d.attrs["convention"] = PIEZO_CONVENTION
+    _set_attrs(d, attrs)
+    return g
+
+
+def read_piezo(f):
+    """(e (3,3,3) in C/m^2, attrs) of /Piezoelectric/clamped_ion; ValueError when malformed."""
+    if PIEZO not in f or "clamped_ion" not in f[PIEZO]:
+        raise ValueError(f"{f.filename}: no /{PIEZO}/clamped_ion dataset")
+    d = f[PIEZO]["clamped_ion"]
+    _require_unit(d, UNIT_PIEZO)
+    conv = _decode(d.attrs.get("convention", ""))
+    if conv != PIEZO_CONVENTION:
+        raise ValueError(
+            f"{d.name}: convention {conv!r}, expected {PIEZO_CONVENTION!r}"
+        )
+    e = _validate_piezo(d[()], d.name)
+    return e, {
+        k: _decode(v) if isinstance(v, bytes) else _plain(v) for k, v in d.attrs.items()
+    }
+
+
+def parse_outcar_piezo(path):
+    """The clamped-ion piezoelectric tensor of a VASP LEPSILON OUTCAR.
+
+    Returns (e (3,3,3) in C/m^2, VASP version or "", ReferenceCell of the run or
+    None).  The LAST complete "PIEZOELECTRIC TENSOR (including local field
+    effects) ... (C/m^2)" block is used; IONIC CONTR blocks (relaxed-ion part,
+    IBRION = 7/8) are ignored, and an OUTCAR with only those or only the
+    extensive e*Angst block is refused.  The structure comes from the last
+    "direct lattice vectors" and "position of ions in fractional coordinates"
+    blocks, the TITEL lines and "ions per type".
+    """
+    with open(path) as fh:
+        lines = fh.readlines()
+    version = lines[0].split()[0] if lines and lines[0].split() else ""
+    if not version.startswith("vasp"):
+        version = ""
+
+    def first3(line):
+        v = [float(x) for x in line.split()[:3]]
+        if len(v) != 3:
+            raise ValueError
+        return v
+
+    blocks, other = [], set()
+    lattice = xf_start = None
+    titel, counts = [], None
+    for i, line in enumerate(lines):
+        if "PIEZOELECTRIC TENSOR" in line and "for field in x, y, z" in line:
+            if "IONIC" in line.upper():
+                other.add("ionic")
+                continue
+            if "including local field effects" not in line:
+                continue
+            if "C/m^2" not in line:
+                other.add("e*Angst")
+                continue
+            try:
+                if lines[i + 1].split() != ["XX", "YY", "ZZ", "XY", "YZ", "ZX"]:
+                    raise ValueError
+                rows = [lines[i + 3 + r].split() for r in range(3)]
+                if [r[0] for r in rows] != ["x", "y", "z"]:
+                    raise ValueError
+                if any(len(r) != 7 for r in rows):
+                    raise ValueError
+                block = [[float(x) for x in r[1:7]] for r in rows]
+                if not np.all(np.isfinite(block)):
+                    raise ValueError
+                blocks.append(block)
+            except (IndexError, ValueError):
+                continue  # incomplete (truncated) block
+        elif "direct lattice vectors" in line:
+            try:
+                lattice = [first3(lines[i + 1 + r]) for r in range(3)]
+            except (IndexError, ValueError):
+                pass
+        elif "position of ions in fractional coordinates" in line:
+            xf_start = i + 1
+        elif line.strip().startswith("TITEL"):
+            titel.append(line.split("=", 1)[1].split()[1].split("_")[0])
+        elif "ions per type" in line:
+            counts = [int(x) for x in line.split("=", 1)[1].split()]
+    if not blocks:
+        if "ionic" in other:
+            raise ValueError(
+                f"{path}: only the IONIC CONTR piezoelectric block (relaxed-ion part) was found; the clamped-ion "
+                "tensor 'PIEZOELECTRIC TENSOR (including local field effects) ... (C/m^2)' of a LEPSILON run is needed"
+            )
+        if "e*Angst" in other:
+            raise ValueError(
+                f"{path}: only the extensive (e Angst) piezoelectric block was found; the intensive (C/m^2) block "
+                "is required (no unit guessing)"
+            )
+        raise ValueError(
+            f"{path}: no complete 'PIEZOELECTRIC TENSOR (including local field effects) ... (C/m^2)' block "
+            "(run VASP with LEPSILON = .TRUE.)"
+        )
+    e = piezo_from_columns(blocks[-1], VASP_PAIRS)
+
+    cell = None
+    if lattice is not None and xf_start is not None and titel and counts:
+        if len(titel) != len(counts):
+            raise ValueError(
+                f"{path}: {len(titel)} TITEL lines but {len(counts)} 'ions per type' entries"
+            )
+        symbols = [s for s, n in zip(titel, counts) for _ in range(n)]
+        try:
+            xf = [first3(lines[xf_start + r]) for r in range(len(symbols))]
+        except (IndexError, ValueError):
+            raise ValueError(f"{path}: incomplete fractional coordinates") from None
+        cell = ReferenceCell(np.array(lattice), symbols, np.array(xf))
+    return e, version, cell
+
+
+def read_structure_file(path):
+    """ReferenceCell of a POSCAR/CONTCAR or vasprun.xml (through ase)."""
+    import ase.io
+
+    fmt = "vasp-xml" if path.lower().endswith(".xml") else "vasp"
+    atoms = ase.io.read(path, format=fmt, index=-1)
+    return cell_from_atoms(atoms)
+
+
+def add_piezo(
+    path, outcar=None, voigt=None, structure=None, overwrite=False, log=print
+):
+    """Write /Piezoelectric/clamped_ion into an existing container; only that group changes.
+
+    ``outcar``: VASP LEPSILON OUTCAR (C/m^2 block).  ``voigt``: a 3x6 text table
+    in C/m^2, standard order xx yy zz yz xz xy, which needs ``structure``.  The
+    crystal of the calculation (``structure``, else the OUTCAR) must be the one
+    of /ReferenceCell in the same Cartesian frame.
+    """
+    h5py = _h5py()
+    if (outcar is None) == (voigt is None):
+        raise ValueError("give exactly one of --outcar and --voigt")
+    if voigt is not None and structure is None:
+        raise ValueError(
+            "--voigt needs --structure (POSCAR or vasprun.xml of the calculation) for the crystal check"
+        )
+    if not os.path.exists(path):
+        raise ValueError(
+            f"{path} does not exist; create the container first (strainfile.py pack, elastic.py fit, ...)"
+        )
+    if outcar is not None:
+        e, version, cell = parse_outcar_piezo(outcar)
+        attrs = {
+            "method": "VASP LEPSILON (DFPT), clamped-ion, including local field effects",
+            "source": os.path.abspath(outcar),
+            "code_version": version,
+        }
+    else:
+        e = piezo_from_columns(np.loadtxt(voigt, ndmin=2), VOIGT_PAIRS)
+        cell = None
+        attrs = {
+            "method": "Voigt table (xx yy zz yz xz xy)",
+            "source": os.path.abspath(voigt),
+        }
+    if structure is not None:
+        cell = read_structure_file(structure)
+        attrs["structure"] = os.path.abspath(structure)
+    if cell is None:
+        raise ValueError(
+            f"{outcar}: the lattice, species and positions could not be read; give --structure"
+        )
+    with h5py.File(path, "r") as f:
+        check_schema(f)
+        ref = read_cell_group(f[REFERENCE])
+        exists = PIEZO in f
+    try:
+        same_crystal(ref, cell)
+    except ValueError as exc:
+        raise ValueError(
+            f"the structure of the piezoelectric calculation is not the crystal of {path}:/ReferenceCell "
+            f"in the same Cartesian frame ({exc})"
+        ) from None
+    if exists and not overwrite:
+        raise ValueError(f"{path} already has /{PIEZO}; use --overwrite to replace it")
+    with update(path, ref, provenance_record(PIEZO, **attrs)) as f:
+        write_piezo(f, e, attrs)
+    log(f"  written: {path}:/{PIEZO}/clamped_ion (C/m^2, Voigt xx yy zz yz xz xy):")
+    for row in piezo_to_voigt(e):
+        log("    " + "".join(f"{x:11.5f}" for x in row))
+    return e
+
+
 # ---------------------------------------------------------------- summary
 def summary(path):
     """Inventory of a container as a dict (used by show/check)."""
@@ -611,6 +849,7 @@ def summary(path):
             }
         else:
             out["strain_harmonic"] = None
+        out["piezo"] = read_piezo(f) if PIEZO in f else None
     return out
 
 
@@ -673,6 +912,14 @@ def supported_settings(info):
             lines.append(label + f"no (weight sums must be 1 or 0 per component):\n{w}")
     else:
         lines.append(label + "no (no /StrainHarmonic)")
+    lines.append(
+        "clamped-ion piezoelectric tensor (EFIELD, strained)  : "
+        + (
+            "present"
+            if info.get("piezo")
+            else "absent (e0 = 0: no piezoelectric stress under EFIELD)"
+        )
+    )
     values = [v for v in range(8) if v & ~bits == 0]
     lines.append(
         "supported STRAIN_COUPLING values                     : "
@@ -934,6 +1181,17 @@ def show(path, min_c3=0.5, log=print):
             )
     else:
         log("  /StrainHarmonic: absent")
+    pz = info["piezo"]
+    if pz:
+        e, pattrs = pz
+        log(
+            f"  /{PIEZO}/clamped_ion (C/m^2, Voigt xx yy zz yz xz xy); "
+            + ", ".join(f"{k}={v}" for k, v in pattrs.items() if k != "unit")
+        )
+        for row in piezo_to_voigt(e):
+            log("    " + "".join(f"{x:11.5f}" for x in row))
+    else:
+        log(f"  /{PIEZO}: absent")
     log("  supports:")
     for line in supported_settings(info):
         log("    " + line)
@@ -1006,7 +1264,7 @@ def check(path, anphon_cell=None, fcs=None, log=print):
                 f"/StrainHarmonic: the weight sums must be 1 or 0 per component:\n{w}"
             )
         if fcs_struct is not None:
-            for (m, s, wt), e, c in zip(rows, entries, cells):
+            for (m, s, _wt), e, c in zip(rows, entries, cells):
                 F = np.eye(3) + mode_tensor(m) * s
                 expected = fcs_struct.lavec @ F.T
                 bad = []

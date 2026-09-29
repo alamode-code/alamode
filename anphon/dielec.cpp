@@ -92,7 +92,7 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
         if (nonanalytic || calc_dielectric_constant || use_efield) {
             if (!borninfo_given) {
                 if (use_efield) {
-                    exitall("Dielec::init()", "BORNINFO must be set when EFIELD is nonzero.");
+                    exitall("Dielec::init()", "BORNINFO must be set when EFIELD is nonzero or POL_REF is given.");
                 }
                 if (calc_dielectric_constant) {
                     exitall("Dielec::init()", "BORNINFO must be set when DIELEC = 1.");

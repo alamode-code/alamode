@@ -370,6 +370,8 @@ void PHON::setup_base() const
     // EFIELD filters the symmetry operations and makes dielec->init() load the
     // Born charges, both before setup_relaxation().
     MPI_Bcast(relaxation->efield.data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(relaxation->pol_ref.data(), 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&relaxation->pol_ref_given, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
     symmetry->efield = relaxation->efield;
     // Also set on rank 0 only, and read inside Fcs_phonon::setup, where it
     // raises maxorder: every rank must agree before any setup_fcs() call,
@@ -437,7 +439,7 @@ void PHON::setup_base() const
                  writes->print_zmode,
                  mode_symmetry->print_irreps,
                  symmetry->SymmListWithMap,
-                 relaxing_structure && relaxation->has_efield(),
+                 relaxing_structure && (relaxation->has_efield() || relaxation->pol_ref_given),
                  relaxing_structure);
     ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
 
@@ -644,7 +646,11 @@ void PHON::execute_self_consistent_phonon() const
                                          *dielec,
                                          *ewald);
     print_stage_line("harmonic diagonalization, all k", timer->elapsed() - t_stage, run_info.my_rank, get_verbosity());
-    relaxation->setup_relaxation(symmetry->tolerance);
+    const auto &ops_ref = symmetry->SymmList_ref;
+    const auto ref_has_inversion = std::any_of(ops_ref.begin(), ops_ref.end(), [](const SymmetryOperation &op) {
+        return (op.rotation_cart + Eigen::Matrix3d::Identity()).cwiseAbs().maxCoeff() < 1.0e-6;
+    });
+    relaxation->setup_relaxation(symmetry->tolerance, ref_has_inversion);
 
     if (run_info.mode == "SCPH") {
         scph->setup_scph();

@@ -5,12 +5,16 @@
                         [--legacy-cell IN] -o OUT.h5 [--force]
     strainfile.py show  FILE.h5 [--min-c3 0.5]
     strainfile.py check FILE.h5 [--anphon-cell IN] [--fcs FC2FILE]
+    strainfile.py piezo FILE.h5 (--outcar OUTCAR | --voigt TABLE --structure POSCAR)
+                        [--structure POSCAR|vasprun.xml] [--overwrite]
 
 The container (HDF5, schema alamode:strain_coupling) replaces the text files
 elastic_constants.in, C1_array.in, strain_force.in and strain_harmonic.in (plus
 the strained force-constant files); anphon reads it through the STRAINFILE tag
 of the &relax field.  elastic.py fit and strainifc.py collect write into it
-directly (--strain-file); pack converts existing text files.
+directly (--strain-file); pack converts existing text files.  piezo adds the
+clamped-ion piezoelectric tensor (/Piezoelectric) that EFIELD uses with a
+strained cell, replacing only that group.
 """
 
 import argparse
@@ -80,6 +84,32 @@ def main(argv=None):
         help="force-constant file (FC2FILE/FCSFILE) of the anphon run",
     )
 
+    z = sub.add_parser(
+        "piezo",
+        help="add the clamped-ion piezoelectric tensor (/Piezoelectric) to a container",
+    )
+    z.add_argument("file")
+    src = z.add_mutually_exclusive_group(required=True)
+    src.add_argument(
+        "--outcar",
+        default=None,
+        help="VASP LEPSILON OUTCAR: the last 'PIEZOELECTRIC TENSOR (including local field effects) "
+        "... (C/m^2)' block (never the IONIC CONTR block)",
+    )
+    src.add_argument(
+        "--voigt",
+        default=None,
+        help="3 x 6 text table in C/m^2, rows x y z, columns xx yy zz yz xz xy (proper, clamped-ion)",
+    )
+    z.add_argument(
+        "--structure",
+        default=None,
+        help="POSCAR or vasprun.xml of the calculation for the crystal check (required with --voigt)",
+    )
+    z.add_argument(
+        "--overwrite", action="store_true", help="replace an existing /Piezoelectric"
+    )
+
     args = p.parse_args(argv)
     try:
         if args.cmd == "pack":
@@ -98,6 +128,10 @@ def main(argv=None):
             problems = sf.check(args.file, args.anphon_cell, args.fcs)
             if problems:
                 sys.exit(1)
+        elif args.cmd == "piezo":
+            sf.add_piezo(
+                args.file, args.outcar, args.voigt, args.structure, args.overwrite
+            )
     except Exception as exc:  # noqa: BLE001
         if args.debug:
             raise

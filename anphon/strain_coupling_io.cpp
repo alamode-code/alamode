@@ -259,6 +259,7 @@ ContainerSummary StrainCouplingFile::probe() const
     }
     s.has_strain_force = file.exist("/StrainForce");
     s.has_strain_harmonic = file.exist("/StrainHarmonic");
+    s.has_piezo = file.exist("/Piezoelectric");
     return s;
 }
 
@@ -382,6 +383,35 @@ StrainHarmonicSet StrainCouplingFile::read_strain_harmonic() const
     return set;
 }
 
+std::array<double, 27> StrainCouplingFile::read_piezo() const
+{
+    const auto &file = *impl->file;
+    const std::string path = "/Piezoelectric/clamped_ion";
+    require(file, path, "clamped-ion piezoelectric tensor");
+    require_unit(file, path, "C/m^2");
+    const auto dset = file.getDataSet(path);
+    std::string convention;
+    if (dset.hasAttribute("convention")) dset.getAttribute("convention").read(convention);
+    if (convention != "proper, clamped-ion") {
+        throw std::runtime_error(path + " of " + file.getName() + " has the convention \"" + convention +
+                                 "\"; only \"proper, clamped-ion\" is accepted.");
+    }
+    const auto v = load_doubles(file, path, {3, 3, 3});
+    std::array<double, 27> e{};
+    for (std::size_t i = 0; i < 27; ++i) e[i] = v[i];
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            for (int k = j + 1; k < 3; ++k) {
+                if (std::fabs(e[(i * 3 + j) * 3 + k] - e[(i * 3 + k) * 3 + j]) > 1.0e-8) {
+                    throw std::runtime_error(path + " of " + file.getName() +
+                                             " is not symmetric in its last two indices.");
+                }
+            }
+        }
+    }
+    return e;
+}
+
 void StrainCouplingFile::load_harmonic_fc2(const StrainHarmonicEntry &entry, const Fcs_phonon &fcs_phonon,
                                            std::vector<FcsArrayWithCell> &fc2_out) const
 {
@@ -398,6 +428,9 @@ std::string StrainCouplingFile::missing_group_hint(const std::string &group)
     }
     if (group == "/StrainHarmonic") {
         return "Add it with: strainifc.py collect --coupling harmonic --strain-file FILE (or strainfile.py pack).";
+    }
+    if (group == "/Piezoelectric") {
+        return "Add it with: strainfile.py piezo FILE --outcar OUTCAR (VASP LEPSILON) or --voigt TABLE --structure POSCAR.";
     }
     return "See the strain-coupling tools (tools/strainfile.py) to add it.";
 }

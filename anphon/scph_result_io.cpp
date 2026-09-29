@@ -127,6 +127,29 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
             exit("scph_result_io", "The Born effective charges (BORNINFO) are not consistent with the restart file");
         }
     }
+    // POL_REF and e0 (STRAINFILE /Piezoelectric): absent means zero.
+    const auto same_values = [&fh](const std::string &path, const double *expected, const std::size_t n) {
+        std::vector<double> stored(n, 0.0);
+        if (fh.exist(path)) {
+            const auto dset = fh.getDataSet(path);
+            if (dset.getElementCount() != n) return false;
+            dset.read(stored.data());
+        }
+        for (std::size_t i = 0; i < n; ++i) {
+            if (std::abs(stored[i] - expected[i]) >
+                1.0e-10 * std::max({std::abs(stored[i]), std::abs(expected[i]), 1.0}))
+                return false;
+        }
+        return true;
+    };
+    if (!same_values("/settings/pol_ref", settings.pol_ref.data(), 3)) {
+        exit("scph_result_io", "The POL_REF tag is not consistent with the restart file");
+    }
+    if (!same_values("/settings/piezo_clamped_ion", settings.piezo0.data(), 27)) {
+        exit(
+            "scph_result_io",
+            "The clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric) is not consistent with the restart file");
+    }
 }
 
 void ScphResultIOH5::load_dymat(const std::string &name, const std::vector<double> &temps_requested,
@@ -291,6 +314,18 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
             const auto nat = settings.born_charges.size() / 9;
             fh.createDataSet<double>("/settings/born_charges", HighFive::DataSpace({nat, 3, 3}))
                 .write_raw(settings.born_charges.data());
+        }
+        const auto nonzero = [](const auto &v) {
+            return std::any_of(v.begin(), v.end(), [](const double x) { return x != 0.0; });
+        };
+        if (nonzero(settings.pol_ref)) {
+            dump(fh, "/settings/pol_ref", std::vector<double>(settings.pol_ref.begin(), settings.pol_ref.end()));
+            dumpAttribute(fh, "/settings/pol_ref", "unit", std::string("C/m^2"));
+        }
+        if (nonzero(settings.piezo0)) {
+            fh.createDataSet<double>("/settings/piezo_clamped_ion", HighFive::DataSpace({3, 3, 3}))
+                .write_raw(settings.piezo0.data());
+            dumpAttribute(fh, "/settings/piezo_clamped_ion", "unit", std::string("e/bohr^2"));
         }
 
         // Primitive cell (identity mapping) and the virtual supercell

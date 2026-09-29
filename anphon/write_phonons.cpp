@@ -231,6 +231,10 @@ void Writes::writeInputVars()
             os << "  EFIELD = " << phon->relaxation->efield[0] << " " << phon->relaxation->efield[1] << " "
                << phon->relaxation->efield[2] << " [eV/Angstrom]\n";
         }
+        if (phon->relaxation->pol_ref_given) {
+            os << "  POL_REF = " << phon->relaxation->pol_ref[0] << " " << phon->relaxation->pol_ref[1] << " "
+               << phon->relaxation->pol_ref[2] << " [C/m^2]\n";
+        }
 
         if (run.mode == "QHA" && phon->relaxation->relax_str == 2) {
             os << "  QHA_SCHEME = " << to_int(phon->qha->qha_scheme) << '\n';

@@ -244,13 +244,16 @@ protected:
     // assignment). Collective: every rank must call it.
     void setup_structural_opt_buffers(StructuralOptWorkspace &ws);
 
-    // EFIELD: displacement-induced polarization dpol [uC/cm^2] at the current
-    // volume and the returned field energy [Ry] of ws.structure_state (zE non-empty).
-    double efield_response(const StructuralOptWorkspace &ws, double dpol[3]) const;
+    // Polarization of `state` (Born charges loaded) in the fixed-voltage model:
+    // dt = A + B [e Bohr] with A = Omega_ref e0 : u and B = sum_k Z*_k u0_k,
+    // pol = F (d_ref + dt) / (Omega_ref det F) and pol_ion = F B / (Omega_ref det F)
+    // [uC/cm^2], F = I + u. Returns the field energy -E0 . (A + B) as used in V0 [Ry].
+    double efield_response(const StructuralOptWorkspace &ws, const RelaxationStructureState &state, double pol[3],
+                           double pol_ion[3], double dt[3]) const;
 
-    // EFIELD: one line with the displacement-induced polarization and the
-    // field energy at the current structure (no-op without a field).
-    void print_efield_response(const StructuralOptWorkspace &ws) const;
+    // The polarization (and the field energy) of `state`; full precision and dt
+    // at VERBOSITY >= 2. No-op without Born charges.
+    void print_efield_response(const StructuralOptWorkspace &ws, const RelaxationStructureState &state) const;
 
     // Residual force/stress norms of one structural step, the per-step
     // du/residual report, and the history-table record.

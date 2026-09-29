@@ -1467,41 +1467,74 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
     }
 }
 
-double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, double dpol[3]) const
+double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, const RelaxationStructureState &state,
+                                      double pol[3], double pol_ion[3], double dt[3]) const
 {
-    const auto &state = ws.structure_state;
     const auto natmin = system->get_primcell().number_of_atoms;
     const auto zstar = dielec->get_borncharge();
+    const auto omega_ref = system->get_primcell().volume;
+    const auto &e0 = relaxation->piezo0;
 
-    // Delta P = (1/Omega) sum_k Z*_k u0_k at the current volume
     Eigen::Matrix3d fmat = Eigen::Matrix3d::Identity();
     for (auto i = 0; i < 3; i++) {
         for (auto j = 0; j < 3; j++) fmat(i, j) += state.u_tensor[i][j];
     }
-    const auto volume = system->get_primcell().volume * fmat.determinant();
-    constexpr auto e_bohr2_to_uc_cm2 = 1.6021766208e-19 / (Bohr_in_Angstrom * Bohr_in_Angstrom * 1.0e-16) * 1.0e6;
-    for (auto a = 0; a < 3; a++) {
-        dpol[a] = 0.0;
+    Eigen::Vector3d a_piezo, b_ion, d_ref;
+    for (auto i = 0; i < 3; i++) {
+        b_ion(i) = 0.0;
         for (auto k = 0; k < natmin; k++) {
-            for (auto b = 0; b < 3; b++) dpol[a] += zstar[k][a][b] * state.u0[3 * k + b];
+            for (auto j = 0; j < 3; j++) b_ion(i) += zstar[k][i][j] * state.u0[3 * k + j];
         }
-        dpol[a] *= e_bohr2_to_uc_cm2 / volume;
+        a_piezo(i) = 0.0;
+        for (auto mn = 0; mn < 9; mn++) a_piezo(i) += e0[i * 9 + mn] * state.u_tensor[mn / 3][mn % 3];
+        a_piezo(i) *= omega_ref;
+        d_ref(i) = omega_ref * relaxation->pol_ref[i] / e_bohr2_in_c_m2;
+        dt[i] = a_piezo(i) + b_ion(i);
     }
+    // e/Bohr^2 -> uC/cm^2 (1 C/m^2 = 100 uC/cm^2)
+    const auto scale = e_bohr2_in_c_m2 * 100.0 / (omega_ref * fmat.determinant());
+    const Eigen::Vector3d p_tot = scale * (fmat * (d_ref + a_piezo + b_ion));
+    const Eigen::Vector3d p_ion = scale * (fmat * b_ion);
+    for (auto i = 0; i < 3; i++) {
+        pol[i] = p_tot(i);
+        pol_ion[i] = p_ion(i);
+    }
+
+    // The field energy as it enters V0: -sum_s zE[s] q0[s] (= -E0 . B up to
+    // masked modes) plus the piezoelectric part -E0 . A.
     auto energy = 0.0;
     for (std::size_t is = 0; is < ws.zE.size(); is++) energy -= ws.zE[is] * state.q0[is];
+    if (relaxation->has_piezo_field_term()) {
+        for (auto mn = 0; mn < 9; mn++) {
+            energy += relaxation->efield_strain_gradient[mn] * state.u_tensor[mn / 3][mn % 3];
+        }
+    }
     return energy;
 }
 
-void ScphQhaCommon::print_efield_response(const StructuralOptWorkspace &ws) const
+void ScphQhaCommon::print_efield_response(const StructuralOptWorkspace &ws, const RelaxationStructureState &state) const
 {
     if (!dielec->has_borncharge() || run.verbosity == 0) return;
 
-    double dpol[3];
-    const auto energy = efield_response(ws, dpol);
-    std::cout << " Delta P = (1/Omega) sum_k Z*_k u0_k [uC/cm^2] =";
-    for (auto a = 0; a < 3; a++) std::cout << std::scientific << std::setw(15) << std::setprecision(6) << dpol[a];
-    if (!ws.zE.empty()) std::cout << ", field energy [Ry] =" << std::setw(15) << energy;
-    std::cout << std::defaultfloat << '\n';
+    double pol[3], pol_ion[3], dt[3];
+    const auto energy = efield_response(ws, state, pol, pol_ion, dt);
+    const auto flags = std::cout.flags();
+    const auto prec = std::cout.precision();
+    const auto digits = run.verbosity > 1 ? 15 : 6;
+    const auto width = run.verbosity > 1 ? 24 : 15;
+    std::cout << std::scientific << std::setprecision(digits);
+    std::cout << " P [uC/cm^2] =";
+    for (const auto p: pol) std::cout << std::setw(width) << p;
+    std::cout << "\n   of which ionic displacements F sum_k Z*_k u0_k / (Omega_ref det F) =";
+    for (const auto p: pol_ion) std::cout << std::setw(width) << p;
+    if (relaxation->has_efield()) std::cout << "\n   field energy -E . (A + B) [Ry] =" << std::setw(width) << energy;
+    if (run.verbosity > 1) {
+        std::cout << "\n   dipole dt = Omega_ref e0:u + sum_k Z*_k u0_k [e Bohr] =";
+        for (const auto d: dt) std::cout << std::setw(width) << d;
+    }
+    std::cout << '\n';
+    std::cout.flags(flags);
+    std::cout.precision(prec);
 }
 
 void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspace &ws,
@@ -1556,6 +1589,11 @@ void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspac
         for (auto is = 0; is < ns; is++) {
             std::cout << std::setw(24) << v1_eff[is].real();
         }
+        if (uses_full_strain_derivatives(ws.relax_mode)) {
+            // the 9 strain gradients dF/du_mn (static + thermal), m-major
+            std::cout << "\n strain gradient dF/du_mn [Ry] :";
+            for (auto mn = 0; mn < 9; mn++) std::cout << std::setw(24) << del_v0_del_umn_eff[mn].real();
+        }
         std::cout << std::defaultfloat << '\n';
     }
 
@@ -1599,7 +1637,12 @@ void ScphQhaCommon::print_final_structure(const StructuralOptWorkspace &ws, cons
 
     std::cout << "\n Final structure at " << temp << " K :\n";
     relaxation->print_structure_and_symmetry(state, nullptr);
-    print_efield_response(ws);
+    if (dielec->has_borncharge()) {
+        std::cout << " Polarization at the last evaluated structure (when converged, the one of the last V0\n"
+                  << " and gradients, and the structure above is one optimizer step further; after a failed\n"
+                  << " temperature it need not match PREFIX.V0 or the structure above):\n";
+    }
+    print_efield_response(ws, ws.evaluated_state);
 
     if (last_temperature) {
         std::cout << " ----------------------------------------------------------------\n\n";
@@ -1612,17 +1655,39 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
 {
     auto i_temp_loop = -1;
 
-    // Displacement-induced polarization (and the EFIELD energy) per temperature,
-    // whenever Born charges are given: nonzero also without a field in a polar phase.
+    // Polarization (and the EFIELD energy) per temperature whenever Born charges
+    // are given: nonzero also without a field in a polar phase.
     std::ofstream fout_pol;
     if (dielec->has_borncharge()) {
         fout_pol.open(run.job_title + ".polarization");
         if (!fout_pol) warn("run_structural_optimization_loop", "Cannot open PREFIX.polarization for writing.");
         const auto &e = relaxation->efield;
-        fout_pol << "# EFIELD = " << e[0] << " " << e[1] << " " << e[2] << " [eV/Angstrom]\n";
-        fout_pol << "# Delta P = (1/Omega) sum_k Z*_k u0_k [uC/cm^2]; field energy = -E . sum_k Z*_k u0_k [Ry]\n";
-        fout_pol << "#" << std::setw(14) << "temp [K]" << std::setw(15) << "Px" << std::setw(15) << "Py"
-                 << std::setw(15) << "Pz" << std::setw(15) << "E_field" << std::setw(6) << "conv" << '\n';
+        const auto &p = relaxation->pol_ref;
+        std::ostringstream pol_ref_note;
+        if (relaxation->pol_ref_given) {
+            pol_ref_note << "# POL_REF = " << p[0] << " " << p[1] << " " << p[2] << " [C/m^2]\n";
+        } else {
+            pol_ref_note << "# POL_REF not given: P excludes the polarization P_ref of the reference structure;\n"
+                         << "# add it as F P_ref / det F.\n";
+        }
+        if (run.verbosity > 0 && !relaxation->pol_ref_given) {
+            std::cout << " NOTE: POL_REF is not given: the reported P excludes the polarization P_ref of the\n"
+                      << "       reference structure; add it as F P_ref / det F.\n\n";
+        }
+        fout_pol << "# EFIELD = " << e[0] << " " << e[1] << " " << e[2]
+                 << " [eV/Angstrom] (field at the reference geometry, fixed voltage)\n"
+                 << pol_ref_note.str() << "# e0 (clamped-ion piezoelectric tensor): " << relaxation->piezo0_source
+                 << '\n'
+                 << "# P = F (d_ref + A + B) / (Omega_ref det F), F = I + u, d_ref = Omega_ref P_ref,\n"
+                 << "#     A = Omega_ref e0:u, B = sum_k Z*_k u0_k [uC/cm^2]; P_ion = F B / (Omega_ref det F);\n"
+                 << "# E_field = -E . (A + B) [Ry]. Each row is the last evaluated structure of the temperature:\n"
+                 << "# with conv = 1 the one of the last V0 and gradients; with conv = 0 the last attempted one,\n"
+                 << "# which need not match PREFIX.V0 or the printed final structure.\n";
+        fout_pol << "#" << std::setw(18) << "temp [K]";
+        for (const auto *label: {"Px", "Py", "Pz", "Pion_x", "Pion_y", "Pion_z", "E_field"}) {
+            fout_pol << std::setw(19) << label;
+        }
+        fout_pol << std::setw(6) << "conv" << '\n';
     }
 
     for (double temp: ctx.vec_temp) {
@@ -1646,6 +1711,7 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
                                            evec_harmonic);
 
         model.after_init_structure(iT, temp);
+        ctx.ws.evaluated_state = ctx.structure_state;
 
         print_initial_structure(ctx.structure_state, ctx.relax_mode);
 
@@ -1705,11 +1771,12 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
         relaxation->write_resfile_atT(ctx.structure_state, temp, ctx.fout_q0, ctx.fout_u0, ctx.fout_u_tensor);
 
         if (fout_pol.is_open()) {
-            double dpol[3];
-            const auto energy = efield_response(ctx.ws, dpol);
-            fout_pol << std::scientific << std::setprecision(6) << std::setw(15) << temp;
-            for (const auto p: dpol) fout_pol << std::setw(15) << p;
-            fout_pol << std::setw(15) << energy << std::setw(6) << (converged_this_temp ? 1 : 0) << '\n';
+            double pol[3], pol_ion[3], dt[3];
+            const auto energy = efield_response(ctx.ws, ctx.ws.evaluated_state, pol, pol_ion, dt);
+            fout_pol << std::scientific << std::setprecision(10) << std::setw(19) << temp;
+            for (const auto x: pol) fout_pol << std::setw(19) << x;
+            for (const auto x: pol_ion) fout_pol << std::setw(19) << x;
+            fout_pol << std::setw(19) << energy << std::setw(6) << (converged_this_temp ? 1 : 0) << '\n';
         }
 
         model.finalize_temperature(iT, temp, converged_this_temp, ctx.converged_prev);
@@ -1719,6 +1786,6 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
 
     if (fout_pol.is_open()) {
         fout_pol.close();
-        print_output_file(run, run.job_title + ".polarization", "Field-induced polarization (EFIELD)");
+        print_output_file(run, run.job_title + ".polarization", "Polarization of the relaxed structures");
     }
 }

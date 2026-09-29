@@ -11,8 +11,11 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <algorithm>
+#include <array>
 #include <complex>
 #include <memory>
+#include "constants.h"
 #include "fcs_phonon.h"
 #include "kpoint.h"
 #include "optimizers.h"
@@ -24,6 +27,8 @@
 
 namespace PHON_NS
 {
+// 1 e/Bohr^2 in C/m^2 (polarization and piezoelectric units; 1 C/m^2 = 0.017478 e/Bohr^2)
+inline constexpr double e_bohr2_in_c_m2 = 1.6021766208e-19 / (Bohr_in_Angstrom * Bohr_in_Angstrom * 1.0e-20);
 
 class DerivativeIFC;
 class ElasticTensor;
@@ -264,6 +269,30 @@ public:
     {
         return efield[0] != 0.0 || efield[1] != 0.0 || efield[2] != 0.0;
     }
+    // POL_REF [C/m^2]: polarization of the reference structure. Output only: it
+    // never enters an energy (fixed-voltage model). pol_ref_given: the tag was set.
+    std::array<double, 3> pol_ref;
+    bool pol_ref_given;
+    bool has_pol_ref() const
+    {
+        return pol_ref[0] != 0.0 || pol_ref[1] != 0.0 || pol_ref[2] != 0.0;
+    }
+    // Clamped-ion proper piezoelectric tensor e0_ijk [e/Bohr^2], flat (i * 3 + j) * 3 + k,
+    // from STRAINFILE /Piezoelectric; zero when absent, with STRAIN_IFC_DIR, or at a
+    // fixed cell. Set on every rank by setup_relaxation; piezo0_source names it.
+    std::array<double, 27> piezo0{};
+    std::string piezo0_source{"none (e0 = 0)"};
+    bool has_piezo0() const
+    {
+        return std::any_of(piezo0.begin(), piezo0.end(), [](const double x) { return x != 0.0; });
+    }
+    // Fixed-voltage cell gradient dH_E/du_mn = -Omega_ref E0_i e0_imn [Ry], flat m * 3 + n,
+    // constant in u; set only when both EFIELD and e0 are nonzero (has_piezo_field_term).
+    std::array<double, 9> efield_strain_gradient{};
+    bool has_piezo_field_term() const
+    {
+        return has_efield() && has_piezo0();
+    }
 
     // STRAIN_COUPLING as given (-1: the deprecated RENORM_*/ELASTIC_CONST
     // tags set a combination it cannot express). The four switches below
@@ -291,7 +320,8 @@ public:
     void create_optimizer(const size_t num_modes);
 
     // symprec is Symmetry::tolerance, cached for the spglib calls of this class.
-    void setup_relaxation(double symprec);
+    // ref_has_inversion: the reference cell has the inversion (missing-e0 warning).
+    void setup_relaxation(double symprec, bool ref_has_inversion);
 
     void compute_del_v_strain(const DerivativeIFC &derivative_ifc, const KpointMeshUniform *kmesh_coarse,
                               const KpointMeshUniform *kmesh_dense, DelVStrainData &del_v_strain,
@@ -325,10 +355,14 @@ public:
     // the primitive cell of this run; runs on every rank.
     void validate_strain_file() const;
 
-    static void renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
-                                        std::array<std::array<double, 3>, 3> &eta_tensor, double *C1_array,
-                                        double **C2_array, double ***C3_array,
-                                        const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell);
+    // piezo0 (and efield_strain_gradient) from STRAINFILE /Piezoelectric; every rank.
+    void load_piezo();
+
+    // Adds the pV term and, under EFIELD with e0, the piezoelectric enthalpy
+    // -Omega_ref E0_i e0_ikl u_kl.
+    void renormalize_v0_from_umn(double &v0_with_umn, double v0_ref, std::array<std::array<double, 3>, 3> &eta_tensor,
+                                 double *C1_array, double **C2_array, double ***C3_array,
+                                 const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell) const;
 
     void renormalize_v1_from_umn(std::complex<double> *, const std::complex<double> *const, const DelVStrainData &,
                                  const std::array<std::array<double, 3>, 3> &) const;

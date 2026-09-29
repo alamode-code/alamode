@@ -123,7 +123,8 @@ public:
         const auto spg_label = qha_.relaxation->print_structure_and_symmetry(
             structure_state,
             uses_full_strain_derivatives(ws_.relax_mode) ? del_v0_del_umn_QHA_ : nullptr);
-        qha_.print_efield_response(ws_);
+        ws_.evaluated_state = structure_state;
+        qha_.print_efield_response(ws_, ws_.evaluated_state);
         std::cout << '\n';
         qha_.print_stage_time("structure print + symmetry", time_stage);
         time_stage = qha_.timer->elapsed();
@@ -332,10 +333,10 @@ void Qha::exec_qha_optimization()
             // absent when restarting from the unified file alone.
             if (with_relax && run.my_rank == 0) store_V0_to_file();
         } else {
-            if (relaxation->has_efield()) {
+            if (relaxation->has_efield() || relaxation->has_pol_ref() || relaxation->has_piezo0()) {
                 exit("exec_qha_optimization",
-                     "RESTART_QHA with EFIELD != 0 needs the state file PREFIX.qha.h5, which records\n"
-                     " the field; the legacy text restart files do not.");
+                     "RESTART_QHA with EFIELD != 0, POL_REF != 0 or a piezoelectric tensor (STRAINFILE)\n"
+                     " needs the state file PREFIX.qha.h5, which records them; the legacy text restart files do not.");
             }
             load_scph_dymat_from_file(delta_dymat_qha,
                                       run.job_title + ".renorm_harm_dymat",
