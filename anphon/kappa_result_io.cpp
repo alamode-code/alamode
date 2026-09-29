@@ -100,7 +100,6 @@ struct KappaResultIOH5::Impl
             // The basis temperature (FC2_TEMPERATURE) each row was computed with.
             dump(fh, "/metadata/fc2_temperatures", file_fc2temps);
             dumpAttribute(fh, "/metadata/fc2_temperatures", "unit", std::string("K"));
-            dump(fh, "/metadata/fc2_source", fmeta.fc2_source);
         }
 
         const std::string cell = "/metadata/PrimitiveCell";
@@ -121,8 +120,11 @@ struct KappaResultIOH5::Impl
     // /metadata/input_variables describes the latest invocation.
     // Temperature-resolved files also keep inputs in /metadata/input_variables_runs/<FC2_TEMPERATURE>.
     // carry_old_runs copies prior run records into the replacement file.
+    // The FC2 provenance follows the same rule: it describes the latest invocation.
     auto stamp_input_variables(HighFive::File &fh, const bool carry_old_runs) const -> void
     {
+        H5Easy::dump(fh, "/metadata/fc2_source", fmeta.fc2_source, H5Easy::DumpMode::Overwrite);
+        H5Easy::dump(fh, "/metadata/fc2_description", fmeta.fc2_description, H5Easy::DumpMode::Overwrite);
         write_input_variables_h5(fh, fmeta.input_variables);
         if (!tdep || fmeta.input_variables.empty()) return;
 

@@ -62,7 +62,8 @@ struct KappaFileMetaH5
     // temperature grid grows by union.
     bool temperature_resolved = false;
     double fc2_temperature = -1.0; // basis temperature of this run
-    std::string fc2_source;        // file the renormalized FC2 came from
+    std::string fc2_source;        // file the FC2 came from
+    std::string fc2_description;   // which FC2 of that file was used (Fcs_phonon::describe_fc2_source)
 };
 
 // Static description of the /iterativebte group: the mesh the iterative

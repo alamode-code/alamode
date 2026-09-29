@@ -258,6 +258,7 @@ public:
     std::vector<double> fcs_sum_sq;     // sum of fcs_val^2 per order
 
     void get_fcs_from_file(const std::string &fname_fcs, const int order, std::vector<FcsArrayWithCell> &fcs_out) const;
+    std::string describe_fc2_source(const std::string &fname) const;
 
     // strained_cell: the IFCs belong to a strained copy of the supercell, whose
     // relative vectors are lattice vectors of the reference cell only up to

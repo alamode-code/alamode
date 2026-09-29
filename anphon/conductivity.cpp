@@ -718,6 +718,7 @@ KappaFileMetaH5 Conductivity::build_kappa_file_meta() const
     meta.temperature_resolved = fcs_phonon->fc2_temperature >= 0.0;
     meta.fc2_temperature = fcs_phonon->fc2_temperature;
     meta.fc2_source = fcs_phonon->file_fc2.empty() ? fcs_phonon->file_fcs : fcs_phonon->file_fc2;
+    meta.fc2_description = fcs_phonon->describe_fc2_source(meta.fc2_source);
     return meta;
 }
 

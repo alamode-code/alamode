@@ -17,6 +17,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include "cell_shift_table.h"
@@ -395,11 +396,24 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
         }
     }
 
+    // FC2_TEMPERATURE selects a row of the renormalized FC2, which only an HDF5
+    // state file carries; parse_fcs_from_h5 checks that the block exists.
+    if (fc2_temperature >= 0.0 && file_dfc2.empty()) {
+        const auto ext = filename_list[0].substr(filename_list[0].find_last_of('.') + 1);
+        if (ext != "h5" && ext != "hdf5") {
+            exit("load_fcs_from_file",
+                 "FC2_TEMPERATURE was given, but the FC2 file is not an HDF5 file and carries no "
+                 "temperature-dependent force constants.");
+        }
+    }
+
     if (run.verbosity > 0) {
         std::cout << "  Reading force constants from the following file(s):\n";
         for (auto i = 0; i < filename_list.size(); ++i) {
             if (!load_flags[i]) continue;
-            std::cout << "   Order " << i + 2 << " : " << filename_list[i] << '\n';
+            std::cout << "   Order " << i + 2 << " : " << filename_list[i];
+            if (i == 0) std::cout << " (" << describe_fc2_source(filename_list[0]) << ")";
+            std::cout << '\n';
         }
         std::cout << "  ... ";
     }
@@ -417,6 +431,33 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
     }
 
     if (run.verbosity > 0) std::cout << "done.\n\n";
+}
+
+// Which FC2 the FC2 source file provides: printed in the "Reading force
+// constants" list and stored as /metadata/fc2_description in kappa.h5.
+std::string Fcs_phonon::describe_fc2_source(const std::string &fname) const
+{
+    std::ostringstream ss;
+    auto has_renormalized = false;
+    const auto ext = fname.substr(fname.find_last_of('.') + 1);
+    if (ext == "h5" || ext == "hdf5") {
+        const HighFive::File file(fname, HighFive::File::ReadOnly);
+        has_renormalized = file.exist("/ForceConstants/Order2_temperature_dependent/force_constant_values");
+    }
+    // Without the renormalized block, the loader stops on FC2_TEMPERATURE.
+    if (has_renormalized && fc2_temperature >= 0.0 && file_dfc2.empty()) {
+        ss << "renormalized FC2 at FC2_TEMPERATURE = " << fc2_temperature << " K";
+        return ss.str();
+    }
+    if (!file_dfc2.empty()) {
+        ss << (has_renormalized ? "base FC2" : "harmonic FC2") << " + anharmonic correction from " << file_dfc2
+           << " at FC2_TEMPERATURE = " << fc2_temperature << " K";
+    } else if (has_renormalized) {
+        ss << "base FC2; the renormalized FC2 in this file is not used because FC2_TEMPERATURE is not given";
+    } else {
+        ss << "harmonic FC2";
+    }
+    return ss.str();
 }
 
 void Fcs_phonon::get_fcs_from_file(const std::string &fname_fcs, const int order,
@@ -607,10 +648,6 @@ void Fcs_phonon::parse_fcs_from_h5(const std::string &fname_fcs, const int order
                      " or set ALLOW_UNCONVERGED = 1 in &general to use the data anyway.");
             }
         }
-
-        if (run.verbosity > 0)
-            std::cout << "\n  FC2_TEMPERATURE = " << fc2_temperature
-                      << " K : loading the renormalized FC2 at this temperature from " << fname_fcs << "\n  ";
     }
 
     parse_fcs_from_h5(file, "", order, fcs_out, temperature_index);

@@ -171,6 +171,48 @@ Description of input variables
  :Type: String
  :Description: When ``FC2FILE`` is given, the harmonic force constants in this file are used for calculating dynamical matrices. It is possible to use supercells of different sizes for harmonic and anharmonic terms, which are specified by ``FC2FILE`` and ``FCSFILE`` respectively. Analogously, ``FC3FILE`` and ``FC4FILE`` can be used to supply the cubic and quartic force constants from separate files; when they are not given, the corresponding terms are read from ``FCSFILE``.
 
+               Each order is thus read from exactly one file:
+
+               .. list-table::
+                  :header-rows: 1
+                  :widths: 20 80
+
+                  * - Order
+                    - Source
+                  * - FC2
+                    - ``FC2FILE`` if given, otherwise ``FCSFILE``
+                  * - FC3
+                    - ``FC3FILE`` if given, otherwise ``FCSFILE`` (only when the mode needs FC3)
+                  * - FC4
+                    - ``FC4FILE`` if given, otherwise ``FCSFILE`` (only when the mode needs FC4)
+
+ .. note::
+
+     **FC2FILE vs. DFC2FILE.** ``FC2FILE`` *replaces* the source of the FC2: the FC2 is
+     read from it instead of from ``FCSFILE``. :ref:`DFC2FILE <anphon_dfc2file>` replaces
+     nothing: it *adds* the anharmonic correction :math:`\Delta\Phi(T)` of an SCPH/QHA
+     run on top of the FC2 read from ``FC2FILE`` (or ``FCSFILE``).
+
+     When ``FC2FILE`` (or ``FCSFILE``) is itself an SCPH/QHA state file
+     (``PREFIX``.scph.h5 / ``PREFIX``.qha.h5), which FC2 is used depends on
+     :ref:`FC2_TEMPERATURE <anphon_fc2_temperature>`:
+
+     * without ``FC2_TEMPERATURE``, the *base* (harmonic) FC2 stored in the file is used and the
+       renormalized FC2 is ignored;
+     * with ``FC2_TEMPERATURE`` and without ``DFC2FILE``, the *renormalized* FC2 at that
+       temperature is used (with ``DFC2FILE``, the base FC2 is used as above and the
+       correction comes from ``DFC2FILE``).
+
+     To use a renormalized FC2, therefore, either give the state file as ``FC2FILE`` together
+     with ``FC2_TEMPERATURE``, or keep the original harmonic FC2 as ``FC2FILE``/``FCSFILE`` and
+     give the state file as ``DFC2FILE`` together with ``FC2_TEMPERATURE``. The latter is needed
+     when the harmonic FC2 comes from a larger supercell than the SCPH/QHA cell. See the table
+     under :ref:`DFC2FILE <anphon_dfc2file>` for all combinations.
+
+     The FC2 actually used is printed in the standard output (the ``Order 2`` line of the list
+     of force-constant files) and, in ``MODE = kappa``, stored as ``/metadata/fc2_source`` and
+     ``/metadata/fc2_description`` in ``PREFIX``.kappa.h5.
+
 ````
 
 .. _anphon_tolerance:
@@ -526,6 +568,8 @@ Description of input variables
                     - same base **+** :math:`\Delta\Phi(T)` from ``DFC2FILE``
                   * - ``FC2FILE`` = ``PREFIX``.scph.h5 + ``FC2_TEMPERATURE``, no ``DFC2FILE``
                     - total (base + :math:`\Delta\Phi(T)`) read directly from the state file
+                  * - ``FC2FILE`` = ``PREFIX``.scph.h5, no ``FC2_TEMPERATURE``, no ``DFC2FILE``
+                    - base FC2 of the state file only; the renormalized FC2 is **not** used
 
                Note that the crystal structure is still taken from
                ``FCSFILE``/``FC2FILE``; ``DFC2FILE`` contributes force-constant
