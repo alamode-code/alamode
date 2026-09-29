@@ -56,10 +56,11 @@ List of supported input variables
    :ref:`IALGO <anphon_ialgo>`, :ref:`KMESH_INTERPOLATE <anphon_qha_kmesh_interpolate>`, :ref:`KMESH_QHA <anphon_qha_kmesh_qha>`, :ref:`LOWER_TEMP <anphon_qha_lower_temp>`
    :ref:`QHA_SCHEME <anphon_qha_scheme>`, :ref:`RELAX_STR <anphon_qha_relax_str>`, :ref:`RESTART_QHA <anphon_restart_qha>`, :ref:`SELF_OFFDIAG <anphon_self_offdiag>`
    **&relax**
-   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`BUBBLE_HESS <anphon_bubble_hess>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`, :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`
-   :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`
-   :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`
-   :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   :ref:`ADD_HESS_DIAG <anphon_add_hess_diag>`, :ref:`ALPHA_STDECENT <anphon_alpha_stdecent>`, :ref:`BUBBLE_HESS <anphon_bubble_hess>`, :ref:`CELL_CONV_TOL <anphon_cell_conv_tol>`
+   :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`, :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`
+   :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`, :ref:`RELAX_ALGO <anphon_relax_algo>`
+   :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`, :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`
+   :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    :ref:`ELASTIC_CONST (deprecated) <anphon_elastic_const>`, :ref:`RENORM_2TO1ST (deprecated) <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST (deprecated) <anphon_renorm_34to1st>`, :ref:`RENORM_3TO2ND (deprecated) <anphon_renorm_3to2nd>`
    **&strain**
    :ref:`Strain tensor <anphon_strain_field>`
