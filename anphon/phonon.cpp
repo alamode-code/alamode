@@ -437,7 +437,8 @@ void PHON::setup_base() const
                  writes->print_zmode,
                  mode_symmetry->print_irreps,
                  symmetry->SymmListWithMap,
-                 relaxing_structure && relaxation->has_efield());
+                 relaxing_structure && relaxation->has_efield(),
+                 relaxing_structure);
     ewald->init(*dielec, fcs_phonon->force_constant_with_cell[0]);
 
     // The adaptive smearing widths come from the group velocities, which need the

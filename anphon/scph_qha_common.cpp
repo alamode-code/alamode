@@ -1494,13 +1494,14 @@ double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, double d
 
 void ScphQhaCommon::print_efield_response(const StructuralOptWorkspace &ws) const
 {
-    if (ws.zE.empty() || run.verbosity == 0) return;
+    if (!dielec->has_borncharge() || run.verbosity == 0) return;
 
     double dpol[3];
     const auto energy = efield_response(ws, dpol);
-    std::cout << " EFIELD: Delta P [uC/cm^2] =";
+    std::cout << " Delta P = (1/Omega) sum_k Z*_k u0_k [uC/cm^2] =";
     for (auto a = 0; a < 3; a++) std::cout << std::scientific << std::setw(15) << std::setprecision(6) << dpol[a];
-    std::cout << ", field energy [Ry] =" << std::setw(15) << energy << std::defaultfloat << '\n';
+    if (!ws.zE.empty()) std::cout << ", field energy [Ry] =" << std::setw(15) << energy;
+    std::cout << std::defaultfloat << '\n';
 }
 
 void ScphQhaCommon::compute_and_print_step_gradients(const StructuralOptWorkspace &ws,
@@ -1611,9 +1612,10 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
 {
     auto i_temp_loop = -1;
 
-    // EFIELD: displacement-induced polarization and field energy per temperature
+    // Displacement-induced polarization (and the EFIELD energy) per temperature,
+    // whenever Born charges are given: nonzero also without a field in a polar phase.
     std::ofstream fout_pol;
-    if (!ctx.ws.zE.empty()) {
+    if (dielec->has_borncharge()) {
         fout_pol.open(run.job_title + ".polarization");
         if (!fout_pol) warn("run_structural_optimization_loop", "Cannot open PREFIX.polarization for writing.");
         const auto &e = relaxation->efield;

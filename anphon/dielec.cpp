@@ -62,7 +62,7 @@ void Dielec::deallocate_variables()
 
 void Dielec::init(const double emin_dos, const double emax_dos, const double delta_e_dos,
                   const unsigned int nonanalytic, const bool print_zmode, const bool print_irreps,
-                  const std::vector<SymmetryOperationWithMapping> &symops, const bool use_efield)
+                  const std::vector<SymmetryOperationWithMapping> &symops, const bool use_efield, const bool relaxing)
 {
     // This should be called after Dos::setup(). The arguments are read on rank 0 only.
 
@@ -82,7 +82,8 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
 
     // Born-charge data is needed by the nonanalytic correction, DIELEC and EFIELD
     // (BORNINFO required, hard error when absent) and by the ZMODE and
-    // IRREPS analyses (used only when BORNINFO is given).  file_born lives
+    // IRREPS analyses and the polarization of a relaxed structure (used only
+    // when BORNINFO is given).  file_born lives
     // on rank 0 only, so the decision is made there and broadcast;
     // setup_dielectric() is collective.
     int need_born_data = 0;
@@ -99,7 +100,7 @@ void Dielec::init(const double emin_dos, const double emax_dos, const double del
                 exitall("Dielec::init()", "BORNINFO must be set when NONANALYTIC>0.");
             }
             need_born_data = 1;
-        } else if (borninfo_given && (print_zmode || print_irreps)) {
+        } else if (borninfo_given && (print_zmode || print_irreps || relaxing)) {
             need_born_data = 1;
         }
     }

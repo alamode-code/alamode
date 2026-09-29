@@ -1355,6 +1355,10 @@ Description of input variables
                polar reference structure. The same quantities are written to ``PREFIX.polarization``
                with the columns: temperature, :math:`\Delta P_x`, :math:`\Delta P_y`, :math:`\Delta P_z`,
                field energy, and a convergence flag (1 when the optimization converged).
+               :math:`\Delta\boldsymbol{P}` and ``PREFIX.polarization`` are also produced without a
+               field whenever ``BORNINFO`` is given in a structural optimization (field energy 0). For a
+               centrosymmetric reference, :math:`\Delta\boldsymbol{P}` is then the spontaneous
+               polarization in the linear Born-charge approximation.
 
                The field and the Born charges are stored in ``PREFIX.scph.h5`` /
                ``PREFIX.qha.h5``. A restart (``RESTART_SCPH``, ``RESTART_QHA``) with a different

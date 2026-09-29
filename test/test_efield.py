@@ -352,6 +352,20 @@ def test_t3(anphonbin):
             "T3[%d]: V0_E - V0_0 = %.9e == -E.sum Z*u0 = %.9e" % (ia, dv[-1], de_ref),
         )
 
+    # Zero field with BORNINFO: .polarization is still written (spontaneous P)
+    log0 = open("t3_e0_0.log").read()
+    row = np.loadtxt("t3_e0_0.polarization", ndmin=2)[-1]
+    umn = np.array([float(x) for x in strain.split()]).reshape(3, 3)
+    omega = volume_ref(log0) * np.linalg.det(np.eye(3) + umn)
+    p_ref = (
+        np.einsum("kab,kb->a", zstar, u[0].reshape(-1, 3)) / omega * EBOHR2_TO_UC_CM2
+    )
+    info += check(
+        np.allclose(row[1:4], p_ref, rtol=1.0e-5, atol=1.0e-8) and row[4] == 0.0,
+        "T3: E = 0 .polarization Delta P %s == (1/Omega) Z* u0 %s, field energy 0"
+        % (row[1:4], p_ref),
+    )
+
     dg = np.array(dg)
     q = np.array(q)
     scale = np.abs(dg).max()
