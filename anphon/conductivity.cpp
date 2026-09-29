@@ -991,7 +991,9 @@ void Conductivity::calc_anharmonic_imagself3()
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            if (run.verbosity > 0) displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "3-phonon");
+            if (run.verbosity > 0 && (isConsole || crossesDecile(i, nk_tmp))) {
+                displayProgressBar(i + 1, nks_tmp, std::cout, timeRemaining, isConsole, "3-phonon");
+            }
             lastUpdate = currentTime;
             if (i == nk_tmp - 1 && run.verbosity > 0) std::cout << "\n done. \n\n" << std::flush;
         }
@@ -1118,7 +1120,9 @@ void Conductivity::calc_anharmonic_imagself4()
                 std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
             long long avgTimePerStep = (i == 0) ? 0 : totalElapsedTime / i;
             long long timeRemaining = (i == 0) ? 0 : avgTimePerStep * (nks_tmp - i - 1);
-            if (run.verbosity > 0) displayProgressBar(i, nks_tmp - 1, std::cout, timeRemaining, isConsole, "4-phonon");
+            if (run.verbosity > 0 && (isConsole || crossesDecile(i, nk_tmp))) {
+                displayProgressBar(i + 1, nks_tmp, std::cout, timeRemaining, isConsole, "4-phonon");
+            }
             lastUpdate = currentTime;
             if (i == nk_tmp - 1 && run.verbosity > 0) std::cout << "\n done. \n\n" << std::flush;
         }

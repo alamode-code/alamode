@@ -25,6 +25,12 @@ inline auto isOutputToConsole() -> bool
     //return isConsoleOutput || isatty(fileno(stdout));
 }
 
+// True when step i (0-based) of n completes a new 10% of the work, or is the last step.
+inline auto crossesDecile(const unsigned int i, const unsigned int n) -> bool
+{
+    return i + 1 >= n || 10ULL * (i + 1) / n != 10ULL * i / n;
+}
+
 inline auto displayProgressBar(int current, int total, std::ostream& out, long long timeRemaining, bool isConsoleOutput,
                                const std::string prefix = "3ph", const int width = 40) -> void
 {

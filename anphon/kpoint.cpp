@@ -38,6 +38,17 @@ Kpoint::~Kpoint()
     deallocate_variables();
 }
 
+namespace
+{
+// Long k-point lists are printed only with VERBOSITY >= 2; otherwise a notice replaces them.
+bool print_kpoint_list(const unsigned int nk, const unsigned int verbosity)
+{
+    if (nk <= 100 || verbosity > 1) return true;
+    std::cout << "   (" << nk << " entries; set VERBOSITY = 2 to print them)\n\n";
+    return false;
+}
+} // namespace
+
 void Kpoint::set_default_variables()
 {}
 
@@ -70,6 +81,7 @@ void Kpoint::kpoint_setups(const std::string mode)
         if (run.my_rank == 0 && run.verbosity > 0) {
             std::cout << "  Number of k points : " << kpoint_general->nk << "\n\n";
             std::cout << "  List of k points : " << '\n';
+            if (!print_kpoint_list(kpoint_general->nk, run.verbosity)) break;
             for (auto i = 0; i < kpoint_general->nk; ++i) {
                 std::cout << std::setw(5) << i + 1 << ":";
                 for (auto j = 0; j < 3; ++j) {
@@ -153,6 +165,7 @@ void Kpoint::print_uniform_mesh_info(const KpointMeshUniform &kmesh) const
         std::cout << "  Number of k points : " << kmesh.nk << '\n';
         std::cout << "  Number of irreducible k points : " << kmesh.nk_irred << "\n\n";
         std::cout << "  List of irreducible k points (reciprocal coordinate, weight) : \n";
+        if (!print_kpoint_list(kmesh.nk_irred, run.verbosity)) return;
 
         for (auto i = 0; i < kmesh.nk_irred; ++i) {
             std::cout << "  " << std::setw(5) << i + 1 << ":";
