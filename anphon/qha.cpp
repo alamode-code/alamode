@@ -333,9 +333,11 @@ void Qha::exec_qha_optimization()
             // absent when restarting from the unified file alone.
             if (with_relax && run.my_rank == 0) store_V0_to_file();
         } else {
-            if (relaxation->has_efield() || relaxation->has_pol_ref() || relaxation->has_piezo0()) {
+            if (relaxation->has_efield() || relaxation->has_pol_ref() || relaxation->has_piezo0() ||
+                relaxation->has_piezo2() || relaxation->has_born_strain())
+            {
                 exit("exec_qha_optimization",
-                     "RESTART_QHA with EFIELD != 0, POL_REF != 0 or a piezoelectric tensor (STRAINFILE)\n"
+                     "RESTART_QHA with EFIELD != 0, POL_REF != 0 or piezoelectric data (STRAINFILE)\n"
                      " needs the state file PREFIX.qha.h5, which records them; the legacy text restart files do not.");
             }
             load_scph_dymat_from_file(delta_dymat_qha,
@@ -763,6 +765,33 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                              v1_QHA,
                              ws.harm_optical_modes);
 
+        if (run.verbosity > 1 && run.my_rank == 0) {
+            // full precision, before the ZSISA / v-ZSISA overwrites (EFIELD checks)
+            std::cout << std::scientific << std::setprecision(15);
+            std::cout << " ZSISA inputs: optical modes :";
+            for (const auto is: ws.harm_optical_modes) std::cout << ' ' << is;
+            std::cout << "\n ZSISA inputs: QHA force (all Gamma modes) :";
+            for (auto is = 0; is < ns; is++) std::cout << std::setw(24) << v1_QHA[is].real();
+            std::cout << "\n ZSISA inputs: QHA stress dF/du_mn [Ry] :";
+            for (auto i1 = 0; i1 < 9; i1++) std::cout << std::setw(24) << del_v0_del_umn_QHA[i1].real();
+            std::cout << "\n ZSISA inputs: static stress dV/du_mn [Ry] :";
+            for (auto i1 = 0; i1 < 9; i1++) std::cout << std::setw(24) << ws.del_v0_del_umn_renorm[i1].real();
+            // the Gamma curvature as compute_ZSISA_stress builds it
+            Eigen::MatrixXcd cmat(ns, ns), v2(ns, ns);
+            for (auto is = 0; is < ns; is++) {
+                for (auto js = 0; js < ns; js++) cmat(js, is) = cmat_convert[0][is][js];
+            }
+            v2 = cmat.adjoint() *
+                 Eigen::VectorXd::Map(omega2_harm_renorm[iT][0], ns).cast<std::complex<double>>().asDiagonal() * cmat;
+            std::cout << "\n ZSISA inputs: Gamma curvature V2 (real part, harmonic modes):\n";
+            for (auto is = 0; is < ns; is++) {
+                std::cout << "  V2" << std::setw(4) << is;
+                for (auto js = 0; js < ns; js++) std::cout << std::setw(24) << v2(is, js).real();
+                std::cout << '\n';
+            }
+            std::cout << std::defaultfloat;
+        }
+
         // qha_scheme == 1 : ZSISA
         if (qha_scheme == QhaScheme::ZSISA) {
             // overwrite v1_QHA by zero-temperature first-order IFCs.
@@ -783,6 +812,24 @@ void Qha::solve_qha_and_compute_forces(StructuralOptWorkspace &ws, const unsigne
                                   ws.C3_array,
                                   *ws.del_v_strain,
                                   q0);
+
+        if (run.verbosity > 1 && run.my_rank == 0) {
+            // full precision (EFIELD checks: B adds -Omega_ref E0 . B to C2, Lambda adds -L to dv1/du)
+            std::cout << std::scientific << std::setprecision(15);
+            std::cout << " ZSISA inputs: renormalized elastic constants d2V0/du_mn du_pq [Ry] (mn m-major):\n";
+            for (auto i1 = 0; i1 < 9; i1++) {
+                std::cout << "  C2" << std::setw(3) << i1;
+                for (auto i2 = 0; i2 < 9; i2++) std::cout << std::setw(24) << C2_array_renorm[i1][i2];
+                std::cout << '\n';
+            }
+            std::cout << " ZSISA inputs: strain derivative of the static force dv1_s/du_mn (all Gamma modes):\n";
+            for (auto i1 = 0; i1 < 9; i1++) {
+                std::cout << "  DV1" << std::setw(3) << i1;
+                for (auto is = 0; is < ns; is++) std::cout << std::setw(24) << del_v1_del_umn_renorm[i1][is].real();
+                std::cout << '\n';
+            }
+            std::cout << std::defaultfloat;
+        }
 
         calculate_C2_array_ZSISA(C2_array_ZSISA, C2_array_renorm, del_v1_del_umn_renorm, delq_delu_ZSISA);
 
@@ -1315,6 +1362,13 @@ void Qha::calculate_del_v1_del_umn_renorm(std::complex<double> **del_v1_del_umn_
     }
 
 
+    // EFIELD with Lambda: the field force -zE(u) has the strain derivative -L_mn,s
+    if (!efield_lambda_mode.empty()) {
+        for (i1 = 0; i1 < 9; i1++) {
+            for (is1 = 0; is1 < ns; is1++) del_v1_del_umn_renorm[i1][is1] -= efield_lambda_mode[i1 * ns + is1];
+        }
+    }
+
     // symmetrize with respect to the interchange of indices of strain tensor
     for (is1 = 0; is1 < ns; is1++) {
         for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
@@ -1411,6 +1465,14 @@ void Qha::calculate_C2_array_renorm(double **C2_array_renorm, const std::array<s
                         del_v_strain.del3_v1(i1 * 81 + i2 * 9 + i3, is1).real() * q0[is1] * u_tensor[i3 / 3][i3 % 3];
                 }
             }
+        }
+    }
+
+    // EFIELD with B: the strain curvature -Omega_ref E0_i B_i,mn,pq of the field
+    // enthalpy (per u like C2_array_renorm; Lambda has no strain-strain term at fixed q0)
+    if (relaxation->has_piezo2_field_term()) {
+        for (i1 = 0; i1 < 9; i1++) {
+            for (i2 = 0; i2 < 9; i2++) C2_array_renorm[i1][i2] += relaxation->efield_strain_curvature[i1 * 9 + i2];
         }
     }
 

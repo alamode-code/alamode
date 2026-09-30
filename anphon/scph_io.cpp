@@ -197,6 +197,8 @@ ScphSettingsH5 ScphQhaCommon::build_scph_settings_h5(const std::string &mode_nam
     }
     settings.pol_ref = relaxation->pol_ref;
     settings.piezo0 = relaxation->piezo0;
+    settings.piezo2 = relaxation->piezo2;
+    if (relaxation->has_born_strain()) settings.born_strain = relaxation->born_strain;
     return settings;
 }
 

@@ -206,7 +206,8 @@ struct StructuralOptWorkspace
     std::vector<int> harm_optical_modes;
 
     // EFIELD: zE[s] = sum_k E . Z*_k e_s(k) / sqrt(M_k) [Ry/Bohr per normal coordinate],
-    // the field energy being -sum_s zE[s] q0[s]; empty without a field
+    // the field energy being -sum_s zE(u)[s] q0[s] with zE(u) = zE + L:u (L: see
+    // ScphQhaCommon::efield_lambda_mode); empty without a field
     std::vector<double> zE;
 
     // The structure of the last V0 / SCP (QHA) solution and gradients: the

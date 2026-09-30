@@ -43,6 +43,12 @@ struct ScphSettingsH5
     // nonzero; absent means zero. Exit on mismatch.
     std::array<double, 3> pol_ref{};
     std::array<double, 27> piezo0{};
+    // The second-order clamped-ion tensor B [e/Bohr^2, (3,3,3,3,3)] and the strain
+    // derivative of the reduced Born charges Lambda [e, (natmin,3,3,3,3)] as used
+    // (mapped onto the primitive cell, ASR-corrected; born_strain empty when absent).
+    // Written only when nonzero; absent means zero. Exit on mismatch.
+    std::array<double, 243> piezo2{};
+    std::vector<double> born_strain;
 };
 
 // Primitive cell of the SCPH run; the virtual supercell (primitive cell

@@ -9,6 +9,7 @@
 */
 
 #include "strain_coupling_io.h"
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -98,6 +99,35 @@ std::vector<double> load_doubles(const HighFive::File &file, const std::string &
             throw std::runtime_error(path + " of " + file.getName() + " contains non-finite values.");
     }
     return values;
+}
+
+// The "convention" attribute of a dataset must be `expected`.
+void require_convention(const HighFive::File &file, const std::string &path, const char *expected)
+{
+    const auto dset = file.getDataSet(path);
+    std::string convention;
+    if (dset.hasAttribute("convention")) dset.getAttribute("convention").read(convention);
+    if (convention != expected) {
+        throw std::runtime_error(path + " of " + file.getName() + " has the convention \"" + convention +
+                                 "\"; only \"" + expected + "\" is accepted.");
+    }
+}
+
+// values[a] == values[partner(a)] for every flat index a, within 1e-8 + 1e-6 max |values|.
+template <typename Partner>
+void require_symmetric(const HighFive::File &file, const std::string &path, const std::vector<double> &values,
+                       Partner partner, const char *what)
+{
+    double scale = 0.0;
+    for (const auto v: values) scale = std::max(scale, std::fabs(v));
+    const auto tol = 1.0e-8 + 1.0e-6 * scale;
+    double dev = 0.0;
+    for (std::size_t a = 0; a < values.size(); ++a) dev = std::max(dev, std::fabs(values[a] - values[partner(a)]));
+    if (dev > tol) {
+        char buf[128];
+        std::snprintf(buf, sizeof(buf), " (largest deviation %.3e, tolerance %.3e).", dev, tol);
+        throw std::runtime_error(path + " of " + file.getName() + " is not symmetric " + what + buf);
+    }
 }
 
 // A cell group in the layout of the alm force-constant files (lattice rows
@@ -260,6 +290,9 @@ ContainerSummary StrainCouplingFile::probe() const
     s.has_strain_force = file.exist("/StrainForce");
     s.has_strain_harmonic = file.exist("/StrainHarmonic");
     s.has_piezo = file.exist("/Piezoelectric");
+    s.has_piezo_clamped_ion = s.has_piezo && file.exist("/Piezoelectric/clamped_ion");
+    s.has_piezo_second_order = s.has_piezo && file.exist("/Piezoelectric/second_order");
+    s.has_born_charge_strain_derivative = s.has_piezo && file.exist("/Piezoelectric/born_charge_strain_derivative");
     return s;
 }
 
@@ -389,13 +422,7 @@ std::array<double, 27> StrainCouplingFile::read_piezo() const
     const std::string path = "/Piezoelectric/clamped_ion";
     require(file, path, "clamped-ion piezoelectric tensor");
     require_unit(file, path, "C/m^2");
-    const auto dset = file.getDataSet(path);
-    std::string convention;
-    if (dset.hasAttribute("convention")) dset.getAttribute("convention").read(convention);
-    if (convention != "proper, clamped-ion") {
-        throw std::runtime_error(path + " of " + file.getName() + " has the convention \"" + convention +
-                                 "\"; only \"proper, clamped-ion\" is accepted.");
-    }
+    require_convention(file, path, "proper, clamped-ion");
     const auto v = load_doubles(file, path, {3, 3, 3});
     std::array<double, 27> e{};
     for (std::size_t i = 0; i < 27; ++i) e[i] = v[i];
@@ -410,6 +437,56 @@ std::array<double, 27> StrainCouplingFile::read_piezo() const
         }
     }
     return e;
+}
+
+std::array<double, 243> StrainCouplingFile::read_piezo_second_order() const
+{
+    const auto &file = *impl->file;
+    const std::string path = "/Piezoelectric/second_order";
+    require(file, path, "second-order clamped-ion piezoelectric tensor");
+    require_unit(file, path, "C/m^2");
+    require_convention(file, path, "proper, clamped-ion, per linear strain u");
+    const auto v = load_doubles(file, path, {3, 3, 3, 3, 3});
+    // flat index ((i * 3 + j) * 3 + k) * 9 + l * 3 + m = i * 81 + jk * 9 + lm
+    const auto swap_pair = [](const std::size_t p) { return (p % 3) * 3 + p / 3; };
+    require_symmetric(
+        file,
+        path,
+        v,
+        [&](const std::size_t a) { return a / 81 * 81 + swap_pair(a / 9 % 9) * 9 + a % 9; },
+        "in its indices jk");
+    require_symmetric(
+        file,
+        path,
+        v,
+        [&](const std::size_t a) { return a / 9 * 9 + swap_pair(a % 9); },
+        "in its indices lm");
+    require_symmetric(
+        file,
+        path,
+        v,
+        [](const std::size_t a) { return a / 81 * 81 + a % 9 * 9 + a / 9 % 9; },
+        "under the exchange of the index pairs jk and lm");
+    std::array<double, 243> b{};
+    for (std::size_t i = 0; i < b.size(); ++i) b[i] = v[i];
+    return b;
+}
+
+std::vector<double> StrainCouplingFile::read_born_charge_strain_derivative(const std::size_t natom_reference) const
+{
+    const auto &file = *impl->file;
+    const std::string path = "/Piezoelectric/born_charge_strain_derivative";
+    require(file, path, "strain derivative of the reduced Born effective charges");
+    require_unit(file, path, "e");
+    require_convention(file, path, "reduced (F^-1 Z*), per linear strain u");
+    const auto v = load_doubles(file, path, {natom_reference, 3, 3, 3, 3});
+    require_symmetric(
+        file,
+        path,
+        v,
+        [](const std::size_t a) { return a / 9 * 9 + (a % 3) * 3 + a % 9 / 3; },
+        "in its strain indices mn");
+    return v;
 }
 
 void StrainCouplingFile::load_harmonic_fc2(const StrainHarmonicEntry &entry, const Fcs_phonon &fcs_phonon,

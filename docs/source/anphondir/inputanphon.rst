@@ -1334,14 +1334,16 @@ Description of input variables
                .. math::
 
                   H_E = -\boldsymbol{E}\cdot\tilde{\boldsymbol{d}}, \qquad
-                  \tilde{\boldsymbol{d}} = \Omega_{\mathrm{ref}}\, e^{(0)}\!:\!u + \sum_{k}Z^{*}_{k}\boldsymbol{u}_{0,k},
+                  \tilde{\boldsymbol{d}} = \Omega_{\mathrm{ref}}\Big[e^{(0)}\!:\!u + \tfrac12 B\!:\!u\!:\!u\Big]
+                  + \sum_{k}\big[Z^{*}_{k} + \Lambda_k\!:\!u\big]\boldsymbol{u}_{0,k},
 
                to the free energy minimized in the structural optimization. Here :math:`Z^{*}_{k}` are the
                Born effective charges of the ``BORNINFO`` file (required), :math:`\boldsymbol{u}_{0,k}` the
                :math:`\Gamma`-point displacement of atom :math:`k`, :math:`u` the displacement gradient
                (``&strain``, :math:`F = I + u`), :math:`\Omega_{\mathrm{ref}}` the volume of the reference
-               primitive cell, and :math:`e^{(0)}` the clamped-ion piezoelectric tensor from the
-               ``/Piezoelectric`` group of ``STRAINFILE`` (zero when absent; see below). It is ignored
+               primitive cell, :math:`e^{(0)}` the clamped-ion piezoelectric tensor, and :math:`B` and
+               :math:`\Lambda_k` its nonlinear (second-order) terms, all from the ``/Piezoelectric``
+               group of ``STRAINFILE`` (each zero when absent; see below). It is ignored
                unless ``MODE = SCPH`` or ``QHA`` with ``RELAX_STR = 1, 2, 4``; it is an error with
                ``RELAX_STR = 3``.
 
@@ -1351,12 +1353,15 @@ Description of input variables
                :math:`F` of the Cartesian dipole :math:`F\tilde{\boldsymbol{d}}` cancels in
                :math:`-\boldsymbol{E}(u)\cdot F\tilde{\boldsymbol{d}}`. As a consequence the polarization of
                the reference structure (``POL_REF``) and its Berry-phase branch only shift
-               :math:`H_E` by a constant and never act on the structure, and the cell feels the constant
-               stress :math:`\partial H_E/\partial u_{mn} = -\Omega_{\mathrm{ref}}E_i e^{(0)}_{imn}`
-               (the converse **proper** piezoelectric effect, no strain curvature). The ionic term keeps
-               :math:`-\boldsymbol{E}\cdot\sum_k Z^{*}_k\boldsymbol{u}_{0,k}` instead of the exact
-               :math:`-\boldsymbol{E}\cdot F^{-1}\sum_k Z^{*}_k\boldsymbol{u}_{0,k}`; the difference is of the
-               order :math:`E\,u\,u_0`, like the neglected strain dependence of :math:`Z^{*}`.
+               :math:`H_E` by a constant and never act on the structure, and the cell feels the stress
+               :math:`\partial H_E/\partial u_{mn} = -\Omega_{\mathrm{ref}}E_i\,(e^{(0)}_{imn} +
+               B_{imn,pq}u_{pq}) - E_i\sum_k\Lambda_{k,ib,mn}u_{0,kb}` (the converse **proper**
+               piezoelectric effect; constant when :math:`B = \Lambda = 0`). Without :math:`\Lambda` the
+               ionic term is :math:`-\boldsymbol{E}\cdot\sum_k Z^{*}_k\boldsymbol{u}_{0,k}` instead of the
+               exact :math:`-\boldsymbol{E}\cdot F^{-1}\sum_k Z^{*}(u)_k\boldsymbol{u}_{0,k}`; the difference
+               is of the order :math:`E\,u\,u_0`. :math:`\Lambda` removes it to linear order in
+               :math:`\boldsymbol{u}_0` (the terms :math:`u^2u_0` and :math:`u_0^2`, i.e. the dependence of
+               :math:`Z^{*}` on :math:`\boldsymbol{u}_0`, are omitted).
                :math:`\boldsymbol{E}` is the internal macroscopic field of an insulator (short-circuit
                electrodes); carrier screening and depolarization fields (fixed-:math:`\boldsymbol{D}`
                conditions) are not modeled.
@@ -1364,16 +1369,50 @@ Description of input variables
                **Clamped-ion piezoelectric tensor.** With a strained cell (``RELAX_STR = 2, 4``) the
                electronic part of the converse piezoelectric response comes from
                ``/Piezoelectric/clamped_ion`` of ``STRAINFILE`` (C/m², written by
-               ``strainfile.py piezo``, see :ref:`the strain tools <label_strain_tools>`). It must be the
+               ``piezo.py collect --route berry`` or ``strainfile.py piezo``, see
+               :ref:`the strain tools <label_strain_tools>`). It must be the
                **clamped-ion** proper tensor: the ionic (relaxed-ion) contribution is already produced by
                the :math:`Z^{*}\boldsymbol{u}_0` term, so giving the relaxed-ion total, or VASP's
-               ``IONIC CONTR`` block, counts it twice. From a VASP ``LEPSILON`` run take the block
+               ``IONIC CONTR`` block, counts it twice. For a non-centrosymmetric reference use the Berry-phase strain grid
+               (``piezo.py``): VASP's ``LEPSILON`` piezoelectric tensor is unreliable for polar
+               structures. If a ``LEPSILON`` value is used anyway, take the block
                ``PIEZOELECTRIC TENSOR (including local field effects) for field in x, y, z (C/m^2)``;
                the block of the same name in ``e Angst`` is the derivative of the dipole of the
                simulation cell (extensive), the ``C/m^2`` one is intensive. Without the group (and on the
                ``STRAIN_IFC_DIR`` route) :math:`e^{(0)} = 0`; that is exact for a centrosymmetric
                reference, and anphon warns when the reference has no inversion (the clamped-ion response
                "may be missing"; point group 432 is a known false positive).
+
+               **Nonlinear terms.** Two optional datasets of the same group, independent of each other
+               and of ``clamped_ion`` (per linear symmetric strain :math:`u`, reference frame):
+
+               * ``second_order`` (3,3,3,3,3) in C/m², indices :math:`[i, jk, lm]`,
+                 :math:`B_{ijklm} = \partial e^{(0)}_{ijk}/\partial u_{lm}`; symmetric in :math:`jk`, in
+                 :math:`lm` and under :math:`jk\leftrightarrow lm`. It adds the strain curvature
+                 :math:`-\Omega_{\mathrm{ref}}\boldsymbol{E}\cdot B` (the field changes the clamped elastic
+                 constants by :math:`-E_iB_{iJK}` per unit volume). It vanishes for a centrosymmetric
+                 reference. Compute it from the Berry-phase dipole of strained cells,
+                 :math:`B = \Omega_{\mathrm{ref}}^{-1}\partial^2\tilde{\boldsymbol{d}}/\partial u^2`, not by
+                 differentiating the piezoelectric tensors of strained cells.
+               * ``born_charge_strain_derivative`` (natom,3,3,3,3) in e, indices
+                 :math:`[k, i\,(\text{polarization}), b\,(\text{displacement}), m, n]`,
+                 :math:`\Lambda_{k,ib,mn} = \partial(F^{-1}Z^{*})_{k,ib}/\partial u_{mn}`, the strain derivative
+                 of the **reduced** Born charges of the atoms of ``/ReferenceCell``; symmetric in
+                 :math:`mn`. It makes the field force on :math:`\boldsymbol{u}_0` strain dependent,
+                 :math:`\boldsymbol{E}\cdot(Z^{*}_k + \Lambda_k\!:\!u)`, and adds the displacement–strain
+                 curvature :math:`-\boldsymbol{E}\cdot\Lambda`. It is allowed in every crystal (for
+                 centrosymmetric perovskites it is the only clamped-ion electromechanical coupling).
+
+               anphon checks the shape, the ``unit`` and ``convention`` attributes, finiteness and the
+               symmetries (absolute 1e-8 plus relative 1e-6), and then symmetrizes exactly. The blocks of
+               :math:`\Lambda` are mapped onto the atoms of the primitive cell like the rows of
+               ``/StrainForce`` (copied, or averaged over translation images for a nested cell; no
+               volume scaling), and the acoustic sum rule :math:`\sum_k\Lambda_k = 0` is enforced by
+               subtracting the atomic mean; the log reports the residual before and after, with a
+               warning when it exceeds 5% of the largest component. All terms enter the energy, the
+               forces, the stress, the ``BUBBLE = 4`` curvature and the ZSISA/v-ZSISA quantities of
+               ``MODE = QHA`` (the strain derivative of the force and the elastic constants), only when
+               ``EFIELD`` is nonzero.
 
                Only the symmetry operations of the (distorted) cell that leave :math:`\boldsymbol{E}`
                invariant are kept; the k-point reduction, the symmetrization of the dynamical matrix and
@@ -1391,14 +1430,17 @@ Description of input variables
                   \qquad \boldsymbol{d}_{\mathrm{ref}} = \Omega_{\mathrm{ref}}\boldsymbol{P}_{\mathrm{ref}},
 
                in :math:`\mu\mathrm{C/cm}^2`, its ionic-displacement part
-               :math:`F\sum_k Z^{*}_k\boldsymbol{u}_{0,k}/(\Omega_{\mathrm{ref}}\det F)`, and the field
+               :math:`F\sum_k(Z^{*}_k + \Lambda_k\!:\!u)\boldsymbol{u}_{0,k}/(\Omega_{\mathrm{ref}}\det F)`,
+               and the field
                energy :math:`-\boldsymbol{E}\cdot\tilde{\boldsymbol{d}}` in Ry.
                :math:`\boldsymbol{P}_{\mathrm{ref}}` is ``POL_REF`` (zero when not given; the header says
                so). ``PREFIX.polarization`` has one row per temperature with the columns: temperature,
                :math:`P_x`, :math:`P_y`, :math:`P_z` (total), :math:`P^{\mathrm{ion}}_x`,
                :math:`P^{\mathrm{ion}}_y`, :math:`P^{\mathrm{ion}}_z`, the field energy, and a convergence
                flag (1 when the optimization converged), printed with 11 significant digits; the header
-               echoes ``EFIELD``, ``POL_REF`` and the source of :math:`e^{(0)}`. Each row refers to the
+               echoes ``EFIELD``, ``POL_REF`` and the sources of :math:`e^{(0)}`, :math:`B` and
+               :math:`\Lambda`. :math:`B` and :math:`\Lambda` change :math:`\boldsymbol{P}` also without a
+               field. Each row refers to the
                **last evaluated structure** of the temperature. When the optimization converged
                (flag 1), that is the structure of the last free energy and gradients (``PREFIX.V0``),
                and the final structure printed in the log and written to ``PREFIX.atom_disp`` /
@@ -1411,13 +1453,13 @@ Description of input variables
                :math:`\boldsymbol{P}` is the spontaneous polarization in the linear Born-charge
                approximation.
 
-               ``EFIELD``, ``POL_REF`` and :math:`e^{(0)}` are stored in ``PREFIX.scph.h5`` /
-               ``PREFIX.qha.h5``, and with a nonzero field also the Born charges. A restart
-               (``RESTART_SCPH``, ``RESTART_QHA``) with a different ``EFIELD``, ``POL_REF`` or
-               :math:`e^{(0)}` is refused, and so is one with different Born charges (``BORNINFO``) when
-               ``EFIELD`` is nonzero (they are not checked at zero field). The
-               legacy text restart files cannot be used when any of ``EFIELD``, ``POL_REF`` and
-               :math:`e^{(0)}` is nonzero. A field sweep is therefore not a restart: run each field value
+               ``EFIELD``, ``POL_REF``, :math:`e^{(0)}`, :math:`B` and :math:`\Lambda` (the last as mapped
+               and ASR-corrected) are stored in ``PREFIX.scph.h5`` / ``PREFIX.qha.h5``, and with a
+               nonzero field also the Born charges. A restart (``RESTART_SCPH``, ``RESTART_QHA``) with a
+               different ``EFIELD``, ``POL_REF``, :math:`e^{(0)}`, :math:`B` or :math:`\Lambda` is refused
+               (absent means zero), and so is one with different Born charges (``BORNINFO``) when
+               ``EFIELD`` is nonzero (they are not checked at zero field). The legacy text restart files
+               cannot be used when any of them is nonzero. A field sweep is therefore not a restart: run each field value
                as a new optimization seeded from the relaxed structure of the previous one with
 
                .. code-block:: bash
@@ -1429,10 +1471,11 @@ Description of input variables
 
                Limitations:
 
-               * The Born charges are fixed: the nonlinearity of :math:`\boldsymbol{P}(\boldsymbol{u})`
-                 and the strain dependence of :math:`Z^{*}` are omitted, and so are nonlinear
-                 piezoelectric coefficients. The model is an exact polynomial, not a complete
-                 second-order expansion. :math:`\det F > 0` is assumed.
+               * The Born charges do not depend on :math:`\boldsymbol{u}_0`: the nonlinearity of
+                 :math:`\boldsymbol{P}(\boldsymbol{u}_0)` is omitted, and the strain dependence of
+                 :math:`Z^{*}` and the second-order piezoelectric coefficients enter only through
+                 :math:`\Lambda` and :math:`B` when they are given. The model is an exact polynomial, exact
+                 to linear order in :math:`\boldsymbol{u}_0`. :math:`\det F > 0` is assumed.
                * Terms of order :math:`E^2` (Raman / electrostriction through
                  :math:`\epsilon^{\infty}`) are neglected. For typical perovskites they are of order
                  :math:`10^{-3}` of the Born force at 1 MV/cm (an estimate, not a strict bound).
@@ -1662,8 +1705,8 @@ Description of input variables
    for runs without ``elastic.py``), or from existing text files with ``strainfile.py pack``; see :ref:`this page <label_strain_container>`. anphon verifies the
    schema, the presence of the groups its settings need (a missing one is reported together
    with the command that adds it), the units, the reference structure against the ``&cell``
-   field (a nested super- or sub-cell is accepted, the rows of ``/StrainForce`` being tiled or
-   averaged accordingly), and every strained supercell against the supercell of the harmonic
+   field (a nested super- or sub-cell is accepted, the rows of ``/StrainForce`` and the blocks of
+   ``/Piezoelectric/born_charge_strain_derivative`` being tiled or averaged accordingly), and every strained supercell against the supercell of the harmonic
    force constants. ``STRAINFILE`` and ``STRAIN_IFC_DIR`` are mutually exclusive. The file is
    read on every MPI rank and must not be modified while anphon runs.
 

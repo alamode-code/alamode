@@ -133,6 +133,22 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0
     if (relaxation->has_piezo_field_term()) {
         for (i1 = 0; i1 < 9; i1++) del_v0_strain_with_strain[i1] += relaxation->efield_strain_gradient[i1];
     }
+    // EFIELD with B: -Omega_ref E0_i B_i,mn,pq u_pq
+    if (relaxation->has_piezo2_field_term()) {
+        for (i1 = 0; i1 < 9; i1++) {
+            for (i2 = 0; i2 < 9; i2++) {
+                del_v0_strain_with_strain[i1] +=
+                    relaxation->efield_strain_curvature[i1 * 9 + i2] * u_tensor[i2 / 3][i2 % 3];
+            }
+        }
+    }
+    // EFIELD with Lambda: -E0_i sum_k Lambda_k,ib,mn u0_kb = -sum_s L_mn,s q0_s, from the
+    // q0 argument (the Hessian check perturbs q0 independently of the workspace)
+    if (!efield_lambda_mode.empty()) {
+        for (i1 = 0; i1 < 9; i1++) {
+            for (is1 = 0; is1 < ns; is1++) del_v0_strain_with_strain[i1] -= efield_lambda_mode[i1 * ns + is1] * q0[is1];
+        }
+    }
 
     // calculate del_v1_del_umn
     for (i1 = 0; i1 < 9; i1++) {

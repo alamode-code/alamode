@@ -23,6 +23,7 @@
 #include "relaxation_types.h"
 #include "scph.h"
 #include "strain_coupling_types.h"
+#include "strain_reference_cell.h"
 #include "symmetry_core.h"
 
 namespace PHON_NS
@@ -172,6 +173,35 @@ public:
     {
         return has_efield() && has_piezo0();
     }
+    // Phase 2 (STRAINFILE /Piezoelectric, optional and independent; zero when absent):
+    // piezo2: the second-order clamped-ion tensor B_i,jk,lm = de0_ijk/du_lm [e/Bohr^2],
+    //   flat i * 81 + (j * 3 + k) * 9 + l * 3 + m, symmetrized;
+    // born_strain: Lambda_k,ib,mn = d(F^-1 Z*)_k,ib/du_mn [e] mapped onto the atoms of the
+    //   primitive cell and ASR-corrected, flat k * 81 + (i * 3 + b) * 9 + m * 3 + n; empty
+    //   when absent. Set on every rank by setup_relaxation; the sources name them.
+    std::array<double, 243> piezo2{};
+    std::string piezo2_source{"none (B = 0)"};
+    std::vector<double> born_strain;
+    std::string born_strain_source{"none (Lambda = 0)"};
+    bool has_piezo2() const
+    {
+        return std::any_of(piezo2.begin(), piezo2.end(), [](const double x) { return x != 0.0; });
+    }
+    bool has_born_strain() const
+    {
+        return std::any_of(born_strain.begin(), born_strain.end(), [](const double x) { return x != 0.0; });
+    }
+    // -Omega_ref E0_i B_i,mn,pq [Ry], flat mn * 9 + pq: the strain curvature of the
+    // field enthalpy; set only when both EFIELD and B are nonzero (has_piezo2_field_term).
+    std::array<double, 81> efield_strain_curvature{};
+    bool has_piezo2_field_term() const
+    {
+        return has_efield() && has_piezo2();
+    }
+    bool has_born_strain_field_term() const
+    {
+        return has_efield() && has_born_strain();
+    }
 
     // STRAIN_COUPLING as given (-1: the deprecated RENORM_*/ELASTIC_CONST
     // tags set a combination it cannot express). The four switches below
@@ -232,13 +262,16 @@ public:
 
     // Schema, required groups, and the reference cell of STRAINFILE against
     // the primitive cell of this run; runs on every rank.
-    void validate_strain_file() const;
+    // Returns the match of its /ReferenceCell atoms onto the primitive cell.
+    strain_parsers::AtomMatch validate_strain_file() const;
 
-    // piezo0 (and efield_strain_gradient) from STRAINFILE /Piezoelectric; every rank.
-    void load_piezo();
+    // piezo0, piezo2 and born_strain (and the field terms efield_strain_gradient,
+    // efield_strain_curvature) from STRAINFILE /Piezoelectric; every rank.
+    // match maps the per-atom Lambda blocks of /ReferenceCell onto the primitive cell.
+    void load_piezo(const strain_parsers::AtomMatch &match);
 
-    // Adds the pV term and, under EFIELD with e0, the piezoelectric enthalpy
-    // -Omega_ref E0_i e0_ikl u_kl.
+    // Adds the pV term and, under EFIELD, the piezoelectric enthalpy
+    // -Omega_ref E0_i (e0_ikl u_kl + 1/2 B_i,kl,pq u_kl u_pq) (each term when its data is nonzero).
     void renormalize_v0_from_umn(double &v0_with_umn, double v0_ref, std::array<std::array<double, 3>, 3> &eta_tensor,
                                  double *C1_array, double **C2_array, double ***C3_array,
                                  const std::array<std::array<double, 3>, 3> &u_tensor, const double pvcell) const;

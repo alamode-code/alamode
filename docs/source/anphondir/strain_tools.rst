@@ -66,6 +66,21 @@ the pieces belong together and to the cell of the run:
        ``convention = "proper, clamped-ion"``, ``method``, ``source`` and
        ``code_version``. Absent means :math:`e^{(0)} = 0`.
 
+       ``second_order`` (3×3×3×3×3): :math:`B_{i,jk,lm} = \partial e^{(0)}_{ijk}/\partial u_{lm}`
+       in C/m², symmetric in :math:`jk`, :math:`lm` and under :math:`(jk)\leftrightarrow(lm)`,
+       ``convention = "proper, clamped-ion, per linear strain u"``.
+
+       ``born_charge_strain_derivative`` (:math:`N_\mathrm{atom}`×3×3×3×3):
+       :math:`\Lambda_{k,ib,mn} = \partial\tilde Z^*_{k,ib}/\partial u_{mn}`
+       in e, the strain derivative of the **reduced** Born charges
+       :math:`\tilde Z^* = F^{-1}Z^*` (:math:`i` polarization, :math:`b`
+       displacement, symmetric in :math:`mn`), in the atom order of
+       ``/ReferenceCell``, ``convention = "reduced (F^-1 Z*), per linear strain u"``.
+
+       The three datasets are independent (any subset may be present; a
+       ``Lambda``-only group suits a centrosymmetric reference). All are per
+       linear symmetric strain :math:`u` in the reference frame.
+
 The producing commands write into the container directly; the same file can
 be updated by each, replacing only its own groups and refusing a reference
 structure that is not the crystal already stored::
@@ -103,16 +118,19 @@ before it is submitted; ``pack`` converts an existing ``STRAIN_IFC_DIR`` (any
 subset of the text files; legacy ``Ry`` files are converted to GPa with the
 volume of ``--legacy-cell``, the ``&cell`` of the run they were made for, and
 that assumption is recorded in the file); ``piezo`` adds the clamped-ion
-piezoelectric tensor used by ``EFIELD`` (below). Every write records its command
+piezoelectric tensor used by ``EFIELD`` (below; ``piezo.py`` computes the
+nonlinear terms). Every write records its command
 line in the ``provenance`` attribute. The container is read on every MPI
 rank and must not be modified while anphon runs. Non-magnetic reference
 structures only.
 
-**The clamped-ion piezoelectric tensor** (``/Piezoelectric``). ``strainfile.py
-piezo`` writes it into an existing container and replaces only that group
-(``--overwrite`` when it exists; the other groups are kept byte for byte).
+**The clamped-ion piezoelectric tensor** (``/Piezoelectric/clamped_ion``). ``strainfile.py
+piezo`` writes it into an existing container and replaces only that dataset
+(``--overwrite`` when it exists; the other groups and the sibling datasets
+``second_order`` and ``born_charge_strain_derivative`` are kept byte for byte).
 
-* ``--outcar``: a VASP ``LEPSILON = .TRUE.`` OUTCAR. The **last** complete block
+* ``--outcar``: a VASP ``LEPSILON = .TRUE.`` OUTCAR (not recommended for
+  non-centrosymmetric structures; see *Which route for which term* below). The **last** complete block
   ``PIEZOELECTRIC TENSOR (including local field effects) for field in x, y, z
   (C/m^2)`` is used. Its rows are the field direction, its columns
   ``XX YY ZZ XY YZ ZX``, and a shear column is the tensor component itself
@@ -132,6 +150,108 @@ accepted), because the tensor is Cartesian. The file records the method, the
 VASP version and the source path. The tensor must be the clamped-ion one: a
 relaxed-ion total counts the ionic response twice. (VASP 5.4.4 and older have
 a sign bug in ``LCALCEPS``.)
+
+**Nonlinear terms: piezo.py** (``second_order`` :math:`B` and
+``born_charge_strain_derivative`` :math:`\Lambda`). ``piezo.py`` generates the
+clamped-ion VASP calculations from a reference calculation directory (``POSCAR``,
+``INCAR``, ``KPOINTS``, ``POTCAR``; only these inputs are copied) and collects the
+results::
+
+    piezo.py generate --route berry REFDIR berry [--h 0.01]
+    piezo.py generate --route dfpt  REFDIR dfpt  [--h 0.01]
+    piezo.py generate --route berry-lambda REFDIR lam_Zn_z_zz --atom 1 --dir z --strain zz [--h 0.01 --delta 0.02]
+    (run VASP in every directory, e.g. with the generated run_all.sh)
+    piezo.py collect berry --strain-file ZnO.strain.h5 [--overwrite] [--no-clamped-ion] [--no-symmetrize]
+    piezo.py collect dfpt  --strain-file ZnO.strain.h5 [--born-ref borninfo/OUTCAR] [--overwrite] [--print]
+    piezo.py collect lam_Zn_z_zz --strain-file ZnO.strain.h5
+
+Every cell is clamped-ion: the fractional coordinates are those of the reference,
+the lattice rows are :math:`\bm a(I+u)` with :math:`u` symmetric, and a shear step
+sets :math:`u_{mn} = u_{nm} = \pm h` (engineering strain :math:`2h`). The
+``INCAR`` of ``REFDIR`` is copied with the route's tags set (``IBRION = -1``,
+``NSW = 0`` and the tags below); ``piezo_manifest.json`` records the strains, and
+``collect`` checks every ``POSCAR`` and the structure recorded in every ``OUTCAR``
+(last lattice, fractional coordinates, species and atom order from the ``TITEL``
+lines and ``ions per type``) against it, so a stale or swapped ``OUTCAR`` is
+rejected. Selective-dynamics flags of the reference ``POSCAR`` are dropped for the
+displaced atom of ``berry-lambda``.
+
+* ``--route berry`` (73 SCF runs with ``LCALCPOL = .TRUE.``, ``ISYM = 0``;
+  ``LEPSILON`` removed): the reference, :math:`\pm h` along each Voigt direction
+  and :math:`(\pm h, \pm h)` for the 15 pairs. ``collect`` forms the reduced dipole
+  :math:`\psi(u) = F^{-1}(p_\mathrm{elc} + p_\mathrm{ion})` from the last
+  ``p[elc]=(`` and ``p[ion]=(`` lines of each OUTCAR, with :math:`F` from the
+  ``POSCAR`` (the ionic part is constant for clamped ions; its grid mean is used).
+  The Berry-phase branch is unwrapped on the connected grid (one quantum = one
+  lattice vector) and every edge, including the loop-closing ones, must change
+  :math:`\psi` by less than a quarter quantum; the largest changes are printed.
+  Then :math:`e^{(0)} = \Omega_0^{-1}\partial\psi/\partial u` and
+  :math:`B = \Omega_0^{-1}\partial^2\psi/\partial u^2` by central first, second
+  and mixed differences. Both are averaged over the point group of the reference
+  (the removed noise is printed and stored as ``e0_symmetry_noise``,
+  ``B_symmetry_noise``; ``--no-symmetrize`` keeps the raw values). ``collect``
+  writes ``clamped_ion`` and ``second_order`` (``--no-clamped-ion`` keeps a stored
+  :math:`e^{(0)}`, e.g. a DFPT one).
+* ``--route dfpt`` (12 runs with ``LEPSILON = .TRUE.``, :math:`\pm h` per Voigt
+  direction): the Born charges of the last ``BORN EFFECTIVE CHARGES (including
+  local field effects)`` block. VASP writes row :math:`i` = field (polarization)
+  direction and column :math:`b` = displacement direction
+  (``linear_response.F``: the force on ion :math:`N` along :math:`b` is
+  ``BORN_CHARGES(i, b, N) * E(i)``). Then
+
+  .. math::
+
+     \Lambda_{k,ib,mn} = \partial^\mathrm{sym}_{u_{mn}}Z^*_{k,ib}
+       - \tfrac12\big(\delta_{im}Z^*_{k,nb} + \delta_{in}Z^*_{k,mb}\big),
+
+  where the second term is the reduction :math:`F^{-1}`. :math:`Z^*` of the
+  reference comes from ``--born-ref`` (the ``LEPSILON`` OUTCAR of the unstrained
+  cell; its atoms are mapped onto the generated order, and another crystal or
+  lattice is refused), otherwise from the mean of the 12 cells (:math:`O(h^2)`). The residual of
+  the acoustic sum rule :math:`\sum_k\Lambda_k = 0` is printed, the atomic mean
+  is subtracted, and the residual is stored in the attribute
+  ``asr_residual_removed``. ``collect`` writes ``born_charge_strain_derivative``.
+* ``--route berry-lambda`` (4 SCF runs, ``LCALCPOL``): the independent check of
+  one :math:`\Lambda` column. Atom ``--atom`` (1-based, POSCAR order) is displaced
+  by :math:`\pm\delta` (Cartesian, added after straining) at strain
+  :math:`\pm h` along ``--strain``; the mixed difference of :math:`\psi` gives
+  :math:`\Lambda_{k,ib,mn}` for all :math:`i`. ``collect`` prints it next to the
+  stored :math:`\Lambda` of ``--strain-file``. Check one diagonal and one shear
+  component before trusting a DFPT :math:`\Lambda`. The 5-decimal dipole output
+  limits the precision to roughly :math:`10^{-5}/(4\delta h)` e (0.01 e for the
+  defaults :math:`\delta = 0.02` Å, :math:`h = 0.01`).
+
+Which route for which term:
+
+* :math:`B` **only from the Berry grid.** Differentiating the ``LEPSILON``
+  piezoelectric tensors of strained cells gives a :math:`B` that violates the
+  :math:`(jk)\leftrightarrow(lm)` symmetry by up to 1.3 C/m² for ZnO; the reason
+  is not understood. ``piezo.py`` never derives :math:`B` from the DFPT route
+  (``collect --route dfpt --second-order`` is refused).
+* :math:`\Lambda` from the strained-cell DFPT Born charges. For BaTiO\ :sub:`3` it
+  agrees with the ``berry-lambda`` mixed differences to about 1 % (e.g.
+  :math:`\Lambda_{\mathrm{Ti},zz,zz} = -17.17` vs. :math:`-17.04`), and it
+  reproduces the Berry-phase clamped-ion tensor of displaced structures through the
+  exact identity (better than 1 %). Cross-check one component with ``berry-lambda``
+  for a new material.
+* :math:`e^{(0)}` **from the Berry grid for non-centrosymmetric structures.** The
+  ``LEPSILON`` piezoelectric tensor of a structure with a polar distortion is
+  unreliable: for BaTiO\ :sub:`3` with a displaced Ti it gets even the sign of
+  :math:`\partial e_{33}/\partial u_0` wrong, while the Berry phase and the DFPT Born
+  charges agree with each other. For polar ZnO the ``LEPSILON`` :math:`e^{(0)}` is
+  about 1.1 × the Berry value. ``strainfile.py piezo --outcar`` is therefore meant
+  for checks only; ``piezo.py collect --route berry`` writes :math:`e^{(0)}` together
+  with :math:`B`.
+
+Cost: a few-atom primitive cell suffices. :math:`B` needs 73 small SCF runs (ZnO,
+12³ k-points: about 20 min on one 32-core node); :math:`\Lambda` needs 12 DFPT runs
+(plus 4 SCF runs per checked component). A centrosymmetric reference (e.g. cubic
+BaTiO\ :sub:`3`) has :math:`e^{(0)} = B = 0` and needs only the DFPT route.
+
+``collect`` maps the atoms onto the ``/ReferenceCell`` of ``--strain-file`` (a
+permutation, or a nested cell: copies for a larger reference cell, the average
+over translation-equivalent images for a smaller one) and replaces only the
+datasets it computes; an existing dataset needs ``--overwrite``.
 
 .. _label_strain_legacy_files:
 

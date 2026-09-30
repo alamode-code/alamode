@@ -1106,10 +1106,16 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
                                        ws.v3_with_umn,
                                        ws.q4_q0[ik_gamma_irred],
                                        q0);
-    // EFIELD: the linear field term -sum_s zE[s] q0[s]; it has no curvature.
+    // EFIELD: the field term -sum_s zE(u)[s] q0[s], linear in q0 (no curvature in q0),
+    // with zE(u) = zE + L:u when Lambda is given (the strain-dependent Born charges).
+    const auto ns_lambda = efield_lambda_mode.size() / 9;
     for (std::size_t is = 0; is < ws.zE.size(); is++) {
-        ws.v1_renorm[is] -= ws.zE[is];
-        ws.v0_renorm -= ws.zE[is] * q0[is];
+        auto ze = ws.zE[is];
+        if (ns_lambda > 0) {
+            for (auto mn = 0; mn < 9; mn++) ze += efield_lambda_mode[mn * ns_lambda + is] * u_tensor[mn / 3][mn % 3];
+        }
+        ws.v1_renorm[is] -= ze;
+        ws.v0_renorm -= ze * q0[is];
     }
     print_stage_time("q0 renormalization v0, v1, v2", time_stage);
     time_stage = timer->elapsed();
@@ -1465,6 +1471,42 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
                  "EFIELD: an optical mode with |omega^2| < 1e-8 at Gamma gets no field force.");
         }
     }
+
+    // EFIELD with Lambda: L_mn,s, the strain derivative of zE (same mask), so that
+    // zE(u)_s = zE_s + sum_mn L_mn,s u_mn. Local work on every rank, as zE.
+    efield_lambda_mode.clear();
+    if (relaxation->has_born_strain_field_term()) {
+        constexpr auto efield_to_ry = Bohr_in_Angstrom / Ryd_in_eV;
+        const auto natmin = system->get_primcell().number_of_atoms;
+        const auto &lambda = relaxation->born_strain;
+        efield_lambda_mode.assign(9 * static_cast<std::size_t>(ns), 0.0);
+        for (auto is = 0; is < ns; is++) {
+            if (std::fabs(omega2_harmonic[0][is]) < eps8) continue;
+            for (auto k = 0; k < natmin; k++) {
+                const auto inv_sqrt_mass = 1.0 / std::sqrt(system->get_mass_prim()[k]);
+                for (auto b = 0; b < 3; b++) {
+                    const auto e_kb = evec_harmonic[0][is][3 * k + b].real() * inv_sqrt_mass;
+                    for (auto i = 0; i < 3; i++) {
+                        const auto ei = relaxation->efield[i] * efield_to_ry * e_kb;
+                        for (auto mn = 0; mn < 9; mn++) {
+                            efield_lambda_mode[mn * ns + is] += ei * lambda[k * 81 + (i * 3 + b) * 9 + mn];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // The mode basis of zE, L and the printed gradients dF/dq0 (EFIELD checks)
+    if (relaxation->has_efield() && run.verbosity > 1 && run.my_rank == 0) {
+        std::cout << " EFIELD: harmonic Gamma eigenvectors Re e_s(k,b), one row per mode s:\n"
+                  << std::scientific << std::setprecision(15);
+        for (auto is = 0; is < ns; is++) {
+            std::cout << "  EV" << std::setw(4) << is;
+            for (auto j = 0; j < ns; j++) std::cout << std::setw(24) << evec_harmonic[0][is][j].real();
+            std::cout << '\n';
+        }
+        std::cout << std::defaultfloat << '\n';
+    }
 }
 
 double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, const RelaxationStructureState &state,
@@ -1479,14 +1521,27 @@ double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, const Re
     for (auto i = 0; i < 3; i++) {
         for (auto j = 0; j < 3; j++) fmat(i, j) += state.u_tensor[i][j];
     }
+    const auto &b2 = relaxation->piezo2;
+    const auto &lambda = relaxation->born_strain;
+    const auto u_at = [&state](const int mn) { return state.u_tensor[mn / 3][mn % 3]; };
     Eigen::Vector3d a_piezo, b_ion, d_ref;
     for (auto i = 0; i < 3; i++) {
         b_ion(i) = 0.0;
         for (auto k = 0; k < natmin; k++) {
-            for (auto j = 0; j < 3; j++) b_ion(i) += zstar[k][i][j] * state.u0[3 * k + j];
+            for (auto j = 0; j < 3; j++) {
+                auto zeff = zstar[k][i][j];
+                if (!lambda.empty()) {
+                    for (auto mn = 0; mn < 9; mn++) zeff += lambda[k * 81 + (i * 3 + j) * 9 + mn] * u_at(mn);
+                }
+                b_ion(i) += zeff * state.u0[3 * k + j];
+            }
         }
         a_piezo(i) = 0.0;
-        for (auto mn = 0; mn < 9; mn++) a_piezo(i) += e0[i * 9 + mn] * state.u_tensor[mn / 3][mn % 3];
+        for (auto mn = 0; mn < 9; mn++) {
+            auto e_mn = e0[i * 9 + mn];
+            for (auto pq = 0; pq < 9; pq++) e_mn += 0.5 * b2[i * 81 + mn * 9 + pq] * u_at(pq);
+            a_piezo(i) += e_mn * u_at(mn);
+        }
         a_piezo(i) *= omega_ref;
         d_ref(i) = omega_ref * relaxation->pol_ref[i] / e_bohr2_in_c_m2;
         dt[i] = a_piezo(i) + b_ion(i);
@@ -1500,13 +1555,25 @@ double ScphQhaCommon::efield_response(const StructuralOptWorkspace &ws, const Re
         pol_ion[i] = p_ion(i);
     }
 
-    // The field energy as it enters V0: -sum_s zE[s] q0[s] (= -E0 . B up to
-    // masked modes) plus the piezoelectric part -E0 . A.
+    // The field energy as it enters V0: -sum_s zE(u)[s] q0[s] (= -E0 . B up to
+    // masked modes) plus the piezoelectric part -E0 . A, at the strain of `state`.
     auto energy = 0.0;
-    for (std::size_t is = 0; is < ws.zE.size(); is++) energy -= ws.zE[is] * state.q0[is];
+    const auto ns_lambda = efield_lambda_mode.size() / 9;
+    for (std::size_t is = 0; is < ws.zE.size(); is++) {
+        auto ze = ws.zE[is];
+        if (ns_lambda > 0) {
+            for (auto mn = 0; mn < 9; mn++) ze += efield_lambda_mode[mn * ns_lambda + is] * u_at(mn);
+        }
+        energy -= ze * state.q0[is];
+    }
     if (relaxation->has_piezo_field_term()) {
+        for (auto mn = 0; mn < 9; mn++) energy += relaxation->efield_strain_gradient[mn] * u_at(mn);
+    }
+    if (relaxation->has_piezo2_field_term()) {
         for (auto mn = 0; mn < 9; mn++) {
-            energy += relaxation->efield_strain_gradient[mn] * state.u_tensor[mn / 3][mn % 3];
+            for (auto pq = 0; pq < 9; pq++) {
+                energy += 0.5 * relaxation->efield_strain_curvature[mn * 9 + pq] * u_at(mn) * u_at(pq);
+            }
         }
     }
     return energy;
@@ -1525,11 +1592,11 @@ void ScphQhaCommon::print_efield_response(const StructuralOptWorkspace &ws, cons
     std::cout << std::scientific << std::setprecision(digits);
     std::cout << " P [uC/cm^2] =";
     for (const auto p: pol) std::cout << std::setw(width) << p;
-    std::cout << "\n   of which ionic displacements F sum_k Z*_k u0_k / (Omega_ref det F) =";
+    std::cout << "\n   of which ionic displacements F sum_k (Z*_k + Lambda_k:u) u0_k / (Omega_ref det F) =";
     for (const auto p: pol_ion) std::cout << std::setw(width) << p;
     if (relaxation->has_efield()) std::cout << "\n   field energy -E . (A + B) [Ry] =" << std::setw(width) << energy;
     if (run.verbosity > 1) {
-        std::cout << "\n   dipole dt = Omega_ref e0:u + sum_k Z*_k u0_k [e Bohr] =";
+        std::cout << "\n   dipole dt = Omega_ref (e0:u + B2:u:u/2) + sum_k (Z*_k + Lambda_k:u) u0_k [e Bohr] =";
         for (const auto d: dt) std::cout << std::setw(width) << d;
     }
     std::cout << '\n';
@@ -1678,8 +1745,12 @@ void ScphQhaCommon::run_structural_optimization_loop(IRelaxationModel &model, St
                  << " [eV/Angstrom] (field at the reference geometry, fixed voltage)\n"
                  << pol_ref_note.str() << "# e0 (clamped-ion piezoelectric tensor): " << relaxation->piezo0_source
                  << '\n'
+                 << "# B2 (second-order clamped-ion piezoelectric tensor): " << relaxation->piezo2_source << '\n'
+                 << "# Lambda (strain derivative of the reduced Born charges): " << relaxation->born_strain_source
+                 << '\n'
                  << "# P = F (d_ref + A + B) / (Omega_ref det F), F = I + u, d_ref = Omega_ref P_ref,\n"
-                 << "#     A = Omega_ref e0:u, B = sum_k Z*_k u0_k [uC/cm^2]; P_ion = F B / (Omega_ref det F);\n"
+                 << "#     A = Omega_ref (e0:u + B2:u:u/2), B = sum_k (Z*_k + Lambda_k:u) u0_k [uC/cm^2];\n"
+                 << "#     P_ion = F B / (Omega_ref det F);\n"
                  << "# E_field = -E . (A + B) [Ry]. Each row is the last evaluated structure of the temperature:\n"
                  << "# with conv = 1 the one of the last V0 and gradients; with conv = 0 the last attempted one,\n"
                  << "# which need not match PREFIX.V0 or the printed final structure.\n";

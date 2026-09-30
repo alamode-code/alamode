@@ -117,8 +117,7 @@ void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inver
         return;
     }
     if (!strain_file.empty()) {
-        validate_strain_file();
-        load_piezo();
+        load_piezo(validate_strain_file());
     } else if (run.my_rank == 0 &&
                (renorm_2to1st == 2 || renorm_3to2nd == 2 || renorm_3to2nd == 3 || elastic_const == 2))
     {
@@ -138,34 +137,156 @@ void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inver
     }
 }
 
-void Relaxation::load_piezo()
+void Relaxation::load_piezo(const strain_parsers::AtomMatch &match)
 {
     piezo0.fill(0.0);
+    piezo2.fill(0.0);
+    born_strain.clear();
     efield_strain_gradient.fill(0.0);
+    efield_strain_curvature.fill(0.0);
+    strain_coupling::ContainerSummary summary;
+    std::vector<double> lambda_ref;
     try {
         const strain_coupling::StrainCouplingFile container(strain_file);
-        if (!container.probe().has_piezo) return;
-        piezo0 = container.read_piezo();
+        summary = container.probe();
+        if (summary.has_piezo_clamped_ion) piezo0 = container.read_piezo();
+        if (summary.has_piezo_second_order) piezo2 = container.read_piezo_second_order();
+        if (summary.has_born_charge_strain_derivative) {
+            lambda_ref = container.read_born_charge_strain_derivative(summary.natom_reference);
+        }
     } catch (const std::runtime_error &e) {
         exit("setup_relaxation", e.what());
     }
-    for (auto &x: piezo0) x /= e_bohr2_in_c_m2; // C/m^2 -> e/Bohr^2
-    piezo0_source = strain_file + ":/Piezoelectric/clamped_ion";
-    if (!has_piezo_field_term()) return;
-
-    // dH_E/du_mn = -Omega_ref E0_i e0_imn: E0 in Ry/(e Bohr), Omega_ref in Bohr^3.
-    constexpr auto efield_to_ry = Bohr_in_Angstrom / Ryd_in_eV;
+    constexpr auto efield_to_ry = Bohr_in_Angstrom / Ryd_in_eV; // eV/Angstrom -> Ry/(e Bohr)
     const auto volume = system->get_primcell().volume;
-    for (auto mn = 0; mn < 9; ++mn) {
-        for (auto i = 0; i < 3; ++i) {
-            efield_strain_gradient[mn] -= volume * efield[i] * efield_to_ry * piezo0[i * 9 + mn];
+
+    if (summary.has_piezo_clamped_ion) {
+        for (auto &x: piezo0) x /= e_bohr2_in_c_m2; // C/m^2 -> e/Bohr^2
+        piezo0_source = strain_file + ":/Piezoelectric/clamped_ion";
+    }
+    if (summary.has_piezo_second_order) {
+        // exact symmetrization (the reader checked it within tolerance): jk, lm, jk <-> lm
+        const auto swap_pair = [](const int p) { return (p % 3) * 3 + p / 3; };
+        const auto symmetrize = [this](const auto partner) {
+            auto sym = piezo2;
+            for (auto a = 0; a < 243; ++a) sym[a] = 0.5 * (piezo2[a] + piezo2[partner(a)]);
+            piezo2 = sym;
+        };
+        symmetrize([&](const int a) { return a / 81 * 81 + swap_pair(a / 9 % 9) * 9 + a % 9; });
+        symmetrize([&](const int a) { return a / 9 * 9 + swap_pair(a % 9); });
+        symmetrize([](const int a) { return a / 81 * 81 + a % 9 * 9 + a / 9 % 9; });
+        for (auto &x: piezo2) x /= e_bohr2_in_c_m2;
+        piezo2_source = strain_file + ":/Piezoelectric/second_order";
+    }
+    if (summary.has_born_charge_strain_derivative) {
+        // The blocks of the /ReferenceCell atoms onto the atoms of the primitive
+        // cell: a copy when this cell is the larger one, the average of the
+        // translation images otherwise (as for /StrainForce); no volume scaling.
+        const auto natmin = static_cast<std::size_t>(system->get_primcell().number_of_atoms);
+        const auto natref = summary.natom_reference;
+        born_strain.assign(natmin * 81, 0.0);
+        double spread = 0.0;
+        auto averaged = false;
+        for (std::size_t k = 0; k < natmin; ++k) {
+            const auto &src = match.src[k];
+            averaged = averaged || src.size() > 1;
+            for (auto c = 0; c < 81; ++c) {
+                auto mean = 0.0;
+                for (const auto j: src) mean += lambda_ref[static_cast<std::size_t>(j) * 81 + c];
+                mean /= static_cast<double>(src.size());
+                born_strain[k * 81 + c] = mean;
+                for (const auto j: src) {
+                    spread = std::max(spread, std::fabs(lambda_ref[static_cast<std::size_t>(j) * 81 + c] - mean));
+                }
+            }
+        }
+        // exact symmetrization in mn (checked within tolerance by the reader)
+        for (std::size_t k = 0; k < natmin; ++k) {
+            for (auto ib = 0; ib < 9; ++ib) {
+                for (auto m = 0; m < 3; ++m) {
+                    for (auto n = m + 1; n < 3; ++n) {
+                        auto &a = born_strain[k * 81 + ib * 9 + m * 3 + n];
+                        auto &b = born_strain[k * 81 + ib * 9 + n * 3 + m];
+                        a = b = 0.5 * (a + b);
+                    }
+                }
+            }
+        }
+        // acoustic sum rule: sum_k Lambda_k = 0 (the translation carries no
+        // dipole at any strain); subtract the atomic mean per component
+        const auto asr_residual = [](const std::vector<double> &v, const std::size_t nat) {
+            auto res = 0.0;
+            for (auto c = 0; c < 81; ++c) {
+                auto sum = 0.0;
+                for (std::size_t k = 0; k < nat; ++k) sum += v[k * 81 + c];
+                res = std::max(res, std::fabs(sum));
+            }
+            return res;
+        };
+        const auto res_ref = asr_residual(lambda_ref, natref);
+        const auto res_mapped = asr_residual(born_strain, natmin);
+        for (auto c = 0; c < 81; ++c) {
+            auto mean = 0.0;
+            for (std::size_t k = 0; k < natmin; ++k) mean += born_strain[k * 81 + c];
+            mean /= static_cast<double>(natmin);
+            for (std::size_t k = 0; k < natmin; ++k) born_strain[k * 81 + c] -= mean;
+        }
+        const auto res_after = asr_residual(born_strain, natmin);
+        auto lambda_max = 0.0;
+        for (const auto x: born_strain) lambda_max = std::max(lambda_max, std::fabs(x));
+        born_strain_source = strain_file + ":/Piezoelectric/born_charge_strain_derivative";
+
+        if (run.my_rank == 0) {
+            const auto flags = std::cout.flags();
+            const auto prec = std::cout.precision();
+            if (run.verbosity > 0) {
+                std::cout << std::scientific << std::setprecision(3) << "  Lambda = d(F^-1 Z*)/du from "
+                          << born_strain_source << ":\n    " << natref << " reference atoms mapped onto the " << natmin
+                          << " atoms of the primitive cell" << (averaged ? " (translation images averaged)" : "")
+                          << "; max |Lambda| = " << lambda_max
+                          << "\n    acoustic sum rule, max |sum_k Lambda_k|: " << res_ref << " (reference cell), "
+                          << res_mapped << " (mapped), " << res_after << " (corrected)\n\n";
+            }
+            std::cout.flags(flags);
+            std::cout.precision(prec);
+            if (spread > 1.0e-6) {
+                std::ostringstream os;
+                os << "The reference cell of " << strain_file << " is larger than the primitive cell of this run;\n"
+                   << " the Lambda blocks of translation-equivalent atoms are averaged. Largest spread: "
+                   << std::scientific << std::setprecision(2) << spread << " e.";
+                warn("setup_relaxation", os.str().c_str());
+            }
+            if (res_mapped > 1.0e-6 + 0.05 * lambda_max) {
+                std::ostringstream os;
+                os << "Lambda (STRAINFILE /Piezoelectric/born_charge_strain_derivative) violates the acoustic sum\n"
+                   << " rule by " << std::scientific << std::setprecision(2) << res_mapped
+                   << " e (max |Lambda| = " << lambda_max << "). The mean was subtracted; check the data.";
+                warn("setup_relaxation", os.str().c_str());
+            }
+        }
+    }
+
+    // dH_E/du_mn = -Omega_ref E0_i (e0_imn + B_i,mn,pq u_pq): E0 in Ry/(e Bohr), Omega_ref in Bohr^3.
+    if (has_piezo_field_term()) {
+        for (auto mn = 0; mn < 9; ++mn) {
+            for (auto i = 0; i < 3; ++i) {
+                efield_strain_gradient[mn] -= volume * efield[i] * efield_to_ry * piezo0[i * 9 + mn];
+            }
+        }
+    }
+    if (has_piezo2_field_term()) {
+        for (auto mnpq = 0; mnpq < 81; ++mnpq) {
+            for (auto i = 0; i < 3; ++i) {
+                efield_strain_curvature[mnpq] -= volume * efield[i] * efield_to_ry * piezo2[i * 81 + mnpq];
+            }
         }
     }
 }
 
-void Relaxation::validate_strain_file() const
+strain_parsers::AtomMatch Relaxation::validate_strain_file() const
 {
     using strain_coupling::StrainCouplingFile;
+    strain_parsers::AtomMatch match;
     try {
         const StrainCouplingFile container(strain_file);
         const auto summary = container.probe();
@@ -192,12 +313,15 @@ void Relaxation::validate_strain_file() const
         // The reference structure must describe the crystal of this run; the
         // primitive cell of the run may be a nested super- or sub-cell of it.
         const auto ref = container.read_reference_cell();
+        if (ref.natom() != summary.natom_reference) {
+            throw std::runtime_error(strain_file + ":/ReferenceCell/number_of_atoms does not match the number of rows"
+                                                   " of its fractional_coordinate.");
+        }
         const auto &pcell = system->get_primcell();
         std::vector<std::string> symbols(pcell.number_of_atoms);
         for (std::size_t i = 0; i < pcell.number_of_atoms; ++i) symbols[i] = system->symbol_kd[pcell.kind[i]];
         const auto what = strain_file + ":/ReferenceCell";
-        const auto match =
-            strain_parsers::match_atoms(ref, pcell.lattice_vector, pcell.x_cartesian, symbols, what.c_str());
+        match = strain_parsers::match_atoms(ref, pcell.lattice_vector, pcell.x_cartesian, symbols, what.c_str());
 
         if (run.my_rank == 0) {
             const auto flags = std::cout.flags();
@@ -216,13 +340,17 @@ void Relaxation::validate_strain_file() const
                       << (summary.has_stress ? " + reference stress" : ", no reference stress") << "\n"
                       << "    StrainForce    : " << (summary.has_strain_force ? "present" : "absent") << "\n"
                       << "    StrainHarmonic : " << (summary.has_strain_harmonic ? "present" : "absent") << "\n"
-                      << "    Piezoelectric  : " << (summary.has_piezo ? "present" : "absent (e0 = 0)") << "\n\n";
+                      << "    Piezoelectric  : " << (summary.has_piezo_clamped_ion ? "e0" : "no e0")
+                      << (summary.has_piezo_second_order ? ", B" : ", no B")
+                      << (summary.has_born_charge_strain_derivative ? ", Lambda" : ", no Lambda")
+                      << " (absent = 0)\n\n";
             std::cout.flags(flags);
             std::cout.precision(prec);
         }
     } catch (const std::runtime_error &e) {
         exit("setup_relaxation", e.what());
     }
+    return match;
 }
 
 void Relaxation::load_reference_stress(const ElasticTensor &elastic, double *C1_array) const
@@ -1316,7 +1444,10 @@ std::string Relaxation::print_structure_and_symmetry(const RelaxationStructureSt
         const auto pressure_gpa = -stress.trace() / 3.0 / gpa_to_ry_bohr3;
 
         if (run.verbosity > 0) {
-            std::cout << "  Stress tensor [GPa]" << (has_piezo_field_term() ? " (incl. EFIELD piezo term)" : "")
+            std::cout << "  Stress tensor [GPa]"
+                      << (has_piezo_field_term() || has_piezo2_field_term() || has_born_strain_field_term()
+                              ? " (incl. EFIELD piezo terms)"
+                              : "")
                       << ":\n";
             for (auto i = 0; i < 3; ++i) {
                 std::cout << "   ";
@@ -1528,6 +1659,15 @@ void Relaxation::renormalize_v0_from_umn(double &v0_with_umn, double v0_ref,
     // EFIELD with e0 (fixed voltage): -E0_i Omega_ref e0_ikl u_kl, linear in u
     if (has_piezo_field_term()) {
         for (auto kl = 0; kl < 9; ++kl) v0_with_umn += efield_strain_gradient[kl] * u_tensor[kl / 3][kl % 3];
+    }
+    // EFIELD with B: -1/2 Omega_ref E0_i B_i,kl,pq u_kl u_pq
+    if (has_piezo2_field_term()) {
+        for (auto kl = 0; kl < 9; ++kl) {
+            for (auto pq = 0; pq < 9; ++pq) {
+                v0_with_umn +=
+                    0.5 * efield_strain_curvature[kl * 9 + pq] * u_tensor[kl / 3][kl % 3] * u_tensor[pq / 3][pq % 3];
+            }
+        }
     }
 }
 

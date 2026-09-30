@@ -42,6 +42,32 @@ generic clamped-ion e0 with strainfile.py piezo --voigt.
   1b errors   : POL_REF / e0 restart mismatches both ways, legacy text restarts,
                 POL_REF without BORNINFO; the missing-e0 warning for ZnO.
 
+Phase 2 (nonlinear clamped-ion terms; same python requirement): fake generic
+B (second_order) and Lambda (born_charge_strain_derivative, ASR-consistent)
+written with h5py into copies of the containers: bto_nl.h5 (e0 + B + Lambda),
+bto_pB.h5 (e0 + B), bto_pL.h5 (e0 + Lambda), bto_lam.h5 (Lambda only, no
+clamped_ion) and bto_nl_nest.h5 (bto_nl.h5 with /ReferenceCell doubled along
+a1 and its atoms reversed).
+  W1 identity : RELAX_STR = 4, sheared strain, one step, generic E, bto_nl vs
+                bto_piezo: V0, the 9 strain gradients and the force against
+                Python (|dg|^2 = sum |E.Lambda:u|^2/M and dg.q0), the symmetric
+                shear energy finite difference; the nested/permuted reference
+                cell is bit-identical; the Lambda-only container against bto.h5;
+                mpirun -np 4 against serial.
+  W2 Maxwell  : V3 with bto_nl.h5 (matched meshes, 5e-5).
+  W3 BUBBLE=4 : BUBBLE_FD_CHECK = 2 on matched meshes at the first structure: the
+                stress-displacement block equals the transposed force-strain
+                block (< 1e-8), and the explicit blocks differ from the bto_piezo
+                run by -Omega E.B (strain-strain) and -L (force-strain); the
+                BUBBLE_HESS optimizer path accepts the curvature.
+  W4 E = 0    : B and Lambda leave the steps, V0 and the gradients bit-identical;
+                dt changes by Omega B:u:u/2 + sum (Lambda:u) u0.
+  2 restarts  : B / Lambda restart mismatches both ways, legacy text restarts
+                (SCPH and QHA), the same data accepted.
+  ZSISA       : QHA, QHA_SCHEME = 2, one step: the renormalized elastic constants
+                gain -Omega E.B, dv1/du gains -L (invariants), and dv1/du is the
+                central difference of the static force over u_zz and u_yz.
+
 Run from the build directory: python ../test/test_efield.py (numpy required)
 """
 
@@ -692,7 +718,7 @@ def last_values(log, label):
 
 
 LBL_G = "strain gradient dF/du_mn [Ry] :"
-LBL_DT = "dipole dt = Omega_ref e0:u + sum_k Z*_k u0_k [e Bohr] ="
+LBL_DT = "dipole dt = Omega_ref (e0:u + B2:u:u/2) + sum_k (Z*_k + Lambda_k:u) u0_k [e Bohr] ="
 LBL_V0 = "V0 at this structure [Ry] ="
 
 
@@ -770,6 +796,301 @@ def test_v1(anphonbin):
     return info
 
 
+def run_nl_script(py, *args):
+    """Copy a container and add the fake B / Lambda (see NL_SCRIPT)."""
+    res = subprocess.run(
+        [py, "-c", NL_SCRIPT] + list(args), capture_output=True, text=True
+    )
+    if res.returncode != 0:
+        raise RuntimeError("adding B/Lambda failed:\n%s" % res.stderr)
+
+
+# ------------------------------------------------------------ phase 2
+def fake_nl(natom=5):
+    """Generic B [C/m^2] (symmetric in jk, lm, jk <-> lm) and Lambda [e]
+    (symmetric in mn, sum_k Lambda_k = 0)."""
+    rng = np.random.default_rng(20260930)
+    b = rng.uniform(-0.3, 0.3, (3, 3, 3, 3, 3))
+    for axes in ((0, 2, 1, 3, 4), (0, 1, 2, 4, 3), (0, 3, 4, 1, 2)):
+        b = 0.5 * (b + b.transpose(axes))
+    lam = rng.uniform(-2.0, 2.0, (natom, 3, 3, 3, 3))
+    lam = 0.5 * (lam + lam.transpose(0, 1, 2, 4, 3))
+    return b, lam - lam.mean(axis=0)
+
+
+B_FAKE, LAMBDA_FAKE = fake_nl()
+PAIRS = [
+    [(0, 0)],
+    [(1, 1)],
+    [(2, 2)],
+    [(1, 2), (2, 1)],
+    [(2, 0), (0, 2)],
+    [(0, 1), (1, 0)],
+]
+
+# argv: src dst what; what contains B (second_order), L (Lambda), N (nested
+# reference cell: doubled along a1, atoms reversed, Lambda blocks tiled)
+NL_SCRIPT = r"""
+import shutil, sys
+import h5py, numpy as np
+src, dst, what = sys.argv[1:4]
+shutil.copy(src, dst)
+b, lam = np.load("fake_b.npy"), np.load("fake_lambda.npy")
+with h5py.File(dst, "r+") as f:
+    g = f.require_group("Piezoelectric")
+    if "B" in what:
+        d = g.create_dataset("second_order", data=b)
+        d.attrs["unit"] = "C/m^2"
+        d.attrs["convention"] = "proper, clamped-ion, per linear strain u"
+    if "N" in what:
+        rc = f["ReferenceCell"]
+        xf = rc["fractional_coordinate"][()] * [0.5, 1.0, 1.0]
+        kinds = rc["atomic_kinds"][()]
+        lat = rc["lattice_vector"][()]
+        lat[0] *= 2.0
+        for name, v in (
+            ("fractional_coordinate", np.vstack([xf, xf + [0.5, 0.0, 0.0]])[::-1]),
+            ("atomic_kinds", np.concatenate([kinds, kinds])[::-1]),
+        ):
+            del rc[name]
+            rc[name] = v
+        rc["lattice_vector"][...] = lat
+        rc["number_of_atoms"][()] = 2 * len(kinds)
+        lam = np.concatenate([lam, lam])[::-1]
+    if "L" in what:
+        d = g.create_dataset("born_charge_strain_derivative", data=lam)
+        d.attrs["unit"] = "e"
+        d.attrs["convention"] = "reduced (F^-1 Z*), per linear strain u"
+"""
+
+
+def build_nl_containers(py, tools_dir):
+    np.save("fake_b.npy", B_FAKE)
+    np.save("fake_lambda.npy", LAMBDA_FAKE)
+    # the same data through the strainkit writer (end-to-end writer/reader check)
+    code = (
+        "import shutil, sys\n"
+        "import numpy as np\n"
+        "sys.path.insert(0, %r)\n"
+        "from strainkit import strainfile as sf\n"
+        "b, lam = np.load('fake_b.npy'), np.load('fake_lambda.npy')\n"
+        "shutil.copy('bto_piezo.h5', 'bto_nl_py.h5')\n"
+        "sf.add_piezo_datasets('bto_nl_py.h5', {sf.SECOND_ORDER: b, sf.BORN_DERIV: lam},"
+        " log=lambda *a: None)\n"
+        "shutil.copy('bto.h5', 'bto_lam_py.h5')\n"
+        "sf.add_piezo_datasets('bto_lam_py.h5', {sf.BORN_DERIV: lam}, log=lambda *a: None)\n"
+        % tools_dir
+    )
+    res = subprocess.run([py, "-c", code], capture_output=True, text=True)
+    if res.returncode != 0:
+        raise RuntimeError("strainfile.add_piezo_datasets failed:\n%s" % res.stderr)
+    run_nl_script(py, "bto_piezo.h5", "bto_nl.h5", "BL")
+    run_nl_script(py, "bto_piezo.h5", "bto_pB.h5", "B")
+    run_nl_script(py, "bto_piezo.h5", "bto_pL.h5", "L")
+    run_nl_script(py, "bto.h5", "bto_lam.h5", "L")
+    run_nl_script(py, "bto_piezo.h5", "bto_nl_nest.h5", "BLN")
+
+
+def nl_terms(efield, umn, u0):
+    """Python reference of the phase-2 field terms at strain umn and Cartesian u0
+    [Bohr, (natom, 3)]: dt_B + dt_L [e Bohr], the change of the 9 strain gradients
+    [Ry], the field-force pattern f_kb = E.(Lambda_k:u) [Ry/Bohr]."""
+    omega = OMEGA_REF[0]
+    e_ry = efield * EV_A_TO_RY
+    bb = B_FAKE / C_M2_PER_E_BOHR2
+    lam_u = np.einsum("kibmn,mn->kib", LAMBDA_FAKE, umn)
+    dt = 0.5 * omega * np.einsum("ijklm,jk,lm->i", bb, umn, umn)
+    dt += np.einsum("kib,kb->i", lam_u, u0)
+    dg = -omega * np.einsum("i,imnpq,pq->mn", e_ry, bb, umn)
+    dg -= np.einsum("i,kibmn,kb->mn", e_ry, LAMBDA_FAKE, u0)
+    return dt, dg.ravel(), np.einsum("i,kib->kb", e_ry, lam_u)
+
+
+LBL_Q = "gradient dF/dq0 (all Gamma modes) :"
+
+
+def mode_lambda(log, efield):
+    """L[mn, s] = sum_{k,i,b} E_i Lambda_k,ib,mn e_s(kb) / sqrt(M_k) in the harmonic
+    Gamma mode basis printed by anphon (VERBOSITY >= 2 under EFIELD)."""
+    ev = np.array(
+        [x.split()[2:] for x in log.splitlines() if x.startswith("  EV ")], float
+    )
+    mass = masses_ry(log, ["Ba", "Ti", "O", "O", "O"])
+    f = np.einsum("i,kibmn->mnkb", efield * EV_A_TO_RY, LAMBDA_FAKE).reshape(9, -1)
+    return (f / np.repeat(np.sqrt(mass), 3)) @ ev.T
+
+
+def same_scaled(a, ref, rel):
+    """|a - ref| <= rel * max |ref| componentwise (scale-aware, no absolute floor)."""
+    return np.abs(np.asarray(a) - ref).max() <= rel * np.abs(ref).max()
+
+
+def test_w1(anphonbin):
+    # bto_nl.h5 (e0 + B + Lambda) against v1_p (bto_piezo.h5, e0 only) of V1:
+    # same field, strain and q0; one step.
+    efield = np.array([0.004, -0.003, 0.01])
+    umn = np.array(STRAIN_SHEAR.split(), float).reshape(3, 3)
+    common = dict(
+        relax_str=4,
+        max_iter=1,
+        displace=DISPLACE_1B,
+        strain=STRAIN_SHEAR,
+        verbosity=2,
+        efield=" ".join(map(str, efield)),
+    )
+    rc, log = run_anphon(
+        anphonbin, "w1_nl", bto_input("w1_nl", strainfile="bto_nl.h5", **common)
+    )
+    if rc:
+        return check(False, "W1: anphon failed with bto_nl.h5")
+    q0 = step_row("step_q0.txt", 0)
+    u0 = step_row("step_u0.txt", 0).reshape(-1, 3)
+    log_p = open("v1_p.log").read()
+    dt_ref, dg_ref, force = nl_terms(efield, umn, u0)
+    e_ry = efield * EV_A_TO_RY
+    dv = last_values(log, LBL_V0)[0] - last_values(log_p, LBL_V0)[0]
+    ddt = last_values(log, LBL_DT) - last_values(log_p, LBL_DT)
+    info = check(
+        close(dv, -e_ry @ ddt, 1.0e-9),
+        "W1: V0(nl) - V0(e0) = %.10e == -E0.(dt(nl) - dt(e0)) = %.10e"
+        % (dv, -e_ry @ ddt),
+    )
+    info += check(
+        np.allclose(ddt, dt_ref, rtol=1.0e-5, atol=1.0e-6 * np.abs(dt_ref).max()),
+        "W1: dt(nl) - dt(e0) %s == Omega B:u:u/2 + sum (Lambda:u) u0 %s"
+        % (ddt, dt_ref),
+    )
+    dg = last_values(log, LBL_G) - last_values(log_p, LBL_G)
+    info += check(
+        np.allclose(dg, dg_ref, rtol=1.0e-5, atol=1.0e-5 * np.abs(dg_ref).max()),
+        "W1: G(nl) - G(e0) == -Omega E0.B:u - E0.Lambda u0 (max dev %.1e of %.1e)"
+        % (np.abs(dg - dg_ref).max(), np.abs(dg_ref).max()),
+    )
+    # the force difference, mode by mode: -sum_mn L_mn,s u_mn (u exact from the input)
+    dq = last_values(log, LBL_Q) - last_values(log_p, LBL_Q)
+    dq_ref = -umn.ravel() @ mode_lambda(log, efield)
+    info += check(
+        same_scaled(dq, dq_ref, 1.0e-9),
+        "W1: g(nl) - g(e0) == -L:u componentwise (max dev %.1e of %.1e)"
+        % (np.abs(dq - dq_ref).max(), np.abs(dq_ref).max()),
+    )
+    info += check(
+        close(dq @ q0, -np.sum(force * u0), 1.0e-5, 0.0),
+        "W1: (g(nl) - g(e0)).q0 = %.9e == -E0.sum (Lambda:u) u0 = %.9e (step-file u0)"
+        % (dq @ q0, -np.sum(force * u0)),
+    )
+
+    # the same data on a doubled, reordered /ReferenceCell: bit-identical
+    rc, log_n = run_anphon(
+        anphonbin,
+        "w1_nest",
+        bto_input("w1_nest", strainfile="bto_nl_nest.h5", **common),
+    )
+    same = rc == 0 and all(
+        np.array_equal(last_values(log, lbl), last_values(log_n, lbl))
+        for lbl in (LBL_V0, LBL_G, LBL_Q, LBL_DT)
+    )
+    info += check(
+        same and "translation images averaged" in log_n,
+        "W1: nested + permuted /ReferenceCell gives bit-identical V0, G, forces and dt",
+    )
+
+    # the containers written by strainfile.add_piezo_datasets: the same numbers
+    py_logs = {}
+    for name, sfile in (("w1_nl_py", "bto_nl_py.h5"), ("w1_lam_py", "bto_lam_py.h5")):
+        rc, py_logs[name] = run_anphon(
+            anphonbin, name, bto_input(name, strainfile=sfile, **common)
+        )
+        if rc:
+            return info + check(False, "W1: anphon failed with %s" % sfile)
+
+    # Lambda only (no clamped_ion, no B) against v1_0 (bto.h5)
+    rc, log_l = run_anphon(
+        anphonbin, "w1_lam", bto_input("w1_lam", strainfile="bto_lam.h5", **common)
+    )
+    if rc:
+        return info + check(False, "W1: anphon failed with the Lambda-only container")
+    log_0 = open("v1_0.log").read()
+    dv = last_values(log_l, LBL_V0)[0] - last_values(log_0, LBL_V0)[0]
+    ref = -np.sum(force * u0)
+    info += check(
+        close(dv, ref, 1.0e-5) and "no e0, no B, Lambda" in log_l,
+        "W1: Lambda-only container: V0 - V0(bto.h5) = %.10e == -E0.sum (Lambda:u) u0 = %.10e"
+        % (dv, ref),
+    )
+    info += check(
+        all(
+            np.array_equal(last_values(a, lbl), last_values(b, lbl))
+            for a, b in ((log, py_logs["w1_nl_py"]), (log_l, py_logs["w1_lam_py"]))
+            for lbl in (LBL_V0, LBL_G, LBL_Q, LBL_DT)
+        ),
+        "W1: containers written by strainfile.add_piezo_datasets (B + Lambda, Lambda only)"
+        " give bit-identical V0, G, forces and dt",
+    )
+    header = open("w1_nl.polarization").read()
+    info += check(
+        "bto_nl.h5:/Piezoelectric/second_order" in header
+        and "bto_nl.h5:/Piezoelectric/born_charge_strain_derivative" in header
+        and "none (B = 0)" in open("w1_lam.polarization").read(),
+        "W1: the .polarization headers name the B and Lambda sources",
+    )
+
+    # symmetric shear u_xy = u_yx += +-h at fixed q0: the field energy against
+    # G_xy + G_yx of all field terms (e0, B, Lambda)
+    h = 1.0e-4
+    ef = {}
+    for sign in (1, -1):
+        umn_s = umn.copy()
+        umn_s[0, 1] += sign * h
+        umn_s[1, 0] += sign * h
+        name = "w1_s%+d" % sign
+        text = bto_input(
+            name,
+            strainfile="bto_nl.h5",
+            **dict(
+                common, strain="\n".join(" %.12e %.12e %.12e" % tuple(r) for r in umn_s)
+            ),
+        )
+        if run_anphon(anphonbin, name, text)[0]:
+            return info + check(False, "W1: shear finite-difference run failed")
+        ef[sign] = np.loadtxt(name + ".polarization", ndmin=2)[-1, 7]
+    fd = (ef[1] - ef[-1]) / (2.0 * h)
+    g_field = (
+        -OMEGA_REF[0] * np.einsum("i,imn->mn", e_ry, piezo_e_bohr2()).ravel() + dg_ref
+    )
+    ref = g_field[1] + g_field[3]
+    info += check(
+        close(fd, ref, 1.0e-5),
+        "W1: d(E_field)/d(u_xy = u_yx) = %.10e == G_xy + G_yx of the field terms = %.10e"
+        % (fd, ref),
+    )
+
+    # MPI against serial
+    if shutil.which("mpirun") is None:
+        print("  skip   W1: mpirun not found, MPI comparison skipped")
+        return info
+    rc, log_m = run_anphon(
+        anphonbin,
+        "w1_nl_mpi",
+        bto_input("w1_nl_mpi", strainfile="bto_nl.h5", **common),
+        nprocs=4,
+    )
+    info += check(
+        rc == 0
+        and all(
+            np.allclose(
+                last_values(log, lbl),
+                last_values(log_m, lbl),
+                rtol=1.0e-9,
+                atol=1.0e-14,
+            )
+            for lbl in (LBL_V0, LBL_G, LBL_Q, LBL_DT)
+        ),
+        "W1: mpirun -np 4 V0, G, forces and dt == serial (bto_nl.h5)",
+    )
+    return info
+
+
 def test_v2(anphonbin):
     # E = 0: e0 and POL_REF are output-only. Same steps and V0 bit for bit.
     common = dict(
@@ -794,6 +1115,7 @@ def test_v2(anphonbin):
             header=open(name + ".polarization").read(),
             row=np.loadtxt(name + ".polarization", ndmin=2)[-1],
         )
+    V2_OUT.update(out)
     a, b = out["v2_0"], out["v2_p"]
     info = check(
         a["steps"] == b["steps"] and a["v0"] == b["v0"] and len(a["v0"]) == 2,
@@ -837,6 +1159,108 @@ def test_v2(anphonbin):
     return info
 
 
+V2_OUT = {}
+
+
+def test_w4(anphonbin):
+    # E = 0 with B and Lambda: the energies and gradients are those of V2's
+    # bto.h5 run bit for bit; only dt (and P) change.
+    common = dict(
+        relax_str=4, max_iter=2, displace=DISPLACE_1B, strain=STRAIN_SHEAR, verbosity=2
+    )
+    rc, log = run_anphon(
+        anphonbin, "w4_nl", bto_input("w4_nl", strainfile="bto_nl.h5", **common)
+    )
+    if rc or "v2_0" not in V2_OUT:
+        return check(False, "W4: anphon failed (or V2 did not run)")
+    a = V2_OUT["v2_0"]
+    steps = [open(f).read() for f in ("step_u0.txt", "step_u_tensor.txt")]
+
+    def grads(lg):
+        return [re.findall(re.escape(lbl) + r"(.*)", lg) for lbl in (LBL_G, LBL_Q)]
+
+    info = check(
+        steps == a["steps"]
+        and re.findall(re.escape(LBL_V0) + r"(.*)", log) == a["v0"]
+        and grads(log) == grads(a["log"]),
+        "W4: E = 0: steps, V0 and all gradients bit-identical with and without B + Lambda",
+    )
+    umn = np.array(STRAIN_SHEAR.split(), float).reshape(3, 3)
+    dt_ref = nl_terms(np.zeros(3), umn, a["u0"].reshape(-1, 3))[0]
+    ddt = last_values(log, LBL_DT) - V2_OUT["v2_p"]["dt"]  # both carry e0
+    info += check(
+        np.allclose(ddt, dt_ref, rtol=1.0e-5, atol=1.0e-6 * np.abs(dt_ref).max()),
+        "W4: dt(nl) - dt(e0) %s == Omega B:u:u/2 + sum (Lambda:u) u0 %s (P changes)"
+        % (ddt, dt_ref),
+    )
+    return info
+
+
+def test_2_restarts(anphonbin):
+    # state files: w1_nl (e0 + B + Lambda) and v1_p (e0) of W1 / V1
+    efield = "0.004 -0.003 0.01"
+    common = dict(
+        relax_str=4,
+        max_iter=1,
+        displace=DISPLACE_1B,
+        strain=STRAIN_SHEAR,
+        efield=efield,
+        restart=True,
+    )
+    msg_b = "second-order clamped-ion piezoelectric tensor"
+    msg_l = "strain derivative of the Born charges"
+    text_scph = bto_input("t6_text_lam", strainfile="bto_lam.h5", restart=True)
+    text_qha = bto_input(
+        "t6_text_qha", strainfile="bto_pB.h5", restart=True, mode="QHA"
+    )
+    cases = [
+        (
+            "w1_nl (restart, no Lambda)",
+            bto_input("w1_nl", strainfile="bto_pB.h5", **common),
+            msg_l,
+        ),
+        (
+            "w1_nl (restart, no B)",
+            bto_input("w1_nl", strainfile="bto_pL.h5", **common),
+            msg_b,
+        ),
+        (
+            "v1_p (restart, B added)",
+            bto_input("v1_p", strainfile="bto_pB.h5", **common),
+            msg_b,
+        ),
+        (
+            "v1_p (restart, Lambda added)",
+            bto_input("v1_p", strainfile="bto_pL.h5", **common),
+            msg_l,
+        ),
+        (
+            "t6_text_lam (SCPH restart, FILE_FORMAT = text, Lambda)",
+            text_scph.replace("  VERBOSITY", "  FILE_FORMAT = text\n  VERBOSITY"),
+            "legacy text restart files",
+        ),
+        (
+            "t6_text_qha (QHA restart, FILE_FORMAT = text, B)",
+            text_qha.replace("  VERBOSITY", "  FILE_FORMAT = text\n  VERBOSITY"),
+            "legacy text restart files",
+        ),
+    ]
+    info = 0
+    for name, text, message in cases:
+        rc, log = run_anphon(anphonbin, name.split()[0], text)
+        info += check(
+            rc != 0 and message in log, "2: %s rejected (%s)" % (name, message)
+        )
+    rc, log = run_anphon(
+        anphonbin, "w1_nl", bto_input("w1_nl", strainfile="bto_nl.h5", **common)
+    )
+    info += check(
+        rc == 0 and "RESTART_SCPH is true" in log,
+        "2: restart with the same B and Lambda accepted",
+    )
+    return info
+
+
 def test_v3(anphonbin):
     # Maxwell identity of the implemented free energy at fixed strain, internal
     # coordinates relaxed: d(dt_i)/du_mn |_E = -dG_mn/dE_i |_u (i = z).
@@ -850,7 +1274,7 @@ def test_v3(anphonbin):
         relax_str=4,
         max_iter=80,
         verbosity=2,
-        strainfile="bto_piezo.h5",
+        strainfile="bto_nl.h5",  # e0 + B + Lambda (W2)
         coord_tol="1.0e-10",
         extra="\n  GRADIENT_CONV_TOL = 1.0e-10",
     )
@@ -917,6 +1341,308 @@ def test_v3(anphonbin):
             rel < 5.0e-5,
             "V3 %s: d(dt_z)/du = %.10e == -dG/dE_z = %.10e (extrapolated), rel. diff %.2e"
             % (label, lhs, rhs, rel),
+        )
+    return info
+
+
+def test_w3(anphonbin):
+    # BUBBLE = 4 at the first structure (COORD_CONV_TOL = 10: converged at once),
+    # matched meshes, bto_nl.h5 and bto_piezo.h5 at the same field.
+    efield = np.array([0.004, -0.003, 0.01])
+    blocks, logs = {}, {}
+    for name, sfile, extra in (
+        ("w3_nl", "bto_nl.h5", ""),
+        ("w3_p", "bto_piezo.h5", ""),
+    ):
+        text = bto_input(
+            name,
+            strainfile=sfile,
+            relax_str=4,
+            max_iter=1,
+            displace=DISPLACE_1B,
+            strain=STRAIN_SHEAR,
+            verbosity=2,
+            coord_tol="10.0",
+            efield=" ".join(map(str, efield)),
+            extra=extra,
+        )
+        text = text.replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 2 2 2")
+        text = text.replace(
+            "SELF_OFFDIAG = 1", "SELF_OFFDIAG = 1\n  BUBBLE = 4\n  BUBBLE_FD_CHECK = 2"
+        )
+        rc, log = run_anphon(anphonbin, name, text)
+        lines = log.splitlines()
+        ss = np.array([x.split()[1:] for x in lines if x.startswith("   ss")], float)
+        qs = [x.split() for x in lines if x.startswith("   qs")]
+        if rc or ss.shape != (6, 6) or not qs:
+            return check(False, "W3: %s failed or printed no explicit blocks" % name)
+        blocks[name] = (
+            ss,
+            [int(x[1]) for x in qs],
+            np.array([x[2:] for x in qs], float),
+        )
+        logs[name] = log
+    log = logs["w3_nl"]
+    m = re.search(r"transpose of force-strain block: max diff / max = (\S+)", log)
+    info = check(
+        m is not None and float(m.group(1)) < 1.0e-8,
+        "W3: explicit stress-displacement block == force-strain block^T (%s)"
+        % (m.group(1) if m else "-"),
+    )
+    m = re.search(r"asymmetry \|J - J\^T\| / \|J\| \(diagonally scaled\) = (\S+)", log)
+    info += check(
+        m is not None and float(m.group(1)) < 1.0e-6,
+        "W3: Jacobian symmetric (%s)" % (m.group(1) if m else "-"),
+    )
+    # the optimizer path (BUBBLE_HESS; its projected response needs 1 1 1 meshes)
+    text = bto_input(
+        "w3_opt",
+        strainfile="bto_nl.h5",
+        relax_str=4,
+        max_iter=1,
+        displace=DISPLACE_1B,
+        strain=STRAIN_SHEAR,
+        efield=" ".join(map(str, efield)),
+        extra="\n  BUBBLE_HESS = 1",
+    )
+    text = text.replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 1 1 1")
+    text = text.replace("KMESH_INTERPOLATE = 2 2 2", "KMESH_INTERPOLATE = 1 1 1")
+    text = text.replace("SELF_OFFDIAG = 1", "SELF_OFFDIAG = 1\n  BUBBLE = 4")
+    rc, log_o = run_anphon(anphonbin, "w3_opt", text)
+    msg = "BUBBLE_HESS: optimizer Hessian from the free-energy curvature (with strain)"
+    info += check(
+        rc == 0 and msg in log_o,
+        "W3: BUBBLE_HESS optimizer path accepts the curvature with B and Lambda",
+    )
+    omega = OMEGA_REF[0]
+    e_ry = efield * EV_A_TO_RY
+    c = -omega * np.einsum("a,amnpq->mnpq", e_ry, B_FAKE / C_M2_PER_E_BOHR2)
+    s_ref = np.array(
+        [
+            [
+                sum(c[i, j, p, q] for i, j in PAIRS[a] for p, q in PAIRS[b])
+                for b in range(6)
+            ]
+            for a in range(6)
+        ]
+    )
+    d_ss = blocks["w3_nl"][0] - blocks["w3_p"][0]
+    info += check(
+        np.allclose(d_ss, s_ref, rtol=1.0e-7, atol=1.0e-7 * np.abs(s_ref).max()),
+        "W3: strain-strain block increment == -Omega E0.B (max dev %.1e of %.1e)"
+        % (np.abs(d_ss - s_ref).max(), np.abs(s_ref).max()),
+    )
+    idx = blocks["w3_nl"][1]
+    d_qs = blocks["w3_nl"][2] - blocks["w3_p"][2]
+    lmode = mode_lambda(log, efield)
+    qs_ref = -np.array(
+        [[sum(lmode[3 * p + q, s] for p, q in PAIRS[n]) for n in range(6)] for s in idx]
+    )
+    info += check(
+        blocks["w3_nl"][1] == blocks["w3_p"][1] and same_scaled(d_qs, qs_ref, 1.0e-7),
+        "W3: force-strain block increment == -L componentwise (max dev %.1e of %.1e)"
+        % (np.abs(d_qs - qs_ref).max(), np.abs(qs_ref).max()),
+    )
+    return info
+
+
+def test_cell_relax(anphonbin, seed_script):
+    # RELAX_STR = 2 under the field with e0 + B + Lambda (1 1 1 meshes, so that the
+    # BUBBLE_HESS optimizer Hessian with its strain blocks is used), converged tightly;
+    # then the stress and force at the final structure are re-evaluated independently
+    # (RELAX_STR = 4, one step): zero with bto_nl.h5, and the B/Lambda part with
+    # bto_piezo.h5 (so the check is sensitive to them).
+    efield = "0.004 -0.003 0.01"
+
+    def text_for(name, sfile, relax_str, max_iter, displace, strain, verbosity):
+        t = bto_input(
+            name,
+            strainfile=sfile,
+            relax_str=relax_str,
+            max_iter=max_iter,
+            displace=displace,
+            strain=strain,
+            verbosity=verbosity,
+            coord_tol="1.0e-7",
+            efield=efield,
+            extra="\n  GRADIENT_CONV_TOL = 1.0e-8\n  CELL_GRADIENT_CONV_TOL = 1.0e-7"
+            + ("\n  BUBBLE_HESS = 1" if relax_str == 2 else ""),
+        )
+        t = t.replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 1 1 1")
+        t = t.replace("KMESH_INTERPOLATE = 2 2 2", "KMESH_INTERPOLATE = 1 1 1")
+        t = t.replace("CELL_CONV_TOL = 5.0e-7", "CELL_CONV_TOL = 1.0e-7")
+        if relax_str == 2:
+            t = t.replace("SELF_OFFDIAG = 1", "SELF_OFFDIAG = 1\n  BUBBLE = 4")
+        return t
+
+    rc, log = run_anphon(
+        anphonbin,
+        "c2_nl",
+        text_for("c2_nl", "bto_nl.h5", 2, 60, DISPLACE_1B, STRAIN_SHEAR, 1),
+    )
+    info = check(
+        rc == 0
+        and "Structural optimization converged" in log
+        and "BUBBLE_HESS: optimizer Hessian from the free-energy curvature (with strain)"
+        in log,
+        "cell: RELAX_STR = 2 with B + Lambda converged, BUBBLE_HESS strain Hessian used",
+    )
+    if info:
+        return info
+    seed = subprocess.run(
+        [sys.executable, seed_script, "c2_nl"], capture_output=True, text=True
+    ).stdout
+    disp = seed[seed.index("&displace") : seed.index("&strain")]
+    strain = seed[seed.index("&strain") + len("&strain") : seed.rindex("/")].strip()
+    g = {}
+    for tag, sfile in (("nl", "bto_nl.h5"), ("p", "bto_piezo.h5")):
+        name = "c2_chk_" + tag
+        rc, lg = run_anphon(
+            anphonbin, name, text_for(name, sfile, 4, 1, disp, strain, 2)
+        )
+        if rc:
+            return check(False, "cell: re-evaluation failed (%s)" % sfile)
+        gm = last_values(lg, LBL_G).reshape(3, 3)
+        g[tag] = gm + gm.T - np.diag(np.diag(gm))  # the optimizer's variables
+    scale = np.abs(g["p"]).max()
+    info += check(
+        np.abs(g["nl"]).max() < 1.0e-3 * scale,
+        "cell: stress at the relaxed structure %.1e << its B/Lambda part %.1e"
+        % (np.abs(g["nl"]).max(), scale),
+    )
+    return info
+
+
+def scheme_stress(log, c2, dv1, umn, vzsisa):
+    """Qha::compute_ZSISA_stress / compute_vZSISA_stress in Python."""
+    opt = [
+        int(x)
+        for x in re.search(r"ZSISA inputs: optical modes :(.*)", log).group(1).split()
+    ]
+    v1 = last_values(log, "ZSISA inputs: QHA force (all Gamma modes) :")
+    g_qha = last_values(log, "ZSISA inputs: QHA stress dF/du_mn [Ry] :")
+    g_static = last_values(log, "ZSISA inputs: static stress dV/du_mn [Ry] :")
+    v2 = np.array(
+        [x.split()[2:] for x in log.splitlines() if x.startswith("  V2 ")], float
+    )
+    dq = np.zeros((len(v1), 9))  # dq*/du_mn = -V2^-1 dv1/du_mn on the optical modes
+    dq[opt] = -np.linalg.solve(v2[np.ix_(opt, opt)], dv1[:, opt].T)
+    g_z = g_qha + v1 @ dq
+    if not vzsisa:
+        return g_z
+    c2z = c2 + dv1 @ dq
+    f = np.eye(3) + umn
+    cof = np.linalg.det(f) * np.linalg.inv(f).T  # d det F / du_mn
+    ddet = cof.ravel()
+    ut = ddet / np.linalg.norm(ddet)
+    pairs = [(a, a) for a in range(3)] + [((a + 1) % 3, (a + 2) % 3) for a in range(3)]
+    vec = np.array([cof[p] for p in pairs])
+    cm = np.zeros((6, 6))
+    for a, (i, j) in enumerate(pairs):
+        for b, (k, l_) in enumerate(pairs):
+            cm[a, b] = (2.0 if b >= 3 else 1.0) * c2z[3 * i + j, 3 * k + l_]
+    d6 = np.linalg.solve(cm, vec)
+    d9 = np.zeros((3, 3))
+    for a, (i, j) in enumerate(pairs):
+        d9[i, j] = d9[j, i] = d6[a]
+    d9 = d9.ravel() / (ut @ d9.ravel())
+    return g_static + ut * (d9 @ g_z - ut @ g_static)
+
+
+def test_zsisa(anphonbin):
+    # QHA with v-ZSISA, one step at the initial structure; the static force is
+    # what the step prints (v1 = v1_renorm under ZSISA / v-ZSISA).
+    efield = np.array([0.004, -0.003, 0.01])
+    umn0 = np.array(STRAIN_SHEAR.split(), float).reshape(3, 3)
+
+    def run(name, sfile, umn, scheme=2):
+        text = bto_input(
+            name,
+            mode="QHA",
+            strainfile=sfile,
+            relax_str=2,
+            max_iter=1,
+            displace=DISPLACE_1B,
+            strain="\n".join(" %.12e %.12e %.12e" % tuple(r) for r in umn),
+            verbosity=2,
+            efield=" ".join(map(str, efield)),
+        ).replace("RELAX_STR = 2", "RELAX_STR = 2\n  QHA_SCHEME = %d" % scheme)
+        rc, log = run_anphon(anphonbin, name, text)
+        lines = log.splitlines()
+        c2 = np.array([x.split()[2:] for x in lines if x.startswith("  C2 ")], float)
+        dv1 = np.array([x.split()[2:] for x in lines if x.startswith("  DV1 ")], float)
+        if rc or c2.shape != (9, 9) or dv1.shape[0] != 9:
+            return None
+        return c2, dv1, last_values(log, LBL_Q), log
+
+    base_nl = run("wq_nl", "bto_nl.h5", umn0)
+    u0 = step_row("step_u0.txt", 0).reshape(-1, 3)
+    base_p = run("wq_p", "bto_piezo.h5", umn0)
+    if base_nl is None or base_p is None:
+        return check(False, "ZSISA: QHA runs failed or printed no ZSISA inputs")
+    omega = OMEGA_REF[0]
+    e_ry = efield * EV_A_TO_RY
+    c_ref = -omega * np.einsum(
+        "a,amnpq->mnpq", e_ry, B_FAKE / C_M2_PER_E_BOHR2
+    ).reshape(9, 9)
+    d_c2 = base_nl[0] - base_p[0]
+    info = check(
+        np.allclose(d_c2, c_ref, rtol=1.0e-8, atol=1.0e-8 * np.abs(c_ref).max()),
+        "ZSISA: C2_renorm increment == -Omega E0.B (max dev %.1e of %.1e)"
+        % (np.abs(d_c2 - c_ref).max(), np.abs(c_ref).max()),
+    )
+    d_dv1 = base_nl[1] - base_p[1]
+    l_ref = -mode_lambda(base_nl[3], efield)
+    info += check(
+        same_scaled(d_dv1, l_ref, 1.0e-9),
+        "ZSISA: dv1/du increment == -L componentwise (max dev %.1e of %.1e)"
+        % (np.abs(d_dv1 - l_ref).max(), np.abs(l_ref).max()),
+    )
+    # the QHA stress before the scheme overwrite: the field-term increment
+    dg_ref = nl_terms(efield, umn0, u0)[1]
+    lbl_qha = "ZSISA inputs: QHA stress dF/du_mn [Ry] :"
+    dg = last_values(base_nl[3], lbl_qha) - last_values(base_p[3], lbl_qha)
+    info += check(
+        same_scaled(dg, dg_ref, 1.0e-5),
+        "ZSISA: QHA stress increment == -Omega E0.B:u - E0.Lambda u0 (max dev %.1e of %.1e)"
+        % (np.abs(dg - dg_ref).max(), np.abs(dg_ref).max()),
+    )
+    # the final corrected stress of both schemes, recomputed in Python from the
+    # printed ingredients (checked above or field-independent)
+    base_z = run("wq1_nl", "bto_nl.h5", umn0, scheme=1)
+    if base_z is None:
+        return info + check(False, "ZSISA: QHA_SCHEME = 1 run failed")
+    for label, res in (
+        ("ZSISA (QHA_SCHEME = 1)", base_z),
+        ("v-ZSISA (QHA_SCHEME = 2)", base_nl),
+    ):
+        ref = scheme_stress(res[3], res[0], res[1], umn0, label.startswith("v"))
+        got = last_values(res[3], LBL_G)
+        info += check(
+            same_scaled(got, ref, 1.0e-9),
+            "ZSISA: final %s stress == Python from the printed inputs (max dev %.1e of %.1e)"
+            % (label, np.abs(got - ref).max(), np.abs(ref).max()),
+        )
+    # derivative regression: dv1/du against central differences of the static force
+    h = 1.0e-4
+    for label, (m, n) in (("zz", (2, 2)), ("yz", (1, 2))):
+        v1 = {}
+        for sign in (1, -1):
+            umn = umn0.copy()
+            umn[m, n] += sign * h
+            if m != n:
+                umn[n, m] += sign * h
+            res = run("wq_%s%+d" % (label, sign), "bto_nl.h5", umn)
+            if res is None:
+                return info + check(False, "ZSISA: finite-difference run failed")
+            v1[sign] = res[2]
+        fd = (v1[1] - v1[-1]) / (2.0 * h)
+        ref = base_nl[1][3 * m + n] + (base_nl[1][3 * n + m] if m != n else 0.0)
+        dev = np.abs(fd - ref).max() / np.abs(ref).max()
+        info += check(
+            dev < 1.0e-5,
+            "ZSISA: dv1/du_%s == central difference of the static force (rel. dev %.1e)"
+            % (label, dev),
         )
     return info
 
@@ -1038,6 +1764,7 @@ if __name__ == "__main__":
     else:
         try:
             build_containers(py, os.path.join(project_root, "tools"))
+            build_nl_containers(py, os.path.join(project_root, "tools"))
             have_containers = True
             STRAIN_SOURCE[0] = "STRAINFILE = bto.h5"
         except RuntimeError as exc:
@@ -1056,9 +1783,19 @@ if __name__ == "__main__":
     if have_containers:
         stages += [
             ("V1", test_v1, (anphonbin,)),
+            ("W1", test_w1, (anphonbin,)),
             ("V2", test_v2, (anphonbin,)),
+            ("W4", test_w4, (anphonbin,)),
             ("1b errors", test_1b_errors, (anphonbin,)),
-            ("V3", test_v3, (anphonbin,)),
+            ("phase-2 restarts", test_2_restarts, (anphonbin,)),
+            ("V3/W2", test_v3, (anphonbin,)),
+            ("W3", test_w3, (anphonbin,)),
+            (
+                "cell",
+                test_cell_relax,
+                (anphonbin, os.path.join(project_root, "tools/efield_seed.py")),
+            ),
+            ("ZSISA", test_zsisa, (anphonbin,)),
         ]
     stages += [
         ("T2", test_t2, (anphonbin, zno_dir)),

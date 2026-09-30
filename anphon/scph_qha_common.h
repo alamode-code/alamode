@@ -114,6 +114,12 @@ protected:
     // modes at Gamma must be singled out.
     int ik_gamma_dense = -1;
     std::vector<bool> is_acoustic_gamma_harm;
+
+    // EFIELD with Lambda: L[mn * ns + s] = sum_{k,i,b} E0_i Lambda_k,ib,mn Re e_s(kb) / sqrt(M_k)
+    // [Ry/Bohr per normal coordinate and unit strain], with the eps8 mask of calculate_u0,
+    // so that -E0 . sum_k (Lambda_k:u) u0_k = -sum_{mn,s} L_mn,s u_mn q0_s. Empty unless
+    // EFIELD and Lambda are nonzero; set on every rank by setup_structural_opt_buffers.
+    std::vector<double> efield_lambda_mode;
     NDArray<MinimumDistList, 3> mindist_list;
     NDArray<std::complex<double>, 4> mat_transform_sym;
 
@@ -245,9 +251,12 @@ protected:
     void setup_structural_opt_buffers(StructuralOptWorkspace &ws);
 
     // Polarization of `state` (Born charges loaded) in the fixed-voltage model:
-    // dt = A + B [e Bohr] with A = Omega_ref e0 : u and B = sum_k Z*_k u0_k,
+    // dt = A + B [e Bohr] with A = Omega_ref (e0 : u + 1/2 B2 : u : u) and
+    // B = sum_k (Z*_k + Lambda_k : u) u0_k (B2: second-order tensor, Lambda: strain
+    // derivative of the reduced Born charges),
     // pol = F (d_ref + dt) / (Omega_ref det F) and pol_ion = F B / (Omega_ref det F)
-    // [uC/cm^2], F = I + u. Returns the field energy -E0 . (A + B) as used in V0 [Ry].
+    // [uC/cm^2], F = I + u. Returns the field energy -E0 . (A + B) as used in V0 [Ry],
+    // with the field force zE(u) of the strain of `state`.
     double efield_response(const StructuralOptWorkspace &ws, const RelaxationStructureState &state, double pol[3],
                            double pol_ion[3], double dt[3]) const;
 

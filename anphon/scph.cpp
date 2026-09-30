@@ -866,9 +866,11 @@ void Scph::exec_scph()
             // every temperature to deform the cubic IFCs.
             if (with_relax && bubble > 0) load_relaxed_structures_h5(run.job_title + ".scph.h5");
         } else {
-            if (relaxation->has_efield() || relaxation->has_pol_ref() || relaxation->has_piezo0()) {
+            if (relaxation->has_efield() || relaxation->has_pol_ref() || relaxation->has_piezo0() ||
+                relaxation->has_piezo2() || relaxation->has_born_strain())
+            {
                 exit("exec_scph",
-                     "RESTART_SCPH with EFIELD != 0, POL_REF != 0 or a piezoelectric tensor (STRAINFILE)\n"
+                     "RESTART_SCPH with EFIELD != 0, POL_REF != 0 or piezoelectric data (STRAINFILE)\n"
                      " needs the state file PREFIX.scph.h5, which records them; the legacy text restart files do not.");
             }
             if (with_relax && bubble > 0) {

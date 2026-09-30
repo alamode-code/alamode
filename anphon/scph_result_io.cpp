@@ -155,6 +155,29 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
             "scph_result_io",
             "The clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric) is not consistent with the restart file");
     }
+    if (!same_values("/settings/piezo_second_order", settings.piezo2.data(), 243)) {
+        exit("scph_result_io",
+             "The second-order clamped-ion piezoelectric tensor (STRAINFILE /Piezoelectric/second_order) is not\n"
+             " consistent with the restart file");
+    }
+    // Lambda: absent (in the file or in this run) means zero
+    const auto path_lambda = std::string("/settings/born_charge_strain_derivative");
+    auto same_lambda = true;
+    if (fh.exist(path_lambda)) {
+        const auto n = fh.getDataSet(path_lambda).getElementCount();
+        auto expected = settings.born_strain;
+        if (expected.empty()) expected.assign(n, 0.0);
+        same_lambda = expected.size() == n && same_values(path_lambda, expected.data(), n);
+    } else {
+        same_lambda = std::all_of(settings.born_strain.begin(), settings.born_strain.end(), [](const double x) {
+            return x == 0.0;
+        });
+    }
+    if (!same_lambda) {
+        exit("scph_result_io",
+             "The strain derivative of the Born charges (STRAINFILE /Piezoelectric/born_charge_strain_derivative)\n"
+             " is not consistent with the restart file");
+    }
 }
 
 void ScphResultIOH5::load_dymat(const std::string &name, const std::vector<double> &temps_requested,
@@ -331,6 +354,17 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
             fh.createDataSet<double>("/settings/piezo_clamped_ion", HighFive::DataSpace({3, 3, 3}))
                 .write_raw(settings.piezo0.data());
             dumpAttribute(fh, "/settings/piezo_clamped_ion", "unit", std::string("e/bohr^2"));
+        }
+        if (nonzero(settings.piezo2)) {
+            fh.createDataSet<double>("/settings/piezo_second_order", HighFive::DataSpace({3, 3, 3, 3, 3}))
+                .write_raw(settings.piezo2.data());
+            dumpAttribute(fh, "/settings/piezo_second_order", "unit", std::string("e/bohr^2"));
+        }
+        if (nonzero(settings.born_strain)) {
+            const auto nat = settings.born_strain.size() / 81;
+            fh.createDataSet<double>("/settings/born_charge_strain_derivative", HighFive::DataSpace({nat, 3, 3, 3, 3}))
+                .write_raw(settings.born_strain.data());
+            dumpAttribute(fh, "/settings/born_charge_strain_derivative", "unit", std::string("e"));
         }
 
         // Primitive cell (identity mapping) and the virtual supercell

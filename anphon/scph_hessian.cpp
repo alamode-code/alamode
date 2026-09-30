@@ -457,6 +457,23 @@ bool Scph::compute_scp_hessian(StructuralOptWorkspace &ws, const RelaxationStruc
         renormalize_ifcs_at_structure(ws);
         ws.structure_state = saved_state;
         E.block(nopt, 0, nv, nopt) = E.block(0, nopt, nopt, nv).transpose();
+        if (report && run.verbosity > 1) {
+            // full precision (EFIELD checks: the field terms add -Omega_ref E0 . B and -L here)
+            std::cout << "  explicit strain-strain block dG_m/ds_n [Ry] (fixed occupations; xx yy zz yz zx xy):\n"
+                      << std::scientific << std::setprecision(15);
+            for (Index m = 0; m < nv; ++m) {
+                std::cout << "   ss";
+                for (Index n = 0; n < nv; ++n) std::cout << std::setw(24) << E(nopt + m, nopt + n);
+                std::cout << '\n';
+            }
+            std::cout << "  explicit force-strain block dg_s/ds_n (optical modes s; xx yy zz yz zx xy):\n";
+            for (Index i = 0; i < nopt; ++i) {
+                std::cout << "   qs" << std::setw(5) << optical[i];
+                for (Index n = 0; n < nv; ++n) std::cout << std::setw(24) << E(i, nopt + n);
+                std::cout << '\n';
+            }
+            std::cout << std::defaultfloat;
+        }
 
         // BUBBLE_FD_CHECK (1 or 2): the transpose above assumes that the force and the
         // stress at fixed occupations derive from one function. Check it
