@@ -969,14 +969,6 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
                     Eigen::VectorXd &lambda, const int verbosity, const std::string &solver_type,
                     const double tolerance_iteration, const int maxnum_iteration)
 {
-#ifdef USE_MKL_BACKEND
-    constexpr auto ldlt_solver_name = "PardisoLDLT";
-#elif defined(USE_ACCEL_BACKEND)
-    constexpr auto ldlt_solver_name = "AccelerateLDLT";
-#else
-    constexpr auto ldlt_solver_name = "SimplicialLDLT";
-#endif
-
     const int N = A.cols();
     const int P = C.rows();
 
@@ -1166,17 +1158,6 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
         }
     }
 
-    // // SimplicialLDLT is not stable for indefinite KKT matrices
-    // KKT_Solver ldlt(K);
-    // if (ldlt.info() == Eigen::Success) {
-    //     sol = ldlt.solve(rhs);
-    //     if (ldlt.info() == Eigen::Success) {
-    //         used_solver = ldlt_solver_name;
-    //         solved = true;
-    //         if (verbosity > 1) std::cout << "  [solveGQRSparse] solved by " << used_solver << "\n";
-    //     }
-    // }
-
     // Sparse QR fallback (Eigen's serial SparseQR) only when SuiteSparse is NOT built -- with
     // SuiteSparse, the multithreaded SuiteSparseQR was already tried above (before SparseLU). QR is the
     // most robust direct method on the symmetric-indefinite KKT but has the heaviest fill-in.
@@ -1217,11 +1198,11 @@ void solveGQRSparse(const Eigen::SparseMatrix<double> &A, const Eigen::VectorXd 
         }
     }
 
-    // fill the output vectors x and lambda
-    if (solved) {
-        x = sol.head(A.cols());
-        lambda = sol.tail(C.rows());
-    } else {
-        LOG_ERR_IF(verbosity, 0, "All solvers failed to solve the KKT system.\n");
+    if (!solved) {
+        ALM_NS::exit("solveGQRSparse", "All solvers failed to solve the KKT system.");
     }
+
+    // fill the output vectors x and lambda
+    x = sol.head(A.cols());
+    lambda = sol.tail(C.rows());
 }
