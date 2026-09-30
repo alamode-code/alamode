@@ -217,6 +217,12 @@ public:
     std::string strain_IFC_dir;
     std::string strain_file; // STRAINFILE: the HDF5 container replacing the text files
 
+    // STRAIN_FC5 = 1: the strain derivative of the quartic IFCs from the quintic ones,
+    // Phi4(u) = Phi4 + sum_mn u_mn dPhi4/du_mn (SCPH, RELAX_STR = 2, 4; rank 0).
+    // STRAIN_FC5_CHANNELS = DIAG keeps only u_xx, u_yy, u_zz in that sum.
+    int strain_fc5 = 0;
+    bool strain_fc5_diag = false;
+
     // The source of the strain couplings and elastic constants (STRAIN_IFC_DIR
     // text files or the STRAINFILE container).
     strain_coupling::StrainSource strain_source() const

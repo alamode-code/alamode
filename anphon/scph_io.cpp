@@ -199,6 +199,11 @@ ScphSettingsH5 ScphQhaCommon::build_scph_settings_h5(const std::string &mode_nam
     settings.piezo0 = relaxation->piezo0;
     settings.piezo2 = relaxation->piezo2;
     if (relaxation->has_born_strain()) settings.born_strain = relaxation->born_strain;
+    if (relaxation->strain_fc5) {
+        settings.strain_fc5 = 1;
+        settings.strain_fc5_diag = relaxation->strain_fc5_diag ? 1 : 0;
+        settings.fc5_fingerprint = fcs_phonon->fc5_fingerprint;
+    }
     return settings;
 }
 

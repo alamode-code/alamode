@@ -867,10 +867,10 @@ void Scph::exec_scph()
             if (with_relax && bubble > 0) load_relaxed_structures_h5(run.job_title + ".scph.h5");
         } else {
             if (relaxation->has_efield() || relaxation->has_pol_ref() || relaxation->has_piezo0() ||
-                relaxation->has_piezo2() || relaxation->has_born_strain())
+                relaxation->has_piezo2() || relaxation->has_born_strain() || relaxation->strain_fc5)
             {
                 exit("exec_scph",
-                     "RESTART_SCPH with EFIELD != 0, POL_REF != 0 or piezoelectric data (STRAINFILE)\n"
+                     "RESTART_SCPH with EFIELD != 0, POL_REF != 0, piezoelectric data (STRAINFILE) or STRAIN_FC5 = 1\n"
                      " needs the state file PREFIX.scph.h5, which records them; the legacy text restart files do not.");
             }
             if (with_relax && bubble > 0) {

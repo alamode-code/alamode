@@ -32,6 +32,32 @@ RealSpaceV4::RealSpaceV4(const std::vector<FcsArrayWithCell> &fc4, const std::ve
     quartic_(fc4, invsqrt_mass, ns, nk_dense_i), acoustic_(acoustic_gamma), knum_of_irred_(knum_of_irred),
     offdiag_(offdiag)
 {
+    init(xk_dense, evec, true);
+}
+
+RealSpaceV4::RealSpaceV4(QuarticMesh &&mesh, const unsigned int ns, const unsigned int *nk_dense_i,
+                         const double *const *xk_dense, const cplx *const *const *evec,
+                         const std::vector<bool> &acoustic_gamma, const unsigned int jk_gamma_dense,
+                         const std::vector<unsigned int> &knum_of_irred, const bool offdiag, const bool with_diag) :
+    ns_(ns), ns2_(ns * ns), nk_(nk_dense_i[0] * nk_dense_i[1] * nk_dense_i[2]), jg_(jk_gamma_dense),
+    quartic_(std::move(mesh)), acoustic_(acoustic_gamma), knum_of_irred_(knum_of_irred), offdiag_(offdiag)
+{
+    init(xk_dense, evec, with_diag);
+}
+
+void RealSpaceV4::set_channel_weights(const double *coef)
+{
+    auto &w = quartic_.weight;
+    std::fill(w.begin(), w.end(), 0.0);
+    for (std::size_t c = 0; c < quartic_.channel.size(); ++c) {
+        if (coef[c] == 0.0) continue;
+        const auto &ch = quartic_.channel[c];
+        for (std::size_t e = 0; e < w.size(); ++e) w[e] += coef[c] * ch[e];
+    }
+}
+
+void RealSpaceV4::init(const double *const *xk_dense, const cplx *const *const *evec, const bool with_diag)
+{
     using namespace Eigen;
     U_.assign(nk_, MatrixXcd(ns_, ns_));
     kphase_.assign(nk_, std::vector<cplx>(nk_));
@@ -47,6 +73,7 @@ RealSpaceV4::RealSpaceV4(const std::vector<FcsArrayWithCell> &fc4, const std::ve
         }
     }
 
+    if (!with_diag) return;
     // on-site diagonal V4[(k,k)][a,a][a,a], k the irreducible points
     const auto nirr = knum_of_irred_.size();
     diag_.assign(nirr, std::vector<double>(ns_, 0.0));
@@ -71,6 +98,19 @@ RealSpaceV4::RealSpaceV4(const std::vector<FcsArrayWithCell> &fc4, const std::ve
 }
 
 void RealSpaceV4::contract(const cplx *d, const std::vector<unsigned int> &kout, cplx *f) const
+{
+    contract_impl(d, kout, {nullptr}, f);
+}
+
+void RealSpaceV4::contract_channels(const cplx *d, const std::vector<unsigned int> &kout, cplx *f) const
+{
+    std::vector<const std::vector<double> *> w;
+    for (const auto &ch: quartic_.channel) w.push_back(&ch);
+    contract_impl(d, kout, w, f);
+}
+
+void RealSpaceV4::contract_impl(const cplx *d, const std::vector<unsigned int> &kout,
+                                const std::vector<const std::vector<double> *> &weights, cplx *f) const
 {
     using namespace Eigen;
     using MatrixXcdRow = Matrix<cplx, Dynamic, Dynamic, RowMajor>;
@@ -97,15 +137,18 @@ void RealSpaceV4::contract(const cplx *d, const std::vector<unsigned int> &kout,
         for (unsigned int ik = 0; ik < nk_; ++ik) x[r] += std::conj(kphase_[ik][r]) * X[ik];
         x[r] /= static_cast<double>(nk_);
     }
-    quartic_.apply(x, z);
+    for (std::size_t c = 0; c < weights.size(); ++c) {
+        quartic_.apply(x, z, nullptr, weights[c]);
+        cplx *fc = f + c * kout.size() * ns2_;
 #pragma omp parallel for schedule(dynamic, 1) if (!nested)
-    for (long io = 0; io < static_cast<long>(kout.size()); ++io) {
-        const auto k = kout[io];
-        MatrixXcd Z = MatrixXcd::Zero(ns_, ns_);
-        for (unsigned int r = 0; r < nk_; ++r) Z += kphase_[k][r] * z[r];
-        MatrixXcd F = U_[k].adjoint() * Z * U_[k];
-        drop(F, k);
-        Map<MatrixXcdRow>(f + static_cast<size_t>(io) * ns2_, ns_, ns_) = F;
+        for (long io = 0; io < static_cast<long>(kout.size()); ++io) {
+            const auto k = kout[io];
+            MatrixXcd Z = MatrixXcd::Zero(ns_, ns_);
+            for (unsigned int r = 0; r < nk_; ++r) Z += kphase_[k][r] * z[r];
+            MatrixXcd F = U_[k].adjoint() * Z * U_[k];
+            drop(F, k);
+            Map<MatrixXcdRow>(fc + static_cast<size_t>(io) * ns2_, ns_, ns_) = F;
+        }
     }
 }
 
@@ -145,8 +188,8 @@ void RealSpaceV4::fmat_batch(const cplx *dmat, const std::size_t nrhs, cplx *fou
     }
 }
 
-void RealSpaceV4::q0_sweep(const double *q0, const cplx *const *const *v3_with_umn, cplx ***v3_renorm,
-                           cplx ***q4_q0) const
+void RealSpaceV4::q0_sweep(const double *q0, const cplx *const *const *v3_with_umn, cplx ***v3_renorm, cplx ***q4_q0,
+                           const bool accumulate) const
 {
     using namespace Eigen;
     const auto nirr = knum_of_irred_.size();
@@ -160,7 +203,13 @@ void RealSpaceV4::q0_sweep(const double *q0, const cplx *const *const *v3_with_u
         contract(d.data(), knum_of_irred_, f.data());
         for (size_t ir = 0; ir < nirr; ++ir) {
             for (unsigned int a = 0; a < ns_; ++a) {
-                for (unsigned int b = 0; b < ns_; ++b) q4_q0[ir][a][b] = f[ir * ns2_ + a * ns_ + b];
+                for (unsigned int b = 0; b < ns_; ++b) {
+                    if (accumulate) {
+                        q4_q0[ir][a][b] += f[ir * ns2_ + a * ns_ + b];
+                    } else {
+                        q4_q0[ir][a][b] = f[ir * ns2_ + a * ns_ + b];
+                    }
+                }
             }
         }
     }
@@ -229,7 +278,11 @@ void RealSpaceV4::q0_sweep(const double *q0, const cplx *const *const *v3_with_u
             }
             for (unsigned int c = 0; c < ns_; ++c) {
                 for (unsigned int d = 0; d < ns_; ++d) {
-                    v3_renorm[jk][b][c * ns_ + d] = v3_with_umn[jk][b][c * ns_ + d] + V(c, d);
+                    if (accumulate) {
+                        v3_renorm[jk][b][c * ns_ + d] += V(c, d);
+                    } else {
+                        v3_renorm[jk][b][c * ns_ + d] = v3_with_umn[jk][b][c * ns_ + d] + V(c, d);
+                    }
                 }
             }
         }

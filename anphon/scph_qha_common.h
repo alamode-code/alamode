@@ -41,6 +41,7 @@
 namespace PHON_NS
 {
 class DelVStrainData;
+class DerivativeIFC;
 class Ewald;
 
 // Collaborators of the SCPH/QHA drivers (non-owning; owned by PHON, which outlives them).
@@ -295,7 +296,27 @@ protected:
     int v4_real_space = 0;
     std::unique_ptr<quartic_rs::RealSpaceV4> v4_rs;
     mutable bool v4_rs_fmat_checked = false, v4_rs_q0_checked = false;
+    // The SCP-matrix contraction with V4, plus the STRAIN_FC5 correction when present.
     void fmat_contract(const std::complex<double> *dvec, std::complex<double> ***fmat_all) const;
+    void fmat_contract_v4(const std::complex<double> *dvec, std::complex<double> ***fmat_all) const;
+
+    // STRAIN_FC5 (&relax, rank 0): the quartic couplings of the strained cell,
+    // Phi4(u) = Phi4 + sum_mn u_mn dPhi4/du_mn, dPhi4/du_mn from the quintic IFCs
+    // (DerivativeIFC::compute_dPhi4_dumn_groups). The 9 channels dPhi4/du_mn are folded
+    // on one real-space slot set; dv4_fc5 contracts with the weights sum_mn u_mn
+    // dPhi4/du_mn of the current strain (set in renormalize_ifcs_at_structure) and is
+    // added to the V4 contractions: the SCP matrix (fmat_contract) and the q0 sweep.
+    // fc5_q4mn[(c * nk + k) * ns^2 + a * ns + b] = sum_cd dV4/du_mn[(k, G)][a,b][c,d] q0[c] q0[d],
+    // c the channel of mn
+    // at every dense k: the q0 parts of the stress (calculate_del_v0_del_umn_renorm,
+    // strain_vertex). Empty (null) without STRAIN_FC5.
+    std::unique_ptr<quartic_rs::RealSpaceV4> dv4_fc5;
+    std::vector<int> fc5_mn;                    // mn = 3 mu + nu of each channel (DIAG: 0, 4, 8)
+    std::array<int, 9> fc5_channel_of_mn{};     // channel of mn, -1 when dropped
+    std::vector<std::complex<double>> fc5_q4mn; // [(channel * nk + k) * ns^2 + ...]
+    void build_fc5_correction(const DerivativeIFC &derivative_ifc);
+    void update_fc5_at_structure(const std::vector<double> &q0, const std::array<std::array<double, 3>, 3> &u_tensor,
+                                 StructuralOptWorkspace &ws);
     void q0_contract(const double *q0, const std::complex<double> *const *const *v3_with_umn,
                      std::complex<double> ***v3_renorm, std::complex<double> ***q4_q0) const;
     const double *const *v4_diag() const;

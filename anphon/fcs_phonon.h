@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <array>
 #include <set>
 #include <string>
 #include <vector>
@@ -230,6 +231,15 @@ public:
     // velocities all describe the relaxed crystal.
     int relaxed_structure = 0;
 
+    // STRAIN_FC5 (&relax): the quintic IFCs, read on rank 0 only from the HDF5 file of
+    // the quartic ones (/ForceConstants/Order5) and replicated with the FC4 supercell.
+    // Kept apart from force_constant_with_cell so that the loops over maxorder see
+    // nothing new. Empty on the other ranks and when load_fc5 is false.
+    bool load_fc5 = false;
+    std::vector<FcsArrayWithCell> fc5;
+    // Fingerprint of fc5 as read (entries, sum |Phi5|, sum Phi5), stored in the state file.
+    std::array<double, 3> fc5_fingerprint{};
+
     // Fingerprint of the IFCs this run loaded, one entry per order, taken
     // after the MPI broadcast but before replication and sorting. An
     // SCPH/QHA run with RELAX_STR != 0 stores it; a later run that adopts
@@ -263,8 +273,10 @@ public:
     // strained_cell: the IFCs belong to a strained copy of the supercell, whose
     // relative vectors are lattice vectors of the reference cell only up to
     // the strain, so they are rounded without checking the residual.
+    // map_order: the order (0: FC2, 1: FC3, 2: FC4) whose supercell and mapping tables
+    // describe the IFCs; -1 takes the order of the IFCs themselves.
     static void replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout,
-                                         bool strained_cell = false);
+                                         bool strained_cell = false, int map_order = -1);
 
     // Carry the loaded IFCs onto the deformed crystal, for every order.
     //
@@ -316,6 +328,9 @@ private:
     void replicate_force_constants(const int maxorder_in);
 
     void MPI_Bcast_fcs_array(unsigned int);
+
+    // Rank 0: read, check and replicate fc5 (load_fc5).
+    void load_fc5_from_file();
 
 private:
     // Collaborators (non-owning; owned by PHON, which outlives this object).

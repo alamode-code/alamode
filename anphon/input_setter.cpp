@@ -284,6 +284,9 @@ void InputSetter::set_relax_vars(PHON *phon, const RelaxInputVars &vars) const
 
     phon->relaxation->strain_IFC_dir = vars.strain_IFC_dir;
     phon->relaxation->strain_file = vars.strain_file;
+    phon->relaxation->strain_fc5 = vars.strain_fc5;
+    phon->relaxation->strain_fc5_diag = vars.strain_fc5_diag;
+    phon->fcs_phonon->load_fc5 = vars.strain_fc5 != 0;
 }
 
 void InputSetter::set_cell_parameter(PHON *phon, const double lavec_in[3][3]) const

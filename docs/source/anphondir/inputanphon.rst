@@ -60,7 +60,8 @@ List of supported input variables
    :ref:`CELL_GRADIENT_CONV_TOL <anphon_cell_gradient_conv_tol>`, :ref:`COORD_CONV_TOL <anphon_coord_conv_tol>`, :ref:`EFIELD <anphon_efield>`, :ref:`GDIIS_PLAIN <anphon_gdiis_plain>`
    :ref:`GRADIENT_CONV_TOL <anphon_gradient_conv_tol>`, :ref:`MAX_STR_ITER <anphon_max_str_iter>`, :ref:`MIXBETA_CELL <anphon_mixbeta_cell>`, :ref:`MIXBETA_COORD <anphon_mixbeta_coord>`
    :ref:`POL_REF <anphon_pol_ref>`, :ref:`RELAX_ALGO <anphon_relax_algo>`, :ref:`SET_INIT_STR <anphon_set_init_str>`, :ref:`STAT_PRESSURE <anphon_stat_pressure>`
-   :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAINFILE <anphon_strainfile>`, :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
+   :ref:`STRAIN_COUPLING <anphon_strain_coupling>`, :ref:`STRAIN_FC5 <anphon_strain_fc5>`, :ref:`STRAIN_FC5_CHANNELS <anphon_strain_fc5_channels>`, :ref:`STRAINFILE <anphon_strainfile>`
+   :ref:`STRAIN_IFC_DIR <anphon_strain_ifc_dir>`
    :ref:`ELASTIC_CONST (deprecated) <anphon_elastic_const>`, :ref:`RENORM_2TO1ST (deprecated) <anphon_renorm_2to1st>`, :ref:`RENORM_34TO1ST (deprecated) <anphon_renorm_34to1st>`, :ref:`RENORM_3TO2ND (deprecated) <anphon_renorm_3to2nd>`
    **&strain**
    :ref:`Strain tensor <anphon_strain_field>`
@@ -1665,6 +1666,51 @@ Description of input variables
   without the unit token (the legacy layout) or with an explicit ``Ry`` token hold :math:`V C` and
   :math:`V \sigma` in Ry for one specific cell, which anphon cannot check: a warning is printed
   when such a file is used together with a user-defined ``&cell``.
+
+````
+
+.. _anphon_strain_fc5:
+
+* STRAIN_FC5-tag = 0 | 1
+
+ :Default: 0
+ :Type: Integer
+
+ :Description: ``STRAIN_FC5 = 1`` adds the first strain derivative of the quartic IFCs,
+  computed from the quintic ones in the same way as :math:`\partial \Phi_3 / \partial u_{\mu\nu}`
+  is computed from the quartic ones (the strain leg on a partner atom, positions relative to the
+  atom in the home cell):
+
+  .. math::
+
+     \Phi_4(u) = \Phi_4 + \sum_{\mu\nu} u_{\mu\nu} \frac{\partial \Phi_4}{\partial u_{\mu\nu}}, \quad
+     \frac{\partial \Phi_4(\ldots)}{\partial u_{\mu\nu}} = \sum_{m} \Phi_5(\ldots, m\mu)\, r_m^{\nu}.
+
+  It enters the SCP equation, the renormalization at the displaced structure :math:`q_0` and the
+  stress. This is the only use of the quintic IFCs: the expansion is truncated at the first strain
+  derivative of :math:`\Phi_4`; higher strain derivatives (:math:`\partial^2 \Phi_3/\partial u^2`,
+  :math:`\partial^3 \Phi_2/\partial u^3`) and the quintic displacement potential
+  :math:`\Phi_5 u^5` are not included.
+
+  The quintic IFCs are read from ``/ForceConstants/Order5`` of the HDF5 file of the quartic
+  ones (``FC4FILE``, else ``FCSFILE``), which must therefore contain both orders from the same fit
+  (same supercell). Available for ``MODE = SCPH`` with ``RELAX_STR = 2`` or ``4``, not with
+  ``BUBBLE = 4`` or ``BUBBLE_HESS = 1``. The correction is evaluated on MPI rank 0. The setting and
+  a fingerprint of the quintic IFCs are stored in ``PREFIX.scph.h5``; ``RESTART_SCPH`` refuses a
+  state file written with a different ``STRAIN_FC5``, ``STRAIN_FC5_CHANNELS`` or quintic IFCs
+  (files without the record count as ``STRAIN_FC5 = 0``).
+
+````
+
+.. _anphon_strain_fc5_channels:
+
+* STRAIN_FC5_CHANNELS-tag = ALL | DIAG
+
+ :Default: ALL
+ :Type: String
+
+ :Description: ``DIAG`` keeps only the normal-strain channels :math:`u_{xx}, u_{yy}, u_{zz}` of
+  ``STRAIN_FC5`` and drops the six shear channels.
 
 ````
 

@@ -10,6 +10,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 
 #include "fcs_phonon.h"
 #include <algorithm>
+#include <array>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -222,6 +223,8 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
         fcs_sum_sq[order] = sum_sq;
     }
 
+    if (load_fc5 && run.my_rank == 0) load_fc5_from_file();
+
     t_stage = stage_clock();
     replicate_force_constants(maxorder);
     // Collective on every rank: DFC2FILE is known on rank 0 only, and a run
@@ -237,6 +240,61 @@ void Fcs_phonon::setup(const std::string &mode, const int quartic_mode, const bo
     }
     if (maxorder >= 3) {
         std::sort(force_constant_with_cell[2].begin(), force_constant_with_cell[2].end());
+    }
+}
+
+void Fcs_phonon::load_fc5_from_file()
+{
+    // the quartic IFCs come from FC4FILE, else FCSFILE (load_fcs_from_file)
+    const auto fname = file_fc4.empty() ? file_fcs : file_fc4;
+    const auto ext = fname.substr(fname.find_last_of('.') + 1);
+    if (ext != "h5" && ext != "hdf5") {
+        exit("load_fc5_from_file",
+             ("STRAIN_FC5 = 1 reads the quintic IFCs (/ForceConstants/Order5) from the HDF5 file of the quartic\n"
+              " ones, but " +
+              fname + " is not an HDF5 file.")
+                 .c_str());
+    }
+    {
+        const HighFive::File probe(fname, HighFive::File::ReadOnly);
+        if (!probe.exist("/ForceConstants/Order5")) {
+            exit("load_fc5_from_file",
+                 ("STRAIN_FC5 = 1 needs the quintic IFCs, but " + fname +
+                  " has no /ForceConstants/Order5.\n Fit up to fifth order (ALM NORDER >= 4) and give that file.")
+                     .c_str());
+        }
+    }
+    fc5.clear();
+    parse_fcs_from_h5(fname, 3, fc5);
+    fc5_fingerprint = {static_cast<double>(fc5.size()), 0.0, 0.0};
+    for (const auto &it: fc5) {
+        fc5_fingerprint[1] += std::abs(it.fcs_val);
+        fc5_fingerprint[2] += it.fcs_val;
+    }
+    if (fc5.empty()) {
+        warn("load_fc5_from_file", "STRAIN_FC5 = 1: all quintic IFCs are zero; the correction vanishes.");
+        return;
+    }
+
+    // Acoustic sum rule over the last leg (dPhi4/du puts the strain leg on a partner and
+    // measures r from the home-cell leg, which is origin-free only with it).
+    std::map<std::array<unsigned int, 5>, double> sum5;
+    for (const auto &it: fc5) {
+        sum5[{it.pairs[0].index,
+              3 * it.atoms_s[1] + it.pairs[1].index % 3,
+              3 * it.atoms_s[2] + it.pairs[2].index % 3,
+              3 * it.atoms_s[3] + it.pairs[3].index % 3,
+              it.pairs[4].index % 3}] += it.fcs_val;
+    }
+    double maxdev = 0.0, maxval = 0.0;
+    for (const auto &[key, v]: sum5) maxdev = std::max(maxdev, std::abs(v));
+    for (const auto &it: fc5) maxval = std::max(maxval, std::abs(it.fcs_val));
+
+    replicate_force_constant(system, fc5, false, 2);
+    if (run.verbosity > 0) {
+        std::cout << "  STRAIN_FC5 = 1: " << fc5.size() << " quintic IFCs read from " << fname
+                  << " (max |Phi5| = " << std::scientific << std::setprecision(3) << maxval
+                  << ", deviation from the translational invariance " << maxdev << std::defaultfloat << ").\n\n";
     }
 }
 
@@ -274,7 +332,7 @@ void Fcs_phonon::deform_relative_vectors(const std::vector<double> &u0)
 }
 
 void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<FcsArrayWithCell> &fcs_inout,
-                                          const bool strained_cell)
+                                          const bool strained_cell, const int map_order)
 {
     // Replicate IFCs from the true primitive cell to the user-defined cell,
     // convert relative vectors to its lattice basis, and derive relvec
@@ -292,11 +350,14 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
 
     if (order < 0) return;
 
+    // the supercell and mapping tables the IFCs live in
+    const int mo = map_order >= 0 ? map_order : order;
+
     force_constant_replicate.clear();
     map_trans.clear();
 
-    const auto [to_true_primitive, from_true_primitive] = system_in->get_mapping_super_alm(order);
-    const auto &cell_tmp = system_in->get_supercell(order);
+    const auto [to_true_primitive, from_true_primitive] = system_in->get_mapping_super_alm(mo);
+    const auto &cell_tmp = system_in->get_supercell(mo);
     const auto ntran_tmp = from_true_primitive[0].size();
 
     // Generate the atom index mapping table for all translations
@@ -340,12 +401,12 @@ void Fcs_phonon::replicate_force_constant(const System *system_in, std::vector<F
                 atom_super_tran[i] = it_trans[atom_super[i]];
             }
 
-            if (system_in->get_map_s2p(order)[atom_super_tran[0]].tran_num != 0) continue;
+            if (system_in->get_map_s2p(mo)[atom_super_tran[0]].tran_num != 0) continue;
 
             for (auto i = 0; i < order + 2; ++i) {
-                atom_new_prim[i] = system_in->get_map_s2p(order)[atom_super_tran[i]].atom_num;
+                atom_new_prim[i] = system_in->get_map_s2p(mo)[atom_super_tran[i]].atom_num;
                 pairs_tmp[i].index = 3 * atom_new_prim[i] + it.pairs[i].index % 3;
-                pairs_tmp[i].tran = system_in->get_map_s2p(order)[atom_super_tran[i]].tran_num;
+                pairs_tmp[i].tran = system_in->get_map_s2p(mo)[atom_super_tran[i]].tran_num;
                 pairs_tmp[i].cell_s = it.pairs[i].cell_s;
             }
 

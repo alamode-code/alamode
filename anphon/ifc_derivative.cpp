@@ -653,6 +653,15 @@ void DerivativeIFC::compute_dV3_dumn(std::vector<std::vector<MatrixXcdRowMajor>>
     print_stage_line("dV3/du: 9 x V3 build", t_v3_build, my_rank_, verbosity_, true);
 }
 
+void DerivativeIFC::compute_dPhi4_dumn_groups(std::vector<DeltaFcsStrainComponents> &groups) const
+{
+    // stable: the order within a group, hence the summation order, is that of fc5 (bitwise
+    // reproducible runs)
+    std::vector<FcsArrayWithCell> fcs_aligned(fcs_phonon_.fc5);
+    std::stable_sort(fcs_aligned.begin(), fcs_aligned.end(), sort_by_heading_indices(1));
+    compute_dV_dumn_all_real_space(fcs_aligned, groups, 1, system_.get_primcell().lattice_vector);
+}
+
 void DerivativeIFC::compute_dV_dumn_all_real_space(const std::vector<FcsArrayWithCell> &fcs_aligned,
                                                    std::vector<DeltaFcsStrainComponents> &groups, const std::size_t m,
                                                    const Eigen::Matrix3d &convmat)

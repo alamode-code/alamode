@@ -248,6 +248,9 @@ struct RelaxInputVars
 
     std::string strain_IFC_dir;
     std::string strain_file; // STRAINFILE
+
+    int strain_fc5 = 0;           // STRAIN_FC5: dPhi4/du from the quintic IFCs
+    bool strain_fc5_diag = false; // STRAIN_FC5_CHANNELS = DIAG (ALL: false)
 };
 
 class InputSetter

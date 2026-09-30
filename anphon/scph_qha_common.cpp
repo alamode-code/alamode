@@ -1077,6 +1077,11 @@ void ScphQhaCommon::renormalize_ifcs_at_structure(StructuralOptWorkspace &ws)
     const auto time_sweep_start = timer->elapsed();
     q0_contract(q0.data(), ws.v3_with_umn, ws.v3_renorm, ws.q4_q0);
     print_stage_time("q0 renormalization: sweep over V4", time_sweep_start);
+    if (dv4_fc5) {
+        const auto time_fc5 = timer->elapsed();
+        update_fc5_at_structure(q0, u_tensor, ws);
+        print_stage_time("STRAIN_FC5: q0 sweep over dV4/du", time_fc5);
+    }
     time_stage = timer->elapsed();
 
     relaxation->renormalize_v1_from_q0(omega2_harmonic,
@@ -1276,12 +1281,94 @@ void ScphQhaCommon::build_v4_service(const bool full_tensor, const bool offdiag_
     }
 }
 
+void ScphQhaCommon::build_fc5_correction(const DerivativeIFC &derivative_ifc)
+{
+    const auto ns = static_cast<unsigned int>(dynamical->neval);
+    const auto nk_irred = kmesh_coarse->nk_irred;
+    std::vector<unsigned int> knum_of_irred(nk_irred);
+    for (unsigned int ik = 0; ik < nk_irred; ++ik) {
+        knum_of_irred[ik] = kmap_coarse_to_dense[kmesh_coarse->kpoint_irred_all[ik][0].knum];
+    }
+
+    if (fcs_phonon->fc5.empty()) {
+        if (run.verbosity > 0) std::cout << " STRAIN_FC5 = 1: no nonzero quintic IFCs, no correction.\n\n";
+        return;
+    }
+    std::vector<DeltaFcsStrainComponents> groups;
+    derivative_ifc.compute_dPhi4_dumn_groups(groups);
+    // the channels mn kept: STRAIN_FC5_CHANNELS = DIAG only the normal strains u_xx, u_yy, u_zz
+    fc5_mn.clear();
+    fc5_channel_of_mn.fill(-1);
+    for (auto mn = 0; mn < 9; ++mn) {
+        if (relaxation->strain_fc5_diag && mn / 3 != mn % 3) continue;
+        fc5_channel_of_mn[mn] = static_cast<int>(fc5_mn.size());
+        fc5_mn.push_back(mn);
+    }
+    if (fc5_mn.size() < 9) {
+        for (auto &g: groups) {
+            std::vector<double> kept;
+            for (const auto mn: fc5_mn) kept.push_back(g.values[mn]);
+            g.values.swap(kept);
+        }
+    }
+    quartic_rs::QuarticMesh mesh(groups, fc5_mn.size(), system->get_invsqrt_mass(), ns, kmesh_dense->nk_i);
+    // NOTE: this object holds its own copy of the nk x nk phase table of the dense mesh
+    // (16 nk^2 bytes, ~256 MiB at 16^3), as does v4_rs when V4_REAL_SPACE > 0.
+    dv4_fc5 = std::make_unique<quartic_rs::RealSpaceV4>(std::move(mesh),
+                                                        ns,
+                                                        kmesh_dense->nk_i,
+                                                        kmesh_dense->xk,
+                                                        evec_harmonic,
+                                                        is_acoustic_gamma_harm,
+                                                        static_cast<unsigned int>(ik_gamma_dense),
+                                                        knum_of_irred,
+                                                        selfenergy_offdiagonal,
+                                                        false);
+    if (run.verbosity > 0) {
+        std::cout << " STRAIN_FC5 = 1: dPhi4/du from the quintic IFCs (" << groups.size() << " groups, "
+                  << dv4_fc5->folded_entries() << " slots on the dense mesh; channels "
+                  << (relaxation->strain_fc5_diag ? "u_xx, u_yy, u_zz" : "all u_mn") << ").\n\n";
+    }
+}
+
+void ScphQhaCommon::update_fc5_at_structure(const std::vector<double> &q0,
+                                            const std::array<std::array<double, 3>, 3> &u_tensor,
+                                            StructuralOptWorkspace &ws)
+{
+    // the quartic couplings of this strain
+    std::vector<double> coef;
+    for (const auto mn: fc5_mn) coef.push_back(u_tensor[mn / 3][mn % 3]);
+    dv4_fc5->set_channel_weights(coef.data());
+
+    // their q0 parts of v3_renorm and q4_q0
+    dv4_fc5->q0_sweep(q0.data(), nullptr, ws.v3_renorm, ws.q4_q0, true);
+
+    // per channel, D = q0 q0^T at Gamma contracted at every dense k (the stress)
+    const auto ns = static_cast<std::size_t>(dynamical->neval);
+    const auto nk = static_cast<std::size_t>(kmesh_dense->nk);
+    const auto ns2 = ns * ns;
+    std::vector<std::complex<double>> d(nk * ns2, 0.0);
+    for (std::size_t a = 0; a < ns; ++a) {
+        for (std::size_t b = 0; b < ns; ++b) d[ik_gamma_dense * ns2 + a * ns + b] = q0[a] * q0[b];
+    }
+    std::vector<unsigned int> kall(nk);
+    for (std::size_t k = 0; k < nk; ++k) kall[k] = static_cast<unsigned int>(k);
+    fc5_q4mn.assign(fc5_mn.size() * nk * ns2, 0.0);
+    dv4_fc5->contract_channels(d.data(), kall, fc5_q4mn.data());
+}
+
 const double *const *ScphQhaCommon::v4_diag() const
 {
     return v4_real_space == 1 ? v4_rs->v4_diag() : v4_service->v4_diag();
 }
 
 void ScphQhaCommon::fmat_contract(const std::complex<double> *dvec, std::complex<double> ***fmat_all) const
+{
+    fmat_contract_v4(dvec, fmat_all);
+    if (dv4_fc5) dv4_fc5->fmat(dvec, fmat_all);
+}
+
+void ScphQhaCommon::fmat_contract_v4(const std::complex<double> *dvec, std::complex<double> ***fmat_all) const
 {
     if (v4_real_space == 1) {
         v4_rs->fmat(dvec, fmat_all);
@@ -1415,6 +1502,14 @@ void ScphQhaCommon::setup_structural_opt_buffers(StructuralOptWorkspace &ws)
     t_stage = timer->elapsed();
     build_v4_service(true, selfenergy_offdiagonal);
     print_stage_time("V4 build", t_stage);
+
+    dv4_fc5.reset();
+    fc5_q4mn.clear();
+    if (relaxation->strain_fc5 && uses_full_strain_derivatives(ws.relax_mode) && run.my_rank == 0) {
+        t_stage = timer->elapsed();
+        build_fc5_correction(derivative_ifc);
+        print_stage_time("STRAIN_FC5: dV4/du build", t_stage);
+    }
 
     ws.v3_ref.resize(nk, ns, ns * ns);
     ws.v3_renorm.resize(nk, ns, ns * ns);
