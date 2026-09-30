@@ -840,15 +840,19 @@ def test_v2(anphonbin):
 def test_v3(anphonbin):
     # Maxwell identity of the implemented free energy at fixed strain, internal
     # coordinates relaxed: d(dt_i)/du_mn |_E = -dG_mn/dE_i |_u (i = z).
+    # Matched meshes (KMESH_SCPH = KMESH_INTERPOLATE): with Fourier
+    # interpolation the SCP functional is stationary on the coarse mesh only, so
+    # force and stress are not exact derivatives of one free energy and the
+    # identity breaks at the interpolation-error level (~2e-4 with 2/4 meshes).
     efield = np.array([0.004, -0.003, 0.01])
     umn0 = np.array(STRAIN_SHEAR.split(), float).reshape(3, 3)
     tight = dict(
         relax_str=4,
-        max_iter=60,
+        max_iter=80,
         verbosity=2,
         strainfile="bto_piezo.h5",
-        coord_tol="1.0e-9",
-        extra="\n  GRADIENT_CONV_TOL = 1.0e-9",
+        coord_tol="1.0e-10",
+        extra="\n  GRADIENT_CONV_TOL = 1.0e-10",
     )
 
     def relax(name, umn, e, displace):
@@ -857,17 +861,14 @@ def test_v3(anphonbin):
             if os.path.exists(f):
                 os.remove(f)
         strain = "\n".join(" %.12e %.12e %.12e" % tuple(r) for r in umn)
-        rc, log = run_anphon(
-            anphonbin,
+        text = bto_input(
             name,
-            bto_input(
-                name,
-                efield=" ".join("%.12e" % x for x in e),
-                strain=strain,
-                displace=displace,
-                **tight,
-            ),
-        )
+            efield=" ".join("%.12e" % x for x in e),
+            strain=strain,
+            displace=displace,
+            **tight,
+        ).replace("KMESH_SCPH = 4 4 4", "KMESH_SCPH = 2 2 2")
+        rc, log = run_anphon(anphonbin, name, text)
         row = np.loadtxt(name + ".polarization", ndmin=2)[-1] if rc == 0 else None
         ok = row is not None and row[8] == 1 and "SCP NOT converged" not in log[-3000:]
         return ok, log
@@ -880,15 +881,12 @@ def test_v3(anphonbin):
         " %.12e %.12e %.12e" % tuple(r) for r in u0
     )
 
-    info = 0
+    # The E side (soft polar mode) has an O(h_E^2) central-difference error:
+    # Richardson-extrapolate two field steps. The strain side is linear enough.
     ez = np.array([0.0, 0.0, 1.0])
-    results = []
-    # The E side is the less linear one (soft polar mode): its central
-    # difference error is O(h_E^2) (ratio ~4 per halving from h_E = 2e-3 down to
-    # 2.5e-4 eV/A). Extrapolated to h_E -> 0 a residual of ~2e-4 (zz) and ~1e-4
-    # (xy) remains; it does not change with a 10x tighter TOL_SCPH, so it is not
-    # SCP convergence noise but the consistency of G with F at this level.
-    for h_u, h_e in ((2.0e-4, 5.0e-4), (1.0e-4, 2.5e-4)):
+    h_u = 1.0e-4
+    dg_de = {}
+    for h_e in (5.0e-4, 2.5e-4):
         g = {}
         for sign in (1, -1):
             ok, log = relax(
@@ -897,29 +895,28 @@ def test_v3(anphonbin):
             if not ok:
                 return check(False, "V3: E run did not converge")
             g[sign] = last_values(log, LBL_G).reshape(3, 3)
-        dg_de = (g[1] - g[-1]) / (2.0 * h_e * EV_A_TO_RY)
-        for label, (m, n) in (("zz", (2, 2)), ("xy", (0, 1))):
-            dts = {}
-            for sign in (1, -1):
-                umn = umn0.copy()
-                umn[m, n] += sign * h_u
-                if m != n:
-                    umn[n, m] += sign * h_u
-                ok, log = relax("v3_%s%+d_%.0e" % (label, sign, h_u), umn, efield, seed)
-                if not ok:
-                    return check(False, "V3: strain run did not converge")
-                dts[sign] = last_values(log, LBL_DT)
-            lhs = (dts[1][2] - dts[-1][2]) / (2.0 * h_u)
-            rhs = -dg_de[m, n] - (dg_de[n, m] if m != n else 0.0)
-            results.append((label, h_u, h_e, lhs, rhs))
-    for label, h_u, h_e, lhs, rhs in results:
+        dg_de[h_e] = (g[1] - g[-1]) / (2.0 * h_e * EV_A_TO_RY)
+    dg_de = (4.0 * dg_de[2.5e-4] - dg_de[5.0e-4]) / 3.0
+
+    info = 0
+    for label, (m, n) in (("zz", (2, 2)), ("xy", (0, 1))):
+        dts = {}
+        for sign in (1, -1):
+            umn = umn0.copy()
+            umn[m, n] += sign * h_u
+            if m != n:
+                umn[n, m] += sign * h_u
+            ok, log = relax("v3_%s%+d" % (label, sign), umn, efield, seed)
+            if not ok:
+                return check(False, "V3: strain run did not converge")
+            dts[sign] = last_values(log, LBL_DT)
+        lhs = (dts[1][2] - dts[-1][2]) / (2.0 * h_u)
+        rhs = -dg_de[m, n] - (dg_de[n, m] if m != n else 0.0)
         rel = abs(lhs - rhs) / max(abs(lhs), abs(rhs))
-        print(
-            "         V3 %s: h_u = %.1e, h_E = %.1e eV/A: d(dt_z)/du = %.10e, "
-            "-dG/dE_z = %.10e, rel. diff %.2e" % (label, h_u, h_e, lhs, rhs, rel)
-        )
         info += check(
-            rel < 5.0e-4, "V3 %s (h_u = %.1e): Maxwell identity" % (label, h_u)
+            rel < 5.0e-5,
+            "V3 %s: d(dt_z)/du = %.10e == -dG/dE_z = %.10e (extrapolated), rel. diff %.2e"
+            % (label, lhs, rhs, rel),
         )
     return info
 
