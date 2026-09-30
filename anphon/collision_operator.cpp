@@ -48,16 +48,6 @@ CollisionOperator::CollisionOperator(const KpointMeshUniform &kmesh_dos_in, cons
     with_isotope = false;
 }
 
-CollisionOperator::~CollisionOperator()
-{
-    if (L_absorb) {
-        L_absorb.clear();
-    }
-    if (L_emitt) {
-        L_emitt.clear();
-    }
-}
-
 void CollisionOperator::setup()
 {
     nk_3ph = kmesh_dos_.nk;

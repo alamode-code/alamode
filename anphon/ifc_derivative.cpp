@@ -1239,13 +1239,20 @@ void DerivativeIFC::read_del_v2_del_umn_in_kspace(double **omega2_harmonic,
     NDArray<std::complex<double>, 3> del_v2_del_umn_alphamu;
     del_v2_del_umn_alphamu.resize(9, nk, ns * ns);
 
-    fin_strain_mode_coupling_kspace.open("B_array_kspace.txt");
+    fin_strain_mode_coupling_kspace.open("B_array_kspace.txt", std::ios::in);
+
+    if (!fin_strain_mode_coupling_kspace) {
+        exit("read_del_v2_del_umn_in_kspace", "could not open file B_array_kspace.txt");
+    }
 
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
         for (ixyz2 = 0; ixyz2 < 3; ixyz2++) {
             for (ik = 0; ik < static_cast<int>(nk); ik++) {
                 for (is = 0; is < ns * ns; is++) {
-                    fin_strain_mode_coupling_kspace >> re_tmp >> im_tmp;
+                    if (!(fin_strain_mode_coupling_kspace >> re_tmp >> im_tmp)) {
+                        exit("read_del_v2_del_umn_in_kspace",
+                             "B_array_kspace.txt is too short or contains invalid data.");
+                    }
                     del_v2_del_umn_alphamu[ixyz1 * 3 + ixyz2][ik][is] = std::complex<double>(re_tmp, im_tmp);
                 }
             }
@@ -1670,9 +1677,6 @@ void DerivativeIFC::process_strain_harmonic_set(
     dphi2_dumn_realspace_symm.resize(3, 3, natmin3, nat3);
     count_tmp.resize(3, 3, natmin3, nat3);
 
-    NDArray<std::complex<double>, 3> del_v2_strain_from_cubic_alphamu;
-    del_v2_strain_from_cubic_alphamu.resize(9, nk, ns * ns);
-
     exist_in.setZero();
     weight_sum.setZero();
     for (ixyz1 = 0; ixyz1 < 3; ixyz1++) {
@@ -2019,12 +2023,6 @@ void DerivativeIFC::process_strain_harmonic_set(
             auto &per_strain = del_v2_del_umn[ixyz1 * 3 + ixyz2];
             for (ik = 0; ik < static_cast<int>(nk); ik++) {
                 r2q(kmesh_dense->xk[ik], nk1, nk2, nk3, ns, mindist_list, dymat_new, dymat_tmp);
-
-                for (is = 0; is < ns; is++) {
-                    for (js = 0; js < ns; js++) {
-                        del_v2_strain_from_cubic_alphamu[ixyz1 * 3 + ixyz2][ik][is * ns + js] = dymat_tmp[is][js];
-                    }
-                }
 
                 for (is = 0; is < ns; is++) {
                     for (js = 0; js < ns; js++) {

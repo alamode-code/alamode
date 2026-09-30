@@ -32,6 +32,22 @@ using PHON_NS::v4_index_transform::transform_index_gemm;
 
 namespace
 {
+// In-place MPI_Allreduce(MPI_SUM) in chunks, so that the element count of a
+// single MPI call always fits an int.
+void allreduce_sum_chunked(std::complex<double> *buf, const std::size_t count)
+{
+#ifdef MPI_CXX_DOUBLE_COMPLEX
+    const MPI_Datatype mpi_complex_type = MPI_CXX_DOUBLE_COMPLEX;
+#else
+    const MPI_Datatype mpi_complex_type = MPI_COMPLEX16;
+#endif
+    constexpr std::size_t mpi_chunk = static_cast<std::size_t>(1) << 30; // elements per MPI call
+    for (std::size_t offset = 0; offset < count; offset += mpi_chunk) {
+        const auto n = static_cast<int>(std::min(mpi_chunk, count - offset));
+        MPI_Allreduce(MPI_IN_PLACE, buf + offset, n, mpi_complex_type, MPI_SUM, MPI_COMM_WORLD);
+    }
+}
+
 // Cache the CSC-like scatter pattern phi4[(a1,a2)][(a3,a4)] from
 // evec_index_v4 and refill values per (k1,k2). Merge duplicate slots,
 // keeping the last group's value to match dense-scatter semantics.
@@ -238,21 +254,7 @@ void ScphQhaCommon::compute_V3_elements_mpi_over_kpoint(
 
     v3_array_at_kpair.clear();
     ind.clear();
-#ifdef MPI_CXX_DOUBLE_COMPLEX
-    MPI_Allreduce(MPI_IN_PLACE,
-                  v3_allreduce_buffer.data(),
-                  static_cast<int>(nk_scph) * ns3,
-                  MPI_CXX_DOUBLE_COMPLEX,
-                  MPI_SUM,
-                  MPI_COMM_WORLD);
-#else
-    MPI_Allreduce(MPI_IN_PLACE,
-                  v3_allreduce_buffer.data(),
-                  static_cast<int>(nk_scph) * ns3,
-                  MPI_COMPLEX16,
-                  MPI_SUM,
-                  MPI_COMM_WORLD);
-#endif
+    allreduce_sum_chunked(v3_allreduce_buffer.data(), v3_allreduce_buffer.size());
 
 #pragma omp parallel for collapse(3) schedule(static)
     for (unsigned int ik = 0; ik < nk_scph; ++ik) {
@@ -445,21 +447,7 @@ void PHON_NS::compute_V3_elements_for_given_IFCs(
 
     v3_array_at_kpair.clear();
     ind.clear();
-#ifdef MPI_CXX_DOUBLE_COMPLEX
-    MPI_Allreduce(MPI_IN_PLACE,
-                  v3_allreduce_buffer.data(),
-                  static_cast<int>(nk_scph) * ns3,
-                  MPI_CXX_DOUBLE_COMPLEX,
-                  MPI_SUM,
-                  MPI_COMM_WORLD);
-#else
-    MPI_Allreduce(MPI_IN_PLACE,
-                  v3_allreduce_buffer.data(),
-                  static_cast<int>(nk_scph) * ns3,
-                  MPI_COMPLEX16,
-                  MPI_SUM,
-                  MPI_COMM_WORLD);
-#endif
+    allreduce_sum_chunked(v3_allreduce_buffer.data(), v3_allreduce_buffer.size());
 
 #pragma omp parallel for collapse(3) schedule(static)
     for (unsigned int ik = 0; ik < nk_scph; ++ik) {

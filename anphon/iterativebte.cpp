@@ -594,9 +594,12 @@ void Iterativebte::iterative_solver()
 
             // Keep the lowest-residual iterate in case the run ends without
             // convergence (for a monotonically improving iteration this is
-            // simply the last one).
-            if (itr > 0 && (res_best < 0.0 || rel < res_best)) {
-                res_best = rel;
+            // simply the last one). The residual is undefined at itr = 0 (no
+            // previous iterate), so that iterate only seeds the best one and
+            // leaves res_best unset: any later iterate replaces it, and it is
+            // what is kept when MAX_CYCLE = 1.
+            if (itr == 0 || res_best < 0.0 || rel < res_best) {
+                if (itr > 0) res_best = rel;
                 itr_best = itr;
                 for (ix = 0; ix < 3; ++ix) {
                     for (iy = 0; iy < 3; ++iy) {

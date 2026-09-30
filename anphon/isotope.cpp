@@ -205,13 +205,16 @@ TetraBins build_tetra_bins(const int nk, const int ns, const double *const *eval
 double averaged_omega(const double *const *eval, const int ns, const double tol_degenerate, const unsigned int knum,
                       const unsigned int snum)
 {
-    auto begin = snum;
-    while (begin > 0 && std::abs(eval[knum][begin] - eval[knum][begin - 1]) < tol_degenerate) {
-        --begin;
-    }
-    auto end = snum + 1;
-    while (end < ns && std::abs(eval[knum][end] - eval[knum][end - 1]) < tol_degenerate) {
-        ++end;
+    // Group anchored to its first member, scanned from band 0: the same
+    // groups as the gamma averaging in calc_isotope_selfenergy_all.
+    unsigned int begin = 0;
+    unsigned int end = 1;
+    while (true) {
+        while (end < static_cast<unsigned int>(ns) && std::abs(eval[knum][end] - eval[knum][begin]) < tol_degenerate) {
+            ++end;
+        }
+        if (snum < end) break;
+        begin = end++;
     }
     auto omega_sum = 0.0;
     for (auto is = begin; is < end; ++is) {

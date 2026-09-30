@@ -1261,7 +1261,7 @@ void Dynamical::project_degenerate_eigenvectors(const Eigen::Matrix3d &lavec_p,
 
         } else {
             std::cout << iset << '\n';
-            exitall("project_degenerate_eigenvectors", "This should not happen.");
+            exit("project_degenerate_eigenvectors", "This should not happen.");
         }
 
         ishift += iset;

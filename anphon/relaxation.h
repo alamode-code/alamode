@@ -75,8 +75,6 @@ public:
                 mat.resize(nmode, nmode2);
             }
         }
-
-        build_pointer_views();
     }
 
     int nk() const
@@ -88,128 +86,9 @@ public:
         return nmode_;
     }
 
-    std::complex<double> **del_v1_raw()
-    {
-        return del_v1_rows_.data();
-    }
-    std::complex<double> *const *del_v1_raw() const
-    {
-        return del_v1_rows_.data();
-    }
-    std::complex<double> **del2_v1_raw()
-    {
-        return del2_v1_rows_.data();
-    }
-    std::complex<double> *const *del2_v1_raw() const
-    {
-        return del2_v1_rows_.data();
-    }
-    std::complex<double> **del3_v1_raw()
-    {
-        return del3_v1_rows_.data();
-    }
-    std::complex<double> *const *del3_v1_raw() const
-    {
-        return del3_v1_rows_.data();
-    }
-    std::complex<double> ***del_v2_raw()
-    {
-        return del_v2_ptrs_.data();
-    }
-    std::complex<double> **const *del_v2_raw() const
-    {
-        return del_v2_ptrs_.data();
-    }
-    std::complex<double> ***del2_v2_raw()
-    {
-        return del2_v2_ptrs_.data();
-    }
-    std::complex<double> **const *del2_v2_raw() const
-    {
-        return del2_v2_ptrs_.data();
-    }
-    std::complex<double> ****del_v3_raw()
-    {
-        return del_v3_ptrs_.data();
-    }
-    std::complex<double> ***const *del_v3_raw() const
-    {
-        return del_v3_ptrs_.data();
-    }
-
 private:
     int nk_{0};
     int nmode_{0};
-
-    std::vector<std::complex<double> *> del_v1_rows_;
-    std::vector<std::complex<double> *> del2_v1_rows_;
-    std::vector<std::complex<double> *> del3_v1_rows_;
-
-    std::vector<std::vector<std::complex<double> *>> del_v2_rows_;
-    std::vector<std::complex<double> **> del_v2_ptrs_;
-
-    std::vector<std::vector<std::complex<double> *>> del2_v2_rows_;
-    std::vector<std::complex<double> **> del2_v2_ptrs_;
-
-    std::vector<std::vector<std::vector<std::complex<double> *>>> del_v3_rows_;
-    std::vector<std::vector<std::complex<double> **>> del_v3_kptrs_;
-    std::vector<std::complex<double> ***> del_v3_ptrs_;
-
-    void build_pointer_views()
-    {
-        const auto nmode2 = nmode_ * nmode_;
-
-        del_v1_rows_.resize(9);
-        for (int i = 0; i < 9; ++i) {
-            del_v1_rows_[i] = del_v1.data() + static_cast<std::size_t>(i) * nmode_;
-        }
-
-        del2_v1_rows_.resize(81);
-        for (int i = 0; i < 81; ++i) {
-            del2_v1_rows_[i] = del2_v1.data() + static_cast<std::size_t>(i) * nmode_;
-        }
-
-        del3_v1_rows_.resize(729);
-        for (int i = 0; i < 729; ++i) {
-            del3_v1_rows_[i] = del3_v1.data() + static_cast<std::size_t>(i) * nmode_;
-        }
-
-        del_v2_rows_.resize(9);
-        del_v2_ptrs_.resize(9);
-        for (int i = 0; i < 9; ++i) {
-            del_v2_rows_[i].resize(nk_);
-            for (int ik = 0; ik < nk_; ++ik) {
-                del_v2_rows_[i][ik] = del_v2[i].data() + static_cast<std::size_t>(ik) * nmode2;
-            }
-            del_v2_ptrs_[i] = del_v2_rows_[i].data();
-        }
-
-        del2_v2_rows_.resize(81);
-        del2_v2_ptrs_.resize(81);
-        for (int i = 0; i < 81; ++i) {
-            del2_v2_rows_[i].resize(nk_);
-            for (int ik = 0; ik < nk_; ++ik) {
-                del2_v2_rows_[i][ik] = del2_v2[i].data() + static_cast<std::size_t>(ik) * nmode2;
-            }
-            del2_v2_ptrs_[i] = del2_v2_rows_[i].data();
-        }
-
-        del_v3_rows_.resize(9);
-        del_v3_kptrs_.resize(9);
-        del_v3_ptrs_.resize(9);
-        for (int i = 0; i < 9; ++i) {
-            del_v3_rows_[i].resize(nk_);
-            del_v3_kptrs_[i].resize(nk_);
-            for (int ik = 0; ik < nk_; ++ik) {
-                del_v3_rows_[i][ik].resize(nmode_);
-                for (int is = 0; is < nmode_; ++is) {
-                    del_v3_rows_[i][ik][is] = del_v3[i][ik].data() + static_cast<std::size_t>(is) * nmode2;
-                }
-                del_v3_kptrs_[i][ik] = del_v3_rows_[i][ik].data();
-            }
-            del_v3_ptrs_[i] = del_v3_kptrs_[i].data();
-        }
-    }
 };
 
 class Relaxation

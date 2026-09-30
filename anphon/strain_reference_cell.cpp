@@ -149,9 +149,14 @@ AtomMatch match_atoms(const ReferenceCell &ref, const Eigen::Matrix3d &lattice_c
     if ((!cur_is_larger && n_ref % nimage != 0) || expected_cur != n_cur) {
         std::ostringstream os;
         os << "Inconsistent atom counts: the &reference_cell header of " << fname << " declares " << n_ref
-           << " atoms and\n V(current) / V(reference) = " << match.ratio << ", so the primitive cell of this run "
-           << "should contain " << (cur_is_larger ? n_ref * nimage : (n_ref + nimage - 1) / nimage)
-           << " atoms; it contains " << n_cur << ".\n Please check the header and the &cell field.";
+           << " atoms and\n V(current) / V(reference) = " << match.ratio;
+        if (!cur_is_larger && n_ref % nimage != 0) {
+            os << ", but " << n_ref << " is not divisible by " << nimage << ".";
+        } else {
+            os << ", so the primitive cell of this run should contain " << expected_cur << " atoms; it contains "
+               << n_cur << ".";
+        }
+        os << "\n Please check the header and the &cell field.";
         throw std::runtime_error(os.str());
     }
 

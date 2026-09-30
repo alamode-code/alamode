@@ -155,9 +155,17 @@ void ModeAnalysis::setup_mode_analysis()
                         boost::trim(item);
                         if (item.empty()) continue;
                         const auto dash = item.find('-');
-                        const auto lo = boost::lexical_cast<unsigned int>(item.substr(0, dash));
-                        const auto hi =
-                            dash == std::string::npos ? lo : boost::lexical_cast<unsigned int>(item.substr(dash + 1));
+                        unsigned int lo = 0, hi = 0;
+                        try {
+                            lo = boost::lexical_cast<unsigned int>(item.substr(0, dash));
+                            hi = dash == std::string::npos ? lo
+                                                           : boost::lexical_cast<unsigned int>(item.substr(dash + 1));
+                        } catch (const boost::bad_lexical_cast &) {
+                            exit("setup_mode_analysis",
+                                 "BRANCHES must be 'all' or a comma-separated list of branch indices or ranges "
+                                 "(e.g. 1,3-5). Invalid entry: ",
+                                 item.c_str());
+                        }
                         if (lo < 1 || hi > ns || lo > hi) exit("setup_mode_analysis", "BRANCHES out of range.");
                         for (auto b = lo; b <= hi; ++b) branches.push_back(b);
                     }
@@ -175,6 +183,9 @@ void ModeAnalysis::setup_mode_analysis()
                 }
             } else {
                 exit("setup_mode_analysis", "MODE = selfenergy needs KPMODE = 0 or 1 in the &kpoint field.");
+            }
+            if (kslist.empty() && kslist_offmesh.empty()) {
+                exit("setup_mode_analysis", "No target mode is selected: check the &kpoint field and BRANCHES.");
             }
             if (run.verbosity > 0) {
                 std::cout << " The number of targets = " << kslist.size() + kslist_offmesh.size() << " ("
@@ -644,7 +655,8 @@ void ModeAnalysis::write_results_hdf5(const unsigned int NT, const double *T_arr
             dump(fh, g.str() + "/temperature", T_arr[iT]);
             dump(fh, g.str() + "/total", spectrum_total[iT]);
             dumpAttribute(fh, g.str() + "/total", "layout", std::string("[q][omega], unit 1/cm^-1"));
-            for (size_t j = 0; j < spectrum_branch[iT][0].size(); ++j) {
+            const auto nbranch = spectrum_branch[iT].empty() ? size_t(0) : spectrum_branch[iT][0].size();
+            for (size_t j = 0; j < nbranch; ++j) {
                 std::vector<std::vector<double>> a(spectrum_branch[iT].size());
                 for (size_t iq = 0; iq < a.size(); ++iq) a[iq] = spectrum_branch[iT][iq][j];
                 std::ostringstream d;

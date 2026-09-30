@@ -37,8 +37,6 @@ public:
                       Integration &integration_in, AnharmonicCore &anharmonic_core_in, unsigned int ns_in,
                       int my_rank_in, int nprocs_in);
 
-    ~CollisionOperator();
-
     // Distribute the wedge over MPI ranks, enumerate the scattering
     // triplets of the local k points and build the symmetry table.
     void setup();

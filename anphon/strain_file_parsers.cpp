@@ -11,6 +11,7 @@
 #include "strain_file_parsers.h"
 #include <cctype>
 #include <cerrno>
+#include <cmath>
 #include <cstdlib>
 #include <stdexcept>
 #include <utility>
@@ -157,6 +158,10 @@ strain_coupling::StrainForceSet parse_strain_force(std::istream &fin, const std:
         if (!is_strain_mode_name(block.mode)) {
             throw std::runtime_error("Invalid name of strain mode in " + fname + ".");
         }
+        if (!std::isfinite(block.smag) || block.smag == 0.0 || !std::isfinite(block.weight)) {
+            throw std::runtime_error(fname + ": block " + std::to_string(set.blocks.size() + 1) +
+                                     " has an invalid smag or weight.");
+        }
         block.forces.resize(set.natom_rows * 3);
         for (auto &v: block.forces) {
             if (!(fin >> v)) {
@@ -184,6 +189,10 @@ strain_coupling::StrainHarmonicSet parse_strain_harmonic(std::istream &fin, cons
     while (fin >> entry.mode >> entry.smag >> entry.weight >> entry.label) {
         if (!is_strain_mode_name(entry.mode)) {
             throw std::runtime_error("Invalid name of strain mode in " + fname + ".");
+        }
+        if (!std::isfinite(entry.smag) || entry.smag == 0.0 || !std::isfinite(entry.weight)) {
+            throw std::runtime_error(fname + ": entry " + std::to_string(set.entries.size() + 1) +
+                                     " has an invalid smag or weight.");
         }
         set.entries.push_back(entry);
     }

@@ -381,9 +381,8 @@ void Fcs_phonon::load_fcs_from_file(const int maxorder_in)
     // user named for the other orders may simply not carry FC4. Say so
     // here: letting the loader fall through produces a bare HDF5 "cannot
     // open dataset" that explains nothing.
-    if (relaxed_structure && require_quartic && filename_list[2].size() > 3 &&
-        filename_list[2].compare(filename_list[2].size() - 3, 3, ".h5") == 0)
-    {
+    const auto ext_fc4 = filename_list[2].substr(filename_list[2].find_last_of('.') + 1);
+    if (relaxed_structure && require_quartic && (ext_fc4 == "h5" || ext_fc4 == "hdf5")) {
         const HighFive::File probe(filename_list[2], HighFive::File::ReadOnly);
         if (!probe.exist("/ForceConstants/Order4")) {
             exit("load_fcs_from_file",

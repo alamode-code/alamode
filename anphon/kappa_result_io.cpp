@@ -729,6 +729,32 @@ struct KappaResultIOH5::Impl
                             dset_vel_old.select({j, 0, 0, 0}, {1, nequiv, cmeta.ns, 3}).read(vbuf.data());
                             dset_vel_new.select({col_map[j], 0, 0, 0}, {1, nequiv, cmeta.ns, 3}).write_raw(vbuf.data());
                         }
+
+                        // The velocity diads are not part of the channel skeleton
+                        // (older files lack them): recreate the dataset here so that
+                        // write_velocity_diad only overwrites this run's columns.
+                        const auto name_diad = opath + "/velocity_diad";
+                        if (oldfile.exist(name_diad)) {
+                            const auto dset_diad_old = oldfile.getDataSet(name_diad);
+                            const auto ddims = dset_diad_old.getDimensions();
+                            if (ddims.size() == 5 && ddims[0] == nt_old && ddims[1] == nequiv && ddims[2] == cmeta.ns &&
+                                ddims[3] == 3 && ddims[4] == 3)
+                            {
+                                auto dset_diad_new =
+                                    h5_create_dataset_compressed<double>(newfile,
+                                                                         name_diad,
+                                                                         {nt_new, nequiv, cmeta.ns, 3, 3},
+                                                                         1);
+                                dset_diad_new.createAttribute("unit", std::string("(m/s)^2"));
+                                std::vector<double> dbuf(nequiv * cmeta.ns * 9);
+                                for (size_t j = 0; j < nt_old; ++j) {
+                                    dset_diad_old.select({j, 0, 0, 0, 0}, {1, nequiv, cmeta.ns, 3, 3})
+                                        .read(dbuf.data());
+                                    dset_diad_new.select({col_map[j], 0, 0, 0, 0}, {1, nequiv, cmeta.ns, 3, 3})
+                                        .write_raw(dbuf.data());
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -744,18 +770,28 @@ struct KappaResultIOH5::Impl
                             .write_raw(row.data());
                     }
                 }
+                auto spec_carried = true;
                 if (oldfile.exist("/kappa/kappa_spec") && newfile.exist("/kappa/kappa_spec")) {
                     const auto ne = fmeta.energy_axis.size();
-                    std::vector<double> col(ne * 3);
-                    for (size_t j = 0; j < nt_old; ++j) {
-                        oldfile.getDataSet("/kappa/kappa_spec").select({0, j, 0}, {ne, 1, 3}).read(col.data());
-                        newfile.getDataSet("/kappa/kappa_spec")
-                            .select({0, col_map[j], 0}, {ne, 1, 3})
-                            .write_raw(col.data());
+                    const auto sdims = oldfile.getDataSet("/kappa/kappa_spec").getDimensions();
+                    if (sdims.size() == 3 && sdims[0] == ne && sdims[1] == nt_old && sdims[2] == 3) {
+                        std::vector<double> col(ne * 3);
+                        for (size_t j = 0; j < nt_old; ++j) {
+                            oldfile.getDataSet("/kappa/kappa_spec").select({0, j, 0}, {ne, 1, 3}).read(col.data());
+                            newfile.getDataSet("/kappa/kappa_spec")
+                                .select({0, col_map[j], 0}, {ne, 1, 3})
+                                .write_raw(col.data());
+                        }
+                    } else {
+                        spec_carried = false;
+                        warn("kappa_result_io",
+                             "The energy grid of /kappa/kappa_spec changed: the spectral kappa of the temperatures\n"
+                             " stored earlier is dropped, and their kappa is marked invalid in the rebuilt kappa.h5\n"
+                             " file. Rerun those temperatures to regenerate it.");
                     }
                 }
                 std::vector<unsigned char> valid_new(nt_new, 0);
-                for (size_t j = 0; j < nt_old && j < old_valid.size(); ++j) {
+                for (size_t j = 0; spec_carried && j < nt_old && j < old_valid.size(); ++j) {
                     valid_new[col_map[j]] = old_valid[j];
                 }
                 newfile.getDataSet("/kappa/valid").write_raw(valid_new.data());

@@ -559,6 +559,10 @@ void PHON::execute_kappa() const
 
     setup_base();
 
+    if (!dos->kmesh_dos) {
+        exit("execute_kappa", "MODE = kappa requires KPMODE = 2 (uniform k mesh) in the &kpoint field.");
+    }
+
     if (kpoint->kpoint_mode < 3) {
         dynamical->diagonalize_dynamical_all(kpoint->kpoint_bs.get(),
                                              kpoint->kpoint_general.get(),

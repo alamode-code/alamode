@@ -13,6 +13,7 @@
 #include <array>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <climits>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -899,7 +900,12 @@ void InputParser::parse_scph_vars(PHON *phon)
         exit("parse_scph_vars", "Please specify KMESH_INTERPOLATE for mode = SCPH");
     }
 
+    // a negative entry wraps to a value above INT_MAX in my_cast<unsigned int>
     for (auto i = 0; i < 3; ++i) {
+        if (kmesh_v[i] == 0 || kmesh_v[i] > static_cast<unsigned int>(INT_MAX))
+            exit("parse_scph_vars", "KMESH_SCPH must be positive integers.");
+        if (kmesh_interpolate_v[i] == 0 || kmesh_interpolate_v[i] > static_cast<unsigned int>(INT_MAX))
+            exit("parse_scph_vars", "KMESH_INTERPOLATE must be positive integers.");
         scph_vars.kmesh_scph[i] = kmesh_v[i];
         scph_vars.kmesh_interpolate[i] = kmesh_interpolate_v[i];
         scph_vars.kmesh_bubble[i] = kmesh_v[i];
@@ -1034,6 +1040,10 @@ void InputParser::parse_qha_vars(PHON *phon)
     }
 
     for (auto i = 0; i < 3; ++i) {
+        if (kmesh_v[i] == 0 || kmesh_v[i] > static_cast<unsigned int>(INT_MAX))
+            exit("parse_qha_vars", "KMESH_QHA must be positive integers.");
+        if (kmesh_interpolate_v[i] == 0 || kmesh_interpolate_v[i] > static_cast<unsigned int>(INT_MAX))
+            exit("parse_qha_vars", "KMESH_INTERPOLATE must be positive integers.");
         qha_vars.kmesh_qha[i] = kmesh_v[i];
         qha_vars.kmesh_interpolate[i] = kmesh_interpolate_v[i];
     }
@@ -1293,6 +1303,20 @@ void InputParser::check_relax_vars() const
                 }
                 fin_test.close();
             } else {
+                // elastic constants (C1_array.in is optional: a missing file
+                // means zero stress at the reference structure)
+                if (relax_vars.elastic_const == 2) {
+                    fin_test.open(relax_vars.strain_IFC_dir + "elastic_constants.in");
+
+                    if (!fin_test) {
+                        exit(
+                            "check_relax_vars",
+                            "elastic_constants.in is required in STRAIN_IFC_DIR when the elastic constants are read\n"
+                            " from file (STRAIN_COUPLING bit 1); or give the strain-coupling container as STRAINFILE.");
+                    }
+                    fin_test.close();
+                }
+
                 // strain-force coupling
                 if (relax_vars.renorm_2to1st == 2) {
                     fin_test.open(relax_vars.strain_IFC_dir + "strain_force.in");

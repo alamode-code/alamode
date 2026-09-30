@@ -1089,7 +1089,10 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
                                                std::complex<double> ***evec_harmonic) const
 {
     // On SCP failure, keep unreliable forces/stress out of optimizer history
-    // and halve the last structure step. With no previous step, take a strongly
+    // and halve the distance to the last converged structure. delta_q0 and
+    // delta_umn keep pointing from that structure to the current one, so that
+    // consecutive failures retreat to 1/2, 1/4, 1/8, ... of the last step.
+    // With no previous step, take a strongly
     // damped force step at fixed cell to leave the initial structure.
 
     auto &q0 = structure_state.q0;
@@ -1116,22 +1119,22 @@ void Relaxation::rescue_step_after_scp_failure(RelaxationStructureState &structu
     if (last_step_norm > eps12) {
         constexpr double backtrack_ratio = 0.5;
         for (is = 0; is < ns; is++) {
-            delta_q0[is] *= -backtrack_ratio;
-            q0[is] += delta_q0[is];
+            delta_q0[is] *= backtrack_ratio;
+            q0[is] -= delta_q0[is];
         }
         for (is = 0; is < 6; is++) {
-            delta_umn[is] *= -backtrack_ratio;
+            delta_umn[is] *= backtrack_ratio;
             if (is < 3) {
-                u_tensor[is][is] += delta_umn[is];
+                u_tensor[is][is] -= delta_umn[is];
             } else {
                 i1 = (is + 1) % 3;
                 i2 = (is + 2) % 3;
-                u_tensor[i1][i2] += delta_umn[is];
-                u_tensor[i2][i1] += delta_umn[is];
+                u_tensor[i1][i2] -= delta_umn[is];
+                u_tensor[i2][i1] -= delta_umn[is];
             }
         }
         if (run.verbosity > 0) {
-            std::cout << " Moving back halfway along the last step and retrying.\n";
+            std::cout << " Halving the distance to the last converged structure and retrying.\n";
         }
     } else {
         // No accepted step exists yet: use the unreliable force, but with a very

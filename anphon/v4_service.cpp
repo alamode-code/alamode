@@ -195,12 +195,7 @@ void V4Service::fmat(const std::complex<double> *dvec, std::complex<double> ***f
 {
     if (distributed()) {
         broadcast_opcode(OP_FMAT);
-        MPI_Bcast(
-            const_cast<std::complex<double> *>(dvec),
-            mpi_count(nk_dense_ * ns2_, "the D matrices exceed INT_MAX elements; the FMAT broadcast needs chunking"),
-            mpi_complex_type,
-            0,
-            MPI_COMM_WORLD);
+        broadcast_from_root(const_cast<std::complex<double> *>(dvec), nk_dense_ * ns2_);
     }
     fmat_local_and_reduce(dvec, fmat_inout);
 }
@@ -300,12 +295,7 @@ void V4Service::worker_loop()
             break;
         }
         if (code == OP_FMAT) {
-            MPI_Bcast(dvec_buf_.data(),
-                      mpi_count(dvec_buf_.size(),
-                                "the D matrices exceed INT_MAX elements; the FMAT broadcast needs chunking"),
-                      mpi_complex_type,
-                      0,
-                      MPI_COMM_WORLD);
+            broadcast_from_root(dvec_buf_.data(), dvec_buf_.size());
             std::fill(&fmat_buf_[0][0][0], &fmat_buf_[0][0][0] + fmat_buf_.size(), czero);
             fmat_local_and_reduce(dvec_buf_.data(), fmat_buf_);
         } else if (code == OP_FMAT_BATCH) {

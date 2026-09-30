@@ -100,6 +100,11 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
     if (load<int>(fh, "/settings/selfenergy_offdiag") != settings.selfenergy_offdiag) {
         exit("scph_result_io", "The SELF_OFFDIAG tag is not consistent");
     }
+    // Absent relax_str: a file written before the tag was stored (no relaxation).
+    const auto relax_str_file = fh.exist("/settings/relax_str") ? load<int>(fh, "/settings/relax_str") : 0;
+    if ((relax_str_file != 0) != (settings.relax_str != 0)) {
+        exit("scph_result_io", "The RELAX_STR tag is not consistent with the restart file");
+    }
     // Absent EFIELD: a zero-field run (or a file written before the tag existed).
     std::vector<double> efield_file(3, 0.0);
     if (fh.exist("/settings/efield")) efield_file = load<std::vector<double>>(fh, "/settings/efield");
