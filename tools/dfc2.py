@@ -51,7 +51,6 @@ class FC2Data:
         """Load force constant data and cell information from the HDF5 file."""
         with h5py.File(fname_h5, "r") as h5file:
             self.values = h5file["ForceConstants/Order2/force_constant_values"][:]
-            self.atom_indices = h5file["ForceConstants/Order2/atom_indices"][:]
             self.atom_indices_supercell = h5file[
                 "ForceConstants/Order2/atom_indices_supercell"
             ][:]

@@ -140,8 +140,13 @@ def generate(
     os.makedirs(ref_dir, exist_ok=True)
     write_structure(template, template.atoms, ref_dir, copy_extra=False)
 
-    dft_text = open(dft_command).read() if dft_command else None
-    job_text = open(job_template).read() if job_template else None
+    dft_text = job_text = None
+    if dft_command:
+        with open(dft_command) as f:
+            dft_text = f.read()
+    if job_template:
+        with open(job_template) as f:
+            job_text = f.read()
     entries = []
     all_calc_dirs = []
     if coupling == "harmonic":

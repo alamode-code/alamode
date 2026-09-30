@@ -934,16 +934,10 @@ class AlamodeDisplace(object):
         if len(entries) == 1:
             tokens = entries[0].split()
             if len(tokens) > 3:
-                if len(tokens) % 2 == 0:
-                    entries = [
-                        "%s %s" % (tokens[i], tokens[i + 1])
-                        for i in range(0, len(tokens), 2)
-                    ]
-                else:
-                    raise RuntimeError(
-                        "Invalid --pes format. Use 'iq imode [coef]' entries "
-                        "separated by semicolons for linear combinations."
-                    )
+                raise RuntimeError(
+                    "Invalid --pes format. Use 'iq imode [coef]' entries "
+                    "separated by semicolons for linear combinations."
+                )
 
         for entry in entries:
             tokens = entry.split()

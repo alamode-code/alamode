@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 
 from . import elasticfit as ef
-from .dftio import check_geometry, read_dft_output
+from .dftio import check_geometry, check_same_species, read_dft_output
 from .fcsorder import (
     anphon_primitive_cell,
     describe_ordering,
@@ -93,12 +93,15 @@ def generate(
             }
         )
     subdirs = [e["dir"] for e in entries]
-    dft_text = open(dft_command).read() if dft_command else None
+    dft_text = None
+    if dft_command:
+        with open(dft_command) as f:
+            dft_text = f.read()
     if job_template:
+        with open(job_template) as f:
+            job_text = f.read()
         with open(os.path.join(outdir, "job.sh"), "w") as f:
-            f.write(
-                render_job_script(open(job_template).read(), dft_text or "", subdirs)
-            )
+            f.write(render_job_script(job_text, dft_text or "", subdirs))
     else:
         write_run_all(os.path.join(outdir, "run_all.sh"), subdirs, dft_text)
 
@@ -201,6 +204,10 @@ def fit(
     geometry_ok = True
     for e in manifest["entries"]:
         if e["dir"] in exclude:
+            if e["index"] == 0:
+                raise ValueError(
+                    f"the reference calculation ({e['dir']}) cannot be excluded from the fit"
+                )
             continue
         out = os.path.join(outdir, e["dir"], manifest["output_file"])
         if not os.path.exists(out):
@@ -215,8 +222,11 @@ def fit(
             r.require("stress")
         if mode in ("energy", "both"):
             r.require("energy")
+        expected = deform(ref_atoms, F)
+        # a different structure (atom count / species order) is fatal even with allow_relaxed
+        check_same_species(r, expected)
         try:
-            check_geometry(r, deform(ref_atoms, F), strict=True)
+            check_geometry(r, expected, strict=True)
         except ValueError as exc:
             if not allow_relaxed:
                 raise

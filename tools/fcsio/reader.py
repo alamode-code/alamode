@@ -60,7 +60,6 @@ class ForceConstantParser:
         self.transformation_matrix = None
         self.transformation_matrix_int = None
         self.shift_vector = None
-        self.shift_vector_vel = None
 
         self._parse_structure()
 

@@ -260,14 +260,19 @@ def update(path, reference_cell, record=None, force=False, source=None):
             with h5py.File(path, "r") as old:
                 dropped = [k for k in (ELASTIC, FORCE, HARMONIC, PIEZO) if k in old]
         f = h5py.File(part, "w")
-        stamp_root(f)
-        write_cell_group(
-            f.create_group(REFERENCE),
-            reference_cell.lavec,
-            reference_cell.xf,
-            reference_cell.elements,
-            source=source,
-        )
+        try:
+            stamp_root(f)
+            write_cell_group(
+                f.create_group(REFERENCE),
+                reference_cell.lavec,
+                reference_cell.xf,
+                reference_cell.elements,
+                source=source,
+            )
+        except Exception:
+            f.close()
+            os.remove(part)
+            raise
     try:
         yield f
         if record is not None:
