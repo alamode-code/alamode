@@ -178,6 +178,20 @@ void ScphResultIOH5::validate_settings(const ScphSettingsH5 &settings) const
              "The strain derivative of the Born charges (STRAINFILE /Piezoelectric/born_charge_strain_derivative)\n"
              " is not consistent with the restart file");
     }
+    // STRAIN_FC5: absent means 0 (also every file written before the tag existed)
+    const auto fc5_file = fh.exist("/settings/strain_fc5") ? load<int>(fh, "/settings/strain_fc5") : 0;
+    if (fc5_file != settings.strain_fc5) {
+        exit("scph_result_io", "The STRAIN_FC5 tag is not consistent with the restart file");
+    }
+    if (settings.strain_fc5) {
+        const auto diag_file = fh.exist("/settings/strain_fc5_diag") ? load<int>(fh, "/settings/strain_fc5_diag") : 0;
+        if (diag_file != settings.strain_fc5_diag) {
+            exit("scph_result_io", "The STRAIN_FC5_CHANNELS tag is not consistent with the restart file");
+        }
+        if (!same_values("/settings/fc5_fingerprint", settings.fc5_fingerprint.data(), 3)) {
+            exit("scph_result_io", "The quintic IFCs (STRAIN_FC5) are not consistent with the restart file");
+        }
+    }
 }
 
 void ScphResultIOH5::load_dymat(const std::string &name, const std::vector<double> &temps_requested,
@@ -359,6 +373,13 @@ void ScphResultIOH5::write_state(const ScphSettingsH5 &settings, const ScphCells
             fh.createDataSet<double>("/settings/piezo_second_order", HighFive::DataSpace({3, 3, 3, 3, 3}))
                 .write_raw(settings.piezo2.data());
             dumpAttribute(fh, "/settings/piezo_second_order", "unit", std::string("e/bohr^2"));
+        }
+        if (settings.strain_fc5) {
+            dump(fh, "/settings/strain_fc5", settings.strain_fc5);
+            dump(fh, "/settings/strain_fc5_diag", settings.strain_fc5_diag);
+            dump(fh,
+                 "/settings/fc5_fingerprint",
+                 std::vector<double>(settings.fc5_fingerprint.begin(), settings.fc5_fingerprint.end()));
         }
         if (nonzero(settings.born_strain)) {
             const auto nat = settings.born_strain.size() / 81;

@@ -108,16 +108,57 @@ struct FoldedIfcs
         slot.reserve(sum.size());
         weight.reserve(sum.size());
         for (const auto &[key, w]: sum) {
-            auto r = key;
-            std::array<unsigned int, 2 * N - 1> id{};
-            for (int d = 2 * N - 2; d >= 0; --d) {
-                const unsigned long long base = d >= N ? nk : ns;
-                id[d] = static_cast<unsigned int>(r % base);
-                r /= base;
-            }
-            slot.push_back(id);
+            slot.push_back(decode(key));
             weight.push_back(w);
         }
+    }
+
+    // Several weight channels on one slot set (STRAIN_FC5: the 9 strain derivatives
+    // dPhi_N/du_{mu nu} of DerivativeIFC::compute_dV_dumn_all_real_space). A group g
+    // has legs g.pairs[0..N-1], cells g.relvecs[0..N-2] and one value per channel,
+    // g.values[c]; channel[c][slot] holds the folded sum. weight (the values the
+    // contractions use) starts at zero, see RealSpaceV4::set_channel_weights.
+    std::vector<std::vector<double>> channel;
+
+    template <class Group>
+    FoldedIfcs(const std::vector<Group> &groups, const std::size_t nchannel, const std::vector<double> &invsqrt_mass,
+               const unsigned int ns_in, const unsigned int *nk_in) : ns(ns_in)
+    {
+        nki = {static_cast<int>(nk_in[0]), static_cast<int>(nk_in[1]), static_cast<int>(nk_in[2])};
+        nk = static_cast<unsigned int>(nki[0] * nki[1] * nki[2]);
+        if (N * std::log2(static_cast<double>(ns)) + (N - 1) * std::log2(static_cast<double>(nk)) >= 63.0) {
+            exit("FoldedIfcs", "the IFC slots of this cell and k-mesh do not fit a 64-bit key.");
+        }
+        std::unordered_map<unsigned long long, std::size_t> index;
+        index.reserve(groups.size());
+        channel.assign(nchannel, {});
+        for (const auto &g: groups) {
+            unsigned long long key = 0;
+            double w = 1.0;
+            for (int n = 0; n < N; ++n) {
+                key = key * ns + g.pairs[n].index;
+                w *= invsqrt_mass[g.pairs[n].index / 3];
+            }
+            for (int n = 0; n < N - 1; ++n) key = key * nk + mesh_cell(nki, g.relvecs[n]);
+            const auto [it, added] = index.emplace(key, slot.size());
+            if (added) {
+                slot.push_back(decode(key));
+                for (auto &ch: channel) ch.push_back(0.0);
+            }
+            for (std::size_t c = 0; c < nchannel; ++c) channel[c][it->second] += w * g.values[c];
+        }
+        weight.assign(slot.size(), 0.0);
+    }
+
+    std::array<unsigned int, 2 * N - 1> decode(unsigned long long key) const
+    {
+        std::array<unsigned int, 2 * N - 1> id{};
+        for (int d = 2 * N - 2; d >= 0; --d) {
+            const unsigned long long base = d >= N ? nk : ns;
+            id[d] = static_cast<unsigned int>(key % base);
+            key /= base;
+        }
+        return id;
     }
 };
 
@@ -136,6 +177,19 @@ struct QuarticMesh: FoldedIfcs<4>
     QuarticMesh(const std::vector<FcsArrayWithCell> &fcs, const std::vector<double> &invsqrt_mass,
                 const unsigned int ns_in, const unsigned int *nk_in) : FoldedIfcs<4>(fcs, invsqrt_mass, ns_in, nk_in)
     {
+        finish();
+    }
+
+    template <class Group>
+    QuarticMesh(const std::vector<Group> &groups, const std::size_t nchannel, const std::vector<double> &invsqrt_mass,
+                const unsigned int ns_in, const unsigned int *nk_in) :
+        FoldedIfcs<4>(groups, nchannel, invsqrt_mass, ns_in, nk_in)
+    {
+        finish();
+    }
+
+    void finish()
+    {
         std::vector<size_t> order(slot.size());
         for (size_t e = 0; e < order.size(); ++e) order[e] = e;
         std::sort(order.begin(), order.end(), [&](const size_t a, const size_t b) {
@@ -151,6 +205,10 @@ struct QuarticMesh: FoldedIfcs<4>
         }
         slot.swap(slot_sorted);
         weight.swap(weight_sorted);
+        for (auto &ch: channel) {
+            for (size_t e = 0; e < order.size(); ++e) weight_sorted[e] = ch[order[e]];
+            ch.swap(weight_sorted);
+        }
         cell_lm.reserve(slot.size());
         row_begin.assign(static_cast<size_t>(nk) * ns + 1, slot.size());
         for (size_t e = slot.size(); e-- > 0;) {
@@ -162,9 +220,11 @@ struct QuarticMesh: FoldedIfcs<4>
         }
     }
 
+    // w: the weights to use instead of weight (one channel of a multi-channel mesh)
     void apply(const std::vector<Eigen::MatrixXcd> &x, std::vector<Eigen::MatrixXcd> &z,
-               const std::vector<cplx> *qphase = nullptr) const
+               const std::vector<cplx> *qphase = nullptr, const std::vector<double> *w_in = nullptr) const
     {
+        const auto &wv = w_in ? *w_in : weight;
         z.assign(nk, Eigen::MatrixXcd::Zero(ns, ns));
         const auto nrow = static_cast<long>(row_begin.size() - 1);
 #pragma omp parallel for schedule(dynamic, 16) if (!in_parallel())
@@ -173,7 +233,7 @@ struct QuarticMesh: FoldedIfcs<4>
             for (size_t e = row_begin[r]; e < row_begin[r + 1]; ++e) {
                 const auto &id = slot[e];
                 // slot: i, j, l, m, cell(R_j), cell(R_l), cell(R_m)
-                const cplx w = qphase ? weight[e] * (*qphase)[id[5]] : cplx(weight[e], 0.0);
+                const cplx w = qphase ? wv[e] * (*qphase)[id[5]] : cplx(wv[e], 0.0);
                 z[rj](i, id[1]) += w * x[cell_lm[e]](id[2], id[3]);
             }
         }
@@ -220,6 +280,16 @@ public:
                 const std::vector<bool> &acoustic_gamma, unsigned int jk_gamma_dense,
                 const std::vector<unsigned int> &knum_of_irred, bool offdiag);
 
+    // From a prebuilt (e.g. multi-channel) mesh; with_diag = false skips the on-site
+    // diagonal (v4_diag() is then empty).
+    RealSpaceV4(QuarticMesh &&mesh, unsigned int ns, const unsigned int *nk_dense_i, const double *const *xk_dense,
+                const cplx *const *const *evec, const std::vector<bool> &acoustic_gamma, unsigned int jk_gamma_dense,
+                const std::vector<unsigned int> &knum_of_irred, bool offdiag, bool with_diag);
+
+    // Multi-channel mesh: weight = sum_c coef[c] channel[c]; every contraction below
+    // then uses these weights.
+    void set_channel_weights(const double *coef);
+
     // F[ik_irred](a,b) += sum_jk sum_cd V4[(ik_irred,jk)][a,b][c,d] D_jk(c,d), dvec[jk*ns2 + c*ns + d],
     // on the lower triangle (offdiag) or the diagonal (D restricted to its diagonal), as
     // V4Service::fmat.
@@ -231,7 +301,9 @@ public:
     // As V4Service::q0_sweep (q0_contraction.h):
     //   v3_renorm[jk][b][c,d] = v3_with_umn[jk][b][c,d] + sum_a V4[(g,jk)][a,b][c,d] q0[a]
     //   q4_q0[ik][a][b]       = sum_cd V4[(ik,jg)][a,b][c,d] q0[c] q0[d]
-    void q0_sweep(const double *q0, const cplx *const *const *v3_with_umn, cplx ***v3_renorm, cplx ***q4_q0) const;
+    // accumulate: add the contributions to v3_renorm and q4_q0 instead (v3_with_umn unused).
+    void q0_sweep(const double *q0, const cplx *const *const *v3_with_umn, cplx ***v3_renorm, cplx ***q4_q0,
+                  bool accumulate = false) const;
 
     // V4[(ik_irred, knum)][a,a][a,a] (real part), as V4Service::v4_diag
     const double *const *v4_diag() const
@@ -247,7 +319,15 @@ public:
     // F_k for the D blocks of the dense mesh, at the dense k-points kout (full matrices, row-major)
     void contract(const cplx *d, const std::vector<unsigned int> &kout, cplx *f) const;
 
+    // As contract, once per channel c of the mesh, with the channel weights instead of the
+    // current ones: f + c * kout.size() * ns^2 (one D, several vertices).
+    void contract_channels(const cplx *d, const std::vector<unsigned int> &kout, cplx *f) const;
+
 private:
+    void init(const double *const *xk_dense, const cplx *const *const *evec, bool with_diag);
+    void contract_impl(const cplx *d, const std::vector<unsigned int> &kout,
+                       const std::vector<const std::vector<double> *> &weights, cplx *f) const;
+
     unsigned int ns_, ns2_, nk_, jg_;
     QuarticMesh quartic_;
     std::vector<Eigen::MatrixXcd> U_;

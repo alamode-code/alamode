@@ -204,6 +204,21 @@ void ScphQhaCommon::calculate_del_v0_del_umn_renorm(std::complex<double> *del_v0
         }
     }
 
+    // STRAIN_FC5: (1/24) dPhi4/du_mn q0^4 = (1/24) 4N sum_ab q4mn[Gamma](a,b) q0[a] q0[b]
+    // (as the quartic term of Relaxation::renormalize_v0_from_q0)
+    if (!fc5_q4mn.empty()) {
+        const auto ns2 = static_cast<std::size_t>(ns) * ns;
+        const double factor4 = 1.0 / 24.0 * 4.0 * nk;
+        for (std::size_t c = 0; c < fc5_mn.size(); c++) {
+            const auto *q4 = fc5_q4mn.data() + (c * nk + ik_gamma_dense) * ns2;
+            for (is1 = 0; is1 < ns; is1++) {
+                for (is2 = 0; is2 < ns; is2++) {
+                    del_v0_del_umn_renorm[fc5_mn[c]] += factor4 * q4[is1 * ns + is2] * q0[is1] * q0[is2];
+                }
+            }
+        }
+    }
+
 
     del_eta_del_u.clear();
     del_v0_del_eta.clear();
@@ -333,8 +348,12 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
     // components and kept its diagonal).
     MatrixXcd G(ns, ns);
     std::vector<bool> is_acoustic_now;
+    const auto ns2 = static_cast<std::size_t>(ns) * ns;
+    // STRAIN_FC5: the occupation matrices of every k (row-major), see below
+    std::vector<std::complex<double>> gall(dv4_fc5 ? nk * ns2 : 0);
     for (auto ik = 0; ik < nk; ik++) {
         scp_occupation_matrix(ik, cmat_convert[ik], omega2_anharm_T[ik], T_in, G, &is_acoustic_now);
+        if (dv4_fc5) Map<MatrixXcdRowMajor>(gall.data() + ik * ns2, ns, ns) = G;
         for (auto js = 0; js < ns; js++) {
             if (ik == ik_gamma_dense && is_acoustic_now[js]) {
                 continue;
@@ -347,6 +366,25 @@ void ScphQhaCommon::compute_anharmonic_del_v0_del_umn(std::complex<double> *del_
         const MatrixXcd GT = G.transpose();
         for (auto i1 = 0; i1 < 9; i1++) {
             del_v0_del_umn_SCP[i1] += factor2 * del_v2_del_umn_renorm[i1 * nk + ik].cwiseProduct(GT).sum();
+        }
+    }
+
+    // STRAIN_FC5: (1/8) dPhi4/du_mn G G. The contraction F_mn[k] = sum dV4/du_mn G is the
+    // change of the SCP matrix, (1/2) dPhi4/du_mn G, so the term is half the harmonic-like
+    // trace above: (1/2) sum_k tr[F_mn[k] G_k^T] / (4N).
+    if (dv4_fc5) {
+        std::vector<unsigned int> kall(nk);
+        for (auto ik = 0; ik < nk; ik++) kall[ik] = static_cast<unsigned int>(ik);
+        std::vector<std::complex<double>> f(fc5_mn.size() * nk * ns2);
+        dv4_fc5->contract_channels(gall.data(), kall, f.data());
+        for (std::size_t c = 0; c < fc5_mn.size(); c++) {
+            std::complex<double> sum = 0.0;
+            for (auto ik = 0; ik < nk; ik++) {
+                Map<const MatrixXcdRowMajor> F(f.data() + (c * nk + ik) * ns2, ns, ns);
+                Map<const MatrixXcdRowMajor> Gk(gall.data() + ik * ns2, ns, ns);
+                sum += F.cwiseProduct(Gk.transpose()).sum();
+            }
+            del_v0_del_umn_SCP[fc5_mn[c]] += 0.5 * factor2 * sum;
         }
     }
 }
@@ -377,6 +415,11 @@ Eigen::MatrixXcd ScphQhaCommon::strain_vertex(const DelVStrainData &del_v_strain
     const VectorXcd acc = factor * (del_v_strain.del_v3[i1][ik].transpose() * q0c);
     Map<const MatrixXcdRowMajor> acc_mat(acc.data(), ns, ns); // acc_mat(is2, is1)
     mat += acc_mat.transpose();
+    // STRAIN_FC5: (1/2) dPhi4/du_mn q0 q0, as the quartic term of Relaxation::renormalize_v2_from_q0
+    if (!fc5_q4mn.empty() && fc5_channel_of_mn[i1] >= 0) {
+        const auto c = static_cast<std::size_t>(fc5_channel_of_mn[i1]);
+        mat += 0.5 * factor * Map<const MatrixXcdRowMajor>(fc5_q4mn.data() + (c * nk + ik) * ns2, ns, ns);
+    }
     return mat;
 }
 

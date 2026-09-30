@@ -204,6 +204,12 @@ public:
                           const KpointMeshUniform *kmesh_coarse_in, const KpointMeshUniform *kmesh_dense_in,
                           const PhaseFactorCache *phase_cache_in) const;
 
+    // STRAIN_FC5: the first strain derivative of the quartic IFCs from the quintic ones
+    // (Fcs_phonon::fc5), dPhi4/du_{mu nu} = sum Phi5(..., m mu) r_m^nu with the strain leg
+    // on a partner and r relative to the home-cell leg, as dV3/du from FC4 in
+    // compute_dV3_dumn: 4-leg groups, values[mu * 3 + nu].
+    void compute_dPhi4_dumn_groups(std::vector<DeltaFcsStrainComponents> &groups) const;
+
     void set_del_v_fixed_cell(std::size_t nk, std::size_t ns, DelVStrainData &del_v_strain) const;
 
     void set_del_v_relax_cell(const KpointMeshUniform *kmesh_coarse, const KpointMeshUniform *kmesh_dense,

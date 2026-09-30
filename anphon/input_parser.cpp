@@ -126,6 +126,21 @@ void InputParser::parse_input(PHON *phon)
         }
         // &displace is optional: without it the relaxation starts from the undistorted positions.
         if (locate_tag("&displace")) parse_initial_displace(phon);
+    } else if (locate_tag("&relax")) {
+        // &relax is not parsed here; STRAIN_FC5 = 1 would be silently ignored
+        for (const auto &line: read_block_lines()) {
+            std::vector<std::string> entries, keyval;
+            boost::split(entries, line, boost::is_any_of(";"));
+            for (const auto &entry: entries) {
+                boost::split(keyval, entry, boost::is_any_of("="));
+                if (keyval.size() != 2) continue;
+                if (boost::to_upper_copy(boost::trim_copy(keyval[0])) == "STRAIN_FC5" &&
+                    boost::trim_copy(keyval[1]) != "0")
+                {
+                    exit("parse_input", "STRAIN_FC5 = 1 needs MODE = SCPH with RELAX_STR = 2 or 4.");
+                }
+            }
+        }
     }
 }
 
@@ -1099,12 +1114,12 @@ void InputParser::parse_relax_vars(PHON *phon)
     // Read input parameters in the &relax-field.
 
     const std::vector<std::string> input_list{
-        "RELAX_ALGO",    "MAX_STR_ITER",  "COORD_CONV_TOL",   "GRADIENT_CONV_TOL", "CELL_GRADIENT_CONV_TOL",
-        "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",    "ALPHA_STDECENT",    "CELL_CONV_TOL",
-        "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX", "COOLING_U0_THR",    "ADD_HESS_DIAG",
-        "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",    "RENORM_34TO1ST",    "STRAIN_IFC_DIR",
-        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING",  "BUBBLE_HESS",       "EFIELD",
-        "POL_REF"};
+        "RELAX_ALGO",    "MAX_STR_ITER",  "COORD_CONV_TOL",     "GRADIENT_CONV_TOL", "CELL_GRADIENT_CONV_TOL",
+        "GDIIS_CONTROL", "GDIIS_PLAIN",   "MIXBETA_COORD",      "ALPHA_STDECENT",    "CELL_CONV_TOL",
+        "MIXBETA_CELL",  "SET_INIT_STR",  "COOLING_U0_INDEX",   "COOLING_U0_THR",    "ADD_HESS_DIAG",
+        "STAT_PRESSURE", "RENORM_3TO2ND", "RENORM_2TO1ST",      "RENORM_34TO1ST",    "STRAIN_IFC_DIR",
+        "ELASTIC_CONST", "STRAINFILE",    "STRAIN_COUPLING",    "BUBBLE_HESS",       "EFIELD",
+        "POL_REF",       "STRAIN_FC5",    "STRAIN_FC5_CHANNELS"};
 
     std::map<std::string, std::string> stropt_var_dict;
 
@@ -1268,6 +1283,37 @@ void InputParser::parse_relax_vars(PHON *phon)
         exit("parse_relax_vars",
              "STRAINFILE and STRAIN_IFC_DIR are mutually exclusive: give either the container file\n"
              " or the directory of the legacy text files.");
+    }
+
+    // STRAIN_FC5: dPhi4/du from the quintic IFCs, an additive real-space correction to the
+    // quartic couplings of the SCP loop, the q0 sweep and the stress.
+    assign_val(relax_vars.strain_fc5, "STRAIN_FC5", stropt_var_dict);
+    if (relax_vars.strain_fc5 < 0 || relax_vars.strain_fc5 > 1) {
+        exit("parse_relax_vars", "STRAIN_FC5 must be 0 or 1.");
+    }
+    std::string fc5_channels = "ALL";
+    assign_val(fc5_channels, "STRAIN_FC5_CHANNELS", stropt_var_dict);
+    boost::to_upper(fc5_channels);
+    if (fc5_channels != "ALL" && fc5_channels != "DIAG") {
+        exit("parse_relax_vars", "STRAIN_FC5_CHANNELS must be ALL or DIAG.");
+    }
+    relax_vars.strain_fc5_diag = fc5_channels == "DIAG";
+    if (relax_vars.strain_fc5) {
+        if (run_mode != "SCPH") {
+            exit("parse_relax_vars", "STRAIN_FC5 = 1 is available for MODE = SCPH only.");
+        }
+        if (relax_str != to_int(RelaxationStrMode::CoordinatesAndCell) &&
+            relax_str != to_int(RelaxationStrMode::CoordinatesAtFixedStrain))
+        {
+            exit("parse_relax_vars", "STRAIN_FC5 = 1 needs a strained cell: RELAX_STR = 2 or 4.");
+        }
+        if (scph_bubble == 4 || relax_vars.bubble_hess) {
+            exit("parse_relax_vars",
+                 "STRAIN_FC5 = 1 cannot be combined with BUBBLE = 4 or BUBBLE_HESS = 1 (the free-energy\n"
+                 " curvature and its quartic ladder do not include dPhi4/du yet).");
+        }
+    } else if (stropt_var_dict.find("STRAIN_FC5_CHANNELS") != stropt_var_dict.end()) {
+        warn("parse_relax_vars", "STRAIN_FC5_CHANNELS is ignored without STRAIN_FC5 = 1.");
     }
 
     input_setter->set_relax_vars(phon, relax_vars);

@@ -82,6 +82,8 @@ void Relaxation::set_default_variables()
     elastic_const = 2;
     strain_IFC_dir.clear();
     strain_file.clear();
+    strain_fc5 = 0;
+    strain_fc5_diag = false;
 }
 
 void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inversion)
@@ -97,6 +99,7 @@ void Relaxation::setup_relaxation(const double symprec, const bool ref_has_inver
     MPI_Bcast(&renorm_2to1st, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
     MPI_Bcast(&renorm_34to1st, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
     MPI_Bcast(&elastic_const, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&strain_fc5, 1, MPI_INTEGER, 0, MPI_COMM_WORLD); // the restart checks run on every rank
     MPI_Bcast_string(strain_IFC_dir, 0, MPI_COMM_WORLD);
     MPI_Bcast_string(strain_file, 0, MPI_COMM_WORLD);
 

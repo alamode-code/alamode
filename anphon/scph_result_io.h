@@ -49,6 +49,12 @@ struct ScphSettingsH5
     // Written only when nonzero; absent means zero. Exit on mismatch.
     std::array<double, 243> piezo2{};
     std::vector<double> born_strain;
+    // STRAIN_FC5 (&relax), STRAIN_FC5_CHANNELS = DIAG, and the fingerprint of the quintic
+    // IFCs (Fcs_phonon::fc5_fingerprint). Written only when STRAIN_FC5 = 1; absent means
+    // 0. Exit on mismatch.
+    int strain_fc5 = 0;
+    int strain_fc5_diag = 0;
+    std::array<double, 3> fc5_fingerprint{};
 };
 
 // Primitive cell of the SCPH run; the virtual supercell (primitive cell
